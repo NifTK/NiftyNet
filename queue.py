@@ -1,5 +1,7 @@
 import threading
+
 import tensorflow as tf
+from six.moves import range
 
 class InputBatchQueueRunner(object):
     def __init__(self, batch_size, queue_size,
@@ -20,7 +22,7 @@ class InputBatchQueueRunner(object):
         # create queue
         if shuffle:
             self.queue = tf.RandomShuffleQueue(
-                capacity=queue_size, min_after_dequeue=queue_size/2,
+                capacity=queue_size, min_after_dequeue=queue_size / 2,
                 dtypes=input_types, shapes=input_shapes, names=input_names,
                 name="shuffled_queue")
         else:
@@ -43,15 +45,14 @@ class InputBatchQueueRunner(object):
             for t in self.element_generator():
                 if coord.should_stop():
                     break
-                session.run(self.enqueue_op, feed_dict={self.place_holders:t})
+                session.run(self.enqueue_op, feed_dict={self.place_holders: t})
         except tf.errors.CancelledError:
             pass
         finally:
             if self.batch_size > self.queue_size:
-                print "Insufficient samples to form a batch:"\
-                    "remaining {} in queue".format(self.queue_size)
+                print("Insufficient samples to form a batch: {} remaining in queue".format(self.queue_size))
             self.close_all(coord, session)
-            print 'preprocessing threads finished'
+            print('Preprocessing threads finished.')
 
     def pop(self, n):
         return self.queue.dequeue_many(n)
@@ -60,8 +61,8 @@ class InputBatchQueueRunner(object):
         return self.pop(self.batch_size)
 
     def init_threads(self, session, coord, num_threads):
-        print 'Starting preprocessing threads...'
-        for i in xrange(num_threads):
+        print('Starting preprocessing threads...')
+        for i in range(num_threads):
             self.threads.append(
                 threading.Thread(target=self.push, args=(session, coord)))
             self.threads[i].daemon = True
@@ -72,7 +73,7 @@ class InputBatchQueueRunner(object):
             coord.request_stop()
             session.run(self.close_queue_op)
         except Exception as e:
-            print e
+            print(e)
 
 
 class DeployInputBuffer(InputBatchQueueRunner):

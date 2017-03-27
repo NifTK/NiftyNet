@@ -1,8 +1,8 @@
 import warnings
 import scipy.ndimage
 import numpy as np
-from external.intensity_range_standardization import\
-    IntensityRangeStandardization
+from external.intensity_range_standardization import IntensityRangeStandardization
+
 warnings.simplefilter("ignore", UserWarning)
 
 
@@ -24,11 +24,11 @@ def grid_window_location_3d(img_size_3d, win_size, grid_size):
     if grid_size <= 0:
         return None
     xs = __enumerate_step_points(
-            0, img_size_3d[0], win_size, grid_size)
+        0, img_size_3d[0], win_size, grid_size)
     ys = __enumerate_step_points(
-            0, img_size_3d[1], win_size, grid_size)
+        0, img_size_3d[1], win_size, grid_size)
     zs = __enumerate_step_points(
-            0, img_size_3d[2], win_size, grid_size)
+        0, img_size_3d[2], win_size, grid_size)
     x_start, y_start, z_start = np.meshgrid(xs, ys, zs)
 
     x_start = x_start.flatten()
@@ -69,7 +69,7 @@ def rand_rotation_3d(img, seg, max_angle=10.0):
 def rand_spatial_scaling(img, seg=None, percentage=10.0):
     rand_zoom = (np.random.randint(-percentage, percentage) + 100.0) / 100.0
     img = scipy.ndimage.zoom(img, rand_zoom, order=3)
-    seg = scipy.ndimage.zoom(seg, rand_zoom, order=0)\
+    seg = scipy.ndimage.zoom(seg, rand_zoom, order=0) \
         if seg is not None else None
     return img, seg
 
