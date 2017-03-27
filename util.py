@@ -84,10 +84,11 @@ def save_segmentation(param, img_name, pred_img):
     #  save_name = save_name + random.choice('abcdefghinm') + '.nii.gz'
     #pred_img = (label_map[pred_img.astype(np.int64)]).astype(np.int64)
     (w, h, d) = pred_img.shape
-    if param.border > 0: # remove paddings
-        pred_img = pred_img[param.border : (w - param.border),
-                            param.border : (h - param.border),
-                            param.border : (d - param.border)]
+    if param.volume_padding_size > 0: # remove paddings
+        pred_img = pred_img[
+                param.volume_padding_size : (w - param.volume_padding_size),
+                param.volume_padding_size : (h - param.volume_padding_size),
+                param.volume_padding_size : (d - param.volume_padding_size)]
     ori_aff = nibabel.load(param.eval_image_dir + '/' + img_name).affine
     predicted_nii = nibabel.Nifti1Image(pred_img, ori_aff)
     predicted_nii.set_data_dtype(np.dtype(np.float32))

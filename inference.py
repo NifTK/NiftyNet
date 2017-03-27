@@ -87,7 +87,7 @@ def run(net, param):
                         pred_img = np.pad(pred_img,
                                           param.volume_padding_size,
                                           'minimum')
-                        #print 'init %s' % valid_names[img_id]
+                        #print 'init %s' % img_name
                     loc_x = spatial_info[batch_id, 1]
                     loc_y = spatial_info[batch_id, 2]
                     loc_z = spatial_info[batch_id, 3]
@@ -106,9 +106,9 @@ def run(net, param):
             print 'User cancelled training'
         except tf.errors.OutOfRangeError:
             pass
-        #except Exception as unusual_error:
-        #    print unusual_error
-        #    seg_batch_runner.close_all(coord, sess)
+        except Exception as unusual_error:
+            print unusual_error
+            seg_batch_runner.close_all(coord, sess)
         finally:
             # save the last batches
             util.save_segmentation(param, valid_names[img_id], pred_img)

@@ -28,7 +28,6 @@ class ToyNet(NetTemplate):
     def inference(self, images, layer_id=None):
         BaseLayer._print_activations(images)
         print ""
-        zero_paddings = [[0, 0], [0, 0], [0, 0]]
         images = tf.expand_dims(images, 4)
         with tf.variable_scope('conv_1_1') as scope:
             conv_1_1 = self.conv_3x3(images, 1, self.num_features[0])

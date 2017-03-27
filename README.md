@@ -10,10 +10,12 @@ NiftyNet is an open-source library for convolutional networks in medical image a
 
 
 ### Dependencies:
+* Python 2.7
 * Tensorflow 1.0
 * Nibabel 2.1
 * Numpy  1.12
 * Scipy 0.19
+* ConfigParser
 
 
 ### Usage

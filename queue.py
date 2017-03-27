@@ -1,31 +1,33 @@
+import time
 import threading
 import tensorflow as tf
 
 class InputBatchQueueRunner(object):
-    def __init__(self, batch_size, queue_size,
+    def __init__(self, batch_size, capacity,
                  input_names, input_types, input_shapes, generator, shuffle):
         self.batch_size = batch_size
         self.element_generator = generator
         self.threads = []
-        self.queue_size = queue_size
 
         self.queue = []
         self.place_holders = []
         self.enqueue_op = []
-        self.init_queue(input_names, input_types, input_shapes,
-                        queue_size, shuffle)
+        self.close_queue_op = []
+        self.queue_size_op = []
+        self.init_queue(
+                input_names, input_types, input_shapes, capacity, shuffle)
 
     def init_queue(self, input_names, input_types, input_shapes,
-                   queue_size, shuffle):
+                   capacity, shuffle):
         # create queue
         if shuffle:
             self.queue = tf.RandomShuffleQueue(
-                capacity=queue_size, min_after_dequeue=queue_size/2,
+                capacity=capacity, min_after_dequeue=capacity/2,
                 dtypes=input_types, shapes=input_shapes, names=input_names,
                 name="shuffled_queue")
         else:
             self.queue = tf.FIFOQueue(
-                capacity=queue_size,
+                capacity=capacity,
                 dtypes=input_types, shapes=input_shapes, names=input_names,
                 name="FIFO_queue")
         # create place holders
@@ -37,6 +39,7 @@ class InputBatchQueueRunner(object):
         queue_input_dict = dict(zip(input_names, self.place_holders))
         self.enqueue_op = self.queue.enqueue(queue_input_dict)
         self.close_queue_op = self.queue.close(cancel_pending_enqueues=True)
+        self.queue_size_op = self.queue.size()
 
     def push(self, session, coord):
         try:
@@ -44,12 +47,16 @@ class InputBatchQueueRunner(object):
                 if coord.should_stop():
                     break
                 session.run(self.enqueue_op, feed_dict={self.place_holders:t})
+            while self.batch_size <= session.run(self.queue_size_op):
+                time.sleep(1)
+                pass
         except tf.errors.CancelledError:
             pass
         finally:
-            if self.batch_size > self.queue_size:
+            if self.batch_size > session.run(self.queue_size_op):
                 print "Insufficient samples to form a batch:"\
-                    "remaining {} in queue".format(self.queue_size)
+                    "remaining {} in queue".format(
+                            session.run(self.queue_size_op))
             self.close_all(coord, session)
             print 'preprocessing threads finished'
 
@@ -76,19 +83,19 @@ class InputBatchQueueRunner(object):
 
 
 class DeployInputBuffer(InputBatchQueueRunner):
-    def __init__(self, batch_size, queue_size, shapes, sample_generator):
+    def __init__(self, batch_size, capacity, shapes, sample_generator):
         input_names = ("images", "info")
         input_types = (tf.float32, tf.int64)
         super(DeployInputBuffer, self).__init__(
-            batch_size, queue_size,
+            batch_size, capacity,
             input_names, input_types, shapes, sample_generator, False)
 
 
 class TrainEvalInputBuffer(InputBatchQueueRunner):
-    def __init__(self, batch_size, queue_size, shapes,
+    def __init__(self, batch_size, capacity, shapes,
                  sample_generator, shuffle=True):
         input_names = ("images", "labels", "info")
         input_types = (tf.float32, tf.int64, tf.int64)
         super(TrainEvalInputBuffer, self).__init__(
-            batch_size, queue_size,
+            batch_size, capacity,
             input_names, input_types, shapes, sample_generator, shuffle)
