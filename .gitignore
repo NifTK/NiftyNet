@@ -1,0 +1,3 @@
+*.py[cod]
+*$py.class
+__pycache__/

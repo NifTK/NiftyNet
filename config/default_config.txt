@@ -1,0 +1,37 @@
+[settings]
+model_dir = ./model1
+net_name = toynet
+
+# preprocessing threads parameters
+queue_length = 8
+num_threads = 4
+
+# network parameters (controlling memory consumption)
+batch_size = 1
+image_size = 32
+label_size = 32
+num_classes = 160
+
+# affected by network's receptive field
+volume_padding_size = 21
+
+# ** training only ** system parameter
+num_gpus = 2
+sample_per_volume = 100
+train_image_dir = /home/ucl/eisuc269/tnet/DataBrain/T1
+train_label_dir = /home/ucl/eisuc269/tnet/DataBrain/Lab_normalised
+
+# **training only** gradient descent and loss parameters
+lr = 0.01
+decay = 1e-7
+loss_type = dice
+reg_type = l2
+starting_iter = 0
+save_every_n = 100
+max_iter = 10
+
+# **inference only** system parameters
+border = 5
+pred_iter = 10
+save_seg_dir = ./model1_output
+eval_image_dir = /home/ucl/eisuc269/tnet/DataBrain/T1
