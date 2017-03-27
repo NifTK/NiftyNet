@@ -25,12 +25,12 @@ python run_application.py train --net_name toynet \
 --train_image_dir ./example_volumes/T1 --train_label_dir ./example_volumes/Label \
 --image_size 42 --label_size 42 --batch_size 1
 ```
-To do segmentation with a trained "toynet":
+After the training process, to do segmentation with a trained "toynet":
 ``` sh
 cd NiftyNet/
 python run_application.py inference --net_name toynet \
 --eval_image_dir ./example_volumes/T1 --save_seg_dir ./seg_output \
---image_size 128 --label_size 128 --batch_size 4
+--image_size 64 --label_size 64 --batch_size 4
 ```
 *Commandline parameters override the default settings defined in `config/default_config.txt`.*
 

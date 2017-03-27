@@ -47,9 +47,15 @@ class InputBatchQueueRunner(object):
                 if coord.should_stop():
                     break
                 session.run(self.enqueue_op, feed_dict={self.place_holders:t})
-            while self.batch_size <= session.run(self.queue_size_op):
-                time.sleep(1)
-                pass
+
+            retry = 0
+            while retry < 5:
+                if self.batch_size <= session.run(self.queue_size_op):
+                    # there are batches to be processed before delete the queue
+                    time.sleep(2)
+                    retry = retry + 1
+                else:
+                    break
         except tf.errors.CancelledError:
             pass
         finally:
