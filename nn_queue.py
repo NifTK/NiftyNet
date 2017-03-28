@@ -1,28 +1,30 @@
-import time
 import threading
+import time
+
 import tensorflow as tf
+from six.moves import range
+
 
 class InputBatchQueueRunner(object):
-    def __init__(self, batch_size, capacity,
+    def __init__(self, batch_size, queue_size,
                  input_names, input_types, input_shapes, generator, shuffle):
         self.batch_size = batch_size
         self.element_generator = generator
         self.threads = []
+        self.queue_size = queue_size
 
         self.queue = []
         self.place_holders = []
         self.enqueue_op = []
-        self.close_queue_op = []
-        self.queue_size_op = []
-        self.init_queue(
-                input_names, input_types, input_shapes, capacity, shuffle)
+        self.init_queue(input_names, input_types, input_shapes,
+                        queue_size, shuffle)
 
     def init_queue(self, input_names, input_types, input_shapes,
                    capacity, shuffle):
         # create queue
         if shuffle:
             self.queue = tf.RandomShuffleQueue(
-                capacity=capacity, min_after_dequeue=capacity/2,
+                capacity=capacity, min_after_dequeue=capacity / 2,
                 dtypes=input_types, shapes=input_shapes, names=input_names,
                 name="shuffled_queue")
         else:
@@ -46,7 +48,7 @@ class InputBatchQueueRunner(object):
             for t in self.element_generator():
                 if coord.should_stop():
                     break
-                session.run(self.enqueue_op, feed_dict={self.place_holders:t})
+                session.run(self.enqueue_op, feed_dict={self.place_holders: t})
 
             retry = 0
             while retry < 5:
@@ -60,11 +62,11 @@ class InputBatchQueueRunner(object):
             pass
         finally:
             if self.batch_size > session.run(self.queue_size_op):
-                print "Insufficient samples to form a batch:"\
-                    "remaining {} in queue".format(
-                            session.run(self.queue_size_op))
+                print("Insufficient samples to form a batch:" \
+                      "remaining {} in queue".format(
+                    session.run(self.queue_size_op)))
             self.close_all(coord, session)
-            print 'preprocessing threads finished'
+            print('Preprocessing threads finished.')
 
     def pop(self, n):
         return self.queue.dequeue_many(n)
@@ -73,8 +75,8 @@ class InputBatchQueueRunner(object):
         return self.pop(self.batch_size)
 
     def init_threads(self, session, coord, num_threads):
-        print 'Starting preprocessing threads...'
-        for i in xrange(num_threads):
+        print('Starting preprocessing threads...')
+        for i in range(num_threads):
             self.threads.append(
                 threading.Thread(target=self.push, args=(session, coord)))
             self.threads[i].daemon = True
@@ -85,23 +87,23 @@ class InputBatchQueueRunner(object):
             coord.request_stop()
             session.run(self.close_queue_op)
         except Exception as e:
-            print e
+            print(e)
 
 
 class DeployInputBuffer(InputBatchQueueRunner):
-    def __init__(self, batch_size, capacity, shapes, sample_generator):
+    def __init__(self, batch_size, queue_size, shapes, sample_generator):
         input_names = ("images", "info")
         input_types = (tf.float32, tf.int64)
         super(DeployInputBuffer, self).__init__(
-            batch_size, capacity,
+            batch_size, queue_size,
             input_names, input_types, shapes, sample_generator, False)
 
 
 class TrainEvalInputBuffer(InputBatchQueueRunner):
-    def __init__(self, batch_size, capacity, shapes,
+    def __init__(self, batch_size, queue_size, shapes,
                  sample_generator, shuffle=True):
         input_names = ("images", "labels", "info")
         input_types = (tf.float32, tf.int64, tf.int64)
         super(TrainEvalInputBuffer, self).__init__(
-            batch_size, capacity,
+            batch_size, queue_size,
             input_names, input_types, shapes, sample_generator, shuffle)

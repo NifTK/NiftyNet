@@ -1,19 +1,22 @@
 import os
 import time
+
 import numpy as np
 import tensorflow as tf
+from six.moves import range
 
 import util
 from loss import LossFunction
-from queue import TrainEvalInputBuffer
-from sampler import VolumeSampler
 from network.net_template import NetTemplate
+from nn_queue import TrainEvalInputBuffer
+from sampler import VolumeSampler
 
 np.random.seed(seed=int(time.time()))
 
+
 def run(net, param):
     if not isinstance(net, NetTemplate):
-        print 'net model should inherit network.NetTemplate'
+        print('net model should inherit network.NetTemplate')
         return
 
     rand_sampler = VolumeSampler(
@@ -33,7 +36,7 @@ def run(net, param):
         train_batch_runner = TrainEvalInputBuffer(
             net.batch_size,
             param.queue_length,
-            shapes=[[net.input_image_size]*3, [net.input_label_size]*3, [7]],
+            shapes=[[net.input_image_size] * 3, [net.input_label_size] * 3, [7]],
             sample_generator=sample_generator,
             shuffle=True)
         loss_func = LossFunction(net.num_classes,
@@ -47,11 +50,11 @@ def run(net, param):
         tower_losses = []
         tower_grads = []
         with tf.variable_scope(tf.get_variable_scope()):
-            for i in xrange(param.num_gpus):
+            for i in range(param.num_gpus):
                 train_pairs = train_batch_runner.pop_batch()
                 images = train_pairs['images']
                 labels = train_pairs['labels']
-                with tf.device("/gpu:%d"%i), tf.name_scope("N_%d"%i) as scope:
+                with tf.device("/gpu:%d" % i), tf.name_scope("N_%d" % i) as scope:
                     predictions = net.inference(images)
                     loss = loss_func.total_loss(predictions, labels, scope)
                     miss = tf.reduce_mean(tf.cast(
@@ -90,7 +93,7 @@ def run(net, param):
     config = tf.ConfigProto()
     config.log_device_placement = False
     config.allow_soft_placement = True
-    #config.gpu_options.allow_growth = True
+    # config.gpu_options.allow_growth = True
 
     start_time = time.time()
     with tf.Session(config=config, graph=graph) as sess:
@@ -98,49 +101,48 @@ def run(net, param):
         if not os.path.exists(param.model_dir + '/models'):
             os.makedirs(param.model_dir + '/models')
         root_dir = os.path.abspath(param.model_dir)
-        #start or load session
+        # start or load session
         ckpt_name = root_dir + '/models/model.ckpt'
         if param.starting_iter > 0:
-            model_str = ckpt_name + '-%d'%(param.starting_iter)
+            model_str = ckpt_name + '-%d' % (param.starting_iter)
             saver.restore(sess, model_str)
-            print 'Loading from {}...'.format(model_str)
+            print('Loading from {}...'.format(model_str))
         else:
             sess.run(init_op)
-            print 'Weights from random initialisations...'
+            print('Weights from random initialisations...')
 
         coord = tf.train.Coordinator()
         writer = tf.summary.FileWriter(root_dir + '/logs', sess.graph)
         try:
             train_batch_runner.init_threads(sess, coord, param.num_threads)
-            for i in xrange(param.max_iter):
+            for i in range(param.max_iter):
                 local_time = time.time()
                 if coord.should_stop():
                     break
-                print 'iter {},'.format(i),
-                _, loss_value, miss_value = sess.run(
-                    [train_op, ave_loss, ave_miss])
-                print 'loss={:.8f}, error_rate={:.8f} ({:.3f}s)'.format(
-                    loss_value, miss_value, time.time() - local_time)
-                if ((i % 20) == 0):
+                print('iter {},'.format(i))
+                _, loss_value, miss_value=sess.run([train_op, ave_loss, ave_miss])
+                print('loss={:.8f}, error_rate={:.8f} ({:.3f}s)'.format(
+                    loss_value, miss_value, time.time() - local_time))
+                if (i % 20) == 0:
                     writer.add_summary(sess.run(write_summary_op),
-                                       i+param.starting_iter)
+                                       i + param.starting_iter)
                 if (i % param.save_every_n) == 0 and (i > 0):
                     saver.save(sess, ckpt_name,
-                               global_step=i+param.starting_iter)
-                    print'Iter {} model saved at {}'.format(
-                            i+param.starting_iter, ckpt_name)
+                               global_step=i + param.starting_iter)
+                    print('Iter {} model saved at {}'.format(
+                        i + param.starting_iter, ckpt_name))
         except KeyboardInterrupt:
-            print 'User cancelled training'
+            print('User cancelled training')
         except tf.errors.OutOfRangeError:
             pass
         except Exception as unusual_error:
-            print unusual_error
+            print(unusual_error)
             train_batch_runner.close_all(coord, sess)
         finally:
             saver.save(sess, ckpt_name,
-                       global_step=param.max_iter+param.starting_iter)
-            print 'Last iteration model saved at {}'.format(ckpt_name)
-            print 'training.py (time in second) {:.2f}'.format(
-                time.time() - start_time)
+                       global_step=param.max_iter + param.starting_iter)
+            print('Last iteration model saved at {}'.format(ckpt_name))
+            print('training.py (time in second) {:.2f}'.format(
+                time.time() - start_time))
             train_batch_runner.close_all(coord, sess)
             coord.join(train_batch_runner.threads)
