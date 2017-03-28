@@ -1,7 +1,10 @@
 # NiftyNet
 NiftyNet is an open-source library for convolutional networks in medical image analysis.
 
-### Features:
+NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
+[University College London (UCL)][ucl].
+
+### Features
 * [x] Easy-to-customise interfaces of network components
 * [x] Designed for sharing networks and pretrained models with the community
 * [x] Efficient discriminative training with multiple-GPU support
@@ -9,7 +12,7 @@ NiftyNet is an open-source library for convolutional networks in medical image a
 * [ ] Implemented recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
 
 
-### Dependencies:
+### Dependencies
 * Python 2.7
 * Tensorflow 1.0
 * Nibabel 2.1
@@ -17,7 +20,7 @@ NiftyNet is an open-source library for convolutional networks in medical image a
 * Scipy 0.19
 
 
-### Usage:
+### Usage
 To train a "toynet" specified in `network/toynet.py`:
 ``` sh
 cd NiftyNet/
@@ -53,7 +56,7 @@ To develop a new architecture:
 1. Add `import network.new_net` to the `NetFactory` class in `run_application.py`
 
 
-### Structure:
+### Structure
 The basic picture of training procedure (data parallelism) is:
 ```
 <Multi-GPU training>                      (training.py)
@@ -67,3 +70,31 @@ with multiple threads:           |^|     |        |      |
 image&label -->> (sampler.py) -->> |   model <----+------+
 (*.nii.gz)   (data_augmentation.py)    update     stochastic gradients
 ```
+
+### Citation
+If you use this software, please cite:
+```
+@InProceedings{niftynet17,
+  author = {Li, Wenqi and Wang, Guotai and Fidon, Lucas and Ourselin, Sebastien and Cardoso, M. Jorge and Vercauteren, Tom},
+  title = {On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task},
+  booktitle = {International Conference on Information Processing in Medical Imaging (IPMI)},
+  year = {2017}
+}
+```
+
+
+### Acknowledgements
+This project was supported through an Innovative Engineering for Health award by
+the Wellcome Trust and EPSRC (WT101957, NS/A000027/1), the National Institute
+for Health Research University College London Hospitals Biomedical Research
+Centre (NIHR BRC UCLH/UCL High Impact Initiative), UCL EPSRC CDT Scholarship
+Award (EP/L016478/1), a UCL Overseas Research Scholarship, a UCL Graduate
+Research Scholarship, and the Health Innovation Challenge Fund by the
+Department of Health and Wellcome Trust (HICF-T4-275, WT 97914). The authors
+would like to acknowledge that the work presented here made use of Emerald, a
+GPU-accelerated High Performance Computer, made available by the Science &
+Engineering South Consortium operated in partnership with the STFC
+Rutherford-Appleton Laboratory.
+
+[cmic]: http://cmic.cs.ucl.ac.uk
+[ucl]: http://www.ucl.ac.uk
