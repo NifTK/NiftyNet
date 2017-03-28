@@ -17,7 +17,7 @@ NiftyNet is an open-source library for convolutional networks in medical image a
 * Scipy 0.19
 
 
-### Usage
+### Usage:
 To train a "toynet" specified in `network/toynet.py`:
 ``` sh
 cd NiftyNet/
@@ -53,7 +53,7 @@ To develop a new architecture:
 1. Add `import network.new_net` to the `NetFactory` class in `run_application.py`
 
 
-### Structure
+### Structure:
 The basic picture of training procedure (data parallelism) is:
 ```
 <Multi-GPU training>                      (training.py)

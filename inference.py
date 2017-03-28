@@ -103,7 +103,7 @@ def run(net, param):
                                     p_start : p_end]
 
         except KeyboardInterrupt:
-            print 'User cancelled training'
+            print 'User cancelled inference'
         except tf.errors.OutOfRangeError:
             pass
         except Exception as unusual_error:

@@ -15,7 +15,7 @@ num_classes = 160
 # affected by network's receptive field
 volume_padding_size = 21
 
-# ** training only ** system parameter
+# ** training only ** system parameters
 num_gpus = 2
 sample_per_volume = 100
 train_image_dir = /home/ucl/eisuc269/tnet/DataBrain/T1
