@@ -20,6 +20,9 @@ if __name__ == "__main__":
     args = parse_user_params.run()
     if util.has_bad_inputs(args):
         sys.exit(-1)
+    if param.cuda_devices is not "":
+        os.environ["CUDA_VISIBLE_DEVICES"] = param.cuda_devices
+        print"set CUDA_VISIBLE_DEVICES env to {}".format(param.cuda_devices)
     is_training = True if args.action == "train" else False
     device_str = "cpu" if (args.action=="train" and args.num_gpus>1) else "gpu"
 

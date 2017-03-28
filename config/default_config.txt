@@ -1,4 +1,5 @@
 [settings]
+cuda_devices = ""
 model_dir = ./model1
 net_name = toynet
 
