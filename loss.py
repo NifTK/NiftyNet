@@ -36,6 +36,8 @@ class LossFunction(object):
             reg_loss = self.reg_loss_fun(var_scope)
             return tf.add(data_loss, self.decay * reg_loss, name='total_loss')
 
+def GDSC(pred,labels):
+    return GDSC
 
 def l2_reg_loss(scope):
     if tf.get_collection('reg_var', scope) == []:
