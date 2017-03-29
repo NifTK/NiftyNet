@@ -3,7 +3,6 @@ import random
 
 import nibabel
 import numpy as np
-import nibabel
 import tensorflow as tf
 
 
@@ -36,13 +35,14 @@ def load_file(img_name, seg_name=None):
 def list_nifti_files(img_dir, rand=False):
     # TODO check images and labels consistency
     train_names = [fn for fn in os.listdir(img_dir)
-                   if fn.endswith(".nii.gz")]
-    if train_names == []:
+                   if fn.lower().endswith((".nii", ".nii.gz"))]
+    if not train_names:
         print('no files in {}'.format(img_dir))
         raise IOError
     if rand:
         random.shuffle(train_names)
     return train_names
+
 
 def has_bad_inputs(args):
     print('Input params:')
@@ -87,14 +87,13 @@ def save_segmentation(param, img_name, pred_img):
     #  save_name = save_name + random.choice('abcdefghinm') + '.nii.gz'
     # pred_img = (label_map[pred_img.astype(np.int64)]).astype(np.int64)
     (w, h, d) = pred_img.shape
-    if param.volume_padding_size > 0: # remove paddings
+    if param.volume_padding_size > 0:  # remove paddings
         pred_img = pred_img[
-                param.volume_padding_size : (w - param.volume_padding_size),
-                param.volume_padding_size : (h - param.volume_padding_size),
-                param.volume_padding_size : (d - param.volume_padding_size)]
+                   param.volume_padding_size: (w - param.volume_padding_size),
+                   param.volume_padding_size: (h - param.volume_padding_size),
+                   param.volume_padding_size: (d - param.volume_padding_size)]
     ori_aff = nibabel.load(param.eval_image_dir + '/' + img_name).affine
     predicted_nii = nibabel.Nifti1Image(pred_img, ori_aff)
     predicted_nii.set_data_dtype(np.dtype(np.float32))
     nibabel.save(predicted_nii, save_name)
     print('saved %s' % save_name)
-
