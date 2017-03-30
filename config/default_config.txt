@@ -1,5 +1,5 @@
 [settings]
-model_dir = ./model1
+model_dir = ./models/model1
 net_name = toynet
 
 # preprocessing threads parameters
@@ -18,8 +18,8 @@ volume_padding_size = 21
 # ** training only ** system parameters
 num_gpus = 2
 sample_per_volume = 100
-train_image_dir = /home/ucl/eisuc269/tnet/DataBrain/T1
-train_label_dir = /home/ucl/eisuc269/tnet/DataBrain/Lab_normalised
+train_image_dir = ./example_volumes/T1
+train_label_dir = ./example_volumes/Label
 
 # **training only** gradient descent and loss parameters
 lr = 0.01
@@ -33,5 +33,5 @@ max_iter = 10
 # **inference only** system parameters
 border = 5
 pred_iter = 10
-save_seg_dir = ./model1_output
-eval_image_dir = /home/ucl/eisuc269/tnet/DataBrain/T1
+save_seg_dir = ./output/model1_output
+eval_image_dir = ./example_volumes/T1
