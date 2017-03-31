@@ -28,6 +28,10 @@ def load_file(img_name, seg_name=None):
         if seg_name is not None else None
     return img_data, seg_data
 
+def list_associations_nifti_files(img_dir,seg_dir,fname,ext='.nii.gz'):
+    img_names = [ file for file in os.listdir(img_dir) if fname in file and file.endswith(ext)]
+    seg_names = [file for file in os.listdir(seg_dir) if fname in file and file.endswith(ext)]
+    return img_names, seg_names
 
 def list_nifti_files(img_dir, rand=False):
     # TODO check images and labels consistency
@@ -39,6 +43,26 @@ def list_nifti_files(img_dir, rand=False):
     if rand:
         random.shuffle(train_names)
     return train_names
+
+def has_bad_inputs_eval(args):
+    print 'Input params:'
+    for arg in vars(args):
+        user_value = getattr(args, arg)
+        if user_value is None:
+            print '{} not set'.format(arg)
+            return True
+        print "-- {}: {}".format(arg, getattr(args, arg))
+    return False
+
+def has_bad_inputs_stats(args):
+    print 'Input params:'
+    for arg in vars(args):
+        user_value = getattr(args, arg)
+        if user_value is None:
+            print '{} not set'.format(arg)
+            return True
+        print "-- {}: {}".format(arg, getattr(args, arg))
+    return False
 
 def has_bad_inputs(args):
     print 'Input params:'

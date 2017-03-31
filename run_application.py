@@ -21,7 +21,7 @@ if __name__ == "__main__":
     if util.has_bad_inputs(args):
         sys.exit(-1)
     is_training = True if args.action == "train" else False
-    device_str = "cpu" if (args.action=="train" and args.num_gpus>1) else "gpu"
+    device_str = "cpu" if (args.action == "train" and args.num_gpus>1) else "gpu"
 
     net_class = NetFactory.create(args.net_name)
     net = net_class(args.batch_size,
