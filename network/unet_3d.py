@@ -2,6 +2,11 @@ import tensorflow as tf
 from base_layer import BaseLayer
 from network.net_template import NetTemplate
 
+# reimplementation of 3D U-net
+#   Çiçek et al., "3D U-Net: Learning dense Volumetric segmentation from
+#   sparse annotation", MICCAI 2016
+#
+
 class U_Net_3D(NetTemplate):
     def __init__(self,
                  batch_size,
@@ -89,9 +94,11 @@ class U_Net_3D(NetTemplate):
         with tf.variable_scope('a') as scope:
             f_in = self.conv_3x3(f_in, ni_, n_middle)
             f_in = self.batch_norm(f_in)
+            f_in = self.nonlinear_acti(f_in)
         with tf.variable_scope('b') as scope:
             f_in = self.conv_3x3(f_in, n_middle, no_)
             f_in = self.batch_norm(f_in)
+            f_in = self.nonlinear_acti(f_in)
         BaseLayer._print_activations(f_in)
         print ""
         return f_in
