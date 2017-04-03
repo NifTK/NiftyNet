@@ -15,34 +15,40 @@ class BaseLayer(object):
         self.input_label_size = 0
         self.activation_type = ""
 
-    def __init_variable(self, name, shape, init, trainable=True):
+    def __init_variable(self, name, shape, init, trainable=True, withreg=True):
         with tf.device('/%s:0' % self._device_string):
             var = tf.get_variable(#init variable if not exists
                 name, shape, initializer=init, trainable=trainable)
-            if trainable:
+            if trainable and withreg:
                 tf.add_to_collection('reg_var', var)
         return var
 
 
     def __variable_with_weight_decay(self, name, shape, stddev):
-        if name == 'b' or 'const': # default bias initialised to 0
+        # TODO this if-else tree needs to be redesigned...
+        if name == 'const':
             return self.__init_variable(
                 name, shape,
                 tf.constant_initializer(0.0, dtype=tf.float32),
-                trainable=True)
+                trainable=True, withreg=False)
+        elif name == 'b': # default bias initialised to 0
+            return self.__init_variable(
+                name, shape,
+                tf.constant_initializer(0.0, dtype=tf.float32),
+                trainable=True, withreg=True)
         elif (name == 'w') and (stddev < 0): #default weights initialiser
             stddev = np.sqrt(1.3 * 2.0 / (np.prod(shape[:-2])*shape[-1]))
             return self.__init_variable(
                 name, shape,
                 tf.truncated_normal_initializer(
                     mean=0.0, stddev=stddev, dtype=tf.float32),
-                trainable=True)
+                trainable=True, withreg=True)
         elif name == 'w': #initialiser with custom stddevs
             return self.__init_variable(
                 name, shape,
                 tf.truncated_normal_initializer(
                     mean=0.0, stddev=stddev, dtype=tf.float32),
-                trainable=True)
+                trainable=True, withreg=True)
         return None
 
 
