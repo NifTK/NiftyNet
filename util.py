@@ -23,12 +23,36 @@ def average_grads(tower_grads):
     return ave_grads
 
 
-def load_file(img_name, seg_name=None):
-    img_data = nibabel.load(img_name).get_data()
-    if img_data.ndim == 4:
-        img_data = img_data[:, :, :, 0]
-    seg_data = nibabel.load(seg_name).get_data().astype(np.int64) \
-        if seg_name is not None else None
+# def load_file(img_name, seg_name=None):
+#     img_data = nibabel.load(img_name).get_data()
+#     if img_data.ndim == 4:
+#         img_data = img_data[:, :, :, 0]
+#     seg_data = nibabel.load(seg_name).get_data().astype(np.int64) \
+#         if seg_name is not None else None
+#     return img_data, seg_data
+
+
+def load_file(patId, data_dir):
+    # file name format is assumed to be 'patient_modality.extension'
+    # load image data with shape [d_z, d_y, d_x, d_mod]
+    mod_arrays = []
+    modality_list = list_modality(data_dir)
+    for modality in modality_list:
+        ext = file_extension(patId, data_dir, modality)
+        if ext is None:
+            raise ValueError('No file found for %s_%s, %s modality is missing'
+                             % (patId, modality, modality))
+        mod_path = os.path.join(data_dir, '%s_%s%s' % (patId, modality, ext))
+        mod_data = nibabel.load(mod_path).get_data().astype(np.float32)
+        mod_arrays.append(mod_data)
+    img_data = np.stack(mod_arrays, axis=-1)
+    # load segmentation data with shape [d_z, d_y, d_x] if exists
+    ext = file_extension(patId, data_dir, 'Label')
+    if ext is not None:
+        seg_path = os.path.join(data_dir, '%s_%s%s' % (patId, 'Label', ext))
+        seg_data = nibabel.load(seg_path).get_data().astype(np.int64)
+    else:
+        seg_data = None
     return img_data, seg_data
 
 
@@ -43,6 +67,41 @@ def list_nifti_files(img_dir, rand=False):
         random.shuffle(train_names)
     return train_names
 
+
+def file_extension(patId, data_dir, modality):
+    if os.path.exists(os.path.join(data_dir, '%s_%s.nii' % (patId, modality))):
+        return '.nii'
+    elif os.path.exists(os.path.join(data_dir, '%s_%s.nii.gz' % (patId, modality))):
+        return '.nii.gz'
+    else:
+        return None
+
+
+def list_patId(data_dir, rand=False):
+    patId_list = []
+    for file_name in os.listdir(data_dir):
+        if file_name.lower().endswith((".nii", ".nii.gz")):
+            patId = file_name.split('_')[0]
+            patId_list.append(patId)
+    return patId_list
+
+
+def list_modality(data_dir):
+    mod_list = []
+    for file_name in os.listdir(data_dir):
+        if file_name.endswith(('.nii', '.nii.gz')):
+            modality = file_name.split('.')[0].split('_')[1]
+            if not(modality in mod_list) and (modality != 'Label'):
+                mod_list.append(modality)
+    # list of modality is sorted to be sure the order remain the same
+    mod_list.sort()
+    return mod_list
+
+def any_mod_file(patId, data_dir):
+    mod_name = list_modality(data_dir)[0]
+    extension = file_extension(patId, data_dir, mod_name)
+    file_name = '%s_%s%s' % (patId, mod_name, extension)
+    return file_name
 
 def has_bad_inputs(args):
     print('Input params:')
@@ -69,8 +128,8 @@ def volume_of_zeros_like(image_name, dtype=np.int64):
     return new_volume
 
 
-def save_segmentation(param, img_name, pred_img):
-    if img_name is None:
+def save_segmentation(param, pat_name, pred_img):
+    if pat_name is None:
         return
     if pred_img is None:
         return
@@ -78,7 +137,7 @@ def save_segmentation(param, img_name, pred_img):
     pred_folder = "{}_pred_{}/".format(param.save_seg_dir, param.pred_iter)
     if not os.path.exists(pred_folder):
         os.makedirs(pred_folder)
-    save_name = pred_folder + img_name
+    save_name = os.path.join(pred_folder, '%s%s' % (pat_name, '.nii.gz'))
 
     # TODO  randomise names to avoid overwrite
     # import random
@@ -92,7 +151,8 @@ def save_segmentation(param, img_name, pred_img):
                    param.volume_padding_size: (w - param.volume_padding_size),
                    param.volume_padding_size: (h - param.volume_padding_size),
                    param.volume_padding_size: (d - param.volume_padding_size)]
-    ori_aff = nibabel.load(param.eval_image_dir + '/' + img_name).affine
+    file_name = any_mod_file(pat_name, param.eval_data_dir)
+    ori_aff = nibabel.load(os.path.join(param.eval_data_dir, file_name)).affine
     predicted_nii = nibabel.Nifti1Image(pred_img, ori_aff)
     predicted_nii.set_data_dtype(np.dtype(np.float32))
     nibabel.save(predicted_nii, save_name)

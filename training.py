@@ -20,7 +20,7 @@ def run(net, param):
         return
 
     rand_sampler = VolumeSampler(
-        util.list_nifti_files(param.train_image_dir, True),
+        util.list_patId(param.train_data_dir, True),
         net.batch_size,
         net.input_image_size,
         net.input_label_size,
@@ -28,15 +28,17 @@ def run(net, param):
         param.sample_per_volume)
 
     sample_generator = rand_sampler.training_samples_from(
-        param.train_image_dir, param.train_label_dir)
+        param.train_data_dir)
 
     graph = tf.Graph()
     with graph.as_default(), tf.device('/cpu:0'):
         # construct train queue and graph
+        mod_n = len(util.list_modality(param.train_data_dir))
         train_batch_runner = TrainEvalInputBuffer(
             net.batch_size,
             param.queue_length,
-            shapes=[[net.input_image_size] * 3, [net.input_label_size] * 3, [7]],
+            shapes=[[net.input_image_size] * 3 + [mod_n],
+                    [net.input_label_size] * 3, [7]],
             sample_generator=sample_generator,
             shuffle=True)
         loss_func = LossFunction(net.num_classes,

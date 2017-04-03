@@ -74,11 +74,15 @@ def run():
     parser.add_argument(
         "--train_image_dir",
         metavar='',
-        help="[Training only] Specify training input volume directory")
+        help="[Training only] Specify training input volume directory (deprecated)")
     parser.add_argument(
         "--train_label_dir",
         metavar='',
-        help="[Training only] Training input label directory")
+        help="[Training only] Training input label directory (deprecated)")
+    parser.add_argument(
+        "--train_data_dir",
+        metavar='',
+        help="[Training only] Specify training input volume directory")
 
     parser.add_argument(
         "--lr",

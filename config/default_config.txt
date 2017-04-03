@@ -18,8 +18,7 @@ volume_padding_size = 21
 # ** training only ** system parameters
 num_gpus = 2
 sample_per_volume = 100
-train_image_dir = ./example_volumes/T1
-train_label_dir = ./example_volumes/Label
+train_data_dir = ./example_volumes
 
 # **training only** gradient descent and loss parameters
 lr = 0.01
@@ -34,4 +33,4 @@ max_iter = 10
 border = 5
 pred_iter = 10
 save_seg_dir = ./output/model1_output
-eval_image_dir = ./example_volumes/T1
+eval_data_dir = ./example_volumes
