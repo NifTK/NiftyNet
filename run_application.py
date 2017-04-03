@@ -13,6 +13,9 @@ class NetFactory(object):
         elif name == "toynet":
             from network.toynet import ToyNet
             return ToyNet
+        elif name == "3dunet":
+            from network.unet_3d import U_Net_3D
+            return U_Net_3D
         print "network: \"{}\" not implemented".format(name)
         raise NotImplementedError
 
@@ -20,7 +23,7 @@ if __name__ == "__main__":
     args = parse_user_params.run()
     if util.has_bad_inputs(args):
         sys.exit(-1)
-    if param.cuda_devices is not "":
+    if args.cuda_devices is not "":
         os.environ["CUDA_VISIBLE_DEVICES"] = param.cuda_devices
         print"set CUDA_VISIBLE_DEVICES env to {}".format(param.cuda_devices)
     is_training = True if args.action == "train" else False

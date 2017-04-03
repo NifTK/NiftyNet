@@ -114,6 +114,20 @@ class BaseLayer(object):
             conv = self.nonlinear_acti(conv)
         return conv
 
+    def upsample_2x2(self, i_): # enlarge the spatial dims by 2
+        i_dim = [i.value for i in i_.get_shape()]
+        kernel = self.__variable_with_weight_decay(
+            'w', [2, 2, 2, i_dim[-1], i_dim[-1]], -1)
+        up_conv = tf.nn.conv3d_transpose(
+            i_, kernel,
+            [i_dim[0], i_dim[1]*2, i_dim[2]*2, i_dim[3]*2, i_dim[-1]],
+            [1, 2, 2, 2, 1], padding='SAME')
+        return up_conv
+
+    def downsample_2x2(self, i_):
+        maxpool = tf.nn.max_pool3d(
+            i_, [1, 2, 2, 2, 1], [1, 2, 2, 2, 1], 'SAME')
+        return maxpool
 
     def set_activation_type(self, type_str):
         self.activation_type = type_str
