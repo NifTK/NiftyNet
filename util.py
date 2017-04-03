@@ -1,8 +1,10 @@
 import os
 import random
-import numpy as np
+
 import nibabel
+import numpy as np
 import tensorflow as tf
+
 
 def average_grads(tower_grads):
     # average gradients computed from multiple GPUs
@@ -20,11 +22,12 @@ def average_grads(tower_grads):
         ave_grads.append(grad_and_var)
     return ave_grads
 
+
 def load_file(img_name, seg_name=None):
     img_data = nibabel.load(img_name).get_data()
     if img_data.ndim == 4:
         img_data = img_data[:, :, :, 0]
-    seg_data = nibabel.load(seg_name).get_data().astype(np.int64)\
+    seg_data = nibabel.load(seg_name).get_data().astype(np.int64) \
         if seg_name is not None else None
     return img_data, seg_data
 
@@ -36,9 +39,9 @@ def list_associations_nifti_files(img_dir,seg_dir,fname,ext='.nii.gz'):
 def list_nifti_files(img_dir, rand=False):
     # TODO check images and labels consistency
     train_names = [fn for fn in os.listdir(img_dir)
-                   if fn.endswith(".nii.gz")]
-    if train_names == []:
-        print 'no files in {}'.format(img_dir)
+                   if fn.lower().endswith((".nii", ".nii.gz"))]
+    if not train_names:
+        print('no files in {}'.format(img_dir))
         raise IOError
     if rand:
         random.shuffle(train_names)
@@ -65,18 +68,17 @@ def has_bad_inputs_stats(args):
     return False
 
 def has_bad_inputs(args):
-    print 'Input params:'
+    print('Input params:')
     for arg in vars(args):
         user_value = getattr(args, arg)
         if user_value is None:
-            print '{} not set'.format(arg)
+            print('{} not set'.format(arg))
             return True
-        print "-- {}: {}".format(arg, getattr(args, arg))
+        print("-- {}: {}".format(arg, getattr(args, arg)))
 
     # at each iteration [batch_size] samples will be read from queue
     if args.queue_length < args.batch_size:
-        print 'queue_length ({}) should be >= batch_size ({}).'.format(
-                args.queue_length, args.batch_size)
+        print('queue_length ({}) should be >= batch_size ({}).'.format(args.queue_length, args.batch_size))
         return True
     return False
 
@@ -102,19 +104,19 @@ def save_segmentation(param, img_name, pred_img):
     save_name = pred_folder + img_name
 
     # TODO  randomise names to avoid overwrite
-    #import random
-    #if os.path.isfile(save_name): # prediction file exist
+    # import random
+    # if os.path.isfile(save_name): # prediction file exist
     #  save_name = save_name[:-7] + time.strftime("%Y%m%d-%H%M%S")
     #  save_name = save_name + random.choice('abcdefghinm') + '.nii.gz'
-    #pred_img = (label_map[pred_img.astype(np.int64)]).astype(np.int64)
+    # pred_img = (label_map[pred_img.astype(np.int64)]).astype(np.int64)
     (w, h, d) = pred_img.shape
-    if param.volume_padding_size > 0: # remove paddings
+    if param.volume_padding_size > 0:  # remove paddings
         pred_img = pred_img[
-                param.volume_padding_size : (w - param.volume_padding_size),
-                param.volume_padding_size : (h - param.volume_padding_size),
-                param.volume_padding_size : (d - param.volume_padding_size)]
+                   param.volume_padding_size: (w - param.volume_padding_size),
+                   param.volume_padding_size: (h - param.volume_padding_size),
+                   param.volume_padding_size: (d - param.volume_padding_size)]
     ori_aff = nibabel.load(param.eval_image_dir + '/' + img_name).affine
     predicted_nii = nibabel.Nifti1Image(pred_img, ori_aff)
     predicted_nii.set_data_dtype(np.dtype(np.float32))
     nibabel.save(predicted_nii, save_name)
-    print 'saved %s' % save_name
+    print('saved %s' % save_name)

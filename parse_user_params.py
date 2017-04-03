@@ -1,6 +1,7 @@
-import os
 import argparse
-import ConfigParser
+import configparser
+import os
+
 
 def run():
     file_parser = argparse.ArgumentParser(add_help=False)
@@ -14,7 +15,7 @@ def run():
     file_arg, remaining_argv = file_parser.parse_known_args()
 
     if file_arg.conf:
-        config = ConfigParser.SafeConfigParser()
+        config = configparser.SafeConfigParser()
         config.read([file_arg.conf])
         defaults = dict(config.items("settings"))
 
@@ -33,7 +34,6 @@ def run():
         help="choose a net from ./network/ ",
         metavar='')
 
-
     parser.add_argument(
         "--queue_length",
         help="Set size of preprocessing buffer queue",
@@ -45,7 +45,6 @@ def run():
         metavar='',
         type=int)
 
-
     parser.add_argument(
         "--batch_size", metavar='', help="Set batch size of the net", type=int)
     parser.add_argument(
@@ -55,13 +54,11 @@ def run():
     parser.add_argument(
         "--num_classes", metavar='', help="set number of classes", type=int)
 
-
     parser.add_argument(
         "--volume_padding_size",
         metavar='',
         help="Set padding size of each volume (in all dimensions)",
         type=int)
-
 
     parser.add_argument(
         "--num_gpus",
@@ -82,7 +79,6 @@ def run():
         "--train_label_dir",
         metavar='',
         help="[Training only] Training input label directory")
-
 
     parser.add_argument(
         "--lr",
@@ -106,7 +102,6 @@ def run():
         "--max_iter",
         metavar='', help="[Training only] total number of iterations", type=int)
 
-
     parser.add_argument(
         "--border",
         metavar='',
@@ -120,14 +115,14 @@ def run():
     parser.add_argument(
         "--save_seg_dir",
         metavar='',
-        help="[Inference only] Prediction directory name")#without '/'
+        help="[Inference only] Prediction directory name")  # without '/'
     parser.add_argument(
         "--eval_image_dir",
         metavar='',
-        help="[Inference only] Directory of image to be segmented")#without '/'
+        help="[Inference only] Directory of image to be segmented")  # without '/'
     parser.add_argument(
-        "action", help="train or inference", choices=['train', 'inference'])#without '/'
-    #parser.add_argument("", help="", type=int)
+        "action", help="train or inference", choices=['train', 'inference'])  # without '/'
+    # parser.add_argument("", help="", type=int)
     args = parser.parse_args(remaining_argv)
     return args
 

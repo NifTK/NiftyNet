@@ -1,5 +1,5 @@
-import tensorflow as tf
 from base_layer import BaseLayer
+
 
 class NetTemplate(BaseLayer):
     def __init__(self,
