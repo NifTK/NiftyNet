@@ -23,15 +23,6 @@ def average_grads(tower_grads):
     return ave_grads
 
 
-# def load_file(img_name, seg_name=None):
-#     img_data = nibabel.load(img_name).get_data()
-#     if img_data.ndim == 4:
-#         img_data = img_data[:, :, :, 0]
-#     seg_data = nibabel.load(seg_name).get_data().astype(np.int64) \
-#         if seg_name is not None else None
-#     return img_data, seg_data
-
-
 def load_file(patId, data_dir):
     # file name format is assumed to be 'patient_modality.extension'
     # load image data with shape [d_z, d_y, d_x, d_mod]
@@ -56,18 +47,6 @@ def load_file(patId, data_dir):
     return img_data, seg_data
 
 
-def list_nifti_files(img_dir, rand=False):
-    # TODO check images and labels consistency
-    train_names = [fn for fn in os.listdir(img_dir)
-                   if fn.lower().endswith((".nii", ".nii.gz"))]
-    if not train_names:
-        print('no files in {}'.format(img_dir))
-        raise IOError
-    if rand:
-        random.shuffle(train_names)
-    return train_names
-
-
 def file_extension(patId, data_dir, modality):
     if os.path.exists(os.path.join(data_dir, '%s_%s.nii' % (patId, modality))):
         return '.nii'
@@ -87,21 +66,31 @@ def list_patId(data_dir, rand=False):
 
 
 def list_modality(data_dir):
+    # file name format is assumed to be 'patient_modality.extension'
     mod_list = []
     for file_name in os.listdir(data_dir):
         if file_name.endswith(('.nii', '.nii.gz')):
-            modality = file_name.split('.')[0].split('_')[1]
+            # remove extension
+            f_name_noext = file_name.split('.')[0]
+            splited_f_name = f_name_noext.split('_')
+            if len(splited_f_name) != 2:
+                raise ValueError('file name %s is not correct\n '
+                                 'only one "_" must be used\n '
+                                 'file name convention is "patient_modality.extension')
+            modality = splited_f_name[1]
             if not(modality in mod_list) and (modality != 'Label'):
                 mod_list.append(modality)
     # list of modality is sorted to be sure the order remain the same
     mod_list.sort()
     return mod_list
 
+
 def any_mod_file(patId, data_dir):
     mod_name = list_modality(data_dir)[0]
     extension = file_extension(patId, data_dir, mod_name)
     file_name = '%s_%s%s' % (patId, mod_name, extension)
     return file_name
+
 
 def has_bad_inputs(args):
     print('Input params:')

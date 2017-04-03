@@ -72,14 +72,6 @@ def run():
         type=int)
     # TODO remove the trailing '/'
     parser.add_argument(
-        "--train_image_dir",
-        metavar='',
-        help="[Training only] Specify training input volume directory (deprecated)")
-    parser.add_argument(
-        "--train_label_dir",
-        metavar='',
-        help="[Training only] Training input label directory (deprecated)")
-    parser.add_argument(
         "--train_data_dir",
         metavar='',
         help="[Training only] Specify training input volume directory")
@@ -121,7 +113,7 @@ def run():
         metavar='',
         help="[Inference only] Prediction directory name")  # without '/'
     parser.add_argument(
-        "--eval_image_dir",
+        "--eval_data_dir",
         metavar='',
         help="[Inference only] Directory of image to be segmented")  # without '/'
     parser.add_argument(
