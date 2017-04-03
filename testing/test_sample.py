@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sys
 import tensorflow as tf
 from sampler import VolumeSampler

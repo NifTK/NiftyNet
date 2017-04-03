@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 import parse_user_params
@@ -16,6 +17,9 @@ class NetFactory(object):
         elif name == "3dunet":
             from network.unet_3d import U_Net_3D
             return U_Net_3D
+        elif name == "vnet":
+            from network.vnet import VNet
+            return VNet
         print "network: \"{}\" not implemented".format(name)
         raise NotImplementedError
 

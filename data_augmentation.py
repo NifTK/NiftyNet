@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import warnings
 import scipy.ndimage
 import numpy as np

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import tensorflow as tf
 from base_layer import BaseLayer
 from network.net_template import NetTemplate
@@ -104,6 +105,6 @@ class U_Net_3D(NetTemplate):
         return f_in
 
     def _upsample_bn(self, i_):
-        up_conv = self.upsample_2x2(i_)
+        up_conv = self.upsample_conv_2x2(i_)
         up_conv = self.batch_norm(up_conv)
         return up_conv
