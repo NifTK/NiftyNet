@@ -15,6 +15,9 @@ class NetFactory(object):
         elif name == "toynet":
             from network.toynet import ToyNet
             return ToyNet
+        elif name == "scalenet":
+            from network.scalenet import ScaleNet
+            return ScaleNet
         print("network: \"{}\" not implemented".format(name))
         raise NotImplementedError
 

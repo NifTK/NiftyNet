@@ -1,6 +1,6 @@
 [settings]
-model_dir = ./models/model1
-net_name = toynet
+model_dir = ./models/model_multimod1
+net_name = scalenet
 
 # preprocessing threads parameters
 queue_length = 8
@@ -10,15 +10,15 @@ num_threads = 4
 batch_size = 1
 image_size = 32
 label_size = 32
-num_classes = 160
+num_classes = 5
 
 # affected by network's receptive field
 volume_padding_size = 21
 
 # ** training only ** system parameters
-num_gpus = 2
+num_gpus = 1
 sample_per_volume = 100
-train_data_dir = ./example_volumes/monomodal_parcellation
+train_data_dir = ./example_volumes/multimodal_BRATS
 
 # **training only** gradient descent and loss parameters
 lr = 0.01
@@ -32,5 +32,5 @@ max_iter = 10
 # **inference only** system parameters
 border = 5
 pred_iter = 10
-save_seg_dir = ./output/model1_output
-eval_data_dir = ./example_volumes/monomodal_parcellation
+save_seg_dir = ./output/model_multimod1_output
+eval_data_dir = ./example_volumes/multimodal_BRATS
