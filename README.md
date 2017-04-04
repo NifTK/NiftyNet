@@ -57,7 +57,8 @@ To develop a new architecture:
 
 ### Files conventions
 Files used for training (resp. inference) are supposed to be located in the `train_data_dir`
-(resp. `eval_data_dir`) directory and to respect the name convention `patient_modality.extension`
+(resp. `eval_data_dir`) directory and to respect the name convention `patient_modality.extension`.
+Please note the delimiter `_`.
 
 Only nifty files (extension .nii or .nii.gz) are supported.
 
