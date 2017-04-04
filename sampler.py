@@ -46,6 +46,11 @@ class VolumeSampler(object):
                         seg[x_:_x, y_:_y, z_:_z])
                     info = np.asarray(
                         [idx, x_, y_, z_, _x, _y, _z], dtype=np.int64)
+                    if self.label_size < self.image_size:
+                        border = (self.image_size - self.label_size) / 2
+                        label = label[border : (self.label_size + border),
+                                      border : (self.label_size + border),
+                                      border : (self.label_size + border)]
                     #print '%s, %d'%(file_, t)
                     #print('sample from: %dx%dx%d'%(x_,y_,z_))
                     #print('sample to: %dx%dx%d'%(_x,_y,_z))
@@ -86,6 +91,11 @@ class VolumeSampler(object):
                     #                               np.std(cuboid)))
                     if seg is not None:
                         label = seg[x_:_x, y_:_y, z_:_z]
+                        if self.label_size < self.image_size:
+                            border = (self.image_size - self.label_size) / 2
+                            label = label[border : (self.label_size + border),
+                                          border : (self.label_size + border),
+                                          border : (self.label_size + border)]
                         yield cuboid, label, info
                     else:
                         yield cuboid, info

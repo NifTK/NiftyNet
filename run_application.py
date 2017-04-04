@@ -20,6 +20,9 @@ class NetFactory(object):
         elif name == "vnet":
             from network.vnet import VNet
             return VNet
+        elif name == "deepmedic":
+            from network.deepmedic import DeepMedic
+            return DeepMedic
         print "network: \"{}\" not implemented".format(name)
         raise NotImplementedError
 

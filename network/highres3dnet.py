@@ -3,6 +3,10 @@ import tensorflow as tf
 from base_layer import BaseLayer
 from network.net_template import NetTemplate
 
+# implementation of HighRes3DNet:
+#    Li et al., "On the compactness, efficiency, and representation of 3D
+#    convolutional networks: Brain parcellation as a pretext task", IPMI '17
+
 class HighRes3DNet(NetTemplate):
     def __init__(self,
                  batch_size,
@@ -20,6 +24,8 @@ class HighRes3DNet(NetTemplate):
         self.num_res_blocks = [3, 3, 3]
         self.num_features = [16, 32, 64, 80]
         self.set_activation_type('relu')
+        #self.num_features = [16, 32, 48, 48] # prelu increases the model size
+        #self.set_activation_type('prelu')
         self.name = "HighRes3DNet\n"\
             "{} dilat-0 blocks with {} features\n"\
             "{} dilat-2 blocks with {} features\n"\

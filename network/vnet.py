@@ -5,7 +5,7 @@ from network.net_template import NetTemplate
 
 # implementation of V-Net:
 #   Milletari et al., "V-Net: Fully convolutional neural networks for
-#   volumetric medical image segmentation", 3DV 2016
+#   volumetric medical image segmentation", 3DV '16
 
 class VNet(NetTemplate):
     def __init__(self,

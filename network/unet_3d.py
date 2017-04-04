@@ -5,7 +5,7 @@ from network.net_template import NetTemplate
 
 # reimplementation of 3D U-net
 #   Çiçek et al., "3D U-Net: Learning dense Volumetric segmentation from
-#   sparse annotation", MICCAI 2016
+#   sparse annotation", MICCAI '16
 #
 
 class U_Net_3D(NetTemplate):

@@ -101,31 +101,46 @@ class BaseLayer(object):
         neg = alphas * (f_in - tf.abs(f_in)) * 0.5
         return pos + neg
 
-    def conv_1x1(self, f_in, ni_, no_):
+    def conv_1x1(self, f_in, ni_, no_, padding='SAME'):
         kernel = self.__variable_with_weight_decay(
             'w', [1, 1, 1, ni_, no_], -1)
-        conv = tf.nn.conv3d(f_in, kernel, [1, 1, 1, 1, 1], padding='SAME')
+        conv = tf.nn.conv3d(f_in, kernel, [1, 1, 1, 1, 1], padding=padding)
         return conv
 
 
-    def conv_3x3(self, f_in, ni_, no_):
+    def conv_3x3(self, f_in, ni_, no_, padding='SAME'):
         kernel = self.__variable_with_weight_decay(
             'w', [3, 3, 3, ni_, no_], -1)
-        conv = tf.nn.conv3d(f_in, kernel, [1, 1, 1, 1, 1], padding='SAME')
+        conv = tf.nn.conv3d(f_in, kernel, [1, 1, 1, 1, 1], padding=padding)
         return conv
 
-    def conv_5x5(self, f_in, ni_, no_):
+    def conv_5x5(self, f_in, ni_, no_, padding='SAME'):
         kernel = self.__variable_with_weight_decay(
             'w', [5, 5, 5, ni_, no_], -1)
-        conv = tf.nn.conv3d(f_in, kernel, [1, 1, 1, 1, 1], padding='SAME')
+        conv = tf.nn.conv3d(f_in, kernel, [1, 1, 1, 1, 1], padding=padding)
         return conv
 
-    def conv_layer_1x1(self, f_in, ni_, no_, bn=True, acti=True):
+    def conv_layer_1x1(self, f_in, ni_, no_,
+                       bn=True, acti=True, padding='SAME'):
         kernel = self.__variable_with_weight_decay(
             'w', [1, 1, 1, ni_, no_], -1)
         biases = self.__variable_with_weight_decay(
             'b', [no_], 0.0)
-        conv = tf.nn.conv3d(f_in, kernel, [1, 1, 1, 1, 1], padding='SAME')
+        conv = tf.nn.conv3d(f_in, kernel, [1, 1, 1, 1, 1], padding=padding)
+        conv = tf.nn.bias_add(conv, biases)
+        if bn:
+            conv = self.batch_norm(conv)
+        if acti:
+            conv = self.nonlinear_acti(conv)
+        return conv
+
+    def conv_layer_3x3(self, f_in, ni_, no_,
+                       bn=True, acti=True, padding='SAME'):
+        kernel = self.__variable_with_weight_decay(
+            'w', [3, 3, 3, ni_, no_], -1)
+        biases = self.__variable_with_weight_decay(
+            'b', [no_], 0.0)
+        conv = tf.nn.conv3d(f_in, kernel, [1, 1, 1, 1, 1], padding=padding)
         conv = tf.nn.bias_add(conv, biases)
         if bn:
             conv = self.batch_norm(conv)
