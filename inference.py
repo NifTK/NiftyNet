@@ -18,7 +18,7 @@ def run(net, param):
         print('Net model should inherit from NetTemplate')
         return
 
-    valid_names = util.list_nifti_files(param.eval_image_dir)
+    valid_names = util.list_patId(param.eval_data_dir)
     rand_sampler = VolumeSampler(valid_names,
                                  net.batch_size,
                                  net.input_image_size,
@@ -29,17 +29,18 @@ def run(net, param):
         print('Param error: non-positive sampling grid_size')
         return None
     sample_generator = rand_sampler.grid_samples_from(
-        param.eval_image_dir, None, sampling_grid_size)
+        param.eval_data_dir, sampling_grid_size, yield_seg=False)
 
     # construct graph
     graph = tf.Graph()
     with graph.as_default(), tf.device("/gpu:0"):  # TODO multiple GPU?
         # construct train queue and graph
         # TODO change batch size param - batch size could be larger in test case
+        mod_n = len(util.list_modality(param.train_data_dir))
         seg_batch_runner = DeployInputBuffer(
             net.batch_size,
             param.queue_length,
-            shapes=[[net.input_image_size] * 3, [7]],
+            shapes=[[net.input_image_size] * 3 + [mod_n], [7]],
             sample_generator=sample_generator)
         test_pairs = seg_batch_runner.pop_batch()
         info = test_pairs['info']
@@ -81,10 +82,11 @@ def run(net, param):
                         # when loc_info changed
                         # save current image results and reset cumulative result
                         if pred_img is not None:
-                            util.save_segmentation(param, img_name, pred_img)
+                            util.save_segmentation(param, pat_name, pred_img)
                         img_id = spatial_info[batch_id, 0]
-                        img_name = valid_names[img_id]
-                        full_name = param.eval_image_dir + '/' + img_name
+                        pat_name = valid_names[img_id]
+                        file_name = util.any_mod_file(pat_name, param.eval_data_dir)
+                        full_name = os.path.join(param.eval_data_dir, file_name)
                         pred_img = util.volume_of_zeros_like(full_name)
                         pred_img = np.pad(pred_img,
                                           param.volume_padding_size,

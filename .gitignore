@@ -4,3 +4,4 @@ __pycache__/
 models/
 output/
 .idea/
+user/

@@ -41,7 +41,8 @@ def grid_window_location_3d(img_size_3d, win_size, grid_size):
     return x_start, x_end, y_start, y_end, z_start, z_end
 
 
-def rand_rotation_3d(img, seg, max_angle=10.0):
+def rand_rotation_3d(img, seg, max_angle=10):
+    # generate transformation
     angle_x = np.random.randint(-max_angle, max_angle) * np.pi / 180.0
     angle_y = np.random.randint(-max_angle, max_angle) * np.pi / 180.0
     angle_z = np.random.randint(-max_angle, max_angle) * np.pi / 180.0
@@ -56,19 +57,21 @@ def rand_rotation_3d(img, seg, max_angle=10.0):
                             [0.0, np.sin(angle_z), np.cos(angle_z)]])
     transform = np.dot(transform_z, np.dot(transform_x, transform_y))
 
-    center_ = 0.5 * np.asarray(img.shape, dtype=np.int64)
+    center_ = 0.5 * np.asarray(img.shape[:-1], dtype=np.int64)
     c_offset = center_ - center_.dot(transform)
-
-    img = scipy.ndimage.affine_transform(
-        img, transform.T, c_offset, order=3).astype(np.float)
+    # apply transformation to each volume
+    for mod_i in range(img.shape[-1]):
+        img[:,:,:,mod_i] = scipy.ndimage.affine_transform(
+            img[:,:,:,mod_i], transform.T, c_offset, order=3).astype(np.float)
     seg = scipy.ndimage.affine_transform(
         seg, transform.T, c_offset, order=0).astype(np.int64)
     return img, seg
 
 
-def rand_spatial_scaling(img, seg=None, percentage=10.0):
+def rand_spatial_scaling(img, seg=None, percentage=10):
     rand_zoom = (np.random.randint(-percentage, percentage) + 100.0) / 100.0
-    img = scipy.ndimage.zoom(img, rand_zoom, order=3)
+    img = np.stack([scipy.ndimage.zoom(img[:,:,:,mod_i], rand_zoom, order=3)
+                    for mod_i in range(img.shape[-1])], axis=-1)
     seg = scipy.ndimage.zoom(seg, rand_zoom, order=0) \
         if seg is not None else None
     return img, seg
@@ -76,8 +79,9 @@ def rand_spatial_scaling(img, seg=None, percentage=10.0):
 
 def rand_intensity_normalisation(img, irs_model):
     rand_bin = np.random.randint(0, 20)
-    img = irs_model.transform(img, thr=rand_bin)
-    img = (img - np.mean(img)) / np.std(img)
+    for mod_i in range(img.shape[-1]):
+        img[:,:,:,mod_i] = irs_model.transform(img[:,:,:,mod_i], thr=rand_bin)
+        img[:,:,:,mod_i] = (img[:,:,:,mod_i] - np.mean(img[:,:,:,mod_i])) / np.std(img[:,:,:,mod_i])
     return img
 
 
