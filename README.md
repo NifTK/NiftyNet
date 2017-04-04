@@ -1,5 +1,5 @@
 # NiftyNet
-NiftyNet is an open-source library for convolutional networks in medical image analysis.
+NiftyNet is an open-source library for 3D convolutional networks in medical image analysis.
 
 NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 [University College London (UCL)][ucl].
@@ -25,14 +25,14 @@ To train a "toynet" specified in `network/toynet.py`:
 ``` sh
 cd NiftyNet/
 python run_application.py train --net_name toynet \
---train_image_dir ./example_volumes/T1 --train_label_dir ./example_volumes/Label \
+--train_data_dir ./example_volumes \
 --image_size 42 --label_size 42 --batch_size 1
 ```
 After the training process, to do segmentation with a trained "toynet":
 ``` sh
 cd NiftyNet/
 python run_application.py inference --net_name toynet \
---eval_image_dir ./example_volumes/T1 --save_seg_dir ./seg_output \
+--eval_data_dir ./example_volumes --save_seg_dir ./seg_output \
 --image_size 64 --label_size 64 --batch_size 4
 ```
 *Commandline parameters override the default settings defined in `config/default_config.txt`.*
@@ -55,6 +55,11 @@ To develop a new architecture:
 1. Implement `inference()` function using the building blocks in `base_layer.py` or creating new building blocks
 1. Add `import network.new_net` to the `NetFactory` class in `run_application.py`
 
+### Files conventions
+Files used for training (resp. inference) are supposed to be located in the `train_data_dir`
+(resp. `eval_data_dir`) directory and to respect the name convention `patient_modality.extension`
+
+Only nifty files (extension .nii or .nii.gz) are supported.
 
 ### Structure
 The basic picture of training procedure (data parallelism) is:

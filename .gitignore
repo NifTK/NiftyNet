@@ -5,3 +5,5 @@ models/
 output/
 .idea/
 user/
+.idea/workspace.xml
+.idea/inspectionProfiles/Project_Default.xml
