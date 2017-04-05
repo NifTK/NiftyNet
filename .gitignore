@@ -3,7 +3,7 @@
 __pycache__/
 models/
 output/
-.idea/
 user/
-.idea/workspace.xml
-.idea/inspectionProfiles/Project_Default.xml
+.idea/
+.idea/*
+emerald_*
