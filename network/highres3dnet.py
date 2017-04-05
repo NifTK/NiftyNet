@@ -21,6 +21,7 @@ class HighRes3DNet(NetTemplate):
                                            num_classes,
                                            is_training,
                                            device_str)
+        assert(image_size % 4 == 0)
         self.num_res_blocks = [3, 3, 3]
         self.num_features = [16, 32, 64, 80]
         self.set_activation_type('relu')
@@ -39,7 +40,6 @@ class HighRes3DNet(NetTemplate):
 
     def inference(self, images, layer_id=None):
         BaseLayer._print_activations(images)
-        print ""
         zero_paddings = [[0, 0], [0, 0], [0, 0]]
         images = tf.expand_dims(images, 4)
         with tf.variable_scope('conv_1_1') as scope:
@@ -47,7 +47,6 @@ class HighRes3DNet(NetTemplate):
             conv_1_1 = self.batch_norm(conv_1_1)
             conv_1_1 = self.nonlinear_acti(conv_1_1)
             BaseLayer._print_activations(conv_1_1)
-            print ""
 
         with tf.variable_scope('res_1') as scope:
             res_1 = self._res_block_2_layers(conv_1_1,
@@ -59,7 +58,6 @@ class HighRes3DNet(NetTemplate):
         with tf.variable_scope('dilate_1_start') as scope:
             res_1 = tf.space_to_batch_nd(res_1, [2, 2, 2], zero_paddings)
             BaseLayer._print_activations(res_1)
-            print ""
         with tf.variable_scope('res_2') as scope:
             res_2 = self._res_block_2_layers(res_1,
                                              self.num_features[0],
@@ -68,13 +66,11 @@ class HighRes3DNet(NetTemplate):
         with tf.variable_scope('dilate_1_end') as scope:
             res_2 = tf.batch_to_space_nd(res_2, [2, 2, 2], zero_paddings)
             BaseLayer._print_activations(res_2)
-            print ""
 
         ## convolutions  dilation factor = 4
         with tf.variable_scope('dilate_2_start') as scope:
             res_2 = tf.space_to_batch_nd(res_2, [4, 4, 4], zero_paddings)
             BaseLayer._print_activations(res_2)
-            print ""
         with tf.variable_scope('res_3') as scope:
             res_3 = self._res_block_2_layers(res_2,
                                              self.num_features[1],
@@ -83,7 +79,6 @@ class HighRes3DNet(NetTemplate):
         with tf.variable_scope('dilate_2_end') as scope:
             res_3 = tf.batch_to_space_nd(res_3, [4, 4, 4], zero_paddings)
             BaseLayer._print_activations(res_3)
-            print ""
 
         ## 1x1x1 convolution "fully connected"
         with tf.variable_scope('conv_fc_1') as scope:
@@ -92,7 +87,6 @@ class HighRes3DNet(NetTemplate):
                                           self.num_features[3],
                                           bn=True, acti=True)
             BaseLayer._print_activations(conv_fc)
-            print ""
 
         with tf.variable_scope('conv_fc_2') as scope:
             conv_fc = self.conv_layer_1x1(conv_fc,
@@ -100,7 +94,6 @@ class HighRes3DNet(NetTemplate):
                                           self.num_classes,
                                           bn=True, acti=False)
             BaseLayer._print_activations(conv_fc)
-            print ""
 
         if layer_id == 'conv_features':
             return res_3
@@ -135,5 +128,5 @@ class HighRes3DNet(NetTemplate):
                     f_in = f_out + shortcut
             ni_ = no_
         BaseLayer._print_activations(f_in)
-        print '//repeated {:d} times'.format(n_layers*2)
+        #print '//repeated {:d} times'.format(n_layers*2)
         return f_in

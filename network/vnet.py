@@ -33,7 +33,6 @@ class VNet(NetTemplate):
 
     def inference(self, images, layer_id=None):
         BaseLayer._print_activations(images)
-        print ""
         images = tf.expand_dims(images, 4)
         pad_images = tf.tile(images, [1, 1, 1, 1, self.num_fea[0]])
         with tf.variable_scope('L1') as scope:
@@ -109,5 +108,4 @@ class VNet(NetTemplate):
                                             bn=False, acti=False)
         conv_f_in = self.nonlinear_acti(conv_f_in)
         BaseLayer._print_activations(conv_f_in)
-        print ""
         return res_f, conv_f_in

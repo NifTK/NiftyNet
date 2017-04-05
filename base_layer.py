@@ -190,4 +190,4 @@ class BaseLayer(object):
 
     @staticmethod
     def _print_activations(tf_var):
-        print(tf_var.op.name, tf_var.get_shape().as_list()),
+        print(tf_var.op.name, tf_var.get_shape().as_list())

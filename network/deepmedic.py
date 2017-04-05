@@ -34,11 +34,11 @@ class DeepMedic(NetTemplate):
         # TODO: make sure label_size = image_size/d_factor - 16
 
         self.d_factor = 3 # subsample factor
+        self.crop_diff = (self.d_factor - 1) * 16
         assert(image_size % self.d_factor == 0)
         assert(self.d_factor % 2 == 1) # to make the downsampling centered
         assert(image_size % 2 == 1) # to make the crop centered
         assert(image_size > self.d_factor * 16) # minimum receptive field
-        self.crop_diff = (self.d_factor - 1) * 16
 
         self.conv_fea = [30, 30, 40, 40, 40, 40, 50, 50]
         self.fc_fea = [150, 150]
@@ -52,30 +52,19 @@ class DeepMedic(NetTemplate):
 
     def inference(self, images, layer_id=None):
         BaseLayer._print_activations(images)
-        print ""
         images = tf.expand_dims(images, 4)
         img_1 = self._crop(images)
         img_2 = self._downsample(images)
 
         # two pathways for convolutional layers
         conv_1, conv_2 = self.conv_layers(img_1, img_2)
-
         # upsample the previously downsampled pathway
-        conv_2 = tf.tile(conv_2, [self.d_factor**3, 1, 1, 1, 1])
-        conv_2 = tf.batch_to_space_nd(
-            conv_2,
-            [self.d_factor, self.d_factor, self.d_factor],
-            [[0, 0], [0, 0], [0, 0]])
-        BaseLayer._print_activations(conv_2)
-        print ""
-
+        conv_2 = self._upsample(conv_2)
         # combine both
         combined = tf.concat([conv_1, conv_2], 4)
-        BaseLayer._print_activations(combined)
-        print ""
-
         # "fully connnected layers"
         fc = self.fc_layers(combined)
+
         if layer_id is None:
             return fc
 
@@ -88,7 +77,6 @@ class DeepMedic(NetTemplate):
                 conv_2 = self.conv_layer_3x3(conv_2, ni_, no_, padding='VALID')
             ni_ = no_
             BaseLayer._print_activations(conv_2)
-            print ""
         return conv_1, conv_2
 
     def fc_layers(self, f_in):
@@ -98,16 +86,23 @@ class DeepMedic(NetTemplate):
                 f_in = self.conv_layer_1x1(f_in, ni_, no_)
             ni_ = no_
             BaseLayer._print_activations(f_in)
-            print ""
         with tf.variable_scope('conv_fc_%d' % (k+1)) as scope:
             f_in = self.conv_layer_1x1(f_in, ni_, self.num_classes)
         BaseLayer._print_activations(f_in)
-        print ""
         return f_in
+
+    def _upsample(self, fea_maps):
+        # upsample by a factor of self.d_factor
+        fea_maps = tf.tile(fea_maps, [self.d_factor**3, 1, 1, 1, 1])
+        fea_maps = tf.batch_to_space_nd(
+            fea_maps, [self.d_factor, self.d_factor, self.d_factor],
+            [[0, 0], [0, 0], [0, 0]])
+        return fea_maps
 
 
     def _downsample(self, images):
         # downsample the larger context to get the downsampled pathway
+        # by a factor of self.d_factor
         np_kernel = np.zeros((self.d_factor,
                               self.d_factor,
                               self.d_factor, 1, 1))
@@ -132,5 +127,3 @@ class DeepMedic(NetTemplate):
         cropped = tf.nn.conv3d(
             images, crop_kernel, [1, 1, 1, 1, 1], padding='VALID')
         return cropped
-
-

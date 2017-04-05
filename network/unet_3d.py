@@ -34,7 +34,6 @@ class U_Net_3D(NetTemplate):
 
     def inference(self, images, layer_id=None):
         BaseLayer._print_activations(images)
-        print ""
         images = tf.expand_dims(images, 4)
 
         # Left - two convolutions - first level
@@ -84,7 +83,6 @@ class U_Net_3D(NetTemplate):
                                           self.num_classes,
                                           bn=True, acti=False)
         BaseLayer._print_activations(conv_fc)
-        print ""
 
         if layer_id is None:
             return conv_fc
@@ -101,7 +99,6 @@ class U_Net_3D(NetTemplate):
             f_in = self.batch_norm(f_in)
             f_in = self.nonlinear_acti(f_in)
         BaseLayer._print_activations(f_in)
-        print ""
         return f_in
 
     def _upsample_bn(self, i_):
