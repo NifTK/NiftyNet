@@ -1,0 +1,19 @@
+[settings]
+
+# default parameters
+threshold = 0.5
+type_stats = probability 
+step = 0.1
+ext = .nii.gz
+name_out = stats
+#(choice between probabilistic binary and multilabel)
+
+# **statistical analysis system parameters
+save_out_dir = ./model1_output
+seg_image_dir = ./model1_output
+data_image_dir = /home/ucl/eisuc269/tnet/DataBrain/T1
+save_out_dir = /Users/csudre/Temp
+seg_image_dir = /Users/csudre/Temp/Seg
+data_image_dir = /Users/csudre/Temp/Data
+list_file = 
+name_seg =

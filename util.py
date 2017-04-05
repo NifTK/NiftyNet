@@ -46,6 +46,10 @@ def load_file(patId, data_dir):
         seg_data = None
     return img_data, seg_data
 
+def list_associations_nifti_files(img_dir,seg_dir,fname,ext='.nii.gz'):
+    img_names = [ file for file in os.listdir(img_dir) if fname in file and file.endswith(ext)]
+    seg_names = [file for file in os.listdir(seg_dir) if fname in file and file.endswith(ext)]
+    return img_names, seg_names
 
 def file_extension(patId, data_dir, modality):
     if os.path.exists(os.path.join(data_dir, '%s_%s.nii' % (patId, modality))):
@@ -91,6 +95,25 @@ def any_mod_file(patId, data_dir):
     file_name = '%s_%s%s' % (patId, mod_name, extension)
     return file_name
 
+def has_bad_inputs_eval(args):
+    print 'Input params:'
+    for arg in vars(args):
+        user_value = getattr(args, arg)
+        if user_value is None:
+            print '{} not set'.format(arg)
+            return True
+        print "-- {}: {}".format(arg, getattr(args, arg))
+    return False
+
+def has_bad_inputs_stats(args):
+    print 'Input params:'
+    for arg in vars(args):
+        user_value = getattr(args, arg)
+        if user_value is None:
+            print '{} not set'.format(arg)
+            return True
+        print "-- {}: {}".format(arg, getattr(args, arg))
+    return False
 
 def has_bad_inputs(args):
     print('Input params:')
