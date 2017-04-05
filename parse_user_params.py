@@ -1,6 +1,7 @@
+# -*- coding: utf-8 -*-
+import os
 import argparse
 import configparser
-import os
 
 
 def run():
@@ -26,12 +27,17 @@ def run():
     parser.set_defaults(**defaults)
 
     parser.add_argument(
+        "--cuda_devices",
+        metavar='',
+        help="Set CUDA_VISIBLE_DEVICES variable, e.g. '0,1,2,3'; " \
+                "leave blank to use the system default value")
+    parser.add_argument(
         "--model_dir",
         metavar='',
         help="Directory to save/load intermediate training models and logs")
     parser.add_argument(
         "--net_name",
-        help="choose a net from ./network/ ",
+        help="Choose a net from ./network/ ",
         metavar='')
 
     parser.add_argument(
@@ -48,11 +54,11 @@ def run():
     parser.add_argument(
         "--batch_size", metavar='', help="Set batch size of the net", type=int)
     parser.add_argument(
-        "--image_size", metavar='', help="set input image size", type=int)
+        "--image_size", metavar='', help="Set input image size", type=int)
     parser.add_argument(
-        "--label_size", metavar='', help="set label size of the net", type=int)
+        "--label_size", metavar='', help="Set label size of the net", type=int)
     parser.add_argument(
-        "--num_classes", metavar='', help="set number of classes", type=int)
+        "--num_classes", metavar='', help="Set number of classes", type=int)
 
     parser.add_argument(
         "--volume_padding_size",
@@ -78,25 +84,25 @@ def run():
 
     parser.add_argument(
         "--lr",
-        help="[Training only] set learning rate", type=float)
+        help="[Training only] Set learning rate", type=float)
     parser.add_argument(
         "--decay",
-        help="[Training only] set weight decay", type=float)
+        help="[Training only] Set weight decay", type=float)
     parser.add_argument(
         "--loss_type",
-        metavar='TYPE_STR', help="[Training only] specify loss type")
+        metavar='TYPE_STR', help="[Training only] Specify loss type")
     parser.add_argument(
         "--reg_type",
-        metavar='TYPE_STR', help="[Training only] specify regulariser type")
+        metavar='TYPE_STR', help="[Training only] Specify regulariser type")
     parser.add_argument(
         "--starting_iter",
-        metavar='', help="[Training only] resume from iteration n", type=int)
+        metavar='', help="[Training only] Resume from iteration n", type=int)
     parser.add_argument(
         "--save_every_n",
         metavar='', help="[Training only] Model saving frequency", type=int)
     parser.add_argument(
         "--max_iter",
-        metavar='', help="[Training only] total number of iterations", type=int)
+        metavar='', help="[Training only] Total number of iterations", type=int)
 
     parser.add_argument(
         "--border",

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 from six.moves import range
 
@@ -52,9 +53,26 @@ class VolumeSampler(object):
                         seg[x_:_x, y_:_y, z_:_z])
                     info = np.asarray(
                         [idx, x_, y_, z_, _x, _y, _z], dtype=np.int64)
-                    # print('%s, %d'%(file_, t))
-                    # print('sample from: %dx%dx%d'%(x_,y_,z_))
-                    # print('sample to: %dx%dx%d'%(_x,_y,_z))
+                    if self.label_size < self.image_size:
+                        border = (self.image_size - self.label_size) / 2
+                        label = label[border : (self.label_size + border),
+                                      border : (self.label_size + border),
+                                      border : (self.label_size + border)]
+                    #print('%s, %d'%(file_, t))
+                    #print('sample from: %dx%dx%d'%(x_,y_,z_))
+                    #print('sample to: %dx%dx%d'%(_x,_y,_z))
+                    yield cuboid, label, info
+        return sampler_iterator
+
+    def grid_samples_from(self, img_path, seg_path, grid_size):
+        # generate dense samples from a fixed sampling grid
+        def sampler_iterator():
+            for idx in xrange(len(self.f_names)):
+                file_ = self.f_names[idx]
+                img_name = img_path + '/' + file_
+                seg_name = (seg_path + '/' + file_) if seg_path else None
+                print '%d of %d loading %s'%(idx+1, len(self.f_names), img_name)
+                img, seg = util.load_file(img_name, seg_name)
                     yield cuboid, label, info
 
         return sampler_iterator
@@ -82,22 +100,27 @@ class VolumeSampler(object):
                 ids = np.array(range(n_windows))
                 for j in range(n_windows + n_windows % self.batch_size):
                     i = ids[j % n_windows]
-                    x_ = xs[i];
-                    y_ = ys[i];
+                    x_ = xs[i]
+                    y_ = ys[i]
                     z_ = zs[i]
-                    _x = xe[i];
-                    _y = ye[i];
+                    _x = xe[i]
+                    _y = ye[i]
                     _z = ze[i]
                     cuboid = img[x_:_x, y_:_y, z_:_z, :]
                     info = np.asarray(
                         [idx, x_, y_, z_, _x, _y, _z], dtype=np.int64)
                     # print('grid sample from: %dx%dx%d to %dx%dx%d,'\
-                    #      'mean: %.4f, std: %.4f'%(info[1], info[2], info[3],
-                    #                               info[4], info[5], info[6],
-                    #                               np.mean(cuboid),
-                    #                               np.std(cuboid)))
+                    #       'mean: %.4f, std: %.4f'%(info[1], info[2], info[3],
+                    #                                info[4], info[5], info[6],
+                    #                                np.mean(cuboid),
+                    #                                np.std(cuboid)))
                     if seg is not None:
                         label = seg[x_:_x, y_:_y, z_:_z]
+                        if self.label_size < self.image_size:
+                            border = (self.image_size - self.label_size) / 2
+                            label = label[border : (self.label_size + border),
+                                          border : (self.label_size + border),
+                                          border : (self.label_size + border)]
                         yield cuboid, label, info
                     else:
                         yield cuboid, info
