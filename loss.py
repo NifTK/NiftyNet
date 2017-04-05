@@ -43,6 +43,7 @@ class LossFunction(object):
 
 # Generalised Dice score with different type weights
 def GDSC_loss(pred,labels,type_weight='Square'):
+    pred = tf.nn.softmax(pred)
     n_voxels = labels.get_shape()[0].value
     n_classes = pred.get_shape()[1].value
     ids = tf.constant(np.array(range(n_voxels)), dtype=tf.int64)
@@ -66,6 +67,7 @@ def GDSC_loss(pred,labels,type_weight='Square'):
 def SensSpec_loss(pred,labels,r=0.05):
     n_voxels = labels.get_shape()[0].value
     n_classes = pred.get_shape()[1].value
+    pred = tf.nn.softmax(pred)
     ids = tf.constant(np.array(range(n_voxels)), dtype=tf.int64)
     ids = tf.stack([ids, labels], axis=1)
     one_hot = tf.SparseTensor(indices=ids,
