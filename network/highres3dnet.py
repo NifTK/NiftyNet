@@ -45,10 +45,10 @@ class HighRes3DNet(NetTemplate):
             print("")
 
         with tf.variable_scope('res_1') as scope:
-            res_1 = self._res_block_2_layers(conv_1_1,
-                                             self.num_features[0],
-                                             self.num_features[0],
-                                             self.num_res_blocks[0])
+            res_1 = self._res_block(conv_1_1,
+                                    self.num_features[0],
+                                    self.num_features[0],
+                                    self.num_res_blocks[0])
 
         ## convolutions  dilation factor = 2
         with tf.variable_scope('dilate_1_start') as scope:
@@ -56,10 +56,10 @@ class HighRes3DNet(NetTemplate):
             BaseLayer._print_activations(res_1)
             print("")
         with tf.variable_scope('res_2') as scope:
-            res_2 = self._res_block_2_layers(res_1,
-                                             self.num_features[0],
-                                             self.num_features[1],
-                                             self.num_res_blocks[1])
+            res_2 = self._res_block(res_1,
+                                    self.num_features[0],
+                                    self.num_features[1],
+                                    self.num_res_blocks[1])
         with tf.variable_scope('dilate_1_end') as scope:
             res_2 = tf.batch_to_space_nd(res_2, [2, 2, 2], zero_paddings)
             BaseLayer._print_activations(res_2)
@@ -71,10 +71,10 @@ class HighRes3DNet(NetTemplate):
             BaseLayer._print_activations(res_2)
             print("")
         with tf.variable_scope('res_3') as scope:
-            res_3 = self._res_block_2_layers(res_2,
-                                             self.num_features[1],
-                                             self.num_features[2],
-                                             self.num_res_blocks[2])
+            res_3 = self._res_block(res_2,
+                                    self.num_features[1],
+                                    self.num_features[2],
+                                    self.num_res_blocks[2])
         with tf.variable_scope('dilate_2_end') as scope:
             res_3 = tf.batch_to_space_nd(res_3, [4, 4, 4], zero_paddings)
             BaseLayer._print_activations(res_3)
@@ -103,19 +103,32 @@ class HighRes3DNet(NetTemplate):
         if layer_id is None:
             return conv_fc
 
-    def _res_block_2_layers(self, f_in, ni_, no_, n_layers):
-        if n_layers == 0:
+    def _res_block(self, f_in, ni_, no_, n_blocks, conv_type=("conv_3x3", "conv_3x3")):
+        n_layers = len(conv_type)
+        conv = []
+        for l in range(n_layers):
+            if conv_type[l] == "conv_3x3":
+                conv_layer_l = self.conv_3x3
+            elif conv_type[l] == "conv_1x1":
+                conv_layer_l = self.conv_1x1
+            else:
+                raise ValueError('Convolution type %s not supported' % conv_type[l])
+            conv.append(conv_layer_l)
+        if n_blocks == 0:
             return f_in
-        for layer in range(0, n_layers):
-            with tf.variable_scope('block_a_%d' % layer) as scope:
-                f_out = self.batch_norm(f_in)
-                f_out = self.nonlinear_acti(f_out)
-                f_out = self.conv_3x3(f_out, ni_, no_)
-            with tf.variable_scope('block_b_%d' % layer) as scope:
-                f_out = self.batch_norm(f_out)
-                f_out = self.nonlinear_acti(f_out)
-                f_out = self.conv_3x3(f_out, no_, no_)
-            with tf.variable_scope('shortcut_%d' % layer) as scope:
+        for block in range(0, n_blocks):
+            # f_out as to be reinitialized to f_in at the beginning of each block
+            # because of the shortcut connection
+            f_out = f_in
+            for layer in range(n_layers):
+                with tf.variable_scope('block_%s_%d' % (chr(ord('a')+layer), block)) as scope:
+                    f_out = self.batch_norm(f_out)
+                    f_out = self.nonlinear_acti(f_out)
+                    if layer == 0:
+                        f_out = conv[layer](f_out, ni_, no_)
+                    else:
+                        f_out = conv[layer](f_out, no_, no_)
+            with tf.variable_scope('shortcut_%d' % block) as scope:
                 if ni_ == no_:
                     f_in = f_out + f_in
                 elif ni_ < no_:  # pad 0s in the feature channel dimension
@@ -129,5 +142,5 @@ class HighRes3DNet(NetTemplate):
                     f_in = f_out + shortcut
             ni_ = no_
         BaseLayer._print_activations(f_in)
-        print('//repeated {:d} times'.format(n_layers * 2))
+        print('//repeated {:d} times'.format(n_blocks * n_layers))
         return f_in

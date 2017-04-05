@@ -64,10 +64,10 @@ class ScaleNet(HighRes3DNet):
         # Front End
         # following layers are the same as for highres3dnet
         with tf.variable_scope('res_1') as scope:
-            res_1 = self._res_block_2_layers(merged_root,
-                                             self.num_features[0],
-                                             self.num_features[0],
-                                             self.num_res_blocks[0])
+            res_1 = self._res_block(merged_root,
+                                    self.num_features[0],
+                                    self.num_features[0],
+                                    self.num_res_blocks[0])
 
         ## convolutions  dilation factor = 2
         with tf.variable_scope('dilate_1_start') as scope:
@@ -75,10 +75,10 @@ class ScaleNet(HighRes3DNet):
             BaseLayer._print_activations(res_1)
             print("")
         with tf.variable_scope('res_2') as scope:
-            res_2 = self._res_block_2_layers(res_1,
-                                             self.num_features[0],
-                                             self.num_features[1],
-                                             self.num_res_blocks[1])
+            res_2 = self._res_block(res_1,
+                                    self.num_features[0],
+                                    self.num_features[1],
+                                    self.num_res_blocks[1])
         with tf.variable_scope('dilate_1_end') as scope:
             res_2 = tf.batch_to_space_nd(res_2, [2, 2, 2], zero_paddings)
             BaseLayer._print_activations(res_2)
@@ -90,10 +90,10 @@ class ScaleNet(HighRes3DNet):
             BaseLayer._print_activations(res_2)
             print("")
         with tf.variable_scope('res_3') as scope:
-            res_3 = self._res_block_2_layers(res_2,
-                                             self.num_features[1],
-                                             self.num_features[2],
-                                             self.num_res_blocks[2])
+            res_3 = self._res_block(res_2,
+                                    self.num_features[1],
+                                    self.num_features[2],
+                                    self.num_res_blocks[2])
         with tf.variable_scope('dilate_2_end') as scope:
             res_3 = tf.batch_to_space_nd(res_3, [4, 4, 4], zero_paddings)
             BaseLayer._print_activations(res_3)
@@ -133,48 +133,18 @@ class ScaleNet(HighRes3DNet):
             # Cross roots res block for each feature in fea_roots
             for fea in range(nfea_in):
                 with tf.variable_scope('fea_root%s_%s' % (fea, layer)):
-                    fea_roots[fea] = self._res_block_conv3_conv1(fea_roots[fea], nroots_in,
-                                                                 nroots_out, n_layers=1)
+                    fea_roots[fea] = self._res_block(fea_roots[fea], nroots_in, nroots_out,
+                                                     n_blocks=1, conv_type=("conv_3x3", "conv_1x1"))
             nroots_in = nroots_out
             # Permute root dimension and feature dimension
             roots = tf.unstack(tf.stack(fea_roots, axis=5), axis=4)
             # Cross features res block for each root in roots
             for r in range(nroots_in):
                 with tf.variable_scope('root%s_%s' % (r, layer)):
-                    roots[r] = self._res_block_conv3_conv1(roots[r], nfea_in,
-                                                           nfea_out, n_layers=1)
+                    roots[r] = self._res_block(roots[r], nfea_in, nfea_out,
+                                               n_blocks=1, conv_type=("conv_3x3", "conv_1x1"))
             nfea_in = nfea_out
         return roots
-
-
-    def _res_block_conv3_conv1(self, f_in, ni_, no_, n_layers):
-        if n_layers == 0:
-            return f_in
-        for layer in range(0, n_layers):
-            with tf.variable_scope('block_a_%d' % layer) as scope:
-                f_out = self.batch_norm(f_in)
-                f_out = self.nonlinear_acti(f_out)
-                f_out = self.conv_3x3(f_out, ni_, no_)
-            with tf.variable_scope('block_b_%d' % layer) as scope:
-                f_out = self.batch_norm(f_out)
-                f_out = self.nonlinear_acti(f_out)
-                f_out = self.conv_1x1(f_out, no_, no_)
-            with tf.variable_scope('shortcut_%d' % layer) as scope:
-                if ni_ == no_:
-                    f_in = f_out + f_in
-                elif ni_ < no_:  # pad 0s in the feature channel dimension
-                    pad_1 = (no_ - ni_) // 2
-                    pad_2 = no_ - ni_ - pad_1
-                    shortcut = tf.pad(
-                        f_in, [[0, 0], [0, 0], [0, 0], [0, 0], [pad_1, pad_2]])
-                    f_in = f_out + shortcut
-                elif ni_ > no_:  # make a projection
-                    shortcut = self.conv_1x1(f_in, ni_, no_)
-                    f_in = f_out + shortcut
-            ni_ = no_
-        BaseLayer._print_activations(f_in)
-        print('//repeated conv 3x3x3 followed by conv 1x1x1 {:d} times'.format(n_layers))
-        return f_in
 
 
     def _merge_roots(self, roots):
