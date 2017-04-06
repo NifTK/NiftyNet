@@ -170,13 +170,3 @@ def run(param):
                     else:
                         print(i,' volume is 0')
             result_file.close()
-
-
-
-
-
-
-
-
-
-

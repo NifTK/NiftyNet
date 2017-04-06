@@ -124,5 +124,4 @@ class VolumeSampler(object):
                         yield cuboid, label, info
                     else:
                         yield cuboid, info
-
         return sampler_iterator

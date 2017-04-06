@@ -134,9 +134,3 @@ class perform_statistics(object):
       masked_array = ma.masked_array(self.data, mask)
       new_arr = masked_array.reshape(-1, masked_array.shape[-1])
       return mstats.mquantiles(new_arr, axis=0)
-
-
-
-
-
-

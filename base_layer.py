@@ -113,9 +113,7 @@ class BaseLayer(object):
 
     def conv_layer_1x1(self, f_in, ni_, no_,
                        bias=True, bn=True, acti=True, padding='SAME'):
-        kernel = self.__variable_with_weight_decay(
-            'w', [1, 1, 1, ni_, no_], -1)
-        conv = tf.nn.conv3d(f_in, kernel, [1, 1, 1, 1, 1], padding=padding)
+        conv = self.conv_1x1(f_in, ni_, no_, padding)
         if bias:
             biases = self.__variable_with_weight_decay('b', [no_], 0.0)
             conv = tf.nn.bias_add(conv, biases)
@@ -127,9 +125,7 @@ class BaseLayer(object):
 
     def conv_layer_3x3(self, f_in, ni_, no_,
                        bias=True, bn=True, acti=True, padding='SAME'):
-        kernel = self.__variable_with_weight_decay(
-            'w', [3, 3, 3, ni_, no_], -1)
-        conv = tf.nn.conv3d(f_in, kernel, [1, 1, 1, 1, 1], padding=padding)
+        conv = self.conv_3x3(f_in, ni_, no_, padding)
         if bias:
             biases = self.__variable_with_weight_decay('b', [no_], 0.0)
             conv = tf.nn.bias_add(conv, biases)
@@ -139,7 +135,7 @@ class BaseLayer(object):
             conv = self.nonlinear_acti(conv)
         return conv
 
-    def downsample_2x2(self, f_in):
+    def downsample_pooling_2x2(self, f_in):
         maxpool = tf.nn.max_pool3d(
             f_in, [1, 2, 2, 2, 1], [1, 2, 2, 2, 1], 'SAME')
         return maxpool

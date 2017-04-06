@@ -39,17 +39,17 @@ class U_Net_3D(NetTemplate):
         # Left - two convolutions - first level
         with tf.variable_scope('L1') as scope:
             conv_1 = self._conv_bn(images, 1, self.num_fea[1], self.num_fea[0])
-            pool_1 = self.downsample_2x2(conv_1)
+            pool_1 = self.downsample_pooling_2x2(conv_1)
 
         # Left - two convolutions - second level
         with tf.variable_scope('L2') as scope:
             conv_2 = self._conv_bn(pool_1, self.num_fea[1], self.num_fea[2])
-            pool_2 = self.downsample_2x2(conv_2)
+            pool_2 = self.downsample_pooling_2x2(conv_2)
 
         # Left - two convolutions - third level
         with tf.variable_scope('L3') as scope:
             conv_3 = self._conv_bn(pool_2, self.num_fea[2], self.num_fea[3])
-            pool_3 = self.downsample_2x2(conv_3)
+            pool_3 = self.downsample_pooling_2x2(conv_3)
 
         # Left - two convolutions - fourth level
         with tf.variable_scope('L4') as scope:
@@ -91,13 +91,11 @@ class U_Net_3D(NetTemplate):
         if n_middle is None:
             n_middle = no_ if ni_ > no_ else ni_
         with tf.variable_scope('a') as scope:
-            f_in = self.conv_3x3(f_in, ni_, n_middle)
-            f_in = self.batch_norm(f_in)
-            f_in = self.nonlinear_acti(f_in)
+            f_in = self.conv_layer_3x3(f_in, ni_, n_middle,
+                                       bias=False, bn=True, acti=True)
         with tf.variable_scope('b') as scope:
-            f_in = self.conv_3x3(f_in, n_middle, no_)
-            f_in = self.batch_norm(f_in)
-            f_in = self.nonlinear_acti(f_in)
+            f_in = self.conv_layer_3x3(f_in, n_middle, no_,
+                                       bias=False, bn=True, acti=True)
         BaseLayer._print_activations(f_in)
         return f_in
 
