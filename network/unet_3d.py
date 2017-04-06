@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
-from base_layer import BaseLayer
+from network.base_layer import BaseLayer
 from network.net_template import NetTemplate
+
 
 # reimplementation of 3D U-net
 #   Çiçek et al., "3D U-Net: Learning dense Volumetric segmentation from
 #   sparse annotation", MICCAI '16
 #
-
-class U_Net_3D(NetTemplate):
+class UNet_3D(NetTemplate):
     def __init__(self,
                  batch_size,
                  image_size,
@@ -16,7 +16,7 @@ class U_Net_3D(NetTemplate):
                  num_classes,
                  is_training=True,
                  device_str="cpu"):
-        super(U_Net_3D, self).__init__(batch_size,
+        super(UNet_3D, self).__init__(batch_size,
                                        image_size,
                                        label_size,
                                        num_classes,
@@ -34,8 +34,6 @@ class U_Net_3D(NetTemplate):
 
     def inference(self, images, layer_id=None):
         BaseLayer._print_activations(images)
-        images = tf.expand_dims(images, 4)
-
         # Left - two convolutions - first level
         with tf.variable_scope('L1') as scope:
             conv_1 = self._conv_bn(images, 1, self.num_fea[1], self.num_fea[0])

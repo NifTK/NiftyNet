@@ -65,6 +65,9 @@ def run():
         metavar='',
         help="Set padding size of each volume (in all dimensions)",
         type=int)
+    parser.add_argument(
+        "--histogram_ref_file",
+        help="A reference of histogram for intensity normalisation")
 
     parser.add_argument(
         "--num_gpus",

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
 
-from base_layer import BaseLayer
+from network.base_layer import BaseLayer
 from network.net_template import NetTemplate
 
 
@@ -20,7 +20,8 @@ class ToyNet(NetTemplate):
                                      is_training,
                                      device_str)
         self.num_features = [10]
-        self.set_activation_type('relu')
+        self.set_activation_type('prelu')
+        #self.set_activation_type('relu')
         self.name = "ToyNet"
         print("{}\n" \
               "3x3x3 convolution {} kernels\n" \
@@ -29,7 +30,6 @@ class ToyNet(NetTemplate):
 
     def inference(self, images, layer_id=None):
         BaseLayer._print_activations(images)
-        images = tf.expand_dims(images, 4)
         with tf.variable_scope('conv_1_1') as scope:
             conv_1_1 = self.conv_3x3(images, 1, self.num_features[0])
             conv_1_1 = self.batch_norm(conv_1_1)

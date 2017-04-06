@@ -9,15 +9,16 @@ from external.intensity_range_standardization import IntensityRangeStandardizati
 
 
 class HistNormaliser(object):
-    def __init__(self):
+    def __init__(self, ref_file_name):
+        self.ref_file_name = ref_file_name
         self.irs_model = []
         self.__init_precomputed_model()
 
     def __init_precomputed_model(self):
         self.irs_model = IntensityRangeStandardization()
-        f_name = os.path.join(os.path.dirname(__file__),
-                              'external/std_hist_ori_995.pkl')
-        with open(f_name, 'rb') as hist_ref:
+        if self.ref_file_name is "":
+            return
+        with open(self.ref_file_name, 'rb') as hist_ref:
             if sys.version_info > (3, 0):
                 self.irs_model = pickle.load(hist_ref, encoding='latin1')
             else:
@@ -25,6 +26,8 @@ class HistNormaliser(object):
             print("Reference histogram loaded")
 
     def intensity_normalisation(self, img, randomised=False):
+        if self.ref_file_name is "":
+            return (img - np.mean(img)) / np.std(img)
         bin_id = np.random.randint(0, 20) if randomised else -1
         img = self.irs_model.transform(img, thr=bin_id)
         img = (img - np.mean(img)) / np.std(img)
