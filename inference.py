@@ -75,6 +75,7 @@ def run(net, param):
             seg_batch_runner.init_threads(sess, coord, num_threads=1)
             img_id = -1
             pred_img = None
+            patient_name = None
             while True:
                 if coord.should_stop():
                     break
@@ -83,16 +84,16 @@ def run(net, param):
                 for batch_id in range(seg_maps.shape[0]):
                     if spatial_info[batch_id, 0] != img_id:
                         # when loc_info changed
-                        # save current image results and reset cumulative result
+                        # save current map and reset cumulative map variable
                         if pred_img is not None:
-                            util.save_segmentation(param, pat_name, pred_img)
+                            util.save_segmentation(
+                                param, patient_name, pred_img)
                         img_id = spatial_info[batch_id, 0]
-                        pat_name = valid_names[img_id]
+                        patient_name = valid_names[img_id]
                         pred_img = util.volume_of_zeros_like(
-                            param.eval_data_dir, pat_name, mod_list[0])
-                        pred_img = np.pad(pred_img,
-                                          param.volume_padding_size,
-                                          'minimum')
+                            param.eval_data_dir, patient_name, mod_list[0])
+                        pred_img = np.pad(
+                            pred_img, param.volume_padding_size, 'minimum')
                         #print ('init %s' % valid_names[img_id])
                     loc_x = spatial_info[batch_id, 1]
                     loc_y = spatial_info[batch_id, 2]
@@ -102,11 +103,11 @@ def run(net, param):
                     p_end = net.input_image_size - param.border
                     predictions = seg_maps[batch_id]
                     pred_img[(loc_x + p_start): (loc_x + p_end),
-                    (loc_y + p_start): (loc_y + p_end),
-                    (loc_z + p_start): (loc_z + p_end)] = \
+                             (loc_y + p_start): (loc_y + p_end),
+                             (loc_z + p_start): (loc_z + p_end)] = \
                         predictions[p_start: p_end,
-                        p_start: p_end,
-                        p_start: p_end]
+                                    p_start: p_end,
+                                    p_start: p_end]
 
         except KeyboardInterrupt:
             print('User cancelled training')

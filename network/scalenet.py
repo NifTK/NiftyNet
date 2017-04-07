@@ -14,11 +14,11 @@ class ScaleNet(HighRes3DNet):
                  is_training=True,
                  device_str="cpu"):
         super(ScaleNet, self).__init__(batch_size,
-                                           image_size,
-                                           label_size,
-                                           num_classes,
-                                           is_training,
-                                           device_str)
+                                       image_size,
+                                       label_size,
+                                       num_classes,
+                                       is_training,
+                                       device_str)
         self.num_res_blocks = [3, 3, 3]
         self.num_features = [16, 32, 64, 80]
         self.set_activation_type('relu')
@@ -54,9 +54,9 @@ class ScaleNet(HighRes3DNet):
                 roots[r] = self.nonlinear_acti(roots[r])
                 BaseLayer._print_activations(roots[r])
         with tf.variable_scope('scalable_res') as scope:
-            roots = self._scalable_multiroots_res_block(roots, nroots, self.num_features[0],
-                                                        nroots, self.num_features[0],
-                                                        self.num_scale_res_block)
+            roots = self._scalable_multiroots_res_block(
+                roots, nroots, self.num_features[0],
+                nroots, self.num_features[0], self.num_scale_res_block)
             merged_root = self._merge_roots(roots)
 
         ########################################
@@ -99,14 +99,14 @@ class ScaleNet(HighRes3DNet):
             conv_fc = self.conv_layer_1x1(res_3,
                                           self.num_features[2],
                                           self.num_features[3],
-                                          bn=True, acti=True)
+                                          bias=True, bn=True, acti=True)
             BaseLayer._print_activations(conv_fc)
 
         with tf.variable_scope('conv_fc_2') as scope:
             conv_fc = self.conv_layer_1x1(conv_fc,
                                           self.num_features[3],
                                           self.num_classes,
-                                          bn=True, acti=False)
+                                          bias=True, bn=True, acti=False)
             BaseLayer._print_activations(conv_fc)
 
         if layer_id == 'conv_features':
@@ -126,16 +126,18 @@ class ScaleNet(HighRes3DNet):
             # Cross roots res block for each feature in fea_roots
             for fea in range(nfea_in):
                 with tf.variable_scope('fea_root%s_%s' % (fea, layer)):
-                    fea_roots[fea] = self._res_block(fea_roots[fea], nroots_in, nroots_out,
-                                                     n_blocks=1, conv_type=("3x3", "1x1"))
+                    fea_roots[fea] = self._res_block(
+                        fea_roots[fea], nroots_in, nroots_out, n_blocks=1,
+                        conv_type=("3x3", "1x1"))
             nroots_in = nroots_out
             # Permute root dimension and feature dimension
             roots = tf.unstack(tf.stack(fea_roots, axis=5), axis=4)
             # Cross features res block for each root in roots
             for r in range(nroots_in):
                 with tf.variable_scope('root%s_%s' % (r, layer)):
-                    roots[r] = self._res_block(roots[r], nfea_in, nfea_out,
-                                               n_blocks=1, conv_type=("3x3", "1x1"))
+                    roots[r] = self._res_block(
+                        roots[r], nfea_in, nfea_out, n_blocks=1,
+                        conv_type=("3x3", "1x1"))
             nfea_in = nfea_out
         return roots
 

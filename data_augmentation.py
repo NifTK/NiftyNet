@@ -18,8 +18,9 @@ def rand_window_location_3d(img_size_3d, win_size, n_samples):
     x_end = x_start + win_size
     y_end = y_start + win_size
     z_end = z_start + win_size
-    return x_start, x_end, y_start, y_end, z_start, z_end
 
+    locations = np.stack((x_start, x_end, y_start, y_end, z_start, z_end)).T
+    return locations
 
 def grid_window_location_3d(img_size_3d, win_size, grid_size):
     if grid_size <= 0:
@@ -39,8 +40,9 @@ def grid_window_location_3d(img_size_3d, win_size, grid_size):
     x_end = x_start + win_size
     y_end = y_start + win_size
     z_end = z_start + win_size
-    return x_start, x_end, y_start, y_end, z_start, z_end
 
+    locations = np.stack((x_start, x_end, y_start, y_end, z_start, z_end)).T
+    return locations
 
 def rand_rotation_3d(img, seg, max_angle=10):
     # generate transformation
@@ -63,11 +65,10 @@ def rand_rotation_3d(img, seg, max_angle=10):
     # apply transformation to each volume
     for mod_i in range(img.shape[-1]):
         img[:,:,:,mod_i] = scipy.ndimage.affine_transform(
-            img[:,:,:,mod_i], transform.T, c_offset, order=3).astype(np.float)
+            img[:,:,:,mod_i], transform.T, c_offset, order=3)
     seg = scipy.ndimage.affine_transform(
-        seg, transform.T, c_offset, order=0).astype(np.int64)
-    return img, seg
-
+        seg, transform.T, c_offset, order=0)
+    return img.astype(np.float), seg.astype(np.int64)
 
 def rand_spatial_scaling(img, seg=None, percentage=10):
     rand_zoom = (np.random.randint(-percentage, percentage) + 100.0) / 100.0
@@ -76,15 +77,6 @@ def rand_spatial_scaling(img, seg=None, percentage=10):
     seg = scipy.ndimage.zoom(seg, rand_zoom, order=0) \
         if seg is not None else None
     return img, seg
-
-
-def rand_intensity_normalisation(img, irs_model):
-    rand_bin = np.random.randint(0, 20)
-    for mod_i in range(img.shape[-1]):
-        img[:,:,:,mod_i] = irs_model.transform(img[:,:,:,mod_i], thr=rand_bin)
-        img[:,:,:,mod_i] = (img[:,:,:,mod_i] - np.mean(img[:,:,:,mod_i])) / np.std(img[:,:,:,mod_i])
-    return img
-
 
 def __enumerate_step_points(starting, ending, win_size, step_size):
     sampling_point_set = []

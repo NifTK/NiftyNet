@@ -45,11 +45,12 @@ class VolumeSampler(object):
                     seg = np.pad(seg, self.padding, 'minimum')
 
                 # randomly sample windows from the volume
-                xs, xe, ys, ye, zs, ze = dataug.rand_window_location_3d(
+                location = dataug.rand_window_location_3d(
                     img.shape, self.image_size, self.sample_per_volume)
                 for t in range(self.sample_per_volume):
-                    x_, y_, z_, _x, _y, _z = xs[t], ys[t], zs[t], xe[t], ye[t], ze[t]
-                    #TODO rotation should be applied before extracting a subwindow
+                    x_, _x, y_, _y, z_, _z = location[t]
+                    #xs[t], ys[t], zs[t], xe[t], ye[t], ze[t]
+                    # TODO rotation should be applied before extracting a subwindow
                     # to avoid loss of information
                     cuboid, label = dataug.rand_rotation_3d(
                         img[x_:_x, y_:_y, z_:_z, :],
@@ -85,7 +86,6 @@ class VolumeSampler(object):
                         if (seg is not None) else None
                 location = dataug.grid_window_location_3d(
                     img.shape[:-1], self.image_size, grid_size)
-                location = np.stack(location).T
                 n_windows = location.shape[0]
                 print('{} samples of {}^3-voxels from {}-voxels volume'.format(
                     n_windows, self.image_size, img.shape))
@@ -96,11 +96,11 @@ class VolumeSampler(object):
                     cuboid = img[x_:_x, y_:_y, z_:_z, :]
                     info = np.asarray(
                         [idx, x_, y_, z_, _x, _y, _z], dtype=np.int64)
-                    # print('grid sample from: %dx%dx%d to %dx%dx%d,'\
-                    #       'mean: %.4f, std: %.4f'%(info[1], info[2], info[3],
-                    #                                info[4], info[5], info[6],
-                    #                                np.mean(cuboid),
-                    #                                np.std(cuboid)))
+                    print('grid sample from: %dx%dx%d to %dx%dx%d,'\
+                           'mean: %.4f, std: %.4f'%(info[1], info[2], info[3],
+                                                    info[4], info[5], info[6],
+                                                    np.mean(cuboid),
+                                                    np.std(cuboid)))
                     if seg is not None:
                         label = seg[x_:_x, y_:_y, z_:_z]
                         if self.label_size < self.image_size:

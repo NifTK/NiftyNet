@@ -144,7 +144,7 @@ def run_eval():
     file_arg, remaining_argv = file_parser.parse_known_args()
 
     if file_arg.conf:
-        config = ConfigParser.SafeConfigParser()
+        config = configparser.SafeConfigParser()
         config.read([file_arg.conf])
         defaults = dict(config.items("settings"))
 
@@ -177,7 +177,7 @@ def run_stats():
     file_arg, remaining_argv = file_parser.parse_known_args()
 
     if file_arg.conf:
-        config = ConfigParser.SafeConfigParser()
+        config = configparser.SafeConfigParser()
         config.read([file_arg.conf])
         defaults = dict(config.items("settings"))
 
