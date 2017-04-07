@@ -49,7 +49,6 @@ class VolumeSampler(object):
                     img.shape, self.image_size, self.sample_per_volume)
                 for t in range(self.sample_per_volume):
                     x_, _x, y_, _y, z_, _z = location[t]
-                    #xs[t], ys[t], zs[t], xe[t], ye[t], ze[t]
                     # TODO rotation should be applied before extracting a subwindow
                     # to avoid loss of information
                     cuboid, label = dataug.rand_rotation_3d(
