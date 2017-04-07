@@ -69,7 +69,7 @@ class VolumeSampler(object):
                     print('dealing with specific sampling ')
                     location = []
                     for t in range(self.sample_per_volume):
-                        print ('doing ',t)
+                        #print ('doing ',t)
                         location.append(self.strategic_sampling(seg))
                     location = np.asarray(location)
                 for t in range(self.sample_per_volume):
@@ -198,7 +198,7 @@ class VolumeSampler(object):
                         numb_checked+=1
                 if numb_checked < numb_add_toCheck:
                     flag_test = 0
-        print('success after', iter)
+        #print('success after', iter)
         return location[0]
 
 
