@@ -25,10 +25,10 @@ class VNet(NetTemplate):
         self.num_fea = [16, 32, 64, 128, 256]
         self.set_activation_type('prelu')
         self.name = "VNet"
-        print "{}\n"\
+        print("{}\n"\
             "3x3x3 convolution {} kernels\n" \
             "Classifiying {} classes".format(
-                self.name, self.num_fea, self.num_classes)
+                self.name, self.num_fea, self.num_classes))
 
 
     def inference(self, images, layer_id=None):

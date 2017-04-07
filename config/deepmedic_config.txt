@@ -14,7 +14,7 @@ label_size = 9
 num_classes = 160
 
 # affected by network's receptive field
-volume_padding_size = 21
+volume_padding_size = 24
 histogram_ref_file = ./external/std_hist_ori_995.pkl
 
 # ** training only ** system parameters
@@ -32,7 +32,7 @@ save_every_n = 1000
 max_iter = 10000
 
 # **inference only** system parameters
-border = 5
+border = 0
 pred_iter = 10000
 save_seg_dir = ./output/deepmedic
 eval_data_dir = ./example_volumes/monomodal_parcellation

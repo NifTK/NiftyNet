@@ -26,10 +26,10 @@ class UNet_3D(NetTemplate):
         self.num_fea = [32, 64, 128, 256, 512]
         self.set_activation_type('relu')
         self.name = "3D U-net"
-        print "{}\n"\
+        print("{}\n"\
               "{} kernels\n" \
               "Classifiying {} classes".format(
-                  self.name, self.num_fea, self.num_classes)
+                  self.name, self.num_fea, self.num_classes))
 
 
     def inference(self, images, layer_id=None):

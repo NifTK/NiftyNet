@@ -43,10 +43,10 @@ class DeepMedic(NetTemplate):
         self.fc_fea = [150, 150]
         self.set_activation_type('prelu')
         self.name = "DeepMedic"
-        print "{}\n"\
+        print("{}\n"\
             "3x3x3 convolution {} kernels\n" \
             "Classifiying {} classes".format(
-                self.name, self.conv_fea, self.num_classes)
+                self.name, self.conv_fea, self.num_classes))
 
 
     def inference(self, images, layer_id=None):
@@ -104,7 +104,7 @@ class DeepMedic(NetTemplate):
         np_kernel = np.zeros((self.d_factor,
                               self.d_factor,
                               self.d_factor, 1, 1))
-        center_ = self.d_factor / 2
+        center_ = np.int(self.d_factor / 2)
         np_kernel[center_, center_, center_, 0, 0] = 1
         d_kernel = tf.constant(np_kernel, dtype=tf.float32)
         downsampled = tf.nn.conv3d(
@@ -119,7 +119,7 @@ class DeepMedic(NetTemplate):
         np_kernel = np.zeros((self.crop_diff + 1,
                               self.crop_diff + 1,
                               self.crop_diff + 1, 1, 1))
-        center_ = self.crop_diff / 2
+        center_ = np.int(self.crop_diff / 2)
         np_kernel[center_, center_, center_, 0, 0] = 1
         crop_kernel = tf.constant(np_kernel, dtype=tf.float32)
         cropped = tf.nn.conv3d(

@@ -4,8 +4,8 @@ model_dir = ./models/model_highres3dnet
 net_name = highres3dnet
 
 # preprocessing threads parameters
-queue_length = 16
-num_threads = 8
+queue_length = 8
+num_threads = 2
 
 # network parameters (controlling memory consumption)
 batch_size = 1

@@ -5,7 +5,7 @@ net_name = 3dunet
 
 # preprocessing threads parameters
 queue_length = 8
-num_threads = 4
+num_threads = 2
 
 # network parameters (controlling memory consumption)
 batch_size = 1

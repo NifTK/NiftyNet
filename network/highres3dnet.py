@@ -38,7 +38,7 @@ class HighRes3DNet(NetTemplate):
                 self.num_res_blocks[1], self.num_features[1],
                 self.num_res_blocks[2], self.num_features[2],
                 self.num_features[3], num_classes)
-        print 'using {}'.format(self.name)
+        print('using {}'.format(self.name))
 
     def inference(self, images, layer_id=None):
         BaseLayer._print_activations(images)

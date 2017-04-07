@@ -111,6 +111,12 @@ class BaseLayer(object):
         conv = tf.nn.conv3d(f_in, kernel, [1, 1, 1, 1, 1], padding=padding)
         return conv
 
+    def conv_5x5(self, f_in, ni_, no_, padding='SAME'):
+        kernel = self.__variable_with_weight_decay(
+            'w', [5, 5, 5, ni_, no_], -1)
+        conv = tf.nn.conv3d(f_in, kernel, [1, 1, 1, 1, 1], padding=padding)
+        return conv
+
     def conv_layer_1x1(self, f_in, ni_, no_,
                        bias=True, bn=True, acti=True, padding='SAME'):
         conv = self.conv_1x1(f_in, ni_, no_, padding)

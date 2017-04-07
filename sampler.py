@@ -58,7 +58,7 @@ class VolumeSampler(object):
                     info = np.asarray(
                         [idx, x_, y_, z_, _x, _y, _z], dtype=np.int64)
                     if self.label_size < self.image_size:
-                        border = (self.image_size - self.label_size) / 2
+                        border = np.int((self.image_size - self.label_size) / 2)
                         label = label[border : (self.label_size + border),
                                       border : (self.label_size + border),
                                       border : (self.label_size + border)]
@@ -96,15 +96,15 @@ class VolumeSampler(object):
                     cuboid = img[x_:_x, y_:_y, z_:_z, :]
                     info = np.asarray(
                         [idx, x_, y_, z_, _x, _y, _z], dtype=np.int64)
-                    print('grid sample from: %dx%dx%d to %dx%dx%d,'\
-                           'mean: %.4f, std: %.4f'%(info[1], info[2], info[3],
-                                                    info[4], info[5], info[6],
-                                                    np.mean(cuboid),
-                                                    np.std(cuboid)))
+                    #print('grid sample from: %dx%dx%d to %dx%dx%d,'\
+                    #       'mean: %.4f, std: %.4f'%(info[1], info[2], info[3],
+                    #                                info[4], info[5], info[6],
+                    #                                np.mean(cuboid),
+                    #                                np.std(cuboid)))
                     if seg is not None:
                         label = seg[x_:_x, y_:_y, z_:_z]
                         if self.label_size < self.image_size:
-                            border = (self.image_size - self.label_size) / 2
+                            border = np.int((self.image_size - self.label_size) / 2)
                             label = label[border : (self.label_size + border),
                                           border : (self.label_size + border),
                                           border : (self.label_size + border)]

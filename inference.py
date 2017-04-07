@@ -28,7 +28,7 @@ def run(net, param):
                                  net.input_label_size,
                                  param.volume_padding_size,
                                  param.histogram_ref_file)
-    sampling_grid_size = net.input_image_size - 2 * param.border
+    sampling_grid_size = net.input_label_size - 2 * param.border
     if sampling_grid_size <= 0:
         print('Param error: non-positive sampling grid_size')
         return None
@@ -94,13 +94,13 @@ def run(net, param):
                             param.eval_data_dir, patient_name, mod_list[0])
                         pred_img = np.pad(
                             pred_img, param.volume_padding_size, 'minimum')
-                        #print ('init %s' % valid_names[img_id])
+                        #print('init %s' % valid_names[img_id])
                     loc_x = spatial_info[batch_id, 1]
                     loc_y = spatial_info[batch_id, 2]
                     loc_z = spatial_info[batch_id, 3]
 
                     p_start = param.border
-                    p_end = net.input_image_size - param.border
+                    p_end = net.input_label_size - param.border
                     predictions = seg_maps[batch_id]
                     pred_img[(loc_x + p_start): (loc_x + p_end),
                              (loc_y + p_start): (loc_y + p_end),

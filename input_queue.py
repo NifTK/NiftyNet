@@ -61,11 +61,11 @@ class InputBatchQueueRunner(object):
             pass
         finally:
             if self.batch_size > session.run(self.queue_size_op):
-                print "Insufficient samples to form a batch:"\
+                print("Insufficient samples to form a batch:"\
                     "remaining {} in queue".format(
-                            session.run(self.queue_size_op))
+                            session.run(self.queue_size_op)))
             self.close_all(coord, session)
-            print 'preprocessing threads finished'
+            print('preprocessing threads finished')
 
     def pop(self, n):
         return self.queue.dequeue_many(n)
@@ -74,8 +74,8 @@ class InputBatchQueueRunner(object):
         return self.pop(self.batch_size)
 
     def init_threads(self, session, coord, num_threads):
-        print 'Starting preprocessing threads...'
-        for i in xrange(num_threads):
+        print('Starting preprocessing threads...')
+        for i in range(num_threads):
             self.threads.append(
                 threading.Thread(target=self.push, args=(session, coord)))
             self.threads[i].daemon = True
@@ -86,7 +86,7 @@ class InputBatchQueueRunner(object):
             coord.request_stop()
             session.run(self.close_queue_op)
         except Exception as e:
-            print e
+            print(e)
 
 
 class DeployInputBuffer(InputBatchQueueRunner):
