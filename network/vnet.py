@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
-from base_layer import BaseLayer
+from network.base_layer import BaseLayer
 from network.net_template import NetTemplate
+
 
 # implementation of V-Net:
 #   Milletari et al., "V-Net: Fully convolutional neural networks for
 #   volumetric medical image segmentation", 3DV '16
-
 class VNet(NetTemplate):
     def __init__(self,
                  batch_size,
@@ -33,7 +33,6 @@ class VNet(NetTemplate):
 
     def inference(self, images, layer_id=None):
         BaseLayer._print_activations(images)
-        images = tf.expand_dims(images, 4)
         pad_images = tf.tile(images, [1, 1, 1, 1, self.num_fea[0]])
         with tf.variable_scope('L1') as scope:
             res_1, down_1 = self._res_block_5x5(

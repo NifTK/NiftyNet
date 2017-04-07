@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import tensorflow as tf
-from base_layer import BaseLayer
+from network.base_layer import BaseLayer
 from network.net_template import NetTemplate
 
 # reimplementation of DeepMedic:
@@ -51,7 +51,6 @@ class DeepMedic(NetTemplate):
 
     def inference(self, images, layer_id=None):
         BaseLayer._print_activations(images)
-        images = tf.expand_dims(images, 4)
         img_1 = self._crop(images)
         img_2 = self._downsample(images)
 

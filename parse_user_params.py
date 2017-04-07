@@ -65,6 +65,9 @@ def run():
         metavar='',
         help="Set padding size of each volume (in all dimensions)",
         type=int)
+    parser.add_argument(
+        "--histogram_ref_file",
+        help="A reference of histogram for intensity normalisation")
 
     parser.add_argument(
         "--num_gpus",
@@ -141,7 +144,7 @@ def run_eval():
     file_arg, remaining_argv = file_parser.parse_known_args()
 
     if file_arg.conf:
-        config = ConfigParser.SafeConfigParser()
+        config = configparser.SafeConfigParser()
         config.read([file_arg.conf])
         defaults = dict(config.items("settings"))
 
@@ -174,7 +177,7 @@ def run_stats():
     file_arg, remaining_argv = file_parser.parse_known_args()
 
     if file_arg.conf:
-        config = ConfigParser.SafeConfigParser()
+        config = configparser.SafeConfigParser()
         config.read([file_arg.conf])
         defaults = dict(config.items("settings"))
 

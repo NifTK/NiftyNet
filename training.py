@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 import os
 import time
 
@@ -9,36 +10,37 @@ from six.moves import range
 import util
 from loss import LossFunction
 from network.net_template import NetTemplate
-from nn_queue import TrainEvalInputBuffer
+from input_queue import TrainEvalInputBuffer
 from sampler import VolumeSampler
 
 np.random.seed(seed=int(time.time()))
-
 
 def run(net, param):
     if not isinstance(net, NetTemplate):
         print('net model should inherit network.NetTemplate')
         return
-
+    assert(param.batch_size <= param.queue_length)
+    patient_list = util.list_patient(param.train_data_dir)
+    modality_list = util.list_modality(param.train_data_dir)
     rand_sampler = VolumeSampler(
-        util.list_patId(param.train_data_dir, True),
+        patient_list,
+        modality_list,
         net.batch_size,
         net.input_image_size,
         net.input_label_size,
         param.volume_padding_size,
+        param.histogram_ref_file,
         param.sample_per_volume)
 
-    sample_generator = rand_sampler.training_samples_from(
-        param.train_data_dir)
+    sample_generator = rand_sampler.training_samples_from(param.train_data_dir)
 
     graph = tf.Graph()
     with graph.as_default(), tf.device('/cpu:0'):
         # construct train queue and graph
-        mod_n = len(util.list_modality(param.train_data_dir))
         train_batch_runner = TrainEvalInputBuffer(
             net.batch_size,
             param.queue_length,
-            shapes=[[net.input_image_size] * 3 + [mod_n],
+            shapes=[[net.input_image_size] * 3 + [len(rand_sampler.modalities)],
                     [net.input_label_size] * 3, [7]],
             sample_generator=sample_generator,
             shuffle=True)
@@ -117,15 +119,18 @@ def run(net, param):
         coord = tf.train.Coordinator()
         writer = tf.summary.FileWriter(root_dir + '/logs', sess.graph)
         try:
+            print('Filling the queue (this can take a few minutes)')
             train_batch_runner.init_threads(sess, coord, param.num_threads)
             for i in range(param.max_iter):
                 local_time = time.time()
                 if coord.should_stop():
                     break
-                print('iter {},'.format(i))
-                _, loss_value, miss_value=sess.run([train_op, ave_loss, ave_miss])
-                print('loss={:.8f}, error_rate={:.8f} ({:.3f}s)'.format(
-                    loss_value, miss_value, time.time() - local_time))
+                _, loss_value, miss_value=sess.run([train_op,
+                                                    ave_loss,
+                                                    ave_miss])
+                print('iter {:d}, loss={:.8f},'\
+                      'error_rate={:.8f} ({:.3f}s)'.format(
+                          i, loss_value, miss_value, time.time() - local_time))
                 if (i % 20) == 0:
                     writer.add_summary(sess.run(write_summary_op),
                                        i + param.starting_iter)

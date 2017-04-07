@@ -25,14 +25,14 @@ To train a "toynet" specified in `network/toynet.py`:
 ``` sh
 cd NiftyNet/
 python run_application.py train --net_name toynet \
---train_data_dir ./example_volumes \
+--train_data_dir ./example_volumes/monomodal_parcellation \
 --image_size 42 --label_size 42 --batch_size 1
 ```
 After the training process, to do segmentation with a trained "toynet":
 ``` sh
 cd NiftyNet/
 python run_application.py inference --net_name toynet \
---eval_data_dir ./example_volumes --save_seg_dir ./seg_output \
+--eval_data_dir ./example_volumes/monomodal_parcellation --save_seg_dir ./seg_output \
 --image_size 64 --label_size 64 --batch_size 4
 ```
 *Commandline parameters override the default settings defined in `config/default_config.txt`.*
