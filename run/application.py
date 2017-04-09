@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-import parse_user_params
-import util
-
+import src.parse_user_params as parse_user_params
+import src.util as util
+import src.network
+import src.network.deepmedic as deepmedic
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w')
 
 
@@ -11,22 +12,22 @@ class NetFactory(object):
     @staticmethod
     def create(name):
         if name == "highres3dnet":
-            from network.highres3dnet import HighRes3DNet
+            from src.network.highres3dnet import HighRes3DNet
             return HighRes3DNet
         elif name == "toynet":
-            from network.toynet import ToyNet
+            from src.network.toynet import ToyNet
             return ToyNet
         elif name == "3dunet":
-            from network.unet_3d import UNet_3D
+            from src.network.unet_3d import UNet_3D
             return UNet_3D
         elif name == "vnet":
-            from network.vnet import VNet
+            from src.network.vnet import VNet
             return VNet
         elif name == "deepmedic":
-            from network.deepmedic import DeepMedic
+            from src.network.deepmedic import DeepMedic
             return DeepMedic
         elif name == "scalenet":
-            from network.scalenet import ScaleNet
+            from src.network.scalenet import ScaleNet
             return ScaleNet
         else:
             print("network: \"{}\" not implemented".format(name))
@@ -50,8 +51,8 @@ if __name__ == "__main__":
                     is_training=is_training,
                     device_str=device_str)
     if is_training:
-        import training
+        import src.training as training
         training.run(net, args)
     else:
-        import inference
+        import src.inference as inference
         inference.run(net, args)
