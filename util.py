@@ -31,10 +31,41 @@ def load_file(img_name, seg_name=None):
         if seg_name is not None else None
     return img_data, seg_data
 
+def load_file_34d(img_name):
+    return  nibabel.load(img_name).get_data()
+
 def list_associations_nifti_files(img_dir,seg_dir,fname,ext='.nii.gz'):
     img_names = [ file for file in os.listdir(img_dir) if fname in file and file.endswith(ext)]
     seg_names = [file for file in os.listdir(seg_dir) if fname in file and file.endswith(ext)]
     return img_names, seg_names
+
+def load_4d_img_from_dict(dict_load,f_name):
+    if 'path' not in dict_load.keys():
+        dict_load['path'] = ['']
+    if 'prefix' not in dict_load.keys():
+        dict_load['prefix'] = ['']
+    if 'suffix' not in dict_load.keys():
+        dict_load['suffix'] = ['']
+    if 'ext' not in dict_load.keys():
+        dict_load['ext'] = ['.nii.gz']
+    img = None
+    num_img = np.max([len(dict_load['path']),len(dict_load['prefix']), len(dict_load['suffix'])])
+    for i in range(0,num_img):
+        name = os.path.join(dict_load['path'][np.min([len(dict_load['path'])-1,i])],
+                            dict_load['prefix'][np.min([len(dict_load['prefix'])-1,i])]+f_name+
+                            dict_load['suffix'][np.min([len(dict_load['suffix'])-1,i])]+
+                            dict_load['ext'][np.min([len(dict_load['ext'])-1,i])])
+        img_temp = load_file_34d(name)
+        if img == None:
+            img = img_temp
+        elif img.ndim == 3:
+            img = np.concatenate([np.expand_dims(img,3),np.expand_dims(img_temp,3)],axis=3)
+
+        else:
+            img = np.concatenate([img,np.expand_dims(img_temp,3)],axis=3)
+    return img
+
+
 
 def list_nifti_files(img_dir, rand=False):
     # TODO check images and labels consistency
