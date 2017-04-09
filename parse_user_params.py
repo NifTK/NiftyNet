@@ -1,6 +1,7 @@
+# -*- coding: utf-8 -*-
+import os
 import argparse
 import configparser
-import os
 
 
 def run():
@@ -26,12 +27,17 @@ def run():
     parser.set_defaults(**defaults)
 
     parser.add_argument(
+        "--cuda_devices",
+        metavar='',
+        help="Set CUDA_VISIBLE_DEVICES variable, e.g. '0,1,2,3'; " \
+                "leave blank to use the system default value")
+    parser.add_argument(
         "--model_dir",
         metavar='',
         help="Directory to save/load intermediate training models and logs")
     parser.add_argument(
         "--net_name",
-        help="choose a net from ./network/ ",
+        help="Choose a net from ./network/ ",
         metavar='')
 
     parser.add_argument(
@@ -48,17 +54,20 @@ def run():
     parser.add_argument(
         "--batch_size", metavar='', help="Set batch size of the net", type=int)
     parser.add_argument(
-        "--image_size", metavar='', help="set input image size", type=int)
+        "--image_size", metavar='', help="Set input image size", type=int)
     parser.add_argument(
-        "--label_size", metavar='', help="set label size of the net", type=int)
+        "--label_size", metavar='', help="Set label size of the net", type=int)
     parser.add_argument(
-        "--num_classes", metavar='', help="set number of classes", type=int)
+        "--num_classes", metavar='', help="Set number of classes", type=int)
 
     parser.add_argument(
         "--volume_padding_size",
         metavar='',
         help="Set padding size of each volume (in all dimensions)",
         type=int)
+    parser.add_argument(
+        "--histogram_ref_file",
+        help="A reference of histogram for intensity normalisation")
 
     parser.add_argument(
         "--num_gpus",
@@ -72,35 +81,31 @@ def run():
         type=int)
     # TODO remove the trailing '/'
     parser.add_argument(
-        "--train_image_dir",
+        "--train_data_dir",
         metavar='',
         help="[Training only] Specify training input volume directory")
-    parser.add_argument(
-        "--train_label_dir",
-        metavar='',
-        help="[Training only] Training input label directory")
 
     parser.add_argument(
         "--lr",
-        help="[Training only] set learning rate", type=float)
+        help="[Training only] Set learning rate", type=float)
     parser.add_argument(
         "--decay",
-        help="[Training only] set weight decay", type=float)
+        help="[Training only] Set weight decay", type=float)
     parser.add_argument(
         "--loss_type",
-        metavar='TYPE_STR', help="[Training only] specify loss type")
+        metavar='TYPE_STR', help="[Training only] Specify loss type")
     parser.add_argument(
         "--reg_type",
-        metavar='TYPE_STR', help="[Training only] specify regulariser type")
+        metavar='TYPE_STR', help="[Training only] Specify regulariser type")
     parser.add_argument(
         "--starting_iter",
-        metavar='', help="[Training only] resume from iteration n", type=int)
+        metavar='', help="[Training only] Resume from iteration n", type=int)
     parser.add_argument(
         "--save_every_n",
         metavar='', help="[Training only] Model saving frequency", type=int)
     parser.add_argument(
         "--max_iter",
-        metavar='', help="[Training only] total number of iterations", type=int)
+        metavar='', help="[Training only] Total number of iterations", type=int)
 
     parser.add_argument(
         "--border",
@@ -117,7 +122,7 @@ def run():
         metavar='',
         help="[Inference only] Prediction directory name")  # without '/'
     parser.add_argument(
-        "--eval_image_dir",
+        "--eval_data_dir",
         metavar='',
         help="[Inference only] Directory of image to be segmented")  # without '/'
     parser.add_argument(
@@ -139,7 +144,7 @@ def run_eval():
     file_arg, remaining_argv = file_parser.parse_known_args()
 
     if file_arg.conf:
-        config = ConfigParser.SafeConfigParser()
+        config = configparser.SafeConfigParser()
         config.read([file_arg.conf])
         defaults = dict(config.items("settings"))
 
@@ -172,7 +177,7 @@ def run_stats():
     file_arg, remaining_argv = file_parser.parse_known_args()
 
     if file_arg.conf:
-        config = ConfigParser.SafeConfigParser()
+        config = configparser.SafeConfigParser()
         config.read([file_arg.conf])
         defaults = dict(config.items("settings"))
 

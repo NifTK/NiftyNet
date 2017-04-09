@@ -1,4 +1,4 @@
-from base_layer import BaseLayer
+from network.base_layer import BaseLayer
 
 
 class NetTemplate(BaseLayer):
@@ -22,5 +22,6 @@ class NetTemplate(BaseLayer):
         self.input_label_size = label_size
         self.num_classes = num_classes
 
+    # images: [batch, width, height, depth, feature]
     def inference(self, images, layer_id=None):
         raise NotImplementedError

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import os.path
 import time
@@ -8,7 +9,7 @@ from six.moves import range
 
 import util
 from network.net_template import NetTemplate
-from nn_queue import DeployInputBuffer
+from input_queue import DeployInputBuffer
 from sampler import VolumeSampler
 
 
@@ -18,18 +19,21 @@ def run(net, param):
         print('Net model should inherit from NetTemplate')
         return
 
-    valid_names = util.list_nifti_files(param.eval_image_dir)
+    valid_names = util.list_patient(param.eval_data_dir)
+    mod_list = util.list_modality(param.train_data_dir)
     rand_sampler = VolumeSampler(valid_names,
+                                 mod_list,
                                  net.batch_size,
                                  net.input_image_size,
                                  net.input_label_size,
-                                 param.volume_padding_size)
-    sampling_grid_size = net.input_image_size - 2 * param.border
+                                 param.volume_padding_size,
+                                 param.histogram_ref_file)
+    sampling_grid_size = net.input_label_size - 2 * param.border
     if sampling_grid_size <= 0:
         print('Param error: non-positive sampling grid_size')
         return None
     sample_generator = rand_sampler.grid_samples_from(
-        param.eval_image_dir, None, sampling_grid_size)
+        param.eval_data_dir, sampling_grid_size, yield_seg=False)
 
     # construct graph
     graph = tf.Graph()
@@ -39,7 +43,7 @@ def run(net, param):
         seg_batch_runner = DeployInputBuffer(
             net.batch_size,
             param.queue_length,
-            shapes=[[net.input_image_size] * 3, [7]],
+            shapes=[[net.input_image_size] * 3 + [len(mod_list)], [7]],
             sample_generator=sample_generator)
         test_pairs = seg_batch_runner.pop_batch()
         info = test_pairs['info']
@@ -71,6 +75,7 @@ def run(net, param):
             seg_batch_runner.init_threads(sess, coord, num_threads=1)
             img_id = -1
             pred_img = None
+            patient_name = None
             while True:
                 if coord.should_stop():
                     break
@@ -79,30 +84,30 @@ def run(net, param):
                 for batch_id in range(seg_maps.shape[0]):
                     if spatial_info[batch_id, 0] != img_id:
                         # when loc_info changed
-                        # save current image results and reset cumulative result
+                        # save current map and reset cumulative map variable
                         if pred_img is not None:
-                            util.save_segmentation(param, img_name, pred_img)
+                            util.save_segmentation(
+                                param, patient_name, pred_img)
                         img_id = spatial_info[batch_id, 0]
-                        img_name = valid_names[img_id]
-                        full_name = param.eval_image_dir + '/' + img_name
-                        pred_img = util.volume_of_zeros_like(full_name)
-                        pred_img = np.pad(pred_img,
-                                          param.volume_padding_size,
-                                          'minimum')
-                        #print ('init %s' % valid_names[img_id])
+                        patient_name = valid_names[img_id]
+                        pred_img = util.volume_of_zeros_like(
+                            param.eval_data_dir, patient_name, mod_list[0])
+                        pred_img = np.pad(
+                            pred_img, param.volume_padding_size, 'minimum')
+                        #print('init %s' % valid_names[img_id])
                     loc_x = spatial_info[batch_id, 1]
                     loc_y = spatial_info[batch_id, 2]
                     loc_z = spatial_info[batch_id, 3]
 
                     p_start = param.border
-                    p_end = net.input_image_size - param.border
+                    p_end = net.input_label_size - param.border
                     predictions = seg_maps[batch_id]
                     pred_img[(loc_x + p_start): (loc_x + p_end),
-                    (loc_y + p_start): (loc_y + p_end),
-                    (loc_z + p_start): (loc_z + p_end)] = \
+                             (loc_y + p_start): (loc_y + p_end),
+                             (loc_z + p_start): (loc_z + p_end)] = \
                         predictions[p_start: p_end,
-                        p_start: p_end,
-                        p_start: p_end]
+                                    p_start: p_end,
+                                    p_start: p_end]
 
         except KeyboardInterrupt:
             print('User cancelled training')

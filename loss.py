@@ -1,9 +1,10 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 import tensorflow as tf
 
 
 class LossFunction(object):
-    def __init__(self, n_class, loss_type='dice', reg_type='l2', decay=0.0):
+    def __init__(self, n_class, loss_type='Dice', reg_type='L2', decay=0.0):
         self.num_classes = n_class
         self.set_loss_type(loss_type)
         self.set_reg_type(reg_type)
@@ -12,9 +13,9 @@ class LossFunction(object):
             loss_type, decay, reg_type))
 
     def set_loss_type(self, type_str):
-        if type_str == "cross_entropy":
+        if type_str == "CrossEntropy":
             self.data_loss_fun = cross_entropy
-        elif type_str == "dice":
+        elif type_str == "Dice":
             self.data_loss_fun = dice
         elif type_str == 'GDSC':
             self.data_loss_fun = GDSC_loss
@@ -22,7 +23,7 @@ class LossFunction(object):
             self.data_loss_fun = SensSpec_loss
 
     def set_reg_type(self, type_str):
-        if type_str == "l2":
+        if type_str == "L2":
             self.reg_loss_fun = l2_reg_loss
 
     def set_decay(self, decay):

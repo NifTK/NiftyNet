@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 import parse_user_params
@@ -15,18 +16,29 @@ class NetFactory(object):
         elif name == "toynet":
             from network.toynet import ToyNet
             return ToyNet
-        print("network: \"{}\" not implemented".format(name))
-        raise NotImplementedError
-
+        elif name == "3dunet":
+            from network.unet_3d import UNet_3D
+            return UNet_3D
+        elif name == "vnet":
+            from network.vnet import VNet
+            return VNet
+        elif name == "deepmedic":
+            from network.deepmedic import DeepMedic
+            return DeepMedic
+        elif name == "scalenet":
+            from network.scalenet import ScaleNet
+            return ScaleNet
+        else:
+            print("network: \"{}\" not implemented".format(name))
+            raise NotImplementedError
 
 if __name__ == "__main__":
-
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    print("Set CUDA_VISIBLE_DEVICES env to 0")
-
     args = parse_user_params.run()
     if util.has_bad_inputs(args):
         sys.exit(-1)
+    if args.cuda_devices is not "":
+        os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda_devices
+        print("set CUDA_VISIBLE_DEVICES env to {}".format(args.cuda_devices))
     is_training = True if args.action == "train" else False
     device_str = "cpu" if (args.action == "train" and args.num_gpus > 1) else "gpu"
 
@@ -39,9 +51,7 @@ if __name__ == "__main__":
                     device_str=device_str)
     if is_training:
         import training
-
         training.run(net, args)
     else:
         import inference
-
         inference.run(net, args)

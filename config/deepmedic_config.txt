@@ -1,20 +1,20 @@
 [settings]
 cuda_devices = ""
-model_dir = ./models/model_toy
-net_name = toynet
+model_dir = ./models/model_deepmedic
+net_name = deepmedic
 
 # preprocessing threads parameters
-queue_length = 8
-num_threads = 2
+queue_length = 512
+num_threads = 12
 
 # network parameters (controlling memory consumption)
-batch_size = 4
-image_size = 32
-label_size = 32
+batch_size = 128
+image_size = 57
+label_size = 9
 num_classes = 160
 
 # affected by network's receptive field
-volume_padding_size = 21
+volume_padding_size = 24
 histogram_ref_file = ./external/std_hist_ori_995.pkl
 
 # ** training only ** system parameters
@@ -28,11 +28,11 @@ decay = 1e-7
 loss_type = Dice
 reg_type = L2
 starting_iter = 0
-save_every_n = 100
-max_iter = 50
+save_every_n = 1000
+max_iter = 10000
 
 # **inference only** system parameters
-border = 5
-pred_iter = 50
-save_seg_dir = ./output/toy
+border = 0
+pred_iter = 10000
+save_seg_dir = ./output/deepmedic
 eval_data_dir = ./example_volumes/monomodal_parcellation

@@ -3,3 +3,6 @@
 __pycache__/
 models/
 output/
+user/
+.idea/
+emerald_*
