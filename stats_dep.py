@@ -1,16 +1,10 @@
-import os
-import os.path
-import sys
-import time
 import scipy
 import nibabel
 import numpy as np
 import numpy.ma as ma
 import tensorflow as tf
 import scipy.stats.mstats as mstats
-from skimage import measure
-from sklearn.neighbors import DistanceMetric
-from morphology import get_morphology
+from util import MorphologyOps
 
 class perform_statistics(object):
   def __init__(self, seg_img, data_img, num_neighbors, threshold=0, pixdim=[1,1,1]):
@@ -36,8 +30,7 @@ class perform_statistics(object):
 
   def Surface(self):
       vol_vox = np.prod(self.pixdim)
-      GMSeg = get_morphology(self.seg,self.neigh)
-      border_seg = GMSeg.BorderMap()
+      border_seg = MorphologyOps(self.seg,self.neigh).border_map()
       numb_border_seg_bin = np.count_nonzero(border_seg)
       numb_border_seg = np.sum(border_seg)
       return numb_border_seg, numb_border_seg_bin, \

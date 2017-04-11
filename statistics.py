@@ -1,17 +1,12 @@
-import os
 import os.path
-import sys
 import time
 import scipy
 import nibabel as nib
 import numpy as np
-import tensorflow as tf
 from stats_dep import perform_statistics
 #from ImageAndPatches import Volume_Sampler
-from morphology import get_morphology
+from util import MorphologyOps
 import util
-
-#sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 def run(param):
     name_for_file = os.path.split(param.data_image_dir)[1] + '_' + os.path.split(param.seg_image_dir)[1]
@@ -102,8 +97,7 @@ def run(param):
                     type_Seg = "Binary"
                     print('Binary')
                     rangeCheck = [0.5]
-                    GMSeg = get_morphology(SegImg,24)
-                    Labels = GMSeg.LabelBinary()
+                    Labels = MorphologyOps(SegImg,24).forground_component()
                     rangeCheck = np.arange(1,np.max(Labels))
                 else:
                     type_Seg = "Labels"

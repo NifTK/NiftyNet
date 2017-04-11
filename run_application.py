@@ -36,7 +36,7 @@ if __name__ == "__main__":
     args = parse_user_params.run()
     if util.has_bad_inputs(args):
         sys.exit(-1)
-    if args.cuda_devices is not "":
+    if args.cuda_devices == '""':
         os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda_devices
         print("set CUDA_VISIBLE_DEVICES env to {}".format(args.cuda_devices))
     is_training = True if args.action == "train" else False

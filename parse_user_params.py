@@ -153,15 +153,32 @@ def run_eval():
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.set_defaults(**defaults)
-    parser.add_argument("--threshold",help="threshold to obtain binary segmentation")
-    parser.add_argument("--step",help="step of increment when considering probabilistic segmentation")
-    parser.add_argument("--ref_image_dir",help = "path to the image to use as reference")
-    parser.add_argument("--seg_image_dir", help="path where to find the images to evaluate")
-    parser.add_argument("--save_eval_dir", help="path where to save the output csv file")
-    parser.add_argument("--name_out", help="string to append for the naming of the output file")
-    parser.add_argument("--ext", help="extension of the image files to be read")
-    parser.add_argument("--list_file", help="Text file containing the list of names to use")
-    parser.add_argument("--name_ref", help="ID for a specific reference file to use")
+    parser.add_argument(
+            "--threshold",
+            help="threshold to obtain binary segmentation",
+            type=float)
+    parser.add_argument(
+            "--step",
+            help="step of increment when considering probabilistic segmentation",
+            type=float)
+    parser.add_argument(
+            "--ref_image_dir",help = "path to the image to use as reference")
+    parser.add_argument(
+            "--seg_image_dir", help="path where to find the images to evaluate")
+    parser.add_argument(
+            "--save_eval_dir", help="path where to save the output csv file")
+    parser.add_argument(
+            "--name_out",
+            help="string to append for the naming of the output file")
+    parser.add_argument(
+            "--ext", help="extension of the image files to be read")
+    parser.add_argument(
+            "--list_file", help="Text file containing the list of names to use")
+    parser.add_argument(
+            "--name_ref", help="ID for a specific reference file to use")
+    parser.add_argument(
+            "--seg_type",
+            help="type of input: discrete maps or probabilistic maps")
     args = parser.parse_args(remaining_argv)
     return args
 

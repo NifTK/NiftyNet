@@ -2,6 +2,8 @@
 import os
 import random
 
+from skimage import measure
+from scipy import ndimage
 import nibabel
 import numpy as np
 import tensorflow as tf
@@ -94,10 +96,19 @@ def load_file(data_dir, patient_id, with_seg=False):
         if seg_name is not None else None
     return img_data, seg_data
 
-def list_associations_nifti_files(img_dir,seg_dir,fname,ext='.nii.gz'):
-    img_names = [ file for file in os.listdir(img_dir) if fname in file and file.endswith(ext)]
-    seg_names = [file for file in os.listdir(seg_dir) if fname in file and file.endswith(ext)]
+def list_img_seg_by_fname(fname, img_dir, seg_dir, ext='.nii.gz'):
+    img_names = [fn for fn in os.listdir(img_dir)
+            if fname in fn and fn.endswith(ext)]
+    seg_names = [fn for fn in os.listdir(seg_dir)
+            if fname in fn and fn.endswith(ext)]
     return img_names, seg_names
+
+def list_nifti_files(img_dir, ext='.nii.gz'):
+    names = [fn for fn in os.listdir(img_dir) if fn.lower().endswith(ext)]
+    if not names:
+        print('no files in {}'.format(img_dir))
+        raise IOError
+    return names
 
 def has_bad_inputs(args):
     print('Input params:')
@@ -152,3 +163,24 @@ def save_segmentation(param, pat_name, pred_img):
     predicted_nii.set_data_dtype(np.dtype(np.float32))
     nibabel.save(predicted_nii, save_name)
     print('saved %s' % save_name)
+
+
+class MorphologyOps(object):
+    def __init__(self, binary_img, neigh):
+        self.binary_map = np.asarray(binary_img, dtype=np.int8)
+        self.neigh = neigh
+
+    def border_map(self):
+        west = ndimage.shift(self.binary_map, [-1, 0, 0], order=0)
+        east = ndimage.shift(self.binary_map, [1, 0, 0], order=0)
+        north = ndimage.shift(self.binary_map, [0, 1, 0], order=0)
+        south = ndimage.shift(self.binary_map, [0, -1, 0], order=0)
+        top = ndimage.shift(self.binary_map, [0, 0, 1], order=0)
+        bottom = ndimage.shift(self.binary_map, [0, 0, -1], order=0)
+        cumulative = west + east + north + south + top + bottom
+        border = ((cumulative < 6) * self.binary_map) == 1
+        return border
+
+    def foreground_component(self):
+        return measure.label(self.binary_map, background=0)
+

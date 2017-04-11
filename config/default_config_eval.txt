@@ -1,19 +1,15 @@
 [settings]
-
 # default parameters
 threshold = 0.5
-type_eval = binary 
 step = 0.1
 ext = .nii.gz
 name_out = eval
-#(choice between probabilistic binary and multilabel)
+#(choice between probabilistic labels 'prob' and discrete labels 'discrete')
+seg_type = discrete
 
 # **statistical analysis system parameters
-name_ref =
-list_file =
-save_eval_dir = ./model1_output
-seg_image_dir = ./model1_output
-ref_image_dir = /home/ucl/eisuc269/tnet/DataBrain/Label_normalised
-save_eval_dir = /Users/csudre/Temp
-seg_image_dir = /Users/csudre/Temp/Seg2
-ref_image_dir = /Users/csudre/Temp/Ref
+name_ref = ""
+list_file = ""
+save_eval_dir = /Users/wenqili/Desktop/Prepa_Wenqi
+seg_image_dir = /Users/wenqili/Desktop/Prepa_Wenqi/seg
+ref_image_dir = /Users/wenqili/Desktop/Prepa_Wenqi/ref

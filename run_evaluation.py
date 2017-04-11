@@ -1,9 +1,6 @@
-import os
 import sys
-import parse_user_params
 import util
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-
+import parse_user_params
 
 if __name__ == "__main__":
     args = parse_user_params.run_eval()
