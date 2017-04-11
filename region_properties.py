@@ -58,10 +58,10 @@ class RegionProperties(object):
 
     def __compute_mask(self):
         mask_temp = 1 - self.seg
-        mask_temp[mask_temp < 0.5] = 0
-        mask_temp[mask_temp >= 0.5] = 1
-        mask = np.tile(mask_temp, [1, 1, 1, self.img.shape[3]])
-        masked_array = ma.masked_array(self.img, mask)
+        mask_temp[mask_temp < 0.5] = False
+        mask_temp[mask_temp >= 0.5] = True
+        mask_temp = np.tile(mask_temp, [1, 1, 1, self.img.shape[3]])
+        masked_array = ma.masked_array(self.img, mask_temp)
         return masked_array.reshape(-1, masked_array.shape[-1])
 
     def centre_of_mass(self):

@@ -31,9 +31,10 @@ def run(param):
             img_names_temp, seg_names_temp = util.list_img_seg_by_fname(
                     name, param.data_image_dir, param.seg_image_dir)
             if len(seg_names_temp) != len(img_names_temp):
-                seg_names_new = [item for item in seg_names_temp \
+                seg_names_new = [item for item in seg_names_temp
                         for i in xrange(len(img_names_temp))]
-                img_names_new = [img_names_temp for i in xrange(len(seg_names_temp))]
+                img_names_new = [img_names_temp
+                        for i in xrange(len(seg_names_temp))]
             else:
                 seg_names_new = seg_names_temp
                 img_names_new = img_names_temp
@@ -73,7 +74,7 @@ def run(param):
 
                 if np.max(SegImg) > 1:
                     type_str = "Labels"
-                    threshold_steps = np.arange(1, np.max(SegImg))
+                    threshold_steps = np.unique(SegImg).tolist()
                 elif len(np.unique(SegImg)) > 2:
                     type_str = "Probabilities"
                     threshold_steps = np.arange(0, 1, float(param.step))
@@ -86,6 +87,8 @@ def run(param):
                 print type_str
 
                 for i in threshold_steps:
+                    print('{} of {} thresholding steps'.format(
+                        i, len(threshold_steps)))
                     if type_str == "Labels" or type_str == "Binary":
                         seg = (SegImg == i)
                     else:
