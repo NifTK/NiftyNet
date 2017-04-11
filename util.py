@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import random
+from functools import partial
 
 from skimage import measure
 from scipy import ndimage
@@ -184,3 +185,29 @@ class MorphologyOps(object):
     def foreground_component(self):
         return measure.label(self.binary_map, background=0)
 
+
+class SimpleCache(object):
+    """
+    this provides a decorator to cache function outputs
+    to avoid repeating some heavy function computations
+    """
+    def __init__(self, func):
+        self.func = func
+
+    def __get__(self, obj, _=None):
+        if obj is None:
+            return self
+        return partial(self, obj)  # to remember func as self.func
+
+    def __call__(self, *args, **kw):
+        obj = args[0]
+        try:
+            cache = obj.__cache
+        except AttributeError:
+            cache = obj.__cache = {}
+        key = (self.func, args[1:], frozenset(kw.items()))
+        try:
+            value = cache[key]
+        except KeyError:
+            value = cache[key] = self.func(*args, **kw)
+        return value

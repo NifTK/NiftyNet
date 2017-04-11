@@ -1,34 +1,7 @@
-from functools import partial
 import numpy as np
 from sklearn.neighbors import DistanceMetric
 from util import MorphologyOps
-
-
-class SimpleCache(object):
-    """
-    this provides a decorator to cache function outputs
-    to avoid repeating some heavy function computations
-    """
-    def __init__(self, func):
-        self.func = func
-
-    def __get__(self, obj, _=None):
-        if obj is None:
-            return self
-        return partial(self, obj)  # to remember func as self.func
-
-    def __call__(self, *args, **kw):
-        obj = args[0]
-        try:
-            cache = obj.__cache
-        except AttributeError:
-            cache = obj.__cache = {}
-        key = (self.func, args[1:], frozenset(kw.items()))
-        try:
-            value = cache[key]
-        except KeyError:
-            value = cache[key] = self.func(*args, **kw)
-        return value
+from util import SimpleCache
 
 
 class PairwiseMeasures(object):
