@@ -4,7 +4,7 @@ import numpy as np
 from six.moves import range
 
 import data_augmentation as dataug
-import util
+import utilities.misc as util
 from preprocess import HistNormaliser
 
 

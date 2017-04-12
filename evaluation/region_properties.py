@@ -4,8 +4,8 @@ import nibabel
 import numpy as np
 import numpy.ma as ma
 import scipy.stats.mstats as mstats
-from util import MorphologyOps
-from util import CacheFunctionOutput
+from utilities.misc import MorphologyOps
+from utilities.misc import CacheFunctionOutput
 
 class RegionProperties(object):
     def __init__(self, seg, img, measures,

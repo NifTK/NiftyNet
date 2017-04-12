@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-import parse_user_params
-import util
+import utilities.misc as util
+import utilities.parse_user_params as parse_user_params
 
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w')
 
@@ -50,8 +50,8 @@ if __name__ == "__main__":
                     is_training=is_training,
                     device_str=device_str)
     if is_training:
-        import training
-        training.run(net, args)
+        import nn.training
+        nn.training.run(net, args)
     else:
-        import inference
-        inference.run(net, args)
+        import nn.inference
+        nn.inference.run(net, args)

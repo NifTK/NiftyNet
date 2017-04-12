@@ -7,7 +7,7 @@ import numpy as np
 import tensorflow as tf
 from six.moves import range
 
-import util
+import utilities.misc as util
 from network.net_template import NetTemplate
 from input_queue import DeployInputBuffer
 from sampler import VolumeSampler

@@ -3,8 +3,8 @@ import scipy
 import nibabel as nib
 import numpy as np
 from region_properties import RegionProperties
-from util import MorphologyOps
-import util
+from utilities.misc import MorphologyOps
+import utilities.misc as util
 
 MEASURES = ('centre of mass', 'volume', 'surface', 'surface volume ratio',
             'compactness', 'mean', 'weighted_mean', 'skewness',
