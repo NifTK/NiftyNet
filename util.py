@@ -97,14 +97,7 @@ def load_file(data_dir, patient_id, with_seg=False):
         if seg_name is not None else None
     return img_data, seg_data
 
-def list_img_seg_by_fname(fname, img_dir, seg_dir, ext='.nii.gz'):
-    img_names = [fn for fn in os.listdir(img_dir)
-            if fname in fn and fn.endswith(ext)]
-    seg_names = [fn for fn in os.listdir(seg_dir)
-            if fname in fn and fn.endswith(ext)]
-    return img_names, seg_names
-
-def list_nifti_files(img_dir, ext='.nii.gz'):
+def list_files(img_dir, ext='.nii.gz'):
     names = [fn for fn in os.listdir(img_dir) if fn.lower().endswith(ext)]
     if not names:
         print('no files in {}'.format(img_dir))
@@ -119,7 +112,6 @@ def has_bad_inputs(args):
         if user_value is None:
             print('{} not set in the config file'.format(arg))
             return True
-
     ## at each iteration [batch_size] samples will be read from queue
     #if args.queue_length < args.batch_size:
     #    print('queue_length ({}) should be >= batch_size ({}).'.format(
@@ -186,7 +178,7 @@ class MorphologyOps(object):
         return measure.label(self.binary_map, background=0)
 
 
-class SimpleCache(object):
+class CacheFunctionOutput(object):
     """
     this provides a decorator to cache function outputs
     to avoid repeating some heavy function computations

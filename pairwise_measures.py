@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.neighbors import DistanceMetric
 from util import MorphologyOps
-from util import SimpleCache
+from util import CacheFunctionOutput
 
 
 class PairwiseMeasures(object):
@@ -61,43 +61,43 @@ class PairwiseMeasures(object):
     def __intersection_map(self):
         return np.multiply(self.ref, self.seg)
 
-    @SimpleCache
+    @CacheFunctionOutput
     def n_pos_ref(self):
         return np.sum(self.ref)
 
-    @SimpleCache
+    @CacheFunctionOutput
     def n_neg_ref(self):
         return np.sum(1 - self.ref)
 
-    @SimpleCache
+    @CacheFunctionOutput
     def n_pos_seg(self):
         return np.sum(self.seg)
 
-    @SimpleCache
+    @CacheFunctionOutput
     def n_neg_seg(self):
         return np.sum(1 - self.seg)
 
-    @SimpleCache
+    @CacheFunctionOutput
     def fp(self):
         return np.sum(self.__FPmap())
 
-    @SimpleCache
+    @CacheFunctionOutput
     def fn(self):
         return np.sum(self.__FNmap())
 
-    @SimpleCache
+    @CacheFunctionOutput
     def tp(self):
         return np.sum(self.__TPmap())
 
-    @SimpleCache
+    @CacheFunctionOutput
     def tn(self):
         return np.sum(self.__TNmap())
 
-    @SimpleCache
+    @CacheFunctionOutput
     def n_intersection(self):
         return np.sum(self.__intersection_map())
 
-    @SimpleCache
+    @CacheFunctionOutput
     def n_union(self):
         return np.sum(self.__union_map())
 
@@ -139,7 +139,7 @@ class PairwiseMeasures(object):
     def vol_diff(self):
         return np.abs(self.n_pos_ref() - self.n_pos_seg()) / self.n_pos_ref()
 
-    @SimpleCache
+    @CacheFunctionOutput
     def _boundaries_dist_mat(self):
         dist = DistanceMetric.get_metric('euclidean')
         border_ref = MorphologyOps(self.ref, self.neigh).border_map()
@@ -160,7 +160,7 @@ class PairwiseMeasures(object):
         return np.max((np.max(np.min(pairwise_dist, 0)),
             np.max(np.min(pairwise_dist,1))))
 
-    @SimpleCache
+    @CacheFunctionOutput
     def _connected_components(self):
         init = np.multiply(self.seg, self.ref)
         blobs_ref = MorphologyOps(self.ref, self.neigh).foreground_component()
@@ -180,7 +180,7 @@ class PairwiseMeasures(object):
         list_FP = [x for x in list_blobs_seg if x not in list_TP_seg]
         return len(list_TP_ref), len(list_FP), len(list_FN)
 
-    @SimpleCache
+    @CacheFunctionOutput
     def connected_errormaps(self):
         blobs_ref, blobs_seg, init = self._connected_components()
         list_blobs_ref = np.unique(blobs_ref[blobs_ref > 0])
@@ -225,13 +225,9 @@ class PairwiseMeasures(object):
         return DEFN+DEFP, DEFP, DEFN
 
     def header_str(self):
-        result_str = ""
-        for key in self.measures:
-            header = self.m_dict[key][1]
-            result_str += ','.join(x for x in header) if \
-                    isinstance(header, tuple) else header
-            result_str += ','
-        return result_str[:-1]
+        result_str = [self.m_dict[key][1] for key in self.measures]
+        result_str = ',' + ','.join(result_str)
+        return result_str
 
     def to_string(self, fmt='{:.4f}'):
         result_str = ""

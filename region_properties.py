@@ -5,7 +5,7 @@ import numpy as np
 import numpy.ma as ma
 import scipy.stats.mstats as mstats
 from util import MorphologyOps
-from util import SimpleCache
+from util import CacheFunctionOutput
 
 class RegionProperties(object):
     def __init__(self, seg, img, measures,
@@ -13,7 +13,8 @@ class RegionProperties(object):
 
         self.seg = seg
         self.img = img
-        img_id = range(0, img.shape[3] if img.ndim == 4 else 1)
+        self.img_channels = self.img.shape[3] if img.ndim == 4 else 1
+        img_id = range(0, self.img_channels)
         self.m_dict = {
                 'centre of mass': (self.centre_of_mass, ['CoMx',
                                                          'CoMy',
@@ -53,7 +54,6 @@ class RegionProperties(object):
         self.pixdim = pixdim
         self.threshold = threshold
         if self.seg is not None:
-            self.img_channels = self.img.shape[3]
             self.masked_img, self.masked_seg = self.__compute_mask()
         self.vol_vox = np.prod(pixdim)
 
@@ -69,14 +69,14 @@ class RegionProperties(object):
     def centre_of_mass(self):
         return np.mean(np.argwhere(self.seg > self.threshold), 0)
 
-    @SimpleCache
+    @CacheFunctionOutput
     def volume(self):
         numb_seg = np.sum(self.seg)
         numb_seg_bin = np.sum(self.seg > 0)
         return numb_seg, numb_seg_bin,\
                numb_seg * self.vol_vox, numb_seg_bin * self.vol_vox
 
-    @SimpleCache
+    @CacheFunctionOutput
     def surface(self):
         border_seg = MorphologyOps(self.seg, self.neigh).border_map()
         numb_border_seg_bin = np.sum(border_seg > 0)
@@ -127,10 +127,8 @@ class RegionProperties(object):
         return mstats.mquantiles(self.masked_img, prob=0.75, axis=0).flatten()
 
     def header_str(self):
-        result_str = ""
-        for i in self.measures:
-            for j in self.m_dict[i][1]:
-                result_str += ',' + j
+        result_str = [j for i in self.measures for j in self.m_dict[i][1]]
+        result_str = ',' + ','.join(result_str)
         return result_str
 
     def to_string(self, fmt='{:4f}'):
@@ -140,5 +138,6 @@ class RegionProperties(object):
                 try:
                     result_str += ',' + fmt.format(j)
                 except ValueError:  #some functions give strings e.g., "--"
+                    print i,j
                     result_str += ',{}'.format(j)
         return result_str

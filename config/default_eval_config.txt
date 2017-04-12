@@ -1,0 +1,16 @@
+[settings]
+
+# default parameters
+threshold = 0.5
+step = 0.1
+ext = .nii.gz
+
+#(choice between probabilistic labels 'prob' and discrete labels 'discrete')
+seg_type = discrete
+
+# **statistical analysis system parameters
+save_csv_dir = /Users/wenqili/Desktop/Prepa_Wenqi
+#seg_dir = /Users/wenqili/Desktop/Prepa_Wenqi/seg
+seg_dir = /Users/wenqili/Desktop/Prepa_Wenqi/Statistics/Seg
+ref_dir = /Users/wenqili/Desktop/Prepa_Wenqi/ref
+img_dir = /Users/wenqili/Desktop/Prepa_Wenqi/Statistics/Data

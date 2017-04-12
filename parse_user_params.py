@@ -27,6 +27,9 @@ def run():
     parser.set_defaults(**defaults)
 
     parser.add_argument(
+        "action", help="train or inference", choices=['train', 'inference'])
+
+    parser.add_argument(
         "--cuda_devices",
         metavar='',
         help="Set CUDA_VISIBLE_DEVICES variable, e.g. '0,1,2,3'; " \
@@ -125,9 +128,6 @@ def run():
         "--eval_data_dir",
         metavar='',
         help="[Inference only] Directory of image to be segmented")  # without '/'
-    parser.add_argument(
-        "action", help="train or inference", choices=['train', 'inference'])  # without '/'
-    # parser.add_argument("", help="", type=int)
     args = parser.parse_args(remaining_argv)
     return args
 
@@ -138,7 +138,7 @@ def run_eval():
                              help="Specify configurations from a file",
                              metavar="File")
     config_file = os.path.join(os.path.dirname(__file__),
-                               'config/default_config_eval.txt')
+                               'config/default_eval_config.txt')
     defaults = {"conf": config_file}
     file_parser.set_defaults(**defaults)
     file_arg, remaining_argv = file_parser.parse_known_args()
@@ -153,65 +153,26 @@ def run_eval():
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.set_defaults(**defaults)
-    parser.add_argument(
-            "--threshold",
+    parser.add_argument("action",
+            help="compute ROI statistics or compare segmentation maps",
+            choices=['roi', 'compare'])
+    parser.add_argument("--threshold",
             help="threshold to obtain binary segmentation",
             type=float)
-    parser.add_argument(
-            "--step",
+    parser.add_argument("--step",
             help="step of increment when considering probabilistic segmentation",
             type=float)
-    parser.add_argument(
-            "--ref_image_dir",help = "path to the image to use as reference")
-    parser.add_argument(
-            "--seg_image_dir", help="path where to find the images to evaluate")
-    parser.add_argument(
-            "--save_eval_dir", help="path where to save the output csv file")
-    parser.add_argument(
-            "--name_out",
-            help="string to append for the naming of the output file")
-    parser.add_argument(
-            "--ext", help="extension of the image files to be read")
-    parser.add_argument(
-            "--list_file", help="Text file containing the list of names to use")
-    parser.add_argument(
-            "--name_ref", help="ID for a specific reference file to use")
-    parser.add_argument(
-            "--seg_type",
+    parser.add_argument("--ref_dir",
+            help="path to the image to use as reference")
+    parser.add_argument("--seg_dir",
+            help="path where to find the images to evaluate")
+    parser.add_argument("--img_dir",
+            help="path where to find the images to evaluate")
+    parser.add_argument("--save_csv_dir",
+            help="path where to save the output csv file")
+    parser.add_argument("--ext",
+            help="extension of the image files to be read")
+    parser.add_argument("--seg_type",
             help="type of input: discrete maps or probabilistic maps")
-    args = parser.parse_args(remaining_argv)
-    return args
-
-def run_stats():
-    file_parser = argparse.ArgumentParser(add_help=False)
-    file_parser.add_argument("-c", "--conf",
-                             help="Specify configurations from a file",
-                             metavar="File")
-    config_file = os.path.join(os.path.dirname(__file__),
-                               'config/default_config_stats.txt')
-    defaults = {"conf": config_file}
-    file_parser.set_defaults(**defaults)
-    file_arg, remaining_argv = file_parser.parse_known_args()
-
-    if file_arg.conf:
-        config = configparser.SafeConfigParser()
-        config.read([file_arg.conf])
-        defaults = dict(config.items("settings"))
-
-    parser = argparse.ArgumentParser(
-        parents=[file_parser],
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.set_defaults(**defaults)
-    parser.add_argument("--threshold",help="threshold to obtain binary segmentation")
-    parser.add_argument("--step",help="step of increment when considering probabilistic segmentation")
-    parser.add_argument("--data_image_dir",help = "path to the image to use for stats")
-    parser.add_argument("--seg_image_dir", help="path where to find the images to evaluate")
-    parser.add_argument("--save_out_dir", help="path where to save the output csv file")
-    parser.add_argument("--name_out", help="string to append for the naming of the output file")
-    parser.add_argument("--ext", help="extension of the image files to be read")
-    parser.add_argument("--list_file", help="Text file containing the list of names to use")
-    parser.add_argument("--name_seg", help="ID for a specific segmentation file to use")
-    parser.add_argument("--type_stats", help="Type of analysis to be performed")
     args = parser.parse_args(remaining_argv)
     return args
