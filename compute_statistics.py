@@ -86,9 +86,9 @@ def run(param):
                     pass
                 print type_str
 
-                for i in threshold_steps:
+                for n, i in enumerate(threshold_steps):
                     print('{} of {} thresholding steps'.format(
-                        i, len(threshold_steps)))
+                        n, len(threshold_steps)))
                     if type_str == "Labels" or type_str == "Binary":
                         seg = (SegImg == i)
                     else:

@@ -53,16 +53,18 @@ class RegionProperties(object):
         self.pixdim = pixdim
         self.threshold = threshold
         if self.seg is not None:
-            self.masked = self.__compute_mask()
+            self.img_channels = self.img.shape[3]
+            self.masked_img, self.masked_seg = self.__compute_mask()
         self.vol_vox = np.prod(pixdim)
 
     def __compute_mask(self):
-        mask_temp = 1 - self.seg
-        mask_temp[mask_temp < 0.5] = False
-        mask_temp[mask_temp >= 0.5] = True
-        mask_temp = np.tile(mask_temp, [1, 1, 1, self.img.shape[3]])
-        masked_array = ma.masked_array(self.img, mask_temp)
-        return masked_array.reshape(-1, masked_array.shape[-1])
+        # TODO: check whether this works for probabilities type
+        foreground_selector = np.where((self.seg > 0).reshape(-1))[0]
+        probs = self.seg.reshape(-1)[foreground_selector]
+        regions = np.zeros((foreground_selector.shape[0], self.img_channels))
+        for i in np.arange(self.img_channels):
+            regions[:,i] = self.img[..., i].reshape(-1)[foreground_selector]
+        return regions, probs
 
     def centre_of_mass(self):
         return np.mean(np.argwhere(self.seg > self.threshold), 0)
@@ -94,36 +96,35 @@ class RegionProperties(object):
                 np.power(Sv,1.5) / Vv, np.power(Svb,1.5) / Vvb
 
     def min_(self):
-        return ma.min(self.masked, 0)
+        return ma.min(self.masked_img, 0)
 
     def max_(self):
-        return ma.max(self.masked, 0)
+        return ma.max(self.masked_img, 0)
 
     def weighted_mean_(self):
-        weights = np.tile(self.seg,
-                [1, 1, 1, self.img.shape[3]]).reshape(-1, self.masked.shape[-1])
-        return ma.average(self.masked, axis=0, weights=weights).flatten()
+        masked_seg = np.tile(self.masked_seg, [self.img_channels, 1]).T
+        return ma.average(self.masked_img, axis=0, weights=masked_seg).flatten()
 
     def mean_(self):
-        return ma.mean(self.masked, 0)
+        return ma.mean(self.masked_img, 0)
 
     def skewness_(self):
-        return mstats.skew(self.masked, 0)
+        return mstats.skew(self.masked_img, 0)
 
     def std_(self):
-        return ma.std(self.masked, 0)
+        return ma.std(self.masked_img, 0)
 
     def kurtosis_(self):
-        return mstats.kurtosis(self.masked, 0)
+        return mstats.kurtosis(self.masked_img, 0)
 
     def median_(self):
-        return ma.median(self.masked, 0)
+        return ma.median(self.masked_img, 0)
 
     def quantile_25(self):
-        return mstats.mquantiles(self.masked, prob=0.25, axis=0).flatten()
+        return mstats.mquantiles(self.masked_img, prob=0.25, axis=0).flatten()
 
     def quantile_75(self):
-        return mstats.mquantiles(self.masked, prob=0.75, axis=0).flatten()
+        return mstats.mquantiles(self.masked_img, prob=0.75, axis=0).flatten()
 
     def header_str(self):
         result_str = ""
