@@ -5,24 +5,27 @@ import pickle
 import nibabel
 import numpy as np
 from argparse import ArgumentParser
-import util
+import misc as util
 from medpy.filter import IntensityRangeStandardization
 
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w')
 
 parser = ArgumentParser(description='Train histogram references for a dataset')
+parser.add_argument('data_folder',
+                    help='path to the folder containing the data '
+                         'to use for training')
+parser.add_argument('model_saving_folder',
+                    help='folder where to save '
+                         'the histogram references learned')
 parser.add_argument('--thr', default=0.955,
                     help='threshold used to separate '
                          'the foreground from the background')
-parser.add_argument('--data_folder',
-                    help='path to the folder containing the data '
-                         'to use for training')
-parser.add_argument('--target_folder',
-                    help='folder where to save the histogram references learned')
+parser.add_argument('--prefix', default='std_hist',
+                    help='output .pkl file name prefix')
 argument = parser.parse_args()
 thr = float(argument.thr)
 data_folder = argument.data_folder
-target_folder = argument.target_folder
+target_folder = argument.model_saving_folder
 
 
 if __name__ == '__main__':
@@ -44,9 +47,11 @@ if __name__ == '__main__':
         print('Train histogram reference for modality %s' % modality)
         irs = IntensityRangeStandardization()
         irs = irs.train(list_images)
-        save_path = os.path.join(target_folder, 'std_hist_%s.pkl' % modality)
+        save_path = os.path.join(target_folder,
+                                 '%s_%s.pkl' % (argument.prefix, modality))
         if not os.path.exists(target_folder):
             os.makedirs(target_folder)
         with open(save_path, 'wb') as f:
             pickle.dump(irs, f)
+        print 'file saved %s' % save_path
 

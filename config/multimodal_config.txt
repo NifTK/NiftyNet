@@ -15,7 +15,7 @@ num_classes = 5
 
 # affected by network's receptive field
 volume_padding_size = 21
-histogram_ref_file = ./external/std_hist_ori_995.pkl
+histogram_ref_file = ./example_volumes/monomodal_histogram_reference.pkl
 
 # ** training only ** system parameters
 num_gpus = 1

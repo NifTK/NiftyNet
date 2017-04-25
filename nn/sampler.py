@@ -237,8 +237,10 @@ class VolumeSampler(object):
                     #                                np.std(cuboid)))
                     if seg is not None:
                         label = seg[x_:_x, y_:_y, z_:_z]
+                        #  cropping the labels if they are smaller
                         if self.label_size < self.image_size:
-                            border = np.int((self.image_size - self.label_size) / 2)
+                            border = (self.image_size - self.label_size) / 2
+                            border = np.int(border)
                             label = label[border : (self.label_size + border),
                                           border : (self.label_size + border),
                                           border : (self.label_size + border)]
