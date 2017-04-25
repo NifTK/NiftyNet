@@ -6,7 +6,7 @@ step = 0.1
 ext = .nii.gz
 
 #(choice between probabilistic labels 'prob' and discrete labels 'discrete')
-seg_type = discrete
+seg_type = prob
 
 # **statistical analysis system parameters
 save_csv_dir = /Users/wenqili/Desktop/Prepa_Wenqi
