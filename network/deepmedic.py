@@ -4,9 +4,11 @@ import tensorflow as tf
 from network.base_layer import BaseLayer
 from network.net_template import NetTemplate
 
-# reimplementation of DeepMedic:
-#    Kamnitsas et al., "Efficient multi-scale 3D CNN with fully connected
-#    CRF for accurate brain lesion segmentation", MedIA '17
+"""
+reimplementation of DeepMedic:
+  Kamnitsas et al., "Efficient multi-scale 3D CNN with fully connected
+  CRF for accurate brain lesion segmentation", MedIA '17
+"""
 class DeepMedic(NetTemplate):
     def __init__(self,
                  batch_size,

@@ -4,10 +4,11 @@ from network.base_layer import BaseLayer
 from network.net_template import NetTemplate
 
 
-# reimplementation of 3D U-net
-#   Çiçek et al., "3D U-Net: Learning dense Volumetric segmentation from
-#   sparse annotation", MICCAI '16
-#
+"""
+reimplementation of 3D U-net
+  Çiçek et al., "3D U-Net: Learning dense Volumetric segmentation from
+  sparse annotation", MICCAI '16
+"""
 class UNet_3D(NetTemplate):
     def __init__(self,
                  batch_size,

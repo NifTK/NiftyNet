@@ -6,9 +6,11 @@ from network.base_layer import BaseLayer
 from network.net_template import NetTemplate
 
 
-# implementation of HighRes3DNet:
-#    Li et al., "On the compactness, efficiency, and representation of 3D
-#    convolutional networks: Brain parcellation as a pretext task", IPMI '17
+"""
+implementation of HighRes3DNet:
+  Li et al., "On the compactness, efficiency, and representation of 3D
+  convolutional networks: Brain parcellation as a pretext task", IPMI '17
+"""
 class HighRes3DNet(NetTemplate):
     def __init__(self,
                  batch_size,
