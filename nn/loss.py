@@ -13,6 +13,8 @@ class LossFunction(object):
             loss_type, decay, reg_type))
 
     def set_loss_type(self, type_str):
+        # TODO raise an error if type_str is not a supported type of loss
+        # and give support for typo error
         if type_str == "CrossEntropy":
             self.data_loss_fun = cross_entropy
         elif type_str == "Dice":

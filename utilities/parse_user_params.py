@@ -70,7 +70,8 @@ def run():
         type=int)
     parser.add_argument(
         "--histogram_ref_file",
-        help="A reference of histogram for intensity normalisation")
+        help="A reference of histogram for intensity normalisation (optional)",
+        default="")
 
     parser.add_argument(
         "--num_gpus",
