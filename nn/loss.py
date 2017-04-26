@@ -13,16 +13,34 @@ class LossFunction(object):
             loss_type, decay, reg_type))
 
     def set_loss_type(self, type_str):
-        # TODO raise an error if type_str is not a supported type of loss
-        # and give support for typo error
-        if type_str == "CrossEntropy":
-            self.data_loss_fun = cross_entropy
-        elif type_str == "Dice":
-            self.data_loss_fun = dice
-        elif type_str == 'GDSC':
-            self.data_loss_fun = GDSC_loss
-        elif type_str == 'SensSpec':
-            self.data_loss_fun = sensitivity_specificity_loss
+        accepted_functions = {"CrossEntropy": cross_entropy,
+                              "Dice": dice,
+                              "GDSC": GDSC_loss,
+                              "SensSpec": sensitivity_specificity_loss}
+        if type_str in accepted_functions.keys():
+            self.data_loss_fun = accepted_functions[type_str]
+        else:
+            edit_distances = {}
+            for loss_name in accepted_functions.keys():
+                edit_distance = damerau_levenshtein_distance(loss_name, type_str)
+                if edit_distance <= 2:
+                    edit_distances[loss_name] = edit_distance
+            if edit_distances:
+                guess_at_correct_spelling = min(edit_distances, key=edit_distances.get)
+                raise ValueError(('By "{0}", did you mean "{1}"?\n '
+                                  '"{0}" is not a valid loss.').format(type_str, guess_at_correct_spelling))
+            else:
+                raise ValueError('Loss type "%s" is not found.' % type_str)
+
+
+                # if type_str == "CrossEntropy":
+                #     self.data_loss_fun = cross_entropy
+                # elif type_str == "Dice":
+                #     self.data_loss_fun = dice
+                # elif type_str == 'GDSC':
+                #     self.data_loss_fun = GDSC_loss
+                # elif type_str == 'SensSpec':
+                #     self.data_loss_fun = sensitivity_specificity_loss
 
     def set_regularisation_type(self, type_str):
         if type_str == "L2":
@@ -120,3 +138,32 @@ def dice(pred, labels):
     dice_score.set_shape([n_classes])
     # minimising average 1 - dice_coefficients
     return 1.0 - tf.reduce_mean(dice_score)
+
+
+def damerau_levenshtein_distance(s1, s2):
+    """Calculates an edit distance, for typo detection. Code based on : 
+    https://en.wikipedia.org/wiki/Damerau–Levenshtein_distance"""
+
+    d = {}
+    string_1_length = len(s1)
+    string_2_length = len(s2)
+    for i in range(-1, string_1_length + 1):
+        d[(i, -1)] = i + 1
+    for j in range(-1, string_2_length + 1):
+        d[(-1, j)] = j + 1
+
+    for i in range(string_1_length):
+        for j in range(string_2_length):
+            if s1[i] == s2[j]:
+                cost = 0
+            else:
+                cost = 1
+            d[(i, j)] = min(
+                d[(i - 1, j)] + 1,  # deletion
+                d[(i, j - 1)] + 1,  # insertion
+                d[(i - 1, j - 1)] + cost,  # substitution
+            )
+            if i and j and s1[i] == s2[j - 1] and s1[i - 1] == s2[j]:
+                d[(i, j)] = min(d[(i, j)], d[i - 2, j - 2] + cost)  # transposition
+
+    return d[string_1_length - 1, string_2_length - 1]
