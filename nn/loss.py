@@ -15,7 +15,7 @@ class LossFunction(object):
     def set_loss_type(self, type_str):
         accepted_functions = {"CrossEntropy": cross_entropy,
                               "Dice": dice,
-                              "GDSC": GDSC_loss,
+                              "GDSC": generalised_dice_loss,
                               "SensSpec": sensitivity_specificity_loss}
         if type_str in accepted_functions.keys():
             self.data_loss_fun = accepted_functions[type_str]
@@ -54,7 +54,7 @@ class LossFunction(object):
 
 
 # Generalised Dice score with different type weights
-def GDSC_loss(pred, labels, type_weight='Square'):
+def generalised_dice_loss(pred, labels, type_weight='Square'):
     n_voxels = labels.get_shape()[0].value
     n_classes = pred.get_shape()[1].value
     pred = tf.nn.softmax(pred)
@@ -75,12 +75,27 @@ def GDSC_loss(pred, labels, type_weight='Square'):
         weights = tf.ones_like(ref_vol)
     else:
         raise ValueError('The variable type_weight "%s" is not defined.' % type_weight)
-    GDSC = tf.reduce_sum(tf.multiply(weights, intersect)) / tf.reduce_sum(tf.multiply(weights, seg_vol + ref_vol))
-    return 1 - GDSC
+
+    generalised_dice_numerator = 2 * tf.reduce_sum(tf.multiply(weights, intersect))
+    generalised_dice_denominator = tf.reduce_sum(tf.multiply(weights, seg_vol + ref_vol))
+    generalised_dice_score = generalised_dice_numerator / generalised_dice_denominator
+    return 1 - generalised_dice_score
 
 
 # Sensitivity Specificity loss function adapted to work for multiple labels
 def sensitivity_specificity_loss(pred, labels, r=0.05):
+    """
+    Function to calculate a multiple-label version of the sensitivity-specificity loss defined in "Deep Convolutional 
+    Encoder Networks for Multiple Sclerosis Lesion Segmentation", Brosch et al, MICCAI 2015, 
+    https://link.springer.com/chapter/10.1007/978-3-319-24574-4_1
+
+    error is the sum of r(specificity part) and (1-r)(sensitivity part) 
+
+    :param pred: the logits (before softmax). 
+    :param labels: segmentation labels. 
+    :param r: the 'sensitivity ratio' (authors suggest anywhere from 0.01-0.10)
+    :return: the loss 
+    """
     n_voxels = labels.get_shape()[0].value
     n_classes = pred.get_shape()[1].value
     pred = tf.nn.softmax(pred)
@@ -89,14 +104,15 @@ def sensitivity_specificity_loss(pred, labels, r=0.05):
     one_hot = tf.SparseTensor(indices=ids,
                               values=[1.0] * n_voxels,
                               dense_shape=[n_voxels, n_classes])
-    one_hotB = 1 - tf.sparse_tensor_to_dense(one_hot)
-    SensSpec = tf.reduce_mean(
-        tf.add(tf.multiply(r, tf.reduce_sum(tf.multiply(tf.square(-1 * tf.sparse_add(-1 * pred, one_hot)) \
-                                                        , tf.sparse_tensor_to_dense(one_hot)),
-                                            0) / tf.sparse_reduce_sum(one_hot, 0)), \
-               tf.multiply((1 - r), tf.reduce_sum(tf.multiply(tf.square(-1 * tf.sparse_add(-1 * pred, one_hot)), \
-                                                              one_hotB), 0) / tf.reduce_sum(one_hotB, 0))))
-    return SensSpec
+    one_hot = tf.sparse_tensor_to_dense(one_hot)
+    # value of unity everywhere except for the previous 'hot' locations
+    one_cold = 1 - one_hot
+
+    squared_error = tf.square(one_hot - pred)
+    specificity_part = tf.reduce_sum(squared_error * one_hot, 0) / tf.reduce_sum(one_hot, 0)
+    sensitivity_part = tf.reduce_sum(tf.multiply(squared_error, one_cold), 0) / tf.reduce_sum(one_cold, 0)
+
+    return tf.reduce_sum(r * specificity_part + (1 - r) * sensitivity_part)
 
 
 def l2_reg_loss(scope):
