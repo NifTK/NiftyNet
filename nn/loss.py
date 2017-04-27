@@ -23,7 +23,7 @@ class LossFunction(object):
             edit_distances = {}
             for loss_name in accepted_functions.keys():
                 edit_distance = damerau_levenshtein_distance(loss_name, type_str)
-                if edit_distance <= 2:
+                if edit_distance <= 3:
                     edit_distances[loss_name] = edit_distance
             if edit_distances:
                 guess_at_correct_spelling = min(edit_distances, key=edit_distances.get)
@@ -31,16 +31,6 @@ class LossFunction(object):
                                   '"{0}" is not a valid loss.').format(type_str, guess_at_correct_spelling))
             else:
                 raise ValueError('Loss type "%s" is not found.' % type_str)
-
-
-                # if type_str == "CrossEntropy":
-                #     self.data_loss_fun = cross_entropy
-                # elif type_str == "Dice":
-                #     self.data_loss_fun = dice
-                # elif type_str == 'GDSC':
-                #     self.data_loss_fun = GDSC_loss
-                # elif type_str == 'SensSpec':
-                #     self.data_loss_fun = sensitivity_specificity_loss
 
     def set_regularisation_type(self, type_str):
         if type_str == "L2":
@@ -65,14 +55,15 @@ class LossFunction(object):
 
 # Generalised Dice score with different type weights
 def GDSC_loss(pred, labels, type_weight='Square'):
-    pred = tf.nn.softmax(pred)
     n_voxels = labels.get_shape()[0].value
     n_classes = pred.get_shape()[1].value
+    pred = tf.nn.softmax(pred)
     ids = tf.constant(np.arange(n_voxels), dtype=tf.int64)
     ids = tf.stack([ids, labels], axis=1)
     one_hot = tf.SparseTensor(indices=ids,
                               values=[1.0] * n_voxels,
                               dense_shape=[n_voxels, n_classes])
+
     ref_vol = tf.sparse_reduce_sum(one_hot, reduction_axes=[0]) + 0.1
     intersect = tf.sparse_reduce_sum(one_hot * pred, reduction_axes=[0])
     seg_vol = tf.reduce_sum(pred, 0) + 0.1
@@ -80,8 +71,10 @@ def GDSC_loss(pred, labels, type_weight='Square'):
         weights = tf.reciprocal(tf.square(ref_vol))
     elif type_weight == 'Simple':
         weights = tf.reciprocal(ref_vol)
+    elif type_weight == 'Uniform':
+        weights = tf.ones_like(ref_vol)
     else:
-        weights = tf.one_like(ref_vol)
+        raise ValueError('The variable type_weight "%s" is not defined.' % type_weight)
     GDSC = tf.reduce_sum(tf.multiply(weights, intersect)) / tf.reduce_sum(tf.multiply(weights, seg_vol + ref_vol))
     return 1 - GDSC
 
@@ -114,7 +107,7 @@ def l2_reg_loss(scope):
 
 
 def cross_entropy(pred, labels):
-    entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(pred, labels)
+    entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pred, labels=labels)
     return tf.reduce_mean(entropy)
 
 
@@ -136,7 +129,7 @@ def dice(pred, labels):
 
     dice_score = dice_numerator / (dice_denominator + epsilon_denominator)
     dice_score.set_shape([n_classes])
-    # minimising average 1 - dice_coefficients
+    # minimising (1 - dice_coefficients)
     return 1.0 - tf.reduce_mean(dice_score)
 
 

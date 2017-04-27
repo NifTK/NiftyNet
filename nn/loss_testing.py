@@ -1,10 +1,30 @@
-import tensorflow as tf
 import os
-from loss import dice, GDSC_loss, LossFunction
-import sys
-from io import StringIO
+
+import numpy as np
+import tensorflow as tf
+from loss import dice, LossFunction, GDSC_loss, cross_entropy
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
+
+
+# TODO check implementation of generalised dice (should it return dice scores for weights = uniform?)
+class GeneralisedDiceTest(tf.test.TestCase):
+    # def test_generalised_dice_score(self):
+    #     with self.test_session():
+    #         predicted = tf.constant([[0, 10], [10, 0], [10, 0], [10, 0]], dtype=tf.float32, name='predicted')
+    #         labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
+    #         one_minus_generalised_dice_score = GDSC_loss(predicted, labels)
+    #         print(one_minus_generalised_dice_score.eval())
+
+    def test_gdsc_incorrect_type_weight_error(self):
+        with self.test_session():
+            with self.assertRaises(ValueError) as cm:
+                predicted = tf.constant([[0, 10], [10, 0], [10, 0], [10, 0]], dtype=tf.float32, name='predicted')
+                labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
+                GDSC_loss(predicted, labels, type_weight='unknown')
+
+            self.assertAllEqual(str(cm.exception),
+                                'The variable type_weight "unknown" is not defined.')
 
 
 class DiceTest(tf.test.TestCase):
@@ -23,20 +43,21 @@ class DiceTest(tf.test.TestCase):
             self.assertAlmostEqual(one_minus_dice_score.eval(), 1.0)
 
 
-# TODO implement tests of other loss functions
-# class GeneralisedDiceTest(tf.test.TestCase):
-#     def test_generalised_dice_score(self):
-#         with self.test_session():
-#             predicted = tf.constant([[0, 10], [10, 0], [10, 0], [10, 0]], dtype=tf.float32, name='predicted')
-#             labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
-#             one_minus_generalised_dice_score = GDSC_loss(predicted, labels)
-#             print(one_minus_generalised_dice_score.eval())
+class CrossEntropyTests(tf.test.TestCase):
+    def test_cross_entropy_value(self):
+        # test value is -0.5 * [1 * log(e / (1+e)) + 1 * log(e^2 / (e^2 + 1))]
+        with self.test_session():
+            predicted = tf.constant([[0, 1], [2, 0]], dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0], dtype=tf.int64, name='labels')
+            computed_cross_entropy = cross_entropy(predicted, labels)
+            self.assertAlmostEqual(computed_cross_entropy.eval(),
+                                   -.5 * (np.log(np.e / (1 + np.e)) + np.log(np.e ** 2 / (1 + np.e ** 2))))
 
 
-class ErrorThrowingTest(tf.test.TestCase):
+class LossFunctionErrorsTest(tf.test.TestCase):
     """
-    These tests check that a ValueError is called for non-existent loss functions. 
-    It also checks that a suggestion is returned if the name is close to a real one.
+    These tests check that a ValueError is called for non-existent loss functions.
+    They also check that suggestions are returned if the name is close to a real one.
     """
 
     def test_value_error_for_bad_loss_function(self):
@@ -44,6 +65,7 @@ class ErrorThrowingTest(tf.test.TestCase):
             with self.assertRaises(ValueError):
                 LossFunction(0, loss_type='wrong answer')
 
+    # Note: sensitive to precise wording of ValueError message.
     def test_suggestion_for_dice_typo(self):
         with self.test_session():
             with self.assertRaises(ValueError) as cm:
