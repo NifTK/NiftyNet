@@ -2,12 +2,13 @@ import os
 
 import numpy as np
 import tensorflow as tf
-from loss import dice, LossFunction, generalised_dice_loss, cross_entropy, sensitivity_specificity_loss
+from nn.loss import dice, LossFunction, generalised_dice_loss, cross_entropy, sensitivity_specificity_loss
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
 
 
 class SensitivitySpecificityTests(tf.test.TestCase):
+    # before re-factoring the code
     def test_sens_spec_loss_by_regression(self):
         with self.test_session():
             predicted = tf.constant([[0, 10], [10, 0], [10, 0], [10, 0]], dtype=tf.float32, name='predicted')
@@ -15,14 +16,23 @@ class SensitivitySpecificityTests(tf.test.TestCase):
             test_loss = sensitivity_specificity_loss(predicted, labels)
             self.assertAlmostEqual(test_loss.eval(), 2.06106e-9)
 
+    def test_multi_label_sens_spec(self):
+        with self.test_session():
+            # answer calculated by hand -
+            predicted = tf.constant([[0, 1, 0], [0, 0, 1]], dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 2], dtype=tf.int64, name='labels')
+            test_loss = sensitivity_specificity_loss(predicted, labels, r=0.05)
+            self.assertAlmostEqual(test_loss.eval(), 0.14598623)
+
 
 class GeneralisedDiceTest(tf.test.TestCase):
-    def test_generalised_dice_score(self):
+    # test done by regression for refactoring purposes
+    def test_generalised_dice_score_regression(self):
         with self.test_session():
             predicted = tf.constant([[0, 10], [10, 0], [10, 0], [10, 0]], dtype=tf.float32, name='predicted')
             labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
             one_minus_generalised_dice_score = generalised_dice_loss(predicted, labels)
-            print(one_minus_generalised_dice_score.eval())
+            self.assertAlmostEqual(one_minus_generalised_dice_score.eval(), 0.0756148)
 
     def test_gdsc_incorrect_type_weight_error(self):
         with self.test_session():
@@ -34,12 +44,12 @@ class GeneralisedDiceTest(tf.test.TestCase):
             self.assertAllEqual(str(cm.exception),
                                 'The variable type_weight "unknown" is not defined.')
 
-    def test_generalised_dice_score_uniform(self):
+    def test_generalised_dice_score_uniform_regression(self):
         with self.test_session():
             predicted = tf.constant([[0, 10], [10, 0], [10, 0], [10, 0]], dtype=tf.float32, name='predicted')
             labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
             one_minus_generalised_dice_score = generalised_dice_loss(predicted, labels, type_weight='Uniform')
-            print(one_minus_generalised_dice_score.eval())
+            self.assertAlmostEqual(one_minus_generalised_dice_score.eval(), 0.0476623)
 
 
 class DiceTest(tf.test.TestCase):

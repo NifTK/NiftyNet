@@ -11,6 +11,7 @@ import tensorflow as tf
 
 LABEL_STRINGS = ['Label', 'LABEL', 'label']
 
+
 def average_grads(tower_grads):
     # average gradients computed from multiple GPUs
     ave_grads = []
@@ -27,6 +28,7 @@ def average_grads(tower_grads):
         ave_grads.append(grad_and_var)
     return ave_grads
 
+
 def _guess_fullname(data_dir, patient_id, modality):
     if not isinstance(modality, list):
         modality = [modality]
@@ -39,6 +41,7 @@ def _guess_fullname(data_dir, patient_id, modality):
             return n + '.nii.gz'
     return None
 
+
 def _split_fullname(name):
     lower_name = name.lower()
     if lower_name.endswith((".nii")):
@@ -48,11 +51,13 @@ def _split_fullname(name):
     else:
         return None
 
+
 def _guess_img_affine(data_dir, patient_id):
     # read volume affine from data folder for the patient_id
     first_mod = list_modality(data_dir)[0]
     file_name = _guess_fullname(data_dir, patient_id, first_mod)
     return nibabel.load(file_name).affine
+
 
 def list_patient(data_dir):
     id_list = []
@@ -62,6 +67,7 @@ def list_patient(data_dir):
             continue
         id_list.append(patient_id[0].split('_')[0])
     return np.unique(id_list).tolist()
+
 
 def list_modality(data_dir):
     # file name format: 'patient_modality.extension'
@@ -74,6 +80,7 @@ def list_modality(data_dir):
         if modality not in LABEL_STRINGS:
             mod_list.append(modality)
     return np.unique(mod_list).tolist()
+
 
 def load_file(data_dir, patient_id, with_seg=False):
     # file name format is assumed to be 'patient_modality.extension'
@@ -93,9 +100,10 @@ def load_file(data_dir, patient_id, with_seg=False):
     if not with_seg:
         return img_data, None
     seg_name = _guess_fullname(data_dir, patient_id, LABEL_STRINGS)
-    seg_data = nibabel.load(seg_name).get_data().astype(np.int64)\
+    seg_data = nibabel.load(seg_name).get_data().astype(np.int64) \
         if seg_name is not None else None
     return img_data, seg_data
+
 
 def list_files(img_dir, ext='.nii.gz'):
     names = [fn for fn in os.listdir(img_dir) if fn.lower().endswith(ext)]
@@ -103,6 +111,7 @@ def list_files(img_dir, ext='.nii.gz'):
         print('no files in {}'.format(img_dir))
         raise IOError
     return names
+
 
 def has_bad_inputs(args):
     print('Input params:')
@@ -113,11 +122,12 @@ def has_bad_inputs(args):
             print('{} not set in the config file'.format(arg))
             return True
     ## at each iteration [batch_size] samples will be read from queue
-    #if args.queue_length < args.batch_size:
+    # if args.queue_length < args.batch_size:
     #    print('queue_length ({}) should be >= batch_size ({}).'.format(
     #        args.queue_length, args.batch_size))
     #    return True
     return False
+
 
 def volume_of_zeros_like(data_dir, patient_name, mod_name, d_type=np.int64):
     # initialise a 3D volume of zeros, with the same shape as image_names
@@ -126,6 +136,7 @@ def volume_of_zeros_like(data_dir, patient_name, mod_name, d_type=np.int64):
     ori_img = ori_img[:, :, :, 0] if ori_img.ndim == 4 else ori_img
     new_volume = np.zeros_like(ori_img, dtype=d_type)
     return new_volume
+
 
 def save_segmentation(param, pat_name, pred_img):
     if pat_name is None:
@@ -183,6 +194,7 @@ class CacheFunctionOutput(object):
     this provides a decorator to cache function outputs
     to avoid repeating some heavy function computations
     """
+
     def __init__(self, func):
         self.func = func
 
@@ -203,3 +215,32 @@ class CacheFunctionOutput(object):
         except KeyError:
             value = cache[key] = self.func(*args, **kw)
         return value
+
+
+def damerau_levenshtein_distance(s1, s2):
+    """Calculates an edit distance, for typo detection. Code based on : 
+    https://en.wikipedia.org/wiki/Damerau–Levenshtein_distance"""
+
+    d = {}
+    string_1_length = len(s1)
+    string_2_length = len(s2)
+    for i in range(-1, string_1_length + 1):
+        d[(i, -1)] = i + 1
+    for j in range(-1, string_2_length + 1):
+        d[(-1, j)] = j + 1
+
+    for i in range(string_1_length):
+        for j in range(string_2_length):
+            if s1[i] == s2[j]:
+                cost = 0
+            else:
+                cost = 1
+            d[(i, j)] = min(
+                d[(i - 1, j)] + 1,  # deletion
+                d[(i, j - 1)] + 1,  # insertion
+                d[(i - 1, j - 1)] + cost,  # substitution
+            )
+            if i and j and s1[i] == s2[j - 1] and s1[i - 1] == s2[j]:
+                d[(i, j)] = min(d[(i, j)], d[i - 2, j - 2] + cost)  # transposition
+
+    return d[string_1_length - 1, string_2_length - 1]

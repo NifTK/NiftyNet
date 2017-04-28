@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import tensorflow as tf
+import utilities.misc as util
 
 
 class LossFunction(object):
@@ -22,7 +23,7 @@ class LossFunction(object):
         else:
             edit_distances = {}
             for loss_name in accepted_functions.keys():
-                edit_distance = damerau_levenshtein_distance(loss_name, type_str)
+                edit_distance = util.damerau_levenshtein_distance(loss_name, type_str)
                 if edit_distance <= 3:
                     edit_distances[loss_name] = edit_distance
             if edit_distances:
@@ -93,7 +94,7 @@ def sensitivity_specificity_loss(pred, labels, r=0.05):
 
     :param pred: the logits (before softmax). 
     :param labels: segmentation labels. 
-    :param r: the 'sensitivity ratio' (authors suggest anywhere from 0.01-0.10)
+    :param r: the 'sensitivity ratio' (authors suggest values from 0.01-0.10 will have similar effects)
     :return: the loss 
     """
     n_voxels = labels.get_shape()[0].value
@@ -108,9 +109,13 @@ def sensitivity_specificity_loss(pred, labels, r=0.05):
     # value of unity everywhere except for the previous 'hot' locations
     one_cold = 1 - one_hot
 
+    # chosen region may contain no voxels of a given label. Prevents nans.
+    epsilon_denominator = 1e-5
+
     squared_error = tf.square(one_hot - pred)
-    specificity_part = tf.reduce_sum(squared_error * one_hot, 0) / tf.reduce_sum(one_hot, 0)
-    sensitivity_part = tf.reduce_sum(tf.multiply(squared_error, one_cold), 0) / tf.reduce_sum(one_cold, 0)
+    specificity_part = tf.reduce_sum(squared_error * one_hot, 0) / (tf.reduce_sum(one_hot, 0) + epsilon_denominator)
+    sensitivity_part = (tf.reduce_sum(tf.multiply(squared_error, one_cold), 0) /
+                        (tf.reduce_sum(one_cold, 0) + epsilon_denominator))
 
     return tf.reduce_sum(r * specificity_part + (1 - r) * sensitivity_part)
 
@@ -147,32 +152,3 @@ def dice(pred, labels):
     dice_score.set_shape([n_classes])
     # minimising (1 - dice_coefficients)
     return 1.0 - tf.reduce_mean(dice_score)
-
-
-def damerau_levenshtein_distance(s1, s2):
-    """Calculates an edit distance, for typo detection. Code based on : 
-    https://en.wikipedia.org/wiki/Damerau–Levenshtein_distance"""
-
-    d = {}
-    string_1_length = len(s1)
-    string_2_length = len(s2)
-    for i in range(-1, string_1_length + 1):
-        d[(i, -1)] = i + 1
-    for j in range(-1, string_2_length + 1):
-        d[(-1, j)] = j + 1
-
-    for i in range(string_1_length):
-        for j in range(string_2_length):
-            if s1[i] == s2[j]:
-                cost = 0
-            else:
-                cost = 1
-            d[(i, j)] = min(
-                d[(i - 1, j)] + 1,  # deletion
-                d[(i, j - 1)] + 1,  # insertion
-                d[(i - 1, j - 1)] + cost,  # substitution
-            )
-            if i and j and s1[i] == s2[j - 1] and s1[i - 1] == s2[j]:
-                d[(i, j)] = min(d[(i, j)], d[i - 2, j - 2] + cost)  # transposition
-
-    return d[string_1_length - 1, string_2_length - 1]
