@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import tensorflow as tf
-from network.base_layer import BaseLayer
-from network.net_template import NetTemplate
+from src.network.base_layer import BaseLayer
+from src.network.net_template import NetTemplate
+
 
 """
 reimplementation of DeepMedic:
@@ -10,6 +11,7 @@ reimplementation of DeepMedic:
   CRF for accurate brain lesion segmentation", MedIA '17
 """
 class DeepMedic(NetTemplate):
+
     def __init__(self,
                  batch_size,
                  image_size,
@@ -49,7 +51,6 @@ class DeepMedic(NetTemplate):
             "3x3x3 convolution {} kernels\n" \
             "Classifiying {} classes".format(
                 self.name, self.conv_fea, self.num_classes))
-
 
     def inference(self, images, layer_id=None):
         BaseLayer._print_activations(images)
@@ -99,7 +100,6 @@ class DeepMedic(NetTemplate):
             [[0, 0], [0, 0], [0, 0]])
         return fea_maps
 
-
     def _downsample(self, images):
         # downsample the larger context to get the downsampled pathway
         # by a factor of self.d_factor
@@ -114,7 +114,6 @@ class DeepMedic(NetTemplate):
             [1, self.d_factor, self.d_factor, self.d_factor, 1],
             padding='VALID')
         return downsampled
-
 
     def _crop(self, images):
         # crop the normal pathway input from a larger context

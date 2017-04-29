@@ -44,8 +44,9 @@ class LossFunction(object):
             reg_loss = self.reg_loss_fun(var_scope)
             return tf.add(data_loss, self.decay * reg_loss, name='total_loss')
 
+
 # Generalised Dice score with different type weights
-def GDSC_loss(pred,labels,type_weight='Square'):
+def GDSC_loss(pred, labels, type_weight='Square'):
     pred = tf.nn.softmax(pred)
     n_voxels = labels.get_shape()[0].value
     n_classes = pred.get_shape()[1].value
@@ -57,17 +58,18 @@ def GDSC_loss(pred,labels,type_weight='Square'):
     ref_vol = tf.sparse_reduce_sum(one_hot,reduction_axes=[0])+0.1
     intersect = tf.sparse_reduce_sum(one_hot * pred , reduction_axes=[0])
     seg_vol = tf.reduce_sum(pred,0)+0.1
-    if type_weight=='Square':
+    if type_weight == 'Square':
         weights = tf.reciprocal(tf.square(ref_vol))
-    elif type_weight=='Simple':
+    elif type_weight == 'Simple':
         weights = tf.reciprocal(ref_vol)
     else:
         weights = tf.one_like(ref_vol)
-    GDSC = tf.reduce_sum(tf.multiply(weights,intersect))/tf.reduce_sum(tf.multiply(weights,seg_vol+ref_vol))
+    GDSC = tf.reduce_sum(tf.multiply(weights,intersect))/ \
+            tf.reduce_sum(tf.multiply(weights, seg_vol+ref_vol))
     return 1-GDSC
 
 # Sensitivity Specificity loss function adapted to work for multiple labels
-def SensSpec_loss(pred,labels,r=0.05):
+def SensSpec_loss(pred, labels, r=0.05):
     n_voxels = labels.get_shape()[0].value
     n_classes = pred.get_shape()[1].value
     pred = tf.nn.softmax(pred)
@@ -77,11 +79,12 @@ def SensSpec_loss(pred,labels,r=0.05):
                               values=[1.0] * n_voxels,
                               dense_shape=[n_voxels, n_classes])
     one_hotB = 1 - tf.sparse_tensor_to_dense(one_hot)
-    SensSpec = tf.reduce_mean(tf.add(tf.multiply(r , tf.reduce_sum(tf.multiply(tf.square(-1*tf.sparse_add(-1*pred , one_hot)) \
+    SensSpec = tf.reduce_mean(tf.add(tf.multiply(r, tf.reduce_sum(tf.multiply(tf.square(-1*tf.sparse_add(-1*pred, one_hot)) \
                , tf.sparse_tensor_to_dense(one_hot)), 0) / tf.sparse_reduce_sum(one_hot, 0)),\
-                tf.multiply((1 - r) , tf.reduce_sum(tf.multiply(tf.square(-1*tf.sparse_add(-1*pred, one_hot)), \
+                tf.multiply((1 - r), tf.reduce_sum(tf.multiply(tf.square(-1*tf.sparse_add(-1*pred, one_hot)), \
                 one_hotB), 0) / tf.reduce_sum(one_hotB, 0))))
     return SensSpec
+
 
 def l2_reg_loss(scope):
     if tf.get_collection('reg_var', scope) == []:

@@ -13,20 +13,20 @@ class VolumeSampler(object):
                  patients, modalities,
                  batch_size, image_size, label_size,
                  volume_padding, volume_hist_path, sample_per_volume=0,
-                 dict_preprocess={'rotation':1,
-                                  'normalisation':1,
-                                  'spatial_scaling':1},
-                 sample_opts={'comp_label_values':[0],
-                              'minimum_sampling_elements':[0],
-                              'minimum_ratio':[0.01],
-                              'min_numb_labels':1}):
+                 dict_preprocess={'rotation': 1,
+                                  'normalisation': 1,
+                                  'spatial_scaling': 1},
+                 sample_opts={'comp_label_values': [0],
+                              'minimum_sampling_elements': [0],
+                              'minimum_ratio': [0.01],
+                              'min_numb_labels': 1},
+                 ):
         self.patients = patients
         self.modalities = modalities
         self.batch_size = batch_size
         self.image_size = image_size
         self.label_size = label_size
         self.padding = volume_padding
-
         self.sample_per_volume = sample_per_volume
         self.preprocessor = HistNormaliser(volume_hist_path)
         self.sample_opts = sample_opts
@@ -151,7 +151,7 @@ class VolumeSampler(object):
                 if self.dict_preprocess['spatial_scaling'] ==1:
                     # volume-level data augmentation
                     img, seg = dataug.rand_spatial_scaling(img, seg)
-                if self.dict_preprocess['normalisation']==1:
+                if self.dict_preprocess['normalisation'] == 1:
                     # intensity histogram normalisation (randomised)
                     img = self.preprocessor.intensity_normalisation(img, True)
                 if self.padding > 0:

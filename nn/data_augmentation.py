@@ -21,6 +21,7 @@ def rand_window_location_3d(img_size_3d, win_size, n_samples):
     locations = np.stack((x_start, x_end, y_start, y_end, z_start, z_end)).T
     return locations
 
+
 def grid_window_location_3d(img_size_3d, win_size, grid_size):
     if grid_size <= 0:
         return None
@@ -43,6 +44,7 @@ def grid_window_location_3d(img_size_3d, win_size, grid_size):
     locations = np.stack((x_start, x_end, y_start, y_end, z_start, z_end)).T
     return locations
 
+
 def rand_rotation_3d(img, seg, max_angle=10):
     # generate transformation
     angle_x = np.random.randint(-max_angle, max_angle) * np.pi / 180.0
@@ -63,11 +65,42 @@ def rand_rotation_3d(img, seg, max_angle=10):
     c_offset = center_ - center_.dot(transform)
     # apply transformation to each volume
     for mod_i in range(img.shape[-1]):
-        img[:,:,:,mod_i] = scipy.ndimage.affine_transform(
-            img[:,:,:,mod_i], transform.T, c_offset, order=3)
+        img[:, :, :, mod_i] = scipy.ndimage.affine_transform(
+            img[:, :, :, mod_i], transform.T, c_offset, order=3)
     seg = scipy.ndimage.affine_transform(
         seg, transform.T, c_offset, order=0)
     return img.astype(np.float), seg.astype(np.int64)
+
+
+def rand_biasfield_3d(shape, max_range, pixdim=(1, 1, 1), order=3):
+    bias_field = np.zeros(shape)
+    x_p = np.arange(0, shape[0]*pixdim[0], step=pixdim[0])/(shape[0]*pixdim[0])-0.5
+    y_p = np.arange(0, shape[1]*pixdim[1], step=pixdim[1])/(shape[1]*pixdim[1])-0.5
+    z_p = np.arange(0, shape[2] * pixdim[2], step=pixdim[2]) / (shape[2] * pixdim[2]) - 0.5
+    meshgrid = np.vstack(np.meshgrid(x_p, y_p, z_p)).reshape(3, -1).T
+    for x_i in range(0, order+1):
+        order_fin = x_i
+        for y_i in range(0, order+1-order_fin):
+            order_fin = y_i + order_fin
+            for z_i in range(0, order+1-order_fin):
+                random_coeff = (2*max_range)*np.random.ranf()-max_range
+                function_bias = random_coeff * (np.power(meshgrid[:, 0], x_i) + np.power(meshgrid[:, 1], y_i) + np.power(meshgrid[:, 2], z_i))
+                function_to_add = np.reshape(function_bias, shape)
+                bias_field = bias_field + function_to_add
+    return np.exp(bias_field)
+
+
+def apply_rand_biasfield(img, max_range, pixdim=(1, 1, 1), order=3):
+    shape = img.shape
+    if img.ndim == 3:
+        bias_field = rand_biasfield_3d(shape, max_range=max_range, pixdim=pixdim, order=order)
+        return img * bias_field
+    if img.ndim == 4:
+        bias_field = np.zeros(shape)
+        for n in range(0,shape[3]):
+            bias_field[:, :, :, n] = rand_biasfield_3d(shape[0:3], max_range=max_range, pixdim=pixdim, order=order)
+        return img * bias_field
+
 
 def rand_spatial_scaling(img, seg=None, percentage=10):
     rand_zoom = (np.random.randint(-percentage, percentage) + 100.0) / 100.0
@@ -77,6 +110,7 @@ def rand_spatial_scaling(img, seg=None, percentage=10):
         if seg is not None else None
     return img, seg
 
+
 def __enumerate_step_points(starting, ending, win_size, step_size):
     sampling_point_set = []
     while (starting + win_size) <= ending:
@@ -84,3 +118,12 @@ def __enumerate_step_points(starting, ending, win_size, step_size):
         starting = starting + step_size
     sampling_point_set.append(np.max((ending - win_size, 0)))
     return np.unique(sampling_point_set).flatten()
+
+
+def create_seg_from_distance(img,list_thresholds):
+    labels = np.sort(list_thresholds)
+    seg = np.copy(img)
+    for t in range(len(list_thresholds), 0, -1):
+        seg[seg > labels[t]] = t
+    return seg
+
