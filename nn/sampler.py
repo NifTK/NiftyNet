@@ -69,7 +69,7 @@ class VolumeSampler(object):
                     seg = np.pad(seg, self.padding, 'minimum')
                 if self.dict_preprocess['rotation']==1:
                     # volume-level randomised rotation
-                    cuboid, label = dataug.rand_rotation_3d(cuboid, label)
+                    img, seg = dataug.rand_rotation_3d(img, seg)
                 # randomly sample windows from the volume
                 location = dataug.rand_window_location_3d(
                     img.shape, self.image_size, self.sample_per_volume)
