@@ -74,7 +74,6 @@ The basic picture of training procedure (data parallelism) is:
                                    |^|              |      |
                (nn/input_queue.py) |^|     sync   GPU_1  GPU_2   ...
                                    |^|     +----> model  model (network/*.py)
-                                   |^|     |        |      |
 with multiple threads:             |^|     |        |      |
               (nn/preprocess.py)   |^|    CPU       v      v (nn/loss.py)
 image&label ->> (nn/sampler.py)  ->> |   model <----+------+
