@@ -16,9 +16,9 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 * Python 2.7
 * Tensorflow 1.0
 * Nibabel 2.1
-* Numpy  1.12
+* Numpy 1.12
 * Scipy 0.19
-* medpy-0.2.2
+* medpy 0.2.2
 
 
 ### Usage
@@ -26,15 +26,16 @@ To train a "toynet" specified in `network/toynet.py`:
 ``` sh
 cd NiftyNet/
 python run_application.py train --net_name toynet \
---train_data_dir ./example_volumes/monomodal_parcellation \
---image_size 42 --label_size 42 --batch_size 1
+    --train_data_dir ./example_volumes/monomodal_parcellation \
+    --image_size 42 --label_size 42 --batch_size 1
 ```
 After the training process, to do segmentation with a trained "toynet":
 ``` sh
 cd NiftyNet/
 python run_application.py inference --net_name toynet \
---eval_data_dir ./example_volumes/monomodal_parcellation --save_seg_dir ./seg_output \
---image_size 64 --label_size 64 --batch_size 4
+    --eval_data_dir ./example_volumes/monomodal_parcellation \
+    --save_seg_dir ./seg_output \
+    --image_size 64 --label_size 64 --batch_size 4
 ```
 *Commandline parameters override the default settings defined in `config/default_config.txt`.*
 
@@ -66,16 +67,18 @@ Only nifty files (extension .nii or .nii.gz) are supported.
 ### Structure
 The basic picture of training procedure (data parallelism) is:
 ```
-<Multi-GPU training>                      (training.py)
-                                 |>----------------------+
-                                 |>---------------+      |
-                                 |^|              |      |
-                      (queue.py) |^|     sync   GPU_1  GPU_2   ...
-                                 |^|     +----> model  model (network/*.py)
-with multiple threads:           |^|     |        |      |
-               (preprocess.py)   |^|    CPU       v      v (loss.py)
-image&label -->> (sampler.py) -->> |   model <----+------+
-(*.nii.gz)   (data_augmentation.py)    update     stochastic gradients
+<Multi-GPU training>
+                                         (nn/training.py)
+                                   |>----------------------+
+                                   |>---------------+      |
+                                   |^|              |      |
+               (nn/input_queue.py) |^|     sync   GPU_1  GPU_2   ...
+                                   |^|     +----> model  model (network/*.py)
+                                   |^|     |        |      |
+with multiple threads:             |^|     |        |      |
+              (nn/preprocess.py)   |^|    CPU       v      v (nn/loss.py)
+image&label ->> (nn/sampler.py)  ->> |   model <----+------+
+(*.nii.gz)  (nn/data_augmentation.py)|   update    stochastic gradients
 ```
 
 ### Citation
