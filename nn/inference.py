@@ -32,7 +32,7 @@ def run(net, param):
     if sampling_grid_size <= 0:
         print('Param error: non-positive sampling grid_size')
         return None
-    sample_generator = rand_sampler.grid_samples_from(
+    sample_generator = rand_sampler.grid_sampling_from(
         param.eval_data_dir, sampling_grid_size, yield_seg=False)
 
     # construct graph

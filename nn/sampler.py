@@ -32,68 +32,6 @@ class VolumeSampler(object):
         self.sample_opts = sample_opts
         self.dict_preprocess = dict_preprocess
 
-
-    def training_samples_from(self, data_dir):
-        # generate random cubic samples/segmentation maps with augmentations
-        def sampler_iterator():
-            print('New thread: Random samples from'\
-                  ' {} modality, {} patients.'.format(
-                self.modalities, len(self.patients)))
-            self.adapt_sample_opts()
-            while True:
-                idx = np.random.randint(0, len(self.patients))
-                img, seg = util.load_file(data_dir,
-                                          self.patients[idx],
-                                          with_seg=True)
-                if self.dict_preprocess['spatial_scaling'] ==1:
-                    # volume-level data augmentation
-                    img, seg = dataug.rand_spatial_scaling(img, seg)
-                if self.dict_preprocess['normalisation']==1:
-                    # intensity histogram normalisation (randomised)
-                    img = self.preprocessor.intensity_normalisation(img, True)
-                # padding to alleviate volume level boundary effects
-                if self.padding > 0:
-                    img = [np.pad(img[:, :, :, mod_i], self.padding, 'minimum')
-                           for mod_i in range(img.shape[-1])]
-                    img = np.stack(img, axis=-1)
-                    seg = np.pad(seg, self.padding, 'minimum')
-
-                # randomly sample windows from the volume
-                if self.sample_opts['minimum_ratio']==[0] \
-                        and self.sample_opts['minimum_sampling_elements']==[0] \
-                        and self.sample_opts['min_numb_labels']==1 \
-                        and len(self.sample_opts['comp_label_values'])==0:
-                    location = dataug.rand_window_location_3d(
-                        img.shape, self.image_size, self.sample_per_volume)
-                else:
-                    print('dealing with specific sampling ')
-                    location = []
-                    for t in range(self.sample_per_volume):
-                        #print ('doing ',t)
-                        location.append(self.strategic_sampling(seg))
-                    location = np.asarray(location)
-                for t in range(self.sample_per_volume):
-                    x_, _x, y_, _y, z_, _z = location[t]
-
-                    cuboid = img[x_:_x, y_:_y, z_:_z, :]
-                    label = seg[x_:_x, y_:_y, z_:_z]
-                    if self.dict_preprocess['rotation']==1:
-                        # TODO rotation should be applied before extracting a subwindow
-                        # to avoid loss of information
-                        cuboid, label = dataug.rand_rotation_3d(cuboid, label)
-                    info = np.asarray(
-                        [idx, x_, y_, z_, _x, _y, _z], dtype=np.int64)
-                    if self.label_size < self.image_size:
-                        border = np.int((self.image_size - self.label_size) / 2)
-                        label = label[border : (self.label_size + border),
-                                      border : (self.label_size + border),
-                                      border : (self.label_size + border)]
-                    #print('%s, %d'%(file_, t))
-                    #print('sample from: %dx%dx%d'%(x_,y_,z_))
-                    #print('sample to: %dx%dx%d'%(_x,_y,_z))
-                    yield cuboid, label, info
-        return sampler_iterator
-
     # Function to make the sample_opts consistent if some fields are missing
     def adapt_sample_opts(self):
         print('adaptation of sample_opts')
@@ -107,111 +45,61 @@ class VolumeSampler(object):
             self.sample_opts['min_numb_labels'] = 1
         if 'flag_pad_effect' not in self.sample_opts.keys():
             self.sample_opts['flag_pad_effect'] = 0
-        return
 
-    def adapt_dict_preprocess(self):
-        if 'rotation' not in self.dict_preprocess.keys():
-            self.dict_preprocess['rotation'] = 1
-        if 'spatial_scaling' not in self.dict_preprocess.keys():
-            self.dict_preprocess['spatial_scaling'] = 1
-        if 'normalisation' not in self.dict_preprocess.keys():
-            self.dict_preprocess['normalisation'] = 1
-        return
+    def uniform_sampling_from(self, data_dir):
+        def sampler_iterator():
+            print('New thread: uniform random samples from'\
+                    ' {} modality, {} patients.'.format(
+                        self.modalities, len(self.patients)))
+            while True:
+                idx = np.random.randint(0, len(self.patients))
+                img, seg = util.load_file(
+                        data_dir, self.patients[idx], with_seg=True)
+                if self.dict_preprocess['spatial_scaling'] == 1:
+                    # volume-level data augmentation
+                    img, seg = dataug.rand_spatial_scaling(img, seg)
+                if self.dict_preprocess['normalisation'] == 1:
+                    # intensity histogram normalisation (randomised)
+                    img = self.preprocessor.intensity_normalisation(img, True)
+                if self.padding > 0:
+                    # padding to alleviate volume level boundary effects
+                    img = [np.pad(img[:, :, :, mod_i], self.padding, 'minimum')
+                           for mod_i in range(img.shape[-1])]
+                    img = np.stack(img, axis=-1)
+                    seg = np.pad(seg, self.padding, 'minimum')
+                if self.dict_preprocess['rotation']==1:
+                    # volume-level randomised rotation
+                    cuboid, label = dataug.rand_rotation_3d(cuboid, label)
+                # randomly sample windows from the volume
+                location = dataug.rand_window_location_3d(
+                    img.shape, self.image_size, self.sample_per_volume)
+                for t in range(self.sample_per_volume):
+                    x_, _x, y_, _y, z_, _z = location[t]
+                    cuboid = img[x_:_x, y_:_y, z_:_z, :]
+                    label = seg[x_:_x, y_:_y, z_:_z]
+                    info = np.asarray(
+                        [idx, x_, y_, z_, _x, _y, _z], dtype=np.int64)
+                    if self.label_size < self.image_size:
+                        border = np.int((self.image_size - self.label_size) / 2)
+                        label = label[border : (self.label_size + border),
+                                      border : (self.label_size + border),
+                                      border : (self.label_size + border)]
+                    #print('%s, %d'%(file_, t))
+                    #print('sample from: %dx%dx%d'%(x_,y_,z_))
+                    #print('sample to: %dx%dx%d'%(_x,_y,_z))
+                    yield cuboid, label, info
+        return sampler_iterator
 
-    def strategic_sampling(self, seg):
-        # get the number of labels
-        uni, counts = np.unique(np.array(seg).flatten(),return_counts=True)
-        Lcomp_values = 0
-        if len(self.sample_opts['comp_label_values'])==0:
-            Lcomp_values=0
-        else:
-            Lcomp_values=len(self.sample_opts['comp_label_values'])
-
-        if len(uni) < self.sample_opts['min_numb_labels']\
-                and self.min_numb_labels > Lcomp_values:
-            min_nlab = len(uni)
-        else:
-            min_nlab=self.sample_opts['min_numb_labels']
-
-        flag_test = 0
-        iter =0
-        while flag_test==0 and iter<200:
-            flag_test = 1
-            iter = iter+1
-            location = dataug.rand_window_location_3d(
-                seg.shape, self.image_size, 1)
-            xs = location[0,0]
-            xe = location[0,1]
-            ys = location[0,2]
-            ye = location[0,3]
-            zs = location[0,4]
-            ze = location[0,5]
-            if self.sample_opts['flag_pad_effect']:
-                seg_test = seg[xs+self.padding:xe-self.padding,
-                               ys+self.padding:ye-self.padding,
-                               zs+self.padding:ze-self.padding]
-            else:
-                seg_test = seg[xs:xe, ys:ye, zs:ze]
-            uni_test, count_test = np.unique(np.array(seg_test).flatten(),return_counts=1)
-            if Lcomp_values > 0:
-                inter = [val for val in uni_test if val in self.sample_opts['comp_label_values']]
-            flag_test = 1
-            numb_add_toCheck = min_nlab
-            new_values = uni_test.copy()
-            numb_checked = 0
-            if len(inter) < Lcomp_values:
-                flag_test = 0
-                continue
-            elif len(uni_test)<min_nlab:
-                flag_test =0
-                continue
-            elif Lcomp_values>0:
-                indices = []
-                indices = np.arange(np.array(uni_test).shape[0])[np.in1d(np.array(uni_test),inter)]
-                indices_uni = np.arange(np.array(uni_test).shape[0])[np.in1d(np.array(uni_test), inter)]
-                if len(indices)==0:
-                    indices = [-1]
-                min_sample = [0]
-                min_ratio = [0]
-                if len(self.sample_opts['minimum_sampling_elements'])!=0:
-                    if len(self.sample_opts['minimum_sampling_elements'])>=len(indices) and len(list(set(indices) - set([-1])))>0:
-                        min_sample = [self.sample_opts['minimum_sampling_elements'][i] for i in range(len(indices))]
-                    else :
-                        min_sample = [np.min(self.sample_opts['minimum_sampling_elements']) for i in range(0,len(inter))]
-                    for i in range(0,len(inter)):
-                        if np.count_nonzero(seg_test == inter[i])<min_sample[i]:
-                            flag_test = 0
-                            break
-                if len(self.sample_opts['minimum_sampling_elements'])!=0:
-                    if len(self.sample_opts['minimum_ratio'])>=len(indices):
-                        min_ratio = [self.sample_opts['minimum_ratio'][i] for i in range(len(indices))]
-                    else:
-                        min_ratio =[np.min(self.sample_opts['minimum_ratio']) for i in range(len(inter))]
-                    for i in range(0,len(inter)):
-                        if np.count_nonzero(seg_test == inter[i])/np.size(seg_test) < min_ratio[i]:
-                            flag_test = 0
-                numb_add_toCheck = min_nlab - len(indices)
-                new_values = [element for i, element in enumerate(uni_test) if i not in indices]
-            if numb_add_toCheck > 0:
-                for i in range(0,len(new_values)):
-                    if np.count_nonzero(seg_test == new_values[i]) >= np.min(min_sample) and np.count_nonzero(seg_test == new_values[i])/np.size(seg_test) >= np.min(min_ratio):
-                        numb_checked+=1
-                if numb_checked < numb_add_toCheck:
-                    flag_test = 0
-        #print('success after', iter)
-        return location[0]
-
-
-    def grid_samples_from(self, data_dir, grid_size, yield_seg=False):
+    def grid_sampling_from(self, data_dir, grid_size, yield_seg=False):
         # generate dense samples from a fixed sampling grid
         def sampler_iterator():
             for idx in range(len(self.patients)):
                 print('{} of {} loading {}'.format(
                     idx + 1, len(self.patients), self.patients[idx]))
-                img, seg = util.load_file(data_dir,
-                                          self.patients[idx],
-                                          with_seg=yield_seg)
-                img = self.preprocessor.intensity_normalisation(img)
+                img, seg = util.load_file(
+                        data_dir, self.patients[idx], with_seg=yield_seg)
+                if self.dict_preprocess['normalisation'] == 1:
+                    img = self.preprocessor.intensity_normalisation(img)
                 if self.padding > 0:
                     img = [np.pad(img[:,:,:,mod_i], self.padding, 'minimum')
                            for mod_i in range(img.shape[-1])]
@@ -238,7 +126,8 @@ class VolumeSampler(object):
                     if seg is not None:
                         label = seg[x_:_x, y_:_y, z_:_z]
                         if self.label_size < self.image_size:
-                            border = np.int((self.image_size - self.label_size) / 2)
+                            border = np.int(
+                                    (self.image_size - self.label_size) / 2)
                             label = label[border : (self.label_size + border),
                                           border : (self.label_size + border),
                                           border : (self.label_size + border)]
@@ -246,3 +135,128 @@ class VolumeSampler(object):
                     else:
                         yield cuboid, info
         return sampler_iterator
+
+    def non_uniform_sampling_from(self, data_dir):
+        # generate random cubic samples/segmentation maps with augmentations
+        def sampler_iterator():
+            print('New thread: Random samples from'\
+                    ' {} modality, {} patients.'.format(
+                      self.modalities, len(self.patients)))
+            self.adapt_sample_opts()
+            while True:
+                idx = np.random.randint(0, len(self.patients))
+                img, seg = util.load_file(data_dir,
+                                          self.patients[idx],
+                                          with_seg=True)
+                if self.dict_preprocess['spatial_scaling'] ==1:
+                    # volume-level data augmentation
+                    img, seg = dataug.rand_spatial_scaling(img, seg)
+                if self.dict_preprocess['normalisation']==1:
+                    # intensity histogram normalisation (randomised)
+                    img = self.preprocessor.intensity_normalisation(img, True)
+                if self.padding > 0:
+                    # padding to alleviate volume level boundary effects
+                    img = [np.pad(img[:, :, :, mod_i], self.padding, 'minimum')
+                           for mod_i in range(img.shape[-1])]
+                    img = np.stack(img, axis=-1)
+                    seg = np.pad(seg, self.padding, 'minimum')
+                if self.dict_preprocess['rotation']==1:
+                    cuboid, label = dataug.rand_rotation_3d(cuboid, label)
+
+                # randomly sample windows from the volume
+                print('dealing with specific sampling ')
+                location = [self.strategic_sampling(seg)\
+                        for t in range(self.sample_per_volume)]
+                location = np.asarray(location)
+                for t in range(self.sample_per_volume):
+                    x_, _x, y_, _y, z_, _z = location[t]
+
+                    cuboid = img[x_:_x, y_:_y, z_:_z, :]
+                    label = seg[x_:_x, y_:_y, z_:_z]
+                    info = np.asarray(
+                        [idx, x_, y_, z_, _x, _y, _z], dtype=np.int64)
+                    if self.label_size < self.image_size:
+                        border = np.int((self.image_size - self.label_size) / 2)
+                        label = label[border : (self.label_size + border),
+                                      border : (self.label_size + border),
+                                      border : (self.label_size + border)]
+                    #print('%s, %d'%(file_, t))
+                    #print('sample from: %dx%dx%d'%(x_,y_,z_))
+                    #print('sample to: %dx%dx%d'%(_x,_y,_z))
+                    yield cuboid, label, info
+        return sampler_iterator
+
+    def strategic_sampling(self, seg):
+        uniq_class_labels = np.unique(np.array(seg).flatten())
+        Lcomp_values = len(self.sample_opts['comp_label_values'])
+
+        if len(uniq_class_labels) < self.sample_opts['min_numb_labels'] \
+                and self.min_numb_labels > Lcomp_values:
+            min_nlab = len(uniq_class_labels)
+        else:
+            min_nlab=self.sample_opts['min_numb_labels']
+
+        is_valid_loc = False
+        n_trials = 0
+        while (not is_valid_loc) and (n_trials < 200):
+            n_trials = n_trials + 1
+            is_valid_loc = True
+            location = dataug.rand_window_location_3d(
+                seg.shape, self.image_size, 1)
+            xs = location[0, 0]
+            xe = location[0, 1]
+            ys = location[0, 2]
+            ye = location[0, 3]
+            zs = location[0, 4]
+            ze = location[0, 5]
+            if self.sample_opts['flag_pad_effect']:
+                seg_test = seg[(xs + self.padding) : (xe - self.padding),
+                               (ys + self.padding) : (ye - self.padding),
+                               (zs + self.padding) : (ze - self.padding)]
+            else:
+                seg_test = seg[xs:xe, ys:ye, zs:ze]
+            uni_test = np.unique(np.array(seg_test).flatten())
+            if Lcomp_values > 0:
+                inter = [val for val in uni_test if val in self.sample_opts['comp_label_values']]
+            numb_add_toCheck = min_nlab
+            new_values = uni_test.copy()
+            numb_checked = 0
+            if len(inter) < Lcomp_values:
+                is_valid_loc = False
+                continue
+            if len(uni_test) < min_nlab:
+                is_valid_loc = False
+                continue
+            if Lcomp_values > 0:
+                indices = []
+                indices = np.arange(np.array(uni_test).shape[0])[np.in1d(np.array(uni_test), inter)]
+                if len(indices) == 0:
+                    indices = [-1]
+                min_sample = [0]
+                min_ratio = [0]
+                if len(self.sample_opts['minimum_sampling_elements']) != 0:
+                    if len(self.sample_opts['minimum_sampling_elements']) >= len(indices) and len(list(set(indices) - set([-1]))) > 0:
+                        min_sample = [self.sample_opts['minimum_sampling_elements'][i] for i in range(len(indices))]
+                    else:
+                        min_sample = [np.min(self.sample_opts['minimum_sampling_elements']) for i in range(0,len(inter))]
+                    for i in range(0, len(inter)):
+                        if np.count_nonzero(seg_test == inter[i]) < min_sample[i]:
+                            is_valid_loc = False
+                            break
+                if len(self.sample_opts['minimum_sampling_elements']) != 0:
+                    if len(self.sample_opts['minimum_ratio']) >= len(indices):
+                        min_ratio = [self.sample_opts['minimum_ratio'][i] for i in range(len(indices))]
+                    else:
+                        min_ratio = [np.min(self.sample_opts['minimum_ratio']) for i in range(len(inter))]
+                    for i in range(0, len(inter)):
+                        if np.count_nonzero(seg_test == inter[i])/np.size(seg_test) < min_ratio[i]:
+                            is_valid_loc = False
+                numb_add_toCheck = min_nlab - len(indices)
+                new_values = [element for i, element in enumerate(uni_test) if i not in indices]
+            if numb_add_toCheck > 0:
+                for i in range(0, len(new_values)):
+                    if np.count_nonzero(seg_test == new_values[i]) >= np.min(min_sample) and np.count_nonzero(seg_test == new_values[i]) / np.size(seg_test) >= np.min(min_ratio):
+                        numb_checked += 1
+                if numb_checked < numb_add_toCheck:
+                    is_valid_loc = False
+        return location[0]
