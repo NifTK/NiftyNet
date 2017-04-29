@@ -2,7 +2,6 @@
 import warnings
 import scipy.ndimage
 import numpy as np
-from external.intensity_range_standardization import IntensityRangeStandardization
 
 warnings.simplefilter("ignore", UserWarning)
 

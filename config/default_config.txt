@@ -15,14 +15,14 @@ num_classes = 160
 
 # affected by network's receptive field
 volume_padding_size = 21
-histogram_ref_file = ./external/std_hist_ori_995.pkl
+histogram_ref_file = ./example_volumes/monomodal_histogram_reference.pkl
 
 # ** training only ** system parameters
 num_gpus = 1
 sample_per_volume = 32
 train_data_dir = ./example_volumes/monomodal_parcellation
 
-# **training only** gradient descent and loss parameters
+# ** training only ** gradient descent and loss parameters
 lr = 0.01
 decay = 1e-7
 loss_type = Dice
@@ -31,7 +31,7 @@ starting_iter = 0
 save_every_n = 100
 max_iter = 50
 
-# **inference only** system parameters
+# ** inference only ** system parameters
 border = 5
 pred_iter = 50
 save_seg_dir = ./output/toy

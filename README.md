@@ -5,11 +5,11 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 [University College London (UCL)][ucl].
 
 ### Features
-* [x] Easy-to-customise interfaces of network components
-* [x] Designed for sharing networks and pretrained models with the community
-* [x] Efficient discriminative training with multiple-GPU support
-* [ ] Comprehensive evaluation metrics for medical image segmentation
-* [ ] Implemented recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
+* Easy-to-customise interfaces of network components
+* Designed for sharing networks and pretrained models with the community
+* Efficient discriminative training with multiple-GPU support
+* Comprehensive evaluation metrics for medical image segmentation
+* Implemented recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
 
 
 ### Dependencies
@@ -18,6 +18,7 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 * Nibabel 2.1
 * Numpy  1.12
 * Scipy 0.19
+* medpy-0.2.2
 
 
 ### Usage
