@@ -2,5 +2,5 @@ nibabel
 numpy
 scipy
 medpy
-tensorflow
+tensorflow-gpu
 configparser

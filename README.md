@@ -1,6 +1,7 @@
 # NiftyNet
+![NiftyNet](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/uploads/5a800a9ca2a8f152a98808fbacd1f491/niftynet-logo-test.png)
 
-Linux CPU - [![build status](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/build.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
+[![build status](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/build.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
 
 NiftyNet is an open-source library for 3D convolutional networks in medical image analysis.
 
@@ -29,6 +30,9 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 To train a "toynet" specified in `network/toynet.py`:
 ``` sh
 cd NiftyNet/
+# download demo data (~62MB)
+wget https://www.dropbox.com/s/2unf08ylxvhc298/example_volumes.tar.gz
+tar -xzvf example_volumes.tar.gz
 python run_application.py train --net_name toynet \
     --train_data_dir ./example_volumes/monomodal_parcellation \
     --image_size 42 --label_size 42 --batch_size 1
