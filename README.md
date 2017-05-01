@@ -29,6 +29,9 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 To train a "toynet" specified in `network/toynet.py`:
 ``` sh
 cd NiftyNet/
+# download demo data (~62MB)
+wget https://www.dropbox.com/s/2unf08ylxvhc298/example_volumes.tar.gz
+tar -xzvf example_volumes.tar.gz
 python run_application.py train --net_name toynet \
     --train_data_dir ./example_volumes/monomodal_parcellation \
     --image_size 42 --label_size 42 --batch_size 1
