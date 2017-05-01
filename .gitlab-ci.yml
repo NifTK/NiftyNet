@@ -4,14 +4,15 @@ testjob:
   script:
     - which nvidia-smi
     - nvidia-smi
-    - echo "hello world"
     - pwd
     - python -c "import tensorflow as tf; print tf.__version__"
+    - python -c "import tensorflow as tf; from tensorflow.python.client import device_lib; print device_lib.list_local_devices()"
+    - ls -la /dev | grep nvidia
     - pip install --user -r requirements.txt
     - wget -q https://www.dropbox.com/s/2unf08ylxvhc298/example_volumes.tar.gz
     - tar -xzvf example_volumes.tar.gz
-    - rm example_volumes.tar.gz
-    - export CUDA_VISIBLE_DEVICES='0'; python run_application.py train --image_size 42 --label_size 42 --batch_size 2
-    - export CUDA_VISIBLE_DEVICES='0'; python run_application.py inference --image_size 64 --label_size 64 --batch_size 8
+    - export CUDA_VISIBLE_DEVICES='0';
+    - python run_application.py train --image_size 42 --label_size 42 --batch_size 2
+    - python run_application.py inference --image_size 64 --label_size 64 --batch_size 8
   tags:
     - gift-linux
