@@ -32,7 +32,7 @@ def run(net, param):
         param.histogram_ref_file,
         param.sample_per_volume)
 
-    sample_generator = rand_sampler.training_samples_from(param.train_data_dir)
+    sample_generator = rand_sampler.uniform_sampling_from(param.train_data_dir)
 
     graph = tf.Graph()
     with graph.as_default(), tf.device('/cpu:0'):

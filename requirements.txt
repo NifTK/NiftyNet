@@ -1,0 +1,6 @@
+nibabel
+numpy
+scipy
+medpy
+tensorflow-gpu
+configparser

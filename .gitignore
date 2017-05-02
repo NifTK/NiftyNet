@@ -1,8 +1,10 @@
 *.py[cod]
 *$py.class
 __pycache__/
+.idea/
+*.pkl
 models/
 output/
 user/
-.idea/
 emerald_*
+example_volumes*
