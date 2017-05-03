@@ -1,17 +1,30 @@
 testjob:
   only:
+    - citest
     - master
   script:
+    # set env
+    - export PYTHONPATH="/home/wenqi/.local/lib/python2.7/site-packages":$PYTHONPATH
+    - export PATH="/home/wenqi/.local/bin":$PATH
+    - export CUDA_VISIBLE_DEVICES='1';
+
+    # print system info
     - which nvidia-smi
     - nvidia-smi
     - pwd
     - python -c "import tensorflow as tf; print tf.__version__"
     - python -c "import tensorflow as tf; from tensorflow.python.client import device_lib; print device_lib.list_local_devices()"
     - ls -la /dev | grep nvidia
+
+    # download data
     - wget -q https://www.dropbox.com/s/2unf08ylxvhc298/example_volumes.tar.gz
     - tar -xzvf example_volumes.tar.gz
-    - export CUDA_VISIBLE_DEVICES='1';
-    - python run_application.py train --image_size 42 --label_size 42 --batch_size 2
-    - python run_application.py inference --image_size 64 --label_size 64 --batch_size 8
+
+    # run python code with coverage wrapper
+    - coverage erase
+    - coverage run -a --source . run_application.py train --image_size 42 --label_size 42 --batch_size 2
+    - coverage run -a --source . run_application.py inference --image_size 64 --label_size 64 --batch_size 8
+    - coverage report
+    - echo 'finished test'
   tags:
     - gift-linux
