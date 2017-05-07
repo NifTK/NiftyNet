@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 from convolution import ConvLayer
-from convolution import ConvBNLayer
+from convolution import ConvolutionalLayer
 
 
 class ConvTest(tf.test.TestCase):
@@ -17,11 +17,11 @@ class ConvTest(tf.test.TestCase):
         conv_3d_out = conv_3d(x_3d)
         print conv_3d
 
-        conv_bn = ConvBNLayer('3D', 10, 3, 1)
+        conv_bn = ConvolutionalLayer('3D', 10, 3, 1)
         conv_bn_out = conv_bn(x_3d, is_training=True)
         print conv_bn
 
-        conv_bn_relu = ConvBNLayer('3D', 10, 3, 1, acti_fun='prelu')
+        conv_bn_relu = ConvolutionalLayer('3D', 10, 3, 1, acti_fun='prelu')
         conv_bn_relu_out = conv_bn_relu(x_3d, is_training=True, keep_prob=0.8)
         print conv_bn_relu
 

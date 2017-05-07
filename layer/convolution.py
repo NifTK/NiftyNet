@@ -22,17 +22,21 @@ def default_b_initializer():
 
 
 class ConvLayer(Layer):
+    """
+    This class defines a simple convolution with an optional bias term.
+    Please consider `ConvolutionalLayer` if batch_norm and activation are also used.
+    """
     def __init__(self,
                  conv_op,
                  n_output_chns,
                  kernel_size=3,
                  strides=1,
-                 with_bias=False,
+                 padding='SAME',
                  w_initializer=None,
                  w_regularizer=None,
+                 with_bias=False,
                  b_initializer=None,
                  b_regularizer=None,
-                 padding='SAME',
                  name='conv'):
 
         self.conv_op = conv_op.upper()
@@ -62,6 +66,7 @@ class ConvLayer(Layer):
         input_shape = input_tensor.get_shape().as_list()
         n_input_chns = input_shape[-1]
 
+        # initialize conv kernels and apply
         w_full_size = np.vstack((
             [self.kernel_size] * self.spatial_rank,
             n_input_chns, self.n_output_chns)).flatten()
@@ -92,37 +97,48 @@ class ConvLayer(Layer):
         return output_tensor
 
 
-class ConvBNLayer(Layer):
+class ConvolutionalLayer(Layer):
+    """
+    This class defines a composite layer with optional components:
+        convolution -> batch_norm -> activation -> dropout
+    """
     def __init__(self,
                  conv_op,
                  n_output_chns,
                  kernel_size,
                  strides,
+                 padding='SAME',
                  w_initializer=None,
                  w_regularizer=None,
+                 with_bias=False,
                  b_initializer=None,
                  b_regularizer=None,
+                 with_bn=True,
                  bn_regularizer=None,
-                 padding='SAME',
                  acti_fun=None,
-                 name="conv_bn"):
+                 name="conv"):
 
         self.conv_op = conv_op.upper()
+        self.with_bias = with_bias
         self.acti_fun = acti_fun
+        self.with_bn = with_bn
         self.layer_name = '{}_{}'.format(self.conv_op, name)
+        if self.with_bn:
+            self.layer_name += '_bn'
         if (self.acti_fun is not None):
             self.layer_name += '_{}'.format(self.acti_fun)
-        super(ConvBNLayer, self).__init__(name=self.layer_name)
+        super(ConvolutionalLayer, self).__init__(name=self.layer_name)
 
         self.n_output_chns = n_output_chns
         self.kernel_size = kernel_size
         self.strides = strides
         self.padding = padding
-
         self.w_initializer = w_initializer
         self.w_regularizer = w_regularizer
+
         self.b_initializer = b_initializer
         self.b_regularizer = b_regularizer
+
         self.bn_regularizer = bn_regularizer
 
         self.conv_layer = None
@@ -136,22 +152,24 @@ class ConvBNLayer(Layer):
                                     n_output_chns=self.n_output_chns,
                                     kernel_size=self.kernel_size,
                                     strides=self.strides,
-                                    with_bias=False,
+                                    padding=self.padding,
                                     w_initializer=self.w_initializer,
                                     w_regularizer=self.w_regularizer,
+                                    with_bias=self.with_bias,
                                     b_initializer=self.b_initializer,
                                     b_regularizer=self.b_regularizer,
-                                    padding=self.padding,
-                                    name='conv_{}'.format(self.conv_op))
-        self.bn_layer = BNLayer(regularizer=self.bn_regularizer,
-                                name='bn')
-        # combine input data
+                                    name='conv_')
         output_tensor = self.conv_layer(input_tensor)
-        output_tensor = self.bn_layer(output_tensor, is_training)
+
+        if self.with_bn:
+            self.bn_layer = BNLayer(regularizer=self.bn_regularizer,
+                                    name='bn')
+            output_tensor = self.bn_layer(output_tensor, is_training)
+
         if (self.acti_fun is not None):
             self.acti_layer = ActiLayer(func=self.acti_fun,
                                         regularizer=self.w_regularizer,
-                                        name='activation')
+                                        name='acti')
             output_tensor = self.acti_layer(output_tensor)
 
         if (keep_prob is not None):
