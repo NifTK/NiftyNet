@@ -41,7 +41,7 @@ class ActiLayer(Layer):
             assert(keep_prob > 0.0)
             assert(keep_prob <= 1.0)
             output_tensor = SUPPORTED_OP['dropout'](
-                    input_tensor, keep_prob=keep_prob)
+                    input_tensor, keep_prob=keep_prob, name='dropout')
         else:
-            output_tensor = SUPPORTED_OP[self.func](input_tensor)
+            output_tensor = SUPPORTED_OP[self.func](input_tensor, name='acti')
         return output_tensor

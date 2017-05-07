@@ -49,6 +49,7 @@ class ConvLayer(Layer):
         self.kernel_size = np.asarray(kernel_size).flatten()
         self.strides = np.asarray(strides).flatten()
         self.with_bias = with_bias
+
         self.w_initializer = w_initializer
         self.w_regularizer = w_regularizer
         self.b_initializer = b_initializer
@@ -87,7 +88,7 @@ class ConvLayer(Layer):
                 'b', shape=(self.n_output_chns),
                 initializer=self.b_initializer,
                 regularizer=self.b_regularizer)
-        output_tensor = tf.nn.bias_add(output_tensor, self._b)
+        output_tensor = tf.nn.bias_add(output_tensor, self._b, name='add_bias')
         return output_tensor
 
 
@@ -131,7 +132,6 @@ class ConvBNLayer(Layer):
 
     def layer_op(self, input_tensor, is_training, keep_prob=None):
         # init sub-layers
-        conv_name = 'conv'.format(self.conv_op)
         self.conv_layer = ConvLayer(conv_op=self.conv_op,
                                     n_output_chns=self.n_output_chns,
                                     kernel_size=self.kernel_size,
@@ -142,7 +142,7 @@ class ConvBNLayer(Layer):
                                     b_initializer=self.b_initializer,
                                     b_regularizer=self.b_regularizer,
                                     padding=self.padding,
-                                    name=conv_name)
+                                    name='conv_{}'.format(self.conv_op))
         self.bn_layer = BNLayer(regularizer=self.bn_regularizer,
                                 name='bn')
         # combine input data
