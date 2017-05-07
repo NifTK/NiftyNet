@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 
 
@@ -23,6 +24,12 @@ class Layer(object):
                 tf.GraphKeys.TRAINABLE_VARIABLES,
                 self.layer_scope().name)
 
+    def num_trainable_params(self):
+        n = tf.Dimension(0)
+        for x in self.trainable_variables():
+            n += np.prod(x.get_shape())
+        return n
+
     def to_string(self):
         layer_scope_name = self.layer_scope().name
         out_str = "\033[42m[Layer]\033[0m {}".format(layer_scope_name)
@@ -33,7 +40,11 @@ class Layer(object):
         if len(layer_variables) ==0:
             out_str += ' (not trainable)'
             return out_str
+        # including name of parameters
         out_str += ' \033[92m[Trainable]\033[0m '
         out_str += ', '.join([v.name.split(':')[0][len(layer_scope_name)+1:]
             for v in layer_variables])
+        # including number of parameters
+        out_str += ' ({})'.format(self.num_trainable_params())
+
         return out_str

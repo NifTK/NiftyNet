@@ -20,7 +20,7 @@ def _compute_mean_and_var(inputs, axes):
 
 
 class BNLayer(Layer):
-    def __init__(self, moving_decay=0.9, eps=1e-5, name='Batch_norm_layer'):
+    def __init__(self, moving_decay=0.9, eps=1e-5, name='batch_norm'):
         super(BNLayer, self).__init__(name=name)
         self.eps = eps
         self.moving_decay = moving_decay
@@ -57,6 +57,7 @@ class BNLayer(Layer):
         update_moving_variance = moving_averages.assign_moving_average(
             moving_variance, variance, self.moving_decay).op
 
+        # call the normalisation function
         if is_training or use_local_stats:
             with tf.control_dependencies(
                     [update_moving_mean, update_moving_variance]):
