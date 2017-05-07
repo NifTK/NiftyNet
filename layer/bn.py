@@ -3,7 +3,6 @@ import tensorflow as tf
 from tensorflow.python.training import moving_averages
 
 from base import Layer
-from layer_util import *
 
 
 def _compute_mean_and_var(inputs, axes):
@@ -26,10 +25,8 @@ class BNLayer(Layer):
         self.eps = eps
         self.moving_decay = moving_decay
 
-    @RequireKeywords('is_training')
-    def layer_op(self, inputs, **kwargs):
+    def layer_op(self, inputs, is_training, use_local_stats=False):
         input_shape = inputs.get_shape()
-        is_training = kwargs['is_training']
 
         # operates on all dims except the last dim
         params_shape = input_shape[-1:]
@@ -60,7 +57,7 @@ class BNLayer(Layer):
         update_moving_variance = moving_averages.assign_moving_average(
             moving_variance, variance, self.moving_decay).op
 
-        if is_training:
+        if is_training or use_local_stats:
             with tf.control_dependencies(
                     [update_moving_mean, update_moving_variance]):
                 outputs = tf.nn.batch_normalization(
