@@ -20,10 +20,15 @@ def _compute_mean_and_var(inputs, axes):
 
 
 class BNLayer(Layer):
-    def __init__(self, moving_decay=0.9, eps=1e-5, name='batch_norm'):
+    def __init__(self,
+                 regularizer=None,
+                 moving_decay=0.9,
+                 eps=1e-5,
+                 name='batch_norm'):
         super(BNLayer, self).__init__(name=name)
         self.eps = eps
         self.moving_decay = moving_decay
+        self.regularizer = regularizer
 
     def layer_op(self, inputs, is_training, use_local_stats=False):
         input_shape = inputs.get_shape()
@@ -35,11 +40,15 @@ class BNLayer(Layer):
         # create trainable variables and moving average variables
         beta = tf.get_variable(
                 'beta',
-                shape=params_shape, initializer=tf.zeros_initializer(),
+                shape=params_shape,
+                initializer=tf.zeros_initializer(),
+                regularizer=self.regularizer,
                 dtype=tf.float32, trainable=True)
         gamma = tf.get_variable(
                 'gamma',
-                shape=params_shape, initializer=tf.ones_initializer(),
+                shape=params_shape,
+                initializer=tf.ones_initializer(),
+                regularizer=self.regularizer,
                 dtype=tf.float32, trainable=True)
         moving_mean = tf.get_variable(
                 'moving_mean',

@@ -22,19 +22,20 @@ SUPPORTED_OP = {'relu': tf.nn.relu,
 
 
 class ActiLayer(Layer):
-    def __init__(self, func, name='actiation'):
+    def __init__(self, func, regularizer=None, name='activation'):
         assert(func in SUPPORTED_OP)
         self.layer_name = '{}_{}'.format(name, func)
         super(ActiLayer, self).__init__(name=self.layer_name)
 
         self.func = func
+        self.regularizer = regularizer
 
     def layer_op(self, input_tensor, keep_prob=None):
         if self.func is 'prelu':
             alphas = tf.get_variable(
                     'alpha', input_tensor.get_shape()[-1],
                     initializer=default_prelu_initializer(),
-                    regularizer=None)
+                    regularizer=self.regularizer)
             output_tensor = SUPPORTED_OP['prelu'](input_tensor, alphas)
         elif self.func is 'dropout':
             assert(keep_prob > 0.0)

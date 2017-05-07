@@ -43,7 +43,7 @@ class ConvLayer(Layer):
         self.layer_name = '{}_{}'.format(self.conv_op, name)
         super(ConvLayer, self).__init__(name=self.layer_name)
 
-        self.n_output_chns= n_output_chns
+        self.n_output_chns = n_output_chns
         self.conv_op_func = SUPPORTED_OP[conv_op][0]
         self.spatial_rank = SUPPORTED_OP[conv_op][1]
         self.kernel_size = np.asarray(kernel_size).flatten()
@@ -80,6 +80,7 @@ class ConvLayer(Layer):
         if not self.with_bias:
             return output_tensor
 
+        # adding the bias term
         if self.b_initializer is None:
             self.b_initializer = default_b_initializer()
         self._b = tf.get_variable(
@@ -96,6 +97,11 @@ class ConvBNLayer(Layer):
                  n_output_chns,
                  kernel_size,
                  strides,
+                 w_initializer=None,
+                 w_regularizer=None,
+                 b_initializer=None,
+                 b_regularizer=None,
+                 bn_regularizer=None,
                  padding='SAME',
                  acti_fun=None,
                  name="conv_bn"):
@@ -112,26 +118,40 @@ class ConvBNLayer(Layer):
         self.strides = strides
         self.padding = padding
 
+        self.w_initializer = w_initializer
+        self.w_regularizer = w_regularizer
+        self.b_initializer = b_initializer
+        self.b_regularizer = b_regularizer
+        self.bn_regularizer = bn_regularizer
+
         self.conv_layer = None
+        self.bn_layer = None
         self.acti_layer = None
         self.dropout_layer = None
 
     def layer_op(self, input_tensor, is_training, keep_prob=None):
         # init sub-layers
         conv_name = 'conv'.format(self.conv_op)
-        self.conv_layer = ConvLayer(self.conv_op,
-                                    self.n_output_chns,
-                                    self.kernel_size,
-                                    self.strides,
+        self.conv_layer = ConvLayer(conv_op=self.conv_op,
+                                    n_output_chns=self.n_output_chns,
+                                    kernel_size=self.kernel_size,
+                                    strides=self.strides,
                                     with_bias=False,
+                                    w_initializer=self.w_initializer,
+                                    w_regularizer=self.w_regularizer,
+                                    b_initializer=self.b_initializer,
+                                    b_regularizer=self.b_regularizer,
                                     padding=self.padding,
                                     name=conv_name)
-        bn_op = BNLayer(name='bn')
+        self.bn_layer = BNLayer(regularizer=self.bn_regularizer,
+                                name='bn')
         # combine input data
         output_tensor = self.conv_layer(input_tensor)
-        output_tensor = bn_op(output_tensor, is_training)
+        output_tensor = self.bn_layer(output_tensor, is_training)
         if (self.acti_fun is not None):
-            self.acti_layer = ActiLayer(func=self.acti_fun, name='activation')
+            self.acti_layer = ActiLayer(func=self.acti_fun,
+                                        regularizer=self.w_regularizer,
+                                        name='activation')
             output_tensor = self.acti_layer(output_tensor)
 
         if (keep_prob is not None):
