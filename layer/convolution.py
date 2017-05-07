@@ -112,21 +112,30 @@ class ConvBNLayer(Layer):
         self.strides = strides
         self.padding = padding
 
-    def layer_op(self, input_tensor, is_training):
+        self.conv_layer = None
+        self.acti_layer = None
+        self.dropout_layer = None
+
+    def layer_op(self, input_tensor, is_training, keep_prob=None):
         # init sub-layers
         conv_name = 'conv'.format(self.conv_op)
-        conv_op = ConvLayer(self.conv_op,
-                            self.n_output_chns,
-                            self.kernel_size,
-                            self.strides,
-                            with_bias=False,
-                            padding=self.padding,
-                            name=conv_name)
+        self.conv_layer = ConvLayer(self.conv_op,
+                                    self.n_output_chns,
+                                    self.kernel_size,
+                                    self.strides,
+                                    with_bias=False,
+                                    padding=self.padding,
+                                    name=conv_name)
         bn_op = BNLayer(name='bn')
         # combine input data
-        output_tensor = conv_op(input_tensor)
+        output_tensor = self.conv_layer(input_tensor)
         output_tensor = bn_op(output_tensor, is_training)
         if (self.acti_fun is not None):
-            acti_op = ActiLayer(func=self.acti_fun, name='activation')
-            output_tensor = acti_op(output_tensor)
+            self.acti_layer = ActiLayer(func=self.acti_fun, name='activation')
+            output_tensor = self.acti_layer(output_tensor)
+
+        if (keep_prob is not None):
+            self.dropout_layer = ActiLayer(func='dropout', name='dropout')
+            output_tensor = self.dropout_layer(output_tensor,
+                                               keep_prob=keep_prob)
         return output_tensor
