@@ -24,6 +24,12 @@ testjob:
     - coverage erase
     - coverage run -a --source . run_application.py train --image_size 42 --label_size 42 --batch_size 2
     - coverage run -a --source . run_application.py inference --image_size 64 --label_size 64 --batch_size 8
+    - coverage run -a --source . -m testing.activation_test
+    - coverage run -a --source . -m testing.bn_test
+    - coverage run -a --source . -m testing.convolution_test
+    - coverage run -a --source . -m testing.deconvolution_test
+    - coverage run -a --source . -m testing.downsample_test
+    - coverage run -a --source . -m testing.upsample_test
     - coverage report
     - echo 'finished test'
   tags:

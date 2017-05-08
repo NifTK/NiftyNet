@@ -9,7 +9,7 @@ from activation import ActiLayer
 SUPPORTED_PADDING = set(['SAME', 'VALID'])
 
 def default_w_initializer(kernel_shape):
-    stddev = np.sqrt(2.0 / np.prod(kernel_shape[:-1])
+    stddev = np.sqrt(2.0 / np.prod(kernel_shape[:-1]))
     return tf.truncated_normal_initializer(
             mean=0.0, stddev=stddev, dtype=tf.float32)
 

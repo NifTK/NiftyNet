@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-from bn import BNLayer
+from layer.bn import BNLayer
 
 
 class BNTest(tf.test.TestCase):

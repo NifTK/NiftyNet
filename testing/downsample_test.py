@@ -1,10 +1,10 @@
 import numpy as np
 import tensorflow as tf
 
-from upsample import UpSampleLayer
+from layer.downsample import DownSampleLayer
 
 
-class UpSampleTest(tf.test.TestCase):
+class DownSampleTest(tf.test.TestCase):
     def test_shape(self):
         input_shape = (2, 16, 16, 16, 8)
         x = tf.ones(input_shape)

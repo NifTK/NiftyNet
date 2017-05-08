@@ -1,8 +1,8 @@
 import numpy as np
 import tensorflow as tf
 
-from convolution import ConvLayer
-from convolution import ConvolutionalLayer
+from layer.convolution import ConvLayer
+from layer.convolution import ConvolutionalLayer
 
 
 class ConvTest(tf.test.TestCase):

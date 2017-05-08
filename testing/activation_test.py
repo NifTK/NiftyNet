@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-from activation import ActiLayer
+from layer.activation import ActiLayer
 
 
 class ActivationTest(tf.test.TestCase):
