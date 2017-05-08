@@ -4,6 +4,7 @@ import tensorflow as tf
 from base import Layer
 from bn import BNLayer
 from activation import ActiLayer
+import layer_util
 
 
 SUPPORTED_OP = {'2D': tf.nn.conv2d_transpose,
@@ -68,8 +69,7 @@ class DeconvLayer(Layer):
     def layer_op(self, input_tensor):
         input_shape = input_tensor.get_shape().as_list()
         n_input_chns = input_shape[-1]
-        spatial_rank = len(input_shape) -2
-        assert(spatial_rank > 0)
+        spatial_rank = layer_util.infer_spatial_rank(input_tensor)
 
         # initialize conv kernels/strides and then apply
         w_full_size = np.vstack((

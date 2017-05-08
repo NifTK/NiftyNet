@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 from base import Layer
+import layer_util
 
 
 SUPPORTED_OP = set(['AVG', 'MAX'])
@@ -26,8 +27,7 @@ class DownSampleLayer(Layer):
         super(DownSampleLayer, self).__init__(name=self.layer_name)
 
     def layer_op(self, input_tensor):
-        spatial_rank = input_tensor.get_shape().ndims - 2
-        assert(spatial_rank > 0)
+        spatial_rank = layer_util.infer_spatial_rank(input_tensor)
         output_tensor = tf.nn.pool(
                 input=input_tensor,
                 window_shape=[self.kernel_size] * spatial_rank,

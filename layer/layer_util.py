@@ -1,3 +1,8 @@
+def infer_spatial_rank(input_tensor):
+    dims = input_tensor.get_shape().ndims - 2
+    assert(dims > 0)
+    return dims
+
 class RequireKeywords(object):
     def __init__(self, *list_of_keys):
         self.keys = list_of_keys

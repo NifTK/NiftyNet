@@ -3,6 +3,7 @@ import tensorflow as tf
 
 from base import Layer
 from deconvolution import DeconvLayer
+import layer_util
 
 
 SUPPORTED_OP = set(['REPLICATE', 'CHANNELWISE_DECONV'])
@@ -42,8 +43,7 @@ class UpSampleLayer(Layer):
         self.b_regularizer = b_regularizer
 
     def layer_op(self, input_tensor):
-        spatial_rank = input_tensor.get_shape().ndims - 2
-        assert(spatial_rank > 0)
+        spatial_rank = layer_util.infer_spatial_rank(input_tensor)
         if self.func == 'REPLICATE':
             if (self.kernel_size != self.stride):
                 raise ValueError(
