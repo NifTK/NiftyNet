@@ -6,21 +6,33 @@ from bn import BNLayer
 from activation import ActiLayer
 
 
+SUPPORTED_OP = {'2D': tf.nn.conv2d_transpose,
+                '3D': tf.nn.conv3d_transpose}
 SUPPORTED_PADDING = set(['SAME', 'VALID'])
 
 def default_w_initializer(kernel_shape):
-    stddev = np.sqrt(2.0 / np.prod(kernel_shape[:-1])
+    stddev = np.sqrt(2.0 / \
+            (np.prod(kernel_shape[:-2]) * kernel_shape[-1]))
     return tf.truncated_normal_initializer(
             mean=0.0, stddev=stddev, dtype=tf.float32)
 
 def default_b_initializer():
     return tf.zeros_initializer()
 
+def infer_output_dim(input_dim, stride, kernel_size, padding):
+    if input_dim is None:
+        return None
+    if padding == 'VALID':
+        output_dim = input_dim * stride + max(kernel_size - stride, 0)
+    if padding == 'SAME':
+        output_dim = input_dim * stride
+    return output_dim
 
-class ConvLayer(Layer):
+
+class DeconvLayer(Layer):
     """
-    This class defines a simple convolution with an optional bias term.
-    Please consider `ConvolutionalLayer` if batch_norm and activation
+    This class defines a simple deconvolution with an optional bias term.
+    Please consider `DeconvolutionalLayer` if batch_norm and activation
     are also used.
     """
     def __init__(self,
@@ -38,7 +50,7 @@ class ConvLayer(Layer):
         assert(self.padding in SUPPORTED_PADDING)
 
         self.layer_name = '{}'.format(name)
-        super(ConvLayer, self).__init__(name=self.layer_name)
+        super(DeconvLayer, self).__init__(name=self.layer_name)
 
         self.n_output_chns = n_output_chns
         self.kernel_size = np.asarray(kernel_size).flatten()
@@ -56,44 +68,61 @@ class ConvLayer(Layer):
     def layer_op(self, input_tensor):
         input_shape = input_tensor.get_shape().as_list()
         n_input_chns = input_shape[-1]
-        spatial_rank = len(input_shape) - 2
+        spatial_rank = len(input_shape) -2
         assert(spatial_rank > 0)
 
         # initialize conv kernels/strides and then apply
         w_full_size = np.vstack((
             [self.kernel_size] * spatial_rank,
-            n_input_chns, self.n_output_chns)).flatten()
+            self.n_output_chns, n_input_chns)).flatten()
         full_stride = np.vstack((
-            [self.stride] * spatial_rank)).flatten()
+            1, [self.stride] * spatial_rank, 1)).flatten()
         if self.w_initializer is None:
             self.w_initializer = default_w_initializer(w_full_size)
         self._w = tf.get_variable(
                 'w', shape=w_full_size.tolist(),
                 initializer=self.w_initializer,
                 regularizer=self.w_regularizer)
-        output_tensor = tf.nn.convolution(input=input_tensor,
-                                          filter=self._w,
-                                          strides=full_stride.tolist(),
-                                          padding=self.padding,
-                                          name='conv')
+        if spatial_rank == 2:
+            op_ = SUPPORTED_OP['2D']
+        elif spatial_rank == 3:
+            op_ = SUPPORTED_OP['3D']
+        else:
+            raise ValueError(
+                    "Only 2D and 3D spatial deconvolutions are supported")
+
+        output_dim = infer_output_dim(input_shape[1],
+                                      self.stride,
+                                      self.kernel_size,
+                                      self.padding)
+        full_output_size = np.vstack((input_shape[0],
+                                      [output_dim] * spatial_rank,
+                                      self.n_output_chns)).flatten()
+        output_tensor = op_(value=input_tensor,
+                            filter=self._w,
+                            output_shape=full_output_size.tolist(),
+                            strides=full_stride.tolist(),
+                            padding=self.padding,
+                            name='conv')
         if not self.with_bias:
             return output_tensor
 
         # adding the bias term
+        bias_full_size = (self.n_output_chns,)
         if self.b_initializer is None:
             self.b_initializer = default_b_initializer()
         self._b = tf.get_variable(
-                'b', shape=(self.n_output_chns),
+                'b', shape=bias_full_size,
                 initializer=self.b_initializer,
                 regularizer=self.b_regularizer)
         output_tensor = tf.nn.bias_add(output_tensor, self._b, name='add_bias')
         return output_tensor
 
 
-class ConvolutionalLayer(Layer):
+class DeconvolutionalLayer(Layer):
     """
     This class defines a composite layer with optional components:
-        convolution -> batch_norm -> activation -> dropout
+        deconvolution -> batch_norm -> activation -> dropout
     """
     def __init__(self,
                  n_output_chns,
@@ -118,7 +147,7 @@ class ConvolutionalLayer(Layer):
             self.layer_name += '_bn'
         if (self.acti_fun is not None):
             self.layer_name += '_{}'.format(self.acti_fun)
-        super(ConvolutionalLayer, self).__init__(name=self.layer_name)
+        super(DeconvolutionalLayer, self).__init__(name=self.layer_name)
 
         self.n_output_chns = n_output_chns
         self.kernel_size = kernel_size
@@ -138,17 +167,17 @@ class ConvolutionalLayer(Layer):
 
     def layer_op(self, input_tensor, is_training, keep_prob=None):
         # init sub-layers
-        self.conv_layer = ConvLayer(n_output_chns=self.n_output_chns,
-                                    kernel_size=self.kernel_size,
-                                    stride=self.stride,
-                                    padding=self.padding,
-                                    w_initializer=self.w_initializer,
-                                    w_regularizer=self.w_regularizer,
-                                    with_bias=self.with_bias,
-                                    b_initializer=self.b_initializer,
-                                    b_regularizer=self.b_regularizer,
-                                    name='conv_')
-        output_tensor = self.conv_layer(input_tensor)
+        self.deconv_layer = DeconvLayer(n_output_chns=self.n_output_chns,
+                                        kernel_size=self.kernel_size,
+                                        stride=self.stride,
+                                        padding=self.padding,
+                                        w_initializer=self.w_initializer,
+                                        w_regularizer=self.w_regularizer,
+                                        with_bias=self.with_bias,
+                                        b_initializer=self.b_initializer,
+                                        b_regularizer=self.b_regularizer,
+                                        name='conv_')
+        output_tensor = self.deconv_layer(input_tensor)
 
         if self.with_bn:
             self.bn_layer = BNLayer(regularizer=self.bn_regularizer, name='bn_')

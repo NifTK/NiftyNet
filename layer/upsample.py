@@ -7,7 +7,7 @@ SUPPORTED_OP = set(['AVG', 'MAX'])
 SUPPORTED_PADDING = set(['SAME', 'VALID'])
 
 
-class DownSampleLayer(Layer):
+class UpSampleLayer(Layer):
     def __init__(self,
                  func,
                  kernel_size,
@@ -23,7 +23,7 @@ class DownSampleLayer(Layer):
         self.stride = stride
 
         self.layer_name = '{}_{}'.format(self.func.lower(), name)
-        super(DownSampleLayer, self).__init__(name=self.layer_name)
+        super(UpSampleLayer, self).__init__(name=self.layer_name)
 
     def layer_op(self, input_tensor):
         spatial_rank = input_tensor.get_shape().ndims - 2
