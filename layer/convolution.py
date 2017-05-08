@@ -30,7 +30,7 @@ class ConvLayer(Layer):
                  conv_op,
                  n_output_chns,
                  kernel_size=3,
-                 strides=1,
+                 stride=1,
                  padding='SAME',
                  w_initializer=None,
                  w_regularizer=None,
@@ -51,7 +51,7 @@ class ConvLayer(Layer):
         self.conv_op_func = SUPPORTED_OP[conv_op][0]
         self.spatial_rank = SUPPORTED_OP[conv_op][1]
         self.kernel_size = np.asarray(kernel_size).flatten()
-        self.strides = np.asarray(strides).flatten()
+        self.stride = np.asarray(stride).flatten()
         self.with_bias = with_bias
 
         self.w_initializer = w_initializer
@@ -70,8 +70,8 @@ class ConvLayer(Layer):
         w_full_size = np.vstack((
             [self.kernel_size] * self.spatial_rank,
             n_input_chns, self.n_output_chns)).flatten()
-        full_strides = np.vstack((
-            1, [self.strides] * self.spatial_rank, 1)).flatten()
+        full_stride = np.vstack((
+            1, [self.stride] * self.spatial_rank, 1)).flatten()
         if self.w_initializer is None:
             self.w_initializer = default_w_initializer(w_full_size)
         self._w = tf.get_variable(
@@ -80,7 +80,7 @@ class ConvLayer(Layer):
                 regularizer=self.w_regularizer)
         output_tensor = self.conv_op_func(input=input_tensor,
                                           filter=self._w,
-                                          strides=full_strides.tolist(),
+                                          stride=full_stride.tolist(),
                                           padding=self.padding,
                                           name='conv')
         if not self.with_bias:
@@ -106,7 +106,7 @@ class ConvolutionalLayer(Layer):
                  conv_op,
                  n_output_chns,
                  kernel_size,
-                 strides,
+                 stride,
                  padding='SAME',
                  w_initializer=None,
                  w_regularizer=None,
@@ -131,7 +131,7 @@ class ConvolutionalLayer(Layer):
 
         self.n_output_chns = n_output_chns
         self.kernel_size = kernel_size
-        self.strides = strides
+        self.stride = stride
         self.padding = padding
         self.w_initializer = w_initializer
         self.w_regularizer = w_regularizer
@@ -151,7 +151,7 @@ class ConvolutionalLayer(Layer):
         self.conv_layer = ConvLayer(conv_op=self.conv_op,
                                     n_output_chns=self.n_output_chns,
                                     kernel_size=self.kernel_size,
-                                    strides=self.strides,
+                                    stride=self.stride,
                                     padding=self.padding,
                                     w_initializer=self.w_initializer,
                                     w_regularizer=self.w_regularizer,

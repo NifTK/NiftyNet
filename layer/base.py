@@ -46,5 +46,4 @@ class Layer(object):
             for v in layer_variables])
         # including number of parameters
         out_str += ' ({})'.format(self.num_trainable_params())
-
         return out_str
