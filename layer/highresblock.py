@@ -17,6 +17,7 @@ class HighResBlock(Layer):
     def __init__(self,
                  n_output_chns,
                  kernels=(3, 3),
+                 dilation_factor=1,
                  acti_type='relu',
                  w_initializer=None,
                  w_regularizer=None,
