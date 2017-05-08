@@ -98,7 +98,7 @@ class ConvolutionalLayer(Layer):
     def __init__(self,
                  n_output_chns,
                  kernel_size,
-                 stride,
+                 stride=1,
                  padding='SAME',
                  w_initializer=None,
                  w_regularizer=None,
