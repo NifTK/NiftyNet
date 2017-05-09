@@ -2,6 +2,7 @@ testjob:
   only:
     - citest
     - master
+    - module
   script:
     # set env
     - export PYTHONPATH="/home/wenqi/.local/lib/python2.7/site-packages":$PYTHONPATH
@@ -29,6 +30,9 @@ testjob:
     - coverage run -a --source . -m testing.convolution_test
     - coverage run -a --source . -m testing.deconvolution_test
     - coverage run -a --source . -m testing.downsample_test
+    - coverage run -a --source . -m testing.elementwise_test
+    - coverage run -a --source . -m testing.highres3dnet_test
+    - coverage run -a --source . -m testing.highresblock_test
     - coverage run -a --source . -m testing.upsample_test
     - coverage report
     - echo 'finished test'

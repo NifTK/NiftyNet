@@ -16,81 +16,71 @@ class HighRes3DNet(Layer):
     def __init__(self,
                  num_classes,
                  w_initializer=None,
-                 w_regularizer=None,
                  b_initializer=None,
+                 w_regularizer=None,
                  b_regularizer=None,
-                 acti_type='relu',
+                 acti_type='prelu',
                  name='HighRes3DNet'):
 
         super(HighRes3DNet, self).__init__(name='HighRes3DNet')
+        self.model = [
+                {'op': 'conv', 'n_features': 16, 'kernel_size': 3},
+                {'op': 'resblocks', 'dilation_factor': 1, 'repeat': 3, 'n_features': 16, 'kernels':(3, 3)},
+                {'op': 'resblocks', 'dilation_factor': 2, 'repeat': 3, 'n_features': 32, 'kernels':(3, 3)},
+                {'op': 'resblocks', 'dilation_factor': 4, 'repeat': 3, 'n_features': 64, 'kernels':(3, 3)},
+                {'op': 'conv', 'n_features': 80, 'kernel_size': 1},
+                {'op': 'conv', 'n_features': num_classes, 'kernel_size': 1}]
         self.acti_type = acti_type
         self.w_initializer = w_initializer
         self.w_regularizer = w_regularizer
         self.b_initializer = b_initializer
         self.b_regularizer = b_regularizer
-
-        self.num_res_blocks = [3, 3, 3]
-        self.num_features = [16, 32, 64, 80]
-        self.num_classes = num_classes
-        self.name = "HighRes3DNet\n"\
-            "{} dilate-0 blocks with {} features\n"\
-            "{} dilate-2 blocks with {} features\n"\
-            "{} dilate-4 blocks with {} features\n"\
-            "{} FC features to classify {} classes".format(
-                self.num_res_blocks[0], self.num_features[0],
-                self.num_res_blocks[1], self.num_features[1],
-                self.num_res_blocks[2], self.num_features[2],
-                self.num_features[3], num_classes)
+        self.name = "HighRes3DNet"
         print('using {}'.format(self.name))
 
-    def layer_op(self, images, is_training, layer_id=None):
-        zero_paddings = [[0,0]]*3
+
+    def layer_op(self, images, is_training, layer_id=-1):
         assert(images.get_shape()[1] % 4 == 0)
-        conv_1_op = ConvolutionalLayer(
-                self.num_features[0], kernel_size=3, name='conv_1')
-        conv_1_out = conv_1_op(images, is_training)
-        res_out = conv_1_out
+        # create operations
+        flow = images
+        list_of_layers = []
+        for (i, layer) in enumerate(self.model):
+            # create convolution layers
+            if layer['op'] == 'conv':
+                # creat a convolutional layer
+                op_ = ConvolutionalLayer(layer['n_features'],
+                                         kernel_size=layer['kernel_size'],
+                                         name='conv_{}'.format(i))
+                # data running through the layer
+                flow = op_(flow, is_training)
+                list_of_layers.append((op_, flow))
+            # create resblocks
+            if layer['op'] == 'resblocks':
+                # instead of dilating the kernels, the dilated convolution
+                # is implmeneted by rearranging the input tensor
+                # The arrangment of input is resumed after the context manager
+                with DilatedTensor(flow, layer['dilation_factor']) as dilated:
+                    for j in range(layer['repeat']):
+                        # creat a highresblock layer
+                        op_ = HighResBlock(layer['n_features'],
+                                           kernels=layer['kernels'],
+                                           name='res_{}_{}'.format(i, j))
+                        # data running through the layer
+                        dilated.tensor = op_(dilated.tensor, is_training)
+                        list_of_layers.append((op_, dilated.tensor))
+                # resume to the ordinary flow after the context manager
+                flow = dilated.tensor
+            if (i == layer_id) and (not is_training):
+                return flow
 
-        for i in range(self.num_res_blocks[0]):
-            res_block = HighResBlock(self.num_features[0],
-                                     kernels=(3, 3),
-                                     with_res=True,
-                                     name='res_0_{}'.format(i))
-            res_out = res_block(res_out, is_training)
+        if is_training:
+            self._assign_initializer_regularizer(list_of_layers)
+        return flow
 
-
-        ## convolutions  dilation factor = 2
-        with DilatedTensor(res_out, 2) as dilated:
-            for i in range(self.num_res_blocks[1]):
-                res_block = HighResBlock(self.num_features[1],
-                                         kernels=(3, 3),
-                                         with_res=True,
-                                         name='res_1_{}'.format(i))
-                dilated.tensor = res_block(dilated.tensor, is_training)
-        res_out = dilated.tensor
-
-        ## convolutions  dilation factor = 4
-        with DilatedTensor(res_out, 4) as dilated:
-            for i in range(self.num_res_blocks[2]):
-                res_block = HighResBlock(self.num_features[2],
-                                         kernels=(3, 3),
-                                         with_res=True,
-                                         name='res_2_{}'.format(i))
-                dilated.tensor = res_block(dilated.tensor, is_training)
-        res_out = dilated.tensor
-
-        ## 1x1x1 convolution "fully connected"
-        conv_kernel_1_op = ConvolutionalLayer(
-                self.num_features[3], kernel_size=1, name='con_fc_1')
-        conv_fc_out = conv_kernel_1_op(res_out, is_training)
-
-        ## 1x1x1 convolution to num_classes
-        conv_kernel_1_op = ConvolutionalLayer(
-                self.num_classes, kernel_size=1, name='con_fc_2')
-        conv_fc_out = conv_kernel_1_op(conv_fc_out, is_training)
-
-        if layer_id == 'conv_features':
-            return res_out
-
-        if layer_id is None:
-            return conv_fc_out
+    def _assign_initializer_regularizer(self, list_of_layers):
+        for (op, _) in list_of_layers:
+            print op
+            op.w_initializer = self.w_initializer
+            op.w_regularizer = self.w_regularizer
+            op.b_initializer = self.b_initializer
+            op.b_regularizer = self.b_regularizer

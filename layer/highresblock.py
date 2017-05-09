@@ -5,7 +5,7 @@ from base import Layer
 from convolution import ConvLayer
 from bn import BNLayer
 from activation import ActiLayer
-from elementwise_sum import ElementwiseSumLayer
+from elementwise import ElementwiseLayer
 
 class HighResBlock(Layer):
     """
@@ -58,6 +58,6 @@ class HighResBlock(Layer):
 
         # make residual connections
         if self.with_res:
-            merge_connections = ElementwiseSumLayer()
+            merge_connections = ElementwiseLayer('SUM')
             output_tensor = merge_connections(output_tensor, input_tensor)
         return output_tensor

@@ -1,16 +1,16 @@
 import numpy as np
 import tensorflow as tf
 
-from layer.elementwise_sum import ElementwiseSumLayer
+from layer.elementwise import ElementwiseLayer
 
 
-class ElementwiseSumTest(tf.test.TestCase):
+class ElementwiseTest(tf.test.TestCase):
     def test_shape(self):
         input_shape = (2, 16, 16, 16, 6)
         x_1 = tf.ones(input_shape)
         input_shape = (2, 16, 16, 16, 6)
         x_2 = tf.zeros(input_shape)
-        sum_layer = ElementwiseSumLayer()
+        sum_layer = ElementwiseLayer('SUM')
         out_sum = sum_layer(x_1, x_2)
         print sum_layer.to_string()
 
@@ -18,7 +18,7 @@ class ElementwiseSumTest(tf.test.TestCase):
         x_1 = tf.ones(input_shape)
         input_shape = (2, 16, 16, 16, 6)
         x_2 = tf.zeros(input_shape)
-        sum_layer = ElementwiseSumLayer()
+        sum_layer = ElementwiseLayer('SUM')
         out_sum = sum_layer(x_1, x_2)
         print sum_layer.to_string()
 
@@ -26,7 +26,15 @@ class ElementwiseSumTest(tf.test.TestCase):
         x_1 = tf.ones(input_shape)
         input_shape = (2, 16, 16, 16, 8)
         x_2 = tf.zeros(input_shape)
-        sum_layer = ElementwiseSumLayer()
+        sum_layer = ElementwiseLayer('SUM')
+        out_sum = sum_layer(x_1, x_2)
+        print sum_layer.to_string()
+
+        input_shape = (2, 16, 16, 16, 6)
+        x_1 = tf.ones(input_shape)
+        input_shape = (2, 16, 16, 16, 8)
+        x_2 = tf.zeros(input_shape)
+        sum_layer = ElementwiseLayer('CONCAT')
         out_sum = sum_layer(x_1, x_2)
         print sum_layer.to_string()
 

@@ -11,7 +11,6 @@ class HighRes3DNetTest(tf.test.TestCase):
 
         highres_layer = HighRes3DNet(num_classes=5)
         out = highres_layer(x, is_training=True)
-        print highres_layer.to_string()
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
