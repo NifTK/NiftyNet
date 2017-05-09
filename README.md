@@ -1,6 +1,8 @@
 # NiftyNet
+![NiftyNet](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/uploads/5a800a9ca2a8f152a98808fbacd1f491/niftynet-logo-test.png)
 
-Linux CPU - [![build status](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/build.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
+[![build status](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/build.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
+[![coverage report](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/coverage.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
 
 NiftyNet is an open-source library for 3D convolutional networks in medical image analysis.
 
