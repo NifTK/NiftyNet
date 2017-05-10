@@ -2,6 +2,7 @@ import tensorflow as tf
 
 from base import Layer
 from convolution import ConvolutionalLayer
+from crop import CropLayer
 
 class DeepMedic(Layer):
     def __init__(self,
@@ -9,7 +10,7 @@ class DeepMedic(Layer):
         self.layer_name = 'DeepMedic'
         super(DeepMedic, self).__init__(name=self.layer_name)
         self.d_factor = 3 # downsampling factor
-        self.crop_diff = (self.d_factor - 1) * 16
+        self.crop_diff = ((self.d_factor - 1) * 16) / 2
         self.conv_features = [30, 30, 40, 40, 40, 40, 50, 50]
         self.fc_features = [150, 150]
         self.acti_type = 'prelu'
@@ -33,5 +34,9 @@ class DeepMedic(Layer):
         assert(self.d_factor % 2 == 1) # to make the downsampling centered
         assert(image_size % 2 == 1) # to make the crop centered
         assert(image_size > self.d_factor * 16) # minimum receptive field
+
+        crop_op = CropLayer(border=self.crop_diff, 'normal_pathway')
+        downsample_op = DownsampleLayer('CONSTANT', )
+
 
         return images

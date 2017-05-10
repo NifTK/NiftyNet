@@ -19,6 +19,11 @@ class DownSampleTest(tf.test.TestCase):
         print down_sample_layer.to_string()
         print out_down_sample.get_shape()
 
+        down_sample_layer = DownSampleLayer('CONSTANT', 3, 3)
+        out_down_sample = down_sample_layer(x)
+        print down_sample_layer.to_string()
+        print out_down_sample.get_shape()
+
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_down_sample)

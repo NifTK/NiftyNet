@@ -22,9 +22,9 @@ class CropLayer(Layer):
     def layer_op(self, inputs):
         spatial_rank = layer_util.infer_spatial_rank(inputs)
         kernel_shape = np.hstack((
-            [self.border*2+1] * spatial_rank, 1, 1)).flatten()
+            [self.border * 2 + 1] * spatial_rank, 1, 1)).flatten()
         # initializer a kernel with all 0s, and set the central element to 1
-        np_kernel = _set_central_to_one(np.zeros(kernel_shape))
+        np_kernel = layer_util.trivial_kernel(kernel_shape)
         crop_kernel = tf.constant(np_kernel, dtype=inputs.dtype)
         # split channel dim
         output_tensor = [tf.expand_dims(x, -1)
@@ -37,9 +37,3 @@ class CropLayer(Layer):
                          for inputs in output_tensor]
         output_tensor = tf.concat(output_tensor, axis=-1)
         return output_tensor
-
-def _set_central_to_one(np_kernel):
-    kernel_shape = np_kernel.shape
-    flattened = np_kernel.reshape(-1)
-    flattened[np.prod(kernel_shape)//2] = 1
-    return flattened.reshape(kernel_shape)
