@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-from layer.highresblock import HighResBlock
+from layer.highres3dnet import HighResBlock
 
 
 class HighResBlockTest(tf.test.TestCase):

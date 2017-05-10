@@ -46,7 +46,7 @@ class DeconvLayer(Layer):
                  with_bias=False,
                  b_initializer=None,
                  b_regularizer=None,
-                 name='conv'):
+                 name='deconv'):
         self.padding = padding.upper()
         assert(self.padding in SUPPORTED_PADDING)
 
@@ -103,7 +103,7 @@ class DeconvLayer(Layer):
                             output_shape=full_output_size.tolist(),
                             strides=full_stride.tolist(),
                             padding=self.padding,
-                            name='conv')
+                            name='deconv')
         if not self.with_bias:
             return output_tensor
 
@@ -137,7 +137,7 @@ class DeconvolutionalLayer(Layer):
                  with_bn=True,
                  bn_regularizer=None,
                  acti_fun=None,
-                 name="conv"):
+                 name="deconv"):
 
         self.with_bias = with_bias
         self.acti_fun = acti_fun
@@ -176,7 +176,7 @@ class DeconvolutionalLayer(Layer):
                                         with_bias=self.with_bias,
                                         b_initializer=self.b_initializer,
                                         b_regularizer=self.b_regularizer,
-                                        name='conv_')
+                                        name='deconv_')
         output_tensor = self.deconv_layer(input_tensor)
 
         if self.with_bn:

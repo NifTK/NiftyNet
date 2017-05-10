@@ -37,6 +37,8 @@ testjob:
     - coverage run -a --source . -m testing.toynet_test
     - coverage run -a --source . -m testing.crop_test
     - coverage run -a --source . -m testing.deepmedic_test
+    - coverage run -a --source . -m testing.vnetblock_test
+    - coverage run -a --source . -m testing.vnet_test
     - coverage report
     - echo 'finished test'
   tags:
