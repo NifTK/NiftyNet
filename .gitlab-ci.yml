@@ -36,6 +36,7 @@ testjob:
     - coverage run -a --source . -m testing.upsample_test
     - coverage run -a --source . -m testing.toynet_test
     - coverage run -a --source . -m testing.crop_test
+    - coverage run -a --source . -m testing.deepmedic_test
     - coverage report
     - echo 'finished test'
   tags:

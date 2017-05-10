@@ -3,10 +3,13 @@ import tensorflow as tf
 from base import Layer
 from convolution import ConvolutionalLayer
 from crop import CropLayer
+from downsample import DownSampleLayer
+from upsample import UpSampleLayer
+from elementwise import ElementwiseLayer
+import layer_util
 
 class DeepMedic(Layer):
-    def __init__(self,
-                 num_classes):
+    def __init__(self, num_classes):
         self.layer_name = 'DeepMedic'
         super(DeepMedic, self).__init__(name=self.layer_name)
         self.d_factor = 3 # downsampling factor
@@ -14,6 +17,7 @@ class DeepMedic(Layer):
         self.conv_features = [30, 30, 40, 40, 40, 40, 50, 50]
         self.fc_features = [150, 150]
         self.acti_type = 'prelu'
+        self.num_classes = num_classes
 
     def layer_op(self, images, is_training, layer_id=-1):
         # image_size is defined as the largest context, then:
@@ -26,6 +30,7 @@ class DeepMedic(Layer):
 
         # where 16 is fixed by the receptive field of conv layers
         # TODO: make sure label_size = image_size/d_factor - 16
+        spatial_rank = layer_util.infer_spatial_rank(images)
 
         image_size = images.get_shape()[1]
         assert(images.get_shape()[2] == image_size)
@@ -35,8 +40,46 @@ class DeepMedic(Layer):
         assert(image_size % 2 == 1) # to make the crop centered
         assert(image_size > self.d_factor * 16) # minimum receptive field
 
-        crop_op = CropLayer(border=self.crop_diff, 'normal_pathway')
-        downsample_op = DownsampleLayer('CONSTANT', )
-
-
+        crop_op = CropLayer(border=self.crop_diff, name='normal')
+        downsample_op = DownSampleLayer(
+                func='CONSTANT',
+                kernel_size=self.d_factor,
+                stride=self.d_factor,
+                padding='VALID',
+                name='downsample')
+        # crop 25x25x25 from 57x57x57
+        normal_path = crop_op(images)
+        # downsample 57x25x25 from 57x57x57
+        downsample_path = downsample_op(images)
+        # convolutions for both pathways
+        for n_features in self.conv_features:
+            conv_path_1 = ConvolutionalLayer(n_output_chns=n_features,
+                                             kernel_size=3,
+                                             padding='VALID',
+                                             acti_fun=self.acti_type)
+            conv_path_2 = ConvolutionalLayer(n_output_chns=n_features,
+                                             kernel_size=3,
+                                             padding='VALID',
+                                             acti_fun=self.acti_type)
+            normal_path = conv_path_1(normal_path, is_training)
+            downsample_path = conv_path_2(downsample_path, is_training)
+        # upsampling the downsampled pathway
+        upsample_op = UpSampleLayer('REPLICATE',
+                                    kernel_size=self.d_factor,
+                                    stride=self.d_factor)
+        downsample_path = upsample_op(downsample_path)
+        # concatenate both pathways
+        concat_op = ElementwiseLayer('CONCAT')
+        output_tensor = concat_op(normal_path, downsample_path)
+        # 1x1x1 convolution layer
+        for n_features in self.fc_features:
+            con_fc = ConvolutionalLayer(n_output_chns=n_features,
+                                        kernel_size=1,
+                                        acti_fun=self.acti_type)
+            output_tensor = con_fc(output_tensor, is_training)
+        # convolution layer to the class scores
+        con_fc = ConvolutionalLayer(n_output_chns=self.num_classes,
+                                    kernel_size=1,
+                                    acti_fun=self.acti_type)
+        output_tensor = con_fc(output_tensor, is_training)
         return images

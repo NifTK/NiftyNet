@@ -40,7 +40,7 @@ class DownSampleLayer(Layer):
             output_tensor = [tf.nn.convolution(
                                  input=inputs,
                                  filter=kernel,
-                                 strides=[self.stride]*spatial_rank,
+                                 strides=[self.stride] * spatial_rank,
                                  padding=self.padding,
                                  name='conv')
                              for inputs in output_tensor]
