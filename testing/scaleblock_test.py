@@ -11,6 +11,7 @@ class ScaleBlockTest(tf.test.TestCase):
         x = tf.unstack(x, axis=-1)
         for (idx, fea) in enumerate(x):
             x[idx] = tf.expand_dims(fea, axis=-1)
+        x = tf.stack(x, axis=-1)
 
         scalenet_layer = ScaleBlock('AVERAGE', n_layers=1)
         out_1 = scalenet_layer(x, is_training=True)
