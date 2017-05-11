@@ -114,10 +114,10 @@ class ConvolutionalLayer(Layer):
         self.acti_fun = acti_fun
         self.with_bn = with_bn
         self.layer_name = '{}'.format(name)
-        if self.with_bn:
-            self.layer_name += '_bn'
-        if (self.acti_fun is not None):
-            self.layer_name += '_{}'.format(self.acti_fun)
+        #if self.with_bn:
+        #    self.layer_name += '_bn'
+        #if (self.acti_fun is not None):
+        #    self.layer_name += '_{}'.format(self.acti_fun)
         super(ConvolutionalLayer, self).__init__(name=self.layer_name)
 
         self.n_output_chns = n_output_chns

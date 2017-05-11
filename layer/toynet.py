@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
 import tensorflow as tf
 
 from base import Layer
 from convolution import ConvolutionalLayer
+
 
 class ToyNet(Layer):
     def __init__(self, num_classes, name='ToyNet'):

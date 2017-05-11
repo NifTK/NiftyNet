@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import tensorflow as tf
 
 from base import Layer
@@ -8,6 +9,12 @@ from upsample import UpSampleLayer
 from elementwise import ElementwiseLayer
 import layer_util
 
+
+"""
+reimplementation of DeepMedic:
+  Kamnitsas et al., "Efficient multi-scale 3D CNN with fully connected
+  CRF for accurate brain lesion segmentation", MedIA '17
+"""
 class DeepMedic(Layer):
     def __init__(self, num_classes):
         self.layer_name = 'DeepMedic'

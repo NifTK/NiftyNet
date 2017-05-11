@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import tensorflow as tf
 
 from base import Layer
@@ -10,6 +11,12 @@ from upsample import UpSampleLayer
 from elementwise import ElementwiseLayer
 import layer_util
 
+
+"""
+implementation of V-Net:
+  Milletari et al., "V-Net: Fully convolutional neural networks for
+  volumetric medical image segmentation", 3DV '16
+"""
 class VNet(Layer):
     def __init__(self, num_classes):
         self.layer_name = 'VNet'
