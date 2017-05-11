@@ -3,12 +3,13 @@ from six.moves import range
 
 import tensorflow as tf
 import numpy as np
-from bn import BNLayer
 from base import Layer
+from bn import BNLayer
 from convolution import ConvLayer, ConvolutionalLayer
 from activation import ActiLayer
 from elementwise import ElementwiseLayer
 from dilatedcontext import DilatedTensor
+import layer_util
 
 
 """
@@ -27,13 +28,13 @@ class HighRes3DNet(Layer):
                  name='HighRes3DNet'):
 
         super(HighRes3DNet, self).__init__(name='HighRes3DNet')
-        self.model = [
-                {'op': 'conv', 'n_features': 16, 'kernel_size': 3},
-                {'op': 'resblocks', 'dilation_factor': 1, 'repeat': 3, 'n_features': 16, 'kernels':(3, 3)},
-                {'op': 'resblocks', 'dilation_factor': 2, 'repeat': 3, 'n_features': 32, 'kernels':(3, 3)},
-                {'op': 'resblocks', 'dilation_factor': 4, 'repeat': 3, 'n_features': 64, 'kernels':(3, 3)},
-                {'op': 'conv', 'n_features': 80, 'kernel_size': 1},
-                {'op': 'conv', 'n_features': num_classes, 'kernel_size': 1}]
+        self.layers = [
+                {'name':'conv_0', 'n_features':16, 'kernel_size':3},
+                {'name':'res_1',  'n_features':16, 'kernels':(3, 3), 'repeat':3},
+                {'name':'res_2',  'n_features':32, 'kernels':(3, 3), 'repeat':3},
+                {'name':'res_3',  'n_features':64, 'kernels':(3, 3), 'repeat':3},
+                {'name':'conv_1', 'n_features':80, 'kernel_size':1},
+                {'name':'conv_2', 'n_features':num_classes, 'kernel_size':1}]
         self.acti_type = acti_type
         self.w_initializer = w_initializer
         self.w_regularizer = w_regularizer
@@ -44,42 +45,72 @@ class HighRes3DNet(Layer):
 
 
     def layer_op(self, images, is_training, layer_id=-1):
-        assert(images.get_shape()[1] % 4 == 0)
-        # create operations
-        flow = images
-        list_of_layers = []
-        for (i, layer) in enumerate(self.model):
-            # create convolution layers
-            if layer['op'] == 'conv':
-                # creat a convolutional layer
-                op_ = ConvolutionalLayer(layer['n_features'],
-                                         kernel_size=layer['kernel_size'],
-                                         name='conv_{}'.format(i))
-                # data running through the layer
-                flow = op_(flow, is_training)
-                list_of_layers.append((op_, flow))
-            # create resblocks
-            if layer['op'] == 'resblocks':
-                # instead of dilating the kernels, the dilated convolution
-                # is implmeneted by rearranging the input tensor
-                # The arrangment of input is resumed after the context manager
-                with DilatedTensor(flow, layer['dilation_factor']) as dilated:
-                    for j in range(layer['repeat']):
-                        # creat a highresblock layer
-                        op_ = HighResBlock(layer['n_features'],
-                                           kernels=layer['kernels'],
-                                           name='res_{}_{}'.format(i, j))
-                        # data running through the layer
-                        dilated.tensor = op_(dilated.tensor, is_training)
-                        list_of_layers.append((op_, dilated.tensor))
-                # resume to the ordinary flow after the context manager
-                flow = dilated.tensor
-            if (i == layer_id) and (not is_training):
-                return flow
+        assert(layer_util.check_spatial_dims(
+            images, lambda x: x % 4 == 0))
+        # go through self.layers, create an instance of each layer
+        # and plugin data
+        layer_instances = []
 
+        # first convolution layer
+        params = self.layers[0]
+        first_conv_layer = ConvolutionalLayer(
+                params['n_features'], params['kernel_size'], name=params['name'])
+        flow = first_conv_layer(images, is_training)
+        layer_instances.append((first_conv_layer, flow))
+
+        # resblocks, all kernels dilated by 1 (no dilation)
+        params = self.layers[1]
+        with DilatedTensor(flow, dilation_factor=1) as dilated:
+            for j in range(params['repeat']):
+                res_block = HighResBlock(params['n_features'],
+                                         params['kernels'],
+                                         name='%s_%d'%(params['name'], j))
+                dilated.tensor = res_block(dilated.tensor, is_training)
+                layer_instances.append((res_block, dilated.tensor))
+        flow = dilated.tensor
+
+        # resblocks, all kernels dilated by 2
+        params = self.layers[2]
+        with DilatedTensor(flow, dilation_factor=2) as dilated:
+            for j in range(params['repeat']):
+                res_block = HighResBlock(params['n_features'],
+                                         params['kernels'],
+                                         name='%s_%d'%(params['name'], j))
+                dilated.tensor = res_block(dilated.tensor, is_training)
+                layer_instances.append((res_block, dilated.tensor))
+        flow = dilated.tensor
+
+        # resblocks, all kernels dilated by 4
+        params = self.layers[3]
+        with DilatedTensor(flow, dilation_factor=4) as dilated:
+            for j in range(params['repeat']):
+                res_block = HighResBlock(params['n_features'],
+                                         params['kernels'],
+                                         name='%s_%d'%(params['name'], j))
+                dilated.tensor = res_block(dilated.tensor, is_training)
+                layer_instances.append((res_block, dilated.tensor))
+        flow = dilated.tensor
+
+        # 1x1x1 convolution layer
+        params = self.layers[4]
+        fc_layer = ConvolutionalLayer(
+                params['n_features'], params['kernel_size'], name=params['name'])
+        flow = fc_layer(flow, is_training)
+        layer_instances.append((fc_layer, flow))
+
+        # 1x1x1 convolution layer
+        params = self.layers[5]
+        fc_layer = ConvolutionalLayer(
+                params['n_features'], params['kernel_size'], name=params['name'])
+        flow = fc_layer(flow, is_training)
+        layer_instances.append((fc_layer, flow))
+
+        # set training properties
         if is_training:
-            self._assign_initializer_regularizer(list_of_layers)
-        return flow
+            self._assign_initializer_regularizer(layer_instances)
+            return layer_instances[-1][1]
+        else:
+            return layer_instances[layer_id][1]
 
     def _assign_initializer_regularizer(self, list_of_layers):
         for (op, _) in list_of_layers:
@@ -107,7 +138,7 @@ class HighResBlock(Layer):
                  with_res=True,
                  name='HighResBlock'):
         self.n_output_chns = n_output_chns
-        if hasattr(kernels, "__iter__"):  # is a list of layer kernel_sizes
+        if hasattr(kernels, "__iter__"):  # a list of layer kernel_sizes
             self.kernels = kernels
         else:  # is a single number (indicating single layer)
             self.kernels = [kernels]
@@ -134,12 +165,10 @@ class HighResBlock(Layer):
                                 w_initializer=self.w_initializer,
                                 w_regularizer=self.w_regularizer,
                                 name='conv_{}'.format(i))
-
             # connect layers
             output_tensor = bn_op(output_tensor, is_training)
             output_tensor = acti_op(output_tensor)
             output_tensor = conv_op(output_tensor)
-
         # make residual connections
         if self.with_res:
             output_tensor = ElementwiseLayer('SUM')(output_tensor, input_tensor)

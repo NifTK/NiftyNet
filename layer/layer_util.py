@@ -28,7 +28,7 @@ def trivial_kernel(kernel_shape):
      [[[0]], [[0]], [[0]]]]
     kernel_shape[-1] and kernel_shape[-2] should be 1, so that it operates
     on the spatial dims only.  Note that there is no exact spatial centre
-    if np.any((kernel_shape % 2) != 1), however it is fine in many cases
+    if np.all((kernel_shape % 2) == 0), however it is fine in many cases
     as np.sum(trivial_kernel(kernel_shape)) == 1
     """
     assert(kernel_shape[-1] == 1)

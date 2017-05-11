@@ -20,9 +20,8 @@ class Layer(object):
         return self._op.variable_scope
 
     def trainable_variables(self):
-        return tf.get_collection(
-                tf.GraphKeys.TRAINABLE_VARIABLES,
-                self.layer_scope().name)
+        return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                 self.layer_scope().name)
 
     def num_trainable_params(self):
         n = tf.Dimension(0)

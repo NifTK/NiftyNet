@@ -91,9 +91,10 @@ class VNetBlock(Layer):
             main_flow = ConvLayer(name='conv_{}'.format(i),
                                   n_output_chns=self.n_feature_chns,
                                   kernel_size=5)(main_flow)
-            if i < self.n_conv - 1: # skip the last layer of conv
+            if i < self.n_conv - 1: # no activation for the last conv layer
                 main_flow = ActiLayer(func=self.acti_type)(main_flow)
         res_flow = ElementwiseLayer('SUM')(main_flow, bypass_flow)
+
         if self.func == 'DOWNSAMPLE':
             main_flow = ConvLayer(name='downsample',
                                   n_output_chns=self.n_output_chns,

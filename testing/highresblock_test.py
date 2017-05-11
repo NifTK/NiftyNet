@@ -11,7 +11,8 @@ class HighResBlockTest(tf.test.TestCase):
 
         highres_layer = HighResBlock(n_output_chns=8, kernels=(3, 3), with_res=True)
         out = highres_layer(x, is_training=True)
-        print highres_layer.to_string()
+
+        print highres_layer
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
