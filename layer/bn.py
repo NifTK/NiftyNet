@@ -1,8 +1,7 @@
-import numpy as np
 import tensorflow as tf
 from tensorflow.python.training import moving_averages
 
-from base import Layer
+from .base import Layer
 
 
 def _compute_mean_and_var(inputs, axes):
@@ -39,25 +38,25 @@ class BNLayer(Layer):
 
         # create trainable variables and moving average variables
         beta = tf.get_variable(
-                'beta',
-                shape=params_shape,
-                initializer=tf.zeros_initializer(),
-                regularizer=self.regularizer,
-                dtype=tf.float32, trainable=True)
+            'beta',
+            shape=params_shape,
+            initializer=tf.zeros_initializer(),
+            regularizer=self.regularizer,
+            dtype=tf.float32, trainable=True)
         gamma = tf.get_variable(
-                'gamma',
-                shape=params_shape,
-                initializer=tf.ones_initializer(),
-                regularizer=self.regularizer,
-                dtype=tf.float32, trainable=True)
+            'gamma',
+            shape=params_shape,
+            initializer=tf.ones_initializer(),
+            regularizer=self.regularizer,
+            dtype=tf.float32, trainable=True)
         moving_mean = tf.get_variable(
-                'moving_mean',
-                shape=params_shape, initializer=tf.zeros_initializer(),
-                dtype=tf.float32, trainable=False)
+            'moving_mean',
+            shape=params_shape, initializer=tf.zeros_initializer(),
+            dtype=tf.float32, trainable=False)
         moving_variance = tf.get_variable(
-                'moving_variance',
-                shape=params_shape, initializer=tf.ones_initializer(),
-                dtype=tf.float32, trainable=False)
+            'moving_variance',
+            shape=params_shape, initializer=tf.ones_initializer(),
+            dtype=tf.float32, trainable=False)
 
         # mean and var
         mean, variance = _compute_mean_and_var(inputs, axes)
@@ -69,7 +68,7 @@ class BNLayer(Layer):
         # call the normalisation function
         if is_training or use_local_stats:
             with tf.control_dependencies(
-                    [update_moving_mean, update_moving_variance]):
+                [update_moving_mean, update_moving_variance]):
                 outputs = tf.nn.batch_normalization(
                     inputs, mean, variance,
                     beta, gamma, self.eps, name='batch_norm')

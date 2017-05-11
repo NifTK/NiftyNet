@@ -1,21 +1,20 @@
 # -*- coding: utf-8 -*-
-import tensorflow as tf
-
-from base import Layer
-from convolution import ConvolutionalLayer
-from crop import CropLayer
-from downsample import DownSampleLayer
-from upsample import UpSampleLayer
-from elementwise import ElementwiseLayer
-import layer_util
+from .base import Layer
+from .convolution import ConvolutionalLayer
+from .crop import CropLayer
+from .downsample import DownSampleLayer
+from .upsample import UpSampleLayer
+from .elementwise import ElementwiseLayer
+from . import layer_util
 
 
-"""
-reimplementation of DeepMedic:
-  Kamnitsas et al., "Efficient multi-scale 3D CNN with fully connected
-  CRF for accurate brain lesion segmentation", MedIA '17
-"""
 class DeepMedic(Layer):
+    """
+    reimplementation of DeepMedic:
+      Kamnitsas et al., "Efficient multi-scale 3D CNN with fully connected
+      CRF for accurate brain lesion segmentation", MedIA '17
+    """
+
     def __init__(self, num_classes):
         self.layer_name = 'DeepMedic'
         super(DeepMedic, self).__init__(name=self.layer_name)
@@ -38,7 +37,7 @@ class DeepMedic(Layer):
         # where 16 is fixed by the receptive field of conv layers
         # TODO: make sure label_size = image_size/d_factor - 16
 
-        assert(self.d_factor % 2 == 1) # to make the downsampling centered
+        assert self.d_factor % 2 == 1 # to make the downsampling centered
         assert(layer_util.check_spatial_dims(
             images, lambda x: x % self.d_factor == 0))
         assert(layer_util.check_spatial_dims(

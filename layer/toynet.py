@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-import tensorflow as tf
-
-from base import Layer
-from convolution import ConvolutionalLayer
+from .base import Layer
+from .convolution import ConvolutionalLayer
 
 
 class ToyNet(Layer):
@@ -11,7 +9,7 @@ class ToyNet(Layer):
         self.hidden_features = 10
         self.num_classes = num_classes
 
-    def layer_op(self, images, is_training, layer_id=-1):
+    def layer_op(self, images, is_training):
         conv_1 = ConvolutionalLayer(self.hidden_features,
                                     kernel_size=3,
                                     acti_fun='relu',

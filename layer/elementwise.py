@@ -1,9 +1,9 @@
 import numpy as np
 
 import tensorflow as tf
-from base import Layer
-from convolution import ConvLayer
-import layer_util
+from .base import Layer
+from .convolution import ConvLayer
+from . import layer_util
 
 SUPPORTED_OP = set(['SUM', 'CONCAT'])
 
@@ -14,9 +14,10 @@ class ElementwiseLayer(Layer):
     It matches the channel dims from two branch flows,
     by either padding or projection if necessary.
     """
+
     def __init__(self, func, initializer=None, regularizer=None, name='residual'):
         self.func = func.upper()
-        assert(self.func in SUPPORTED_OP)
+        assert self.func in SUPPORTED_OP
         self.layer_name = 'res_{}'.format(self.func.lower())
         super(ElementwiseLayer, self).__init__(name=self.layer_name)
         self.initializer = initializer

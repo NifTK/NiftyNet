@@ -1,21 +1,19 @@
 # -*- coding: utf-8 -*-
-import tensorflow as tf
-
-from base import Layer
-from convolution import ConvolutionalLayer
-from deconvolution import DeconvolutionalLayer
-from downsample import DownSampleLayer
-from upsample import UpSampleLayer
-from elementwise import ElementwiseLayer
-import layer_util
+from .base import Layer
+from .convolution import ConvolutionalLayer
+from .deconvolution import DeconvolutionalLayer
+from .downsample import DownSampleLayer
+from .elementwise import ElementwiseLayer
+from . import layer_util
 
 
-"""
-reimplementation of 3D U-net
-  Çiçek et al., "3D U-Net: Learning dense Volumetric segmentation from
-  sparse annotation", MICCAI '16
-"""
 class UNet3D(Layer):
+    """
+    reimplementation of 3D U-net
+      Çiçek et al., "3D U-Net: Learning dense Volumetric segmentation from
+      sparse annotation", MICCAI '16
+    """
+
     def __init__(self, num_classes):
         self.layer_name = 'UNet_3D'
         super(UNet3D, self).__init__(name=self.layer_name)
@@ -25,7 +23,7 @@ class UNet3D(Layer):
 
     def layer_op(self, images, is_training, layer_id=-1):
         # image_size  should be divisible by 8
-        assert(layer_util.check_spatial_dims(images, lambda x: x % 8 == 0))
+        assert layer_util.check_spatial_dims(images, lambda x: x % 8 == 0)
         block_layer = UNetBlock('DOWNSAMPLE',
                                 (self.n_features[0], self.n_features[1]),
                                 (3, 3), with_downsample_branch=True,
@@ -91,7 +89,7 @@ class UNetBlock(Layer):
                  acti_type='relu',
                  name='UNet_block'):
         self.func = func.upper()
-        assert(self.func in SUPPORTED_OP)
+        assert self.func in SUPPORTED_OP
 
         super(UNetBlock, self).__init__(name=name)
         self.kernels = kernels

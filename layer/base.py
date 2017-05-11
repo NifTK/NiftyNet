@@ -36,13 +36,13 @@ class Layer(object):
             out_str += ' \033[46m(input undecided)\033[0m'
             return out_str
         layer_variables = self.trainable_variables()
-        if len(layer_variables) ==0:
+        if not layer_variables:
             out_str += ' (not trainable)'
             return out_str
         # including name of parameters
         out_str += ' \033[92m[Trainable]\033[0m '
         out_str += ', '.join([v.name.split(':')[0][len(layer_scope_name)+1:]
-            for v in layer_variables])
+                              for v in layer_variables])
         # including number of parameters
         out_str += ' ({})'.format(self.num_trainable_params())
         return out_str

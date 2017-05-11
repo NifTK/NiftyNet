@@ -15,7 +15,7 @@ def infer_spatial_rank(input_tensor):
     e.g. given an input tensor [Batch, X, Y, Z, Feature] the spatial rank is 3
     """
     dims = input_tensor.get_shape().ndims - 2
-    assert(dims > 0)
+    assert dims > 0
     return dims
 
 def trivial_kernel(kernel_shape):
@@ -31,9 +31,9 @@ def trivial_kernel(kernel_shape):
     if np.all((kernel_shape % 2) == 0), however it is fine in many cases
     as np.sum(trivial_kernel(kernel_shape)) == 1
     """
-    assert(kernel_shape[-1] == 1)
-    assert(kernel_shape[-2] == 1)
-    #assert(np.all((kernel_shape % 2) == 1))
+    assert kernel_shape[-1] == 1
+    assert kernel_shape[-2] == 1
+    #assert np.all((kernel_shape % 2) == 1)
     kernel = np.zeros(kernel_shape)
     flattened = kernel.reshape(-1)
     flattened[np.prod(kernel_shape)//2] = 1

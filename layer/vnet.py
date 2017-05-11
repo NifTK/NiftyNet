@@ -1,23 +1,21 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
 
-from base import Layer
-from convolution import ConvLayer, ConvolutionalLayer
-from deconvolution import DeconvLayer, DeconvolutionalLayer
-from activation import ActiLayer
-from crop import CropLayer
-from downsample import DownSampleLayer
-from upsample import UpSampleLayer
-from elementwise import ElementwiseLayer
-import layer_util
+from .base import Layer
+from .convolution import ConvLayer
+from .deconvolution import DeconvLayer
+from .activation import ActiLayer
+from .elementwise import ElementwiseLayer
+from . import layer_util
 
 
-"""
-implementation of V-Net:
-  Milletari et al., "V-Net: Fully convolutional neural networks for
-  volumetric medical image segmentation", 3DV '16
-"""
 class VNet(Layer):
+    """
+    implementation of V-Net:
+      Milletari et al., "V-Net: Fully convolutional neural networks for
+      volumetric medical image segmentation", 3DV '16
+    """
+
     def __init__(self, num_classes):
         self.layer_name = 'VNet'
         super(VNet, self).__init__(name=self.layer_name)
@@ -27,7 +25,7 @@ class VNet(Layer):
         self.acti_type = 'prelu'
 
     def layer_op(self, images, is_training, layer_id=-1):
-        assert(layer_util.check_spatial_dims(images, lambda x: x % 8 == 0))
+        assert layer_util.check_spatial_dims(images, lambda x: x % 8 == 0)
 
         padded_images = tf.tile(images, [1, 1, 1, 1, self.n_features[0]])
         # downsampling  blocks
@@ -87,7 +85,7 @@ class VNetBlock(Layer):
                  name='vnet_block'):
         super(VNetBlock, self).__init__(name=name)
         self.func = func.upper()
-        assert(self.func in SUPPORTED_OPS)
+        assert self.func in SUPPORTED_OPS
         self.n_conv = n_conv
         self.n_feature_chns = n_feature_chns
         self.n_output_chns = n_output_chns

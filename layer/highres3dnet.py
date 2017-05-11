@@ -1,23 +1,22 @@
 # -*- coding: utf-8 -*-
 from six.moves import range
 
-import tensorflow as tf
-import numpy as np
-from base import Layer
-from bn import BNLayer
-from convolution import ConvLayer, ConvolutionalLayer
-from activation import ActiLayer
-from elementwise import ElementwiseLayer
-from dilatedcontext import DilatedTensor
-import layer_util
+from .base import Layer
+from .bn import BNLayer
+from .convolution import ConvLayer, ConvolutionalLayer
+from .activation import ActiLayer
+from .elementwise import ElementwiseLayer
+from .dilatedcontext import DilatedTensor
+from . import layer_util
 
 
-"""
-implementation of HighRes3DNet:
-  Li et al., "On the compactness, efficiency, and representation of 3D
-  convolutional networks: Brain parcellation as a pretext task", IPMI '17
-"""
 class HighRes3DNet(Layer):
+    """
+    implementation of HighRes3DNet:
+      Li et al., "On the compactness, efficiency, and representation of 3D
+      convolutional networks: Brain parcellation as a pretext task", IPMI '17
+    """
+
     def __init__(self,
                  num_classes,
                  w_initializer=None,
@@ -29,19 +28,19 @@ class HighRes3DNet(Layer):
 
         super(HighRes3DNet, self).__init__(name='HighRes3DNet')
         self.layers = [
-                {'name':'conv_0', 'n_features':16, 'kernel_size':3},
-                {'name':'res_1',  'n_features':16, 'kernels':(3, 3), 'repeat':3},
-                {'name':'res_2',  'n_features':32, 'kernels':(3, 3), 'repeat':3},
-                {'name':'res_3',  'n_features':64, 'kernels':(3, 3), 'repeat':3},
-                {'name':'conv_1', 'n_features':80, 'kernel_size':1},
-                {'name':'conv_2', 'n_features':num_classes, 'kernel_size':1}]
+            {'name': 'conv_0', 'n_features': 16, 'kernel_size': 3},
+            {'name': 'res_1', 'n_features': 16, 'kernels': (3, 3), 'repeat': 3},
+            {'name': 'res_2', 'n_features': 32, 'kernels': (3, 3), 'repeat': 3},
+            {'name': 'res_3', 'n_features': 64, 'kernels': (3, 3), 'repeat': 3},
+            {'name': 'conv_1', 'n_features': 80, 'kernel_size': 1},
+            {'name': 'conv_2', 'n_features': num_classes, 'kernel_size': 1}]
         self.acti_type = acti_type
         self.w_initializer = w_initializer
         self.w_regularizer = w_regularizer
         self.b_initializer = b_initializer
         self.b_regularizer = b_regularizer
         self.name = "HighRes3DNet"
-        print('using {}'.format(self.name))
+        print 'using {}'.format(self.name)
 
 
     def layer_op(self, images, is_training, layer_id=-1):
@@ -54,7 +53,7 @@ class HighRes3DNet(Layer):
         # first convolution layer
         params = self.layers[0]
         first_conv_layer = ConvolutionalLayer(
-                params['n_features'], params['kernel_size'], name=params['name'])
+            params['n_features'], params['kernel_size'], name=params['name'])
         flow = first_conv_layer(images, is_training)
         layer_instances.append((first_conv_layer, flow))
 
@@ -94,14 +93,14 @@ class HighRes3DNet(Layer):
         # 1x1x1 convolution layer
         params = self.layers[4]
         fc_layer = ConvolutionalLayer(
-                params['n_features'], params['kernel_size'], name=params['name'])
+            params['n_features'], params['kernel_size'], name=params['name'])
         flow = fc_layer(flow, is_training)
         layer_instances.append((fc_layer, flow))
 
         # 1x1x1 convolution layer
         params = self.layers[5]
         fc_layer = ConvolutionalLayer(
-                params['n_features'], params['kernel_size'], name=params['name'])
+            params['n_features'], params['kernel_size'], name=params['name'])
         flow = fc_layer(flow, is_training)
         layer_instances.append((fc_layer, flow))
 
@@ -109,8 +108,7 @@ class HighRes3DNet(Layer):
         if is_training:
             self._assign_initializer_regularizer(layer_instances)
             return layer_instances[-1][1]
-        else:
-            return layer_instances[layer_id][1]
+        return layer_instances[layer_id][1]
 
     def _assign_initializer_regularizer(self, list_of_layers):
         for (op, _) in list_of_layers:
@@ -129,6 +127,7 @@ class HighResBlock(Layer):
             - e.g.: kernels=(5, 5, 5) indicate three conv layers of kernel_size 5
     with_res - whether to add residual connections to bypass the conv layers
     """
+
     def __init__(self,
                  n_output_chns,
                  kernels=(3, 3),
@@ -143,14 +142,13 @@ class HighResBlock(Layer):
         else:  # is a single number (indicating single layer)
             self.kernels = [kernels]
         self.acti_type = acti_type
-        self.w_initializer=None
-        self.w_regularizer=None
+        self.w_initializer = None
+        self.w_regularizer = None
         self.layer_name = name
         self.with_res = with_res
         super(HighResBlock, self).__init__(name=self.layer_name)
 
     def layer_op(self, input_tensor, is_training):
-        self.n_input_chns = input_tensor.get_shape()[-1]
         output_tensor = input_tensor
         for (i, k) in enumerate(self.kernels):
             # create parameterised layers

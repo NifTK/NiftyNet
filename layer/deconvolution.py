@@ -1,10 +1,10 @@
 import numpy as np
 import tensorflow as tf
 
-from base import Layer
-from bn import BNLayer
-from activation import ActiLayer
-import layer_util
+from .base import Layer
+from .bn import BNLayer
+from .activation import ActiLayer
+from . import layer_util
 
 
 SUPPORTED_OP = {'2D': tf.nn.conv2d_transpose,
@@ -15,7 +15,7 @@ def default_w_initializer(kernel_shape):
     stddev = np.sqrt(2.0 / \
             (np.prod(kernel_shape[:-2]) * kernel_shape[-1]))
     return tf.truncated_normal_initializer(
-            mean=0.0, stddev=stddev, dtype=tf.float32)
+        mean=0.0, stddev=stddev, dtype=tf.float32)
 
 def default_b_initializer():
     return tf.zeros_initializer()
@@ -48,7 +48,7 @@ class DeconvLayer(Layer):
                  b_regularizer=None,
                  name='deconv'):
         self.padding = padding.upper()
-        assert(self.padding in SUPPORTED_PADDING)
+        assert self.padding in SUPPORTED_PADDING
 
         self.layer_name = '{}'.format(name)
         super(DeconvLayer, self).__init__(name=self.layer_name)
@@ -80,16 +80,16 @@ class DeconvLayer(Layer):
         if self.w_initializer is None:
             self.w_initializer = default_w_initializer(w_full_size)
         self._w = tf.get_variable(
-                'w', shape=w_full_size.tolist(),
-                initializer=self.w_initializer,
-                regularizer=self.w_regularizer)
+            'w', shape=w_full_size.tolist(),
+            initializer=self.w_initializer,
+            regularizer=self.w_regularizer)
         if spatial_rank == 2:
             op_ = SUPPORTED_OP['2D']
         elif spatial_rank == 3:
             op_ = SUPPORTED_OP['3D']
         else:
             raise ValueError(
-                    "Only 2D and 3D spatial deconvolutions are supported")
+                "Only 2D and 3D spatial deconvolutions are supported")
 
         output_dim = infer_output_dim(input_shape[1],
                                       self.stride,
@@ -112,9 +112,9 @@ class DeconvLayer(Layer):
         if self.b_initializer is None:
             self.b_initializer = default_b_initializer()
         self._b = tf.get_variable(
-                'b', shape=bias_full_size,
-                initializer=self.b_initializer,
-                regularizer=self.b_regularizer)
+            'b', shape=bias_full_size,
+            initializer=self.b_initializer,
+            regularizer=self.b_regularizer)
         output_tensor = tf.nn.bias_add(output_tensor, self._b, name='add_bias')
         return output_tensor
 
@@ -160,7 +160,7 @@ class DeconvolutionalLayer(Layer):
         self.b_regularizer = b_regularizer
         self.bn_regularizer = bn_regularizer
 
-        self.conv_layer = None
+        self.deconv_layer = None
         self.bn_layer = None
         self.acti_layer = None
         self.dropout_layer = None
@@ -183,13 +183,13 @@ class DeconvolutionalLayer(Layer):
             self.bn_layer = BNLayer(regularizer=self.bn_regularizer, name='bn_')
             output_tensor = self.bn_layer(output_tensor, is_training)
 
-        if (self.acti_fun is not None):
+        if self.acti_fun is not None:
             self.acti_layer = ActiLayer(func=self.acti_fun,
                                         regularizer=self.w_regularizer,
                                         name='acti_')
             output_tensor = self.acti_layer(output_tensor)
 
-        if (keep_prob is not None):
+        if keep_prob is not None:
             self.dropout_layer = ActiLayer(func='dropout', name='dropout_')
             output_tensor = self.dropout_layer(output_tensor,
                                                keep_prob=keep_prob)

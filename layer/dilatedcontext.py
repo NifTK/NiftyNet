@@ -1,5 +1,5 @@
 import tensorflow as tf
-import layer_util
+from . import layer_util
 
 
 class DilatedTensor(object):
@@ -8,6 +8,7 @@ class DilatedTensor(object):
     When created, the input_tensor is dilated,
     the input_tensor resumes to original space when exiting the context.
     """
+
     def __init__(self, input_tensor, dilation_factor):
         assert(layer_util.check_spatial_dims(
             input_tensor, lambda x: x % dilation_factor == 0))
@@ -21,10 +22,10 @@ class DilatedTensor(object):
     def __enter__(self):
         if self.dilation_factor > 1:
             self.tensor = tf.space_to_batch_nd(
-                    self.tensor, self.block_shape, self.zero_paddings)
+                self.tensor, self.block_shape, self.zero_paddings)
         return self
 
     def __exit__(self, *args):
         if self.dilation_factor > 1:
             self.tensor = tf.batch_to_space_nd(
-                    self.tensor, self.block_shape, self.zero_paddings)
+                self.tensor, self.block_shape, self.zero_paddings)
