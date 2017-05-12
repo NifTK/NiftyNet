@@ -56,7 +56,7 @@ def run(net, param):
         tower_grads = []
         with tf.variable_scope(tf.get_variable_scope()):
             for i in range(param.num_gpus):
-                train_pairs = train_batch_runner.pop_batch()
+                train_pairs = train_batch_runner.pop_batch_op
                 images = train_pairs['images']
                 labels = train_pairs['labels']
                 with tf.device("/gpu:%d" % i), tf.name_scope("N_%d" % i) as scope:
@@ -120,7 +120,7 @@ def run(net, param):
         writer = tf.summary.FileWriter(root_dir + '/logs', sess.graph)
         try:
             print('Filling the queue (this can take a few minutes)')
-            train_batch_runner.init_threads(sess, coord, param.num_threads)
+            train_batch_runner.run_threads(sess, coord, param.num_threads)
             for i in range(param.max_iter):
                 local_time = time.time()
                 if coord.should_stop():
@@ -145,12 +145,11 @@ def run(net, param):
             pass
         except Exception as unusual_error:
             print(unusual_error)
-            train_batch_runner.close_all(coord, sess)
+            train_batch_runner.close_all()
         finally:
             saver.save(sess, ckpt_name,
                        global_step=param.max_iter + param.starting_iter)
             print('Last iteration model saved at {}'.format(ckpt_name))
             print('training.py (time in second) {:.2f}'.format(
                 time.time() - start_time))
-            train_batch_runner.close_all(coord, sess)
-            coord.join(train_batch_runner.threads)
+            train_batch_runner.close_all()

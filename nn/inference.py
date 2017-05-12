@@ -45,7 +45,7 @@ def run(net, param):
             param.queue_length,
             shapes=[[net.input_image_size] * 3 + [len(mod_list)], [7]],
             sample_generator=sample_generator)
-        test_pairs = seg_batch_runner.pop_batch()
+        test_pairs = seg_batch_runner.pop_batch_op
         info = test_pairs['info']
         logits = net.inference(test_pairs['images'])
         logits = tf.argmax(logits, 4)
@@ -72,7 +72,7 @@ def run(net, param):
 
         coord = tf.train.Coordinator()
         try:
-            seg_batch_runner.init_threads(sess, coord, num_threads=1)
+            seg_batch_runner.run_threads(sess, coord, num_threads=1)
             img_id = -1
             pred_img = None
             patient_name = None
@@ -113,13 +113,12 @@ def run(net, param):
             print('User cancelled training')
         except tf.errors.OutOfRangeError:
             pass
-        # except Exception as unusual_error:
-        #    print(unusual_error)
-        #    seg_batch_runner.close_all(coord, sess)
+        except Exception as unusual_error:
+            print(unusual_error)
+            seg_batch_runner.close_all()
         finally:
             # save the last batches
             util.save_segmentation(param, valid_names[img_id], pred_img)
             print('inference.py time: {} seconds'.format(
                 time.time() - start_time))
-            seg_batch_runner.close_all(coord, sess)
-            coord.join(seg_batch_runner.threads)
+            seg_batch_runner.close_all()

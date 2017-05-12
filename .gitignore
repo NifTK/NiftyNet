@@ -5,6 +5,7 @@ __pycache__/
 *.pkl
 models/
 output/
+seg_output_*
 user/
 emerald_*
 example_volumes*
