@@ -122,7 +122,7 @@ class InputBatchQueueRunner(object):
                 # preparing closing down
                 # waiting to be sure the last few batches are dequeued
                 retry, interval = 60000, 0.001
-                print "stopping the sampling threads..." \
+                print "stopping the sampling threads... " \
                       "({} seconds grace period)".format(retry * interval)
                 while retry > 0:
                     remained = self.current_queue_size - self.min_queue_size

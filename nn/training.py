@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 import os
 import time
 
@@ -7,19 +6,20 @@ import numpy as np
 import tensorflow as tf
 from six.moves import range
 
-import utilities.misc as util
-from loss import LossFunction
-from network.net_template import NetTemplate
-from input_queue import TrainEvalInputBuffer
-from sampler import VolumeSampler
+from network.net_template import NetTemplate as NetTemplate
+from utilities import misc as util
+from .input_queue import TrainEvalInputBuffer
+from .loss import LossFunction
+from .sampler import VolumeSampler
 
 np.random.seed(seed=int(time.time()))
+
 
 def run(net, param):
     if not isinstance(net, NetTemplate):
         print('net model should inherit network.NetTemplate')
         return
-    assert(param.batch_size <= param.queue_length)
+    assert (param.batch_size <= param.queue_length)
     patient_list = util.list_patient(param.train_data_dir)
     modality_list = util.list_modality(param.train_data_dir)
     rand_sampler = VolumeSampler(
@@ -31,17 +31,22 @@ def run(net, param):
         param.volume_padding_size,
         param.histogram_ref_file,
         param.sample_per_volume)
-
     sample_generator = rand_sampler.uniform_sampling_from(param.train_data_dir)
 
     graph = tf.Graph()
     with graph.as_default(), tf.device('/cpu:0'):
         # construct train queue and graph
+        input_shapes = [
+            # multimodal image size
+            [param.image_size] * 3 + [len(rand_sampler.modalities)],
+            # label size
+            [param.image_size] * 3,
+            # location info size
+            [7]]
         train_batch_runner = TrainEvalInputBuffer(
-            net.batch_size,
-            param.queue_length,
-            shapes=[[net.input_image_size] * 3 + [len(rand_sampler.modalities)],
-                    [net.input_label_size] * 3, [7]],
+            batch_size=param.batch_size,
+            capacity=param.queue_length,
+            shapes=input_shapes,
             sample_generator=sample_generator,
             shuffle=True)
         loss_func = LossFunction(net.num_classes,
@@ -125,12 +130,12 @@ def run(net, param):
                 local_time = time.time()
                 if coord.should_stop():
                     break
-                _, loss_value, miss_value=sess.run([train_op,
-                                                    ave_loss,
-                                                    ave_miss])
-                print('iter {:d}, loss={:.8f},'\
+                _, loss_value, miss_value = sess.run([train_op,
+                                                      ave_loss,
+                                                      ave_miss])
+                print('iter {:d}, loss={:.8f},' \
                       'error_rate={:.8f} ({:.3f}s)'.format(
-                          i, loss_value, miss_value, time.time() - local_time))
+                    i, loss_value, miss_value, time.time() - local_time))
                 if (i % 20) == 0:
                     writer.add_summary(sess.run(write_summary_op),
                                        i + param.starting_iter)
@@ -143,9 +148,10 @@ def run(net, param):
             print('User cancelled training')
         except tf.errors.OutOfRangeError:
             pass
-        except Exception as unusual_error:
-            print(unusual_error)
-            train_batch_runner.close_all()
+        except ValueError as e:
+            print(e)
+        except RuntimeError as e:
+            print(e)
         finally:
             saver.save(sess, ckpt_name,
                        global_step=param.max_iter + param.starting_iter)
