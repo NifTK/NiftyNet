@@ -6,19 +6,21 @@ from .bn import BNLayer
 from .activation import ActiLayer
 from . import layer_util
 
-
 SUPPORTED_OP = {'2D': tf.nn.conv2d_transpose,
                 '3D': tf.nn.conv3d_transpose}
 SUPPORTED_PADDING = set(['SAME', 'VALID'])
 
+
 def default_w_initializer(kernel_shape):
     stddev = np.sqrt(2.0 / \
-            (np.prod(kernel_shape[:-2]) * kernel_shape[-1]))
+                     (np.prod(kernel_shape[:-2]) * kernel_shape[-1]))
     return tf.truncated_normal_initializer(
         mean=0.0, stddev=stddev, dtype=tf.float32)
 
+
 def default_b_initializer():
     return tf.zeros_initializer()
+
 
 def infer_output_dim(input_dim, stride, kernel_size, padding):
     if input_dim is None:
@@ -36,6 +38,7 @@ class DeconvLayer(Layer):
     Please consider `DeconvolutionalLayer` if batch_norm and activation
     are also used.
     """
+
     def __init__(self,
                  n_output_chns,
                  kernel_size=3,
@@ -124,6 +127,7 @@ class DeconvolutionalLayer(Layer):
     This class defines a composite layer with optional components:
         deconvolution -> batch_norm -> activation -> dropout
     """
+
     def __init__(self,
                  n_output_chns,
                  kernel_size,
@@ -143,9 +147,9 @@ class DeconvolutionalLayer(Layer):
         self.acti_fun = acti_fun
         self.with_bn = with_bn
         self.layer_name = '{}'.format(name)
-        #if self.with_bn:
+        # if self.with_bn:
         #    self.layer_name += '_bn'
-        #if (self.acti_fun is not None):
+        # if (self.acti_fun is not None):
         #    self.layer_name += '_{}'.format(self.acti_fun)
         super(DeconvolutionalLayer, self).__init__(name=self.layer_name)
 

@@ -1,4 +1,3 @@
-import numpy as np
 import tensorflow as tf
 
 from layer.activation import ActiLayer
@@ -45,7 +44,6 @@ class ActivationTest(tf.test.TestCase):
         out_dropout = dropout_layer(x, keep_prob=0.8)
         print dropout_layer
 
-
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_relu)
@@ -57,8 +55,9 @@ class ActivationTest(tf.test.TestCase):
             out = sess.run(out_tanh)
             out = sess.run(out_prelu)
             out = sess.run(out_dropout)
-            #self.assertAllClose(input_shape, out.shape)
-            #self.assertAllClose(np.zeros(input_shape), out)
+            # self.assertAllClose(input_shape, out.shape)
+            # self.assertAllClose(np.zeros(input_shape), out)
+
 
 if __name__ == "__main__":
     tf.test.main()

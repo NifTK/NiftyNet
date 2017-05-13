@@ -14,10 +14,10 @@ class CropLayer(Layer):
     This function is implemented with a convolution in the `valid` mode
     with a trivial kernel
     """
+
     def __init__(self, border, name='crop'):
         super(CropLayer, self).__init__(name=name)
         self.border = border
-
 
     def layer_op(self, inputs):
         spatial_rank = layer_util.infer_spatial_rank(inputs)
@@ -31,7 +31,7 @@ class CropLayer(Layer):
                          for x in tf.unstack(inputs, axis=-1)]
         output_tensor = [tf.nn.convolution(input=inputs,
                                            filter=crop_kernel,
-                                           strides=[1]*spatial_rank,
+                                           strides=[1] * spatial_rank,
                                            padding='VALID',
                                            name='conv')
                          for inputs in output_tensor]

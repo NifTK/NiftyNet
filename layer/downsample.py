@@ -1,9 +1,8 @@
 import numpy as np
 import tensorflow as tf
 
-from .base import Layer
 from . import layer_util
-
+from .base import Layer
 
 SUPPORTED_OP = set(['AVG', 'MAX', 'CONSTANT'])
 SUPPORTED_PADDING = set(['SAME', 'VALID'])

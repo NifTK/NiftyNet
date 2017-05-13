@@ -1,4 +1,3 @@
-import numpy as np
 import tensorflow as tf
 
 from layer.highres3dnet import HighRes3DNet
@@ -15,6 +14,7 @@ class HighRes3DNetTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
+
 
 if __name__ == "__main__":
     tf.test.main()

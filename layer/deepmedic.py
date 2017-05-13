@@ -18,7 +18,7 @@ class DeepMedic(Layer):
     def __init__(self, num_classes):
         self.layer_name = 'DeepMedic'
         super(DeepMedic, self).__init__(name=self.layer_name)
-        self.d_factor = 3 # downsampling factor
+        self.d_factor = 3  # downsampling factor
         self.crop_diff = ((self.d_factor - 1) * 16) / 2
         self.conv_features = [30, 30, 40, 40, 40, 40, 50, 50]
         self.fc_features = [150, 150, num_classes]
@@ -37,20 +37,20 @@ class DeepMedic(Layer):
         # where 16 is fixed by the receptive field of conv layers
         # TODO: make sure label_size = image_size/d_factor - 16
 
-        assert self.d_factor % 2 == 1 # to make the downsampling centered
-        assert(layer_util.check_spatial_dims(
+        assert self.d_factor % 2 == 1  # to make the downsampling centered
+        assert (layer_util.check_spatial_dims(
             images, lambda x: x % self.d_factor == 0))
-        assert(layer_util.check_spatial_dims(
-            images, lambda x: x % 2 == 1)) # to make the crop centered
-        assert(layer_util.check_spatial_dims(
-            images, lambda x: x > self.d_factor * 16)) # minimum receptive field
+        assert (layer_util.check_spatial_dims(
+            images, lambda x: x % 2 == 1))  # to make the crop centered
+        assert (layer_util.check_spatial_dims(
+            images, lambda x: x > self.d_factor * 16))  # minimum receptive field
 
         ### crop 25x25x25 from 57x57x57
         crop_op = CropLayer(border=self.crop_diff, name='cropping_input')
         normal_path = crop_op(images)
         print crop_op
 
-        ### downsample 57x25x25 from 57x57x57
+        ### downsample 25x25x25 from 57x57x57
         downsample_op = DownSampleLayer(func='CONSTANT',
                                         kernel_size=self.d_factor,
                                         stride=self.d_factor,
@@ -61,17 +61,19 @@ class DeepMedic(Layer):
 
         ### convolutions for both pathways
         for n_features in self.conv_features:
+            # normal pathway convolutions
             conv_path_1 = ConvolutionalLayer(n_output_chns=n_features,
                                              kernel_size=3,
                                              padding='VALID',
                                              acti_fun=self.acti_type,
                                              name='normal_conv')
+            normal_path = conv_path_1(normal_path, is_training)
+            # downsampled pathway convolutions
             conv_path_2 = ConvolutionalLayer(n_output_chns=n_features,
                                              kernel_size=3,
                                              padding='VALID',
                                              acti_fun=self.acti_type,
                                              name='downsample_conv')
-            normal_path = conv_path_1(normal_path, is_training)
             downsample_path = conv_path_2(downsample_path, is_training)
             print conv_path_1
             print conv_path_2

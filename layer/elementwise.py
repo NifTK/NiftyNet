@@ -1,9 +1,9 @@
 import numpy as np
-
 import tensorflow as tf
+
+from . import layer_util
 from .base import Layer
 from .convolution import ConvLayer
-from . import layer_util
 
 SUPPORTED_OP = set(['SUM', 'CONCAT'])
 

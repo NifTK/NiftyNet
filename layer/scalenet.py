@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
+import tensorflow as tf
 from six.moves import range
 
-import tensorflow as tf
 from .base import Layer
 from .convolution import ConvolutionalLayer
 from .highres3dnet import HighRes3DNet, HighResBlock
@@ -12,7 +12,6 @@ class ScaleNet(Layer):
                  num_classes,
                  acti_type='prelu',
                  name='ScaleNet'):
-
         super(ScaleNet, self).__init__(name=name)
         self.n_features = 16
         self.num_classes = num_classes
@@ -20,12 +19,11 @@ class ScaleNet(Layer):
         self.name = "ScaleNet"
         print 'using {}'.format(self.name)
 
-
     def layer_op(self, images, is_training, layer_id=-1):
         n_modality = images.get_shape().as_list()[-1]
         rank = images.get_shape().ndims
         assert n_modality > 1
-        roots = tf.split(images, n_modality, axis=rank-1)
+        roots = tf.split(images, n_modality, axis=rank - 1)
         for (idx, root) in enumerate(roots):
             conv_layer = ConvolutionalLayer(n_output_chns=self.n_features,
                                             kernel_size=3,
@@ -40,7 +38,10 @@ class ScaleNet(Layer):
         output_tensor = front_end(output_tensor, is_training)
         return output_tensor
 
+
 SUPPORTED_OP = set(['MAX', 'AVERAGE'])
+
+
 class ScaleBlock(Layer):
     def __init__(self, func, n_layers=1, name='scaleblock'):
         self.func = func.upper()

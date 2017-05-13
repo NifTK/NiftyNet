@@ -1,10 +1,9 @@
 import numpy as np
 import tensorflow as tf
 
+from . import layer_util
 from .base import Layer
 from .deconvolution import DeconvLayer
-from . import layer_util
-
 
 SUPPORTED_OP = set(['REPLICATE', 'CHANNELWISE_DECONV'])
 
@@ -52,7 +51,7 @@ class UpSampleLayer(Layer):
                     "consider using `CHANNELWISE_DECONV` operation.")
             # simply replicate input values to
             # local regions of (kernel_size ** spatial_rank) element
-            repmat = np.hstack((self.kernel_size**spatial_rank,
+            repmat = np.hstack((self.kernel_size ** spatial_rank,
                                 [1] * spatial_rank, 1)).flatten()
             output_tensor = tf.tile(input=input_tensor, multiples=repmat)
             output_tensor = tf.batch_to_space_nd(

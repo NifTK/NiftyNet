@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 import os
-import sys
 import pickle
+import sys
+from argparse import ArgumentParser
+
 import nibabel
 import numpy as np
-from argparse import ArgumentParser
-import misc as util
 from medpy.filter import IntensityRangeStandardization
+
+import misc as util
 
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w')
 
@@ -27,7 +29,6 @@ thr = float(argument.thr)
 data_folder = argument.data_folder
 target_folder = argument.model_saving_folder
 
-
 if __name__ == '__main__':
     list_modality = util.list_modality(data_folder)
     print('Modalities found: %s' % list_modality)
@@ -41,8 +42,8 @@ if __name__ == '__main__':
             image = nibabel.load(file_path).get_data()
             # Assure that min of image is 0
             image = image - np.min(image)
-            #TODO add downsampling?
-            foreground = image[image > np.mean(image)*thr]
+            # TODO add downsampling?
+            foreground = image[image > np.mean(image) * thr]
             list_images.append(foreground)
         print('Train histogram reference for modality %s' % modality)
         irs = IntensityRangeStandardization()
@@ -54,4 +55,3 @@ if __name__ == '__main__':
         with open(save_path, 'wb') as f:
             pickle.dump(irs, f)
         print 'file saved %s' % save_path
-

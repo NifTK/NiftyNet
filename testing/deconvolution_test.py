@@ -1,4 +1,3 @@
-import numpy as np
 import tensorflow as tf
 
 from layer.deconvolution import DeconvLayer
@@ -35,9 +34,8 @@ class DeconvTest(tf.test.TestCase):
 
         deconv_reg = DeconvLayer(10, 3, 1, w_regularizer=tf.nn.l2_loss)
         conv_reg_out = deconv_reg(x_2d)
-        #print tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+        # print tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
         print conv_reg_out.get_shape()
-
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -46,8 +44,9 @@ class DeconvTest(tf.test.TestCase):
             out_bn = sess.run(conv_bn_out)
             out_bn_relu = sess.run(conv_bn_relu_out)
             out_reg = sess.run(conv_reg_out)
-        #    self.assertAllClose(input_shape, out.shape)
-        #    self.assertAllClose(np.zeros(input_shape), out)
+            #    self.assertAllClose(input_shape, out.shape)
+            #    self.assertAllClose(np.zeros(input_shape), out)
+
 
 if __name__ == "__main__":
     tf.test.main()

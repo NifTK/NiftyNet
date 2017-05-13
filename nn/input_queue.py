@@ -6,8 +6,9 @@ TrainEvalInputBuffer provides randomised queue
 DeployInputBuffer provides FIFO queue. This is designed for making
 patch-based predictions for mulitple test volumes.
 """
-import time
 import threading
+import time
+
 import tensorflow as tf
 
 
@@ -34,7 +35,7 @@ class InputBatchQueueRunner(object):
                  shuffle=True):
 
         assert callable(generator)
-        assert batch_size <= (capacity/2)
+        assert batch_size <= (capacity / 2)
         assert batch_size > 0
         assert len(input_names) == len(input_types)
         assert len(input_names) == len(input_shapes)
@@ -43,7 +44,7 @@ class InputBatchQueueRunner(object):
 
         # define queue properties
         self.input_names, self.input_types, self.input_shapes = \
-                input_names, input_types, input_shapes
+            input_names, input_types, input_shapes
         self.capacity = capacity
         self.shuffle = shuffle
         self.min_queue_size = self.capacity / 2 if self.shuffle else 0
@@ -79,7 +80,7 @@ class InputBatchQueueRunner(object):
                 names=self.input_names,
                 name="shuffled_queue")
         else:
-            self._queue = tf.FIFOQueue(# pylint: disable=redefined-variable-type
+            self._queue = tf.FIFOQueue(  # pylint: disable=redefined-variable-type
                 capacity=self.capacity,
                 dtypes=self.input_types,
                 shapes=self.input_shapes,
@@ -121,7 +122,7 @@ class InputBatchQueueRunner(object):
                 # preparing closing down
                 # waiting to be sure the last few batches are dequeued
                 retry, interval = 60000, 0.001
-                print "stopping the sampling threads..."\
+                print "stopping the sampling threads..." \
                       "({} seconds grace period)".format(retry * interval)
                 while retry > 0:
                     remained = self.current_queue_size - self.min_queue_size
@@ -132,9 +133,9 @@ class InputBatchQueueRunner(object):
                     retry -= 1
                 if remained > 0:
                     # still having elements left, we can't do anything with that
-                    print("Insufficient samples to form a {}-element batch: "\
+                    print("Insufficient samples to form a {}-element batch: " \
                           "{} available in queue".format(
-                              self.batch_size, remained))
+                        self.batch_size, remained))
                 self.close_all()
 
     @property

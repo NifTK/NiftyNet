@@ -1,4 +1,3 @@
-import numpy as np
 import tensorflow as tf
 
 from layer.scalenet import ScaleBlock
@@ -27,6 +26,7 @@ class ScaleBlockTest(tf.test.TestCase):
             out_2 = sess.run(out_2)
             print out_1.shape
             print out_2.shape
+
 
 if __name__ == "__main__":
     tf.test.main()

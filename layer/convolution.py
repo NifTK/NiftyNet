@@ -6,13 +6,14 @@ from .bn import BNLayer
 from .activation import ActiLayer
 from . import layer_util
 
-
 SUPPORTED_PADDING = set(['SAME', 'VALID'])
+
 
 def default_w_initializer(kernel_shape):
     stddev = np.sqrt(2.0 / np.prod(kernel_shape[:-1]))
     return tf.truncated_normal_initializer(
         mean=0.0, stddev=stddev, dtype=tf.float32)
+
 
 def default_b_initializer():
     return tf.zeros_initializer()
@@ -24,6 +25,7 @@ class ConvLayer(Layer):
     Please consider `ConvolutionalLayer` if batch_norm and activation
     are also used.
     """
+
     def __init__(self,
                  n_output_chns,
                  kernel_size=3,
@@ -95,6 +97,7 @@ class ConvolutionalLayer(Layer):
     This class defines a composite layer with optional components:
         convolution -> batch_norm -> activation -> dropout
     """
+
     def __init__(self,
                  n_output_chns,
                  kernel_size,
@@ -114,9 +117,9 @@ class ConvolutionalLayer(Layer):
         self.acti_fun = acti_fun
         self.with_bn = with_bn
         self.layer_name = '{}'.format(name)
-        #if self.with_bn:
+        # if self.with_bn:
         #    self.layer_name += '_bn'
-        #if (self.acti_fun is not None):
+        # if (self.acti_fun is not None):
         #    self.layer_name += '_{}'.format(self.acti_fun)
         super(ConvolutionalLayer, self).__init__(name=self.layer_name)
 

@@ -68,7 +68,7 @@ class BNLayer(Layer):
         # call the normalisation function
         if is_training or use_local_stats:
             with tf.control_dependencies(
-                [update_moving_mean, update_moving_variance]):
+                    [update_moving_mean, update_moving_variance]):
                 outputs = tf.nn.batch_normalization(
                     inputs, mean, variance,
                     beta, gamma, self.eps, name='batch_norm')

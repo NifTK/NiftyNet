@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
 
+from . import layer_util
+from .activation import ActiLayer
 from .base import Layer
 from .convolution import ConvLayer
 from .deconvolution import DeconvLayer
-from .activation import ActiLayer
 from .elementwise import ElementwiseLayer
-from . import layer_util
 
 
 class VNet(Layer):
@@ -75,6 +75,8 @@ class VNet(Layer):
 
 
 SUPPORTED_OPS = set(['DOWNSAMPLE', 'UPSAMPLE', 'SAME'])
+
+
 class VNetBlock(Layer):
     def __init__(self,
                  func,
@@ -96,7 +98,7 @@ class VNetBlock(Layer):
             main_flow = ConvLayer(name='conv_{}'.format(i),
                                   n_output_chns=self.n_feature_chns,
                                   kernel_size=5)(main_flow)
-            if i < self.n_conv - 1: # no activation for the last conv layer
+            if i < self.n_conv - 1:  # no activation for the last conv layer
                 main_flow = ActiLayer(func=self.acti_type)(main_flow)
         res_flow = ElementwiseLayer('SUM')(main_flow, bypass_flow)
 

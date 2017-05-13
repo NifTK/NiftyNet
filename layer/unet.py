@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
+from . import layer_util
 from .base import Layer
 from .convolution import ConvolutionalLayer
 from .deconvolution import DeconvolutionalLayer
 from .downsample import DownSampleLayer
 from .elementwise import ElementwiseLayer
-from . import layer_util
 
 
 class UNet3D(Layer):
@@ -80,6 +80,8 @@ class UNet3D(Layer):
 
 
 SUPPORTED_OP = set(['DOWNSAMPLE', 'UPSAMPLE', 'NONE'])
+
+
 class UNetBlock(Layer):
     def __init__(self,
                  func,
@@ -124,5 +126,5 @@ class UNetBlock(Layer):
                                                name='up_2x2')
             output_tensor = upsample_op(output_tensor, is_training)
         elif self.func == 'NONE':
-            pass # do nothing
+            pass  # do nothing
         return output_tensor, branch_output

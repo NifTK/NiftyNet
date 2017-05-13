@@ -1,4 +1,3 @@
-import numpy as np
 import tensorflow as tf
 
 from layer.convolution import ConvLayer
@@ -33,7 +32,6 @@ class ConvTest(tf.test.TestCase):
         conv_reg_out = conv_reg(x_2d)
         print tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
 
-
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_2d = sess.run(conv_2d_out)
@@ -41,8 +39,9 @@ class ConvTest(tf.test.TestCase):
             out_bn = sess.run(conv_bn_out)
             out_bn_relu = sess.run(conv_bn_relu_out)
             out_reg = sess.run(conv_reg_out)
-        #    self.assertAllClose(input_shape, out.shape)
-        #    self.assertAllClose(np.zeros(input_shape), out)
+            #    self.assertAllClose(input_shape, out.shape)
+            #    self.assertAllClose(np.zeros(input_shape), out)
+
 
 if __name__ == "__main__":
     tf.test.main()

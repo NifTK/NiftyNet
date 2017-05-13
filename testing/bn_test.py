@@ -24,5 +24,6 @@ class BNTest(tf.test.TestCase):
             self.assertAllClose(input_shape, out.shape)
             self.assertAllClose(np.zeros(input_shape), out)
 
+
 if __name__ == "__main__":
     tf.test.main()

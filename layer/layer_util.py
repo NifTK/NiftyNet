@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def check_spatial_dims(input_tensor, criteria):
     """
     valid each of the spatial dims against `criteria`
@@ -18,6 +19,7 @@ def infer_spatial_rank(input_tensor):
     assert dims > 0
     return dims
 
+
 def trivial_kernel(kernel_shape):
     """
     This function generates a trivial kernel with all 0s except for the
@@ -33,13 +35,13 @@ def trivial_kernel(kernel_shape):
     """
     assert kernel_shape[-1] == 1
     assert kernel_shape[-2] == 1
-    #assert np.all((kernel_shape % 2) == 1)
+    # assert np.all((kernel_shape % 2) == 1)
     kernel = np.zeros(kernel_shape)
     flattened = kernel.reshape(-1)
-    flattened[np.prod(kernel_shape)//2] = 1
+    flattened[np.prod(kernel_shape) // 2] = 1
     return flattened.reshape(kernel_shape)
 
-#class RequireKeywords(object):
+# class RequireKeywords(object):
 #    def __init__(self, *list_of_keys):
 #        self.keys = list_of_keys
 #

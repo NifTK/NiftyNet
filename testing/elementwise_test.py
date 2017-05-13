@@ -1,4 +1,3 @@
-import numpy as np
 import tensorflow as tf
 
 from layer.elementwise import ElementwiseLayer
@@ -41,6 +40,7 @@ class ElementwiseTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_sum)
+
 
 if __name__ == "__main__":
     tf.test.main()

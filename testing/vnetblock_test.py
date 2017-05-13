@@ -1,4 +1,3 @@
-import numpy as np
 import tensorflow as tf
 
 from layer.vnet import VNetBlock
@@ -31,6 +30,7 @@ class VNetBlockTest(tf.test.TestCase):
             sess.run(tf.global_variables_initializer())
             out_1 = sess.run(out_1)
             out_2 = sess.run(out_2)
+
 
 if __name__ == "__main__":
     tf.test.main()

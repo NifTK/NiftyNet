@@ -10,7 +10,7 @@ class DilatedTensor(object):
     """
 
     def __init__(self, input_tensor, dilation_factor):
-        assert(layer_util.check_spatial_dims(
+        assert (layer_util.check_spatial_dims(
             input_tensor, lambda x: x % dilation_factor == 0))
         self.tensor = input_tensor
         self.dilation_factor = dilation_factor

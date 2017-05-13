@@ -1,4 +1,3 @@
-import numpy as np
 import tensorflow as tf
 
 from layer.unet import UNet3D
@@ -17,6 +16,7 @@ class UNet3DTest(tf.test.TestCase):
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             print out.shape
+
 
 if __name__ == "__main__":
     tf.test.main()

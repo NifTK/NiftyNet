@@ -1,21 +1,21 @@
 import numpy as np
 import tensorflow as tf
 
-from nn.input_queue import InputBatchQueueRunner, DeployInputBuffer, TrainEvalInputBuffer
+from nn.input_queue import DeployInputBuffer, TrainEvalInputBuffer
 
 
 class InputQueueTest(tf.test.TestCase):
-
     def get_dummy_generator(self, num_samples=10, window_size=10, with_seg=True):
         def dummy_generator():
             for i in range(num_samples):
-                image = np.ones([window_size]*3) * 1.0
+                image = np.ones([window_size] * 3) * 1.0
                 info = np.zeros(7)
                 if with_seg:
-                    label = np.ones([window_size]*3) * 1
+                    label = np.ones([window_size] * 3) * 1
                     yield image, label, info
                 else:
                     yield image, info
+
         return dummy_generator
 
     def test_setup_train_eval_queue(self):
@@ -55,6 +55,7 @@ class InputQueueTest(tf.test.TestCase):
                     print i, out_tuple['images'].shape
             except tf.errors.OutOfRangeError as e:
                 pass
+
 
 if __name__ == "__main__":
     tf.test.main()

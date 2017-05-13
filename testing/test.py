@@ -56,7 +56,7 @@ class VarLayer(Layer):
         # create component layers
         input_shape = input_x.get_shape()
         myvar1 = tf.get_variable(
-                'my_var_1', shape=input_shape, initializer=self.init_x)
+            'my_var_1', shape=input_shape, initializer=self.init_x)
         output = input_x * myvar1
         return output
 
@@ -76,7 +76,6 @@ class TwoVarLayer(Layer):
         first_out = first_var_op(input_x)
         second_out = second_var_op(first_out)
         return second_out
-
 
 
 with tf.variable_scope('test_1') as scope:
@@ -105,11 +104,11 @@ with tf.variable_scope('test_1') as scope:
 
     init_op = tf.global_variables_initializer()
 
-#sess = tf.Session()
-#sess.run(init_op)
-#print sess.run(out_1)
-#print sess.run(out_2)
-#print sess.run(out_3)
-#print sess.run(out_4)
-#print sess.run(out_5)
-#print sess.run(out_6)
+# sess = tf.Session()
+# sess.run(init_op)
+# print sess.run(out_1)
+# print sess.run(out_2)
+# print sess.run(out_3)
+# print sess.run(out_4)
+# print sess.run(out_5)
+# print sess.run(out_6)

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
+
 import utilities.misc as util
 import utilities.parse_user_params as parse_user_params
 
@@ -32,6 +33,7 @@ class NetFactory(object):
             print("network: \"{}\" not implemented".format(name))
             raise NotImplementedError
 
+
 if __name__ == "__main__":
     args = parse_user_params.run()
     if util.has_bad_inputs(args):
@@ -51,7 +53,9 @@ if __name__ == "__main__":
                     device_str=device_str)
     if is_training:
         import nn.training
+
         nn.training.run(net, args)
     else:
         import nn.inference
+
         nn.inference.run(net, args)

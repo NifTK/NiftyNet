@@ -8,8 +8,8 @@ import tensorflow as tf
 from six.moves import range
 
 import utilities.misc as util
-from network.net_template import NetTemplate
 from input_queue import DeployInputBuffer
+from network.net_template import NetTemplate
 from sampler import VolumeSampler
 
 
@@ -94,7 +94,7 @@ def run(net, param):
                             param.eval_data_dir, patient_name, mod_list[0])
                         pred_img = np.pad(
                             pred_img, param.volume_padding_size, 'minimum')
-                        #print('init %s' % valid_names[img_id])
+                        # print('init %s' % valid_names[img_id])
                     loc_x = spatial_info[batch_id, 1]
                     loc_y = spatial_info[batch_id, 2]
                     loc_z = spatial_info[batch_id, 3]
@@ -103,11 +103,11 @@ def run(net, param):
                     p_end = net.input_label_size - param.border
                     predictions = seg_maps[batch_id]
                     pred_img[(loc_x + p_start): (loc_x + p_end),
-                             (loc_y + p_start): (loc_y + p_end),
-                             (loc_z + p_start): (loc_z + p_end)] = \
+                    (loc_y + p_start): (loc_y + p_end),
+                    (loc_z + p_start): (loc_z + p_end)] = \
                         predictions[p_start: p_end,
-                                    p_start: p_end,
-                                    p_start: p_end]
+                        p_start: p_end,
+                        p_start: p_end]
 
         except KeyboardInterrupt:
             print('User cancelled training')

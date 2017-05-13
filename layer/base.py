@@ -41,7 +41,7 @@ class Layer(object):
             return out_str
         # including name of parameters
         out_str += ' \033[92m[Trainable]\033[0m '
-        out_str += ', '.join([v.name.split(':')[0][len(layer_scope_name)+1:]
+        out_str += ', '.join([v.name.split(':')[0][len(layer_scope_name) + 1:]
                               for v in layer_variables])
         # including number of parameters
         out_str += ' ({})'.format(self.num_trainable_params())

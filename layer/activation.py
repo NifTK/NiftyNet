@@ -2,13 +2,16 @@ import tensorflow as tf
 
 from .base import Layer
 
+
 def default_prelu_initializer():
     return tf.zeros_initializer()
+
 
 def prelu(f_in, channelwise_params):
     pos = tf.nn.relu(f_in)
     neg = channelwise_params * (f_in - tf.abs(f_in)) * 0.5
     return pos + neg
+
 
 SUPPORTED_OP = {'relu': tf.nn.relu,
                 'relu6': tf.nn.relu6,
@@ -29,7 +32,6 @@ class ActiLayer(Layer):
         self.regularizer = regularizer
 
         super(ActiLayer, self).__init__(name=self.layer_name)
-
 
     def layer_op(self, input_tensor, keep_prob=None):
         if self.func == 'prelu':

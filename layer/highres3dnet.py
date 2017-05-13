@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from six.moves import range
 
+from . import layer_util
+from .activation import ActiLayer
 from .base import Layer
 from .bn import BNLayer
 from .convolution import ConvLayer, ConvolutionalLayer
-from .activation import ActiLayer
-from .elementwise import ElementwiseLayer
 from .dilatedcontext import DilatedTensor
-from . import layer_util
+from .elementwise import ElementwiseLayer
 
 
 class HighRes3DNet(Layer):
@@ -42,9 +42,8 @@ class HighRes3DNet(Layer):
         self.name = "HighRes3DNet"
         print 'using {}'.format(self.name)
 
-
     def layer_op(self, images, is_training, layer_id=-1):
-        assert(layer_util.check_spatial_dims(
+        assert (layer_util.check_spatial_dims(
             images, lambda x: x % 4 == 0))
         # go through self.layers, create an instance of each layer
         # and plugin data
@@ -63,7 +62,7 @@ class HighRes3DNet(Layer):
             for j in range(params['repeat']):
                 res_block = HighResBlock(params['n_features'],
                                          params['kernels'],
-                                         name='%s_%d'%(params['name'], j))
+                                         name='%s_%d' % (params['name'], j))
                 dilated.tensor = res_block(dilated.tensor, is_training)
                 layer_instances.append((res_block, dilated.tensor))
         flow = dilated.tensor
@@ -74,7 +73,7 @@ class HighRes3DNet(Layer):
             for j in range(params['repeat']):
                 res_block = HighResBlock(params['n_features'],
                                          params['kernels'],
-                                         name='%s_%d'%(params['name'], j))
+                                         name='%s_%d' % (params['name'], j))
                 dilated.tensor = res_block(dilated.tensor, is_training)
                 layer_instances.append((res_block, dilated.tensor))
         flow = dilated.tensor
@@ -85,7 +84,7 @@ class HighRes3DNet(Layer):
             for j in range(params['repeat']):
                 res_block = HighResBlock(params['n_features'],
                                          params['kernels'],
-                                         name='%s_%d'%(params['name'], j))
+                                         name='%s_%d' % (params['name'], j))
                 dilated.tensor = res_block(dilated.tensor, is_training)
                 layer_instances.append((res_block, dilated.tensor))
         flow = dilated.tensor
@@ -117,7 +116,6 @@ class HighRes3DNet(Layer):
             op.w_regularizer = self.w_regularizer
             op.b_initializer = self.b_initializer
             op.b_regularizer = self.b_regularizer
-
 
 
 class HighResBlock(Layer):

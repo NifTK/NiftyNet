@@ -1,4 +1,3 @@
-import numpy as np
 import tensorflow as tf
 
 from layer.crop import CropLayer
@@ -27,6 +26,7 @@ class CropTest(tf.test.TestCase):
             out_1 = sess.run(out_crop_1)
             self.assertAllClose((2, 10, 10, 10, 8), out.shape)
             self.assertAllClose((2, 1, 1, 1, 8), out_1.shape)
+
 
 if __name__ == "__main__":
     tf.test.main()

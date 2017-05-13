@@ -1,4 +1,3 @@
-import numpy as np
 import tensorflow as tf
 
 from layer.deepmedic import DeepMedic
@@ -16,6 +15,7 @@ class DeepMedicTest(tf.test.TestCase):
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             print out.shape
+
 
 if __name__ == "__main__":
     tf.test.main()

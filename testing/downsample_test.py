@@ -1,4 +1,3 @@
-import numpy as np
 import tensorflow as tf
 
 from layer.downsample import DownSampleLayer
@@ -27,8 +26,9 @@ class DownSampleTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_down_sample)
-            #self.assertAllClose(input_shape, out.shape)
-            #self.assertAllClose(np.zeros(input_shape), out)
+            # self.assertAllClose(input_shape, out.shape)
+            # self.assertAllClose(np.zeros(input_shape), out)
+
 
 if __name__ == "__main__":
     tf.test.main()
