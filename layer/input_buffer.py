@@ -72,14 +72,14 @@ class InputBatchQueueRunner(object):
                 names=self.sampler.placeholder_names,
                 name="shuffled_queue")
         else:
-            self._queue = tf.FIFOQueue(  # pylint: disable=redefined-variable-type
+            self._queue = tf.FIFOQueue(# pylint: disable=redefined-variable-type
                 capacity=self.capacity,
                 dtypes=self.sampler.placeholder_dtypes,
                 shapes=self.sampler.placeholder_shapes,
                 names=self.sampler.placeholder_names,
                 name="FIFO_queue")
 
-        # create enqueue operation
+        # create queue operations
         queue_input_dict = dict(zip(self.sampler.placeholder_names,
                                     self.sampler.placeholders))
         self._enqueue_op = self._queue.enqueue(queue_input_dict)
@@ -90,7 +90,12 @@ class InputBatchQueueRunner(object):
     def _push(self, thread_id):
         print('New thread: {}'.format(thread_id))
         try:
-            for t in self.sampler():
+            if self.shuffle:
+                iterator = self.sampler()
+            else:
+                iterator = self.sampler(self.batch_size)
+                
+            for t in iterator:
                 if self._session._closed:
                     break
                 if self._coordinator.should_stop():
@@ -116,7 +121,7 @@ class InputBatchQueueRunner(object):
                 # waiting to be sure the last few batches are dequeued
                 retry, interval = 60000, 0.001
                 print "stopping the sampling threads... " \
-                      "({} seconds grace period)".format(retry * interval)
+                      "(in {} seconds)".format(retry * interval)
                 remained = self.current_queue_size - self.min_queue_size
                 while retry > 0:
                     if self.batch_size > remained:
@@ -126,10 +131,10 @@ class InputBatchQueueRunner(object):
                     retry -= 1
                     remained = self.current_queue_size - self.min_queue_size
                 if remained > 0:
-                    # still having elements left, we can't do anything with that
-                    print("Insufficient samples to form a {}-element batch: " \
-                          "{} available in queue".format(
-                        self.batch_size, remained))
+                    # still having elements left
+                    print("Insufficient samples {} to form a {}-element " \
+                          "batch in queue".format(self.batch_size, remained))
+                # close the queue
                 self.close_all()
 
     @property

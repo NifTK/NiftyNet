@@ -14,11 +14,24 @@ class InputQueueTest(tf.test.TestCase):
                                     spatial_rank=3,
                                     num_modality=1,
                                     name='sampler_with_label')
-
+        image_key, label_key, info_key = test_sampler.placeholder_names
         test_queue = TrainEvalInputBuffer(batch_size=2,
                                           capacity=8,
                                           sampler=test_sampler)
+        out_1 = test_queue.pop_batch_op
 
+        with self.test_session() as sess:
+            coord = tf.train.Coordinator()
+            test_queue.run_threads(sess, coord, num_threads=2)
+            try:
+                for i in range(100):
+                    out_tuple = sess.run(out_1)
+                    print image_key
+                    print out_tuple[image_key].shape
+            except tf.errors.OutOfRangeError as e:
+                pass
+
+    def test_deploy_queue(self):
         test_sampler = ImageSampler(image_shape=(32, 32, 32),
                                     label_shape=None,
                                     image_dtype=tf.float32,
@@ -26,23 +39,20 @@ class InputQueueTest(tf.test.TestCase):
                                     spatial_rank=3,
                                     num_modality=1,
                                     name='sampler_without_label')
-
-        deploy_queue = DeployInputBuffer(batch_size=2,
+        image_key, info_key = test_sampler.placeholder_names
+        deploy_queue = DeployInputBuffer(batch_size=5,
                                          capacity=8,
                                          sampler=test_sampler)
-        out_1 = test_queue.pop_batch_op
         out_2 = deploy_queue.pop_batch_op
-
         with self.test_session() as sess:
             coord = tf.train.Coordinator()
-            test_queue.run_threads(sess, coord, num_threads=2)
-            deploy_queue.run_threads(sess, coord, num_threads=2)
+            deploy_queue.run_threads(sess, coord, num_threads=1)
             try:
                 for i in range(100):
-                    out_tuple = sess.run(out_1)
-                    print out_tuple['sampler_with_label/images'].shape
                     out_tuple = sess.run(out_2)
-                    print  out_tuple['sampler_without_label/images'].shape
+                    print image_key
+                    print out_tuple[image_key].shape
+                    print out_tuple[info_key]
             except tf.errors.OutOfRangeError as e:
                 pass
 
