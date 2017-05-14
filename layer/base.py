@@ -46,3 +46,6 @@ class Layer(object):
         # including number of parameters
         out_str += ' ({})'.format(self.num_trainable_params())
         return out_str
+
+    def _enter_variable_scope(self):
+        return tf.variable_scope(self._op.variable_scope)

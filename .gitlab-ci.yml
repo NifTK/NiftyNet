@@ -43,7 +43,8 @@ testjob:
     - coverage run -a --source . -m testing.unet_test
     - coverage run -a --source . -m testing.scaleblock_test
     - coverage run -a --source . -m testing.scalenet_test
-    - coverage run -a --source . -m testing.input_queue_test
+    - coverage run -a --source . -m testing.input_sampler_test
+    - coverage run -a --source . -m testing.input_buffer_test
     - coverage report
     - echo 'finished test'
   tags:

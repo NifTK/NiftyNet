@@ -6,10 +6,13 @@ TrainEvalInputBuffer provides randomised queue
 DeployInputBuffer provides FIFO queue. This is designed for making
 patch-based predictions for mulitple test volumes.
 """
+
 import threading
 import time
 
 import tensorflow as tf
+
+from .input_sampler import ImageSampler
 
 
 class InputBatchQueueRunner(object):
@@ -21,37 +24,24 @@ class InputBatchQueueRunner(object):
 
     The sampling threads can be stopped by:
         1. close_all() called externally -- all threads quit immediately
-        2. no more elements from self.element_generator() -- the last
+        2. no more elements from self.sampler() -- the last
            thread will call close_all() with a grace period 60 seconds
     """
 
-    def __init__(self,
-                 batch_size,
-                 capacity,
-                 input_names,
-                 input_types,
-                 input_shapes,
-                 generator,
-                 shuffle=True):
+    def __init__(self, batch_size, capacity, sampler, shuffle=True):
 
-        assert callable(generator)
-        assert batch_size <= (capacity / 2)
+        assert isinstance(sampler, ImageSampler)
         assert batch_size > 0
-        assert len(input_names) == len(input_types)
-        assert len(input_names) == len(input_shapes)
         self.batch_size = batch_size
-        self.element_generator = generator
+        self.sampler = sampler
 
         # define queue properties
-        self.input_names, self.input_types, self.input_shapes = \
-            input_names, input_types, input_shapes
-        self.capacity = capacity
+        self.capacity = max(capacity, batch_size * 2)
         self.shuffle = shuffle
         self.min_queue_size = self.capacity / 2 if self.shuffle else 0
 
-        # create queue and associated operations
+        # create queue and the associated operations
         self._queue = None
-        self._place_holders = None
         self._enqueue_op = None
         self._dequeue_op = None
         self._query_queue_size_op = None
@@ -62,60 +52,57 @@ class InputBatchQueueRunner(object):
         self._session = None
         self._coordinator = None
         self._threads = []
-        # this variable is used to monitor the generator threads
+
+        # this variable is used to monitor the sampler threads
         self._started_threads = []
 
     def _create_queue_and_ops(self):
         """
         Create a shuffled queue or FIFOqueue, and create queue
-        operations. These should be called before tf.Graph.finalize.
+        operations. This should be called before tf.Graph.finalize.
         """
+
         # create queue
         if self.shuffle:
             self._queue = tf.RandomShuffleQueue(
                 capacity=self.capacity,
                 min_after_dequeue=self.min_queue_size,
-                dtypes=self.input_types,
-                shapes=self.input_shapes,
-                names=self.input_names,
+                dtypes=self.sampler.placeholder_dtypes,
+                shapes=self.sampler.placeholder_shapes,
+                names=self.sampler.placeholder_names,
                 name="shuffled_queue")
         else:
             self._queue = tf.FIFOQueue(  # pylint: disable=redefined-variable-type
                 capacity=self.capacity,
-                dtypes=self.input_types,
-                shapes=self.input_shapes,
-                names=self.input_names,
+                dtypes=self.sampler.placeholder_dtypes,
+                shapes=self.sampler.placeholder_shapes,
+                names=self.sampler.placeholder_names,
                 name="FIFO_queue")
-        # create place holders
-        self._place_holders = tuple(tf.placeholder(dtype,
-                                                   shape=self.input_shapes[i],
-                                                   name=self.input_names[i])
-                                    for i, dtype in enumerate(self.input_types))
+
         # create enqueue operation
-        queue_input_dict = dict(zip(self.input_names, self._place_holders))
+        queue_input_dict = dict(zip(self.sampler.placeholder_names,
+                                    self.sampler.placeholders))
         self._enqueue_op = self._queue.enqueue(queue_input_dict)
         self._dequeue_op = self._queue.dequeue_many(self.batch_size)
         self._query_queue_size_op = self._queue.size()
         self._close_queue_op = self._queue.close(cancel_pending_enqueues=True)
 
     def _push(self, thread_id):
+        print('New thread: {}'.format(thread_id))
         try:
-            for t in self.element_generator():
+            for t in self.sampler():
                 if self._session._closed:
                     break
                 if self._coordinator.should_stop():
                     break
-                # ensure the shape of generator's output matches
+                # ensure the shape of sampler's output matches
                 # the queue input definitions
-                assert len(self._place_holders) == len(t)
-                for (idx, values) in enumerate(t):
-                    queue_shape = self._place_holders[idx].get_shape().as_list()
-                    input_shape = list(values.shape)
-                    assert queue_shape == input_shape
-                self._session.run(self._enqueue_op,
-                                  feed_dict={self._place_holders: t})
+                assert len(t.keys()[0]) == len(t.values()[0])
+                self._session.run(self._enqueue_op, feed_dict=t)
         except tf.errors.CancelledError:
             pass
+        except AssertionError as e:
+            print "AssertionError: please check the sampler() dims"
         except ValueError as e:
             print e
         except RuntimeError as e:
@@ -130,13 +117,14 @@ class InputBatchQueueRunner(object):
                 retry, interval = 60000, 0.001
                 print "stopping the sampling threads... " \
                       "({} seconds grace period)".format(retry * interval)
+                remained = self.current_queue_size - self.min_queue_size
                 while retry > 0:
-                    remained = self.current_queue_size - self.min_queue_size
                     if self.batch_size > remained:
                         break
                     # more batches can be processed before deleting the queue
                     time.sleep(interval)
                     retry -= 1
+                    remained = self.current_queue_size - self.min_queue_size
                 if remained > 0:
                     # still having elements left, we can't do anything with that
                     print("Insufficient samples to form a {}-element batch: " \
@@ -158,14 +146,20 @@ class InputBatchQueueRunner(object):
         print 'Starting preprocessing threads...'
         self._session = session
         self._coordinator = coord
+        self._started_threads = [False for i in range(num_threads)]
         for idx in range(num_threads):
             self._threads.append(
                 threading.Thread(target=self._push, args=[idx]))
             self._threads[idx].daemon = True
             self._threads[idx].start()
-            self._started_threads.append(True)
+            self._started_threads[idx] = True
 
     def close_all(self):
+        """
+        This function stops all threads immediately and close the queue.
+        Further enqueue/dequeue operation raises errors
+        """
+
         if not self._threads:
             raise RuntimeError("the queue is not currently running")
         try:
@@ -181,35 +175,16 @@ class InputBatchQueueRunner(object):
 
 
 class DeployInputBuffer(InputBatchQueueRunner):
-    def __init__(self,
-                 batch_size,
-                 capacity,
-                 shapes,
-                 sample_generator):
-        input_names = ("images", "info")
-        input_types = (tf.float32, tf.int64)
+    def __init__(self, batch_size, capacity, sampler):
         super(DeployInputBuffer, self).__init__(batch_size=batch_size,
                                                 capacity=capacity,
-                                                input_names=input_names,
-                                                input_types=input_types,
-                                                input_shapes=shapes,
-                                                generator=sample_generator,
+                                                sampler=sampler,
                                                 shuffle=False)
 
 
 class TrainEvalInputBuffer(InputBatchQueueRunner):
-    def __init__(self,
-                 batch_size,
-                 capacity,
-                 shapes,
-                 sample_generator,
-                 shuffle=True):
-        input_names = ("images", "labels", "info")
-        input_types = (tf.float32, tf.int64, tf.int64)
+    def __init__(self, batch_size, capacity, sampler, shuffle=True):
         super(TrainEvalInputBuffer, self).__init__(batch_size=batch_size,
                                                    capacity=capacity,
-                                                   input_names=input_names,
-                                                   input_types=input_types,
-                                                   input_shapes=shapes,
-                                                   generator=sample_generator,
+                                                   sampler=sampler,
                                                    shuffle=shuffle)
