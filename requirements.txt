@@ -1,3 +1,4 @@
+six
 nibabel
 numpy
 scipy
