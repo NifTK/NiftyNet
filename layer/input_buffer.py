@@ -12,7 +12,8 @@ import time
 
 import tensorflow as tf
 
-from .input_sampler import ImageSampler
+from .base_sampler import BaseSampler
+from .input_placeholders import ImagePatch
 
 
 class InputBatchQueueRunner(object):
@@ -30,7 +31,7 @@ class InputBatchQueueRunner(object):
 
     def __init__(self, batch_size, capacity, sampler, shuffle=True):
 
-        assert isinstance(sampler, ImageSampler)
+        assert isinstance(sampler, BaseSampler)
         assert batch_size > 0
         self.batch_size = batch_size
         self.sampler = sampler
@@ -95,15 +96,16 @@ class InputBatchQueueRunner(object):
             else:
                 iterator = self.sampler(self.batch_size)
 
-            for t in iterator:
+            for patch in iterator:
                 if self._session._closed:
                     break
                 if self._coordinator.should_stop():
                     break
-                # ensure the shape of sampler's output matches
-                # the queue input definitions
-                assert len(t.keys()[0]) == len(t.values()[0])
-                self._session.run(self._enqueue_op, feed_dict=t)
+
+                assert isinstance(patch, ImagePatch)
+                patch_dict = patch.as_dict()
+                assert len(patch_dict.keys()[0]) == len(patch_dict.values()[0])
+                self._session.run(self._enqueue_op, feed_dict=patch_dict)
         except tf.errors.CancelledError:
             pass
         except AssertionError as e:

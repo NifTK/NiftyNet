@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-from layer.input_sampler import ImageSampler
+from layer.toy_sampler import ToySampler
 from layer.input_placeholders import ImagePatch
 
 
@@ -10,11 +10,13 @@ class SamplerTest(tf.test.TestCase):
     def run_test_sampler(self, patch_holder=None):
         if patch_holder is None:
             return
-        test_sampler = ImageSampler(patch_holder, name='sampler')
+        test_sampler = ToySampler(patch_holder, name='sampler')
         print test_sampler.placeholder_names
         print test_sampler.placeholder_dtypes
         print test_sampler.placeholder_shapes
-        for data_dict in test_sampler():
+        for d in test_sampler():
+            assert isinstance(d, ImagePatch)
+            data_dict = d.as_dict()
             keys = data_dict.keys()[0]
             output = data_dict.values()[0]
             for (idx, key) in enumerate(keys):

@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 from layer.input_buffer import DeployInputBuffer, TrainEvalInputBuffer
-from layer.input_sampler import ImageSampler
+from layer.toy_sampler import ToySampler
 from layer.input_placeholders import ImagePatch
 
 
@@ -17,7 +17,7 @@ class InputQueueTest(tf.test.TestCase):
                                 num_modality=1,
                                 num_map=1,
                                 name='image_patch')
-        test_sampler = ImageSampler(test_patch, name='sampler')
+        test_sampler = ToySampler(test_patch, name='sampler')
         image_key, label_key, info_key, weight_map_key = \
                 test_sampler.placeholder_names
         test_queue = TrainEvalInputBuffer(batch_size=2,
@@ -41,7 +41,7 @@ class InputQueueTest(tf.test.TestCase):
                                 image_dtype=tf.float32,
                                 num_modality=1,
                                 name='sampler_without_label')
-        test_sampler = ImageSampler(test_patch, name='sampler')
+        test_sampler = ToySampler(test_patch, name='sampler')
         image_key, info_key = test_sampler.placeholder_names
         deploy_queue = DeployInputBuffer(batch_size=5,
                                          capacity=8,
