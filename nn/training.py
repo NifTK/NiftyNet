@@ -95,6 +95,7 @@ def run(net, param):
         init_op = tf.global_variables_initializer()
         train_op = tf.group(apply_grad_op, var_averages_op)
         write_summary_op = tf.summary.merge(summaries)
+
         # saver
         saver = tf.train.Saver(max_to_keep=20)
         tf.Graph.finalize(graph)
@@ -140,7 +141,8 @@ def run(net, param):
                     writer.add_summary(sess.run(write_summary_op),
                                        i + param.starting_iter)
                 if (i % param.save_every_n) == 0 and (i > 0):
-                    saver.save(sess, ckpt_name,
+                    saver.save(sess,
+                               ckpt_name,
                                global_step=i + param.starting_iter)
                     print('Iter {} model saved at {}'.format(
                         i + param.starting_iter, ckpt_name))
@@ -153,7 +155,8 @@ def run(net, param):
         except RuntimeError as e:
             print(e)
         finally:
-            saver.save(sess, ckpt_name,
+            saver.save(sess,
+                       ckpt_name,
                        global_step=param.max_iter + param.starting_iter)
             print('Last iteration model saved at {}'.format(ckpt_name))
             print('training.py (time in second) {:.2f}'.format(

@@ -49,14 +49,14 @@ class HighRes3DNet(Layer):
         # and plugin data
         layer_instances = []
 
-        # first convolution layer
+        ### first convolution layer
         params = self.layers[0]
         first_conv_layer = ConvolutionalLayer(
             params['n_features'], params['kernel_size'], name=params['name'])
         flow = first_conv_layer(images, is_training)
         layer_instances.append((first_conv_layer, flow))
 
-        # resblocks, all kernels dilated by 1 (no dilation)
+        ### resblocks, all kernels dilated by 1 (normal convolution)
         params = self.layers[1]
         with DilatedTensor(flow, dilation_factor=1) as dilated:
             for j in range(params['repeat']):
@@ -67,7 +67,7 @@ class HighRes3DNet(Layer):
                 layer_instances.append((res_block, dilated.tensor))
         flow = dilated.tensor
 
-        # resblocks, all kernels dilated by 2
+        ### resblocks, all kernels dilated by 2
         params = self.layers[2]
         with DilatedTensor(flow, dilation_factor=2) as dilated:
             for j in range(params['repeat']):
@@ -78,7 +78,7 @@ class HighRes3DNet(Layer):
                 layer_instances.append((res_block, dilated.tensor))
         flow = dilated.tensor
 
-        # resblocks, all kernels dilated by 4
+        ### resblocks, all kernels dilated by 4
         params = self.layers[3]
         with DilatedTensor(flow, dilation_factor=4) as dilated:
             for j in range(params['repeat']):
@@ -89,14 +89,14 @@ class HighRes3DNet(Layer):
                 layer_instances.append((res_block, dilated.tensor))
         flow = dilated.tensor
 
-        # 1x1x1 convolution layer
+        ### 1x1x1 convolution layer
         params = self.layers[4]
         fc_layer = ConvolutionalLayer(
             params['n_features'], params['kernel_size'], name=params['name'])
         flow = fc_layer(flow, is_training)
         layer_instances.append((fc_layer, flow))
 
-        # 1x1x1 convolution layer
+        ### 1x1x1 convolution layer
         params = self.layers[5]
         fc_layer = ConvolutionalLayer(
             params['n_features'], params['kernel_size'], name=params['name'])

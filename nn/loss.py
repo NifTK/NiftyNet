@@ -79,10 +79,13 @@ def SensSpec_loss(pred, labels, r=0.05):
                               values=[1.0] * n_voxels,
                               dense_shape=[n_voxels, n_classes])
     one_hotB = 1 - tf.sparse_tensor_to_dense(one_hot)
-    SensSpec = tf.reduce_mean(tf.add(tf.multiply(r, tf.reduce_sum(tf.multiply(tf.square(-1*tf.sparse_add(-1*pred, one_hot)) \
-               , tf.sparse_tensor_to_dense(one_hot)), 0) / tf.sparse_reduce_sum(one_hot, 0)),\
-                tf.multiply((1 - r), tf.reduce_sum(tf.multiply(tf.square(-1*tf.sparse_add(-1*pred, one_hot)), \
-                one_hotB), 0) / tf.reduce_sum(one_hotB, 0))))
+    SensSpec =\
+            tf.reduce_mean(
+                tf.add(
+                    tf.multiply(r, tf.reduce_sum(tf.multiply(tf.square(-1*tf.sparse_add(-1*pred, one_hot)), tf.sparse_tensor_to_dense(one_hot)), 0) / tf.sparse_reduce_sum(one_hot, 0)),\
+                    tf.multiply((1 - r), tf.reduce_sum(tf.multiply(tf.square(-1*tf.sparse_add(-1*pred, one_hot)), one_hotB), 0) / tf.reduce_sum(one_hotB, 0))
+                )
+            )
     return SensSpec
 
 

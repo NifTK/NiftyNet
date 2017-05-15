@@ -50,7 +50,7 @@ class DeepMedic(Layer):
         normal_path = crop_op(images)
         print crop_op
 
-        ### downsample 25x25x25 from 57x57x57
+        ### downsample 19x19x19 from 57x57x57
         downsample_op = DownSampleLayer(func='CONSTANT',
                                         kernel_size=self.d_factor,
                                         stride=self.d_factor,

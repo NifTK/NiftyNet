@@ -69,11 +69,15 @@ class UNet3D(Layer):
         print block_layer
 
         block_layer = UNetBlock('NONE',
-                                (self.n_features[1], self.n_features[1], self.num_classes),
-                                (3, 3, 1), with_downsample_branch=True,
+                                (self.n_features[1],
+                                 self.n_features[1],
+                                 self.num_classes),
+                                (3, 3, 1),
+                                with_downsample_branch=True,
                                 name='R1_FC')
         concat_1 = ElementwiseLayer('CONCAT')(conv_1, up_1)
-        # note for the last layer, upsampling path is not used
+
+        # for the last layer, upsampling path is not used
         _, output_tensor = block_layer(concat_1, is_training)
         print block_layer
         return output_tensor
