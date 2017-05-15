@@ -3,18 +3,23 @@ import tensorflow as tf
 
 from layer.input_buffer import DeployInputBuffer, TrainEvalInputBuffer
 from layer.input_sampler import ImageSampler
+from layer.input_placeholders import ImagePatch
 
 
 class InputQueueTest(tf.test.TestCase):
     def test_setup_train_eval_queue(self):
-        test_sampler = ImageSampler(image_shape=(32, 32, 32),
-                                    label_shape=(32, 32, 32),
-                                    image_dtype=tf.float32,
-                                    label_dtype=tf.int64,
-                                    spatial_rank=3,
-                                    num_modality=1,
-                                    name='sampler_with_label')
-        image_key, label_key, info_key = test_sampler.placeholder_names
+        test_patch = ImagePatch(image_shape=(32, 32, 32),
+                                label_shape=(32, 32, 32),
+                                weight_map_shape=(32, 32, 32),
+                                image_dtype=tf.float32,
+                                label_dtype=tf.int64,
+                                weight_map_dtype=tf.float32,
+                                num_modality=1,
+                                num_map=1,
+                                name='image_patch')
+        test_sampler = ImageSampler(test_patch, name='sampler')
+        image_key, label_key, info_key, weight_map_key = \
+                test_sampler.placeholder_names
         test_queue = TrainEvalInputBuffer(batch_size=2,
                                           capacity=8,
                                           sampler=test_sampler)
@@ -32,13 +37,11 @@ class InputQueueTest(tf.test.TestCase):
                 pass
 
     def test_deploy_queue(self):
-        test_sampler = ImageSampler(image_shape=(32, 32, 32),
-                                    label_shape=None,
-                                    image_dtype=tf.float32,
-                                    label_dtype=None,
-                                    spatial_rank=3,
-                                    num_modality=1,
-                                    name='sampler_without_label')
+        test_patch = ImagePatch(image_shape=(32, 32, 32),
+                                image_dtype=tf.float32,
+                                num_modality=1,
+                                name='sampler_without_label')
+        test_sampler = ImageSampler(test_patch, name='sampler')
         image_key, info_key = test_sampler.placeholder_names
         deploy_queue = DeployInputBuffer(batch_size=5,
                                          capacity=8,
