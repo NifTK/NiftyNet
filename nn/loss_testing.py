@@ -3,6 +3,7 @@ import os
 import numpy as np
 import tensorflow as tf
 from nn.loss import dice, LossFunction, generalised_dice_loss, cross_entropy, sensitivity_specificity_loss
+from nn.loss import huber_loss, l1_loss, l2_loss
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
 
@@ -104,6 +105,49 @@ class LossFunctionErrorsTest(tf.test.TestCase):
                 LossFunction(0, loss_type='GSDC')
             self.assertAllEqual(str(cm.exception),
                                 'By "GSDC", did you mean "GDSC"?\n "GSDC" is not a valid loss.')
+
+
+class HuberLossTests(tf.test.TestCase):
+    def test_huber_loss(self):
+        with self.test_session():
+            predicted = tf.constant([[0, 10], [10, 0], [10, 0], [10, 0]], dtype=tf.float32, name='predicted')
+            gold_standard = tf.constant([[0, 10], [10, 0], [10, 0], [10, 0]], dtype=tf.float32, name='gold_standard')
+            self.assertEqual(huber_loss(predicted, gold_standard).eval(), 0.0)
+
+    def test_huber_continuous(self):
+        with self.test_session():
+            epsilon = tf.constant(1e-10, dtype=tf.float32)
+            predicted = tf.constant([1], dtype=tf.float32, name='predicted')
+            gold_standard = tf.constant([0], dtype=tf.float32, name='gold_standard')
+            huber_loss_inside_delta = huber_loss(predicted + epsilon, gold_standard, delta=1.0)
+            huber_loss_outside_delta = huber_loss(predicted - epsilon, gold_standard, delta=1.0)
+            self.assertAlmostEqual(huber_loss_inside_delta.eval(), huber_loss_outside_delta.eval())
+
+    def test_huber_loss_hand_example(self):
+        with self.test_session():
+            # loss should be: mean( 0.2 ** 2/ 2 + (2-0.5) ) == 1.52/2 == 0.76
+            predicted = tf.constant([1.2, 1], dtype=tf.float32, name='predicted')
+            gold_standard = tf.constant([1, 3], dtype=tf.float32, name='gold_standard')
+            loss = huber_loss(predicted, gold_standard, delta=1.0)
+            self.assertAlmostEqual(loss.eval(), .76)
+
+
+class L1LossTests(tf.test.TestCase):
+    def test_l1_loss(self):
+        # expected loss: mean(.2 + 2) = 1.1
+        with self.test_session():
+            predicted = tf.constant([1.2, 1], dtype=tf.float32, name='predicted')
+            gold_standard = tf.constant([1, 3], dtype=tf.float32, name='gold_standard')
+            self.assertAlmostEqual(l1_loss(predicted, gold_standard).eval(), 1.1)
+
+
+class L2LossTests(tf.test.TestCase):
+    def test_l2_loss(self):
+        # expected loss: (0.04 + 4 + 1) /2 = 2.52 (note - not the mean, just the sum)
+        with self.test_session():
+            predicted = tf.constant([1.2, 1, 2], dtype=tf.float32, name='predicted')
+            gold_standard = tf.constant([1, 3, 3], dtype=tf.float32, name='gold_standard')
+            self.assertAlmostEqual(l2_loss(predicted, gold_standard).eval(), 2.52)
 
 
 if __name__ == '__main__':

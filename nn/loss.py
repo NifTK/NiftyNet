@@ -152,3 +152,41 @@ def dice(pred, labels):
     dice_score.set_shape([n_classes])
     # minimising (1 - dice_coefficients)
     return 1.0 - tf.reduce_mean(dice_score)
+
+
+def l1_loss(prediction, ground_truth):
+    """
+    :param prediction: the current prediction of the ground truth. 
+    :param ground_truth: the measurement you are approximating with regression. 
+    :return: mean of the l1 loss across all voxels.
+    """
+    absolute_residuals = tf.abs(tf.subtract(prediction, ground_truth))
+    return tf.reduce_mean(absolute_residuals)
+
+
+def l2_loss(prediction, ground_truth):
+    """
+    :param prediction: the current prediction of the ground truth. 
+    :param ground_truth: the measurement you are approximating with regression. 
+    :return: sum(differences squared) / 2 - Note, no square root
+    """
+    residuals = tf.subtract(prediction, ground_truth)
+    return tf.nn.l2_loss(residuals)
+
+
+def huber_loss(prediction, ground_truth, delta=1.0):
+    """
+    The Huber loss is a smooth piecewise loss function that is quadratic for |x| <= delta, and linear for |x|> delta
+    See https://en.wikipedia.org/wiki/Huber_loss .     
+    :param prediction: the current prediction of the ground truth. 
+    :param ground_truth: the measurement you are approximating with regression. 
+    :param delta: the point at which quadratic->linear transition happens.
+    :return: 
+    """
+    absolute_residuals = tf.abs(tf.subtract(prediction, ground_truth))
+    residual_is_outside_delta = tf.less(delta, absolute_residuals)
+    quadratic_residual = 0.5 * absolute_residuals ** 2
+    linear_residual = delta * (absolute_residuals - delta / 2)
+
+    voxelwise_loss = tf.where(residual_is_outside_delta, linear_residual, quadratic_residual)
+    return tf.reduce_mean(voxelwise_loss)
