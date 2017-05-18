@@ -37,11 +37,11 @@ class DownSampleLayer(Layer):
             output_tensor = [tf.expand_dims(x, -1)
                              for x in tf.unstack(input_tensor, axis=-1)]
             output_tensor = [tf.nn.convolution(
-                input=inputs,
-                filter=kernel,
-                strides=[self.stride] * spatial_rank,
-                padding=self.padding,
-                name='conv') for inputs in output_tensor]
+                                 input=inputs,
+                                 filter=kernel,
+                                 strides=[self.stride] * spatial_rank,
+                                 padding=self.padding,
+                                 name='conv') for inputs in output_tensor]
             output_tensor = tf.concat(output_tensor, axis=-1)
         else:
             output_tensor = tf.nn.pool(

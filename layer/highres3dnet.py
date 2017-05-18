@@ -51,8 +51,9 @@ class HighRes3DNet(Layer):
 
         ### first convolution layer
         params = self.layers[0]
-        first_conv_layer = ConvolutionalLayer(
-            params['n_features'], params['kernel_size'], name=params['name'])
+        first_conv_layer = ConvolutionalLayer(params['n_features'],
+                                              params['kernel_size'],
+                                              name=params['name'])
         flow = first_conv_layer(images, is_training)
         layer_instances.append((first_conv_layer, flow))
 
@@ -91,15 +92,17 @@ class HighRes3DNet(Layer):
 
         ### 1x1x1 convolution layer
         params = self.layers[4]
-        fc_layer = ConvolutionalLayer(
-            params['n_features'], params['kernel_size'], name=params['name'])
+        fc_layer = ConvolutionalLayer(params['n_features'],
+                                      params['kernel_size'],
+                                      name=params['name'])
         flow = fc_layer(flow, is_training)
         layer_instances.append((fc_layer, flow))
 
         ### 1x1x1 convolution layer
         params = self.layers[5]
-        fc_layer = ConvolutionalLayer(
-            params['n_features'], params['kernel_size'], name=params['name'])
+        fc_layer = ConvolutionalLayer(params['n_features'],
+                                      params['kernel_size'],
+                                      name=params['name'])
         flow = fc_layer(flow, is_training)
         layer_instances.append((fc_layer, flow))
 
