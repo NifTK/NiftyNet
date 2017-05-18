@@ -2,12 +2,12 @@
 import tensorflow as tf
 from six.moves import range
 
-from .base import Layer
+from .base import TrainableLayer
 from .convolution import ConvolutionalLayer
 from .highres3dnet import HighRes3DNet, HighResBlock
 
 
-class ScaleNet(Layer):
+class ScaleNet(TrainableLayer):
     def __init__(self,
                  num_classes,
                  acti_type='prelu',
@@ -42,7 +42,7 @@ class ScaleNet(Layer):
 SUPPORTED_OP = set(['MAX', 'AVERAGE'])
 
 
-class ScaleBlock(Layer):
+class ScaleBlock(TrainableLayer):
     def __init__(self, func, n_layers=1, name='scaleblock'):
         self.func = func.upper()
         assert self.func in SUPPORTED_OP

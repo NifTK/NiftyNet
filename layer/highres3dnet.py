@@ -3,14 +3,15 @@ from six.moves import range
 
 from . import layer_util
 from .activation import ActiLayer
-from .base import Layer
+from .base import TrainableLayer
 from .bn import BNLayer
 from .convolution import ConvLayer, ConvolutionalLayer
 from .dilatedcontext import DilatedTensor
 from .elementwise import ElementwiseLayer
 
 
-class HighRes3DNet(Layer):
+# TODO:  regularizer
+class HighRes3DNet(TrainableLayer):
     """
     implementation of HighRes3DNet:
       Li et al., "On the compactness, efficiency, and representation of 3D
@@ -35,10 +36,8 @@ class HighRes3DNet(Layer):
             {'name': 'conv_1', 'n_features': 80, 'kernel_size': 1},
             {'name': 'conv_2', 'n_features': num_classes, 'kernel_size': 1}]
         self.acti_type = acti_type
-        self.w_initializer = w_initializer
-        self.w_regularizer = w_regularizer
-        self.b_initializer = b_initializer
-        self.b_regularizer = b_regularizer
+        self.initializers = {'w': w_initializer, 'b': b_initializer}
+        self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
         self.name = "HighRes3DNet"
         print 'using {}'.format(self.name)
 
@@ -115,13 +114,13 @@ class HighRes3DNet(Layer):
     def _assign_initializer_regularizer(self, list_of_layers):
         for (op, _) in list_of_layers:
             print op
-            op.w_initializer = self.w_initializer
-            op.w_regularizer = self.w_regularizer
-            op.b_initializer = self.b_initializer
-            op.b_regularizer = self.b_regularizer
+            #op.w_initializer = self.w_initializer
+            #op.w_regularizer = self.w_regularizer
+            #op.b_initializer = self.b_initializer
+            #op.b_regularizer = self.b_regularizer
 
 
-class HighResBlock(Layer):
+class HighResBlock(TrainableLayer):
     """
     This class define a high-resolution block with residual connections
     kernels - specify kernel sizes of each convolutional layer
@@ -137,32 +136,34 @@ class HighResBlock(Layer):
                  w_regularizer=None,
                  with_res=True,
                  name='HighResBlock'):
+        self.layer_name = name
+        super(HighResBlock, self).__init__(name=self.layer_name)
+
         self.n_output_chns = n_output_chns
         if hasattr(kernels, "__iter__"):  # a list of layer kernel_sizes
             self.kernels = kernels
         else:  # is a single number (indicating single layer)
             self.kernels = [kernels]
         self.acti_type = acti_type
-        self.w_initializer = None
-        self.w_regularizer = None
-        self.layer_name = name
         self.with_res = with_res
-        super(HighResBlock, self).__init__(name=self.layer_name)
+
+        self.initializers = {'w': w_initializer}
+        self.regularizers = {'w': w_regularizer}
 
     def layer_op(self, input_tensor, is_training):
         output_tensor = input_tensor
         for (i, k) in enumerate(self.kernels):
             # create parameterised layers
-            bn_op = BNLayer(regularizer=self.w_regularizer,
+            bn_op = BNLayer(regularizer=self.regularizers['w'],
                             name='bn_{}'.format(i))
             acti_op = ActiLayer(func=self.acti_type,
-                                regularizer=self.w_regularizer,
+                                regularizer=self.regularizers['w'],
                                 name='acti_{}'.format(i))
             conv_op = ConvLayer(n_output_chns=self.n_output_chns,
                                 kernel_size=k,
                                 stride=1,
-                                w_initializer=self.w_initializer,
-                                w_regularizer=self.w_regularizer,
+                                w_initializer=self.initializers['w'],
+                                w_regularizer=self.regularizers['w'],
                                 name='conv_{}'.format(i))
             # connect layers
             output_tensor = bn_op(output_tensor, is_training)

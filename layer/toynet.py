@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from .base import Layer
+from .base import TrainableLayer
 from .convolution import ConvolutionalLayer
 
 
-class ToyNet(Layer):
+class ToyNet(TrainableLayer):
     def __init__(self, num_classes, name='ToyNet'):
         super(ToyNet, self).__init__(name=name)
         self.hidden_features = 10

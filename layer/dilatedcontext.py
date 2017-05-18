@@ -12,20 +12,32 @@ class DilatedTensor(object):
     def __init__(self, input_tensor, dilation_factor):
         assert (layer_util.check_spatial_dims(
             input_tensor, lambda x: x % dilation_factor == 0))
-        self.tensor = input_tensor
+        self._tensor = input_tensor
         self.dilation_factor = dilation_factor
         # parameters to transform input tensor
-        self.spatial_rank = layer_util.infer_spatial_rank(self.tensor)
+        self.spatial_rank = layer_util.infer_spatial_rank(self._tensor)
         self.zero_paddings = [[0, 0]] * self.spatial_rank
         self.block_shape = [dilation_factor] * self.spatial_rank
 
     def __enter__(self):
         if self.dilation_factor > 1:
-            self.tensor = tf.space_to_batch_nd(
-                self.tensor, self.block_shape, self.zero_paddings)
+            self._tensor = tf.space_to_batch_nd(self._tensor,
+                                                self.block_shape,
+                                                self.zero_paddings,
+                                                name='dilated')
         return self
 
     def __exit__(self, *args):
         if self.dilation_factor > 1:
-            self.tensor = tf.batch_to_space_nd(
-                self.tensor, self.block_shape, self.zero_paddings)
+            self._tensor = tf.batch_to_space_nd(self._tensor,
+                                                self.block_shape,
+                                                self.zero_paddings,
+                                                name='de-dilate')
+
+    @property
+    def tensor(self):
+        return self._tensor
+
+    @tensor.setter
+    def tensor(self, value):
+        self._tensor = value

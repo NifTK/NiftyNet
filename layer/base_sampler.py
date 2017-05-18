@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# import nn.data_augmentation as dataug
-# import utilities.misc as util
-# from nn.preprocess import HistNormaliser
 from .base import Layer
 from .input_placeholders import ImagePatch
 

@@ -2,51 +2,256 @@ import tensorflow as tf
 
 from layer.deconvolution import DeconvLayer
 from layer.deconvolution import DeconvolutionalLayer
+from tensorflow.contrib.layers.python.layers import regularizers
 
 
 class DeconvTest(tf.test.TestCase):
-    def test_shape(self):
-        input_shape = (2, 16, 16, 16, 8)
-        x_3d = tf.ones(input_shape)
 
+    def get_2d_input(self):
         input_shape = (2, 16, 16, 8)
         x_2d = tf.ones(input_shape)
+        return x_2d
 
-        deconv_3d = DeconvLayer(10, 3, 2, with_bias=True, padding='VALID')
-        conv_3d_out = deconv_3d(x_3d)
-        print deconv_3d
-        print conv_3d_out.get_shape()
+    def get_3d_input(self):
+        input_shape = (2, 16, 16, 16, 8)
+        x_3d = tf.ones(input_shape)
+        return x_3d
 
-        deconv_bn = DeconvolutionalLayer(10, 3, 1)
-        conv_bn_out = deconv_bn(x_3d, is_training=True)
-        print deconv_bn
-        print conv_bn_out.get_shape()
+    def test_3d_deconv_default_shape(self):
+        x_3d = self.get_3d_input()
+        conv_3d = DeconvLayer(10, 3, 2)
+        conv_3d_out = conv_3d(x_3d)
+        print conv_3d
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_3d = sess.run(conv_3d_out)
 
-        deconv_bn_relu = DeconvolutionalLayer(10, 3, 1, acti_fun='relu')
-        conv_bn_relu_out = deconv_bn_relu(x_3d, is_training=True, keep_prob=0.8)
-        print deconv_bn_relu
-        print conv_bn_relu_out.get_shape()
+    def test_3d_deconv_bias_shape(self):
+        x_3d = self.get_3d_input()
+        conv_3d = DeconvLayer(10, 3, 1, with_bias=True)
+        conv_3d_out = conv_3d(x_3d)
+        print conv_3d
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_3d = sess.run(conv_3d_out)
 
-        deconv_2d = DeconvLayer(10, 3, 1)
-        conv_2d_out = deconv_2d(x_2d)
-        print deconv_2d
-        print conv_2d_out.get_shape()
+    def test_deconv_3d_bias_reg_shape(self):
+        x_3d = self.get_3d_input()
+        conv_reg = DeconvLayer(10, 3, 2,
+                             w_regularizer=regularizers.l2_regularizer(0.5),
+                             with_bias=True,
+                             b_regularizer=regularizers.l2_regularizer(0.5))
+        conv_reg_out = conv_reg(x_3d)
+        print conv_reg
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_3d = sess.run(conv_reg_out)
 
-        deconv_reg = DeconvLayer(10, 3, 1, w_regularizer=tf.nn.l2_loss)
-        conv_reg_out = deconv_reg(x_2d)
-        # print tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-        print conv_reg_out.get_shape()
+    def test_3d_deconvlayer_default_shape(self):
+        x_3d = self.get_3d_input()
+        conv_3d = DeconvolutionalLayer(10, 3, 1)
+        conv_3d_out = conv_3d(x_3d, is_training=True)
+        print conv_3d
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_3d = sess.run(conv_3d_out)
 
+    def test_3d_deconvlayer_bias_shape(self):
+        x_3d = self.get_3d_input()
+        conv_3d = DeconvolutionalLayer(10, 3, 1, with_bias=True, with_bn=False)
+        conv_3d_out = conv_3d(x_3d)
+        print conv_3d
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_3d = sess.run(conv_3d_out)
+
+    def test_deconvlayer_3d_bias_reg_shape(self):
+        x_3d = self.get_3d_input()
+        conv_reg = DeconvolutionalLayer(
+            10, 3, 1,
+            w_regularizer=regularizers.l2_regularizer(0.5),
+            with_bias=True,
+            b_regularizer=regularizers.l2_regularizer(0.5),
+            with_bn=False)
+        conv_reg_out = conv_reg(x_3d)
+        print conv_reg
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_3d = sess.run(conv_reg_out)
+
+    def test_deconvlayer_3d_bn_reg_shape(self):
+        x_3d = self.get_3d_input()
+        conv_reg = DeconvolutionalLayer(
+            10, 3, 1,
+            w_regularizer=regularizers.l2_regularizer(0.5),
+            with_bias=False,
+            with_bn=True,
+            bn_regularizer=regularizers.l2_regularizer(0.5))
+        conv_reg_out = conv_reg(x_3d, is_training=True)
+        print conv_reg
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_3d = sess.run(conv_reg_out)
+
+    def test_deconvlayer_3d_bn_reg_shape(self):
+        x_3d = self.get_3d_input()
+        conv_reg = DeconvolutionalLayer(
+            10, 3, 1,
+            w_regularizer=regularizers.l2_regularizer(0.5),
+            with_bias=False,
+            with_bn=True,
+            bn_regularizer=regularizers.l2_regularizer(0.5),
+            acti_fun='prelu')
+        conv_reg_out = conv_reg(x_3d, is_training=True)
+        print conv_reg
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_3d = sess.run(conv_reg_out)
+
+    def test_deconvlayer_3d_relu_shape(self):
+        x_3d = self.get_3d_input()
+        conv_reg = DeconvolutionalLayer(
+            10, 3, 1,
+            acti_fun='relu')
+        conv_reg_out = conv_reg(x_3d, is_training=True)
+        print conv_reg
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_3d = sess.run(conv_reg_out)
+
+    def test_deconvlayer_3d_bn_reg_dropout_shape(self):
+        x_3d = self.get_3d_input()
+        conv_reg = DeconvolutionalLayer(
+            10, 3, 1,
+            w_regularizer=regularizers.l2_regularizer(0.5),
+            with_bias=False,
+            with_bn=True,
+            bn_regularizer=regularizers.l2_regularizer(0.5),
+            acti_fun='prelu')
+        conv_reg_out = conv_reg(x_3d, is_training=True, keep_prob=0.4)
+        print conv_reg
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_3d = sess.run(conv_reg_out)
+
+        ### 2d tests
+
+    def test_2d_deconv_default_shape(self):
+        x_2d = self.get_2d_input()
+        conv_2d = DeconvLayer(10, 3, 1)
+        conv_2d_out = conv_2d(x_2d)
+        print conv_2d
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_2d = sess.run(conv_2d_out)
-            out_3d = sess.run(conv_3d_out)
-            out_bn = sess.run(conv_bn_out)
-            out_bn_relu = sess.run(conv_bn_relu_out)
-            out_reg = sess.run(conv_reg_out)
-            #    self.assertAllClose(input_shape, out.shape)
-            #    self.assertAllClose(np.zeros(input_shape), out)
 
+    def test_2d_deconv_bias_shape(self):
+        x_2d = self.get_2d_input()
+        conv_2d = DeconvLayer(10, 3, 1, with_bias=True)
+        conv_2d_out = conv_2d(x_2d)
+        print conv_2d
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_2d = sess.run(conv_2d_out)
+
+    def test_deconv_2d_bias_reg_shape(self):
+        x_2d = self.get_2d_input()
+        conv_reg = DeconvLayer(10, 3, 1,
+                             w_regularizer=regularizers.l2_regularizer(0.5),
+                             with_bias=True,
+                             b_regularizer=regularizers.l2_regularizer(0.5))
+        conv_reg_out = conv_reg(x_2d)
+        print conv_reg
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_2d = sess.run(conv_reg_out)
+
+    def test_2d_deconvlayer_default_shape(self):
+        x_2d = self.get_2d_input()
+        conv_2d = DeconvolutionalLayer(10, 3, 1)
+        conv_2d_out = conv_2d(x_2d, is_training=True)
+        print conv_2d
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_2d = sess.run(conv_2d_out)
+
+    def test_2d_deconvlayer_bias_shape(self):
+        x_2d = self.get_2d_input()
+        conv_2d = DeconvolutionalLayer(10, 3, 1, with_bias=True, with_bn=False)
+        conv_2d_out = conv_2d(x_2d)
+        print conv_2d
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_2d = sess.run(conv_2d_out)
+
+    def test_deconvlayer_2d_bias_reg_shape(self):
+        x_2d = self.get_2d_input()
+        conv_reg = DeconvolutionalLayer(
+            10, 3, 1,
+            w_regularizer=regularizers.l2_regularizer(0.5),
+            with_bias=True,
+            b_regularizer=regularizers.l2_regularizer(0.5),
+            with_bn=False)
+        conv_reg_out = conv_reg(x_2d)
+        print conv_reg
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_2d = sess.run(conv_reg_out)
+
+    def test_deconvlayer_2d_bn_reg_shape(self):
+        x_2d = self.get_2d_input()
+        conv_reg = DeconvolutionalLayer(
+            10, 3, 1,
+            w_regularizer=regularizers.l2_regularizer(0.5),
+            with_bias=False,
+            with_bn=True,
+            bn_regularizer=regularizers.l2_regularizer(0.5))
+        conv_reg_out = conv_reg(x_2d, is_training=True)
+        print conv_reg
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_2d = sess.run(conv_reg_out)
+
+    def test_deconvlayer_2d_bn_reg_shape(self):
+        x_2d = self.get_2d_input()
+        conv_reg = DeconvolutionalLayer(
+            10, 3, 1,
+            w_regularizer=regularizers.l2_regularizer(0.5),
+            with_bias=False,
+            with_bn=True,
+            bn_regularizer=regularizers.l2_regularizer(0.5),
+            acti_fun='prelu')
+        conv_reg_out = conv_reg(x_2d, is_training=True)
+        print conv_reg
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_2d = sess.run(conv_reg_out)
+
+    def test_deconvlayer_2d_relu_shape(self):
+        x_2d = self.get_2d_input()
+        conv_reg = DeconvolutionalLayer(
+            10, 3, 2,
+            acti_fun='relu')
+        conv_reg_out = conv_reg(x_2d, is_training=True)
+        print conv_reg
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_2d = sess.run(conv_reg_out)
+
+    def test_deconvlayer_2d_bn_reg_shape(self):
+        x_2d = self.get_2d_input()
+        conv_reg = DeconvolutionalLayer(
+            10, 3, 2,
+            w_regularizer=regularizers.l2_regularizer(0.5),
+            with_bias=False,
+            with_bn=True,
+            bn_regularizer=regularizers.l2_regularizer(0.5),
+            acti_fun='prelu')
+        conv_reg_out = conv_reg(x_2d, is_training=True, keep_prob=0.4)
+        print conv_reg
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out_2d = sess.run(conv_reg_out)
 
 if __name__ == "__main__":
     tf.test.main()

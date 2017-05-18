@@ -2,26 +2,31 @@ import numpy as np
 import tensorflow as tf
 
 from . import layer_util
-from .base import Layer
+from .base import TrainableLayer
 from .convolution import ConvLayer
 
 SUPPORTED_OP = set(['SUM', 'CONCAT'])
 
 
-class ElementwiseLayer(Layer):
+class ElementwiseLayer(TrainableLayer):
     """
     This class takes care of the elementwise sum in a residual connection
     It matches the channel dims from two branch flows,
     by either padding or projection if necessary.
     """
 
-    def __init__(self, func, initializer=None, regularizer=None, name='residual'):
+    def __init__(self,
+                 func,
+                 initializer=None,
+                 regularizer=None,
+                 name='residual'):
         self.func = func.upper()
         assert self.func in SUPPORTED_OP
         self.layer_name = 'res_{}'.format(self.func.lower())
+
         super(ElementwiseLayer, self).__init__(name=self.layer_name)
-        self.initializer = initializer
-        self.regularizer = regularizer
+        self.initializers = {'w': initializer}
+        self.regularizers = {'w': regularizer}
 
     def layer_op(self, param_flow, bypass_flow):
         n_param_flow = param_flow.get_shape()[-1]
@@ -43,8 +48,8 @@ class ElementwiseLayer(Layer):
                                       kernel_size=1,
                                       stride=1,
                                       padding='SAME',
-                                      w_initializer=self.initializer,
-                                      w_regularizer=self.regularizer,
+                                      w_initializer=self.initializers['w'],
+                                      w_regularizer=self.regularizers['w'],
                                       name='proj')
                 bypass_flow = projector(bypass_flow)
 

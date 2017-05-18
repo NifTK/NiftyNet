@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from . import layer_util
-from .base import Layer
+from .base import TrainableLayer
 from .convolution import ConvolutionalLayer
 from .deconvolution import DeconvolutionalLayer
 from .downsample import DownSampleLayer
 from .elementwise import ElementwiseLayer
 
 
-class UNet3D(Layer):
+class UNet3D(TrainableLayer):
     """
     reimplementation of 3D U-net
       Çiçek et al., "3D U-Net: Learning dense Volumetric segmentation from
@@ -86,7 +86,7 @@ class UNet3D(Layer):
 SUPPORTED_OP = set(['DOWNSAMPLE', 'UPSAMPLE', 'NONE'])
 
 
-class UNetBlock(Layer):
+class UNetBlock(TrainableLayer):
     def __init__(self,
                  func,
                  n_chns,

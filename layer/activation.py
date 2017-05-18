@@ -24,18 +24,20 @@ class ActiLayer(TrainableLayer):
     def __init__(self, func, regularizer=None, name='activation'):
         self.func = func.lower()
         assert self.func in SUPPORTED_OP
-        self.layer_name = '{}_{}'.format(name, self.func)
+        self.layer_name = '{}_{}'.format(self.func, name)
 
         super(ActiLayer, self).__init__(name=self.layer_name)
-        self.const_initializer = tf.zeros_initializer()
-        self.const_regularizer = regularizer
+
+        # these are used for prelu variables
+        self.initializers = {'alpha': tf.constant_initializer(0.0)}
+        self.regularizers = {'alpha': regularizer}
 
     def layer_op(self, input_tensor, keep_prob=None):
         if self.func == 'prelu':
             alphas = tf.get_variable(
                 'alpha', input_tensor.get_shape()[-1],
-                initializer=self.const_initializer,
-                regularizer=self.const_regularizer)
+                initializer=self.initializers['alpha'],
+                regularizer=self.regularizers['alpha'])
             output_tensor = SUPPORTED_OP['prelu'](input_tensor, alphas)
         elif self.func == 'dropout':
             assert keep_prob > 0.0

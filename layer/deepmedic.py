@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from .base import Layer
+from .base import TrainableLayer
 from .convolution import ConvolutionalLayer
 from .crop import CropLayer
 from .downsample import DownSampleLayer
@@ -8,7 +8,7 @@ from .elementwise import ElementwiseLayer
 from . import layer_util
 
 
-class DeepMedic(Layer):
+class DeepMedic(TrainableLayer):
     """
     reimplementation of DeepMedic:
       Kamnitsas et al., "Efficient multi-scale 3D CNN with fully connected

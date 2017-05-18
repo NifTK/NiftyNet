@@ -2,13 +2,13 @@ import numpy as np
 import tensorflow as tf
 
 from . import layer_util
-from .base import Layer
+from .base import TrainableLayer
 from .deconvolution import DeconvLayer
 
 SUPPORTED_OP = set(['REPLICATE', 'CHANNELWISE_DECONV'])
 
 
-class UpSampleLayer(Layer):
+class UpSampleLayer(TrainableLayer):
     """
     This class defines channel-wise upsampling operations.
     Different from `DeconvLayer`, the elements are not mixed in the channel dim.
@@ -36,10 +36,8 @@ class UpSampleLayer(Layer):
         super(UpSampleLayer, self).__init__(name=self.layer_name)
 
         self.with_bias = with_bias
-        self.w_initializer = w_initializer
-        self.w_regularizer = w_regularizer
-        self.b_initializer = b_initializer
-        self.b_regularizer = b_regularizer
+        self.initializers = {'w': w_initializer, 'b': b_initializer}
+        self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
     def layer_op(self, input_tensor):
         spatial_rank = layer_util.infer_spatial_rank(input_tensor)
@@ -67,10 +65,10 @@ class UpSampleLayer(Layer):
                                          stride=self.stride,
                                          padding='SAME',
                                          with_bias=self.with_bias,
-                                         w_initializer=self.w_initializer,
-                                         w_regularizer=self.w_regularizer,
-                                         b_initializer=self.b_initializer,
-                                         b_regularizer=self.b_regularizer,
+                                         w_initializer=self.initializers['w'],
+                                         w_regularizer=self.regularizers['w'],
+                                         b_initializer=self.initializers['b'],
+                                         b_regularizer=self.regularizers['b'],
                                          name='deconv_{}'.format(i))(x)
                              for (i, x) in enumerate(output_tensor)]
             output_tensor = tf.concat(output_tensor, axis=-1)

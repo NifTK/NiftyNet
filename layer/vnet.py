@@ -3,13 +3,13 @@ import tensorflow as tf
 
 from . import layer_util
 from .activation import ActiLayer
-from .base import Layer
+from .base import TrainableLayer
 from .convolution import ConvLayer
 from .deconvolution import DeconvLayer
 from .elementwise import ElementwiseLayer
 
 
-class VNet(Layer):
+class VNet(TrainableLayer):
     """
     implementation of V-Net:
       Milletari et al., "V-Net: Fully convolutional neural networks for
@@ -27,7 +27,12 @@ class VNet(Layer):
     def layer_op(self, images, is_training, layer_id=-1):
         assert layer_util.check_spatial_dims(images, lambda x: x % 8 == 0)
 
-        padded_images = tf.tile(images, [1, 1, 1, 1, self.n_features[0]])
+        if layer_util.infer_spatial_rank(images) == 2:
+            padded_images = tf.tile(images, [1, 1, 1, self.n_features[0]])
+        elif layer_util.infer_spatial_rank(images) == 3:
+            padded_images = tf.tile(images, [1, 1, 1, 1, self.n_features[0]])
+        else:
+            raise ValueError('not supported spatial rank of the input image')
         # downsampling  blocks
         res_1, down_1 = VNetBlock('DOWNSAMPLE', 1,
                                   self.n_features[0],
@@ -77,7 +82,7 @@ class VNet(Layer):
 SUPPORTED_OPS = set(['DOWNSAMPLE', 'UPSAMPLE', 'SAME'])
 
 
-class VNetBlock(Layer):
+class VNetBlock(TrainableLayer):
     def __init__(self,
                  func,
                  n_conv,

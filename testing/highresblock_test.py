@@ -4,19 +4,95 @@ from layer.highres3dnet import HighResBlock
 
 
 class HighResBlockTest(tf.test.TestCase):
-    def test_shape(self):
+    def test_3d_increase_shape(self):
         input_shape = (2, 16, 16, 16, 8)
         x = tf.ones(input_shape)
 
-        highres_layer = HighResBlock(n_output_chns=8, kernels=(3, 3), with_res=True)
+        highres_layer = HighResBlock(n_output_chns=16,
+                                     kernels=(3, 3),
+                                     with_res=True)
         out = highres_layer(x, is_training=True)
-
         print highres_layer
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
+            self.assertAllClose((2, 16, 16, 16, 16), out.shape)
 
+    def test_3d_same_shape(self):
+        input_shape = (2, 16, 16, 16, 8)
+        x = tf.ones(input_shape)
+
+        highres_layer = HighResBlock(n_output_chns=8,
+                                     kernels=(3, 3),
+                                     with_res=True)
+        out = highres_layer(x, is_training=True)
+        print highres_layer
+
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out = sess.run(out)
+            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
+
+    def test_3d_reduce_shape(self):
+        input_shape = (2, 16, 16, 16, 8)
+        x = tf.ones(input_shape)
+
+        highres_layer = HighResBlock(n_output_chns=4,
+                                     kernels=(3, 3),
+                                     with_res=True)
+        out = highres_layer(x, is_training=True)
+        print highres_layer
+
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out = sess.run(out)
+            self.assertAllClose((2, 16, 16, 16, 4), out.shape)
+
+    def test_2d_increase_shape(self):
+        input_shape = (2, 16, 16, 8)
+        x = tf.ones(input_shape)
+
+        highres_layer = HighResBlock(n_output_chns=16,
+                                     kernels=(3, 3),
+                                     with_res=True)
+        out = highres_layer(x, is_training=True)
+        print highres_layer
+
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out = sess.run(out)
+            self.assertAllClose((2, 16, 16, 16), out.shape)
+
+    def test_2d_same_shape(self):
+        input_shape = (2, 16, 16, 8)
+        x = tf.ones(input_shape)
+
+        highres_layer = HighResBlock(n_output_chns=8,
+                                     kernels=(3, 3),
+                                     with_res=True)
+        out = highres_layer(x, is_training=True)
+        print highres_layer
+
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out = sess.run(out)
+            self.assertAllClose((2, 16, 16, 8), out.shape)
+
+    def test_2d_reduce_shape(self):
+        input_shape = (2, 16, 16, 8)
+        x = tf.ones(input_shape)
+
+        highres_layer = HighResBlock(n_output_chns=4,
+                                     kernels=(3, 3),
+                                     with_res=True)
+        out = highres_layer(x, is_training=True)
+        print highres_layer
+
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out = sess.run(out)
+            self.assertAllClose((2, 16, 16, 4), out.shape)
 
 if __name__ == "__main__":
     tf.test.main()

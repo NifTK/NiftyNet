@@ -29,12 +29,15 @@ class Layer(object):
 
 
 class TrainableLayer(Layer):
+    """
+    Note that rand_initializer and const_initializer are set in different
+    ways: rand_initializer should be set with an initializer instance
+    const_initializer should be set with a number
+    """
     def __init__(self, name='untitled_op'):
         super(TrainableLayer, self).__init__(name=name)
-        self._rand_initializer = None
-        self._rand_regularizer = None
-        self._const_initializer = None
-        self._const_regularizer = None
+        self._initializers = None
+        self._regularizers = None
 
     def trainable_variables(self):
         return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
@@ -62,35 +65,19 @@ class TrainableLayer(Layer):
         return out_str
 
     @property
-    def rand_initializer(self):
-        assert self._rand_initializer is not None
-        return self._rand_initializer
+    def initializers(self):
+        return self._initializers
 
     @property
-    def rand_regularizer(self):
-        return self._rand_regularizer
+    def regularizers(self):
+        return self._regularizers
 
-    @property
-    def const_initializer(self):
-        assert self._const_initializer is not None
-        return self._const_initializer
+    @initializers.setter
+    def initializers(self, value):
+        assert isinstance(value, dict)
+        self._initializers = value
 
-    @property
-    def const_regularizer(self):
-        return self._const_regularizer
-
-    @rand_initializer.setter
-    def rand_initializer(self, value):
-        self._rand_initializer = value
-
-    @rand_regularizer.setter
-    def rand_regularizer(self, value):
-        self._rand_regularizer = value
-
-    @const_initializer.setter
-    def const_initializer(self, value):
-        self._const_initializer = value
-
-    @const_regularizer.setter
-    def const_regularizer(self, value):
-        self._const_regularizer = value
+    @regularizers.setter
+    def regularizers(self, value):
+        assert isinstance(value, dict)
+        self._regularizers = value

@@ -102,12 +102,10 @@ def run(net, param):
                     p_start = param.border
                     p_end = net.input_label_size - param.border
                     predictions = seg_maps[batch_id]
-                    pred_img[(loc_x + p_start): (loc_x + p_end),
-                    (loc_y + p_start): (loc_y + p_end),
-                    (loc_z + p_start): (loc_z + p_end)] = \
-                        predictions[p_start: p_end,
-                        p_start: p_end,
-                        p_start: p_end]
+                    pred_img[(loc_x + p_start):(loc_x + p_end),
+                             (loc_y + p_start):(loc_y + p_end),
+                             (loc_z + p_start):(loc_z + p_end)] = \
+                        predictions[p_start:p_end, p_start:p_end, p_start:p_end]
 
         except KeyboardInterrupt:
             print('User cancelled training')

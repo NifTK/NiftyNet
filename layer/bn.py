@@ -1,10 +1,11 @@
 import tensorflow as tf
 from tensorflow.python.training import moving_averages
 
-from .base import Layer
+from .base import TrainableLayer
 
 
 def _compute_mean_and_var(inputs, axes):
+    # compute mean and variance of the inputs along axes
     input_shape = inputs.get_shape()
     counts = 1
     for d in axes:
@@ -18,8 +19,9 @@ def _compute_mean_and_var(inputs, axes):
     return mean, variance
 
 
-class BNLayer(Layer):
+class BNLayer(TrainableLayer):
     def __init__(self,
+                 initializer=None,
                  regularizer=None,
                  moving_decay=0.9,
                  eps=1e-5,
@@ -27,7 +29,13 @@ class BNLayer(Layer):
         super(BNLayer, self).__init__(name=name)
         self.eps = eps
         self.moving_decay = moving_decay
-        self.regularizer = regularizer
+
+        self.initializers = {'beta': tf.constant_initializer(0.0),
+                             'gamma': tf.constant_initializer(1.0),
+                             'moving_mean': tf.constant_initializer(0.0),
+                             'moving_variance': tf.constant_initializer(1.0)}
+
+        self.regularizers = {'beta': regularizer, 'gamma': regularizer}
 
     def layer_op(self, inputs, is_training, use_local_stats=False):
         input_shape = inputs.get_shape()
@@ -40,22 +48,24 @@ class BNLayer(Layer):
         beta = tf.get_variable(
             'beta',
             shape=params_shape,
-            initializer=tf.zeros_initializer(),
-            regularizer=self.regularizer,
+            initializer=self.initializers['beta'],
+            regularizer=self.regularizers['beta'],
             dtype=tf.float32, trainable=True)
         gamma = tf.get_variable(
             'gamma',
             shape=params_shape,
-            initializer=tf.ones_initializer(),
-            regularizer=self.regularizer,
+            initializer=self.initializers['gamma'],
+            regularizer=self.regularizers['gamma'],
             dtype=tf.float32, trainable=True)
         moving_mean = tf.get_variable(
             'moving_mean',
-            shape=params_shape, initializer=tf.zeros_initializer(),
+            shape=params_shape,
+            initializer=self.initializers['moving_mean'],
             dtype=tf.float32, trainable=False)
         moving_variance = tf.get_variable(
             'moving_variance',
-            shape=params_shape, initializer=tf.ones_initializer(),
+            shape=params_shape,
+            initializer=self.initializers['moving_variance'],
             dtype=tf.float32, trainable=False)
 
         # mean and var

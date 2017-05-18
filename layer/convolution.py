@@ -1,25 +1,30 @@
 import numpy as np
 import tensorflow as tf
 
-from .base import Layer
-from .bn import BNLayer
-from .activation import ActiLayer
 from . import layer_util
+from .activation import ActiLayer
+from .base import TrainableLayer
+from .bn import BNLayer
 
 SUPPORTED_PADDING = set(['SAME', 'VALID'])
 
 
-def default_w_initializer(kernel_shape):
-    stddev = np.sqrt(2.0 / np.prod(kernel_shape[:-1]))
-    return tf.truncated_normal_initializer(
-        mean=0.0, stddev=stddev, dtype=tf.float32)
+def default_w_initializer():
+    def _initializer(shape, dtype, partition_info):
+        stddev = np.sqrt(2.0 / np.prod(shape[:-1]))
+        from tensorflow.python.ops import random_ops
+        return random_ops.truncated_normal(shape, 0.0, stddev, dtype=tf.float32)
+        # return tf.truncated_normal_initializer(
+        #    mean=0.0, stddev=stddev, dtype=tf.float32)
+
+    return _initializer
 
 
 def default_b_initializer():
-    return tf.zeros_initializer()
+    return tf.constant_initializer(0.0)
 
 
-class ConvLayer(Layer):
+class ConvLayer(TrainableLayer):
     """
     This class defines a simple convolution with an optional bias term.
     Please consider `ConvolutionalLayer` if batch_norm and activation
@@ -48,13 +53,11 @@ class ConvLayer(Layer):
         self.stride = np.asarray(stride).flatten()
         self.with_bias = with_bias
 
-        self.w_initializer = w_initializer
-        self.w_regularizer = w_regularizer
-        self.b_initializer = b_initializer
-        self.b_regularizer = b_regularizer
+        self.initializers = {
+            'w': w_initializer if w_initializer else default_w_initializer(),
+            'b': b_initializer if b_initializer else default_b_initializer()}
 
-        self._w = None
-        self._b = None
+        self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
     def layer_op(self, input_tensor):
         input_shape = input_tensor.get_shape().as_list()
@@ -67,14 +70,12 @@ class ConvLayer(Layer):
             n_input_chns, self.n_output_chns)).flatten()
         full_stride = np.vstack((
             [self.stride] * spatial_rank)).flatten()
-        if self.w_initializer is None:
-            self.w_initializer = default_w_initializer(w_full_size)
-        self._w = tf.get_variable(
+        conv_kernel = tf.get_variable(
             'w', shape=w_full_size.tolist(),
-            initializer=self.w_initializer,
-            regularizer=self.w_regularizer)
+            initializer=self.initializers['w'],
+            regularizer=self.regularizers['w'])
         output_tensor = tf.nn.convolution(input=input_tensor,
-                                          filter=self._w,
+                                          filter=conv_kernel,
                                           strides=full_stride.tolist(),
                                           padding=self.padding,
                                           name='conv')
@@ -82,17 +83,15 @@ class ConvLayer(Layer):
             return output_tensor
 
         # adding the bias term
-        if self.b_initializer is None:
-            self.b_initializer = default_b_initializer()
-        self._b = tf.get_variable(
+        bias_term = tf.get_variable(
             'b', shape=(self.n_output_chns),
-            initializer=self.b_initializer,
-            regularizer=self.b_regularizer)
-        output_tensor = tf.nn.bias_add(output_tensor, self._b, name='add_bias')
+            initializer=self.initializers['b'],
+            regularizer=self.regularizers['b'])
+        output_tensor = tf.nn.bias_add(output_tensor, bias_term, name='add_bias')
         return output_tensor
 
 
-class ConvolutionalLayer(Layer):
+class ConvolutionalLayer(TrainableLayer):
     """
     This class defines a composite layer with optional components:
         convolution -> batch_norm -> activation -> dropout
@@ -117,10 +116,10 @@ class ConvolutionalLayer(Layer):
         self.acti_fun = acti_fun
         self.with_bn = with_bn
         self.layer_name = '{}'.format(name)
-        # if self.with_bn:
-        #    self.layer_name += '_bn'
-        # if (self.acti_fun is not None):
-        #    self.layer_name += '_{}'.format(self.acti_fun)
+        if self.with_bn:
+            self.layer_name += '_bn'
+        if (self.acti_fun is not None):
+            self.layer_name += '_{}'.format(self.acti_fun)
         super(ConvolutionalLayer, self).__init__(name=self.layer_name)
 
         self.n_output_chns = n_output_chns
@@ -128,43 +127,45 @@ class ConvolutionalLayer(Layer):
         self.stride = stride
         self.padding = padding
 
-        self.w_initializer = w_initializer
-        self.w_regularizer = w_regularizer
-        self.b_initializer = b_initializer
-        self.b_regularizer = b_regularizer
-        self.bn_regularizer = bn_regularizer
+        self.initializers = {
+            'w': w_initializer if w_initializer else default_w_initializer(),
+            'b': b_initializer if b_initializer else default_b_initializer()}
+
+        self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
         self.conv_layer = None
         self.bn_layer = None
         self.acti_layer = None
         self.dropout_layer = None
 
-    def layer_op(self, input_tensor, is_training, keep_prob=None):
+    def layer_op(self, input_tensor, is_training=None, keep_prob=None):
         # init sub-layers
         self.conv_layer = ConvLayer(n_output_chns=self.n_output_chns,
                                     kernel_size=self.kernel_size,
                                     stride=self.stride,
                                     padding=self.padding,
-                                    w_initializer=self.w_initializer,
-                                    w_regularizer=self.w_regularizer,
+                                    w_initializer=self.initializers['w'],
+                                    w_regularizer=self.regularizers['w'],
                                     with_bias=self.with_bias,
-                                    b_initializer=self.b_initializer,
-                                    b_regularizer=self.b_regularizer,
+                                    b_initializer=self.initializers['b'],
+                                    b_regularizer=self.regularizers['b'],
                                     name='conv_')
         output_tensor = self.conv_layer(input_tensor)
 
         if self.with_bn:
-            self.bn_layer = BNLayer(regularizer=self.bn_regularizer, name='bn_')
+            self.bn_layer = BNLayer(regularizer=self.regularizers['w'],
+                                    name='bn_')
             output_tensor = self.bn_layer(output_tensor, is_training)
 
         if self.acti_fun is not None:
             self.acti_layer = ActiLayer(func=self.acti_fun,
-                                        regularizer=self.w_regularizer,
+                                        regularizer=self.regularizers['w'],
                                         name='acti_')
             output_tensor = self.acti_layer(output_tensor)
 
         if keep_prob is not None:
-            self.dropout_layer = ActiLayer(func='dropout', name='dropout_')
+            self.dropout_layer = ActiLayer(func='dropout',
+                                           name='dropout_')
             output_tensor = self.dropout_layer(output_tensor,
                                                keep_prob=keep_prob)
         return output_tensor
