@@ -10,3 +10,4 @@ user/
 emerald_*
 example_volumes*
 .coverage*
+TestingData*
