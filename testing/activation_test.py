@@ -24,6 +24,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_relu)
+            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
 
     def test_3d_relu6_shape(self):
         x = self.get_3d_input()
@@ -33,6 +34,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_relu6)
+            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
 
     def test_3d_elu_shape(self):
         x = self.get_3d_input()
@@ -42,6 +44,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_elu)
+            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
 
     def test_3d_softplus_shape(self):
         x = self.get_3d_input()
@@ -51,6 +54,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_softplus)
+            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
 
     def test_3d_softsign_shape(self):
         x = self.get_3d_input()
@@ -60,6 +64,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_softsign)
+            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
 
     def test_3d_sigmoid_shape(self):
         x = self.get_3d_input()
@@ -69,6 +74,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_sigmoid)
+            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
 
     def test_3d_tanh_shape(self):
         x = self.get_3d_input()
@@ -78,6 +84,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_tanh)
+            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
 
     def test_3d_prelu_shape(self):
         x = self.get_3d_input()
@@ -87,6 +94,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_prelu)
+            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
 
     def test_3d_prelu_reg_shape(self):
         x = self.get_3d_input()
@@ -98,6 +106,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_prelu)
+            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
 
     def test_3d_dropout_shape(self):
         x = self.get_3d_input()
@@ -107,6 +116,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_dropout)
+            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
 
             # self.assertAllClose(input_shape, out.shape)
             # self.assertAllClose(np.zeros(input_shape), out)
@@ -120,6 +130,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_relu)
+            self.assertAllClose((2, 16, 16, 8), out.shape)
 
     def test_2d_relu6_shape(self):
         x = self.get_2d_input()
@@ -129,6 +140,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_relu6)
+            self.assertAllClose((2, 16, 16, 8), out.shape)
 
     def test_2d_elu_shape(self):
         x = self.get_2d_input()
@@ -138,6 +150,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_elu)
+            self.assertAllClose((2, 16, 16, 8), out.shape)
 
     def test_2d_softplus_shape(self):
         x = self.get_2d_input()
@@ -147,6 +160,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_softplus)
+            self.assertAllClose((2, 16, 16, 8), out.shape)
 
     def test_2d_softsign_shape(self):
         x = self.get_2d_input()
@@ -156,6 +170,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_softsign)
+            self.assertAllClose((2, 16, 16, 8), out.shape)
 
     def test_2d_sigmoid_shape(self):
         x = self.get_2d_input()
@@ -165,6 +180,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_sigmoid)
+            self.assertAllClose((2, 16, 16, 8), out.shape)
 
     def test_2d_tanh_shape(self):
         x = self.get_2d_input()
@@ -174,6 +190,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_tanh)
+            self.assertAllClose((2, 16, 16, 8), out.shape)
 
     def test_2d_prelu_shape(self):
         x = self.get_2d_input()
@@ -183,6 +200,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_prelu)
+            self.assertAllClose((2, 16, 16, 8), out.shape)
 
     def test_2d_prelu_reg_shape(self):
         x = self.get_2d_input()
@@ -194,6 +212,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_prelu)
+            self.assertAllClose((2, 16, 16, 8), out.shape)
 
     def test_2d_dropout_shape(self):
         x = self.get_2d_input()
@@ -203,6 +222,7 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_dropout)
+            self.assertAllClose((2, 16, 16, 8), out.shape)
 
 
 if __name__ == "__main__":
