@@ -18,6 +18,7 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 
 
 ### Dependencies
+* six
 * Python 2.7
 * Tensorflow 1.0
 * Nibabel 2.1
@@ -25,6 +26,7 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 * Scipy 0.19
 * medpy 0.2.2
 * configparser
+* scikit-image
 
 
 ### Usage
