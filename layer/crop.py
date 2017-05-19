@@ -1,8 +1,8 @@
 import numpy as np
 import tensorflow as tf
 
-from .base import Layer
 from . import layer_util
+from .base import Layer
 
 
 class CropLayer(Layer):

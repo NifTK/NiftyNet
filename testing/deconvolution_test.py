@@ -1,12 +1,11 @@
 import tensorflow as tf
+from tensorflow.contrib.layers.python.layers import regularizers
 
 from layer.deconvolution import DeconvLayer
 from layer.deconvolution import DeconvolutionalLayer
-from tensorflow.contrib.layers.python.layers import regularizers
 
 
 class DeconvTest(tf.test.TestCase):
-
     def get_2d_input(self):
         input_shape = (2, 16, 16, 8)
         x_2d = tf.ones(input_shape)
@@ -38,9 +37,9 @@ class DeconvTest(tf.test.TestCase):
     def test_deconv_3d_bias_reg_shape(self):
         x_3d = self.get_3d_input()
         conv_reg = DeconvLayer(10, 3, 2,
-                             w_regularizer=regularizers.l2_regularizer(0.5),
-                             with_bias=True,
-                             b_regularizer=regularizers.l2_regularizer(0.5))
+                               w_regularizer=regularizers.l2_regularizer(0.5),
+                               with_bias=True,
+                               b_regularizer=regularizers.l2_regularizer(0.5))
         conv_reg_out = conv_reg(x_3d)
         print conv_reg
         with self.test_session() as sess:
@@ -85,8 +84,7 @@ class DeconvTest(tf.test.TestCase):
             10, 3, 1,
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
-            with_bn=True,
-            bn_regularizer=regularizers.l2_regularizer(0.5))
+            with_bn=True)
         conv_reg_out = conv_reg(x_3d, is_training=True)
         print conv_reg
         with self.test_session() as sess:
@@ -100,7 +98,6 @@ class DeconvTest(tf.test.TestCase):
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
             with_bn=True,
-            bn_regularizer=regularizers.l2_regularizer(0.5),
             acti_fun='prelu')
         conv_reg_out = conv_reg(x_3d, is_training=True)
         print conv_reg
@@ -126,7 +123,6 @@ class DeconvTest(tf.test.TestCase):
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
             with_bn=True,
-            bn_regularizer=regularizers.l2_regularizer(0.5),
             acti_fun='prelu')
         conv_reg_out = conv_reg(x_3d, is_training=True, keep_prob=0.4)
         print conv_reg
@@ -134,7 +130,7 @@ class DeconvTest(tf.test.TestCase):
             sess.run(tf.global_variables_initializer())
             out_3d = sess.run(conv_reg_out)
 
-        ### 2d tests
+            ### 2d tests
 
     def test_2d_deconv_default_shape(self):
         x_2d = self.get_2d_input()
@@ -157,9 +153,9 @@ class DeconvTest(tf.test.TestCase):
     def test_deconv_2d_bias_reg_shape(self):
         x_2d = self.get_2d_input()
         conv_reg = DeconvLayer(10, 3, 1,
-                             w_regularizer=regularizers.l2_regularizer(0.5),
-                             with_bias=True,
-                             b_regularizer=regularizers.l2_regularizer(0.5))
+                               w_regularizer=regularizers.l2_regularizer(0.5),
+                               with_bias=True,
+                               b_regularizer=regularizers.l2_regularizer(0.5))
         conv_reg_out = conv_reg(x_2d)
         print conv_reg
         with self.test_session() as sess:
@@ -204,8 +200,7 @@ class DeconvTest(tf.test.TestCase):
             10, 3, 1,
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
-            with_bn=True,
-            bn_regularizer=regularizers.l2_regularizer(0.5))
+            with_bn=True)
         conv_reg_out = conv_reg(x_2d, is_training=True)
         print conv_reg
         with self.test_session() as sess:
@@ -219,7 +214,6 @@ class DeconvTest(tf.test.TestCase):
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
             with_bn=True,
-            bn_regularizer=regularizers.l2_regularizer(0.5),
             acti_fun='prelu')
         conv_reg_out = conv_reg(x_2d, is_training=True)
         print conv_reg
@@ -245,13 +239,13 @@ class DeconvTest(tf.test.TestCase):
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
             with_bn=True,
-            bn_regularizer=regularizers.l2_regularizer(0.5),
             acti_fun='prelu')
         conv_reg_out = conv_reg(x_2d, is_training=True, keep_prob=0.4)
         print conv_reg
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_2d = sess.run(conv_reg_out)
+
 
 if __name__ == "__main__":
     tf.test.main()

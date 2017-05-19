@@ -40,5 +40,6 @@ class BNTest(tf.test.TestCase):
             print out.shape
             print out_dilated.shape
 
+
 if __name__ == "__main__":
     tf.test.main()

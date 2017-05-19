@@ -28,5 +28,6 @@ class ToyNetTest(tf.test.TestCase):
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 160), out.shape)
 
+
 if __name__ == "__main__":
     tf.test.main()

@@ -50,5 +50,6 @@ class CropTest(tf.test.TestCase):
             self.assertAllClose((2, 10, 10, 8), out.shape)
             self.assertAllClose((2, 1, 1, 8), out_1.shape)
 
+
 if __name__ == "__main__":
     tf.test.main()

@@ -10,14 +10,22 @@ from .highres3dnet import HighRes3DNet, HighResBlock
 class ScaleNet(TrainableLayer):
     def __init__(self,
                  num_classes,
+                 w_initializer=None,
+                 w_regularizer=None,
+                 b_initializer=None,
+                 b_regularizer=None,
                  acti_type='prelu',
                  name='ScaleNet'):
         super(ScaleNet, self).__init__(name=name)
+
         self.n_features = 16
         self.num_classes = num_classes
         self.acti_type = acti_type
-        self.name = "ScaleNet"
-        print 'using {}'.format(self.name)
+
+        self.initializers = {'w': w_initializer, 'b': b_initializer}
+        self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
+
+        print 'using {}'.format(name)
 
     def layer_op(self, images, is_training, layer_id=-1):
         n_modality = images.get_shape().as_list()[-1]
@@ -25,9 +33,12 @@ class ScaleNet(TrainableLayer):
         assert n_modality > 1
         roots = tf.split(images, n_modality, axis=rank - 1)
         for (idx, root) in enumerate(roots):
-            conv_layer = ConvolutionalLayer(n_output_chns=self.n_features,
-                                            kernel_size=3,
-                                            name='conv_{}'.format(idx))
+            conv_layer = ConvolutionalLayer(
+                n_output_chns=self.n_features,
+                kernel_size=3,
+                w_initializer=self.initializers['w'],
+                w_regularizer=self.regularizers['w'],
+                name='conv_{}'.format(idx))
             roots[idx] = conv_layer(root, is_training)
         roots = tf.stack(roots, axis=-1)
 
@@ -43,11 +54,19 @@ SUPPORTED_OP = set(['MAX', 'AVERAGE'])
 
 
 class ScaleBlock(TrainableLayer):
-    def __init__(self, func, n_layers=1, name='scaleblock'):
+    def __init__(self,
+                 func,
+                 n_layers=1,
+                 w_initializer=None,
+                 w_regularizer=None,
+                 name='scaleblock'):
         self.func = func.upper()
         assert self.func in SUPPORTED_OP
         super(ScaleBlock, self).__init__(name=name)
         self.n_layers = n_layers
+
+        self.initializers = {'w': w_initializer}
+        self.regularizers = {'w': w_regularizer}
 
     def layer_op(self, input_tensor, is_training):
         n_modality = input_tensor.get_shape().as_list()[-1]
@@ -63,10 +82,13 @@ class ScaleBlock(TrainableLayer):
             output_tensor = tf.unstack(output_tensor, axis=-1)
             for (idx, tensor) in enumerate(output_tensor):
                 block_name = 'M_F_{}_{}'.format(layer, idx)
-                highresblock_op = HighResBlock(n_output_chns=n_modality,
-                                               kernels=(3, 1),
-                                               with_res=True,
-                                               name=block_name)
+                highresblock_op = HighResBlock(
+                    n_output_chns=n_modality,
+                    kernels=(3, 1),
+                    with_res=True,
+                    w_initializer=self.initializers['w'],
+                    w_regularizer=self.regularizers['w'],
+                    name=block_name)
                 output_tensor[idx] = highresblock_op(tensor, is_training)
                 print highresblock_op
             output_tensor = tf.stack(output_tensor, axis=-1)
@@ -76,10 +98,13 @@ class ScaleBlock(TrainableLayer):
             output_tensor = tf.unstack(output_tensor, axis=-1)
             for (idx, tensor) in enumerate(output_tensor):
                 block_name = 'F_M_{}_{}'.format(layer, idx)
-                highresblock_op = HighResBlock(n_output_chns=n_chns,
-                                               kernels=(3, 1),
-                                               with_res=True,
-                                               name=block_name)
+                highresblock_op = HighResBlock(
+                    n_output_chns=n_chns,
+                    kernels=(3, 1),
+                    with_res=True,
+                    w_initializer=self.initializers['w'],
+                    w_regularizer=self.regularizers['w'],
+                    name=block_name)
                 output_tensor[idx] = highresblock_op(tensor, is_training)
                 print highresblock_op
             output_tensor = tf.stack(output_tensor, axis=-1)

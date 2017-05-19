@@ -4,8 +4,8 @@ import tensorflow as tf
 from . import layer_util
 from .base import Layer
 
-SUPPORTED_OP = set(['AVG', 'MAX', 'CONSTANT'])
-SUPPORTED_PADDING = set(['SAME', 'VALID'])
+SUPPORTED_OP = {'AVG', 'MAX', 'CONSTANT'}
+SUPPORTED_PADDING = {'SAME', 'VALID'}
 
 
 class DownSampleLayer(Layer):
@@ -16,15 +16,15 @@ class DownSampleLayer(Layer):
                  padding='SAME',
                  name='pooling'):
         self.func = func.upper()
-        self.padding = padding.upper()
         assert self.func in SUPPORTED_OP
+        self.layer_name = '{}_{}'.format(self.func.lower(), name)
+        super(DownSampleLayer, self).__init__(name=self.layer_name)
+
+        self.padding = padding.upper()
         assert self.padding in SUPPORTED_PADDING
 
         self.kernel_size = kernel_size
         self.stride = stride
-
-        self.layer_name = '{}_{}'.format(self.func.lower(), name)
-        super(DownSampleLayer, self).__init__(name=self.layer_name)
 
     def layer_op(self, input_tensor):
         spatial_rank = layer_util.infer_spatial_rank(input_tensor)
@@ -37,11 +37,11 @@ class DownSampleLayer(Layer):
             output_tensor = [tf.expand_dims(x, -1)
                              for x in tf.unstack(input_tensor, axis=-1)]
             output_tensor = [tf.nn.convolution(
-                                 input=inputs,
-                                 filter=kernel,
-                                 strides=[self.stride] * spatial_rank,
-                                 padding=self.padding,
-                                 name='conv') for inputs in output_tensor]
+                input=inputs,
+                filter=kernel,
+                strides=[self.stride] * spatial_rank,
+                padding=self.padding,
+                name='conv') for inputs in output_tensor]
             output_tensor = tf.concat(output_tensor, axis=-1)
         else:
             output_tensor = tf.nn.pool(

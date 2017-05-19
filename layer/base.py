@@ -30,12 +30,13 @@ class Layer(object):
 
 class TrainableLayer(Layer):
     """
-    Note that rand_initializer and const_initializer are set in different
-    ways: rand_initializer should be set with an initializer instance
-    const_initializer should be set with a number
+    Extends the Layer object to have trainable parameters,
+    adding intiailizers and regularizers.
     """
-    def __init__(self, name='untitled_op'):
+
+    def __init__(self, name='trainable_op'):
         super(TrainableLayer, self).__init__(name=name)
+
         self._initializers = None
         self._regularizers = None
 
@@ -43,11 +44,15 @@ class TrainableLayer(Layer):
         return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
                                  self.layer_scope().name)
 
+    def regularizer_loss(self):
+        return tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES,
+                                 self.layer_scope().name)
+
     def num_trainable_params(self):
         n = tf.Dimension(0)
         for x in self.trainable_variables():
             n += np.prod(x.get_shape())
-        return n
+        return int(n)
 
     def to_string(self):
         out_str = Layer.to_string(self)

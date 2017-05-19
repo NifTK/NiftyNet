@@ -85,8 +85,7 @@ class ConvTest(tf.test.TestCase):
             10, 3, 1,
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
-            with_bn=True,
-            bn_regularizer=regularizers.l2_regularizer(0.5))
+            with_bn=True)
         conv_reg_out = conv_reg(x_3d, is_training=True)
         print conv_reg
         with self.test_session() as sess:
@@ -100,7 +99,6 @@ class ConvTest(tf.test.TestCase):
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
             with_bn=True,
-            bn_regularizer=regularizers.l2_regularizer(0.5),
             acti_fun='prelu')
         conv_reg_out = conv_reg(x_3d, is_training=True)
         print conv_reg
@@ -126,7 +124,6 @@ class ConvTest(tf.test.TestCase):
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
             with_bn=True,
-            bn_regularizer=regularizers.l2_regularizer(0.5),
             acti_fun='prelu')
         conv_reg_out = conv_reg(x_3d, is_training=True, keep_prob=0.4)
         print conv_reg
@@ -134,8 +131,7 @@ class ConvTest(tf.test.TestCase):
             sess.run(tf.global_variables_initializer())
             out_3d = sess.run(conv_reg_out)
 
-        ### 2d tests
-
+    ### 2d tests
     def test_2d_conv_default_shape(self):
         x_2d = self.get_2d_input()
         conv_2d = ConvLayer(10, 3, 1)
@@ -204,8 +200,7 @@ class ConvTest(tf.test.TestCase):
             10, 3, 1,
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
-            with_bn=True,
-            bn_regularizer=regularizers.l2_regularizer(0.5))
+            with_bn=True)
         conv_reg_out = conv_reg(x_2d, is_training=True)
         print conv_reg
         with self.test_session() as sess:
@@ -219,7 +214,6 @@ class ConvTest(tf.test.TestCase):
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
             with_bn=True,
-            bn_regularizer=regularizers.l2_regularizer(0.5),
             acti_fun='prelu')
         conv_reg_out = conv_reg(x_2d, is_training=True)
         print conv_reg
@@ -245,7 +239,6 @@ class ConvTest(tf.test.TestCase):
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
             with_bn=True,
-            bn_regularizer=regularizers.l2_regularizer(0.5),
             acti_fun='prelu')
         conv_reg_out = conv_reg(x_2d, is_training=True, keep_prob=0.4)
         print conv_reg

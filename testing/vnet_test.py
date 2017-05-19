@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow.contrib.layers.python.layers import regularizers
 
 from layer.vnet import VNet
 
@@ -31,6 +32,44 @@ class VNetTest(tf.test.TestCase):
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 160), out.shape)
+
+    def test_3d_reg_shape(self):
+        input_shape = (2, 32, 32, 32, 1)
+        x = tf.ones(input_shape)
+
+        # vnet_instance = VNet(num_classes=160)
+        vnet_instance = VNet(
+            num_classes=160,
+            w_regularizer=regularizers.l2_regularizer(0.4),
+            b_regularizer=regularizers.l2_regularizer(0.4))
+        out = vnet_instance(x, is_training=True)
+        print vnet_instance.num_trainable_params()
+        print tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out = sess.run(out)
+            self.assertAllClose((2, 32, 32, 32, 160), out.shape)
+
+    def test_2d_reg_shape(self):
+        input_shape = (2, 32, 32, 1)
+        x = tf.ones(input_shape)
+
+        # vnet_instance = VNet(num_classes=160)
+        vnet_instance = VNet(
+            num_classes=160,
+            w_regularizer=regularizers.l2_regularizer(0.4),
+            b_regularizer=regularizers.l2_regularizer(0.4))
+        out = vnet_instance(x, is_training=True)
+        print vnet_instance.num_trainable_params()
+        print tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+        print vnet_instance.regularizer_loss()
+
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out = sess.run(out)
+            self.assertAllClose((2, 32, 32, 160), out.shape)
+
 
 if __name__ == "__main__":
     tf.test.main()

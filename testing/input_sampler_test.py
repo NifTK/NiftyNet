@@ -1,12 +1,10 @@
-import numpy as np
 import tensorflow as tf
 
-from layer.toy_sampler import ToySampler
 from layer.input_placeholders import ImagePatch
+from layer.toy_sampler import ToySampler
 
 
 class SamplerTest(tf.test.TestCase):
-
     def run_test_sampler(self, patch_holder=None):
         if patch_holder is None:
             return
@@ -22,7 +20,6 @@ class SamplerTest(tf.test.TestCase):
             for (idx, key) in enumerate(keys):
                 print key, output[idx].shape
 
-
     def test_full_shape_3d(self):
         patch_holder = ImagePatch(image_shape=(32, 32, 32),
                                   label_shape=(32, 32, 32),
@@ -33,7 +30,6 @@ class SamplerTest(tf.test.TestCase):
                                   num_map=1,
                                   name='patch_placeholders')
         self.run_test_sampler(patch_holder)
-
 
     def test_image_label_info_shape_3d(self):
         patch_holder = ImagePatch(image_shape=(32, 32, 32),
@@ -78,7 +74,6 @@ class SamplerTest(tf.test.TestCase):
                                   num_map=1,
                                   name='patch_placeholders')
         self.run_test_sampler(patch_holder)
-
 
     def test_image_label_info_shape_2d(self):
         patch_holder = ImagePatch(image_shape=(32, 32),

@@ -74,5 +74,6 @@ class DownSampleTest(tf.test.TestCase):
             out = sess.run(out_down_sample_const)
             self.assertAllClose((2, 6, 6, 8), out.shape)
 
+
 if __name__ == "__main__":
     tf.test.main()

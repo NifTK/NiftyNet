@@ -10,7 +10,6 @@ from .dilatedcontext import DilatedTensor
 from .elementwise import ElementwiseLayer
 
 
-# TODO:  regularizer
 class HighRes3DNet(TrainableLayer):
     """
     implementation of HighRes3DNet:
@@ -27,7 +26,7 @@ class HighRes3DNet(TrainableLayer):
                  acti_type='prelu',
                  name='HighRes3DNet'):
 
-        super(HighRes3DNet, self).__init__(name='HighRes3DNet')
+        super(HighRes3DNet, self).__init__(name=name)
         self.layers = [
             {'name': 'conv_0', 'n_features': 16, 'kernel_size': 3},
             {'name': 'res_1', 'n_features': 16, 'kernels': (3, 3), 'repeat': 3},
@@ -36,10 +35,11 @@ class HighRes3DNet(TrainableLayer):
             {'name': 'conv_1', 'n_features': 80, 'kernel_size': 1},
             {'name': 'conv_2', 'n_features': num_classes, 'kernel_size': 1}]
         self.acti_type = acti_type
+
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
-        self.name = "HighRes3DNet"
-        print 'using {}'.format(self.name)
+
+        print 'using {}'.format(name)
 
     def layer_op(self, images, is_training, layer_id=-1):
         assert (layer_util.check_spatial_dims(
@@ -50,9 +50,12 @@ class HighRes3DNet(TrainableLayer):
 
         ### first convolution layer
         params = self.layers[0]
-        first_conv_layer = ConvolutionalLayer(params['n_features'],
-                                              params['kernel_size'],
-                                              name=params['name'])
+        first_conv_layer = ConvolutionalLayer(
+            params['n_features'],
+            params['kernel_size'],
+            w_initializer=self.initializers['w'],
+            w_regularizer=self.regularizers['w'],
+            name=params['name'])
         flow = first_conv_layer(images, is_training)
         layer_instances.append((first_conv_layer, flow))
 
@@ -60,9 +63,12 @@ class HighRes3DNet(TrainableLayer):
         params = self.layers[1]
         with DilatedTensor(flow, dilation_factor=1) as dilated:
             for j in range(params['repeat']):
-                res_block = HighResBlock(params['n_features'],
-                                         params['kernels'],
-                                         name='%s_%d' % (params['name'], j))
+                res_block = HighResBlock(
+                    params['n_features'],
+                    params['kernels'],
+                    w_initializer=self.initializers['w'],
+                    w_regularizer=self.regularizers['w'],
+                    name='%s_%d' % (params['name'], j))
                 dilated.tensor = res_block(dilated.tensor, is_training)
                 layer_instances.append((res_block, dilated.tensor))
         flow = dilated.tensor
@@ -71,9 +77,12 @@ class HighRes3DNet(TrainableLayer):
         params = self.layers[2]
         with DilatedTensor(flow, dilation_factor=2) as dilated:
             for j in range(params['repeat']):
-                res_block = HighResBlock(params['n_features'],
-                                         params['kernels'],
-                                         name='%s_%d' % (params['name'], j))
+                res_block = HighResBlock(
+                    params['n_features'],
+                    params['kernels'],
+                    w_initializer=self.initializers['w'],
+                    w_regularizer=self.regularizers['w'],
+                    name='%s_%d' % (params['name'], j))
                 dilated.tensor = res_block(dilated.tensor, is_training)
                 layer_instances.append((res_block, dilated.tensor))
         flow = dilated.tensor
@@ -82,26 +91,35 @@ class HighRes3DNet(TrainableLayer):
         params = self.layers[3]
         with DilatedTensor(flow, dilation_factor=4) as dilated:
             for j in range(params['repeat']):
-                res_block = HighResBlock(params['n_features'],
-                                         params['kernels'],
-                                         name='%s_%d' % (params['name'], j))
+                res_block = HighResBlock(
+                    params['n_features'],
+                    params['kernels'],
+                    w_initializer=self.initializers['w'],
+                    w_regularizer=self.regularizers['w'],
+                    name='%s_%d' % (params['name'], j))
                 dilated.tensor = res_block(dilated.tensor, is_training)
                 layer_instances.append((res_block, dilated.tensor))
         flow = dilated.tensor
 
         ### 1x1x1 convolution layer
         params = self.layers[4]
-        fc_layer = ConvolutionalLayer(params['n_features'],
-                                      params['kernel_size'],
-                                      name=params['name'])
+        fc_layer = ConvolutionalLayer(
+            params['n_features'],
+            params['kernel_size'],
+            w_initializer=self.initializers['w'],
+            w_regularizer=self.regularizers['w'],
+            name=params['name'])
         flow = fc_layer(flow, is_training)
         layer_instances.append((fc_layer, flow))
 
         ### 1x1x1 convolution layer
         params = self.layers[5]
-        fc_layer = ConvolutionalLayer(params['n_features'],
-                                      params['kernel_size'],
-                                      name=params['name'])
+        fc_layer = ConvolutionalLayer(
+            params['n_features'],
+            params['kernel_size'],
+            w_initializer=self.initializers['w'],
+            w_regularizer=self.regularizers['w'],
+            name=params['name'])
         flow = fc_layer(flow, is_training)
         layer_instances.append((fc_layer, flow))
 
@@ -114,10 +132,6 @@ class HighRes3DNet(TrainableLayer):
     def _assign_initializer_regularizer(self, list_of_layers):
         for (op, _) in list_of_layers:
             print op
-            #op.w_initializer = self.w_initializer
-            #op.w_regularizer = self.w_regularizer
-            #op.b_initializer = self.b_initializer
-            #op.b_regularizer = self.b_regularizer
 
 
 class HighResBlock(TrainableLayer):
@@ -136,8 +150,8 @@ class HighResBlock(TrainableLayer):
                  w_regularizer=None,
                  with_res=True,
                  name='HighResBlock'):
-        self.layer_name = name
-        super(HighResBlock, self).__init__(name=self.layer_name)
+
+        super(HighResBlock, self).__init__(name=name)
 
         self.n_output_chns = n_output_chns
         if hasattr(kernels, "__iter__"):  # a list of layer kernel_sizes

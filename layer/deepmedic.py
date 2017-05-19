@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
+from . import layer_util
 from .base import TrainableLayer
 from .convolution import ConvolutionalLayer
 from .crop import CropLayer
 from .downsample import DownSampleLayer
-from .upsample import UpSampleLayer
 from .elementwise import ElementwiseLayer
-from . import layer_util
+from .upsample import UpSampleLayer
 
 
 class DeepMedic(TrainableLayer):
@@ -15,15 +15,28 @@ class DeepMedic(TrainableLayer):
       CRF for accurate brain lesion segmentation", MedIA '17
     """
 
-    def __init__(self, num_classes):
-        self.layer_name = 'DeepMedic'
-        super(DeepMedic, self).__init__(name=self.layer_name)
+    def __init__(self,
+                 num_classes,
+                 w_initializer=None,
+                 w_regularizer=None,
+                 b_initializer=None,
+                 b_regularizer=None,
+                 acti_type='prelu',
+                 name="DeepMedic"):
+
+        super(DeepMedic, self).__init__(name=name)
+
         self.d_factor = 3  # downsampling factor
         self.crop_diff = ((self.d_factor - 1) * 16) / 2
         self.conv_features = [30, 30, 40, 40, 40, 40, 50, 50]
         self.fc_features = [150, 150, num_classes]
-        self.acti_type = 'relu'
+        self.acti_type = acti_type
         self.num_classes = num_classes
+
+        self.initializers = {'w': w_initializer, 'b': b_initializer}
+        self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
+
+        print 'using {}'.format(name)
 
     def layer_op(self, images, is_training, layer_id=-1):
         # image_size is defined as the largest context, then:
@@ -62,20 +75,27 @@ class DeepMedic(TrainableLayer):
         ### convolutions for both pathways
         for n_features in self.conv_features:
             # normal pathway convolutions
-            conv_path_1 = ConvolutionalLayer(n_output_chns=n_features,
-                                             kernel_size=3,
-                                             padding='VALID',
-                                             acti_fun=self.acti_type,
-                                             name='normal_conv')
+            conv_path_1 = ConvolutionalLayer(
+                n_output_chns=n_features,
+                kernel_size=3,
+                padding='VALID',
+                w_initializer=self.initializers['w'],
+                w_regularizer=self.regularizers['w'],
+                acti_fun=self.acti_type,
+                name='normal_conv')
             normal_path = conv_path_1(normal_path, is_training)
-            # downsampled pathway convolutions
-            conv_path_2 = ConvolutionalLayer(n_output_chns=n_features,
-                                             kernel_size=3,
-                                             padding='VALID',
-                                             acti_fun=self.acti_type,
-                                             name='downsample_conv')
-            downsample_path = conv_path_2(downsample_path, is_training)
             print conv_path_1
+
+            # downsampled pathway convolutions
+            conv_path_2 = ConvolutionalLayer(
+                n_output_chns=n_features,
+                kernel_size=3,
+                padding='VALID',
+                w_initializer=self.initializers['w'],
+                w_regularizer=self.regularizers['w'],
+                acti_fun=self.acti_type,
+                name='downsample_conv')
+            downsample_path = conv_path_2(downsample_path, is_training)
             print conv_path_2
 
         ### upsampling the downsampled pathway
@@ -88,10 +108,13 @@ class DeepMedic(TrainableLayer):
 
         ### 1x1x1 convolution layer
         for n_features in self.fc_features:
-            conv_fc = ConvolutionalLayer(n_output_chns=n_features,
-                                         kernel_size=1,
-                                         acti_fun=self.acti_type,
-                                         name='conv_1x1x1_{}'.format(n_features))
+            conv_fc = ConvolutionalLayer(
+                n_output_chns=n_features,
+                kernel_size=1,
+                acti_fun=self.acti_type,
+                w_initializer=self.initializers['w'],
+                w_regularizer=self.regularizers['w'],
+                name='conv_1x1x1_{}'.format(n_features))
             output_tensor = conv_fc(output_tensor, is_training)
             print conv_fc
 

@@ -1,14 +1,14 @@
 import numpy as np
 import tensorflow as tf
 
+from . import layer_util
+from .activation import ActiLayer
 from .base import TrainableLayer
 from .bn import BNLayer
-from .activation import ActiLayer
-from . import layer_util
 
 SUPPORTED_OP = {'2D': tf.nn.conv2d_transpose,
                 '3D': tf.nn.conv3d_transpose}
-SUPPORTED_PADDING = set(['SAME', 'VALID'])
+SUPPORTED_PADDING = {'SAME', 'VALID'}
 
 
 def default_w_initializer():
@@ -16,14 +16,14 @@ def default_w_initializer():
         stddev = np.sqrt(2.0 / np.prod(shape[:-2]) * shape[-1])
         from tensorflow.python.ops import random_ops
         return random_ops.truncated_normal(shape, 0.0, stddev, dtype=tf.float32)
-        #return tf.truncated_normal_initializer(
+        # return tf.truncated_normal_initializer(
         #    mean=0.0, stddev=stddev, dtype=tf.float32)
+
     return _initializer
 
 
 def default_b_initializer():
     return tf.constant_initializer(0.0)
-
 
 
 def infer_output_dim(input_dim, stride, kernel_size, padding):
@@ -48,9 +48,9 @@ class DeconvLayer(TrainableLayer):
                  kernel_size=3,
                  stride=1,
                  padding='SAME',
+                 with_bias=False,
                  w_initializer=None,
                  w_regularizer=None,
-                 with_bias=False,
                  b_initializer=None,
                  b_regularizer=None,
                  name='deconv'):
@@ -82,7 +82,7 @@ class DeconvLayer(TrainableLayer):
             self.n_output_chns, n_input_chns)).flatten()
         full_stride = np.vstack((
             1, [self.stride] * spatial_rank, 1)).flatten()
-        kernel = tf.get_variable(
+        deconv_kernel = tf.get_variable(
             'w', shape=w_full_size.tolist(),
             initializer=self.initializers['w'],
             regularizer=self.regularizers['w'])
@@ -102,7 +102,7 @@ class DeconvLayer(TrainableLayer):
                                       [output_dim] * spatial_rank,
                                       self.n_output_chns)).flatten()
         output_tensor = op_(value=input_tensor,
-                            filter=kernel,
+                            filter=deconv_kernel,
                             output_shape=full_output_size.tolist(),
                             strides=full_stride.tolist(),
                             padding=self.padding,
@@ -133,14 +133,13 @@ class DeconvolutionalLayer(TrainableLayer):
                  kernel_size,
                  stride,
                  padding='SAME',
+                 with_bias=False,
+                 with_bn=True,
+                 acti_fun=None,
                  w_initializer=None,
                  w_regularizer=None,
-                 with_bias=False,
                  b_initializer=None,
                  b_regularizer=None,
-                 with_bn=True,
-                 bn_regularizer=None,
-                 acti_fun=None,
                  name="deconv"):
 
         self.with_bias = with_bias
@@ -175,9 +174,9 @@ class DeconvolutionalLayer(TrainableLayer):
                                         kernel_size=self.kernel_size,
                                         stride=self.stride,
                                         padding=self.padding,
+                                        with_bias=self.with_bias,
                                         w_initializer=self.initializers['w'],
                                         w_regularizer=self.regularizers['w'],
-                                        with_bias=self.with_bias,
                                         b_initializer=self.initializers['b'],
                                         b_regularizer=self.regularizers['b'],
                                         name='deconv_')

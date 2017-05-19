@@ -1,4 +1,5 @@
 import tensorflow as tf
+
 from . import layer_util
 
 

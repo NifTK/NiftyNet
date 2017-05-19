@@ -6,7 +6,7 @@ from .activation import ActiLayer
 from .base import TrainableLayer
 from .bn import BNLayer
 
-SUPPORTED_PADDING = set(['SAME', 'VALID'])
+SUPPORTED_PADDING = {'SAME', 'VALID'}
 
 
 def default_w_initializer():
@@ -36,9 +36,9 @@ class ConvLayer(TrainableLayer):
                  kernel_size=3,
                  stride=1,
                  padding='SAME',
+                 with_bias=False,
                  w_initializer=None,
                  w_regularizer=None,
-                 with_bias=False,
                  b_initializer=None,
                  b_regularizer=None,
                  name='conv'):
@@ -102,17 +102,15 @@ class ConvolutionalLayer(TrainableLayer):
                  kernel_size,
                  stride=1,
                  padding='SAME',
+                 with_bias=False,
+                 with_bn=True,
+                 acti_fun=None,
                  w_initializer=None,
                  w_regularizer=None,
-                 with_bias=False,
                  b_initializer=None,
                  b_regularizer=None,
-                 with_bn=True,
-                 bn_regularizer=None,
-                 acti_fun=None,
                  name="conv"):
 
-        self.with_bias = with_bias
         self.acti_fun = acti_fun
         self.with_bn = with_bn
         self.layer_name = '{}'.format(name)
@@ -126,6 +124,7 @@ class ConvolutionalLayer(TrainableLayer):
         self.kernel_size = kernel_size
         self.stride = stride
         self.padding = padding
+        self.with_bias = with_bias
 
         self.initializers = {
             'w': w_initializer if w_initializer else default_w_initializer(),
@@ -144,9 +143,9 @@ class ConvolutionalLayer(TrainableLayer):
                                     kernel_size=self.kernel_size,
                                     stride=self.stride,
                                     padding=self.padding,
+                                    with_bias=self.with_bias,
                                     w_initializer=self.initializers['w'],
                                     w_regularizer=self.regularizers['w'],
-                                    with_bias=self.with_bias,
                                     b_initializer=self.initializers['b'],
                                     b_regularizer=self.regularizers['b'],
                                     name='conv_')

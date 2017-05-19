@@ -5,7 +5,7 @@ from . import layer_util
 from .base import TrainableLayer
 from .deconvolution import DeconvLayer
 
-SUPPORTED_OP = set(['REPLICATE', 'CHANNELWISE_DECONV'])
+SUPPORTED_OP = {'REPLICATE', 'CHANNELWISE_DECONV'}
 
 
 class UpSampleLayer(TrainableLayer):
@@ -30,12 +30,13 @@ class UpSampleLayer(TrainableLayer):
                  name='upsample'):
         self.func = func.upper()
         assert self.func in SUPPORTED_OP
-        self.kernel_size = kernel_size
-        self.stride = stride
         self.layer_name = '{}_{}'.format(self.func.lower(), name)
         super(UpSampleLayer, self).__init__(name=self.layer_name)
 
+        self.kernel_size = kernel_size
+        self.stride = stride
         self.with_bias = with_bias
+
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 

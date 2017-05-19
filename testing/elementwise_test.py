@@ -4,7 +4,6 @@ from layer.elementwise import ElementwiseLayer
 
 
 class ElementwiseTest(tf.test.TestCase):
-
     def test_3d_shape(self):
         input_shape = (2, 16, 16, 16, 6)
         x_1 = tf.ones(input_shape)
@@ -49,7 +48,6 @@ class ElementwiseTest(tf.test.TestCase):
             out = sess.run(out_sum_4)
             self.assertAllClose((2, 16, 16, 16, 14), out.shape)
 
-
     def test_2d_shape(self):
         input_shape = (2, 16, 16, 6)
         x_1 = tf.ones(input_shape)
@@ -93,5 +91,7 @@ class ElementwiseTest(tf.test.TestCase):
             self.assertAllClose((2, 16, 16, 6), out.shape)
             out = sess.run(out_sum_4)
             self.assertAllClose((2, 16, 16, 14), out.shape)
+
+
 if __name__ == "__main__":
     tf.test.main()

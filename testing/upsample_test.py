@@ -59,5 +59,6 @@ class UpSampleTest(tf.test.TestCase):
             out = sess.run(out_up_sample_deconv)
             self.assertAllClose((4, 32, 32, 8), out.shape)
 
+
 if __name__ == "__main__":
     tf.test.main()
