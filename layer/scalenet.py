@@ -38,6 +38,7 @@ class ScaleNet(TrainableLayer):
                 kernel_size=3,
                 w_initializer=self.initializers['w'],
                 w_regularizer=self.regularizers['w'],
+                acti_func=self.acti_type,
                 name='conv_{}'.format(idx))
             roots[idx] = conv_layer(root, is_training)
         roots = tf.stack(roots, axis=-1)
@@ -59,11 +60,13 @@ class ScaleBlock(TrainableLayer):
                  n_layers=1,
                  w_initializer=None,
                  w_regularizer=None,
+                 acti_type='relu',
                  name='scaleblock'):
         self.func = func.upper()
         assert self.func in SUPPORTED_OP
         super(ScaleBlock, self).__init__(name=name)
         self.n_layers = n_layers
+        self.acti_type = acti_type
 
         self.initializers = {'w': w_initializer}
         self.regularizers = {'w': w_regularizer}
@@ -88,6 +91,7 @@ class ScaleBlock(TrainableLayer):
                     with_res=True,
                     w_initializer=self.initializers['w'],
                     w_regularizer=self.regularizers['w'],
+                    acti_type=self.acti_type,
                     name=block_name)
                 output_tensor[idx] = highresblock_op(tensor, is_training)
                 print highresblock_op
@@ -104,6 +108,7 @@ class ScaleBlock(TrainableLayer):
                     with_res=True,
                     w_initializer=self.initializers['w'],
                     w_regularizer=self.regularizers['w'],
+                    acti_type=self.acti_type,
                     name=block_name)
                 output_tensor[idx] = highresblock_op(tensor, is_training)
                 print highresblock_op

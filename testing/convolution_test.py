@@ -106,7 +106,7 @@ class ConvTest(tf.test.TestCase):
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
             with_bn=True,
-            acti_fun='prelu')
+            acti_func='prelu')
         conv_reg_out = conv_reg(x_3d, is_training=True)
         print conv_reg
         with self.test_session() as sess:
@@ -118,7 +118,7 @@ class ConvTest(tf.test.TestCase):
         x_3d = self.get_3d_input()
         conv_reg = ConvolutionalLayer(
             10, 3, 1,
-            acti_fun='relu')
+            acti_func='relu')
         conv_reg_out = conv_reg(x_3d, is_training=True)
         print conv_reg
         with self.test_session() as sess:
@@ -133,7 +133,7 @@ class ConvTest(tf.test.TestCase):
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
             with_bn=True,
-            acti_fun='prelu')
+            acti_func='prelu')
         conv_reg_out = conv_reg(x_3d, is_training=True, keep_prob=0.4)
         print conv_reg
         with self.test_session() as sess:
@@ -149,7 +149,7 @@ class ConvTest(tf.test.TestCase):
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
             with_bn=True,
-            acti_fun='prelu')
+            acti_func='prelu')
         conv_reg_out = conv_reg(x_3d, is_training=True, keep_prob=0.4)
         print conv_reg
         with self.test_session() as sess:
@@ -240,14 +240,14 @@ class ConvTest(tf.test.TestCase):
             out_2d = sess.run(conv_reg_out)
             self.assertAllClose((2, 16, 16, 10), out_2d.shape)
 
-    def test_convlayer_2d_bn_reg_prelu_shape(self):
+    def test_convlayer_2d_bn_reg_prelu_2_shape(self):
         x_2d = self.get_2d_input()
         conv_reg = ConvolutionalLayer(
             10, 3, 2,
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
             with_bn=True,
-            acti_fun='prelu')
+            acti_func='prelu')
         conv_reg_out = conv_reg(x_2d, is_training=True)
         print conv_reg
         with self.test_session() as sess:
@@ -259,7 +259,7 @@ class ConvTest(tf.test.TestCase):
         x_2d = self.get_2d_input()
         conv_reg = ConvolutionalLayer(
             10, 3, 2,
-            acti_fun='relu')
+            acti_func='relu')
         conv_reg_out = conv_reg(x_2d, is_training=True)
         print conv_reg
         with self.test_session() as sess:
@@ -267,14 +267,14 @@ class ConvTest(tf.test.TestCase):
             out_2d = sess.run(conv_reg_out)
             self.assertAllClose((2, 8, 8, 10), out_2d.shape)
 
-    def test_convlayer_2d_bn_reg_shape(self):
+    def test_convlayer_2d_bn_reg_prelu_shape(self):
         x_2d = self.get_2d_input()
         conv_reg = ConvolutionalLayer(
             10, 3, 1,
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
             with_bn=True,
-            acti_fun='prelu')
+            acti_func='prelu')
         conv_reg_out = conv_reg(x_2d, is_training=True, keep_prob=0.4)
         print conv_reg
         with self.test_session() as sess:
@@ -290,7 +290,7 @@ class ConvTest(tf.test.TestCase):
             w_regularizer=regularizers.l2_regularizer(0.5),
             with_bias=False,
             with_bn=True,
-            acti_fun='prelu')
+            acti_func='prelu')
         conv_reg_out = conv_reg(x_2d, is_training=True, keep_prob=0.4)
         print conv_reg
         with self.test_session() as sess:

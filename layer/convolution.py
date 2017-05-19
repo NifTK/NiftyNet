@@ -104,20 +104,20 @@ class ConvolutionalLayer(TrainableLayer):
                  padding='SAME',
                  with_bias=False,
                  with_bn=True,
-                 acti_fun=None,
+                 acti_func=None,
                  w_initializer=None,
                  w_regularizer=None,
                  b_initializer=None,
                  b_regularizer=None,
                  name="conv"):
 
-        self.acti_fun = acti_fun
+        self.acti_func = acti_func
         self.with_bn = with_bn
         self.layer_name = '{}'.format(name)
         if self.with_bn:
             self.layer_name += '_bn'
-        if (self.acti_fun is not None):
-            self.layer_name += '_{}'.format(self.acti_fun)
+        if (self.acti_func is not None):
+            self.layer_name += '_{}'.format(self.acti_func)
         super(ConvolutionalLayer, self).__init__(name=self.layer_name)
 
         self.n_output_chns = n_output_chns
@@ -156,8 +156,8 @@ class ConvolutionalLayer(TrainableLayer):
                                     name='bn_')
             output_tensor = self.bn_layer(output_tensor, is_training)
 
-        if self.acti_fun is not None:
-            self.acti_layer = ActiLayer(func=self.acti_fun,
+        if self.acti_func is not None:
+            self.acti_layer = ActiLayer(func=self.acti_func,
                                         regularizer=self.regularizers['w'],
                                         name='acti_')
             output_tensor = self.acti_layer(output_tensor)
