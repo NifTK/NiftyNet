@@ -47,6 +47,7 @@ testjob:
     - coverage run -a --source . -m testing.scalenet_test
     - coverage run -a --source . -m testing.input_sampler_test
     - coverage run -a --source . -m testing.input_buffer_test
+    - coverage run -a --source . -m testing.dilatedcontext_test
     - coverage run -a --source . -m testing.loss_test
     - coverage run -a --source . -m testing.subject_test
     - coverage report

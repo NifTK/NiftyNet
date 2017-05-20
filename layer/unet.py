@@ -41,6 +41,7 @@ class UNet3D(TrainableLayer):
                                 (3, 3), with_downsample_branch=True,
                                 w_initializer=self.initializers['w'],
                                 w_regularizer=self.regularizers['w'],
+                                acti_type=self.acti_type,
                                 name='L1')
         pool_1, conv_1 = block_layer(images, is_training)
         print block_layer
@@ -50,6 +51,7 @@ class UNet3D(TrainableLayer):
                                 (3, 3), with_downsample_branch=True,
                                 w_initializer=self.initializers['w'],
                                 w_regularizer=self.regularizers['w'],
+                                acti_type=self.acti_type,
                                 name='L2')
         pool_2, conv_2 = block_layer(pool_1, is_training)
         print block_layer
@@ -59,6 +61,7 @@ class UNet3D(TrainableLayer):
                                 (3, 3), with_downsample_branch=True,
                                 w_initializer=self.initializers['w'],
                                 w_regularizer=self.regularizers['w'],
+                                acti_type=self.acti_type,
                                 name='L3')
         pool_3, conv_3 = block_layer(pool_2, is_training)
         print block_layer
@@ -68,6 +71,7 @@ class UNet3D(TrainableLayer):
                                 (3, 3), with_downsample_branch=False,
                                 w_initializer=self.initializers['w'],
                                 w_regularizer=self.regularizers['w'],
+                                acti_type=self.acti_type,
                                 name='L4')
         up_3, _ = block_layer(pool_3, is_training)
         print block_layer
@@ -77,6 +81,7 @@ class UNet3D(TrainableLayer):
                                 (3, 3), with_downsample_branch=False,
                                 w_initializer=self.initializers['w'],
                                 w_regularizer=self.regularizers['w'],
+                                acti_type=self.acti_type,
                                 name='R3')
         concat_3 = ElementwiseLayer('CONCAT')(conv_3, up_3)
         up_2, _ = block_layer(concat_3, is_training)
@@ -87,6 +92,7 @@ class UNet3D(TrainableLayer):
                                 (3, 3), with_downsample_branch=False,
                                 w_initializer=self.initializers['w'],
                                 w_regularizer=self.regularizers['w'],
+                                acti_type=self.acti_type,
                                 name='R2')
         concat_2 = ElementwiseLayer('CONCAT')(conv_2, up_2)
         up_1, _ = block_layer(concat_2, is_training)
@@ -100,6 +106,7 @@ class UNet3D(TrainableLayer):
                                 with_downsample_branch=True,
                                 w_initializer=self.initializers['w'],
                                 w_regularizer=self.regularizers['w'],
+                                acti_type=self.acti_type,
                                 name='R1_FC')
         concat_1 = ElementwiseLayer('CONCAT')(conv_1, up_1)
 
@@ -143,7 +150,7 @@ class UNetBlock(TrainableLayer):
                                          kernel_size=kernel_size,
                                          w_initializer=self.initializers['w'],
                                          w_regularizer=self.regularizers['w'],
-                                         acti_fun=self.acti_type,
+                                         acti_func=self.acti_type,
                                          name='{}'.format(n_features))
             output_tensor = conv_op(output_tensor, is_training)
 

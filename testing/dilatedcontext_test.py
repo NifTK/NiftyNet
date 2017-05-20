@@ -16,7 +16,6 @@ class BNTest(tf.test.TestCase):
 
     def test_2d_dilating_shape(self):
         x = self.get_2d_input()
-        print x
         with DilatedTensor(x, 4) as dilated:
             intermediate = dilated.tensor
         x = dilated.tensor
@@ -24,12 +23,11 @@ class BNTest(tf.test.TestCase):
         with self.test_session() as sess:
             out = sess.run(x)
             out_dilated = sess.run(intermediate)
-            print out.shape
-            print out_dilated.shape
+            self.assertAllClose((2, 16, 16, 8), out.shape)
+            self.assertAllClose((32, 4, 4, 8), out_dilated.shape)
 
     def test_3d_dilating_shape(self):
         x = self.get_3d_input()
-        print x
         with DilatedTensor(x, 4) as dilated:
             intermediate = dilated.tensor
         x = dilated.tensor
@@ -37,8 +35,8 @@ class BNTest(tf.test.TestCase):
         with self.test_session() as sess:
             out = sess.run(x)
             out_dilated = sess.run(intermediate)
-            print out.shape
-            print out_dilated.shape
+            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
+            self.assertAllClose((128, 4, 4, 4, 8), out_dilated.shape)
 
 
 if __name__ == "__main__":

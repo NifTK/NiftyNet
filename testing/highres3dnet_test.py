@@ -26,7 +26,7 @@ class HighRes3DNetTest(tf.test.TestCase):
             w_regularizer=regularizers.l2_regularizer(0.5),
             b_regularizer=regularizers.l2_regularizer(0.5))
         out = highres_layer(x, is_training=True)
-        print tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+        #print tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -54,7 +54,7 @@ class HighRes3DNetTest(tf.test.TestCase):
             w_regularizer=regularizers.l2_regularizer(0.5),
             b_regularizer=regularizers.l2_regularizer(0.5))
         out = highres_layer(x, is_training=True)
-        print tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+        #print tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())

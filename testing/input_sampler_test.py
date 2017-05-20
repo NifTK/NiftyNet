@@ -6,8 +6,6 @@ from layer.toy_sampler import ToySampler
 
 class SamplerTest(tf.test.TestCase):
     def run_test_sampler(self, patch_holder=None):
-        if patch_holder is None:
-            return
         test_sampler = ToySampler(patch_holder, name='sampler')
         print test_sampler.placeholder_names
         print test_sampler.placeholder_dtypes
@@ -19,7 +17,6 @@ class SamplerTest(tf.test.TestCase):
             output = data_dict.values()[0]
             for (idx, key) in enumerate(keys):
                 print key, output[idx].shape
-
     def test_full_shape_3d(self):
         patch_holder = ImagePatch(image_shape=(32, 32, 32),
                                   label_shape=(32, 32, 32),

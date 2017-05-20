@@ -81,7 +81,7 @@ class DeepMedic(TrainableLayer):
                 padding='VALID',
                 w_initializer=self.initializers['w'],
                 w_regularizer=self.regularizers['w'],
-                acti_fun=self.acti_type,
+                acti_func=self.acti_type,
                 name='normal_conv')
             normal_path = conv_path_1(normal_path, is_training)
             print conv_path_1
@@ -93,7 +93,7 @@ class DeepMedic(TrainableLayer):
                 padding='VALID',
                 w_initializer=self.initializers['w'],
                 w_regularizer=self.regularizers['w'],
-                acti_fun=self.acti_type,
+                acti_func=self.acti_type,
                 name='downsample_conv')
             downsample_path = conv_path_2(downsample_path, is_training)
             print conv_path_2
@@ -111,7 +111,7 @@ class DeepMedic(TrainableLayer):
             conv_fc = ConvolutionalLayer(
                 n_output_chns=n_features,
                 kernel_size=1,
-                acti_fun=self.acti_type,
+                acti_func=self.acti_type,
                 w_initializer=self.initializers['w'],
                 w_regularizer=self.regularizers['w'],
                 name='conv_1x1x1_{}'.format(n_features))

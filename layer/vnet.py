@@ -50,22 +50,26 @@ class VNet(TrainableLayer):
                                   self.n_features[1],
                                   w_initializer=self.initializers['w'],
                                   w_regularizer=self.regularizers['w'],
+                                  acti_type=self.acti_type,
                                   name='L1')(images, padded_images)
         res_2, down_2 = VNetBlock('DOWNSAMPLE', 2,
                                   self.n_features[1],
                                   self.n_features[2],
                                   w_initializer=self.initializers['w'],
                                   w_regularizer=self.regularizers['w'],
+                                  acti_type=self.acti_type,
                                   name='L2')(down_1, down_1)
         res_3, down_3 = VNetBlock('DOWNSAMPLE', 3,
                                   self.n_features[2],
                                   self.n_features[3],
                                   w_initializer=self.initializers['w'],
                                   w_regularizer=self.regularizers['w'],
+                                  acti_type=self.acti_type,
                                   name='L3')(down_2, down_2)
         res_4, down_4 = VNetBlock('DOWNSAMPLE', 3,
                                   self.n_features[3],
                                   self.n_features[4],
+                                  acti_type=self.acti_type,
                                   name='L4')(down_3, down_3)
         # upsampling blocks
         _, up_4 = VNetBlock('UPSAMPLE', 3,
@@ -73,6 +77,7 @@ class VNet(TrainableLayer):
                             self.n_features[4],
                             w_initializer=self.initializers['w'],
                             w_regularizer=self.regularizers['w'],
+                            acti_type=self.acti_type,
                             name='V_')(down_4, down_4)
         concat_r4 = ElementwiseLayer('CONCAT')(up_4, res_4)
         _, up_3 = VNetBlock('UPSAMPLE', 3,
@@ -80,6 +85,7 @@ class VNet(TrainableLayer):
                             self.n_features[3],
                             w_initializer=self.initializers['w'],
                             w_regularizer=self.regularizers['w'],
+                            acti_type=self.acti_type,
                             name='R4')(concat_r4, up_4)
         concat_r3 = ElementwiseLayer('CONCAT')(up_3, res_3)
         _, up_2 = VNetBlock('UPSAMPLE', 3,
@@ -87,6 +93,7 @@ class VNet(TrainableLayer):
                             self.n_features[2],
                             w_initializer=self.initializers['w'],
                             w_regularizer=self.regularizers['w'],
+                            acti_type=self.acti_type,
                             name='R3')(concat_r3, up_3)
         concat_r2 = ElementwiseLayer('CONCAT')(up_2, res_2)
         _, up_1 = VNetBlock('UPSAMPLE', 2,
@@ -94,6 +101,7 @@ class VNet(TrainableLayer):
                             self.n_features[1],
                             w_initializer=self.initializers['w'],
                             w_regularizer=self.regularizers['w'],
+                            acti_type=self.acti_type,
                             name='R2')(concat_r2, up_2)
         # final class score
         concat_r1 = ElementwiseLayer('CONCAT')(up_1, res_1)
@@ -104,6 +112,7 @@ class VNet(TrainableLayer):
                                      w_regularizer=self.regularizers['w'],
                                      b_initializer=self.initializers['b'],
                                      b_regularizer=self.regularizers['b'],
+                                     acti_type=self.acti_type,
                                      name='R1')(concat_r1, up_1)
         return output_tensor
 

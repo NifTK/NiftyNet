@@ -53,6 +53,7 @@ class HighRes3DNet(TrainableLayer):
         first_conv_layer = ConvolutionalLayer(
             params['n_features'],
             params['kernel_size'],
+            acti_func=self.acti_type,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
             name=params['name'])
@@ -66,6 +67,7 @@ class HighRes3DNet(TrainableLayer):
                 res_block = HighResBlock(
                     params['n_features'],
                     params['kernels'],
+                    acti_type=self.acti_type,
                     w_initializer=self.initializers['w'],
                     w_regularizer=self.regularizers['w'],
                     name='%s_%d' % (params['name'], j))
@@ -80,6 +82,7 @@ class HighRes3DNet(TrainableLayer):
                 res_block = HighResBlock(
                     params['n_features'],
                     params['kernels'],
+                    acti_type=self.acti_type,
                     w_initializer=self.initializers['w'],
                     w_regularizer=self.regularizers['w'],
                     name='%s_%d' % (params['name'], j))
@@ -94,6 +97,7 @@ class HighRes3DNet(TrainableLayer):
                 res_block = HighResBlock(
                     params['n_features'],
                     params['kernels'],
+                    acti_type=self.acti_type,
                     w_initializer=self.initializers['w'],
                     w_regularizer=self.regularizers['w'],
                     name='%s_%d' % (params['name'], j))
@@ -106,6 +110,7 @@ class HighRes3DNet(TrainableLayer):
         fc_layer = ConvolutionalLayer(
             params['n_features'],
             params['kernel_size'],
+            acti_func=self.acti_type,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
             name=params['name'])
@@ -117,6 +122,7 @@ class HighRes3DNet(TrainableLayer):
         fc_layer = ConvolutionalLayer(
             params['n_features'],
             params['kernel_size'],
+            acti_func=self.acti_type,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
             name=params['name'])
