@@ -20,8 +20,8 @@ testjob:
     # download data
     - wget -q https://www.dropbox.com/s/2unf08ylxvhc298/example_volumes.tar.gz
     - tar -xzvf example_volumes.tar.gz
-    - wget -q https://www.dropbox.com/s/2q58bocvbt7f62j/TestingData.tar.gz
-    - tar -xzvf TestingData.tar.gz
+    - wget -q https://www.dropbox.com/s/94wa4fl8f8k3aie/testing_data.tar.gz
+    - tar -xzvf testing_data.tar.gz
 
     # run python code with coverage wrapper
     - coverage erase
@@ -45,11 +45,12 @@ testjob:
     - coverage run -a --source . -m testing.unet_test
     - coverage run -a --source . -m testing.scaleblock_test
     - coverage run -a --source . -m testing.scalenet_test
-    - coverage run -a --source . -m testing.input_sampler_test
+    - coverage run -a --source . -m testing.toy_sampler_test
     - coverage run -a --source . -m testing.input_buffer_test
     - coverage run -a --source . -m testing.dilatedcontext_test
     - coverage run -a --source . -m testing.loss_test
     - coverage run -a --source . -m testing.subject_test
+    - coverage run -a --source . -m testing.uniform_sampler_test
     - coverage report
     - echo 'finished test'
   tags:

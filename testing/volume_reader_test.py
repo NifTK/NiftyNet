@@ -20,7 +20,7 @@ class SubjectTest(tf.test.TestCase):
             dict_normalisation=dict_normalisation,
             dict_masking=dict_masking)
         print a_processor.subject_list
-        a_processor.next_subject()
+        out = _processor.next_subject()
 
 if __name__ == "__main__":
     tf.test.main()

@@ -13,9 +13,9 @@ class InputQueueTest(tf.test.TestCase):
                                 image_dtype=tf.float32,
                                 label_dtype=tf.int64,
                                 weight_map_dtype=tf.float32,
-                                num_modality=1,
-                                num_map=1,
-                                name='image_patch')
+                                num_image_modality=1,
+                                num_label_modality=1,
+                                num_map=1)
         test_sampler = ToySampler(test_patch, name='sampler')
         image_key, label_key, info_key, weight_map_key = \
             test_sampler.placeholder_names
@@ -39,8 +39,7 @@ class InputQueueTest(tf.test.TestCase):
     def test_3d_deploy_queue(self):
         test_patch = ImagePatch(image_shape=(32, 32, 32),
                                 image_dtype=tf.float32,
-                                num_modality=1,
-                                name='sampler_without_label')
+                                num_image_modality=1)
         test_sampler = ToySampler(test_patch, name='sampler')
         image_key, info_key = test_sampler.placeholder_names
         deploy_queue = DeployInputBuffer(batch_size=5,
@@ -66,9 +65,9 @@ class InputQueueTest(tf.test.TestCase):
                                 image_dtype=tf.float32,
                                 label_dtype=tf.int64,
                                 weight_map_dtype=tf.float32,
-                                num_modality=1,
-                                num_map=1,
-                                name='image_patch')
+                                num_image_modality=1,
+                                num_label_modality=1,
+                                num_map=1)
         test_sampler = ToySampler(test_patch, name='sampler')
         image_key, label_key, info_key, weight_map_key = \
             test_sampler.placeholder_names
@@ -92,8 +91,7 @@ class InputQueueTest(tf.test.TestCase):
     def test_2d_deploy_queue(self):
         test_patch = ImagePatch(image_shape=(32, 32),
                                 image_dtype=tf.float32,
-                                num_modality=1,
-                                name='sampler_without_label')
+                                num_image_modality=1)
         test_sampler = ToySampler(test_patch, name='sampler')
         image_key, info_key = test_sampler.placeholder_names
         deploy_queue = DeployInputBuffer(batch_size=5,

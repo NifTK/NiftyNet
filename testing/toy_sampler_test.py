@@ -4,7 +4,7 @@ from layer.input_placeholders import ImagePatch
 from layer.toy_sampler import ToySampler
 
 
-class SamplerTest(tf.test.TestCase):
+class ToySamplerTest(tf.test.TestCase):
     def run_test_sampler(self, patch_holder=None):
         test_sampler = ToySampler(patch_holder, name='sampler')
         print test_sampler.placeholder_names
@@ -17,15 +17,16 @@ class SamplerTest(tf.test.TestCase):
             output = data_dict.values()[0]
             for (idx, key) in enumerate(keys):
                 print key, output[idx].shape
+
     def test_full_shape_3d(self):
         patch_holder = ImagePatch(image_shape=(32, 32, 32),
                                   label_shape=(32, 32, 32),
                                   weight_map_shape=(32, 32, 32),
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
-                                  num_modality=1,
-                                  num_map=1,
-                                  name='patch_placeholders')
+                                  num_image_modality=1,
+                                  num_label_modality=1,
+                                  num_map=1)
         self.run_test_sampler(patch_holder)
 
     def test_image_label_info_shape_3d(self):
@@ -34,9 +35,9 @@ class SamplerTest(tf.test.TestCase):
                                   weight_map_shape=None,
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
-                                  num_modality=1,
-                                  num_map=1,
-                                  name='patch_placeholders_1')
+                                  num_image_modality=1,
+                                  num_label_modality=1,
+                                  num_map=1)
         self.run_test_sampler(patch_holder)
 
     def test_image_weight_map_info_shape_3d(self):
@@ -45,9 +46,9 @@ class SamplerTest(tf.test.TestCase):
                                   weight_map_shape=(32, 32, 32),
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
-                                  num_modality=1,
-                                  num_map=1,
-                                  name='patch_placeholders_1')
+                                  num_image_modality=1,
+                                  num_label_modality=1,
+                                  num_map=1)
         self.run_test_sampler(patch_holder)
 
     def test_image_info_shape_3d(self):
@@ -56,9 +57,9 @@ class SamplerTest(tf.test.TestCase):
                                   weight_map_shape=None,
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
-                                  num_modality=1,
-                                  num_map=1,
-                                  name='patch_placeholders_1')
+                                  num_image_modality=1,
+                                  num_label_modality=1,
+                                  num_map=1)
         self.run_test_sampler(patch_holder)
 
     def test_full_shape_2d(self):
@@ -67,9 +68,9 @@ class SamplerTest(tf.test.TestCase):
                                   weight_map_shape=(32, 32),
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
-                                  num_modality=1,
-                                  num_map=1,
-                                  name='patch_placeholders')
+                                  num_image_modality=1,
+                                  num_label_modality=1,
+                                  num_map=1)
         self.run_test_sampler(patch_holder)
 
     def test_image_label_info_shape_2d(self):
@@ -78,9 +79,9 @@ class SamplerTest(tf.test.TestCase):
                                   weight_map_shape=None,
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
-                                  num_modality=1,
-                                  num_map=1,
-                                  name='patch_placeholders_1')
+                                  num_image_modality=1,
+                                  num_label_modality=1,
+                                  num_map=1)
         self.run_test_sampler(patch_holder)
 
     def test_image_weight_map_info_shape_2d(self):
@@ -89,9 +90,9 @@ class SamplerTest(tf.test.TestCase):
                                   weight_map_shape=(32, 32),
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
-                                  num_modality=1,
-                                  num_map=1,
-                                  name='patch_placeholders_1')
+                                  num_image_modality=1,
+                                  num_label_modality=1,
+                                  num_map=1)
         self.run_test_sampler(patch_holder)
 
     def test_image_info_shape_2d(self):
@@ -100,9 +101,9 @@ class SamplerTest(tf.test.TestCase):
                                   weight_map_shape=None,
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
-                                  num_modality=1,
-                                  num_map=1,
-                                  name='patch_placeholders_1')
+                                  num_image_modality=1,
+                                  num_label_modality=1,
+                                  num_map=1)
         self.run_test_sampler(patch_holder)
 
 

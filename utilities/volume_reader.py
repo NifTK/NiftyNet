@@ -55,7 +55,7 @@ class VolumePreprocessor(object):
         self.flag_whitening = flag_whitening
 
         self.subject_list = self._search_for_eligible_subjects()
-        self.current_id = 0
+        self.current_id = -1
 
     # Look and create initial subjects according to constraints.
     def search_with_constraints(self):
@@ -206,7 +206,7 @@ class VolumePreprocessor(object):
             data_dict = self.whiten_subject_data(data_dict, modalities_to_whiten)
 
         img, seg, weights = self.data_distribution(current_subject, data_dict)
-        return img, seg, weights, current_subject
+        return self.current_id, img, seg, weights
 
     def data_distribution(self, subject, data):
         """

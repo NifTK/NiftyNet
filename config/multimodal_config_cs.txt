@@ -72,7 +72,7 @@ seg_compulsory = Parcellation
 seg_optional = LesionFin
 weight_compulsory =
 weight_optional =
-train_data_dir = ./TestingData
+train_data_dir = ./testing_data
 
 # ** sampling strategy to adopt
 compulsory_labels = 0

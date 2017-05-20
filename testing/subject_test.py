@@ -5,8 +5,8 @@ class SubjectTest(tf.test.TestCase):
 
     def test_new_subject(self):
         test_name = '1023'
-        file_path_dict = {'T1': 'TestingData/1023_o_T1_time_01.nii.gz',
-                          'LABEL': 'TestingData/T1_1023_NeuroMorph_Parcellation.nii.gz'}
+        file_path_dict = {'T1': 'testing_data/1023_o_T1_time_01.nii.gz',
+                          'LABEL': 'testing_data/T1_1023_NeuroMorph_Parcellation.nii.gz'}
         a_subject = Subject(name=test_name,
                             file_path_dict=file_path_dict,
                             list_nn=['LABEL'])

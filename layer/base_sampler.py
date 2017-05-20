@@ -6,8 +6,8 @@ from .input_placeholders import ImagePatch
 
 class BaseSampler(Layer):
     """
-    This class defines the basic operations of a sampler
-    in order to generate image patches for training/inference
+    This class defines the basic operations of sampling
+    to generate image patches for training/inference
 
     The layer_op should return an iterable object
     that yields an instance of ImagePatch
@@ -22,6 +22,10 @@ class BaseSampler(Layer):
         self.patch = patch
 
     def layer_op(self, batch_size):
+        """
+        should return an input placeholder, i.e.:
+        yield self.patch
+        """
         raise NotImplementedError
 
     @property

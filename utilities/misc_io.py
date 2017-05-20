@@ -91,6 +91,7 @@ def load_volume(filename, allow_multimod_single_file=False, allow_timeseries=Fal
         warnings.warn("This file %s does not exist" % filename)
         return None
     else:
+        print filename
         img_nii = nib.load(filename)
         img_shape = img_nii.header.get_data_shape()
         img_data = img_nii.get_data().astype(np.float32)

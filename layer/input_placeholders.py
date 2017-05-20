@@ -19,20 +19,22 @@ class ImagePatch(object):
                  image_dtype=tf.float32,
                  label_dtype=tf.int64,
                  weight_map_dtype=tf.float32,
-                 num_modality=1,
-                 num_map=1,
-                 name='placeholders'):
+                 num_image_modality=1,
+                 num_label_modality=1,
+                 num_map=1):
 
         # shapes
         self._image_shape = image_shape
         self._label_shape = label_shape
         self._weight_map_shape = weight_map_shape
+
         # types
         self._image_dtype = image_dtype
         self._label_dtype = label_dtype
         self._weight_map_dtype = weight_map_dtype
 
-        self._num_modality = num_modality
+        self._num_image_modality = num_image_modality
+        self._num_label_modality = num_label_modality
         self._num_map = num_map
 
         assert len(set(image_shape)) == 1
@@ -86,19 +88,22 @@ class ImagePatch(object):
 
     @property
     def full_image_shape(self):
-        return [self.image_size] * self.spatial_rank + [self._num_modality]
+        spatial_dims = [self.image_size] * self.spatial_rank
+        return spatial_dims + [self._num_image_modality]
 
     @property
     def full_label_shape(self):
         if self.has_labels:
             # assumes the samples have the same length in all spatial dims
-            return [self.label_size] * self.spatial_rank
+            spatial_dims = [self.label_size] * self.spatial_rank
+            return spatial_dims + [self._num_label_modality]
         return None
 
     @property
     def full_weight_map_shape(self):
         if self.has_weight_maps:
-            return [self.weight_map_size] * self.spatial_rank + [self._num_map]
+            spatial_dims = [self.weight_map_size] * self.spatial_rank
+            return spatial_dims + [self._num_map]
         return None
 
     @property
@@ -156,6 +161,7 @@ class ImagePatch(object):
     def placeholders(self):
         return self._placeholders
 
+    ### set the corresponding data of each placeholder
     @property
     def image(self):
         assert self._image is not None
@@ -197,6 +203,7 @@ class ImagePatch(object):
         assert self.has_weight_maps
         assert value.shape == tuple(self.full_weight_map_shape)
         self._weight_map = value
+    ### end of set the corresponding data of each placeholder
 
     def as_dict(self):
         out_list = []
