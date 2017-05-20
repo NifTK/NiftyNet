@@ -20,11 +20,13 @@ testjob:
     # download data
     - wget -q https://www.dropbox.com/s/2unf08ylxvhc298/example_volumes.tar.gz
     - tar -xzvf example_volumes.tar.gz
+    - wget -q https://www.dropbox.com/s/2q58bocvbt7f62j/TestingData.tar.gz
+    - tar -xzvf TestingData.tar.gz
 
     # run python code with coverage wrapper
     - coverage erase
-    - coverage run -a --source . run_application.py train --image_size 42 --label_size 42 --batch_size 2
-    - coverage run -a --source . run_application.py inference --image_size 64 --label_size 64 --batch_size 4
+    #- coverage run -a --source . run_application.py train --image_size 42 --label_size 42 --batch_size 2
+    #- coverage run -a --source . run_application.py inference --image_size 64 --label_size 64 --batch_size 4
     - coverage run -a --source . -m testing.activation_test
     - coverage run -a --source . -m testing.bn_test
     - coverage run -a --source . -m testing.convolution_test
@@ -46,6 +48,7 @@ testjob:
     - coverage run -a --source . -m testing.input_sampler_test
     - coverage run -a --source . -m testing.input_buffer_test
     - coverage run -a --source . -m testing.loss_test
+    - coverage run -a --source . -m testing.subject_test
     - coverage report
     - echo 'finished test'
   tags:
