@@ -18,6 +18,7 @@ class BNTest(tf.test.TestCase):
     def test_3d_bn_shape(self):
         x = self.get_3d_input()
         bn_layer = BNLayer()
+        print bn_layer
         out_bn = bn_layer(x, is_training=True)
         print bn_layer
 
@@ -68,6 +69,7 @@ class BNTest(tf.test.TestCase):
         out_bn = bn_layer(x, is_training=True)
         test_bn = bn_layer(x, is_training=False)
         print bn_layer
+        reg_loss = tf.add_n(bn_layer.regularizer_loss())
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -80,6 +82,9 @@ class BNTest(tf.test.TestCase):
             out = sess.run(test_bn)
             self.assertAllClose(x_shape, out.shape)
             # self.assertAllClose(np.zeros(x_shape), out)
+
+            out = sess.run(reg_loss)
+            self.assertAlmostEqual(out, 2.0)
 
 
 if __name__ == "__main__":

@@ -51,7 +51,7 @@ testjob:
     - coverage run -a --source . -m testing.loss_test
     - coverage run -a --source . -m testing.subject_test
     - coverage run -a --source . -m testing.uniform_sampler_test
-    - coverage report
+    - coverage report -m
     - echo 'finished test'
   tags:
     - gift-linux
