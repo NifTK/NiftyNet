@@ -5,7 +5,7 @@ from . import layer_util
 from .base import TrainableLayer
 from .convolution import ConvLayer
 
-SUPPORTED_OP = set(['SUM', 'CONCAT'])
+SUPPORTED_OP = {'SUM', 'CONCAT'}
 
 
 class ElementwiseLayer(TrainableLayer):

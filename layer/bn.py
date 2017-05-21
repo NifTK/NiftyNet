@@ -20,8 +20,14 @@ def _compute_mean_and_var(inputs, axes):
 
 
 class BNLayer(TrainableLayer):
+    """
+    Batch normalisation layer, with trainable mean value 'beta' and
+    std 'gamma'.  'beta' is initialised to 0.0 and 'gamma' is initialised
+    to 1.0.  This class assumes 'beta' and 'gamma' share the same type of
+    regulariser.
+    """
+
     def __init__(self,
-                 initializer=None,
                  regularizer=None,
                  moving_decay=0.9,
                  eps=1e-5,

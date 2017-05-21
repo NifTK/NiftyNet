@@ -203,6 +203,7 @@ class ImagePatch(object):
         assert self.has_weight_maps
         assert value.shape == tuple(self.full_weight_map_shape)
         self._weight_map = value
+
     ### end of set the corresponding data of each placeholder
 
     def as_dict(self):

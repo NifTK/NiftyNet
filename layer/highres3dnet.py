@@ -39,7 +39,7 @@ class HighRes3DNet(TrainableLayer):
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
-        print 'using {}'.format(name)
+        print('using {}'.format(name))
 
     def layer_op(self, images, is_training, layer_id=-1):
         assert (layer_util.check_spatial_dims(
@@ -137,7 +137,7 @@ class HighRes3DNet(TrainableLayer):
 
     def _assign_initializer_regularizer(self, list_of_layers):
         for (op, _) in list_of_layers:
-            print op
+            print(op)
 
 
 class HighResBlock(TrainableLayer):

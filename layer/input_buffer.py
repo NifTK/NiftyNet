@@ -63,7 +63,7 @@ class InputBatchQueueRunner(object):
         operations. This should be called before tf.Graph.finalize.
         """
 
-        # create queue
+        # create a queue
         if self.shuffle:
             self._queue = tf.RandomShuffleQueue(
                 capacity=self.capacity,
@@ -109,21 +109,21 @@ class InputBatchQueueRunner(object):
         except tf.errors.CancelledError:
             pass
         except AssertionError as e:
-            print "AssertionError: please check the sampler() dims"
+            print("AssertionError: please check the sampler() dims")
         except ValueError as e:
-            print e
+            print(e)
         except RuntimeError as e:
-            print e
+            print(e)
         finally:
             # this thread won't enqueue anymore
             self._started_threads[thread_id] = False
             # try to close down when it's the last thread
             if not any(self._started_threads):
-                # preparing closing down
+                # preparing for closing down
                 # waiting to be sure the last few batches are dequeued
                 retry, interval = 60000, 0.001
-                print "stopping the sampling threads... " \
-                      "(in {} seconds)".format(retry * interval)
+                print("stopping the sampling threads... "
+                      "(in {} seconds)".format(retry * interval))
                 remained = self.current_queue_size - self.min_queue_size
                 while retry > 0:
                     if self.batch_size > remained:
@@ -134,7 +134,7 @@ class InputBatchQueueRunner(object):
                     remained = self.current_queue_size - self.min_queue_size
                 if remained > 0:
                     # still having elements left
-                    print("Insufficient samples {} to form a {}-element " \
+                    print("Insufficient samples {} to form a {}-element "
                           "batch in queue".format(self.batch_size, remained))
                 # close the queue
                 self.close_all()
@@ -150,7 +150,7 @@ class InputBatchQueueRunner(object):
         return self._dequeue_op
 
     def run_threads(self, session, coord, num_threads=1):
-        print 'Starting preprocessing threads...'
+        print('Starting preprocessing threads...')
         self._session = session
         self._coordinator = coord
         self._started_threads = [False for i in range(num_threads)]
@@ -175,7 +175,7 @@ class InputBatchQueueRunner(object):
                                    stop_grace_period_secs=0,
                                    ignore_live_threads=True)
         except RuntimeError as e:
-            print e
+            print(e)
         finally:
             if not self._session._closed:
                 self._session.run(self._close_queue_op)

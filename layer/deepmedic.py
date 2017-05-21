@@ -36,7 +36,7 @@ class DeepMedic(TrainableLayer):
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
-        print 'using {}'.format(name)
+        print('using {}'.format(name))
 
     def layer_op(self, images, is_training, layer_id=-1):
         # image_size is defined as the largest context, then:
@@ -61,7 +61,7 @@ class DeepMedic(TrainableLayer):
         ### crop 25x25x25 from 57x57x57
         crop_op = CropLayer(border=self.crop_diff, name='cropping_input')
         normal_path = crop_op(images)
-        print crop_op
+        print(crop_op)
 
         ### downsample 19x19x19 from 57x57x57
         downsample_op = DownSampleLayer(func='CONSTANT',
@@ -70,7 +70,7 @@ class DeepMedic(TrainableLayer):
                                         padding='VALID',
                                         name='downsample_input')
         downsample_path = downsample_op(images)
-        print downsample_op
+        print(downsample_op)
 
         ### convolutions for both pathways
         for n_features in self.conv_features:
@@ -84,7 +84,7 @@ class DeepMedic(TrainableLayer):
                 acti_func=self.acti_func,
                 name='normal_conv')
             normal_path = conv_path_1(normal_path, is_training)
-            print conv_path_1
+            print(conv_path_1)
 
             # downsampled pathway convolutions
             conv_path_2 = ConvolutionalLayer(
@@ -96,7 +96,7 @@ class DeepMedic(TrainableLayer):
                 acti_func=self.acti_func,
                 name='downsample_conv')
             downsample_path = conv_path_2(downsample_path, is_training)
-            print conv_path_2
+            print(conv_path_2)
 
         ### upsampling the downsampled pathway
         downsample_path = UpSampleLayer('REPLICATE',
@@ -116,6 +116,6 @@ class DeepMedic(TrainableLayer):
                 w_regularizer=self.regularizers['w'],
                 name='conv_1x1x1_{}'.format(n_features))
             output_tensor = conv_fc(output_tensor, is_training)
-            print conv_fc
+            print(conv_fc)
 
         return output_tensor

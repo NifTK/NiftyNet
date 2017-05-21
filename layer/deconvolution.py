@@ -53,12 +53,11 @@ class DeconvLayer(TrainableLayer):
                  b_initializer=None,
                  b_regularizer=None,
                  name='deconv'):
+
+        super(DeconvLayer, self).__init__(name=name)
+
         self.padding = padding.upper()
         assert self.padding in SUPPORTED_PADDING
-
-        self.layer_name = '{}'.format(name)
-        super(DeconvLayer, self).__init__(name=self.layer_name)
-
         self.n_output_chns = n_output_chns
         self.kernel_size = np.asarray(kernel_size).flatten()
         self.stride = np.asarray(stride).flatten()
@@ -125,6 +124,9 @@ class DeconvolutionalLayer(TrainableLayer):
     """
     This class defines a composite layer with optional components:
         deconvolution -> batch_norm -> activation -> dropout
+    The b_initializer and b_regularizer are applied to the DeconvLayer
+    The w_initializer and w_regularizer are applied to the DeconvLayer,
+    the batch normalisation layer, and the activation layer (for 'prelu')
     """
 
     def __init__(self,
@@ -139,22 +141,29 @@ class DeconvolutionalLayer(TrainableLayer):
                  w_regularizer=None,
                  b_initializer=None,
                  b_regularizer=None,
+                 moving_decay=0.9,
+                 eps=1e-5,
                  name="deconv"):
 
-        self.with_bias = with_bias
         self.acti_func = acti_func
         self.with_bn = with_bn
         self.layer_name = '{}'.format(name)
-        # if self.with_bn:
-        #    self.layer_name += '_bn'
-        # if (self.acti_func is not None):
-        #    self.layer_name += '_{}'.format(self.acti_func)
+        if self.with_bn:
+            self.layer_name += '_bn'
+        if (self.acti_func is not None):
+            self.layer_name += '_{}'.format(self.acti_func)
         super(DeconvolutionalLayer, self).__init__(name=self.layer_name)
 
+        # for DeconvLayer
         self.n_output_chns = n_output_chns
         self.kernel_size = kernel_size
         self.stride = stride
         self.padding = padding
+        self.with_bias = with_bias
+
+        # for BNLayer
+        self.moving_decay = moving_decay
+        self.eps = eps
 
         self.initializers = {
             'w': w_initializer if w_initializer else default_w_initializer(),
@@ -162,38 +171,36 @@ class DeconvolutionalLayer(TrainableLayer):
 
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
-        self.deconv_layer = None
-        self.bn_layer = None
-        self.acti_layer = None
-        self.dropout_layer = None
-
     def layer_op(self, input_tensor, is_training=None, keep_prob=None):
         # init sub-layers
-        self.deconv_layer = DeconvLayer(n_output_chns=self.n_output_chns,
-                                        kernel_size=self.kernel_size,
-                                        stride=self.stride,
-                                        padding=self.padding,
-                                        with_bias=self.with_bias,
-                                        w_initializer=self.initializers['w'],
-                                        w_regularizer=self.regularizers['w'],
-                                        b_initializer=self.initializers['b'],
-                                        b_regularizer=self.regularizers['b'],
-                                        name='deconv_')
-        output_tensor = self.deconv_layer(input_tensor)
+        deconv_layer = DeconvLayer(n_output_chns=self.n_output_chns,
+                                   kernel_size=self.kernel_size,
+                                   stride=self.stride,
+                                   padding=self.padding,
+                                   with_bias=self.with_bias,
+                                   w_initializer=self.initializers['w'],
+                                   w_regularizer=self.regularizers['w'],
+                                   b_initializer=self.initializers['b'],
+                                   b_regularizer=self.regularizers['b'],
+                                   name='deconv_')
+        output_tensor = deconv_layer(input_tensor)
 
         if self.with_bn:
-            self.bn_layer = BNLayer(regularizer=self.regularizers['w'],
-                                    name='bn_')
-            output_tensor = self.bn_layer(output_tensor, is_training)
+            bn_layer = BNLayer(
+                regularizer=self.regularizers['w'],
+                moving_decay=self.moving_decay,
+                eps=self.eps,
+                name='bn_')
+            output_tensor = bn_layer(output_tensor, is_training)
 
         if self.acti_func is not None:
-            self.acti_layer = ActiLayer(func=self.acti_func,
-                                        regularizer=self.regularizers['w'],
-                                        name='acti_')
-            output_tensor = self.acti_layer(output_tensor)
+            acti_layer = ActiLayer(
+                func=self.acti_func,
+                regularizer=self.regularizers['w'],
+                name='acti_')
+            output_tensor = acti_layer(output_tensor)
 
         if keep_prob is not None:
-            self.dropout_layer = ActiLayer(func='dropout', name='dropout_')
-            output_tensor = self.dropout_layer(output_tensor,
-                                               keep_prob=keep_prob)
+            dropout_layer = ActiLayer(func='dropout', name='dropout_')
+            output_tensor = dropout_layer(output_tensor, keep_prob=keep_prob)
         return output_tensor

@@ -25,7 +25,7 @@ class ScaleNet(TrainableLayer):
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
-        print 'using {}'.format(name)
+        print('using {}'.format(name))
 
     def layer_op(self, images, is_training, layer_id=-1):
         n_modality = images.get_shape().as_list()[-1]
@@ -51,7 +51,7 @@ class ScaleNet(TrainableLayer):
         return output_tensor
 
 
-SUPPORTED_OP = set(['MAX', 'AVERAGE'])
+SUPPORTED_OP = {'MAX', 'AVERAGE'}
 
 
 class ScaleBlock(TrainableLayer):
@@ -94,7 +94,7 @@ class ScaleBlock(TrainableLayer):
                     acti_func=self.acti_func,
                     name=block_name)
                 output_tensor[idx] = highresblock_op(tensor, is_training)
-                print highresblock_op
+                print(highresblock_op)
             output_tensor = tf.stack(output_tensor, axis=-1)
 
             # feature channels => modalities
@@ -111,7 +111,7 @@ class ScaleBlock(TrainableLayer):
                     acti_func=self.acti_func,
                     name=block_name)
                 output_tensor[idx] = highresblock_op(tensor, is_training)
-                print highresblock_op
+                print(highresblock_op)
             output_tensor = tf.stack(output_tensor, axis=-1)
 
         if self.func == 'MAX':

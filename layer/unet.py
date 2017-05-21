@@ -31,7 +31,7 @@ class UNet3D(TrainableLayer):
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
-        print 'using {}'.format(name)
+        print('using {}'.format(name))
 
     def layer_op(self, images, is_training, layer_id=-1):
         # image_size  should be divisible by 8
@@ -44,7 +44,7 @@ class UNet3D(TrainableLayer):
                                 acti_func=self.acti_func,
                                 name='L1')
         pool_1, conv_1 = block_layer(images, is_training)
-        print block_layer
+        print(block_layer)
 
         block_layer = UNetBlock('DOWNSAMPLE',
                                 (self.n_features[1], self.n_features[2]),
@@ -54,7 +54,7 @@ class UNet3D(TrainableLayer):
                                 acti_func=self.acti_func,
                                 name='L2')
         pool_2, conv_2 = block_layer(pool_1, is_training)
-        print block_layer
+        print(block_layer)
 
         block_layer = UNetBlock('DOWNSAMPLE',
                                 (self.n_features[2], self.n_features[3]),
@@ -64,7 +64,7 @@ class UNet3D(TrainableLayer):
                                 acti_func=self.acti_func,
                                 name='L3')
         pool_3, conv_3 = block_layer(pool_2, is_training)
-        print block_layer
+        print(block_layer)
 
         block_layer = UNetBlock('UPSAMPLE',
                                 (self.n_features[3], self.n_features[4]),
@@ -74,7 +74,7 @@ class UNet3D(TrainableLayer):
                                 acti_func=self.acti_func,
                                 name='L4')
         up_3, _ = block_layer(pool_3, is_training)
-        print block_layer
+        print(block_layer)
 
         block_layer = UNetBlock('UPSAMPLE',
                                 (self.n_features[3], self.n_features[3]),
@@ -85,7 +85,7 @@ class UNet3D(TrainableLayer):
                                 name='R3')
         concat_3 = ElementwiseLayer('CONCAT')(conv_3, up_3)
         up_2, _ = block_layer(concat_3, is_training)
-        print block_layer
+        print(block_layer)
 
         block_layer = UNetBlock('UPSAMPLE',
                                 (self.n_features[2], self.n_features[2]),
@@ -96,7 +96,7 @@ class UNet3D(TrainableLayer):
                                 name='R2')
         concat_2 = ElementwiseLayer('CONCAT')(conv_2, up_2)
         up_1, _ = block_layer(concat_2, is_training)
-        print block_layer
+        print(block_layer)
 
         block_layer = UNetBlock('NONE',
                                 (self.n_features[1],
@@ -112,7 +112,7 @@ class UNet3D(TrainableLayer):
 
         # for the last layer, upsampling path is not used
         _, output_tensor = block_layer(concat_1, is_training)
-        print block_layer
+        print(block_layer)
         return output_tensor
 
 

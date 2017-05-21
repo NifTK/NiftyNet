@@ -21,6 +21,12 @@ SUPPORTED_OP = {'relu': tf.nn.relu,
 
 
 class ActiLayer(TrainableLayer):
+    """
+    Apply an element-wise non-linear activation function.
+    'Prelu' uses trainable parameters and those are initialised to zeros
+    Dropout function is also supported
+    """
+
     def __init__(self, func, regularizer=None, name='activation'):
         self.func = func.lower()
         assert self.func in SUPPORTED_OP

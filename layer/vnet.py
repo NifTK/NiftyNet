@@ -33,7 +33,7 @@ class VNet(TrainableLayer):
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
-        print 'using {}'.format(name)
+        print('using {}'.format(name))
 
     def layer_op(self, images, is_training, layer_id=-1):
         assert layer_util.check_spatial_dims(images, lambda x: x % 8 == 0)
@@ -132,6 +132,7 @@ class VNetBlock(TrainableLayer):
                  b_regularizer=None,
                  acti_func='relu',
                  name='vnet_block'):
+
         super(VNetBlock, self).__init__(name=name)
 
         self.func = func.upper()
@@ -178,5 +179,5 @@ class VNetBlock(TrainableLayer):
                                   b_regularizer=self.regularizers['b'],
                                   kernel_size=1, with_bias=True)(res_flow)
         main_flow = ActiLayer(self.acti_func)(main_flow)
-        print self
+        print(self)
         return res_flow, main_flow
