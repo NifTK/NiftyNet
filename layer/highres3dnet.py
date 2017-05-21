@@ -23,7 +23,7 @@ class HighRes3DNet(TrainableLayer):
                  b_initializer=None,
                  w_regularizer=None,
                  b_regularizer=None,
-                 acti_type='prelu',
+                 acti_func='prelu',
                  name='HighRes3DNet'):
 
         super(HighRes3DNet, self).__init__(name=name)
@@ -34,7 +34,7 @@ class HighRes3DNet(TrainableLayer):
             {'name': 'res_3', 'n_features': 64, 'kernels': (3, 3), 'repeat': 3},
             {'name': 'conv_1', 'n_features': 80, 'kernel_size': 1},
             {'name': 'conv_2', 'n_features': num_classes, 'kernel_size': 1}]
-        self.acti_type = acti_type
+        self.acti_func = acti_func
 
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
@@ -53,7 +53,7 @@ class HighRes3DNet(TrainableLayer):
         first_conv_layer = ConvolutionalLayer(
             params['n_features'],
             params['kernel_size'],
-            acti_func=self.acti_type,
+            acti_func=self.acti_func,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
             name=params['name'])
@@ -67,7 +67,7 @@ class HighRes3DNet(TrainableLayer):
                 res_block = HighResBlock(
                     params['n_features'],
                     params['kernels'],
-                    acti_type=self.acti_type,
+                    acti_func=self.acti_func,
                     w_initializer=self.initializers['w'],
                     w_regularizer=self.regularizers['w'],
                     name='%s_%d' % (params['name'], j))
@@ -82,7 +82,7 @@ class HighRes3DNet(TrainableLayer):
                 res_block = HighResBlock(
                     params['n_features'],
                     params['kernels'],
-                    acti_type=self.acti_type,
+                    acti_func=self.acti_func,
                     w_initializer=self.initializers['w'],
                     w_regularizer=self.regularizers['w'],
                     name='%s_%d' % (params['name'], j))
@@ -97,7 +97,7 @@ class HighRes3DNet(TrainableLayer):
                 res_block = HighResBlock(
                     params['n_features'],
                     params['kernels'],
-                    acti_type=self.acti_type,
+                    acti_func=self.acti_func,
                     w_initializer=self.initializers['w'],
                     w_regularizer=self.regularizers['w'],
                     name='%s_%d' % (params['name'], j))
@@ -110,7 +110,7 @@ class HighRes3DNet(TrainableLayer):
         fc_layer = ConvolutionalLayer(
             params['n_features'],
             params['kernel_size'],
-            acti_func=self.acti_type,
+            acti_func=self.acti_func,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
             name=params['name'])
@@ -122,7 +122,7 @@ class HighRes3DNet(TrainableLayer):
         fc_layer = ConvolutionalLayer(
             params['n_features'],
             params['kernel_size'],
-            acti_func=self.acti_type,
+            acti_func=self.acti_func,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
             name=params['name'])
@@ -151,7 +151,7 @@ class HighResBlock(TrainableLayer):
     def __init__(self,
                  n_output_chns,
                  kernels=(3, 3),
-                 acti_type='relu',
+                 acti_func='relu',
                  w_initializer=None,
                  w_regularizer=None,
                  with_res=True,
@@ -164,7 +164,7 @@ class HighResBlock(TrainableLayer):
             self.kernels = kernels
         else:  # is a single number (indicating single layer)
             self.kernels = [kernels]
-        self.acti_type = acti_type
+        self.acti_func = acti_func
         self.with_res = with_res
 
         self.initializers = {'w': w_initializer}
@@ -176,7 +176,7 @@ class HighResBlock(TrainableLayer):
             # create parameterised layers
             bn_op = BNLayer(regularizer=self.regularizers['w'],
                             name='bn_{}'.format(i))
-            acti_op = ActiLayer(func=self.acti_type,
+            acti_op = ActiLayer(func=self.acti_func,
                                 regularizer=self.regularizers['w'],
                                 name='acti_{}'.format(i))
             conv_op = ConvLayer(n_output_chns=self.n_output_chns,

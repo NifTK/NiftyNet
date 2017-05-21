@@ -14,13 +14,13 @@ class ScaleNet(TrainableLayer):
                  w_regularizer=None,
                  b_initializer=None,
                  b_regularizer=None,
-                 acti_type='prelu',
+                 acti_func='prelu',
                  name='ScaleNet'):
         super(ScaleNet, self).__init__(name=name)
 
         self.n_features = 16
         self.num_classes = num_classes
-        self.acti_type = acti_type
+        self.acti_func = acti_func
 
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
@@ -38,7 +38,7 @@ class ScaleNet(TrainableLayer):
                 kernel_size=3,
                 w_initializer=self.initializers['w'],
                 w_regularizer=self.regularizers['w'],
-                acti_func=self.acti_type,
+                acti_func=self.acti_func,
                 name='conv_{}'.format(idx))
             roots[idx] = conv_layer(root, is_training)
         roots = tf.stack(roots, axis=-1)
@@ -60,13 +60,13 @@ class ScaleBlock(TrainableLayer):
                  n_layers=1,
                  w_initializer=None,
                  w_regularizer=None,
-                 acti_type='relu',
+                 acti_func='relu',
                  name='scaleblock'):
         self.func = func.upper()
         assert self.func in SUPPORTED_OP
         super(ScaleBlock, self).__init__(name=name)
         self.n_layers = n_layers
-        self.acti_type = acti_type
+        self.acti_func = acti_func
 
         self.initializers = {'w': w_initializer}
         self.regularizers = {'w': w_regularizer}
@@ -91,7 +91,7 @@ class ScaleBlock(TrainableLayer):
                     with_res=True,
                     w_initializer=self.initializers['w'],
                     w_regularizer=self.regularizers['w'],
-                    acti_type=self.acti_type,
+                    acti_func=self.acti_func,
                     name=block_name)
                 output_tensor[idx] = highresblock_op(tensor, is_training)
                 print highresblock_op
@@ -108,7 +108,7 @@ class ScaleBlock(TrainableLayer):
                     with_res=True,
                     w_initializer=self.initializers['w'],
                     w_regularizer=self.regularizers['w'],
-                    acti_type=self.acti_type,
+                    acti_func=self.acti_func,
                     name=block_name)
                 output_tensor[idx] = highresblock_op(tensor, is_training)
                 print highresblock_op
