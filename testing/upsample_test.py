@@ -12,15 +12,15 @@ class UpSampleTest(tf.test.TestCase):
 
         up_sample_layer = UpSampleLayer('REPLICATE', 3, 3)
         out_up_sample_rep_1 = up_sample_layer(x)
-        print up_sample_layer.to_string()
+        print(up_sample_layer.to_string())
 
         up_sample_layer = UpSampleLayer('REPLICATE', 2, 2)
         out_up_sample_rep_2 = up_sample_layer(x)
-        print up_sample_layer.to_string()
+        print(up_sample_layer.to_string())
 
         up_sample_layer = UpSampleLayer('CHANNELWISE_DECONV', 2, 2)
         out_up_sample_deconv = up_sample_layer(x)
-        print up_sample_layer.to_string()
+        print(up_sample_layer.to_string())
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -40,15 +40,15 @@ class UpSampleTest(tf.test.TestCase):
 
         up_sample_layer = UpSampleLayer('REPLICATE', 3, 3)
         out_up_sample_rep_1 = up_sample_layer(x)
-        print up_sample_layer.to_string()
+        print(up_sample_layer.to_string())
 
         up_sample_layer = UpSampleLayer('REPLICATE', 2, 2)
         out_up_sample_rep_2 = up_sample_layer(x)
-        print up_sample_layer.to_string()
+        print(up_sample_layer.to_string())
 
         up_sample_layer = UpSampleLayer('CHANNELWISE_DECONV', 2, 2)
         out_up_sample_deconv = up_sample_layer(x)
-        print up_sample_layer.to_string()
+        print(up_sample_layer.to_string())
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())

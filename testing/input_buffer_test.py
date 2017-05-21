@@ -30,7 +30,7 @@ class InputQueueTest(tf.test.TestCase):
             try:
                 for i in range(100):
                     out_tuple = sess.run(out_1)
-                    #print image_key
+                    #print(image_key)
                     self.assertAllClose(
                         (2, 32, 32, 32, 1), out_tuple[image_key].shape)
             except tf.errors.OutOfRangeError as e:
@@ -52,7 +52,7 @@ class InputQueueTest(tf.test.TestCase):
             try:
                 for i in range(100):
                     out_tuple = sess.run(out_2)
-                    #print out_tuple[info_key]
+                    #print(out_tuple[info_key])
                     self.assertAllClose(
                         (5, 32, 32, 32, 1), out_tuple[image_key].shape)
             except tf.errors.OutOfRangeError as e:
@@ -82,7 +82,7 @@ class InputQueueTest(tf.test.TestCase):
             try:
                 for i in range(100):
                     out_tuple = sess.run(out_1)
-                    #print image_key
+                    #print(image_key)
                     self.assertAllClose(
                         (2, 32, 32, 1), out_tuple[image_key].shape)
             except tf.errors.OutOfRangeError as e:
@@ -104,7 +104,7 @@ class InputQueueTest(tf.test.TestCase):
             try:
                 for i in range(100):
                     out_tuple = sess.run(out_2)
-                    #print out_tuple[info_key]
+                    #print(out_tuple[info_key])
                     self.assertAllClose(
                         (5, 32, 32, 1), out_tuple[image_key].shape)
             except tf.errors.OutOfRangeError as e:

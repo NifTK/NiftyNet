@@ -13,7 +13,7 @@ class HighResBlockTest(tf.test.TestCase):
                                      kernels=(3, 3),
                                      with_res=True)
         out = highres_layer(x, is_training=True)
-        print highres_layer
+        print(highres_layer)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -28,7 +28,7 @@ class HighResBlockTest(tf.test.TestCase):
                                      kernels=(3, 3),
                                      with_res=True)
         out = highres_layer(x, is_training=True)
-        print highres_layer
+        print(highres_layer)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -43,7 +43,7 @@ class HighResBlockTest(tf.test.TestCase):
                                      kernels=(3, 3),
                                      with_res=True)
         out = highres_layer(x, is_training=True)
-        print highres_layer
+        print(highres_layer)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -60,7 +60,7 @@ class HighResBlockTest(tf.test.TestCase):
             with_res=True,
             w_regularizer=regularizers.l2_regularizer(0.3))
         out = highres_layer(x, is_training=True)
-        print highres_layer
+        print(highres_layer)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -78,7 +78,7 @@ class HighResBlockTest(tf.test.TestCase):
             w_regularizer=regularizers.l2_regularizer(0.3))
 
         out = highres_layer(x, is_training=True)
-        print highres_layer
+        print(highres_layer)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -95,7 +95,7 @@ class HighResBlockTest(tf.test.TestCase):
             with_res=True,
             w_regularizer=regularizers.l2_regularizer(0.3))
         out = highres_layer(x, is_training=True)
-        print highres_layer
+        print(highres_layer)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -110,7 +110,7 @@ class HighResBlockTest(tf.test.TestCase):
                                      kernels=(3, 3),
                                      with_res=True)
         out = highres_layer(x, is_training=True)
-        print highres_layer
+        print(highres_layer)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -125,7 +125,7 @@ class HighResBlockTest(tf.test.TestCase):
                                      kernels=(3, 3),
                                      with_res=True)
         out = highres_layer(x, is_training=True)
-        print highres_layer
+        print(highres_layer)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -140,7 +140,7 @@ class HighResBlockTest(tf.test.TestCase):
                                      kernels=(3, 3),
                                      with_res=True)
         out = highres_layer(x, is_training=True)
-        print highres_layer
+        print(highres_layer)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())

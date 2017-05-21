@@ -7,16 +7,16 @@ from layer.toy_sampler import ToySampler
 class ToySamplerTest(tf.test.TestCase):
     def run_test_sampler(self, patch_holder=None):
         test_sampler = ToySampler(patch_holder, name='sampler')
-        print test_sampler.placeholder_names
-        print test_sampler.placeholder_dtypes
-        print test_sampler.placeholder_shapes
+        print(test_sampler.placeholder_names)
+        print(test_sampler.placeholder_dtypes)
+        print(test_sampler.placeholder_shapes)
         for d in test_sampler():
             assert isinstance(d, ImagePatch)
             data_dict = d.as_dict()
             keys = data_dict.keys()[0]
             output = data_dict.values()[0]
             for (idx, key) in enumerate(keys):
-                print key, output[idx].shape
+                print(key, output[idx].shape)
 
     def test_full_shape_3d(self):
         patch_holder = ImagePatch(image_shape=(32, 32, 32),

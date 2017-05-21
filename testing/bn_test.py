@@ -18,9 +18,9 @@ class BNTest(tf.test.TestCase):
     def test_3d_bn_shape(self):
         x = self.get_3d_input()
         bn_layer = BNLayer()
-        print bn_layer
+        print(bn_layer)
         out_bn = bn_layer(x, is_training=True)
-        print bn_layer
+        print(bn_layer)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -35,7 +35,7 @@ class BNTest(tf.test.TestCase):
         bn_layer = BNLayer(regularizer=regularizers.l2_regularizer(0.5))
         out_bn = bn_layer(x, is_training=True)
         test_bn = bn_layer(x, is_training=False)
-        print bn_layer
+        print(bn_layer)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -53,7 +53,7 @@ class BNTest(tf.test.TestCase):
         x = self.get_2d_input()
         bn_layer = BNLayer()
         out_bn = bn_layer(x, is_training=True)
-        print bn_layer
+        print(bn_layer)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -68,7 +68,7 @@ class BNTest(tf.test.TestCase):
         bn_layer = BNLayer(regularizer=regularizers.l2_regularizer(0.5))
         out_bn = bn_layer(x, is_training=True)
         test_bn = bn_layer(x, is_training=False)
-        print bn_layer
+        print(bn_layer)
         reg_loss = tf.add_n(bn_layer.regularizer_loss())
 
         with self.test_session() as sess:

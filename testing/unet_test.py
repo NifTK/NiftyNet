@@ -11,7 +11,7 @@ class UNet3DTest(tf.test.TestCase):
 
         unet_instance = UNet3D(num_classes=160)
         out = unet_instance(x, is_training=True)
-        print unet_instance.num_trainable_params()
+        print(unet_instance.num_trainable_params())
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -24,7 +24,7 @@ class UNet3DTest(tf.test.TestCase):
 
         unet_instance = UNet3D(num_classes=160)
         out = unet_instance(x, is_training=True)
-        print unet_instance.num_trainable_params()
+        print(unet_instance.num_trainable_params())
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -38,7 +38,7 @@ class UNet3DTest(tf.test.TestCase):
         unet_instance = UNet3D(num_classes=160,
                                w_regularizer=regularizers.l2_regularizer(0.4))
         out = unet_instance(x, is_training=True)
-        print unet_instance.num_trainable_params()
+        print(unet_instance.num_trainable_params())
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -52,7 +52,7 @@ class UNet3DTest(tf.test.TestCase):
         unet_instance = UNet3D(num_classes=160,
                                w_regularizer=regularizers.l2_regularizer(0.4))
         out = unet_instance(x, is_training=True)
-        print unet_instance.num_trainable_params()
+        print(unet_instance.num_trainable_params())
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())

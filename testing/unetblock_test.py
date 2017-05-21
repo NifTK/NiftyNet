@@ -21,15 +21,15 @@ class UNetBlockTest(tf.test.TestCase):
         unet_block_op = UNetBlock(
             'DOWNSAMPLE', (32, 64), (3, 3), with_downsample_branch=True)
         out_1, out_2 = unet_block_op(x, is_training=True)
-        print unet_block_op
-        print out_1
-        print out_2
+        print(unet_block_op)
+        print(out_1)
+        print(out_2)
 
         unet_block_op = UNetBlock(
             'UPSAMPLE', (32, 64), (3, 3), with_downsample_branch=False)
         out_3, _ = unet_block_op(x, is_training=True)
-        print unet_block_op
-        print out_3
+        print(unet_block_op)
+        print(out_3)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -46,15 +46,15 @@ class UNetBlockTest(tf.test.TestCase):
         unet_block_op = UNetBlock(
             'DOWNSAMPLE', (32, 64), (3, 3), with_downsample_branch=True)
         out_1, out_2 = unet_block_op(x, is_training=True)
-        print unet_block_op
-        print out_1
-        print out_2
+        print(unet_block_op)
+        print(out_1)
+        print(out_2)
 
         unet_block_op = UNetBlock(
             'UPSAMPLE', (32, 64), (3, 3), with_downsample_branch=False)
         out_3, _ = unet_block_op(x, is_training=True)
-        print unet_block_op
-        print out_3
+        print(unet_block_op)
+        print(out_3)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -72,16 +72,16 @@ class UNetBlockTest(tf.test.TestCase):
             'DOWNSAMPLE', (32, 64), (3, 3), with_downsample_branch=True,
             w_regularizer=regularizers.l2_regularizer(0.3))
         out_1, out_2 = unet_block_op(x, is_training=True)
-        print unet_block_op
-        print out_1
-        print out_2
+        print(unet_block_op)
+        print(out_1)
+        print(out_2)
 
         unet_block_op = UNetBlock(
             'UPSAMPLE', (32, 64), (3, 3), with_downsample_branch=False,
             w_regularizer=regularizers.l2_regularizer(0.3))
         out_3, _ = unet_block_op(x, is_training=True)
-        print unet_block_op
-        print out_3
+        print(unet_block_op)
+        print(out_3)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -99,16 +99,16 @@ class UNetBlockTest(tf.test.TestCase):
             'DOWNSAMPLE', (32, 64), (3, 3), with_downsample_branch=True,
             w_regularizer=regularizers.l2_regularizer(0.3))
         out_1, out_2 = unet_block_op(x, is_training=True)
-        print unet_block_op
-        print out_1
-        print out_2
+        print(unet_block_op)
+        print(out_1)
+        print(out_2)
 
         unet_block_op = UNetBlock(
             'UPSAMPLE', (32, 64), (3, 3), with_downsample_branch=False,
             w_regularizer=regularizers.l2_regularizer(0.3))
         out_3, _ = unet_block_op(x, is_training=True)
-        print unet_block_op
-        print out_3
+        print(unet_block_op)
+        print(out_3)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())

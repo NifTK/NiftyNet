@@ -11,7 +11,7 @@ class ScaleNetTest(tf.test.TestCase):
 
         scalenet_layer = ScaleNet(num_classes=5)
         out = scalenet_layer(x, is_training=True)
-        print scalenet_layer.num_trainable_params()
+        print(scalenet_layer.num_trainable_params())
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -24,7 +24,7 @@ class ScaleNetTest(tf.test.TestCase):
 
         scalenet_layer = ScaleNet(num_classes=5)
         out = scalenet_layer(x, is_training=True)
-        print scalenet_layer.num_trainable_params()
+        print(scalenet_layer.num_trainable_params())
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -38,7 +38,7 @@ class ScaleNetTest(tf.test.TestCase):
         scalenet_layer = ScaleNet(num_classes=5,
                                   w_regularizer=regularizers.l2_regularizer(0.3))
         out = scalenet_layer(x, is_training=True)
-        print scalenet_layer.num_trainable_params()
+        print(scalenet_layer.num_trainable_params())
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -52,7 +52,7 @@ class ScaleNetTest(tf.test.TestCase):
         scalenet_layer = ScaleNet(num_classes=5,
                                   w_regularizer=regularizers.l2_regularizer(0.3))
         out = scalenet_layer(x, is_training=True)
-        print scalenet_layer.num_trainable_params()
+        print(scalenet_layer.num_trainable_params())
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())

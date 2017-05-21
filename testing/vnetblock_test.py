@@ -19,15 +19,15 @@ class VNetBlockTest(tf.test.TestCase):
         x = self.get_3d_data()
         vnet_block_op = VNetBlock('DOWNSAMPLE', 2, 16, 8)
         out_1, out_2 = vnet_block_op(x, x)
-        print vnet_block_op
+        print(vnet_block_op)
 
         vnet_block_op = VNetBlock('UPSAMPLE', 2, 16, 8)
         out_3, out_4 = vnet_block_op(x, x)
-        print vnet_block_op
+        print(vnet_block_op)
 
         vnet_block_op = VNetBlock('SAME', 2, 16, 8)
         out_5, out_6 = vnet_block_op(x, x)
-        print vnet_block_op
+        print(vnet_block_op)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -48,15 +48,15 @@ class VNetBlockTest(tf.test.TestCase):
         x = self.get_2d_data()
         vnet_block_op = VNetBlock('DOWNSAMPLE', 2, 16, 8)
         out_1, out_2 = vnet_block_op(x, x)
-        print vnet_block_op
+        print(vnet_block_op)
 
         vnet_block_op = VNetBlock('UPSAMPLE', 2, 16, 8)
         out_3, out_4 = vnet_block_op(x, x)
-        print vnet_block_op
+        print(vnet_block_op)
 
         vnet_block_op = VNetBlock('SAME', 2, 16, 8)
         out_5, out_6 = vnet_block_op(x, x)
-        print vnet_block_op
+        print(vnet_block_op)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -78,17 +78,17 @@ class VNetBlockTest(tf.test.TestCase):
         vnet_block_op = VNetBlock('DOWNSAMPLE', 2, 16, 8,
                                   w_regularizer=regularizers.l2_regularizer(0.2))
         out_1, out_2 = vnet_block_op(x, x)
-        print vnet_block_op
+        print(vnet_block_op)
 
         vnet_block_op = VNetBlock('UPSAMPLE', 2, 16, 8,
                                   w_regularizer=regularizers.l2_regularizer(0.2))
         out_3, out_4 = vnet_block_op(x, x)
-        print vnet_block_op
+        print(vnet_block_op)
 
         vnet_block_op = VNetBlock('SAME', 2, 16, 8,
                                   w_regularizer=regularizers.l2_regularizer(0.2))
         out_5, out_6 = vnet_block_op(x, x)
-        print vnet_block_op
+        print(vnet_block_op)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -110,17 +110,17 @@ class VNetBlockTest(tf.test.TestCase):
         vnet_block_op = VNetBlock('DOWNSAMPLE', 2, 16, 8,
                                   w_regularizer=regularizers.l2_regularizer(0.2))
         out_1, out_2 = vnet_block_op(x, x)
-        print vnet_block_op
+        print(vnet_block_op)
 
         vnet_block_op = VNetBlock('UPSAMPLE', 2, 16, 8,
                                   w_regularizer=regularizers.l2_regularizer(0.2))
         out_3, out_4 = vnet_block_op(x, x)
-        print vnet_block_op
+        print(vnet_block_op)
 
         vnet_block_op = VNetBlock('SAME', 2, 16, 8,
                                   w_regularizer=regularizers.l2_regularizer(0.2))
         out_5, out_6 = vnet_block_op(x, x)
-        print vnet_block_op
+        print(vnet_block_op)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())

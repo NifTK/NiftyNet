@@ -18,7 +18,7 @@ class DownSampleTest(tf.test.TestCase):
         x = self.get_3d_input()
         down_sample_layer = DownSampleLayer('MAX', 3, 3)
         out_down_sample_max = down_sample_layer(x)
-        print down_sample_layer
+        print(down_sample_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_down_sample_max)
@@ -28,7 +28,7 @@ class DownSampleTest(tf.test.TestCase):
         x = self.get_3d_input()
         down_sample_layer = DownSampleLayer('AVG', 2, 2)
         out_down_sample_avg = down_sample_layer(x)
-        print down_sample_layer
+        print(down_sample_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_down_sample_avg)
@@ -38,7 +38,7 @@ class DownSampleTest(tf.test.TestCase):
         x = self.get_3d_input()
         down_sample_layer = DownSampleLayer('CONSTANT', 3, 3)
         out_down_sample_const = down_sample_layer(x)
-        print down_sample_layer
+        print(down_sample_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_down_sample_const)
@@ -48,7 +48,7 @@ class DownSampleTest(tf.test.TestCase):
         x = self.get_2d_input()
         down_sample_layer = DownSampleLayer('MAX', 3, 3)
         out_down_sample_max = down_sample_layer(x)
-        print down_sample_layer
+        print(down_sample_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_down_sample_max)
@@ -58,7 +58,7 @@ class DownSampleTest(tf.test.TestCase):
         x = self.get_2d_input()
         down_sample_layer = DownSampleLayer('AVG', 2, 2)
         out_down_sample_avg = down_sample_layer(x)
-        print down_sample_layer
+        print(down_sample_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_down_sample_avg)
@@ -68,7 +68,7 @@ class DownSampleTest(tf.test.TestCase):
         x = self.get_2d_input()
         down_sample_layer = DownSampleLayer('CONSTANT', 3, 3)
         out_down_sample_const = down_sample_layer(x)
-        print down_sample_layer
+        print(down_sample_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_down_sample_const)

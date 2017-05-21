@@ -10,8 +10,8 @@ class SubjectTest(tf.test.TestCase):
         a_subject = Subject(name=test_name,
                             file_path_dict=file_path_dict,
                             list_nn=['LABEL'])
-        print a_subject._read_original_affine()
-        print a_subject._read_original_pixdim()
+        print(a_subject._read_original_affine())
+        print(a_subject._read_original_pixdim())
 
         out = a_subject.read_all_modalities(do_reorient=False,
                                             do_resample=False)
@@ -21,7 +21,7 @@ class SubjectTest(tf.test.TestCase):
 
         out_2 = a_subject.read_all_modalities(do_reorient=True,
                                               do_resample=True)
-        print a_subject
+        print(a_subject)
 
 if __name__ == "__main__":
     tf.test.main()

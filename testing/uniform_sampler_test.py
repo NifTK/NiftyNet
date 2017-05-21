@@ -25,9 +25,9 @@ class SubjectTest(tf.test.TestCase):
             dict_constraint=dict_constraint,
             dict_normalisation=dict_normalisation,
             dict_masking=dict_masking)
-        print 'found {} subjects'.format(len(volume_loader.subject_list))
+        print('found {} subjects'.format(len(volume_loader.subject_list)))
         for x in volume_loader.subject_list:
-            print x.file_path_dict.values()
+            print(x.file_path_dict.values())
         #out = volume_loader.next_subject()
 
         # define output element patch
@@ -49,12 +49,12 @@ class SubjectTest(tf.test.TestCase):
             self.assertAllClose((32, 32, 32, 2), d.image.shape)
             self.assertAllClose((7,), d.info.shape)
             self.assertAllClose((32, 32, 32, 2), d.label.shape)
-            print d.info
+            print(d.info)
 
             keys = data_dict.keys()[0]
             output = data_dict.values()[0]
             for (idx, key) in enumerate(keys):
-                print key, output[idx].shape
+                print(key, output[idx].shape)
 
 if __name__ == "__main__":
     tf.test.main()

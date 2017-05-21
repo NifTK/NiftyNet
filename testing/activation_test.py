@@ -20,7 +20,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_3d_input()
         relu_layer = ActiLayer(func='relu')
         out_relu = relu_layer(x)
-        print relu_layer
+        print(relu_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_relu)
@@ -30,7 +30,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_3d_input()
         relu6_layer = ActiLayer(func='relu6')
         out_relu6 = relu6_layer(x)
-        print relu6_layer
+        print(relu6_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_relu6)
@@ -40,7 +40,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_3d_input()
         elu_layer = ActiLayer(func='elu')
         out_elu = elu_layer(x)
-        print elu_layer
+        print(elu_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_elu)
@@ -50,7 +50,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_3d_input()
         softplus_layer = ActiLayer(func='softplus')
         out_softplus = softplus_layer(x)
-        print softplus_layer
+        print(softplus_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_softplus)
@@ -60,7 +60,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_3d_input()
         softsign_layer = ActiLayer(func='softsign')
         out_softsign = softsign_layer(x)
-        print softsign_layer
+        print(softsign_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_softsign)
@@ -70,7 +70,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_3d_input()
         sigmoid_layer = ActiLayer(func='sigmoid')
         out_sigmoid = sigmoid_layer(x)
-        print sigmoid_layer
+        print(sigmoid_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_sigmoid)
@@ -80,7 +80,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_3d_input()
         tanh_layer = ActiLayer(func='tanh')
         out_tanh = tanh_layer(x)
-        print tanh_layer
+        print(tanh_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_tanh)
@@ -90,7 +90,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_3d_input()
         prelu_layer = ActiLayer(func='prelu')
         out_prelu = prelu_layer(x)
-        print prelu_layer
+        print(prelu_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_prelu)
@@ -102,7 +102,7 @@ class ActivationTest(tf.test.TestCase):
                                 regularizer=regularizers.l2_regularizer(0.5),
                                 name='regularized')
         out_prelu = prelu_layer(x)
-        print prelu_layer
+        print(prelu_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_prelu)
@@ -112,7 +112,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_3d_input()
         dropout_layer = ActiLayer(func='dropout')
         out_dropout = dropout_layer(x, keep_prob=0.8)
-        print dropout_layer
+        print(dropout_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_dropout)
@@ -126,7 +126,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_2d_input()
         relu_layer = ActiLayer(func='relu')
         out_relu = relu_layer(x)
-        print relu_layer
+        print(relu_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_relu)
@@ -136,7 +136,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_2d_input()
         relu6_layer = ActiLayer(func='relu6')
         out_relu6 = relu6_layer(x)
-        print relu6_layer
+        print(relu6_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_relu6)
@@ -146,7 +146,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_2d_input()
         elu_layer = ActiLayer(func='elu')
         out_elu = elu_layer(x)
-        print elu_layer
+        print(elu_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_elu)
@@ -156,7 +156,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_2d_input()
         softplus_layer = ActiLayer(func='softplus')
         out_softplus = softplus_layer(x)
-        print softplus_layer
+        print(softplus_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_softplus)
@@ -166,7 +166,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_2d_input()
         softsign_layer = ActiLayer(func='softsign')
         out_softsign = softsign_layer(x)
-        print softsign_layer
+        print(softsign_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_softsign)
@@ -176,7 +176,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_2d_input()
         sigmoid_layer = ActiLayer(func='sigmoid')
         out_sigmoid = sigmoid_layer(x)
-        print sigmoid_layer
+        print(sigmoid_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_sigmoid)
@@ -186,7 +186,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_2d_input()
         tanh_layer = ActiLayer(func='tanh')
         out_tanh = tanh_layer(x)
-        print tanh_layer
+        print(tanh_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_tanh)
@@ -196,7 +196,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_2d_input()
         prelu_layer = ActiLayer(func='prelu')
         out_prelu = prelu_layer(x)
-        print prelu_layer
+        print(prelu_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_prelu)
@@ -208,7 +208,7 @@ class ActivationTest(tf.test.TestCase):
                                 regularizer=regularizers.l2_regularizer(0.5),
                                 name='regularized')
         out_prelu = prelu_layer(x)
-        print prelu_layer
+        print(prelu_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_prelu)
@@ -218,7 +218,7 @@ class ActivationTest(tf.test.TestCase):
         x = self.get_2d_input()
         dropout_layer = ActiLayer(func='dropout')
         out_dropout = dropout_layer(x, keep_prob=0.8)
-        print dropout_layer
+        print(dropout_layer)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_dropout)

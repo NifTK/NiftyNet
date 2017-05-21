@@ -19,7 +19,7 @@ class SubjectTest(tf.test.TestCase):
             dict_constraint=dict_constraint,
             dict_normalisation=dict_normalisation,
             dict_masking=dict_masking)
-        print a_processor.subject_list
+        print(a_processor.subject_list)
         out = _processor.next_subject()
 
 if __name__ == "__main__":

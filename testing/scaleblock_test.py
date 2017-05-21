@@ -27,11 +27,11 @@ class ScaleBlockTest(tf.test.TestCase):
         x = self.get_2d_input()
         scalenet_layer = ScaleBlock('AVERAGE', n_layers=1)
         out_1 = scalenet_layer(x, is_training=True)
-        print scalenet_layer
+        print(scalenet_layer)
 
         scalenet_layer = ScaleBlock('MAX', n_layers=2)
         out_2 = scalenet_layer(x, is_training=True)
-        print scalenet_layer
+        print(scalenet_layer)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -47,11 +47,11 @@ class ScaleBlockTest(tf.test.TestCase):
             n_layers=1,
             w_regularizer=regularizers.l2_regularizer(0.3))
         out_1 = scalenet_layer(x, is_training=True)
-        print scalenet_layer
+        print(scalenet_layer)
 
         scalenet_layer = ScaleBlock('MAX', n_layers=2)
         out_2 = scalenet_layer(x, is_training=True)
-        print scalenet_layer
+        print(scalenet_layer)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -64,11 +64,11 @@ class ScaleBlockTest(tf.test.TestCase):
         x = self.get_3d_input()
         scalenet_layer = ScaleBlock('AVERAGE', n_layers=1)
         out_1 = scalenet_layer(x, is_training=True)
-        print scalenet_layer
+        print(scalenet_layer)
 
         scalenet_layer = ScaleBlock('MAX', n_layers=2)
         out_2 = scalenet_layer(x, is_training=True)
-        print scalenet_layer
+        print(scalenet_layer)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -84,11 +84,11 @@ class ScaleBlockTest(tf.test.TestCase):
             n_layers=1,
             w_regularizer=regularizers.l2_regularizer(0.3))
         out_1 = scalenet_layer(x, is_training=True)
-        print scalenet_layer
+        print(scalenet_layer)
 
         scalenet_layer = ScaleBlock('MAX', n_layers=2)
         out_2 = scalenet_layer(x, is_training=True)
-        print scalenet_layer
+        print(scalenet_layer)
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())

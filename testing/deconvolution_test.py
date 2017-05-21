@@ -20,7 +20,7 @@ class DeconvTest(tf.test.TestCase):
         x_3d = self.get_3d_input()
         conv_3d = DeconvLayer(10, 3, 2)
         conv_3d_out = conv_3d(x_3d)
-        print conv_3d
+        print(conv_3d)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_3d = sess.run(conv_3d_out)
@@ -30,7 +30,7 @@ class DeconvTest(tf.test.TestCase):
         x_3d = self.get_3d_input()
         conv_3d = DeconvLayer(10, 3, 1, with_bias=True)
         conv_3d_out = conv_3d(x_3d)
-        print conv_3d
+        print(conv_3d)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_3d = sess.run(conv_3d_out)
@@ -43,7 +43,7 @@ class DeconvTest(tf.test.TestCase):
                                with_bias=True,
                                b_regularizer=regularizers.l2_regularizer(0.5))
         conv_reg_out = conv_reg(x_3d)
-        print conv_reg
+        print(conv_reg)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_3d = sess.run(conv_reg_out)
@@ -52,7 +52,7 @@ class DeconvTest(tf.test.TestCase):
         x_3d = self.get_3d_input()
         conv_3d = DeconvolutionalLayer(10, 3, 1)
         conv_3d_out = conv_3d(x_3d, is_training=True)
-        print conv_3d
+        print(conv_3d)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_3d = sess.run(conv_3d_out)
@@ -62,7 +62,7 @@ class DeconvTest(tf.test.TestCase):
         x_3d = self.get_3d_input()
         conv_3d = DeconvolutionalLayer(10, 3, 1, with_bias=True, with_bn=False)
         conv_3d_out = conv_3d(x_3d)
-        print conv_3d
+        print(conv_3d)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_3d = sess.run(conv_3d_out)
@@ -77,7 +77,7 @@ class DeconvTest(tf.test.TestCase):
             b_regularizer=regularizers.l2_regularizer(0.5),
             with_bn=False)
         conv_reg_out = conv_reg(x_3d)
-        print conv_reg
+        print(conv_reg)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_3d = sess.run(conv_reg_out)
@@ -91,7 +91,7 @@ class DeconvTest(tf.test.TestCase):
             with_bias=False,
             with_bn=True)
         conv_reg_out = conv_reg(x_3d, is_training=True)
-        print conv_reg
+        print(conv_reg)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_3d = sess.run(conv_reg_out)
@@ -106,7 +106,7 @@ class DeconvTest(tf.test.TestCase):
             with_bn=True,
             acti_func='prelu')
         conv_reg_out = conv_reg(x_3d, is_training=True)
-        print conv_reg
+        print(conv_reg)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_3d = sess.run(conv_reg_out)
@@ -118,7 +118,7 @@ class DeconvTest(tf.test.TestCase):
             10, 3, 1,
             acti_func='relu')
         conv_reg_out = conv_reg(x_3d, is_training=True)
-        print conv_reg
+        print(conv_reg)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_3d = sess.run(conv_reg_out)
@@ -133,7 +133,7 @@ class DeconvTest(tf.test.TestCase):
             with_bn=True,
             acti_func='prelu')
         conv_reg_out = conv_reg(x_3d, is_training=True, keep_prob=0.4)
-        print conv_reg
+        print(conv_reg)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_3d = sess.run(conv_reg_out)
@@ -149,7 +149,7 @@ class DeconvTest(tf.test.TestCase):
             with_bn=True,
             acti_func='prelu')
         conv_reg_out = conv_reg(x_3d, is_training=True, keep_prob=0.4)
-        print conv_reg
+        print(conv_reg)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_3d = sess.run(conv_reg_out)
@@ -161,7 +161,7 @@ class DeconvTest(tf.test.TestCase):
         x_2d = self.get_2d_input()
         conv_2d = DeconvLayer(10, 3, 1)
         conv_2d_out = conv_2d(x_2d)
-        print conv_2d
+        print(conv_2d)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_2d = sess.run(conv_2d_out)
@@ -171,7 +171,7 @@ class DeconvTest(tf.test.TestCase):
         x_2d = self.get_2d_input()
         conv_2d = DeconvLayer(10, 3, 1, with_bias=True)
         conv_2d_out = conv_2d(x_2d)
-        print conv_2d
+        print(conv_2d)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_2d = sess.run(conv_2d_out)
@@ -184,7 +184,7 @@ class DeconvTest(tf.test.TestCase):
                                with_bias=True,
                                b_regularizer=regularizers.l2_regularizer(0.5))
         conv_reg_out = conv_reg(x_2d)
-        print conv_reg
+        print(conv_reg)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_2d = sess.run(conv_reg_out)
@@ -194,7 +194,7 @@ class DeconvTest(tf.test.TestCase):
         x_2d = self.get_2d_input()
         conv_2d = DeconvolutionalLayer(10, 3, 1)
         conv_2d_out = conv_2d(x_2d, is_training=True)
-        print conv_2d
+        print(conv_2d)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_2d = sess.run(conv_2d_out)
@@ -204,7 +204,7 @@ class DeconvTest(tf.test.TestCase):
         x_2d = self.get_2d_input()
         conv_2d = DeconvolutionalLayer(10, 3, 1, with_bias=True, with_bn=False)
         conv_2d_out = conv_2d(x_2d)
-        print conv_2d
+        print(conv_2d)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_2d = sess.run(conv_2d_out)
@@ -219,7 +219,7 @@ class DeconvTest(tf.test.TestCase):
             b_regularizer=regularizers.l2_regularizer(0.5),
             with_bn=False)
         conv_reg_out = conv_reg(x_2d)
-        print conv_reg
+        print(conv_reg)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_2d = sess.run(conv_reg_out)
@@ -233,7 +233,7 @@ class DeconvTest(tf.test.TestCase):
             with_bias=False,
             with_bn=True)
         conv_reg_out = conv_reg(x_2d, is_training=True)
-        print conv_reg
+        print(conv_reg)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_2d = sess.run(conv_reg_out)
@@ -248,7 +248,7 @@ class DeconvTest(tf.test.TestCase):
             with_bn=True,
             acti_func='prelu')
         conv_reg_out = conv_reg(x_2d, is_training=True)
-        print conv_reg
+        print(conv_reg)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_2d = sess.run(conv_reg_out)
@@ -260,7 +260,7 @@ class DeconvTest(tf.test.TestCase):
             10, 3, 2,
             acti_func='relu')
         conv_reg_out = conv_reg(x_2d, is_training=True)
-        print conv_reg
+        print(conv_reg)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_2d = sess.run(conv_reg_out)
@@ -275,7 +275,7 @@ class DeconvTest(tf.test.TestCase):
             with_bn=True,
             acti_func='prelu')
         conv_reg_out = conv_reg(x_2d, is_training=True, keep_prob=0.4)
-        print conv_reg
+        print(conv_reg)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_2d = sess.run(conv_reg_out)
@@ -291,7 +291,7 @@ class DeconvTest(tf.test.TestCase):
             with_bn=True,
             acti_func='prelu')
         conv_reg_out = conv_reg(x_2d, is_training=True, keep_prob=0.4)
-        print conv_reg
+        print(conv_reg)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_2d = sess.run(conv_reg_out)

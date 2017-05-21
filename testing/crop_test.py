@@ -11,7 +11,7 @@ class CropTest(tf.test.TestCase):
 
         crop_layer = CropLayer(border=test_border)
         out_crop = crop_layer(x)
-        print crop_layer.to_string()
+        print(crop_layer)
 
         input_shape = (2, 7, 7, 7, 8)
         test_border = 3
@@ -19,7 +19,7 @@ class CropTest(tf.test.TestCase):
 
         crop_layer = CropLayer(border=test_border)
         out_crop_1 = crop_layer(x)
-        print crop_layer.to_string()
+        print(crop_layer)
 
         with self.test_session() as sess:
             out = sess.run(out_crop)
@@ -34,7 +34,7 @@ class CropTest(tf.test.TestCase):
 
         crop_layer = CropLayer(border=test_border)
         out_crop = crop_layer(x)
-        print crop_layer.to_string()
+        print(crop_layer)
 
         input_shape = (2, 7, 7, 8)
         test_border = 3
@@ -42,7 +42,7 @@ class CropTest(tf.test.TestCase):
 
         crop_layer = CropLayer(border=test_border)
         out_crop_1 = crop_layer(x)
-        print crop_layer.to_string()
+        print(crop_layer)
 
         with self.test_session() as sess:
             out = sess.run(out_crop)
