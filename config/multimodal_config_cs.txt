@@ -15,10 +15,9 @@ num_classes = 5
 
 # affected by network's receptive field
 volume_padding_size = 21
-#volume_hist_path = /Users/csudre/Documents/Barcelona/BarcelonaT1Space/T2_T1Space/ /Users/csudre/Documents/Barcelona/BarcelonaT1Space/FLAIR_T1Space/ /Users/csudre/Documents/Barcelona/BarcelonaT1Space/Parcellations/
-volume_hist_path = /Users/csudre/Documents/HGG_Training/
-#histogram_ref_file = /Users/csudre/DevelopmentNiftyNet/NiftyNet/utilities/hist_model.txt
-histogram_ref_file = /Users/csudre/DevelopmentNiftyNet/NiftyNet/utilities/standardisation_models_init.txt
+
+volume_hist_path = ./testing_data/HGG_Training/
+histogram_ref_file = ./testing_data/standardisation_models_init.txt
 standardisation_training = True
 
 # ** inputs regarding the normalisation and preceding masking
@@ -26,15 +25,13 @@ standardisation_training = True
 flag_normalisation = False
 flag_whitening = True
 flag_spatial_scaling = True
-flag_saving_norm = False
-#saving_norm_dir = /Users/csudre/Documents/HGG_Training/Norming_2/
-saving_norm_dir = /Users/csudre/Temp/TestNiftyNetLoading/Norm
+flag_saving_norm = True
+saving_norm_dir = ./testing_data/Norm
 norm_type = percentile
 flag_saving_mask = False
 mask_multimod_type = and
 mask_multimod = T1 FLAIR
 mask_type = otsu_plus
-# saving_mask_dir = /Users/csudre/Documents/HGG_Training/Masking_2/
 flag_rotation = True
 
 # ** input regarding orientation and isotropy
@@ -47,7 +44,6 @@ flag_isotropic = True
 # ** training only ** system parameters
 num_gpus = 1
 sample_per_volume = 100
-#train_data_dir = [./example_volumes/multimodal_BRATS]
 
 # **training only** gradient descent and loss parameters
 lr = 0.01
