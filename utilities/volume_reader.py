@@ -45,7 +45,7 @@ class VolumePreprocessor(object):
             dict_masking.mask_type, '')
 
         self.subject_list = self._search_for_eligible_subjects()
-        self.current_id = 0
+        self.current_id = -1
 
     def create_list_subject_from_csv(self):
         list_subjects = []
@@ -73,13 +73,16 @@ class VolumePreprocessor(object):
 
     def create_array_subjects_csv_list(self):
         subjects_input, files_input = misc_csv.create_array_files_from_csv(
-            self.csv_list.input, self.number_list.input,
+            self.csv_list.input,
+            self.number_list.input,
             self.flags.flag_allow_missing)
         subjects_output, files_output = misc_csv.create_array_files_from_csv(
-            self.csv_list.output, self.number_list.output,
+            self.csv_list.output,
+            self.number_list.output,
             self.flags.flag_allow_missing)
         subjects_weight, files_weight = misc_csv.create_array_files_from_csv(
-            self.csv_list.weight, self.number_list.weight,
+            self.csv_list.weight,
+            self.number_list.weight,
             self.flags.flag_allow_missing)
         subjects_input_txt, files_input_txt = \
             misc_csv.create_array_files_from_csv(self.csv_list.input_txt,
@@ -89,19 +92,16 @@ class VolumePreprocessor(object):
             misc_csv.create_array_files_from_csv(self.csv_list.output_txt,
                                                  self.number_list.output_txt,
                                                  self.flags.flag_allow_missing)
-        subjects_input = [[subject] for subject in subjects_input]
-        subjects_output = [[subject] for subject in subjects_output]
-        subjects_weight = [[subject] for subject in subjects_weight] if \
-            subjects_weight is not None else None
-        subjects_input_txt = [[subject] for subject in subjects_input_txt] if \
-            subjects_input_txt is not None else None
-        subjects_output_txt = [[subject] for subject in subjects_output_txt] if \
-            subjects_output_txt is not None else None
-        name_list = cc.InputList(subjects_input, subjects_output,
-                                 subjects_weight, subjects_input_txt,
+        name_list = cc.InputList(subjects_input,
+                                 subjects_output,
+                                 subjects_weight,
+                                 subjects_input_txt,
                                  subjects_output_txt)
-        file_list = cc.InputList(files_input, files_output, files_weight,
-                                 files_input_txt, files_output_txt)
+        file_list = cc.InputList(files_input,
+                                 files_output,
+                                 files_weight,
+                                 files_input_txt,
+                                 files_output_txt)
         list_combined = misc_csv.combine_list_constraint(name_list, file_list)
         return list_combined
 
@@ -136,19 +136,17 @@ class VolumePreprocessor(object):
         else:
             subjects = self.create_list_subject_from_csv()
 
-        if self.flags.flag_standardise and len(hs.check_modalities_to_train(
-                self.dict_normalisation.hist_ref_file,
-                modalities.keys())) > 0:
-            mod_to_train = hs.check_modalities_to_train(
-                self.dict_normalisation.hist_ref_file,
-                modalities.keys())
+        mod_to_train = hs.check_modalities_to_train(
+            self.dict_normalisation.hist_ref_file,
+            modalities.keys())
+
+        if self.flags.flag_standardise and len(mod_to_train) > 0:
             modalities_to_train = {}
             for mod in mod_to_train:
                 modalities_to_train[mod] = modalities[mod]
             warnings.warn("The histogram has to be retrained...")
             array_files = misc_csv.create_array_files(csv_file=self.csv_file,
                                                       csv_list=self.csv_list)
-
             new_mapping = self.standardisor \
                 .training_normalisation_from_array_files(
                 array_files, modalities_to_train)
@@ -157,7 +155,6 @@ class VolumePreprocessor(object):
         #if self.flags.flag_standardise and self.flags.flag_save_norm:
         #    for s in subjects:
         #        self.normalise_subject_data_and_save(s)
-
         return subjects
 
     def whiten_subject_data_array(self, data_array, modalities_indices=None):

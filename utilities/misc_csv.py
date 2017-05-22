@@ -74,67 +74,48 @@ HEADER_FIRST = ['Mod', 'Type', 'Time']
 # From a unique csv file with for each subject the list of files to use,
 # build the 2d array of files to load for each subject and create the overall
 #  list of such arrays. num_modality indicates the
-# number of
-# modalities before going to further time point
-def create_array_files_from_csv(csv_file, numb_mod,
+# number of modalities before going to further time point
+def create_array_files_from_csv(csv_file,
+                                numb_mod=None,
                                 flag_allow_missing=True):
-    list_subjects = []
-    list_files_tot = []
     if csv_file is None:
         return None, None
+    list_subjects = []
+    list_filenames = []
     with open(csv_file, "rb") as infile:
         reader = csv.reader(infile)
         for row in reader:
-            list_files = []
-
-            for f in row[1:]:
-                list_files.append(f)
-            if '' not in list_files or flag_allow_missing:
-                list_subjects.append(row[0])
-                if numb_mod is None:
-                    numb_mod = len(list_files)
-                new_list = [list_files[i:i + numb_mod] for i in
-                            range(0, len(list_files), numb_mod)]
-                list_files_tot.append(new_list)
-    return list_subjects, list_files_tot
+            if ('' in row) and (not flag_allow_missing):
+                continue
+            subject_name, list_files = [row[0]], row[1:]
+            list_subjects.append(subject_name)
+            numb_mod = len(list_files) if numb_mod is None else numb_mod
+            grouped_time_points = [list_files[i:(i+numb_mod)]
+                                   for i in range(0, len(list_files), numb_mod)]
+            list_filenames.append(grouped_time_points)
+    return list_subjects, list_filenames
 
 
 # Create the list of files arrays for each subject according to csv format
 # input (either a unique csv file with already build 5d data or multiple csv
 # files according to data field (input, output, weight input_txt or output_txt)
 def create_array_files(csv_file=None, csv_list=None, number=None):
-    if csv_file is None:
-        if csv_list is None:
-            warnings.warn("No csv file available, no array list produced")
+    if csv_list is not None:
+        if (csv_list.input is None) or (not os.path.exists(csv_list.input)):
+            warnings.warn("No input csv, no array list produced")
             return None
-        else:
-            if csv_list.input is None or not os.path.exists(csv_list.input):
-                warnings.warn("No input csv, no array list produced")
-                return None
-            list_subjects, list_files_tot = create_array_files_from_csv(
-                csv_list.input, number)
-            return list_files_tot
-    list_files_tot = []
-    with open(csv_file, "rb") as infile:
-        reader = csv.reader(infile)
-        for row in reader:
-            list_files_tot.append([[row[1]]])
-    return list_files_tot
-
-
-# Among the total possibility of names, remove the duplicates and do not
-# consider them as potential subject names
-def find_redundant_names(name_list):
-    flattened_list = [item for sublist in name_list for item in sublist]
-    redundancies = [item for item in flattened_list if flattened_list.count(
-        item) > 1]
-    return redundancies
-
-
-# From the list of redundancies, remove them from the list of possible names
-def remove_redundancies(name_list, redundancies):
-    name_new = [name for name in name_list if name not in redundancies]
-    return name_new
+        _, list_filenames = create_array_files_from_csv(csv_list.input, number)
+        return list_filenames
+    if csv_file is not None:
+        with open(csv_file, "rb") as infile:
+            reader = csv.reader(infile)
+            list_filenames = []
+            for row in reader:
+                # TODO: check, maybe row[1:]
+                list_filenames.append([[row[1]]])
+        return list_filenames
+    warnings.warn("No csv file available, no array list produced")
+    return None
 
 
 # try to find a direct match between two arrays of list of possible names.
@@ -174,11 +155,11 @@ def find_max_overlap_in_list(name, list_names):
     match_seq = ''
     match_orig = ''
     for test in list_names:
-        match = SequenceMatcher(None, name, test).find_longest_match(0, len(
-            name), 0, len(test))
+        match = SequenceMatcher(None, name, test).find_longest_match(
+                0, len(name), 0, len(test))
         if match.size > match_max:
             match_max = match.size
-            match_seq = test[match.b:match.b + match.size]
+            match_seq = test[match.b:(match.b + match.size)]
             match_orig = test
     return match_seq, list_names.index(match_orig)
 
@@ -192,10 +173,10 @@ def match_second_degree(name_list1, name_list2):
         return None, None, None, None
     init_match1, init_match2, ind_match1, ind_match2 = match_first_degree(
         name_list1, name_list2)
-    reduced_list1 = [names for names in name_list1 if init_match1[
-        name_list1.index(names)] == '']
-    reduced_list2 = [names for names in name_list1 if init_match1[
-        name_list1.index(names)] == '']
+    reduced_list1 = [names for names in name_list1
+        if init_match1[name_list1.index(names)] == '']
+    reduced_list2 = [names for names in name_list1
+        if init_match1[name_list1.index(names)] == '']
     redflat_1 = [item for sublist in reduced_list1 for item in sublist]
     indflat_1 = [i for i in range(0, len(init_match1)) for item in
                  name_list1[i] if init_match1[i] == '']
@@ -269,15 +250,24 @@ def combine_list_constraint(name_list, list_files):
     return list_compare
 
 
+def remove_duplicated_names(name_list):
+    flattened_list = [item for sublist in name_list for item in sublist]
+    list_duplicated = [item for item in flattened_list
+                       if flattened_list.count(item) > 1]
+    duplicates_removed = []
+    for names in name_list:
+        duplicates_removed.append([name for name in names
+                                   if name not in list_duplicated])
+    return duplicates_removed
+
+
 def create_csv_prepare5d(list_constraints, csv_file):
     name_tot = []
     list_tot = []
     for c in list_constraints:
         list_files, name_list = \
             cc.ConstraintSearch.create_list_from_constraint(c)
-        redundancies = find_redundant_names(name_list)
-        name_list = [remove_redundancies(name_list_subj, redundancies) for
-                     name_list_subj in name_list]
+        name_list = remove_duplicated_names(name_list)
         list_tot.append(list_files)
         name_tot.append(name_list)
     list_combined = combine_list_constraint_for5d(name_tot, list_tot)
@@ -303,37 +293,27 @@ def create_csv(constraint_list, csv_file):
         list_input, name_input = \
             cc.ConstraintSearch.create_list_from_constraint(
                 constraint_list.input)
-        redundancies = find_redundant_names(name_input)
-        name_input = [remove_redundancies(name_list_subj, redundancies) for
-                      name_list_subj in name_input]
+        name_input = remove_duplicated_names(name_input)
     if constraint_list.output is not None:
         list_output, name_output = \
             cc.ConstraintSearch.create_list_from_constraint(
                 constraint_list.output)
-        redundancies = find_redundant_names(name_output)
-        name_output = [remove_redundancies(name_list_subj, redundancies) for
-                       name_list_subj in name_output]
+        name_output = remove_duplicated_names(name_output)
     if constraint_list.weight is not None:
         list_weight, name_weight = \
             cc.ConstraintSearch.create_list_from_constraint(
                 constraint_list.weight)
-        redundancies = find_redundant_names(name_weight)
-        name_weight = [remove_redundancies(name_list_subj, redundancies) for
-                       name_list_subj in name_weight]
+        name_weight = remove_duplicated_names(name_weight)
     if constraint_list.input_txt is not None:
         list_input_txt, name_input_txt = \
             cc.ConstraintSearch.create_list_from_constraint(
                 constraint_list.input_txt)
-        redundancies = find_redundant_names(name_input_txt)
-        name_input_txt = [remove_redundancies(name_list_subj, redundancies) for
-                          name_list_subj in name_input_txt]
+        name_input_txt = remove_duplicated_names(name_input_txt)
     if constraint_list.output_txt is not None:
         list_output_txt, name_output_txt = \
             cc.ConstraintSearch.create_list_from_constraint(
                 constraint_list.output_txt)
-        redundancies = find_redundant_names(name_output_txt)
-        name_output_txt = [remove_redundancies(name_list_subj, redundancies) for
-                           name_list_subj in name_output_txt]
+        name_output_txt = remove_duplicated_names(name_output_txt)
 
     list_files_init = cc.InputList(list_input, list_output, list_weight,
                                    list_input_txt, list_output_txt)

@@ -79,24 +79,18 @@ class Subject(object):
         image_pixdim = self._read_original_pixdim()
         if not data.input is None:
             data.input = util.do_resampling(
-                    data.input,
-                    image_pixdim,
-                    [1, 1, 1],
-                    interp_order=self.interp_order.input)
+                data.input, image_pixdim, [1, 1, 1],
+                interp_order=self.interp_order.input)
 
         if not data.output is None:
             data.output = util.do_resampling(
-                    data.output,
-                    image_pixdim,
-                    [1, 1, 1],
-                    interp_order=self.interp_order.output)
+                data.output, image_pixdim, [1, 1, 1],
+                interp_order=self.interp_order.output)
 
         if not data.weight is None:
             data.weight = util.do_resampling(
-                    data.weight,
-                    image_pixdim,
-                    [1, 1, 1],
-                    interp_order=self.interp_order.weight)
+                data.weight, image_pixdim, [1, 1, 1],
+                interp_order=self.interp_order.weight)
         self.is_isotropic = True
         return data
 
