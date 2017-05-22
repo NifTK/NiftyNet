@@ -9,8 +9,8 @@ class SubjectTest(tf.test.TestCase):
         test_name = '1023'
         t1_path = 'testing_data/1023_o_T1_time_01.nii.gz'
         label_path = 'testing_data/T1_1023_NeuroMorph_Parcellation.nii.gz'
-        input = cc.InputFiles(t1_path, [[t1_path]])
-        output = cc.InputFiles(label_path, [[label_path]])
+        input = cc.CSVCell([[t1_path]])
+        output = cc.CSVCell([[label_path]])
 
         data_list = cc.InputList(input, output, None, None, None)
         interp_orders = cc.InputList([3], [0], None, None, None)

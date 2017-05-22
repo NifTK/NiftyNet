@@ -30,7 +30,7 @@ class Subject(object):
         Given the list of files to load, find the original orientation
         and update the corresponding field if not done yet
         """
-        filename_first = self.file_path_list.input.filename_ref
+        filename_first = self.file_path_list.input.array_files[0][0]
         img_original = nib.load(filename_first)
         util.rectify_header_sform_qform(img_original)
         # print img_original.affine
@@ -42,14 +42,14 @@ class Subject(object):
         Given the list of files to load, find the original spatial resolution
         and update the corresponding field if not done yet
         """
-        filename_first = self.file_path_list.input.filename_ref
+        filename_first = self.file_path_list.input.array_files[0][0]
         img_original = nib.load(filename_first)
         # print img_original.header.get_zooms()
         return img_original.header.get_zooms()
 
-    def _set_data_path(self, new_name):
-        # TODO: check file exists
-        self.file_path_list.input.filename_ref = new_name
+    #def _set_data_path(self, new_name):
+    #    # TODO: check file exists
+    #    self.file_path_list.input.filename_ref = new_name
 
     def _reorient_to_stand(self, data):
         """

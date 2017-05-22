@@ -32,7 +32,6 @@ class VolumePreprocessor(object):
                  loss=['dice']):
 
         self.dict_normalisation = dict_normalisation
-        self.dict_masking = dict_masking
         self.csv_list = csv_list
         self.csv_file = csv_file
         self.number_list = number_list
@@ -41,9 +40,9 @@ class VolumePreprocessor(object):
 
         self.standardisor = HistNormaliser_bis(
             self.dict_normalisation.hist_ref_file,
-            self.dict_normalisation.path_to_train,
+            self.dict_normalisation.path_to_train, dict_masking,
             self.dict_normalisation.norm_type, self.dict_normalisation.cutoff,
-            self.dict_masking.mask_type, '')
+            dict_masking.mask_type, '')
 
         self.subject_list = self._search_for_eligible_subjects()
         self.current_id = 0
@@ -55,9 +54,9 @@ class VolumePreprocessor(object):
         with open(self.csv_file, "rb") as infile:
             reader = csv.reader(infile)
             for row in reader:
-                input = cc.InputFiles(row[1], [[row[1]]])
-                output = cc.InputFiles(row[2], [[row[2]]])
-                weight = cc.InputFiles(row[3], [[row[3]]])
+                input = cc.CSVCell([[row[1]]])
+                output = cc.CSVCell([[row[2]]])
+                weight = cc.CSVCell([[row[3]]])
                 data_list = cc.InputList(input, output, weight, row[4], row[5])
                 new_subject = Subject(row[0], data_list,
                                       interp_order=interp_order_fields)
@@ -112,11 +111,11 @@ class VolumePreprocessor(object):
         list_combined = self.create_array_subjects_csv_list()
         subjects = []
         for s in list_combined:
-            input_files = cc.InputFiles(s[1][0][0], s[1])
-            output_files = cc.InputFiles(s[2][0][0], s[2])
-            weight_files = cc.InputFiles(s[3][0][0], s[3]) if s[3] is not '' else None
-            input_txt_files = cc.InputFiles(s[4][0][0], s[4]) if s[4] is not '' else None
-            output_txt_files = cc.InputFiles(s[5][0][0], s[5]) if s[5] is not '' else None
+            input_files = cc.CSVCell(s[1])
+            output_files = cc.CSVCell(s[2])
+            weight_files = cc.CSVCell(s[3]) if s[3] is not '' else None
+            input_txt_files = cc.CSVCell(s[4]) if s[4] is not '' else None
+            output_txt_files = cc.CSVCell(s[5]) if s[5] is not '' else None
             file_path_list = cc.InputList(input_files,
                                           output_files,
                                           weight_files,
@@ -147,19 +146,17 @@ class VolumePreprocessor(object):
             for mod in mod_to_train:
                 modalities_to_train[mod] = modalities[mod]
             warnings.warn("The histogram has to be retrained...")
-            array_files = misc_csv.create_array_files(csv_file=
-                                                      self.csv_file,
-                                                      csv_list=
-                                                      self.csv_list)
+            array_files = misc_csv.create_array_files(csv_file=self.csv_file,
+                                                      csv_list=self.csv_list)
 
             new_mapping = self.standardisor \
                 .training_normalisation_from_array_files(
                 array_files, modalities_to_train)
             self.standardisor.complete_and_transform_model_file(
                 new_mapping, mod_to_train)
-        if self.flags.flag_standardise and self.flags.flag_save_norm:
-            for s in subjects:
-                self.normalise_subject_data_and_save(s)
+        #if self.flags.flag_standardise and self.flags.flag_save_norm:
+        #    for s in subjects:
+        #        self.normalise_subject_data_and_save(s)
 
         return subjects
 
@@ -168,7 +165,7 @@ class VolumePreprocessor(object):
             modalities_indices = range(0, data_array.shape[3])
         list_mod_whiten = [m for m in modalities_indices if
                            m < data_array.shape[3]]
-        mask_array = self.make_mask_array(data_array)
+        mask_array = self.standardisor.make_mask_array(data_dict.input)
         for m in list_mod_whiten:
             for t in range(0, data_array.shape[4]):
                 data_array[..., m, t] = \
@@ -177,7 +174,7 @@ class VolumePreprocessor(object):
         return data_array
 
     def whiten_subject_data(self, data_dict, modalities):
-        mask_array = self.make_mask_array(data_dict.input)
+        mask_array = self.standardisor.make_mask_array(data_dict.input)
         for m in modalities:
             for t in range(0, len(data_dict[m])):
                 data_dict.input[..., m, t] = self.standardisor. \
@@ -185,68 +182,34 @@ class VolumePreprocessor(object):
                     data_dict.input[..., m, t], mask_array[..., m, t])
         return data_dict
 
-    def normalise_subject_data_and_save(self, subject):
-        if self.flags.flag_standardise:
-            data_dict = subject.read_all_modalities(self.flags.flag_reorient,
-                                                    self.flags.flag_resample)
-            data_dict.input = np.nan_to_num(data_dict.input)
-            mask_array = self.make_mask_array(data_dict.input)
-            data_dict.input = self.standardisor.normalise_data_array(
-                data_dict.input, mask_array)
-            name_norm_save = io.create_new_filename(
-                subject.name + '.nii.gz',
-                new_path=self.dict_normalisation.path_to_save,
-                new_prefix='Norm')
-            data_nifti_format = np.swapaxes(data_dict.input, 4, 3)  # Put
-            # back the array with the nifti conventions.
-            io.save_img(data_nifti_format, subject.name, [], name_norm_save,
-                        filename_ref=subject.file_path_list.input.filename_ref,
-                        flag_orientation=self.flags.flag_reorient,
-                        flag_isotropic=self.flags.flag_resample)
-            subject._set_data_path(name_norm_save)
+    #def normalise_subject_data_and_save(self, subject):
+    #    if self.flags.flag_standardise:
+    #        data_dict = subject.read_all_modalities(self.flags.flag_reorient,
+    #                                                self.flags.flag_resample)
+    #        data_dict.input = np.nan_to_num(data_dict.input)
+    #        mask_array = self.make_mask_array(data_dict.input)
+    #        data_dict.input = self.standardisor.normalise_data_array(
+    #            data_dict.input, mask_array)
+    #        name_norm_save = io.create_new_filename(
+    #            subject.name + '.nii.gz',
+    #            new_path=self.dict_normalisation.path_to_save,
+    #            new_prefix='Norm')
+    #        # Put back the array with the nifti conventions.
+    #        data_nifti_format = np.swapaxes(data_dict.input, 4, 3)
+    #        io.save_img(data_nifti_format, subject.name, [], name_norm_save,
+    #                    filename_ref=subject.file_path_list.input.filename_ref,
+    #                    flag_orientation=self.flags.flag_reorient,
+    #                    flag_isotropic=self.flags.flag_resample)
+    #        # TODO: save norm
+    #        #subject._set_data_path(name_norm_save)
 
-    def make_mask_array(self, data_array):
-        data_array = io.expand_for_5d(data_array)
-        max_time = data_array.shape[4]
-        list_indices_mod = [m for m in range(0, data_array.shape[3]) if
-                            np.count_nonzero(data_array[..., m, :]) > 0]
-        mod_masking = list_indices_mod
-        mask_array = np.zeros_like(data_array)
-        for mod in mod_masking:
-            for t in range(0, max_time):
-                new_mask = hs.create_mask_img_3d(
-                    data_array[..., mod, t], self.dict_masking.mask_type)
-                new_mask = io.expand_for_5d(new_mask)
-                mask_array[..., mod:mod + 1, t:t + 1] = new_mask
-        if self.dict_masking.multimod_type == 'or':
-            for t in range(0, max_time):
-                new_mask = np.zeros([data_array.shape[0:3]])
-                for mod in mod_masking:
-                    if np.count_nonzero(data_array[..., mod, t]) > 0:
-                        new_mask = new_mask + mask_array[..., mod, t]
-                new_mask[new_mask > 0.5] = 1
-                mask_array[..., t] = io.expand_for_5d(np.tile(np.expand_dims(
-                    new_mask, axis=3), [1, mask_array.shape[3]]))
-            return mask_array
-        elif self.dict_masking.multimod_type == 'and':
-            for t in range(0, max_time):
-                new_mask = np.ones(data_array.shape[0:3])
-                for mod in mod_masking:
-                    if np.count_nonzero(data_array[..., mod, t]) > 0:
-                        new_mask = np.multiply(new_mask,
-                                               mask_array[..., mod, t])
-                mask_array[..., t:t + 1] = io.expand_for_5d(np.tile(
-                    np.expand_dims(new_mask, axis=3), [1, mask_array.shape[3]]))
-            return mask_array
-        else:
-            return mask_array
 
     def normalise_subject_data(self, data_dict):
         """
         Call this function to normalise the subject already loaded data.
         """
         data_dict.input = np.nan_to_num(data_dict.input)
-        mask_array = self.make_mask_array(data_dict.input)
+        mask_array = self.standardisor.make_mask_array(data_dict.input)
         data_dict.input = self.standardisor.normalise_data_array(
             data_dict.input, mask_array)
         return data_dict
@@ -271,4 +234,3 @@ class VolumePreprocessor(object):
 
         return data_dict.input, data_dict.output, data_dict.weight, \
                current_subject
-

@@ -190,11 +190,11 @@ def split_filename(file_name):
 
     return pth, fname, ext
 
-def prepare_5d_data(input_files):
-    if input_files is None:
+def prepare_5d_data(csv_cell):
+    if csv_cell is None:
         return None
-    numb_tp = input_files.numb_tp
-    numb_mod = input_files.numb_mod
+    numb_tp = csv_cell.num_time_point
+    numb_mod = csv_cell.num_modality
     max_time = numb_tp
     max_mod = numb_mod
     allow_multitime = False
@@ -210,8 +210,8 @@ def prepare_5d_data(input_files):
         data_array.append([])
         for m in range(0, numb_mod):
             data_array[t].append([])
-            if os.path.exists(input_files.array_files[t][m]):
-                img_nii = nib.load(input_files.array_files[t][m])
+            if os.path.exists(csv_cell.array_files[t][m]):
+                img_nii = nib.load(csv_cell.array_files[t][m])
                 img_data_shape = img_nii.header.get_data_shape()
                 if not flag_dimensions_set:
                     dimensions = img_data_shape[0:np.min([3,
@@ -221,7 +221,7 @@ def prepare_5d_data(input_files):
                     if not check_dim(img_data_shape, dimensions):
                         raise ValueError("The 3d dimensionality of image %s "
                                          "%s is not concordant with %s "
-                                         % (input_files.array_files[m][t],
+                                         % (csv_cell.array_files[m][t],
                                          ' '.join(map(str, img_data_shape[0:3])),
                                             ' '.join(map(str, dimensions))))
                 if len(img_data_shape) >= 4 and img_data_shape[3]>1 \

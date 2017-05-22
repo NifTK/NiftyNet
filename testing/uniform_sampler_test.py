@@ -3,7 +3,6 @@ import tensorflow as tf
 from utilities.volume_reader import VolumePreprocessor
 import utilities.volume_reader as vr
 import utilities.parse_user_params as parse_user_params
-import utilities.misc_grep_file as misc
 
 # sampler
 from layer.uniform_sampler import UniformSampler

@@ -87,7 +87,7 @@ def create_database_perc_multimod_arrayfiles(mask_type, array_files, cutoff,
     for p in array_files:
     #for i in range(0, 10):
         #p = array_files[i]
-        input_files = cc.InputFiles(p[0], p)
+        input_files = cc.CSVCell(p)
         img_data = io.prepare_5d_data(input_files)
         numb_modalities = img_data.shape[3]
         numb_timepoints = img_data.shape[4]

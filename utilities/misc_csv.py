@@ -73,7 +73,7 @@ HEADER_FIRST = ['Mod', 'Type', 'Time']
 
 # From a unique csv file with for each subject the list of files to use,
 # build the 2d array of files to load for each subject and create the overall
-#  list of such arrays. numb_mod indicates the
+#  list of such arrays. num_modality indicates the
 # number of
 # modalities before going to further time point
 def create_array_files_from_csv(csv_file, numb_mod,

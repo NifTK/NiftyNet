@@ -88,7 +88,7 @@ class Sampling(object):
 
 
 class Flags(object):
-    def __init__(self, flag_save_norm=True, flag_save_mask=False,
+    def __init__(self, flag_save_norm=False, flag_save_mask=False,
                  flag_reorient=False,
                  flag_resample=False, flag_whiten=False,
                  flag_standardise=False, flag_allow_missing=False):
@@ -101,12 +101,17 @@ class Flags(object):
         self.flag_allow_missing = flag_allow_missing
 
 
-class InputFiles(object):
-    def __init__(self, filename_ref, array_files):
-        self.filename_ref = filename_ref  # image for header info.
-        self.numb_tp = len(array_files)
-        self.numb_mod = len(array_files[0])
+class CSVCell(object):
+    def __init__(self, array_files):
         self.array_files = array_files  # multi-modality images
+
+    @property
+    def num_time_point(self):
+        return len(self.array_files)
+
+    @property
+    def num_modality(self):
+        return len(self.array_files[0])
 
 
 class InputList(object):
@@ -163,13 +168,22 @@ class ConstraintSearch(object):
                 raise ValueError("The constraint not %s is not valid for %s"
                                  % (c, filename))
 
-        index_init = 0
+        index_init = 0 if index_constraint[sort_indices[0]] > 0 else \
+            length_constraint[
+            sort_indices[0]]
         name_pot = []
-        for i in range(0, len(self.list_contain)):
-            name_pot_temp = name[index_init: index_constraint[sort_indices[i]]]
+        index_start = 0 if index_constraint[sort_indices[0]] > 0 else 1
+        for i in range(index_start, len(self.list_contain)):
+            name_pot_temp = name[index_init: index_constraint[sort_indices[
+                i]]]
             for c in self.list_clean:
                 if c in name_pot_temp:
                     name_pot_temp = name_pot_temp.replace(c, '')
             name_pot.append(name_pot_temp)
-            index_init += len(self.list_contain[sort_indices[i]])
+            index_init = index_constraint[sort_indices[i]] + len(
+                self.list_contain[
+                                                      sort_indices[
+                i]])
+        name_pot.append(name[index_init:])
         return name_pot
+
