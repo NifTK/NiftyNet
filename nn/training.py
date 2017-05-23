@@ -8,9 +8,9 @@ from six.moves import range
 
 from network.net_template import NetTemplate as NetTemplate
 from utilities import misc as util
-from .input_queue import TrainEvalInputBuffer
-from .loss import LossFunction
-from .sampler import VolumeSampler
+from input_queue import TrainEvalInputBuffer
+from loss import LossFunction
+from sampler import VolumeSampler
 
 np.random.seed(seed=int(time.time()))
 

@@ -110,7 +110,6 @@ class VolumePreprocessor(object):
         interp_order = self.guess_interp_from_loss()
         interp_order_fields = cc.InputList([3], interp_order, [3], None, None)
         list_combined = self.create_array_subjects_csv_list()
-        import pdb; pdb.set_trace()
         subjects = []
         for s in list_combined:
             input_files = cc.CSVCell(s[1])
@@ -123,22 +122,45 @@ class VolumePreprocessor(object):
                                           weight_files,
                                           input_txt_files,
                                           output_txt_files)
-            import pdb; pdb.set_trace()
             new_subject = Subject(s[0], file_path_list, interp_order_fields)
             subjects.append(new_subject)
         return subjects
+
+    def create_list_array_input_files_from_subjects(self, subjects):
+        array_files_tot = []
+        if subjects is None:
+            subjects = self.create_list_subject_from_csv()
+        for s in subjects:
+            if not s.file_path_list.input is None:
+                array_files_tot.append(s.file_path_list.input.array_files)
+        return array_files_tot
+
+    def create_dict_modalities_from_subjects(self, subjects):
+        if subjects is None:
+            return {}
+        subject_ref = subjects[0]
+        csv_cell_ref = subject_ref.file_path_list.input
+        data_array = io.prepare_5d_data(csv_cell_ref)
+        numb_mod = data_array.shape[3]
+        dict_modalities = {}
+        for m in range(0, numb_mod):
+            name_mod = 'Mod%d' % m
+            dict_modalities[name_mod] = m
+        return dict_modalities
 
 
     # Provide the final list of eligible subjects
     def _search_for_eligible_subjects(self):
         modalities = self.dict_normalisation.list_modalities
+
         if self.csv_file is None and self.csv_list is None:
             raise ValueError("There is not input to build the subjects list!!!")
         if self.csv_file is None:
             subjects = self.create_list_subject_from_list()
         else:
             subjects = self.create_list_subject_from_csv()
-
+        if modalities is None:
+            modalities = self.create_dict_modalities_from_subjects(subjects)
         mod_to_train = hs.check_modalities_to_train(
             self.dict_normalisation.hist_ref_file,
             modalities.keys())
@@ -148,8 +170,9 @@ class VolumePreprocessor(object):
             for mod in mod_to_train:
                 modalities_to_train[mod] = modalities[mod]
             warnings.warn("The histogram has to be retrained...")
-            array_files = misc_csv.create_array_files(csv_file=self.csv_file,
-                                                      csv_list=self.csv_list)
+            array_files = self.create_list_array_input_files_from_subjects(
+                subjects)
+            #import pdb; pdb.set_trace()
             new_mapping = self.standardisor \
                 .training_normalisation_from_array_files(
                 array_files, modalities_to_train)
@@ -165,7 +188,7 @@ class VolumePreprocessor(object):
             modalities_indices = range(0, data_array.shape[3])
         list_mod_whiten = [m for m in modalities_indices if
                            m < data_array.shape[3]]
-        mask_array = self.standardisor.make_mask_array(data_dict.input)
+        mask_array = self.standardisor.make_mask_array(data_array)
         for m in list_mod_whiten:
             for t in range(0, data_array.shape[4]):
                 data_array[..., m, t] = \

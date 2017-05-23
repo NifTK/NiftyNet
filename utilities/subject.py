@@ -3,6 +3,8 @@ import nibabel as nib
 import misc_io as util
 import utilities.constraints_classes as cc
 from misc import CacheFunctionOutput
+import os
+import warnings
 
 STANDARD_ORIENTATION = [[0, 1], [1, 1], [2, 1]]
 
@@ -31,7 +33,7 @@ class Subject(object):
         and update the corresponding field if not done yet
         """
         # TODO: find header
-        filename_first = self.file_path_list.input.array_files[0][0]
+        filename_first = self.find_filename_reference_header()
         img_original = nib.load(filename_first)
         util.rectify_header_sform_qform(img_original)
         # print img_original.affine
@@ -43,10 +45,27 @@ class Subject(object):
         Given the list of files to load, find the original spatial resolution
         and update the corresponding field if not done yet
         """
-        filename_first = self.file_path_list.input.array_files[0][0]
+        filename_first = self.find_filename_reference_header()
         img_original = nib.load(filename_first)
         # print img_original.header.get_zooms()
         return img_original.header.get_zooms()
+
+    def _set_data_path_input(self, new_name):
+        if os.path.exists(new_name):
+            self.file_path_list.input.array_files = [[new_name]]
+        else:
+            warnings.warn("Cannot update new file array as the given file "
+                          "does not exist")
+
+    def find_filename_reference_header(self):
+        array_files = self.file_path_list.input.array_files
+        list_files = [item for sublist in array_files  for item in sublist]
+        for filename in list_files:
+            if not filename == '' and os.path.exists(filename):
+                path, name, ext = util.split_filename(filename)
+                if 'nii' in ext:
+                    return filename
+        warnings.warn("There is no nifti file that can be used...")
 
     #def _set_data_path(self, new_name):
     #    # TODO: check file exists
