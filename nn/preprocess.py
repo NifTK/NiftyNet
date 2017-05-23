@@ -47,7 +47,8 @@ class HistNormaliser_bis(object):
                                     mapping, modalities_to_train)
                     self.models = new_model
 
-    def training_normalisation_from_array_files(self, array_files,
+    def training_normalisation_from_array_files(self,
+                                                array_files,
                                                 list_modalities):
         mapping = {}
 

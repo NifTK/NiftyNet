@@ -58,7 +58,8 @@ class VolumePreprocessor(object):
                 output = cc.CSVCell([[row[2]]])
                 weight = cc.CSVCell([[row[3]]])
                 data_list = cc.InputList(input, output, weight, row[4], row[5])
-                new_subject = Subject(row[0], data_list,
+                new_subject = Subject(row[0],
+                                      data_list,
                                       interp_order=interp_order_fields)
                 list_subjects.append(new_subject)
         return list_subjects
@@ -109,6 +110,7 @@ class VolumePreprocessor(object):
         interp_order = self.guess_interp_from_loss()
         interp_order_fields = cc.InputList([3], interp_order, [3], None, None)
         list_combined = self.create_array_subjects_csv_list()
+        import pdb; pdb.set_trace()
         subjects = []
         for s in list_combined:
             input_files = cc.CSVCell(s[1])
@@ -121,7 +123,7 @@ class VolumePreprocessor(object):
                                           weight_files,
                                           input_txt_files,
                                           output_txt_files)
-
+            import pdb; pdb.set_trace()
             new_subject = Subject(s[0], file_path_list, interp_order_fields)
             subjects.append(new_subject)
         return subjects
@@ -148,7 +150,6 @@ class VolumePreprocessor(object):
             warnings.warn("The histogram has to be retrained...")
             array_files = misc_csv.create_array_files(csv_file=self.csv_file,
                                                       csv_list=self.csv_list)
-            import pdb; pdb.set_trace()
             new_mapping = self.standardisor \
                 .training_normalisation_from_array_files(
                 array_files, modalities_to_train)
