@@ -77,7 +77,7 @@ HEADER_FIRST = ['Mod', 'Type', 'Time']
 # number of modalities before going to further time point
 def create_array_files_from_csv(csv_file, numb_mod=None, allow_missing=True):
     if csv_file is None:
-        return None, None
+        return [], []
     list_subjects = []
     list_filenames = []
     with open(csv_file, "rb") as infile:
@@ -229,7 +229,6 @@ def combine_list_constraint(name_list, list_files):
                                                         name_list.input_txt)
     name_match_iot, ind_iot, _, _ = match_second_degree(name_list.input,
                                                         name_list.output_txt)
-    list_compare = []
     if name_list.input is None:
         raise ValueError("There is no input! Please do check your constraints")
 
@@ -245,14 +244,14 @@ def combine_list_constraint(name_list, list_files):
         warnings.warn("You have only an input...")
         list_temp = remove_duplicated_names(name_list.input)
         list_to_use = ['_'.join(sublist) for sublist in list_temp]
-    for i in range(0, len(list_to_use)):
-        name = list_to_use[i]
+
+    list_compare = []
+    for (i, name) in enumerate(list_to_use):
         input = list_files.input[i]
         output = list_files.output[ind_io[i]] if ind_io is not None else ''
         weight = list_files.weight[ind_iw[i]] if ind_iw is not None else ''
         input_txt = list_files.weight[ind_iit[i]] if ind_iit is not None else ''
-        output_txt = list_files.output_txt[ind_iot[i]] if ind_iot is not None \
-            else ''
+        output_txt = list_files.output_txt[ind_iot[i]] if ind_iot is not None else ''
         list_temp = [name, input, output, weight, input_txt, output_txt]
         list_compare.append(list_temp)
     return list_compare

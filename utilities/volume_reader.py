@@ -10,6 +10,7 @@ import utilities.constraints_classes as cc
 import utilities.misc_csv as misc_csv
 from nn.preprocess import HistNormaliser_bis
 from utilities.subject import Subject
+from utilities.CSVTable import CSVTable
 
 
 class VolumePreprocessor(object):
@@ -47,88 +48,7 @@ class VolumePreprocessor(object):
         self.subject_list = self._search_for_eligible_subjects()
         self.current_id = -1
 
-    def create_list_subject_from_csv(self):
-        list_subjects = []
-        interp_order = self.guess_interp_from_loss()
-        interp_order_fields = cc.InputList([3], interp_order, [3], None, None)
-        with open(self.csv_file, "rb") as infile:
-            reader = csv.reader(infile)
-            for row in reader:
-                input = cc.CSVCell([[row[1]]])
-                output = cc.CSVCell([[row[2]]])
-                weight = cc.CSVCell([[row[3]]])
-                data_list = cc.InputList(input, output, weight, row[4], row[5])
-                new_subject = Subject(row[0],
-                                      data_list,
-                                      interp_order=interp_order_fields)
-                list_subjects.append(new_subject)
-        return list_subjects
-
-    def guess_interp_from_loss(self):
-        categorical = ['cross_entropy', 'dice']
-        interp_order = []
-        for l in self.loss:
-            order = 0 if l in categorical else 3
-            interp_order.append(order)
-        return interp_order
-
-    def create_array_subjects_csv_list(self):
-        subjects_input, files_input = misc_csv.create_array_files_from_csv(
-            self.csv_list.input,
-            self.number_list.input,
-            self.flags.flag_allow_missing)
-        subjects_output, files_output = misc_csv.create_array_files_from_csv(
-            self.csv_list.output,
-            self.number_list.output,
-            self.flags.flag_allow_missing)
-        subjects_weight, files_weight = misc_csv.create_array_files_from_csv(
-            self.csv_list.weight,
-            self.number_list.weight,
-            self.flags.flag_allow_missing)
-        subjects_input_txt, files_input_txt = \
-            misc_csv.create_array_files_from_csv(self.csv_list.input_txt,
-                                                 self.number_list.input_txt,
-                                                 self.flags.flag_allow_missing)
-        subjects_output_txt, files_output_txt = \
-            misc_csv.create_array_files_from_csv(self.csv_list.output_txt,
-                                                 self.number_list.output_txt,
-                                                 self.flags.flag_allow_missing)
-        name_list = cc.InputList(subjects_input,
-                                 subjects_output,
-                                 subjects_weight,
-                                 subjects_input_txt,
-                                 subjects_output_txt)
-        file_list = cc.InputList(files_input,
-                                 files_output,
-                                 files_weight,
-                                 files_input_txt,
-                                 files_output_txt)
-        list_combined = misc_csv.combine_list_constraint(name_list, file_list)
-        return list_combined
-
-    def create_list_subject_from_list(self):
-        interp_order = self.guess_interp_from_loss()
-        interp_order_fields = cc.InputList([3], interp_order, [3], None, None)
-        list_combined = self.create_array_subjects_csv_list()
-        subjects = []
-        for s in list_combined:
-            input_files = cc.CSVCell(s[1])
-            output_files = cc.CSVCell(s[2])
-            weight_files = cc.CSVCell(s[3]) if s[3] is not '' else None
-            input_txt_files = cc.CSVCell(s[4]) if s[4] is not '' else None
-            output_txt_files = cc.CSVCell(s[5]) if s[5] is not '' else None
-            file_path_list = cc.InputList(input_files,
-                                          output_files,
-                                          weight_files,
-                                          input_txt_files,
-                                          output_txt_files)
-            new_subject = Subject(s[0], file_path_list, interp_order_fields)
-            subjects.append(new_subject)
-        return subjects
-
-    def create_list_array_input_files_from_subjects(self, subjects):
-        if subjects is None:
-            subjects = self.create_list_subject_from_csv()
+    def list_input_filenames_from_subjects(self, subjects):
         array_files_tot = []
         for s in subjects:
             if not s.file_path_list.input is None:
@@ -151,13 +71,20 @@ class VolumePreprocessor(object):
 
     # Provide the final list of eligible subjects
     def _search_for_eligible_subjects(self):
-
         if self.csv_file is None and self.csv_list is None:
             raise ValueError("There is not input to build the subjects list!!!")
+
+        csv_table = CSVTable()
         if self.csv_file is None:
-            subjects = self.create_list_subject_from_list()
+            csv_table.create_by_join_multiple_csv_files(
+                input_image_file=self.csv_list.input,
+                target_image_file=self.csv_list.output,
+                weight_map_file=self.csv_list.weight,
+                target_note_file=self.csv_list.input_txt,
+                allow_missing=True)
         else:
-            subjects = self.create_list_subject_from_csv()
+            csv_table.create_by_single_csv_file(csv_file=self.csv_file)
+        subjects = csv_table.to_subject_list()
 
         modalities = self.dict_normalisation.list_modalities
         if modalities is None:
@@ -171,7 +98,7 @@ class VolumePreprocessor(object):
             for mod in mod_to_train:
                 modalities_to_train[mod] = modalities[mod]
             warnings.warn("The histogram has to be retrained...")
-            array_files = self.create_list_array_input_files_from_subjects(
+            array_files = self.list_input_filenames_from_subjects(
                     subjects)
             new_mapping = self.standardisor \
                 .training_normalisation_from_array_files(
@@ -205,28 +132,6 @@ class VolumePreprocessor(object):
                     data_dict.input[..., m, t], mask_array[..., m, t])
         return data_dict
 
-    #def normalise_subject_data_and_save(self, subject):
-    #    if self.flags.flag_standardise:
-    #        data_dict = subject.read_all_modalities(self.flags.flag_reorient,
-    #                                                self.flags.flag_resample)
-    #        data_dict.input = np.nan_to_num(data_dict.input)
-    #        mask_array = self.make_mask_array(data_dict.input)
-    #        data_dict.input = self.standardisor.normalise_data_array(
-    #            data_dict.input, mask_array)
-    #        name_norm_save = io.create_new_filename(
-    #            subject.name + '.nii.gz',
-    #            new_path=self.dict_normalisation.path_to_save,
-    #            new_prefix='Norm')
-    #        # Put back the array with the nifti conventions.
-    #        data_nifti_format = np.swapaxes(data_dict.input, 4, 3)
-    #        io.save_img(data_nifti_format, subject.name, [], name_norm_save,
-    #                    filename_ref=subject.file_path_list.input.filename_ref,
-    #                    flag_orientation=self.flags.flag_reorient,
-    #                    flag_isotropic=self.flags.flag_resample)
-    #        # TODO: save norm
-    #        #subject._set_data_path(name_norm_save)
-
-
     def normalise_subject_data(self, data_dict):
         """
         Call this function to normalise the subject already loaded data.
@@ -257,3 +162,25 @@ class VolumePreprocessor(object):
 
         return data_dict.input, data_dict.output, data_dict.weight, \
                current_subject
+
+    #def normalise_subject_data_and_save(self, subject):
+    #    if self.flags.flag_standardise:
+    #        data_dict = subject.read_all_modalities(self.flags.flag_reorient,
+    #                                                self.flags.flag_resample)
+    #        data_dict.input = np.nan_to_num(data_dict.input)
+    #        mask_array = self.make_mask_array(data_dict.input)
+    #        data_dict.input = self.standardisor.normalise_data_array(
+    #            data_dict.input, mask_array)
+    #        name_norm_save = io.create_new_filename(
+    #            subject.name + '.nii.gz',
+    #            new_path=self.dict_normalisation.path_to_save,
+    #            new_prefix='Norm')
+    #        # Put back the array with the nifti conventions.
+    #        data_nifti_format = np.swapaxes(data_dict.input, 4, 3)
+    #        io.save_img(data_nifti_format, subject.name, [], name_norm_save,
+    #                    filename_ref=subject.file_path_list.input.filename_ref,
+    #                    flag_orientation=self.flags.flag_reorient,
+    #                    flag_isotropic=self.flags.flag_resample)
+    #        # TODO: save norm
+    #        #subject._set_data_path(name_norm_save)
+
