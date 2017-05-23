@@ -136,19 +136,14 @@ class ConstraintSearch(object):
         name_list_final = []
         for p in self.list_paths:
             for filename in os.listdir(p):
-                flag_possible = True
-                for c in self.list_contain:
-                    if c not in filename:
-                        flag_possible = False
-                        break
-                for n in self.list_not_contain:
-                    if n in filename:
-                        flag_possible = False
-                        break
-                if flag_possible:
-                    list_final.append(os.path.join(p, filename))
-                    name_list_final.append(self.list_subjects_potential(
-                        filename))
+                if any(c not in filename for c in self.list_contain):
+                    continue
+                if any(c in filename for c in self.list_not_contain):
+                    continue
+                full_file_name = os.path.join(p, filename)
+                list_final.append(full_file_name)
+                name_list_final.append(
+                        self.list_subjects_potential(filename))
         return list_final, name_list_final
 
     def list_subjects_potential(self, filename):
@@ -156,34 +151,23 @@ class ConstraintSearch(object):
         length_constraint = []
         path, name, ext = util.split_filename(filename)
         for c in self.list_contain:
-            if c not in name:
-                raise ValueError("The constraint %s is not valid for %s"
-                                 % (c, filename))
             index_constraint.append(name.find(c))
             length_constraint.append(len(c))
         sort_indices = np.argsort(index_constraint)
 
-        for c in self.list_not_contain:
-            if c in name:
-                raise ValueError("The constraint not %s is not valid for %s"
-                                 % (c, filename))
-
         index_init = 0 if index_constraint[sort_indices[0]] > 0 else \
-            length_constraint[
-            sort_indices[0]]
+            length_constraint[sort_indices[0]]
         name_pot = []
         index_start = 0 if index_constraint[sort_indices[0]] > 0 else 1
         for i in range(index_start, len(self.list_contain)):
-            name_pot_temp = name[index_init: index_constraint[sort_indices[
-                i]]]
+            name_pot_temp = name[
+                    index_init: index_constraint[sort_indices[i]]]
             for c in self.list_clean:
                 if c in name_pot_temp:
                     name_pot_temp = name_pot_temp.replace(c, '')
             name_pot.append(name_pot_temp)
-            index_init = index_constraint[sort_indices[i]] + len(
-                self.list_contain[
-                                                      sort_indices[
-                i]])
+            index_init = index_constraint[sort_indices[i]] + \
+                len(self.list_contain[sort_indices[i]])
         name_pot.append(name[index_init:])
         return name_pot
 

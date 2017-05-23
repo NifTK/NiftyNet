@@ -75,9 +75,7 @@ HEADER_FIRST = ['Mod', 'Type', 'Time']
 # build the 2d array of files to load for each subject and create the overall
 #  list of such arrays. num_modality indicates the
 # number of modalities before going to further time point
-def create_array_files_from_csv(csv_file,
-                                numb_mod=None,
-                                flag_allow_missing=True):
+def create_array_files_from_csv(csv_file, numb_mod=None, allow_missing=True):
     if csv_file is None:
         return None, None
     list_subjects = []
@@ -85,7 +83,7 @@ def create_array_files_from_csv(csv_file,
     with open(csv_file, "rb") as infile:
         reader = csv.reader(infile)
         for row in reader:
-            if ('' in row) and (not flag_allow_missing):
+            if ('' in row) and (not allow_missing):
                 continue
             subject_name, list_files = [row[0]], row[1:]
             list_subjects.append(subject_name)
@@ -199,26 +197,21 @@ def match_second_degree(name_list1, name_list2):
 # From a list of list of names and a list of list of files that are
 # associated, find the name correspondance and therefore the files associations
 def combine_list_constraint_for5d(name_list, list_files):
+    name_length = [len(names) for names in name_list]
+    ind_max = name_length.index(max(name_length))
     name_tot = []
     ind_tot = []
-    ind_max = 0
-    length_max = 0
-    list_combined = []
-    for i in range(0, len(name_list)):
-        if len(name_list[i]) > length_max:
-            ind_max = i
-            length_max = len(name_list[i])
     name_max = name_list[ind_max]
     for c in range(0, len(list_files)):
-        name_match, ind_match, _, _ = match_second_degree(name_list[ind_max],
+        name_match, ind_match, _, _ = match_second_degree(name_max,
                                                           name_list[c])
         name_max = name_match if c == ind_max else name_max
         name_tot.append(name_match)
         ind_tot.append(ind_match)
 
-    for i in range(0, len(name_list[ind_max])):
+    list_combined = []
+    for (i, name) in enumerate(name_max):
         list_temp = []
-        name = name_max[i]
         list_temp.append(name)
         for c in range(0, len(list_files)):
             output = list_files[c][ind_tot[c][i]]
@@ -268,8 +261,8 @@ def create_csv_prepare5d(list_constraints, csv_file):
         list_files, name_list = \
             cc.ConstraintSearch.create_list_from_constraint(c)
         name_list = remove_duplicated_names(name_list)
-        list_tot.append(list_files)
         name_tot.append(name_list)
+        list_tot.append(list_files)
     list_combined = combine_list_constraint_for5d(name_tot, list_tot)
     with open(csv_file, 'wb') as csvfile:
         file_writer = csv.writer(csvfile, delimiter=',')
