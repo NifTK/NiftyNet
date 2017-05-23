@@ -32,7 +32,7 @@ class Subject(object):
         Given the list of files to load, find the original orientation
         and update the corresponding field if not done yet
         """
-        filename_first = self.find_filename_reference_header()
+        filename_first = self._find_first_nifty_file()
         img_original = nib.load(filename_first)
         util.rectify_header_sform_qform(img_original)
         # print img_original.affine
@@ -44,7 +44,7 @@ class Subject(object):
         Given the list of files to load, find the original spatial resolution
         and update the corresponding field if not done yet
         """
-        filename_first = self.find_filename_reference_header()
+        filename_first = self._find_first_nifty_file()
         img_original = nib.load(filename_first)
         # print img_original.header.get_zooms()
         return img_original.header.get_zooms()
@@ -56,15 +56,15 @@ class Subject(object):
             warnings.warn("Cannot update new file array as the given file "
                           "does not exist")
 
-    def find_filename_reference_header(self):
+    def _find_first_nifty_file(self):
         array_files = self.file_path_list.input.array_files
-        list_files = [item for sublist in array_files  for item in sublist]
+        list_files = [item for sublist in array_files for item in sublist]
         for filename in list_files:
             if not filename == '' and os.path.exists(filename):
                 path, name, ext = util.split_filename(filename)
                 if 'nii' in ext:
                     return filename
-        warnings.warn("There is no nifti file that can be used...")
+        return None
 
     def _reorient_to_stand(self, data):
         """
@@ -126,7 +126,7 @@ class Subject(object):
 
     def __str__(self):
         out_str = 'subject: {}.'.format(self.name)
-        out_str += ' file_path: {}.'.format(self.file_path_list)
+        out_str += ' file_path_list: {}.'.format(self.file_path_list)
         out_str += ' do reorientation: {}.'.format(self.is_oriented_to_stand)
         out_str += ' do resampling: {}.'.format(self.is_isotropic)
         return out_str

@@ -19,37 +19,11 @@ except ImportError:
     from skimage import filter as filters
 
 
-def check_modalities_to_train(modelfile, modalities):
-    if modelfile is None or not os.path.exists(modelfile):
-        return modalities
-    modalities_not_to_train = []
-    if os.path.exists(modelfile):
-        with open(modelfile) as model:
-            for line in model:
-                for m in modalities:
-                    if m in line.split(' '):
-                        modalities_not_to_train.append(m)
-    modalities_to_train = [m for m in modalities if m not in modalities_not_to_train]
-    return modalities_to_train
-
-
-def list_trained_modalities(modelfile):
-    trained_modalities = []
-    if modelfile is None or not os.path.exists(modelfile):
-        return trained_modalities
-    else:
-        with open(modelfile) as model:
-            for line in model:
-                words = line.split(' ')
-                if len(words) > 2:
-                    trained_modalities.append(words[0])
-    return trained_modalities
-
 
 def percentiles(img, mask, perc):
     masked_img = ma.masked_array(img, mask)
-    perc_results = np.percentile(ma.compressed(masked_img), 100*np.array(perc))
-
+    perc_results = np.percentile(ma.compressed(masked_img),
+                                 100*np.array(perc))
     hist, bin = np.histogram(ma.compressed(masked_img), bins=50)
     return perc_results
 

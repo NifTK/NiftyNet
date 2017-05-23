@@ -11,8 +11,15 @@ class CSVTable(object):
     corresponding to a single modality file. In the case of multiple csv
     files, the subject name is matched to have a joint _csv_file
     """
-    def __init__(self):
-        self._csv_file = None
+    def __init__(self, csv_file=None, csv_dict=None):
+        self._csv_table = None
+        if csv_file is not None:
+            self.create_by_reading_single_csv(csv_file)
+        if csv_dict is not None:
+            self.create_by_join_multiple_csv_files(**csv_dict)
+        if self._csv_table is None:
+            raise RuntimeError('unable to read csv files into a nested list')
+
 
     def create_by_join_multiple_csv_files(self,
                                           input_image_file,
@@ -22,8 +29,7 @@ class CSVTable(object):
                                           allow_missing=True):
         input_image_id, input_image_fullname = \
             misc_csv.create_array_files_from_csv(input_image_file,
-                                                 allow_missing)
-        #input_image_id = [[item] for item in input_image_id]
+                                                 allow_missing=allow_missing)
         # TODO: currently hard coded, to make it flexible in the future
         header = ('target_image_file', 'weight_map_file', 'target_note_file')
         csv_to_join = {header[0]: target_image_file,
@@ -37,15 +43,15 @@ class CSVTable(object):
             csv_file = csv_to_join[f]
             if csv_file is None:
                 matches[f] = (None, None)
-            else:
-                csv_id, matched_fullnames = \
-                    misc_csv.create_array_files_from_csv(csv_file, allow_missing)
-                #csv_id = [[item] for item in csv_id]
-                joint_id, matched_index, _, _ = \
-                    misc_csv.match_second_degree(input_image_id, csv_id)
-                matches[f] = (matched_index, matched_fullnames)
-
-        # nothing to join, using input_image_file as the final id of csv_table
+                continue
+            # read single csv file (first column: id, rest column: image name)
+            csv_id, matched_fullnames = misc_csv.create_array_files_from_csv(
+                csv_file, allow_missing=allow_missing)
+            # find matching between first column and 'input_image_file'
+            joint_id, matched_index, _, _ = misc_csv.match_second_degree(
+                input_image_id, csv_id)
+            matches[f] = (matched_index, matched_fullnames)
+        # no table join, using input_image_file as the final id of csv_table
         if joint_id is None:
             joint_id = misc_csv.remove_duplicated_names(input_image_id)
             joint_id = ['_'.join(sublist) for sublist in input_image_id]

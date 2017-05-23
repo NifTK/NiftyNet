@@ -17,20 +17,21 @@ class SubjectTest(tf.test.TestCase):
         constraint_Label = cc.ConstraintSearch(['./testing_data'], ['Parcellation'], [], ['_'])
         misc_csv.create_csv_prepare5d([constraint_Label], './testing_data/TestPrepareOutputHGG.csv')
 
-        csv_list = cc.InputList('./testing_data/TestPrepareInputHGG.csv',
-                                './testing_data/TestPrepareOutputHGG.csv',
-                                None, None, None)
+        #csv_list = cc.InputList('./testing_data/TestPrepareInputHGG.csv',
+        #                        './testing_data/TestPrepareOutputHGG.csv',
+        #                        None, None, None)
         #csv_list = cc.InputList('./testing_data/TestPrepareInputHGG.csv',
         #                        None, None, None, None)
-
-        list_modalities = {'T1': 1, 'FLAIR': 0}
+        csv_dict = {'input_image_file': './testing_data/TestPrepareInputHGG.csv',
+                    'target_image_file': './testing_data/TestPrepareOutputHGG.csv',
+                    'weight_map_file': None,
+                    'target_note_file': None}
 
         dict_normalisation = cc.Normalisation('', '')
         dict_normalisation._update_dict_normalisation(param)
         dict_masking = cc.Masking()
         dict_masking._update_dict_masking(param)
-        dict_normalisation.list_modalities = list_modalities
-        new_vr = vr.VolumePreprocessor(dict_normalisation, dict_masking, csv_list=csv_list,
+        new_vr = vr.VolumePreprocessor(dict_normalisation, dict_masking, csv_dict=csv_dict,
                                        number_list=cc.InputList(4, 1, None, None, None),
                                        loss=['dice'],
                                        flags=cc.Flags(flag_reorient=True, flag_resample=True,

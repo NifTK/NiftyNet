@@ -27,17 +27,17 @@ class VolumePreprocessor(object):
                  dict_normalisation,
                  dict_masking,
                  csv_file=None,
-                 csv_list=None,
+                 csv_dict=None,
                  number_list=None,
                  flags=cc.Flags(),
                  loss=['dice']):
 
         self.dict_normalisation = dict_normalisation
-        self.csv_list = csv_list
-        self.csv_file = csv_file
         self.number_list = number_list
         self.flags = flags
         self.loss = loss
+
+        self.csv_table = CSVTable(csv_file, csv_dict)
 
         self.standardisor = HistNormaliser_bis(
             self.dict_normalisation.hist_ref_file,
@@ -45,66 +45,39 @@ class VolumePreprocessor(object):
             self.dict_normalisation.norm_type, self.dict_normalisation.cutoff,
             dict_masking.mask_type, '')
 
-        self.subject_list = self._search_for_eligible_subjects()
+        self.subject_list = self.create_subject_list()
         self.current_id = -1
 
     def list_input_filenames_from_subjects(self, subjects):
-        array_files_tot = []
-        for s in subjects:
-            if not s.file_path_list.input is None:
-                array_files_tot.append(s.file_path_list.input.array_files)
-        return array_files_tot
+        if subjects is None:
+            return {}
+        return [s.file_path_list.input.array_files for s in subjects]
 
     def create_dict_modalities_from_subjects(self, subjects):
         if subjects is None:
             return {}
-        subject_ref = subjects[0]
-        csv_cell_ref = subject_ref.file_path_list.input
-        data_array = io.prepare_5d_data(csv_cell_ref)
-        numb_mod = data_array.shape[3]
+        num_modality = subjects[0].file_path_list.input.num_modality
         dict_modalities = {}
-        for m in range(0, numb_mod):
-            name_mod = 'Mod%d' % m
+        for m in range(0, num_modality):
+            name_mod = 'Modality-{}'.format(m)
             dict_modalities[name_mod] = m
         return dict_modalities
 
 
     # Provide the final list of eligible subjects
-    def _search_for_eligible_subjects(self):
-        if self.csv_file is None and self.csv_list is None:
-            raise ValueError("There is not input to build the subjects list!!!")
+    def create_subject_list(self):
 
-        csv_table = CSVTable()
-        if self.csv_file is None:
-            csv_table.create_by_join_multiple_csv_files(
-                input_image_file=self.csv_list.input,
-                target_image_file=self.csv_list.output,
-                weight_map_file=self.csv_list.weight,
-                target_note_file=self.csv_list.input_txt,
-                allow_missing=True)
-        else:
-            csv_table.create_by_single_csv_file(csv_file=self.csv_file)
-        subjects = csv_table.to_subject_list()
-
-        modalities = self.dict_normalisation.list_modalities
-        if modalities is None:
-            modalities = self.create_dict_modalities_from_subjects(subjects)
-
-        mod_to_train = hs.check_modalities_to_train(
-            self.dict_normalisation.hist_ref_file,
-            modalities.keys())
+        subjects = self.csv_table.to_subject_list()
+        modalities = self.create_dict_modalities_from_subjects(subjects)
+        mod_to_train = self.standardisor.check_modalities_to_train(modalities)
         if self.flags.flag_standardise and len(mod_to_train) > 0:
-            modalities_to_train = {}
-            for mod in mod_to_train:
-                modalities_to_train[mod] = modalities[mod]
-            warnings.warn("The histogram has to be retrained...")
-            array_files = self.list_input_filenames_from_subjects(
-                    subjects)
+            print("Training normalisation histogram references")
+            array_files = self.list_input_filenames_from_subjects(subjects)
             new_mapping = self.standardisor \
                 .training_normalisation_from_array_files(
-                array_files, modalities_to_train)
+                array_files, mod_to_train)
             self.standardisor.complete_and_transform_model_file(
-                new_mapping, mod_to_train)
+                new_mapping, mod_to_train.keys())
         #if self.flags.flag_standardise and self.flags.flag_save_norm:
         #    for s in subjects:
         #        self.normalise_subject_data_and_save(s)
@@ -160,8 +133,7 @@ class VolumePreprocessor(object):
         if self.flags.flag_whiten:
             data_dict.input = self.whiten_subject_data_array(data_dict.input)
 
-        return data_dict.input, data_dict.output, data_dict.weight, \
-               current_subject
+        return data_dict.input, data_dict.output, data_dict.weight, self.current_id
 
     #def normalise_subject_data_and_save(self, subject):
     #    if self.flags.flag_standardise:
@@ -183,4 +155,3 @@ class VolumePreprocessor(object):
     #                    flag_isotropic=self.flags.flag_resample)
     #        # TODO: save norm
     #        #subject._set_data_path(name_norm_save)
-
