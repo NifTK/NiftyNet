@@ -230,8 +230,23 @@ def combine_list_constraint(name_list, list_files):
                                                         name_list.input_txt)
     name_match_iot, ind_iot, _, _ = match_second_degree(name_list.input,
                                                         name_list.output_txt)
-    for i in range(0, len(name_match_io)):
-        name = name_match_io[i]
+    if name_list.input is None:
+        raise ValueError("There is no input! Please do check your constraints")
+
+    if not name_list.output is None:
+        list_to_use = name_match_io
+    elif not name_list.weight is None:
+        list_to_use = name_match_iw
+    elif not name_list.input_txt is None:
+        list_to_use = name_match_iit
+    elif not name_list.output_txt is None:
+        list_to_use = name_match_iot
+    else:
+        warnings.warn("You have only an input...")
+        list_temp = remove_duplicated_names(name_list.input)
+        list_to_use = ['_'.join(sublist) for sublist in list_temp]
+    for i in range(0, len(list_to_use)):
+        name = list_to_use[i]
         input = list_files.input[i]
         output = list_files.output[ind_io[i]] if ind_io is not None else ''
         weight = list_files.weight[ind_iw[i]] if ind_iw is not None else ''
@@ -241,6 +256,7 @@ def combine_list_constraint(name_list, list_files):
         list_temp = [name, input, output, weight, input_txt, output_txt]
         list_compare.append(list_temp)
     return list_compare
+
 
 
 def remove_duplicated_names(name_list):
