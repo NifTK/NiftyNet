@@ -221,7 +221,6 @@ def combine_list_constraint_for5d(name_list, list_files):
 
 
 def combine_list_constraint(name_list, list_files):
-    list_compare = []
     name_match_io, ind_io, _, _ = match_second_degree(name_list.input,
                                                       name_list.output)
     name_match_iw, ind_iw, _, _ = match_second_degree(name_list.input,
@@ -230,6 +229,7 @@ def combine_list_constraint(name_list, list_files):
                                                         name_list.input_txt)
     name_match_iot, ind_iot, _, _ = match_second_degree(name_list.input,
                                                         name_list.output_txt)
+    list_compare = []
     for i in range(0, len(name_match_io)):
         name = name_match_io[i]
         input = list_files.input[i]

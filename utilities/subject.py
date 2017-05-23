@@ -32,7 +32,6 @@ class Subject(object):
         Given the list of files to load, find the original orientation
         and update the corresponding field if not done yet
         """
-        # TODO: find header
         filename_first = self.find_filename_reference_header()
         img_original = nib.load(filename_first)
         util.rectify_header_sform_qform(img_original)
@@ -66,10 +65,6 @@ class Subject(object):
                 if 'nii' in ext:
                     return filename
         warnings.warn("There is no nifti file that can be used...")
-
-    #def _set_data_path(self, new_name):
-    #    # TODO: check file exists
-    #    self.file_path_list.input.filename_ref = new_name
 
     def _reorient_to_stand(self, data):
         """
