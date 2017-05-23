@@ -126,6 +126,7 @@ class VolumePreprocessor(object):
             subjects.append(new_subject)
         return subjects
 
+
     # Provide the final list of eligible subjects
     def _search_for_eligible_subjects(self):
         modalities = self.dict_normalisation.list_modalities
@@ -147,6 +148,7 @@ class VolumePreprocessor(object):
             warnings.warn("The histogram has to be retrained...")
             array_files = misc_csv.create_array_files(csv_file=self.csv_file,
                                                       csv_list=self.csv_list)
+            import pdb; pdb.set_trace()
             new_mapping = self.standardisor \
                 .training_normalisation_from_array_files(
                 array_files, modalities_to_train)

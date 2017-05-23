@@ -30,6 +30,7 @@ class Subject(object):
         Given the list of files to load, find the original orientation
         and update the corresponding field if not done yet
         """
+        # TODO: find header
         filename_first = self.file_path_list.input.array_files[0][0]
         img_original = nib.load(filename_first)
         util.rectify_header_sform_qform(img_original)
