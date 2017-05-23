@@ -107,10 +107,14 @@ class CSVCell(object):
 
     @property
     def num_time_point(self):
+        if (self.array_files) is None or (self.array_files == ''):
+            return 0
         return len(self.array_files)
 
     @property
     def num_modality(self):
+        if (self.array_files) is None or (self.array_files == ''):
+            return 0
         return len(self.array_files[0])
 
 

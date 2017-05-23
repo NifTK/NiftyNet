@@ -20,6 +20,8 @@ class SubjectTest(tf.test.TestCase):
         csv_list = cc.InputList('./testing_data/TestPrepareInputHGG.csv',
                                 './testing_data/TestPrepareOutputHGG.csv',
                                 None, None, None)
+        #csv_list = cc.InputList('./testing_data/TestPrepareInputHGG.csv',
+        #                        None, None, None, None)
 
         list_modalities = {'T1': 1, 'FLAIR': 0}
 
@@ -36,7 +38,8 @@ class SubjectTest(tf.test.TestCase):
 
         img, seg, weight_map, subject = new_vr.next_subject()
         print img.shape
-        print seg.shape
+        if seg is not None:
+            print seg.shape
         print weight_map
         print subject
 
