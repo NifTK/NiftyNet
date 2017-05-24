@@ -33,7 +33,7 @@ class VolumePreprocessor(object):
                  do_normalisation=True,
                  do_whitening=True,
                  allow_missing=True,
-                 output_columns=(0, 1, 2),
+                 output_columns=(0, 1, 2, 3),
                  interp_order=(3, 0, 3),
                  loss=['dice']):
 
@@ -62,63 +62,14 @@ class VolumePreprocessor(object):
         self.output_columns = output_columns
         self.interp_order = interp_order
 
-    def create_dict_modalities_from_subjects(self, subjects):
-        if subjects is None:
-            return {}
-        num_modality = subjects[0].column(0).num_modality
-        dict_modalities = {}
-        for m in range(0, num_modality):
-            name_mod = 'Modality-{}'.format(m)
-            dict_modalities[name_mod] = m
-        return dict_modalities
-
 
     # Provide the final list of eligible subjects
     def create_subject_list(self):
-
         subjects = self.csv_table.to_subject_list()
-
-        modalities = subjects[0].modalities_dict()
-        mod_to_train = self.standardisor.check_modalities_to_train(modalities)
-        if self.do_normalisation and len(mod_to_train) > 0:
-            print("Training normalisation histogram references")
-            image_files = [subject.column(0) for subject in subjects]
-            new_mapping = self.standardisor \
-                .training_normalisation_from_array_files(
-                image_files, mod_to_train)
-            self.standardisor.complete_and_transform_model_file(
-                new_mapping, mod_to_train.keys())
+        if self.do_normalisation:
+            self.standardisor.train_normalisation_ref(subjects)
         return subjects
 
-    def whiten_subject_data_array(self, data_array, modalities_indices=None):
-        if modalities_indices is None:
-            modalities_indices = range(0, data_array.shape[3])
-        list_mod_whiten = [m for m in modalities_indices if
-                           m < data_array.shape[3]]
-        mask_array = self.standardisor.make_mask_array(data_array)
-        for m in list_mod_whiten:
-            for t in range(0, data_array.shape[4]):
-                data_array[..., m, t] = \
-                    self.standardisor.whitening_transformation(
-                        data_array[..., m, t], mask_array[..., m, t])
-        return data_array
-
-    def whiten_subject_data(self, image_5d, modalities):
-        mask_array = self.standardisor.make_mask_array(image_5d)
-        for m in modalities:
-            for t in range(0, len(data_dict[m])):
-                image_5d[...,m,t] = self.standardisor.whitening_transformation(
-                        image_5d[...,m,t], mask_array[...,m,t])
-        return data_dict
-
-    def normalise_subject_data(self, image_5d):
-        """
-        Call this function to normalise the subject already loaded data.
-        """
-        image_5d = np.nan_to_num(image_5d)
-        mask_array = self.standardisor.make_mask_array(image_5d)
-        image_5d = self.standardisor.normalise_data_array(image_5d, mask_array)
-        return image_5d
 
     def next_subject(self, do_shuffle=True):
         """
@@ -130,19 +81,20 @@ class VolumePreprocessor(object):
             shuffle(self.subject_list)
         current_subject = self.subject_list[self.current_id]
         print current_subject
-        input_image, target_image, weight_map  = \
-                current_subject.load_columns(self.output_columns,
-                                             self.do_reorientation,
-                                             self.do_resampling,
-                                             self.interp_order)
+        subject_dict =  current_subject.load_columns(self.output_columns,
+                                                     self.do_reorientation,
+                                                     self.do_resampling,
+                                                     self.interp_order)
 
+        image = subject_dict['input_image_file']
+        label = subject_dict['target_image_file']
+        weight = subject_dict['weight_map_file']
         if self.do_normalisation:
-            input_image = self.normalise_subject_data(input_image)
-
+            image = self.standardisor.normalise(image)
         if self.do_whitening:
-            input_image = self.whiten_subject_data_array(input_image)
-
-        return input_image, target_image, weight_map, self.current_id
+            image = self.standardisor.whiten(image)
+        
+        return image, label, weight, self.current_id
 
     #def normalise_subject_data_and_save(self, subject):
     #    if self.flags.flag_standardise:

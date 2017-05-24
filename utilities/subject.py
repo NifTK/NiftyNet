@@ -1,7 +1,7 @@
 import os
 
 import nibabel as nib
-
+import numpy as np
 import misc_io as util
 import utilities.constraints_classes as cc
 from misc import CacheFunctionOutput
@@ -43,7 +43,7 @@ class Subject(object):
     fields = ('input_image_file',
               'target_image_file',
               'weight_map_file',
-              'target_note_file')
+              'target_note')
     data_types = ('image_filename',
                  'image_filename',
                  'image_filename',
@@ -159,17 +159,18 @@ class Subject(object):
         # TODO change name to read_image_as_5d
         if Subject.data_types[index] == 'textual_comment':
             return self.column(index)()[0][0]
+
         elif Subject.data_types[index] == 'image_filename':
             data_5d = util.prepare_5d_data(self.column(index))
-            if do_resampling:
-                if interp_order is None:
-                    print("do resampling, but interpolation order is not "
-                          "specified, defaulting to interp_order=3")
-                    interp_order = 3
+            if do_resampling and (interp_order is None):
+                print("do resampling, but interpolation order is not "
+                      "specified, defaulting to interp_order=3")
+                interp_order = 3
                 data_5d = self.__resample_to_isotropic(data_5d, interp_order)
             if do_reorientation:
                 data_5d = self.__reorient_to_stand(data_5d)
-        return data_5d
+            data_5d = np.nan_to_num(data_5d)
+        return {Subject.fields[index]: data_5d}
 
     def load_columns(self,
                      index_list,
@@ -181,16 +182,21 @@ class Subject(object):
         returns all data (with reorientation/resampling if required)
         """
 
-        if (interp_order is None):
+        # set default interp
+        if interp_order is None:
             interp_order = [3] * len(index_list)
-            if do_resampling:
-                print("do resampling, but interpolation orders are not "
-                      "specified, defaulting to interp_order=3 for all columns")
-        return tuple([self.load_column(column_ind,
-                                       do_reorientation,
-                                       do_resampling,
-                                       interp_order[i])
-                      for (i, column_ind) in enumerate(index_list)])
+        if len(interp_order) < len(index_list):
+            full_interp_order = [3] * len(index_list)
+            full_interp_order[:len(interp_order)] = interp_order
+            interp_order = full_interp_order
+        output_dict = {}
+        for (i, column_ind) in enumerate(index_list):
+            column_dict = self.load_column(column_ind,
+                                           do_reorientation,
+                                           do_resampling,
+                                           interp_order[i])
+            output_dict[column_dict.keys()[0]] = column_dict.values()[0]
+        return output_dict
 
     def __str__(self):
         out_str = []

@@ -20,7 +20,8 @@ class SubjectTest(tf.test.TestCase):
         csv_dict = {'input_image_file': './testing_data/TestPrepareInputHGG.csv',
                     'target_image_file': './testing_data/TestPrepareOutputHGG.csv',
                     'weight_map_file': None,
-                    'target_note_file': None}
+                    'target_note': None}
+                    #'target_note': './testing_data/TestComments.csv'}
 
         dict_normalisation = cc.Normalisation('', '')
         dict_normalisation._update_dict_normalisation(param)
@@ -32,7 +33,9 @@ class SubjectTest(tf.test.TestCase):
                                        loss=['dice'],
                                        do_reorientation=True,
                                        do_resampling=True,
-                                       do_normalisation=True)
+                                       do_normalisation=True,
+                                       output_columns=(0, 1, 2),
+                                       interp_order=(3, 0))
 
         img, seg, weight_map, subject = new_vr.next_subject()
         print img.shape
