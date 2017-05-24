@@ -181,10 +181,11 @@ class Subject(object):
         returns all data (with reorientation/resampling if required)
         """
 
-        if (do_resampling) and (interp_order is None):
+        if (interp_order is None):
             interp_order = [3] * len(index_list)
-            print("do resampling, but interpolation orders are not "
-                  "specified, defaulting to interp_order=3 for all columns")
+            if do_resampling:
+                print("do resampling, but interpolation orders are not "
+                      "specified, defaulting to interp_order=3 for all columns")
         return tuple([self.load_column(column_ind,
                                        do_reorientation,
                                        do_resampling,
