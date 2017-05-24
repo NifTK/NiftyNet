@@ -56,8 +56,10 @@ def standardise_cutoff(cutoff, type_hist='quartile'):
     #     cutoff[1] = np.max([cutoff[1], 0.75])
     return cutoff
 
-def create_database_perc_multimod_arrayfiles(mask_type, array_files, cutoff,
-                                      list_modalities=None):
+def create_database_perc_multimod_arrayfiles(mask_type,
+                                             array_files,
+                                             cutoff,
+                                             list_modalities=None):
     perc_database = {}
     for p in array_files:
     #for i in range(0, 10):

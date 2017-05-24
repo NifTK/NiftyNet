@@ -69,7 +69,7 @@ class HistNormaliser_bis(object):
                                                 list_modalities):
         mapping = {}
         perc_database = hs.create_database_perc_multimod_arrayfiles(
-            self.mask_type,array_files, self.cutoff, list_modalities)
+            self.mask_type, array_files, self.cutoff, list_modalities)
         for m in perc_database.keys():
             s1, s2 = hs.create_standard_range(perc_database[m])
             print(perc_database, s1, s2)

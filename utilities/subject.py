@@ -204,6 +204,14 @@ class Subject(object):
                 out_str.append('{}: {}'.format(csv_field, csv_cell()))
         return '\n'.join(out_str)
 
+    def modalities_dict(self):
+        num_modality = self.column(0).num_modality
+        dict_modalities = {}
+        for m in range(0, num_modality):
+            name_mod = 'Modality-{}'.format(m)
+            dict_modalities[name_mod] = m
+        return dict_modalities
+
     # def _set_data_path_input(self, new_name):
     #    if os.path.exists(new_name):
     #        self.set_column(1, MultiModalFileList([[new_name]]))

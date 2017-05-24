@@ -62,11 +62,6 @@ class VolumePreprocessor(object):
         self.output_columns = output_columns
         self.interp_order = interp_order
 
-    def list_input_filenames_from_subjects(self, subjects):
-        if subjects is None:
-            return {}
-        return [s.column(0) for s in subjects]
-
     def create_dict_modalities_from_subjects(self, subjects):
         if subjects is None:
             return {}
@@ -83,14 +78,14 @@ class VolumePreprocessor(object):
 
         subjects = self.csv_table.to_subject_list()
 
-        modalities = self.create_dict_modalities_from_subjects(subjects)
+        modalities = subjects[0].modalities_dict()
         mod_to_train = self.standardisor.check_modalities_to_train(modalities)
         if self.do_normalisation and len(mod_to_train) > 0:
             print("Training normalisation histogram references")
-            array_files = self.list_input_filenames_from_subjects(subjects)
+            image_files = [subject.column(0) for subject in subjects]
             new_mapping = self.standardisor \
                 .training_normalisation_from_array_files(
-                array_files, mod_to_train)
+                image_files, mod_to_train)
             self.standardisor.complete_and_transform_model_file(
                 new_mapping, mod_to_train.keys())
         return subjects
