@@ -1,12 +1,12 @@
 import tensorflow as tf
-from utilities.volume_reader import VolumePreprocessor
-import utilities.volume_reader as vr
-import utilities.parse_user_params as parse_user_params
+
 import utilities.constraints_classes as cc
 import utilities.misc_csv as misc_csv
+import utilities.parse_user_params as parse_user_params
+import utilities.volume_reader as vr
+
 
 class SubjectTest(tf.test.TestCase):
-
     def test_volume_reader(self):
         param = parse_user_params.run()
         constraint_T1 = cc.ConstraintSearch(['./testing_data'], ['T1'], ['Parcellation'], ['_'])
@@ -21,7 +21,7 @@ class SubjectTest(tf.test.TestCase):
                     'target_image_file': './testing_data/TestPrepareOutputHGG.csv',
                     'weight_map_file': None,
                     'target_note': None}
-                    #'target_note': './testing_data/TestComments.csv'}
+        # 'target_note': './testing_data/TestComments.csv'}
 
         dict_normalisation = cc.Normalisation('', '')
         dict_normalisation._update_dict_normalisation(param)
@@ -45,10 +45,5 @@ class SubjectTest(tf.test.TestCase):
         img, seg, weight_map, subject = new_vr.next_subject()
 
 
-
 if __name__ == "__main__":
     tf.test.main()
-
-
-
-
