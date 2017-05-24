@@ -12,10 +12,10 @@ class SubjectTest(tf.test.TestCase):
         constraint_T1 = cc.ConstraintSearch(['./testing_data'], ['T1'], ['Parcellation'], ['_'])
         constraint_FLAIR = cc.ConstraintSearch(['./testing_data'], ['FLAIR'], [], ['_'])
         constraint_array = [constraint_FLAIR, constraint_T1]
-        misc_csv.create_csv_prepare5d(constraint_array, './testing_data/TestPrepareInputHGG.csv')
+        misc_csv.write_matched_filenames_to_csv(constraint_array, './testing_data/TestPrepareInputHGG.csv')
 
         constraint_Label = cc.ConstraintSearch(['./testing_data'], ['Parcellation'], [], ['_'])
-        misc_csv.create_csv_prepare5d([constraint_Label], './testing_data/TestPrepareOutputHGG.csv')
+        misc_csv.write_matched_filenames_to_csv([constraint_Label], './testing_data/TestPrepareOutputHGG.csv')
 
         csv_dict = {'input_image_file': './testing_data/TestPrepareInputHGG.csv',
                     'target_image_file': './testing_data/TestPrepareOutputHGG.csv',
@@ -30,7 +30,6 @@ class SubjectTest(tf.test.TestCase):
         new_vr = vr.VolumePreprocessor(dict_normalisation,
                                        dict_masking,
                                        csv_dict=csv_dict,
-                                       loss=['dice'],
                                        do_reorientation=True,
                                        do_resampling=True,
                                        do_normalisation=True,

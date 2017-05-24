@@ -1,15 +1,6 @@
-import csv
-import warnings
 from random import shuffle
 
-import numpy as np
-
-import misc_io as io
-import nn.histogram_standardisation as hs
-import utilities.constraints_classes as cc
-import utilities.misc_csv as misc_csv
 from nn.preprocess import HistNormaliser_bis
-from utilities.subject import Subject
 from utilities.CSVTable import CSVTable
 
 
@@ -34,9 +25,7 @@ class VolumePreprocessor(object):
                  do_whitening=True,
                  allow_missing=True,
                  output_columns=(0, 1, 2, 3),
-                 interp_order=(3, 0, 3),
-                 loss=['dice']):
-
+                 interp_order=(3, 0, 3)):
 
         self.do_reorientation = do_reorientation
         self.do_resampling = do_resampling
@@ -45,7 +34,6 @@ class VolumePreprocessor(object):
 
         self.dict_normalisation = dict_normalisation
 
-        self.loss = loss
         self.csv_table = CSVTable(csv_file, csv_dict, allow_missing)
 
         self.standardisor = HistNormaliser_bis(
@@ -62,14 +50,15 @@ class VolumePreprocessor(object):
         self.output_columns = output_columns
         self.interp_order = interp_order
 
-
-    # Provide the final list of eligible subjects
     def create_subject_list(self):
+        """
+        provide a list of subjects, the subjects are constructed from csv_table
+        data. These are used to train a histogram normalisation reference.
+        """
         subjects = self.csv_table.to_subject_list()
         if self.do_normalisation:
             self.standardisor.train_normalisation_ref(subjects)
         return subjects
-
 
     def next_subject(self, do_shuffle=True):
         """
@@ -81,10 +70,10 @@ class VolumePreprocessor(object):
             shuffle(self.subject_list)
         current_subject = self.subject_list[self.current_id]
         print current_subject
-        subject_dict =  current_subject.load_columns(self.output_columns,
-                                                     self.do_reorientation,
-                                                     self.do_resampling,
-                                                     self.interp_order)
+        subject_dict = current_subject.load_columns(self.output_columns,
+                                                    self.do_reorientation,
+                                                    self.do_resampling,
+                                                    self.interp_order)
 
         image = subject_dict['input_image_file']
         label = subject_dict['target_image_file']
@@ -93,26 +82,26 @@ class VolumePreprocessor(object):
             image = self.standardisor.normalise(image)
         if self.do_whitening:
             image = self.standardisor.whiten(image)
-        
+
         return image, label, weight, self.current_id
 
-    #def normalise_subject_data_and_save(self, subject):
-    #    if self.flags.flag_standardise:
-    #        data_dict = subject.read_all_modalities(self.flags.flag_reorient,
-    #                                                self.flags.flag_resample)
-    #        data_dict.input = np.nan_to_num(data_dict.input)
-    #        mask_array = self.make_mask_array(data_dict.input)
-    #        data_dict.input = self.standardisor.normalise_data_array(
-    #            data_dict.input, mask_array)
-    #        name_norm_save = io.create_new_filename(
-    #            subject.name + '.nii.gz',
-    #            new_path=self.dict_normalisation.path_to_save,
-    #            new_prefix='Norm')
-    #        # Put back the array with the nifti conventions.
-    #        data_nifti_format = np.swapaxes(data_dict.input, 4, 3)
-    #        io.save_img(data_nifti_format, subject.name, [], name_norm_save,
-    #                    filename_ref=subject.file_path_list.input.filename_ref,
-    #                    flag_orientation=self.flags.flag_reorient,
-    #                    flag_isotropic=self.flags.flag_resample)
-    #        # TODO: save norm
-    #        #subject._set_data_path(name_norm_save)
+        # def normalise_subject_data_and_save(self, subject):
+        #    if self.flags.flag_standardise:
+        #        data_dict = subject.read_all_modalities(self.flags.flag_reorient,
+        #                                                self.flags.flag_resample)
+        #        data_dict.input = np.nan_to_num(data_dict.input)
+        #        mask_array = self.make_mask_array(data_dict.input)
+        #        data_dict.input = self.standardisor.normalise_data_array(
+        #            data_dict.input, mask_array)
+        #        name_norm_save = io.create_new_filename(
+        #            subject.name + '.nii.gz',
+        #            new_path=self.dict_normalisation.path_to_save,
+        #            new_prefix='Norm')
+        #        # Put back the array with the nifti conventions.
+        #        data_nifti_format = np.swapaxes(data_dict.input, 4, 3)
+        #        io.save_img(data_nifti_format, subject.name, [], name_norm_save,
+        #                    filename_ref=subject.file_path_list.input.filename_ref,
+        #                    flag_orientation=self.flags.flag_reorient,
+        #                    flag_isotropic=self.flags.flag_resample)
+        #        # TODO: save norm
+        #        #subject._set_data_path(name_norm_save)

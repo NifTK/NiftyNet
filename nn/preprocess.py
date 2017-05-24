@@ -1,17 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
-import pickle
-import sys
 import warnings
+
 import numpy as np
 import numpy.ma as ma
-#from medpy.filter import IntensityRangeStandardization
-from scipy.interpolate.interpolate import interp1d
-import scipy.ndimage as nd
+
 import histogram_standardisation as hs
 import utilities.misc_io as io
-from shutil import copyfile
-
 
 N_INTERVAL = 20
 
@@ -53,7 +48,6 @@ class HistNormaliser_bis(object):
         self.mod_to_train = modalities_to_train
         return
 
-
     def train_normalisation_ref(self, subjects):
         self.check_modalities_to_train(subjects[0])
         if len(self.mod_to_train) <= 0:
@@ -70,8 +64,6 @@ class HistNormaliser_bis(object):
             mapping[m] = hs.create_mapping_perc(perc_database[m], s1, s2)
         self.mapping = mapping
         self.complete_and_transform_model_file()
-
-
 
     # Function to modify the model file with the mapping if needed according
     # to existent mapping and modalities
@@ -90,8 +82,7 @@ class HistNormaliser_bis(object):
             to_change = [m for m in modalities]
             to_change_string = map(str, modalities)
             new_name = os.path.join(path, name + '_' + ''.join(
-                to_change_string)+'_'+self.option_saving+ext)
-
+                to_change_string) + '_' + self.option_saving + ext)
 
             with open(self.hist_model_file) as oldfile, open(new_name, 'w+') as newfile:
                 for line in oldfile:
@@ -117,7 +108,7 @@ class HistNormaliser_bis(object):
                 new_mask = hs.create_mask_img_3d(
                     data_array[..., mod, t], self.dict_masking.mask_type)
                 new_mask = io.expand_to_5d(new_mask)
-                mask_array[..., mod:mod+1, t:t+1] = new_mask
+                mask_array[..., mod:mod + 1, t:t + 1] = new_mask
         if flag_all:
             return mask_array
         elif self.dict_masking.multimod_type == 'or':
@@ -137,7 +128,7 @@ class HistNormaliser_bis(object):
                     if np.count_nonzero(data_array[..., mod, t]) > 0:
                         new_mask = np.multiply(new_mask,
                                                mask_array[..., mod, t])
-                mask_array[..., t:t+1] = io.expand_to_5d(np.tile(
+                mask_array[..., t:t + 1] = io.expand_to_5d(np.tile(
                     np.expand_dims(new_mask, axis=3), [1, mask_array.shape[3]]))
             return mask_array
         else:
@@ -146,7 +137,7 @@ class HistNormaliser_bis(object):
     def whitening_transformation(self, img, mask):
         # make sure img is a monomodal volume
         assert (len(img.shape) == 3) or (img.shape[3] == 1)
-        masked_img = ma.masked_array(np.copy(img), 1-mask)
+        masked_img = ma.masked_array(np.copy(img), 1 - mask)
         mean = masked_img.mean()
         std = masked_img.std()
         img[mask == 1] -= mean
@@ -173,8 +164,8 @@ class HistNormaliser_bis(object):
         data_array = io.expand_to_5d(data_array)
         if data_array.shape[3] > len(list_modalities):
             warnings.warn("There are more modalities to normalise than "
-                             "reference histograms ! Please rerun the "
-                             "histogram training")
+                          "reference histograms ! Please rerun the "
+                          "histogram training")
 
             raise ValueError("There are more modalities to normalise than "
                              "reference histograms ! Please rerun the "
@@ -185,9 +176,9 @@ class HistNormaliser_bis(object):
             for t in range(0, data_array.shape[4]):
                 if np.count_nonzero(data_array[..., mod, t]) == 0:
                     continue
-                mask_temp = mask_array[...,mod,t]
+                mask_temp = mask_array[..., mod, t]
                 data_array[..., mod, t] = self.intensity_normalisation(
-                    data_array[...,mod, t], mask_temp, list_modalities[mod])
+                    data_array[..., mod, t], mask_temp, list_modalities[mod])
         return data_array
 
     def list_trained_modalities(self):
@@ -197,13 +188,11 @@ class HistNormaliser_bis(object):
             return []
         trained_modalities = []
         with open(self.hist_model_file) as model:
-             for line in model:
+            for line in model:
                 words = line.split(' ')
                 if len(words) > 2:
                     trained_modalities.append(words[0])
         return trained_modalities
-
-
 
     def intensity_normalisation(self, img_data, mask, modality):
         if not io.check_shape_compatibility_3d(img_data, mask):
@@ -225,7 +214,6 @@ class HistNormaliser_bis(object):
         hs.standardise_cutoff(self.cutoff, self.norm_type)
         new_img = np.copy(img_data)
         for i in range(0, img_data.shape[-1]):
-
             # Histogram normalisation (foreground)
             new_img_temp = hs.transform_for_mapping(img_data[..., i],
                                                     mask_new[..., i],
@@ -238,8 +226,7 @@ class HistNormaliser_bis(object):
             new_img[..., i] = new_img_temp
         return new_img
 
-
-#class HistNormaliser(object):
+# class HistNormaliser(object):
 #    def __init__(self, ref_file_name):
 #        self.ref_file_name = ref_file_name
 #        self.irs_model = []
@@ -299,7 +286,7 @@ class HistNormaliser_bis(object):
 #        return img_norm
 
 
-#class MahalNormaliser(object):
+# class MahalNormaliser(object):
 #    def __init__(self, mask, perc_threshold):
 #        self.mask = mask
 #        self.perc_threshold = perc_threshold

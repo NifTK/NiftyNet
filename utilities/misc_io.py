@@ -93,7 +93,7 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
         data_mod = None
         for m in range(0, data_init.shape[3]):
             data_3d = data_init[..., m, t]
-            #interp_order_m = interp_order[min(len(interp_order) - 1, m)]
+            # interp_order_m = interp_order[min(len(interp_order) - 1, m)]
             data_new = scipy.ndimage.zoom(data_3d,
                                           to_multiply[0:3],
                                           order=interp_order)
@@ -111,7 +111,7 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
 
 ### end of resample/reorientation original volumes
 
-# Load volume expected and return 3D and not 4D
+
 def load_volume(filename,
                 allow_multimod_single_file=False,
                 allow_timeseries=False):
@@ -190,7 +190,7 @@ def split_filename(file_name):
     return pth, fname, ext
 
 
-def prepare_5d_data(csv_cell):
+def csv_cell_to_volume_5d(csv_cell):
     """
     This function create a 5D image matrix from a csv_cell
     :param csv_cell: an array of file names, e.g. ['path_to_T1', 'path_to_T2']
@@ -357,6 +357,7 @@ def clean_name(filename):
 STANDARD_ORIENTATION = [[0, 1], [1, 1], [2, 1]]
 
 
+# TODO: save segmentation
 def save_img(img_data, subject_id, list_path_dir, save_path, filename_ref=None,
              flag_orientation=True,
              flag_isotropic=True, interp_order=[3]):
