@@ -87,46 +87,6 @@ class Sampling(object):
         self.sampling_dim = 3
 
 
-class Flags(object):
-    def __init__(self, flag_save_norm=False, flag_save_mask=False,
-                 flag_reorient=False,
-                 flag_resample=False, flag_whiten=False,
-                 flag_standardise=False, flag_allow_missing=False):
-        self.flag_save_norm = flag_save_norm
-        self.flag_save_mask = flag_save_mask
-        self.flag_reorient = flag_reorient
-        self.flag_resample = flag_resample
-        self.flag_whiten = flag_whiten
-        self.flag_standardise = flag_standardise
-        self.flag_allow_missing = flag_allow_missing
-
-
-class CSVCell(object):
-    def __init__(self, array_files):
-        self.array_files = array_files  # multi-modality images
-
-    @property
-    def num_time_point(self):
-        if (self.array_files) is None or (self.array_files == ''):
-            return 0
-        return len(self.array_files)
-
-    @property
-    def num_modality(self):
-        if (self.array_files) is None or (self.array_files == ''):
-            return 0
-        return len(self.array_files[0])
-
-
-class InputList(object):
-    def __init__(self, input, output, weight, input_txt, output_txt):
-        self.input = input
-        self.output = output
-        self.weight = weight
-        self.input_txt = input_txt
-        self.output_txt = output_txt
-
-
 class ConstraintSearch(object):
     def __init__(self, list_paths=[], list_contain=[], list_not_contain=[],
                  list_clean=[]):
@@ -146,8 +106,7 @@ class ConstraintSearch(object):
                     continue
                 full_file_name = os.path.join(p, filename)
                 list_final.append(full_file_name)
-                name_list_final.append(
-                        self.list_subjects_potential(filename))
+                name_list_final.append(self.list_subjects_potential(filename))
         return list_final, name_list_final
 
     def list_subjects_potential(self, filename):
@@ -174,4 +133,13 @@ class ConstraintSearch(object):
                 len(self.list_contain[sort_indices[i]])
         name_pot.append(name[index_init:])
         return name_pot
+
+#class InputList(object):
+#    def __init__(self, input, output, weight, input_txt, output_txt):
+#        self.input = input
+#        self.output = output
+#        self.weight = weight
+#        self.input_txt = input_txt
+#        self.output_txt = output_txt
+
 

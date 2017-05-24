@@ -2,6 +2,7 @@ import utilities.constraints_classes as cc
 import utilities.misc_csv as misc_csv
 from utilities.subject import Subject
 
+
 class CSVTable(object):
     """
     This class converts csv files into a nested list _csv_file
@@ -11,7 +12,8 @@ class CSVTable(object):
     corresponding to a single modality file. In the case of multiple csv
     files, the subject name is matched to have a joint _csv_file
     """
-    def __init__(self, csv_file=None, csv_dict=None):
+    def __init__(self, csv_file=None, csv_dict=None, allow_missing=True):
+        self.allow_missing = allow_missing
         self._csv_table = None
         if csv_file is not None:
             self.create_by_reading_single_csv(csv_file)
@@ -21,32 +23,36 @@ class CSVTable(object):
             raise RuntimeError('unable to read csv files into a nested list')
 
 
-    def create_by_join_multiple_csv_files(self,
-                                          input_image_file,
-                                          target_image_file=None,
-                                          weight_map_file=None,
-                                          target_note_file=None,
-                                          allow_missing=True):
-        input_image_id, input_image_fullname = \
-            misc_csv.create_array_files_from_csv(input_image_file,
-                                                 allow_missing=allow_missing)
-        # TODO: currently hard coded, to make it flexible in the future
-        header = ('target_image_file', 'weight_map_file', 'target_note_file')
-        csv_to_join = {header[0]: target_image_file,
-                       header[1]: weight_map_file,
-                       header[2]: target_note_file}
+    def create_by_join_multiple_csv_files(self, **csv_dict):
 
+        header = Subject.fields
+        csv_to_join = {}
+        for h in header:
+            try:
+                csv_to_join[h] = csv_dict[h]
+            except KeyError:
+                print("The csv_dict input should have the following keys:\n"
+                      +"{}\n".format(header)
+                      +"Each value should be a filename of csv file\n"
+                      +"where each csv file contains at least two columns\n"
+                      +"  - the first column: subject id\n"
+                      +"  - the rest columns: image filename\n"
+                      +"subject_id will be used to join multiple csv files.")
+
+        input_image_id, input_image_fullname = \
+            misc_csv.create_array_files_from_csv(
+                    csv_to_join[header[0]], allow_missing=self.allow_missing)
         # try to do pairwise matching between input_image_file and the others
         joint_id = None
         matches = {}
-        for f in header:
+        for f in header[1:]:
             csv_file = csv_to_join[f]
             if csv_file is None:
                 matches[f] = (None, None)
                 continue
             # read single csv file (first column: id, rest column: image name)
             csv_id, matched_fullnames = misc_csv.create_array_files_from_csv(
-                csv_file, allow_missing=allow_missing)
+                csv_file, allow_missing=self.allow_missing)
             # find matching between first column and 'input_image_file'
             joint_id, matched_index, _, _ = misc_csv.match_second_degree(
                 input_image_id, csv_id)
@@ -64,7 +70,7 @@ class CSVTable(object):
             joint_csv_row.append(name)
             joint_csv_row.append(input_image_fullname[i])
             # add other matched paths from other csv files
-            for f in header:
+            for f in header[1:]:
                 matched_index = matches[f][0]
                 if matched_index is None:
                     joint_csv_row.append('')
@@ -88,19 +94,8 @@ class CSVTable(object):
 
     def to_subject_list(self):
         subject_list = []
-        # interp_order = self.guess_interp_from_loss()
-        interp_order_fields = cc.InputList([3], [0], [3], None, None)
         for row in self._csv_table:
-            input_files = cc.CSVCell(row[1])
-            output_files = cc.CSVCell(row[2]) if row[2] != '' else None
-            weight_files = cc.CSVCell(row[3]) if row[3] != '' else None
-            input_txt_files = cc.CSVCell(row[4]) if row[4] != '' else None
-            file_path_list = cc.InputList(input_files,
-                                          output_files,
-                                          weight_files,
-                                          input_txt_files,
-                                          None)
-            new_subject = Subject(row[0], file_path_list, interp_order_fields)
+            new_subject = Subject.from_csv_row(row)
             subject_list.append(new_subject)
         return subject_list
 

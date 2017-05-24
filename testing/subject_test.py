@@ -12,26 +12,26 @@ class SubjectTest(tf.test.TestCase):
         input = cc.CSVCell([[t1_path]])
         output = cc.CSVCell([[label_path]])
 
-        data_list = cc.InputList(input, output, None, None, None)
-        interp_orders = cc.InputList([3], [0], None, None, None)
+        a_subject = Subject(name=test_name)
+        a_subject.set_all_columns(input, output, None, None)
 
-        a_subject = Subject(name=test_name,
-                            file_path_list=data_list,
-                            interp_order=interp_orders)
         print(a_subject._read_original_affine())
         print(a_subject._read_original_pixdim())
 
-        out = a_subject.read_all_modalities(do_reorient=False,
-                                            do_resample=False)
-        print out.input.shape
+        out = a_subject.load_columns((0, 1, 2),
+                                     do_reorient=False,
+                                     do_resample=False)
+        print out[0].shape
 
-        out_1 = a_subject.read_all_modalities(do_reorient=True,
-                                              do_resample=False)
-        print out_1.input.shape
+        out_1 = a_subject.load_columns((0, 1, 2),
+                                       do_reorient=True,
+                                       do_resample=False)
+        print out_1[0].shape
 
-        out_2 = a_subject.read_all_modalities(do_reorient=True,
-                                              do_resample=True)
-        print out_2.input.shape
+        out_2 = a_subject.load_columns((0, 1, 2),
+                                       do_reorient=True,
+                                       do_resample=True)
+        print out_2[0].shape
         print(a_subject)
 
 if __name__ == "__main__":

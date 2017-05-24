@@ -71,7 +71,9 @@ def do_reorientation(data_array, ornt_init, ornt_fin):
 
 # Perform the resampling of the data array given the initial and final pixel
 # dimensions and the interpolation order
-def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order=[3]):
+# this function assumes the same interp_order for multi-modal images
+# do we need separate interp_order for each modality?
+def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     if data_array is None:
         warnings.warn("None array, nothing to resample")
         return
@@ -91,10 +93,10 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order=[3]):
         data_mod = None
         for m in range(0, data_init.shape[3]):
             data_3d = data_init[..., m, t]
-            interp_order_m = interp_order[min(len(interp_order) - 1, m)]
+            #interp_order_m = interp_order[min(len(interp_order) - 1, m)]
             data_new = scipy.ndimage.zoom(data_3d,
                                           to_multiply[0:3],
-                                          order=interp_order_m)
+                                          order=interp_order)
             data_new = expand_to_5d(data_new)
             if data_mod is None:
                 data_mod = data_new
@@ -211,11 +213,11 @@ def prepare_5d_data(csv_cell):
         data_array.append([])
         for m in range(0, numb_mod):
             data_array[t].append([])
-            if not os.path.exists(csv_cell.array_files[t][m]):
+            if not os.path.exists(csv_cell()[t][m]):
                 data_array[t][m] = np.zeros(dimensions)
                 continue
             # load a 3d volume
-            img_nii = nib.load(csv_cell.array_files[t][m])
+            img_nii = nib.load(csv_cell()[t][m])
             img_data_shape = img_nii.header.get_data_shape()
 
             if not flag_dimensions_set:
@@ -225,7 +227,7 @@ def prepare_5d_data(csv_cell):
                 if not np.all(img_data_shape[:3] == dimensions[:3]):
                     raise ValueError("The 3d dimensionality of image %s "
                                      "%s is not consistent with %s "
-                                     % (csv_cell.array_files[m][t],
+                                     % (csv_cell()[m][t],
                                         ' '.join(map(str, img_data_shape[0:3])),
                                         ' '.join(map(str, dimensions))))
             if len(img_data_shape) >= 4 and img_data_shape[3] > 1 \

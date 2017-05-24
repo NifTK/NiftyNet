@@ -9,6 +9,7 @@ import os
 import scipy.ndimage as ndimg
 from scipy.ndimage.morphology import binary_fill_holes as fill_holes
 import utilities.constraints_classes as cc
+from utilities.subject import MultiModalFileList
 import utilities.misc_csv as misc_csv
 from scipy.signal import argrelextrema
 from shutil import copyfile
@@ -61,7 +62,7 @@ def create_database_perc_multimod_arrayfiles(mask_type, array_files, cutoff,
     for p in array_files:
     #for i in range(0, 10):
         #p = array_files[i]
-        input_files = cc.CSVCell(p)
+        input_files = MultiModalFileList(p)
         img_data = io.prepare_5d_data(input_files)
         numb_modalities = img_data.shape[3]
         numb_timepoints = img_data.shape[4]
