@@ -254,14 +254,14 @@ def csv_cell_to_volume_5d(csv_cell):
     return data_to_save
 
 
-def expand_to_5d(img_data):
-    if img_data.ndim == 2:
-        img_data = np.expand_dims(img_data, axis=2)
-    if img_data.ndim == 3:
-        img_data = np.expand_dims(img_data, axis=3)
-    if img_data.ndim == 4:
-        img_data = np.expand_dims(img_data, axis=4)
-    return img_data
+# def expand_to_5d(img_data):
+#     if img_data.ndim == 2:
+#         img_data = np.expand_dims(img_data, axis=2)
+#     if img_data.ndim == 3:
+#         img_data = np.expand_dims(img_data, axis=3)
+#     if img_data.ndim == 4:
+#         img_data = np.expand_dims(img_data, axis=4)
+#     return img_data
 
 
 def pad_zeros_to_5d(data_array, max_mod, max_time):
@@ -311,13 +311,13 @@ def create_5d_from_array(data_array):
     return data_5d
 
 
-# Check compatibility in dimensions for the first 3 dimensions of two images
-def check_shape_compatibility_3d(img1, img2):
-    # consider by default that there are a min of 3 dimensions (2d images are
-    # always expanded beforehand
-    if img1.ndim < 3 or img2.ndim < 3:
-        raise ValueError
-    return np.all(img1.shape[:3] == img2.shape[:3])
+# # Check compatibility in dimensions for the first 3 dimensions of two images
+# def check_shape_compatibility_3d(img1, img2):
+#     # consider by default that there are a min of 3 dimensions (2d images are
+#     # always expanded beforehand
+#     if img1.ndim < 3 or img2.ndim < 3:
+#         raise ValueError
+#     return np.all(img1.shape[:3] == img2.shape[:3])
 
 
 def adapt_to_shape(img_to_change, shape, mod='tile'):
@@ -325,34 +325,29 @@ def adapt_to_shape(img_to_change, shape, mod='tile'):
         return np.zeros(shape)
     shape_to_change = img_to_change.shape
     if len(shape) < len(shape_to_change):
-        warnings.warn("There must be a problem with shapes!")
-        return img_to_change
+        raise ValueError('shape inconsistency')
     if np.all(shape_to_change == shape):
         return img_to_change
-    if mod == 'tile':
-        new_img = np.resize(img_to_change, shape)
-        return new_img
-    else:
-        new_img = np.copy(img_to_change)
-        return new_img.resize(shape)
+    new_img = np.resize(img_to_change, shape)
+    return new_img
 
 
-def create_new_filename(filename_init, new_path='', new_prefix='',
-                        new_suffix=''):
-    path, name, ext = split_filename(filename_init)
-    if new_path is None or len(new_path) == 0:
-        new_path = path
-    new_name = "%s_%s_%s" % (new_prefix, name, new_suffix)
-    new_filename = os.path.join(new_path, new_name + ext)
-    new_filename = clean_name(new_filename)
-    return new_filename
+# def create_new_filename(filename_init, new_path='', new_prefix='',
+#                         new_suffix=''):
+#     path, name, ext = split_filename(filename_init)
+#     if new_path is None or len(new_path) == 0:
+#         new_path = path
+#     new_name = "%s_%s_%s" % (new_prefix, name, new_suffix)
+#     new_filename = os.path.join(new_path, new_name + ext)
+#     new_filename = clean_name(new_filename)
+#     return new_filename
 
 
-def clean_name(filename):
-    filename = filename.replace("__", "_")
-    filename = filename.replace("..", ".")
-    filename = filename.replace("_.", ".")
-    return filename
+# def clean_name(filename):
+#     filename = filename.replace("__", "_")
+#     filename = filename.replace("..", ".")
+#     filename = filename.replace("_.", ".")
+#     return filename
 
 
 STANDARD_ORIENTATION = [[0, 1], [1, 1], [2, 1]]

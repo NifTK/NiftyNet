@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import warnings
 
 import numpy as np
 import numpy.ma as ma
@@ -8,131 +7,111 @@ import numpy.ma as ma
 import histogram_standardisation as hs
 import utilities.misc_io as io
 
-N_INTERVAL = 20
-
 
 class HistNormaliser_bis(object):
     def __init__(self,
                  models_filename,
-                 path_to_train,
                  dict_masking,
                  norm_type='percentile',
                  cutoff=[0.05, 0.95],
-                 mask_type='otsu_plus',
-                 option_saving=''):
+                 mask_type='otsu_plus'):
         self.hist_model_file = models_filename
-        self.path = [p for p in path_to_train]
         self.cutoff = cutoff
         self.norm_type = norm_type
         self.mask_type = mask_type
-        self.option_saving = option_saving
         self.dict_masking = dict_masking
 
-        self.mod_to_train = {}
-        self.mapping = None
+        # mapping is a complete cache of the model file, the total number of
+        # modalities are listed in self.modalities
+        self.mapping = hs.read_mapping_file(models_filename)
+        self.modalities = {}
 
-    def check_modalities_to_train(self, subject):
-        modalities = subject.modalities_dict()
-        if self.hist_model_file is None:
-            self.mod_to_train = modalities
-            return
-        if not os.path.exists(self.hist_model_file):
-            self.mod_to_train = modalities
-            return
-        modalities_to_train = dict(modalities)
-        with open(self.hist_model_file) as model:
-            for line in model:
-                for m in modalities.keys():
-                    if m in line.split(' '):
-                        del modalities_to_train[m]
-        self.mod_to_train = modalities_to_train
-        return
+    def __set_modalities(self, subject):
+        self.modalities = subject.modalities_dict()
+
+    def __check_modalities_to_train(self):
+        if self.mapping is {}:
+            return self.modalities
+        # remove if exists in currently loaded mapping dict
+        modalities_to_train = dict(self.modalities)
+        for mod in self.modalities.keys():
+            if mod in self.mapping:
+                del modalities_to_train[mod]
+        return modalities_to_train
 
     def train_normalisation_ref(self, subjects):
-        self.check_modalities_to_train(subjects[0])
-        if len(self.mod_to_train) <= 0:
-            print('normalisation histogram reference model already trained')
+        # check modalities to train, using the first subject in subject list
+        # to find input modality list
+        self.__set_modalities(subjects[0])
+        mod_to_train = self.__check_modalities_to_train()
+        if len(mod_to_train) <= 0:
+            print('Normalisation histogram reference models found')
             return
-        mapping = {}
-        list_modalities = self.mod_to_train
+        print('training normalisation reference for {}'.format(
+            mod_to_train.keys()))
         array_files = [subject.column(0) for subject in subjects]
-        perc_database = hs.create_database_perc_multimod_arrayfiles(
-            self.mask_type, array_files, self.cutoff, list_modalities)
-        for m in perc_database.keys():
-            s1, s2 = hs.create_standard_range(perc_database[m])
-            print(perc_database, s1, s2)
-            mapping[m] = hs.create_mapping_perc(perc_database[m], s1, s2)
-        self.mapping = mapping
-        self.complete_and_transform_model_file()
+        trained_mapping = hs.create_mapping_from_multimod_arrayfiles(
+            array_files, mod_to_train, self.cutoff, self.mask_type)
+        # for python 3.5: self.mapping = {**self.mapping, **trained_mapping}
+        self.mapping.update(trained_mapping)
+        self.__write_all_mod_mapping()
 
     # Function to modify the model file with the mapping if needed according
     # to existent mapping and modalities
-    def complete_and_transform_model_file(self):
-        mapping = self.mapping
-        modalities = self.mod_to_train.keys()
-        modalities = [m for m in modalities if m in mapping.keys()]
-
-        path, name, ext = io.split_filename(self.hist_model_file)
-        if not os.path.exists(path):
-            os.mkdir(path)
+    def __write_all_mod_mapping(self):
+        # backup existing file first
         if os.path.exists(self.hist_model_file):
-            warnings.warn("The reference filename exists and will be copied "
-                          "for modification")
-            path, name, ext = io.split_filename(self.hist_model_file)
-            to_change = [m for m in modalities]
-            to_change_string = map(str, modalities)
-            new_name = os.path.join(path, name + '_' + ''.join(
-                to_change_string) + '_' + self.option_saving + ext)
+            backup_name = '{}.backup'.format(self.hist_model_file)
+            from shutil import copyfile
+            copyfile(self.hist_model_file, backup_name)
 
-            with open(self.hist_model_file) as oldfile, open(new_name, 'w+') as newfile:
-                for line in oldfile:
-                    if not any(m_to_change in line for m_to_change in
-                               to_change_string):
-                        newfile.write(line)
-            self.hist_model_file = new_name
-        else:
-            new_name = self.hist_model_file
-        for m in modalities:
-            hs.write_mapping_file(mapping[m], new_name, m)
-        return new_name
+        if not os.path.exists(os.path.dirname(self.hist_model_file)):
+            try:
+                os.mkdirs(os.path.dirname(self.hist_model_file))
+            except OSError:
+                print('cannot create {}'.format(self.hist_model_file))
+                raise
+        hs.force_writing_new_mapping(self.hist_model_file, self.mapping)
 
-    def make_mask_array(self, data_array, flag_all=False):
-        data_array = io.expand_to_5d(data_array)
-        max_time = data_array.shape[4]
-        list_indices_mod = [m for m in range(0, data_array.shape[3]) if
-                            np.count_nonzero(data_array[..., m, :]) > 0]
-        mod_masking = list_indices_mod
-        mask_array = np.zeros_like(data_array)
-        for mod in mod_masking:
-            for t in range(0, max_time):
-                new_mask = hs.create_mask_img_3d(
-                    data_array[..., mod, t], self.dict_masking.mask_type)
-                new_mask = io.expand_to_5d(new_mask)
-                mask_array[..., mod:mod + 1, t:t + 1] = new_mask
-        if flag_all:
+    def make_mask_array(self, data_array):
+        # data_array = io.expand_to_5d(data_array)
+        assert data_array.ndim == 5
+        mod_to_mask = [m for m in range(0, data_array.shape[3]) if
+                       np.any(data_array[..., m, :])]
+        mask_array = np.zeros_like(data_array, dtype=bool)
+        for mod in mod_to_mask:
+            for t in range(0, data_array.shape[4]):
+                mask_array[..., mod, t] = hs.create_mask_img_3d(
+                    data_array[..., mod, t],
+                    self.dict_masking.mask_type)
+
+        if self.dict_masking.multimod_type is None:
             return mask_array
-        elif self.dict_masking.multimod_type == 'or':
-            for t in range(0, max_time):
-                new_mask = np.zeros([data_array.shape[0:3]])
-                for mod in mod_masking:
-                    if np.count_nonzero(data_array[..., mod, t]) > 0:
-                        new_mask = new_mask + mask_array[..., mod, t]
-                new_mask[new_mask > 0.5] = 1
-                mask_array[..., t] = io.expand_to_5d(np.tile(np.expand_dims(
-                    new_mask, axis=3), [1, mask_array.shape[3]]))
+
+        if self.dict_masking.multimod_type == '':
             return mask_array
-        elif self.dict_masking.multimod_type == 'and':
-            for t in range(0, max_time):
+
+        if self.dict_masking.multimod_type == 'all':
+            return mask_array
+
+        if self.dict_masking.multimod_type == 'or':
+            for t in range(0, data_array.shape[4]):
+                new_mask = np.zeros(data_array.shape[0:3], dtype=np.bool)
+                for mod in mod_to_mask:
+                    new_mask = np.logical_or(new_mask, mask_array[..., mod, t])
+                mask_array[..., t] = np.tile(np.expand_dims(new_mask, axis=-1),
+                                             [1, mask_array.shape[3]])
+            return mask_array
+
+        if self.dict_masking.multimod_type == 'and':
+            for t in range(0, data_array.shape[4]):
                 new_mask = np.ones(data_array.shape[0:3])
-                for mod in mod_masking:
-                    if np.count_nonzero(data_array[..., mod, t]) > 0:
-                        new_mask = np.multiply(new_mask,
-                                               mask_array[..., mod, t])
-                mask_array[..., t:t + 1] = io.expand_to_5d(np.tile(
-                    np.expand_dims(new_mask, axis=3), [1, mask_array.shape[3]]))
+                for mod in mod_to_mask:
+                    new_mask = np.logical_and(new_mask, mask_array[..., mod, t])
+                mask_array[..., t] = np.tile(np.expand_dims(new_mask, axis=-1),
+                                             [1, mask_array.shape[3]])
             return mask_array
-        else:
-            return mask_array
+        raise ValueError('unknown mask combining option')
 
     def whitening_transformation(self, img, mask):
         # make sure img is a monomodal volume
@@ -157,74 +136,34 @@ class HistNormaliser_bis(object):
         return data_array
 
     def normalise(self, data_array):
-        mask_array = self.make_mask_array(data_array)
-        list_modalities = self.list_trained_modalities()
-        print("Modalities considered in the order %s" % ' '.join(
-            list_modalities))
-        data_array = io.expand_to_5d(data_array)
-        if data_array.shape[3] > len(list_modalities):
-            warnings.warn("There are more modalities to normalise than "
-                          "reference histograms ! Please rerun the "
-                          "histogram training")
-
+        assert not self.modalities == {}
+        assert data_array.ndim == 5
+        if data_array.shape[3] > len(self.modalities):
             raise ValueError("There are more modalities to normalise than "
                              "reference histograms ! Please rerun the "
                              "histogram training")
-        if mask_array is None:
-            mask_array = self.make_mask_array(data_array, flag_all='True')
-        for mod in range(0, data_array.shape[3]):
+        mask_array = self.make_mask_array(data_array)
+        for mod in self.modalities.keys():
             for t in range(0, data_array.shape[4]):
-                if np.count_nonzero(data_array[..., mod, t]) == 0:
-                    continue
-                mask_temp = mask_array[..., mod, t]
-                data_array[..., mod, t] = self.intensity_normalisation(
-                    data_array[..., mod, t], mask_temp, list_modalities[mod])
+                mod_id = self.modalities[mod]
+                if not np.any(data_array[..., mod_id, t]):
+                    continue  # missing modality
+                data_array[..., mod_id, t] = self.intensity_normalisation_3d(
+                    data_array[..., mod_id, t],
+                    mask_array[..., mod_id, t],
+                    self.mapping[mod])
         return data_array
 
-    def list_trained_modalities(self):
-        if self.hist_model_file is None:
-            return []
-        if not os.path.exists(self.hist_model_file):
-            return []
-        trained_modalities = []
-        with open(self.hist_model_file) as model:
-            for line in model:
-                words = line.split(' ')
-                if len(words) > 2:
-                    trained_modalities.append(words[0])
-        return trained_modalities
-
-    def intensity_normalisation(self, img_data, mask, modality):
-        if not io.check_shape_compatibility_3d(img_data, mask):
-            raise ValueError('incompatibility of shapes between img and mask')
-        mapping = hs.read_mapping_file(self.hist_model_file, modality)
-        if len(mapping) == 15:
-            final_mapping = mapping[1:-1]
-        else:
-            final_mapping = mapping
-        if img_data.ndim == 3:
-            mask_new = io.adapt_to_shape(mask, img_data.shape)
-            new_img_temp = hs.transform_for_mapping(img_data,
-                                                    mask_new,
-                                                    final_mapping,
-                                                    self.cutoff,
-                                                    self.norm_type)
-            return new_img_temp
+    def intensity_normalisation_3d(self, img_data, mask, mapping):
+        assert img_data.ndim == 3
+        assert np.all(img_data.shape[:3] == mask.shape[:3])
         mask_new = io.adapt_to_shape(mask, img_data.shape)
-        hs.standardise_cutoff(self.cutoff, self.norm_type)
-        new_img = np.copy(img_data)
-        for i in range(0, img_data.shape[-1]):
-            # Histogram normalisation (foreground)
-            new_img_temp = hs.transform_for_mapping(img_data[..., i],
-                                                    mask_new[..., i],
-                                                    final_mapping,
-                                                    self.cutoff,
-                                                    self.norm_type)
-            # Whitening with zero mean and unit variance (foreground)
-            # new_img_temp = self.whitening_transformation(new_img_temp,
-            # mask_new[..., i])
-            new_img[..., i] = new_img_temp
-        return new_img
+        img_data = hs.transform_for_mapping(img_data,
+                                            mask_new,
+                                            mapping,
+                                            self.cutoff,
+                                            self.norm_type)
+        return img_data
 
 # class HistNormaliser(object):
 #    def __init__(self, ref_file_name):

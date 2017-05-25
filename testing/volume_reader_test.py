@@ -34,7 +34,8 @@ class SubjectTest(tf.test.TestCase):
                                        do_resampling=True,
                                        do_normalisation=True,
                                        output_columns=(0, 1, 2),
-                                       interp_order=(3, 0))
+                                       interp_order=(3, 0),
+                                       modality_names=None)
 
         img, seg, weight_map, subject = new_vr.next_subject()
         print img.shape

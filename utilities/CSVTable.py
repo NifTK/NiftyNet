@@ -12,9 +12,15 @@ class CSVTable(object):
     files, the subject name is matched to have a joint _csv_file
     """
 
-    def __init__(self, csv_file=None, csv_dict=None, allow_missing=True):
+    def __init__(self,
+                 csv_file=None,
+                 csv_dict=None,
+                 modality_names=None,
+                 allow_missing=True):
+
         self.allow_missing = allow_missing
         self._csv_table = None
+        self.modality_names = modality_names
         if csv_file is not None:
             self.create_by_reading_single_csv(csv_file)
         if csv_dict is not None:
@@ -95,7 +101,7 @@ class CSVTable(object):
     def to_subject_list(self):
         subject_list = []
         for row in self._csv_table:
-            new_subject = Subject.from_csv_row(row)
+            new_subject = Subject.from_csv_row(row, self.modality_names)
             subject_list.append(new_subject)
         return subject_list
 

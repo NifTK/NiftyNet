@@ -43,7 +43,7 @@ class Augmentation(object):
 
 class Masking(object):
     def __init__(self, mask_type='otsu_plus', path_to_save='',
-                 multimod_type='and',
+                 multimod_type='or',
                  multimod=[0],
                  alpha=0.,
                  flag_saving=False, val=0, ):

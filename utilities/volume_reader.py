@@ -25,7 +25,8 @@ class VolumePreprocessor(object):
                  do_whitening=True,
                  allow_missing=True,
                  output_columns=(0, 1, 2, 3),
-                 interp_order=(3, 0, 3)):
+                 interp_order=(3, 0, 3),
+                 modality_names=None):
 
         self.do_reorientation = do_reorientation
         self.do_resampling = do_resampling
@@ -34,15 +35,14 @@ class VolumePreprocessor(object):
 
         self.dict_normalisation = dict_normalisation
 
-        self.csv_table = CSVTable(csv_file, csv_dict, allow_missing)
+        self.csv_table = CSVTable(csv_file, csv_dict, modality_names, allow_missing)
 
         self.standardisor = HistNormaliser_bis(
-            self.dict_normalisation.hist_ref_file,
-            self.dict_normalisation.path_to_train,
-            dict_masking,
-            self.dict_normalisation.norm_type,
-            self.dict_normalisation.cutoff,
-            dict_masking.mask_type, '')
+            models_filename=self.dict_normalisation.hist_ref_file,
+            dict_masking=dict_masking,
+            norm_type=self.dict_normalisation.norm_type,
+            cutoff=self.dict_normalisation.cutoff,
+            mask_type=dict_masking.mask_type)
 
         self.subject_list = self.create_subject_list()
         self.current_id = -1
@@ -82,7 +82,6 @@ class VolumePreprocessor(object):
             image = self.standardisor.normalise(image)
         if self.do_whitening:
             image = self.standardisor.whiten(image)
-
         return image, label, weight, self.current_id
 
         # def normalise_subject_data_and_save(self, subject):

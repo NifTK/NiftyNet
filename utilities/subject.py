@@ -49,19 +49,23 @@ class Subject(object):
                   'image_filename',
                   'textual_comment')
 
-    def __init__(self, name):
+    def __init__(self, name, modality_names=None):
         self.name = name
+        self.modality_names = modality_names
         self.csv_cell_dict = self._create_empty_csvcell_dict()
 
         self.is_oriented_to_stand = False
         self.is_isotropic = False
 
     @classmethod
-    def from_csv_row(cls, row):
+    def from_csv_row(cls, row, modality_names=None):
         new_subject = cls(name=row[0])
         csv_cell_list = [MultiModalFileList(column) if column != '' else None
                          for column in row[1:]]
         new_subject.set_all_columns(*csv_cell_list)
+        if modality_names is not None:
+            # check modality names consistent with subject image files
+            assert(len(modality_names) == len(new_subject.column(0)()[0]))
         return new_subject
 
     def _create_empty_csvcell_dict(self):
@@ -212,6 +216,8 @@ class Subject(object):
 
     def modalities_dict(self):
         num_modality = self.column(0).num_modality
+        if self.modality_names is not None:
+            return dict(zip(self.modality_names, range(0, num_modality)))
         dict_modalities = {}
         for m in range(0, num_modality):
             name_mod = 'Modality-{}'.format(m)
