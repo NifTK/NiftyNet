@@ -1,12 +1,13 @@
 import os
 
 import nibabel as nib
+import numpy as np
 
 import misc_io as util
-import utilities.constraints_classes as cc
 from misc import CacheFunctionOutput
 
 STANDARD_ORIENTATION = [[0, 1], [1, 1], [2, 1]]
+
 
 class MultiModalFileList(object):
     def __init__(self, multi_mod_filenames):
@@ -34,7 +35,6 @@ class MultiModalFileList(object):
         return len(self.multi_mod_filenames[0])
 
 
-
 class Subject(object):
     """
     This class specifies all properties of a subject
@@ -43,11 +43,11 @@ class Subject(object):
     fields = ('input_image_file',
               'target_image_file',
               'weight_map_file',
-              'target_note_file')
+              'target_note')
     data_types = ('image_filename',
-                 'image_filename',
-                 'image_filename',
-                 'textual_comment')
+                  'image_filename',
+                  'image_filename',
+                  'textual_comment')
 
     def __init__(self, name):
         self.name = name
@@ -159,17 +159,18 @@ class Subject(object):
         # TODO change name to read_image_as_5d
         if Subject.data_types[index] == 'textual_comment':
             return self.column(index)()[0][0]
+
         elif Subject.data_types[index] == 'image_filename':
-            data_5d = util.prepare_5d_data(self.column(index))
-            if do_resampling:
-                if interp_order is None:
-                    print("do resampling, but interpolation order is not "
-                          "specified, defaulting to interp_order=3")
-                    interp_order = 3
+            data_5d = util.csv_cell_to_volume_5d(self.column(index))
+            if do_resampling and (interp_order is None):
+                print("do resampling, but interpolation order is not "
+                      "specified, defaulting to interp_order=3")
+                interp_order = 3
                 data_5d = self.__resample_to_isotropic(data_5d, interp_order)
             if do_reorientation:
                 data_5d = self.__reorient_to_stand(data_5d)
-        return data_5d
+            data_5d = np.nan_to_num(data_5d)
+        return {Subject.fields[index]: data_5d}
 
     def load_columns(self,
                      index_list,
@@ -181,16 +182,21 @@ class Subject(object):
         returns all data (with reorientation/resampling if required)
         """
 
-        if (interp_order is None):
+        # set default interp
+        if interp_order is None:
             interp_order = [3] * len(index_list)
-            if do_resampling:
-                print("do resampling, but interpolation orders are not "
-                      "specified, defaulting to interp_order=3 for all columns")
-        return tuple([self.load_column(column_ind,
-                                       do_reorientation,
-                                       do_resampling,
-                                       interp_order[i])
-                      for (i, column_ind) in enumerate(index_list)])
+        if len(interp_order) < len(index_list):
+            full_interp_order = [3] * len(index_list)
+            full_interp_order[:len(interp_order)] = interp_order
+            interp_order = full_interp_order
+        output_dict = {}
+        for (i, column_ind) in enumerate(index_list):
+            column_dict = self.load_column(column_ind,
+                                           do_reorientation,
+                                           do_resampling,
+                                           interp_order[i])
+            output_dict[column_dict.keys()[0]] = column_dict.values()[0]
+        return output_dict
 
     def __str__(self):
         out_str = []
@@ -212,44 +218,44 @@ class Subject(object):
             dict_modalities[name_mod] = m
         return dict_modalities
 
-    # def _set_data_path_input(self, new_name):
-    #    if os.path.exists(new_name):
-    #        self.set_column(1, MultiModalFileList([[new_name]]))
-    #    else:
-    #        warnings.warn("Cannot update new file array as the given file "
-    #                      "does not exist")
+        # def _set_data_path_input(self, new_name):
+        #    if os.path.exists(new_name):
+        #        self.set_column(1, MultiModalFileList([[new_name]]))
+        #    else:
+        #        warnings.warn("Cannot update new file array as the given file "
+        #                      "does not exist")
 
-    # TODO: back to the original volume
-    # def _reorient_to_original(self, data):
-    #    """
-    #    given image data of all modalities in standardised orientation,
-    #    this function returns image data in original orientation
-    #    """
-    #    image_affine = self._read_original_affine()
-    #    ornt_original = nib.orientations.axcodes2ornt(
-    #            nib.aff2axcodes(image_affine))
-    #    data_reoriented = io.do_reorientation(
-    #            data, STANDARD_ORIENTATION, ornt_original)
-    #    self.is_oriented_to_stand = False
-    #    return data_reoriented
+        # TODO: back to the original volume
+        # def _reorient_to_original(self, data):
+        #    """
+        #    given image data of all modalities in standardised orientation,
+        #    this function returns image data in original orientation
+        #    """
+        #    image_affine = self._read_original_affine()
+        #    ornt_original = nib.orientations.axcodes2ornt(
+        #            nib.aff2axcodes(image_affine))
+        #    data_reoriented = io.do_reorientation(
+        #            data, STANDARD_ORIENTATION, ornt_original)
+        #    self.is_oriented_to_stand = False
+        #    return data_reoriented
 
-    # TODO: support time series
-    # def adapt_time_series(self, data):
-    #     times = {}
-    #     min_times = 1000
-    #     max_times = 1
-    #     for mod in self.file_path_list.keys():
-    #         if data[mod].ndim < 5:
-    #             times[mod] = 1
-    #             min_times = 1
-    #         else:
-    #             times[mod] = data[mod].shape[4]
-    #             max_times = np.max([times[mod], max_times])
-    #             min_times = np.min([times[mod], min_times])
-    #     if not min_times == max_times:
-    #         warnings.warn("Incompatibility between presented time series")
-    #         for mod in self.file_path_list.keys():
-    #             if times[mod] < max_times:
-    #                 data[mod] = io.adjust_to_maxtime(data[mod], max_times)
-    #
-    #     return data
+        # TODO: support time series
+        # def adapt_time_series(self, data):
+        #     times = {}
+        #     min_times = 1000
+        #     max_times = 1
+        #     for mod in self.file_path_list.keys():
+        #         if data[mod].ndim < 5:
+        #             times[mod] = 1
+        #             min_times = 1
+        #         else:
+        #             times[mod] = data[mod].shape[4]
+        #             max_times = np.max([times[mod], max_times])
+        #             min_times = np.min([times[mod], min_times])
+        #     if not min_times == max_times:
+        #         warnings.warn("Incompatibility between presented time series")
+        #         for mod in self.file_path_list.keys():
+        #             if times[mod] < max_times:
+        #                 data[mod] = io.adjust_to_maxtime(data[mod], max_times)
+        #
+        #     return data

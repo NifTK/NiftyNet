@@ -124,22 +124,12 @@ class ConstraintSearch(object):
         index_start = 0 if index_constraint[sort_indices[0]] > 0 else 1
         for i in range(index_start, len(self.list_contain)):
             name_pot_temp = name[
-                    index_init: index_constraint[sort_indices[i]]]
+                            index_init: index_constraint[sort_indices[i]]]
             for c in self.list_clean:
                 if c in name_pot_temp:
                     name_pot_temp = name_pot_temp.replace(c, '')
             name_pot.append(name_pot_temp)
             index_init = index_constraint[sort_indices[i]] + \
-                len(self.list_contain[sort_indices[i]])
+                         len(self.list_contain[sort_indices[i]])
         name_pot.append(name[index_init:])
         return name_pot
-
-#class InputList(object):
-#    def __init__(self, input, output, weight, input_txt, output_txt):
-#        self.input = input
-#        self.output = output
-#        self.weight = weight
-#        self.input_txt = input_txt
-#        self.output_txt = output_txt
-
-

@@ -1,10 +1,8 @@
+# -*- coding: utf-8 -*-
 import csv
-import os
-import warnings
 from difflib import SequenceMatcher
 
 import constraints_classes as cc
-
 
 
 # From a unique csv file with for each subject the list of files to use,
@@ -12,7 +10,9 @@ import constraints_classes as cc
 # list of such arrays. num_modality indicates the
 # number of modalities before going to further time point
 # TODO: to support multiple time points
-def create_array_files_from_csv(csv_file, allow_missing=True, numb_mod=None):
+def load_subject_and_filenames_from_csv_file(csv_file,
+                                             allow_missing=True,
+                                             numb_mod=None):
     if csv_file is None:
         return [], []
     list_subjects = []
@@ -29,7 +29,6 @@ def create_array_files_from_csv(csv_file, allow_missing=True, numb_mod=None):
                                    for i in range(0, len(list_files), numb_mod)]
             list_filenames.append(grouped_time_points)
     return list_subjects, list_filenames
-
 
 
 # try to find a direct match between two arrays of list of possible names.
@@ -64,7 +63,7 @@ def match_first_degree(name_list1, name_list2):
 # Find the maximum overlap of n in the list of strings list_names. Returns
 # the matched sequence and the corresponding index of the corresponding
 # element in the list
-def find_max_overlap_in_list(name, list_names):
+def __find_max_overlap_in_list(name, list_names):
     match_max = 0
     match_seq = ''
     match_orig = ''
@@ -100,19 +99,19 @@ def match_second_degree(name_list1, name_list2):
     for i in range(0, len(name_list1)):
         if init_match1[i] == '':
             for n in name_list1[i]:
-                init_match1[i], index = find_max_overlap_in_list(n, redflat_2)
+                init_match1[i], index = __find_max_overlap_in_list(n, redflat_2)
                 ind_match1[i] = indflat_1[index]
     for i in range(0, len(name_list2)):
         if init_match2[i] == '':
             for n in name_list1[i]:
-                init_match2[i], index = find_max_overlap_in_list(n, redflat_1)
+                init_match2[i], index = __find_max_overlap_in_list(n, redflat_1)
                 ind_match2[i] = indflat_2[index]
     return init_match1, ind_match1, init_match2, ind_match2
 
 
 # From a list of list of names and a list of list of files that are
 # associated, find the name correspondance and therefore the files associations
-def combine_list_constraint_for5d(name_list, list_files):
+def join_subject_id_and_filename_list(name_list, list_files):
     name_length = [len(names) for names in name_list]
     ind_max = name_length.index(max(name_length))
     name_tot = []
@@ -146,7 +145,7 @@ def remove_duplicated_names(name_list):
     return duplicates_removed
 
 
-def create_csv_prepare5d(list_constraints, csv_file):
+def write_matched_filenames_to_csv(list_constraints, csv_file):
     name_tot = []
     list_tot = []
     for c in list_constraints:
@@ -155,15 +154,14 @@ def create_csv_prepare5d(list_constraints, csv_file):
         name_list = remove_duplicated_names(name_list)
         name_tot.append(name_list)
         list_tot.append(list_files)
-    list_combined = combine_list_constraint_for5d(name_tot, list_tot)
+    list_combined = join_subject_id_and_filename_list(name_tot, list_tot)
     with open(csv_file, 'wb') as csvfile:
         file_writer = csv.writer(csvfile, delimiter=',')
         for list_temp in list_combined:
             file_writer.writerow(list_temp)
     return
 
-
-#def combine_list_constraint(name_list, list_files):
+# def combine_list_constraint(name_list, list_files):
 #    name_match_io, ind_io, _, _ = match_second_degree(name_list.input,
 #                                                      name_list.output)
 #    name_match_iw, ind_iw, _, _ = match_second_degree(name_list.input,
@@ -200,7 +198,7 @@ def create_csv_prepare5d(list_constraints, csv_file):
 #    return list_compare
 
 
-#def create_csv(constraint_list, csv_file):
+# def create_csv(constraint_list, csv_file):
 #    list_input = None
 #    list_output = None
 #    list_weight = None
@@ -312,4 +310,3 @@ def create_csv_prepare5d(list_constraints, csv_file):
 #                              in zip(csv_fields[1:], row[1:])}
 #     f.close()
 #     return dict1
-

@@ -1,4 +1,3 @@
-import utilities.constraints_classes as cc
 import utilities.misc_csv as misc_csv
 from utilities.subject import Subject
 
@@ -12,6 +11,7 @@ class CSVTable(object):
     corresponding to a single modality file. In the case of multiple csv
     files, the subject name is matched to have a joint _csv_file
     """
+
     def __init__(self, csv_file=None, csv_dict=None, allow_missing=True):
         self.allow_missing = allow_missing
         self._csv_table = None
@@ -22,7 +22,6 @@ class CSVTable(object):
         if self._csv_table is None:
             raise RuntimeError('unable to read csv files into a nested list')
 
-
     def create_by_join_multiple_csv_files(self, **csv_dict):
 
         header = Subject.fields
@@ -32,16 +31,16 @@ class CSVTable(object):
                 csv_to_join[h] = csv_dict[h]
             except KeyError:
                 print("The csv_dict input should have the following keys:\n"
-                      +"{}\n".format(header)
-                      +"Each value should be a filename of csv file\n"
-                      +"where each csv file contains at least two columns\n"
-                      +"  - the first column: subject id\n"
-                      +"  - the rest columns: image filename\n"
-                      +"subject_id will be used to join multiple csv files.")
+                      + "{}\n".format(header)
+                      + "Each value should be a filename of csv file\n"
+                      + "where each csv file contains at least two columns\n"
+                      + "  - the first column: subject id\n"
+                      + "  - the rest columns: image filename\n"
+                      + "subject_id will be used to join multiple csv files.")
 
         input_image_id, input_image_fullname = \
-            misc_csv.create_array_files_from_csv(
-                    csv_to_join[header[0]], allow_missing=self.allow_missing)
+            misc_csv.load_subject_and_filenames_from_csv_file(
+                csv_to_join[header[0]], self.allow_missing, None)
         # try to do pairwise matching between input_image_file and the others
         joint_id = None
         matches = {}
@@ -51,8 +50,9 @@ class CSVTable(object):
                 matches[f] = (None, None)
                 continue
             # read single csv file (first column: id, rest column: image name)
-            csv_id, matched_fullnames = misc_csv.create_array_files_from_csv(
-                csv_file, allow_missing=self.allow_missing)
+            csv_id, matched_fullnames = \
+                misc_csv.load_subject_and_filenames_from_csv_file(
+                    csv_file, self.allow_missing, None)
             # find matching between first column and 'input_image_file'
             joint_id, matched_index, _, _ = misc_csv.match_second_degree(
                 input_image_id, csv_id)
