@@ -170,6 +170,7 @@ class Subject(object):
                 print("do resampling, but interpolation order is not "
                       "specified, defaulting to interp_order=3")
                 interp_order = 3
+            if do_resampling:
                 data_5d = self.__resample_to_isotropic(data_5d, interp_order)
             if do_reorientation:
                 data_5d = self.__reorient_to_stand(data_5d)
@@ -195,10 +196,10 @@ class Subject(object):
             interp_order = full_interp_order
         output_dict = {}
         for (i, column_ind) in enumerate(index_list):
-            column_dict = self.load_column(column_ind,
-                                           do_reorientation,
-                                           do_resampling,
-                                           interp_order[i])
+            column_dict = self.load_column(index=column_ind,
+                                           do_reorientation=do_reorientation,
+                                           do_resampling=do_resampling,
+                                           interp_order=interp_order[i])
             output_dict[column_dict.keys()[0]] = column_dict.values()[0]
         return output_dict
 

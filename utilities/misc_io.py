@@ -88,25 +88,19 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
                              constant_values=1)
 
     # resampling each 3d volume in the 5D data
-    data_init = expand_to_5d(data_array)
-    data_resampled = None
-    for t in range(0, data_init.shape[4]):
-        data_mod = None
-        for m in range(0, data_init.shape[3]):
-            data_3d = data_init[..., m, t]
+    data_resampled = []
+    for t in range(0, data_array.shape[4]):
+        data_mod = []
+        for m in range(0, data_array.shape[3]):
+            data_3d = data_array[..., m, t]
             # interp_order_m = interp_order[min(len(interp_order) - 1, m)]
             data_new = scipy.ndimage.zoom(data_3d,
                                           to_multiply[0:3],
                                           order=interp_order)
-            data_new = expand_to_5d(data_new)
-            if data_mod is None:
-                data_mod = data_new
-            else:
-                data_mod = np.concatenate([data_mod, data_new], axis=3)
-        if data_resampled is None:
-            data_resampled = data_mod
-        else:
-            data_resampled = np.concatenate([data_resampled, data_mod], axis=4)
+            data_mod.append(data_new[..., np.newaxis])
+        data_mod = np.concatenate(data_mod, axis=-1)
+        data_resampled.append(data_mod[..., np.newaxis])
+    data_resampled = np.concatenate(data_resampled, axis=-1)
     return data_resampled
 
 
@@ -254,14 +248,10 @@ def csv_cell_to_volume_5d(csv_cell):
     return data_to_save
 
 
-# def expand_to_5d(img_data):
-#     if img_data.ndim == 2:
-#         img_data = np.expand_dims(img_data, axis=2)
-#     if img_data.ndim == 3:
-#         img_data = np.expand_dims(img_data, axis=3)
-#     if img_data.ndim == 4:
-#         img_data = np.expand_dims(img_data, axis=4)
-#     return img_data
+def expand_to_5d(img_data):
+    while img_data.ndim < 5:
+        img_data = np.expand_dims(img_data, axis=-1)
+    return img_data
 
 
 def pad_zeros_to_5d(data_array, max_mod, max_time):
