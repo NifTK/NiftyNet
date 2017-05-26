@@ -62,7 +62,6 @@ def rectify_header_sform_qform(img_nii):
 # Perform the reorientation to ornt_fin of the data array given ornt_init
 def do_reorientation(data_array, ornt_init, ornt_fin):
     if np.array_equal(ornt_init, ornt_fin):
-        # print("Already in same orientation")
         return data_array
     ornt_transf = nib.orientations.ornt_transform(ornt_init, ornt_fin)
     data_reoriented = nib.orientations.apply_orientation(
@@ -86,7 +85,6 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
                              (0, data_array.ndim - len(to_multiply)),
                              mode='constant',
                              constant_values=1)
-
     # resampling each 3d volume in the 5D data
     data_resampled = []
     for t in range(0, data_array.shape[4]):
@@ -266,8 +264,8 @@ def pad_zeros_to_5d(data_array, max_mod, max_time):
                                             data.shape[2],
                                             data.shape[3],
                                             max_time - data.shape[4]])
-                data_new = np.concatenate([data, zeros_to_append], axis=4)
-                data_array[0][m] = data_new
+                data_array[0][m] = np.concatenate(
+                    [data, zeros_to_append], axis=4)
     else:
         for t in range(0, len(data_array)):
             data = data_array[t][0]
@@ -277,37 +275,22 @@ def pad_zeros_to_5d(data_array, max_mod, max_time):
                                             data.shape[2],
                                             max_mod - data.shape[3],
                                             data.shape[4]])
-                data_new = np.concatenate([data, zeros_to_append], axis=3)
-                data_array[t][0] = data_new
+                data_array[t][0] = np.concatenate(
+                    [data, zeros_to_append], axis=3)
     return data_array
 
 
 def create_5d_from_array(data_array):
-    data_5d = None
+    data_5d = []
     for t in range(0, len(data_array)):
-        data_mod_temp = None
+        data_mod_temp = []
         for m in range(0, len(data_array[0])):
             data_temp = data_array[t][m]
-            if data_mod_temp is None:
-                data_mod_temp = data_temp
-            else:
-                data_mod_temp = np.concatenate(
-                    [data_mod_temp, data_temp], axis=3)
-        if data_5d is None:
-            data_5d = data_mod_temp
-        else:
-            data_5d = np.concatenate(
-                [data_5d, data_mod_temp], axis=4)
+            data_mod_temp.append(data_temp)
+        data_mod_temp = np.concatenate(data_mod_temp, axis=3)
+        data_5d.append(data_mod_temp)
+    data_5d = np.concatenate(data_5d, axis=4)
     return data_5d
-
-
-# # Check compatibility in dimensions for the first 3 dimensions of two images
-# def check_shape_compatibility_3d(img1, img2):
-#     # consider by default that there are a min of 3 dimensions (2d images are
-#     # always expanded beforehand
-#     if img1.ndim < 3 or img2.ndim < 3:
-#         raise ValueError
-#     return np.all(img1.shape[:3] == img2.shape[:3])
 
 
 def adapt_to_shape(img_to_change, shape, mod='tile'):
@@ -320,24 +303,6 @@ def adapt_to_shape(img_to_change, shape, mod='tile'):
         return img_to_change
     new_img = np.resize(img_to_change, shape)
     return new_img
-
-
-# def create_new_filename(filename_init, new_path='', new_prefix='',
-#                         new_suffix=''):
-#     path, name, ext = split_filename(filename_init)
-#     if new_path is None or len(new_path) == 0:
-#         new_path = path
-#     new_name = "%s_%s_%s" % (new_prefix, name, new_suffix)
-#     new_filename = os.path.join(new_path, new_name + ext)
-#     new_filename = clean_name(new_filename)
-#     return new_filename
-
-
-# def clean_name(filename):
-#     filename = filename.replace("__", "_")
-#     filename = filename.replace("..", ".")
-#     filename = filename.replace("_.", ".")
-#     return filename
 
 
 STANDARD_ORIENTATION = [[0, 1], [1, 1], [2, 1]]
@@ -390,3 +355,28 @@ def list_nifti_subject(list_data_dir, subject_id):
             if subject_id in split_name and 'nii' in ext:
                 file_list.append(os.path.join(data_dir, file_name))
     return file_list
+
+# # Check compatibility in dimensions for the first 3 dimensions of two images
+# def check_shape_compatibility_3d(img1, img2):
+#     # consider by default that there are a min of 3 dimensions (2d images are
+#     # always expanded beforehand
+#     if img1.ndim < 3 or img2.ndim < 3:
+#         raise ValueError
+#     return np.all(img1.shape[:3] == img2.shape[:3])
+
+# def create_new_filename(filename_init, new_path='', new_prefix='',
+#                         new_suffix=''):
+#     path, name, ext = split_filename(filename_init)
+#     if new_path is None or len(new_path) == 0:
+#         new_path = path
+#     new_name = "%s_%s_%s" % (new_prefix, name, new_suffix)
+#     new_filename = os.path.join(new_path, new_name + ext)
+#     new_filename = clean_name(new_filename)
+#     return new_filename
+
+
+# def clean_name(filename):
+#     filename = filename.replace("__", "_")
+#     filename = filename.replace("..", ".")
+#     filename = filename.replace("_.", ".")
+#     return filename

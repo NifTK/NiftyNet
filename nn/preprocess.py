@@ -47,11 +47,12 @@ class HistNormaliser_bis(object):
         if len(mod_to_train) <= 0:
             print('Normalisation histogram reference models found')
             return
-        print('training normalisation reference for {}'.format(
+        print('training normalisation histogram references for {}'.format(
             mod_to_train.keys()))
         array_files = [subject.column(0) for subject in subjects]
         trained_mapping = hs.create_mapping_from_multimod_arrayfiles(
             array_files, mod_to_train, self.cutoff, self.mask_type)
+        ### merging trained_mapping dict and self.mapping dict
         # for python 3.5: self.mapping = {**self.mapping, **trained_mapping}
         self.mapping.update(trained_mapping)
         self.__write_all_mod_mapping()
@@ -63,7 +64,13 @@ class HistNormaliser_bis(object):
         if os.path.exists(self.hist_model_file):
             backup_name = '{}.backup'.format(self.hist_model_file)
             from shutil import copyfile
-            copyfile(self.hist_model_file, backup_name)
+            try:
+                copyfile(self.hist_model_file, backup_name)
+            except OSError:
+                print('cannot backup file {}'.format(self.hist_model_file))
+                raise
+            print("moved existing histogram refernce file\n"
+                  " from {} to {}".format(self.hist_model_file, backup_name))
 
         if not os.path.exists(os.path.dirname(self.hist_model_file)):
             try:
@@ -115,20 +122,18 @@ class HistNormaliser_bis(object):
         raise ValueError('unknown mask combining option')
 
     def whiten(self, data_array):
-        modalities_indices = range(0, data_array.shape[3])
-        list_mod_whiten = [m for m in modalities_indices if
-                           m < data_array.shape[3]]
         mask_array = self.make_mask_array(data_array)
-        for m in list_mod_whiten:
+        for m in range(0, data_array.shape[3]):
             for t in range(0, data_array.shape[4]):
                 data_array[..., m, t] = \
-                    self.whitening_transformation_3d(
-                        data_array[..., m, t], mask_array[..., m, t])
+                    self.whitening_transformation_3d(data_array[..., m, t],
+                                                     mask_array[..., m, t])
         return data_array
 
     def whitening_transformation_3d(self, img, mask):
         # make sure img is a monomodal volume
         assert img.ndim == 3
+
         masked_img = ma.masked_array(np.copy(img), np.logical_not(mask))
         mean = masked_img.mean()
         std = masked_img.std()
@@ -139,10 +144,12 @@ class HistNormaliser_bis(object):
     def normalise(self, data_array):
         assert not self.modalities == {}
         assert data_array.ndim == 5
-        if data_array.shape[3] > len(self.modalities):
-            raise ValueError("There are more modalities to normalise than "
-                             "reference histograms ! Please rerun the "
-                             "histogram training")
+        assert data_array.shape[3] <= len(self.modalities)
+
+        if self.mapping is {}:
+            raise RuntimeError("calling normalisor with empty mapping,"
+                "probably {} doesnot exists or not loaded".format(
+                    self.hist_model_file))
         mask_array = self.make_mask_array(data_array)
         for mod in self.modalities.keys():
             for t in range(0, data_array.shape[4]):
@@ -158,6 +165,7 @@ class HistNormaliser_bis(object):
     def intensity_normalisation_3d(self, img_data, mask, mapping):
         assert img_data.ndim == 3
         assert np.all(img_data.shape[:3] == mask.shape[:3])
+
         mask_new = io.adapt_to_shape(mask, img_data.shape)
         img_data = hs.transform_by_mapping(img_data,
                                            mask_new,

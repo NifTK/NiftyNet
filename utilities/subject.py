@@ -129,11 +129,6 @@ class Subject(object):
         return None
 
     def __reorient_to_stand(self, data_5d):
-        """
-        given dictionary data of all modalities,
-        this function returns reoriented image data
-        """
-
         if data_5d is None:
             return None
         image_affine = self._read_original_affine()
@@ -143,17 +138,32 @@ class Subject(object):
                                      ornt_original,
                                      STANDARD_ORIENTATION)
 
+    def __reorient_to_original(self, data_5d):
+       if data_5d is None:
+           return None
+       image_affine = self._read_original_affine()
+       ornt_original = nib.orientations.axcodes2ornt(
+               nib.aff2axcodes(image_affine))
+       return util.do_reorientation(data_5d,
+                                    STANDARD_ORIENTATION,
+                                    ornt_original)
+
     def __resample_to_isotropic(self, data_5d, interp_order):
-        """
-        given image data of all modalities,
-        this function returns resampled image data
-        """
         if data_5d is None:
             return None
         image_pixdim = self._read_original_pixdim()
         return util.do_resampling(data_5d,
                                   image_pixdim,
                                   [1, 1, 1],
+                                  interp_order=interp_order)
+
+    def __resample_to_original(self, data_5d, interp_order):
+        if data_5d is None:
+            return None
+        image_pixdim = self._read_original_pixdim()
+        return util.do_resampling(data_5d,
+                                  [1, 1, 1],
+                                  image_pixdim,
                                   interp_order=interp_order)
 
     def load_column(self,
@@ -233,19 +243,6 @@ class Subject(object):
         #        warnings.warn("Cannot update new file array as the given file "
         #                      "does not exist")
 
-        # TODO: back to the original volume
-        # def _reorient_to_original(self, data):
-        #    """
-        #    given image data of all modalities in standardised orientation,
-        #    this function returns image data in original orientation
-        #    """
-        #    image_affine = self._read_original_affine()
-        #    ornt_original = nib.orientations.axcodes2ornt(
-        #            nib.aff2axcodes(image_affine))
-        #    data_reoriented = io.do_reorientation(
-        #            data, STANDARD_ORIENTATION, ornt_original)
-        #    self.is_oriented_to_stand = False
-        #    return data_reoriented
 
         # TODO: support time series
         # def adapt_time_series(self, data):
