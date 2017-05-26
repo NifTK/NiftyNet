@@ -87,7 +87,7 @@ def run(net, param):
         var_averages_op = variable_averages.apply(tf.trainable_variables())
 
         # primary operations
-        init_op = tf.global_variables_initializer()
+        init_op = tf.group(tf.local_variables_initializer(),tf.global_variables_initializer())
         train_op = tf.group(apply_grad_op, var_averages_op)
         write_summary_op = tf.summary.merge(summaries)
         # saver
