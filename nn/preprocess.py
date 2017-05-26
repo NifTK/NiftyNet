@@ -158,11 +158,11 @@ class HistNormaliser_bis(object):
         assert img_data.ndim == 3
         assert np.all(img_data.shape[:3] == mask.shape[:3])
         mask_new = io.adapt_to_shape(mask, img_data.shape)
-        img_data = hs.transform_for_mapping(img_data,
-                                            mask_new,
-                                            mapping,
-                                            self.cutoff,
-                                            self.norm_type)
+        img_data = hs.transform_by_mapping(img_data,
+                                           mask_new,
+                                           mapping,
+                                           self.cutoff,
+                                           self.norm_type)
         return img_data
 
 # class HistNormaliser(object):

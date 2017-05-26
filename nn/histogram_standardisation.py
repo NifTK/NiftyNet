@@ -30,10 +30,10 @@ def standardise_cutoff(cutoff, type_hist='quartile'):
         return DEFAULT_CUTOFF
     if len(cutoff) == 0:
         return DEFAULT_CUTOFF
-    if len(cutoff) > 2:
-        cutoff = np.unique([np.min(cutoff), np.max(cutoff)])
     if len(cutoff) == 1:
         return DEFAULT_CUTOFF
+    if len(cutoff) > 2:
+        cutoff = np.unique([np.min(cutoff), np.max(cutoff)])
     if cutoff[0] > cutoff[1]:
         cutoff[0], cutoff[1] = cutoff[1], cutoff[0]
     cutoff[0] = max(0., cutoff[0])
@@ -62,9 +62,9 @@ def create_mapping_from_multimod_arrayfiles(array_files,
             if m not in perc_database.keys():
                 perc_database[m] = []
             for t in range(0, numb_timepoints):
-                img_temp = img_data[..., list_modalities[m], t]
-                mask_temp = create_mask_img_3d(img_temp, mask_type)
-                perc = percentiles(img_temp, mask_temp, cutoff)
+                img_3d = img_data[..., list_modalities[m], t]
+                mask_3d = create_mask_img_3d(img_3d, mask_type)
+                perc = percentiles(img_3d, mask_3d, cutoff)
                 perc_database[m].append(perc)
     mapping = {}
     for m in list_modalities.keys():
@@ -148,16 +148,16 @@ def create_mask_img_3d(img, type_mask='otsu_plus', thr=0.):
 
 
 def create_mapping_perc(perc_database, s1, s2):
-    final_map = np.zeros([perc_database.shape[0], 13])
-    for j in range(0, perc_database.shape[0]):
-        lin_coeff = (s2 - s1) / (perc_database[j, 12] - perc_database[j, 0])
-        affine_coeff = s1 - lin_coeff * perc_database[j, 0]
-        for i in range(0, 13):
-            final_map[j, i] = lin_coeff * perc_database[j, i] + affine_coeff
-    return np.mean(final_map, axis=0)
+    # assuming shape: n_data_points = perc_database.shape[0]
+    #                 n_percentiles = perc_database.shape[1]
+    slope = (s2 - s1) / (perc_database[:, -1] - perc_database[:, 0])
+    final_map = slope.dot(perc_database) / perc_database.shape[0]
+    intercept = np.mean(s1 - slope * perc_database[:, 0])
+    final_map = final_map + intercept
+    return final_map
 
 
-def transform_for_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
+def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     range_to_use = None
     if type_hist == 'quartile':
         range_to_use = [0, 3, 6, 9, 12]
@@ -168,36 +168,55 @@ def transform_for_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     cutoff = standardise_cutoff(cutoff, type_hist)
     perc = percentiles(img, mask, cutoff)
     # Apply linear histogram standardisation
+    range_mapping = mapping[range_to_use]
+    range_perc = perc[range_to_use]
+    diff_mapping = range_mapping[1:] - range_mapping[:-1]
+    diff_perc = range_perc[1:] - range_perc[:-1]
+    diff_perc[diff_perc==0] = 1e-5
+
+    affine_map = np.zeros([2, len(range_to_use) - 1])
+    # compute slopes of the linear models
+    affine_map[0] = diff_mapping / diff_perc
+    # compute intercepts of the linear models
+    affine_map[1] = range_mapping[:-1] - affine_map[0] * range_perc[:-1]
     lin_img = np.ones_like(img, dtype=np.float32)
     aff_img = np.zeros_like(img, dtype=np.float32)
-    affine_map = np.zeros([2, len(range_to_use) - 1])
-    for i in range(len(range_to_use) - 1):
-        affine_map[0, i] = (mapping[range_to_use[i + 1]] - mapping[range_to_use[i]]) / \
-                           (perc[range_to_use[i + 1]] - perc[range_to_use[i]])
-        affine_map[1, i] = mapping[range_to_use[i]] - affine_map[0, i] * perc[range_to_use[i]]
-        lin_img[img >= perc[range_to_use[i]]] = affine_map[0, i]
-        aff_img[img >= perc[range_to_use[i]]] = affine_map[1, i]
-    # Note that values below cutoff[0] over cutoff[1] are also transformed at this stage
-    lin_img[img < perc[range_to_use[0]]] = affine_map[0, 0]
-    aff_img[img < perc[range_to_use[0]]] = affine_map[1, 0]
-    new_img = np.multiply(lin_img, img) + aff_img
+
+    ### img < range_perc[0] set to affine_map[default], 1, 0
+    ### img >= range_perc[9] set to affine_map[:,9]
+    #for i in range(len(range_to_use) - 1):
+    #    greater_than_i = (img >= range_perc[i])
+    #    lin_img[greater_than_i] = affine_map[0, i]
+    #    aff_img[greater_than_i] = affine_map[1, i]
+
+    ### img < range_perc[0] set to affine_map[:,-1]
+    ### img >= range_perc[9] set to affine_map[:,9]
+    ### by the design of np.digitize, if img >= range_perc[i]: return i+1)
+    bin_id = np.digitize(img, range_perc[:-1], right=False) - 1
+    lin_img = affine_map[0, bin_id]
+    aff_img = affine_map[1, bin_id]
+    # handling below cutoff[0] over cutoff[1]
+    # values are mapped linearly and then smoothed
+    lowest_values = img < range_perc[0]
+    lin_img[lowest_values] = affine_map[0, 0]
+    aff_img[lowest_values] = affine_map[1, 0]
+    highest_values = img >= range_perc[-1]
+    img = lin_img * img + aff_img
     # Apply smooth thresholding (exponential) below cutoff[0] and over cutoff[1]
-    low_values = img <= perc[range_to_use[0]]
-    new_img[low_values] = smooth_threshold(new_img[low_values], mode='low_value')
-    high_values = img >= perc[range_to_use[-1]]
-    new_img[high_values] = smooth_threshold(new_img[high_values], mode='high_value')
+    img[lowest_values] = smooth_threshold(img[lowest_values], mode='low')
+    img[highest_values] = smooth_threshold(img[highest_values], mode='high')
     # Apply mask and set background to zero
-    new_img[mask == 0] = 0.
-    return new_img
+    img[mask==False] = 0.
+    return img
 
 
-def smooth_threshold(value, mode='high_value'):
+def smooth_threshold(value, mode='high'):
     smoothness = 1.
-    if mode == 'high_value':
+    if mode == 'high':
         affine = np.min(value)
         smooth_value = (value - affine) / smoothness
         smooth_value = (1. - np.exp((-1) * smooth_value)) + affine
-    elif mode == 'low_value':
+    elif mode == 'low':
         affine = np.max(value)
         smooth_value = (value - affine) / smoothness
         smooth_value = (np.exp(smooth_value) - 1.) + affine
