@@ -4,11 +4,11 @@ model_dir = ./models/model_toy
 net_name = toynet
 
 # preprocessing threads parameters
-queue_length = 8
+queue_length = 20
 num_threads = 2
 
 # network parameters (controlling memory consumption)
-batch_size = 2
+batch_size = 1
 image_size = 32
 label_size = 32
 num_classes = 5

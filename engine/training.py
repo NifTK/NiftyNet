@@ -30,7 +30,6 @@ def run(net_class, param, device_str):
             ['./example_volumes/multimodal_BRATS'], ['T1c'], [], ['_'])
     constraint_T2 = cc.ConstraintSearch(
             ['./example_volumes/multimodal_BRATS'], ['T2'], [], ['_'])
-
     constraint_array = [constraint_FLAIR,
                         constraint_T1,
                         constraint_T1c,
@@ -79,6 +78,7 @@ def run(net_class, param, device_str):
         # define how to generate samples from the volume
         sampler = UniformSampler(patch=patch_holder,
                                  volume_loader=volume_loader,
+                                 patch_per_volume=param.sample_per_volume,
                                  name='uniform_sampler')
         # construct train queue and graph
         net = net_class(num_classes=param.num_classes)
@@ -96,10 +96,11 @@ def run(net_class, param, device_str):
         tower_misses = []
         tower_losses = []
         tower_grads = []
+        train_pairs = train_batch_runner.pop_batch_op
+        images = train_pairs['images']
+        labels = train_pairs['labels']
+        _ = net(images, is_training=True)
         for i in range(param.num_gpus):
-            train_pairs = train_batch_runner.pop_batch_op
-            images = train_pairs['images']
-            labels = train_pairs['labels']
             with tf.device("/{}:{}".format(device_str, i)):
                 predictions = net(images, is_training=True)
                 loss = loss_func(predictions, labels)
@@ -107,7 +108,6 @@ def run(net_class, param, device_str):
                     tf.not_equal(tf.argmax(predictions, -1), labels[...,0]),
                     dtype=tf.float32))
 
-                #tf.get_variable_scope().reuse_variables()
                 grads = train_step.compute_gradients(loss)
                 tower_losses.append(loss)
                 tower_misses.append(miss)
