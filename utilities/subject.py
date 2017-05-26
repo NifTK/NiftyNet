@@ -66,6 +66,7 @@ class Subject(object):
         if modality_names is not None:
             # check modality names consistent with subject image files
             assert(len(modality_names) == len(new_subject.column(0)()[0]))
+            new_subject.modality_names = modality_names
         return new_subject
 
     def _create_empty_csvcell_dict(self):

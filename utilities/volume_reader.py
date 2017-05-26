@@ -1,9 +1,5 @@
 from random import shuffle
 
-from nn.preprocess import HistNormaliser_bis
-from utilities.csv_table import CSVTable
-
-
 class VolumePreprocessor(object):
     """
     This class manages the loading step, i.e., return subject's data
@@ -15,40 +11,28 @@ class VolumePreprocessor(object):
     """
 
     def __init__(self,
-                 dict_normalisation=None,
-                 dict_masking=None,
-                 csv_file=None,
-                 csv_dict=None,
+                 csv_reader,
+                 standardisor,
                  do_reorientation=False,
                  do_resampling=False,
                  do_normalisation=True,
                  do_whitening=True,
-                 allow_missing=True,
                  output_columns=(0, 1, 2, 3),
-                 interp_order=(3, 0, 3),
-                 modality_names=None):
+                 interp_order=(3, 0, 3)):
+
+        self.csv_table = csv_reader
+        self.standardisor = standardisor
 
         self.do_reorientation = do_reorientation
         self.do_resampling = do_resampling
         self.do_normalisation = do_normalisation
         self.do_whitening = do_whitening
 
-        self.dict_normalisation = dict_normalisation
-
-        self.csv_table = CSVTable(csv_file, csv_dict, modality_names, allow_missing)
-
-        self.standardisor = HistNormaliser_bis(
-            models_filename=self.dict_normalisation.hist_ref_file,
-            dict_masking=dict_masking,
-            norm_type=self.dict_normalisation.norm_type,
-            cutoff=self.dict_normalisation.cutoff,
-            mask_type=dict_masking.mask_type)
+        self.output_columns = output_columns
+        self.interp_order = interp_order
 
         self.subject_list = self.create_subject_list()
         self.current_id = -1
-
-        self.output_columns = output_columns
-        self.interp_order = interp_order
 
     def create_subject_list(self):
         """
