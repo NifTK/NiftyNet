@@ -1,7 +1,7 @@
 from random import shuffle
 
 from nn.preprocess import HistNormaliser_bis
-from utilities.CSVTable import CSVTable
+from utilities.csv_table import CSVTable
 
 
 class VolumePreprocessor(object):

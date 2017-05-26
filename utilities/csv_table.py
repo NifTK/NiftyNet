@@ -24,11 +24,11 @@ class CSVTable(object):
         if csv_file is not None:
             self.create_by_reading_single_csv(csv_file)
         if csv_dict is not None:
-            self.create_by_join_multiple_csv_files(**csv_dict)
+            self.create_by_joining_multiple_csv_files(**csv_dict)
         if self._csv_table is None:
             raise RuntimeError('unable to read csv files into a nested list')
 
-    def create_by_join_multiple_csv_files(self, **csv_dict):
+    def create_by_joining_multiple_csv_files(self, **csv_dict):
 
         header = Subject.fields
         csv_to_join = {}
