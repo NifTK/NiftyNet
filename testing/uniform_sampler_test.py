@@ -1,6 +1,5 @@
 import tensorflow as tf
 
-import utilities.parse_user_params as parse_user_params
 import utilities.misc_csv as misc_csv
 from utilities.csv_table import CSVTable
 from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
@@ -14,7 +13,6 @@ class SubjectTest(tf.test.TestCase):
 
     def test_volume_reader(self):
 
-        param = parse_user_params.run()
         csv_dict = {'input_image_file': './testing_data/testing_case_input',
                     'target_image_file': './testing_data/testing_case_target',
                     'weight_map_file': None,
@@ -26,10 +24,9 @@ class SubjectTest(tf.test.TestCase):
                               allow_missing=True)
 
         hist_norm = HistNorm(
-            models_filename=param.saving_norm_dir,
+            models_filename='./testing_data/standardisation_models.txt',
             multimod_mask_type='or',
-            norm_type=param.norm_type,
-            cutoff=[x for x in param.norm_cutoff],
+            norm_type='percentile',
             mask_type='otsu_plus')
 
         volume_loader = VolumeLoaderLayer(csv_loader, hist_norm)
