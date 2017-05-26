@@ -11,12 +11,17 @@ class VolumeLoaderLayer(Layer):
     is a Patient object.
     """
 
-    def __init__(self, csv_reader, standardisor, name='volume_loader'):
+    def __init__(self,
+                 csv_reader,
+                 standardisor,
+                 do_shuffle=False,
+                 name='volume_loader'):
 
         super(VolumeLoaderLayer, self).__init__(name=name)
 
         self.csv_table = csv_reader
         self.standardisor = standardisor
+        self.do_shuffle = do_shuffle
 
         self.subject_list = None
         self.current_id = None
@@ -28,24 +33,27 @@ class VolumeLoaderLayer(Layer):
         data. These are used to train a histogram normalisation reference.
         """
         self.subject_list = self.csv_table.to_subject_list()
+        if self.do_shuffle:
+            shuffle(self.subject_list)
         self.current_id = -1
+
 
     def layer_op(self,
                  do_reorientation=False,
                  do_resampling=False,
                  do_normalisation=False,
                  do_whitening=False,
-                 do_shuffle=True,
                  interp_order=(3, 0, 3)):
         """
         Call this function to get the next subject's image data.
         """
         # go to the next subject in the list (avoid running out of the list)
-        self.current_id = (self.current_id + 1) % len(self.subject_list)
-        if do_shuffle:
-            shuffle(self.subject_list)
+        if self.do_shuffle:
+            self.current_id = np.random.randint(0, len(self.patients))
+        else:
+            self.current_id = self.current_id + 1
         current_subject = self.subject_list[self.current_id]
-        print current_subject
+        #print current_subject
         subject_dict = current_subject.load_columns((0, 1, 2),
                                                     do_reorientation,
                                                     do_resampling,
@@ -59,6 +67,15 @@ class VolumeLoaderLayer(Layer):
             self.standardisor.train_normalisation_ref(self.subject_list)
         image = self.standardisor(image, do_normalisation, do_whitening)
         return image, label, weight, self.current_id
+
+    @property
+    def has_next(self):
+        if self.do_shuffle:
+            return True
+        if self.current_id < len(self.subject_list) - 1:
+            return True
+        return False
+
 
         # def normalise_subject_data_and_save(self, subject):
         #    if self.flags.flag_standardise:

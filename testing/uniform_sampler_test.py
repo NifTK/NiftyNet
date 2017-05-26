@@ -1,8 +1,10 @@
 import tensorflow as tf
-# for the preprocessor
-from utilities.volume_reader import VolumePreprocessor
-import utilities.volume_reader as vr
+
 import utilities.parse_user_params as parse_user_params
+import utilities.misc_csv as misc_csv
+from utilities.csv_table import CSVTable
+from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
+from layer.volume_loader import VolumeLoaderLayer
 
 # sampler
 from layer.uniform_sampler import UniformSampler
@@ -11,23 +13,27 @@ from layer.input_placeholders import ImagePatch
 class SubjectTest(tf.test.TestCase):
 
     def test_volume_reader(self):
-        param = parse_user_params.run()
-        dict_constraint = vr.Constraints([],[],[],[],[],[],[],False,False)
-        dict_constraint._update_dict_constraint(param)
-        dict_normalisation = vr.Normalisation('','')
-        dict_normalisation._update_dict_normalisation(param)
-        dict_masking = vr.Masking()
-        dict_masking._update_dict_masking(param)
 
-        # initialise volume loader
-        volume_loader = VolumePreprocessor(
-            dict_constraint=dict_constraint,
-            dict_normalisation=dict_normalisation,
-            dict_masking=dict_masking)
+        param = parse_user_params.run()
+        csv_dict = {'input_image_file': './testing_data/testing_case_input',
+                    'target_image_file': './testing_data/testing_case_target',
+                    'weight_map_file': None,
+                    'target_note': None}
+        # 'target_note': './testing_data/TestComments.csv'}
+
+        csv_loader = CSVTable(csv_dict=csv_dict,
+                              modality_names=('FLAIR', 'T1'),
+                              allow_missing=True)
+
+        hist_norm = HistNorm(
+            models_filename=param.saving_norm_dir,
+            multimod_mask_type='or',
+            norm_type=param.norm_type,
+            cutoff=[x for x in param.norm_cutoff],
+            mask_type='otsu_plus')
+
+        volume_loader = VolumeLoaderLayer(csv_loader, hist_norm)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
-        for x in volume_loader.subject_list:
-            print(x.file_path_dict.values())
-        #out = volume_loader.next_subject()
 
         # define output element patch
         patch_holder = ImagePatch(image_shape=(32, 32, 32),
@@ -36,7 +42,7 @@ class SubjectTest(tf.test.TestCase):
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
                                   num_image_modality=2,
-                                  num_label_modality=2,
+                                  num_label_modality=1,
                                   num_map=1)
 
         sampler = UniformSampler(patch=patch_holder,
@@ -47,7 +53,7 @@ class SubjectTest(tf.test.TestCase):
             data_dict = d.as_dict()
             self.assertAllClose((32, 32, 32, 2), d.image.shape)
             self.assertAllClose((7,), d.info.shape)
-            self.assertAllClose((32, 32, 32, 2), d.label.shape)
+            self.assertAllClose((32, 32, 32, 1), d.label.shape)
             print(d.info)
 
             keys = data_dict.keys()[0]
