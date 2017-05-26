@@ -115,12 +115,12 @@ class HistNormaliser_bis(object):
 
     def whitening_transformation(self, img, mask):
         # make sure img is a monomodal volume
-        assert (len(img.shape) == 3) or (img.shape[3] == 1)
+        assert img.ndim == 3 
         masked_img = ma.masked_array(np.copy(img), 1 - mask)
         mean = masked_img.mean()
         std = masked_img.std()
-        img[mask == 1] -= mean
-        img[mask == 1] /= std
+        img[mask == True] -= mean
+        img[mask == True] /= std
         return img
 
     def whiten(self, data_array):
