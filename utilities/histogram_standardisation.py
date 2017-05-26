@@ -97,30 +97,6 @@ def create_standard_range(perc_database):
     return 0., 100.
 
 
-def read_mapping_file(mapping_file):
-    mapping_dict = {}
-    if not os.path.exists(mapping_file):
-        return mapping_dict
-    with open(mapping_file, "r") as f:
-        for line in f:
-            if len(line) <= 2:
-                continue
-            line = line.split()
-            if len(line) < 2:
-                continue
-            map_name, map_value = line[0], map(float, line[1:])
-            mapping_dict[map_name] = np.asarray(map_value)
-    return mapping_dict
-
-
-def force_writing_new_mapping(filename, mapping_dict):
-    f = open(filename, 'w+')
-    for mod in mapping_dict.keys():
-        mapping_string = ' '.join(map(str, mapping_dict[mod]))
-        string_fin = ('{} {}\n').format(mod, mapping_string)
-        f.write(string_fin)
-
-
 def create_mask_img_3d(img, type_mask='otsu_plus', thr=0.):
     assert img.ndim == 3
     mask_init = np.zeros_like(img, dtype=np.bool)
@@ -223,6 +199,30 @@ def smooth_threshold(value, mode='high'):
     else:
         smooth_value = value
     return smooth_value
+
+
+def read_mapping_file(mapping_file):
+    mapping_dict = {}
+    if not os.path.exists(mapping_file):
+        return mapping_dict
+    with open(mapping_file, "r") as f:
+        for line in f:
+            if len(line) <= 2:
+                continue
+            line = line.split()
+            if len(line) < 2:
+                continue
+            map_name, map_value = line[0], map(float, line[1:])
+            mapping_dict[map_name] = np.asarray(map_value)
+    return mapping_dict
+
+
+def force_writing_new_mapping(filename, mapping_dict):
+    f = open(filename, 'w+')
+    for mod in mapping_dict.keys():
+        mapping_string = ' '.join(map(str, mapping_dict[mod]))
+        string_fin = ('{} {}\n').format(mod, mapping_string)
+        f.write(string_fin)
 
 ## create mask for image if multimodal or not
 # def create_mask_img_multimod(img, type_mask='otsu_plus', alpha=0.1,

@@ -19,8 +19,8 @@ class CSVTable(object):
                  allow_missing=True):
 
         self.allow_missing = allow_missing
-        self._csv_table = None
         self.modality_names = modality_names
+        self._csv_table = None
         if csv_file is not None:
             self.create_by_reading_single_csv(csv_file)
         if csv_dict is not None:

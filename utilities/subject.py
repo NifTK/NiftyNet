@@ -70,6 +70,7 @@ class Subject(object):
         return new_subject
 
     def _create_empty_csvcell_dict(self):
+        # initialise subject dict by fields
         none_tuple = tuple([None] * len(Subject.fields))
         return dict(zip(Subject.fields, none_tuple))
 

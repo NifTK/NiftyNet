@@ -3,9 +3,9 @@ import tensorflow as tf
 import utilities.constraints_classes as cc
 import utilities.misc_csv as misc_csv
 import utilities.parse_user_params as parse_user_params
-import utilities.volume_reader as vr
-from nn.preprocess import HistNormaliser_bis
 from utilities.csv_table import CSVTable
+from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
+from layer.volume_loader import VolumeLoaderLayer
 
 
 class SubjectTest(tf.test.TestCase):
@@ -34,28 +34,33 @@ class SubjectTest(tf.test.TestCase):
                               modality_names=('FLAIR', 'T1'),
                               allow_missing=True)
 
-        histogram_normalisor = HistNormaliser_bis(
+        hist_norm = HistNorm(
             models_filename=param.saving_norm_dir,
             multimod_mask_type='or',
             norm_type=param.norm_type,
             cutoff=[x for x in param.norm_cutoff],
             mask_type='otsu_plus')
 
-        new_vr = vr.VolumePreprocessor(csv_loader,
-                                       histogram_normalisor,
-                                       do_reorientation=True,
-                                       do_resampling=True,
-                                       do_normalisation=True,
-                                       output_columns=(0, 1, 2),
-                                       interp_order=(3, 0))
+        volume_loader = VolumeLoaderLayer(csv_loader, hist_norm)
 
-        img, seg, weight_map, subject = new_vr.next_subject()
+        img, seg, weight_map, subject = volume_loader(
+            do_reorientation=True,
+            do_resampling=True,
+            do_normalisation=True,
+            do_whitening=True,
+            do_shuffle=False)
+
         print img.shape
         if seg is not None:
             print seg.shape
         print weight_map
         print subject
-        img, seg, weight_map, subject = new_vr.next_subject()
+        img, seg, weight_map, subject = volume_loader(
+            do_reorientation=False,
+            do_resampling=True,
+            do_normalisation=False,
+            do_whitening=True,
+            do_shuffle=False)
 
 
 if __name__ == "__main__":

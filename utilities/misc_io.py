@@ -293,16 +293,6 @@ def create_5d_from_array(data_array):
     return data_5d
 
 
-def adapt_to_shape(img_to_change, shape, mod='tile'):
-    if img_to_change is None or img_to_change.size == 0:
-        return np.zeros(shape)
-    shape_to_change = img_to_change.shape
-    if len(shape) < len(shape_to_change):
-        raise ValueError('shape inconsistency')
-    if np.all(shape_to_change == shape):
-        return img_to_change
-    new_img = np.resize(img_to_change, shape)
-    return new_img
 
 
 STANDARD_ORIENTATION = [[0, 1], [1, 1], [2, 1]]
@@ -355,6 +345,19 @@ def list_nifti_subject(list_data_dir, subject_id):
             if subject_id in split_name and 'nii' in ext:
                 file_list.append(os.path.join(data_dir, file_name))
     return file_list
+
+
+# def adapt_to_shape(img_to_change, shape, mod='tile'):
+#     if img_to_change is None or img_to_change.size == 0:
+#         return np.zeros(shape)
+#     shape_to_change = img_to_change.shape
+#     if len(shape) < len(shape_to_change):
+#         raise ValueError('shape inconsistency')
+#     if np.all(shape_to_change == shape):
+#         return img_to_change
+#     new_img = np.resize(img_to_change, shape)
+#     return new_img
+
 
 # # Check compatibility in dimensions for the first 3 dimensions of two images
 # def check_shape_compatibility_3d(img1, img2):

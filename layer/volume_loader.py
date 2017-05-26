@@ -1,6 +1,7 @@
 from random import shuffle
+from .base import Layer
 
-class VolumePreprocessor(object):
+class VolumeLoaderLayer(Layer):
     """
     This class manages the loading step, i.e., return subject's data
     by searching user provided path and modality constraints.
@@ -10,41 +11,32 @@ class VolumePreprocessor(object):
     is a Patient object.
     """
 
-    def __init__(self,
-                 csv_reader,
-                 standardisor,
-                 do_reorientation=False,
-                 do_resampling=False,
-                 do_normalisation=True,
-                 do_whitening=True,
-                 output_columns=(0, 1, 2, 3),
-                 interp_order=(3, 0, 3)):
+    def __init__(self, csv_reader, standardisor, name='volume_loader'):
+
+        super(VolumeLoaderLayer, self).__init__(name=name)
 
         self.csv_table = csv_reader
         self.standardisor = standardisor
 
-        self.do_reorientation = do_reorientation
-        self.do_resampling = do_resampling
-        self.do_normalisation = do_normalisation
-        self.do_whitening = do_whitening
+        self.subject_list = None
+        self.current_id = None
+        self.__initialise_subject_list()
 
-        self.output_columns = output_columns
-        self.interp_order = interp_order
-
-        self.subject_list = self.create_subject_list()
-        self.current_id = -1
-
-    def create_subject_list(self):
+    def __initialise_subject_list(self):
         """
         provide a list of subjects, the subjects are constructed from csv_table
         data. These are used to train a histogram normalisation reference.
         """
-        subjects = self.csv_table.to_subject_list()
-        if self.do_normalisation:
-            self.standardisor.train_normalisation_ref(subjects)
-        return subjects
+        self.subject_list = self.csv_table.to_subject_list()
+        self.current_id = -1
 
-    def next_subject(self, do_shuffle=True):
+    def layer_op(self,
+                 do_reorientation=False,
+                 do_resampling=False,
+                 do_normalisation=False,
+                 do_whitening=False,
+                 do_shuffle=True,
+                 interp_order=(3, 0, 3)):
         """
         Call this function to get the next subject's image data.
         """
@@ -54,18 +46,18 @@ class VolumePreprocessor(object):
             shuffle(self.subject_list)
         current_subject = self.subject_list[self.current_id]
         print current_subject
-        subject_dict = current_subject.load_columns(self.output_columns,
-                                                    self.do_reorientation,
-                                                    self.do_resampling,
-                                                    self.interp_order)
+        subject_dict = current_subject.load_columns((0, 1, 2),
+                                                    do_reorientation,
+                                                    do_resampling,
+                                                    interp_order)
 
         image = subject_dict['input_image_file']
         label = subject_dict['target_image_file']
         weight = subject_dict['weight_map_file']
-        if self.do_normalisation:
-            image = self.standardisor.normalise(image)
-        if self.do_whitening:
-            image = self.standardisor.whiten(image)
+
+        if not self.standardisor.is_ready(do_normalisation, do_whitening):
+            self.standardisor.train_normalisation_ref(self.subject_list)
+        image = self.standardisor(image, do_normalisation, do_whitening)
         return image, label, weight, self.current_id
 
         # def normalise_subject_data_and_save(self, subject):
