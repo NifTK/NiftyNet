@@ -173,17 +173,19 @@ def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     aff_img = affine_map[1, bin_id]
     # handling below cutoff[0] over cutoff[1]
     # values are mapped linearly and then smoothed
-    lowest_values = img < range_perc[0]
+    lowest_values = img <= range_perc[0]
+    highest_values = img >= range_perc[-1]
     lin_img[lowest_values] = affine_map[0, 0]
     aff_img[lowest_values] = affine_map[1, 0]
-    highest_values = img >= range_perc[-1]
-    img = lin_img * img + aff_img
+    new_img = lin_img * img + aff_img
     # Apply smooth thresholding (exponential) below cutoff[0] and over cutoff[1]
-    img[lowest_values] = smooth_threshold(img[lowest_values], mode='low')
-    img[highest_values] = smooth_threshold(img[highest_values], mode='high')
+    new_img[lowest_values] = smooth_threshold(
+            new_img[lowest_values], mode='low')
+    new_img[highest_values] = smooth_threshold(
+            new_img[highest_values], mode='high')
     # Apply mask and set background to zero
-    img[mask==False] = 0.
-    return img
+    new_img[mask==False] = 0.
+    return new_img
 
 
 def smooth_threshold(value, mode='high'):

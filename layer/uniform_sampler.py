@@ -3,7 +3,7 @@ import numpy as np
 from six.moves import range
 
 from .base_sampler import BaseSampler
-import nn.data_augmentation as dataug
+import engine.data_augmentation as dataug
 
 
 class UniformSampler(BaseSampler):

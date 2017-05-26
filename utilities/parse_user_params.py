@@ -27,9 +27,7 @@ def run():
     parser.set_defaults(**defaults)
 
     parser.add_argument(
-        "--action", help="train or inference", default='train', choices=[
-            'train',
-                                                           'inference'])
+        "action", help="train or inference", choices=['train', 'inference'])
 
     parser.add_argument(
         "--cuda_devices",
@@ -125,12 +123,6 @@ def run():
         help="Indicates if generated masks must be saved or not"
     )
     parser.add_argument(
-        "--mask_multimod",
-        nargs='+',
-        help="List of modality indices that will be used for the creation of "
-             "the mask"
-    )
-    parser.add_argument(
         #TODO refactor this part to allow to use values different from default
         "--norm_cutoff",
         default=[0.01, 0.99],
@@ -138,12 +130,7 @@ def run():
         help="Cutoff values for the normalisation process"
     )
     parser.add_argument(
-        "--working_resolution",
-        nargs=3,
-        help="Expected resolution"
-    )
-    parser.add_argument(
-        "--mask_multimod_type",
+        "--multimod_mask_type",
         choices=['and', 'or', 'multi'],
         help="Way of associating the masks obtained for the different "
              "modalities"
@@ -152,10 +139,6 @@ def run():
         "--mask_type",
         choices=['otsu_plus','otsu_minus','val_plus','val_minus'],
         help="type of masking strategy used"
-    )
-    parser.add_argument(
-        "--saving_mask_dir",
-        help="Where to save masks"
     )
     parser.add_argument(
         "--flag_rotation",
@@ -219,47 +202,6 @@ def run():
         "--eval_data_dir",
         metavar='',
         help="[Inference only] Directory of image to be segmented")  # without '/'
-    parser.add_argument(
-        "--mod_compulsory",
-        metavar='',
-        nargs='+',
-        help="List of modalities that are required"
-    )
-    parser.add_argument(
-        "--seg_compulsory",
-        metavar='',
-        nargs='+',
-        help="List of compulsory segmentation and additional files"
-    )
-    parser.add_argument(
-        "--weight_compulsory",
-        metavar='',
-        nargs='+',
-        help="List of compulsory weights and additional files"
-    )
-    parser.add_argument(
-        "--mod_optional",
-        metavar='',
-        nargs='+',
-        help="List of optional modalities to look for"
-    )
-    parser.add_argument(
-        "--seg_optional",
-        metavar='',
-        nargs='+',
-        help="List of optional additional files to look for"
-    )
-    parser.add_argument(
-        "--weight_optional",
-        metavar='',
-        nargs='+',
-        help="List of optional additional files to look for"
-    )
-    parser.add_argument(
-        "--compulsory_labels",
-        nargs='+',
-        help="List of compulsory labels to get when sampling"
-    )
     parser.add_argument(
         "--min_sampling_ratio",
         help="Minumum ratio to satisfy in the sampling of different labels"

@@ -76,6 +76,9 @@ class VolumeLoaderLayer(Layer):
             return True
         return False
 
+    def num_modality(self, column_id):
+        return self.subject_list[0].column(column_id).num_modality
+
 
         # def normalise_subject_data_and_save(self, subject):
         #    if self.flags.flag_standardise:

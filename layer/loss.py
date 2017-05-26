@@ -85,8 +85,11 @@ class LossFunction(Layer):
 
     @regularisation_loss_func.setter
     def regularisation_loss_func(self, type_str):
-        if type_str == "L2":
+        if type_str.upper() == "L2":
             self._regularisation_loss_func = l2_reg_loss
+        else:
+            raise NotImplementedError(
+                'regularisation parameters not implemented')
 
     @decay.setter
     def decay(self, value):
@@ -106,8 +109,7 @@ class LossFunction(Layer):
                                                 labels,
                                                 **self.loss_func_params)
             else:
-                data_loss = self.data_loss_func(pred,
-                                                labels)
+                data_loss = self.data_loss_func(pred, labels)
             if self.decay <= 0:
                 return data_loss
 
