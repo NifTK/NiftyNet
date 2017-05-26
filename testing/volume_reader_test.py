@@ -2,7 +2,6 @@ import tensorflow as tf
 
 import utilities.constraints_classes as cc
 import utilities.misc_csv as misc_csv
-import utilities.parse_user_params as parse_user_params
 from utilities.csv_table import CSVTable
 from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
 from layer.volume_loader import VolumeLoaderLayer
@@ -10,7 +9,6 @@ from layer.volume_loader import VolumeLoaderLayer
 
 class SubjectTest(tf.test.TestCase):
     def test_volume_reader(self):
-        param = parse_user_params.run()
         constraint_T1 = cc.ConstraintSearch(
                 ['./testing_data'], ['T1'], ['Parcellation'], ['_'])
         constraint_FLAIR = cc.ConstraintSearch(
@@ -35,10 +33,9 @@ class SubjectTest(tf.test.TestCase):
                               allow_missing=True)
 
         hist_norm = HistNorm(
-            models_filename=param.saving_norm_dir,
+            models_filename='./testing_data/standardisation_models.txt',
             multimod_mask_type='or',
-            norm_type=param.norm_type,
-            cutoff=[x for x in param.norm_cutoff],
+            norm_type='percentile',
             mask_type='otsu_plus')
 
         volume_loader = VolumeLoaderLayer(csv_loader, hist_norm)

@@ -100,7 +100,7 @@ def run(net_class, param, device_str):
             train_pairs = train_batch_runner.pop_batch_op
             images = train_pairs['images']
             labels = train_pairs['labels']
-            with tf.device("/:{}{}".format(device_str, i)):
+            with tf.device("/{}:{}".format(device_str, i)):
                 predictions = net(images, is_training=True)
                 loss = loss_func(predictions, labels)
                 miss = tf.reduce_mean(tf.cast(
