@@ -59,7 +59,7 @@ def run(net_class, param, device_str):
                          cutoff=[x for x in param.norm_cutoff],
                          mask_type=param.mask_type)
     # define how to choose training volumes
-    volume_loader = VolumeLoaderLayer(csv_loader, hist_norm)
+    volume_loader = VolumeLoaderLayer(csv_loader, hist_norm, do_shuffle=True)
     print('found {} subjects'.format(len(volume_loader.subject_list)))
 
 
@@ -134,7 +134,6 @@ def run(net_class, param, device_str):
 
         # saver
         saver = tf.train.Saver(max_to_keep=20)
-        a = tf.constant(0.0)
         tf.Graph.finalize(graph)
 
     # run session
@@ -168,13 +167,12 @@ def run(net_class, param, device_str):
                 local_time = time.time()
                 if coord.should_stop():
                     break
-                sess.run(a)
-                #_, loss_value, miss_value = sess.run([train_op,
-                #                                      ave_loss,
-                #                                      ave_miss])
-                #print('iter {:d}, loss={:.8f},' \
-                #      'error_rate={:.8f} ({:.3f}s)'.format(
-                #    i, loss_value, miss_value, time.time() - local_time))
+                _, loss_value, miss_value = sess.run([train_op,
+                                                      ave_loss,
+                                                      ave_miss])
+                print('iter {:d}, loss={:.8f},' \
+                      'error_rate={:.8f} ({:.3f}s)'.format(
+                    i, loss_value, miss_value, time.time() - local_time))
                 if (i % 20) == 0:
                     writer.add_summary(sess.run(write_summary_op),
                                        i + param.starting_iter)

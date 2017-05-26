@@ -1,3 +1,4 @@
+import numpy as np
 from random import shuffle
 from .base import Layer
 
@@ -14,7 +15,7 @@ class VolumeLoaderLayer(Layer):
     def __init__(self,
                  csv_reader,
                  standardisor,
-                 do_shuffle=False,
+                 do_shuffle=True,
                  name='volume_loader'):
 
         super(VolumeLoaderLayer, self).__init__(name=name)
@@ -49,7 +50,7 @@ class VolumeLoaderLayer(Layer):
         """
         # go to the next subject in the list (avoid running out of the list)
         if self.do_shuffle:
-            self.current_id = np.random.randint(0, len(self.patients))
+            self.current_id = np.random.randint(0, len(self.subject_list))
         else:
             self.current_id = self.current_id + 1
         current_subject = self.subject_list[self.current_id]
@@ -74,6 +75,7 @@ class VolumeLoaderLayer(Layer):
             return True
         if self.current_id < len(self.subject_list) - 1:
             return True
+        print('volume loader finished (reaching the last element')
         return False
 
     def num_modality(self, column_id):
