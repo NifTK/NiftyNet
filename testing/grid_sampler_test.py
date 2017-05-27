@@ -7,7 +7,7 @@ from layer.volume_loader import VolumeLoaderLayer
 
 # sampler
 from layer.grid_sampler import GridSampler
-from layer.input_placeholders import ImagePatch
+from utilities.input_placeholders import ImagePatch
 
 class SubjectTest(tf.test.TestCase):
 

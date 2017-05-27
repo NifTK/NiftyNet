@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from .base import Layer
-from .input_placeholders import ImagePatch
+from utilities.input_placeholders import ImagePatch
 
 
 class BaseSampler(Layer):

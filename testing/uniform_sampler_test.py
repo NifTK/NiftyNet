@@ -7,7 +7,7 @@ from layer.volume_loader import VolumeLoaderLayer
 
 # sampler
 from layer.uniform_sampler import UniformSampler
-from layer.input_placeholders import ImagePatch
+from utilities.input_placeholders import ImagePatch
 
 class SubjectTest(tf.test.TestCase):
 

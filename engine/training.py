@@ -10,7 +10,7 @@ import utilities.constraints_classes as cc
 import utilities.misc_csv as misc_csv
 from layer.input_buffer import TrainEvalInputBuffer
 from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
-from layer.input_placeholders import ImagePatch
+from utilities.input_placeholders import ImagePatch
 from layer.loss import LossFunction
 from layer.uniform_sampler import UniformSampler
 from layer.volume_loader import VolumeLoaderLayer

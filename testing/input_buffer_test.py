@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from layer.input_buffer import DeployInputBuffer, TrainEvalInputBuffer
-from layer.input_placeholders import ImagePatch
+from utilities.input_placeholders import ImagePatch
 from layer.toy_sampler import ToySampler
 
 

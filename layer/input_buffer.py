@@ -13,7 +13,7 @@ import time
 import tensorflow as tf
 
 from .base_sampler import BaseSampler
-from .input_placeholders import ImagePatch
+from utilities.input_placeholders import ImagePatch
 
 
 class InputBatchQueueRunner(object):
