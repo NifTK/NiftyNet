@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import numpy as np
 import tensorflow as tf
 
 
@@ -205,6 +206,52 @@ class ImagePatch(object):
         self._weight_map = value
 
     ### end of set the corresponding data of each placeholder
+
+    def set_data(self, subject_id, spatial_loc, img, seg, w_map):
+
+        # TODO:check the colon operator
+        self.info = np.array(np.hstack([[subject_id], spatial_loc]),
+                             dtype=np.int64)
+
+        if self.spatial_rank == 3:
+            x_, y_, z_, _x, _y, _z = spatial_loc
+            self.image = img[x_:_x, y_:_y, z_:_z, :]
+            if self.has_labels:
+                diff = self.image_size - self.label_size
+                assert diff >= 0  # assumes label_size <= image_size
+                x_d, y_d, z_d = (x_ + diff), (y_ + diff), (z_ + diff)
+                self.label = \
+                    seg[x_d: (self.label_size + x_d),
+                        y_d: (self.label_size + y_d),
+                        z_d: (self.label_size + z_d), :]
+
+            if self.has_weight_maps:
+                diff = self.image_size - self.weight_map_size
+                assert diff >= 0
+                x_d, y_d, z_d = (x_ + diff), (y_ + diff), (z_ + diff)
+                self.weight_map = \
+                    w_map[x_d: (self.weight_map_size + x_d),
+                          y_d: (self.weight_map_size + y_d),
+                          z_d: (self.weight_map_size + z_d), :]
+
+        elif self.spatial_rank == 2:
+            x_, y_, _x, _y, = spatial_loc
+            self.image = img[x_:_x, y_:_y, :]
+            if self.has_labels:
+                diff = self.image_size - self.label_size
+                assert diff >= 0  # assumes label_size <= image_size
+                x_d, y_d = (x_ + diff), (y_ + diff)
+                self.label = \
+                    seg[x_d: (self.label_size + x_d),
+                        y_d: (self.label_size + y_d), :]
+
+            if self.has_weight_maps:
+                diff = self.image_size - self.weight_map_size
+                assert diff >= 0
+                x_d, y_d, = (x_ + diff), (y_ + diff)
+                self.weight_map = \
+                    w_map[x_d: (self.weight_map_size + x_d),
+                          y_d: (self.weight_map_size + y_d), :]
 
     def as_dict(self):
         out_list = []

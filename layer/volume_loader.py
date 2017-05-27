@@ -86,7 +86,7 @@ class VolumeLoaderLayer(Layer):
             return True
         if self.current_id < len(self.subject_list) - 1:
             return True
-        print('volume loader finished (reaching the last element')
+        print('volume loader finished (reaching the last element)')
         return False
 
     @property

@@ -52,6 +52,7 @@ testjob:
     - coverage run -a --source . -m testing.subject_test
     - coverage run -a --source . -m testing.volume_reader_test
     - coverage run -a --source . -m testing.uniform_sampler_test
+    - coverage run -a --source . -m testing.grid_sampler_test
     - coverage report -m
     - echo 'finished test'
   tags:

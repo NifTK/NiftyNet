@@ -5,42 +5,60 @@ import utilities.misc_io as io
 from .base_sampler import BaseSampler
 
 
-def rand_spatial_coordinates(spatial_rank, img_size, win_size, n_samples):
+def generate_grid_coordinates(spatial_rank, img_size, win_size, grid_size):
+    if grid_size <= 0:
+        return None
     assert np.all([d >= win_size for d in img_size[:spatial_rank]])
 
-    # consisting of starting and ending coordinates
-    all_coords = np.zeros((n_samples, spatial_rank * 2), dtype=np.int)
+    # generating sampling points along each dim
+    steps_along_each = [_enumerate_step_points(0,
+                                               img_size[i],
+                                               win_size,
+                                               grid_size)
+                        for i in range(0, spatial_rank)]
+    # create a mesh grid
+    starting_ = np.asarray(np.meshgrid(*steps_along_each))
+    starting_ = starting_.reshape((spatial_rank, -1))
+    # transform mesh grid into a list of coordinates
+    all_coordinates = np.zeros((starting_.shape[1], spatial_rank * 2),
+                               dtype=np.int)
     for i in range(0, spatial_rank):
-        all_coords[:, i] = np.random.random_integers(
-            0, max(img_size[i] - win_size, 1), n_samples)
-        all_coords[:, i + spatial_rank] = all_coords[:, i] + win_size
-    return all_coords
+        all_coordinates[:, i] = starting_[i, :]
+        all_coordinates[:, i + spatial_rank] = starting_[i, :] + win_size
+    return all_coordinates
 
 
-class UniformSampler(BaseSampler):
+def _enumerate_step_points(starting, ending, win_size, step_size):
+    sampling_point_set = []
+    while (starting + win_size) <= ending:
+        sampling_point_set.append(starting)
+        starting = starting + step_size
+    sampling_point_set.append(np.max((ending - win_size, 0)))
+    return np.unique(sampling_point_set).flatten()
+
+
+class GridSampler(BaseSampler):
     """
-    This class generators samples by uniformly sampling each input volume
+    This class generators samples from a fixed sampling grid
     currently 4D input is supported, Hight x Width x Depth x Modality
     """
 
     def __init__(self,
                  patch,
                  volume_loader,
-                 patch_per_volume=1,
+                 grid_size=1,
                  volume_padding_size=0,
-                 name="uniform_sampler"):
-
-        super(UniformSampler, self).__init__(patch=patch, name=name)
+                 name="grid_sampler"):
+        super(GridSampler, self).__init__(patch=patch, name=name)
         self.volume_loader = volume_loader
-        self.patch_per_volume = patch_per_volume
         self.volume_padding_size = volume_padding_size
+        self.grid_size = grid_size
+
+        assert self.volume_loader.do_shuffle == False
 
     def layer_op(self, batch_size=1):
         """
-         problems:
-            check how many modalities available
-            check the colon operator
-            automatically handle mutlimodal by matching dims?
+        assumes img, seg the same size
         """
         # batch_size is needed here so that it generates total number of
         # N samples where (N % batch_size) == 0
@@ -71,12 +89,12 @@ class UniformSampler(BaseSampler):
                 weight_map = io.volume_spatial_padding(
                     weight_map, self.volume_padding_size)
 
-            # generates random spatial coordinates
-            locations = rand_spatial_coordinates(spatial_rank,
-                                                img.shape,
-                                                self.patch.image_size,
-                                                self.patch_per_volume)
-
+            # generates grid spatial coordinates
+            locations = generate_grid_coordinates(spatial_rank,
+                                                  img.shape,
+                                                  self.patch.image_size,
+                                                  self.grid_size)
+            print('yielding {} locations'.format(locations.shape[0]))
             for loc in locations:
                 self.patch.info = np.array(np.hstack([[idx], loc]),
                                            dtype=np.int64)

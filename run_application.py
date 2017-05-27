@@ -42,7 +42,7 @@ if __name__ == "__main__":
         os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda_devices
         print("set CUDA_VISIBLE_DEVICES env to {}".format(args.cuda_devices))
     is_training = True if args.action == "train" else False
-    device_str = "gpu" if (args.action == "train" and args.num_gpus > 0) else "cpu"
+    device_str = "gpu" if args.action == "train" and args.num_gpus > 0 else "cpu"
 
     net_class = NetFactory.create(args.net_name)
     if is_training:
