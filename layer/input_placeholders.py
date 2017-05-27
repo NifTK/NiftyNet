@@ -21,7 +21,7 @@ class ImagePatch(object):
                  weight_map_dtype=tf.float32,
                  num_image_modality=1,
                  num_label_modality=1,
-                 num_map=1):
+                 num_weight_map=1):
 
         # shapes
         self._image_shape = image_shape
@@ -35,7 +35,7 @@ class ImagePatch(object):
 
         self._num_image_modality = num_image_modality
         self._num_label_modality = num_label_modality
-        self._num_map = num_map
+        self._num_weight_map = num_weight_map
 
         assert len(set(image_shape)) == 1
         if label_shape is not None:
@@ -103,7 +103,7 @@ class ImagePatch(object):
     def full_weight_map_shape(self):
         if self.has_weight_maps:
             spatial_dims = [self.weight_map_size] * self.spatial_rank
-            return spatial_dims + [self._num_map]
+            return spatial_dims + [self._num_weight_map]
         return None
 
     @property

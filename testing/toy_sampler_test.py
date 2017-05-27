@@ -26,7 +26,7 @@ class ToySamplerTest(tf.test.TestCase):
                                   label_dtype=tf.int64,
                                   num_image_modality=1,
                                   num_label_modality=1,
-                                  num_map=1)
+                                  num_weight_map=1)
         self.run_test_sampler(patch_holder)
 
     def test_image_label_info_shape_3d(self):
@@ -37,7 +37,7 @@ class ToySamplerTest(tf.test.TestCase):
                                   label_dtype=tf.int64,
                                   num_image_modality=1,
                                   num_label_modality=1,
-                                  num_map=1)
+                                  num_weight_map=1)
         self.run_test_sampler(patch_holder)
 
     def test_image_weight_map_info_shape_3d(self):
@@ -48,7 +48,7 @@ class ToySamplerTest(tf.test.TestCase):
                                   label_dtype=tf.int64,
                                   num_image_modality=1,
                                   num_label_modality=1,
-                                  num_map=1)
+                                  num_weight_map=1)
         self.run_test_sampler(patch_holder)
 
     def test_image_info_shape_3d(self):
@@ -59,7 +59,7 @@ class ToySamplerTest(tf.test.TestCase):
                                   label_dtype=tf.int64,
                                   num_image_modality=1,
                                   num_label_modality=1,
-                                  num_map=1)
+                                  num_weight_map=1)
         self.run_test_sampler(patch_holder)
 
     def test_full_shape_2d(self):
@@ -70,7 +70,7 @@ class ToySamplerTest(tf.test.TestCase):
                                   label_dtype=tf.int64,
                                   num_image_modality=1,
                                   num_label_modality=1,
-                                  num_map=1)
+                                  num_weight_map=1)
         self.run_test_sampler(patch_holder)
 
     def test_image_label_info_shape_2d(self):
@@ -81,7 +81,7 @@ class ToySamplerTest(tf.test.TestCase):
                                   label_dtype=tf.int64,
                                   num_image_modality=1,
                                   num_label_modality=1,
-                                  num_map=1)
+                                  num_weight_map=1)
         self.run_test_sampler(patch_holder)
 
     def test_image_weight_map_info_shape_2d(self):
@@ -92,7 +92,7 @@ class ToySamplerTest(tf.test.TestCase):
                                   label_dtype=tf.int64,
                                   num_image_modality=1,
                                   num_label_modality=1,
-                                  num_map=1)
+                                  num_weight_map=1)
         self.run_test_sampler(patch_holder)
 
     def test_image_info_shape_2d(self):
@@ -103,7 +103,7 @@ class ToySamplerTest(tf.test.TestCase):
                                   label_dtype=tf.int64,
                                   num_image_modality=1,
                                   num_label_modality=1,
-                                  num_map=1)
+                                  num_weight_map=1)
         self.run_test_sampler(patch_holder)
 
 

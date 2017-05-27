@@ -15,7 +15,7 @@ class InputQueueTest(tf.test.TestCase):
                                 weight_map_dtype=tf.float32,
                                 num_image_modality=1,
                                 num_label_modality=1,
-                                num_map=1)
+                                num_weight_map=1)
         test_sampler = ToySampler(test_patch, name='sampler')
         image_key, label_key, info_key, weight_map_key = \
             test_sampler.placeholder_names
@@ -67,7 +67,7 @@ class InputQueueTest(tf.test.TestCase):
                                 weight_map_dtype=tf.float32,
                                 num_image_modality=1,
                                 num_label_modality=1,
-                                num_map=1)
+                                num_weight_map=1)
         test_sampler = ToySampler(test_patch, name='sampler')
         image_key, label_key, info_key, weight_map_key = \
             test_sampler.placeholder_names

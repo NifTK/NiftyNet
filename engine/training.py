@@ -47,6 +47,7 @@ def run(net_class, param, device_str):
                 'weight_map_file': None,
                 'target_note': None}
 
+    # read each line of csv files into an instance of Subject
     csv_loader = CSVTable(csv_dict=csv_dict,
                           modality_names=('FLAIR', 'T1', 'T1c', 'T2'),
                           allow_missing=True)
@@ -79,24 +80,28 @@ def run(net_class, param, device_str):
                                   weight_map_shape=None,
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
+                                  weight_map_dtype=tf.float32,
                                   num_image_modality=volume_loader.num_modality(0),
-                                  num_label_modality=volume_loader.num_modality(1))
+                                  num_label_modality=volume_loader.num_modality(1),
+                                  num_weight_map=1)
 
         # define how to generate samples from the volume
         sampler = UniformSampler(patch=patch_holder,
                                  volume_loader=volume_loader,
                                  patch_per_volume=param.sample_per_volume,
                                  name='uniform_sampler')
-        # construct train queue and graph
-        net = net_class(num_classes=param.num_classes)
-        train_batch_runner = TrainEvalInputBuffer(batch_size=param.batch_size,
-                                                  capacity=param.queue_length,
-                                                  sampler=sampler)
 
-        loss_func = LossFunction(n_class=net.num_classes,
+        net = net_class(num_classes=param.num_classes)
+        loss_func = LossFunction(n_class=param.num_classes,
                                  loss_type=param.loss_type,
                                  reg_type=param.reg_type,
                                  decay=param.decay)
+        # construct train queue
+        train_batch_runner = TrainEvalInputBuffer(batch_size=param.batch_size,
+                                                  capacity=param.queue_length,
+                                                  sampler=sampler,
+                                                  shuffle=True)
+
         # optimizer
         train_step = tf.train.AdamOptimizer(learning_rate=param.lr)
 
@@ -181,13 +186,11 @@ def run(net_class, param, device_str):
                 print('iter {:d}, loss={:.8f},' \
                       'error_rate={:.8f} ({:.3f}s)'.format(
                     i, loss_value, miss_value, time.time() - local_time))
-                if (i % 20) == 0:
-                    writer.add_summary(sess.run(write_summary_op),
-                                       i + param.starting_iter)
-                if (i % param.save_every_n) == 0 and (i > 0):
-                    saver.save(sess,
-                               ckpt_name,
-                               global_step=i + param.starting_iter)
+                current_iter = i + param.starting_iter
+                if (current_iter % 20) == 0:
+                    writer.add_summary(sess.run(write_summary_op), current_iter)
+                if (current_iter % param.save_every_n) == 0:
+                    saver.save(sess, ckpt_name, global_step=current_iter)
                     print('Iter {} model saved at {}'.format(
                         i + param.starting_iter, ckpt_name))
         except KeyboardInterrupt:
@@ -199,8 +202,7 @@ def run(net_class, param, device_str):
         except RuntimeError as e:
             print(e)
         finally:
-            saver.save(sess,
-                       ckpt_name,
+            saver.save(sess, ckpt_name,
                        global_step=param.max_iter + param.starting_iter)
             print('Last iteration model saved at {}'.format(ckpt_name))
             print('training.py (time in second) {:.2f}'.format(

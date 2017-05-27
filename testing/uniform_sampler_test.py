@@ -40,7 +40,7 @@ class SubjectTest(tf.test.TestCase):
                                   label_dtype=tf.int64,
                                   num_image_modality=2,
                                   num_label_modality=1,
-                                  num_map=1)
+                                  num_weight_map=1)
 
         sampler = UniformSampler(patch=patch_holder,
                                  volume_loader=volume_loader,
