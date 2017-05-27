@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 
-from .base_sampler import BaseSampler
 import utilities.misc_io as io
+from .base_sampler import BaseSampler
 
 
 def rand_spatial_coordinates(spatial_rank, img_size, win_size, n_samples):
@@ -27,11 +27,13 @@ class UniformSampler(BaseSampler):
                  patch,
                  volume_loader,
                  patch_per_volume=1,
+                 volume_padding_size=0,
                  name="uniform_sampler"):
 
         super(UniformSampler, self).__init__(patch=patch, name=name)
         self.volume_loader = volume_loader
         self.patch_per_volume = patch_per_volume
+        self.volume_padding_size = volume_padding_size
 
     def layer_op(self, batch_size=1):
         """
@@ -52,14 +54,22 @@ class UniformSampler(BaseSampler):
             assert io.check_spatial_dims(spatial_rank, img, weight_map)
             # match volumetric data shapes to the patch definition
             img = io.match_volume_shape_to_patch_definition(
-                    img, self.patch.full_image_shape)
+                img, self.patch.full_image_shape)
             seg = io.match_volume_shape_to_patch_definition(
-                    seg, self.patch.full_label_shape)
+                seg, self.patch.full_label_shape)
             weight_map = io.match_volume_shape_to_patch_definition(
-                    weight_map, self.patch.full_weight_map_shape)
-            if not (img.ndim == 4):
-                # TODO: support other types of image data
+                weight_map, self.patch.full_weight_map_shape)
+            if img.ndim - spatial_rank > 1:
                 raise NotImplementedError
+                # time series data are not supported after this point
+
+            if self.volume_padding_size > 0:
+                img = io.volume_spatial_padding(
+                    img, self.volume_padding_size)
+                seg = io.volume_spatial_padding(
+                    seg, self.volume_padding_size)
+                weight_map = io.volume_spatial_padding(
+                    weight_map, self.volume_padding_size)
 
             # generates random spatial coordinates
             location = rand_spatial_coordinates(spatial_rank,
@@ -68,28 +78,51 @@ class UniformSampler(BaseSampler):
                                                 self.patch_per_volume)
 
             for t in range(0, self.patch_per_volume):
-                x_, y_, z_, _x, _y, _z = location[t]
 
-                self.patch.image = img[x_:_x, y_:_y, z_:_z, :]
-                self.patch.info = np.array([idx, x_, y_, z_, _x, _y, _z],
+                self.patch.info = np.array(np.hstack([[idx], location[t]]),
                                            dtype=np.int64)
-                if self.patch.has_labels:
-                    border = self.patch.image_size - \
-                             self.patch.label_size
-                    assert border >= 0 # assumes label_size <= image_size
-                    x_b, y_b, z_b = (x_+border), (y_+border), (z_+border)
-                    self.patch.label = seg[
-                            x_b : (self.patch.label_size + x_b),
-                            y_b : (self.patch.label_size + y_b),
-                            z_b : (self.patch.label_size + z_b), :]
+                if spatial_rank == 3:
+                    x_, y_, z_, _x, _y, _z = location[t]
+                    self.patch.image = img[x_:_x, y_:_y, z_:_z, :]
+                    if self.patch.has_labels:
+                        diff = self.patch.image_size - self.patch.label_size
+                        assert diff >= 0  # assumes label_size <= image_size
+                        x_d, y_d, z_d = (x_ + diff), (y_ + diff), (z_ + diff)
+                        self.patch.label = \
+                            seg[x_d: (self.patch.label_size + x_d),
+                                y_d: (self.patch.label_size + y_d),
+                                z_d: (self.patch.label_size + z_d),
+                                :]
 
-                if self.patch.has_weight_maps:
-                    border = self.patch.image_size - \
-                             self.patch.weight_map_size
-                    assert border >= 0
-                    x_b, y_b, z_b = (x_+border), (y_+border), (z_+border)
-                    self.patch.weight_map = weight_map[
-                            x_b : (self.patch.weight_map_size + x_b),
-                            y_b : (self.patch.weight_map_size + y_b),
-                            z_b : (self.patch.weight_map_size + z_b), :]
-                yield self.patch
+                    if self.patch.has_weight_maps:
+                        diff = self.patch.image_size - self.patch.weight_map_size
+                        assert diff >= 0
+                        x_d, y_d, z_d = (x_ + diff), (y_ + diff), (z_ + diff)
+                        self.patch.weight_map = \
+                            weight_map[x_d: (self.patch.weight_map_size + x_d),
+                                       y_d: (self.patch.weight_map_size + y_d),
+                                       z_d: (self.patch.weight_map_size + z_d),
+                                       :]
+                    yield self.patch
+
+                elif spatial_rank == 2:
+                    x_, y_, _x, _y, = location[t]
+                    self.patch.image = img[x_:_x, y_:_y, :]
+                    if self.patch.has_labels:
+                        diff = self.patch.image_size - self.patch.label_size
+                        assert diff >= 0  # assumes label_size <= image_size
+                        x_d, y_d = (x_ + diff), (y_ + diff)
+                        self.patch.label = \
+                            seg[x_d: (self.patch.label_size + x_d),
+                                y_d: (self.patch.label_size + y_d),
+                                :]
+
+                    if self.patch.has_weight_maps:
+                        diff = self.patch.image_size - self.patch.weight_map_size
+                        assert diff >= 0
+                        x_d, y_d, = (x_ + diff), (y_ + diff)
+                        self.patch.weight_map = \
+                            weight_map[x_d: (self.patch.weight_map_size + x_d),
+                                       y_d: (self.patch.weight_map_size + y_d),
+                                       :]
+                    yield self.patch

@@ -86,6 +86,7 @@ def run(net_class, param, device_str):
         sampler = UniformSampler(patch=patch_holder,
                                  volume_loader=volume_loader,
                                  patch_per_volume=param.sample_per_volume,
+                                 volume_padding_size=param.volume_padding_size,
                                  name='uniform_sampler')
 
         net = net_class(num_classes=param.num_classes)

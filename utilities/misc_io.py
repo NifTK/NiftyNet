@@ -368,6 +368,22 @@ def match_volume_shape_to_patch_definition(image_data, patch_shape):
         image_data = np.expand_dims(image_data, axis=-1)
     return image_data
 
+def volume_spatial_padding(image_data, padding_size):
+    # this only works for [spatial,  modality]
+    # doesn't work for time series data
+    if padding_size <= 0:
+        return image_data
+    if image_data is None:
+        return image_data
+    if image_data.shape is ():
+        return image_data
+
+    # padding to alleviate volume level boundary effects
+    img = [np.pad(image_data[..., mod_i], padding_size, 'minimum')
+           for mod_i in range(0, image_data.shape[-1])]
+    img = np.stack(img, axis=-1)
+    return img
+
 # def adapt_to_shape(img_to_change, shape, mod='tile'):
 #     if img_to_change is None or img_to_change.size == 0:
 #         return np.zeros(shape)

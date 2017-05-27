@@ -44,6 +44,8 @@ class SubjectTest(tf.test.TestCase):
 
         sampler = UniformSampler(patch=patch_holder,
                                  volume_loader=volume_loader,
+                                 patch_per_volume=1,
+                                 volume_padding_size=21,
                                  name='uniform_sampler')
         n_volumes = 0
         for d in sampler():
