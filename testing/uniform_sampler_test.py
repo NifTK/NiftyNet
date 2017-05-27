@@ -29,7 +29,7 @@ class SubjectTest(tf.test.TestCase):
             norm_type='percentile',
             mask_type='otsu_plus')
 
-        volume_loader = VolumeLoaderLayer(csv_loader, hist_norm)
+        volume_loader = VolumeLoaderLayer(csv_loader, hist_norm, do_shuffle=True)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
         # define output element patch

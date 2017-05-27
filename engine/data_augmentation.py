@@ -6,45 +6,6 @@ import numpy as np
 warnings.simplefilter("ignore", UserWarning)
 
 
-def rand_window_location_3d(img_size_3d, win_size, n_samples):
-    x_start = np.random.random_integers(
-        0, np.max((img_size_3d[0] - win_size, 1)), n_samples)
-    y_start = np.random.random_integers(
-        0, np.max((img_size_3d[1] - win_size, 1)), n_samples)
-    z_start = np.random.random_integers(
-        0, np.max((img_size_3d[2] - win_size, 1)), n_samples)
-
-    x_end = x_start + win_size
-    y_end = y_start + win_size
-    z_end = z_start + win_size
-
-    locations = np.stack((x_start, x_end, y_start, y_end, z_start, z_end)).T
-    return locations
-
-
-def grid_window_location_3d(img_size_3d, win_size, grid_size):
-    if grid_size <= 0:
-        return None
-    xs = __enumerate_step_points(
-        0, img_size_3d[0], win_size, grid_size)
-    ys = __enumerate_step_points(
-        0, img_size_3d[1], win_size, grid_size)
-    zs = __enumerate_step_points(
-        0, img_size_3d[2], win_size, grid_size)
-    x_start, y_start, z_start = np.meshgrid(xs, ys, zs)
-
-    x_start = x_start.flatten()
-    y_start = y_start.flatten()
-    z_start = z_start.flatten()
-
-    x_end = x_start + win_size
-    y_end = y_start + win_size
-    z_end = z_start + win_size
-
-    locations = np.stack((x_start, x_end, y_start, y_end, z_start, z_end)).T
-    return locations
-
-
 def rand_rotation_3d(img, seg, max_angle=10):
     # generate transformation
     angle_x = np.random.randint(-max_angle, max_angle) * np.pi / 180.0
@@ -109,21 +70,4 @@ def rand_spatial_scaling(img, seg=None, percentage=10):
     seg = scipy.ndimage.zoom(seg, rand_zoom, order=0) \
         if seg is not None else None
     return img, seg
-
-
-def __enumerate_step_points(starting, ending, win_size, step_size):
-    sampling_point_set = []
-    while (starting + win_size) <= ending:
-        sampling_point_set.append(starting)
-        starting = starting + step_size
-    sampling_point_set.append(np.max((ending - win_size, 0)))
-    return np.unique(sampling_point_set).flatten()
-
-
-def create_seg_from_distance(img,list_thresholds):
-    labels = np.sort(list_thresholds)
-    seg = np.copy(img)
-    for t in range(len(list_thresholds), 0, -1):
-        seg[seg > labels[t]] = t
-    return seg
 

@@ -17,21 +17,6 @@ from .input_placeholders import ImagePatch
 
 
 
-class DeployInputBuffer(InputBatchQueueRunner):
-    def __init__(self, batch_size, capacity, sampler):
-        super(DeployInputBuffer, self).__init__(batch_size=batch_size,
-                                                capacity=capacity,
-                                                sampler=sampler,
-                                                shuffle=False)
-
-
-class TrainEvalInputBuffer(InputBatchQueueRunner):
-    def __init__(self, batch_size, capacity, sampler, shuffle=True):
-        super(TrainEvalInputBuffer, self).__init__(batch_size=batch_size,
-                                                   capacity=capacity,
-                                                   sampler=sampler,
-                                                   shuffle=shuffle)
-
 class InputBatchQueueRunner(object):
     """
     This class defines a light wrapper around queue objects
@@ -195,3 +180,21 @@ class InputBatchQueueRunner(object):
         finally:
             if not self._session._closed:
                 self._session.run(self._close_queue_op)
+
+
+
+class DeployInputBuffer(InputBatchQueueRunner):
+    def __init__(self, batch_size, capacity, sampler):
+        super(DeployInputBuffer, self).__init__(batch_size=batch_size,
+                                                capacity=capacity,
+                                                sampler=sampler,
+                                                shuffle=False)
+
+
+class TrainEvalInputBuffer(InputBatchQueueRunner):
+    def __init__(self, batch_size, capacity, sampler, shuffle=True):
+        super(TrainEvalInputBuffer, self).__init__(batch_size=batch_size,
+                                                   capacity=capacity,
+                                                   sampler=sampler,
+                                                   shuffle=shuffle)
+

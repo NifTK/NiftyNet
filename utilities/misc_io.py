@@ -346,6 +346,27 @@ def list_nifti_subject(list_data_dir, subject_id):
                 file_list.append(os.path.join(data_dir, file_name))
     return file_list
 
+def check_spatial_dims(spatial_rank, image_a, image_b):
+    if image_b is None:
+        return True
+    if image_b.shape is ():
+        return True
+    if image_b.ndim < spatial_rank:
+        return False
+    if image_a.ndim < spatial_rank:
+        return False
+    return np.all(image_a.shape[:spatial_rank] == image_b.shape[:spatial_rank])
+
+def match_volume_shape_to_patch_definition(image_data, patch_shape):
+    if image_data is None:
+        return None
+    if image_data.shape is ():
+        return image_data
+    while image_data.ndim > len(patch_shape):
+        image_data = image_data[..., 0]
+    while image_data.ndim < len(patch_shape):
+        image_data = np.expand_dims(image_data, axis=-1)
+    return image_data
 
 # def adapt_to_shape(img_to_change, shape, mod='tile'):
 #     if img_to_change is None or img_to_change.size == 0:

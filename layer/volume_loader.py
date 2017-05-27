@@ -89,5 +89,14 @@ class VolumeLoaderLayer(Layer):
         print('volume loader finished (reaching the last element')
         return False
 
+    @property
+    def num_subjects(self):
+        if self.subject_list is None:
+            return 0
+        return len(self.subject_list)
+
     def num_modality(self, column_id):
         return self.subject_list[0].column(column_id).num_modality
+
+    def get_subject(self, idx):
+        return self.subject_list[idx]
