@@ -8,13 +8,13 @@ from six.moves import range
 
 import utilities.constraints_classes as cc
 import utilities.misc_csv as misc_csv
-from utilities import misc as util
-from layer.uniform_sampler import UniformSampler
-from layer.input_placeholders import ImagePatch
-from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
 from layer.input_buffer import TrainEvalInputBuffer
+from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
+from layer.input_placeholders import ImagePatch
 from layer.loss import LossFunction
+from layer.uniform_sampler import UniformSampler
 from layer.volume_loader import VolumeLoaderLayer
+from utilities import misc as util
 from utilities.csv_table import CSVTable
 
 np.random.seed(seed=int(time.time()))
@@ -23,24 +23,24 @@ np.random.seed(seed=int(time.time()))
 def run(net_class, param, device_str):
     assert (param.batch_size <= param.queue_length)
     constraint_T1 = cc.ConstraintSearch(
-            ['./example_volumes/multimodal_BRATS'], ['T1'], ['T1c'], ['_'])
+        ['./example_volumes/multimodal_BRATS'], ['T1'], ['T1c'], ['_'])
     constraint_FLAIR = cc.ConstraintSearch(
-            ['./example_volumes/multimodal_BRATS'], ['Flair'], [], ['_'])
+        ['./example_volumes/multimodal_BRATS'], ['Flair'], [], ['_'])
     constraint_T1c = cc.ConstraintSearch(
-            ['./example_volumes/multimodal_BRATS'], ['T1c'], [], ['_'])
+        ['./example_volumes/multimodal_BRATS'], ['T1c'], [], ['_'])
     constraint_T2 = cc.ConstraintSearch(
-            ['./example_volumes/multimodal_BRATS'], ['T2'], [], ['_'])
+        ['./example_volumes/multimodal_BRATS'], ['T2'], [], ['_'])
     constraint_array = [constraint_FLAIR,
                         constraint_T1,
                         constraint_T1c,
                         constraint_T2]
     misc_csv.write_matched_filenames_to_csv(
-            constraint_array, './example_volumes/multimodal_BRATS/input.txt')
+        constraint_array, './example_volumes/multimodal_BRATS/input.txt')
 
     constraint_Label = cc.ConstraintSearch(
-            ['./example_volumes/multimodal_BRATS'], ['Label'], [], [])
+        ['./example_volumes/multimodal_BRATS'], ['Label'], [], [])
     misc_csv.write_matched_filenames_to_csv(
-            [constraint_Label], './example_volumes/multimodal_BRATS/target.txt')
+        [constraint_Label], './example_volumes/multimodal_BRATS/target.txt')
 
     csv_dict = {'input_image_file': './example_volumes/multimodal_BRATS/input.txt',
                 'target_image_file': './example_volumes/multimodal_BRATS/target.txt',
@@ -69,14 +69,11 @@ def run(net_class, param, device_str):
                                       interp_order=(3, 0))
     print('found {} subjects'.format(len(volume_loader.subject_list)))
 
-
-
-
     graph = tf.Graph()
     with graph.as_default(), tf.device('/cpu:0'):
         # define a training element
-        patch_holder = ImagePatch(image_shape=[param.image_size]*3,
-                                  label_shape=[param.label_size]*3,
+        patch_holder = ImagePatch(image_shape=[param.image_size] * 3,
+                                  label_shape=[param.label_size] * 3,
                                   weight_map_shape=None,
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
@@ -111,14 +108,14 @@ def run(net_class, param, device_str):
         train_pairs = train_batch_runner.pop_batch_op
         images = train_pairs['images']
         labels = train_pairs['labels']
-        #_ = net(images, is_training=True)
+        # _ = net(images, is_training=True)
         for i in range(param.num_gpus):
             with tf.device("/{}:{}".format(device_str, i)):
                 predictions = net(images, is_training=True)
                 loss = loss_func(predictions, labels)
                 # TODO compute miss for dfferent target types
                 miss = tf.reduce_mean(tf.cast(
-                    tf.not_equal(tf.argmax(predictions, -1), labels[...,0]),
+                    tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),
                     dtype=tf.float32))
 
                 grads = train_step.compute_gradients(loss)
