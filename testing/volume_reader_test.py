@@ -40,21 +40,13 @@ class SubjectTest(tf.test.TestCase):
 
         volume_loader = VolumeLoaderLayer(csv_loader, hist_norm)
 
-        img, seg, weight_map, subject = volume_loader(
-            do_reorientation=True,
-            do_resampling=True,
-            do_normalisation=True,
-            do_whitening=True)
+        img, seg, weight_map, subject = volume_loader()
         print img.shape
         if seg is not None:
             print seg.shape
         print weight_map
         print volume_loader.subject_list[subject]
-        img, seg, weight_map, subject = volume_loader(
-            do_reorientation=False,
-            do_resampling=True,
-            do_normalisation=False,
-            do_whitening=True)
+        img, seg, weight_map, subject = volume_loader()
 
 
 if __name__ == "__main__":

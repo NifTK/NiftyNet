@@ -58,7 +58,14 @@ def run(net_class, param, device_str):
                          cutoff=[x for x in param.norm_cutoff],
                          mask_type=param.mask_type)
     # define how to choose training volumes
-    volume_loader = VolumeLoaderLayer(csv_loader, hist_norm, do_shuffle=True)
+    volume_loader = VolumeLoaderLayer(csv_loader,
+                                      hist_norm,
+                                      do_shuffle=True,
+                                      do_reorientation=True,
+                                      do_resampling=True,
+                                      do_normalisation=True,
+                                      do_whitening=True,
+                                      interp_order=(3, 0))
     print('found {} subjects'.format(len(volume_loader.subject_list)))
 
 
@@ -99,11 +106,12 @@ def run(net_class, param, device_str):
         train_pairs = train_batch_runner.pop_batch_op
         images = train_pairs['images']
         labels = train_pairs['labels']
-        _ = net(images, is_training=True)
+        #_ = net(images, is_training=True)
         for i in range(param.num_gpus):
             with tf.device("/{}:{}".format(device_str, i)):
                 predictions = net(images, is_training=True)
                 loss = loss_func(predictions, labels)
+                # TODO compute miss for dfferent target types
                 miss = tf.reduce_mean(tf.cast(
                     tf.not_equal(tf.argmax(predictions, -1), labels[...,0]),
                     dtype=tf.float32))

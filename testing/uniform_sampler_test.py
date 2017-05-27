@@ -45,6 +45,7 @@ class SubjectTest(tf.test.TestCase):
         sampler = UniformSampler(patch=patch_holder,
                                  volume_loader=volume_loader,
                                  name='uniform_sampler')
+        n_volumes = 0
         for d in sampler():
             assert isinstance(d, ImagePatch)
             data_dict = d.as_dict()
@@ -52,6 +53,9 @@ class SubjectTest(tf.test.TestCase):
             self.assertAllClose((7,), d.info.shape)
             self.assertAllClose((32, 32, 32, 1), d.label.shape)
             print(d.info)
+            n_volumes = n_volumes + 1
+            if n_volumes == 5:
+                break
 
             keys = data_dict.keys()[0]
             output = data_dict.values()[0]

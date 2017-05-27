@@ -21,11 +21,6 @@ class UniformSampler(BaseSampler):
         self.volume_loader = volume_loader
         self.patch_per_volume = patch_per_volume
 
-        self.do_reorientation = True
-        self.do_resampling = True
-        self.do_normalisation = True
-        self.do_whitening = True
-
     def layer_op(self, batch_size=1):
         """
          problems:
@@ -42,10 +37,7 @@ class UniformSampler(BaseSampler):
         # N samples where (N % batch_size) == 0
 
         while self.volume_loader.has_next:
-            img, seg, _, idx = self.volume_loader(self.do_reorientation,
-                                                  self.do_resampling,
-                                                  self.do_normalisation,
-                                                  self.do_whitening)
+            img, seg, _, idx = self.volume_loader()
             if img.ndim == 5:
                 img = np.squeeze(img, axis=(4,))
             if seg.ndim == 5:
