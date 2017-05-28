@@ -68,7 +68,5 @@ class UniformSampler(BaseSampler):
                                                  self.patch_per_volume)
 
             for loc in locations:
-                self.patch.info = np.array(np.hstack([[idx], loc]),
-                                           dtype=np.int64)
                 self.patch.set_data(idx, loc, img, seg, weight_map)
                 yield self.patch

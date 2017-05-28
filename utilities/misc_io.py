@@ -299,39 +299,18 @@ STANDARD_ORIENTATION = [[0, 1], [1, 1], [2, 1]]
 
 
 # TODO: save segmentation
-def save_img(img_data, subject_id, list_path_dir, save_path, filename_ref=None,
-             flag_orientation=True,
-             flag_isotropic=True, interp_order=[3]):
-    if subject_id is None:
-        return
+def save_volume_5d(img_data, filename, save_path, img_ref=None):
     if img_data is None:
         return
-    save_folder = os.path.dirname(save_path)
-    if not os.path.exists(save_folder):
-        os.makedirs(save_folder)
-    # By default img assumed to be in RAS convention
-    # Need to put it back to original affine
-    if filename_ref is None:
-        files_list = list_nifti_subject(list_path_dir, subject_id)
-        if len(files_list) == 0:
-            raise ValueError("There is no file of reference for subject %s in "
-                             "%s" % (subject_id, list_path_dir))
-
-        filename_ref = files_list[0]
-    img_ref = nib.load(filename_ref)
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
     img_ref = rectify_header_sform_qform(img_ref)
     affine = img_ref.affine
-    ornt_fin = nib.orientations.axcodes2ornt(nib.aff2axcodes(affine))
-    pixdim_fin = img_ref.header.get_zooms()
-    # affine = _guess_img_affine_bis(list_path_dir, subject_id)
-    if flag_orientation:
-        img_data = do_reorientation(img_data, STANDARD_ORIENTATION, ornt_fin)
-    if flag_isotropic:
-        img_data = do_resampling(img_data, pixdim_init=[1, 1, 1],
-                                 pixdim_fin=pixdim_fin,
-                                 interp_order=interp_order)
     img_nii = nib.Nifti1Image(img_data, affine)
-    nib.save(img_nii, save_path)
+    img_nii.set_data_dtype(np.dtype(np.float32))
+    output_name = os.path.join(save_path, filename)
+    nib.save(img_nii, output_name)
+    print('saved {}'.format(output_name))
 
 
 # Returns list of nifti filenames for given subject according to list of
@@ -368,20 +347,17 @@ def match_volume_shape_to_patch_definition(image_data, patch_shape):
         image_data = np.expand_dims(image_data, axis=-1)
     return image_data
 
-def volume_spatial_padding(image_data, padding_size):
-    # this only works for [spatial,  modality]
-    # doesn't work for time series data
-    if padding_size <= 0:
-        return image_data
-    if image_data is None:
-        return image_data
-    if image_data.shape is ():
-        return image_data
-    # padding to alleviate volume level boundary effects
-    img = [np.pad(image_data[..., mod_i], padding_size, 'minimum')
-           for mod_i in range(0, image_data.shape[-1])]
-    img = np.stack(img, axis=-1)
-    return img
+def spatial_padding_to_indexes(spatial_padding):
+    indexes = np.zeros((len(spatial_padding), 2), dtype=np.int)
+    for (i,s) in enumerate(spatial_padding):
+        if len(s) == 1:
+            indexes[i] = [s[0], s[0]]
+        elif len(s) == 2:
+            indexes[i] = [s[0], s[1]]
+        else:
+            raise ValueError("unknown spatial_padding format")
+    return indexes.flatten()
+
 
 # def adapt_to_shape(img_to_change, shape, mod='tile'):
 #     if img_to_change is None or img_to_change.size == 0:

@@ -55,8 +55,9 @@ class Subject(object):
         self.csv_cell_dict = self._create_empty_csvcell_dict()
 
         self.load_reorientation = False
-        self.load_isotropic = False
+        self.load_resampling = False
         self.spatial_padding = None
+        self.input_image_shape = None
 
     @classmethod
     def from_csv_row(cls, row, modality_names=None):
@@ -169,13 +170,19 @@ class Subject(object):
                                   interp_order=interp_order)
 
     def __pad_volume(self, data_5d, spatial_padding):
+        """
+        spatial_padding should be a tuple of ((M,N), (P,Q),...)
+        """
         if (data_5d is None) or (data_5d.shape is ()):
             return data_5d
         # pad the first few dims according to the length of spatial_padding
         ndim = data_5d.ndim
+        if type(spatial_padding) is int:
+            raise ValueError(
+                "spatial_padding should be a tuple: ((M,N), (P,Q),...)")
         assert len(spatial_padding) <= ndim
         while len(spatial_padding) < ndim:
-            spatial_padding = spatial_padding + ((0,),)
+            spatial_padding = spatial_padding + ((0,0),)
         data_5d = np.pad(data_5d, spatial_padding, 'minimum')
         return data_5d
 
@@ -198,7 +205,7 @@ class Subject(object):
                 interp_order = 3
             if do_resampling:
                 data_5d = self.__resample_to_isotropic(data_5d, interp_order)
-                self.load_isotropic = True
+                self.load_resampling = True
             if do_reorientation:
                 data_5d = self.__reorient_to_stand(data_5d)
                 self.load_reorientation = True
@@ -206,9 +213,10 @@ class Subject(object):
             if spatial_padding is not None:
                 data_5d = self.__pad_volume(data_5d, spatial_padding)
                 self.spatial_padding = spatial_padding
-            #if index == 1:  # if it is the target, remember the shape
-            #    self.set_target_volume_shape(data_5d)
+            if index == 0:  # if it is the target, remember the shape
+                self.input_image_shape = data_5d.shape
         return {Subject.fields[index]: data_5d}
+
 
     def load_columns(self,
                      index_list,
@@ -260,5 +268,38 @@ class Subject(object):
             dict_modalities[name_mod] = m
         return dict_modalities
 
-    def zeros_like_target_data(self, n_channels):
-        pass
+    def matrix_like_input_data_5d(self, spatial_rank, n_channels, init_value=0):
+        """
+        create an empty matrix with an optional initial values.
+        the output is a 5d volume, with the first `spatial_rank` corresponding
+        to the spatial shape of the input image, `n_channels` defines the
+        number of channels, this can be
+        1: segmentation map
+        n: n_class probabilities or n-dim features from the network
+        """
+        zeros_shape = self.input_image_shape[:spatial_rank] + (n_channels,)
+        while len(zeros_shape) < 5:
+            zeros_shape = zeros_shape + (1,)
+        return np.ones(zeros_shape) * init_value
+
+    def save_network_output(self, data, save_path):
+        if data is None:
+            return
+        if self.spatial_padding is not None:
+            ind = util.spatial_padding_to_indexes(self.spatial_padding)
+            if len(ind) == 6:  # spatial_rank == 3
+                w, h, d = data.shape[:3]
+                data = data[ind[0]: (w - ind[1]),
+                            ind[2]: (h - ind[3]),
+                            ind[4]: (d - ind[5]), :, :]
+            if len(ind) == 4:  # spatial_rank == 2
+                w, h = data.shape[:2]
+                data = data[ind[0]: (w - ind[1]),
+                            ind[2]: (h - ind[3]), :, :, :]
+        if self.load_reorientation:
+            data = self.__reorient_to_original(data)
+        if self.load_resampling:
+            data = self.__resample_to_original(data, 3)
+        original_header = self.__find_first_nibabel_object()
+        filename = self.name + '_niftynet_out'
+        util.save_volume_5d(data, filename, save_path, original_header)

@@ -23,6 +23,7 @@ from utilities.csv_table import CSVTable
 
 # run on single GPU with single thread
 def run(net_class, param, device_str):
+    param_n_channel_out = 1
     assert (param.batch_size <= param.queue_length)
     constraint_T1 = cc.ConstraintSearch(
         ['./example_volumes/multimodal_BRATS'], ['T1'], ['T1c'], ['_'])
@@ -61,15 +62,16 @@ def run(net_class, param, device_str):
                          cutoff=[x for x in param.norm_cutoff],
                          mask_type=param.mask_type)
     # define how to choose training volumes
-    spatial_padding = ((param.volume_padding_size,),
-                       (param.volume_padding_size,),
-                       (param.volume_padding_size,))
+    spatial_padding = ((param.volume_padding_size, param.volume_padding_size),
+                       (param.volume_padding_size, param.volume_padding_size),
+                       (param.volume_padding_size, param.volume_padding_size))
+
     volume_loader = VolumeLoaderLayer(csv_loader,
                                       hist_norm,
                                       is_training=False,
                                       do_reorientation=True,
                                       do_resampling=True,
-                                      spatial_padding=param.volume_padding_size,
+                                      spatial_padding=spatial_padding,
                                       do_normalisation=True,
                                       do_whitening=True,
                                       interp_order=(3, 0))
@@ -90,6 +92,7 @@ def run(net_class, param, device_str):
                                   num_image_modality=volume_loader.num_modality(0),
                                   num_label_modality=volume_loader.num_modality(1),
                                   num_weight_map=1)
+        spatial_rank = patch_holder.spatial_rank
         sampling_grid_size = patch_holder.label_size - 2 * param.border
         assert sampling_grid_size > 0
         sampler = GridSampler(patch=patch_holder,
@@ -105,7 +108,7 @@ def run(net_class, param, device_str):
         test_pairs = seg_batch_runner.pop_batch_op
         info = test_pairs['info']
         logits = net(test_pairs['images'], is_training=False)
-        logits = tf.argmax(logits, 4)
+        logits = tf.argmax(logits, -1)
         variable_averages = tf.train.ExponentialMovingAverage(0.9)
         variables_to_restore = variable_averages.variables_to_restore()
         saver = tf.train.Saver(var_list=variables_to_restore)
@@ -128,11 +131,10 @@ def run(net_class, param, device_str):
         saver.restore(sess, model_str)
 
         coord = tf.train.Coordinator()
+        all_saved_flag = False
         try:
             seg_batch_runner.run_threads(sess, coord, num_threads=1)
-            img_id = -1
-            pred_img = None
-            patient_name = None
+            img_id, pred_img = None, None
             while True:
                 if coord.should_stop():
                     break
@@ -142,28 +144,40 @@ def run(net_class, param, device_str):
                     if spatial_info[batch_id, 0] != img_id:
                         # when loc_info changed
                         # save current map and reset cumulative map variable
-                        if pred_img is not None:
-                            util.save_segmentation(param, patient_name, pred_img)
                         img_id = spatial_info[batch_id, 0]
-                        volume_loader.get_subject(img_id).zeros_like_target_data()
+                        subject_i = volume_loader.get_subject(img_id)
+                        subject_i.save_network_output(pred_img,
+                                                      param.save_seg_dir)
+                        if spatial_info[batch_id, 0] == -1:
+                            print('received finishing batch')
+                            all_saved_flag = True
+                            seg_batch_runner.close_all()
+                        pred_img = subject_i.matrix_like_input_data_5d(
+                            spatial_rank, param_n_channel_out)
 
-                        patient_name = valid_names[img_id]
-                        pred_img = util.volume_of_zeros_like(
-                            param.eval_data_dir, patient_name, mod_list[0])
-                        pred_img = np.pad(
-                            pred_img, param.volume_padding_size, 'minimum')
-                        # print('init %s' % valid_names[img_id])
-                    loc_x = spatial_info[batch_id, 1]
-                    loc_y = spatial_info[batch_id, 2]
-                    loc_z = spatial_info[batch_id, 3]
-
-                    p_start = param.border
-                    p_end = net.input_label_size - param.border
+                    # try to expand prediction dims to match the output volume
                     predictions = seg_maps[batch_id]
-                    pred_img[(loc_x + p_start):(loc_x + p_end),
-                             (loc_y + p_start):(loc_y + p_end),
-                             (loc_z + p_start):(loc_z + p_end)] = \
-                        predictions[p_start:p_end, p_start:p_end, p_start:p_end]
+                    while predictions.ndim < pred_img.ndim:
+                        predictions = np.expand_dims(predictions, axis=-1)
+
+                    # assign predicted patch to the allocated output volume
+                    p_start = param.border
+                    p_end = patch_holder.label_size - param.border
+                    if spatial_rank == 3:
+                        loc_x, loc_y, loc_z = spatial_info[batch_id, 1:4]
+                        pred_img[(loc_x + p_start):(loc_x + p_end),
+                                 (loc_y + p_start):(loc_y + p_end),
+                                 (loc_z + p_start):(loc_z + p_end),...] = \
+                            predictions[p_start:p_end,
+                                        p_start:p_end,
+                                        p_start:p_end,...]
+                    elif spatial_rank == 2:
+                        loc_x, loc_y = spatial_info[batch_id, 1:3]
+                        pred_img[(loc_x + p_start):(loc_x + p_end),
+                                 (loc_y + p_start):(loc_y + p_end), ...] = \
+                            predictions[p_start:p_end,
+                                        p_start:p_end,
+                                        p_start:p_end,...]
 
         except KeyboardInterrupt:
             print('User cancelled training')
@@ -173,8 +187,8 @@ def run(net_class, param, device_str):
             print(unusual_error)
             seg_batch_runner.close_all()
         finally:
-            # save the last batches
-            util.save_segmentation(param, valid_names[img_id], pred_img)
-            print('inference.py time: {} seconds'.format(
+            if not all_saved_flag:
+                raise ValueError('stopped early, incomplete predictions')
+            print('inference.py time: {:.3f} seconds'.format(
                 time.time() - start_time))
             seg_batch_runner.close_all()

@@ -106,36 +106,17 @@ class InputBatchQueueRunner(object):
                 patch_dict = patch.as_dict()
                 assert len(patch_dict.keys()[0]) == len(patch_dict.values()[0])
                 self._session.run(self._enqueue_op, feed_dict=patch_dict)
+
         except tf.errors.CancelledError:
             pass
         except ValueError as e:
             print(e)
+            self.close_all()
         except RuntimeError as e:
             print(e)
+            self.close_all()
         finally:
-            # this thread won't enqueue anymore
-            self._started_threads[thread_id] = False
-            # try to close down when it's the last thread
-            if not any(self._started_threads):
-                # preparing for closing down
-                # waiting to be sure the last few batches are dequeued
-                retry, interval = 60000, 0.001
-                print("stopping the sampling threads... "
-                      "(in {} seconds)".format(retry * interval))
-                remained = self.current_queue_size - self.min_queue_size
-                while retry > 0:
-                    if self.batch_size > remained:
-                        break
-                    # more batches can be processed before deleting the queue
-                    time.sleep(interval)
-                    retry -= 1
-                    remained = self.current_queue_size - self.min_queue_size
-                if remained > 0:
-                    # still having elements left
-                    print("Insufficient samples {} to form a {}-element "
-                          "batch in queue".format(self.batch_size, remained))
-                # close the queue
-                self.close_all()
+            pass
 
     @property
     def current_queue_size(self):

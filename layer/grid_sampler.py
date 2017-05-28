@@ -85,9 +85,24 @@ class GridSampler(BaseSampler):
                                                   img.shape,
                                                   self.patch.image_size,
                                                   self.grid_size)
-            print('yielding {} locations'.format(locations.shape[0]))
-            for loc in locations:
-                self.patch.info = np.array(np.hstack([[idx], loc]),
-                                           dtype=np.int64)
+            n_patches = locations.shape[0]
+            extra_patches = batch_size - n_patches % batch_size \
+                if (n_patches % batch_size) != 0 else 0
+            extend_n_patches = n_patches + extra_patches
+            if extra_patches > 0:
+                print("yielding {} locations, "
+                      "extends to {} to be divisible by batch size {}".format(
+                    n_patches, extend_n_patches, batch_size))
+            else:
+                print("yielding {} locations".format(n_patches))
+
+            for i in range(0, extend_n_patches):
+                loc = locations[i % n_patches]
                 self.patch.set_data(idx, loc, img, seg, weight_map)
                 yield self.patch
+
+        # all patches finished, have to inform engine to stop
+        # creating a dummy batch with (idx==-1) to do this
+        for i in range(0, batch_size):
+            self.patch.info = np.array(np.hstack([[-1], loc]), dtype=np.int64)
+            yield self.patch

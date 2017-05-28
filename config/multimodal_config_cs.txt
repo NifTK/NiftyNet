@@ -38,7 +38,7 @@ flag_isotropic = True
 
 
 # ** training only ** system parameters
-num_gpus = 1
+num_gpus = 2
 sample_per_volume = 100
 
 # **training only** gradient descent and loss parameters

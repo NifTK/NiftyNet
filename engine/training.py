@@ -59,9 +59,9 @@ def run(net_class, param, device_str):
                          cutoff=[x for x in param.norm_cutoff],
                          mask_type=param.mask_type)
     # define how to choose training volumes
-    spatial_padding = ((param.volume_padding_size,),
-                       (param.volume_padding_size,),
-                       (param.volume_padding_size,))
+    spatial_padding = ((param.volume_padding_size, param.volume_padding_size),
+                       (param.volume_padding_size, param.volume_padding_size),
+                       (param.volume_padding_size, param.volume_padding_size))
     volume_loader = VolumeLoaderLayer(csv_loader,
                                       hist_norm,
                                       is_training=True,
