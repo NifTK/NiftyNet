@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import tensorflow as tf
-from src.network.base_layer import BaseLayer
-from src.network.net_template import NetTemplate
+from network.base_layer import BaseLayer
+from network.net_template import NetTemplate
 
 
 """
