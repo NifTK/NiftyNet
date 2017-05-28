@@ -42,10 +42,13 @@ class HistogramNormalisationLayer(Layer):
             image_5d = self.whiten(image_5d, mask_array)
         return image_5d
 
-    def __set_modalities(self, subject):
-        self.modalities = subject.modalities_dict()
+    def __update_modality_dict(self, subject):
+        self.modalities.update(subject.modalities_dict())
 
-    def __check_modalities_to_train(self):
+    def __check_modalities_to_train(self, subjects):
+        # collect all modality list from subjects
+        for subject in subjects:
+            self.__update_modality_dict(subject)
         if self.mapping is {}:
             return self.modalities
         # remove if exists in currently loaded mapping dict
@@ -55,10 +58,11 @@ class HistogramNormalisationLayer(Layer):
                 del modalities_to_train[mod]
         return modalities_to_train
 
-    def is_ready(self, do_normalisation, do_whitening):
+    def is_ready(self, subjects, do_normalisation, do_whitening):
         if not do_normalisation:
             return True # always ready for do_whitening
-        if not (self.mapping and self.modalities):
+        mod_to_train = self.__check_modalities_to_train(subjects)
+        if len(mod_to_train) > 0:
             print 'histogram normalisation, looking for reference histogram...'
             return False
         return True
@@ -66,9 +70,8 @@ class HistogramNormalisationLayer(Layer):
     def train_normalisation_ref(self, subjects):
         # check modalities to train, using the first subject in subject list
         # to find input modality list
-        self.__set_modalities(subjects[0])
-        mod_to_train = self.__check_modalities_to_train()
-        if len(mod_to_train) <= 0:
+        mod_to_train = self.__check_modalities_to_train(subjects)
+        if len(mod_to_train) == 0:
             print('Normalisation histogram reference models found')
             return
         print('training normalisation histogram references for {}'.format(

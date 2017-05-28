@@ -54,8 +54,9 @@ class Subject(object):
         self.modality_names = modality_names
         self.csv_cell_dict = self._create_empty_csvcell_dict()
 
-        self.is_oriented_to_stand = False
-        self.is_isotropic = False
+        self.load_reorientation = False
+        self.load_isotropic = False
+        self.spatial_padding = None
 
     @classmethod
     def from_csv_row(cls, row, modality_names=None):
@@ -114,10 +115,10 @@ class Subject(object):
     def __find_first_nibabel_object(self):
         """
         a helper function find the *first* available image from hard drive
-        and return a nibabel image object. This can be used to determine
+        and return a nibabel image object. This is used to determine
         image affine/pixel size info.
-        This function assumes the header info are the same across all
-        volumes for this subject
+        This function assumes the header data are the same across all
+        input volumes for this subject
         :return: nibabel image object
         """
         input_image_files = self.column(0)()
@@ -130,7 +131,7 @@ class Subject(object):
         return None
 
     def __reorient_to_stand(self, data_5d):
-        if data_5d is None:
+        if (data_5d is None) or (data_5d.shape is ()):
             return None
         image_affine = self._read_original_affine()
         ornt_original = nib.orientations.axcodes2ornt(
@@ -140,17 +141,17 @@ class Subject(object):
                                      STANDARD_ORIENTATION)
 
     def __reorient_to_original(self, data_5d):
-       if data_5d is None:
-           return None
-       image_affine = self._read_original_affine()
-       ornt_original = nib.orientations.axcodes2ornt(
-               nib.aff2axcodes(image_affine))
-       return util.do_reorientation(data_5d,
-                                    STANDARD_ORIENTATION,
-                                    ornt_original)
+        if (data_5d is None) or (data_5d.shape is ()):
+            return None
+        image_affine = self._read_original_affine()
+        ornt_original = nib.orientations.axcodes2ornt(
+                nib.aff2axcodes(image_affine))
+        return util.do_reorientation(data_5d,
+                                     STANDARD_ORIENTATION,
+                                     ornt_original)
 
     def __resample_to_isotropic(self, data_5d, interp_order):
-        if data_5d is None:
+        if (data_5d is None) or (data_5d.shape is ()):
             return None
         image_pixdim = self._read_original_pixdim()
         return util.do_resampling(data_5d,
@@ -159,7 +160,7 @@ class Subject(object):
                                   interp_order=interp_order)
 
     def __resample_to_original(self, data_5d, interp_order):
-        if data_5d is None:
+        if (data_5d is None) or (data_5d.shape is ()):
             return None
         image_pixdim = self._read_original_pixdim()
         return util.do_resampling(data_5d,
@@ -167,11 +168,24 @@ class Subject(object):
                                   image_pixdim,
                                   interp_order=interp_order)
 
+    def __pad_volume(self, data_5d, spatial_padding):
+        if (data_5d is None) or (data_5d.shape is ()):
+            return data_5d
+        # pad the first few dims according to the length of spatial_padding
+        ndim = data_5d.ndim
+        assert len(spatial_padding) <= ndim
+        while len(spatial_padding) < ndim:
+            spatial_padding = spatial_padding + ((0,),)
+        data_5d = np.pad(data_5d, spatial_padding, 'minimum')
+        return data_5d
+
+
     def load_column(self,
                     index,
                     do_reorientation=False,
                     do_resampling=False,
-                    interp_order=None):
+                    interp_order=None,
+                    spatial_padding=None):
         # TODO change name to read_image_as_5d
         if Subject.data_types[index] == 'textual_comment':
             return self.column(index)()[0][0]
@@ -184,16 +198,24 @@ class Subject(object):
                 interp_order = 3
             if do_resampling:
                 data_5d = self.__resample_to_isotropic(data_5d, interp_order)
+                self.load_isotropic = True
             if do_reorientation:
                 data_5d = self.__reorient_to_stand(data_5d)
+                self.load_reorientation = True
             data_5d = np.nan_to_num(data_5d)
+            if spatial_padding is not None:
+                data_5d = self.__pad_volume(data_5d, spatial_padding)
+                self.spatial_padding = spatial_padding
+            #if index == 1:  # if it is the target, remember the shape
+            #    self.set_target_volume_shape(data_5d)
         return {Subject.fields[index]: data_5d}
 
     def load_columns(self,
                      index_list,
                      do_reorientation=False,
                      do_resampling=False,
-                     interp_order=None):
+                     interp_order=None,
+                     spatial_padding=None):
         """
         This function load all images from file_path_list,
         returns all data (with reorientation/resampling if required)
@@ -211,7 +233,8 @@ class Subject(object):
             column_dict = self.load_column(index=column_ind,
                                            do_reorientation=do_reorientation,
                                            do_resampling=do_resampling,
-                                           interp_order=interp_order[i])
+                                           interp_order=interp_order[i],
+                                           spatial_padding=spatial_padding)
             output_dict[column_dict.keys()[0]] = column_dict.values()[0]
         return output_dict
 
@@ -237,31 +260,5 @@ class Subject(object):
             dict_modalities[name_mod] = m
         return dict_modalities
 
-        # def _set_data_path_input(self, new_name):
-        #    if os.path.exists(new_name):
-        #        self.set_column(1, MultiModalFileList([[new_name]]))
-        #    else:
-        #        warnings.warn("Cannot update new file array as the given file "
-        #                      "does not exist")
-
-
-        # TODO: support time series
-        # def adapt_time_series(self, data):
-        #     times = {}
-        #     min_times = 1000
-        #     max_times = 1
-        #     for mod in self.file_path_list.keys():
-        #         if data[mod].ndim < 5:
-        #             times[mod] = 1
-        #             min_times = 1
-        #         else:
-        #             times[mod] = data[mod].shape[4]
-        #             max_times = np.max([times[mod], max_times])
-        #             min_times = np.min([times[mod], min_times])
-        #     if not min_times == max_times:
-        #         warnings.warn("Incompatibility between presented time series")
-        #         for mod in self.file_path_list.keys():
-        #             if times[mod] < max_times:
-        #                 data[mod] = io.adjust_to_maxtime(data[mod], max_times)
-        #
-        #     return data
+    def zeros_like_target_data(self, n_channels):
+        pass

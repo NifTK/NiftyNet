@@ -52,4 +52,4 @@ if __name__ == "__main__":
     else:
         import engine.inference
 
-        engine.inference.run(net, args, device_str)
+        engine.inference.run(net_class, args, device_str)

@@ -47,14 +47,13 @@ class GridSampler(BaseSampler):
                  patch,
                  volume_loader,
                  grid_size=1,
-                 volume_padding_size=0,
                  name="grid_sampler"):
         super(GridSampler, self).__init__(patch=patch, name=name)
         self.volume_loader = volume_loader
-        self.volume_padding_size = volume_padding_size
         self.grid_size = grid_size
 
-        assert self.volume_loader.do_shuffle == False
+        # this sampler is used for inference only, should not shuffle the input
+        assert self.volume_loader.is_training == False
 
     def layer_op(self, batch_size=1):
         """
@@ -80,14 +79,6 @@ class GridSampler(BaseSampler):
             if img.ndim - spatial_rank > 1:
                 raise NotImplementedError
                 # time series data are not supported after this point
-
-            if self.volume_padding_size > 0:
-                img = io.volume_spatial_padding(
-                    img, self.volume_padding_size)
-                seg = io.volume_spatial_padding(
-                    seg, self.volume_padding_size)
-                weight_map = io.volume_spatial_padding(
-                    weight_map, self.volume_padding_size)
 
             # generates grid spatial coordinates
             locations = generate_grid_coordinates(spatial_rank,

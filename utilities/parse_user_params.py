@@ -69,20 +69,8 @@ def run():
         help="Set padding size of each volume (in all dimensions)",
         type=int)
     parser.add_argument(
-        "--volume_hist_path",
-        help="List of path from where to find reference files for histogram "
-             "training"
-    )
-    parser.add_argument(
         "--histogram_ref_file",
-        help="A reference of histogram for intensity normalisation (optional)")
-    parser.add_argument(
-        "--standardisation_training",
-        default=False,
-        help="Indicates if the retraining of the standardisation should be "
-             "performed",
-        type=bool
-    )
+        help="A reference file of histogram for intensity normalisation")
     parser.add_argument(
         "--flag_normalisation",
         help="Indicates if the normalisation must be performed"
@@ -108,10 +96,6 @@ def run():
     parser.add_argument(
         "--flag_saving_norm",
         help="Indicates if the normalisation must be saved"
-    )
-    parser.add_argument(
-        "--saving_norm_dir",
-        help="Path where normalised images should be saved"
     )
     parser.add_argument(
         "--norm_type",

@@ -17,8 +17,6 @@ class SubjectTest(tf.test.TestCase):
                     'target_image_file': './testing_data/testing_case_target',
                     'weight_map_file': None,
                     'target_note': None}
-        # 'target_note': './testing_data/TestComments.csv'}
-
         csv_loader = CSVTable(csv_dict=csv_dict,
                               modality_names=('FLAIR', 'T1'),
                               allow_missing=True)
@@ -29,7 +27,7 @@ class SubjectTest(tf.test.TestCase):
             norm_type='percentile',
             mask_type='otsu_plus')
 
-        volume_loader = VolumeLoaderLayer(csv_loader, hist_norm, do_shuffle=True)
+        volume_loader = VolumeLoaderLayer(csv_loader, hist_norm, is_training=True)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
         # define output element patch
@@ -45,7 +43,6 @@ class SubjectTest(tf.test.TestCase):
         sampler = UniformSampler(patch=patch_holder,
                                  volume_loader=volume_loader,
                                  patch_per_volume=1,
-                                 volume_padding_size=21,
                                  name='uniform_sampler')
         n_volumes = 0
         for d in sampler():

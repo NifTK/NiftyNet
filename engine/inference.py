@@ -8,46 +8,103 @@ import tensorflow as tf
 from six.moves import range
 
 import utilities.misc as util
-from input_queue import DeployInputBuffer
-from network.net_template import NetTemplate
-from sampler import VolumeSampler
+
+import utilities.constraints_classes as cc
+import utilities.misc_csv as misc_csv
+from layer.input_buffer import DeployInputBuffer
+from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
+from utilities.input_placeholders import ImagePatch
+from layer.loss import LossFunction
+from layer.grid_sampler import GridSampler
+from layer.volume_loader import VolumeLoaderLayer
+from utilities import misc as util
+from utilities.csv_table import CSVTable
 
 
 # run on single GPU with single thread
-def run(net, param):
-    if not isinstance(net, NetTemplate):
-        print('Net model should inherit from NetTemplate')
-        return
+def run(net_class, param, device_str):
+    assert (param.batch_size <= param.queue_length)
+    constraint_T1 = cc.ConstraintSearch(
+        ['./example_volumes/multimodal_BRATS'], ['T1'], ['T1c'], ['_'])
+    constraint_FLAIR = cc.ConstraintSearch(
+        ['./example_volumes/multimodal_BRATS'], ['Flair'], [], ['_'])
+    constraint_T1c = cc.ConstraintSearch(
+        ['./example_volumes/multimodal_BRATS'], ['T1c'], [], ['_'])
+    constraint_T2 = cc.ConstraintSearch(
+        ['./example_volumes/multimodal_BRATS'], ['T2'], [], ['_'])
+    constraint_array = [constraint_FLAIR,
+                        constraint_T1,
+                        constraint_T1c,
+                        constraint_T2]
+    misc_csv.write_matched_filenames_to_csv(
+        constraint_array, './example_volumes/multimodal_BRATS/input.txt')
 
-    valid_names = util.list_patient(param.eval_data_dir)
-    mod_list = util.list_modality(param.train_data_dir)
-    rand_sampler = VolumeSampler(valid_names,
-                                 mod_list,
-                                 net.batch_size,
-                                 net.input_image_size,
-                                 net.input_label_size,
-                                 param.volume_padding_size,
-                                 param.histogram_ref_file)
-    sampling_grid_size = net.input_label_size - 2 * param.border
-    if sampling_grid_size <= 0:
-        print('Param error: non-positive sampling grid_size')
-        return None
-    sample_generator = rand_sampler.grid_sampling_from(
-        param.eval_data_dir, sampling_grid_size, yield_seg=False)
+    constraint_Label = cc.ConstraintSearch(
+        ['./example_volumes/multimodal_BRATS'], ['Label'], [], [])
+    misc_csv.write_matched_filenames_to_csv(
+        [constraint_Label], './example_volumes/multimodal_BRATS/target.txt')
+
+    csv_dict = {'input_image_file': './example_volumes/multimodal_BRATS/input.txt',
+                'target_image_file': './example_volumes/multimodal_BRATS/target.txt',
+                'weight_map_file': None,
+                'target_note': None}
+
+    # read each line of csv files into an instance of Subject
+    csv_loader = CSVTable(csv_dict=csv_dict,
+                          modality_names=('FLAIR', 'T1', 'T1c', 'T2'),
+                          allow_missing=True)
+
+    # define how to normalise image volumes
+    hist_norm = HistNorm(models_filename=param.histogram_ref_file,
+                         multimod_mask_type=param.multimod_mask_type,
+                         norm_type=param.norm_type,
+                         cutoff=[x for x in param.norm_cutoff],
+                         mask_type=param.mask_type)
+    # define how to choose training volumes
+    spatial_padding = ((param.volume_padding_size,),
+                       (param.volume_padding_size,),
+                       (param.volume_padding_size,))
+    volume_loader = VolumeLoaderLayer(csv_loader,
+                                      hist_norm,
+                                      is_training=False,
+                                      do_reorientation=True,
+                                      do_resampling=True,
+                                      spatial_padding=param.volume_padding_size,
+                                      do_normalisation=True,
+                                      do_whitening=True,
+                                      interp_order=(3, 0))
+    print('found {} subjects'.format(len(volume_loader.subject_list)))
+
 
     # construct graph
     graph = tf.Graph()
-    with graph.as_default(), tf.device("/gpu:0"):  # TODO multiple GPU?
-        # construct train queue and graph
+    with graph.as_default(), tf.device("/{}:0".format(device_str)):
+        # construct inference queue and graph
         # TODO change batch size param - batch size could be larger in test case
-        seg_batch_runner = DeployInputBuffer(
-            net.batch_size,
-            param.queue_length,
-            shapes=[[net.input_image_size] * 3 + [len(mod_list)], [7]],
-            sample_generator=sample_generator)
+        patch_holder = ImagePatch(image_shape=[param.image_size] * 3,
+                                  label_shape=[param.label_size] * 3,
+                                  weight_map_shape=None,
+                                  image_dtype=tf.float32,
+                                  label_dtype=tf.int64,
+                                  weight_map_dtype=tf.float32,
+                                  num_image_modality=volume_loader.num_modality(0),
+                                  num_label_modality=volume_loader.num_modality(1),
+                                  num_weight_map=1)
+        sampling_grid_size = patch_holder.label_size - 2 * param.border
+        assert sampling_grid_size > 0
+        sampler = GridSampler(patch=patch_holder,
+                              volume_loader=volume_loader,
+                              grid_size=sampling_grid_size,
+                              name='grid_sampler')
+
+        net = net_class(num_classes=param.num_classes)
+        # construct train queue
+        seg_batch_runner = DeployInputBuffer(batch_size=param.batch_size,
+                                             capacity=param.queue_length,
+                                             sampler=sampler)
         test_pairs = seg_batch_runner.pop_batch_op
         info = test_pairs['info']
-        logits = net.inference(test_pairs['images'])
+        logits = net(test_pairs['images'], is_training=False)
         logits = tf.argmax(logits, 4)
         variable_averages = tf.train.ExponentialMovingAverage(0.9)
         variables_to_restore = variable_averages.variables_to_restore()
@@ -86,9 +143,10 @@ def run(net, param):
                         # when loc_info changed
                         # save current map and reset cumulative map variable
                         if pred_img is not None:
-                            util.save_segmentation(
-                                param, patient_name, pred_img)
+                            util.save_segmentation(param, patient_name, pred_img)
                         img_id = spatial_info[batch_id, 0]
+                        volume_loader.get_subject(img_id).zeros_like_target_data()
+
                         patient_name = valid_names[img_id]
                         pred_img = util.volume_of_zeros_like(
                             param.eval_data_dir, patient_name, mod_list[0])

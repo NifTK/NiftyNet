@@ -377,7 +377,6 @@ def volume_spatial_padding(image_data, padding_size):
         return image_data
     if image_data.shape is ():
         return image_data
-
     # padding to alleviate volume level boundary effects
     img = [np.pad(image_data[..., mod_i], padding_size, 'minimum')
            for mod_i in range(0, image_data.shape[-1])]

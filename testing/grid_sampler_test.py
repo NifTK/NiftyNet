@@ -29,7 +29,7 @@ class SubjectTest(tf.test.TestCase):
 
         volume_loader = VolumeLoaderLayer(csv_loader,
                                           hist_norm,
-                                          do_shuffle=False)
+                                          is_training=False)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
         # define output element patch
@@ -46,7 +46,6 @@ class SubjectTest(tf.test.TestCase):
         sampler = GridSampler(patch=patch_holder,
                               volume_loader=volume_loader,
                               grid_size=100,
-                              volume_padding_size=21,
                               name='grid_sampler')
         n_volumes = 0
         for d in sampler():

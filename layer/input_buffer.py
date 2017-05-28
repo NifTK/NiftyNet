@@ -108,8 +108,6 @@ class InputBatchQueueRunner(object):
                 self._session.run(self._enqueue_op, feed_dict=patch_dict)
         except tf.errors.CancelledError:
             pass
-        except AssertionError as e:
-            print("AssertionError: please check the sampler() dims")
         except ValueError as e:
             print(e)
         except RuntimeError as e:

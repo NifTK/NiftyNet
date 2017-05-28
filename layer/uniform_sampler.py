@@ -27,13 +27,11 @@ class UniformSampler(BaseSampler):
                  patch,
                  volume_loader,
                  patch_per_volume=1,
-                 volume_padding_size=0,
                  name="uniform_sampler"):
 
         super(UniformSampler, self).__init__(patch=patch, name=name)
         self.volume_loader = volume_loader
         self.patch_per_volume = patch_per_volume
-        self.volume_padding_size = volume_padding_size
 
     def layer_op(self, batch_size=1):
         """
@@ -63,19 +61,11 @@ class UniformSampler(BaseSampler):
                 raise NotImplementedError
                 # time series data are not supported after this point
 
-            if self.volume_padding_size > 0:
-                img = io.volume_spatial_padding(
-                    img, self.volume_padding_size)
-                seg = io.volume_spatial_padding(
-                    seg, self.volume_padding_size)
-                weight_map = io.volume_spatial_padding(
-                    weight_map, self.volume_padding_size)
-
             # generates random spatial coordinates
             locations = rand_spatial_coordinates(spatial_rank,
-                                                img.shape,
-                                                self.patch.image_size,
-                                                self.patch_per_volume)
+                                                 img.shape,
+                                                 self.patch.image_size,
+                                                 self.patch_per_volume)
 
             for loc in locations:
                 self.patch.info = np.array(np.hstack([[idx], loc]),

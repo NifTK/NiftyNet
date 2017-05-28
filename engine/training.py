@@ -53,17 +53,21 @@ def run(net_class, param, device_str):
                           allow_missing=True)
 
     # define how to normalise image volumes
-    hist_norm = HistNorm(models_filename=param.saving_norm_dir,
+    hist_norm = HistNorm(models_filename=param.histogram_ref_file,
                          multimod_mask_type=param.multimod_mask_type,
                          norm_type=param.norm_type,
                          cutoff=[x for x in param.norm_cutoff],
                          mask_type=param.mask_type)
     # define how to choose training volumes
+    spatial_padding = ((param.volume_padding_size,),
+                       (param.volume_padding_size,),
+                       (param.volume_padding_size,))
     volume_loader = VolumeLoaderLayer(csv_loader,
                                       hist_norm,
-                                      do_shuffle=True,
+                                      is_training=True,
                                       do_reorientation=True,
                                       do_resampling=True,
+                                      spatial_padding=spatial_padding,
                                       do_normalisation=True,
                                       do_whitening=True,
                                       interp_order=(3, 0))
@@ -86,7 +90,6 @@ def run(net_class, param, device_str):
         sampler = UniformSampler(patch=patch_holder,
                                  volume_loader=volume_loader,
                                  patch_per_volume=param.sample_per_volume,
-                                 volume_padding_size=param.volume_padding_size,
                                  name='uniform_sampler')
 
         net = net_class(num_classes=param.num_classes)
@@ -110,7 +113,7 @@ def run(net_class, param, device_str):
         images = train_pairs['images']
         labels = train_pairs['labels']
         # _ = net(images, is_training=True)
-        for i in range(param.num_gpus):
+        for i in range(0, param.num_gpus):
             with tf.device("/{}:{}".format(device_str, i)):
                 predictions = net(images, is_training=True)
                 loss = loss_func(predictions, labels)

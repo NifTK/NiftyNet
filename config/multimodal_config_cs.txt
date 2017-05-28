@@ -16,10 +16,6 @@ num_classes = 5
 # affected by network's receptive field
 volume_padding_size = 21
 
-volume_hist_path = ./testing_data/HGG_Training/
-histogram_ref_file = ./testing_data/standardisation_models_init.txt
-standardisation_training = True
-
 # ** inputs regarding the normalisation and preceding masking
 
 flag_normalisation = False
@@ -27,7 +23,7 @@ flag_whitening = True
 flag_spatial_scaling = True
 flag_saving_norm = True
 
-saving_norm_dir = ./example_volumes/multimodal_BRATS/standardisation_models.txt
+histogram_ref_file = ./example_volumes/multimodal_BRATS/standardisation_models.txt
 norm_type = percentile
 flag_saving_mask = False
 multimod_mask_type = and
