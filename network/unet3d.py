@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
+
 from network.base_layer import BaseLayer
 from network.net_template import NetTemplate
-
 
 """
 reimplementation of 3D U-net
   Çiçek et al., "3D U-Net: Learning dense Volumetric segmentation from
   sparse annotation", MICCAI '16
 """
-class UNet_3D(NetTemplate):
+
+
+class UNet3D(NetTemplate):
     def __init__(self,
                  batch_size,
                  image_size,
@@ -17,21 +19,20 @@ class UNet_3D(NetTemplate):
                  num_classes,
                  is_training=True,
                  device_str="cpu"):
-        super(UNet_3D, self).__init__(batch_size,
-                                       image_size,
-                                       label_size,
-                                       num_classes,
-                                       is_training,
-                                       device_str)
-        assert(image_size % 8 == 0) # image_size should be divisible by 8
+        super(UNet3D, self).__init__(batch_size,
+                                     image_size,
+                                     label_size,
+                                     num_classes,
+                                     is_training,
+                                     device_str)
+        assert (image_size % 8 == 0)  # image_size should be divisible by 8
         self.num_fea = [32, 64, 128, 256, 512]
         self.set_activation_type('relu')
         self.name = "3D U-net"
-        print("{}\n"\
-              "{} kernels\n" \
+        print("{}\n"
+              "{} kernels\n"
               "Classifiying {} classes".format(
-                  self.name, self.num_fea, self.num_classes))
-
+            self.name, self.num_fea, self.num_classes))
 
     def inference(self, images, layer_id=None):
         BaseLayer._print_activations(images)

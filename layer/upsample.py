@@ -73,5 +73,7 @@ class UpSampleLayer(TrainableLayer):
                                          name='deconv_{}'.format(i))(x)
                              for (i, x) in enumerate(output_tensor)]
             output_tensor = tf.concat(output_tensor, axis=-1)
+        else:
+            raise ValueError('Unsupported function type')
 
         return output_tensor

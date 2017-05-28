@@ -4,16 +4,15 @@ This module define queues that stores training/evaluation images (and labels)
 TrainEvalInputBuffer provides randomised queue
 
 DeployInputBuffer provides FIFO queue. This is designed for making
-patch-based predictions for mulitple test volumes.
+patch-based predictions for multiple test volumes.
 """
 
 import threading
-import time
 
 import tensorflow as tf
 
-from .base_sampler import BaseSampler
 from utilities.input_placeholders import ImagePatch
+from .base_sampler import BaseSampler
 
 
 class InputBatchQueueRunner(object):
@@ -54,7 +53,7 @@ class InputBatchQueueRunner(object):
 
     def _create_queue_and_ops(self):
         """
-        Create a shuffled queue or FIFOqueue, and create queue
+        Create a shuffled queue or FIFO queue, and create queue
         operations. This should be called before tf.Graph.finalize.
         """
 
@@ -68,7 +67,8 @@ class InputBatchQueueRunner(object):
                 names=self.sampler.placeholder_names,
                 name="shuffled_queue")
         else:
-            self._queue = tf.FIFOQueue(  # pylint: disable=redefined-variable-type
+            self._queue = tf.FIFOQueue(
+                # pylint: disable=redefined-variable-type
                 capacity=self.capacity,
                 dtypes=self.sampler.placeholder_dtypes,
                 shapes=self.sampler.placeholder_shapes,

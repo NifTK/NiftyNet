@@ -4,14 +4,14 @@ import tensorflow as tf
 from src.network.base_layer import BaseLayer
 from src.network.net_template import NetTemplate
 
-
 """
 reimplementation of DeepMedic:
   Kamnitsas et al., "Efficient multi-scale 3D CNN with fully connected
   CRF for accurate brain lesion segmentation", MedIA '17
 """
-class DeepMedic(NetTemplate):
 
+
+class DeepMedic(NetTemplate):
     def __init__(self,
                  batch_size,
                  image_size,
@@ -20,11 +20,11 @@ class DeepMedic(NetTemplate):
                  is_training=True,
                  device_str="cpu"):
         super(DeepMedic, self).__init__(batch_size,
-                                     image_size,
-                                     label_size,
-                                     num_classes,
-                                     is_training,
-                                     device_str)
+                                        image_size,
+                                        label_size,
+                                        num_classes,
+                                        is_training,
+                                        device_str)
         # image_size is defined as the largest context, then:
         #   downsampled path size: image_size / d_factor
         #   downsampled path output: image_size / d_factor - 16
@@ -36,21 +36,21 @@ class DeepMedic(NetTemplate):
         # where 16 is fixed by the receptive field of conv layers
         # TODO: make sure label_size = image_size/d_factor - 16
 
-        self.d_factor = 3 # subsample factor
+        self.d_factor = 3  # subsample factor
         self.crop_diff = (self.d_factor - 1) * 16
-        assert(image_size % self.d_factor == 0)
-        assert(self.d_factor % 2 == 1) # to make the downsampling centered
-        assert(image_size % 2 == 1) # to make the crop centered
-        assert(image_size > self.d_factor * 16) # minimum receptive field
+        assert (image_size % self.d_factor == 0)
+        assert (self.d_factor % 2 == 1)  # to make the downsampling centered
+        assert (image_size % 2 == 1)  # to make the crop centered
+        assert (image_size > self.d_factor * 16)  # minimum receptive field
 
         self.conv_fea = [30, 30, 40, 40, 40, 40, 50, 50]
         self.fc_fea = [150, 150]
         self.set_activation_type('prelu')
         self.name = "DeepMedic"
-        print("{}\n"\
-            "3x3x3 convolution {} kernels\n" \
-            "Classifiying {} classes".format(
-                self.name, self.conv_fea, self.num_classes))
+        print("{}\n"
+              "3x3x3 convolution {} kernels\n"
+              "Classifiying {} classes".format(
+            self.name, self.conv_fea, self.num_classes))
 
     def inference(self, images, layer_id=None):
         BaseLayer._print_activations(images)
@@ -87,14 +87,14 @@ class DeepMedic(NetTemplate):
                 f_in = self.conv_layer_1x1(f_in, ni_, no_)
             ni_ = no_
             BaseLayer._print_activations(f_in)
-        with tf.variable_scope('conv_fc_%d' % (k+1)) as scope:
+        with tf.variable_scope('conv_fc_%d' % (k + 1)) as scope:
             f_in = self.conv_layer_1x1(f_in, ni_, self.num_classes)
         BaseLayer._print_activations(f_in)
         return f_in
 
     def _upsample(self, fea_maps):
         # upsample by a factor of self.d_factor
-        fea_maps = tf.tile(fea_maps, [self.d_factor**3, 1, 1, 1, 1])
+        fea_maps = tf.tile(fea_maps, [self.d_factor ** 3, 1, 1, 1, 1])
         fea_maps = tf.batch_to_space_nd(
             fea_maps, [self.d_factor, self.d_factor, self.d_factor],
             [[0, 0], [0, 0], [0, 0]])

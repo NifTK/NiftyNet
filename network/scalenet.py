@@ -37,7 +37,6 @@ class ScaleNet(HighRes3DNet):
             self.num_features[3], num_classes)
         print('using {}'.format(self.name))
 
-
     def inference(self, images, layer_id=None):
         BaseLayer._print_activations(images)
         zero_paddings = [[0, 0], [0, 0], [0, 0]]
@@ -115,7 +114,6 @@ class ScaleNet(HighRes3DNet):
         if layer_id is None:
             return conv_fc
 
-
     def _scalable_multiroots_res_block(self, roots, nroots_in, nfea_in,
                                        nroots_out, nfea_out, n_layers):
         if n_layers == 0:
@@ -141,10 +139,9 @@ class ScaleNet(HighRes3DNet):
             nfea_in = nfea_out
         return roots
 
-
     def _merge_roots(self, roots):
         if self.merging_type == 'maxout':
             merged_out = tf.reduce_max(tf.stack(roots, axis=-1), axis=-1)
-        else: # default is 'average'
+        else:  # default is 'average'
             merged_out = tf.reduce_mean(tf.stack(roots, axis=-1), axis=-1)
         return merged_out

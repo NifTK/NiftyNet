@@ -56,14 +56,15 @@ class DeepMedic(TrainableLayer):
         assert (layer_util.check_spatial_dims(
             images, lambda x: x % 2 == 1))  # to make the crop centered
         assert (layer_util.check_spatial_dims(
-            images, lambda x: x > self.d_factor * 16))  # minimum receptive field
+            images,
+            lambda x: x > self.d_factor * 16))  # required by receptive field
 
-        ### crop 25x25x25 from 57x57x57
+        # crop 25x25x25 from 57x57x57
         crop_op = CropLayer(border=self.crop_diff, name='cropping_input')
         normal_path = crop_op(images)
         print(crop_op)
 
-        ### downsample 19x19x19 from 57x57x57
+        # downsample 19x19x19 from 57x57x57
         downsample_op = DownSampleLayer(func='CONSTANT',
                                         kernel_size=self.d_factor,
                                         stride=self.d_factor,
@@ -72,7 +73,7 @@ class DeepMedic(TrainableLayer):
         downsample_path = downsample_op(images)
         print(downsample_op)
 
-        ### convolutions for both pathways
+        # convolutions for both pathways
         for n_features in self.conv_features:
             # normal pathway convolutions
             conv_path_1 = ConvolutionalLayer(
@@ -98,15 +99,15 @@ class DeepMedic(TrainableLayer):
             downsample_path = conv_path_2(downsample_path, is_training)
             print(conv_path_2)
 
-        ### upsampling the downsampled pathway
+        # upsampling the downsampled pathway
         downsample_path = UpSampleLayer('REPLICATE',
                                         kernel_size=self.d_factor,
                                         stride=self.d_factor)(downsample_path)
 
-        ### concatenate both pathways
+        # concatenate both pathways
         output_tensor = ElementwiseLayer('CONCAT')(normal_path, downsample_path)
 
-        ### 1x1x1 convolution layer
+        # 1x1x1 convolution layer
         for n_features in self.fc_features:
             conv_fc = ConvolutionalLayer(
                 n_output_chns=n_features,

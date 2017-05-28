@@ -36,7 +36,8 @@ class ScaleNetTest(tf.test.TestCase):
         x = tf.ones(input_shape)
 
         scalenet_layer = ScaleNet(num_classes=5,
-                                  w_regularizer=regularizers.l2_regularizer(0.3))
+                                  w_regularizer=regularizers.l2_regularizer(
+                                      0.3))
         out = scalenet_layer(x, is_training=True)
         print(scalenet_layer.num_trainable_params())
 
@@ -50,7 +51,8 @@ class ScaleNetTest(tf.test.TestCase):
         x = tf.ones(input_shape)
 
         scalenet_layer = ScaleNet(num_classes=5,
-                                  w_regularizer=regularizers.l2_regularizer(0.3))
+                                  w_regularizer=regularizers.l2_regularizer(
+                                      0.3))
         out = scalenet_layer(x, is_training=True)
         print(scalenet_layer.num_trainable_params())
 

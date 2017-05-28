@@ -215,7 +215,9 @@ class Subject(object):
                 self.spatial_padding = spatial_padding
             if index == 0:  # if it is the target, remember the shape
                 self.input_image_shape = data_5d.shape
-        return {Subject.fields[index]: data_5d}
+            return {Subject.fields[index]: data_5d}
+        else:
+            return self.column(index)()[0][0]
 
 
     def load_columns(self,

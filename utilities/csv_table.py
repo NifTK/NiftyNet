@@ -66,15 +66,13 @@ class CSVTable(object):
         # no table join, using input_image_file as the final id of csv_table
         if joint_id is None:
             joint_id = misc_csv.remove_duplicated_names(input_image_id)
-            joint_id = ['_'.join(sublist) for sublist in input_image_id]
+            joint_id = ['_'.join(sublist) for sublist in joint_id]
 
         # create matching result to a joint csv table
         self._csv_table = []
         for (i, name) in enumerate(joint_id):
             # construct a row of the csv_table
-            joint_csv_row = []
-            joint_csv_row.append(name)
-            joint_csv_row.append(input_image_fullname[i])
+            joint_csv_row = [name, input_image_fullname[i]]
             # add other matched paths from other csv files
             for f in header[1:]:
                 matched_index = matches[f][0]
@@ -104,12 +102,3 @@ class CSVTable(object):
             new_subject = Subject.from_csv_row(row, self.modality_names)
             subject_list.append(new_subject)
         return subject_list
-
-
-        # def guess_interp_from_loss(self):
-        #    categorical = ['cross_entropy', 'dice']
-        #    interp_order = []
-        #    for l in self.loss:
-        #        order = 0 if l in categorical else 3
-        #        interp_order.append(order)
-        #    return interp_order

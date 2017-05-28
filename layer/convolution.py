@@ -82,10 +82,11 @@ class ConvLayer(TrainableLayer):
 
         # adding the bias term
         bias_term = tf.get_variable(
-            'b', shape=(self.n_output_chns),
+            'b', shape=self.n_output_chns,
             initializer=self.initializers['b'],
             regularizer=self.regularizers['b'])
-        output_tensor = tf.nn.bias_add(output_tensor, bias_term, name='add_bias')
+        output_tensor = tf.nn.bias_add(output_tensor, bias_term,
+                                       name='add_bias')
         return output_tensor
 
 
@@ -119,7 +120,7 @@ class ConvolutionalLayer(TrainableLayer):
         self.layer_name = '{}'.format(name)
         if self.with_bn:
             self.layer_name += '_bn'
-        if (self.acti_func is not None):
+        if self.acti_func is not None:
             self.layer_name += '_{}'.format(self.acti_func)
         super(ConvolutionalLayer, self).__init__(name=self.layer_name)
 

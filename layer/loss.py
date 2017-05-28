@@ -213,7 +213,8 @@ def dice(pred, labels):
                               values=[1.0] * n_voxels,
                               dense_shape=[n_voxels, n_classes])
     # dice
-    dice_numerator = 2.0 * tf.sparse_reduce_sum(one_hot * pred, reduction_axes=[0])
+    dice_numerator = 2.0 * tf.sparse_reduce_sum(one_hot * pred,
+                                                reduction_axes=[0])
     dice_denominator = (tf.reduce_sum(tf.square(pred), reduction_indices=[0]) +
                         tf.sparse_reduce_sum(one_hot, reduction_axes=[0]))
     epsilon_denominator = 0.00001

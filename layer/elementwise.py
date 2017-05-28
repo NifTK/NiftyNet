@@ -22,7 +22,7 @@ class ElementwiseLayer(TrainableLayer):
                  name='residual'):
         self.func = func.upper()
         assert self.func in SUPPORTED_OP
-        self.layer_name = 'res_{}'.format(self.func.lower())
+        self.layer_name = '{}_{}'.format(name, self.func.lower())
 
         super(ElementwiseLayer, self).__init__(name=self.layer_name)
         self.initializers = {'w': initializer}

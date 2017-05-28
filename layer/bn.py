@@ -12,7 +12,7 @@ def _compute_mean_and_var(inputs, axes):
         counts = counts * input_shape[d].value
     divisors = tf.constant(1.0 / counts, dtype=inputs.dtype)
     mean = tf.reduce_sum(inputs, axes) * divisors
-    ## variance = sum((x-mean)^2)/n - (sum(x-mean)/n)^2
+    # variance = sum((x-mean)^2)/n - (sum(x-mean)/n)^2
     variance = tf.subtract(
         tf.reduce_sum(tf.squared_difference(inputs, mean), axes) * divisors,
         tf.square(tf.reduce_sum(tf.subtract(inputs, mean), axes) * divisors))

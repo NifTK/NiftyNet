@@ -54,7 +54,7 @@ def create_mapping_from_multimod_arrayfiles(array_files,
     perc_database = {}
     for p in array_files:
         img_data = io.csv_cell_to_volume_5d(p)
-        numb_modalities = img_data.shape[3]
+        #numb_modalities = img_data.shape[3]
         numb_timepoints = img_data.shape[4]
         # to_do = {m: list_modalities[m] for m in list_modalities.keys() if
         #         list_modalities[m] < numb_modalities}
@@ -148,19 +148,19 @@ def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     range_perc = perc[range_to_use]
     diff_mapping = range_mapping[1:] - range_mapping[:-1]
     diff_perc = range_perc[1:] - range_perc[:-1]
-    diff_perc[diff_perc==0] = 1e-5
+    diff_perc[diff_perc == 0] = 1e-5
 
     affine_map = np.zeros([2, len(range_to_use) - 1])
     # compute slopes of the linear models
     affine_map[0] = diff_mapping / diff_perc
     # compute intercepts of the linear models
     affine_map[1] = range_mapping[:-1] - affine_map[0] * range_perc[:-1]
-    lin_img = np.ones_like(img, dtype=np.float32)
-    aff_img = np.zeros_like(img, dtype=np.float32)
+    #lin_img = np.ones_like(img, dtype=np.float32)
+    #aff_img = np.zeros_like(img, dtype=np.float32)
 
     ### img < range_perc[0] set to affine_map[default], 1, 0
     ### img >= range_perc[9] set to affine_map[:,9]
-    #for i in range(len(range_to_use) - 1):
+    # for i in range(len(range_to_use) - 1):
     #    greater_than_i = (img >= range_perc[i])
     #    lin_img[greater_than_i] = affine_map[0, i]
     #    aff_img[greater_than_i] = affine_map[1, i]
@@ -180,11 +180,11 @@ def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     new_img = lin_img * img + aff_img
     # Apply smooth thresholding (exponential) below cutoff[0] and over cutoff[1]
     new_img[lowest_values] = smooth_threshold(
-            new_img[lowest_values], mode='low')
+        new_img[lowest_values], mode='low')
     new_img[highest_values] = smooth_threshold(
-            new_img[highest_values], mode='high')
+        new_img[highest_values], mode='high')
     # Apply mask and set background to zero
-    new_img[mask==False] = 0.
+    new_img[mask == False] = 0.
     return new_img
 
 
@@ -223,7 +223,7 @@ def force_writing_new_mapping(filename, mapping_dict):
     f = open(filename, 'w+')
     for mod in mapping_dict.keys():
         mapping_string = ' '.join(map(str, mapping_dict[mod]))
-        string_fin = ('{} {}\n').format(mod, mapping_string)
+        string_fin = '{} {}\n'.format(mod, mapping_string)
         f.write(string_fin)
 
 ## create mask for image if multimodal or not

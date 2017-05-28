@@ -118,15 +118,15 @@ def join_subject_id_and_filename_list(name_list, list_files):
     ind_tot = []
     name_max = name_list[ind_max]
     for c in range(0, len(list_files)):
-        name_match, ind_match, _, _ = match_second_degree(name_max, name_list[c])
+        name_match, ind_match, _, _ = match_second_degree(name_max,
+                                                          name_list[c])
         name_max = name_match if c == ind_max else name_max
         name_tot.append(name_match)
         ind_tot.append(ind_match)
 
     list_combined = []
     for (i, name) in enumerate(name_max):
-        list_temp = []
-        list_temp.append(name)
+        list_temp = [name]
         for c in range(0, len(list_files)):
             output = list_files[c][ind_tot[c][i]]
             list_temp.append(output)

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
 from functools import partial
-from skimage import measure
 
 import nibabel
 import numpy as np
 import tensorflow as tf
 from scipy import ndimage
+from skimage import measure
 
 LABEL_STRINGS = ['Label', 'LABEL', 'label']
 
@@ -43,9 +43,9 @@ def _guess_fullname(data_dir, patient_id, modality):
 
 def _split_fullname(name):
     lower_name = name.lower()
-    if lower_name.endswith((".nii")):
+    if lower_name.endswith(".nii"):
         return [name[:-4], '.nii']
-    elif lower_name.endswith((".nii.gz")):
+    elif lower_name.endswith(".nii.gz"):
         return [name[:-7], '.nii.gz']
     else:
         return None
@@ -240,6 +240,7 @@ def damerau_levenshtein_distance(s1, s2):
                 d[(i - 1, j - 1)] + cost,  # substitution
             )
             if i and j and s1[i] == s2[j - 1] and s1[i - 1] == s2[j]:
-                d[(i, j)] = min(d[(i, j)], d[i - 2, j - 2] + cost)  # transposition
+                d[(i, j)] = min(d[(i, j)],
+                                d[i - 2, j - 2] + cost)  # transposition
 
     return d[string_1_length - 1, string_2_length - 1]

@@ -5,12 +5,13 @@ from six.moves import range
 from network.base_layer import BaseLayer
 from network.net_template import NetTemplate
 
-
 """
 implementation of HighRes3DNet:
   Li et al., "On the compactness, efficiency, and representation of 3D
   convolutional networks: Brain parcellation as a pretext task", IPMI '17
 """
+
+
 class HighRes3DNet(NetTemplate):
     def __init__(self,
                  batch_size,
@@ -25,21 +26,21 @@ class HighRes3DNet(NetTemplate):
                                            num_classes,
                                            is_training,
                                            device_str)
-        assert(image_size % 4 == 0)
+        assert (image_size % 4 == 0)
         self.num_res_blocks = [3, 3, 3]
         self.num_features = [16, 32, 64, 80]
         self.set_activation_type('relu')
-        #self.num_features = [16, 32, 48, 48] # prelu increases the model size
-        #self.set_activation_type('prelu')
-        self.name = "HighRes3DNet\n"\
-            "{} dilat-0 blocks with {} features\n"\
-            "{} dilat-2 blocks with {} features\n"\
-            "{} dilat-4 blocks with {} features\n"\
-            "{} FC features to classify {} classes".format(
-                self.num_res_blocks[0], self.num_features[0],
-                self.num_res_blocks[1], self.num_features[1],
-                self.num_res_blocks[2], self.num_features[2],
-                self.num_features[3], num_classes)
+        # self.num_features = [16, 32, 48, 48] # prelu increases the model size
+        # self.set_activation_type('prelu')
+        self.name = "HighRes3DNet\n" \
+                    "{} dilat-0 blocks with {} features\n" \
+                    "{} dilat-2 blocks with {} features\n" \
+                    "{} dilat-4 blocks with {} features\n" \
+                    "{} FC features to classify {} classes".format(
+            self.num_res_blocks[0], self.num_features[0],
+            self.num_res_blocks[1], self.num_features[1],
+            self.num_res_blocks[2], self.num_features[2],
+            self.num_features[3], num_classes)
         print('using {}'.format(self.name))
 
     def inference(self, images, layer_id=None):

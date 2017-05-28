@@ -45,8 +45,8 @@ class VolumeSampler(object):
 
     def uniform_sampling_from(self, data_dir):
         def sampler_iterator():
-            print('New thread: uniform random samples from'\
-                    ' {} modality, {} patients.'.format(
+            print('New thread: uniform random samples from'
+                  ' {} modality, {} patients.'.format(
                         self.modalities, len(self.patients)))
             while True:
                 idx = np.random.randint(0, len(self.patients))
@@ -136,8 +136,8 @@ class VolumeSampler(object):
     def non_uniform_sampling_from(self, data_dir):
         # generate random cubic samples/segmentation maps with augmentations
         def sampler_iterator():
-            print('New thread: Random samples from'\
-                    ' {} modality, {} patients.'.format(
+            print('New thread: Random samples from'
+                  ' {} modality, {} patients.'.format(
                       self.modalities, len(self.patients)))
             self.adapt_sample_opts()
             while True:
@@ -234,7 +234,7 @@ class VolumeSampler(object):
             else:
                 seg_test = seg[xs:xe, ys:ye, zs:ze]
             uni_test, count_test = np.unique(np.array(seg_test).flatten(),
-                                             return_counts=1)
+                                             return_counts=True)
 
             if numb_compulsory > 0:
                 # Check if all the compulsory values are there and with the
@@ -272,7 +272,7 @@ class VolumeSampler(object):
                         # ratio and see if the condition of number of added values to
                         # check is verified
                         numb_verified = 0
-                        for i in xrange(0,len(uni_test)):
+                        for i in range(0,len(uni_test)):
                             if uni_test[i] not in compulsory_values:
                                 ratio = np.true_divide(count_test[i], np.sum(
                                     count_test))

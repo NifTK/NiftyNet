@@ -23,8 +23,8 @@ class ToyNet(NetTemplate):
         self.set_activation_type('prelu')
         #self.set_activation_type('relu')
         self.name = "ToyNet"
-        print("{}\n" \
-              "3x3x3 convolution {} kernels\n" \
+        print("{}\n"
+              "3x3x3 convolution {} kernels\n"
               "Classifiying {} classes".format(
             self.name, self.num_features, self.num_classes))
 

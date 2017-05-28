@@ -16,7 +16,7 @@ class ConvTest(tf.test.TestCase):
         x_2d = tf.ones(input_shape)
         return x_2d
 
-    ### 3d tests
+    # 3d tests
     def test_3d_conv_default_shape(self):
         x_3d = self.get_3d_input()
         conv_3d = ConvLayer(10, 3, 1)
@@ -157,7 +157,7 @@ class ConvTest(tf.test.TestCase):
             out_3d = sess.run(conv_reg_out)
             self.assertAllClose((2, 14, 14, 14, 10), out_3d.shape)
 
-    ### 2d tests
+    # 2d tests
     def test_2d_conv_default_shape(self):
         x_2d = self.get_2d_input()
         conv_2d = ConvLayer(10, 3, 1)

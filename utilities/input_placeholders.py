@@ -254,9 +254,7 @@ class ImagePatch(object):
                           y_d: (self.weight_map_size + y_d), :]
 
     def as_dict(self):
-        out_list = []
-        out_list.append(self.image)
-        out_list.append(self.info)
+        out_list = [self.image, self.info]
         if self.has_labels:
             out_list.append(self.label)
         if self.has_weight_maps:

@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
 import tensorflow as tf
 from utilities.subject import Subject
 from utilities.subject import MultiModalFileList
@@ -21,17 +24,17 @@ class SubjectTest(tf.test.TestCase):
         out = a_subject.load_columns((0, 1, 2),
                                      do_reorientation=False,
                                      do_resampling=False)
-        print out.keys()
+        print(out.keys())
 
         out_1 = a_subject.load_columns((0, 1, 2),
                                        do_reorientation=True,
                                        do_resampling=False)
-        print out_1.keys()
+        print(out_1.keys())
 
         out_2 = a_subject.load_columns((0, 1, 2),
                                        do_reorientation=True,
                                        do_resampling=True)
-        print out_2.keys()
+        print(out_2.keys())
         print(a_subject)
 
 if __name__ == "__main__":

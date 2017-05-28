@@ -15,7 +15,7 @@ class ActivationTest(tf.test.TestCase):
         x = tf.ones(input_shape)
         return x
 
-    ### 3d test
+    # 3d test
     def test_3d_relu_shape(self):
         x = self.get_3d_input()
         relu_layer = ActiLayer(func='relu')
@@ -120,8 +120,8 @@ class ActivationTest(tf.test.TestCase):
 
             # self.assertAllClose(input_shape, out.shape)
             # self.assertAllClose(np.zeros(input_shape), out)
-        ### 2d test
 
+    # 2d test
     def test_2d_relu_shape(self):
         x = self.get_2d_input()
         relu_layer = ActiLayer(func='relu')

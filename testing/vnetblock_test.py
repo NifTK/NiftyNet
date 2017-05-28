@@ -76,17 +76,20 @@ class VNetBlockTest(tf.test.TestCase):
     def test_3d_reg_shape(self):
         x = self.get_3d_data()
         vnet_block_op = VNetBlock('DOWNSAMPLE', 2, 16, 8,
-                                  w_regularizer=regularizers.l2_regularizer(0.2))
+                                  w_regularizer=regularizers.l2_regularizer(
+                                      0.2))
         out_1, out_2 = vnet_block_op(x, x)
         print(vnet_block_op)
 
         vnet_block_op = VNetBlock('UPSAMPLE', 2, 16, 8,
-                                  w_regularizer=regularizers.l2_regularizer(0.2))
+                                  w_regularizer=regularizers.l2_regularizer(
+                                      0.2))
         out_3, out_4 = vnet_block_op(x, x)
         print(vnet_block_op)
 
         vnet_block_op = VNetBlock('SAME', 2, 16, 8,
-                                  w_regularizer=regularizers.l2_regularizer(0.2))
+                                  w_regularizer=regularizers.l2_regularizer(
+                                      0.2))
         out_5, out_6 = vnet_block_op(x, x)
         print(vnet_block_op)
 
@@ -108,17 +111,20 @@ class VNetBlockTest(tf.test.TestCase):
     def test_2d_reg_shape(self):
         x = self.get_2d_data()
         vnet_block_op = VNetBlock('DOWNSAMPLE', 2, 16, 8,
-                                  w_regularizer=regularizers.l2_regularizer(0.2))
+                                  w_regularizer=regularizers.l2_regularizer(
+                                      0.2))
         out_1, out_2 = vnet_block_op(x, x)
         print(vnet_block_op)
 
         vnet_block_op = VNetBlock('UPSAMPLE', 2, 16, 8,
-                                  w_regularizer=regularizers.l2_regularizer(0.2))
+                                  w_regularizer=regularizers.l2_regularizer(
+                                      0.2))
         out_3, out_4 = vnet_block_op(x, x)
         print(vnet_block_op)
 
         vnet_block_op = VNetBlock('SAME', 2, 16, 8,
-                                  w_regularizer=regularizers.l2_regularizer(0.2))
+                                  w_regularizer=regularizers.l2_regularizer(
+                                      0.2))
         out_5, out_6 = vnet_block_op(x, x)
         print(vnet_block_op)
 

@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
+
 from network.base_layer import BaseLayer
 from network.net_template import NetTemplate
-
 
 """
 implementation of V-Net:
   Milletari et al., "V-Net: Fully convolutional neural networks for
   volumetric medical image segmentation", 3DV '16
 """
+
+
 class VNet(NetTemplate):
     def __init__(self,
                  batch_size,
@@ -23,15 +25,14 @@ class VNet(NetTemplate):
                                    num_classes,
                                    is_training,
                                    device_str)
-        assert(image_size % 8 == 0) # image_size should be divisible by 8
+        assert (image_size % 8 == 0)  # image_size should be divisible by 8
         self.num_fea = [16, 32, 64, 128, 256]
         self.set_activation_type('prelu')
         self.name = "VNet"
-        print("{}\n"\
-            "3x3x3 convolution {} kernels\n" \
-            "Classifiying {} classes".format(
-                self.name, self.num_fea, self.num_classes))
-
+        print("{}\n"
+              "3x3x3 convolution {} kernels\n"
+              "Classifiying {} classes".format(
+            self.name, self.num_fea, self.num_classes))
 
     def inference(self, images, layer_id=None):
         BaseLayer._print_activations(images)
@@ -94,7 +95,7 @@ class VNet(NetTemplate):
         # the residual block
         ni_ = f_in.get_shape()[-1].value
         for i in range(n_blocks):
-            with tf.variable_scope('5x5_conv_%d'%i) as scope:
+            with tf.variable_scope('5x5_conv_%d' % i) as scope:
                 conv = self.conv_5x5(f_in, ni_, n_middle)
                 f_in = self.nonlinear_acti(conv) if i < n_blocks - 1 else conv
                 ni_ = n_middle

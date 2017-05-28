@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 import os
 import warnings
 
@@ -112,7 +113,7 @@ def load_volume(filename,
         warnings.warn("This file %s does not exist" % filename)
         return None
 
-    print filename
+    print(filename)
     img_nii = nib.load(filename)
     img_shape = img_nii.header.get_data_shape()
     img_data = img_nii.get_data().astype(np.float32)

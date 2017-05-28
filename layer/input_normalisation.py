@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+
 import os
 
 import numpy as np
 import numpy.ma as ma
 
 import utilities.histogram_standardisation as hs
-import utilities.misc_io as io
 from .base import Layer
 
 
@@ -60,10 +61,10 @@ class HistogramNormalisationLayer(Layer):
 
     def is_ready(self, subjects, do_normalisation, do_whitening):
         if not do_normalisation:
-            return True # always ready for do_whitening
+            return True  # always ready for do_whitening
         mod_to_train = self.__check_modalities_to_train(subjects)
         if len(mod_to_train) > 0:
-            print 'histogram normalisation, looking for reference histogram...'
+            print('histogram normalisation, looking for reference histogram...')
             return False
         return True
 
@@ -133,7 +134,6 @@ class HistogramNormalisationLayer(Layer):
                                                      mask_array[..., m, t])
         return data_array
 
-
     def whitening_transformation_3d(self, img, mask):
         # make sure img is a monomodal volume
         assert img.ndim == 3
@@ -152,8 +152,8 @@ class HistogramNormalisationLayer(Layer):
 
         if self.mapping is {}:
             raise RuntimeError("calling normalisor with empty mapping,"
-                "probably {} doesnot exists or not loaded".format(
-                    self.hist_model_file))
+                               "probably {} does not exists or not loaded".format(
+                self.hist_model_file))
         for mod in self.modalities.keys():
             for t in range(0, data_array.shape[4]):
                 mod_id = self.modalities[mod]
@@ -169,15 +169,13 @@ class HistogramNormalisationLayer(Layer):
         assert img_data.ndim == 3
         assert np.all(img_data.shape[:3] == mask.shape[:3])
 
-        #mask_new = io.adapt_to_shape(mask, img_data.shape)
+        # mask_new = io.adapt_to_shape(mask, img_data.shape)
         img_data = hs.transform_by_mapping(img_data,
                                            mask,
                                            mapping,
                                            self.cutoff,
                                            self.norm_type)
         return img_data
-
-
 
     # Function to modify the model file with the mapping if needed according
     # to existent mapping and modalities
@@ -191,7 +189,7 @@ class HistogramNormalisationLayer(Layer):
             except OSError:
                 print('cannot backup file {}'.format(self.hist_model_file))
                 raise
-            print("moved existing histogram refernce file\n"
+            print("moved existing histogram reference file\n"
                   " from {} to {}".format(self.hist_model_file, backup_name))
 
         if not os.path.exists(os.path.dirname(self.hist_model_file)):

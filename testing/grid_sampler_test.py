@@ -1,18 +1,15 @@
 import tensorflow as tf
 
-import utilities.misc_csv as misc_csv
-from utilities.csv_table import CSVTable
-from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
-from layer.volume_loader import VolumeLoaderLayer
-
 # sampler
 from layer.grid_sampler import GridSampler
+from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
+from layer.volume_loader import VolumeLoaderLayer
+from utilities.csv_table import CSVTable
 from utilities.input_placeholders import ImagePatch
 
+
 class SubjectTest(tf.test.TestCase):
-
     def test_volume_reader(self):
-
         csv_dict = {'input_image_file': './testing_data/testing_case_input',
                     'target_image_file': './testing_data/testing_case_target',
                     'weight_map_file': None,
@@ -54,15 +51,16 @@ class SubjectTest(tf.test.TestCase):
             self.assertAllClose((32, 32, 32, 2), d.image.shape)
             self.assertAllClose((7,), d.info.shape)
             self.assertAllClose((32, 32, 32, 1), d.label.shape)
-            #print(d.info)
+            # print(d.info)
             n_volumes = n_volumes + 1
-            #if n_volumes == 5:
+            # if n_volumes == 5:
             #    break
 
-        #    keys = data_dict.keys()[0]
-        #    output = data_dict.values()[0]
-        #    for (idx, key) in enumerate(keys):
-        #        print(key, output[idx].shape)
+            #    keys = data_dict.keys()[0]
+            #    output = data_dict.values()[0]
+            #    for (idx, key) in enumerate(keys):
+            #        print(key, output[idx].shape)
+
 
 if __name__ == "__main__":
     tf.test.main()

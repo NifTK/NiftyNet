@@ -1,16 +1,14 @@
 import tensorflow as tf
 
-import utilities.misc_csv as misc_csv
-from utilities.csv_table import CSVTable
 from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
-from layer.volume_loader import VolumeLoaderLayer
-
 # sampler
 from layer.uniform_sampler import UniformSampler
+from layer.volume_loader import VolumeLoaderLayer
+from utilities.csv_table import CSVTable
 from utilities.input_placeholders import ImagePatch
 
-class SubjectTest(tf.test.TestCase):
 
+class SubjectTest(tf.test.TestCase):
     def test_volume_reader(self):
 
         csv_dict = {'input_image_file': './testing_data/testing_case_input',
@@ -27,7 +25,8 @@ class SubjectTest(tf.test.TestCase):
             norm_type='percentile',
             mask_type='otsu_plus')
 
-        volume_loader = VolumeLoaderLayer(csv_loader, hist_norm, is_training=True)
+        volume_loader = VolumeLoaderLayer(csv_loader, hist_norm,
+                                          is_training=True)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
         # define output element patch
@@ -60,6 +59,7 @@ class SubjectTest(tf.test.TestCase):
             output = data_dict.values()[0]
             for (idx, key) in enumerate(keys):
                 print(key, output[idx].shape)
+
 
 if __name__ == "__main__":
     tf.test.main()

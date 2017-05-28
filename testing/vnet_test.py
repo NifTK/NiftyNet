@@ -44,7 +44,7 @@ class VNetTest(tf.test.TestCase):
             b_regularizer=regularizers.l2_regularizer(0.4))
         out = vnet_instance(x, is_training=True)
         print(vnet_instance.num_trainable_params())
-        #print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
+        # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -62,8 +62,8 @@ class VNetTest(tf.test.TestCase):
             b_regularizer=regularizers.l2_regularizer(0.4))
         out = vnet_instance(x, is_training=True)
         print(vnet_instance.num_trainable_params())
-        #print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
-        #print(vnet_instance.regularizer_loss())
+        # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
+        # print(vnet_instance.regularizer_loss())
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())

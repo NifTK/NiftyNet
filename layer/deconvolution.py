@@ -150,7 +150,7 @@ class DeconvolutionalLayer(TrainableLayer):
         self.layer_name = '{}'.format(name)
         if self.with_bn:
             self.layer_name += '_bn'
-        if (self.acti_func is not None):
+        if self.acti_func is not None:
             self.layer_name += '_{}'.format(self.acti_func)
         super(DeconvolutionalLayer, self).__init__(name=self.layer_name)
 

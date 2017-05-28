@@ -53,7 +53,7 @@ class GridSampler(BaseSampler):
         self.grid_size = grid_size
 
         # this sampler is used for inference only, should not shuffle the input
-        assert self.volume_loader.is_training == False
+        assert not self.volume_loader.is_training
 
     def layer_op(self, batch_size=1):
         """

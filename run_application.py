@@ -18,8 +18,8 @@ class NetFactory(object):
             from layer.toynet import ToyNet
             return ToyNet
         elif name == "3dunet":
-            from layer.unet_3d import UNet_3D
-            return UNet_3D
+            from layer.unet import UNet3D
+            return UNet3D
         elif name == "vnet":
             from layer.vnet import VNet
             return VNet

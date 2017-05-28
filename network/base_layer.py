@@ -30,13 +30,13 @@ class BaseLayer(object):
                 name, shape,
                 tf.constant_initializer(0.0, dtype=tf.float32),
                 trainable=True, withreg=False)
-        elif name == 'b': # default bias initialised to 0
+        elif name == 'b':  # default bias initialised to 0
             return self.__init_variable(
                 name, shape,
                 tf.constant_initializer(0.0, dtype=tf.float32),
                 trainable=True, withreg=True)
-        elif (name == 'w') and (stddev < 0): #default weights initialiser
-            stddev = np.sqrt(1.3 * 2.0 / (np.prod(shape[:-2])*shape[-1]))
+        elif (name == 'w') and (stddev < 0):  # default weights initialiser
+            stddev = np.sqrt(1.3 * 2.0 / (np.prod(shape[:-2]) * shape[-1]))
             return self.__init_variable(
                 name, shape,
                 tf.truncated_normal_initializer(
@@ -75,7 +75,8 @@ class BaseLayer(object):
         ## variance = sum((x-mean)^2)/n - (sum(x-mean)/n)^2
         variance = tf.subtract(
             tf.reduce_sum(tf.squared_difference(inputs, mean), axis) * divisors,
-            tf.square(tf.reduce_sum(tf.subtract(inputs, mean), axis) * divisors))
+            tf.square(
+                tf.reduce_sum(tf.subtract(inputs, mean), axis) * divisors))
         update_moving_mean = moving_averages.assign_moving_average(
             moving_mean, mean, 0.9)
         update_moving_variance = moving_averages.assign_moving_average(
@@ -168,7 +169,7 @@ class BaseLayer(object):
             'w', [2, 2, 2, no_, ni_], -1)
         up_conv = tf.nn.conv3d_transpose(
             f_in, kernel,
-            [i_dim[0], i_dim[1]*2, i_dim[2]*2, i_dim[3]*2, no_],
+            [i_dim[0], i_dim[1] * 2, i_dim[2] * 2, i_dim[3] * 2, no_],
             [1, 2, 2, 2, 1], padding='SAME')
         return up_conv
 

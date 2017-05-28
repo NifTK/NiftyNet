@@ -133,9 +133,8 @@ def run(net_class, param, device_str):
 
         # summary for visualisations
         # tracking current batch loss
-        summaries = []
-        summaries.append(tf.summary.scalar("total-miss", ave_miss))
-        summaries.append(tf.summary.scalar("total-loss", ave_loss))
+        summaries = [tf.summary.scalar("total-miss", ave_miss),
+                     tf.summary.scalar("total-loss", ave_loss)]
 
         # Track the moving averages of all trainable variables.
         variable_averages = tf.train.ExponentialMovingAverage(0.9)
@@ -165,7 +164,7 @@ def run(net_class, param, device_str):
         # start or load session
         ckpt_name = root_dir + '/models/model.ckpt'
         if param.starting_iter > 0:
-            model_str = ckpt_name + '-%d' % (param.starting_iter)
+            model_str = ckpt_name + '-%d' % param.starting_iter
             saver.restore(sess, model_str)
             print('Loading from {}...'.format(model_str))
         else:
@@ -184,7 +183,7 @@ def run(net_class, param, device_str):
                 _, loss_value, miss_value = sess.run([train_op,
                                                       ave_loss,
                                                       ave_miss])
-                print('iter {:d}, loss={:.8f},' \
+                print('iter {:d}, loss={:.8f},'
                       'error_rate={:.8f} ({:.3f}s)'.format(
                     i, loss_value, miss_value, time.time() - local_time))
                 current_iter = i + param.starting_iter

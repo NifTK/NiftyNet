@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-import os
 import argparse
+import os
+
 import configparser
 
 
@@ -33,7 +34,7 @@ def run():
         "--cuda_devices",
         metavar='',
         help="Set CUDA_VISIBLE_DEVICES variable, e.g. '0,1,2,3'; " \
-                "leave blank to use the system default value")
+             "leave blank to use the system default value")
     parser.add_argument(
         "--model_dir",
         metavar='',
@@ -107,7 +108,7 @@ def run():
         help="Indicates if generated masks must be saved or not"
     )
     parser.add_argument(
-        #TODO refactor this part to allow to use values different from default
+        # TODO refactor this part to allow to use values different from default
         "--norm_cutoff",
         default=[0.01, 0.99],
         nargs=2,
@@ -121,7 +122,7 @@ def run():
     )
     parser.add_argument(
         "--mask_type",
-        choices=['otsu_plus','otsu_minus','val_plus','val_minus'],
+        choices=['otsu_plus', 'otsu_minus', 'val_plus', 'val_minus'],
         help="type of masking strategy used"
     )
     parser.add_argument(
@@ -220,25 +221,25 @@ def run_eval():
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.set_defaults(**defaults)
     parser.add_argument("action",
-            help="compute ROI statistics or compare segmentation maps",
-            choices=['roi', 'compare'])
+                        help="compute ROI statistics or compare segmentation maps",
+                        choices=['roi', 'compare'])
     parser.add_argument("--threshold",
-            help="threshold to obtain binary segmentation",
-            type=float)
+                        help="threshold to obtain binary segmentation",
+                        type=float)
     parser.add_argument("--step",
-            help="step of increment when considering probabilistic segmentation",
-            type=float)
+                        help="step of increment when considering probabilistic segmentation",
+                        type=float)
     parser.add_argument("--ref_dir",
-            help="path to the image to use as reference")
+                        help="path to the image to use as reference")
     parser.add_argument("--seg_dir",
-            help="path where to find the images to evaluate")
+                        help="path where to find the images to evaluate")
     parser.add_argument("--img_dir",
-            help="path where to find the images to evaluate")
+                        help="path where to find the images to evaluate")
     parser.add_argument("--save_csv_dir",
-            help="path where to save the output csv file")
+                        help="path where to save the output csv file")
     parser.add_argument("--ext",
-            help="extension of the image files to be read")
+                        help="extension of the image files to be read")
     parser.add_argument("--seg_type",
-            help="type of input: discrete maps or probabilistic maps")
+                        help="type of input: discrete maps or probabilistic maps")
     args = parser.parse_args(remaining_argv)
     return args
