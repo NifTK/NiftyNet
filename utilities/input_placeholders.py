@@ -265,3 +265,6 @@ class ImagePatch(object):
         assert not any([x is None for x in out_list])
         assert len(out_list) == len(self.placeholders)
         return {self.placeholders: tuple(out_list)}
+
+    def fill_with_stopping_info(self):
+        self.info = -1 * np.ones(self.full_info_shape)

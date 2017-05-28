@@ -51,6 +51,7 @@ class UniformSampler(BaseSampler):
             assert io.check_spatial_dims(spatial_rank, img, seg)
             assert io.check_spatial_dims(spatial_rank, img, weight_map)
             # match volumetric data shapes to the patch definition
+            # (result will be 3d or 4d)
             img = io.match_volume_shape_to_patch_definition(
                 img, self.patch.full_image_shape)
             seg = io.match_volume_shape_to_patch_definition(

@@ -100,9 +100,3 @@ class GridSampler(BaseSampler):
                 loc = locations[i % n_patches]
                 self.patch.set_data(idx, loc, img, seg, weight_map)
                 yield self.patch
-
-        # all patches finished, have to inform engine to stop
-        # creating a dummy batch with (idx==-1) to do this
-        for i in range(0, batch_size):
-            self.patch.info = np.array(np.hstack([[-1], loc]), dtype=np.int64)
-            yield self.patch

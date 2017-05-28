@@ -24,9 +24,7 @@ class InputBatchQueueRunner(object):
     tf.coordinator to start generating samples with multiple threads.
 
     The sampling threads can be stopped by:
-        1. close_all() called externally -- all threads quit immediately
-        2. no more elements from self.sampler() -- the last
-           thread will call close_all() with a grace period 60 seconds
+    close_all() called externally -- all threads quit immediately
     """
 
     def __init__(self, batch_size, capacity, sampler, shuffle=True):
@@ -53,9 +51,6 @@ class InputBatchQueueRunner(object):
         self._session = None
         self._coordinator = None
         self._threads = []
-
-        # this variable is used to monitor the sampler threads
-        self._started_threads = []
 
     def _create_queue_and_ops(self):
         """
@@ -107,12 +102,23 @@ class InputBatchQueueRunner(object):
                 assert len(patch_dict.keys()[0]) == len(patch_dict.values()[0])
                 self._session.run(self._enqueue_op, feed_dict=patch_dict)
 
+            for i in range(0, self.capacity):
+                if self._session._closed:
+                    break
+                if self._coordinator.should_stop():
+                    break
+                patch.fill_with_stopping_info()
+                self._session.run(self._enqueue_op, feed_dict=patch.as_dict())
+
         except tf.errors.CancelledError:
             pass
         except ValueError as e:
             print(e)
             self.close_all()
         except RuntimeError as e:
+            print(e)
+            self.close_all()
+        except Exception as e:
             print(e)
             self.close_all()
         finally:
@@ -132,13 +138,11 @@ class InputBatchQueueRunner(object):
         print('Starting preprocessing threads...')
         self._session = session
         self._coordinator = coord
-        self._started_threads = [False for i in range(num_threads)]
         for idx in range(num_threads):
             self._threads.append(
                 threading.Thread(target=self._push, args=[idx]))
             self._threads[idx].daemon = True
             self._threads[idx].start()
-            self._started_threads[idx] = True
 
     def close_all(self):
         """

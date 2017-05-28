@@ -18,7 +18,7 @@ class ToySampler(BaseSampler):
         # batch_size is needed here so that it generates total number of
         # N samples where (N % batch_size) == 0
         i = 0
-        n_item = 4
+        n_item = 1
         all_item = ((n_item / batch_size) + 1) * batch_size
         for i in range(all_item):
             out_list = []

@@ -1,9 +1,13 @@
+import os
+import sys
+import numpy as np
 import tensorflow as tf
 
 from layer.input_buffer import DeployInputBuffer, TrainEvalInputBuffer
 from utilities.input_placeholders import ImagePatch
 from layer.toy_sampler import ToySampler
 
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 class InputQueueTest(tf.test.TestCase):
     def test_3d_setup_train_eval_queue(self):
@@ -28,11 +32,13 @@ class InputQueueTest(tf.test.TestCase):
             coord = tf.train.Coordinator()
             test_queue.run_threads(sess, coord, num_threads=2)
             try:
-                for i in range(100):
+                for i in range(3):
                     out_tuple = sess.run(out_1)
-                    #print(image_key)
+                    if np.any(out_tuple[info_key][:,0] == -1):
+                        test_queue.close_all()
                     self.assertAllClose(
                         (2, 32, 32, 32, 1), out_tuple[image_key].shape)
+                test_queue.close_all()
             except tf.errors.OutOfRangeError as e:
                 pass
 
@@ -50,11 +56,14 @@ class InputQueueTest(tf.test.TestCase):
             coord = tf.train.Coordinator()
             deploy_queue.run_threads(sess, coord, num_threads=1)
             try:
-                for i in range(100):
+                for i in range(3):
                     out_tuple = sess.run(out_2)
+                    if np.any(out_tuple[info_key][:,0] == -1):
+                        deploy_queue.close_all()
                     #print(out_tuple[info_key])
                     self.assertAllClose(
                         (5, 32, 32, 32, 1), out_tuple[image_key].shape)
+                deploy_queue.close_all()
             except tf.errors.OutOfRangeError as e:
                 pass
 
@@ -80,11 +89,13 @@ class InputQueueTest(tf.test.TestCase):
             coord = tf.train.Coordinator()
             test_queue.run_threads(sess, coord, num_threads=2)
             try:
-                for i in range(100):
+                for i in range(3):
                     out_tuple = sess.run(out_1)
-                    #print(image_key)
+                    if np.any(out_tuple[info_key][:,0] == -1):
+                        test_queue.close_all()
                     self.assertAllClose(
                         (2, 32, 32, 1), out_tuple[image_key].shape)
+                test_queue.close_all()
             except tf.errors.OutOfRangeError as e:
                 pass
 
@@ -102,11 +113,14 @@ class InputQueueTest(tf.test.TestCase):
             coord = tf.train.Coordinator()
             deploy_queue.run_threads(sess, coord, num_threads=1)
             try:
-                for i in range(100):
+                for i in range(20):
                     out_tuple = sess.run(out_2)
+                    if np.any(out_tuple[info_key][:,0] == -1):
+                        deploy_queue.close_all()
                     #print(out_tuple[info_key])
                     self.assertAllClose(
                         (5, 32, 32, 1), out_tuple[image_key].shape)
+                deploy_queue.close_all()
             except tf.errors.OutOfRangeError as e:
                 pass
 
