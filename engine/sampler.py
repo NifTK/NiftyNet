@@ -247,11 +247,10 @@ class VolumeSampler(object):
 
                     if x in uni_list:
                         rat_test = np.true_divide(count_test[uni_list.index(x)],
-                                          np.sum(
-                            count_test))
+                                          np.sum(count_test))
                         if rat_test < r:
                             flag_test = 0
-                    if not x in uni_list:
+                    else:
                         flag_test = 0
 
             # Continue to check if other conditions are valid only if valid

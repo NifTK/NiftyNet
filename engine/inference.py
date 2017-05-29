@@ -139,7 +139,7 @@ def run(net_class, param, device_str):
         all_saved_flag = False
         try:
             seg_batch_runner.run_threads(sess, coord, num_threads=1)
-            img_id, pred_img = None, None
+            img_id, pred_img, subject_i = None, None, None
             while True:
                 if coord.should_stop():
                     break
@@ -147,9 +147,9 @@ def run(net_class, param, device_str):
                 # go through each one in a batch
                 for batch_id in range(seg_maps.shape[0]):
                     if spatial_info[batch_id, 0] != img_id:
-                        # when loc_info changed
+                        # when spatial_info changed
                         # save current map and reset cumulative map variable
-                        if pred_img is not None:
+                        if pred_img is not None and subject_i is not None:
                             subject_i.save_network_output(
                                 pred_img,
                                 param.save_seg_dir,
