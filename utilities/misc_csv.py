@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import csv
+import numpy as np
 from difflib import SequenceMatcher
 
 import constraints_classes as cc
@@ -112,20 +113,20 @@ def match_second_degree(name_list1, name_list2):
 # From a list of list of names and a list of list of files that are
 # associated, find the name correspondance and therefore the files associations
 def join_subject_id_and_filename_list(name_list, list_files):
-    name_length = [len(names) for names in name_list]
-    ind_max = name_length.index(max(name_length))
+    ind_max = np.argmax([len(names) for names in name_list])
+    name_max = name_list[ind_max]
     name_tot = []
     ind_tot = []
-    name_max = name_list[ind_max]
+    name_max_to_use = []
     for c in range(0, len(list_files)):
-        name_match, ind_match, _, _ = match_second_degree(name_max,
-                                                          name_list[c])
-        name_max = name_match if c == ind_max else name_max
+        name_match, ind_match, _, _ = match_second_degree(name_max, name_list[c])
+        if c == ind_max:
+            name_max_to_use = name_match
         name_tot.append(name_match)
         ind_tot.append(ind_match)
 
     list_combined = []
-    for (i, name) in enumerate(name_max):
+    for (i, name) in enumerate(name_max_to_use):
         list_temp = [name]
         for c in range(0, len(list_files)):
             output = list_files[c][ind_tot[c][i]]

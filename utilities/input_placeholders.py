@@ -2,7 +2,6 @@
 import numpy as np
 import tensorflow as tf
 
-
 class ImagePatch(object):
     """
     This class defines the output element of an image sampler and
@@ -218,43 +217,48 @@ class ImagePatch(object):
 
         if self.spatial_rank == 3:
             x_, y_, z_, _x, _y, _z = spatial_loc
-            self.image = img[x_:_x, y_:_y, z_:_z, :]
+            assert _x <= img.data.shape[0]
+            assert _y <= img.data.shape[1]
+            assert _z <= img.data.shape[2]
+            self.image = img.data[x_:_x, y_:_y, z_:_z, :]
             if self.has_labels and (seg is not None):
                 diff = self.image_size - self.label_size
                 assert diff >= 0  # assumes label_size <= image_size
                 x_d, y_d, z_d = (x_ + diff), (y_ + diff), (z_ + diff)
                 self.label = \
-                    seg[x_d: (self.label_size + x_d),
-                        y_d: (self.label_size + y_d),
-                        z_d: (self.label_size + z_d), :]
+                    seg.data[x_d: (self.label_size + x_d),
+                             y_d: (self.label_size + y_d),
+                             z_d: (self.label_size + z_d), :]
 
             if self.has_weight_maps and (w_map is not None):
                 diff = self.image_size - self.weight_map_size
                 assert diff >= 0
                 x_d, y_d, z_d = (x_ + diff), (y_ + diff), (z_ + diff)
                 self.weight_map = \
-                    w_map[x_d: (self.weight_map_size + x_d),
-                          y_d: (self.weight_map_size + y_d),
-                          z_d: (self.weight_map_size + z_d), :]
+                    w_map.data[x_d: (self.weight_map_size + x_d),
+                               y_d: (self.weight_map_size + y_d),
+                               z_d: (self.weight_map_size + z_d), :]
 
         elif self.spatial_rank == 2:
             x_, y_, _x, _y, = spatial_loc
-            self.image = img[x_:_x, y_:_y, :]
+            assert _x <= img.data.shape[0]
+            assert _y <= img.data.shape[1]
+            self.image = img.data[x_:_x, y_:_y, :]
             if self.has_labels and (seg is not None):
                 diff = self.image_size - self.label_size
                 assert diff >= 0  # assumes label_size <= image_size
                 x_d, y_d = (x_ + diff), (y_ + diff)
                 self.label = \
-                    seg[x_d: (self.label_size + x_d),
-                        y_d: (self.label_size + y_d), :]
+                    seg.data[x_d: (self.label_size + x_d),
+                             y_d: (self.label_size + y_d), :]
 
             if self.has_weight_maps and (w_map is not None):
                 diff = self.image_size - self.weight_map_size
                 assert diff >= 0
                 x_d, y_d, = (x_ + diff), (y_ + diff)
                 self.weight_map = \
-                    w_map[x_d: (self.weight_map_size + x_d),
-                          y_d: (self.weight_map_size + y_d), :]
+                    w_map.data[x_d: (self.weight_map_size + x_d),
+                               y_d: (self.weight_map_size + y_d), :]
 
     def as_dict(self):
         out_list = [self.image, self.info]
@@ -267,5 +271,14 @@ class ImagePatch(object):
         assert len(out_list) == len(self.placeholders)
         return {self.placeholders: tuple(out_list)}
 
+    @property
+    def stopping_signal(self):
+        return -1 * np.ones(self.full_info_shape)
+
     def fill_with_stopping_info(self):
-        self.info = -1 * np.ones(self.full_info_shape)
+        self.info = self.stopping_signal
+
+    def is_stopping_signal(self, info):
+        if info is None:
+            raise ValueError('wrong data format')
+        return np.all(info == self.stopping_signal)

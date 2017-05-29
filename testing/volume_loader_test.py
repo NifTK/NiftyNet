@@ -11,7 +11,7 @@ from utilities.csv_table import CSVTable
 
 
 class SubjectTest(tf.test.TestCase):
-    def test_volume_reader(self):
+    def test_volume_loader(self):
         constraint_T1 = cc.ConstraintSearch(
             ['./testing_data'], ['T1'], ['Parcellation'], ['_'])
         constraint_FLAIR = cc.ConstraintSearch(
@@ -45,12 +45,13 @@ class SubjectTest(tf.test.TestCase):
         volume_loader = VolumeLoaderLayer(csv_loader, hist_norm)
 
         img, seg, weight_map, subject = volume_loader()
-        print(img.shape)
+        print(img.data.shape)
         if seg is not None:
-            print(seg.shape)
+            print(seg.data.shape)
         print(weight_map)
         print(volume_loader.subject_list[subject])
         img, seg, weight_map, subject = volume_loader()
+        print(subject)
 
 
 if __name__ == "__main__":

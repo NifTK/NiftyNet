@@ -43,11 +43,7 @@ class GridSampler(BaseSampler):
     currently 4D input is supported, Hight x Width x Depth x Modality
     """
 
-    def __init__(self,
-                 patch,
-                 volume_loader,
-                 grid_size=1,
-                 name="grid_sampler"):
+    def __init__(self, patch, volume_loader, grid_size=1, name="grid_sampler"):
         super(GridSampler, self).__init__(patch=patch, name=name)
         self.volume_loader = volume_loader
         self.grid_size = grid_size
@@ -67,22 +63,26 @@ class GridSampler(BaseSampler):
             img, seg, weight_map, idx = self.volume_loader()
 
             # to make sure all volumetric data have the same spatial dims
-            assert io.check_spatial_dims(spatial_rank, img, seg)
-            assert io.check_spatial_dims(spatial_rank, img, weight_map)
-            # match volumetric data shapes to the patch definition
-            img = io.match_volume_shape_to_patch_definition(
-                img, self.patch.full_image_shape)
-            seg = io.match_volume_shape_to_patch_definition(
-                seg, self.patch.full_label_shape)
-            weight_map = io.match_volume_shape_to_patch_definition(
-                weight_map, self.patch.full_weight_map_shape)
-            if img.ndim - spatial_rank > 1:
+            # and match volumetric data shapes to the patch definition
+            # (the matched result will be either 3d or 4d)
+            img.spatial_rank = spatial_rank
+            img.data = io.match_volume_shape_to_patch_definition(
+                img.data, self.patch.full_image_shape)
+            if img.data.ndim - spatial_rank > 1:
                 raise NotImplementedError
-                # time series data are not supported after this point
+                # time series data are not supported
+            if seg is not None:
+                seg.spatial_rank = spatial_rank
+                seg.data = io.match_volume_shape_to_patch_definition(
+                    seg.data, self.patch.full_label_shape)
+            if weight_map is not None:
+                weight_map.spatial_rank = spatial_rank
+                weight_map.data = io.match_volume_shape_to_patch_definition(
+                    weight_map.data, self.patch.full_weight_map_shape)
 
             # generates grid spatial coordinates
-            locations = generate_grid_coordinates(spatial_rank,
-                                                  img.shape,
+            locations = generate_grid_coordinates(img.spatial_rank,
+                                                  img.data.shape,
                                                   self.patch.image_size,
                                                   self.grid_size)
             n_patches = locations.shape[0]

@@ -36,7 +36,7 @@ class InputQueueTest(tf.test.TestCase):
             try:
                 for i in range(3):
                     out_tuple = sess.run(out_1)
-                    if np.any(out_tuple[info_key][:, 0] == -1):
+                    if test_patch.is_stopping_signal(out_tuple[info_key][-1]):
                         test_queue.close_all()
                     self.assertAllClose(
                         (2, 32, 32, 32, 1), out_tuple[image_key].shape)
@@ -60,7 +60,7 @@ class InputQueueTest(tf.test.TestCase):
             try:
                 for i in range(3):
                     out_tuple = sess.run(out_2)
-                    if np.any(out_tuple[info_key][:, 0] == -1):
+                    if test_patch.is_stopping_signal(out_tuple[info_key][-1]):
                         deploy_queue.close_all()
                     # print(out_tuple[info_key])
                     self.assertAllClose(
@@ -93,7 +93,7 @@ class InputQueueTest(tf.test.TestCase):
             try:
                 for i in range(3):
                     out_tuple = sess.run(out_1)
-                    if np.any(out_tuple[info_key][:, 0] == -1):
+                    if test_patch.is_stopping_signal(out_tuple[info_key][-1]):
                         test_queue.close_all()
                     self.assertAllClose(
                         (2, 32, 32, 1), out_tuple[image_key].shape)
@@ -117,7 +117,7 @@ class InputQueueTest(tf.test.TestCase):
             try:
                 for i in range(20):
                     out_tuple = sess.run(out_2)
-                    if np.any(out_tuple[info_key][:, 0] == -1):
+                    if test_patch.is_stopping_signal(out_tuple[info_key][-1]):
                         deploy_queue.close_all()
                     # print(out_tuple[info_key])
                     self.assertAllClose(

@@ -13,6 +13,7 @@ class MultiModalFileList(object):
     def __init__(self, multi_mod_filenames):
         # list of multi-modality images filenames
         # each list element is a filename of a single-mod volume
+        assert multi_mod_filenames is not None
         self.multi_mod_filenames = multi_mod_filenames
 
     def __call__(self):
@@ -33,6 +34,33 @@ class MultiModalFileList(object):
         if self.multi_mod_filenames == '':
             return 0
         return len(self.multi_mod_filenames[0])
+
+class ColumnData(object):
+    def __init__(self, column_name, data, spatial_rank, interp_order):
+        self._name = column_name
+        self._data = data
+        self._spatial_rank = spatial_rank
+        self._interp_order = interp_order
+
+    @property
+    def name(self):
+        return self._name
+    @property
+    def interp_order(self):
+        return self._interp_order
+    @property
+    def spatial_rank(self):
+        return self._spatial_rank
+    @spatial_rank.setter
+    def spatial_rank(self, value):
+        self._spatial_rank = value
+    @property
+    def data(self):
+        return self._data
+    @data.setter
+    def data(self, value):
+        self._data = value
+
 
 
 class Subject(object):
@@ -79,19 +107,16 @@ class Subject(object):
     def set_all_columns(self, *args):
         assert (len(args) == len(Subject.fields))
         for (i, value) in enumerate(args):
-            self.set_column(i, value)
+            self._set_column(i, value)
 
-    def set_column(self, index, value):
+    def _set_column(self, index, value):
         if value is None:
             return
         assert (isinstance(value, MultiModalFileList))
         self.csv_cell_dict[Subject.fields[index]] = value
 
     def column(self, index):
-        if index > len(Subject.fields) - 1:
-            raise ValueError(
-                'subject has {} columns, attempting to access index {}'.format(
-                    len(Subject.fields), index))
+        assert index < len(Subject.fields)
         return self.csv_cell_dict[Subject.fields[index]]
 
     @CacheFunctionOutput
@@ -177,13 +202,15 @@ class Subject(object):
             return data_5d
         # pad the first few dims according to the length of spatial_padding
         ndim = data_5d.ndim
-        if type(spatial_padding) is int:
+        if (type(spatial_padding) is int) or \
+            (not all(isinstance(i, tuple) for i in spatial_padding)):
             raise ValueError(
                 "spatial_padding should be a tuple: ((M,N), (P,Q),...)")
-        assert len(spatial_padding) <= ndim
-        while len(spatial_padding) < ndim:
-            spatial_padding = spatial_padding + ((0,0),)
-        data_5d = np.pad(data_5d, spatial_padding, 'minimum')
+        all_padding = spatial_padding + tuple()
+        assert len(all_padding) <= ndim
+        while len(all_padding) < ndim:
+            all_padding = all_padding + ((0,0),)
+        data_5d = np.pad(data_5d, all_padding, 'minimum')
         return data_5d
 
 
@@ -194,11 +221,24 @@ class Subject(object):
                     interp_order=None,
                     spatial_padding=None):
         # TODO change name to read_image_as_5d
-        if Subject.data_types[index] == 'textual_comment':
-            return self.column(index)()[0][0]
+        assert index < len(Subject.data_types)
+        field_name = Subject.fields[index]
+        type_name = Subject.data_types[index]
+        this_column = self.column(index)
+        if this_column is None:
+            return {field_name: None}
+        if not this_column()[0][0]:
+            return {field_name: None}
 
-        elif Subject.data_types[index] == 'image_filename':
-            data_5d = util.csv_cell_to_volume_5d(self.column(index))
+        if type_name == 'textual_comment':
+            return {field_name: ColumnData(field_name,
+                                           this_column()[0][0],
+                                           spatial_rank=None,
+                                           interp_order=None)}
+
+        elif type_name == 'image_filename':
+            spatial_rank = None
+            data_5d = util.csv_cell_to_volume_5d(this_column)
             if do_resampling and (interp_order is None):
                 print("do resampling, but interpolation order is not "
                       "specified, defaulting to interp_order=3")
@@ -213,11 +253,15 @@ class Subject(object):
             if spatial_padding is not None:
                 data_5d = self.__pad_volume(data_5d, spatial_padding)
                 self.spatial_padding = spatial_padding
+                spatial_rank = len(spatial_padding)
             if index == 0:  # if it is the target, remember the shape
                 self.input_image_shape = data_5d.shape
-            return {Subject.fields[index]: data_5d}
+            return {field_name: ColumnData(field_name,
+                                           data_5d,
+                                           spatial_rank=spatial_rank,
+                                           interp_order=interp_order)}
         else:
-            return self.column(index)()[0][0]
+            return {'unknow_field': None}
 
 
     def load_columns(self,
@@ -248,18 +292,6 @@ class Subject(object):
             output_dict[column_dict.keys()[0]] = column_dict.values()[0]
         return output_dict
 
-    def __str__(self):
-        out_str = []
-        out_str.append('subject: {}'.format(self.name))
-        for ind in range(0, len(Subject.fields)):
-            csv_field = Subject.fields[ind]
-            csv_cell = self.column(ind)
-            if csv_cell is None:
-                out_str.append('{}: None'.format(csv_field))
-            else:
-                out_str.append('{}: {}'.format(csv_field, csv_cell()))
-        return '\n'.join(out_str)
-
     def modalities_dict(self):
         num_modality = self.column(0).num_modality
         if self.modality_names is not None:
@@ -284,7 +316,7 @@ class Subject(object):
             zeros_shape = zeros_shape + (1,)
         return np.ones(zeros_shape) * init_value
 
-    def save_network_output(self, data, save_path):
+    def save_network_output(self, data, save_path, interp_order=3):
         if data is None:
             return
         if self.spatial_padding is not None:
@@ -301,7 +333,20 @@ class Subject(object):
         if self.load_reorientation:
             data = self.__reorient_to_original(data)
         if self.load_resampling:
-            data = self.__resample_to_original(data, 3)
+            data = self.__resample_to_original(data, interp_order)
         original_header = self.__find_first_nibabel_object()
         filename = self.name + '_niftynet_out'
         util.save_volume_5d(data, filename, save_path, original_header)
+
+    def __str__(self):
+        out_str = []
+        out_str.append('subject: {}'.format(self.name))
+        for ind in range(0, len(Subject.fields)):
+            csv_field = Subject.fields[ind]
+            csv_cell = self.column(ind)
+            if csv_cell is None:
+                out_str.append('{}: None'.format(csv_field))
+            else:
+                out_str.append('{}: {}'.format(csv_field, csv_cell()))
+        return '\n'.join(out_str)
+

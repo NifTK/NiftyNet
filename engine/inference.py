@@ -20,6 +20,7 @@ from utilities.input_placeholders import ImagePatch
 # run on single GPU with single thread
 def run(net_class, param, device_str):
     param_n_channel_out = 1
+    param_output_interp_order = 3
     assert (param.batch_size <= param.queue_length)
     constraint_T1 = cc.ConstraintSearch(
         ['./example_volumes/multimodal_BRATS'], ['T1'], ['T1c'], ['_'])
@@ -149,9 +150,12 @@ def run(net_class, param, device_str):
                         # when loc_info changed
                         # save current map and reset cumulative map variable
                         if pred_img is not None:
-                            subject_i.save_network_output(pred_img,
-                                                          param.save_seg_dir)
-                        if spatial_info[batch_id, 0] == -1:
+                            subject_i.save_network_output(
+                                pred_img,
+                                param.save_seg_dir,
+                                param_output_interp_order)
+                        if patch_holder.is_stopping_signal(
+                                spatial_info[batch_id]):
                             print('received finishing batch')
                             all_saved_flag = True
                             seg_batch_runner.close_all()

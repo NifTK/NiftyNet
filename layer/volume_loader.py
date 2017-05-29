@@ -17,7 +17,7 @@ class VolumeLoaderLayer(Layer):
 
     def __init__(self,
                  csv_reader,
-                 standardisor,
+                 standardisor=None,
                  is_training=True,
                  do_reorientation=True,
                  do_resampling=True,
@@ -40,6 +40,11 @@ class VolumeLoaderLayer(Layer):
         self.do_whitening = do_whitening
         self.interp_order = interp_order
 
+        self.columns_to_load = (0, 1, 2)
+        while len(self.interp_order) < len(self.columns_to_load):
+            self.interp_order = self.interp_order + (3,)
+        self.interp_order = self.interp_order[:len(self.columns_to_load)]
+
         self.subject_list = None
         self.current_id = None
         self.__initialise_subject_list()
@@ -52,6 +57,10 @@ class VolumeLoaderLayer(Layer):
         self.subject_list = self.csv_table.to_subject_list()
         if self.is_training:
             shuffle(self.subject_list)
+        self.current_id = -1
+
+        if self.standardisor is None:
+            return
         standardisor_ready = self.standardisor.is_ready(self.subject_list,
                                                         self.do_normalisation,
                                                         self.do_whitening)
@@ -64,7 +73,6 @@ class VolumeLoaderLayer(Layer):
                     "reference model file")
         else:
             print('histogram normalisation initialised')
-        self.current_id = -1
 
     def layer_op(self):
         """
@@ -77,7 +85,7 @@ class VolumeLoaderLayer(Layer):
             self.current_id = self.current_id + 1
         current_subject = self.subject_list[self.current_id]
         # print current_subject
-        subject_dict = current_subject.load_columns((0, 1, 2),
+        subject_dict = current_subject.load_columns(self.columns_to_load,
                                                     self.do_reorientation,
                                                     self.do_resampling,
                                                     self.interp_order,
@@ -87,9 +95,10 @@ class VolumeLoaderLayer(Layer):
         label = subject_dict['target_image_file']
         weight = subject_dict['weight_map_file']
 
-        image = self.standardisor(image,
-                                  self.do_normalisation,
-                                  self.do_whitening)
+        if self.standardisor is not None:
+            image.data = self.standardisor(image.data,
+                                           self.do_normalisation,
+                                           self.do_whitening)
         return image, label, weight, self.current_id
 
     @property

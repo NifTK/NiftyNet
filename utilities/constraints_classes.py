@@ -44,10 +44,19 @@ class ConstraintSearch(object):
             name_pot_temp = name[
                             index_init: index_constraint[sort_indices[i]]]
             for c in self.list_clean:
-                if c in name_pot_temp:
-                    name_pot_temp = name_pot_temp.replace(c, '')
+                name_pot_temp.rsplit(c)
             name_pot.append(name_pot_temp)
             index_init = index_constraint[sort_indices[i]] + \
                          len(self.list_contain[sort_indices[i]])
-        name_pot.append(name[index_init:])
+
+        name_temp = name[index_init:]
+        for c in self.list_clean:
+            if c in name_temp:
+                name_temp = name_temp.rstrip(c)
+                name_temp = name_temp.lstrip(c)
+                index_clean = name_temp.find(c)
+                if index_clean == 0:
+                    name_temp = name_temp[len(c):]
+        name_pot.append(name_temp)
         return name_pot
+
