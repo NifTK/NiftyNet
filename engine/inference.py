@@ -43,7 +43,7 @@ def run(net_class, param, device_str):
 
     csv_dict = {
         'input_image_file': './example_volumes/multimodal_BRATS/input.txt',
-        'target_image_file': './example_volumes/multimodal_BRATS/target.txt',
+        'target_image_file': None,
         'weight_map_file': None,
         'target_note': None}
 
@@ -79,19 +79,25 @@ def run(net_class, param, device_str):
     with graph.as_default(), tf.device("/{}:0".format(device_str)):
         # construct inference queue and graph
         # TODO change batch size param - batch size could be larger in test case
-        patch_holder = ImagePatch(image_shape=[param.image_size] * 3,
-                                  label_shape=[param.label_size] * 3,
-                                  weight_map_shape=None,
-                                  image_dtype=tf.float32,
-                                  label_dtype=tf.int64,
-                                  weight_map_dtype=tf.float32,
-                                  num_image_modality=volume_loader.num_modality(
-                                      0),
-                                  num_label_modality=volume_loader.num_modality(
-                                      1),
-                                  num_weight_map=1)
+
+        #patch_holder = ImagePatch(
+        #    image_shape=[param.image_size] * 3,
+        #    label_shape=None,
+        #    weight_map_shape=None,
+        #    image_dtype=tf.float32,
+        #    label_dtype=tf.int64,
+        #    weight_map_dtype=tf.float32,
+        #    num_image_modality=volume_loader.num_modality(0),
+        #    num_label_modality=volume_loader.num_modality(1),
+        #    num_weight_map=1)
+
+        # `patch` instance with image data only
+        patch_holder = ImagePatch(
+            image_shape=[param.image_size] * 3,
+            image_dtype=tf.float32,
+            num_image_modality=volume_loader.num_modality(0))
         spatial_rank = patch_holder.spatial_rank
-        sampling_grid_size = patch_holder.label_size - 2 * param.border
+        sampling_grid_size = patch_holder.image_size - 2 * param.border
         assert sampling_grid_size > 0
         sampler = GridSampler(patch=patch_holder,
                               volume_loader=volume_loader,
@@ -161,23 +167,27 @@ def run(net_class, param, device_str):
                         predictions = np.expand_dims(predictions, axis=-1)
 
                     # assign predicted patch to the allocated output volume
-                    p_start = param.border
-                    p_end = patch_holder.label_size - param.border
+                    origin = spatial_info[batch_id, 1:(1+spatial_rank)]
+                    # indexing within the patch
+                    s_ = param.border
+                    _s = patch_holder.image_size - param.border
+                    # indexing within the prediction volume
+                    dest_start = origin + s_
+                    dest_end = origin + _s
+                    assert np.all(dest_start >= 0)
+                    assert np.all(dest_end <= pred_img.shape[0:spatial_rank])
                     if spatial_rank == 3:
-                        loc_x, loc_y, loc_z = spatial_info[batch_id, 1:4]
-                        pred_img[(loc_x + p_start):(loc_x + p_end),
-                        (loc_y + p_start):(loc_y + p_end),
-                        (loc_z + p_start):(loc_z + p_end), ...] = \
-                            predictions[p_start:p_end,
-                            p_start:p_end,
-                            p_start:p_end, ...]
+                        x_, y_, z_ = dest_start
+                        _x, _y, _z = dest_end
+                        pred_img[x_:_x, y_:_y, z_:_z, ...] = \
+                            predictions[s_:_s, s_:_s, s_:_s, ...]
                     elif spatial_rank == 2:
-                        loc_x, loc_y = spatial_info[batch_id, 1:3]
-                        pred_img[(loc_x + p_start):(loc_x + p_end),
-                        (loc_y + p_start):(loc_y + p_end), ...] = \
-                            predictions[p_start:p_end,
-                            p_start:p_end,
-                            p_start:p_end, ...]
+                        x_, y_ = dest_start
+                        _x, _y = dest_end
+                        pred_img[x_:_x, y_:_y, ...] = \
+                            predictions[s_:_s, s_:_s, ...]
+                    else:
+                        raise ValueError("unsupported spatial rank")
 
         except KeyboardInterrupt:
             print('User cancelled training')

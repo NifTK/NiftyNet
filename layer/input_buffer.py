@@ -102,6 +102,7 @@ class InputBatchQueueRunner(object):
                 assert len(patch_dict.keys()[0]) == len(patch_dict.values()[0])
                 self._session.run(self._enqueue_op, feed_dict=patch_dict)
 
+            # push a set of stopping patches
             for i in range(0, self.capacity):
                 if self._session._closed:
                     break

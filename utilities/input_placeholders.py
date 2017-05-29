@@ -62,11 +62,13 @@ class ImagePatch(object):
 
     @property
     def has_labels(self):
-        return self._label_shape is not None
+        return (self._label_shape is not None) and \
+               (self._num_label_modality > 0)
 
     @property
     def has_weight_maps(self):
-        return self._weight_map_shape is not None
+        return (self._weight_map_shape is not None) and \
+               (self._num_weight_map > 0)
 
     @property
     def image_size(self):
@@ -212,11 +214,12 @@ class ImagePatch(object):
         # TODO:check the colon operator
         self.info = np.array(np.hstack([[subject_id], spatial_loc]),
                              dtype=np.int64)
+        assert img is not None
 
         if self.spatial_rank == 3:
             x_, y_, z_, _x, _y, _z = spatial_loc
             self.image = img[x_:_x, y_:_y, z_:_z, :]
-            if self.has_labels:
+            if self.has_labels and (seg is not None):
                 diff = self.image_size - self.label_size
                 assert diff >= 0  # assumes label_size <= image_size
                 x_d, y_d, z_d = (x_ + diff), (y_ + diff), (z_ + diff)
@@ -225,7 +228,7 @@ class ImagePatch(object):
                         y_d: (self.label_size + y_d),
                         z_d: (self.label_size + z_d), :]
 
-            if self.has_weight_maps:
+            if self.has_weight_maps and (w_map is not None):
                 diff = self.image_size - self.weight_map_size
                 assert diff >= 0
                 x_d, y_d, z_d = (x_ + diff), (y_ + diff), (z_ + diff)
@@ -237,7 +240,7 @@ class ImagePatch(object):
         elif self.spatial_rank == 2:
             x_, y_, _x, _y, = spatial_loc
             self.image = img[x_:_x, y_:_y, :]
-            if self.has_labels:
+            if self.has_labels and (seg is not None):
                 diff = self.image_size - self.label_size
                 assert diff >= 0  # assumes label_size <= image_size
                 x_d, y_d = (x_ + diff), (y_ + diff)
@@ -245,7 +248,7 @@ class ImagePatch(object):
                     seg[x_d: (self.label_size + x_d),
                         y_d: (self.label_size + y_d), :]
 
-            if self.has_weight_maps:
+            if self.has_weight_maps and (w_map is not None):
                 diff = self.image_size - self.weight_map_size
                 assert diff >= 0
                 x_d, y_d, = (x_ + diff), (y_ + diff)

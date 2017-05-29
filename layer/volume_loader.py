@@ -108,7 +108,10 @@ class VolumeLoaderLayer(Layer):
         return len(self.subject_list)
 
     def num_modality(self, column_id):
-        return self.subject_list[0].column(column_id).num_modality
+        column_i = self.subject_list[0].column(column_id)
+        if column_i is None:
+            return 0
+        return column_i.num_modality
 
     def get_subject(self, idx):
         return self.subject_list[idx]
