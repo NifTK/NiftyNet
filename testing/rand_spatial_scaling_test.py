@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-from layer.rand_rotation import RandomRotationLayer
+from layer.rand_spatial_scaling import RandomSpatialScalingLayer
 from utilities.subject import ColumnData
 
 
@@ -21,17 +21,15 @@ class RandRotationTest(tf.test.TestCase):
 
     def test_4d_shape(self):
         x = self.get_4d_input()
-        rand_rotation_layer = RandomRotationLayer(
-            min_angle=-10.0, max_angle=10.0)
-        rand_rotation_layer.randomise()
-        out = rand_rotation_layer(x)
+        rand_layer = RandomSpatialScalingLayer(max_percentage=10.0)
+        rand_layer.randomise(x.spatial_rank)
+        out = rand_layer(x)
 
     def test_5d_shape(self):
         x = self.get_5d_input()
-        rand_rotation_layer = RandomRotationLayer(
-            min_angle=-10.0, max_angle=10.0)
-        rand_rotation_layer.randomise()
-        out = rand_rotation_layer(x)
+        rand_layer = RandomSpatialScalingLayer(max_percentage=10.0)
+        rand_layer.randomise(x.spatial_rank)
+        out = rand_layer(x)
 
 if __name__ == "__main__":
     tf.test.main()

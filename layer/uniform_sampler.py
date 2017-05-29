@@ -4,6 +4,7 @@ import numpy as np
 import utilities.misc_io as io
 from .base_sampler import BaseSampler
 from .rand_rotation import RandomRotationLayer
+from .rand_spatial_scaling import RandomSpatialScalingLayer
 
 
 def rand_spatial_coordinates(spatial_rank, img_size, win_size, n_samples):
@@ -28,7 +29,7 @@ class UniformSampler(BaseSampler):
                  patch,
                  volume_loader,
                  patch_per_volume=1,
-                 data_augmentation_methods=['rotation'],
+                 data_augmentation_methods=['rotation', 'spatial_scaling'],
                  name="uniform_sampler"):
 
         super(UniformSampler, self).__init__(patch=patch, name=name)
@@ -39,6 +40,9 @@ class UniformSampler(BaseSampler):
             if method == 'rotation':
                 self.data_augmentation_layers.append(
                     RandomRotationLayer(min_angle=-10.0, max_angle=10.0))
+            elif method == 'spatial_scaling':
+                self.data_augmentation_layers.append(
+                    RandomSpatialScalingLayer(max_percentage=10.0))
             else:
                 raise ValueError('unkown data augmentation method')
 
@@ -78,7 +82,7 @@ class UniformSampler(BaseSampler):
 
             # apply volume level augmentation
             for layer in self.data_augmentation_layers:
-                layer.randomise()
+                layer.randomise(spatial_rank=spatial_rank)
                 img, seg, weight_map = layer(img), layer(seg), layer(weight_map)
 
             # generates random spatial coordinates

@@ -15,12 +15,16 @@ class RandomRotationLayer(Layer):
                  max_angle=10.0,
                  name='random_rotation'):
         super(RandomRotationLayer, self).__init__(name=name)
+        assert min_angle < max_angle
         self.min_angle = float(min_angle)
         self.max_angle = float(max_angle)
         self._transform = None
 
-    def randomise(self):
-        self._randomise_transformation_3d()
+    def randomise(self, spatial_rank=3):
+        if spatial_rank == 3:
+            self._randomise_transformation_3d()
+        else:
+            raise ValueError('not supported spatial rank')
 
     def _randomise_transformation_3d(self):
         # generate transformation
