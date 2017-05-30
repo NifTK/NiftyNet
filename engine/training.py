@@ -181,7 +181,6 @@ def run(net_class, param, device_str):
     config.allow_soft_placement = True
     # config.gpu_options.allow_growth = True
 
-    import pdb; pdb.set_trace()
     start_time = time.time()
     with tf.Session(config=config, graph=graph) as sess:
         # prepare output directory

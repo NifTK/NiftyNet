@@ -58,22 +58,30 @@ def run(net_class, param, device_str):
     hist_norm = HistNorm(models_filename=param.histogram_ref_file,
                          multimod_mask_type=param.multimod_mask_type,
                          norm_type=param.norm_type,
-                         cutoff=[x for x in param.norm_cutoff],
+                         cutoff=(param.cutoff_min, param.cutoff_max),
                          mask_type=param.mask_type)
     # define how to choose training volumes
     spatial_padding = ((param.volume_padding_size, param.volume_padding_size),
                        (param.volume_padding_size, param.volume_padding_size),
                        (param.volume_padding_size, param.volume_padding_size))
 
-    volume_loader = VolumeLoaderLayer(csv_loader,
-                                      hist_norm,
-                                      is_training=False,
-                                      do_reorientation=True,
-                                      do_resampling=True,
-                                      spatial_padding=spatial_padding,
-                                      do_normalisation=True,
-                                      do_whitening=True,
-                                      interp_order=(3, 0))
+    param.reorientation = True if param.reorientation == "True" else False
+    param.resampling = True if param.resampling == "True" else False
+    param.normalisation = True if param.normalisation == "True" else False
+    param.whitening = True if param.whitening == "True" else False
+    interp_order = (param.image_interp_order,
+                    param.label_interp_order,
+                    param.w_map_interp_order)
+    volume_loader = VolumeLoaderLayer(
+        csv_loader,
+        hist_norm,
+        is_training=False,
+        do_reorientation=param.reorientation,
+        do_resampling=param.resampling,
+        spatial_padding=spatial_padding,
+        do_normalisation=param.normalisation,
+        do_whitening=param.whitening,
+        interp_order=interp_order)
     print('found {} subjects'.format(len(volume_loader.subject_list)))
 
     # construct graph
