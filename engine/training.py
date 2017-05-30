@@ -57,7 +57,7 @@ def run(net_class, param, device_str):
         models_filename=param.histogram_ref_file,
         multimod_mask_type=param.multimod_mask_type,
         norm_type=param.norm_type,
-        cutoff=(param.cutoff_min, param.cutoff_max),
+        cutoff=[param.cutoff_min, param.cutoff_max],
         mask_type=param.mask_type)
     # define how to choose training volumes
     spatial_padding = ((param.volume_padding_size, param.volume_padding_size),
