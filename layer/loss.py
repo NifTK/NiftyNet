@@ -99,17 +99,17 @@ class LossFunction(Layer):
     def loss_func_params(self, value):
         self._loss_func_params = value
 
-    def layer_op(self, pred, labels, var_scope=None):
+    def layer_op(self, pred, label, weight_map=None, var_scope=None):
         with tf.device('/cpu:0'):
             # data term
             pred = tf.reshape(pred, [-1, self.num_classes])
-            labels = tf.reshape(labels, [-1])
+            label = tf.reshape(label, [-1])
             if self.loss_func_params:
                 data_loss = self.data_loss_func(pred,
-                                                labels,
+                                                label,
                                                 **self.loss_func_params)
             else:
-                data_loss = self.data_loss_func(pred, labels)
+                data_loss = self.data_loss_func(pred, label)
             if self.decay <= 0:
                 return data_loss
 

@@ -41,10 +41,10 @@ class ConstraintSearch(object):
         name_pot = []
         index_start = 0 if index_constraint[sort_indices[0]] > 0 else 1
         for i in range(index_start, len(self.list_contain)):
-            name_pot_temp = name[
-                            index_init: index_constraint[sort_indices[i]]]
+            name_pot_temp = name[index_init: index_constraint[sort_indices[i]]]
             for c in self.list_clean:
-                name_pot_temp.rsplit(c)
+                if c in name_pot_temp:
+                    name_pot_temp = name_pot_temp.replace(c, '')
             name_pot.append(name_pot_temp)
             index_init = index_constraint[sort_indices[i]] + \
                          len(self.list_contain[sort_indices[i]])

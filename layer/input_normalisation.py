@@ -152,7 +152,7 @@ class HistogramNormalisationLayer(Layer):
 
         if self.mapping is {}:
             raise RuntimeError("calling normalisor with empty mapping,"
-                               "probably {} does not exists or not loaded".format(
+                               "probably {} is not loaded".format(
                 self.hist_model_file))
         for mod in self.modalities.keys():
             for t in range(0, data_array.shape[4]):

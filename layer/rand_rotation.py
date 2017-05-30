@@ -77,4 +77,5 @@ class RandomRotationLayer(Layer):
                 raise ValueError('negative interpolation order')
             return inputs
         else:
+            # TODO: rotation for spatial_rank is 2
             raise ValueError('unsupported spatial rank')

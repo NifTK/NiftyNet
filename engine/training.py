@@ -112,11 +112,15 @@ def run(net_class, param, device_str):
         train_pairs = train_batch_runner.pop_batch_op
         images = train_pairs['images']
         labels = train_pairs['labels']
+        if "weight_maps" in train_pairs:
+            weight_maps = train_pairs['weight_maps']
+        else:
+            weight_maps = None
         # _ = net(images, is_training=True)
         for i in range(0, param.num_gpus):
             with tf.device("/{}:{}".format(device_str, i)):
                 predictions = net(images, is_training=True)
-                loss = loss_func(predictions, labels)
+                loss = loss_func(predictions, labels, weight_maps)
                 # TODO compute miss for dfferent target types
                 miss = tf.reduce_mean(tf.cast(
                     tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),

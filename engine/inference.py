@@ -19,8 +19,9 @@ from utilities.input_placeholders import ImagePatch
 
 # run on single GPU with single thread
 def run(net_class, param, device_str):
-    param_n_channel_out = 1
     param_output_interp_order = 3
+    param_output_probablities = False
+    param_n_channel_out = 1 if not param_output_probablities else param.num_classes
     assert (param.batch_size <= param.queue_length)
     constraint_T1 = cc.ConstraintSearch(
         ['./example_volumes/multimodal_BRATS'], ['T1'], ['T1c'], ['_'])
@@ -113,7 +114,10 @@ def run(net_class, param, device_str):
         test_pairs = seg_batch_runner.pop_batch_op
         info = test_pairs['info']
         logits = net(test_pairs['images'], is_training=False)
-        logits = tf.argmax(logits, -1)
+        if param_output_probablities:
+            logits = tf.nn.softmax(logits)
+        else:
+            logits = tf.argmax(logits, -1)
         variable_averages = tf.train.ExponentialMovingAverage(0.9)
         variables_to_restore = variable_averages.variables_to_restore()
         saver = tf.train.Saver(var_list=variables_to_restore)
