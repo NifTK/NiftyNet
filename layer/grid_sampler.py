@@ -54,6 +54,7 @@ class GridSampler(BaseSampler):
     def layer_op(self, batch_size=1):
         """
         assumes img, seg the same size
+        this function should be called with only one thread at a time
         """
         # batch_size is needed here so that it generates total number of
         # N samples where (N % batch_size) == 0

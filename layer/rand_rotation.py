@@ -58,7 +58,6 @@ class RandomRotationLayer(Layer):
     def layer_op(self, inputs):
         if inputs is None:
             return inputs
-
         if inputs.spatial_rank == 3:
             if inputs.data.ndim == 4:
                 for mod_i in range(inputs.data.shape[-1]):

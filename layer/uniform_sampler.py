@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
+from copy import deepcopy
 
 import utilities.misc_io as io
 from .base_sampler import BaseSampler
@@ -58,6 +59,8 @@ class UniformSampler(BaseSampler):
         # N samples where (N % batch_size) == 0
 
         spatial_rank = self.patch.spatial_rank
+        local_layers = [deepcopy(x) for x in self.data_augmentation_layers]
+        patch = deepcopy(self.patch)
         while self.volume_loader.has_next:
             img, seg, weight_map, idx = self.volume_loader()
 
@@ -66,30 +69,29 @@ class UniformSampler(BaseSampler):
             # (the matched result will be either 3d or 4d)
             img.spatial_rank = spatial_rank
             img.data = io.match_volume_shape_to_patch_definition(
-                img.data, self.patch.full_image_shape)
+                img.data, patch.full_image_shape)
             if img.data.ndim - spatial_rank > 1:
                 raise NotImplementedError
                 # time series data are not supported
             if seg is not None:
                 seg.spatial_rank = spatial_rank
                 seg.data = io.match_volume_shape_to_patch_definition(
-                    seg.data, self.patch.full_label_shape)
+                    seg.data, patch.full_label_shape)
             if weight_map is not None:
                 weight_map.spatial_rank = spatial_rank
                 weight_map.data = io.match_volume_shape_to_patch_definition(
-                    weight_map.data, self.patch.full_weight_map_shape)
+                    weight_map.data, patch.full_weight_map_shape)
 
             # apply volume level augmentation
-            for layer in self.data_augmentation_layers:
-                layer.randomise(spatial_rank=spatial_rank)
-                img, seg, weight_map = layer(img), layer(seg), layer(weight_map)
+            for aug in local_layers:
+                aug.randomise(spatial_rank=spatial_rank)
+                img, seg, weight_map = aug(img), aug(seg), aug(weight_map)
 
             # generates random spatial coordinates
             locations = rand_spatial_coordinates(img.spatial_rank,
                                                  img.data.shape,
-                                                 self.patch.image_size,
+                                                 patch.image_size,
                                                  self.patch_per_volume)
-
             for loc in locations:
-                self.patch.set_data(idx, loc, img, seg, weight_map)
-                yield self.patch
+                patch.set_data(idx, loc, img, seg, weight_map)
+                yield patch

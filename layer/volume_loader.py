@@ -80,17 +80,17 @@ class VolumeLoaderLayer(Layer):
         """
         # go to the next subject in the list (avoid running out of the list)
         if self.is_training:
-            self.current_id = np.random.randint(0, len(self.subject_list))
+            idx = np.random.randint(len(self.subject_list))
         else:
-            self.current_id = self.current_id + 1
-        current_subject = self.subject_list[self.current_id]
+            idx = self.current_id + 1
+            self.current_id = idx  # warning this is not thread-safe
+        current_subject = self.subject_list[idx]
         # print current_subject
         subject_dict = current_subject.load_columns(self.columns_to_load,
                                                     self.do_reorientation,
                                                     self.do_resampling,
                                                     self.interp_order,
                                                     self.spatial_padding)
-
         image = subject_dict['input_image_file']
         label = subject_dict['target_image_file']
         weight = subject_dict['weight_map_file']
@@ -99,7 +99,7 @@ class VolumeLoaderLayer(Layer):
             image.data = self.standardisor(image.data,
                                            self.do_normalisation,
                                            self.do_whitening)
-        return image, label, weight, self.current_id
+        return image, label, weight, idx
 
     @property
     def has_next(self):
@@ -111,15 +111,17 @@ class VolumeLoaderLayer(Layer):
         return False
 
     @property
-    def num_subjects(self):
-        if self.subject_list is None:
-            return 0
+    def num_subject(self):
         return len(self.subject_list)
 
     def num_modality(self, column_id):
         column_i = self.subject_list[0].column(column_id)
         if column_i is None:
             return 0
+        num_modality = column_i.num_modality
+        # make sure num_modality is the same across the list of subjects
+        for x in self.subject_list:
+            assert x.column(column_id).num_modality == num_modality
         return column_i.num_modality
 
     def get_subject(self, idx):

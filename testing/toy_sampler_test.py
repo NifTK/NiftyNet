@@ -12,7 +12,7 @@ class ToySamplerTest(tf.test.TestCase):
         print(test_sampler.placeholder_shapes)
         for d in test_sampler():
             assert isinstance(d, ImagePatch)
-            data_dict = d.as_dict()
+            data_dict = d.as_dict(self.placeholders)
             keys = data_dict.keys()[0]
             output = data_dict.values()[0]
             for (idx, key) in enumerate(keys):

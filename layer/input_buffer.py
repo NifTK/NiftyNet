@@ -98,9 +98,10 @@ class InputBatchQueueRunner(object):
                     break
 
                 assert isinstance(patch, ImagePatch)
-                patch_dict = patch.as_dict()
+                patch_dict = patch.as_dict(self.sampler.placeholders)
                 assert len(patch_dict.keys()[0]) == len(patch_dict.values()[0])
                 self._session.run(self._enqueue_op, feed_dict=patch_dict)
+                #print("push {}".format(patch.info))
 
             # push a set of stopping patches
             for i in range(0, self.capacity):
@@ -109,7 +110,9 @@ class InputBatchQueueRunner(object):
                 if self._coordinator.should_stop():
                     break
                 patch.fill_with_stopping_info()
-                self._session.run(self._enqueue_op, feed_dict=patch.as_dict())
+                self._session.run(
+                    self._enqueue_op,
+                    feed_dict=patch.as_dict(self.sampler.placeholders))
 
         except tf.errors.CancelledError:
             pass

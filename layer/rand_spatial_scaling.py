@@ -41,9 +41,25 @@ class RandomSpatialScalingLayer(Layer):
     def layer_op(self, inputs):
         if inputs is None:
             return inputs
-
-        inputs.data = self._apply_transformation(
-            inputs.data, interp_order=inputs.interp_order)
+        if inputs.spatial_rank == 3:
+            if inputs.data.ndim == 4:
+                transformed_data = []
+                for mod_i in range(inputs.data.shape[-1]):
+                    scaled_data = self._apply_transformation(
+                        inputs.data[..., mod_i], inputs.interp_order)
+                    transformed_data.append(scaled_data[..., np.newaxis])
+                inputs.data = np.concatenate(transformed_data, axis=-1)
+            if inputs.data.ndim == 5:
+                transformed_data = []
+                for t in range(inputs.data.shape[-1]):
+                    mod_data = []
+                    for mod_i in range(inputs.data.shape[-2]):
+                        scaled_data = self._apply_transformation(
+                            inputs.data[..., mod_i, t], inputs.interp_order)
+                        mod_data.append(scaled_data[..., np.newaxis])
+                    mod_data = np.concatenate(mod_data, axis=-1)
+                    transformed_data.append(mod_data[..., np.newaxis])
+                inputs.data = np.concatenate(transformed_data, axis=-1)
         if inputs.interp_order > 0:
             inputs.data = inputs.data.astype(np.float)
         elif inputs.interp_order == 0:

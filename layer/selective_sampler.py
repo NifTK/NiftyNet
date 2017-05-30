@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
+from copy import deepcopy
 
 import utilities.misc_io as io
 from .base_sampler import BaseSampler
@@ -54,6 +55,9 @@ class SelectiveSampler(BaseSampler):
         # N samples where (N % batch_size) == 0
 
         spatial_rank = self.patch.spatial_rank
+        local_layers = [deepcopy(x) for x in self.data_augmentation_layers]
+        patch = deepcopy(self.patch)
+        spatial_location_check = deepcopy(self.spatial_location_check)
         while self.volume_loader.has_next:
             img, seg, weight_map, idx = self.volume_loader()
 
@@ -76,22 +80,27 @@ class SelectiveSampler(BaseSampler):
                     weight_map.data, self.patch.full_weight_map_shape)
 
             # apply volume level augmentation
-            for layer in self.data_augmentation_layers:
-                layer.randomise(spatial_rank=spatial_rank)
-                img, seg, weight_map = layer(img), layer(seg), layer(weight_map)
+            for aug in local_layers:
+                aug.randomise(spatial_rank=spatial_rank)
+                img, seg, weight_map = aug(img), aug(seg), aug(weight_map)
 
+            # to generate 'patch_per_volume' samples satisfying
+            # the conditions specified by spatial_location_check instance:
+            # 'n_locations_to_check' samples are randomly sampled
+            # and checked. This sampling and checking process is repeated
+            # for 10 times at most.
             locations = []
             n_locations_to_check = self.patch_per_volume * 10
-            self.spatial_location_check.sampling_from(seg.data)
+            spatial_location_check.sampling_from(seg.data)
             n_trials = 10
             while len(locations) < self.patch_per_volume and n_trials > 0:
                 # generates random spatial coordinates
                 candidate_locations = rand_spatial_coordinates(
                     img.spatial_rank,
                     img.data.shape,
-                    self.patch.image_size,
+                    patch.image_size,
                     n_locations_to_check)
-                is_valid = [self.spatial_location_check(location, spatial_rank)
+                is_valid = [spatial_location_check(location, spatial_rank)
                             for location in candidate_locations]
                 is_valid = np.asarray(is_valid, dtype=bool)
                 print("{} good samples from {} candidates".format(
@@ -102,5 +111,5 @@ class SelectiveSampler(BaseSampler):
             locations = np.vstack(locations)
 
             for loc in locations:
-                self.patch.set_data(idx, loc, img, seg, weight_map)
-                yield self.patch
+                patch.set_data(idx, loc, img, seg, weight_map)
+                yield patch

@@ -45,8 +45,6 @@ class ImagePatch(object):
             assert len(weight_map_shape) == self.spatial_rank
             assert len(set(weight_map_shape)) == 1
 
-        self._placeholders = self._create_placeholders()
-
         # actual data
         self._image = None
         self._info = None
@@ -119,7 +117,7 @@ class ImagePatch(object):
         """
         return [1 + self.spatial_rank * 2]
 
-    def _create_placeholders(self):
+    def create_placeholders(self):
         """
         The placeholders are defined so that the input buffer knows how
         to initialise an input queue
@@ -158,10 +156,6 @@ class ImagePatch(object):
                 name='weightmaps')
             placeholders_list.append(weight_map_placeholders)
         return tuple(placeholders_list)
-
-    @property
-    def placeholders(self):
-        return self._placeholders
 
     ### set the corresponding data of each placeholder
     @property
@@ -260,7 +254,7 @@ class ImagePatch(object):
                     w_map.data[x_d: (self.weight_map_size + x_d),
                                y_d: (self.weight_map_size + y_d), :]
 
-    def as_dict(self):
+    def as_dict(self, placeholders):
         out_list = [self.image, self.info]
         if self.has_labels:
             out_list.append(self.label)
@@ -268,8 +262,8 @@ class ImagePatch(object):
             out_list.append(self.weight_map)
 
         assert not any([x is None for x in out_list])
-        assert len(out_list) == len(self.placeholders)
-        return {self.placeholders: tuple(out_list)}
+        assert len(out_list) == len(placeholders)
+        return {placeholders: tuple(out_list)}
 
     @property
     def stopping_signal(self):

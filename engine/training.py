@@ -195,8 +195,8 @@ def run(net_class, param, device_str):
                         i + param.starting_iter, ckpt_name))
         except KeyboardInterrupt:
             print('User cancelled training')
-        except tf.errors.OutOfRangeError:
-            pass
+        except tf.errors.OutOfRangeError as e:
+            print(e)
         except ValueError as e:
             print(e)
         except RuntimeError as e:

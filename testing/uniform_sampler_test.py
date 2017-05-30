@@ -46,7 +46,7 @@ class SubjectTest(tf.test.TestCase):
         n_volumes = 0
         for d in sampler():
             assert isinstance(d, ImagePatch)
-            data_dict = d.as_dict()
+            data_dict = d.as_dict(sampler.placeholders)
             self.assertAllClose((32, 32, 32, 2), d.image.shape)
             self.assertAllClose((7,), d.info.shape)
             self.assertAllClose((32, 32, 32, 1), d.label.shape)

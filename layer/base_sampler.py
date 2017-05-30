@@ -20,6 +20,7 @@ class BaseSampler(Layer):
 
         assert isinstance(patch, ImagePatch)
         self.patch = patch
+        self._placeholders = self.patch.create_placeholders()
 
     def layer_op(self, batch_size):
         """
@@ -30,7 +31,7 @@ class BaseSampler(Layer):
 
     @property
     def placeholders(self):
-        return self.patch.placeholders
+        return self._placeholders
 
     @property
     def placeholder_names(self):

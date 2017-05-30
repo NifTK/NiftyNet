@@ -1,3 +1,4 @@
+import os
 import subprocess
 
 rc = subprocess.call('/home/wenqi/list_gpu_memory.sh', shell=True)
@@ -10,3 +11,6 @@ if free_memory[0] > free_memory[1]:
     print '1'
 else:
     print '0'
+
+if os.path.exists('./gpu_tmp_log'):
+    os.remove('./gpu_tmp_log')
