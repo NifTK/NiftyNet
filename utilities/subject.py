@@ -35,6 +35,7 @@ class MultiModalFileList(object):
             return 0
         return len(self.multi_mod_filenames[0])
 
+
 class ColumnData(object):
     def __init__(self, column_name, data, spatial_rank, interp_order):
         self._name = column_name
@@ -45,22 +46,26 @@ class ColumnData(object):
     @property
     def name(self):
         return self._name
+
     @property
     def interp_order(self):
         return self._interp_order
+
     @property
     def spatial_rank(self):
         return self._spatial_rank
+
     @spatial_rank.setter
     def spatial_rank(self, value):
         self._spatial_rank = value
+
     @property
     def data(self):
         return self._data
+
     @data.setter
     def data(self, value):
         self._data = value
-
 
 
 class Subject(object):
@@ -95,7 +100,7 @@ class Subject(object):
         new_subject.set_all_columns(*csv_cell_list)
         if modality_names is not None:
             # check modality names consistent with subject image files
-            assert(len(modality_names) == len(new_subject.column(0)()[0]))
+            assert (len(modality_names) == len(new_subject.column(0)()[0]))
             new_subject.modality_names = modality_names
         return new_subject
 
@@ -171,7 +176,7 @@ class Subject(object):
             return None
         image_affine = self._read_original_affine()
         ornt_original = nib.orientations.axcodes2ornt(
-                nib.aff2axcodes(image_affine))
+            nib.aff2axcodes(image_affine))
         return util.do_reorientation(data_5d,
                                      STANDARD_ORIENTATION,
                                      ornt_original)
@@ -203,16 +208,15 @@ class Subject(object):
         # pad the first few dims according to the length of spatial_padding
         ndim = data_5d.ndim
         if (type(spatial_padding) is int) or \
-            (not all(isinstance(i, tuple) for i in spatial_padding)):
+                (not all(isinstance(i, tuple) for i in spatial_padding)):
             raise ValueError(
                 "spatial_padding should be a tuple: ((M,N), (P,Q),...)")
         all_padding = spatial_padding + tuple()
         assert len(all_padding) <= ndim
         while len(all_padding) < ndim:
-            all_padding = all_padding + ((0,0),)
+            all_padding = all_padding + ((0, 0),)
         data_5d = np.pad(data_5d, all_padding, 'minimum')
         return data_5d
-
 
     def load_column(self,
                     index,
@@ -220,7 +224,7 @@ class Subject(object):
                     do_resampling=False,
                     interp_order=None,
                     spatial_padding=None):
-        # TODO change name to read_image_as_5d
+
         assert index < len(Subject.data_types)
         field_name = Subject.fields[index]
         type_name = Subject.data_types[index]
@@ -262,7 +266,6 @@ class Subject(object):
                                            interp_order=interp_order)}
         else:
             return {'unknow_field': None}
-
 
     def load_columns(self,
                      index_list,
@@ -324,12 +327,12 @@ class Subject(object):
             if len(ind) == 6:  # spatial_rank == 3
                 w, h, d = data.shape[:3]
                 data = data[ind[0]: (w - ind[1]),
-                            ind[2]: (h - ind[3]),
-                            ind[4]: (d - ind[5]), :, :]
+                       ind[2]: (h - ind[3]),
+                       ind[4]: (d - ind[5]), :, :]
             if len(ind) == 4:  # spatial_rank == 2
                 w, h = data.shape[:2]
                 data = data[ind[0]: (w - ind[1]),
-                            ind[2]: (h - ind[3]), :, :, :]
+                       ind[2]: (h - ind[3]), :, :, :]
         if self.load_reorientation:
             data = self.__reorient_to_original(data)
         if self.load_resampling:
@@ -349,4 +352,3 @@ class Subject(object):
             else:
                 out_str.append('{}: {}'.format(csv_field, csv_cell()))
         return '\n'.join(out_str)
-

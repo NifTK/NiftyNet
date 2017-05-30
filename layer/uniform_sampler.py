@@ -4,8 +4,6 @@ from copy import deepcopy
 
 import utilities.misc_io as io
 from .base_sampler import BaseSampler
-from .rand_rotation import RandomRotationLayer
-from .rand_spatial_scaling import RandomSpatialScalingLayer
 
 
 def rand_spatial_coordinates(spatial_rank, img_size, win_size, n_samples):
@@ -30,23 +28,16 @@ class UniformSampler(BaseSampler):
                  patch,
                  volume_loader,
                  patch_per_volume=1,
-                 data_augmentation_methods=['rotation', 'spatial_scaling'],
+                 data_augmentation_methods=None,
                  name="uniform_sampler"):
 
         super(UniformSampler, self).__init__(patch=patch, name=name)
         self.volume_loader = volume_loader
         self.patch_per_volume = patch_per_volume
-        self.data_augmentation_layers = []
-        if data_augmentation_methods is not None:
-            for method in data_augmentation_methods:
-                if method == 'rotation':
-                    self.data_augmentation_layers.append(
-                        RandomRotationLayer(min_angle=-10.0, max_angle=10.0))
-                elif method == 'spatial_scaling':
-                    self.data_augmentation_layers.append(
-                        RandomSpatialScalingLayer(max_percentage=10.0))
-                else:
-                    raise ValueError('unkown data augmentation method')
+        if data_augmentation_methods is None:
+            self.data_augmentation_layers = []
+        else:
+            self.data_augmentation_layers = data_augmentation_methods
 
     def layer_op(self, batch_size=1):
         """

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 
 import numpy as np
@@ -11,6 +12,13 @@ try:
     from skimage import filters
 except ImportError:
     from skimage import filter as filters
+"""
+Implementation of
+Nyúl László G., Jayaram K. Udupa, and Xuan Zhang.
+"New variants of a method of MRI scale standardization."
+IEEE transactions on medical imaging 19.2 (2000): 143-150.
+"""
+
 
 DEFAULT_CUTOFF = [0.01, 0.99]
 
@@ -132,7 +140,7 @@ def create_mapping_perc(perc_database, s1, s2):
     final_map = final_map + intercept
     return final_map
 
-
+# TODO: test cases
 def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     range_to_use = None
     if type_hist == 'quartile':

@@ -87,9 +87,26 @@ def run(net_class, param, device_str):
                                   num_weight_map=1)
 
         # define how to generate samples from the volume
+        augmentations = []
+        param_do_rotation = True
+        param_do_scaling = True
+        if param_do_rotation:
+            from layer.rand_rotation import RandomRotationLayer
+            param_min_angle=-10.0
+            param_max_angle=10.0
+            augmentations.append(RandomRotationLayer(
+                min_angle=param_min_angle,
+                max_angle=param_max_angle))
+        if param_do_scaling:
+            from layer.rand_spatial_scaling import RandomSpatialScalingLayer
+            param_max_percentage = 10.0
+            augmentations.append(RandomSpatialScalingLayer(
+                max_percentage=param_max_percentage))
+
         sampler = UniformSampler(patch=patch_holder,
                                  volume_loader=volume_loader,
                                  patch_per_volume=param.sample_per_volume,
+                                 data_augmentation_methods=augmentations,
                                  name='uniform_sampler')
 
         net = net_class(num_classes=param.num_classes)

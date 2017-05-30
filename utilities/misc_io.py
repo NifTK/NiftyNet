@@ -8,6 +8,8 @@ import nibabel as nib
 import numpy as np
 import scipy.ndimage
 
+FILE_EXTENSIONS = [".nii.gz", ".tar.gz"]
+
 
 #### utilities for file headers
 
@@ -105,12 +107,6 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
 
 
 ### end of resample/reorientation original volumes
-
-
-
-
-
-FILE_EXTENSIONS = [".nii.gz", ".tar.gz"]
 
 
 def split_filename(file_name):
@@ -239,10 +235,6 @@ def create_5d_from_array(data_array):
     return data_5d
 
 
-STANDARD_ORIENTATION = [[0, 1], [1, 1], [2, 1]]
-
-
-# TODO: save segmentation
 def save_volume_5d(img_data, filename, save_path, img_ref=None):
     if img_data is None:
         return
