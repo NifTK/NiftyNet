@@ -51,8 +51,9 @@ class SubjectTest(tf.test.TestCase):
             self.assertAllClose((32, 32, 32, 2), d.image.shape)
             self.assertAllClose((7,), d.info.shape)
             self.assertAllClose((32, 32, 32, 1), d.label.shape)
-            # print(d.info)
             n_volumes = n_volumes + 1
+            if n_volumes == 3:
+                break
             # if n_volumes == 5:
             #    break
 

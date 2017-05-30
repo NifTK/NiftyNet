@@ -41,7 +41,7 @@ class SubjectTest(tf.test.TestCase):
 
         sampler = UniformSampler(patch=patch_holder,
                                  volume_loader=volume_loader,
-                                 patch_per_volume=1,
+                                 patch_per_volume=10,
                                  name='uniform_sampler')
         n_volumes = 0
         for d in sampler():
@@ -52,7 +52,7 @@ class SubjectTest(tf.test.TestCase):
             self.assertAllClose((32, 32, 32, 1), d.label.shape)
             print(d.info)
             n_volumes = n_volumes + 1
-            if n_volumes == 5:
+            if n_volumes == 3:
                 break
 
             keys = data_dict.keys()[0]

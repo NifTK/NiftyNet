@@ -21,30 +21,30 @@ class SubjectTest(tf.test.TestCase):
         a_subject.set_all_columns(input, None, None, None)
         print(a_subject._read_original_affine())
         print(a_subject._read_original_pixdim())
-        out = a_subject.load_columns((0, 1, 2, 3),
-                                     do_reorientation=False,
-                                     do_resampling=False)
-        print(out.keys())
+        #out = a_subject.load_columns((0, 1, 2, 3),
+        #                             do_reorientation=False,
+        #                             do_resampling=False)
+        #print(out.keys())
 
-        a_subject.set_all_columns(input, output, None, comments)
-        print(a_subject._read_original_affine())
-        print(a_subject._read_original_pixdim())
-        out = a_subject.load_columns((0, 1, 2, 3),
-                                     do_reorientation=False,
-                                     do_resampling=True)
+        #a_subject.set_all_columns(input, output, None, comments)
+        #print(a_subject._read_original_affine())
+        #print(a_subject._read_original_pixdim())
+        #out = a_subject.load_columns((0, 1, 2, 3),
+        #                             do_reorientation=False,
+        #                             do_resampling=True)
 
-        print(out.keys())
-        out_1 = a_subject.load_columns((0, 1, 3),
-                                       do_reorientation=True,
-                                       do_resampling=False)
-        print(out_1.keys())
+        #print(out.keys())
+        #out_1 = a_subject.load_columns((0, 1, 3),
+        #                               do_reorientation=True,
+        #                               do_resampling=False)
+        #print(out_1.keys())
 
-        a_subject.set_all_columns(input, None, weights, comments)
-        out_2 = a_subject.load_columns((0, 1, 2),
-                                       do_reorientation=True,
-                                       do_resampling=True)
-        print(out_2.keys())
-        print(a_subject)
+        #a_subject.set_all_columns(input, None, weights, comments)
+        #out_2 = a_subject.load_columns((0, 1, 2),
+        #                               do_reorientation=True,
+        #                               do_resampling=True)
+        #print(out_2.keys())
+        #print(a_subject)
 
         a_subject.set_all_columns(input, output, weights, comments)
         out_2 = a_subject.load_columns((0, 1, 2),

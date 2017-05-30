@@ -36,6 +36,7 @@ class RandomSpatialScalingLayer(Layer):
         while len(full_zoom) < image.ndim:
             full_zoom = np.hstack((full_zoom, [1.0]))
         image = scipy.ndimage.zoom(image, full_zoom, order=interp_order)
+        print image.shape
         return image
 
     def layer_op(self, inputs):
