@@ -17,6 +17,8 @@ testjob:
     - python -c "import tensorflow as tf; from tensorflow.python.client import device_lib; print device_lib.list_local_devices()"
     - ls -la /dev | grep nvidia
 
+    - echo $(python testing/get_gpu_index.py)
+
     # download data
     - wget -q https://www.dropbox.com/s/2unf08ylxvhc298/example_volumes.tar.gz
     - tar -xzvf example_volumes.tar.gz
@@ -25,7 +27,7 @@ testjob:
 
     # run python code with coverage wrapper
     - coverage erase
-    - coverage run -a --source . run_application.py train --image_size 42 --label_size 42 --batch_size 2
+    - coverage run -a --source . run_application.py train --image_size 42 --label_size 42 --batch_size 2 --cuda_devices $(python testing/get_gpu_index.py)
     - coverage run -a --source . run_application.py inference --image_size 84 --label_size 84 --batch_size 7
     - coverage run -a --source . -m testing.activation_test
     - coverage run -a --source . -m testing.bn_test
