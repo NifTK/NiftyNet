@@ -4,7 +4,7 @@ import numpy as np
 import numpy.ma as ma
 import scipy.stats.mstats as mstats
 
-from utilities.misc import MorphologyOps, CacheFunctionOutput
+from utilities.misc_common import MorphologyOps, CacheFunctionOutput
 
 
 class RegionProperties(object):

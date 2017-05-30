@@ -2,7 +2,7 @@
 import os
 import sys
 
-import utilities.misc as util
+import utilities.misc_common as util
 import utilities.parse_user_params as parse_user_params
 
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)

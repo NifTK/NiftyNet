@@ -4,7 +4,7 @@ import nibabel as nib
 import numpy as np
 
 import misc_io as util
-from misc import CacheFunctionOutput
+from misc_common import CacheFunctionOutput
 
 STANDARD_ORIENTATION = [[0, 1], [1, 1], [2, 1]]
 

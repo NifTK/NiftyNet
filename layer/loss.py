@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 
 from layer.base import Layer
-from utilities.misc import damerau_levenshtein_distance
+from utilities.misc_common import damerau_levenshtein_distance
 
 
 class LossFunction(Layer):

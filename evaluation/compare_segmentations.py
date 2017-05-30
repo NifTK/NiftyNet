@@ -3,7 +3,7 @@ import scipy
 import nibabel as nib
 import numpy as np
 from pairwise_measures import PairwiseMeasures
-import utilities.misc as util
+import utilities.misc_common as util
 
 
 MEASURES = (

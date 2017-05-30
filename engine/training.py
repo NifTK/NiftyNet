@@ -14,7 +14,7 @@ from utilities.input_placeholders import ImagePatch
 from layer.loss import LossFunction
 from layer.uniform_sampler import UniformSampler
 from layer.volume_loader import VolumeLoaderLayer
-from utilities import misc as util
+from utilities import misc_common as util
 from utilities.csv_table import CSVTable
 
 np.random.seed(seed=int(time.time()))

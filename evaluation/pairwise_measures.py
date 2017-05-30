@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.neighbors import DistanceMetric
 
-from utilities.misc import MorphologyOps, CacheFunctionOutput
+from utilities.misc_common import MorphologyOps, CacheFunctionOutput
 
 
 class PairwiseMeasures(object):
