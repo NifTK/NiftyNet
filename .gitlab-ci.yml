@@ -7,7 +7,6 @@ testjob:
     # set env
     - export PYTHONPATH="/home/wenqi/.local/lib/python2.7/site-packages":$PYTHONPATH
     - export PATH="/home/wenqi/.local/bin":$PATH
-    - export CUDA_VISIBLE_DEVICES='1';
 
     # print system info
     - which nvidia-smi
