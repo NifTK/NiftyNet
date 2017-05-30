@@ -11,6 +11,19 @@ class KeywordsMatching(object):
         self.list_contain = list_contain
         self.list_not_contain = list_not_contain
 
+    @classmethod
+    def from_tuple(cls, input_tuple):
+        path, contain, not_contain = [], [], []
+        for (name, value) in input_tuple:
+            if name == "path_to_search":
+                path.append(value)
+            elif name == "filename_contains":
+                contain.append(value)
+            elif name == "filename_not_contains":
+                not_contain.append(value)
+        new_subject = cls(path, contain, not_contain)
+        return new_subject
+
     def matching_subjects_and_filenames(self):
         list_final = []
         name_list_final = []

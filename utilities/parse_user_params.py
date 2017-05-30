@@ -2,23 +2,51 @@
 import argparse
 import os
 
-import configparser
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+
+from utilities.filename_matching import KeywordsMatching
 
 
 def run():
     file_parser = argparse.ArgumentParser(add_help=False)
-    file_parser.add_argument("-c", "--conf",
-                             help="Specify configurations from a file",
-                             metavar="File")
-    config_file = os.path.join(os.path.dirname(__file__),
-                               '../config/multimodal_config_cs.txt')
-    defaults = {"conf": config_file}
-    file_parser.set_defaults(**defaults)
+    file_parser.add_argument(
+        "-c", "--conf",
+        help="Specify configurations from a file", metavar="File")
+    config_file = os.path.join(
+        os.path.dirname(__file__), '../config/default_config.txt')
+    default_file = {"conf": config_file}
+    file_parser.set_defaults(**default_file)
     file_arg, remaining_argv = file_parser.parse_known_args()
 
     if file_arg.conf:
-        config = configparser.SafeConfigParser()
+        config = configparser.ConfigParser()
         config.read([file_arg.conf])
+
+        # match flexible input modality sections
+        image_keywords = []
+        label_keywords = []
+        w_map_keywords = []
+        for section in config.sections():
+            section = section.lower()
+            if 'image' in section:
+                image_keywords.append(config.items(section))
+            elif 'label' in section:
+                label_keywords.append(config.items(section))
+            elif 'weight' in section:
+                w_map_keywords.append(config.items(section))
+        image_matcher = []
+        for modality_info in image_keywords:
+            image_matcher.append(KeywordsMatching.from_tuple(modality_info))
+        label_matcher = []
+        for modality_info in label_keywords:
+            label_matcher.append(KeywordsMatching.from_tuple(modality_info))
+        w_map_matcher = []
+        for modality_info in w_map_keywords:
+            w_map_matcher.append(KeywordsMatching.from_tuple(modality_info))
+
         defaults = dict(config.items("settings"))
 
     parser = argparse.ArgumentParser(
@@ -56,11 +84,15 @@ def run():
         type=int)
 
     parser.add_argument(
+        "--spatial_rank", metavar='', help="Set input spatial rank", type=int)
+    parser.add_argument(
         "--batch_size", metavar='', help="Set batch size of the net", type=int)
     parser.add_argument(
         "--image_size", metavar='', help="Set input image size", type=int)
     parser.add_argument(
         "--label_size", metavar='', help="Set label size of the net", type=int)
+    parser.add_argument(
+        "--w_map_size", metavar='', help="Set weight map size of the net", type=int)
     parser.add_argument(
         "--num_classes", metavar='', help="Set number of classes", type=int)
 
@@ -73,30 +105,46 @@ def run():
         "--histogram_ref_file",
         help="A reference file of histogram for intensity normalisation")
     parser.add_argument(
-        "--flag_normalisation",
+        "--normalisation",
         help="Indicates if the normalisation must be performed"
     )
     parser.add_argument(
-        "--flag_whitening",
+        "--whitening",
         help="Indicates if the whitening of the data should be applied"
     )
     parser.add_argument(
-        "--flag_spatial_scaling",
+        "--image_interp_order",
+        help="image interpolation order when do resampling/rotation",
+        type=int
+    )
+    parser.add_argument(
+        "--label_interp_order",
+        help="label interpolation order when do resampling/rotation",
+        type=int
+    )
+    parser.add_argument(
+        "--w_map_interp_order",
+        help="weight map interpolation order when do resampling/rotation",
+        type=int
+    )
+    parser.add_argument(
+        "--spatial_scaling",
         help="Indicates if the spatial scaling must be performed"
     )
     parser.add_argument(
-        "--flag_orientation",
+        "--max_percentage",
+        help="the spatial scaling factor in [-max_percentage, max_percentage]",
+        type=float
+    )
+    parser.add_argument(
+        "--reorientation",
         help="Indicates if the loaded images are put by default in the RAS "
              "orientation"
     )
     parser.add_argument(
-        "--flag_isotropic",
+        "--resampling",
         help="Indicates if the volumes must be interpolated to be in "
              "representing images of 1 1 1 resolution"
-    )
-    parser.add_argument(
-        "--flag_saving_norm",
-        help="Indicates if the normalisation must be saved"
     )
     parser.add_argument(
         "--norm_type",
@@ -104,15 +152,14 @@ def run():
         help="Type of normalisation to perform"
     )
     parser.add_argument(
-        "--flag_saving_mask",
-        help="Indicates if generated masks must be saved or not"
+        "--cutoff_min",
+        help="Cutoff values for the normalisation process",
+        type=float
     )
     parser.add_argument(
-        # TODO refactor this part to allow to use values different from default
-        "--norm_cutoff",
-        default=[0.01, 0.99],
-        nargs=2,
-        help="Cutoff values for the normalisation process"
+        "--cutoff_max",
+        help="Cutoff values for the normalisation process",
+        type=float
     )
     parser.add_argument(
         "--multimod_mask_type",
@@ -126,8 +173,18 @@ def run():
         help="type of masking strategy used"
     )
     parser.add_argument(
-        "--flag_rotation",
+        "--rotation",
         help="Indicates if a rotation should be applied"
+    )
+    parser.add_argument(
+        "--min_angle",
+        help="minimum rotation angle when rotation augmentation is enabled",
+        type=float
+    )
+    parser.add_argument(
+        "--max_angle",
+        help="maximum rotation angle when rotation augmentation is enabled",
+        type=float
     )
 
     parser.add_argument(
@@ -140,12 +197,6 @@ def run():
         help="[Training only] Set number of samples per image in each batch",
         metavar='',
         type=int)
-    # TODO remove the trailing '/'
-    parser.add_argument(
-        "--train_data_dir",
-        metavar='',
-        nargs='+',
-        help="[Training only] Specify training input volume directory")
 
     parser.add_argument(
         "--lr",
@@ -187,14 +238,14 @@ def run():
         "--eval_data_dir",
         metavar='',
         help="[Inference only] Directory of image to be segmented")  # without '/'
-    parser.add_argument(
-        "--min_sampling_ratio",
-        help="Minumum ratio to satisfy in the sampling of different labels"
-    )
-    parser.add_argument(
-        "--min_numb_labels",
-        help="Minimum number of different labels present in a patch"
-    )
+    #parser.add_argument(
+    #    "--min_sampling_ratio",
+    #    help="Minumum ratio to satisfy in the sampling of different labels"
+    #)
+    #parser.add_argument(
+    #    "--min_numb_labels",
+    #    help="Minimum number of different labels present in a patch"
+    #)
     args = parser.parse_args(remaining_argv)
     return args
 

@@ -53,55 +53,60 @@ def run(net_class, param, device_str):
                           allow_missing=True)
 
     # define how to normalise image volumes
-    hist_norm = HistNorm(models_filename=param.histogram_ref_file,
-                         multimod_mask_type=param.multimod_mask_type,
-                         norm_type=param.norm_type,
-                         cutoff=[x for x in param.norm_cutoff],
-                         mask_type=param.mask_type)
+    hist_norm = HistNorm(
+        models_filename=param.histogram_ref_file,
+        multimod_mask_type=param.multimod_mask_type,
+        norm_type=param.norm_type,
+        cutoff=(param.cutoff_min, param.cutoff_max),
+        mask_type=param.mask_type)
     # define how to choose training volumes
     spatial_padding = ((param.volume_padding_size, param.volume_padding_size),
                        (param.volume_padding_size, param.volume_padding_size),
                        (param.volume_padding_size, param.volume_padding_size))
-    volume_loader = VolumeLoaderLayer(csv_loader,
-                                      hist_norm,
-                                      is_training=True,
-                                      do_reorientation=True,
-                                      do_resampling=True,
-                                      spatial_padding=spatial_padding,
-                                      do_normalisation=True,
-                                      do_whitening=True,
-                                      interp_order=(3, 0))
+    interp_order = (param.image_interp_order,
+                    param.label_interp_order,
+                    param.w_map_interp_order)
+    param.reorientation = True if param.reorientation == "True" else False
+    param.resampling = True if param.resampling == "True" else False
+    param.normalisation = True if param.normalisation == "True" else False
+    param.whitening = True if param.whitening == "True" else False
+    volume_loader = VolumeLoaderLayer(
+        csv_loader,
+        hist_norm,
+        is_training=True,
+        do_reorientation= param.reorientation,
+        do_resampling=param.resampling,
+        spatial_padding=spatial_padding,
+        do_normalisation=param.normalisation,
+        do_whitening=param.whitening,
+        interp_order=interp_order)
     print('found {} subjects'.format(len(volume_loader.subject_list)))
 
     graph = tf.Graph()
     with graph.as_default(), tf.device('/cpu:0'):
         # define a training element
-        patch_holder = ImagePatch(image_shape=[param.image_size] * 3,
-                                  label_shape=[param.label_size] * 3,
-                                  weight_map_shape=None,
-                                  image_dtype=tf.float32,
-                                  label_dtype=tf.int64,
-                                  weight_map_dtype=tf.float32,
-                                  num_image_modality=volume_loader.num_modality(0),
-                                  num_label_modality=volume_loader.num_modality(1),
-                                  num_weight_map=1)
+        patch_holder = ImagePatch(
+            image_shape=[param.image_size] * param.spatial_rank,
+            label_shape=[param.label_size] * param.spatial_rank,
+            weight_map_shape=[param.w_map_size] * param.spatial_rank,
+            image_dtype=tf.float32,
+            label_dtype=tf.int64,
+            weight_map_dtype=tf.float32,
+            num_image_modality=volume_loader.num_modality(0),
+            num_label_modality=volume_loader.num_modality(1),
+            num_weight_map=volume_loader.num_modality(2))
 
         # define how to generate samples from the volume
         augmentations = []
-        param_do_rotation = True
-        param_do_scaling = True
-        if param_do_rotation:
+        if param.rotation == "True":
             from layer.rand_rotation import RandomRotationLayer
-            param_min_angle=-10.0
-            param_max_angle=10.0
             augmentations.append(RandomRotationLayer(
-                min_angle=param_min_angle,
-                max_angle=param_max_angle))
-        if param_do_scaling:
+                min_angle=param.min_angle,
+                max_angle=param.max_angle))
+        if param.spatial_scaling == "True":
             from layer.rand_spatial_scaling import RandomSpatialScalingLayer
-            param_max_percentage = 10.0
             augmentations.append(RandomSpatialScalingLayer(
-                max_percentage=param_max_percentage))
+                max_percentage=param.max_percentage))
 
         sampler = UniformSampler(patch=patch_holder,
                                  volume_loader=volume_loader,
@@ -176,6 +181,7 @@ def run(net_class, param, device_str):
     config.allow_soft_placement = True
     # config.gpu_options.allow_growth = True
 
+    import pdb; pdb.set_trace()
     start_time = time.time()
     with tf.Session(config=config, graph=graph) as sess:
         # prepare output directory

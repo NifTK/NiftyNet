@@ -8,7 +8,6 @@ from .base_sampler import BaseSampler
 
 def rand_spatial_coordinates(spatial_rank, img_size, win_size, n_samples):
     assert np.all([d >= win_size for d in img_size[:spatial_rank]])
-
     # consisting of starting and ending coordinates
     all_coords = np.zeros((n_samples, spatial_rank * 2), dtype=np.int)
     for i in range(0, spatial_rank):
@@ -39,16 +38,13 @@ class UniformSampler(BaseSampler):
         else:
             self.data_augmentation_layers = data_augmentation_methods
 
-    def layer_op(self, batch_size=1):
+    def layer_op(self):
         """
          problems:
             check how many modalities available
             check the colon operator
             automatically handle mutlimodal by matching dims?
         """
-        # batch_size is needed here so that it generates total number of
-        # N samples where (N % batch_size) == 0
-
         spatial_rank = self.patch.spatial_rank
         local_layers = [deepcopy(x) for x in self.data_augmentation_layers]
         patch = deepcopy(self.patch)
