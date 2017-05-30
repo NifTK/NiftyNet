@@ -5,36 +5,30 @@ import utilities.misc_io as io
 from .base_sampler import BaseSampler
 from .rand_rotation import RandomRotationLayer
 from .rand_spatial_scaling import RandomSpatialScalingLayer
+from .uniform_sampler import rand_spatial_coordinates
+from .spatial_location_check import SpatialLocationCheckLayer
 
 
-def rand_spatial_coordinates(spatial_rank, img_size, win_size, n_samples):
-    assert np.all([d >= win_size for d in img_size[:spatial_rank]])
-
-    # consisting of starting and ending coordinates
-    all_coords = np.zeros((n_samples, spatial_rank * 2), dtype=np.int)
-    for i in range(0, spatial_rank):
-        all_coords[:, i] = np.random.random_integers(
-            0, max(img_size[i] - win_size, 1), n_samples)
-        all_coords[:, i + spatial_rank] = all_coords[:, i] + win_size
-    return all_coords
-
-
-class UniformSampler(BaseSampler):
+class SelectiveSampler(BaseSampler):
     """
-    This class generators samples by uniformly sampling each input volume
-    currently 4D input is supported, Height x Width x Depth x Modality
+    This class generators samples by sampling each input volume
+    the output samples satisfy constraints such as number of
+    unique values in training label
+    (currently 4D input is supported, Height x Width x Depth x Modality)
     """
 
     def __init__(self,
                  patch,
                  volume_loader,
-                 patch_per_volume=1,
+                 spatial_location_check=None,
                  data_augmentation_methods=['rotation', 'spatial_scaling'],
-                 name="uniform_sampler"):
+                 patch_per_volume=1,
+                 name="selective_sampler"):
 
-        super(UniformSampler, self).__init__(patch=patch, name=name)
+        super(SelectiveSampler, self).__init__(patch=patch, name=name)
         self.volume_loader = volume_loader
-        self.patch_per_volume = patch_per_volume
+
+        self.spatial_location_check = spatial_location_check
         self.data_augmentation_layers = []
         if data_augmentation_methods is not None:
             for method in data_augmentation_methods:
@@ -46,6 +40,8 @@ class UniformSampler(BaseSampler):
                         RandomSpatialScalingLayer(max_percentage=10.0))
                 else:
                     raise ValueError('unkown data augmentation method')
+
+        self.patch_per_volume = patch_per_volume
 
     def layer_op(self, batch_size=1):
         """
@@ -84,11 +80,26 @@ class UniformSampler(BaseSampler):
                 layer.randomise(spatial_rank=spatial_rank)
                 img, seg, weight_map = layer(img), layer(seg), layer(weight_map)
 
-            # generates random spatial coordinates
-            locations = rand_spatial_coordinates(img.spatial_rank,
-                                                 img.data.shape,
-                                                 self.patch.image_size,
-                                                 self.patch_per_volume)
+            locations = []
+            n_locations_to_check = self.patch_per_volume * 10
+            self.spatial_location_check.sampling_from(seg.data)
+            n_trials = 10
+            while len(locations) < self.patch_per_volume and n_trials > 0:
+                # generates random spatial coordinates
+                candidate_locations = rand_spatial_coordinates(
+                    img.spatial_rank,
+                    img.data.shape,
+                    self.patch.image_size,
+                    n_locations_to_check)
+                is_valid = [self.spatial_location_check(location, spatial_rank)
+                            for location in candidate_locations]
+                is_valid = np.asarray(is_valid, dtype=bool)
+                print("{} good samples from {} candidates".format(
+                    np.sum(is_valid), len(candidate_locations)))
+                for loc in candidate_locations[is_valid]:
+                    locations.append(loc)
+                n_trials -= 1
+            locations = np.vstack(locations)
 
             for loc in locations:
                 self.patch.set_data(idx, loc, img, seg, weight_map)
