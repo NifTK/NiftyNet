@@ -7,7 +7,7 @@ import numpy as np
 import tensorflow as tf
 from six.moves import range
 
-import utilities.constraints_classes as cc
+from utilities.filename_matching import KeywordsMatching
 import utilities.misc_csv as misc_csv
 from layer.grid_sampler import GridSampler
 from layer.input_buffer import DeployInputBuffer
@@ -23,14 +23,14 @@ def run(net_class, param, device_str):
     param_output_probablities = False
     param_n_channel_out = 1 if not param_output_probablities else param.num_classes
     assert (param.batch_size <= param.queue_length)
-    constraint_T1 = cc.ConstraintSearch(
-        ['./example_volumes/multimodal_BRATS'], ['T1'], ['T1c'], ['_'])
-    constraint_FLAIR = cc.ConstraintSearch(
-        ['./example_volumes/multimodal_BRATS'], ['Flair'], [], ['_'])
-    constraint_T1c = cc.ConstraintSearch(
-        ['./example_volumes/multimodal_BRATS'], ['T1c'], [], ['_'])
-    constraint_T2 = cc.ConstraintSearch(
-        ['./example_volumes/multimodal_BRATS'], ['T2'], [], ['_'])
+    constraint_T1 = KeywordsMatching(
+        ['./example_volumes/multimodal_BRATS'], ['T1'], ['T1c'])
+    constraint_FLAIR = KeywordsMatching(
+        ['./example_volumes/multimodal_BRATS'], ['Flair'], [])
+    constraint_T1c = KeywordsMatching(
+        ['./example_volumes/multimodal_BRATS'], ['T1c'], [])
+    constraint_T2 = KeywordsMatching(
+        ['./example_volumes/multimodal_BRATS'], ['T2'], [])
     constraint_array = [constraint_FLAIR,
                         constraint_T1,
                         constraint_T1c,
@@ -38,8 +38,8 @@ def run(net_class, param, device_str):
     misc_csv.write_matched_filenames_to_csv(
         constraint_array, './example_volumes/multimodal_BRATS/input.txt')
 
-    constraint_Label = cc.ConstraintSearch(
-        ['./example_volumes/multimodal_BRATS'], ['Label'], [], [])
+    constraint_Label = KeywordsMatching(
+        ['./example_volumes/multimodal_BRATS'], ['Label'], [])
     misc_csv.write_matched_filenames_to_csv(
         [constraint_Label], './example_volumes/multimodal_BRATS/target.txt')
 

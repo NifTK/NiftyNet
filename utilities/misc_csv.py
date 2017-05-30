@@ -3,7 +3,7 @@ import csv
 import numpy as np
 from difflib import SequenceMatcher
 
-import constraints_classes as cc
+from filename_matching import KeywordsMatching
 
 
 # From a unique csv file with for each subject the list of files to use,
@@ -151,7 +151,7 @@ def write_matched_filenames_to_csv(list_constraints, csv_file):
     list_tot = []
     for c in list_constraints:
         list_files, name_list = \
-            cc.ConstraintSearch.create_list_from_constraint(c)
+            KeywordsMatching.matching_subjects_and_filenames(c)
         name_list = remove_duplicated_names(name_list)
         name_tot.append(name_list)
         list_tot.append(list_files)
@@ -212,27 +212,27 @@ def write_matched_filenames_to_csv(list_constraints, csv_file):
 #    name_weight = None
 #    if constraint_list.input is not None:
 #        list_input, name_input = \
-#            cc.ConstraintSearch.create_list_from_constraint(
+#            KeywordsMatching.create_list_from_constraint(
 #                constraint_list.input)
 #        name_input = remove_duplicated_names(name_input)
 #    if constraint_list.output is not None:
 #        list_output, name_output = \
-#            cc.ConstraintSearch.create_list_from_constraint(
+#            KeywordsMatching.create_list_from_constraint(
 #                constraint_list.output)
 #        name_output = remove_duplicated_names(name_output)
 #    if constraint_list.weight is not None:
 #        list_weight, name_weight = \
-#            cc.ConstraintSearch.create_list_from_constraint(
+#            KeywordsMatching.create_list_from_constraint(
 #                constraint_list.weight)
 #        name_weight = remove_duplicated_names(name_weight)
 #    if constraint_list.input_txt is not None:
 #        list_input_txt, name_input_txt = \
-#            cc.ConstraintSearch.create_list_from_constraint(
+#            KeywordsMatching.create_list_from_constraint(
 #                constraint_list.input_txt)
 #        name_input_txt = remove_duplicated_names(name_input_txt)
 #    if constraint_list.output_txt is not None:
 #        list_output_txt, name_output_txt = \
-#            cc.ConstraintSearch.create_list_from_constraint(
+#            KeywordsMatching.create_list_from_constraint(
 #                constraint_list.output_txt)
 #        name_output_txt = remove_duplicated_names(name_output_txt)
 #

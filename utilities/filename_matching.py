@@ -5,15 +5,13 @@ import numpy as np
 import misc_io as util
 
 
-class ConstraintSearch(object):
-    def __init__(self, list_paths=[], list_contain=[], list_not_contain=[],
-                 list_clean=[]):
+class KeywordsMatching(object):
+    def __init__(self, list_paths=[], list_contain=[], list_not_contain=[]):
         self.list_paths = list_paths
         self.list_contain = list_contain
         self.list_not_contain = list_not_contain
-        self.list_clean = list_clean
 
-    def create_list_from_constraint(self):
+    def matching_subjects_and_filenames(self):
         list_final = []
         name_list_final = []
         for p in self.list_paths:
@@ -24,13 +22,14 @@ class ConstraintSearch(object):
                     continue
                 full_file_name = os.path.join(p, filename)
                 list_final.append(full_file_name)
-                name_list_final.append(self.list_subjects_potential(filename))
+                name_list_final.append(self.extract_subject_id_from(filename))
         return list_final, name_list_final
 
-    def list_subjects_potential(self, filename):
+    def extract_subject_id_from(self, filename):
+        path, name, ext = util.split_filename(filename)
+
         index_constraint = []
         length_constraint = []
-        path, name, ext = util.split_filename(filename)
         for c in self.list_contain:
             index_constraint.append(name.find(c))
             length_constraint.append(len(c))
@@ -42,21 +41,15 @@ class ConstraintSearch(object):
         index_start = 0 if index_constraint[sort_indices[0]] > 0 else 1
         for i in range(index_start, len(self.list_contain)):
             name_pot_temp = name[index_init: index_constraint[sort_indices[i]]]
-            for c in self.list_clean:
-                if c in name_pot_temp:
-                    name_pot_temp = name_pot_temp.replace(c, '')
-            name_pot.append(name_pot_temp)
+            name_pot_temp = ''.join(x for x in name_pot_temp if x.isalnum())
+            if name_pot_temp is not '':
+                name_pot.append(name_pot_temp)
             index_init = index_constraint[sort_indices[i]] + \
                          len(self.list_contain[sort_indices[i]])
 
         name_temp = name[index_init:]
-        for c in self.list_clean:
-            if c in name_temp:
-                name_temp = name_temp.rstrip(c)
-                name_temp = name_temp.lstrip(c)
-                index_clean = name_temp.find(c)
-                if index_clean == 0:
-                    name_temp = name_temp[len(c):]
-        name_pot.append(name_temp)
+        name_temp = ''.join(x for x in name_temp if x.isalnum())
+        if name_temp is not '':
+            name_pot.append(name_temp)
         return name_pot
 
