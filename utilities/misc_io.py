@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
+
 import os
 import warnings
 
@@ -106,63 +107,7 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
 ### end of resample/reorientation original volumes
 
 
-def load_volume(filename,
-                allow_multimod_single_file=False,
-                allow_timeseries=False):
-    if not os.path.exists(filename):
-        warnings.warn("This file %s does not exist" % filename)
-        return None
 
-    print(filename)
-    img_nii = nib.load(filename)
-    img_shape = img_nii.header.get_data_shape()
-    img_data = img_nii.get_data().astype(np.float32)
-    if len(img_shape) == 2:  # If the image is 2D it is expanded as a 3D
-        return np.expand_dims(img_data, axis=2)
-
-    if len(img_shape) == 3:  # do nothing if image is 3D
-        return img_data
-
-    if len(img_shape) == 4:  # 4D depends on use of multi time series
-        warnings.warn("A 4D image has been detected. As per Nifti "
-                      "standards, it will be considered as a time series "
-                      "image")
-        if not allow_timeseries:  # if no time series allowed, take only
-            # the first volume
-            warnings.warn("Time series not allowed in this setting, "
-                          "only the first volume will be returned")
-            return img_data[..., 0:1]
-        else:
-            # time series are moved to the 5th dimension
-            return np.swapaxes(np.expand_dims(img_data, axis=4), 4, 3)
-
-    if len(img_shape) == 5:
-        warnings.warn("A 5D image has been detected. As per Nifti "
-                      "conventions, it will be considered as a multimodal image")
-        if not allow_multimod_single_file:
-            warnings.warn("Multiple modalities in a single file not "
-                          "allowed in this setting. Only the first "
-                          "modality will be considered")
-            if img_shape[3] == 1:  # only one time point in the 4th dimension
-                return img_data[..., 0, 0]
-            else:
-                if not allow_timeseries:
-                    warnings.warn("Time series not allowed in this "
-                                  "setting, only the first volume of the "
-                                  "time series will be returned")
-                    return img_data[..., 0, 0]
-                else:
-                    return np.swapaxes(img_data[..., 0], 4, 3)
-        else:
-            if img_shape[3] == 1:  # only one time point in the image series
-                return np.swapaxes(img_data[..., 0, :], 4, 3)
-            elif not allow_timeseries:
-                warnings.warn("Time series not allowed in this setting, "
-                              "only the first volume multimodal will be "
-                              "returned")
-                return np.swapaxes(img_data[..., 0, :], 4, 3)
-            else:
-                return np.swapaxes(img_data, 4, 3)
 
 
 FILE_EXTENSIONS = [".nii.gz", ".tar.gz"]
@@ -294,8 +239,6 @@ def create_5d_from_array(data_array):
     return data_5d
 
 
-
-
 STANDARD_ORIENTATION = [[0, 1], [1, 1], [2, 1]]
 
 
@@ -314,18 +257,6 @@ def save_volume_5d(img_data, filename, save_path, img_ref=None):
     print('saved {}'.format(output_name))
 
 
-# Returns list of nifti filenames for given subject according to list of
-# directories
-def list_nifti_subject(list_data_dir, subject_id):
-    file_list = []
-    for data_dir in list_data_dir:
-        for file_name in os.listdir(data_dir):
-            path, name, ext = split_filename(file_name)
-            split_name = name.split('_')
-            if subject_id in split_name and 'nii' in ext:
-                file_list.append(os.path.join(data_dir, file_name))
-    return file_list
-
 def match_volume_shape_to_patch_definition(image_data, patch_shape):
     if image_data is None:
         return None
@@ -335,9 +266,10 @@ def match_volume_shape_to_patch_definition(image_data, patch_shape):
         image_data = np.expand_dims(image_data, axis=-1)
     return image_data
 
+
 def spatial_padding_to_indexes(spatial_padding):
     indexes = np.zeros((len(spatial_padding), 2), dtype=np.int)
-    for (i,s) in enumerate(spatial_padding):
+    for (i, s) in enumerate(spatial_padding):
         if len(s) == 1:
             indexes[i] = [s[0], s[0]]
         elif len(s) == 2:
@@ -347,39 +279,98 @@ def spatial_padding_to_indexes(spatial_padding):
     return indexes.flatten()
 
 
-# def adapt_to_shape(img_to_change, shape, mod='tile'):
-#     if img_to_change is None or img_to_change.size == 0:
-#         return np.zeros(shape)
-#     shape_to_change = img_to_change.shape
-#     if len(shape) < len(shape_to_change):
-#         raise ValueError('shape inconsistency')
-#     if np.all(shape_to_change == shape):
-#         return img_to_change
-#     new_img = np.resize(img_to_change, shape)
-#     return new_img
+    # def adapt_to_shape(img_to_change, shape, mod='tile'):
+    #     if img_to_change is None or img_to_change.size == 0:
+    #         return np.zeros(shape)
+    #     shape_to_change = img_to_change.shape
+    #     if len(shape) < len(shape_to_change):
+    #         raise ValueError('shape inconsistency')
+    #     if np.all(shape_to_change == shape):
+    #         return img_to_change
+    #     new_img = np.resize(img_to_change, shape)
+    #     return new_img
 
 
-# # Check compatibility in dimensions for the first 3 dimensions of two images
-# def check_shape_compatibility_3d(img1, img2):
-#     # consider by default that there are a min of 3 dimensions (2d images are
-#     # always expanded beforehand
-#     if img1.ndim < 3 or img2.ndim < 3:
-#         raise ValueError
-#     return np.all(img1.shape[:3] == img2.shape[:3])
+    # # Check compatibility in dimensions for the first 3 dimensions of two images
+    # def check_shape_compatibility_3d(img1, img2):
+    #     # consider by default that there are a min of 3 dimensions (2d images are
+    #     # always expanded beforehand
+    #     if img1.ndim < 3 or img2.ndim < 3:
+    #         raise ValueError
+    #     return np.all(img1.shape[:3] == img2.shape[:3])
 
-# def create_new_filename(filename_init, new_path='', new_prefix='',
-#                         new_suffix=''):
-#     path, name, ext = split_filename(filename_init)
-#     if new_path is None or len(new_path) == 0:
-#         new_path = path
-#     new_name = "%s_%s_%s" % (new_prefix, name, new_suffix)
-#     new_filename = os.path.join(new_path, new_name + ext)
-#     new_filename = clean_name(new_filename)
-#     return new_filename
+    # def create_new_filename(filename_init, new_path='', new_prefix='',
+    #                         new_suffix=''):
+    #     path, name, ext = split_filename(filename_init)
+    #     if new_path is None or len(new_path) == 0:
+    #         new_path = path
+    #     new_name = "%s_%s_%s" % (new_prefix, name, new_suffix)
+    #     new_filename = os.path.join(new_path, new_name + ext)
+    #     new_filename = clean_name(new_filename)
+    #     return new_filename
 
 
-# def clean_name(filename):
-#     filename = filename.replace("__", "_")
-#     filename = filename.replace("..", ".")
-#     filename = filename.replace("_.", ".")
-#     return filename
+    # def clean_name(filename):
+    #     filename = filename.replace("__", "_")
+    #     filename = filename.replace("..", ".")
+    #     filename = filename.replace("_.", ".")
+    #     return filename
+
+
+    # def load_volume(filename,
+    #                 allow_multimod_single_file=False,
+    #                 allow_timeseries=False):
+    #     if not os.path.exists(filename):
+    #         warnings.warn("This file %s does not exist" % filename)
+    #         return None
+    #
+    #     print(filename)
+    #     img_nii = nib.load(filename)
+    #     img_shape = img_nii.header.get_data_shape()
+    #     img_data = img_nii.get_data().astype(np.float32)
+    #     if len(img_shape) == 2:  # If the image is 2D it is expanded as a 3D
+    #         return np.expand_dims(img_data, axis=2)
+    #
+    #     if len(img_shape) == 3:  # do nothing if image is 3D
+    #         return img_data
+    #
+    #     if len(img_shape) == 4:  # 4D depends on use of multi time series
+    #         warnings.warn("A 4D image has been detected. As per Nifti "
+    #                       "standards, it will be considered as a time series "
+    #                       "image")
+    #         if not allow_timeseries:  # if no time series allowed, take only
+    #             # the first volume
+    #             warnings.warn("Time series not allowed in this setting, "
+    #                           "only the first volume will be returned")
+    #             return img_data[..., 0:1]
+    #         else:
+    #             # time series are moved to the 5th dimension
+    #             return np.swapaxes(np.expand_dims(img_data, axis=4), 4, 3)
+    #
+    #     if len(img_shape) == 5:
+    #         warnings.warn("A 5D image has been detected. As per Nifti "
+    #                       "conventions, it will be considered as a multimodal image")
+    #         if not allow_multimod_single_file:
+    #             warnings.warn("Multiple modalities in a single file not "
+    #                           "allowed in this setting. Only the first "
+    #                           "modality will be considered")
+    #             if img_shape[3] == 1:  # only one time point in the 4th dimension
+    #                 return img_data[..., 0, 0]
+    #             else:
+    #                 if not allow_timeseries:
+    #                     warnings.warn("Time series not allowed in this "
+    #                                   "setting, only the first volume of the "
+    #                                   "time series will be returned")
+    #                     return img_data[..., 0, 0]
+    #                 else:
+    #                     return np.swapaxes(img_data[..., 0], 4, 3)
+    #         else:
+    #             if img_shape[3] == 1:  # only one time point in the image series
+    #                 return np.swapaxes(img_data[..., 0, :], 4, 3)
+    #             elif not allow_timeseries:
+    #                 warnings.warn("Time series not allowed in this setting, "
+    #                               "only the first volume multimodal will be "
+    #                               "returned")
+    #                 return np.swapaxes(img_data[..., 0, :], 4, 3)
+    #             else:
+    #                 return np.swapaxes(img_data, 4, 3)
