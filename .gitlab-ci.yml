@@ -4,6 +4,7 @@ testjob:
     - master
     - module
   script:
+    - pkill -f coverage
     # set env
     - export PYTHONPATH="/home/wenqi/.local/lib/python2.7/site-packages":$PYTHONPATH
     - export PATH="/home/wenqi/.local/bin":$PATH
