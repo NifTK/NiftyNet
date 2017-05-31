@@ -111,6 +111,8 @@ def look_up_operations(type_str, supported):
         set_to_check = supported
     elif isinstance(supported, dict):
         set_to_check = set(supported.keys())
+    else:
+        set_to_check = set()
 
     edit_distances = {}
     for supported_key in set_to_check:
