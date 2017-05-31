@@ -46,7 +46,6 @@ class ConvLayer(TrainableLayer):
                  name='conv'):
         super(ConvLayer, self).__init__(name=name)
 
-
         self.padding = look_up_operations(padding.upper(), SUPPORTED_PADDING)
         self.n_output_chns = n_output_chns
         self.kernel_size = np.asarray(kernel_size).flatten()

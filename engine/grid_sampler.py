@@ -6,6 +6,14 @@ from engine.base_sampler import BaseSampler
 
 
 def generate_grid_coordinates(spatial_rank, img_size, win_size, grid_size):
+    """
+    Generate N-D coordinates with a fixed step size 'grid_size' in each dim
+    :param spatial_rank: the number of spatial dims
+    :param img_size: image size to be covered by the sampling grid
+    :param win_size: window size centered at each sampling point
+    :param grid_size: step size of the samples
+    :return: n*2 columns of coordinates for n-d image size
+    """
     if grid_size <= 0:
         return None
     assert np.all([d >= win_size for d in img_size[:spatial_rank]])
@@ -29,6 +37,14 @@ def generate_grid_coordinates(spatial_rank, img_size, win_size, grid_size):
 
 
 def _enumerate_step_points(starting, ending, win_size, step_size):
+    """
+    generate all possible sampling size in between starting and ending
+    :param starting: integer of starting value
+    :param ending: integer of ending value
+    :param win_size: integer of window length
+    :param step_size: integer of distance between two sampling points
+    :return: a set of unique sampling points
+    """
     sampling_point_set = []
     while (starting + win_size) <= ending:
         sampling_point_set.append(starting)

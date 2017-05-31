@@ -31,10 +31,12 @@ class ToySampler(BaseSampler):
 
             # generate a label
             if self.patch.has_labels:
-                self.patch.label = np.zeros(self.patch.full_label_shape)
+                self.patch.label = np.zeros(
+                    self.patch.full_label_shape)
 
             # generate a weight map
             if self.patch.has_weight_maps:
-                self.patch.weight_map = np.zeros(self.patch.full_weight_map_shape)
+                self.patch.weight_map = np.zeros(
+                    self.patch.full_weight_map_shape)
 
             yield self.patch

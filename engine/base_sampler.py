@@ -31,6 +31,7 @@ class BaseSampler(Layer):
 
     @property
     def placeholders(self):
+        # This is required to connect the sampler to an input buffer
         return self._placeholders
 
     @property

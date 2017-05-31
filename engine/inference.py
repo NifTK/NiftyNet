@@ -18,6 +18,15 @@ from utilities.input_placeholders import ImagePatch
 # run on single GPU with single thread
 def run(net_class, param, csv_dict, device_str):
     assert (param.batch_size <= param.queue_length)
+    # expanding a few of the user input parameters
+    spatial_padding = ((param.volume_padding_size, param.volume_padding_size),
+                       (param.volume_padding_size, param.volume_padding_size),
+                       (param.volume_padding_size, param.volume_padding_size))
+    param_n_channel_out = 1 if not param.output_prob else param.num_classes
+    interp_order = (param.image_interp_order,
+                    param.label_interp_order,
+                    param.w_map_interp_order)
+
     # read each line of csv files into an instance of Subject
     csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
 
@@ -28,19 +37,6 @@ def run(net_class, param, csv_dict, device_str):
                          cutoff=(param.cutoff_min, param.cutoff_max),
                          mask_type=param.mask_type)
     # define how to choose training volumes
-    spatial_padding = ((param.volume_padding_size, param.volume_padding_size),
-                       (param.volume_padding_size, param.volume_padding_size),
-                       (param.volume_padding_size, param.volume_padding_size))
-
-    param.reorientation = True if param.reorientation == "True" else False
-    param.resampling = True if param.resampling == "True" else False
-    param.normalisation = True if param.normalisation == "True" else False
-    param.whitening = True if param.whitening == "True" else False
-    param.output_prob = True if param.output_prob == "True" else False
-    param_n_channel_out = 1 if not param.output_prob else param.num_classes
-    interp_order = (param.image_interp_order,
-                    param.label_interp_order,
-                    param.w_map_interp_order)
     volume_loader = VolumeLoaderLayer(
         csv_loader,
         hist_norm,

@@ -280,6 +280,14 @@ def run():
                 'target_image_file': label_csv_path,
                 'weight_map_file': w_map_csv_path,
                 'target_note': None}
+
+    args.reorientation = True if args.reorientation == "True" else False
+    args.resampling = True if args.resampling == "True" else False
+    args.normalisation = True if args.normalisation == "True" else False
+    args.whitening = True if args.whitening == "True" else False
+    args.rotation = True if args.rotation == "True" else False
+    args.spatial_scaling = True if args.spatial_scaling == "True" else False
+    args.output_prob = True if args.output_prob == "True" else False
     return args, csv_dict
 
 

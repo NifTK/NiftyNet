@@ -1,6 +1,3 @@
-from __future__ import print_function, print_function, print_function, \
-    print_function
-
 import tensorflow as tf
 
 import utilities.misc_csv as misc_csv
