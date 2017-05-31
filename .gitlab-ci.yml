@@ -4,7 +4,7 @@ testjob:
     - master
     - module
   script:
-    #- pkill -f coverage
+    - pkill -f coverage
     # set env
     - export PYTHONPATH="/home/wenqi/.local/lib/python2.7/site-packages":$PYTHONPATH
     - export PATH="/home/wenqi/.local/bin":$PATH
@@ -30,8 +30,8 @@ testjob:
     - coverage erase
     - coverage run -a --source . run_application.py train --image_size 42 --label_size 42 --batch_size 3
     - coverage run -a --source . run_application.py inference --image_size 84 --label_size 84 --batch_size 7
-    - coverage run -a --source . run_application.py train -c config/deepmedic_config.txt --batch_size=8 --queue_length=16 --num_threads=2
-    - coverage run -a --source . run_application.py inference -c config/deepmedic_config.txt --batch_size=64 --queue_length=64
+      #- coverage run -a --source . run_application.py train -c config/deepmedic_config.txt --batch_size=8 --queue_length=16 --num_threads=2
+      #- coverage run -a --source . run_application.py inference -c config/deepmedic_config.txt --batch_size=64 --queue_length=64
     - coverage run -a --source . -m testing.activation_test
     - coverage run -a --source . -m testing.bn_test
     - coverage run -a --source . -m testing.convolution_test
