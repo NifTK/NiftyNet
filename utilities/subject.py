@@ -326,6 +326,7 @@ class Subject(object):
             data_type = np.float
         else:
             data_type = np.int
+        print('preparing output size {}'.format(zeros_shape))
         return np.ones(zeros_shape, dtype=data_type) * init_value
 
     def save_network_output(self, data, save_path, interp_order=3):

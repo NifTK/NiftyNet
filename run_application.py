@@ -41,15 +41,15 @@ if __name__ == "__main__":
     if not (args.cuda_devices == '""'):
         os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda_devices
         print("set CUDA_VISIBLE_DEVICES env to {}".format(args.cuda_devices))
-    is_training = True if args.action == "train" else False
-    device_str = "gpu" if args.action == "train" and args.num_gpus > 0 else "cpu"
-
     net_class = NetFactory.create(args.net_name)
-    if is_training:
+
+    if args.action == "train":
         import engine.training
 
+        device_str = "gpu" if args.num_gpus > 0 else "cpu"
         engine.training.run(net_class, args, csv_dict, device_str)
     else:
         import engine.inference
 
+        device_str = "gpu" if args.num_gpus > 0 else "cpu"
         engine.inference.run(net_class, args, csv_dict, device_str)

@@ -114,24 +114,27 @@ def run(net_class, param, csv_dict, device_str):
             seg_batch_runner.run_threads(sess, coord, num_threads=1)
             img_id, pred_img, subject_i = None, None, None
             while True:
+                local_time = time.time()
                 if coord.should_stop():
                     break
                 seg_maps, spatial_info = sess.run([logits, info])
                 # go through each one in a batch
                 for batch_id in range(seg_maps.shape[0]):
                     if spatial_info[batch_id, 0] != img_id:
-                        # when spatial_info changed
+                        # when subject_id changed
                         # save current map and reset cumulative map variable
-                        if pred_img is not None and subject_i is not None:
+                        if subject_i is not None:
                             subject_i.save_network_output(
                                 pred_img,
                                 param.save_seg_dir,
                                 param.output_interp_order)
+
                         if patch_holder.is_stopping_signal(
                                 spatial_info[batch_id]):
                             print('received finishing batch')
                             all_saved_flag = True
                             seg_batch_runner.close_all()
+                            break
 
                         img_id = spatial_info[batch_id, 0]
                         subject_i = volume_loader.get_subject(img_id)
@@ -151,8 +154,7 @@ def run(net_class, param, csv_dict, device_str):
                     s_ = param.border
                     _s = patch_holder.label_size - param.border
                     # indexing within the prediction volume
-                    dest_start = origin + s_
-                    dest_end = origin + _s
+                    dest_start, dest_end = (origin + s_), (origin + _s)
                     assert np.all(dest_start >= 0)
                     assert np.all(dest_end <= pred_img.shape[0:spatial_rank])
                     if spatial_rank == 3:
@@ -167,6 +169,8 @@ def run(net_class, param, csv_dict, device_str):
                             predictions[s_:_s, s_:_s, ...]
                     else:
                         raise ValueError("unsupported spatial rank")
+                print('processed {} image patches ({:.3f}s)'.format(
+                    len(spatial_info), time.time() - local_time))
 
         except KeyboardInterrupt:
             print('User cancelled training')
