@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import utilities.misc_csv as misc_csv
 from utilities.subject import Subject
 
