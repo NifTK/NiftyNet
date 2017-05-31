@@ -2,10 +2,13 @@
 from __future__ import print_function
 
 import os
+import warnings
 
 import nibabel as nib
 import numpy as np
 import scipy.ndimage
+
+warnings.simplefilter("ignore", UserWarning)
 
 FILE_EXTENSIONS = [".nii.gz", ".tar.gz"]
 
@@ -74,7 +77,7 @@ def do_reorientation(data_array, ornt_init, ornt_fin):
 # do we need separate interp_order for each modality?
 def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     if data_array is None:
-        #warnings.warn("None array, nothing to resample")
+        # warnings.warn("None array, nothing to resample")
         return
     if np.array_equal(pixdim_fin, pixdim_init):
         return data_array

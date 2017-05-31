@@ -116,7 +116,6 @@ def run(net_class, param, csv_dict, device_str):
             weight_maps = train_pairs['weight_maps']
         else:
             weight_maps = None
-        # _ = net(images, is_training=True)
         for i in range(0, param.num_gpus):
             with tf.device("/{}:{}".format(device_str, i)):
                 predictions = net(images, is_training=True)

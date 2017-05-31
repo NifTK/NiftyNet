@@ -149,7 +149,7 @@ def run(net_class, param, csv_dict, device_str):
                     origin = spatial_info[batch_id, 1:(1 + spatial_rank)]
                     # indexing within the patch
                     s_ = param.border
-                    _s = patch_holder.image_size - param.border
+                    _s = patch_holder.label_size - param.border
                     # indexing within the prediction volume
                     dest_start = origin + s_
                     dest_end = origin + _s
