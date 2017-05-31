@@ -51,8 +51,8 @@ class HighRes3DNet(TrainableLayer):
         ### first convolution layer
         params = self.layers[0]
         first_conv_layer = ConvolutionalLayer(
-            params['n_features'],
-            params['kernel_size'],
+            n_output_chns=params['n_features'],
+            kernel_size=params['kernel_size'],
             acti_func=self.acti_func,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
@@ -108,8 +108,8 @@ class HighRes3DNet(TrainableLayer):
         ### 1x1x1 convolution layer
         params = self.layers[4]
         fc_layer = ConvolutionalLayer(
-            params['n_features'],
-            params['kernel_size'],
+            n_output_chns=params['n_features'],
+            kernel_size=params['kernel_size'],
             acti_func=self.acti_func,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
@@ -120,9 +120,9 @@ class HighRes3DNet(TrainableLayer):
         ### 1x1x1 convolution layer
         params = self.layers[5]
         fc_layer = ConvolutionalLayer(
-            params['n_features'],
-            params['kernel_size'],
-            acti_func=self.acti_func,
+            n_output_chns=params['n_features'],
+            kernel_size=params['kernel_size'],
+            acti_func=None,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
             name=params['name'])
@@ -131,11 +131,11 @@ class HighRes3DNet(TrainableLayer):
 
         # set training properties
         if is_training:
-            self._assign_initializer_regularizer(layer_instances)
+            self._print(layer_instances)
             return layer_instances[-1][1]
         return layer_instances[layer_id][1]
 
-    def _assign_initializer_regularizer(self, list_of_layers):
+    def _print(self, list_of_layers):
         for (op, _) in list_of_layers:
             print(op)
 

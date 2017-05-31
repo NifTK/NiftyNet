@@ -17,7 +17,7 @@ class NetFactory(object):
         elif name == "toynet":
             from network.toynet import ToyNet
             return ToyNet
-        elif name == "3dunet":
+        elif name == "unet":
             from network.unet import UNet3D
             return UNet3D
         elif name == "vnet":

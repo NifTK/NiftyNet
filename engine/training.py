@@ -19,7 +19,7 @@ np.random.seed(seed=int(time.time()))
 
 
 def run(net_class, param, csv_dict, device_str):
-    assert (param.batch_size <= param.queue_length)
+    param.queue_length = max(param.queue_length, param.batch_size)
     # expanding a few user input parameters
     spatial_padding = ((param.volume_padding_size, param.volume_padding_size),
                        (param.volume_padding_size, param.volume_padding_size),

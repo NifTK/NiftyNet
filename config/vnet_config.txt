@@ -1,4 +1,38 @@
+[image modality 1]
+path_to_search = ./example_volumes/monomodal_parcellation
+filename_contains = T1
+filename_not_contains =
+
+[label modality 1]
+path_to_search = ./example_volumes/monomodal_parcellation
+filename_contains = Label
+filename_not_contains =
+
 [settings]
+#histogram normalisation
+histogram_ref_file = ./example_volumes/monomodal_parcellation/standardisation_models.txt
+multimod_mask_type = and
+norm_type = percentile
+cutoff_min = 0.01
+cutoff_max = 0.99
+mask_type = otsu_plus
+
+# volume level preprocessing
+reorientation = True
+resampling = True
+normalisation = True
+whitening = True
+image_interp_order = 3
+label_interp_order = 0
+w_map_interp_order = 3
+
+# training augmentation
+rotation = True
+min_angle = -10.0
+max_angle = 10.0
+spatial_scaling = True
+max_percentage = 10.0
+
 cuda_devices = ""
 model_dir = ./models/model_vnet
 net_name = vnet
@@ -8,31 +42,34 @@ queue_length = 8
 num_threads = 2
 
 # network parameters (controlling memory consumption)
+spatial_rank = 3
 batch_size = 1
 image_size = 96
 label_size = 96
+w_map_size = 96
 num_classes = 160
 
 # affected by network's receptive field
 volume_padding_size = 21
-histogram_ref_file = ./example_volumes/monomodal_histogram_reference.pkl
 
 # ** training only ** system parameters
 num_gpus = 1
 sample_per_volume = 32
-train_data_dir = ./example_volumes/monomodal_parcellation
 
-# **training only** gradient descent and loss parameters
+# ** training only ** gradient descent and loss parameters
 lr = 0.0001
 decay = 1e-7
 loss_type = Dice
 reg_type = L2
 starting_iter = 0
-save_every_n = 5000
-max_iter = 30000
+save_every_n = 5
+max_iter = 10
 
-# **inference only** system parameters
+# ** inference only ** system parameters
 border = 5
-pred_iter = 10000
+pred_iter = 10
 save_seg_dir = ./output/vnet
 eval_data_dir = ./example_volumes/monomodal_parcellation
+
+output_interp_order = 0
+output_prob = False
