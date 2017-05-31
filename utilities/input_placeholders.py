@@ -2,6 +2,7 @@
 import numpy as np
 import tensorflow as tf
 
+
 class ImagePatch(object):
     """
     This class defines the output element of an image sampler and
@@ -221,8 +222,8 @@ class ImagePatch(object):
                 x_d, y_d, z_d = (x_ + diff), (y_ + diff), (z_ + diff)
                 self.label = \
                     seg.data[x_d: (self.label_size + x_d),
-                             y_d: (self.label_size + y_d),
-                             z_d: (self.label_size + z_d), :]
+                    y_d: (self.label_size + y_d),
+                    z_d: (self.label_size + z_d), :]
 
             if self.has_weight_maps and (w_map is not None):
                 diff = self.image_size - self.weight_map_size
@@ -230,8 +231,8 @@ class ImagePatch(object):
                 x_d, y_d, z_d = (x_ + diff), (y_ + diff), (z_ + diff)
                 self.weight_map = \
                     w_map.data[x_d: (self.weight_map_size + x_d),
-                               y_d: (self.weight_map_size + y_d),
-                               z_d: (self.weight_map_size + z_d), :]
+                    y_d: (self.weight_map_size + y_d),
+                    z_d: (self.weight_map_size + z_d), :]
 
         elif self.spatial_rank == 2:
             x_, y_, _x, _y, = spatial_loc
@@ -244,7 +245,7 @@ class ImagePatch(object):
                 x_d, y_d = (x_ + diff), (y_ + diff)
                 self.label = \
                     seg.data[x_d: (self.label_size + x_d),
-                             y_d: (self.label_size + y_d), :]
+                    y_d: (self.label_size + y_d), :]
 
             if self.has_weight_maps and (w_map is not None):
                 diff = self.image_size - self.weight_map_size
@@ -252,7 +253,7 @@ class ImagePatch(object):
                 x_d, y_d, = (x_ + diff), (y_ + diff)
                 self.weight_map = \
                     w_map.data[x_d: (self.weight_map_size + x_d),
-                               y_d: (self.weight_map_size + y_d), :]
+                    y_d: (self.weight_map_size + y_d), :]
 
     def as_dict(self, placeholders):
         out_list = [self.image, self.info]

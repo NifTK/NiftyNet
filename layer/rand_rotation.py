@@ -28,11 +28,11 @@ class RandomRotationLayer(Layer):
 
     def _randomise_transformation_3d(self):
         # generate transformation
-        angle_x = np.random.randint(
+        angle_x = np.random.uniform(
                 self.min_angle, self.max_angle) * np.pi / 180.0
-        angle_y = np.random.randint(
+        angle_y = np.random.uniform(
                 self.min_angle, self.max_angle) * np.pi / 180.0
-        angle_z = np.random.randint(
+        angle_z = np.random.uniform(
                 self.min_angle, self.max_angle) * np.pi / 180.0
         transform_x = np.array([[np.cos(angle_x), -np.sin(angle_x), 0.0],
                                 [np.sin(angle_x), np.cos(angle_x), 0.0],

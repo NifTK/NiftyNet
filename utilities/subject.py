@@ -16,7 +16,7 @@ class MultiModalFileList(object):
         assert multi_mod_filenames is not None
         self.multi_mod_filenames = multi_mod_filenames
 
-    def __call__(self):
+    def __call__(self, *args, **kwargs):
         return self.multi_mod_filenames
 
     @property
@@ -342,8 +342,7 @@ class Subject(object):
         util.save_volume_5d(data, filename, save_path, original_header)
 
     def __str__(self):
-        out_str = []
-        out_str.append('subject: {}'.format(self.name))
+        out_str = ['subject: {}'.format(self.name)]
         for ind in range(0, len(Subject.fields)):
             csv_field = Subject.fields[ind]
             csv_cell = self.column(ind)

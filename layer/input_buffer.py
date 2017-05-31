@@ -116,14 +116,18 @@ class InputBatchQueueRunner(object):
 
         except tf.errors.CancelledError:
             pass
-        except ValueError as e:
-            print(e)
-            self.close_all()
-        except RuntimeError as e:
-            print(e)
-            self.close_all()
+        #except ValueError as e:
+        #    print(e)
+        #    self.close_all()
+        #except RuntimeError as e:
+        #    print(e)
+        #    self.close_all()
         except Exception as e:
-            print(e)
+            import sys
+            import traceback
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_exception(
+                    exc_type, exc_value, exc_traceback, file=sys.stdout)
             self.close_all()
         finally:
             pass

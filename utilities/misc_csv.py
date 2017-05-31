@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import csv
 import numpy as np
 from difflib import SequenceMatcher
@@ -15,6 +16,8 @@ def load_subject_and_filenames_from_csv_file(csv_file,
                                              allow_missing=True,
                                              numb_mod=None):
     if csv_file is None:
+        return [], []
+    if not os.path.isfile(csv_file):
         return [], []
     list_subjects = []
     list_filenames = []
@@ -149,6 +152,8 @@ def remove_duplicated_names(name_list):
 def write_matched_filenames_to_csv(list_constraints, csv_file):
     name_tot = []
     list_tot = []
+    if list_constraints is None or list_constraints == []:
+        return
     for c in list_constraints:
         list_files, name_list = \
             KeywordsMatching.matching_subjects_and_filenames(c)
@@ -156,6 +161,9 @@ def write_matched_filenames_to_csv(list_constraints, csv_file):
         name_tot.append(name_list)
         list_tot.append(list_files)
     list_combined = join_subject_id_and_filename_list(name_tot, list_tot)
+    output_dir = os.path.dirname(csv_file)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
     with open(csv_file, 'wb') as csvfile:
         file_writer = csv.writer(csvfile, delimiter=',')
         for list_temp in list_combined:

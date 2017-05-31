@@ -6,60 +6,21 @@ import numpy as np
 import tensorflow as tf
 from six.moves import range
 
-from utilities.filename_matching import KeywordsMatching
-import utilities.misc_csv as misc_csv
 from layer.input_buffer import TrainEvalInputBuffer
 from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
-from utilities.input_placeholders import ImagePatch
 from layer.loss import LossFunction
 from layer.uniform_sampler import UniformSampler
 from layer.volume_loader import VolumeLoaderLayer
 from utilities import misc_common as util
 from utilities.csv_table import CSVTable
+from utilities.input_placeholders import ImagePatch
 
 np.random.seed(seed=int(time.time()))
 
 
-def run(net_class, param, device_str):
+def run(net_class, param, csv_dict, device_str):
     assert (param.batch_size <= param.queue_length)
-    constraint_T1 = KeywordsMatching(
-        ['./example_volumes/multimodal_BRATS'], ['T1'], ['T1c'])
-    constraint_FLAIR = KeywordsMatching(
-        ['./example_volumes/multimodal_BRATS'], ['Flair'], [])
-    constraint_T1c = KeywordsMatching(
-        ['./example_volumes/multimodal_BRATS'], ['T1c'], [])
-    constraint_T2 = KeywordsMatching(
-        ['./example_volumes/multimodal_BRATS'], ['T2'], [])
-    constraint_array = [constraint_FLAIR,
-                        constraint_T1,
-                        constraint_T1c,
-                        constraint_T2]
-    misc_csv.write_matched_filenames_to_csv(
-        constraint_array, './example_volumes/multimodal_BRATS/input.txt')
-
-    constraint_Label = KeywordsMatching(
-        ['./example_volumes/multimodal_BRATS'], ['Label'], [])
-    misc_csv.write_matched_filenames_to_csv(
-        [constraint_Label], './example_volumes/multimodal_BRATS/target.txt')
-
-    csv_dict = {'input_image_file': './example_volumes/multimodal_BRATS/input.txt',
-                'target_image_file': './example_volumes/multimodal_BRATS/target.txt',
-                'weight_map_file': None,
-                'target_note': None}
-
-    # read each line of csv files into an instance of Subject
-    csv_loader = CSVTable(csv_dict=csv_dict,
-                          modality_names=('FLAIR', 'T1', 'T1c', 'T2'),
-                          allow_missing=True)
-
-    # define how to normalise image volumes
-    hist_norm = HistNorm(
-        models_filename=param.histogram_ref_file,
-        multimod_mask_type=param.multimod_mask_type,
-        norm_type=param.norm_type,
-        cutoff=[param.cutoff_min, param.cutoff_max],
-        mask_type=param.mask_type)
-    # define how to choose training volumes
+    # expanding a few user input parameters
     spatial_padding = ((param.volume_padding_size, param.volume_padding_size),
                        (param.volume_padding_size, param.volume_padding_size),
                        (param.volume_padding_size, param.volume_padding_size))
@@ -70,11 +31,26 @@ def run(net_class, param, device_str):
     param.resampling = True if param.resampling == "True" else False
     param.normalisation = True if param.normalisation == "True" else False
     param.whitening = True if param.whitening == "True" else False
+    param.rotation = True if param.rotation == "True" else False
+    param.spatial_scaling = True if param.spatial_scaling == "True" else False
+
+    # read each line of csv files into an instance of Subject
+    csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
+
+    # defines how to normalise image volumes
+    hist_norm = HistNorm(
+        models_filename=param.histogram_ref_file,
+        multimod_mask_type=param.multimod_mask_type,
+        norm_type=param.norm_type,
+        cutoff=(param.cutoff_min, param.cutoff_max),
+        mask_type=param.mask_type)
+
+    # defines volume-level preprocessing
     volume_loader = VolumeLoaderLayer(
         csv_loader,
         hist_norm,
         is_training=True,
-        do_reorientation= param.reorientation,
+        do_reorientation=param.reorientation,
         do_resampling=param.resampling,
         spatial_padding=spatial_padding,
         do_normalisation=param.normalisation,
@@ -84,7 +60,7 @@ def run(net_class, param, device_str):
 
     graph = tf.Graph()
     with graph.as_default(), tf.device('/cpu:0'):
-        # define a training element
+        # defines a training element
         patch_holder = ImagePatch(
             image_shape=[param.image_size] * param.spatial_rank,
             label_shape=[param.label_size] * param.spatial_rank,
@@ -96,18 +72,18 @@ def run(net_class, param, device_str):
             num_label_modality=volume_loader.num_modality(1),
             num_weight_map=volume_loader.num_modality(2))
 
-        # define how to generate samples from the volume
+        # defines data augmentation for training
         augmentations = []
-        if param.rotation == "True":
+        if param.rotation:
             from layer.rand_rotation import RandomRotationLayer
             augmentations.append(RandomRotationLayer(
                 min_angle=param.min_angle,
                 max_angle=param.max_angle))
-        if param.spatial_scaling == "True":
+        if param.spatial_scaling:
             from layer.rand_spatial_scaling import RandomSpatialScalingLayer
             augmentations.append(RandomSpatialScalingLayer(
                 max_percentage=param.max_percentage))
-
+        # defines how to generate samples of the training element from volume
         sampler = UniformSampler(patch=patch_holder,
                                  volume_loader=volume_loader,
                                  patch_per_volume=param.sample_per_volume,
@@ -222,11 +198,12 @@ def run(net_class, param, device_str):
         except KeyboardInterrupt:
             print('User cancelled training')
         except tf.errors.OutOfRangeError as e:
-            print(e)
-        except ValueError as e:
-            print(e)
-        except RuntimeError as e:
-            print(e)
+            pass
+        except Exception:
+            import sys, traceback
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_exception(
+                exc_type, exc_value, exc_traceback, file=sys.stdout)
         finally:
             saver.save(sess, ckpt_name,
                        global_step=param.max_iter + param.starting_iter)

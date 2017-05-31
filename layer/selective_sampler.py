@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
-import numpy as np
 from copy import deepcopy
+
+import numpy as np
 
 import utilities.misc_io as io
 from .base_sampler import BaseSampler
-from .rand_rotation import RandomRotationLayer
-from .rand_spatial_scaling import RandomSpatialScalingLayer
 from .uniform_sampler import rand_spatial_coordinates
-from .spatial_location_check import SpatialLocationCheckLayer
 
 
 class SelectiveSampler(BaseSampler):
@@ -22,27 +20,18 @@ class SelectiveSampler(BaseSampler):
                  patch,
                  volume_loader,
                  spatial_location_check=None,
-                 data_augmentation_methods=['rotation', 'spatial_scaling'],
+                 data_augmentation_methods=None,
                  patch_per_volume=1,
                  name="selective_sampler"):
 
         super(SelectiveSampler, self).__init__(patch=patch, name=name)
         self.volume_loader = volume_loader
-
-        self.spatial_location_check = spatial_location_check
-        self.data_augmentation_layers = []
-        if data_augmentation_methods is not None:
-            for method in data_augmentation_methods:
-                if method == 'rotation':
-                    self.data_augmentation_layers.append(
-                        RandomRotationLayer(min_angle=-10.0, max_angle=10.0))
-                elif method == 'spatial_scaling':
-                    self.data_augmentation_layers.append(
-                        RandomSpatialScalingLayer(max_percentage=10.0))
-                else:
-                    raise ValueError('unkown data augmentation method')
-
         self.patch_per_volume = patch_per_volume
+        self.spatial_location_check = spatial_location_check
+        if data_augmentation_methods is None:
+            self.data_augmentation_layers = []
+        else:
+            self.data_augmentation_layers = data_augmentation_methods
 
     def layer_op(self, batch_size=1):
         """
@@ -85,7 +74,7 @@ class SelectiveSampler(BaseSampler):
                 img, seg, weight_map = aug(img), aug(seg), aug(weight_map)
 
             # to generate 'patch_per_volume' samples satisfying
-            # the conditions specified by spatial_location_check instance:
+            #  the conditions specified by spatial_location_check instance:
             # 'n_locations_to_check' samples are randomly sampled
             # and checked. This sampling and checking process is repeated
             # for 10 times at most.

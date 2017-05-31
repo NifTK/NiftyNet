@@ -35,7 +35,7 @@ class NetFactory(object):
 
 
 if __name__ == "__main__":
-    args = parse_user_params.run()
+    args, csv_dict = parse_user_params.run()
     if util.has_bad_inputs(args):
         sys.exit(-1)
     if not (args.cuda_devices == '""'):
@@ -48,8 +48,8 @@ if __name__ == "__main__":
     if is_training:
         import engine.training
 
-        engine.training.run(net_class, args, device_str)
+        engine.training.run(net_class, args, csv_dict, device_str)
     else:
         import engine.inference
 
-        engine.inference.run(net_class, args, device_str)
+        engine.inference.run(net_class, args, csv_dict, device_str)

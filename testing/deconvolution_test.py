@@ -155,7 +155,6 @@ class DeconvTest(tf.test.TestCase):
             out_3d = sess.run(conv_reg_out)
             self.assertAllClose((2, 33, 33, 33, 10), out_3d.shape)
 
-
     ### 2d tests
     def test_2d_deconv_default_shape(self):
         x_2d = self.get_2d_input()
@@ -296,6 +295,7 @@ class DeconvTest(tf.test.TestCase):
             sess.run(tf.global_variables_initializer())
             out_2d = sess.run(conv_reg_out)
             self.assertAllClose((2, 33, 33, 10), out_2d.shape)
+
 
 if __name__ == "__main__":
     tf.test.main()

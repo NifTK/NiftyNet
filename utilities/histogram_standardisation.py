@@ -19,7 +19,6 @@ Nyúl László G., Jayaram K. Udupa, and Xuan Zhang.
 IEEE transactions on medical imaging 19.2 (2000): 143-150.
 """
 
-
 DEFAULT_CUTOFF = [0.01, 0.99]
 
 
@@ -34,6 +33,7 @@ def percentiles(img, mask, cutoff):
 
 
 def standardise_cutoff(cutoff, type_hist='quartile'):
+    cutoff = np.asarray(cutoff)
     if cutoff is None:
         return DEFAULT_CUTOFF
     if len(cutoff) == 0:
@@ -62,7 +62,7 @@ def create_mapping_from_multimod_arrayfiles(array_files,
     perc_database = {}
     for p in array_files:
         img_data = io.csv_cell_to_volume_5d(p)
-        #numb_modalities = img_data.shape[3]
+        # numb_modalities = img_data.shape[3]
         numb_timepoints = img_data.shape[4]
         # to_do = {m: list_modalities[m] for m in list_modalities.keys() if
         #         list_modalities[m] < numb_modalities}
@@ -140,6 +140,7 @@ def create_mapping_perc(perc_database, s1, s2):
     final_map = final_map + intercept
     return final_map
 
+
 # TODO: test cases
 def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     range_to_use = None
@@ -163,8 +164,8 @@ def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     affine_map[0] = diff_mapping / diff_perc
     # compute intercepts of the linear models
     affine_map[1] = range_mapping[:-1] - affine_map[0] * range_perc[:-1]
-    #lin_img = np.ones_like(img, dtype=np.float32)
-    #aff_img = np.zeros_like(img, dtype=np.float32)
+    # lin_img = np.ones_like(img, dtype=np.float32)
+    # aff_img = np.zeros_like(img, dtype=np.float32)
 
     ### img < range_perc[0] set to affine_map[default], 1, 0
     ### img >= range_perc[9] set to affine_map[:,9]

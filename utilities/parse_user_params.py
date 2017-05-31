@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 import os
+import utilities.misc_csv as misc_csv
 
 try:
     import configparser
@@ -8,6 +9,27 @@ except ImportError:
     import ConfigParser as configparser
 
 from utilities.filename_matching import KeywordsMatching
+
+def _input_path_search(config):
+    # match flexible input modality sections
+    image_keywords = []
+    label_keywords = []
+    w_map_keywords = []
+    for section in config.sections():
+        section = section.lower()
+        if 'image' in section:
+            image_keywords.append(config.items(section))
+        elif 'label' in section:
+            label_keywords.append(config.items(section))
+        elif 'weight' in section:
+            w_map_keywords.append(config.items(section))
+    image_matcher = [KeywordsMatching.from_tuple(mod_info)
+                     for mod_info in image_keywords]
+    label_matcher = [KeywordsMatching.from_tuple(mod_info)
+                     for mod_info in label_keywords]
+    w_map_matcher = [KeywordsMatching.from_tuple(mod_info)
+                     for mod_info in w_map_keywords]
+    return image_matcher, label_matcher, w_map_matcher
 
 
 def run():
@@ -21,33 +43,14 @@ def run():
     file_parser.set_defaults(**default_file)
     file_arg, remaining_argv = file_parser.parse_known_args()
 
-    if file_arg.conf:
+    try:
         config = configparser.ConfigParser()
         config.read([file_arg.conf])
-
-        # match flexible input modality sections
-        image_keywords = []
-        label_keywords = []
-        w_map_keywords = []
-        for section in config.sections():
-            section = section.lower()
-            if 'image' in section:
-                image_keywords.append(config.items(section))
-            elif 'label' in section:
-                label_keywords.append(config.items(section))
-            elif 'weight' in section:
-                w_map_keywords.append(config.items(section))
-        image_matcher = []
-        for modality_info in image_keywords:
-            image_matcher.append(KeywordsMatching.from_tuple(modality_info))
-        label_matcher = []
-        for modality_info in label_keywords:
-            label_matcher.append(KeywordsMatching.from_tuple(modality_info))
-        w_map_matcher = []
-        for modality_info in w_map_keywords:
-            w_map_matcher.append(KeywordsMatching.from_tuple(modality_info))
-
+        # initialise search of image modality filenames
+        image_matcher, label_matcher, w_map_matcher = _input_path_search(config)
         defaults = dict(config.items("settings"))
+    except Exception as e:
+        raise ValueError('configuration file not found')
 
     parser = argparse.ArgumentParser(
         parents=[file_parser],
@@ -238,6 +241,15 @@ def run():
         "--eval_data_dir",
         metavar='',
         help="[Inference only] Directory of image to be segmented")  # without '/'
+    parser.add_argument(
+        "--output_interp_order",
+        metavar='',
+        help="[Inference only] interpolation order of the network output",
+        type=int)
+    parser.add_argument(
+        "--output_prob",
+        metavar='',
+        help="[Inference only] whether to output multi-class probabilities")
     #parser.add_argument(
     #    "--min_sampling_ratio",
     #    help="Minumum ratio to satisfy in the sampling of different labels"
@@ -247,7 +259,28 @@ def run():
     #    help="Minimum number of different labels present in a patch"
     #)
     args = parser.parse_args(remaining_argv)
-    return args
+
+    # creating output
+    image_csv_path = os.path.join(args.model_dir, 'image_files.csv')
+    misc_csv.write_matched_filenames_to_csv(image_matcher, image_csv_path)
+
+    if label_matcher:
+        label_csv_path = os.path.join(args.model_dir, 'label_files.csv')
+        misc_csv.write_matched_filenames_to_csv(label_matcher, label_csv_path)
+    else:
+        label_csv_path = None
+
+    if w_map_matcher:
+        w_map_csv_path = os.path.join(args.model_dir, 'w_map_files.csv')
+        misc_csv.write_matched_filenames_to_csv(w_map_matcher, w_map_csv_path)
+    else:
+        w_map_csv_path = None
+
+    csv_dict = {'input_image_file': image_csv_path,
+                'target_image_file': label_csv_path,
+                'weight_map_file': w_map_csv_path,
+                'target_note': None}
+    return args, csv_dict
 
 
 def run_eval():
@@ -262,7 +295,7 @@ def run_eval():
     file_arg, remaining_argv = file_parser.parse_known_args()
 
     if file_arg.conf:
-        config = configparser.SafeConfigParser()
+        config = configparser.ConfigParser()
         config.read([file_arg.conf])
         defaults = dict(config.items("settings"))
 

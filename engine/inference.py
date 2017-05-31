@@ -7,8 +7,6 @@ import numpy as np
 import tensorflow as tf
 from six.moves import range
 
-from utilities.filename_matching import KeywordsMatching
-import utilities.misc_csv as misc_csv
 from layer.grid_sampler import GridSampler
 from layer.input_buffer import DeployInputBuffer
 from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
@@ -18,47 +16,16 @@ from utilities.input_placeholders import ImagePatch
 
 
 # run on single GPU with single thread
-def run(net_class, param, device_str):
-    param_output_interp_order = 3
-    param_output_probablities = False
-    param_n_channel_out = 1 if not param_output_probablities else param.num_classes
+def run(net_class, param, csv_dict, device_str):
     assert (param.batch_size <= param.queue_length)
-    constraint_T1 = KeywordsMatching(
-        ['./example_volumes/multimodal_BRATS'], ['T1'], ['T1c'])
-    constraint_FLAIR = KeywordsMatching(
-        ['./example_volumes/multimodal_BRATS'], ['Flair'], [])
-    constraint_T1c = KeywordsMatching(
-        ['./example_volumes/multimodal_BRATS'], ['T1c'], [])
-    constraint_T2 = KeywordsMatching(
-        ['./example_volumes/multimodal_BRATS'], ['T2'], [])
-    constraint_array = [constraint_FLAIR,
-                        constraint_T1,
-                        constraint_T1c,
-                        constraint_T2]
-    misc_csv.write_matched_filenames_to_csv(
-        constraint_array, './example_volumes/multimodal_BRATS/input.txt')
-
-    constraint_Label = KeywordsMatching(
-        ['./example_volumes/multimodal_BRATS'], ['Label'], [])
-    misc_csv.write_matched_filenames_to_csv(
-        [constraint_Label], './example_volumes/multimodal_BRATS/target.txt')
-
-    csv_dict = {
-        'input_image_file': './example_volumes/multimodal_BRATS/input.txt',
-        'target_image_file': None,
-        'weight_map_file': None,
-        'target_note': None}
-
     # read each line of csv files into an instance of Subject
-    csv_loader = CSVTable(csv_dict=csv_dict,
-                          modality_names=('FLAIR', 'T1', 'T1c', 'T2'),
-                          allow_missing=True)
+    csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
 
     # define how to normalise image volumes
     hist_norm = HistNorm(models_filename=param.histogram_ref_file,
                          multimod_mask_type=param.multimod_mask_type,
                          norm_type=param.norm_type,
-                         cutoff=[param.cutoff_min, param.cutoff_max],
+                         cutoff=(param.cutoff_min, param.cutoff_max),
                          mask_type=param.mask_type)
     # define how to choose training volumes
     spatial_padding = ((param.volume_padding_size, param.volume_padding_size),
@@ -69,6 +36,8 @@ def run(net_class, param, device_str):
     param.resampling = True if param.resampling == "True" else False
     param.normalisation = True if param.normalisation == "True" else False
     param.whitening = True if param.whitening == "True" else False
+    param.output_prob = True if param.output_prob == "True" else False
+    param_n_channel_out = 1 if not param.output_prob else param.num_classes
     interp_order = (param.image_interp_order,
                     param.label_interp_order,
                     param.w_map_interp_order)
@@ -90,22 +59,18 @@ def run(net_class, param, device_str):
         # construct inference queue and graph
         # TODO change batch size param - batch size could be larger in test case
 
-        #patch_holder = ImagePatch(
-        #    image_shape=[param.image_size] * 3,
-        #    label_shape=None,
-        #    weight_map_shape=None,
-        #    image_dtype=tf.float32,
-        #    label_dtype=tf.int64,
-        #    weight_map_dtype=tf.float32,
-        #    num_image_modality=volume_loader.num_modality(0),
-        #    num_label_modality=volume_loader.num_modality(1),
-        #    num_weight_map=1)
+        patch_holder = ImagePatch(
+            image_shape=[param.image_size] * param.spatial_rank,
+            label_shape=[param.label_size] * param.spatial_rank,
+            weight_map_shape=[param.w_map_size] * param.spatial_rank,
+            image_dtype=tf.float32,
+            label_dtype=tf.int64,
+            weight_map_dtype=tf.float32,
+            num_image_modality=volume_loader.num_modality(0),
+            num_label_modality=volume_loader.num_modality(1),
+            num_weight_map=volume_loader.num_modality(2))
 
         # `patch` instance with image data only
-        patch_holder = ImagePatch(
-            image_shape=[param.image_size] * 3,
-            image_dtype=tf.float32,
-            num_image_modality=volume_loader.num_modality(0))
         spatial_rank = patch_holder.spatial_rank
         sampling_grid_size = patch_holder.image_size - 2 * param.border
         assert sampling_grid_size > 0
@@ -122,7 +87,7 @@ def run(net_class, param, device_str):
         test_pairs = seg_batch_runner.pop_batch_op
         info = test_pairs['info']
         logits = net(test_pairs['images'], is_training=False)
-        if param_output_probablities:
+        if param.output_prob:
             logits = tf.nn.softmax(logits)
         else:
             logits = tf.argmax(logits, -1)
@@ -165,7 +130,7 @@ def run(net_class, param, device_str):
                             subject_i.save_network_output(
                                 pred_img,
                                 param.save_seg_dir,
-                                param_output_interp_order)
+                                param.output_interp_order)
                         if patch_holder.is_stopping_signal(
                                 spatial_info[batch_id]):
                             print('received finishing batch')
@@ -183,7 +148,7 @@ def run(net_class, param, device_str):
                         predictions = np.expand_dims(predictions, axis=-1)
 
                     # assign predicted patch to the allocated output volume
-                    origin = spatial_info[batch_id, 1:(1+spatial_rank)]
+                    origin = spatial_info[batch_id, 1:(1 + spatial_rank)]
                     # indexing within the patch
                     s_ = param.border
                     _s = patch_holder.image_size - param.border
@@ -207,14 +172,18 @@ def run(net_class, param, device_str):
 
         except KeyboardInterrupt:
             print('User cancelled training')
-        except tf.errors.OutOfRangeError:
+        except tf.errors.OutOfRangeError as e:
             pass
-        except Exception as unusual_error:
-            print(unusual_error)
+        except Exception:
+            import sys
+            import traceback
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_exception(
+                exc_type, exc_value, exc_traceback, file=sys.stdout)
             seg_batch_runner.close_all()
         finally:
             if not all_saved_flag:
-                raise ValueError('stopped early, incomplete predictions')
+                print('stopped early, incomplete predictions')
             print('inference.py time: {:.3f} seconds'.format(
                 time.time() - start_time))
             seg_batch_runner.close_all()

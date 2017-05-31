@@ -33,6 +33,7 @@ class ElementwiseLayer(TrainableLayer):
         n_bypass_flow = bypass_flow.get_shape()[-1]
         spatial_rank = layer_util.infer_spatial_rank(param_flow)
 
+        output_tensor = param_flow
         if self.func == 'SUM':
             if n_param_flow > n_bypass_flow:  # pad the channel dim
                 pad_1 = np.int((n_param_flow - n_bypass_flow) // 2)

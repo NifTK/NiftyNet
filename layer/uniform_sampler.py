@@ -38,7 +38,7 @@ class UniformSampler(BaseSampler):
         else:
             self.data_augmentation_layers = data_augmentation_methods
 
-    def layer_op(self):
+    def layer_op(self, batch_size=1):
         """
          problems:
             check how many modalities available

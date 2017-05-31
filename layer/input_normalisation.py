@@ -15,7 +15,7 @@ class HistogramNormalisationLayer(Layer):
                  models_filename,
                  multimod_mask_type='or',
                  norm_type='percentile',
-                 cutoff=[0.05, 0.95],
+                 cutoff=(0.05, 0.95),
                  mask_type='otsu_plus',
                  name='hist_norm'):
 

@@ -16,11 +16,9 @@ FILE_EXTENSIONS = [".nii.gz", ".tar.gz"]
 def create_affine_pixdim(affine, pixdim):
     norm_affine = np.sqrt(np.sum(np.square(affine[:, 0:3]), 0))
     to_divide = np.tile(
-        np.expand_dims(np.append(norm_affine, 1), axis=1),
-        [1, 4])
+        np.expand_dims(np.append(norm_affine, 1), axis=1), [1, 4])
     to_multiply = np.tile(
-        np.expand_dims(np.append(np.asarray(pixdim), 1), axis=1),
-        [1, 4])
+        np.expand_dims(np.append(np.asarray(pixdim), 1), axis=1), [1, 4])
     return np.multiply(np.divide(affine, to_divide.T), to_multiply.T)
 
 
@@ -251,6 +249,8 @@ def save_volume_5d(img_data, filename, save_path, img_ref=None):
 
 def match_volume_shape_to_patch_definition(image_data, patch_shape):
     if image_data is None:
+        return None
+    if patch_shape is None:
         return None
     while image_data.ndim > len(patch_shape):
         image_data = image_data[..., 0]

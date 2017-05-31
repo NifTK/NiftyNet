@@ -6,17 +6,17 @@ filename_not_contains = T1c
 [image modality 2]
 path_to_search = ./example_volumes/multimodal_BRATS
 filename_contains = Flair
-filename_not_contains = ""
+filename_not_contains =
 
 [image modality 3]
-path = ./example_volumes/multimodal_BRATS
+path_to_search = ./example_volumes/multimodal_BRATS
 filename_contains = T1c
-filename_not_contains = T1
+filename_not_contains =
 
 [image modality 4]
 path_to_search = ./example_volumes/multimodal_BRATS
 filename_contains = T2
-filename_not_contains = T2
+filename_not_contains =
 
 [label modality 1]
 path_to_search = ./example_volumes/multimodal_BRATS
@@ -24,7 +24,6 @@ filename_contains = Label
 filename_not_contains = T1
 
 [settings]
-
 #histogram normalisation
 histogram_ref_file = ./example_volumes/multimodal_BRATS/standardisation_models.txt
 multimod_mask_type = and
@@ -54,7 +53,7 @@ model_dir = ./models/model_toy
 net_name = toynet
 
 # preprocessing threads parameters
-queue_length = 8
+queue_length = 20
 num_threads = 2
 
 # network parameters (controlling memory consumption)
@@ -63,7 +62,7 @@ batch_size = 4
 image_size = 32
 label_size = 32
 w_map_size = 32
-num_classes = 160
+num_classes = 5
 
 # affected by network's receptive field
 volume_padding_size = 21
@@ -86,3 +85,6 @@ border = 5
 pred_iter = 10
 save_seg_dir = ./output/toy
 eval_data_dir = ./example_volumes/multimodal_BRATS
+
+output_interp_order = 3
+output_prob = False

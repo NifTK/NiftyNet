@@ -29,10 +29,10 @@ def default_b_initializer():
 def infer_output_dim(input_dim, stride, kernel_size, padding):
     assert input_dim is not None
     if padding == 'VALID':
-        output_dim = input_dim * stride + max(kernel_size - stride, 0)
+        return input_dim * stride + max(kernel_size - stride, 0)
     if padding == 'SAME':
-        output_dim = input_dim * stride
-    return output_dim
+        return input_dim * stride
+    return
 
 
 class DeconvLayer(TrainableLayer):

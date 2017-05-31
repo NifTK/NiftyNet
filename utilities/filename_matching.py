@@ -6,7 +6,7 @@ import misc_io as util
 
 
 class KeywordsMatching(object):
-    def __init__(self, list_paths=[], list_contain=[], list_not_contain=[]):
+    def __init__(self, list_paths=(), list_contain=(), list_not_contain=()):
         self.list_paths = list_paths
         self.list_contain = list_contain
         self.list_not_contain = list_not_contain
@@ -15,14 +15,19 @@ class KeywordsMatching(object):
     def from_tuple(cls, input_tuple):
         path, contain, not_contain = [], [], []
         for (name, value) in input_tuple:
+            if len(value) <= 1 or value == '""':
+                continue
             if name == "path_to_search":
-                path.append(value)
+                if os.path.exists(value):
+                    path.append(value)
+                else:
+                    raise ValueError('folder not found {}'.format(value))
             elif name == "filename_contains":
                 contain.append(value)
             elif name == "filename_not_contains":
                 not_contain.append(value)
-        new_subject = cls(path, contain, not_contain)
-        return new_subject
+        new_matcher = cls(tuple(path), tuple(contain), tuple(not_contain))
+        return new_matcher
 
     def matching_subjects_and_filenames(self):
         list_final = []
@@ -58,11 +63,10 @@ class KeywordsMatching(object):
             if name_pot_temp is not '':
                 name_pot.append(name_pot_temp)
             index_init = index_constraint[sort_indices[i]] + \
-                         len(self.list_contain[sort_indices[i]])
+                len(self.list_contain[sort_indices[i]])
 
         name_temp = name[index_init:]
         name_temp = ''.join(x for x in name_temp if x.isalnum())
         if name_temp is not '':
             name_pot.append(name_temp)
         return name_pot
-

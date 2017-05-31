@@ -11,7 +11,7 @@ class SpatialLocationCheckLayer(Layer):
     """
 
     def __init__(self,
-                 compulsory=[[0], [0]],
+                 compulsory=((0), (0)),
                  minimum_ratio=0.01,
                  min_numb_labels=1,
                  padding=0,
@@ -54,6 +54,8 @@ class SpatialLocationCheckLayer(Layer):
             xs, ys = location[0:spatial_rank] + self.padding
             xe, ye = location[spatial_rank:] - self.padding
             test_cube = self.discrete_volume[xs:xe, ys:ye, ...]
+        else:
+            raise ValueError("not supported spatial rank")
 
         uniq_, count_ = np.unique(np.asarray(test_cube).flatten(),
                                   return_counts=True)
