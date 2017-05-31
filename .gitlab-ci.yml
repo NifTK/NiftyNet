@@ -3,6 +3,7 @@ testjob:
     - citest
     - master
     - module
+    - defining_tests
   script:
     # set env
     - export PYTHONPATH="/home/wenqi/.local/lib/python2.7/site-packages":$PYTHONPATH
