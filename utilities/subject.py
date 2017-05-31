@@ -305,7 +305,11 @@ class Subject(object):
             dict_modalities[name_mod] = m
         return dict_modalities
 
-    def matrix_like_input_data_5d(self, spatial_rank, n_channels, init_value=0):
+    def matrix_like_input_data_5d(self,
+                                  spatial_rank,
+                                  n_channels,
+                                  interp_order,
+                                  init_value=0):
         """
         create an empty matrix with an optional initial values.
         the output is a 5d volume, with the first `spatial_rank` corresponding
@@ -317,7 +321,11 @@ class Subject(object):
         zeros_shape = self.input_image_shape[:spatial_rank] + (n_channels,)
         while len(zeros_shape) < 5:
             zeros_shape = zeros_shape + (1,)
-        return np.ones(zeros_shape) * init_value
+        if interp_order > 0:
+            data_type = np.float
+        else:
+            data_type = np.int
+        return np.ones(zeros_shape, dtype=data_type) * init_value
 
     def save_network_output(self, data, save_path, interp_order=3):
         if data is None:

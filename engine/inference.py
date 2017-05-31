@@ -140,7 +140,9 @@ def run(net_class, param, csv_dict, device_str):
                         img_id = spatial_info[batch_id, 0]
                         subject_i = volume_loader.get_subject(img_id)
                         pred_img = subject_i.matrix_like_input_data_5d(
-                            spatial_rank, param_n_channel_out)
+                            spatial_rank=spatial_rank,
+                            n_channels=param_n_channel_out,
+                            interp_order=param.output_interp_order)
 
                     # try to expand prediction dims to match the output volume
                     predictions = seg_maps[batch_id]

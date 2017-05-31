@@ -2,7 +2,6 @@
 from __future__ import print_function
 
 import os
-import warnings
 
 import nibabel as nib
 import numpy as np
@@ -32,10 +31,8 @@ def rectify_header_sform_qform(img_nii):
     flag_sform_problem = False
     flag_qform_problem = False
     if not np.array_equal(norm_sform, np.asarray(pixdim)):
-        warnings.warn("Incompatibility between header pixdim and sform")
         flag_sform_problem = True
     if not np.array_equal(norm_qform, np.asarray(pixdim)):
-        warnings.warn("Incompatibility between header pixdim and qform")
         flag_qform_problem = True
 
     if not flag_qform_problem and not flag_sform_problem:
@@ -77,7 +74,7 @@ def do_reorientation(data_array, ornt_init, ornt_fin):
 # do we need separate interp_order for each modality?
 def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     if data_array is None:
-        warnings.warn("None array, nothing to resample")
+        #warnings.warn("None array, nothing to resample")
         return
     if np.array_equal(pixdim_fin, pixdim_init):
         return data_array
