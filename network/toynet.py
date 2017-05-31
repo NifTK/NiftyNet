@@ -1,48 +1,44 @@
 # -*- coding: utf-8 -*-
-import tensorflow as tf
-
-from network.base_layer import BaseLayer
-from network.net_template import NetTemplate
+from layer.base_layer import TrainableLayer
+from layer.convolution import ConvolutionalLayer
 
 
-class ToyNet(NetTemplate):
+class ToyNet(TrainableLayer):
     def __init__(self,
-                 batch_size,
-                 image_size,
-                 label_size,
                  num_classes,
-                 is_training=True,
-                 device_str="cpu"):
-        super(ToyNet, self).__init__(batch_size,
-                                     image_size,
-                                     label_size,
-                                     num_classes,
-                                     is_training,
-                                     device_str)
-        self.num_features = [10]
-        self.set_activation_type('prelu')
-        #self.set_activation_type('relu')
-        self.name = "ToyNet"
-        print("{}\n" \
-              "3x3x3 convolution {} kernels\n" \
-              "Classifiying {} classes".format(
-            self.name, self.num_features, self.num_classes))
+                 w_initializer=None,
+                 w_regularizer=None,
+                 b_initializer=None,
+                 b_regularizer=None,
+                 acti_func='prelu',
+                 name='ToyNet'):
 
-    def inference(self, images, layer_id=None):
-        BaseLayer._print_activations(images)
-        with tf.variable_scope('conv_1_1') as scope:
-            conv_1_1 = self.conv_3x3(images, 1, self.num_features[0])
-            conv_1_1 = self.batch_norm(conv_1_1)
-            conv_1_1 = self.nonlinear_acti(conv_1_1)
-            BaseLayer._print_activations(conv_1_1)
+        super(ToyNet, self).__init__(name=name)
+        self.hidden_features = 10
+        self.num_classes = num_classes
 
-        ## 1x1x1 convolution "fully connected"
-        with tf.variable_scope('conv_fc') as scope:
-            conv_fc = self.conv_layer_1x1(conv_1_1,
-                                          self.num_features[0],
-                                          self.num_classes,
-                                          bias=True, bn=True, acti=False)
-            BaseLayer._print_activations(conv_fc)
+        self.initializers = {'w': w_initializer, 'b': b_initializer}
+        self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
-        if layer_id is None:
-            return conv_fc
+    def layer_op(self, images, is_training):
+        conv_1 = ConvolutionalLayer(self.hidden_features,
+                                    kernel_size=3,
+                                    w_initializer=self.initializers['w'],
+                                    w_regularizer=self.regularizers['w'],
+                                    b_initializer=self.initializers['b'],
+                                    b_regularizer=self.regularizers['b'],
+                                    acti_func='relu',
+                                    name='conv_input')
+
+        conv_2 = ConvolutionalLayer(self.num_classes,
+                                    kernel_size=1,
+                                    w_initializer=self.initializers['w'],
+                                    w_regularizer=self.regularizers['w'],
+                                    b_initializer=self.initializers['b'],
+                                    b_regularizer=self.regularizers['b'],
+                                    acti_func=None,
+                                    name='conv_output')
+
+        flow = conv_1(images, is_training)
+        flow = conv_2(flow, is_training)
+        return flow

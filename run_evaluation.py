@@ -1,5 +1,6 @@
 import sys
-import utilities.misc as util
+
+import utilities.misc_common as util
 import utilities.parse_user_params as parse_user_params
 
 if __name__ == "__main__":
@@ -8,7 +9,9 @@ if __name__ == "__main__":
         sys.exit(-1)
     if args.action.lower() == 'roi':
         import evaluation.compute_ROI_statistics
+
         evaluation.compute_ROI_statistics.run(args)
     elif args.action.lower() == 'compare':
         import evaluation.compare_segmentations
+
         evaluation.compare_segmentations.run(args)

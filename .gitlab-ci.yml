@@ -2,11 +2,12 @@ testjob:
   only:
     - citest
     - master
+    - module
+    - defining_tests
   script:
     # set env
     - export PYTHONPATH="/home/wenqi/.local/lib/python2.7/site-packages":$PYTHONPATH
     - export PATH="/home/wenqi/.local/bin":$PATH
-    - export CUDA_VISIBLE_DEVICES='1';
 
     # print system info
     - which nvidia-smi
@@ -16,15 +17,69 @@ testjob:
     - python -c "import tensorflow as tf; from tensorflow.python.client import device_lib; print device_lib.list_local_devices()"
     - ls -la /dev | grep nvidia
 
+    - echo $(python testing/get_gpu_index.py)
+    - export CUDA_VISIBLE_DEVICES=$(python testing/get_gpu_index.py)
+
     # download data
     - wget -q https://www.dropbox.com/s/2unf08ylxvhc298/example_volumes.tar.gz
     - tar -xzvf example_volumes.tar.gz
+    - wget -q https://www.dropbox.com/s/94wa4fl8f8k3aie/testing_data.tar.gz
+    - tar -xzvf testing_data.tar.gz
 
     # run python code with coverage wrapper
     - coverage erase
-    - coverage run -a --source . run_application.py train --image_size 42 --label_size 42 --batch_size 2
-    - coverage run -a --source . run_application.py inference --image_size 64 --label_size 64 --batch_size 8
-    - coverage report
+
+    - coverage run -a --source . run_application.py train -c config/highres3dnet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2
+    - coverage run -a --source . run_application.py inference -c config/highres3dnet_config.txt --batch_size 8 --image_size 64 --label_size 64 --queue_length 32
+
+    - coverage run -a --source . run_application.py train -c config/scalenet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2
+    - coverage run -a --source . run_application.py inference -c config/scalenet_config.txt --batch_size 16 --image_size 64 --label_size 64 --queue_length 32
+
+    - coverage run -a --source . run_application.py train -c config/vnet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2
+    - coverage run -a --source . run_application.py inference -c config/vnet_config.txt --batch_size 16 --image_size 64 --label_size 64 --queue_length 32
+
+    - coverage run -a --source . run_application.py train -c config/unet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2
+    - coverage run -a --source . run_application.py inference -c config/unet_config.txt --batch_size 8 --image_size 64 --label_size 64 --queue_length 32
+
+    - coverage run -a --source . run_application.py train -c config/deepmedic_config.txt --batch_size 8 --queue_length 16 --num_threads 2
+    - coverage run -a --source . run_application.py inference -c config/deepmedic_config.txt --batch_size 64 --queue_length 96
+
+    - coverage run -a --source . run_application.py train --image_size 42 --label_size 42 --batch_size 3 --queue_length 6
+    - coverage run -a --source . run_application.py inference --image_size 84 --label_size 84 --batch_size 7 --queue_length 14
+
+    - coverage run -a --source . run_application.py train -c config/default_multimodal_config.txt --image_size 42 --label_size 42 --batch_size 3
+    - coverage run -a --source . run_application.py inference -c config/default_multimodal_config.txt --image_size 84 --label_size 84 --batch_size 7
+
+    - coverage run -a --source . -m testing.activation_test
+    - coverage run -a --source . -m testing.bn_test
+    - coverage run -a --source . -m testing.convolution_test
+    - coverage run -a --source . -m testing.deconvolution_test
+    - coverage run -a --source . -m testing.downsample_test
+    - coverage run -a --source . -m testing.elementwise_test
+    - coverage run -a --source . -m testing.highres3dnet_test
+    - coverage run -a --source . -m testing.highresblock_test
+    - coverage run -a --source . -m testing.upsample_test
+    - coverage run -a --source . -m testing.toynet_test
+    - coverage run -a --source . -m testing.crop_test
+    - coverage run -a --source . -m testing.deepmedic_test
+    - coverage run -a --source . -m testing.vnetblock_test
+    - coverage run -a --source . -m testing.vnet_test
+    - coverage run -a --source . -m testing.unetblock_test
+    - coverage run -a --source . -m testing.unet_test
+    - coverage run -a --source . -m testing.scaleblock_test
+    - coverage run -a --source . -m testing.scalenet_test
+    - coverage run -a --source . -m testing.toy_sampler_test
+    - coverage run -a --source . -m testing.input_buffer_test
+    - coverage run -a --source . -m testing.dilatedcontext_test
+    - coverage run -a --source . -m testing.loss_test
+    - coverage run -a --source . -m testing.subject_test
+    - coverage run -a --source . -m testing.volume_loader_test
+    - coverage run -a --source . -m testing.uniform_sampler_test
+    - coverage run -a --source . -m testing.grid_sampler_test
+    - coverage run -a --source . -m testing.selective_sampler_test
+    - coverage run -a --source . -m testing.rand_rotation_test
+    - coverage run -a --source . -m testing.rand_spatial_scaling_test
+    - coverage report -m
     - echo 'finished test'
   tags:
     - gift-linux

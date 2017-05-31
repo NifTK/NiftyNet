@@ -3,7 +3,7 @@ import scipy
 import nibabel as nib
 import numpy as np
 from pairwise_measures import PairwiseMeasures
-import utilities.misc as util
+import utilities.misc_common as util
 
 
 MEASURES = (
@@ -72,18 +72,18 @@ def run(param):
             print('Probabilistic analysis')
             threshold_steps = np.arange(0, 1, param.step)
 
-        for i in threshold_steps:
-            if i==0: continue
-            if i >= 1:  # discrete eval
-                seg_binary = np.asarray(seg == i, dtype=np.float32)
-                ref_binary = np.asarray(ref == i, dtype=np.float32)
-            elif i < 1:  # prob eval
-                seg_binary = np.asarray(seg >= i, dtype=np.float32)
+        for j in threshold_steps:
+            if j==0: continue
+            if j >= 1:  # discrete eval
+                seg_binary = np.asarray(seg == j, dtype=np.float32)
+                ref_binary = np.asarray(ref == j, dtype=np.float32)
+            elif j < 1:  # prob eval
+                seg_binary = np.asarray(seg >= j, dtype=np.float32)
                 ref_binary = np.asarray(ref >= 0.5, dtype=np.float32)
             if np.all(seg_binary==0):
                 print("Empty foreground in thresholded binary image.")
                 continue
             PE = PairwiseMeasures(seg_binary, ref_binary,
                     measures=MEASURES, num_neighbors=6, pixdim=voxel_sizes)
-            fixed_fields = "{}, {}, {},".format(ref_name, seg_name, i)
+            fixed_fields = "{}, {}, {},".format(ref_name, seg_name, j)
             print >> out_stream, fixed_fields + PE.to_string(OUTPUT_FORMAT)

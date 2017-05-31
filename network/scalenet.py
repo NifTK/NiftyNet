@@ -1,150 +1,121 @@
+# -*- coding: utf-8 -*-
 import tensorflow as tf
 from six.moves import range
 
-from network.base_layer import BaseLayer
-from network.highres3dnet import HighRes3DNet
+from layer.base_layer import TrainableLayer
+from layer.convolution import ConvolutionalLayer
+from network.highres3dnet import HighRes3DNet, HighResBlock
+from utilities.misc_common import look_up_operations
 
 
-class ScaleNet(HighRes3DNet):
+class ScaleNet(TrainableLayer):
     def __init__(self,
-                 batch_size,
-                 image_size,
-                 label_size,
                  num_classes,
-                 is_training=True,
-                 device_str="cpu"):
-        super(ScaleNet, self).__init__(batch_size,
-                                       image_size,
-                                       label_size,
-                                       num_classes,
-                                       is_training,
-                                       device_str)
-        self.num_res_blocks = [3, 3, 3]
-        self.num_features = [16, 32, 64, 80]
-        self.set_activation_type('relu')
-        self.num_scale_res_block = 1
-        self.merging_type = 'average'
-        self.name = "ScaleNet\n" \
-                    "{} scalable multiroot blocks with {} features\n" \
-                    "{} dilat-0 blocks with {} features\n" \
-                    "{} dilat-2 blocks with {} features\n" \
-                    "{} dilat-4 blocks with {} features\n" \
-                    "{} FC features to classify {} classes".format(
-            self.num_scale_res_block, self.num_features[0],
-            self.num_res_blocks[0], self.num_features[0],
-            self.num_res_blocks[1], self.num_features[1],
-            self.num_res_blocks[2], self.num_features[2],
-            self.num_features[3], num_classes)
-        print('using {}'.format(self.name))
+                 w_initializer=None,
+                 w_regularizer=None,
+                 b_initializer=None,
+                 b_regularizer=None,
+                 acti_func='prelu',
+                 name='ScaleNet'):
+        super(ScaleNet, self).__init__(name=name)
+
+        self.n_features = 16
+        self.num_classes = num_classes
+        self.acti_func = acti_func
+
+        self.initializers = {'w': w_initializer, 'b': b_initializer}
+        self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
+
+        print('using {}'.format(name))
+
+    def layer_op(self, images, is_training, layer_id=-1):
+        n_modality = images.get_shape().as_list()[-1]
+        rank = images.get_shape().ndims
+        assert n_modality > 1
+        roots = tf.split(images, n_modality, axis=rank - 1)
+        for (idx, root) in enumerate(roots):
+            conv_layer = ConvolutionalLayer(
+                n_output_chns=self.n_features,
+                kernel_size=3,
+                w_initializer=self.initializers['w'],
+                w_regularizer=self.regularizers['w'],
+                acti_func=self.acti_func,
+                name='conv_{}'.format(idx))
+            roots[idx] = conv_layer(root, is_training)
+        roots = tf.stack(roots, axis=-1)
+
+        back_end = ScaleBlock('AVERAGE', n_layers=1)
+        output_tensor = back_end(roots, is_training)
+
+        front_end = HighRes3DNet(self.num_classes)
+        output_tensor = front_end(output_tensor, is_training)
+        return output_tensor
 
 
-    def inference(self, images, layer_id=None):
-        BaseLayer._print_activations(images)
-        zero_paddings = [[0, 0], [0, 0], [0, 0]]
-        ########################################
-        # Back End
-        # images shape dimension must be [d_batch, d_z, d_y, d_x, d_mod]
-        roots = tf.unstack(images, axis=4)
-        nroots = len(roots)
-        for r in range(nroots):
-            with tf.variable_scope('mod%s_conv_1_1' % r) as scope:
-                roots[r] = tf.expand_dims(roots[r], axis=4)
-                roots[r] = self.conv_3x3(roots[r], 1, self.num_features[0])
-                roots[r] = self.batch_norm(roots[r])
-                roots[r] = self.nonlinear_acti(roots[r])
-                BaseLayer._print_activations(roots[r])
-        with tf.variable_scope('scalable_res') as scope:
-            roots = self._scalable_multiroots_res_block(
-                roots, nroots, self.num_features[0],
-                nroots, self.num_features[0], self.num_scale_res_block)
-            merged_root = self._merge_roots(roots)
-
-        ########################################
-        # Front End
-        # following layers are the same as for highres3dnet
-        with tf.variable_scope('res_1') as scope:
-            res_1 = self._res_block(merged_root,
-                                    self.num_features[0],
-                                    self.num_features[0],
-                                    self.num_res_blocks[0])
-
-        ## convolutions  dilation factor = 2
-        with tf.variable_scope('dilate_1_start') as scope:
-            res_1 = tf.space_to_batch_nd(res_1, [2, 2, 2], zero_paddings)
-            BaseLayer._print_activations(res_1)
-        with tf.variable_scope('res_2') as scope:
-            res_2 = self._res_block(res_1,
-                                    self.num_features[0],
-                                    self.num_features[1],
-                                    self.num_res_blocks[1])
-        with tf.variable_scope('dilate_1_end') as scope:
-            res_2 = tf.batch_to_space_nd(res_2, [2, 2, 2], zero_paddings)
-            BaseLayer._print_activations(res_2)
-
-        ## convolutions  dilation factor = 4
-        with tf.variable_scope('dilate_2_start') as scope:
-            res_2 = tf.space_to_batch_nd(res_2, [4, 4, 4], zero_paddings)
-            BaseLayer._print_activations(res_2)
-        with tf.variable_scope('res_3') as scope:
-            res_3 = self._res_block(res_2,
-                                    self.num_features[1],
-                                    self.num_features[2],
-                                    self.num_res_blocks[2])
-        with tf.variable_scope('dilate_2_end') as scope:
-            res_3 = tf.batch_to_space_nd(res_3, [4, 4, 4], zero_paddings)
-            BaseLayer._print_activations(res_3)
-
-        ## 1x1x1 convolution "fully connected"
-        with tf.variable_scope('conv_fc_1') as scope:
-            conv_fc = self.conv_layer_1x1(res_3,
-                                          self.num_features[2],
-                                          self.num_features[3],
-                                          bias=True, bn=True, acti=True)
-            BaseLayer._print_activations(conv_fc)
-
-        with tf.variable_scope('conv_fc_2') as scope:
-            conv_fc = self.conv_layer_1x1(conv_fc,
-                                          self.num_features[3],
-                                          self.num_classes,
-                                          bias=True, bn=True, acti=False)
-            BaseLayer._print_activations(conv_fc)
-
-        if layer_id == 'conv_features':
-            return res_3
-
-        if layer_id is None:
-            return conv_fc
+SUPPORTED_OP = {'MAX', 'AVERAGE'}
 
 
-    def _scalable_multiroots_res_block(self, roots, nroots_in, nfea_in,
-                                       nroots_out, nfea_out, n_layers):
-        if n_layers == 0:
-            return roots
-        for layer in range(n_layers):
-            # Permute root dimension and feature dimension
-            fea_roots = tf.unstack(tf.stack(roots, axis=5), axis=4)
-            # Cross roots res block for each feature in fea_roots
-            for fea in range(nfea_in):
-                with tf.variable_scope('fea_root%s_%s' % (fea, layer)):
-                    fea_roots[fea] = self._res_block(
-                        fea_roots[fea], nroots_in, nroots_out, n_blocks=1,
-                        conv_type=("3x3", "1x1"))
-            nroots_in = nroots_out
-            # Permute root dimension and feature dimension
-            roots = tf.unstack(tf.stack(fea_roots, axis=5), axis=4)
-            # Cross features res block for each root in roots
-            for r in range(nroots_in):
-                with tf.variable_scope('root%s_%s' % (r, layer)):
-                    roots[r] = self._res_block(
-                        roots[r], nfea_in, nfea_out, n_blocks=1,
-                        conv_type=("3x3", "1x1"))
-            nfea_in = nfea_out
-        return roots
+class ScaleBlock(TrainableLayer):
+    def __init__(self,
+                 func,
+                 n_layers=1,
+                 w_initializer=None,
+                 w_regularizer=None,
+                 acti_func='relu',
+                 name='scaleblock'):
+        self.func = look_up_operations(func.upper(), SUPPORTED_OP)
+        super(ScaleBlock, self).__init__(name=name)
+        self.n_layers = n_layers
+        self.acti_func = acti_func
 
+        self.initializers = {'w': w_initializer}
+        self.regularizers = {'w': w_regularizer}
 
-    def _merge_roots(self, roots):
-        if self.merging_type == 'maxout':
-            merged_out = tf.reduce_max(tf.stack(roots, axis=-1), axis=-1)
-        else: # default is 'average'
-            merged_out = tf.reduce_mean(tf.stack(roots, axis=-1), axis=-1)
-        return merged_out
+    def layer_op(self, input_tensor, is_training):
+        n_modality = input_tensor.get_shape().as_list()[-1]
+        n_chns = input_tensor.get_shape().as_list()[-2]
+        rank = input_tensor.get_shape().ndims
+        perm = [i for i in range(rank)]
+        perm[-2], perm[-1] = perm[-1], perm[-2]
+
+        output_tensor = input_tensor
+        for layer in range(self.n_layers):
+            # modalities => feature channels
+            output_tensor = tf.transpose(output_tensor, perm=perm)
+            output_tensor = tf.unstack(output_tensor, axis=-1)
+            for (idx, tensor) in enumerate(output_tensor):
+                block_name = 'M_F_{}_{}'.format(layer, idx)
+                highresblock_op = HighResBlock(
+                    n_output_chns=n_modality,
+                    kernels=(3, 1),
+                    with_res=True,
+                    w_initializer=self.initializers['w'],
+                    w_regularizer=self.regularizers['w'],
+                    acti_func=self.acti_func,
+                    name=block_name)
+                output_tensor[idx] = highresblock_op(tensor, is_training)
+                print(highresblock_op)
+            output_tensor = tf.stack(output_tensor, axis=-1)
+
+            # feature channels => modalities
+            output_tensor = tf.transpose(output_tensor, perm=perm)
+            output_tensor = tf.unstack(output_tensor, axis=-1)
+            for (idx, tensor) in enumerate(output_tensor):
+                block_name = 'F_M_{}_{}'.format(layer, idx)
+                highresblock_op = HighResBlock(
+                    n_output_chns=n_chns,
+                    kernels=(3, 1),
+                    with_res=True,
+                    w_initializer=self.initializers['w'],
+                    w_regularizer=self.regularizers['w'],
+                    acti_func=self.acti_func,
+                    name=block_name)
+                output_tensor[idx] = highresblock_op(tensor, is_training)
+                print(highresblock_op)
+            output_tensor = tf.stack(output_tensor, axis=-1)
+
+        if self.func == 'MAX':
+            output_tensor = tf.reduce_max(output_tensor, axis=-1)
+        elif self.func == 'AVERAGE':
+            output_tensor = tf.reduce_mean(output_tensor, axis=-1)
+        return output_tensor

@@ -1,12 +1,12 @@
 import numpy as np
 from sklearn.neighbors import DistanceMetric
-from utilities.misc import MorphologyOps
-from utilities.misc import CacheFunctionOutput
+
+from utilities.misc_common import MorphologyOps, CacheFunctionOutput
 
 
 class PairwiseMeasures(object):
     def __init__(self, seg_img, ref_img,
-            measures=None, num_neighbors=8, pixdim=[1, 1, 1]):
+                 measures=None, num_neighbors=8, pixdim=[1, 1, 1]):
 
         self.m_dict = {
             'ref volume': (self.n_pos_ref, 'Volume (Ref)'),
@@ -109,7 +109,7 @@ class PairwiseMeasures(object):
 
     def accuracy(self):
         return (self.tn() + self.tp()) / \
-                (self.tn() + self.tp() + self.fn() + self.fp())
+               (self.tn() + self.tp() + self.fn() + self.fp())
 
     def false_positive_rate(self):
         return self.fp() / self.n_neg_ref()
@@ -134,7 +134,7 @@ class PairwiseMeasures(object):
 
     def markedness(self):
         return self.positive_predictive_values() + \
-                self.negative_predictive_values() - 1
+               self.negative_predictive_values() - 1
 
     def vol_diff(self):
         return np.abs(self.n_pos_ref() - self.n_pos_seg()) / self.n_pos_ref()
@@ -153,12 +153,12 @@ class PairwiseMeasures(object):
         pairwise_dist = self._boundaries_dist_mat()
         return (np.sum(np.min(pairwise_dist, 0)) + \
                 np.sum(np.min(pairwise_dist, 1))) / \
-                (np.sum(self.ref + self.seg))
+               (np.sum(self.ref + self.seg))
 
     def hausdorff_distance(self):
         pairwise_dist = self._boundaries_dist_mat()
         return np.max((np.max(np.min(pairwise_dist, 0)),
-            np.max(np.min(pairwise_dist,1))))
+                       np.max(np.min(pairwise_dist, 1))))
 
     @CacheFunctionOutput
     def _connected_components(self):
@@ -187,12 +187,12 @@ class PairwiseMeasures(object):
         list_blobs_seg = np.unique(blobs_seg[blobs_seg > 0])
         mul_blobs_ref = np.multiply(blobs_ref, init)
         mul_blobs_seg = np.multiply(blobs_seg, init)
-        list_TP_ref = np.unique(mul_blobs_ref[mul_blobs_ref>0])
-        list_TP_seg = np.unique(mul_blobs_seg[mul_blobs_seg>0])
+        list_TP_ref = np.unique(mul_blobs_ref[mul_blobs_ref > 0])
+        list_TP_seg = np.unique(mul_blobs_seg[mul_blobs_seg > 0])
 
         list_FN = [x for x in list_blobs_ref if x not in list_TP_ref]
         list_FP = [x for x in list_blobs_seg if x not in list_TP_seg]
-        #print(np.max(blobs_ref),np.max(blobs_seg))
+        # print(np.max(blobs_ref),np.max(blobs_seg))
         tpc_map = np.zeros_like(blobs_ref)
         fpc_map = np.zeros_like(blobs_ref)
         fnc_map = np.zeros_like(blobs_ref)
@@ -210,19 +210,19 @@ class PairwiseMeasures(object):
         TPcMap, _, _ = self.connected_errormaps()
         OEFMap = self.ref - np.multiply(TPcMap, self.seg)
         unique, counts = np.unique(OEFMap, return_counts=True)
-        #print(counts)
+        # print(counts)
         OEFN = counts[unique == 1]
         OEFP = counts[unique == -1]
         OEFN = 0 if len(OEFN) == 0 else OEFN[0]
         OEFP = 0 if len(OEFP) == 0 else OEFP[0]
-        OER = 2*(OEFN + OEFP) / (self.n_pos_seg() + self.n_pos_ref())
+        OER = 2 * (OEFN + OEFP) / (self.n_pos_seg() + self.n_pos_ref())
         return OER, OEFP, OEFN
 
     def detection_error(self):
         TPcMap, FNcMap, FPcMap = self.connected_errormaps()
         DEFN = np.sum(FNcMap)
         DEFP = np.sum(FPcMap)
-        return DEFN+DEFP, DEFP, DEFN
+        return DEFN + DEFP, DEFP, DEFN
 
     def header_str(self):
         result_str = [self.m_dict[key][1] for key in self.measures]
@@ -234,6 +234,6 @@ class PairwiseMeasures(object):
         for key in self.measures:
             result = self.m_dict[key][0]()
             result_str += ','.join(fmt.format(x) for x in result) \
-                    if isinstance(result, tuple) else fmt.format(result)
+                if isinstance(result, tuple) else fmt.format(result)
             result_str += ','
         return result_str[:-1]  # trim the last comma

@@ -24,7 +24,6 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 * Nibabel 2.1
 * Numpy 1.12
 * Scipy 0.19
-* medpy 0.2.2
 * configparser
 * scikit-image
 

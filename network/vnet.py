@@ -1,112 +1,183 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
-from network.base_layer import BaseLayer
-from network.net_template import NetTemplate
+
+from layer import layer_util
+from layer.activation import ActiLayer
+from layer.base_layer import TrainableLayer
+from layer.convolution import ConvLayer
+from layer.deconvolution import DeconvLayer
+from layer.elementwise import ElementwiseLayer
+from utilities.misc_common import look_up_operations
 
 
-"""
-implementation of V-Net:
-  Milletari et al., "V-Net: Fully convolutional neural networks for
-  volumetric medical image segmentation", 3DV '16
-"""
-class VNet(NetTemplate):
+class VNet(TrainableLayer):
+    """
+    implementation of V-Net:
+      Milletari et al., "V-Net: Fully convolutional neural networks for
+      volumetric medical image segmentation", 3DV '16
+    """
+
     def __init__(self,
-                 batch_size,
-                 image_size,
-                 label_size,
                  num_classes,
-                 is_training=True,
-                 device_str="cpu"):
-        super(VNet, self).__init__(batch_size,
-                                   image_size,
-                                   label_size,
-                                   num_classes,
-                                   is_training,
-                                   device_str)
-        assert(image_size % 8 == 0) # image_size should be divisible by 8
-        self.num_fea = [16, 32, 64, 128, 256]
-        self.set_activation_type('prelu')
-        self.name = "VNet"
-        print("{}\n"\
-            "3x3x3 convolution {} kernels\n" \
-            "Classifiying {} classes".format(
-                self.name, self.num_fea, self.num_classes))
+                 w_initializer=None,
+                 w_regularizer=None,
+                 b_initializer=None,
+                 b_regularizer=None,
+                 acti_func='relu',
+                 name='VNet'):
+        super(VNet, self).__init__(name=name)
+
+        self.num_classes = num_classes
+        self.n_features = [16, 32, 64, 128, 256]
+        self.acti_func = acti_func
+
+        self.initializers = {'w': w_initializer, 'b': b_initializer}
+        self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
+
+        print('using {}'.format(name))
+
+    def layer_op(self, images, is_training, layer_id=-1):
+        assert layer_util.check_spatial_dims(images, lambda x: x % 8 == 0)
+
+        if layer_util.infer_spatial_rank(images) == 2:
+            padded_images = tf.tile(images, [1, 1, 1, self.n_features[0]])
+        elif layer_util.infer_spatial_rank(images) == 3:
+            padded_images = tf.tile(images, [1, 1, 1, 1, self.n_features[0]])
+        else:
+            raise ValueError('not supported spatial rank of the input image')
+        # downsampling  blocks
+        res_1, down_1 = VNetBlock('DOWNSAMPLE', 1,
+                                  self.n_features[0],
+                                  self.n_features[1],
+                                  w_initializer=self.initializers['w'],
+                                  w_regularizer=self.regularizers['w'],
+                                  acti_func=self.acti_func,
+                                  name='L1')(images, padded_images)
+        res_2, down_2 = VNetBlock('DOWNSAMPLE', 2,
+                                  self.n_features[1],
+                                  self.n_features[2],
+                                  w_initializer=self.initializers['w'],
+                                  w_regularizer=self.regularizers['w'],
+                                  acti_func=self.acti_func,
+                                  name='L2')(down_1, down_1)
+        res_3, down_3 = VNetBlock('DOWNSAMPLE', 3,
+                                  self.n_features[2],
+                                  self.n_features[3],
+                                  w_initializer=self.initializers['w'],
+                                  w_regularizer=self.regularizers['w'],
+                                  acti_func=self.acti_func,
+                                  name='L3')(down_2, down_2)
+        res_4, down_4 = VNetBlock('DOWNSAMPLE', 3,
+                                  self.n_features[3],
+                                  self.n_features[4],
+                                  acti_func=self.acti_func,
+                                  name='L4')(down_3, down_3)
+        # upsampling blocks
+        _, up_4 = VNetBlock('UPSAMPLE', 3,
+                            self.n_features[4],
+                            self.n_features[4],
+                            w_initializer=self.initializers['w'],
+                            w_regularizer=self.regularizers['w'],
+                            acti_func=self.acti_func,
+                            name='V_')(down_4, down_4)
+        concat_r4 = ElementwiseLayer('CONCAT')(up_4, res_4)
+        _, up_3 = VNetBlock('UPSAMPLE', 3,
+                            self.n_features[4],
+                            self.n_features[3],
+                            w_initializer=self.initializers['w'],
+                            w_regularizer=self.regularizers['w'],
+                            acti_func=self.acti_func,
+                            name='R4')(concat_r4, up_4)
+        concat_r3 = ElementwiseLayer('CONCAT')(up_3, res_3)
+        _, up_2 = VNetBlock('UPSAMPLE', 3,
+                            self.n_features[3],
+                            self.n_features[2],
+                            w_initializer=self.initializers['w'],
+                            w_regularizer=self.regularizers['w'],
+                            acti_func=self.acti_func,
+                            name='R3')(concat_r3, up_3)
+        concat_r2 = ElementwiseLayer('CONCAT')(up_2, res_2)
+        _, up_1 = VNetBlock('UPSAMPLE', 2,
+                            self.n_features[2],
+                            self.n_features[1],
+                            w_initializer=self.initializers['w'],
+                            w_regularizer=self.regularizers['w'],
+                            acti_func=self.acti_func,
+                            name='R2')(concat_r2, up_2)
+        # final class score
+        concat_r1 = ElementwiseLayer('CONCAT')(up_1, res_1)
+        _, output_tensor = VNetBlock('SAME', 1,
+                                     self.n_features[1],
+                                     self.num_classes,
+                                     w_initializer=self.initializers['w'],
+                                     w_regularizer=self.regularizers['w'],
+                                     b_initializer=self.initializers['b'],
+                                     b_regularizer=self.regularizers['b'],
+                                     acti_func=self.acti_func,
+                                     name='R1')(concat_r1, up_1)
+        return output_tensor
 
 
-    def inference(self, images, layer_id=None):
-        BaseLayer._print_activations(images)
-        pad_images = tf.tile(images, [1, 1, 1, 1, self.num_fea[0]])
-        with tf.variable_scope('L1') as scope:
-            res_1, down_1 = self._res_block_5x5(
-                images, pad_images, 1, self.num_fea[0], self.num_fea[1],
-                'downsample')
+SUPPORTED_OP = {'DOWNSAMPLE', 'UPSAMPLE', 'SAME'}
 
-        with tf.variable_scope('L2') as scope:
-            res_2, down_2 = self._res_block_5x5(
-                down_1, down_1, 2, self.num_fea[1], self.num_fea[2],
-                'downsample')
 
-        with tf.variable_scope('L3') as scope:
-            res_3, down_3 = self._res_block_5x5(
-                down_2, down_2, 3, self.num_fea[2], self.num_fea[3],
-                'downsample')
+class VNetBlock(TrainableLayer):
+    def __init__(self,
+                 func,
+                 n_conv,
+                 n_feature_chns,
+                 n_output_chns,
+                 w_initializer=None,
+                 w_regularizer=None,
+                 b_initializer=None,
+                 b_regularizer=None,
+                 acti_func='relu',
+                 name='vnet_block'):
 
-        with tf.variable_scope('L4') as scope:
-            res_4, down_4 = self._res_block_5x5(
-                down_3, down_3, 3, self.num_fea[3], self.num_fea[4],
-                'downsample')
+        super(VNetBlock, self).__init__(name=name)
 
-        with tf.variable_scope('V') as scope:
-            _, up_4 = self._res_block_5x5(
-                down_4, down_4, 3, self.num_fea[4], self.num_fea[4],
-                'upsample')
+        self.func = look_up_operations(func.upper(), SUPPORTED_OP)
+        self.n_conv = n_conv
+        self.n_feature_chns = n_feature_chns
+        self.n_output_chns = n_output_chns
+        self.acti_func = acti_func
 
-        with tf.variable_scope('R4') as scope:
-            concat_r4 = tf.concat([up_4, res_4], 4)
-            _, up_3 = self._res_block_5x5(
-                concat_r4, up_4, 3, self.num_fea[4], self.num_fea[3],
-                'upsample')
+        self.initializers = {'w': w_initializer, 'b': b_initializer}
+        self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
-        with tf.variable_scope('R3') as scope:
-            concat_r3 = tf.concat([up_3, res_3], 4)
-            _, up_2 = self._res_block_5x5(
-                concat_r3, up_3, 3, self.num_fea[3], self.num_fea[2],
-                'upsample')
+    def layer_op(self, main_flow, bypass_flow):
+        for i in range(self.n_conv):
+            main_flow = ConvLayer(name='conv_{}'.format(i),
+                                  n_output_chns=self.n_feature_chns,
+                                  w_initializer=self.initializers['w'],
+                                  w_regularizer=self.regularizers['w'],
+                                  kernel_size=5)(main_flow)
+            if i < self.n_conv - 1:  # no activation for the last conv layer
+                main_flow = ActiLayer(
+                    func=self.acti_func,
+                    regularizer=self.regularizers['w'])(main_flow)
+        res_flow = ElementwiseLayer('SUM')(main_flow, bypass_flow)
 
-        with tf.variable_scope('R2') as scope:
-            concat_r2 = tf.concat([up_2, res_2], 4)
-            _, up_1 = self._res_block_5x5(
-                concat_r2, up_2, 2, self.num_fea[2], self.num_fea[1],
-                'upsample')
-
-        with tf.variable_scope('R1') as scope:
-            concat_r1 = tf.concat([up_1, res_1], 4)
-            _, conv_fc = self._res_block_5x5(
-                concat_r1, up_1, 1, self.num_fea[1], self.num_classes,
-                'conv_1x1x1')
-
-        if layer_id is None:
-            return conv_fc
-
-    def _res_block_5x5(self, f_in, res_in,
-                       n_blocks, n_middle, n_out,
-                       type_str='downsample'):
-        # the residual block
-        ni_ = f_in.get_shape()[-1].value
-        for i in range(n_blocks):
-            with tf.variable_scope('5x5_conv_%d'%i) as scope:
-                conv = self.conv_5x5(f_in, ni_, n_middle)
-                f_in = self.nonlinear_acti(conv) if i < n_blocks - 1 else conv
-                ni_ = n_middle
-        res_f = res_in + f_in
-        # the main branch
-        if type_str is 'downsample':
-            conv_f_in = self.downsample_conv_2x2(res_f, n_middle, n_out)
-        elif type_str is 'upsample':
-            conv_f_in = self.upsample_conv_2x2(res_f, n_middle, n_out)
-        elif type_str is 'conv_1x1x1':
-            conv_f_in = self.conv_layer_1x1(res_f, n_middle, n_out,
-                                            bias=True, bn=False, acti=False)
-        conv_f_in = self.nonlinear_acti(conv_f_in)
-        BaseLayer._print_activations(conv_f_in)
-        return res_f, conv_f_in
+        if self.func == 'DOWNSAMPLE':
+            main_flow = ConvLayer(name='downsample',
+                                  n_output_chns=self.n_output_chns,
+                                  w_initializer=self.initializers['w'],
+                                  w_regularizer=self.regularizers['w'],
+                                  kernel_size=2, stride=2)(res_flow)
+        elif self.func == 'UPSAMPLE':
+            main_flow = DeconvLayer(name='upsample',
+                                    n_output_chns=self.n_output_chns,
+                                    w_initializer=self.initializers['w'],
+                                    w_regularizer=self.regularizers['w'],
+                                    kernel_size=2, stride=2)(res_flow)
+        elif self.func == 'SAME':
+            main_flow = ConvLayer(name='conv_1x1x1',
+                                  n_output_chns=self.n_output_chns,
+                                  w_initializer=self.initializers['w'],
+                                  w_regularizer=self.regularizers['w'],
+                                  b_initializer=self.initializers['b'],
+                                  b_regularizer=self.regularizers['b'],
+                                  kernel_size=1, with_bias=True)(res_flow)
+        main_flow = ActiLayer(self.acti_func)(main_flow)
+        print(self)
+        return res_flow, main_flow
