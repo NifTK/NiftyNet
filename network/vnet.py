@@ -7,6 +7,7 @@ from layer.base_layer import TrainableLayer
 from layer.convolution import ConvLayer
 from layer.deconvolution import DeconvLayer
 from layer.elementwise import ElementwiseLayer
+from utilities.misc_common import look_up_operations
 
 
 class VNet(TrainableLayer):
@@ -117,7 +118,7 @@ class VNet(TrainableLayer):
         return output_tensor
 
 
-SUPPORTED_OPS = {'DOWNSAMPLE', 'UPSAMPLE', 'SAME'}
+SUPPORTED_OP = {'DOWNSAMPLE', 'UPSAMPLE', 'SAME'}
 
 
 class VNetBlock(TrainableLayer):
@@ -135,8 +136,7 @@ class VNetBlock(TrainableLayer):
 
         super(VNetBlock, self).__init__(name=name)
 
-        self.func = func.upper()
-        assert self.func in SUPPORTED_OPS
+        self.func = look_up_operations(func.upper(), SUPPORTED_OP)
         self.n_conv = n_conv
         self.n_feature_chns = n_feature_chns
         self.n_output_chns = n_output_chns

@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 import tensorflow as tf
 
+from utilities.misc_common import look_up_operations
 from . import layer_util
 from .base_layer import TrainableLayer
 from .convolution import ConvLayer
@@ -20,8 +22,8 @@ class ElementwiseLayer(TrainableLayer):
                  initializer=None,
                  regularizer=None,
                  name='residual'):
-        self.func = func.upper()
-        assert self.func in SUPPORTED_OP
+
+        self.func = look_up_operations(func.upper(), SUPPORTED_OP)
         self.layer_name = '{}_{}'.format(name, self.func.lower())
 
         super(ElementwiseLayer, self).__init__(name=self.layer_name)

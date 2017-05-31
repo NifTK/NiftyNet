@@ -5,6 +5,7 @@ from layer.convolution import ConvolutionalLayer
 from layer.deconvolution import DeconvolutionalLayer
 from layer.downsample import DownSampleLayer
 from layer.elementwise import ElementwiseLayer
+from utilities.misc_common import look_up_operations
 
 
 class UNet3D(TrainableLayer):
@@ -132,8 +133,7 @@ class UNetBlock(TrainableLayer):
 
         super(UNetBlock, self).__init__(name=name)
 
-        self.func = func.upper()
-        assert self.func in SUPPORTED_OP
+        self.func = look_up_operations(func.upper(), SUPPORTED_OP)
 
         self.kernels = kernels
         self.n_chns = n_chns

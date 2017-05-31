@@ -99,10 +99,39 @@ class CacheFunctionOutput(object):
         return value
 
 
-def damerau_levenshtein_distance(s1, s2):
-    """Calculates an edit distance, for typo detection. Code based on : 
-    https://en.wikipedia.org/wiki/Damerau–Levenshtein_distance"""
+def look_up_operations(type_str, supported):
+    assert isinstance(type_str, str) or isinstance(type_str, unicode)
+    if type_str in supported and isinstance(supported, dict):
+        return supported[type_str]
 
+    if type_str in supported and isinstance(supported, set):
+        return type_str
+
+    if isinstance(supported, set):
+        set_to_check = supported
+    elif isinstance(supported, dict):
+        set_to_check = set(supported.keys())
+
+    edit_distances = {}
+    for supported_key in set_to_check:
+        edit_distance = _damerau_levenshtein_distance(supported_key,
+                                                      type_str)
+        if edit_distance <= 3:
+            edit_distances[supported_key] = edit_distance
+    if edit_distances:
+        guess_at_correct_spelling = min(edit_distances,
+                                        key=edit_distances.get)
+        raise ValueError('By "{0}", did you mean "{1}"?\n '
+                         '"{0}" is not a valid option.'.format(
+            type_str, guess_at_correct_spelling))
+    else:
+        raise ValueError("no supported operation \"{}\" "
+                         "is not found.".format(type_str))
+
+
+def _damerau_levenshtein_distance(s1, s2):
+    """Calculates an edit distance, for typo detection. Code based on :
+    https://en.wikipedia.org/wiki/Damerau–Levenshtein_distance"""
     d = {}
     string_1_length = len(s1)
     string_2_length = len(s2)

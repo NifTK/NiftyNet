@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 import tensorflow as tf
 
+from utilities.misc_common import look_up_operations
 from . import layer_util
 from .base_layer import Layer
 
@@ -16,19 +18,18 @@ class DownSampleLayer(Layer):
                  padding='SAME',
                  name='pooling'):
         self.func = func.upper()
-        assert self.func in SUPPORTED_OP
         self.layer_name = '{}_{}'.format(self.func.lower(), name)
         super(DownSampleLayer, self).__init__(name=self.layer_name)
 
         self.padding = padding.upper()
-        assert self.padding in SUPPORTED_PADDING
+        look_up_operations(self.padding, SUPPORTED_PADDING)
 
         self.kernel_size = kernel_size
         self.stride = stride
 
     def layer_op(self, input_tensor):
         spatial_rank = layer_util.infer_spatial_rank(input_tensor)
-
+        look_up_operations(self.func, SUPPORTED_OP)
         if self.func == 'CONSTANT':
             kernel_shape = np.hstack((
                 [self.kernel_size] * spatial_rank, 1, 1)).flatten()

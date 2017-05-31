@@ -33,6 +33,16 @@ def run(net_class, param, csv_dict, device_str):
     param.whitening = True if param.whitening == "True" else False
     param.rotation = True if param.rotation == "True" else False
     param.spatial_scaling = True if param.spatial_scaling == "True" else False
+    w_regularizer = None
+    b_regularizer = None
+    if param.reg_type.lower() == 'l2':
+        from tensorflow.contrib.layers.python.layers import regularizers
+        w_regularizer = regularizers.l2_regularizer(param.decay)
+        b_regularizer = regularizers.l2_regularizer(param.decay)
+    elif param.reg_type.lower() == 'l1':
+        from tensorflow.contrib.layers.python.layers import regularizers
+        w_regularizer = regularizers.l1_regularizer(param.decay)
+        b_regularizer = regularizers.l1_regularizer(param.decay)
 
     # read each line of csv files into an instance of Subject
     csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
@@ -90,11 +100,11 @@ def run(net_class, param, csv_dict, device_str):
                                  data_augmentation_methods=augmentations,
                                  name='uniform_sampler')
 
-        net = net_class(num_classes=param.num_classes)
+        net = net_class(num_classes=param.num_classes,
+                        w_regularizer=w_regularizer,
+                        b_regularizer=b_regularizer)
         loss_func = LossFunction(n_class=param.num_classes,
-                                 loss_type=param.loss_type,
-                                 reg_type=param.reg_type,
-                                 decay=param.decay)
+                                 loss_type=param.loss_type)
         # construct train queue
         train_batch_runner = TrainEvalInputBuffer(batch_size=param.batch_size,
                                                   capacity=param.queue_length,
@@ -118,7 +128,12 @@ def run(net_class, param, csv_dict, device_str):
         for i in range(0, param.num_gpus):
             with tf.device("/{}:{}".format(device_str, i)):
                 predictions = net(images, is_training=True)
-                loss = loss_func(predictions, labels, weight_maps)
+                data_loss = loss_func(predictions, labels, weight_maps)
+                reg_losses = graph.get_collection(
+                        tf.GraphKeys.REGULARIZATION_LOSSES)
+                reg_loss = tf.reduce_mean([tf.reduce_mean(reg_loss)
+                                          for reg_loss in reg_losses])
+                loss = data_loss + reg_loss
                 # TODO compute miss for dfferent target types
                 miss = tf.reduce_mean(tf.cast(
                     tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),

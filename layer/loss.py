@@ -3,119 +3,36 @@ import numpy as np
 import tensorflow as tf
 
 from layer.base_layer import Layer
-from utilities.misc_common import damerau_levenshtein_distance
+from utilities.misc_common import look_up_operations
 
 
 class LossFunction(Layer):
     def __init__(self,
                  n_class,
                  loss_type='Dice',
-                 reg_type='L2',
-                 decay=0.0,
                  loss_func_params={},
                  name='loss_function'):
 
         super(LossFunction, self).__init__(name=name)
-        self._num_classes = 0
+        self._num_classes = n_class
+        self._loss_func_params = loss_func_params
         self._data_loss_func = None
-        self._regularisation_loss_func = None
-        self._decay = None
-        self._loss_func_params = None
-        self._set_all_fields(
-            n_class, loss_type, reg_type, decay, loss_func_params)
-        print('Training loss: {}_loss + ({})*{}_loss'.format(
-            loss_type, decay, reg_type))
+        self.make_callable_loss_func(loss_type)
 
-    def _set_all_fields(self,
-                        n_class,
-                        loss_type,
-                        reg_type,
-                        decay,
-                        loss_func_params):
-        self.num_classes = n_class
-        self.data_loss_func = loss_type
-        self.regularisation_loss_func = reg_type
-        self.decay = decay
-        self.loss_func_params = loss_func_params
-
-    @property
-    def num_classes(self):
-        return self._num_classes
-
-    @property
-    def data_loss_func(self):
-        return self._data_loss_func
-
-    @property
-    def regularisation_loss_func(self):
-        return self._regularisation_loss_func
-
-    @property
-    def decay(self):
-        return self._decay
-
-    @property
-    def loss_func_params(self):
-        return self._loss_func_params
-
-    @num_classes.setter
-    def num_classes(self, value):
-        self._num_classes = value
-
-    @data_loss_func.setter
-    def data_loss_func(self, type_str):
-        if type_str in SUPPORTED_OPS.keys():
-            self._data_loss_func = SUPPORTED_OPS[type_str]
-        else:
-            edit_distances = {}
-            for loss_name in SUPPORTED_OPS.keys():
-                edit_distance = damerau_levenshtein_distance(loss_name,
-                                                             type_str)
-                if edit_distance <= 3:
-                    edit_distances[loss_name] = edit_distance
-            if edit_distances:
-                guess_at_correct_spelling = min(edit_distances,
-                                                key=edit_distances.get)
-                raise ValueError('By "{0}", did you mean "{1}"?\n '
-                                 '"{0}" is not a valid loss.'.format(
-                    type_str, guess_at_correct_spelling))
-            else:
-                raise ValueError("Loss type \"{}\" "
-                                 "is not found.".format(type_str))
-
-    @regularisation_loss_func.setter
-    def regularisation_loss_func(self, type_str):
-        if type_str.upper() == "L2":
-            self._regularisation_loss_func = l2_reg_loss
-        else:
-            raise NotImplementedError(
-                'regularisation parameters not implemented')
-
-    @decay.setter
-    def decay(self, value):
-        self._decay = value
-
-    @loss_func_params.setter
-    def loss_func_params(self, value):
-        self._loss_func_params = value
+    def make_callable_loss_func(self, type_str):
+        self._data_loss_func = look_up_operations(type_str, SUPPORTED_OPS)
 
     def layer_op(self, pred, label, weight_map=None, var_scope=None):
         with tf.device('/cpu:0'):
-            # data term
-            pred = tf.reshape(pred, [-1, self.num_classes])
+            pred = tf.reshape(pred, [-1, self._num_classes])
             label = tf.reshape(label, [-1])
-            if self.loss_func_params:
-                data_loss = self.data_loss_func(pred,
-                                                label,
-                                                **self.loss_func_params)
+            if self._loss_func_params:
+                data_loss = self._data_loss_func(pred,
+                                                 label,
+                                                 **self._loss_func_params)
             else:
-                data_loss = self.data_loss_func(pred, label)
-            if self.decay <= 0:
-                return data_loss
-
-            # regularisation term
-            reg_loss = self.regularisation_loss_func(var_scope)
-            return tf.add(data_loss, self.decay * reg_loss, name='total_loss')
+                data_loss = self._data_loss_func(pred, label)
+            return data_loss
 
 
 # Generalised Dice score with different type weights

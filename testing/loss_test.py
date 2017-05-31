@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 
 import numpy as np
@@ -23,7 +24,8 @@ class SensitivitySpecificityTests(tf.test.TestCase):
             # answer calculated by hand -
             predicted = tf.constant([[0, 1, 0], [0, 0, 1]], dtype=tf.float32, name='predicted')
             labels = tf.constant([1, 2], dtype=tf.int64, name='labels')
-            test_loss_func = LossFunction(3, loss_type='SensSpec', loss_func_params={'r': 0.05})
+            test_loss_func = LossFunction(3, loss_type='SensSpec',
+                                          loss_func_params={'r': 0.05})
             test_loss = test_loss_func(predicted, labels)
             self.assertAlmostEqual(test_loss.eval(), 0.14598623)
 
@@ -43,7 +45,9 @@ class GeneralisedDiceTest(tf.test.TestCase):
             with self.assertRaises(ValueError) as cm:
                 predicted = tf.constant([[0, 10], [10, 0], [10, 0], [10, 0]], dtype=tf.float32, name='predicted')
                 labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
-                test_loss_func = LossFunction(2, loss_type='GDSC', loss_func_params={'type_weight': 'unknown'})
+                test_loss_func = LossFunction(2, loss_type='GDSC',
+                                              loss_func_params={
+                                                  'type_weight': 'unknown'})
                 one_minus_generalised_dice_score = test_loss_func(predicted, labels)
                 # generalised_dice_loss(predicted, labels, type_weight='unknown')
                 # self.assertAllEqual(e, 'The variable type_weight "unknown" is not defined.')
@@ -52,7 +56,8 @@ class GeneralisedDiceTest(tf.test.TestCase):
         with self.test_session():
             predicted = tf.constant([[0, 10], [10, 0], [10, 0], [10, 0]], dtype=tf.float32, name='predicted')
             labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
-            test_loss_func = LossFunction(2, loss_type='GDSC', loss_func_params={'type_weight': 'Uniform'})
+            test_loss_func = LossFunction(2, loss_type='GDSC',
+                                          loss_func_params={'type_weight': 'Uniform'})
             one_minus_generalised_dice_score = test_loss_func(predicted, labels)
             self.assertAlmostEqual(one_minus_generalised_dice_score.eval(), 0.0476623)
 
@@ -104,14 +109,14 @@ class LossFunctionErrorsTest(tf.test.TestCase):
             with self.assertRaises(ValueError) as cm:
                 LossFunction(0, loss_type='dice')
             self.assertAllEqual(str(cm.exception),
-                                'By "dice", did you mean "Dice"?\n "dice" is not a valid loss.')
+                                'By "dice", did you mean "Dice"?\n "dice" is not a valid option.')
 
     def test_suggestion_for_gdsc_typo(self):
         with self.test_session():
             with self.assertRaises(ValueError) as cm:
                 LossFunction(0, loss_type='GSDC')
             self.assertAllEqual(str(cm.exception),
-                                'By "GSDC", did you mean "GDSC"?\n "GSDC" is not a valid loss.')
+                                'By "GSDC", did you mean "GDSC"?\n "GSDC" is not a valid option.')
 
 
 if __name__ == '__main__':

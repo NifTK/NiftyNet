@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 import tensorflow as tf
 
+from utilities.misc_common import look_up_operations
 from . import layer_util
 from .base_layer import TrainableLayer
 from .deconvolution import DeconvLayer
@@ -28,8 +30,7 @@ class UpSampleLayer(TrainableLayer):
                  b_initializer=None,
                  b_regularizer=None,
                  name='upsample'):
-        self.func = func.upper()
-        assert self.func in SUPPORTED_OP
+        self.func = look_up_operations(func.upper(), SUPPORTED_OP)
         self.layer_name = '{}_{}'.format(self.func.lower(), name)
         super(UpSampleLayer, self).__init__(name=self.layer_name)
 
@@ -42,6 +43,7 @@ class UpSampleLayer(TrainableLayer):
 
     def layer_op(self, input_tensor):
         spatial_rank = layer_util.infer_spatial_rank(input_tensor)
+        output_tensor = input_tensor
         if self.func == 'REPLICATE':
             if self.kernel_size != self.stride:
                 raise ValueError(
@@ -73,7 +75,4 @@ class UpSampleLayer(TrainableLayer):
                                          name='deconv_{}'.format(i))(x)
                              for (i, x) in enumerate(output_tensor)]
             output_tensor = tf.concat(output_tensor, axis=-1)
-        else:
-            raise ValueError('Unsupported function type')
-
         return output_tensor

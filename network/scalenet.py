@@ -5,6 +5,7 @@ from six.moves import range
 from layer.base_layer import TrainableLayer
 from layer.convolution import ConvolutionalLayer
 from network.highres3dnet import HighRes3DNet, HighResBlock
+from utilities.misc_common import look_up_operations
 
 
 class ScaleNet(TrainableLayer):
@@ -62,8 +63,7 @@ class ScaleBlock(TrainableLayer):
                  w_regularizer=None,
                  acti_func='relu',
                  name='scaleblock'):
-        self.func = func.upper()
-        assert self.func in SUPPORTED_OP
+        self.func = look_up_operations(func.upper(), SUPPORTED_OP)
         super(ScaleBlock, self).__init__(name=name)
         self.n_layers = n_layers
         self.acti_func = acti_func

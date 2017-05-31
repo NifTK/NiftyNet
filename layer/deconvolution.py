@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 import tensorflow as tf
 
+from utilities.misc_common import look_up_operations
 from . import layer_util
 from .activation import ActiLayer
 from .base_layer import TrainableLayer
@@ -56,8 +58,8 @@ class DeconvLayer(TrainableLayer):
 
         super(DeconvLayer, self).__init__(name=name)
 
-        self.padding = padding.upper()
-        assert self.padding in SUPPORTED_PADDING
+
+        self.padding = look_up_operations(padding.upper(), SUPPORTED_PADDING)
         self.n_output_chns = n_output_chns
         self.kernel_size = np.asarray(kernel_size).flatten()
         self.stride = np.asarray(stride).flatten()
