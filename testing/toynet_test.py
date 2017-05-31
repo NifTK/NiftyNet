@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from layer.toynet import ToyNet
+from network.toynet import ToyNet
 
 
 class ToyNetTest(tf.test.TestCase):

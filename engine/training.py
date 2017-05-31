@@ -6,11 +6,11 @@ import numpy as np
 import tensorflow as tf
 from six.moves import range
 
-from layer.input_buffer import TrainEvalInputBuffer
+from engine.input_buffer import TrainEvalInputBuffer
+from engine.uniform_sampler import UniformSampler
+from engine.volume_loader import VolumeLoaderLayer
 from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
 from layer.loss import LossFunction
-from layer.uniform_sampler import UniformSampler
-from layer.volume_loader import VolumeLoaderLayer
 from utilities import misc_common as util
 from utilities.csv_table import CSVTable
 from utilities.input_placeholders import ImagePatch

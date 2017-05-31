@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-from .base import Layer
+from layer.base_layer import Layer
 
 
 class SpatialLocationCheckLayer(Layer):

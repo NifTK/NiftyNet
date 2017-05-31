@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 from . import layer_util
-from .base import Layer
+from .base_layer import Layer
 
 SUPPORTED_OP = {'AVG', 'MAX', 'CONSTANT'}
 SUPPORTED_PADDING = {'SAME', 'VALID'}

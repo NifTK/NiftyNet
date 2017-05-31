@@ -1,7 +1,7 @@
 import tensorflow as tf
 
+from engine.toy_sampler import ToySampler
 from utilities.input_placeholders import ImagePatch
-from layer.toy_sampler import ToySampler
 
 
 class ToySamplerTest(tf.test.TestCase):

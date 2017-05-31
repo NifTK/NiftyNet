@@ -11,8 +11,8 @@ import threading
 
 import tensorflow as tf
 
+from engine.base_sampler import BaseSampler
 from utilities.input_placeholders import ImagePatch
-from .base_sampler import BaseSampler
 
 
 class InputBatchQueueRunner(object):

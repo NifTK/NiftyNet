@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
 
-from . import layer_util
-from .activation import ActiLayer
-from .base import TrainableLayer
-from .convolution import ConvLayer
-from .deconvolution import DeconvLayer
-from .elementwise import ElementwiseLayer
+from layer import layer_util
+from layer.activation import ActiLayer
+from layer.base_layer import TrainableLayer
+from layer.convolution import ConvLayer
+from layer.deconvolution import DeconvLayer
+from layer.elementwise import ElementwiseLayer
 
 
 class VNet(TrainableLayer):

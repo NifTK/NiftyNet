@@ -1,11 +1,10 @@
 import os
 import sys
 
-import numpy as np
 import tensorflow as tf
 
-from layer.input_buffer import DeployInputBuffer, TrainEvalInputBuffer
-from layer.toy_sampler import ToySampler
+from engine.input_buffer import DeployInputBuffer, TrainEvalInputBuffer
+from engine.toy_sampler import ToySampler
 from utilities.input_placeholders import ImagePatch
 
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)

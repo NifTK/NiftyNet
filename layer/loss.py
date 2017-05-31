@@ -2,7 +2,7 @@
 import numpy as np
 import tensorflow as tf
 
-from layer.base import Layer
+from layer.base_layer import Layer
 from utilities.misc_common import damerau_levenshtein_distance
 
 

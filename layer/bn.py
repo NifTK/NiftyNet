@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.python.training import moving_averages
 
-from .base import TrainableLayer
+from .base_layer import TrainableLayer
 
 
 def _compute_mean_and_var(inputs, axes):

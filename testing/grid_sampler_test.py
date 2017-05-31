@@ -1,9 +1,9 @@
 import tensorflow as tf
 
 # sampler
-from layer.grid_sampler import GridSampler
+from engine.grid_sampler import GridSampler
+from engine.volume_loader import VolumeLoaderLayer
 from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
-from layer.volume_loader import VolumeLoaderLayer
 from utilities.csv_table import CSVTable
 from utilities.input_placeholders import ImagePatch
 

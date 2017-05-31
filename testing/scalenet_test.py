@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
-from layer.scalenet import ScaleNet
+from network.scalenet import ScaleNet
 
 
 class ScaleNetTest(tf.test.TestCase):

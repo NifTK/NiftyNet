@@ -1,12 +1,12 @@
 import tensorflow as tf
 
-from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
 # sampler
-from layer.selective_sampler import SelectiveSampler
-from layer.volume_loader import VolumeLoaderLayer
+from engine.selective_sampler import SelectiveSampler
+from engine.spatial_location_check import SpatialLocationCheckLayer
+from engine.volume_loader import VolumeLoaderLayer
+from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
 from utilities.csv_table import CSVTable
 from utilities.input_placeholders import ImagePatch
-from layer.spatial_location_check import SpatialLocationCheckLayer
 
 
 class SubjectTest(tf.test.TestCase):

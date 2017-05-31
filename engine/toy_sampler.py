@@ -2,7 +2,7 @@
 import numpy as np
 from six.moves import range
 
-from .base_sampler import BaseSampler
+from engine.base_sampler import BaseSampler
 
 
 class ToySampler(BaseSampler):

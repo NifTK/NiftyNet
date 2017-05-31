@@ -3,7 +3,7 @@ import tensorflow as tf
 
 from . import layer_util
 from .activation import ActiLayer
-from .base import TrainableLayer
+from .base_layer import TrainableLayer
 from .bn import BNLayer
 
 SUPPORTED_OP = {'2D': tf.nn.conv2d_transpose,

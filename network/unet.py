@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-from . import layer_util
-from .base import TrainableLayer
-from .convolution import ConvolutionalLayer
-from .deconvolution import DeconvolutionalLayer
-from .downsample import DownSampleLayer
-from .elementwise import ElementwiseLayer
+from layer import layer_util
+from layer.base_layer import TrainableLayer
+from layer.convolution import ConvolutionalLayer
+from layer.deconvolution import DeconvolutionalLayer
+from layer.downsample import DownSampleLayer
+from layer.elementwise import ElementwiseLayer
 
 
 class UNet3D(TrainableLayer):

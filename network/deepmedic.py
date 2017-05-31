@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-from . import layer_util
-from .base import TrainableLayer
-from .convolution import ConvolutionalLayer
-from .crop import CropLayer
-from .downsample import DownSampleLayer
-from .elementwise import ElementwiseLayer
-from .upsample import UpSampleLayer
+from layer import layer_util
+from layer.base_layer import TrainableLayer
+from layer.convolution import ConvolutionalLayer
+from layer.crop import CropLayer
+from layer.downsample import DownSampleLayer
+from layer.elementwise import ElementwiseLayer
+from layer.upsample import UpSampleLayer
 
 
 class DeepMedic(TrainableLayer):

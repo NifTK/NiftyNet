@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from six.moves import range
 
-from . import layer_util
-from .activation import ActiLayer
-from .base import TrainableLayer
-from .bn import BNLayer
-from .convolution import ConvLayer, ConvolutionalLayer
-from .dilatedcontext import DilatedTensor
-from .elementwise import ElementwiseLayer
+from layer import layer_util
+from layer.activation import ActiLayer
+from layer.base_layer import TrainableLayer
+from layer.bn import BNLayer
+from layer.convolution import ConvLayer, ConvolutionalLayer
+from layer.dilatedcontext import DilatedTensor
+from layer.elementwise import ElementwiseLayer
 
 
 class HighRes3DNet(TrainableLayer):
@@ -20,8 +20,8 @@ class HighRes3DNet(TrainableLayer):
     def __init__(self,
                  num_classes,
                  w_initializer=None,
-                 b_initializer=None,
                  w_regularizer=None,
+                 b_initializer=None,
                  b_regularizer=None,
                  acti_func='prelu',
                  name='HighRes3DNet'):

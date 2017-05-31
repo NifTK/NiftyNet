@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import scipy.ndimage
 
-from .base import Layer
+from .base_layer import Layer
 
 
 class RandomRotationLayer(Layer):

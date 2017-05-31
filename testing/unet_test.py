@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
-from layer.unet import UNet3D
+from network.unet import UNet3D
 
 
 class UNet3DTest(tf.test.TestCase):

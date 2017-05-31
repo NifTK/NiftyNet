@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
-from layer.unet import UNetBlock
+from network.unet import UNetBlock
 
 
 class UNetBlockTest(tf.test.TestCase):

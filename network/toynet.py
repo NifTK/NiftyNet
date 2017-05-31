@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from .base import TrainableLayer
-from .convolution import ConvolutionalLayer
+from layer.base_layer import TrainableLayer
+from layer.convolution import ConvolutionalLayer
 
 
 class ToyNet(TrainableLayer):

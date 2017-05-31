@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
-from layer.highres3dnet import HighResBlock
+from network.highres3dnet import HighResBlock
 
 
 class HighResBlockTest(tf.test.TestCase):

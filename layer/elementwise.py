@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 from . import layer_util
-from .base import TrainableLayer
+from .base_layer import TrainableLayer
 from .convolution import ConvLayer
 
 SUPPORTED_OP = {'SUM', 'CONCAT'}

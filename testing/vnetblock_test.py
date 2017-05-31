@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
-from layer.vnet import VNetBlock
+from network.vnet import VNetBlock
 
 
 class VNetBlockTest(tf.test.TestCase):

@@ -3,11 +3,11 @@ from __future__ import print_function, print_function, print_function, \
 
 import tensorflow as tf
 
-from utilities.filename_matching import KeywordsMatching
 import utilities.misc_csv as misc_csv
+from engine.volume_loader import VolumeLoaderLayer
 from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
-from layer.volume_loader import VolumeLoaderLayer
 from utilities.csv_table import CSVTable
+from utilities.filename_matching import KeywordsMatching
 
 
 class SubjectTest(tf.test.TestCase):

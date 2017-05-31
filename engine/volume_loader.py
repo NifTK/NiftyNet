@@ -2,7 +2,7 @@ from random import shuffle
 
 import numpy as np
 
-from .base import Layer
+from layer.base_layer import Layer
 
 
 class VolumeLoaderLayer(Layer):

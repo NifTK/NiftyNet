@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-import numpy as np
 from copy import deepcopy
 
+import numpy as np
+
 import utilities.misc_io as io
-from .base_sampler import BaseSampler
+from engine.base_sampler import BaseSampler
 
 
 def rand_spatial_coordinates(spatial_rank, img_size, win_size, n_samples):

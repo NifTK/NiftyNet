@@ -12,22 +12,22 @@ class NetFactory(object):
     @staticmethod
     def create(name):
         if name == "highres3dnet":
-            from layer.highres3dnet import HighRes3DNet
+            from network.highres3dnet import HighRes3DNet
             return HighRes3DNet
         elif name == "toynet":
-            from layer.toynet import ToyNet
+            from network.toynet import ToyNet
             return ToyNet
         elif name == "3dunet":
-            from layer.unet import UNet3D
+            from network.unet import UNet3D
             return UNet3D
         elif name == "vnet":
-            from layer.vnet import VNet
+            from network.vnet import VNet
             return VNet
         elif name == "deepmedic":
-            from layer.deepmedic import DeepMedic
+            from network.deepmedic import DeepMedic
             return DeepMedic
         elif name == "scalenet":
-            from layer.scalenet import ScaleNet
+            from network.scalenet import ScaleNet
             return ScaleNet
         else:
             print("network: \"{}\" not implemented".format(name))

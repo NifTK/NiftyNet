@@ -7,7 +7,7 @@ import numpy as np
 import numpy.ma as ma
 
 import utilities.histogram_standardisation as hs
-from .base import Layer
+from .base_layer import Layer
 
 
 class HistogramNormalisationLayer(Layer):

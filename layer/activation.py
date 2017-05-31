@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from .base import TrainableLayer
+from .base_layer import TrainableLayer
 
 
 def prelu(f_in, channelwise_params):

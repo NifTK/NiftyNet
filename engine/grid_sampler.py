@@ -2,7 +2,7 @@
 import numpy as np
 
 import utilities.misc_io as io
-from .base_sampler import BaseSampler
+from engine.base_sampler import BaseSampler
 
 
 def generate_grid_coordinates(spatial_rank, img_size, win_size, grid_size):

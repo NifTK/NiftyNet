@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .base import Layer
+from layer.base_layer import Layer
 from utilities.input_placeholders import ImagePatch
 
 

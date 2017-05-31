@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
-from layer.scalenet import ScaleBlock
+from network.scalenet import ScaleBlock
 
 
 class ScaleBlockTest(tf.test.TestCase):

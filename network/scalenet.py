@@ -2,9 +2,9 @@
 import tensorflow as tf
 from six.moves import range
 
-from .base import TrainableLayer
-from .convolution import ConvolutionalLayer
-from .highres3dnet import HighRes3DNet, HighResBlock
+from layer.base_layer import TrainableLayer
+from layer.convolution import ConvolutionalLayer
+from network.highres3dnet import HighRes3DNet, HighResBlock
 
 
 class ScaleNet(TrainableLayer):

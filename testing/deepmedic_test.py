@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
-from layer.deepmedic import DeepMedic
+from network.deepmedic import DeepMedic
 
 
 class DeepMedicTest(tf.test.TestCase):
