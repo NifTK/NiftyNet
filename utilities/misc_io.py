@@ -149,7 +149,7 @@ def csv_cell_to_volume_5d(csv_cell):
         for m in range(0, numb_mod):
             data_array[t].append([])
             if not os.path.exists(csv_cell()[t][m]):
-                data_array[t][m] = np.zeros(dimensions)
+                data_array[t][m] = expand_to_5d(np.zeros(dimensions))
                 continue
             # load a 3d volume
             img_nii = nib.load(csv_cell()[t][m])
