@@ -20,7 +20,7 @@ def rand_spatial_coordinates(spatial_rank, img_size, win_size, n_samples):
 
 class UniformSampler(BaseSampler):
     """
-    This class generators samples by uniformly sampling each input volume
+    This class generates samples by uniformly sampling each input volume,
     currently up to 4D input is supported, Height x Width x Depth x Modality
     """
     def __init__(self,

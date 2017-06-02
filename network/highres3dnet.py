@@ -142,7 +142,7 @@ class HighRes3DNet(TrainableLayer):
 
 class HighResBlock(TrainableLayer):
     """
-    This class define a high-resolution block with residual connections
+    This class defines a high-resolution block with residual connections
     kernels - specify kernel sizes of each convolutional layer
             - e.g.: kernels=(5, 5, 5) indicate three conv layers of kernel_size 5
     with_res - whether to add residual connections to bypass the conv layers

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-This module define queues that stores training/evaluation images (and labels)
-TrainEvalInputBuffer provides randomised queue
+This module defines queues that stores training/evaluation images (and labels)
+TrainEvalInputBuffer provides a randomised queue
 
-DeployInputBuffer provides FIFO queue. This is designed for making
-patch-based predictions for multiple test volumes.
+DeployInputBuffer provides a FIFO queue. This is designed for making
+patch-based predictions for volumetric images.
 """
 
 import threading
@@ -17,13 +17,13 @@ from utilities.input_placeholders import ImagePatch
 
 class InputBatchQueueRunner(object):
     """
-    This class defines a light wrapper around queue objects
+    This class defines a light wrapper around 'queue' objects
     for training pair/evaluation pairs.
     After initialisation, run_threads() can be called with tf.session and
     tf.coordinator to start generating samples with multiple threads.
 
     The sampling threads can be stopped by:
-    close_all() called externally -- all threads quit immediately
+    calling close_all() externally -- all threads quit immediately
     """
 
     def __init__(self, batch_size, capacity, sampler, shuffle=True):

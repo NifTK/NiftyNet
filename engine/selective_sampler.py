@@ -35,10 +35,10 @@ class SelectiveSampler(BaseSampler):
 
     def layer_op(self, batch_size=1):
         """
-         problems:
-            check how many modalities available
-            check the colon operator
-            automatically handle mutlimodal by matching dims?
+        This function is similar to the uniform_sampler.py
+        Except that the spatial locations shou be validated against the
+        volumetric label maps to ensure each patch covers minimum
+        number of unique labels, proportion of a specific labels etc.
         """
         # batch_size is needed here so that it generates total number of
         # N samples where (N % batch_size) == 0
