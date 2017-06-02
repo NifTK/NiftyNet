@@ -7,7 +7,7 @@ with open('./gpu_tmp_log', 'r') as f:
     for line in f.readlines():
         gpu_info.append(line[:-1])
 free_memory = [float(x) for x in gpu_info[1:]]
-if free_memory[0] > 1000:
+if free_memory[0] > free_memory[1]:
     print('1')
 else:
     print('0')

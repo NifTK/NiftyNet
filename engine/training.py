@@ -60,7 +60,7 @@ def run(net_class, param, csv_dict, device_str):
             label_shape=[param.label_size] * param.spatial_rank,
             weight_map_shape=[param.w_map_size] * param.spatial_rank,
             image_dtype=tf.float32,
-            label_dtype=tf.int64,
+            label_dtype=tf.int64 if param.label_interp_order==0 else tf.float32,
             weight_map_dtype=tf.float32,
             num_image_modality=volume_loader.num_modality(0),
             num_label_modality=volume_loader.num_modality(1),

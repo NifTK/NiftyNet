@@ -66,7 +66,6 @@ def run(net_class, param, csv_dict, device_str):
             num_label_modality=volume_loader.num_modality(1),
             num_weight_map=volume_loader.num_modality(2))
 
-        # `patch` instance with image data only
         spatial_rank = patch_holder.spatial_rank
         sampling_grid_size = patch_holder.image_size - 2 * param.border
         assert sampling_grid_size > 0

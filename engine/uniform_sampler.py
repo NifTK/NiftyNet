@@ -20,10 +20,9 @@ def rand_spatial_coordinates(spatial_rank, img_size, win_size, n_samples):
 
 class UniformSampler(BaseSampler):
     """
-    This class generators samples by uniformly sampling each input volume
-    currently 4D input is supported, Height x Width x Depth x Modality
+    This class generates samples by uniformly sampling each input volume,
+    currently up to 4D input is supported, Height x Width x Depth x Modality
     """
-
     def __init__(self,
                  patch,
                  volume_loader,
@@ -41,10 +40,10 @@ class UniformSampler(BaseSampler):
 
     def layer_op(self, batch_size=1):
         """
-         problems:
-            check how many modalities available
-            check the colon operator
-            automatically handle mutlimodal by matching dims?
+        This layer reads the input volume size and generate
+        randomised sampling coordinates, patches at the coordinates
+        will be loaded and sent to the buffer.
+        This operation can be called from multiple threads
         """
         spatial_rank = self.patch.spatial_rank
         local_layers = [deepcopy(x) for x in self.data_augmentation_layers]
