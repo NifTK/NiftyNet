@@ -35,10 +35,10 @@ class SelectiveSampler(BaseSampler):
 
     def layer_op(self, batch_size=1):
         """
-        This function is similar to the uniform_sampler.py
-        Except that the spatial locations shou be validated against the
-        volumetric label maps to ensure each patch covers minimum
-        number of unique labels, proportion of a specific labels etc.
+         problems:
+            check how many modalities available
+            check the colon operator
+            automatically handle mutlimodal by matching dims?
         """
         # batch_size is needed here so that it generates total number of
         # N samples where (N % batch_size) == 0
@@ -55,18 +55,19 @@ class SelectiveSampler(BaseSampler):
             # (the matched result will be either 3d or 4d)
             img.spatial_rank = spatial_rank
             img.data = io.match_volume_shape_to_patch_definition(
-                img.data, self.patch.full_image_shape)
-            if img.data.ndim - spatial_rank > 1:
+                img.data, self.patch.full_informative_image_shape)
+            if img.data.ndim == 5:
                 raise NotImplementedError
                 # time series data are not supported
             if seg is not None:
                 seg.spatial_rank = spatial_rank
                 seg.data = io.match_volume_shape_to_patch_definition(
-                    seg.data, self.patch.full_label_shape)
+                    seg.data, self.patch.full_informative_label_shape)
             if weight_map is not None:
                 weight_map.spatial_rank = spatial_rank
                 weight_map.data = io.match_volume_shape_to_patch_definition(
-                    weight_map.data, self.patch.full_weight_map_shape)
+                    weight_map.data,
+                    self.patch.full_informative_weight_map_shape)
 
             # apply volume level augmentation
             for aug in local_layers:

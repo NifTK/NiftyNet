@@ -131,6 +131,8 @@ def join_subject_id_and_filename_list(name_list, list_files):
     list_combined = []
     for (i, name) in enumerate(name_max_to_use):
         list_temp = [name]
+        'To do : Taking care of the case when the list of a constraint is ' \
+        'completely empty'
         for c in range(0, len(list_files)):
             output = list_files[c][ind_tot[c][i]]
             list_temp.append(output)

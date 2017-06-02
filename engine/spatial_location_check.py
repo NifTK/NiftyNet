@@ -55,6 +55,11 @@ class SpatialLocationCheckLayer(Layer):
             xs, ys = location[0:spatial_rank] + self.padding
             xe, ye = location[spatial_rank:] - self.padding
             test_cube = self.discrete_volume[xs:xe, ys:ye, ...]
+        elif spatial_rank == 2.5:
+            xs, ys = location[0:spatial_rank] + self.padding
+            xe, ye = location[3:] - self.padding
+            z = location[2]
+            test_cube = self.discrete_volume[xs:xe, ys:ye, z, ...]
         else:
             raise ValueError("not supported spatial rank")
 

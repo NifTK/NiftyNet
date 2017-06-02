@@ -319,7 +319,8 @@ class Subject(object):
         1: segmentation map
         n: n_class probabilities or n-dim features from the network
         """
-        zeros_shape = self.input_image_shape[:spatial_rank] + (n_channels,)
+        zeros_shape = self.input_image_shape[:int(np.ceil(spatial_rank))] + (
+            n_channels,)
         while len(zeros_shape) < 5:
             zeros_shape = zeros_shape + (1,)
         if interp_order > 0:
@@ -339,7 +340,7 @@ class Subject(object):
                 data = data[ind[0]: (w - ind[1]),
                        ind[2]: (h - ind[3]),
                        ind[4]: (d - ind[5]), :, :]
-            if len(ind) == 4:  # spatial_rank == 2
+            if len(ind) == 4:  # spatial_rank == 2 or 2.5
                 w, h = data.shape[:2]
                 data = data[ind[0]: (w - ind[1]),
                        ind[2]: (h - ind[3]), :, :, :]

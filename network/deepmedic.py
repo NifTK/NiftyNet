@@ -48,7 +48,7 @@ class DeepMedic(TrainableLayer):
         #   normal path output: (image_size / d_factor - 16) * d_factor
 
         # where 16 is fixed by the receptive field of conv layers
-        # TODO: make sure label_size = (image_size/d_factor - 16) * d_factor
+        # TODO: make sure label_size = image_size/d_factor - 16
 
         assert self.d_factor % 2 == 1  # to make the downsampling centered
         assert (layer_util.check_spatial_dims(

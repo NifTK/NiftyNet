@@ -23,6 +23,7 @@ path_to_search = ./example_volumes/multimodal_BRATS
 filename_contains = Label
 filename_not_contains = T1
 
+
 [settings]
 #histogram normalisation
 histogram_ref_file = ./example_volumes/multimodal_BRATS/standardisation_models.txt

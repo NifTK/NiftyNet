@@ -8,6 +8,8 @@ from six.moves import range
 
 from engine.input_buffer import TrainEvalInputBuffer
 from engine.uniform_sampler import UniformSampler
+from engine.selective_sampler import SelectiveSampler
+from engine.spatial_location_check import SpatialLocationCheckLayer
 from engine.volume_loader import VolumeLoaderLayer
 from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
 from layer.loss import LossFunction
@@ -21,9 +23,18 @@ np.random.seed(seed=int(time.time()))
 def run(net_class, param, csv_dict, device_str):
     param.queue_length = max(param.queue_length, param.batch_size)
     # expanding a few user input parameters
-    spatial_padding = ((param.volume_padding_size, param.volume_padding_size),
-                       (param.volume_padding_size, param.volume_padding_size),
-                       (param.volume_padding_size, param.volume_padding_size))
+    if param.spatial_rank == 3:
+        spatial_padding = ((param.volume_padding_size,
+                            param.volume_padding_size),
+                           (param.volume_padding_size,
+                           param.volume_padding_size),
+                           (param.volume_padding_size,
+                           param.volume_padding_size))
+    else:
+        spatial_padding = ((param.volume_padding_size,
+                            param.volume_padding_size),
+                           (param.volume_padding_size,
+                           param.volume_padding_size))
     interp_order = (param.image_interp_order,
                     param.label_interp_order,
                     param.w_map_interp_order)
@@ -55,12 +66,21 @@ def run(net_class, param, csv_dict, device_str):
     graph = tf.Graph()
     with graph.as_default(), tf.device('/cpu:0'):
         # defines a training element
+        if param.spatial_rank == 2.5:
+            image_shape = [param.image_size] * 2
+            label_shape = [param.label_size] * 2
+            weight_map_shape = [param.w_map_size] * 2
+        else:
+            image_shape = [param.image_size] * int(param.spatial_rank)
+            label_shape = [param.label_size] * int(param.spatial_rank)
+            weight_map_shape = [param.w_map_size] * int(param.spatial_rank)
         patch_holder = ImagePatch(
-            image_shape=[param.image_size] * param.spatial_rank,
-            label_shape=[param.label_size] * param.spatial_rank,
-            weight_map_shape=[param.w_map_size] * param.spatial_rank,
+            image_shape=image_shape,
+            info_length=2*param.spatial_rank,
+            label_shape=label_shape,
+            weight_map_shape=weight_map_shape,
             image_dtype=tf.float32,
-            label_dtype=tf.int64 if param.label_interp_order==0 else tf.float32,
+            label_dtype=tf.int64,
             weight_map_dtype=tf.float32,
             num_image_modality=volume_loader.num_modality(0),
             num_label_modality=volume_loader.num_modality(1),

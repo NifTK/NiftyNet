@@ -87,7 +87,8 @@ def run():
         type=int)
 
     parser.add_argument(
-        "--spatial_rank", metavar='', help="Set input spatial rank", type=int)
+        "--spatial_rank", metavar='', help="Set input spatial rank",
+        choices=[2,2.5,3], type=float)
     parser.add_argument(
         "--batch_size", metavar='', help="Set batch size of the net", type=int)
     parser.add_argument(

@@ -48,6 +48,8 @@ def rectify_header_sform_qform(img_nii):
         else:
             affine = img_nii.affine
             pixdim = img_nii.header.get_zooms()
+            if len(pixdim) == 2:
+                pixdim = pixdim + (1,)
             new_affine = create_affine_pixdim(affine, pixdim)
             img_nii.set_sform(new_affine)
             img_nii.set_qform(new_affine)

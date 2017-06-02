@@ -8,21 +8,29 @@ from engine.base_sampler import BaseSampler
 
 
 def rand_spatial_coordinates(spatial_rank, img_size, win_size, n_samples):
-    assert np.all([d >= win_size for d in img_size[:spatial_rank]])
+    num_needed_location = int(np.ceil(spatial_rank))
+    num_window_dimension = int(np.floor(spatial_rank))
+    assert np.all([d >= win_size for d in img_size[:num_window_dimension]])
     # consisting of starting and ending coordinates
+
     all_coords = np.zeros((n_samples, spatial_rank * 2), dtype=np.int)
-    for i in range(0, spatial_rank):
+
+    for i in range(0, num_window_dimension):
         all_coords[:, i] = np.random.random_integers(
             0, max(img_size[i] - win_size, 1), n_samples)
-        all_coords[:, i + spatial_rank] = all_coords[:, i] + win_size
+        all_coords[:, i + num_needed_location] = all_coords[:, i] + win_size
+    if spatial_rank == 2.5:
+        all_coords[:, 2] = np.random.random_integers(0, max(img_size[2]-1,
+                                                            1), n_samples)
     return all_coords
 
 
 class UniformSampler(BaseSampler):
     """
-    This class generates samples by uniformly sampling each input volume,
-    currently up to 4D input is supported, Height x Width x Depth x Modality
+    This class generators samples by uniformly sampling each input volume
+    currently 4D input is supported, Height x Width x Depth x Modality
     """
+
     def __init__(self,
                  patch,
                  volume_loader,
@@ -40,10 +48,10 @@ class UniformSampler(BaseSampler):
 
     def layer_op(self, batch_size=1):
         """
-        This layer reads the input volume size and generate
-        randomised sampling coordinates, patches at the coordinates
-        will be loaded and sent to the buffer.
-        This operation can be called from multiple threads
+         problems:
+            check how many modalities available
+            check the colon operator
+            automatically handle mutlimodal by matching dims?
         """
         spatial_rank = self.patch.spatial_rank
         local_layers = [deepcopy(x) for x in self.data_augmentation_layers]
@@ -55,19 +63,20 @@ class UniformSampler(BaseSampler):
             # and match volumetric data shapes to the patch definition
             # (the matched result will be either 3d or 4d)
             img.spatial_rank = spatial_rank
+
             img.data = io.match_volume_shape_to_patch_definition(
-                img.data, patch.full_image_shape)
-            if img.data.ndim - spatial_rank > 1:
+                img.data, patch.full_informative_image_shape)
+            if img.data.ndim == 5:
                 raise NotImplementedError
                 # time series data are not supported
             if seg is not None:
                 seg.spatial_rank = spatial_rank
                 seg.data = io.match_volume_shape_to_patch_definition(
-                    seg.data, patch.full_label_shape)
+                    seg.data, patch.full_informative_label_shape)
             if weight_map is not None:
                 weight_map.spatial_rank = spatial_rank
                 weight_map.data = io.match_volume_shape_to_patch_definition(
-                    weight_map.data, patch.full_weight_map_shape)
+                    weight_map.data, patch.full_informative_weight_map_shape)
 
             # apply volume level augmentation
             for aug in local_layers:

@@ -8,6 +8,7 @@ class ImagePatch(object):
     This class defines the output element of an image sampler and
     the element in the input buffer.
 
+
     It assumes all images have same length in all spatial dims
     i.e., image_shape = [image_size] * spatial_rank
     and full_image_shape = [image_spatial_shape] + [number_of_modalities]
@@ -15,6 +16,7 @@ class ImagePatch(object):
 
     def __init__(self,
                  image_shape,
+                 info_length,
                  label_shape=None,
                  weight_map_shape=None,
                  image_dtype=tf.float32,
@@ -28,6 +30,7 @@ class ImagePatch(object):
         self._image_shape = image_shape
         self._label_shape = label_shape
         self._weight_map_shape = weight_map_shape
+        self._info_length = info_length
 
         # types
         self._image_dtype = image_dtype
@@ -40,10 +43,10 @@ class ImagePatch(object):
 
         assert len(set(image_shape)) == 1
         if label_shape is not None:
-            assert len(label_shape) == self.spatial_rank
+            assert len(label_shape) == int(np.floor(self.spatial_rank))
             assert len(set(label_shape)) == 1
         if weight_map_shape is not None:
-            assert len(weight_map_shape) == self.spatial_rank
+            assert len(weight_map_shape) == int(np.floor(self.spatial_rank))
             assert len(set(weight_map_shape)) == 1
 
         # actual data
@@ -56,7 +59,10 @@ class ImagePatch(object):
     def spatial_rank(self):
         # spatial_rank == 3 for volumetric images
         # spatial_rank == 2 for 2D images
-        return len(self._image_shape)
+        return 1.0*self._info_length/2.0
+        # if self._image_shape[-1] == 1:
+        #     return 2.5
+        # return len(self._image_shape)
 
     @property
     def has_labels(self):
@@ -88,22 +94,51 @@ class ImagePatch(object):
         return None
 
     @property
+    def num_window(self):
+        return np.floor(self.spatial_rank)
+
+    @property
+    def num_locations(self):
+        return np.ceil(self.spatial_rank)
+
+    @property
+    def full_informative_image_shape(self):
+        spatial_dims = [self.image_size] * self.num_window
+        if self.spatial_rank <= 2.5:
+            spatial_dims = spatial_dims + [1]
+        return spatial_dims + [self._num_image_modality]
+
+    @property
+    def full_informative_label_shape(self):
+        spatial_dims = [self.label_size] * self.num_window
+        if self.spatial_rank <= 2.5:
+            spatial_dims = spatial_dims + [1]
+        return spatial_dims + [self._num_label_modality]
+
+    @property
+    def full_informative_weight_shape(self):
+        spatial_dims = [self.weight_map_size] * self.num_window
+        if self.spatial_rank <= 2.5:
+            spatial_dims = spatial_dims + [1]
+        return spatial_dims + [self._num_weight_map]
+
+    @property
     def full_image_shape(self):
-        spatial_dims = [self.image_size] * self.spatial_rank
+        spatial_dims = [self.image_size] * self.num_window
         return spatial_dims + [self._num_image_modality]
 
     @property
     def full_label_shape(self):
         if self.has_labels:
             # assumes the samples have the same length in all spatial dims
-            spatial_dims = [self.label_size] * self.spatial_rank
+            spatial_dims = [self.label_size] * self.num_window
             return spatial_dims + [self._num_label_modality]
         return None
 
     @property
     def full_weight_map_shape(self):
         if self.has_weight_maps:
-            spatial_dims = [self.weight_map_size] * self.spatial_rank
+            spatial_dims = [self.weight_map_size] * self.num_window
             return spatial_dims + [self._num_weight_map]
         return None
 
@@ -238,14 +273,14 @@ class ImagePatch(object):
             x_, y_, _x, _y, = spatial_loc
             assert _x <= img.data.shape[0]
             assert _y <= img.data.shape[1]
-            self.image = img.data[x_:_x, y_:_y, :]
+            self.image = img.data[x_:_x, y_:_y, 0, :]
             if self.has_labels and (seg is not None):
                 diff = self.image_size - self.label_size
                 assert diff >= 0  # assumes label_size <= image_size
                 x_d, y_d = (x_ + diff), (y_ + diff)
                 self.label = \
                     seg.data[x_d: (self.label_size + x_d),
-                    y_d: (self.label_size + y_d), :]
+                    y_d: (self.label_size + y_d), 0, :]
 
             if self.has_weight_maps and (w_map is not None):
                 diff = self.image_size - self.weight_map_size
@@ -253,7 +288,31 @@ class ImagePatch(object):
                 x_d, y_d, = (x_ + diff), (y_ + diff)
                 self.weight_map = \
                     w_map.data[x_d: (self.weight_map_size + x_d),
-                    y_d: (self.weight_map_size + y_d), :]
+                    y_d: (self.weight_map_size + y_d), 0, :]
+
+        elif self.spatial_rank == 2.5:
+            x_, y_, z_, _x, _y = spatial_loc
+            assert _x <= img.data.shape[0]
+            assert _y <= img.data.shape[1]
+            assert z_ < img.data.shape[2]
+            self.image = img.data[x_:_x, y_:_y, z_, :]
+            if self.has_labels and (seg is not None):
+                diff = self.image_size - self.label_size
+                assert diff >= 0  # assumes label_size <= image_size
+                x_d, y_d = (x_ + diff), (y_ + diff)
+                self.label = \
+                    seg.data[x_d: (self.label_size + x_d),
+                    y_d: (self.label_size + y_d),
+                    z_ , :]
+
+            if self.has_weight_maps and (w_map is not None):
+                diff = self.image_size - self.weight_map_size
+                assert diff >= 0
+                x_d, y_d = (x_ + diff), (y_ + diff)
+                self.weight_map = \
+                    w_map.data[x_d: (self.weight_map_size + x_d),
+                    y_d : (self.weight_map_size + y_d),
+                    z_, :]
 
     def as_dict(self, placeholders):
         out_list = [self.image, self.info]

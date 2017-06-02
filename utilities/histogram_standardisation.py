@@ -192,8 +192,8 @@ def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
         new_img[lowest_values], mode='low')
     new_img[highest_values] = smooth_threshold(
         new_img[highest_values], mode='high')
-    # TODO: Apply mask and set background to zero
-    #new_img[mask == False] = 0.
+    # Apply mask and set background to zero
+    new_img[mask == False] = 0.
     return new_img
 
 

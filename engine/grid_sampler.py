@@ -16,23 +16,30 @@ def generate_grid_coordinates(spatial_rank, img_size, win_size, grid_size):
     """
     if grid_size <= 0:
         return None
-    assert np.all([d >= win_size for d in img_size[:spatial_rank]])
+    num_windows = int(np.floor(spatial_rank))
+    num_location_types = int(np.ceil(spatial_rank))
+    assert np.all([d >= win_size for d in img_size[:num_windows]])
 
     # generating sampling points along each dim
     steps_along_each = [_enumerate_step_points(0,
                                                img_size[i],
                                                win_size,
                                                grid_size)
-                        for i in range(0, spatial_rank)]
+                        for i in range(0, num_windows)]
+    if num_windows < spatial_rank:
+        steps_along_each.append(_enumerate_step_points(0, img_size[
+            num_windows], 1, 1))
     # create a mesh grid
     starting_ = np.asarray(np.meshgrid(*steps_along_each))
-    starting_ = starting_.reshape((spatial_rank, -1))
+    starting_ = starting_.reshape((num_location_types, -1))
     # transform mesh grid into a list of coordinates
     all_coordinates = np.zeros((starting_.shape[1], spatial_rank * 2),
                                dtype=np.int)
-    for i in range(0, spatial_rank):
+    for i in range(0, num_windows):
         all_coordinates[:, i] = starting_[i, :]
-        all_coordinates[:, i + spatial_rank] = starting_[i, :] + win_size
+        all_coordinates[:, i + num_location_types] = starting_[i, :] + win_size
+    if num_windows < spatial_rank:
+        all_coordinates[:, num_windows] = starting_[num_windows, :]
     return all_coordinates
 
 
@@ -84,18 +91,19 @@ class GridSampler(BaseSampler):
             # (the matched result will be either 3d or 4d)
             img.spatial_rank = spatial_rank
             img.data = io.match_volume_shape_to_patch_definition(
-                img.data, self.patch.full_image_shape)
-            if img.data.ndim - spatial_rank > 1:
+                img.data, self.patch.full_informative_image_shape)
+            if img.data.ndim == 5:
                 raise NotImplementedError
                 # time series data are not supported
             if seg is not None:
                 seg.spatial_rank = spatial_rank
                 seg.data = io.match_volume_shape_to_patch_definition(
-                    seg.data, self.patch.full_label_shape)
+                    seg.data, self.patch.full_informative_label_shape)
             if weight_map is not None:
                 weight_map.spatial_rank = spatial_rank
                 weight_map.data = io.match_volume_shape_to_patch_definition(
-                    weight_map.data, self.patch.full_weight_map_shape)
+                    weight_map.data,
+                    self.patch.full_informative_weight_map_shape)
 
             # generates grid spatial coordinates
             locations = generate_grid_coordinates(img.spatial_rank,
