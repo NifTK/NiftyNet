@@ -1,5 +1,5 @@
 # NiftyNet
-<img src="https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/raw/master/niftynet-logo.png" width="175" height="103">
+<img src="https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/raw/master/niftynet-logo.png" width="263" height="155">
 
 [![build status](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/build.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
 [![coverage report](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/coverage.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
@@ -13,8 +13,8 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 * Easy-to-customise interfaces of network components
 * Designed for sharing networks and pretrained models with the community
 * Efficient discriminative training with multiple-GPU support
-* Comprehensive evaluation metrics for medical image segmentation
 * Implemented recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
+* Comprehensive evaluation metrics for medical image segmentation
 
 
 ### Dependencies
@@ -36,16 +36,14 @@ cd NiftyNet/
 wget https://www.dropbox.com/s/y7mdh4m9ptkibax/example_volumes.tar.gz
 tar -xzvf example_volumes.tar.gz
 python run_application.py train --net_name toynet \
-    --train_data_dir ./example_volumes/monomodal_parcellation \
     --image_size 42 --label_size 42 --batch_size 1
 ```
 After the training process, to do segmentation with a trained "toynet":
 ``` sh
 cd NiftyNet/
 python run_application.py inference --net_name toynet \
-    --eval_data_dir ./example_volumes/monomodal_parcellation \
     --save_seg_dir ./seg_output \
-    --image_size 64 --label_size 64 --batch_size 4
+    --image_size 80 --label_size 80 --batch_size 8
 ```
 *Commandline parameters override the default settings defined in `config/default_config.txt`.*
 
@@ -63,31 +61,28 @@ python run_application.py -h
 ```
 
 To develop a new architecture:
-1. Create a `network/new_net.py` inheriting `network/net_template.py`
-1. Implement `inference()` function using the building blocks in `base_layer.py` or creating new building blocks
-1. Add `import network.new_net` to the `NetFactory` class in `run_application.py`
+1. Create a `network/new_net.py` inheriting `TrainableLayer` from `layer.base_layer`
+1. Implement `layer_op()` function using the building blocks in `layer/` or creating new layers
+1. Import `network.new_net` to the `NetFactory` class in `run_application.py`
+1. Train the network with `python run_application.py train -c /path/to/customised_config`
 
-### Files conventions
-Files used for training (resp. inference) are supposed to be located in the `train_data_dir`
-(resp. `eval_data_dir`) directory and to respect the name convention `patient_modality.extension`.
-Please note the delimiter `_`.
 
-Only nifty files (extension .nii or .nii.gz) are supported.
+Image data in nifty format (extension .nii or .nii.gz) are supported.
 
 ### Structure
 The basic picture of training procedure (data parallelism) is:
 ```
 <Multi-GPU training>
-                                         (nn/training.py)
-                                   |>----------------------+
-                                   |>---------------+      |
-                                   |^|              |      |
-               (nn/input_queue.py) |^|     sync   GPU_1  GPU_2   ...
-                                   |^|     +----> model  model (network/*.py)
-with multiple threads:             |^|     |        |      |
-              (nn/preprocess.py)   |^|    CPU       v      v (nn/loss.py)
-image&label ->> (nn/sampler.py)  ->> |   model <----+------+
-(*.nii.gz)  (nn/data_augmentation.py)|   update    stochastic gradients
+                                     (engine/training.py)
+                                            |>----------------------+
+                                            |>---------------+      |
+                                            |^|              |      |
+                   (engine/input_buffer.py) |^|     sync   GPU_1  GPU_2   ...
+                                            |^|     +----> model  model (network/*.py)
+with multiple threads:                      |^|     |        |      |
+            (layer/input_normalisation.py)  |^|    CPU       v      v (layer/*.py)
+image&label ->> (engine/*_sampler.py)   >>>   |   model <----+------+
+(*.nii.gz)        (layer/rand_*.py)     >>>   |  update    stochastic gradients
 ```
 
 ### Citation
@@ -117,3 +112,4 @@ Rutherford-Appleton Laboratory.
 
 [cmic]: http://cmic.cs.ucl.ac.uk
 [ucl]: http://www.ucl.ac.uk
+
