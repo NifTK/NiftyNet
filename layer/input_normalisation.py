@@ -194,7 +194,7 @@ class HistogramNormalisationLayer(Layer):
 
         if not os.path.exists(os.path.dirname(self.hist_model_file)):
             try:
-                os.mkdirs(os.path.dirname(self.hist_model_file))
+                os.makedirs(os.path.dirname(self.hist_model_file))
             except OSError:
                 print('cannot create {}'.format(self.hist_model_file))
                 raise

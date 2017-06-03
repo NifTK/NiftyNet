@@ -217,7 +217,7 @@ class ImagePatch(object):
             assert _z <= img.data.shape[2]
             self.image = img.data[x_:_x, y_:_y, z_:_z, :]
             if self.has_labels and (seg is not None):
-                diff = self.image_size - self.label_size
+                diff = int((self.image_size - self.label_size) / 2)
                 assert diff >= 0  # assumes label_size <= image_size
                 x_d, y_d, z_d = (x_ + diff), (y_ + diff), (z_ + diff)
                 self.label = \
@@ -226,7 +226,7 @@ class ImagePatch(object):
                     z_d: (self.label_size + z_d), :]
 
             if self.has_weight_maps and (w_map is not None):
-                diff = self.image_size - self.weight_map_size
+                diff = int((self.image_size - self.weight_map_size) / 2)
                 assert diff >= 0
                 x_d, y_d, z_d = (x_ + diff), (y_ + diff), (z_ + diff)
                 self.weight_map = \
@@ -240,7 +240,7 @@ class ImagePatch(object):
             assert _y <= img.data.shape[1]
             self.image = img.data[x_:_x, y_:_y, :]
             if self.has_labels and (seg is not None):
-                diff = self.image_size - self.label_size
+                diff = int((self.image_size - self.label_size) / 2)
                 assert diff >= 0  # assumes label_size <= image_size
                 x_d, y_d = (x_ + diff), (y_ + diff)
                 self.label = \
@@ -248,7 +248,7 @@ class ImagePatch(object):
                     y_d: (self.label_size + y_d), :]
 
             if self.has_weight_maps and (w_map is not None):
-                diff = self.image_size - self.weight_map_size
+                diff = int((self.image_size - self.weight_map_size) / 2)
                 assert diff >= 0
                 x_d, y_d, = (x_ + diff), (y_ + diff)
                 self.weight_map = \
