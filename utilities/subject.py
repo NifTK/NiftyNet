@@ -319,8 +319,8 @@ class Subject(object):
         1: segmentation map
         n: n_class probabilities or n-dim features from the network
         """
-        zeros_shape = self.input_image_shape[:int(np.ceil(spatial_rank))] + (
-            n_channels,)
+        zeros_shape = self.input_image_shape[:int(np.ceil(spatial_rank))]
+        zeros_shape = zeros_shape + (n_channels,)
         while len(zeros_shape) < 5:
             zeros_shape = zeros_shape + (1,)
         if interp_order > 0:
@@ -333,6 +333,15 @@ class Subject(object):
     def save_network_output(self, data, save_path, interp_order=3):
         if data is None:
             return
+
+        # In case multiple modalities output, have to swap
+        # the dimensions to ensure modalties in the 5th
+        # dimension (nifty standards)
+        if data.shape[3] > 1:
+            print("Ensuring nifty dimension standards")
+            data = np.swapaxes(data, 4, 3)
+        # output format: [H x W x D x Time points x Modality]
+
         if self.spatial_padding is not None:
             ind = util.spatial_padding_to_indexes(self.spatial_padding)
             if len(ind) == 6:  # spatial_rank == 3

@@ -55,19 +55,19 @@ class SelectiveSampler(BaseSampler):
             # (the matched result will be either 3d or 4d)
             img.spatial_rank = spatial_rank
             img.data = io.match_volume_shape_to_patch_definition(
-                img.data, self.patch.full_informative_image_shape)
+                img.data, self.patch)
             if img.data.ndim == 5:
                 raise NotImplementedError
                 # time series data are not supported
             if seg is not None:
                 seg.spatial_rank = spatial_rank
                 seg.data = io.match_volume_shape_to_patch_definition(
-                    seg.data, self.patch.full_informative_label_shape)
+                    seg.data, self.patch)
             if weight_map is not None:
                 weight_map.spatial_rank = spatial_rank
                 weight_map.data = io.match_volume_shape_to_patch_definition(
                     weight_map.data,
-                    self.patch.full_informative_weight_map_shape)
+                    self.patch)
 
             # apply volume level augmentation
             for aug in local_layers:

@@ -7,3 +7,10 @@ We'd like to follow this python style guide: [pythonstyle]
 > make your comments have little boxes of hash marks around them too.
 
 [pythonstyle]: https://google.github.io/styleguide/pyguide.html
+
+Before submitting a merge request, please make sure your branch passes all
+unit tests, by running:
+``` sh
+cd NiftyNet/
+sh run_test.sh
+```

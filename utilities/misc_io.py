@@ -83,7 +83,7 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
         return
     if np.array_equal(pixdim_fin, pixdim_init):
         return data_array
-    to_multiply = np.divide(pixdim_init[0:3], pixdim_fin[0:3])
+    to_multiply = np.divide(pixdim_init[0:], pixdim_fin[0:len(pixdim_init)])
     if len(to_multiply) < data_array.ndim:
         to_multiply = np.pad(to_multiply,
                              (0, data_array.ndim - len(to_multiply)),
@@ -130,6 +130,7 @@ def csv_cell_to_volume_5d(csv_cell):
     This function create a 5D image matrix from a csv_cell
     :param csv_cell: an array of file names, e.g. ['path_to_T1', 'path_to_T2']
     :return: 5D image consisting of images from 'path_to_T1', 'path_to_T2'
+             The five dimensions are H x W x D x Modality x Time point
     """
     if csv_cell is None:
         return None
@@ -149,7 +150,7 @@ def csv_cell_to_volume_5d(csv_cell):
         for m in range(0, numb_mod):
             data_array[t].append([])
             if not os.path.exists(csv_cell()[t][m]):
-                data_array[t][m] = np.zeros(dimensions)
+                data_array[t][m] = expand_to_5d(np.zeros(dimensions))
                 continue
             # load a 3d volume
             img_nii = nib.load(csv_cell()[t][m])
@@ -249,14 +250,15 @@ def save_volume_5d(img_data, filename, save_path, img_ref=None):
     print('saved {}'.format(output_name))
 
 
-def match_volume_shape_to_patch_definition(image_data, patch_shape):
+def match_volume_shape_to_patch_definition(image_data, patch):
     if image_data is None:
         return None
-    if patch_shape is None:
+    if patch is None:
         return None
-    while image_data.ndim > len(patch_shape):
+    # always casting to 4D input volume [H x W x D x Modality]
+    while image_data.ndim > 4:
         image_data = image_data[..., 0]
-    while image_data.ndim < len(patch_shape):
+    while image_data.ndim < 4:
         image_data = np.expand_dims(image_data, axis=-1)
     return image_data
 

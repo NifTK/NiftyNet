@@ -12,9 +12,10 @@ sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 class InputQueueTest(tf.test.TestCase):
     def test_3d_setup_train_eval_queue(self):
-        test_patch = ImagePatch(image_shape=(32, 32, 32),
-                                label_shape=(32, 32, 32),
-                                weight_map_shape=(32, 32, 32),
+        test_patch = ImagePatch(spatial_rank=3,
+                                image_size=32,
+                                label_size=32,
+                                weight_map_size=32,
                                 image_dtype=tf.float32,
                                 label_dtype=tf.int64,
                                 weight_map_dtype=tf.float32,
@@ -44,7 +45,8 @@ class InputQueueTest(tf.test.TestCase):
                 pass
 
     def test_3d_deploy_queue(self):
-        test_patch = ImagePatch(image_shape=(32, 32, 32),
+        test_patch = ImagePatch(spatial_rank=3,
+                                image_size=32,
                                 image_dtype=tf.float32,
                                 num_image_modality=1)
         test_sampler = ToySampler(test_patch, name='sampler')
@@ -69,9 +71,10 @@ class InputQueueTest(tf.test.TestCase):
                 pass
 
     def test_2d_setup_train_eval_queue(self):
-        test_patch = ImagePatch(image_shape=(32, 32),
-                                label_shape=(32, 32),
-                                weight_map_shape=(32, 32),
+        test_patch = ImagePatch(spatial_rank=2,
+                                image_size=32,
+                                label_size=32,
+                                weight_map_size=32,
                                 image_dtype=tf.float32,
                                 label_dtype=tf.int64,
                                 weight_map_dtype=tf.float32,
@@ -101,7 +104,8 @@ class InputQueueTest(tf.test.TestCase):
                 pass
 
     def test_2d_deploy_queue(self):
-        test_patch = ImagePatch(image_shape=(32, 32),
+        test_patch = ImagePatch(spatial_rank=2,
+                                image_size=32,
                                 image_dtype=tf.float32,
                                 num_image_modality=1)
         test_sampler = ToySampler(test_patch, name='sampler')
