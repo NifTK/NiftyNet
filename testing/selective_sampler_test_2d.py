@@ -34,7 +34,7 @@ class SubjectTest(tf.test.TestCase):
         patch_holder = ImagePatch(image_size=32,
                                   label_size=32,
                                   weight_map_size=None,
-                                  spatial_rank=3,
+                                  spatial_rank=2,
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
                                   num_image_modality=2,
@@ -57,9 +57,9 @@ class SubjectTest(tf.test.TestCase):
         for d in sampler():
             assert isinstance(d, ImagePatch)
             data_dict = d.as_dict(sampler.placeholders)
-            self.assertAllClose((32, 32, 32, 2), d.image.shape)
-            self.assertAllClose((7,), d.info.shape)
-            self.assertAllClose((32, 32, 32, 1), d.label.shape)
+            self.assertAllClose((32, 32, 2), d.image.shape)
+            self.assertAllClose((5,), d.info.shape)
+            self.assertAllClose((32, 32, 1), d.label.shape)
             print(d.info)
             n_volumes = n_volumes + 1
             if n_volumes == 5:

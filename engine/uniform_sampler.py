@@ -65,18 +65,18 @@ class UniformSampler(BaseSampler):
             img.spatial_rank = spatial_rank
 
             img.data = io.match_volume_shape_to_patch_definition(
-                img.data, patch.full_informative_image_shape)
+                img.data, patch)
             if img.data.ndim == 5:
                 raise NotImplementedError
                 # time series data are not supported
             if seg is not None:
                 seg.spatial_rank = spatial_rank
                 seg.data = io.match_volume_shape_to_patch_definition(
-                    seg.data, patch.full_informative_label_shape)
+                    seg.data, patch)
             if weight_map is not None:
                 weight_map.spatial_rank = spatial_rank
                 weight_map.data = io.match_volume_shape_to_patch_definition(
-                    weight_map.data, patch.full_informative_weight_map_shape)
+                    weight_map.data, patch)
 
             # apply volume level augmentation
             for aug in local_layers:

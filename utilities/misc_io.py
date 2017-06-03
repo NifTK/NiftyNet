@@ -83,7 +83,7 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
         return
     if np.array_equal(pixdim_fin, pixdim_init):
         return data_array
-    to_multiply = np.divide(pixdim_init[0:3], pixdim_fin[0:3])
+    to_multiply = np.divide(pixdim_init[0:], pixdim_fin[0:len(pixdim_init)])
     if len(to_multiply) < data_array.ndim:
         to_multiply = np.pad(to_multiply,
                              (0, data_array.ndim - len(to_multiply)),
@@ -249,14 +249,13 @@ def save_volume_5d(img_data, filename, save_path, img_ref=None):
     print('saved {}'.format(output_name))
 
 
-def match_volume_shape_to_patch_definition(image_data, patch_shape):
+def match_volume_shape_to_patch_definition(image_data, patch):
     if image_data is None:
         return None
-    if patch_shape is None:
+    if patch is None:
         return None
-    while image_data.ndim > len(patch_shape):
-        image_data = image_data[..., 0]
-    while image_data.ndim < len(patch_shape):
+    image_data = np.squeeze(image_data, axis=4)
+    while image_data.ndim < 4:
         image_data = np.expand_dims(image_data, axis=-1)
     return image_data
 

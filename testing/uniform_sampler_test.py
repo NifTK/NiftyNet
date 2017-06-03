@@ -11,8 +11,10 @@ from utilities.input_placeholders import ImagePatch
 class SubjectTest(tf.test.TestCase):
     def test_volume_reader(self):
 
-        csv_dict = {'input_image_file': './testing_data/testing_case_input',
-                    'target_image_file': './testing_data/testing_case_target',
+        csv_dict = {'input_image_file':
+                        './testing_data/testing_case_input',
+                    'target_image_file':
+                        './testing_data/testing_case_target',
                     'weight_map_file': None,
                     'target_note': None}
         csv_loader = CSVTable(csv_dict=csv_dict,
@@ -30,14 +32,15 @@ class SubjectTest(tf.test.TestCase):
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
         # define output element patch
-        patch_holder = ImagePatch(image_shape=(32, 32, 32),
-                                  label_shape=(32, 32, 32),
-                                  weight_map_shape=None,
+        patch_holder = ImagePatch(image_size=32,
+                                  label_size=32,
+                                  weight_map_size=None,
+                                  spatial_rank=3,
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
                                   num_image_modality=2,
                                   num_label_modality=1,
-                                  num_weight_map=1)
+                                  num_weight_map=0)
 
         sampler = UniformSampler(patch=patch_holder,
                                  volume_loader=volume_loader,

@@ -1,8 +1,7 @@
 import tensorflow as tf
 
 # sampler
-from engine.selective_sampler import SelectiveSampler
-from engine.spatial_location_check import SpatialLocationCheckLayer
+from engine.uniform_sampler import UniformSampler
 from engine.volume_loader import VolumeLoaderLayer
 from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
 from utilities.csv_table import CSVTable
@@ -12,8 +11,10 @@ from utilities.input_placeholders import ImagePatch
 class SubjectTest(tf.test.TestCase):
     def test_volume_reader(self):
 
-        csv_dict = {'input_image_file': './testing_data/testing_case_input',
-                    'target_image_file': './testing_data/testing_case_target',
+        csv_dict = {'input_image_file':
+                        './testing_data/testing_case_input',
+                    'target_image_file':
+                        './testing_data/testing_case_target',
                     'weight_map_file': None,
                     'target_note': None}
         csv_loader = CSVTable(csv_dict=csv_dict,
@@ -26,7 +27,7 @@ class SubjectTest(tf.test.TestCase):
             norm_type='percentile',
             mask_type='otsu_plus')
 
-        volume_loader = VolumeLoaderLayer(csv_loader,
+        volume_loader = VolumeLoaderLayer(csv_loader, hist_norm,
                                           is_training=True)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
@@ -34,35 +35,27 @@ class SubjectTest(tf.test.TestCase):
         patch_holder = ImagePatch(image_size=32,
                                   label_size=32,
                                   weight_map_size=None,
-                                  spatial_rank=3,
+                                  spatial_rank=2.5,
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
                                   num_image_modality=2,
                                   num_label_modality=1,
                                   num_weight_map=0)
-        location_check_layer = SpatialLocationCheckLayer(
-            compulsory=[[0], [0.01]],
-            minimum_ratio=0.01,
-            min_numb_labels=1,
-            padding=0)
 
-        sampler = SelectiveSampler(
-            patch=patch_holder,
-            volume_loader=volume_loader,
-            spatial_location_check=location_check_layer,
-            data_augmentation_methods=[],
-            patch_per_volume=10)
-
+        sampler = UniformSampler(patch=patch_holder,
+                                 volume_loader=volume_loader,
+                                 patch_per_volume=10,
+                                 name='uniform_sampler')
         n_volumes = 0
         for d in sampler():
             assert isinstance(d, ImagePatch)
             data_dict = d.as_dict(sampler.placeholders)
-            self.assertAllClose((32, 32, 32, 2), d.image.shape)
-            self.assertAllClose((7,), d.info.shape)
-            self.assertAllClose((32, 32, 32, 1), d.label.shape)
+            self.assertAllClose((32, 32, 2), d.image.shape)
+            self.assertAllClose((6,), d.info.shape)
+            self.assertAllClose((32, 32, 1), d.label.shape)
             print(d.info)
             n_volumes = n_volumes + 1
-            if n_volumes == 5:
+            if n_volumes == 3:
                 break
 
             keys = data_dict.keys()[0]

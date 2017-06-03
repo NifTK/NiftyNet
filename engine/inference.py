@@ -67,10 +67,10 @@ def run(net_class, param, csv_dict, device_str):
             label_shape = [param.label_size] * int(param.spatial_rank)
             weight_map_shape = [param.w_map_size] * int(param.spatial_rank)
         patch_holder = ImagePatch(
-            image_shape=image_shape,
-            label_shape=label_shape,
-            weight_map_shape=weight_map_shape,
-            info_length=2*param.spatial_rank,
+            image_size=param.image_size,
+            label_size=param.label_size,
+            weight_map_size=param.w_map_size,
+            spatial_rank=param.spatial_rank,
             image_dtype=tf.float32,
             label_dtype=tf.int64,
             weight_map_dtype=tf.float32,

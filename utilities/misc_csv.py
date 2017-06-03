@@ -26,6 +26,8 @@ def load_subject_and_filenames_from_csv_file(csv_file,
         for row in reader:
             if ('' in row) and (not allow_missing):
                 continue
+            if ('' in row) and len(set(row[1:])) == 1:
+                continue
             subject_name, list_files = [row[0]], row[1:]
             list_subjects.append(subject_name)
             numb_mod = len(list_files) if numb_mod is None else numb_mod
