@@ -14,7 +14,7 @@ def rand_spatial_coordinates(spatial_rank, img_size, win_size, n_samples):
     assert np.all([d >= win_size for d in img_size[:grid_spatial_rank]])
     # consisting of starting and ending coordinates
 
-    all_coords = np.zeros((n_samples, spatial_rank * 2), dtype=np.int)
+    all_coords = np.zeros((n_samples, int(spatial_rank*2.0)), dtype=np.int)
 
     for i in range(0, grid_spatial_rank):
         all_coords[:, i] = np.random.random_integers(
