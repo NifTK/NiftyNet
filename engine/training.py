@@ -64,8 +64,8 @@ def run(net_class, param, csv_dict, device_str):
     with graph.as_default(), tf.device('/cpu:0'):
         # defines a training element
         patch_holder = ImagePatch(
-            image_size=param.image_size,
             spatial_rank=param.spatial_rank,
+            image_size=param.image_size,
             label_size=param.label_size,
             weight_map_size=param.w_map_size,
             image_dtype=tf.float32,

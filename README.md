@@ -33,7 +33,7 @@ To train a "toynet" specified in `network/toynet.py`:
 ``` sh
 cd NiftyNet/
 # download demo data (~62MB)
-wget https://www.dropbox.com/s/2unf08ylxvhc298/example_volumes.tar.gz
+wget https://www.dropbox.com/s/y7mdh4m9ptkibax/example_volumes.tar.gz
 tar -xzvf example_volumes.tar.gz
 python run_application.py train --net_name toynet \
     --train_data_dir ./example_volumes/monomodal_parcellation \

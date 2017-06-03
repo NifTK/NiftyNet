@@ -33,7 +33,6 @@ def run(net_class, param, csv_dict, device_str):
 
     # read each line of csv files into an instance of Subject
     csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
-    import pdb; pdb.set_trace()
 
     # define how to normalise image volumes
     hist_norm = HistNorm(models_filename=param.histogram_ref_file,
@@ -59,19 +58,12 @@ def run(net_class, param, csv_dict, device_str):
     with graph.as_default(), tf.device("/{}:0".format(device_str)):
         # construct inference queue and graph
         # TODO change batch size param - batch size could be larger in test case
-        if param.spatial_rank == 2.5:
-            image_shape = [param.image_size] * 2
-            label_shape = [param.label_size] * 2
-            weight_map_shape = [param.w_map_size] * 2
-        else:
-            image_shape = [param.image_size] * int(param.spatial_rank)
-            label_shape = [param.label_size] * int(param.spatial_rank)
-            weight_map_shape = [param.w_map_size] * int(param.spatial_rank)
+
         patch_holder = ImagePatch(
+            spatial_rank=param.spatial_rank,
             image_size=param.image_size,
             label_size=param.label_size,
             weight_map_size=param.w_map_size,
-            spatial_rank=param.spatial_rank,
             image_dtype=tf.float32,
             label_dtype=tf.int64,
             weight_map_dtype=tf.float32,
@@ -81,9 +73,7 @@ def run(net_class, param, csv_dict, device_str):
 
         # `patch` instance with image data only
         spatial_rank = patch_holder.spatial_rank
-        sampling_grid_size = patch_holder.image_size - 2 * param.border
-        # It should maybe be:
-        sampling_grid_size = patch_holder.label_size
+        sampling_grid_size = patch_holder.label_size - 2 * param.border
         assert sampling_grid_size > 0
         sampler = GridSampler(patch=patch_holder,
                               volume_loader=volume_loader,
