@@ -1,5 +1,5 @@
 # NiftyNet
-![NiftyNet](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/uploads/5a800a9ca2a8f152a98808fbacd1f491/niftynet-logo-test.png)
+<img src="https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/raw/master/niftynet-logo.png" width="175" height="103">
 
 [![build status](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/build.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
 [![coverage report](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/coverage.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
