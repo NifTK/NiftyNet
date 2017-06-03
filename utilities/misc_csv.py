@@ -26,8 +26,6 @@ def load_subject_and_filenames_from_csv_file(csv_file,
         for row in reader:
             if ('' in row) and (not allow_missing):
                 continue
-            if ('' in row) and len(set(row[1:])) == 1:
-                continue
             subject_name, list_files = [row[0]], row[1:]
             list_subjects.append(subject_name)
             numb_mod = len(list_files) if numb_mod is None else numb_mod
@@ -58,7 +56,7 @@ def match_first_degree(name_list1, name_list2):
                 ind_match1[i] = indflat_2[flatten_list2.index(name)]
                 break
     for i in range(0, len(name_list2)):
-        for name in name_list2[i]:
+        for name in name_list1[i]:
             if name in flatten_list1:
                 init_match2[i] = name
                 ind_match2[i] = indflat_1[flatten_list1.index(name)]
@@ -73,8 +71,6 @@ def __find_max_overlap_in_list(name, list_names):
     match_max = 0
     match_seq = ''
     match_orig = ''
-    if len(list_names):
-        return '', -1
     for test in list_names:
         match = SequenceMatcher(None, name, test).find_longest_match(
             0, len(name), 0, len(test))
@@ -82,11 +78,6 @@ def __find_max_overlap_in_list(name, list_names):
             match_max = match.size
             match_seq = test[match.b:(match.b + match.size)]
             match_orig = test
-    if match_max == 0:
-        return '', -1
-    other_list = [name for name in list_names if match_seq in name]
-    if len(other_list) > 1:
-        return '', -1
     return match_seq, list_names.index(match_orig)
 
 
@@ -101,8 +92,8 @@ def match_second_degree(name_list1, name_list2):
         name_list1, name_list2)
     reduced_list1 = [names for names in name_list1
                      if init_match1[name_list1.index(names)] == '']
-    reduced_list2 = [names for names in name_list2
-                     if init_match2[name_list2.index(names)] == '']
+    reduced_list2 = [names for names in name_list1
+                     if init_match1[name_list1.index(names)] == '']
     redflat_1 = [item for sublist in reduced_list1 for item in sublist]
     indflat_1 = [i for i in range(0, len(init_match1)) for item in
                  name_list1[i] if init_match1[i] == '']
@@ -113,14 +104,12 @@ def match_second_degree(name_list1, name_list2):
         if init_match1[i] == '':
             for n in name_list1[i]:
                 init_match1[i], index = __find_max_overlap_in_list(n, redflat_2)
-                if index > 0:
-                    ind_match1[i] = indflat_2[index]
+                ind_match1[i] = indflat_1[index]
     for i in range(0, len(name_list2)):
         if init_match2[i] == '':
-            for n in name_list2[i]:
+            for n in name_list1[i]:
                 init_match2[i], index = __find_max_overlap_in_list(n, redflat_1)
-                if index > 0:
-                    ind_match2[i] = indflat_1[index]
+                ind_match2[i] = indflat_2[index]
     return init_match1, ind_match1, init_match2, ind_match2
 
 
@@ -142,9 +131,8 @@ def join_subject_id_and_filename_list(name_list, list_files):
     list_combined = []
     for (i, name) in enumerate(name_max_to_use):
         list_temp = [name]
-        # TODO: when the list of a constraint is completely empty
         for c in range(0, len(list_files)):
-            output = list_files[c][ind_tot[c][i]] if ind_tot[c][i] > 0 else ''
+            output = list_files[c][ind_tot[c][i]]
             list_temp.append(output)
         list_combined.append(list_temp)
     return list_combined

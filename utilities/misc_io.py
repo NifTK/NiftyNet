@@ -155,6 +155,7 @@ def csv_cell_to_volume_5d(csv_cell):
             # load a 3d volume
             img_nii = nib.load(csv_cell()[t][m])
             img_data_shape = img_nii.header.get_data_shape()
+            assert np.prod(img_data_shape) > 1
 
             if not flag_dimensions_set:
                 dimensions = img_data_shape[0:min(3, len(img_data_shape))]

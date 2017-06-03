@@ -142,7 +142,7 @@ class HistogramNormalisationLayer(Layer):
         mean = masked_img.mean()
         std = masked_img.std()
         img[mask == True] -= mean
-        img[mask == True] /= std
+        img[mask == True] /= max(std, 1e-5)
         return img
 
     def normalise(self, data_array, mask_array):

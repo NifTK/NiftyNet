@@ -33,6 +33,7 @@ def run(net_class, param, csv_dict, device_str):
 
     # read each line of csv files into an instance of Subject
     csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
+    import pdb; pdb.set_trace()
 
     # define how to normalise image volumes
     hist_norm = HistNorm(models_filename=param.histogram_ref_file,
@@ -176,7 +177,7 @@ def run(net_class, param, csv_dict, device_str):
                     image_label_size_diff = patch_holder.image_size - \
                                             patch_holder.label_size
                     s_ = param.border + int(image_label_size_diff / 2)
-                    _s = s_ + patch_holder.label_size - param.border
+                    _s = s_ + patch_holder.label_size - 2 * param.border
                     # absolute indexing in the prediction volume
                     dest_start, dest_end = (origin + s_), (origin + _s)
 
