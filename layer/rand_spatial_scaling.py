@@ -26,6 +26,7 @@ class RandomSpatialScalingLayer(Layer):
         self._rand_zoom = None
 
     def randomise(self, spatial_rank=3):
+        spatial_rank = int(np.floor(spatial_rank))
         rand_zoom = np.random.uniform(low=-self._max_percentage,
                                       high=self._max_percentage,
                                       size=(spatial_rank,))

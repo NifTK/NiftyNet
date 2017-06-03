@@ -242,7 +242,6 @@ class Subject(object):
                                            interp_order=None)}
 
         elif type_name == 'image_filename':
-            spatial_rank = None
             data_5d = util.csv_cell_to_volume_5d(this_column)
             if do_resampling and (interp_order is None):
                 print("do resampling, but interpolation order is not "
@@ -258,12 +257,11 @@ class Subject(object):
             if spatial_padding is not None:
                 data_5d = self.__pad_volume(data_5d, spatial_padding)
                 self.spatial_padding = spatial_padding
-                spatial_rank = len(spatial_padding)
             if index == 0:  # if it is the target, remember the shape
                 self.input_image_shape = data_5d.shape
             return {field_name: ColumnData(field_name,
                                            data_5d,
-                                           spatial_rank=spatial_rank,
+                                           spatial_rank=None,
                                            interp_order=interp_order)}
         else:
             return {'unknow_field': None}
