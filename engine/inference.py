@@ -155,7 +155,7 @@ def run(net_class, param, csv_dict, device_str):
 
                     # assign predicted patch to the allocated output volume
                     origin = spatial_info[
-                        batch_id, 1:(1 + np.floor(spatial_rank))]
+                        batch_id, 1:(1 + int(np.floor(spatial_rank)))]
 
                     # indexing within the patch
                     assert patch_holder.label_size >= param.border*2

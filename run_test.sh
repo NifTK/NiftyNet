@@ -3,6 +3,7 @@ tar -xzvf example_volumes.tar.gz
 wget -N https://www.dropbox.com/s/94wa4fl8f8k3aie/testing_data.tar.gz
 tar -xzvf testing_data.tar.gz
 
+python -m testing.volume_loader_test
 python -m testing.activation_test
 python -m testing.bn_test
 python -m testing.convolution_test
@@ -32,4 +33,3 @@ python -m testing.uniform_sampler_test
 python -m testing.upsample_test
 python -m testing.vnet_test
 python -m testing.vnetblock_test
-python -m testing.volume_loader_test

@@ -125,7 +125,7 @@ def run(net_class, param, csv_dict, device_str):
             weight_maps = train_pairs['weight_maps']
         else:
             weight_maps = None
-        for i in range(0, param.num_gpus):
+        for i in range(0, max(param.num_gpus, 1)):
             with tf.device("/{}:{}".format(device_str, i)):
                 predictions = net(images, is_training=True)
                 data_loss = loss_func(predictions, labels, weight_maps)

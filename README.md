@@ -38,6 +38,8 @@ tar -xzvf example_volumes.tar.gz
 python run_application.py train --net_name toynet \
     --image_size 42 --label_size 42 --batch_size 1
 ```
+GPU is enabled by default; to train with CPU only please add parameter `--num_gpus=0`
+
 After the training process, to do segmentation with a trained "toynet":
 ``` sh
 cd NiftyNet/

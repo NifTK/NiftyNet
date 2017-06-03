@@ -41,7 +41,7 @@ def generate_grid_coordinates(spatial_rank, img_size, win_size, grid_size):
     starting_ = np.asarray(np.meshgrid(*steps_along_each))
     starting_ = starting_.reshape((full_spatial_rank, -1))
     # transform mesh grid into a list of coordinates
-    all_coordinates = np.zeros((starting_.shape[1], spatial_rank * 2),
+    all_coordinates = np.zeros((starting_.shape[1], int(spatial_rank*2.0)),
                                dtype=np.int)
     for i in range(0, grid_spatial_rank):
         all_coordinates[:, i] = starting_[i, :]
