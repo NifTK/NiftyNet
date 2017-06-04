@@ -142,7 +142,7 @@ class HistogramNormalisationLayer(Layer):
         mean = masked_img.mean()
         std = masked_img.std()
         img[mask == True] -= mean
-        img[mask == True] /= std
+        img[mask == True] /= max(std, 1e-5)
         return img
 
     def normalise(self, data_array, mask_array):
@@ -194,7 +194,7 @@ class HistogramNormalisationLayer(Layer):
 
         if not os.path.exists(os.path.dirname(self.hist_model_file)):
             try:
-                os.mkdirs(os.path.dirname(self.hist_model_file))
+                os.makedirs(os.path.dirname(self.hist_model_file))
             except OSError:
                 print('cannot create {}'.format(self.hist_model_file))
                 raise

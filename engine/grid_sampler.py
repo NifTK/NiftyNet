@@ -4,42 +4,53 @@ import numpy as np
 import utilities.misc_io as io
 from engine.base_sampler import BaseSampler
 
+SUPPORTED_SPATIAL_RANKS = {2.0, 2.5, 3.0}
+
 
 def generate_grid_coordinates(spatial_rank, img_size, win_size, grid_size):
     """
     Generate N-D coordinates with a fixed step size 'grid_size' in each dim
+
+    For 2.5D volume (3D volume treated as a stack of 2D slices),
+    given the volume input is [HWDC],
+    the grid should be constructed on [HW] and running through all possible 'D's
+
     :param spatial_rank: the number of spatial dims
     :param img_size: image size to be covered by the sampling grid
     :param win_size: window size centered at each sampling point
     :param grid_size: step size of the samples
     :return: n*2 columns of coordinates for n-d image size
     """
+    assert spatial_rank in SUPPORTED_SPATIAL_RANKS
     if grid_size <= 0:
         return None
-    num_windows = int(np.floor(spatial_rank))
-    num_location_types = int(np.ceil(spatial_rank))
-    assert np.all([d >= win_size for d in img_size[:num_windows]])
+    grid_spatial_rank = int(np.floor(spatial_rank))
+    full_spatial_rank = int(np.ceil(spatial_rank))
+    assert np.all([d >= win_size for d in img_size[:grid_spatial_rank]])
 
     # generating sampling points along each dim
     steps_along_each = [_enumerate_step_points(0,
                                                img_size[i],
                                                win_size,
                                                grid_size)
-                        for i in range(0, num_windows)]
-    if num_windows < spatial_rank:
-        steps_along_each.append(_enumerate_step_points(0, img_size[
-            num_windows], 1, 1))
+                        for i in range(0, grid_spatial_rank)]
+    if spatial_rank == 2.5:
+        # the third dimension should be sampled densely
+        steps_along_each.append(_enumerate_step_points(0, img_size[2], 1, 1))
     # create a mesh grid
     starting_ = np.asarray(np.meshgrid(*steps_along_each))
-    starting_ = starting_.reshape((num_location_types, -1))
+    starting_ = starting_.reshape((full_spatial_rank, -1))
     # transform mesh grid into a list of coordinates
-    all_coordinates = np.zeros((starting_.shape[1], spatial_rank * 2),
+    all_coordinates = np.zeros((starting_.shape[1], int(spatial_rank*2.0)),
                                dtype=np.int)
-    for i in range(0, num_windows):
+    for i in range(0, grid_spatial_rank):
         all_coordinates[:, i] = starting_[i, :]
-        all_coordinates[:, i + num_location_types] = starting_[i, :] + win_size
-    if num_windows < spatial_rank:
-        all_coordinates[:, num_windows] = starting_[num_windows, :]
+        all_coordinates[:, i + full_spatial_rank] = starting_[i, :] + win_size
+    if spatial_rank == 2.5:
+        all_coordinates[:, 2] = starting_[2, :]
+    # the order of the coordinates should be consistent with
+    # input_placeholders.py : full_info_shape
+    # so that we have a consistent interpretation
     return all_coordinates
 
 

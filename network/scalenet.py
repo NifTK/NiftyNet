@@ -9,6 +9,12 @@ from utilities.misc_common import look_up_operations
 
 
 class ScaleNet(TrainableLayer):
+    """
+    implementation of ScaleNet:
+        Fidon et al., "Scalable multimodal convolutional
+        networks for brain tumour segmentation", MICCAI '17
+    """
+
     def __init__(self,
                  num_classes,
                  w_initializer=None,

@@ -19,9 +19,10 @@ class ToySamplerTest(tf.test.TestCase):
                 print(key, output[idx].shape)
 
     def test_full_shape_3d(self):
-        patch_holder = ImagePatch(image_shape=(32, 32, 32),
-                                  label_shape=(32, 32, 32),
-                                  weight_map_shape=(32, 32, 32),
+        patch_holder = ImagePatch(spatial_rank=3,
+                                  image_size=32,
+                                  label_size=32,
+                                  weight_map_size=32,
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
                                   num_image_modality=1,
@@ -30,9 +31,10 @@ class ToySamplerTest(tf.test.TestCase):
         self.run_test_sampler(patch_holder)
 
     def test_image_label_info_shape_3d(self):
-        patch_holder = ImagePatch(image_shape=(32, 32, 32),
-                                  label_shape=(32, 32, 32),
-                                  weight_map_shape=None,
+        patch_holder = ImagePatch(spatial_rank=3,
+                                  image_size=32,
+                                  label_size=32,
+                                  weight_map_size=None,
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
                                   num_image_modality=1,
@@ -41,9 +43,10 @@ class ToySamplerTest(tf.test.TestCase):
         self.run_test_sampler(patch_holder)
 
     def test_image_weight_map_info_shape_3d(self):
-        patch_holder = ImagePatch(image_shape=(32, 32, 32),
-                                  label_shape=None,
-                                  weight_map_shape=(32, 32, 32),
+        patch_holder = ImagePatch(spatial_rank=3,
+                                  image_size=32,
+                                  label_size=None,
+                                  weight_map_size=32,
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
                                   num_image_modality=1,
@@ -52,9 +55,10 @@ class ToySamplerTest(tf.test.TestCase):
         self.run_test_sampler(patch_holder)
 
     def test_image_info_shape_3d(self):
-        patch_holder = ImagePatch(image_shape=(32, 32, 32),
-                                  label_shape=None,
-                                  weight_map_shape=None,
+        patch_holder = ImagePatch(spatial_rank=3,
+                                  image_size=32,
+                                  label_size=None,
+                                  weight_map_size=None,
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
                                   num_image_modality=1,
@@ -63,9 +67,10 @@ class ToySamplerTest(tf.test.TestCase):
         self.run_test_sampler(patch_holder)
 
     def test_full_shape_2d(self):
-        patch_holder = ImagePatch(image_shape=(32, 32),
-                                  label_shape=(32, 32),
-                                  weight_map_shape=(32, 32),
+        patch_holder = ImagePatch(spatial_rank=2,
+                                  image_size=32,
+                                  label_size=32,
+                                  weight_map_size=32,
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
                                   num_image_modality=1,
@@ -74,9 +79,10 @@ class ToySamplerTest(tf.test.TestCase):
         self.run_test_sampler(patch_holder)
 
     def test_image_label_info_shape_2d(self):
-        patch_holder = ImagePatch(image_shape=(32, 32),
-                                  label_shape=(32, 32),
-                                  weight_map_shape=None,
+        patch_holder = ImagePatch(spatial_rank=2,
+                                  image_size=32,
+                                  label_size=32,
+                                  weight_map_size=None,
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
                                   num_image_modality=1,
@@ -85,9 +91,10 @@ class ToySamplerTest(tf.test.TestCase):
         self.run_test_sampler(patch_holder)
 
     def test_image_weight_map_info_shape_2d(self):
-        patch_holder = ImagePatch(image_shape=(32, 32),
-                                  label_shape=None,
-                                  weight_map_shape=(32, 32),
+        patch_holder = ImagePatch(spatial_rank=2,
+                                  image_size=32,
+                                  label_size=None,
+                                  weight_map_size=32,
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
                                   num_image_modality=1,
@@ -96,9 +103,10 @@ class ToySamplerTest(tf.test.TestCase):
         self.run_test_sampler(patch_holder)
 
     def test_image_info_shape_2d(self):
-        patch_holder = ImagePatch(image_shape=(32, 32),
-                                  label_shape=None,
-                                  weight_map_shape=None,
+        patch_holder = ImagePatch(spatial_rank=2,
+                                  image_size=32,
+                                  label_size=None,
+                                  weight_map_size=None,
                                   image_dtype=tf.float32,
                                   label_dtype=tf.int64,
                                   num_image_modality=1,

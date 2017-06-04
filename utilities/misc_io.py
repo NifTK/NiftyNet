@@ -130,6 +130,7 @@ def csv_cell_to_volume_5d(csv_cell):
     This function create a 5D image matrix from a csv_cell
     :param csv_cell: an array of file names, e.g. ['path_to_T1', 'path_to_T2']
     :return: 5D image consisting of images from 'path_to_T1', 'path_to_T2'
+             The five dimensions are H x W x D x Modality x Time point
     """
     if csv_cell is None:
         return None
@@ -154,6 +155,7 @@ def csv_cell_to_volume_5d(csv_cell):
             # load a 3d volume
             img_nii = nib.load(csv_cell()[t][m])
             img_data_shape = img_nii.header.get_data_shape()
+            assert np.prod(img_data_shape) > 1
 
             if not flag_dimensions_set:
                 dimensions = img_data_shape[0:min(3, len(img_data_shape))]
@@ -254,7 +256,9 @@ def match_volume_shape_to_patch_definition(image_data, patch):
         return None
     if patch is None:
         return None
-    image_data = np.squeeze(image_data, axis=4)
+    # always casting to 4D input volume [H x W x D x Modality]
+    while image_data.ndim > 4:
+        image_data = image_data[..., 0]
     while image_data.ndim < 4:
         image_data = np.expand_dims(image_data, axis=-1)
     return image_data

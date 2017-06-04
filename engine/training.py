@@ -24,17 +24,14 @@ def run(net_class, param, csv_dict, device_str):
     param.queue_length = max(param.queue_length, param.batch_size)
     # expanding a few user input parameters
     if param.spatial_rank == 3:
-        spatial_padding = ((param.volume_padding_size,
-                            param.volume_padding_size),
-                           (param.volume_padding_size,
-                           param.volume_padding_size),
-                           (param.volume_padding_size,
-                           param.volume_padding_size))
+        spatial_padding = \
+            ((param.volume_padding_size, param.volume_padding_size),
+             (param.volume_padding_size, param.volume_padding_size),
+             (param.volume_padding_size, param.volume_padding_size))
     else:
-        spatial_padding = ((param.volume_padding_size,
-                            param.volume_padding_size),
-                           (param.volume_padding_size,
-                           param.volume_padding_size))
+        spatial_padding = \
+            ((param.volume_padding_size, param.volume_padding_size),
+             (param.volume_padding_size, param.volume_padding_size))
     interp_order = (param.image_interp_order,
                     param.label_interp_order,
                     param.w_map_interp_order)
@@ -67,8 +64,8 @@ def run(net_class, param, csv_dict, device_str):
     with graph.as_default(), tf.device('/cpu:0'):
         # defines a training element
         patch_holder = ImagePatch(
-            image_size=param.image_size,
             spatial_rank=param.spatial_rank,
+            image_size=param.image_size,
             label_size=param.label_size,
             weight_map_size=param.w_map_size,
             image_dtype=tf.float32,
@@ -128,7 +125,7 @@ def run(net_class, param, csv_dict, device_str):
             weight_maps = train_pairs['weight_maps']
         else:
             weight_maps = None
-        for i in range(0, param.num_gpus):
+        for i in range(0, max(param.num_gpus, 1)):
             with tf.device("/{}:{}".format(device_str, i)):
                 predictions = net(images, is_training=True)
                 data_loss = loss_func(predictions, labels, weight_maps)

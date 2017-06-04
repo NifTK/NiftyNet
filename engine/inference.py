@@ -20,12 +20,15 @@ def run(net_class, param, csv_dict, device_str):
     param.queue_length = max(param.queue_length, param.batch_size)
     # expanding a few of the user input parameters
     if param.spatial_rank == 3:
-        spatial_padding = ((param.volume_padding_size, param.volume_padding_size),
-                       (param.volume_padding_size, param.volume_padding_size),
-                       (param.volume_padding_size, param.volume_padding_size))
+        spatial_padding = \
+            ((param.volume_padding_size, param.volume_padding_size),
+             (param.volume_padding_size, param.volume_padding_size),
+             (param.volume_padding_size, param.volume_padding_size))
     else:
-        spatial_padding = ((param.volume_padding_size, param.volume_padding_size),
-                       (param.volume_padding_size, param.volume_padding_size))
+        spatial_padding = \
+            ((param.volume_padding_size, param.volume_padding_size),
+             (param.volume_padding_size, param.volume_padding_size))
+
     param_n_channel_out = 1 if not param.output_prob else param.num_classes
     interp_order = (param.image_interp_order,
                     param.label_interp_order,
@@ -40,6 +43,7 @@ def run(net_class, param, csv_dict, device_str):
                          norm_type=param.norm_type,
                          cutoff=(param.cutoff_min, param.cutoff_max),
                          mask_type=param.mask_type)
+
     # define how to choose training volumes
     volume_loader = VolumeLoaderLayer(
         csv_loader,
@@ -58,19 +62,12 @@ def run(net_class, param, csv_dict, device_str):
     with graph.as_default(), tf.device("/{}:0".format(device_str)):
         # construct inference queue and graph
         # TODO change batch size param - batch size could be larger in test case
-        if param.spatial_rank == 2.5:
-            image_shape = [param.image_size] * 2
-            label_shape = [param.label_size] * 2
-            weight_map_shape = [param.w_map_size] * 2
-        else:
-            image_shape = [param.image_size] * int(param.spatial_rank)
-            label_shape = [param.label_size] * int(param.spatial_rank)
-            weight_map_shape = [param.w_map_size] * int(param.spatial_rank)
+
         patch_holder = ImagePatch(
+            spatial_rank=param.spatial_rank,
             image_size=param.image_size,
             label_size=param.label_size,
             weight_map_size=param.w_map_size,
-            spatial_rank=param.spatial_rank,
             image_dtype=tf.float32,
             label_dtype=tf.int64,
             weight_map_dtype=tf.float32,
@@ -80,9 +77,7 @@ def run(net_class, param, csv_dict, device_str):
 
         # `patch` instance with image data only
         spatial_rank = patch_holder.spatial_rank
-        sampling_grid_size = patch_holder.image_size - 2 * param.border
-        # It should maybe be:
-        sampling_grid_size = patch_holder.label_size
+        sampling_grid_size = patch_holder.label_size - 2 * param.border
         assert sampling_grid_size > 0
         sampler = GridSampler(patch=patch_holder,
                               volume_loader=volume_loader,
@@ -138,12 +133,6 @@ def run(net_class, param, csv_dict, device_str):
                         # when subject_id changed
                         # save current map and reset cumulative map variable
                         if subject_i is not None:
-                            # In case multiple modalities out, have to swap
-                            # the dimensions to ensure modalties in the 5th
-                            # dimension (nifty standards)
-                            if pred_img.shape[3] > 1:
-                                print("Ensuring nifty dimension standards")
-                                pred_img = np.swapaxes(pred_img, 4, 3)
                             subject_i.save_network_output(
                                 pred_img,
                                 param.save_seg_dir,
@@ -169,24 +158,26 @@ def run(net_class, param, csv_dict, device_str):
                         predictions = np.expand_dims(predictions, axis=-1)
 
                     # assign predicted patch to the allocated output volume
-                    origin = spatial_info[batch_id, 1:(1 + spatial_rank)]
+                    origin = spatial_info[
+                        batch_id, 1:(1 + int(np.floor(spatial_rank)))]
+
                     # indexing within the patch
-                    if param.border > 0 and patch_holder.label_size == \
-                            patch_holder.image_size:
-                        s_ = param.border
-                        _s = patch_holder.image_size - param.border
-                        p_, _p = s_, _s
-                    else:
-                        s_ = (patch_holder.image_size -
-                              patch_holder.label_size)/2
-                        _s = s_ + patch_holder.label_size
-                        p_, _p = 0, patch_holder.label_size
-                    # indexing within the prediction volume
+                    assert patch_holder.label_size >= param.border*2
+                    p_ = param.border
+                    _p = patch_holder.label_size - param.border
+
+                    # indexing relative to the sampled volume
+                    assert patch_holder.image_size >= patch_holder.label_size
+                    image_label_size_diff = patch_holder.image_size - \
+                                            patch_holder.label_size
+                    s_ = param.border + int(image_label_size_diff / 2)
+                    _s = s_ + patch_holder.label_size - 2 * param.border
+                    # absolute indexing in the prediction volume
                     dest_start, dest_end = (origin + s_), (origin + _s)
 
                     assert np.all(dest_start >= 0)
-                    assert np.all(dest_end <= pred_img.shape[0:int(np.floor(
-                        spatial_rank))])
+                    assert np.all(dest_end <= pred_img.shape[
+                                              0:int(np.floor(spatial_rank))])
                     if spatial_rank == 3:
                         x_, y_, z_ = dest_start
                         _x, _y, _z = dest_end
@@ -200,11 +191,9 @@ def run(net_class, param, csv_dict, device_str):
                     elif spatial_rank == 2.5:
                         x_, y_ = dest_start
                         _x, _y = dest_end
-                        z_ = spatial_info[batch_id, 1 + int(np.floor(
-                            spatial_rank))]
-                        pred_img[x_:_x, y_:_y, z_, ...] = predictions[p_:_p,
-                                                                      p_:_p,
-                                                                      0, ...]
+                        z_ = spatial_info[batch_id, 3]
+                        pred_img[x_:_x, y_:_y, z_:(z_+1), ...] = \
+                            predictions[p_:_p, p_:_p, ...]
                     else:
                         raise ValueError("unsupported spatial rank")
                 print('processed {} image patches ({:.3f}s)'.format(

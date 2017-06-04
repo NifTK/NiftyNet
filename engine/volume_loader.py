@@ -56,6 +56,8 @@ class VolumeLoaderLayer(Layer):
         data. These are used to train a histogram normalisation reference.
         """
         self.subject_list = self.csv_table.to_subject_list()
+        if len(self.subject_list) == 0:
+            raise ValueError("subject not found")
         if self.is_training:
             shuffle(self.subject_list)
         self.current_id = -1

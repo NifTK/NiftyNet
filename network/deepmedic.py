@@ -11,8 +11,8 @@ from layer.upsample import UpSampleLayer
 class DeepMedic(TrainableLayer):
     """
     reimplementation of DeepMedic:
-      Kamnitsas et al., "Efficient multi-scale 3D CNN with fully connected
-      CRF for accurate brain lesion segmentation", MedIA '17
+        Kamnitsas et al., "Efficient multi-scale 3D CNN with fully connected
+        CRF for accurate brain lesion segmentation", MedIA '17
     """
 
     def __init__(self,
@@ -49,6 +49,11 @@ class DeepMedic(TrainableLayer):
 
         # where 16 is fixed by the receptive field of conv layers
         # TODO: make sure label_size = image_size/d_factor - 16
+
+        # image_size has to be an odd number and divisible by 3 and
+        # smaller than the smallest image size of the input volumes
+
+        # label_size should be (image_size/d_factor - 16) * d_factor
 
         assert self.d_factor % 2 == 1  # to make the downsampling centered
         assert (layer_util.check_spatial_dims(

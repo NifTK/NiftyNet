@@ -1,25 +1,26 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import tensorflow as tf
+
+
 from .subject import ColumnData
 
-############ prefered usage ###################################
-#test_patch = ImagePatch(spatial_rank=3,
-#                        image_size=32,
-#                        label_size=32,
-#                        weight_map_size=32,
-#                        image_dtype=tf.float32,
-#                        label_dtype=tf.int64,
-#                        weight_map_dtype=tf.float32,
-#                        num_image_modality=1,
-#                        num_label_modality=1,
-#                        num_weight_map=1)
+############ prefered usage example ##########
+# test_patch = ImagePatch(spatial_rank=3,
+#                         image_size=32,
+#                         label_size=32,
+#                         weight_map_size=32,
+#                         image_dtype=tf.float32,
+#                         label_dtype=tf.int64,
+#                         weight_map_dtype=tf.float32,
+#                         num_image_modality=1,
+#                         num_label_modality=1,
+#                         num_weight_map=1)
 ################################################
 
 
+SUPPORTED_SPATIAL_RANKS = {2.0, 2.5, 3.0}
 
-
-SUPPORTED_SPATIAL_RANKS = set([2.0, 2.5, 3.0])
 
 
 class ImagePatch(object):
@@ -29,7 +30,7 @@ class ImagePatch(object):
 
 
     It assumes all images have same length in all spatial dims
-    i.e., image_shape = [image_size] * np.ceil(spatial_rank)
+    i.e., image_shape = [image_size] * int(np.floor(spatial_rank))
     and full_image_shape = [image_spatial_shape] + [number_of_modalities]
 
     *_size an integer specifying how many voxels along one dimension
@@ -111,25 +112,26 @@ class ImagePatch(object):
         # 2D patch:   [d x d x n_mod]
         # 2.5D patch: [d x d x n_mod]
         # 3D patch:   [d x d x d x n_mod]
-        spatial_dims = (self.image_size, ) * int(np.floor(self.spatial_rank))
-        spatial_dims = spatial_dims + (self._num_image_modality, )
+
+        spatial_dims = (self.image_size,) * int(np.floor(self.spatial_rank))
+        spatial_dims = spatial_dims + (self._num_image_modality,)
         return spatial_dims
 
     @property
     def full_label_shape(self):
         if self.has_labels:
-            spatial_dims = (self.label_size, ) *\
-                            int(np.floor(self.spatial_rank))
-            spatial_dims = spatial_dims + (self._num_label_modality, )
+            spatial_dims = (self.label_size,) * \
+                           int(np.floor(self.spatial_rank))
+            spatial_dims = spatial_dims + (self._num_label_modality,)
             return spatial_dims
         return None
 
     @property
     def full_weight_map_shape(self):
         if self.has_weight_maps:
-            spatial_dims = (self.weight_map_size, ) * \
+            spatial_dims = (self.weight_map_size,) * \
                            int(np.floor(self.spatial_rank))
-            spatial_dims = spatial_dims + (self._num_weight_map, )
+            spatial_dims = spatial_dims + (self._num_weight_map,)
             return spatial_dims
         return None
 
@@ -141,11 +143,11 @@ class ImagePatch(object):
         the first dim: volume id
         the size of the other dims: spatial_rank * 2, indicating starting
         and end point of a patch in each dim
-        3D:   [volume_id, x_start, x_end, y_start, y_end, z_start, z_end]
-        2.5D: [volume_id, x_start, x_end, y_start, y_end, z_start]
-        2D:   [volume_id, x_start, x_end, y_start, y_end]
+        3D:   [volume_id, x_start, y_start, z_start, x_end, y_end, z_end]
+        2.5D: [volume_id, x_start, y_start, z_start, x_end, y_end]
+        2D:   [volume_id, x_start, y_start, x_end, y_end]
         """
-        return (1 + int(self.spatial_rank * 2.0), )
+        return (1 + int(self.spatial_rank * 2.0),)
 
     def create_placeholders(self):
         """
@@ -247,21 +249,21 @@ class ImagePatch(object):
             assert _z <= img.data.shape[2]
             self.image = img.data[x_:_x, y_:_y, z_:_z, :]
             if self.has_labels and (seg is not None):
-                diff = self.image_size - self.label_size
+                diff = int((self.image_size - self.label_size) / 2)
                 assert diff >= 0  # assumes label_size <= image_size
                 x_d, y_d, z_d = (x_ + diff), (y_ + diff), (z_ + diff)
                 self.label = seg.data[x_d: (self.label_size + x_d),
-                             y_d: (self.label_size + y_d),
-                             z_d: (self.label_size + z_d), :]
+                                      y_d: (self.label_size + y_d),
+                                      z_d: (self.label_size + z_d), :]
 
             if self.has_weight_maps and (w_map is not None):
-                diff = self.image_size - self.weight_map_size
+                diff = int((self.image_size - self.weight_map_size) / 2)
                 assert diff >= 0
                 x_d, y_d, z_d = (x_ + diff), (y_ + diff), (z_ + diff)
                 self.weight_map = \
                     w_map.data[x_d: (self.weight_map_size + x_d),
-                    y_d: (self.weight_map_size + y_d),
-                    z_d: (self.weight_map_size + z_d), :]
+                               y_d: (self.weight_map_size + y_d),
+                               z_d: (self.weight_map_size + z_d), :]
             return
 
         if self.spatial_rank == 2:
@@ -276,14 +278,14 @@ class ImagePatch(object):
         assert z_ < img.data.shape[2]
         self.image = img.data[x_:_x, y_:_y, z_, :]
         if self.has_labels and (seg is not None):
-            diff = self.image_size - self.label_size
+            diff = int((self.image_size - self.label_size) / 2)
             assert diff >= 0  # assumes label_size <= image_size
             x_d, y_d = (x_ + diff), (y_ + diff)
             self.label = seg.data[x_d: (self.label_size + x_d),
                                   y_d: (self.label_size + y_d), z_, :]
 
         if self.has_weight_maps and (w_map is not None):
-            diff = self.image_size - self.weight_map_size
+            diff = int((self.image_size - self.weight_map_size) / 2)
             assert diff >= 0
             x_d, y_d, = (x_ + diff), (y_ + diff)
             self.weight_map = \
