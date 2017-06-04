@@ -5,6 +5,7 @@ from layer.convolution import ConvolutionalLayer
 from layer.deconvolution import DeconvolutionalLayer
 from layer.downsample import DownSampleLayer
 from layer.elementwise import ElementwiseLayer
+from layer.crop import CropLayer
 from utilities.misc_common import look_up_operations
 
 
@@ -37,6 +38,7 @@ class UNet3D(TrainableLayer):
     def layer_op(self, images, is_training, layer_id=-1):
         # image_size  should be divisible by 8
         assert layer_util.check_spatial_dims(images, lambda x: x % 8 == 0)
+        assert layer_util.check_spatial_dims(images, lambda x: x >= 89)
         block_layer = UNetBlock('DOWNSAMPLE',
                                 (self.n_features[0], self.n_features[1]),
                                 (3, 3), with_downsample_branch=True,
@@ -113,6 +115,9 @@ class UNet3D(TrainableLayer):
 
         # for the last layer, upsampling path is not used
         _, output_tensor = block_layer(concat_1, is_training)
+
+        crop_layer = CropLayer(border=44, name='crop-88')
+        output_tensor = crop_layer(output_tensor)
         print(block_layer)
         return output_tensor
 

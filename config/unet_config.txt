@@ -21,12 +21,12 @@ num_threads = 2
 spatial_rank = 3
 batch_size = 1
 image_size = 96
-label_size = 96
-w_map_size = 96
+label_size = 8
+w_map_size = 8
 num_classes = 160
 
 # affected by network's receptive field
-volume_padding_size = 21
+volume_padding_size = 44
 
 #histogram normalisation
 histogram_ref_file = ./example_volumes/monomodal_parcellation/standardisation_models.txt

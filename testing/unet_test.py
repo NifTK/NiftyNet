@@ -6,7 +6,7 @@ from network.unet import UNet3D
 
 class UNet3DTest(tf.test.TestCase):
     def test_3d_shape(self):
-        input_shape = (2, 32, 32, 32, 1)
+        input_shape = (2, 96, 96, 96, 1)
         x = tf.ones(input_shape)
 
         unet_instance = UNet3D(num_classes=160)
@@ -16,10 +16,10 @@ class UNet3DTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
-            self.assertAllClose((2, 32, 32, 32, 160), out.shape)
+            self.assertAllClose((2, 8, 8, 8, 160), out.shape)
 
     def test_2d_shape(self):
-        input_shape = (2, 32, 32, 1)
+        input_shape = (2, 96, 96, 1)
         x = tf.ones(input_shape)
 
         unet_instance = UNet3D(num_classes=160)
@@ -29,10 +29,10 @@ class UNet3DTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
-            self.assertAllClose((2, 32, 32, 160), out.shape)
+            self.assertAllClose((2, 8, 8, 160), out.shape)
 
     def test_3d_reg_shape(self):
-        input_shape = (2, 32, 32, 32, 1)
+        input_shape = (2, 96, 96, 96, 1)
         x = tf.ones(input_shape)
 
         unet_instance = UNet3D(num_classes=160,
@@ -43,10 +43,10 @@ class UNet3DTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
-            self.assertAllClose((2, 32, 32, 32, 160), out.shape)
+            self.assertAllClose((2, 8, 8, 8, 160), out.shape)
 
     def test_2d_reg_shape(self):
-        input_shape = (2, 32, 32, 1)
+        input_shape = (2, 96, 96, 1)
         x = tf.ones(input_shape)
 
         unet_instance = UNet3D(num_classes=160,
@@ -57,7 +57,7 @@ class UNet3DTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
-            self.assertAllClose((2, 32, 32, 160), out.shape)
+            self.assertAllClose((2, 8, 8, 160), out.shape)
 
 
 if __name__ == "__main__":
