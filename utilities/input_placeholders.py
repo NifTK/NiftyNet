@@ -2,6 +2,7 @@
 import numpy as np
 import tensorflow as tf
 
+
 from .subject import ColumnData
 
 ############ prefered usage example ##########
@@ -19,6 +20,7 @@ from .subject import ColumnData
 
 
 SUPPORTED_SPATIAL_RANKS = {2.0, 2.5, 3.0}
+
 
 
 class ImagePatch(object):
@@ -110,6 +112,7 @@ class ImagePatch(object):
         # 2D patch:   [d x d x n_mod]
         # 2.5D patch: [d x d x n_mod]
         # 3D patch:   [d x d x d x n_mod]
+
         spatial_dims = (self.image_size,) * int(np.floor(self.spatial_rank))
         spatial_dims = spatial_dims + (self._num_image_modality,)
         return spatial_dims
