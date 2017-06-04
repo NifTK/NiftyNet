@@ -12,11 +12,13 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 ### Features
 * Easy-to-customise interfaces of network components
 * Designed for sharing networks and pretrained models
+* Designed to support 2-D, 2.5-D, 3-D, 4-D inputs*
 * Efficient discriminative training with multiple-GPU support
 * Implemented recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
 * Comprehensive evaluation metrics for medical image segmentation
 
-
+ <sup>*2.5-D: volumetric images processed as a stack of 2D slices; 
+4-D: co-registered multi-modal 3D volumes</sup>
 ### Dependencies
 * six
 * Python 2.7
@@ -29,6 +31,7 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 
 
 ### Usage
+##### (a) To Run a toy example
 To train a "toynet" specified in `network/toynet.py`:
 ``` sh
 cd NiftyNet/
@@ -38,7 +41,7 @@ tar -xzvf example_volumes.tar.gz
 python run_application.py train --net_name toynet \
     --image_size 42 --label_size 42 --batch_size 1
 ```
-(GPU is enabled by default; to train with CPU only please use `--num_gpus 0`)
+(GPU computing is enabled by default; to train with CPU only please use `--num_gpus 0`)
 
 After the training process, to do segmentation with a trained "toynet":
 ``` sh
@@ -47,9 +50,11 @@ python run_application.py inference --net_name toynet \
     --save_seg_dir ./seg_output \
     --image_size 80 --label_size 80 --batch_size 8
 ```
-*Commandline parameters override the default settings defined in `config/default_config.txt`.*
+##### (b) To customise configurations
+Commandline parameters override the default settings defined in `config/default_config.txt`.
 
 Alternatively, to run with a customised config file:
+
 ``` sh
 cd NiftyNet/
 # training
@@ -62,7 +67,7 @@ where `/path/to/customised_config` implements all parameters listed by running:
 python run_application.py -h
 ```
 
-To develop a new architecture:
+##### (c) To develop a new network architecture
 1. Create a `network/new_net.py` inheriting `TrainableLayer` from `layer.base_layer`
 1. Implement `layer_op()` function using the building blocks in `layer/` or creating new layers
 1. Import `network.new_net` to the `NetFactory` class in `run_application.py`
