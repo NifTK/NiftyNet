@@ -25,8 +25,8 @@ class RandomRotationLayer(Layer):
         if spatial_rank == 3:
             self._randomise_transformation_3d()
         else:
-            raise ValueError(
-                'currently not supported spatial rank for rand rotation')
+            #currently not supported spatial rank for rand rotation
+            pass
 
     def _randomise_transformation_3d(self):
         # generate transformation
@@ -80,4 +80,5 @@ class RandomRotationLayer(Layer):
             return inputs
         else:
             # TODO: rotation for spatial_rank is 2
-            raise ValueError('unsupported spatial rank')
+            # currently not supported 2/2.5D rand rotation
+            return inputs

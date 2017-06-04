@@ -191,9 +191,8 @@ def run(net_class, param, csv_dict, device_str):
                     elif spatial_rank == 2.5:
                         x_, y_ = dest_start
                         _x, _y = dest_end
-                        z_ = spatial_info[batch_id,
-                                          1 + int(np.floor(spatial_rank))]
-                        pred_img[x_:_x, y_:_y, z_, ...] = \
+                        z_ = spatial_info[batch_id, 3]
+                        pred_img[x_:_x, y_:_y, z_:(z_+1), ...] = \
                             predictions[p_:_p, p_:_p, ...]
                     else:
                         raise ValueError("unsupported spatial rank")
