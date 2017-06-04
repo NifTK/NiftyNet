@@ -11,7 +11,7 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 
 ### Features
 * Easy-to-customise interfaces of network components
-* Designed for sharing networks and pretrained models with the community
+* Designed for sharing networks and pretrained models
 * Efficient discriminative training with multiple-GPU support
 * Implemented recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
 * Comprehensive evaluation metrics for medical image segmentation
@@ -38,7 +38,7 @@ tar -xzvf example_volumes.tar.gz
 python run_application.py train --net_name toynet \
     --image_size 42 --label_size 42 --batch_size 1
 ```
-GPU is enabled by default; to train with CPU only please add parameter `--num_gpus 0`
+(GPU is enabled by default; to train with CPU only please use `--num_gpus 0`)
 
 After the training process, to do segmentation with a trained "toynet":
 ``` sh
@@ -72,7 +72,7 @@ To develop a new architecture:
 Image data in nifty format (extension .nii or .nii.gz) are supported.
 
 ### Structure
-The basic picture of training procedure (data parallelism) is:
+The basic picture of a training procedure (data parallelism) is:
 ```
 <Multi-GPU training>
                                      (engine/training.py)

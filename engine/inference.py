@@ -20,12 +20,15 @@ def run(net_class, param, csv_dict, device_str):
     param.queue_length = max(param.queue_length, param.batch_size)
     # expanding a few of the user input parameters
     if param.spatial_rank == 3:
-        spatial_padding = ((param.volume_padding_size, param.volume_padding_size),
-                       (param.volume_padding_size, param.volume_padding_size),
-                       (param.volume_padding_size, param.volume_padding_size))
+        spatial_padding = \
+            ((param.volume_padding_size, param.volume_padding_size),
+             (param.volume_padding_size, param.volume_padding_size),
+             (param.volume_padding_size, param.volume_padding_size))
     else:
-        spatial_padding = ((param.volume_padding_size, param.volume_padding_size),
-                       (param.volume_padding_size, param.volume_padding_size))
+        spatial_padding = \
+            ((param.volume_padding_size, param.volume_padding_size),
+             (param.volume_padding_size, param.volume_padding_size))
+
     param_n_channel_out = 1 if not param.output_prob else param.num_classes
     interp_order = (param.image_interp_order,
                     param.label_interp_order,
@@ -40,6 +43,7 @@ def run(net_class, param, csv_dict, device_str):
                          norm_type=param.norm_type,
                          cutoff=(param.cutoff_min, param.cutoff_max),
                          mask_type=param.mask_type)
+
     # define how to choose training volumes
     volume_loader = VolumeLoaderLayer(
         csv_loader,

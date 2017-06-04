@@ -4,6 +4,14 @@ from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.framework import function
 import numpy
 
+"""
+Re-implementation of [1] for volumetric image processing.
+
+
+[1] Zheng, Shuai, et al. "Conditional random fields as recurrent neural networks." 
+CVPR 2015.
+"""
+
 def permutohedral_prepare(position_vectors):
 	batch_size = int(position_vectors.get_shape()[0])
 	nCh=int(position_vectors.get_shape()[-1])

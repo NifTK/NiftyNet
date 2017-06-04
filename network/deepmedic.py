@@ -11,8 +11,8 @@ from layer.upsample import UpSampleLayer
 class DeepMedic(TrainableLayer):
     """
     reimplementation of DeepMedic:
-      Kamnitsas et al., "Efficient multi-scale 3D CNN with fully connected
-      CRF for accurate brain lesion segmentation", MedIA '17
+        Kamnitsas et al., "Efficient multi-scale 3D CNN with fully connected
+        CRF for accurate brain lesion segmentation", MedIA '17
     """
 
     def __init__(self,
