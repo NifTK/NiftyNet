@@ -17,7 +17,7 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 * Implemented recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
 * Comprehensive evaluation metrics for medical image segmentation
 
- <sup>*2.5-D: volumetric images processed as a stack of 2D slices; 
+ <sup>*2.5-D: volumetric images processed as a stack of 2D slices;
 4-D: co-registered multi-modal 3D volumes</sup>
 ### Dependencies
 * six
@@ -31,7 +31,7 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 
 
 ### Usage
-##### (a) To Run a toy example
+##### (a) To run a toy example
 To train a "toynet" specified in `network/toynet.py`:
 ``` sh
 cd NiftyNet/
