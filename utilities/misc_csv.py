@@ -92,7 +92,7 @@ def __find_max_overlap_in_list(name, list_names):
 
 # Perform the double matching between two lists of list of possible names.
 # First find the direct matches, remove them from the ones still to match and
-#  match the remainding ones using the maximum overlap. Returns the name
+#  match the remaining ones using the maximum overlap. Returns the name
 # match for each list, and the index correspondences.
 def match_second_degree(name_list1, name_list2):
     if name_list1 is None or name_list2 is None:
@@ -113,13 +113,13 @@ def match_second_degree(name_list1, name_list2):
         if init_match1[i] == '':
             for n in name_list1[i]:
                 init_match1[i], index = __find_max_overlap_in_list(n, redflat_2)
-                if index > 0:
+                if index >= 0:
                     ind_match1[i] = indflat_2[index]
     for i in range(0, len(name_list2)):
         if init_match2[i] == '':
             for n in name_list2[i]:
                 init_match2[i], index = __find_max_overlap_in_list(n, redflat_1)
-                if index > 0:
+                if index >= 0:
                     ind_match2[i] = indflat_1[index]
     return init_match1, ind_match1, init_match2, ind_match2
 
@@ -145,7 +145,7 @@ def join_subject_id_and_filename_list(name_list, list_files):
         'To do : Taking care of the case when the list of a constraint is ' \
         'completely empty'
         for c in range(0, len(list_files)):
-            output = list_files[c][ind_tot[c][i]] if ind_tot[c][i]>0 else ''
+            output = list_files[c][ind_tot[c][i]] if ind_tot[c][i]>-1 else ''
             list_temp.append(output)
         list_combined.append(list_temp)
     return list_combined
