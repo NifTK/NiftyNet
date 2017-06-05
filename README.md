@@ -115,10 +115,10 @@ To run NiftyNet on the CS cluster, follow these instructions:
 #$ -l tmem=11.5G
 #$ -S /bin/bash
 #!/bin/bash
-# The lines above are resource requests. This script has requested 1 Titan X (Pascal) GPU for 24 hours, and 11.5 GB of memory to be started with the BASH Shell. 
+# The lines above are resource requests. This script has requested 1 Titan X (Pascal) GPU for 24 hours, and 11.5 GB of memory to be started with the BASH Shell.
 # More information about resource requests can be found at http://hpc.cs.ucl.ac.uk/job_submission_sge/
 
-# This line ensures that you only use the 1 GPU requested. 
+# This line ensures that you only use the 1 GPU requested.
 export CUDA_VISIBLE_DEVICES=$(( `nvidia-smi | grep " / .....MiB"|grep -n " ...MiB / [0-9]....MiB"|cut -d : -f 1|head -n 1` - 1 ))
 
 # If CUDA_VISIBLE_DEVICES is set to -1, there were no available GPUs. This is often due to someone else failing to correctly limit their GPU usage as in the line above.
@@ -127,7 +127,7 @@ then
 
 # These lines backup up you old library path and set a special library path that makes it possible to run tensorflow
 export LD_LIBRARY_BACKUP=${LD_LIBRARY_PATH}
-export LD_LIBRARY_PATH="/share/apps/libc6_2.17/lib/x86_64-linux-gnu/:/share/apps/libc6_2.17/usr/lib64/:/share/apps/gcc-6.2.0/lib64:/share/apps/gcc-6.2.0/lib:/share/apps/python-3.6.0-shared/lib:/share/apps/cuda-8.0/lib64:/share/apps/cuda-8.0/extras/CUPTI/lib64:${LD_LIBRARY_PATH}" 
+export LD_LIBRARY_PATH="/share/apps/libc6_2.17/lib/x86_64-linux-gnu/:/share/apps/libc6_2.17/usr/lib64/:/share/apps/gcc-6.2.0/lib64:/share/apps/gcc-6.2.0/lib:/share/apps/python-3.6.0-shared/lib:/share/apps/cuda-8.0/lib64:/share/apps/cuda-8.0/extras/CUPTI/lib64:${LD_LIBRARY_PATH}"
 
 # This is the line that runs the NiftyNet command
 /share/apps/libc6_2.17/lib/x86_64-linux-gnu/ld-2.17.so $(command -v /share/apps/python-3.6.0-shared/bin/python3) run_application.py train --net_name toynet --image_size 42 --label_size 42 --batch_size 1
