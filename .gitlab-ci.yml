@@ -68,7 +68,7 @@ testjob:
     - coverage run -a --source . -m testing.vnetblock_test
     - coverage run -a --source . -m testing.vnet_test
     - coverage run -a --source . -m testing.unetblock_test
-    - coverage run -a --source . -m testing.unet_test
+      #- coverage run -a --source . -m testing.unet_test
     - coverage run -a --source . -m testing.scaleblock_test
     - coverage run -a --source . -m testing.scalenet_test
     - coverage run -a --source . -m testing.toy_sampler_test
