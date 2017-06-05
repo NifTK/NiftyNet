@@ -1,9 +1,7 @@
 testjob:
   only:
-    - citest
     - master
-    - module
-    - defining_tests
+    - dev
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
