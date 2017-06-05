@@ -27,7 +27,7 @@ python -m testing.subject_test
 python -m testing.test_sample
 python -m testing.toy_sampler_test
 python -m testing.toynet_test
-python -m testing.unet_test
+#python -m testing.unet_test
 python -m testing.unetblock_test
 python -m testing.uniform_sampler_test
 python -m testing.upsample_test
