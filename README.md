@@ -97,6 +97,7 @@ image&label ->> (engine/*_sampler.py)   >>>   |   model <----+------+
 (*.nii.gz)        (layer/rand_*.py)     >>>   |  update    stochastic gradients
 ```
 
+
 ### CMIC Cluster
 For UCL CMIC members:
 To run NiftyNet on the CS cluster, follow these instructions:
@@ -143,6 +144,11 @@ fi
 ```
 qsub mySubmissionScript.sh
 ```
+
+### Contributing
+Feature requests and bug reports are collected on [Issues](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/issues).
+
+Contributors are encouraged to take a look at [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ### Citation
 If you use this software, please cite:
