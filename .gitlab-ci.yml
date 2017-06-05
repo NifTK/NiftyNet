@@ -38,8 +38,9 @@ testjob:
     - coverage run -a --source . run_application.py train -c config/vnet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2
     - coverage run -a --source . run_application.py inference -c config/vnet_config.txt --batch_size 16 --image_size 64 --label_size 64 --queue_length 32
 
-    - coverage run -a --source . run_application.py train -c config/unet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2
-    - coverage run -a --source . run_application.py inference -c config/unet_config.txt --batch_size 8 --image_size 64 --label_size 64 --queue_length 32
+    # need a large GPU to run
+    #- coverage run -a --source . run_application.py train -c config/unet_config.txt --batch_size 1 --image_size 96 --label_size 96 --queue_length 5 --num_threads 2
+    #- coverage run -a --source . run_application.py inference -c config/unet_config.txt --batch_size 1 --image_size 96 --label_size 96 --queue_length 5
 
     - coverage run -a --source . run_application.py train -c config/deepmedic_config.txt --batch_size 8 --queue_length 16 --num_threads 2
     - coverage run -a --source . run_application.py inference -c config/deepmedic_config.txt --batch_size 64 --queue_length 96

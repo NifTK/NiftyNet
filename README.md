@@ -21,13 +21,18 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 4-D: co-registered multi-modal 3D volumes</sup>
 ### Dependencies
 * six
-* Python 2.7
-* Tensorflow 1.0
-* Nibabel 2.1
-* Numpy 1.12
-* Scipy 0.19
+* Python
+* Tensorflow
+* Nibabel
+* Numpy
+* Scipy
 * configparser
 * scikit-image
+
+Please run `pip install -r requirements` to install the dependencies
+
+To intall tensorflow, please follow
+https://www.tensorflow.org/install/
 
 
 ### Usage

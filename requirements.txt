@@ -1,7 +1,6 @@
-six
-nibabel
-numpy
-scipy
-tensorflow-gpu
+six>=1.10
+nibabel>=2.1.0
+numpy>=1.11
+scipy>=0.18
 configparser
-scikit-image
+scikit-image>0.12
