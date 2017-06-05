@@ -9,14 +9,14 @@ Possible activation layers to be specified as the acti_func field of Convolution
 
 Field | Equation | Graph
 ------|----------|------
-relu  |[relu_eq](../equations_and_images_doc/relu_eq.pdf)| ![relu_img](../equations_and_images_doc/relu_img.png)
-relu6 |[relu6_eq](../equations_and_images_doc/relu6_eq.pdf)| tes
-elu | ![elu_eq](../equations_and_images_doc/elu_eq.pdf)|![elu_img](../equations_and_images_doc/elu_img.png)
-softplus |[softplus_eq](../equations_and_images_doc/softplus_eq.pdf)|![softplus_img](../equations_and_images_doc/softplus_img.png)
-softsign |[softsign_eq](../equations_and_images_doc/softsign_eq.pdf) |![softsign_img](../equations_and_images_doc/softsign_img.png)
-sigmoid |[sigmoid_eq](../equations_and_images_doc/sigmoid_eq.pdf)|![sigmoid_img](../equations_and_images_doc/sigmoid_img.png)
-tanh |[tanh_eq](../equations_and_images_doc/tanh_eq.pdf) |![tanh_img](../equations_and_images_doc/tanh_img.png)
-prelu |[prelu_eq](../equations_and_images_doc/prelu_eq.pdf) |![prelu_img](../equations_and_images_doc/prelu_img.png)
+relu  |[relu_eq](./figures/relu_eq.pdf)| ![relu_img](./figures/relu_img.png)
+relu6 |[relu6_eq](./figures/relu6_eq.pdf)| tes
+elu | ![elu_eq](./figures/elu_eq.pdf)|![elu_img](./figures/elu_img.png)
+softplus |[softplus_eq](./figures/softplus_eq.pdf)|![softplus_img](./figures/softplus_img.png)
+softsign |[softsign_eq](./figures/softsign_eq.pdf) |![softsign_img](./figures/softsign_img.png)
+sigmoid |[sigmoid_eq](./figures/sigmoid_eq.pdf)|![sigmoid_img](./figures/sigmoid_img.png)
+tanh |[tanh_eq](./figures/tanh_eq.pdf) |![tanh_img](./figures/tanh_img.png)
+prelu |[prelu_eq](./figures/prelu_eq.pdf) |![prelu_img](./figures/prelu_img.png)
 dropout | |
 
 
