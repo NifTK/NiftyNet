@@ -1,3 +1,5 @@
+from __future__ import absolute_import, print_function
+
 import tensorflow as tf
 
 from engine.toy_sampler import ToySampler

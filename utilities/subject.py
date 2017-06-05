@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function
 import os
 
 import nibabel as nib
 import numpy as np
-
-import misc_io as util
-from misc_common import CacheFunctionOutput
+import utilities.misc_io as util
+from .misc_common import CacheFunctionOutput
 
 STANDARD_ORIENTATION = [[0, 1], [1, 1], [2, 1]]
 
@@ -291,7 +291,9 @@ class Subject(object):
                                            do_resampling=do_resampling,
                                            interp_order=interp_order[i],
                                            spatial_padding=spatial_padding)
-            output_dict[column_dict.keys()[0]] = column_dict.values()[0]
+
+            desired_key = list(column_dict)[0]
+            output_dict[desired_key] = column_dict[desired_key]
         return output_dict
 
     def modalities_dict(self):
@@ -325,7 +327,7 @@ class Subject(object):
             data_type = np.float
         else:
             data_type = np.int
-        print('preparing output size {}'.format(zeros_shape))
+        print('Preparing output size {}'.format(zeros_shape))
         return np.ones(zeros_shape, dtype=data_type) * init_value
 
     def save_network_output(self, data, save_path, interp_order=3):
@@ -336,7 +338,7 @@ class Subject(object):
         # the dimensions to ensure modalties in the 5th
         # dimension (nifty standards)
         if data.shape[3] > 1:
-            print("Ensuring nifty dimension standards")
+            print("Ensuring NIfTI dimension standards")
             data = np.swapaxes(data, 4, 3)
         # output format: [H x W x D x Time points x Modality]
 

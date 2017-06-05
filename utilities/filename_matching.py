@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function
+
 import os
 
 import numpy as np
-
-import misc_io as util
+import utilities.misc_io as util
 
 
 class KeywordsMatching(object):

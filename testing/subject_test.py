@@ -1,6 +1,4 @@
-from __future__ import print_function
-from __future__ import print_function
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 import tensorflow as tf
 from utilities.subject import Subject
 from utilities.subject import MultiModalFileList

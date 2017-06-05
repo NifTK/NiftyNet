@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function
+
 import argparse
 import os
 import utilities.misc_csv as misc_csv
@@ -8,7 +10,8 @@ try:
 except ImportError:
     import ConfigParser as configparser
 
-from utilities.filename_matching import KeywordsMatching
+from .filename_matching import KeywordsMatching
+
 
 def _input_path_search(config):
     # match flexible input modality sections

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function
 import os
 
 import numpy as np
@@ -214,7 +215,7 @@ def smooth_threshold(value, mode='high'):
 
 def read_mapping_file(mapping_file):
     mapping_dict = {}
-    if not os.path.exists(mapping_file):
+    if not os.path.isfile(mapping_file):
         return mapping_dict
     with open(mapping_file, "r") as f:
         for line in f:
@@ -223,8 +224,8 @@ def read_mapping_file(mapping_file):
             line = line.split()
             if len(line) < 2:
                 continue
-            map_name, map_value = line[0], map(float, line[1:])
-            mapping_dict[map_name] = np.asarray(map_value)
+            map_name, map_value = line[0], np.float32(line[1:])
+            mapping_dict[map_name] = map_value
     return mapping_dict
 
 

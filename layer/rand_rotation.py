@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function
+
 import tensorflow as tf
 import numpy as np
 import scipy.ndimage
@@ -70,7 +72,7 @@ class RandomRotationLayer(Layer):
                     for mod_i in range(inputs.data.shape[-2]):
                         inputs.data[..., mod_i, t] = \
                             self._apply_transformation_3d(
-                            inputs.data[..., mod_i, t], inputs.interp_order)
+                                inputs.data[..., mod_i, t], inputs.interp_order)
             if inputs.interp_order > 0:
                 inputs.data = inputs.data.astype(np.float)
             elif inputs.interp_order == 0:

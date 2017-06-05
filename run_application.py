@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function
 import os
 import sys
 
 import utilities.misc_common as util
 import utilities.parse_user_params as parse_user_params
 
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w')
 
 
 class NetFactory(object):

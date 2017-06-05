@@ -1,3 +1,5 @@
+from __future__ import absolute_import, print_function
+
 import tensorflow as tf
 
 from tensorflow.python.ops import control_flow_ops

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function
+
 import tensorflow as tf
 
 from utilities.misc_common import look_up_operations

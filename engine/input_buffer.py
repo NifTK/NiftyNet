@@ -7,6 +7,8 @@ DeployInputBuffer provides FIFO queue. This is designed for making
 patch-based predictions for multiple test volumes.
 """
 
+from __future__ import absolute_import, print_function
+
 import threading
 
 import tensorflow as tf
@@ -36,7 +38,7 @@ class InputBatchQueueRunner(object):
         # define queue properties
         self.capacity = max(capacity, batch_size * 2)
         self.shuffle = shuffle
-        self.min_queue_size = self.capacity / 2 if self.shuffle else 0
+        self.min_queue_size = self.capacity // 2 if self.shuffle else 0
 
         # create queue and the associated operations
         self._queue = None
@@ -99,7 +101,6 @@ class InputBatchQueueRunner(object):
 
                 assert isinstance(patch, ImagePatch)
                 patch_dict = patch.as_dict(self.sampler.placeholders)
-                assert len(patch_dict.keys()[0]) == len(patch_dict.values()[0])
                 self._session.run(self._enqueue_op, feed_dict=patch_dict)
                 #print("push {}".format(patch.info))
 

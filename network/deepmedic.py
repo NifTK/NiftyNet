@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function
+
 from layer import layer_util
 from layer.base_layer import TrainableLayer
 from layer.convolution import ConvolutionalLayer
@@ -27,7 +29,7 @@ class DeepMedic(TrainableLayer):
         super(DeepMedic, self).__init__(name=name)
 
         self.d_factor = 3  # downsampling factor
-        self.crop_diff = ((self.d_factor - 1) * 16) / 2
+        self.crop_diff = ((self.d_factor - 1) * 16) // 2
         self.conv_features = [30, 30, 40, 40, 40, 40, 50, 50]
         self.fc_features = [150, 150, num_classes]
         self.acti_func = acti_func

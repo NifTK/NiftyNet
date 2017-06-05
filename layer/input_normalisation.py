@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
 import os
+import sys
 
 import numpy as np
 import numpy.ma as ma
@@ -81,7 +82,7 @@ class HistogramNormalisationLayer(Layer):
         trained_mapping = hs.create_mapping_from_multimod_arrayfiles(
             array_files, mod_to_train, self.cutoff, self.mask_type)
         ### merging trained_mapping dict and self.mapping dict
-        # for python 3.5: self.mapping = {**self.mapping, **trained_mapping}
+
         self.mapping.update(trained_mapping)
         self.__write_all_mod_mapping()
 
@@ -151,10 +152,10 @@ class HistogramNormalisationLayer(Layer):
         assert data_array.shape[3] <= len(self.modalities)
 
         if self.mapping is {}:
-            raise RuntimeError("calling normalisor with empty mapping,"
+            raise RuntimeError("calling normaliser with empty mapping,"
                                "probably {} is not loaded".format(
                 self.hist_model_file))
-        for mod in self.modalities.keys():
+        for mod in self.modalities:
             for t in range(0, data_array.shape[4]):
                 mod_id = self.modalities[mod]
                 if not np.any(data_array[..., mod_id, t]):

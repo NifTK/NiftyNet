@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function
 import os
 import csv
 import numpy as np
 from difflib import SequenceMatcher
+import sys
 
-from filename_matching import KeywordsMatching
+from .filename_matching import KeywordsMatching
 
 
 # From a unique csv file with for each subject the list of files to use,
@@ -21,7 +23,8 @@ def load_subject_and_filenames_from_csv_file(csv_file,
         return [], []
     list_subjects = []
     list_filenames = []
-    with open(csv_file, "rb") as infile:
+
+    with open(csv_file, "r") as infile:
         reader = csv.reader(infile)
         for row in reader:
             if ('' in row) and (not allow_missing):
@@ -92,7 +95,7 @@ def __find_max_overlap_in_list(name, list_names):
 
 # Perform the double matching between two lists of list of possible names.
 # First find the direct matches, remove them from the ones still to match and
-#  match the remaining ones using the maximum overlap. Returns the name
+# match the remaining ones using the maximum overlap. Returns the name
 # match for each list, and the index correspondences.
 def match_second_degree(name_list1, name_list2):
     if name_list1 is None or name_list2 is None:
@@ -168,8 +171,7 @@ def write_matched_filenames_to_csv(list_constraints, csv_file):
     if list_constraints is None or list_constraints == []:
         return
     for c in list_constraints:
-        list_files, name_list = \
-            KeywordsMatching.matching_subjects_and_filenames(c)
+        list_files, name_list = KeywordsMatching.matching_subjects_and_filenames(c)
         name_list = remove_duplicated_names(name_list)
         name_tot.append(name_list)
         list_tot.append(list_files)
@@ -177,10 +179,18 @@ def write_matched_filenames_to_csv(list_constraints, csv_file):
     output_dir = os.path.dirname(csv_file)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    with open(csv_file, 'wb') as csvfile:
-        file_writer = csv.writer(csvfile, delimiter=',')
-        for list_temp in list_combined:
-            file_writer.writerow(list_temp)
+
+    # csv writer has different behaviour in python 2/3
+    if sys.version_info >= (3, 0, 0):
+        with open(csv_file, 'w', newline='', encoding='utf8') as csvfile:
+            file_writer = csv.writer(csvfile)
+            for list_temp in list_combined:
+                file_writer.writerow(list_temp)
+    else:
+        with open(csv_file, 'wb') as csvfile:
+            file_writer = csv.writer(csvfile, delimiter=',')
+            for list_temp in list_combined:
+                file_writer.writerow(list_temp)
     return
 
 # def combine_list_constraint(name_list, list_files):

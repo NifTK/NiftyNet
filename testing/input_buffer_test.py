@@ -1,3 +1,5 @@
+from __future__ import absolute_import, print_function
+
 import os
 import sys
 
@@ -7,7 +9,7 @@ from engine.input_buffer import DeployInputBuffer, TrainEvalInputBuffer
 from engine.toy_sampler import ToySampler
 from utilities.input_placeholders import ImagePatch
 
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w')
 
 
 class InputQueueTest(tf.test.TestCase):

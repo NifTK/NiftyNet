@@ -1,3 +1,5 @@
+from __future__ import absolute_import, print_function
+
 import tensorflow as tf
 
 # sampler
@@ -58,8 +60,8 @@ class UniformSamplerTest(tf.test.TestCase):
             if n_volumes == 3:
                 break
 
-            keys = data_dict.keys()[0]
-            output = data_dict.values()[0]
+            keys = list(data_dict.keys())[0]
+            output = data_dict[keys]
             for (idx, key) in enumerate(keys):
                 print(key, output[idx].shape)
 
@@ -112,8 +114,8 @@ class UniformSamplerTest(tf.test.TestCase):
             if n_volumes == 3:
                 break
 
-            keys = data_dict.keys()[0]
-            output = data_dict.values()[0]
+            keys = list(data_dict.keys())[0]
+            output = data_dict[keys]
             for (idx, key) in enumerate(keys):
                 print(key, output[idx].shape)
 
@@ -166,8 +168,8 @@ class UniformSamplerTest(tf.test.TestCase):
             if n_volumes == 3:
                 break
 
-            keys = data_dict.keys()[0]
-            output = data_dict.values()[0]
+            keys = list(data_dict.keys())[0]
+            output = data_dict[keys]
             for (idx, key) in enumerate(keys):
                 print(key, output[idx].shape)
 

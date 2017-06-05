@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
 import os
 import warnings
@@ -48,8 +48,6 @@ def rectify_header_sform_qform(img_nii):
         else:
             affine = img_nii.affine
             pixdim = img_nii.header.get_zooms()
-            if len(pixdim) == 2:
-                pixdim = pixdim + (1,)
             new_affine = create_affine_pixdim(affine, pixdim)
             img_nii.set_sform(new_affine)
             img_nii.set_qform(new_affine)
@@ -248,7 +246,7 @@ def save_volume_5d(img_data, filename, save_path, img_ref=None):
     img_nii.set_data_dtype(np.dtype(np.float32))
     output_name = os.path.join(save_path, filename)
     nib.save(img_nii, output_name)
-    print('saved {}'.format(output_name))
+    print('Saved {}'.format(output_name))
 
 
 def match_volume_shape_to_patch_definition(image_data, patch):

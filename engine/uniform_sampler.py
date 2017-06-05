@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function
+
 from copy import deepcopy
 
 import numpy as np
@@ -17,11 +19,11 @@ def rand_spatial_coordinates(spatial_rank, img_size, win_size, n_samples):
     all_coords = np.zeros((n_samples, int(spatial_rank*2.0)), dtype=np.int)
 
     for i in range(0, grid_spatial_rank):
-        all_coords[:, i] = np.random.random_integers(
+        all_coords[:, i] = np.random.randint(
             0, max(img_size[i] - win_size, 1), n_samples)
         all_coords[:, i + full_spatial_rank] = all_coords[:, i] + win_size
     if spatial_rank == 2.5:
-        all_coords[:, 2] = np.random.random_integers(
+        all_coords[:, 2] = np.random.randint(
             0, max(img_size[2]-1, 1), n_samples)
     return all_coords
 

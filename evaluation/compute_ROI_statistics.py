@@ -1,8 +1,10 @@
+from __future__ import absolute_import, print_function
+
 import os.path
 import scipy
 import nibabel as nib
 import numpy as np
-from region_properties import RegionProperties
+from .region_properties import RegionProperties
 from utilities.misc_common import MorphologyOps
 import utilities.misc_common as util
 
@@ -34,7 +36,7 @@ def run(param):
         for img_name in img_names:
             img = nib.load(os.path.join(param.img_dir, img_name))
             img = img.get_data()
-            print img.shape
+            print(img.shape)
             # Create name of report file
             out_name = '{}_{}_{}.csv'.format(
                     OUTPUT_FILE_PREFIX,
@@ -65,7 +67,7 @@ def run(param):
                     threshold_steps = np.arange(1, np.max(seg_d))
                 else:
                     pass
-                print type_str
+                print(type_str)
 
                 for n, i in enumerate(threshold_steps):
                     print('{} of {} thresholding steps'.format(
