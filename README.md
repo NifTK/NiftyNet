@@ -29,9 +29,9 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 * configparser
 * scikit-image
 
-Please run `pip install -r requirements` to install the dependencies
+Please run `pip install -r requirements.txt` to install the dependencies
 
-To intall tensorflow, please follow
+To install Tensorflow, please follow
 https://www.tensorflow.org/install/
 
 
