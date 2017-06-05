@@ -73,7 +73,7 @@ def __find_max_overlap_in_list(name, list_names):
     match_max = 0
     match_seq = ''
     match_orig = ''
-    if len(list_names):
+    if len(list_names) == 0:
         return '', -1
     for test in list_names:
         match = SequenceMatcher(None, name, test).find_longest_match(
