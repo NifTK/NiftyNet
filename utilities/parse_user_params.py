@@ -46,14 +46,11 @@ def run():
     file_parser.set_defaults(**default_file)
     file_arg, remaining_argv = file_parser.parse_known_args()
 
-    try:
-        config = configparser.ConfigParser()
-        config.read([file_arg.conf])
-        # initialise search of image modality filenames
-        image_matcher, label_matcher, w_map_matcher = _input_path_search(config)
-        defaults = dict(config.items("settings"))
-    except Exception as e:
-        raise ValueError('configuration file not found')
+    config = configparser.ConfigParser()
+    config.read([file_arg.conf])
+    # initialise search of image modality filenames
+    image_matcher, label_matcher, w_map_matcher = _input_path_search(config)
+    defaults = dict(config.items("settings"))
 
     parser = argparse.ArgumentParser(
         parents=[file_parser],

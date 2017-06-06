@@ -20,15 +20,21 @@ class KeywordsMatching(object):
             if len(value) <= 1 or value == '""':
                 continue
             if name == "path_to_search":
-                if os.path.exists(value):
-                    path.append(value)
-                else:
-                    raise ValueError('folder not found {}'.format(value))
+                value = value.split(',')
+                for path_i in value:
+                    path_i = path_i.strip()
+                    if os.path.exists(path_i):
+                        path.append(path_i)
+                    else:
+                        raise ValueError('folder not found {}'.format(path_i))
             elif name == "filename_contains":
                 contain.append(value)
             elif name == "filename_not_contains":
                 not_contain.append(value)
-        new_matcher = cls(tuple(path), tuple(contain), tuple(not_contain))
+        path = tuple(set(path))
+        contain = tuple(set(contain))
+        not_contain = tuple(set(not_contain))
+        new_matcher = cls(path, contain, not_contain)
         return new_matcher
 
     def matching_subjects_and_filenames(self):
