@@ -106,7 +106,9 @@ To run NiftyNet on the CS cluster, follow these instructions:
 
 2) Log in to the CS cluster by following [these instructions](http://hpc.cs.ucl.ac.uk/how_to_login/):
 
-3) Create a submission script (```mySubmissionScript.sh``` in this example) for the NiftyNet task (```run_application.py train --net_name toynet --image_size 42 --label_size 42 --batch_size 1``` in this example):
+3) Set up NiftyNet on your cluster account.
+
+4) Create a submission script (```mySubmissionScript.sh``` in this example) for the NiftyNet task (```run_application.py train --net_name toynet --image_size 42 --label_size 42 --batch_size 1``` in this example):
 
 ```
 #$ -P gpu
@@ -126,20 +128,14 @@ export CUDA_VISIBLE_DEVICES=$(( `nvidia-smi | grep " / .....MiB"|grep -n " ...Mi
 if (( $CUDA_VISIBLE_DEVICES > -1 ))
 then
 
-# These lines backup up you old library path and set a special library path that makes it possible to run tensorflow
-export LD_LIBRARY_BACKUP=${LD_LIBRARY_PATH}
-export LD_LIBRARY_PATH="/share/apps/libc6_2.17/lib/x86_64-linux-gnu/:/share/apps/libc6_2.17/usr/lib64/:/share/apps/gcc-6.2.0/lib64:/share/apps/gcc-6.2.0/lib:/share/apps/python-3.6.0-shared/lib:/share/apps/cuda-8.0/lib64:/share/apps/cuda-8.0/extras/CUPTI/lib64:${LD_LIBRARY_PATH}"
-
-# This is the line that runs the NiftyNet command
-/share/apps/libc6_2.17/lib/x86_64-linux-gnu/ld-2.17.so $(command -v /share/apps/python-3.6.0-shared/bin/python3) run_application.py train --net_name toynet --image_size 42 --label_size 42 --batch_size 1
-
-# This line restores your path so that you can run normal programs again
-export LD_LIBRARY_PATH="${LD_LIBRARY_BACKUP}"
+# These lines runs your NiftyNet task with the correct library paths for tensorflow
+TF_LD_LIBRARY_PATH=/share/apps/libc6_2.17/lib/x86_64-linux-gnu/:/share/apps/libc6_2.17/usr/lib64/:/share/apps/gcc-6.2.0/lib64:/share/apps/gcc-6.2.0/lib:/share/apps/python-3.6.0-shared/lib:/share/apps/cuda-8.0/lib64:/share/apps/cuda-8.0/extras/CUPTI/lib64:$LD_LIBRARY_PATH
+/share/apps/libc6_2.17/lib/x86_64-linux-gnu/ld-2.17.so --library-path $TF_LD_LIBRARY_PATH $(command -v /share/apps/python-3.6.0-shared/bin/python3)  run_application.py train --net_name toynet --image_size 42 --label_size 42 --batch_size 1
 
 fi
 ```
 
-4) While logged in to comic100 or comic2, submit the job using qsub
+5) While logged in to comic100 or comic2, submit the job using qsub
 
 ```
 qsub mySubmissionScript.sh
