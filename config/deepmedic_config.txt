@@ -54,6 +54,7 @@ rotation = True
 min_angle = -10.0
 max_angle = 10.0
 spatial_scaling = True
+min_percentage = -10.0
 max_percentage = 10.0
 
 

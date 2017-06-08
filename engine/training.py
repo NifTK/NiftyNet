@@ -131,12 +131,13 @@ def run(net_class, param, csv_dict, device_str):
         for i in range(0, max(param.num_gpus, 1)):
             with tf.device("/{}:{}".format(device_str, i)):
                 predictions = net(images, is_training=True)
-                data_loss = loss_func(predictions, labels, weight_maps)
-                reg_losses = graph.get_collection(
-                    tf.GraphKeys.REGULARIZATION_LOSSES)
-                reg_loss = tf.reduce_mean([tf.reduce_mean(reg_loss)
-                                           for reg_loss in reg_losses])
-                loss = data_loss + reg_loss
+                loss = loss_func(predictions, labels, weight_maps)
+                if param.decay > 0:
+                    reg_losses = graph.get_collection(
+                        tf.GraphKeys.REGULARIZATION_LOSSES)
+                    reg_loss = tf.reduce_mean([tf.reduce_mean(reg_loss)
+                                               for reg_loss in reg_losses])
+                    loss = loss + reg_loss
                 # TODO compute miss for dfferent target types
                 miss = tf.reduce_mean(tf.cast(
                     tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),
