@@ -76,9 +76,9 @@ class HistogramNormalisationLayer(Layer):
         if len(mod_to_train) == 0:
             print('Normalisation histogram reference models found')
             return
-        print('training normalisation histogram references for {}'.format(
-            mod_to_train.keys()))
         array_files = [subject.column(0) for subject in subjects]
+        print("training normalisation histogram references for {}, "
+              "using {} subjects".format(mod_to_train.keys(), len(array_files)))
         trained_mapping = hs.create_mapping_from_multimod_arrayfiles(
             array_files, mod_to_train, self.cutoff, self.mask_type)
         ### merging trained_mapping dict and self.mapping dict
