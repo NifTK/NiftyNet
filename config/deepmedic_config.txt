@@ -70,7 +70,6 @@ max_iter = 10
 border = 0
 pred_iter = 10
 save_seg_dir = ./output/deepmedic
-eval_data_dir = ./example_volumes/monomodal_parcellation
 
 output_interp_order = 0
 output_prob = False
