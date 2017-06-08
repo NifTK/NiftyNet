@@ -6,10 +6,10 @@ import sys
 import utilities.misc_common as util
 import utilities.parse_user_params as parse_user_params
 
-if sys.version_info[0] >= 3:
-    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w')
-else:
-    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+#if sys.version_info[0] >= 3:
+#    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w')
+#else:
+#    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 
 
