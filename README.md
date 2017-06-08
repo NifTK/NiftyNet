@@ -136,7 +136,7 @@ then
 
 # These lines runs your NiftyNet task with the correct library paths for tensorflow
 TF_LD_LIBRARY_PATH=/share/apps/libc6_2.17/lib/x86_64-linux-gnu/:/share/apps/libc6_2.17/usr/lib64/:/share/apps/gcc-6.2.0/lib64:/share/apps/gcc-6.2.0/lib:/share/apps/python-3.6.0-shared/lib:/share/apps/cuda-8.0/lib64:/share/apps/cuda-8.0/extras/CUPTI/lib64:$LD_LIBRARY_PATH
-/share/apps/libc6_2.17/lib/x86_64-linux-gnu/ld-2.17.so --library-path $TF_LD_LIBRARY_PATH $(command -v /share/apps/python-3.6.0-shared/bin/python3)  run_application.py train --net_name toynet --image_size 42 --label_size 42 --batch_size 1
+/share/apps/libc6_2.17/lib/x86_64-linux-gnu/ld-2.17.so --library-path $TF_LD_LIBRARY_PATH $(command -v /share/apps/python-3.6.0-shared/bin/python3) -u  run_application.py train --net_name toynet --image_size 42 --label_size 42 --batch_size 1
 
 fi
 ```

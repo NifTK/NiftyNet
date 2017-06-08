@@ -181,7 +181,7 @@ def write_matched_filenames_to_csv(list_constraints, csv_file):
         os.makedirs(output_dir)
 
     # csv writer has different behaviour in python 2/3
-    if sys.version_info >= (3, 0, 0):
+    if sys.version_info[0] >= 3:
         with open(csv_file, 'w', newline='', encoding='utf8') as csvfile:
             file_writer = csv.writer(csvfile)
             for list_temp in list_combined:
