@@ -173,7 +173,8 @@ def run():
     )
     parser.add_argument(
         "--mask_type",
-        choices=['otsu_plus', 'otsu_minus', 'val_plus', 'val_minus'],
+        choices=['threshold_plus', 'threshold_minus',
+                 'otsu_plus', 'otsu_minus', 'mean'],
         help="type of masking strategy used"
     )
     parser.add_argument(
@@ -238,10 +239,6 @@ def run():
         "--save_seg_dir",
         metavar='',
         help="[Inference only] Prediction directory name")  # without '/'
-    parser.add_argument(
-        "--eval_data_dir",
-        metavar='',
-        help="[Inference only] Directory of image to be segmented")  # without '/'
     parser.add_argument(
         "--output_interp_order",
         metavar='',

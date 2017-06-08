@@ -85,7 +85,6 @@ max_iter = 10
 border = 5
 pred_iter = 10
 save_seg_dir = ./output/toy
-eval_data_dir = ./example_volumes/multimodal_BRATS
 
 output_interp_order = 3
 output_prob = False

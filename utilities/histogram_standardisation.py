@@ -8,6 +8,7 @@ import scipy.ndimage as ndimg
 from scipy.ndimage.morphology import binary_fill_holes as fill_holes
 
 import utilities.misc_io as io
+from utilities.misc_common import look_up_operations, printProgressBar
 
 try:
     from skimage import filters
@@ -21,6 +22,8 @@ IEEE transactions on medical imaging 19.2 (2000): 143-150.
 """
 
 DEFAULT_CUTOFF = [0.01, 0.99]
+SUPPORTED_MASK_TYPES = {'threshold_plus', 'threshold_minus',
+                        'otsu_plus', 'otsu_minus', 'mean'}
 
 
 def percentiles(img, mask, cutoff):
@@ -61,7 +64,10 @@ def create_mapping_from_multimod_arrayfiles(array_files,
                                             cutoff,
                                             mask_type):
     perc_database = {}
-    for p in array_files:
+    for (i, p) in enumerate(array_files):
+        printProgressBar(i, len(array_files),
+                         prefix='normalisation histogram training',
+                         decimals=1, length=10, fill='*')
         img_data = io.csv_cell_to_volume_5d(p)
         # numb_modalities = img_data.shape[3]
         numb_timepoints = img_data.shape[4]
@@ -108,28 +114,28 @@ def create_standard_range(perc_database):
 
 def create_mask_img_3d(img, type_mask='otsu_plus', thr=0.):
     assert img.ndim == 3
-    mask_init = np.zeros_like(img, dtype=np.bool)
+    type_mask = look_up_operations(type_mask.lower(), SUPPORTED_MASK_TYPES)
+    mask = np.zeros_like(img, dtype=np.bool)
     if type_mask == 'threshold_plus':
-        mask_init[img > thr] = 1
-        mask_init[img <= thr] = 0
+        mask[img > thr] = 1
     elif type_mask == 'threshold_minus':
-        mask_init[img < thr] = 1
-        mask_init[img >= thr] = 0
+        mask[img < thr] = 1
     elif type_mask == 'otsu_plus':
         if not np.any(img):
             thr = 0
         else:
             thr = filters.threshold_otsu(img)
-        mask_init[img > thr] = 1
-        mask_init[img <= thr] = 0
+        mask[img > thr] = 1
     elif type_mask == 'otsu_minus':
         thr = filters.threshold_otsu(img)
-        mask_init[img < thr] = 1
-        mask_init[img >= thr] = 0
-    mask_1 = ndimg.binary_dilation(mask_init, iterations=2)
-    mask_bis = fill_holes(mask_1)
+        mask[img < thr] = 1
+    elif type_mask == 'mean':
+        thr = np.mean(img)
+        mask[img > thr] = 1
+    mask = ndimg.binary_dilation(mask, iterations=2)
+    mask = fill_holes(mask)
     # mask_fin = ndimg.binary_erosion(mask_bis, iterations=2)
-    return mask_bis
+    return mask
 
 
 def create_mapping_perc(perc_database, s1, s2):
