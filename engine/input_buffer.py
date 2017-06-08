@@ -164,8 +164,10 @@ class InputBatchQueueRunner(object):
         try:
             self._coordinator.request_stop()
             self._coordinator.join(threads=self._threads,
-                                   stop_grace_period_secs=0,
-                                   ignore_live_threads=True)
+                                   stop_grace_period_secs=0)
+            #self._coordinator.join(threads=self._threads,
+            #                       stop_grace_period_secs=0,
+            #                       ignore_live_threads=True)
         except RuntimeError as e:
             print(e)
         finally:
