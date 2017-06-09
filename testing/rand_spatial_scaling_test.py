@@ -23,13 +23,15 @@ class RandRotationTest(tf.test.TestCase):
 
     def test_4d_shape(self):
         x = self.get_4d_input()
-        rand_layer = RandomSpatialScalingLayer(max_percentage=10.0)
+        rand_layer = RandomSpatialScalingLayer(min_percentage=-10.0,
+                                               max_percentage=10.0)
         rand_layer.randomise(x.spatial_rank)
         out = rand_layer(x)
 
     def test_5d_shape(self):
         x = self.get_5d_input()
-        rand_layer = RandomSpatialScalingLayer(max_percentage=10.0)
+        rand_layer = RandomSpatialScalingLayer(min_percentage=-10.0,
+                                               max_percentage=10.0)
         rand_layer.randomise(x.spatial_rank)
         out = rand_layer(x)
 

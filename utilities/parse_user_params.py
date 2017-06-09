@@ -136,8 +136,13 @@ def run():
         help="Indicates if the spatial scaling must be performed"
     )
     parser.add_argument(
+        "--min_percentage",
+        help="the spatial scaling factor in [-min_percentage, max_percentage]",
+        type=float
+    )
+    parser.add_argument(
         "--max_percentage",
-        help="the spatial scaling factor in [-max_percentage, max_percentage]",
+        help="the spatial scaling factor in [-min_percentage, max_percentage]",
         type=float
     )
     parser.add_argument(

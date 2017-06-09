@@ -2,7 +2,7 @@
 from __future__ import absolute_import, print_function
 
 import warnings
-import tensorflow as tf
+
 import numpy as np
 import scipy.ndimage
 
@@ -18,21 +18,22 @@ class RandomSpatialScalingLayer(Layer):
     """
 
     def __init__(self,
+                 min_percentage=-10,
                  max_percentage=10,
                  name='random_spatial_scaling'):
         super(RandomSpatialScalingLayer, self).__init__(name=name)
-        if max_percentage < 0:
-            self._max_percentage = -1 * int(max_percentage)
-        else:
-            self._max_percentage = int(max_percentage)
+        assert min_percentage < max_percentage
+        assert min_percentage > -100.0
+        self._min_percentage = int(min_percentage)
+        self._max_percentage = int(max_percentage)
         self._rand_zoom = None
 
     def randomise(self, spatial_rank=3):
         spatial_rank = int(np.floor(spatial_rank))
-        rand_zoom = np.random.uniform(low=-self._max_percentage,
+        rand_zoom = np.random.uniform(low=self._min_percentage,
                                       high=self._max_percentage,
                                       size=(spatial_rank,))
-        self._rand_zoom = (rand_zoom + 100.0) / 100.0
+        self._rand_zoom = max((rand_zoom + 100.0) / 100.0, 1e-5)
 
     def _apply_transformation(self, image, interp_order=3):
         assert self._rand_zoom is not None

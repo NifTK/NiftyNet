@@ -87,6 +87,7 @@ def run(net_class, param, csv_dict, device_str):
         if param.spatial_scaling:
             from layer.rand_spatial_scaling import RandomSpatialScalingLayer
             augmentations.append(RandomSpatialScalingLayer(
+                min_percentage=param.min_percentage,
                 max_percentage=param.max_percentage))
         # defines how to generate samples of the training element from volume
         sampler = UniformSampler(patch=patch_holder,
