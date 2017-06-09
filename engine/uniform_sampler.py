@@ -13,7 +13,11 @@ def rand_spatial_coordinates(spatial_rank, img_size, win_size, n_samples):
     # Please see grid_sampler.py generate_grid_coordinates() for more info
     grid_spatial_rank = int(np.floor(spatial_rank))
     full_spatial_rank = int(np.ceil(spatial_rank))
-    assert np.all([d >= win_size for d in img_size[:grid_spatial_rank]])
+    if not np.all([d >= win_size for d in img_size[:grid_spatial_rank]]):
+        raise ValueError('Window size larger than the input image dims'
+                         ' (please make sure that image dims after '
+                         'random spatial scaling are still larger than window'
+                         ' size)')
     # consisting of starting and ending coordinates
 
     all_coords = np.zeros((n_samples, int(spatial_rank*2.0)), dtype=np.int)
