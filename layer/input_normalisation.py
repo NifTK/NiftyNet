@@ -96,8 +96,7 @@ class HistogramNormalisationLayer(Layer):
         for mod in mod_to_mask:
             for t in range(0, data_array.shape[4]):
                 mask_array[..., mod, t] = hs.create_mask_img_3d(
-                    data_array[..., mod, t],
-                    self.mask_type)
+                    data_array[..., mod, t], self.mask_type)
 
         if self.multimod_mask_type is None:
             return mask_array

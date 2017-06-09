@@ -24,9 +24,10 @@ IEEE transactions on medical imaging 19.2 (2000): 143-150.
 DEFAULT_CUTOFF = [0.01, 0.99]
 SUPPORTED_MASK_TYPES = {'threshold_plus', 'threshold_minus',
                         'otsu_plus', 'otsu_minus', 'mean'}
+SUPPORTED_CUTPOINTS = {'percentile', 'quartile', 'median'}
 
 
-def percentiles(img, mask, cutoff):
+def __compute_percentiles(img, mask, cutoff):
     perc = [cutoff[0],
             0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.9,
             cutoff[1]]
@@ -36,26 +37,24 @@ def percentiles(img, mask, cutoff):
     return perc_results
 
 
-def standardise_cutoff(cutoff, type_hist='quartile'):
+def __standardise_cutoff(cutoff, type_hist='quartile'):
     cutoff = np.asarray(cutoff)
     if cutoff is None:
         return DEFAULT_CUTOFF
-    if len(cutoff) == 0:
-        return DEFAULT_CUTOFF
-    if len(cutoff) == 1:
-        return DEFAULT_CUTOFF
     if len(cutoff) > 2:
         cutoff = np.unique([np.min(cutoff), np.max(cutoff)])
+    if len(cutoff) < 2:
+        return DEFAULT_CUTOFF
     if cutoff[0] > cutoff[1]:
         cutoff[0], cutoff[1] = cutoff[1], cutoff[0]
     cutoff[0] = max(0., cutoff[0])
     cutoff[1] = min(1., cutoff[1])
-    # if type_hist == 'percentile':
-    #     cutoff[0] = np.min([cutoff[0], 0.1])
-    #     cutoff[1] = np.max([cutoff[1], 0.9])
-    # if type_hist == 'quartile':
-    #     cutoff[0] = np.min([cutoff[0], 0.25])
-    #     cutoff[1] = np.max([cutoff[1], 0.75])
+    if type_hist == 'quartile':
+        cutoff[0] = np.min([cutoff[0], 0.24])
+        cutoff[1] = np.max([cutoff[1], 0.76])
+    else:
+        cutoff[0] = np.min([cutoff[0], 0.09])
+        cutoff[1] = np.max([cutoff[1], 0.91])
     return cutoff
 
 
@@ -79,36 +78,17 @@ def create_mapping_from_multimod_arrayfiles(array_files,
             for t in range(0, numb_timepoints):
                 img_3d = img_data[..., list_modalities[m], t]
                 mask_3d = create_mask_img_3d(img_3d, mask_type)
-                perc = percentiles(img_3d, mask_3d, cutoff)
+                perc = __compute_percentiles(img_3d, mask_3d, cutoff)
                 perc_database[m].append(perc)
     mapping = {}
     for m in list_modalities.keys():
         perc_database[m] = np.vstack(perc_database[m])
-        s1, s2 = create_standard_range(perc_database[m])
-        mapping[m] = create_mapping_perc(perc_database[m], s1, s2)
+        s1, s2 = create_standard_range()
+        mapping[m] = __averaged_mapping(perc_database[m], s1, s2)
     return mapping
 
 
-def create_standard_range(perc_database):
-    # if pc1 > pc2:
-    #     temp = pc2
-    #     pc2 = pc1
-    #     pc1 = temp
-    # if pc1 < 0:
-    #     pc1 =0
-    # if pc2 > 16:
-    #     pc2 = 16
-    # if type == 'quartile':
-    #     pc1 = np.min([pc1, 5])
-    #     pc2 = np.max([pc2, 11])
-    # if type == 'percentile':
-    #     pc1 = np.min([pc1, 3])
-    #     pc2 = np.max([pc2, 13])
-    # left_side = perc_database[:, 6] - perc_database[:, 0]
-    # right_side = perc_database[:, 12] - perc_database[:, 6]
-    # range_min = (np.max(left_side) + np.max(right_side)) * np.max \
-    #    ([np.max(left_side) / np.min(left_side),
-    #      np.max(right_side) / np.min(right_side)])
+def create_standard_range():
     return 0., 100.
 
 
@@ -121,27 +101,28 @@ def create_mask_img_3d(img, type_mask='otsu_plus', thr=0.):
     elif type_mask == 'threshold_minus':
         mask[img < thr] = 1
     elif type_mask == 'otsu_plus':
-        if not np.any(img):
-            thr = 0
-        else:
+        if np.any(img):
             thr = filters.threshold_otsu(img)
         mask[img > thr] = 1
     elif type_mask == 'otsu_minus':
-        thr = filters.threshold_otsu(img)
+        if np.any(img):
+            thr = filters.threshold_otsu(img)
         mask[img < thr] = 1
     elif type_mask == 'mean':
         thr = np.mean(img)
         mask[img > thr] = 1
     mask = ndimg.binary_dilation(mask, iterations=2)
     mask = fill_holes(mask)
+    assert not np.all(mask==False)
     # mask_fin = ndimg.binary_erosion(mask_bis, iterations=2)
     return mask
 
 
-def create_mapping_perc(perc_database, s1, s2):
+def __averaged_mapping(perc_database, s1, s2):
     # assuming shape: n_data_points = perc_database.shape[0]
     #                 n_percentiles = perc_database.shape[1]
     slope = (s2 - s1) / (perc_database[:, -1] - perc_database[:, 0])
+    slope = np.nan_to_num(slope)
     final_map = slope.dot(perc_database) / perc_database.shape[0]
     intercept = np.mean(s1 - slope * perc_database[:, 0])
     final_map = final_map + intercept
@@ -150,15 +131,17 @@ def create_mapping_perc(perc_database, s1, s2):
 
 # TODO: test cases
 def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
-    range_to_use = None
+    type_hist = look_up_operations(type_hist.lower(), SUPPORTED_CUTPOINTS)
     if type_hist == 'quartile':
         range_to_use = [0, 3, 6, 9, 12]
-    if type_hist == 'percentile':
+    elif type_hist == 'percentile':
         range_to_use = [0, 1, 2, 4, 5, 6, 7, 8, 10, 11, 12]
-    if type_hist == 'median':
+    elif type_hist == 'median':
         range_to_use = [0, 6, 12]
-    cutoff = standardise_cutoff(cutoff, type_hist)
-    perc = percentiles(img, mask, cutoff)
+    else:
+        raise ValueError('unknown cutting points type')
+    cutoff = __standardise_cutoff(cutoff, type_hist)
+    perc = __compute_percentiles(img, mask, cutoff)
     # Apply linear histogram standardisation
     range_mapping = mapping[range_to_use]
     range_perc = perc[range_to_use]
@@ -174,16 +157,16 @@ def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     # lin_img = np.ones_like(img, dtype=np.float32)
     # aff_img = np.zeros_like(img, dtype=np.float32)
 
-    ### img < range_perc[0] set to affine_map[default], 1, 0
-    ### img >= range_perc[9] set to affine_map[:,9]
+    # img < range_perc[0] set to affine_map[default], 1, 0
+    # img >= range_perc[9] set to affine_map[:,9]
     # for i in range(len(range_to_use) - 1):
     #    greater_than_i = (img >= range_perc[i])
     #    lin_img[greater_than_i] = affine_map[0, i]
     #    aff_img[greater_than_i] = affine_map[1, i]
 
-    ### img < range_perc[0] set to affine_map[:,-1]
-    ### img >= range_perc[9] set to affine_map[:,9]
-    ### by the design of np.digitize, if img >= range_perc[i]: return i+1)
+    # img < range_perc[0] set to affine_map[:,-1]
+    # img >= range_perc[9] set to affine_map[:,9]
+    # by the design of np.digitize, if img >= range_perc[i]: return i+1)
     bin_id = np.digitize(img, range_perc[:-1], right=False) - 1
     lin_img = affine_map[0, bin_id]
     aff_img = affine_map[1, bin_id]
@@ -241,42 +224,3 @@ def force_writing_new_mapping(filename, mapping_dict):
         mapping_string = ' '.join(map(str, mapping_dict[mod]))
         string_fin = '{} {}\n'.format(mod, mapping_string)
         f.write(string_fin)
-
-## create mask for image if multimodal or not
-# def create_mask_img_multimod(img, type_mask='otsu_plus', alpha=0.1,
-#                             multimod=[0], multimod_type='and'):
-#    if img.ndim == 3:
-#        thr = alpha * img.mean()
-#        return create_mask_img_3d(img, type_mask, thr)
-#    if np.max(multimod) > img.shape[3]:
-#        raise ValueError
-#    if len(multimod) == 1:
-#        thr = alpha * img.mean()
-#
-#        return create_mask_img_3d(img[..., np.min([multimod[0],
-#                                                   img.shape[3]])], type_mask, thr)
-#    else:
-#        mask_init = np.zeros([img.shape[0], img.shape[1], img.shape[2],
-#                              len(multimod)])
-#        for i in range(0, len(multimod)):
-#            thr = alpha * img[..., i].mean()
-#            mask_temp = create_mask_img_3d(
-#                img[..., np.min([multimod[i], img.shape[3]])],
-#                type_mask, thr)
-#            mask_init[:, :, :, i] = mask_temp
-#
-#        if multimod_type == 'or':
-#            # Case when the mask if formed by the union of all modalities masks
-#            mask_reduced = np.sum(mask_init, axis=3)
-#            mask_reduced[mask_reduced > 0] = 1
-#            return mask_reduced
-#        elif multimod_type == 'and':
-#            # Case when the mask is formed by the intersection of all
-#            # modalities masks
-#            mask_reduced = np.sum(mask_init, axis=3)
-#            mask_reduced[mask_reduced < len(multimod) - 1] = 0
-#            mask_reduced[mask_reduced > 0] = 1
-#            return mask_reduced
-#        else:
-#            # Case when there will be one mask for each modality
-#            return mask_init
