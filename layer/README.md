@@ -137,10 +137,12 @@ File: rand_spatial_scaling.py
 Class: RandomSpatialScalingLayer.py
 Fields:
 
+* min_percentage: Value between 0 and 100 that indicates the range of possible random scaling to be applied.
 * max_percentage: Value between 0 and 100 that indicates the range of possible random scaling to be applied.
 * name
 
 The random spatial scaling is one of the possible augmentation operations.
+The scaling factor is computed as [(min_percentage+100)/100, (max_percentage+100)/100]
 
 ## Upsampling
 File: upsample.py
