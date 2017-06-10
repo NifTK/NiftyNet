@@ -197,23 +197,24 @@ def run(net_class, param, csv_dict, device_str):
         try:
             print('Filling the queue (this can take a few minutes)')
             train_batch_runner.run_threads(sess, coord, param.num_threads)
-            for i in range(param.max_iter):
+            for i in range(param.max_iter - param.starting_iter):
                 local_time = time.time()
                 if coord.should_stop():
                     break
                 _, loss_value, miss_value = sess.run([train_op,
                                                       ave_loss,
                                                       ave_miss])
+                current_iter = i + param.starting_iter
+                iter_time = time.time() - local_time
                 print('iter {:d}, loss={:.8f},'
                       'error_rate={:.8f} ({:.3f}s)'.format(
-                    i, loss_value, miss_value, time.time() - local_time))
-                current_iter = i + param.starting_iter
+                    current_iter, loss_value, miss_value, iter_time))
                 if (current_iter % 20) == 0:
                     writer.add_summary(sess.run(write_summary_op), current_iter)
                 if (current_iter % param.save_every_n) == 0:
                     saver.save(sess, ckpt_name, global_step=current_iter)
                     print('Iter {} model saved at {}'.format(
-                        i + param.starting_iter, ckpt_name))
+                        current_iter, ckpt_name))
         except KeyboardInterrupt:
             print('User cancelled training')
         except tf.errors.OutOfRangeError as e:
@@ -224,8 +225,7 @@ def run(net_class, param, csv_dict, device_str):
             traceback.print_exception(
                 exc_type, exc_value, exc_traceback, file=sys.stdout)
         finally:
-            saver.save(sess, ckpt_name,
-                       global_step=param.max_iter + param.starting_iter)
+            saver.save(sess, ckpt_name, global_step=param.max_iter)
             print('Last iteration model saved at {}'.format(ckpt_name))
             print('training.py (time in second) {:.2f}'.format(
                 time.time() - start_time))
