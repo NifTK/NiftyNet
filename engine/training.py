@@ -183,9 +183,9 @@ def run(net_class, param, csv_dict, device_str):
             os.makedirs(param.model_dir + '/models')
         root_dir = os.path.abspath(param.model_dir)
         # start or load session
-        ckpt_name = root_dir + '/models/model.ckpt'
+        ckpt_name = '{}/models/model.ckpt'.format(root_dir)
         if param.starting_iter > 0:
-            model_str = ckpt_name + '-%d' % param.starting_iter
+            model_str = '{}-{}'.format(ckpt_name, param.starting_iter)
             saver.restore(sess, model_str)
             print('Loading from {}...'.format(model_str))
         else:
@@ -211,7 +211,7 @@ def run(net_class, param, csv_dict, device_str):
                     current_iter, loss_value, miss_value, iter_time))
                 if (current_iter % 20) == 0:
                     writer.add_summary(sess.run(write_summary_op), current_iter)
-                if (current_iter % param.save_every_n) == 0:
+                if (current_iter % param.save_every_n) == 0 and i > 0:
                     saver.save(sess, ckpt_name, global_step=current_iter)
                     print('Iter {} model saved at {}'.format(
                         current_iter, ckpt_name))
