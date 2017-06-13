@@ -70,8 +70,10 @@ def create_mapping_from_multimod_arrayfiles(array_files,
                 perc_database[m] = []
             for t in range(0, numb_timepoints):
                 img_3d = img_data[..., list_modalities[m], t]
-                mask_3d = masking_function(img_3d)
-
+                if masking_function is not None:
+                    mask_3d = masking_function(img_3d)
+                else:
+                    mask_3d = np.ones_like(img_3d, dtype=np.bool)
                 perc = __compute_percentiles(img_3d, mask_3d, cutoff)
                 perc_database[m].append(perc)
     mapping = {}

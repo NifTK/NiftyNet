@@ -32,8 +32,8 @@ class MeanVarNormalisationLayer(Layer):
         masked_img = ma.masked_array(np.copy(image), np.logical_not(mask))
         mean = masked_img.mean()
         std = masked_img.std()
-        image[mask == True] -= mean
-        image[mask == True] /= max(std, 1e-5)
+        image -= mean
+        image /= max(std, 1e-5)
         return image
 
     def layer_op(self, image, mask=None):
@@ -50,7 +50,6 @@ class MeanVarNormalisationLayer(Layer):
         if image_mask is None:
             image_mask = np.ones_like(image, dtype=np.bool)
 
-        assert np.all(image_mask.shape == image.shape)
         if image.ndim == 3:
             image = self.__whitening_transformation_3d(image, image_mask)
 

@@ -7,7 +7,10 @@ import tensorflow as tf
 
 import utilities.misc_csv as misc_csv
 from layer.binary_masking import BinaryMaskingLayer
-from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
+from layer.histogram_normalisation import \
+    HistogramNormalisationLayer as HistNorm
+from layer.mean_variance_normalisation import \
+    MeanVarNormalisationLayer as MVNorm
 from utilities.csv_table import CSVTable
 from utilities.filename_matching import KeywordsMatching
 
@@ -44,11 +47,12 @@ class HistTest(tf.test.TestCase):
         model_file = './testing_data/standardisation_models.txt'
         if os.path.exists(model_file):
             os.remove(model_file)
+        masking_func = BinaryMaskingLayer(
+            type='otsu_plus',
+            multimod_fusion='or')
         hist_norm = HistNorm(
             models_filename=model_file,
-            binary_masking_func=BinaryMaskingLayer(
-                type='otsu_plus',
-                multimod_fusion='or'),
+            binary_masking_func=masking_func,
             norm_type='percentile',
             cutoff=(0.05, 0.95))
         hist_norm.train_normalisation_ref(subjects=subject_list)
@@ -59,9 +63,10 @@ class HistTest(tf.test.TestCase):
         # normalise a uniformly sampled random image
         test_shape = (20, 20, 20, 2, 3)
         rand_image = np.random.uniform(low=-10.0, high=10.0, size=test_shape)
-        norm_image = hist_norm(rand_image,
-                               do_normalising=True,
-                               do_whitening=True)
+        norm_image, mask = hist_norm(rand_image)
+        # apply mean std normalisation
+        mv_norm = MVNorm(masking_func)
+        norm_image = mv_norm(norm_image, mask)
 
         rand_image = rand_image.flatten()
         norm_image = norm_image.flatten()
