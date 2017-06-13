@@ -13,6 +13,7 @@ from engine.uniform_sampler import UniformSampler
 from engine.selective_sampler import SelectiveSampler
 from engine.spatial_location_check import SpatialLocationCheckLayer
 from engine.volume_loader import VolumeLoaderLayer
+from layer.binary_masking import BinaryMaskingLayer
 from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
 from layer.loss import LossFunction
 from utilities import misc_common as util
@@ -44,10 +45,11 @@ def run(net_class, param, csv_dict, device_str):
     # defines how to normalise image volumes
     hist_norm = HistNorm(
         models_filename=param.histogram_ref_file,
-        multimod_mask_type=param.multimod_mask_type,
+        binary_masking_func=BinaryMaskingLayer(
+            type=param.mask_type,
+            multimod_fusion=param.multimod_mask_type),
         norm_type=param.norm_type,
-        cutoff=(param.cutoff_min, param.cutoff_max),
-        mask_type=param.mask_type)
+        cutoff=(param.cutoff_min, param.cutoff_max))
 
     # defines volume-level preprocessing
     volume_loader = VolumeLoaderLayer(

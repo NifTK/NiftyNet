@@ -1,9 +1,11 @@
 from __future__ import absolute_import, print_function
+
 import tensorflow as tf
 
 # sampler
 from engine.grid_sampler import GridSampler
 from engine.volume_loader import VolumeLoaderLayer
+from layer.binary_masking import BinaryMaskingLayer
 from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
 from utilities.csv_table import CSVTable
 from utilities.input_placeholders import ImagePatch
@@ -21,9 +23,11 @@ class UniformSamplerTest(tf.test.TestCase):
 
         hist_norm = HistNorm(
             models_filename='./testing_data/standardisation_models.txt',
-            multimod_mask_type='or',
+            binary_masking_func=BinaryMaskingLayer(
+                type='otsu_plus',
+                multimod_fusion='or'),
             norm_type='percentile',
-            mask_type='otsu_plus')
+            cutoff=(0.01, 0.99))
 
         volume_loader = VolumeLoaderLayer(csv_loader,
                                           hist_norm,
@@ -56,13 +60,13 @@ class UniformSamplerTest(tf.test.TestCase):
             n_volumes = n_volumes + 1
             if n_volumes == 3:
                 break
-            # if n_volumes == 5:
-            #    break
+                # if n_volumes == 5:
+                #    break
 
-            #    keys = data_dict.keys()[0]
-            #    output = data_dict.values()[0]
-            #    for (idx, key) in enumerate(keys):
-            #        print(key, output[idx].shape)
+                #    keys = data_dict.keys()[0]
+                #    output = data_dict.values()[0]
+                #    for (idx, key) in enumerate(keys):
+                #        print(key, output[idx].shape)
 
     def test_2d(self):
         csv_dict = {'input_image_file': './testing_data/testing_case_input',
@@ -75,9 +79,11 @@ class UniformSamplerTest(tf.test.TestCase):
 
         hist_norm = HistNorm(
             models_filename='./testing_data/standardisation_models.txt',
-            multimod_mask_type='or',
+            binary_masking_func=BinaryMaskingLayer(
+                type='otsu_plus',
+                multimod_fusion='or'),
             norm_type='percentile',
-            mask_type='otsu_plus')
+            cutoff=(0.01, 0.99))
 
         volume_loader = VolumeLoaderLayer(csv_loader,
                                           hist_norm,
@@ -122,9 +128,11 @@ class UniformSamplerTest(tf.test.TestCase):
 
         hist_norm = HistNorm(
             models_filename='./testing_data/standardisation_models.txt',
-            multimod_mask_type='or',
+            binary_masking_func=BinaryMaskingLayer(
+                type='otsu_plus',
+                multimod_fusion='or'),
             norm_type='percentile',
-            mask_type='otsu_plus')
+            cutoff=(0.01, 0.99))
 
         volume_loader = VolumeLoaderLayer(csv_loader,
                                           hist_norm,
@@ -157,6 +165,7 @@ class UniformSamplerTest(tf.test.TestCase):
             n_volumes = n_volumes + 1
             if n_volumes == 3:
                 break
+
 
 if __name__ == "__main__":
     tf.test.main()

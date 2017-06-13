@@ -12,6 +12,7 @@ from six.moves import range
 from engine.grid_sampler import GridSampler
 from engine.input_buffer import DeployInputBuffer
 from engine.volume_loader import VolumeLoaderLayer
+from layer.binary_masking import BinaryMaskingLayer
 from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
 from utilities.csv_table import CSVTable
 from utilities.input_placeholders import ImagePatch
@@ -40,11 +41,13 @@ def run(net_class, param, csv_dict, device_str):
     csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
 
     # define how to normalise image volumes
-    hist_norm = HistNorm(models_filename=param.histogram_ref_file,
-                         multimod_mask_type=param.multimod_mask_type,
-                         norm_type=param.norm_type,
-                         cutoff=(param.cutoff_min, param.cutoff_max),
-                         mask_type=param.mask_type)
+    hist_norm = HistNorm(
+        models_filename=param.histogram_ref_file,
+        binary_masking_func=BinaryMaskingLayer(
+            type=param.mask_type,
+            multimod_fusion=param.multimod_mask_type),
+        norm_type=param.norm_type,
+        cutoff=(param.cutoff_min, param.cutoff_max))
 
     # define how to choose training volumes
     volume_loader = VolumeLoaderLayer(
@@ -161,10 +164,10 @@ def run(net_class, param, csv_dict, device_str):
 
                     # assign predicted patch to the allocated output volume
                     origin = spatial_info[
-                        batch_id, 1:(1 + int(np.floor(spatial_rank)))]
+                             batch_id, 1:(1 + int(np.floor(spatial_rank)))]
 
                     # indexing within the patch
-                    assert patch_holder.label_size >= param.border*2
+                    assert patch_holder.label_size >= param.border * 2
                     p_ = param.border
                     _p = patch_holder.label_size - param.border
 
@@ -194,7 +197,7 @@ def run(net_class, param, csv_dict, device_str):
                         x_, y_ = dest_start
                         _x, _y = dest_end
                         z_ = spatial_info[batch_id, 3]
-                        pred_img[x_:_x, y_:_y, z_:(z_+1), ...] = \
+                        pred_img[x_:_x, y_:_y, z_:(z_ + 1), ...] = \
                             predictions[p_:_p, p_:_p, ...]
                     else:
                         raise ValueError("unsupported spatial rank")

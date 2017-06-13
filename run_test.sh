@@ -3,6 +3,7 @@ tar -xzvf example_volumes.tar.gz
 wget -N https://www.dropbox.com/s/94wa4fl8f8k3aie/testing_data.tar.gz
 tar -xzvf testing_data.tar.gz
 
+python -m testing.binary_masking_test
 python -m testing.histogram_normalisation_test
 python -m testing.volume_loader_test
 python -m testing.activation_test

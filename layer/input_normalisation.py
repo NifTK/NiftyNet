@@ -2,31 +2,31 @@
 from __future__ import absolute_import, print_function
 
 import os
-import sys
 
 import numpy as np
 import numpy.ma as ma
 
 import utilities.histogram_standardisation as hs
 from .base_layer import Layer
+from .binary_masking import BinaryMaskingLayer
 
 
 class HistogramNormalisationLayer(Layer):
     def __init__(self,
                  models_filename,
-                 multimod_mask_type='or',
+                 binary_masking_func=None,
                  norm_type='percentile',
                  cutoff=(0.05, 0.95),
-                 mask_type='otsu_plus',
                  name='hist_norm'):
 
         super(HistogramNormalisationLayer, self).__init__(name=name)
         self.hist_model_file = models_filename
 
-        self.multimod_mask_type = multimod_mask_type
+        if binary_masking_func is not None:
+            assert isinstance(binary_masking_func, BinaryMaskingLayer)
+            self.binary_masking_func = binary_masking_func
         self.norm_type = norm_type
         self.cutoff = cutoff
-        self.mask_type = mask_type
 
         # mapping is a complete cache of the model file, the total number of
         # modalities are listed in self.modalities
@@ -37,20 +37,21 @@ class HistogramNormalisationLayer(Layer):
         if not (do_whitening and do_normalising):
             return image_5d
 
-        mask_array = self.make_mask_array(image_5d)
+        if self.binary_masking_func is not None:
+            mask_array = self.binary_masking_func(image_5d)
+        else:
+            mask_array = np.ones_like(image_5d)
+
         if do_normalising:
             image_5d = self.normalise(image_5d, mask_array)
         if do_whitening:
             image_5d = self.whiten(image_5d, mask_array)
         return image_5d
 
-    def __update_modality_dict(self, subject):
-        self.modalities.update(subject.modalities_dict())
-
     def __check_modalities_to_train(self, subjects):
         # collect all modality list from subjects
         for subject in subjects:
-            self.__update_modality_dict(subject)
+            self.modalities.update(subject.modalities_dict())
         if self.mapping is {}:
             return self.modalities
         # remove if exists in currently loaded mapping dict
@@ -80,51 +81,12 @@ class HistogramNormalisationLayer(Layer):
         print("training normalisation histogram references for {}, "
               "using {} subjects".format(mod_to_train.keys(), len(array_files)))
         trained_mapping = hs.create_mapping_from_multimod_arrayfiles(
-            array_files, mod_to_train, self.cutoff, self.mask_type)
-        ### merging trained_mapping dict and self.mapping dict
+            array_files, mod_to_train, self.cutoff, self.binary_masking_func)
 
+        # merging trained_mapping dict and self.mapping dict
         self.mapping.update(trained_mapping)
         self.__write_all_mod_mapping()
 
-    # TODO: handling mask output is all False
-    def make_mask_array(self, data_array):
-        # data_array = io.expand_to_5d(data_array)
-        assert data_array.ndim == 5
-        mod_to_mask = [m for m in range(0, data_array.shape[3]) if
-                       np.any(data_array[..., m, :])]
-        mask_array = np.zeros_like(data_array, dtype=bool)
-        for mod in mod_to_mask:
-            for t in range(0, data_array.shape[4]):
-                mask_array[..., mod, t] = hs.create_mask_img_3d(
-                    data_array[..., mod, t], self.mask_type)
-
-        if self.multimod_mask_type is None:
-            return mask_array
-
-        if self.multimod_mask_type == '':
-            return mask_array
-
-        if self.multimod_mask_type == 'all':
-            return mask_array
-
-        if self.multimod_mask_type == 'or':
-            for t in range(0, data_array.shape[4]):
-                new_mask = np.zeros(data_array.shape[0:3], dtype=np.bool)
-                for mod in mod_to_mask:
-                    new_mask = np.logical_or(new_mask, mask_array[..., mod, t])
-                mask_array[..., t] = np.tile(np.expand_dims(new_mask, axis=-1),
-                                             [1, mask_array.shape[3]])
-            return mask_array
-
-        if self.multimod_mask_type == 'and':
-            for t in range(0, data_array.shape[4]):
-                new_mask = np.ones(data_array.shape[0:3])
-                for mod in mod_to_mask:
-                    new_mask = np.logical_and(new_mask, mask_array[..., mod, t])
-                mask_array[..., t] = np.tile(np.expand_dims(new_mask, axis=-1),
-                                             [1, mask_array.shape[3]])
-            return mask_array
-        raise ValueError('unknown mask combining option')
 
     def whiten(self, data_array, mask_array):
         for m in range(0, data_array.shape[3]):

@@ -1,19 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
+
 import os
 
 import numpy as np
 import numpy.ma as ma
-import scipy.ndimage as ndimg
-from scipy.ndimage.morphology import binary_fill_holes as fill_holes
 
 import utilities.misc_io as io
 from utilities.misc_common import look_up_operations, printProgressBar
 
-try:
-    from skimage import filters
-except ImportError:
-    from skimage import filter as filters
 """
 Implementation of
 Nyúl László G., Jayaram K. Udupa, and Xuan Zhang.
@@ -22,8 +17,6 @@ IEEE transactions on medical imaging 19.2 (2000): 143-150.
 """
 
 DEFAULT_CUTOFF = [0.01, 0.99]
-SUPPORTED_MASK_TYPES = {'threshold_plus', 'threshold_minus',
-                        'otsu_plus', 'otsu_minus', 'mean'}
 SUPPORTED_CUTPOINTS = {'percentile', 'quartile', 'median'}
 
 
@@ -61,7 +54,7 @@ def __standardise_cutoff(cutoff, type_hist='quartile'):
 def create_mapping_from_multimod_arrayfiles(array_files,
                                             list_modalities,
                                             cutoff,
-                                            mask_type):
+                                            masking_function):
     perc_database = {}
     for (i, p) in enumerate(array_files):
         printProgressBar(i, len(array_files),
@@ -77,7 +70,8 @@ def create_mapping_from_multimod_arrayfiles(array_files,
                 perc_database[m] = []
             for t in range(0, numb_timepoints):
                 img_3d = img_data[..., list_modalities[m], t]
-                mask_3d = create_mask_img_3d(img_3d, mask_type)
+                mask_3d = masking_function(img_3d)
+
                 perc = __compute_percentiles(img_3d, mask_3d, cutoff)
                 perc_database[m].append(perc)
     mapping = {}
@@ -90,32 +84,6 @@ def create_mapping_from_multimod_arrayfiles(array_files,
 
 def create_standard_range():
     return 0., 100.
-
-
-def create_mask_img_3d(img, type_mask='otsu_plus', thr=0.):
-    assert img.ndim == 3
-    type_mask = look_up_operations(type_mask.lower(), SUPPORTED_MASK_TYPES)
-    mask = np.zeros_like(img, dtype=np.bool)
-    if type_mask == 'threshold_plus':
-        mask[img > thr] = 1
-    elif type_mask == 'threshold_minus':
-        mask[img < thr] = 1
-    elif type_mask == 'otsu_plus':
-        if np.any(img):
-            thr = filters.threshold_otsu(img)
-        mask[img > thr] = 1
-    elif type_mask == 'otsu_minus':
-        if np.any(img):
-            thr = filters.threshold_otsu(img)
-        mask[img < thr] = 1
-    elif type_mask == 'mean':
-        thr = np.mean(img)
-        mask[img > thr] = 1
-    mask = ndimg.binary_dilation(mask, iterations=2)
-    mask = fill_holes(mask)
-    assert not np.all(mask==False)
-    # mask_fin = ndimg.binary_erosion(mask_bis, iterations=2)
-    return mask
 
 
 def __averaged_mapping(perc_database, s1, s2):

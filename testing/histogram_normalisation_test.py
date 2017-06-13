@@ -1,11 +1,12 @@
 from __future__ import absolute_import, print_function
 
-import tensorflow as tf
-import numpy as np
 import os
 
+import numpy as np
+import tensorflow as tf
+
 import utilities.misc_csv as misc_csv
-from engine.volume_loader import VolumeLoaderLayer
+from layer.binary_masking import BinaryMaskingLayer
 from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
 from utilities.csv_table import CSVTable
 from utilities.filename_matching import KeywordsMatching
@@ -23,7 +24,8 @@ class HistTest(tf.test.TestCase):
                                    44.7821246138, 50.7930589961, 56.1703089214,
                                    59.2393548654, 63.1565641037, 78.7271261392,
                                    100.0])
-        constraint_T1 = KeywordsMatching(['./testing_data'], ['T1'], ['Parcellation'])
+        constraint_T1 = KeywordsMatching(['./testing_data'], ['T1'],
+                                         ['Parcellation'])
         constraint_FLAIR = KeywordsMatching(['./testing_data'], ['FLAIR'], [])
         constraint_array = [constraint_FLAIR, constraint_T1]
         misc_csv.write_matched_filenames_to_csv(
@@ -42,10 +44,13 @@ class HistTest(tf.test.TestCase):
         model_file = './testing_data/standardisation_models.txt'
         if os.path.exists(model_file):
             os.remove(model_file)
-        hist_norm = HistNorm(models_filename=model_file,
-                             multimod_mask_type='or',
-                             norm_type='percentile',
-                             mask_type='otsu_plus')
+        hist_norm = HistNorm(
+            models_filename=model_file,
+            binary_masking_func=BinaryMaskingLayer(
+                type='otsu_plus',
+                multimod_fusion='or'),
+            norm_type='percentile',
+            cutoff=(0.05, 0.95))
         hist_norm.train_normalisation_ref(subjects=subject_list)
         out_map = hist_norm.mapping
         self.assertAllClose(out_map['T1'], expected_T1)
@@ -54,7 +59,9 @@ class HistTest(tf.test.TestCase):
         # normalise a uniformly sampled random image
         test_shape = (20, 20, 20, 2, 3)
         rand_image = np.random.uniform(low=-10.0, high=10.0, size=test_shape)
-        norm_image = hist_norm(rand_image, do_normalising=True, do_whitening=True)
+        norm_image = hist_norm(rand_image,
+                               do_normalising=True,
+                               do_whitening=True)
 
         rand_image = rand_image.flatten()
         norm_image = norm_image.flatten()
@@ -65,6 +72,7 @@ class HistTest(tf.test.TestCase):
         self.assertAllClose(np.mean(norm_image), 0.0)
         self.assertAllClose(np.std(norm_image), 1.0)
         self.assertAllClose(order_before, order_after)
+
 
 if __name__ == "__main__":
     tf.test.main()

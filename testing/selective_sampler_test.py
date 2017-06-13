@@ -6,7 +6,6 @@ import tensorflow as tf
 from engine.selective_sampler import SelectiveSampler
 from engine.spatial_location_check import SpatialLocationCheckLayer
 from engine.volume_loader import VolumeLoaderLayer
-from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
 from utilities.csv_table import CSVTable
 from utilities.input_placeholders import ImagePatch
 
@@ -21,12 +20,6 @@ class SelectiveSamplerTest(tf.test.TestCase):
         csv_loader = CSVTable(csv_dict=csv_dict,
                               modality_names=('FLAIR', 'T1'),
                               allow_missing=True)
-
-        hist_norm = HistNorm(
-            models_filename='./testing_data/standardisation_models.txt',
-            multimod_mask_type='or',
-            norm_type='percentile',
-            mask_type='otsu_plus')
 
         volume_loader = VolumeLoaderLayer(csv_loader,
                                           is_training=True)
@@ -82,12 +75,6 @@ class SelectiveSamplerTest(tf.test.TestCase):
                               modality_names=('FLAIR', 'T1'),
                               allow_missing=True)
 
-        hist_norm = HistNorm(
-            models_filename='./testing_data/standardisation_models.txt',
-            multimod_mask_type='or',
-            norm_type='percentile',
-            mask_type='otsu_plus')
-
         volume_loader = VolumeLoaderLayer(csv_loader,
                                           is_training=True)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
@@ -141,12 +128,6 @@ class SelectiveSamplerTest(tf.test.TestCase):
         csv_loader = CSVTable(csv_dict=csv_dict,
                               modality_names=('FLAIR', 'T1'),
                               allow_missing=True)
-
-        hist_norm = HistNorm(
-            models_filename='./testing_data/standardisation_models.txt',
-            multimod_mask_type='or',
-            norm_type='percentile',
-            mask_type='otsu_plus')
 
         volume_loader = VolumeLoaderLayer(csv_loader,
                                           is_training=True)

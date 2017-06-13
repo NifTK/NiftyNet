@@ -5,6 +5,7 @@ import tensorflow as tf
 # sampler
 from engine.uniform_sampler import UniformSampler
 from engine.volume_loader import VolumeLoaderLayer
+from layer.binary_masking import BinaryMaskingLayer
 from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
 from utilities.csv_table import CSVTable
 from utilities.input_placeholders import ImagePatch
@@ -25,11 +26,14 @@ class UniformSamplerTest(tf.test.TestCase):
 
         hist_norm = HistNorm(
             models_filename='./testing_data/standardisation_models.txt',
-            multimod_mask_type='or',
+            binary_masking_func=BinaryMaskingLayer(
+                type='otsu_plus',
+                multimod_fusion='or'),
             norm_type='percentile',
-            mask_type='otsu_plus')
+            cutoff=(0.01, 0.99))
 
-        volume_loader = VolumeLoaderLayer(csv_loader, hist_norm,
+        volume_loader = VolumeLoaderLayer(csv_loader,
+                                          hist_norm,
                                           is_training=True)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
@@ -79,11 +83,14 @@ class UniformSamplerTest(tf.test.TestCase):
 
         hist_norm = HistNorm(
             models_filename='./testing_data/standardisation_models.txt',
-            multimod_mask_type='or',
+            binary_masking_func=BinaryMaskingLayer(
+                type='otsu_plus',
+                multimod_fusion='or'),
             norm_type='percentile',
-            mask_type='otsu_plus')
+            cutoff=(0.01, 0.99))
 
-        volume_loader = VolumeLoaderLayer(csv_loader, hist_norm,
+        volume_loader = VolumeLoaderLayer(csv_loader,
+                                          hist_norm,
                                           is_training=True)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
@@ -133,9 +140,11 @@ class UniformSamplerTest(tf.test.TestCase):
 
         hist_norm = HistNorm(
             models_filename='./testing_data/standardisation_models.txt',
-            multimod_mask_type='or',
+            binary_masking_func=BinaryMaskingLayer(
+                type='otsu_plus',
+                multimod_fusion='or'),
             norm_type='percentile',
-            mask_type='otsu_plus')
+            cutoff=(0.01, 0.99))
 
         volume_loader = VolumeLoaderLayer(csv_loader, hist_norm,
                                           is_training=True)
