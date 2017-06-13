@@ -40,7 +40,7 @@ class HistogramNormalisationLayer(Layer):
         if self.binary_masking_func is not None:
             mask_array = self.binary_masking_func(image_5d)
         else:
-            mask_array = np.ones_like(image_5d)
+            mask_array = np.ones_like(image_5d, dtype=np.bool)
 
         if do_normalising:
             image_5d = self.normalise(image_5d, mask_array)

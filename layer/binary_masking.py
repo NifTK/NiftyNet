@@ -33,7 +33,7 @@ class BinaryMaskingLayer(Layer):
         self.multimod_fusion = multimod_fusion
         self.threshold = threshold
 
-    def __make_3d_mask(self, image):
+    def __make_mask_3d(self, image):
 
         assert image.ndim == 3
         mask = np.zeros_like(image, dtype=np.bool)
@@ -62,7 +62,7 @@ class BinaryMaskingLayer(Layer):
 
     def layer_op(self, image):
         if image.ndim == 3:
-            return self.__make_3d_mask(image)
+            return self.__make_mask_3d(image)
 
         if image.ndim == 5:
             mod_to_mask = [m for m in range(0, image.shape[3]) if
@@ -70,7 +70,7 @@ class BinaryMaskingLayer(Layer):
             mask = np.zeros_like(image, dtype=bool)
             for mod in mod_to_mask:
                 for t in range(0, image.shape[4]):
-                    mask[..., mod, t] = self.__make_3d_mask(image[..., mod, t])
+                    mask[..., mod, t] = self.__make_mask_3d(image[..., mod, t])
 
             if self.multimod_fusion == 'or':
                 for t in range(0, image.shape[4]):

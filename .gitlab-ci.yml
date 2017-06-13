@@ -51,6 +51,7 @@ testjob:
     - coverage run -a --source . run_application.py train -c config/default_multimodal_config.txt --image_size 42 --label_size 42 --batch_size 3
     - coverage run -a --source . run_application.py inference -c config/default_multimodal_config.txt --image_size 84 --label_size 84 --batch_size 7
 
+    - coverage run -a --source . -m testing.mean_variance_normalisation_test
     - coverage run -a --source . -m testing.binary_masking_test
     - coverage run -a --source . -m testing.histogram_normalisation_test
     - coverage run -a --source . -m testing.activation_test
