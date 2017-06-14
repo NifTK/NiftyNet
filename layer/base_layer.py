@@ -89,3 +89,18 @@ class TrainableLayer(Layer):
     def regularizers(self, value):
         assert isinstance(value, dict)
         self._regularizers = value
+
+
+class LayerFromCallable(Layer):
+    """Module wrapping a function provided by the user.
+    Analogous to snt.Module
+    """
+
+    def __init__(self, layer_op, name='untitled_op'):
+        super(LayerFromCallable, self).__init__(name=name)
+        if not callable(layer_op):
+            raise TypeError("layer_op must be callable.")
+        self._layer_op=layer_op
+
+    def layer_op(self, *args, **kwargs):
+        return self._layer_op(*args,**kwargs)
