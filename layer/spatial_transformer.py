@@ -24,6 +24,7 @@ from __future__ import print_function
 import numpy as np
 import tensorflow as tf
 from .base_layer import Layer
+from .base_layer import LayerFromCallable
 
 import abc
 from itertools import chain
@@ -456,7 +457,7 @@ class AffineGridWarper(GridWarper):
 
     if name is None:
       name = self.module_name + '_inverse'
-    return base.Module(_affine_grid_warper_inverse, name=name)
+    return LayerFromCallable(_affine_grid_warper_inverse, name=name)
 
 
 class AffineWarpConstraints(object):
