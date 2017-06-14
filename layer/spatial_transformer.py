@@ -1,4 +1,5 @@
 # Copyright 2017 The Sonnet Authors. All Rights Reserved.
+# Modifications copyright 2017 The NiftyNet Authors. 
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,18 +19,19 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import abc
-from itertools import chain
 
 # Dependency imports
 import numpy as np
-from six.moves import xrange  # pylint: disable=redefined-builtin
-from sonnet.python.modules import base
-from sonnet.python.modules import basic
 import tensorflow as tf
+from .base_layer import Layer
+
+import abc
+from itertools import chain
+from six.moves import xrange  # pylint: disable=redefined-builtin
 
 
-class GridWarper(base.AbstractModule):
+
+class GridWarper(Layer):
   """Grid warper interface class.
 
   An object implementing the `GridWarper` interface generates a reference grid
@@ -70,7 +72,7 @@ class GridWarper(base.AbstractModule):
     self._source_shape = tuple(source_shape)
     self._output_shape = tuple(output_shape)
     if len(self._output_shape) > len(self._source_shape):
-      raise base.Error('Output domain dimensionality ({}) must be equal or '
+      raise ValueError('Output domain dimensionality ({}) must be equal or '
                        'smaller than source domain dimensionality ({})'
                        .format(len(self._output_shape),
                                len(self._source_shape)))
@@ -198,10 +200,10 @@ class AffineGridWarper(GridWarper):
       self._constraints = AffineWarpConstraints(constraints=constraints)
 
     if self._constraints.num_free_params == 0:
-      raise base.Error('Transformation is fully constrained.')
+      raise ValueError('Transformation is fully constrained.')
 
     if self._constraints.num_dim != num_dim:
-      raise base.Error('Incompatible set of constraints provided: '
+      raise ValueError('Incompatible set of constraints provided: '
                        'input grid shape and constraints have different '
                        'dimensionality.')
 
@@ -271,7 +273,7 @@ class AffineGridWarper(GridWarper):
     features += offsets
     return features
 
-  def _build(self, inputs):
+  def layer_op(self, inputs):
     """Assembles the module network and adds it to the graph.
 
     The internal computation graph is assembled according to the set of
@@ -292,15 +294,15 @@ class AffineGridWarper(GridWarper):
     batch_size = tf.expand_dims(input_shape[0], 0)
     number_of_params = inputs.get_shape()[1]
     if number_of_params != self._constraints.num_free_params:
-      raise base.Error('Input size is not consistent with constraint '
+      raise ValueError('Input size is not consistent with constraint '
                        'definition: {} parameters expected, {} provided.'
                        .format(self._constraints.num_free_params,
                                number_of_params))
     num_output_dimensions = len(self._psi) // 3
     def get_input_slice(start, size):
       """Extracts a subset of columns from the input 2D Tensor."""
-      return basic.SliceByDim([1], [start], [size])(inputs)
-
+      rank = len(inputs.get_shape().as_list())
+      return tf.slice(inputs,begin=[0,start]+[0]*(rank-2),size=[-1,size]+[-1]*(rank-2)
     warped_grid = []
     var_index_offset = 0
     number_of_points = np.prod(self._output_shape)
@@ -351,7 +353,7 @@ class AffineGridWarper(GridWarper):
     # Reshape all the warped coordinates tensors to match the specified output
     # shape and concatenate  into a single matrix.
     grid_shape = self._output_shape + (1,)
-    warped_grid = [basic.BatchReshape(grid_shape)(grid) for grid in warped_grid]
+    warped_grid = [tf.reshape(grid,(-1,)+grid_shape) for grid in warped_grid]
     return tf.concat(warped_grid, len(grid_shape))
 
   @property
@@ -435,12 +437,11 @@ class AffineGridWarper(GridWarper):
       c_inv = -c / det
       d_inv = a / det
 
-      m_inv = basic.BatchReshape(
-          [2, 2])(tf.concat([a_inv, b_inv, c_inv, d_inv], 1))
+      m_inv = tf.reshape(tf.concat([a_inv, b_inv, c_inv, d_inv], 1)),[-1, 2, 2])
 
       txy = tf.expand_dims(tf.concat([tx, ty], 1), 2)
 
-      txy_inv = basic.BatchFlatten()(tf.matmul(m_inv, txy))
+      txy_inv = tf.reshape(tf.matmul(m_inv, txy),[-1,2])
       tx_inv = txy_inv[:, 0:1]
       ty_inv = txy_inv[:, 1:2]
 
