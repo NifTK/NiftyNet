@@ -16,7 +16,7 @@ except ImportError:
 """
 This class defines methods to generate a binary image from an input image.
 The binary image can be used as an automatic foreground selector, so that later
-processing layers can only operate on the `True` locations within the image.  
+processing layers can only operate on the `True` locations within the image.
 """
 SUPPORTED_MASK_TYPES = {'threshold_plus', 'threshold_minus',
                         'otsu_plus', 'otsu_minus', 'mean'}

@@ -124,36 +124,23 @@ def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     affine_map[0] = diff_mapping / diff_perc
     # compute intercepts of the linear models
     affine_map[1] = range_mapping[:-1] - affine_map[0] * range_perc[:-1]
-    # lin_img = np.ones_like(img, dtype=np.float32)
-    # aff_img = np.zeros_like(img, dtype=np.float32)
 
-    # img < range_perc[0] set to affine_map[default], 1, 0
-    # img >= range_perc[9] set to affine_map[:,9]
-    # for i in range(len(range_to_use) - 1):
-    #    greater_than_i = (img >= range_perc[i])
-    #    lin_img[greater_than_i] = affine_map[0, i]
-    #    aff_img[greater_than_i] = affine_map[1, i]
-
-    # img < range_perc[0] set to affine_map[:,-1]
-    # img >= range_perc[9] set to affine_map[:,9]
-    # by the design of np.digitize, if img >= range_perc[i]: return i+1)
-    bin_id = np.digitize(img, range_perc[:-1], right=False) - 1
+    bin_id = np.digitize(img, range_perc[1:-1], right=False)
     lin_img = affine_map[0, bin_id]
     aff_img = affine_map[1, bin_id]
     # handling below cutoff[0] over cutoff[1]
     # values are mapped linearly and then smoothed
+    new_img = lin_img * img + aff_img
+
+    # Apply smooth thresholding (exponential) below cutoff[0] and over cutoff[1]
     lowest_values = img <= range_perc[0]
     highest_values = img >= range_perc[-1]
-    lin_img[lowest_values] = affine_map[0, 0]
-    aff_img[lowest_values] = affine_map[1, 0]
-    new_img = lin_img * img + aff_img
-    # Apply smooth thresholding (exponential) below cutoff[0] and over cutoff[1]
     new_img[lowest_values] = smooth_threshold(
         new_img[lowest_values], mode='low')
     new_img[highest_values] = smooth_threshold(
         new_img[highest_values], mode='high')
     # Apply mask and set background to zero
-    new_img[mask == False] = 0.
+    #new_img[mask == False] = 0.
     return new_img
 
 

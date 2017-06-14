@@ -8,12 +8,9 @@ from .base_layer import Layer
 from .binary_masking import BinaryMaskingLayer
 
 """
-This class defines methods to generate a binary image from an input image.
-The binary image can be used as an automatic foreground selector, so that later
-processing layers can only operate on the `True` locations within the image.  
+This class defines image-level normalisation by subtracting
+foreground mean intensity value and dividing by standard deviation
 """
-SUPPORTED_MASK_TYPES = {'threshold_plus', 'threshold_minus',
-                        'otsu_plus', 'otsu_minus', 'mean'}
 
 
 class MeanVarNormalisationLayer(Layer):

@@ -63,17 +63,18 @@ class HistTest(tf.test.TestCase):
         # normalise a uniformly sampled random image
         test_shape = (20, 20, 20, 2, 3)
         rand_image = np.random.uniform(low=-10.0, high=10.0, size=test_shape)
-        norm_image, mask = hist_norm(rand_image)
+        norm_image = np.copy(rand_image)
+        norm_image, mask = hist_norm(norm_image)
+
         # apply mean std normalisation
         mv_norm = MVNorm(masking_func)
         norm_image = mv_norm(norm_image, mask)
 
-        rand_image = rand_image.flatten()
-        norm_image = norm_image.flatten()
         # mapping should keep at least the order of the images
+        rand_image = rand_image[:,:,:,1,2].flatten()
+        norm_image = norm_image[:,:,:,1,2].flatten()
         order_before = rand_image[1:] > rand_image[:-1]
         order_after = norm_image[1:] > norm_image[:-1]
-
         self.assertAllClose(np.mean(norm_image), 0.0)
         self.assertAllClose(np.std(norm_image), 1.0)
         self.assertAllClose(order_before, order_after)
