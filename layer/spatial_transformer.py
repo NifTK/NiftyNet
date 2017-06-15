@@ -25,14 +25,67 @@ import numpy as np
 import tensorflow as tf
 from .base_layer import Layer
 from .base_layer import LayerFromCallable
+from layer import layer_util
 
 import abc
 from itertools import chain
 from six.moves import xrange  # pylint: disable=redefined-builtin
+from utilities.misc_common import look_up_operations
+
+SUPPORTED_INTERPOLATION={'LINEAR','NEAREST'}
+SUPPORTED_BOUNDARY={'REPLICATE','CIRCULAR','SYMMETRIC'}
+
+class ResamplerLayer(Layer):
+  """ Resampler  class
+  
+  Takes an input tensor and
+  a sampling definition (e.g. a list of grid points) at run-time and returns 
+  one or more values for each grid location
+  """
+  def __init__(self, interpolation='LINEAR', boundary='REPLICATE',name='resampler'):
+    super(ResamplerLayer, self).__init__(name=name)
+    self.interpolation = look_up_operations(interpolation.upper(), SUPPORTED_INTERPOLATION)
+    self.boundary = look_up_operations(boundary.upper(), SUPPORTED_BOUNDARY)
+    self.boundary_func_ = {'REPLICATE':self.boundary_replicate,'CIRCULAR':self.boundary_circular,'SYMMETRIC':self.boundary_symmetric}[self.boundary]
+    self.resample_func_ = {'LINEAR':self.resample_linear,'NEAREST':self.resample_nearest}[self.interpolation]
+
+  def boundary_replicate(self,sample_coords,input_size):
+    return tf.maximum(tf.minimum(sample_coords,input_size),tf.zeros_like(input_size))
+  def boundary_circular(self,sample_coords,input_size):
+    return tf.mod(tf.mod(sample_coords,input_size)+input_size,input_size)
+  def boundary_symmetric(self,sample_coords,input_size):
+    circularSize = input_size+input_size-2
+    return (input_size-1)-tf.abs((input_size-1)-tf.mod(tf.mod(sample_coords,circularSize)+circularSize),circularSize)
+
+  def resample_linear(self,inputs,sample_coords):
+    input_size=tf.reshape(inputs.get_shape().as_list()[1:-1],[1]*(len(sample_coords.get_shape().as_list())-1)+[-1]  )
+    spatial_rank = layer_util.infer_spatial_rank(inputs)
+    spatial_coords = tf.floor(sample_coords)
+    offsets = [[int(c) for c in format(it,'0%ib'%spatial_rank)] for it in range(2**spatial_rank)]
+    offset_signs = [[(-1.)**o for o in os] for os in offsets]
+    preboundary_spatial_coords = tf.reshape(offsets,[1,2**spatial_rank]+[1]*spatial_rank+[spatial_rank])+tf.expand_dims(tf.cast(spatial_coords,tf.int32),1)
+    weight=sample_coords-spatial_coords
+    expanded_weights=tf.cast(tf.reshape(offsets,[1,2**spatial_rank]+[1]*spatial_rank+[spatial_rank]),tf.float32)+tf.reshape(offset_signs,[1,2**spatial_rank]+[1]*spatial_rank+[spatial_rank])*tf.expand_dims(weight,1)
+    spatial_coords2 = self.boundary_func_(preboundary_spatial_coords,input_size)
+    sz=spatial_coords2.get_shape().as_list()
+    batch_coords = tf.tile(tf.reshape(tf.range(sz[0]),[sz[0],1]+[1]*spatial_rank+[1]),[1]+sz[1:-1]+[1])
+    raw_samples = tf.gather_nd(inputs,tf.concat([batch_coords,spatial_coords2],-1))
+    samples=tf.reduce_sum(expanded_weights*raw_samples,reduction_indices=1)
+    return samples
+  def resample_nearest(self,inputs,sample_coords):
+    input_size=tf.reshape(inputs.get_shape().as_list()[1:-1],[1]*(len(sample_coords.get_shape().as_list())-1)+[-1]  )
+    spatial_rank = layer_util.infer_spatial_rank(inputs)
+    spatial_coords = self.boundary_func_(tf.cast(tf.round(sample_coords),tf.int32),input_size);
+    sz=spatial_coords.get_shape().as_list()
+    batch_coords = tf.tile(tf.reshape(tf.range(sz[0]),[sz[0]]+[1]*spatial_rank+[1]),[1]+sz[1:])
+    samples = tf.gather_nd(inputs,tf.concat(batch_coords,spatial_coords,len(sz)))
+    return samples
+    
+  def layer_op(self, inputs, sample_coords):
+    return self.resample_func_(inputs,sample_coords)
 
 
-
-class GridWarper(Layer):
+class GridWarperLayer(Layer):
   """Grid warper interface class.
 
   An object implementing the `GridWarper` interface generates a reference grid
@@ -68,7 +121,7 @@ class GridWarper(Layer):
       Error: If `len(output_shape) > len(source_shape)`.
       TypeError: If `output_shape` and `source_shape` are not both iterable.
     """
-    super(GridWarper, self).__init__(name=name)
+    super(GridWarperLayer, self).__init__(name=name)
 
     self._source_shape = tuple(source_shape)
     self._output_shape = tuple(output_shape)
@@ -150,7 +203,7 @@ def _create_affine_features(output_shape, source_shape):
   return psi
 
 
-class AffineGridWarper(GridWarper):
+class AffineGridWarperLayer(GridWarperLayer):
   """Affine Grid Warper class.
 
   The affine grid warper generates a reference grid of n-dimensional points
@@ -208,7 +261,7 @@ class AffineGridWarper(GridWarper):
                        'input grid shape and constraints have different '
                        'dimensionality.')
 
-    super(AffineGridWarper, self).__init__(source_shape=source_shape,
+    super(AffineGridWarperLayer, self).__init__(source_shape=source_shape,
                                            output_shape=output_shape,
                                            num_coeff=6,
                                            name=name,
@@ -303,7 +356,7 @@ class AffineGridWarper(GridWarper):
     def get_input_slice(start, size):
       """Extracts a subset of columns from the input 2D Tensor."""
       rank = len(inputs.get_shape().as_list())
-      return tf.slice(inputs,begin=[0,start]+[0]*(rank-2),size=[-1,size]+[-1]*(rank-2)
+      return tf.slice(inputs,begin=[0,start]+[0]*(rank-2),size=[-1,size]+[-1]*(rank-2))
     warped_grid = []
     var_index_offset = 0
     number_of_points = np.prod(self._output_shape)
@@ -438,7 +491,7 @@ class AffineGridWarper(GridWarper):
       c_inv = -c / det
       d_inv = a / det
 
-      m_inv = tf.reshape(tf.concat([a_inv, b_inv, c_inv, d_inv], 1)),[-1, 2, 2])
+      m_inv = tf.reshape(tf.concat([a_inv, b_inv, c_inv, d_inv], 1),[-1, 2, 2])
 
       txy = tf.expand_dims(tf.concat([tx, ty], 1), 2)
 
