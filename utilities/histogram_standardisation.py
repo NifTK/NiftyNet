@@ -1,29 +1,25 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
+
 import os
 
 import numpy as np
 import numpy.ma as ma
-import scipy.ndimage as ndimg
-from scipy.ndimage.morphology import binary_fill_holes as fill_holes
 
 import utilities.misc_io as io
 from utilities.misc_common import look_up_operations, printProgressBar
 
-try:
-    from skimage import filters
-except ImportError:
-    from skimage import filter as filters
 """
 Implementation of
 Nyúl László G., Jayaram K. Udupa, and Xuan Zhang.
 "New variants of a method of MRI scale standardization."
 IEEE transactions on medical imaging 19.2 (2000): 143-150.
+
+This implementation only supports input images with floating point number,
+(not integers).
 """
 
 DEFAULT_CUTOFF = [0.01, 0.99]
-SUPPORTED_MASK_TYPES = {'threshold_plus', 'threshold_minus',
-                        'otsu_plus', 'otsu_minus', 'mean'}
 SUPPORTED_CUTPOINTS = {'percentile', 'quartile', 'median'}
 
 
@@ -61,7 +57,7 @@ def __standardise_cutoff(cutoff, type_hist='quartile'):
 def create_mapping_from_multimod_arrayfiles(array_files,
                                             list_modalities,
                                             cutoff,
-                                            mask_type):
+                                            masking_function):
     perc_database = {}
     for (i, p) in enumerate(array_files):
         printProgressBar(i, len(array_files),
@@ -77,7 +73,10 @@ def create_mapping_from_multimod_arrayfiles(array_files,
                 perc_database[m] = []
             for t in range(0, numb_timepoints):
                 img_3d = img_data[..., list_modalities[m], t]
-                mask_3d = create_mask_img_3d(img_3d, mask_type)
+                if masking_function is not None:
+                    mask_3d = masking_function(img_3d)
+                else:
+                    mask_3d = np.ones_like(img_3d, dtype=np.bool)
                 perc = __compute_percentiles(img_3d, mask_3d, cutoff)
                 perc_database[m].append(perc)
     mapping = {}
@@ -90,32 +89,6 @@ def create_mapping_from_multimod_arrayfiles(array_files,
 
 def create_standard_range():
     return 0., 100.
-
-
-def create_mask_img_3d(img, type_mask='otsu_plus', thr=0.):
-    assert img.ndim == 3
-    type_mask = look_up_operations(type_mask.lower(), SUPPORTED_MASK_TYPES)
-    mask = np.zeros_like(img, dtype=np.bool)
-    if type_mask == 'threshold_plus':
-        mask[img > thr] = 1
-    elif type_mask == 'threshold_minus':
-        mask[img < thr] = 1
-    elif type_mask == 'otsu_plus':
-        if np.any(img):
-            thr = filters.threshold_otsu(img)
-        mask[img > thr] = 1
-    elif type_mask == 'otsu_minus':
-        if np.any(img):
-            thr = filters.threshold_otsu(img)
-        mask[img < thr] = 1
-    elif type_mask == 'mean':
-        thr = np.mean(img)
-        mask[img > thr] = 1
-    mask = ndimg.binary_dilation(mask, iterations=2)
-    mask = fill_holes(mask)
-    assert not np.all(mask==False)
-    # mask_fin = ndimg.binary_erosion(mask_bis, iterations=2)
-    return mask
 
 
 def __averaged_mapping(perc_database, s1, s2):
@@ -154,36 +127,23 @@ def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     affine_map[0] = diff_mapping / diff_perc
     # compute intercepts of the linear models
     affine_map[1] = range_mapping[:-1] - affine_map[0] * range_perc[:-1]
-    # lin_img = np.ones_like(img, dtype=np.float32)
-    # aff_img = np.zeros_like(img, dtype=np.float32)
 
-    # img < range_perc[0] set to affine_map[default], 1, 0
-    # img >= range_perc[9] set to affine_map[:,9]
-    # for i in range(len(range_to_use) - 1):
-    #    greater_than_i = (img >= range_perc[i])
-    #    lin_img[greater_than_i] = affine_map[0, i]
-    #    aff_img[greater_than_i] = affine_map[1, i]
-
-    # img < range_perc[0] set to affine_map[:,-1]
-    # img >= range_perc[9] set to affine_map[:,9]
-    # by the design of np.digitize, if img >= range_perc[i]: return i+1)
-    bin_id = np.digitize(img, range_perc[:-1], right=False) - 1
+    bin_id = np.digitize(img, range_perc[1:-1], right=False)
     lin_img = affine_map[0, bin_id]
     aff_img = affine_map[1, bin_id]
     # handling below cutoff[0] over cutoff[1]
     # values are mapped linearly and then smoothed
+    new_img = lin_img * img + aff_img
+
+    # Apply smooth thresholding (exponential) below cutoff[0] and over cutoff[1]
     lowest_values = img <= range_perc[0]
     highest_values = img >= range_perc[-1]
-    lin_img[lowest_values] = affine_map[0, 0]
-    aff_img[lowest_values] = affine_map[1, 0]
-    new_img = lin_img * img + aff_img
-    # Apply smooth thresholding (exponential) below cutoff[0] and over cutoff[1]
     new_img[lowest_values] = smooth_threshold(
         new_img[lowest_values], mode='low')
     new_img[highest_values] = smooth_threshold(
         new_img[highest_values], mode='high')
     # Apply mask and set background to zero
-    new_img[mask == False] = 0.
+    #new_img[mask == False] = 0.
     return new_img
 
 

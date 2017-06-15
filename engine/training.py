@@ -10,58 +10,15 @@ from six.moves import range
 
 from engine.input_buffer import TrainEvalInputBuffer
 from engine.uniform_sampler import UniformSampler
-from engine.selective_sampler import SelectiveSampler
-from engine.spatial_location_check import SpatialLocationCheckLayer
-from engine.volume_loader import VolumeLoaderLayer
-from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
 from layer.loss import LossFunction
 from utilities import misc_common as util
-from utilities.csv_table import CSVTable
 from utilities.input_placeholders import ImagePatch
 
 np.random.seed(seed=int(time.time()))
 
 
-def run(net_class, param, csv_dict, device_str):
-    param.queue_length = max(param.queue_length, param.batch_size)
-    # expanding a few user input parameters
-    if param.spatial_rank == 3:
-        spatial_padding = \
-            ((param.volume_padding_size, param.volume_padding_size),
-             (param.volume_padding_size, param.volume_padding_size),
-             (param.volume_padding_size, param.volume_padding_size))
-    else:
-        spatial_padding = \
-            ((param.volume_padding_size, param.volume_padding_size),
-             (param.volume_padding_size, param.volume_padding_size))
-    interp_order = (param.image_interp_order,
-                    param.label_interp_order,
-                    param.w_map_interp_order)
-
-    # read each line of csv files into an instance of Subject
-    csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
-
-    # defines how to normalise image volumes
-    hist_norm = HistNorm(
-        models_filename=param.histogram_ref_file,
-        multimod_mask_type=param.multimod_mask_type,
-        norm_type=param.norm_type,
-        cutoff=(param.cutoff_min, param.cutoff_max),
-        mask_type=param.mask_type)
-
-    # defines volume-level preprocessing
-    volume_loader = VolumeLoaderLayer(
-        csv_loader,
-        hist_norm,
-        is_training=True,
-        do_reorientation=param.reorientation,
-        do_resampling=param.resampling,
-        spatial_padding=spatial_padding,
-        do_normalisation=param.normalisation,
-        do_whitening=param.whitening,
-        interp_order=interp_order)
-    print('found {} subjects'.format(len(volume_loader.subject_list)))
-
+def run(net_class, param, volume_loader, device_str):
+    # construct graph
     graph = tf.Graph()
     with graph.as_default(), tf.device('/cpu:0'):
         # defines a training element
@@ -113,10 +70,11 @@ def run(net_class, param, csv_dict, device_str):
         loss_func = LossFunction(n_class=param.num_classes,
                                  loss_type=param.loss_type)
         # construct train queue
-        train_batch_runner = TrainEvalInputBuffer(batch_size=param.batch_size,
-                                                  capacity=param.queue_length,
-                                                  sampler=sampler,
-                                                  shuffle=True)
+        train_batch_runner = TrainEvalInputBuffer(
+            batch_size=param.batch_size,
+            capacity=max(param.queue_length, param.batch_size),
+            sampler=sampler,
+            shuffle=True)
 
         # optimizer
         train_step = tf.train.AdamOptimizer(learning_rate=param.lr)
