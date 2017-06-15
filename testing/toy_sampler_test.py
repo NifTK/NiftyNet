@@ -15,8 +15,8 @@ class ToySamplerTest(tf.test.TestCase):
         for d in test_sampler():
             assert isinstance(d, ImagePatch)
             data_dict = d.as_dict(test_sampler.placeholders)
-            keys = data_dict.keys()[0]
-            output = data_dict.values()[0]
+            keys = list(data_dict)[0]
+            output = data_dict[keys][0]
             for (idx, key) in enumerate(keys):
                 print(key, output[idx].shape)
 

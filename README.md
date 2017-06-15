@@ -111,10 +111,11 @@ To run NiftyNet on the CS cluster, follow these instructions:
 4) Install dependencies by running the following commands from the NiftyNet directory:
 ```
 export LD_LIBRARY_PATH=/share/apps/python-3.6.0-shared/lib:$LD_LIBRARY_PATH
-/share/apps/libc6_2.17/lib/x86_64-linux-gnu/ld-2.17.so --library-path /share/apps/libc6_2.17/lib/x86_64-linux-gnu/:/share/apps/libc6_2.17/usr/lib64/:/share/apps/gcc-6.2.0/lib64:/share/apps/gcc-6.2.0/lib:/share/apps/python-3.6.0-shared/lib:/share/apps/cuda-8.0/lib64:/share/apps/cuda-8.0/extras/CUPTI/lib64:${LD_LIBRARY_PATH} $(command -v /share/apps/python-3.6.0-shared/bin/python3) -c 'import pip; pip.main(["install","--user","-r", "requirements.txt"])'
+/share/apps/python-3.6.0-shared/bin/pip3 install --user tensorflow==1.1
+/share/apps/python-3.6.0-shared/bin/pip3 install --user -r requirements.txt
 ```
 
-5) Create a submission script (```mySubmissionScript.sh``` in this example) for the NiftyNet task (```run_application.py train --net_name toynet --image_size 42 --label_size 42 --batch_size 1``` in this example):
+5.a) Requesting single GPU, create a submission script (```mySubmissionScript.sh``` in this example) for the NiftyNet task (```run_application.py train --net_name toynet --image_size 42 --label_size 42 --batch_size 1``` in this example):
 
 ```
 #$ -P gpu
@@ -140,8 +141,30 @@ TF_LD_LIBRARY_PATH=/share/apps/libc6_2.17/lib/x86_64-linux-gnu/:/share/apps/libc
 
 fi
 ```
+5.b) Similarly, to request two GPUs:
 
-5) While logged in to comic100 or comic2, submit the job using qsub
+```
+#$ -P gpu
+#$ -l gpu=2
+#$ -l gpu_titanxp=2
+#$ -l h_rt=23:59:0
+#$ -l tmem=11.5G
+#$ -S /bin/bash
+#!/bin/bash
+# The lines above are resource requests. This script has requested 2 Titan X (Pascal) GPU for 24 hours, and 11.5 GB of memory to be started with the BASH Shell.
+# More information about resource requests can be found at http://hpc.cs.ucl.ac.uk/job_submission_sge/
+
+n_gpus=2
+nvidia-smi
+export CUDA_VISIBLE_DEVICES=$(echo $(nvidia-smi pmon -s m -c 1|grep ' - '|sed "s:[^0-9]::g"|sort|uniq|head -n $n_gpus)|sed -e "s:\s:,:g")
+echo $CUDA_VISIBLE_DEVICES
+
+# These lines runs your NiftyNet task with the correct library paths for tensorflow
+TF_LD_LIBRARY_PATH=/share/apps/libc6_2.17/lib/x86_64-linux-gnu/:/share/apps/libc6_2.17/usr/lib64/:/share/apps/gcc-6.2.0/lib64:/share/apps/gcc-6.2.0/lib:/share/apps/python-3.6.0-shared/lib:/share/apps/cuda-8.0/lib64:/share/apps/cuda-8.0/extras/CUPTI/lib64:$LD_LIBRARY_PATH
+/share/apps/libc6_2.17/lib/x86_64-linux-gnu/ld-2.17.so --library-path $TF_LD_LIBRARY_PATH $(command -v /share/apps/python-3.6.0-shared/bin/python3) -u  run_application.py train --net_name toynet --num_gpus $n_gpus --image_size 42 --label_size 42 --batch_size 1
+```
+
+6) While logged in to comic100 or comic2, submit the job using qsub
 
 ```
 qsub mySubmissionScript.sh
