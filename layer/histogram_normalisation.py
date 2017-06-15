@@ -56,10 +56,7 @@ class HistogramNormalisationLayer(Layer):
             image_mask = np.ones_like(image_5d, dtype=np.bool)
 
         normalised = self.__normalise_5d(image_5d, image_mask)
-        if mask is None:
-            return normalised, image_mask
-        else:
-            return normalised
+        return normalised, image_mask
 
     def __check_modalities_to_train(self, subjects):
         # collect all modality list from subjects

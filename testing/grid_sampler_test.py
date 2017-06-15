@@ -6,7 +6,10 @@ import tensorflow as tf
 from engine.grid_sampler import GridSampler
 from engine.volume_loader import VolumeLoaderLayer
 from layer.binary_masking import BinaryMaskingLayer
-from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
+from layer.histogram_normalisation import \
+    HistogramNormalisationLayer as HistNorm
+from layer.mean_variance_normalisation import \
+    MeanVarNormalisationLayer as MVNorm
 from utilities.csv_table import CSVTable
 from utilities.input_placeholders import ImagePatch
 
@@ -21,16 +24,17 @@ class UniformSamplerTest(tf.test.TestCase):
                               modality_names=('FLAIR', 'T1'),
                               allow_missing=True)
 
+        masking_func = BinaryMaskingLayer(
+            type='otsu_plus',
+            multimod_fusion='or')
         hist_norm = HistNorm(
             models_filename='./testing_data/standardisation_models.txt',
-            binary_masking_func=BinaryMaskingLayer(
-                type='otsu_plus',
-                multimod_fusion='or'),
+            binary_masking_func=masking_func,
             norm_type='percentile',
             cutoff=(0.01, 0.99))
-
+        mv_norm = MVNorm(binary_masking_func=masking_func)
         volume_loader = VolumeLoaderLayer(csv_loader,
-                                          hist_norm,
+                                          standardisor=(hist_norm, mv_norm),
                                           is_training=False)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
@@ -77,16 +81,18 @@ class UniformSamplerTest(tf.test.TestCase):
                               modality_names=('FLAIR', 'T1'),
                               allow_missing=True)
 
+        masking_func = BinaryMaskingLayer(
+            type='otsu_plus',
+            multimod_fusion='or')
         hist_norm = HistNorm(
             models_filename='./testing_data/standardisation_models.txt',
-            binary_masking_func=BinaryMaskingLayer(
-                type='otsu_plus',
-                multimod_fusion='or'),
+            binary_masking_func=masking_func,
             norm_type='percentile',
             cutoff=(0.01, 0.99))
+        mv_norm = MVNorm(binary_masking_func=masking_func)
 
         volume_loader = VolumeLoaderLayer(csv_loader,
-                                          hist_norm,
+                                          (hist_norm, mv_norm),
                                           is_training=False)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
@@ -126,16 +132,18 @@ class UniformSamplerTest(tf.test.TestCase):
                               modality_names=('FLAIR', 'T1'),
                               allow_missing=True)
 
+        masking_func = BinaryMaskingLayer(
+            type='otsu_plus',
+            multimod_fusion='or')
         hist_norm = HistNorm(
             models_filename='./testing_data/standardisation_models.txt',
-            binary_masking_func=BinaryMaskingLayer(
-                type='otsu_plus',
-                multimod_fusion='or'),
+            binary_masking_func=masking_func,
             norm_type='percentile',
             cutoff=(0.01, 0.99))
+        mv_norm = MVNorm(binary_masking_func=masking_func)
 
         volume_loader = VolumeLoaderLayer(csv_loader,
-                                          hist_norm,
+                                          (hist_norm, mv_norm),
                                           is_training=False)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 

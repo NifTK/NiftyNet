@@ -26,7 +26,7 @@ class BinaryMaskingTEst(tf.test.TestCase):
             threshold=0.0)
         mean_var_layer = MeanVarNormalisationLayer(
             binary_masking_func=mask_layer)
-        mask_out = mean_var_layer(x, mask_layer(x))
+        mask_out, _ = mean_var_layer(x, mask_layer(x))
         self.assertAllClose(x.shape, mask_out.shape)
 
     def test_3d_minus_shape(self):
@@ -59,7 +59,7 @@ class BinaryMaskingTEst(tf.test.TestCase):
             threshold=0.0)
         mean_var_layer = MeanVarNormalisationLayer(
             binary_masking_func=mask_layer)
-        mask_out = mean_var_layer(x, mask_layer(x))
+        mask_out, _ = mean_var_layer(x, mask_layer(x))
         self.assertAllClose(x.shape, mask_out.shape)
 
 

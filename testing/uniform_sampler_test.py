@@ -6,7 +6,10 @@ import tensorflow as tf
 from engine.uniform_sampler import UniformSampler
 from engine.volume_loader import VolumeLoaderLayer
 from layer.binary_masking import BinaryMaskingLayer
-from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
+from layer.histogram_normalisation import \
+    HistogramNormalisationLayer as HistNorm
+from layer.mean_variance_normalisation import \
+    MeanVarNormalisationLayer as MVNorm
 from utilities.csv_table import CSVTable
 from utilities.input_placeholders import ImagePatch
 
@@ -31,9 +34,9 @@ class UniformSamplerTest(tf.test.TestCase):
                 multimod_fusion='or'),
             norm_type='percentile',
             cutoff=(0.01, 0.99))
-
+        mv_norm = MVNorm()
         volume_loader = VolumeLoaderLayer(csv_loader,
-                                          hist_norm,
+                                          (hist_norm, mv_norm),
                                           is_training=True)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
@@ -88,9 +91,9 @@ class UniformSamplerTest(tf.test.TestCase):
                 multimod_fusion='or'),
             norm_type='percentile',
             cutoff=(0.01, 0.99))
-
+        mv_norm = MVNorm()
         volume_loader = VolumeLoaderLayer(csv_loader,
-                                          hist_norm,
+                                          (hist_norm, mv_norm),
                                           is_training=True)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
@@ -145,8 +148,10 @@ class UniformSamplerTest(tf.test.TestCase):
                 multimod_fusion='or'),
             norm_type='percentile',
             cutoff=(0.01, 0.99))
+        mv_norm = MVNorm()
 
-        volume_loader = VolumeLoaderLayer(csv_loader, hist_norm,
+        volume_loader = VolumeLoaderLayer(csv_loader,
+                                          (hist_norm, mv_norm),
                                           is_training=True)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
@@ -181,6 +186,7 @@ class UniformSamplerTest(tf.test.TestCase):
             output = data_dict[keys]
             for (idx, key) in enumerate(keys):
                 print(key, output[idx].shape)
+
 
 if __name__ == "__main__":
     tf.test.main()

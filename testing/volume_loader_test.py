@@ -5,7 +5,8 @@ import tensorflow as tf
 import utilities.misc_csv as misc_csv
 from engine.volume_loader import VolumeLoaderLayer
 from layer.binary_masking import BinaryMaskingLayer
-from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
+from layer.histogram_normalisation import \
+    HistogramNormalisationLayer as HistNorm
 from utilities.csv_table import CSVTable
 from utilities.filename_matching import KeywordsMatching
 
@@ -13,15 +14,15 @@ from utilities.filename_matching import KeywordsMatching
 class SubjectTest(tf.test.TestCase):
     def test_volume_loader(self):
         constraint_T1 = KeywordsMatching(['./testing_data'], ['T1'],
-                                            ['Parcellation'])
+                                         ['Parcellation'])
         constraint_FLAIR = KeywordsMatching(['./testing_data'], ['FLAIR'],
-                                               [])
+                                            [])
         constraint_array = [constraint_FLAIR, constraint_T1]
         misc_csv.write_matched_filenames_to_csv(
             constraint_array, './testing_data/TestPrepareInputHGG.csv')
 
         constraint_Label = KeywordsMatching(['./testing_data'],
-                                               ['Parcellation'], [])
+                                            ['Parcellation'], [])
         misc_csv.write_matched_filenames_to_csv(
             [constraint_Label], './testing_data/TestPrepareOutputHGG.csv')
 

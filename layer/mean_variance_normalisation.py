@@ -56,7 +56,4 @@ class MeanVarNormalisationLayer(Layer):
                     image[..., m, t] = self.__whitening_transformation_3d(
                         image[..., m, t], image_mask[..., m, t])
 
-        if mask is None:
-            return image, image_mask
-        else:
-            return image
+        return image, image_mask

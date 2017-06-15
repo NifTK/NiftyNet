@@ -68,7 +68,7 @@ class HistTest(tf.test.TestCase):
 
         # apply mean std normalisation
         mv_norm = MVNorm(masking_func)
-        norm_image = mv_norm(norm_image, mask)
+        norm_image, _ = mv_norm(norm_image, mask)
 
         # mapping should keep at least the order of the images
         rand_image = rand_image[:,:,:,1,2].flatten()

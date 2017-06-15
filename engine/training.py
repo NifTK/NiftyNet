@@ -10,12 +10,13 @@ from six.moves import range
 
 from engine.input_buffer import TrainEvalInputBuffer
 from engine.uniform_sampler import UniformSampler
-from engine.selective_sampler import SelectiveSampler
-from engine.spatial_location_check import SpatialLocationCheckLayer
 from engine.volume_loader import VolumeLoaderLayer
 from layer.binary_masking import BinaryMaskingLayer
-from layer.input_normalisation import HistogramNormalisationLayer as HistNorm
+from layer.histogram_normalisation import \
+    HistogramNormalisationLayer as HistNorm
 from layer.loss import LossFunction
+from layer.mean_variance_normalisation import \
+    MeanVarNormalisationLayer as MVNorm
 from utilities import misc_common as util
 from utilities.csv_table import CSVTable
 from utilities.input_placeholders import ImagePatch
@@ -42,7 +43,7 @@ def run(net_class, param, csv_dict, device_str):
     # read each line of csv files into an instance of Subject
     csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
 
-    # defines how to normalise image volumes
+    # defines layers of normalising image volumes
     hist_norm = HistNorm(
         models_filename=param.histogram_ref_file,
         binary_masking_func=BinaryMaskingLayer(
@@ -50,17 +51,16 @@ def run(net_class, param, csv_dict, device_str):
             multimod_fusion=param.multimod_mask_type),
         norm_type=param.norm_type,
         cutoff=(param.cutoff_min, param.cutoff_max))
+    mean_std_norm = MVNorm()
 
     # defines volume-level preprocessing
     volume_loader = VolumeLoaderLayer(
         csv_loader,
-        hist_norm,
+        standardisor=(hist_norm, mean_std_norm),
         is_training=True,
         do_reorientation=param.reorientation,
         do_resampling=param.resampling,
         spatial_padding=spatial_padding,
-        do_normalisation=param.normalisation,
-        do_whitening=param.whitening,
         interp_order=interp_order)
     print('found {} subjects'.format(len(volume_loader.subject_list)))
 

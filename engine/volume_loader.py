@@ -7,6 +7,8 @@ import numpy as np
 
 from layer.base_layer import Layer
 
+from layer.histogram_normalisation import HistogramNormalisationLayer
+from layer.mean_variance_normalisation import MeanVarNormalisationLayer
 
 class VolumeLoaderLayer(Layer):
     """
@@ -25,22 +27,26 @@ class VolumeLoaderLayer(Layer):
                  do_reorientation=True,
                  do_resampling=True,
                  spatial_padding=None,
-                 do_normalisation=True,
-                 do_whitening=True,
                  interp_order=(3, 0),
                  name='volume_loader'):
 
         super(VolumeLoaderLayer, self).__init__(name=name)
 
         self.csv_table = csv_reader
+        if standardisor is not None:
+            if isinstance(standardisor, Layer):
+                standardisor = (standardisor,)
+            try:
+                _ = (e for e in standardisor)
+            except TypeError:
+                raise ValueError(
+                    "standardisor should be None or a list of layers")
         self.standardisor = standardisor
 
         self.is_training = is_training
         self.do_reorientation = do_reorientation
         self.do_resampling = do_resampling
         self.spatial_padding = spatial_padding
-        self.do_normalisation = do_normalisation
-        self.do_whitening = do_whitening
         self.interp_order = interp_order
 
         self.columns_to_load = (0, 1, 2)
@@ -66,18 +72,17 @@ class VolumeLoaderLayer(Layer):
 
         if self.standardisor is None:
             return
-        standardisor_ready = self.standardisor.is_ready(self.subject_list,
-                                                        self.do_normalisation,
-                                                        self.do_whitening)
-        if not standardisor_ready:
-            if self.is_training:
-                self.standardisor.train_normalisation_ref(self.subject_list)
-            else:
-                raise ValueError(
-                    "histogram normalisation enabled, but can't find histogram"
-                    "reference model file")
-        else:
-            print('histogram normalisation initialised')
+
+        for norm_layer in self.standardisor:
+            if isinstance(norm_layer, HistogramNormalisationLayer):
+                # check whether histogram mapping file is ready
+                standardisor_ready = norm_layer.is_ready(self.subject_list)
+                if self.is_training and not standardisor_ready:
+                    norm_layer.train_normalisation_ref(self.subject_list)
+                elif not self.is_training and not standardisor_ready:
+                    raise RuntimeError(
+                        "Could not initialise histogram normalisation layer")
+
 
     def layer_op(self):
         """
@@ -101,9 +106,10 @@ class VolumeLoaderLayer(Layer):
         weight = subject_dict['weight_map_file']
 
         if self.standardisor is not None:
-            image.data = self.standardisor(image.data,
-                                           self.do_normalisation,
-                                           self.do_whitening)
+            image_foreground_mask = None
+            for norm_layer in self.standardisor:
+                image.data, image_foreground_mask = norm_layer(
+                    image.data, image_foreground_mask)
         return image, label, weight, idx
 
     @property

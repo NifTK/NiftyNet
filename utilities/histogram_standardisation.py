@@ -14,6 +14,9 @@ Implementation of
 Nyúl László G., Jayaram K. Udupa, and Xuan Zhang.
 "New variants of a method of MRI scale standardization."
 IEEE transactions on medical imaging 19.2 (2000): 143-150.
+
+This implementation only supports input images with floating point number,
+(not integers).
 """
 
 DEFAULT_CUTOFF = [0.01, 0.99]
