@@ -55,7 +55,7 @@ class ResamplerLayer(Layer):
     return tf.mod(tf.mod(sample_coords,input_size)+input_size,input_size)
   def boundary_symmetric(self,sample_coords,input_size):
     circularSize = input_size+input_size-2
-    return (input_size-1)-tf.abs((input_size-1)-tf.mod(tf.mod(sample_coords,circularSize)+circularSize),circularSize)
+    return (input_size-1)-tf.abs((input_size-1)-tf.mod(tf.mod(sample_coords,circularSize)+circularSize,circularSize))
 
   def resample_linear(self,inputs,sample_coords):
     # Each sample is interpolated as a weighted sum of 2^spatial_rank voxels
