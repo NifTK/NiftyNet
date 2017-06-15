@@ -11,58 +11,12 @@ from six.moves import range
 
 from engine.grid_sampler import GridSampler
 from engine.input_buffer import DeployInputBuffer
-from engine.volume_loader import VolumeLoaderLayer
-from layer.binary_masking import BinaryMaskingLayer
-from layer.histogram_normalisation import \
-    HistogramNormalisationLayer as HistNorm
-from layer.mean_variance_normalisation import \
-    MeanVarNormalisationLayer as MVNorm
-from utilities.csv_table import CSVTable
 from utilities.input_placeholders import ImagePatch
 
 
 # run on single GPU with single thread
-def run(net_class, param, csv_dict, device_str):
-    param.queue_length = max(param.queue_length, param.batch_size)
-    # expanding a few of the user input parameters
-    if param.spatial_rank == 3:
-        spatial_padding = \
-            ((param.volume_padding_size, param.volume_padding_size),
-             (param.volume_padding_size, param.volume_padding_size),
-             (param.volume_padding_size, param.volume_padding_size))
-    else:
-        spatial_padding = \
-            ((param.volume_padding_size, param.volume_padding_size),
-             (param.volume_padding_size, param.volume_padding_size))
-
-    param_n_channel_out = 1 if not param.output_prob else param.num_classes
-    interp_order = (param.image_interp_order,
-                    param.label_interp_order,
-                    param.w_map_interp_order)
-
-    # read each line of csv files into an instance of Subject
-    csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
-
-    # define layers of normalising image volumes
-    hist_norm = HistNorm(
-        models_filename=param.histogram_ref_file,
-        binary_masking_func=BinaryMaskingLayer(
-            type=param.mask_type,
-            multimod_fusion=param.multimod_mask_type),
-        norm_type=param.norm_type,
-        cutoff=(param.cutoff_min, param.cutoff_max))
-    mean_std_norm = MVNorm()
-
-    # define how to choose training volumes
-    volume_loader = VolumeLoaderLayer(
-        csv_loader,
-        standardisor=(hist_norm, mean_std_norm),
-        is_training=False,
-        do_reorientation=param.reorientation,
-        do_resampling=param.resampling,
-        spatial_padding=spatial_padding,
-        interp_order=interp_order)
-    print('found {} subjects'.format(len(volume_loader.subject_list)))
+def run(net_class, param, volume_loader, device_str):
+    output_image_channels = param.num_classes if not param.output_prob else 1
 
     # construct graph
     graph = tf.Graph()
@@ -93,9 +47,10 @@ def run(net_class, param, csv_dict, device_str):
 
         net = net_class(num_classes=param.num_classes)
         # construct train queue
-        seg_batch_runner = DeployInputBuffer(batch_size=param.batch_size,
-                                             capacity=param.queue_length,
-                                             sampler=sampler)
+        seg_batch_runner = DeployInputBuffer(
+            batch_size=param.batch_size,
+            capacity=max(param.queue_length, param.batch_size),
+            sampler=sampler)
         test_pairs = seg_batch_runner.pop_batch_op
         info = test_pairs['info']
         logits = net(test_pairs['images'], is_training=False)
@@ -156,7 +111,7 @@ def run(net_class, param, csv_dict, device_str):
                         subject_i = volume_loader.get_subject(img_id)
                         pred_img = subject_i.matrix_like_input_data_5d(
                             spatial_rank=spatial_rank,
-                            n_channels=param_n_channel_out,
+                            n_channels=output_image_channels,
                             interp_order=param.output_interp_order)
 
                     # try to expand prediction dims to match the output volume
@@ -183,8 +138,8 @@ def run(net_class, param, csv_dict, device_str):
                     dest_start, dest_end = (origin + s_), (origin + _s)
 
                     assert np.all(dest_start >= 0)
-                    assert np.all(dest_end <= pred_img.shape[
-                                              0:int(np.floor(spatial_rank))])
+                    img_dims = pred_img.shape[0:int(np.floor(spatial_rank))]
+                    assert np.all(dest_end <= img_dims)
                     if spatial_rank == 3:
                         x_, y_, z_ = dest_start
                         _x, _y, _z = dest_end
