@@ -1,17 +1,16 @@
 from __future__ import absolute_import, print_function
 import os
-import subprocess
+from subprocess import Popen, PIPE
 
-rc = subprocess.call('/home/wenqi/list_gpu_memory.sh', shell=True)
-gpu_info = []
-with open('./gpu_tmp_log', 'r') as f:
-    for line in f.readlines():
-        gpu_info.append(line[:-1])
-free_memory = [float(x) for x in gpu_info[1:]]
+bash_string = "nvidia-smi --query-gpu=memory.free --format=csv"
+p1 = Popen(bash_string.split(), stdout=PIPE)
+bash_string = "tail -n 2"
+p2 = Popen(bash_string.split(), stdin=p1.stdout, stdout=PIPE)
+p3 = Popen(['sed', 's: MiB::'], stdin=p2.stdout, stdout=PIPE)
+output, error = p3.communicate()
+
+free_memory = [float(x) for x in output.split('\n')[:-1]]
 if free_memory[0] > 1000:
     print('1')
 else:
     print('0')
-
-if os.path.exists('./gpu_tmp_log'):
-    os.remove('./gpu_tmp_log')
