@@ -16,7 +16,7 @@ from utilities.input_placeholders import ImagePatch
 
 # run on single GPU with single thread
 def run(net_class, param, volume_loader, device_str):
-    output_image_channels = param.num_classes if not param.output_prob else 1
+    output_image_channels = param.num_classes if param.output_prob else 1
 
     # construct graph
     graph = tf.Graph()
