@@ -12,12 +12,11 @@ from six.moves import range
 from engine.grid_sampler import GridSampler
 from engine.input_buffer import DeployInputBuffer
 from utilities.input_placeholders import ImagePatch
+from layer.post_processing import PostProcessingLayer
 
 
 # run on single GPU with single thread
 def run(net_class, param, volume_loader, device_str):
-    output_image_channels = param.num_classes if param.output_prob else 1
-
     # construct graph
     graph = tf.Graph()
     with graph.as_default(), tf.device("/{}:0".format(device_str)):
@@ -54,10 +53,19 @@ def run(net_class, param, volume_loader, device_str):
         test_pairs = seg_batch_runner.pop_batch_op
         info = test_pairs['info']
         logits = net(test_pairs['images'], is_training=False)
-        if param.output_prob:
-            logits = tf.nn.softmax(logits)
+
+        # converting logits into final output for
+        # classification probabilities or argmax classification labels
+        if param.output_prob and param.num_classes > 1:
+            post_process_layer = PostProcessingLayer(
+                'SOFTMAX', num_classes=param.num_classes)
+        elif not param.output_prob and param.num_classes > 1:
+            post_process_layer = PostProcessingLayer(
+                'ARGMAX', num_classes=param.num_classes)
         else:
-            logits = tf.argmax(logits, -1)
+            post_process_layer = PostProcessingLayer(
+                'IDENTITY', num_classes=param.num_classes)
+        net_out = post_process_layer(logits)
         variable_averages = tf.train.ExponentialMovingAverage(0.9)
         variables_to_restore = variable_averages.variables_to_restore()
         saver = tf.train.Saver(var_list=variables_to_restore)
@@ -88,7 +96,7 @@ def run(net_class, param, volume_loader, device_str):
                 local_time = time.time()
                 if coord.should_stop():
                     break
-                seg_maps, spatial_info = sess.run([logits, info])
+                seg_maps, spatial_info = sess.run([net_out, info])
                 # go through each one in a batch
                 for batch_id in range(seg_maps.shape[0]):
                     if spatial_info[batch_id, 0] != img_id:
@@ -111,7 +119,7 @@ def run(net_class, param, volume_loader, device_str):
                         subject_i = volume_loader.get_subject(img_id)
                         pred_img = subject_i.matrix_like_input_data_5d(
                             spatial_rank=spatial_rank,
-                            n_channels=output_image_channels,
+                            n_channels=post_process_layer.num_output_channels(),
                             interp_order=param.output_interp_order)
 
                     # try to expand prediction dims to match the output volume
