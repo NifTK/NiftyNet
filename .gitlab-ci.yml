@@ -83,6 +83,7 @@ testjob:
     - coverage run -a --source . -m testing.selective_sampler_test
     - coverage run -a --source . -m testing.rand_rotation_test
     - coverage run -a --source . -m testing.rand_spatial_scaling_test
+    - coverage run -a --source . -m testing.post_processing_test
     - coverage report -m
     - echo 'finished test'
   tags:

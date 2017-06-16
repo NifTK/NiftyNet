@@ -8,6 +8,7 @@ python -m testing.binary_masking_test
 python -m testing.histogram_normalisation_test
 python -m testing.volume_loader_test
 python -m testing.activation_test
+python -m testing.post_processing_test
 python -m testing.bn_test
 python -m testing.convolution_test
 python -m testing.crop_test
