@@ -105,11 +105,15 @@ def run(net_class, param, volume_loader, device_str):
                 tower_losses.append(loss)
                 tower_misses.append(miss)
                 tower_grads.append(grads)
+
+                # note: only use batch stats from one GPU for batch_norm
+                if i == 0:
+                    bn_updates = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+
         ave_loss = tf.reduce_mean(tower_losses)
         ave_miss = tf.reduce_mean(tower_misses)
         ave_grads = util.average_grads(tower_grads)
         apply_grad_op = train_step.apply_gradients(ave_grads)
-
         # summary for visualisations
         # tracking current batch loss
         summaries = [tf.summary.scalar("total-miss", ave_miss),
@@ -117,11 +121,17 @@ def run(net_class, param, volume_loader, device_str):
 
         # Track the moving averages of all trainable variables.
         variable_averages = tf.train.ExponentialMovingAverage(0.9)
-        var_averages_op = variable_averages.apply(tf.trainable_variables())
+        var_averages_op = variable_averages.apply(
+            tf.trainable_variables() + tf.moving_average_variables())
+
+        # batch norm variables moving mean and var
+        batchnorm_updates_op = tf.group(*bn_updates)
 
         # primary operations
         init_op = tf.global_variables_initializer()
-        train_op = tf.group(apply_grad_op, var_averages_op)
+        train_op = tf.group(apply_grad_op,
+                            var_averages_op,
+                            batchnorm_updates_op)
         write_summary_op = tf.summary.merge(summaries)
 
         # saver
