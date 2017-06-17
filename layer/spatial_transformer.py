@@ -168,8 +168,7 @@ class GridWarperLayer(Layer):
 
 def _create_affine_features(output_shape, source_shape):
   """Generates n-dimensional homogenous coordinates for a given grid definition.
-
-  `source_shape` and `output_shape` are used to define the size of the source
+    `source_shape` and `output_shape` are used to define the size of the source
   and output signal domains, as opposed to the shape of the respective
   Tensors. For example, for an image of size `width=W` and `height=H`,
   `{source,output}_shape=[H, W]`; for a volume of size `width=W`, `height=H`
@@ -180,34 +179,13 @@ def _create_affine_features(output_shape, source_shape):
       warped.
    source_shape: Iterable of integers determining the domain of the signal to be
      resampled.
-
   Returns:
-    List of flattened numpy arrays of coordinates in range `[-1, 1]^N`, for
-    example:
-      ```
-      [[x_0_0, .... , x_0_{n-1}],
-       ....
-       [x_{M-1}_0, .... , x_{M-1}_{n-1}],
-       [x_{M}_0=0, .... , x_{M}_{n-1}=0],
-       ...
-       [x_{N-1}_0=0, .... , x_{N-1}_{n-1}=0],
-       [1, ..., 1]]
-      ```
-      where N is the dimensionality of the sampled space, M is the
-      dimensionality of the output space, i.e. 2 for images
-      and 3 for volumes, and n is the number of points in the output grid.
-      When the dimensionality of `output_shape` is smaller that that of
-      `source_shape` the last rows before [1, ..., 1] will be filled with 0.
-  """
-  ranges = [np.linspace(-1, 1, x, dtype=np.float32)
-            for x in reversed(output_shape)]
-  psi = [x.reshape(-1) for x in np.meshgrid(*ranges, indexing='xy')]
-  dim_gap = len(source_shape) - len(output_shape)
-  for _ in xrange(dim_gap):
-    psi.append(np.zeros_like(psi[0], dtype=np.float32))
-  psi.append(np.ones_like(psi[0], dtype=np.float32))
-  return psi
+    List of flattened numpy arrays of coordinates
 
+  """
+  embedded_output_shape = list(output_shape)+[1]*(len(source_shape) - len(output_shape))
+  ranges = [np.arange(x,dtype=np.float32) for x in embedded_output_shape]+[np.array([1])]
+  return [x.reshape(-1) for x in np.meshgrid(*ranges, indexing='ij')]
 
 class AffineGridWarperLayer(GridWarperLayer):
   """Affine Grid Warper class.
@@ -281,8 +259,8 @@ class AffineGridWarperLayer(GridWarperLayer):
     mask = affine_warp_constraints.mask
     psi = _create_affine_features(output_shape=self._output_shape,
                                   source_shape=self._source_shape)
-    scales = [(x - 1.0) * .5 for x in reversed(self._source_shape)]
-    offsets = scales
+    scales = [1. for x in self._source_shape]
+    offsets = [0. for x in scales]
     # Transforming a point x's i-th coordinate via an affine transformation
     # is performed via the following dot product:
     #

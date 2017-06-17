@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
+import numpy as np
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from layer.convolution import ConvLayer
@@ -71,6 +72,12 @@ class ResamplerTest(tf.test.TestCase):
                                interpolation='NEAREST',
                                boundary='SYMMETRIC',
                                expected_value=[[[1],[3]],[[13],[10]]])
+    def test_resampler_gridwarper_combination_correctness(self):
+        self._test_correctness(input=self.get_3d_input1(),
+                               grid=AffineGridWarperLayer([2,2,3],[2,2,2])(tf.constant([[1,0,0,0,0,1,0,0,0,0,1,0],[1,0,0,0,0,1,0,0,0,0,1,.5]],dtype=tf.float32)),
+                               interpolation='LINEAR',
+                               boundary='REPLICATE',
+                               expected_value=[[[[[1],[2]],[[3],[4]]],[[[5],[6]],[[7],[8]]]],[[[[9.5],[2.5]],[[11.5],[3]]],[[[13.5],[3.5]],[[15.5],[4]]]]])
 
 
 if __name__ == "__main__":
