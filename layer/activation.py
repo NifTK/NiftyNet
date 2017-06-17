@@ -13,6 +13,12 @@ def prelu(f_in, channelwise_params):
     return pos + neg
 
 
+def relu_translated_left(input):
+    # Could pass the 25 as a parameter in future...
+    # Currently only using this to ensure predictions of log variances don't reach -inf
+    return tf.nn.relu(input) - 25
+
+
 SUPPORTED_OP = {'relu': tf.nn.relu,
                 'relu6': tf.nn.relu6,
                 'elu': tf.nn.elu,
@@ -21,7 +27,8 @@ SUPPORTED_OP = {'relu': tf.nn.relu,
                 'sigmoid': tf.nn.sigmoid,
                 'tanh': tf.nn.tanh,
                 'prelu': prelu,
-                'dropout': tf.nn.dropout}
+                'dropout': tf.nn.dropout,
+                'relu_translated_left': relu_translated_left}
 
 
 class ActiLayer(TrainableLayer):
@@ -55,6 +62,8 @@ class ActiLayer(TrainableLayer):
             output_tensor = func_(input_tensor,
                                   keep_prob=keep_prob,
                                   name='dropout')
+        elif self.func == 'relu_translated_left':
+            output_tensor = func_(input_tensor)
         else:
             output_tensor = func_(input_tensor, name='acti')
         return output_tensor

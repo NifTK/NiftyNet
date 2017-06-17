@@ -181,10 +181,50 @@ def huber_loss(prediction, ground_truth, delta=1.0):
     voxelwise_loss = tf.where(residual_is_outside_delta, linear_residual, quadratic_residual)
     return tf.reduce_mean(voxelwise_loss)
 
+def variational_lower_bound(predictions):
+    """
+        This is the variational lower bound derived in
+    Auto-Encoding Varitaional Bayes, Kingma & Welling, 2014
+    :param posterior_means: predicted means for the posterior
+    :param posterior_logvariances: predicted log variances for the posterior
+    :param predicted_means: predicted mean parameter for the voxels modelled as Gaussians
+    :param predicted_logvariances: predicted log variance parameter for the voxels modelled as Gaussians
+    :param originals: the original inputs
+    :return:
+    """
+    [posterior_means, posterior_logvariances, predicted_means, predicted_logvariances, originals] = predictions
+    # sum_of_squares = tf.reshape(tf.square(originals - predicted_means),
+    #                             [-1, conf.input_channels * np.prod(conf.input_dimensions).astype(conf.intX)])
+    sum_of_squares = tf.square(originals - predicted_means)
+    log_likelihood = -0.5 * (predicted_logvariances + np.log(2 * np.pi) + tf.exp(-predicted_logvariances) * sum_of_squares)
+    negative_log_likelihood = -log_likelihood
+    KL_divergence = 0.5 * tf.reduce_mean(1 + posterior_logvariances - tf.square(posterior_means) - tf.exp(posterior_logvariances), axis=[1,2,3,4])
+
+    error_to_minimise = tf.reduce_mean(tf.reduce_sum(negative_log_likelihood, axis=[1,2,3,4]) - KL_divergence)
+
+    # # The gaussian pixels
+    # factor_one = tf.rsqrt(2*np.pi*predicted_variance)
+    # factor_two = tf.exp(tf.div(-tf.square(predicted_means),2*predicted_variance))
+    # Gaussian_pixels = tf.mul(factor_one, factor_two)
+    # predicted_variance = tf.exp(predicted_logvariances)
+    # likelihood = tf.exp(log_likelihood)
+    # average_KL_divergence = tf.reduce_mean(-input_arguments[2])
+    # average_negative_log_likelihood = tf.reduce_mean(negative_log_likelihood)
+    # true_reconstruction_error = average_negative_log_likelihood  # Negative log likelihood per example
+    # true_reconstruction_error = tf.reduce_mean(tf.reduce_sum(likelihood, 1)) # Likelihood per example
+    # if conf.input_channels > 1:
+    #     likelihood = tf.reshape(likelihood, np.concatenate([[-1], conf.input_dimensions, [conf.input_channels]]))
+    # else:
+    #     likelihood = tf.reshape(likelihood, np.concatenate([[-1], conf.input_dimensions]))
+    # average_likelihood = tf.reduce_mean(likelihood)
+
+    return error_to_minimise
+
 SUPPORTED_OPS = {"CrossEntropy": cross_entropy,
                  "Dice": dice,
                  "GDSC": generalised_dice_loss,
                  "SensSpec": sensitivity_specificity_loss,
                  "L1Loss": l1_loss,
                  "L2Loss": l2_loss,
-                 "Huber": huber_loss}
+                 "Huber": huber_loss,
+                 "VariationalLowerBound": variational_lower_bound}
