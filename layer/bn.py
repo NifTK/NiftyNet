@@ -7,21 +7,6 @@ from tensorflow.python.training import moving_averages
 from .base_layer import TrainableLayer
 
 
-def _compute_mean_and_var(inputs, axes):
-    # compute mean and variance of the inputs along axes
-    input_shape = inputs.get_shape()
-    counts = 1
-    for d in axes:
-        counts = counts * input_shape[d].value
-    divisors = tf.constant(1.0 / counts, dtype=inputs.dtype)
-    mean = tf.reduce_sum(inputs, axes) * divisors
-    # variance = sum((x-mean)^2)/n - (sum(x-mean)/n)^2
-    variance = tf.subtract(
-        tf.reduce_sum(tf.squared_difference(inputs, mean), axes) * divisors,
-        tf.square(tf.reduce_sum(tf.subtract(inputs, mean), axes) * divisors))
-    return mean, variance
-
-
 class BNLayer(TrainableLayer):
     """
     Batch normalisation layer, with trainable mean value 'beta' and
@@ -66,33 +51,63 @@ class BNLayer(TrainableLayer):
             initializer=self.initializers['gamma'],
             regularizer=self.regularizers['gamma'],
             dtype=tf.float32, trainable=True)
+
+        collections = [tf.GraphKeys.MOVING_AVERAGE_VARIABLES,
+                       tf.GraphKeys.GLOBAL_VARIABLES]
         moving_mean = tf.get_variable(
             'moving_mean',
             shape=params_shape,
             initializer=self.initializers['moving_mean'],
-            dtype=tf.float32, trainable=False)
+            dtype=tf.float32, trainable=False, collections=collections)
         moving_variance = tf.get_variable(
             'moving_variance',
             shape=params_shape,
             initializer=self.initializers['moving_variance'],
-            dtype=tf.float32, trainable=False)
+            dtype=tf.float32, trainable=False, collections=collections)
 
         # mean and var
-        mean, variance = _compute_mean_and_var(inputs, axes)
+        mean, variance = tf.nn.moments(inputs, axes)
         update_moving_mean = moving_averages.assign_moving_average(
             moving_mean, mean, self.moving_decay).op
         update_moving_variance = moving_averages.assign_moving_average(
             moving_variance, variance, self.moving_decay).op
+        tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_moving_mean)
+        tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_moving_variance)
 
         # call the normalisation function
         if is_training or use_local_stats:
-            with tf.control_dependencies(
-                    [update_moving_mean, update_moving_variance]):
-                outputs = tf.nn.batch_normalization(
-                    inputs, mean, variance,
-                    beta, gamma, self.eps, name='batch_norm')
+            # with tf.control_dependencies(
+            #         [update_moving_mean, update_moving_variance]):
+            outputs = tf.nn.batch_normalization(
+                inputs, mean, variance,
+                beta, gamma, self.eps, name='batch_norm')
         else:
             outputs = tf.nn.batch_normalization(
                 inputs, moving_mean, moving_variance,
                 beta, gamma, self.eps, name='batch_norm')
+        outputs.set_shape(inputs.get_shape())
         return outputs
+
+
+        # # Regularizers are not currently supported for fused batch norm.
+        # return tf.contrib.layers.batch_norm(
+        #     inputs,
+        #     decay=self.moving_decay,
+        #     center=True,
+        #     scale=True,
+        #     epsilon=self.eps,
+        #     activation_fn=None,
+        #     param_initializers=self.initializers,
+        #     param_regularizers=self.regularizers,
+        #     updates_collections=tf.GraphKeys.UPDATE_OPS,
+        #     is_training=is_training,
+        #     reuse=None,
+        #     variables_collections=[tf.GraphKeys.MOVING_AVERAGE_VARIABLES,
+        #                            tf.GraphKeys.GLOBAL_VARIABLES],
+        #     outputs_collections=None,
+        #     trainable=True,
+        #     batch_weights=None,
+        #     fused=False,
+        #     data_format='NHWC',
+        #     zero_debias_moving_mean=False,
+        #     scope=None)
