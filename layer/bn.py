@@ -52,8 +52,7 @@ class BNLayer(TrainableLayer):
             regularizer=self.regularizers['gamma'],
             dtype=tf.float32, trainable=True)
 
-        collections = [tf.GraphKeys.MOVING_AVERAGE_VARIABLES,
-                       tf.GraphKeys.GLOBAL_VARIABLES]
+        collections = [tf.GraphKeys.GLOBAL_VARIABLES]
         moving_mean = tf.get_variable(
             'moving_mean',
             shape=params_shape,

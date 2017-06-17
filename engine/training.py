@@ -121,8 +121,7 @@ def run(net_class, param, volume_loader, device_str):
 
         # Track the moving averages of all trainable variables.
         variable_averages = tf.train.ExponentialMovingAverage(0.9)
-        var_averages_op = variable_averages.apply(
-            tf.trainable_variables() + tf.moving_average_variables())
+        var_averages_op = variable_averages.apply(tf.trainable_variables())
 
         # batch norm variables moving mean and var
         batchnorm_updates_op = tf.group(*bn_updates)
