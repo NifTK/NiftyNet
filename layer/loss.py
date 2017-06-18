@@ -181,7 +181,7 @@ def huber_loss(prediction, ground_truth, delta=1.0):
     voxelwise_loss = tf.where(residual_is_outside_delta, linear_residual, quadratic_residual)
     return tf.reduce_mean(voxelwise_loss)
 
-def variational_lower_bound(predictions):
+def variational_lower_bound(predictions, labels):
     """
         This is the variational lower bound derived in
     Auto-Encoding Varitaional Bayes, Kingma & Welling, 2014
@@ -193,12 +193,12 @@ def variational_lower_bound(predictions):
     :return:
     """
     [posterior_means, posterior_logvariances, predicted_means, predicted_logvariances, originals] = predictions
-    # sum_of_squares = tf.reshape(tf.square(originals - predicted_means),
-    #                             [-1, conf.input_channels * np.prod(conf.input_dimensions).astype(conf.intX)])
+
     sum_of_squares = tf.square(originals - predicted_means)
     log_likelihood = -0.5 * (predicted_logvariances + np.log(2 * np.pi) + tf.exp(-predicted_logvariances) * sum_of_squares)
     negative_log_likelihood = -log_likelihood
-    KL_divergence = 0.5 * tf.reduce_mean(1 + posterior_logvariances - tf.square(posterior_means) - tf.exp(posterior_logvariances), axis=[1,2,3,4])
+
+    KL_divergence = 0.5 * tf.reduce_mean(1 + posterior_logvariances - tf.square(posterior_means) - tf.exp(posterior_logvariances), axis=[1])
 
     error_to_minimise = tf.reduce_mean(tf.reduce_sum(negative_log_likelihood, axis=[1,2,3,4]) - KL_divergence)
 
@@ -212,10 +212,6 @@ def variational_lower_bound(predictions):
     # average_negative_log_likelihood = tf.reduce_mean(negative_log_likelihood)
     # true_reconstruction_error = average_negative_log_likelihood  # Negative log likelihood per example
     # true_reconstruction_error = tf.reduce_mean(tf.reduce_sum(likelihood, 1)) # Likelihood per example
-    # if conf.input_channels > 1:
-    #     likelihood = tf.reshape(likelihood, np.concatenate([[-1], conf.input_dimensions, [conf.input_channels]]))
-    # else:
-    #     likelihood = tf.reshape(likelihood, np.concatenate([[-1], conf.input_dimensions]))
     # average_likelihood = tf.reduce_mean(likelihood)
 
     return error_to_minimise
