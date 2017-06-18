@@ -18,7 +18,7 @@ class VAE_basic(TrainableLayer):
                  w_regularizer=None,
                  b_initializer=None,
                  b_regularizer=None,
-                 acti_func='prelu',
+                 acti_func='relu',
                  name='VAE_basic'):
 
         super(VAE_basic, self).__init__(name=name)
@@ -87,11 +87,11 @@ class VAE_basic(TrainableLayer):
 
         sample_from_posterior = sampler_from_posterior([posterior_means, posterior_logvariances])
 
-        predicted_means = decoder_means(sample_from_posterior, is_training)
-        predicted_logvariances = decoder_logvariances(sample_from_posterior, is_training)
+        data_means = decoder_means(sample_from_posterior, is_training)
+        data_logvariances = decoder_logvariances(sample_from_posterior, is_training)
 
-        predicted_means = reshape_output(predicted_means)
-        predicted_logvariances = reshape_output(predicted_logvariances)
+        data_means = reshape_output(data_means)
+        data_logvariances = reshape_output(data_logvariances)
 
 
-        return [posterior_means, posterior_logvariances, predicted_means, predicted_logvariances, originals]
+        return [posterior_means, posterior_logvariances, data_means, data_logvariances, originals]

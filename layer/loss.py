@@ -187,22 +187,22 @@ def variational_lower_bound(predictions, labels):
     Auto-Encoding Varitaional Bayes, Kingma & Welling, 2014
     :param posterior_means: predicted means for the posterior
     :param posterior_logvariances: predicted log variances for the posterior
-    :param predicted_means: predicted mean parameter for the voxels modelled as Gaussians
-    :param predicted_logvariances: predicted log variance parameter for the voxels modelled as Gaussians
+    :param data_means: predicted mean parameter for the voxels modelled as Gaussians
+    :param data_logvariances: predicted log variance parameter for the voxels modelled as Gaussians
     :param originals: the original inputs
     :return:
     """
-    [posterior_means, posterior_logvariances, predicted_means, predicted_logvariances, originals] = predictions
-    squared_differences = tf.square(originals - predicted_means)
-    log_likelihood = -0.5 * (predicted_logvariances + np.log(2 * np.pi) + tf.exp(-predicted_logvariances) * squared_differences)
+    [posterior_means, posterior_logvariances, data_means, data_logvariances, originals] = predictions
+    squared_differences = tf.square(originals - data_means)
+    log_likelihood = -0.5 * (data_logvariances + np.log(2 * np.pi) + tf.exp(-data_logvariances) * squared_differences)
     KL_divergence = 0.5 * tf.reduce_mean(1 + posterior_logvariances - tf.square(posterior_means) - tf.exp(posterior_logvariances), axis=[1])
     error_to_minimise = tf.reduce_mean(tf.reduce_sum(-log_likelihood, axis=[1,2,3,4]) - KL_divergence)
 
     # # The gaussian pixels
     # factor_one = tf.rsqrt(2*np.pi*predicted_variance)
-    # factor_two = tf.exp(tf.div(-tf.square(predicted_means),2*predicted_variance))
+    # factor_two = tf.exp(tf.div(-tf.square(data_means),2*predicted_variance))
     # Gaussian_pixels = tf.mul(factor_one, factor_two)
-    # predicted_variance = tf.exp(predicted_logvariances)
+    # predicted_variance = tf.exp(data_logvariances)
     # negative_log_likelihood = -log_likelihood
     # likelihood = tf.exp(log_likelihood)
     # average_KL_divergence = tf.reduce_mean(-input_arguments[2])
