@@ -50,7 +50,7 @@ class ResamplerLayer(Layer):
     self.resample_func_ = {'LINEAR':self.resample_linear,'NEAREST':self.resample_nearest}[self.interpolation]
 
   def boundary_replicate(self,sample_coords,input_size):
-    return tf.maximum(tf.minimum(sample_coords,input_size),tf.zeros_like(input_size))
+    return tf.maximum(tf.minimum(sample_coords,input_size-1),tf.zeros_like(input_size))
   def boundary_circular(self,sample_coords,input_size):
     return tf.mod(tf.mod(sample_coords,input_size)+input_size,input_size)
   def boundary_symmetric(self,sample_coords,input_size):
