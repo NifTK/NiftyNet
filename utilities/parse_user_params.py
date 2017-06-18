@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function
-
 import argparse
 import os
 import utilities.misc_csv as misc_csv
@@ -10,8 +8,7 @@ try:
 except ImportError:
     import ConfigParser as configparser
 
-from .filename_matching import KeywordsMatching
-
+from utilities.filename_matching import KeywordsMatching
 
 def _input_path_search(config):
     # match flexible input modality sections
@@ -34,6 +31,26 @@ def _input_path_search(config):
                      for mod_info in w_map_keywords]
     return image_matcher, label_matcher, w_map_matcher
 
+def _eval_path_search(config):
+    # match flexible input modality sections
+    output_keywords = []
+    ref_keywords = []
+    data_keywords = []
+    for section in config.sections():
+        section = section.lower()
+        if 'output' in section:
+            output_keywords.append(config.items(section))
+        elif 'ref' in section:
+            ref_keywords.append(config.items(section))
+        elif 'data' in section:
+            data_keywords.append(config.items(section))
+    output_matcher = [KeywordsMatching.from_tuple(mod_info)
+                     for mod_info in output_keywords]
+    ref_matcher = [KeywordsMatching.from_tuple(mod_info)
+                     for mod_info in ref_keywords]
+    data_matcher = [KeywordsMatching.from_tuple(mod_info)
+                   for mod_info in data_keywords]
+    return output_matcher, ref_matcher, data_matcher
 
 def run():
     file_parser = argparse.ArgumentParser(add_help=False)
@@ -46,11 +63,14 @@ def run():
     file_parser.set_defaults(**default_file)
     file_arg, remaining_argv = file_parser.parse_known_args()
 
-    config = configparser.ConfigParser()
-    config.read([file_arg.conf])
-    # initialise search of image modality filenames
-    image_matcher, label_matcher, w_map_matcher = _input_path_search(config)
-    defaults = dict(config.items("settings"))
+    try:
+        config = configparser.ConfigParser()
+        config.read([file_arg.conf])
+        # initialise search of image modality filenames
+        image_matcher, label_matcher, w_map_matcher = _input_path_search(config)
+        defaults = dict(config.items("settings"))
+    except Exception as e:
+        raise ValueError('configuration file not found')
 
     parser = argparse.ArgumentParser(
         parents=[file_parser],
@@ -136,13 +156,8 @@ def run():
         help="Indicates if the spatial scaling must be performed"
     )
     parser.add_argument(
-        "--min_percentage",
-        help="the spatial scaling factor in [-min_percentage, max_percentage]",
-        type=float
-    )
-    parser.add_argument(
         "--max_percentage",
-        help="the spatial scaling factor in [-min_percentage, max_percentage]",
+        help="the spatial scaling factor in [-max_percentage, max_percentage]",
         type=float
     )
     parser.add_argument(
@@ -178,8 +193,7 @@ def run():
     )
     parser.add_argument(
         "--mask_type",
-        choices=['threshold_plus', 'threshold_minus',
-                 'otsu_plus', 'otsu_minus', 'mean'],
+        choices=['otsu_plus', 'otsu_minus', 'val_plus', 'val_minus'],
         help="type of masking strategy used"
     )
     parser.add_argument(
@@ -245,6 +259,10 @@ def run():
         metavar='',
         help="[Inference only] Prediction directory name")  # without '/'
     parser.add_argument(
+        "--eval_data_dir",
+        metavar='',
+        help="[Inference only] Directory of image to be segmented")  # without '/'
+    parser.add_argument(
         "--output_interp_order",
         metavar='',
         help="[Inference only] interpolation order of the network output",
@@ -295,6 +313,9 @@ def run():
 
 
 def run_eval():
+
+
+
     file_parser = argparse.ArgumentParser(add_help=False)
     file_parser.add_argument("-c", "--conf",
                              help="Specify configurations from a file",
@@ -304,11 +325,15 @@ def run_eval():
     defaults = {"conf": config_file}
     file_parser.set_defaults(**defaults)
     file_arg, remaining_argv = file_parser.parse_known_args()
-
-    if file_arg.conf:
+    try:
         config = configparser.ConfigParser()
         config.read([file_arg.conf])
+        # initialise search of image modality filenames
+        output_matcher, ref_matcher, data_matcher = _eval_path_search(
+            config)
         defaults = dict(config.items("settings"))
+    except Exception as e:
+        raise ValueError('configuration file not found')
 
     parser = argparse.ArgumentParser(
         parents=[file_parser],
@@ -337,4 +362,22 @@ def run_eval():
     parser.add_argument("--seg_type",
                         help="type of input: discrete maps or probabilistic maps")
     args = parser.parse_args(remaining_argv)
-    return args
+    # creating output
+    image_csv_path = os.path.join(args.save_csv_dir, 'image_files.csv')
+    misc_csv.write_matched_filenames_to_csv(output_matcher, image_csv_path)
+
+    if ref_matcher:
+        ref_csv_path = os.path.join(args.save_csv_dir, 'ref_files.csv')
+        misc_csv.write_matched_filenames_to_csv(ref_matcher, ref_csv_path)
+    else:
+        ref_csv_path = None
+    if data_matcher:
+            data_csv_path = os.path.join(args.save_csv_dir, 'data_files.csv')
+            misc_csv.write_matched_filenames_to_csv(data_matcher, data_csv_path)
+    else:
+            data_csv_path = None
+    csv_dict = {'input_image_file': image_csv_path,
+                'target_image_file': ref_csv_path,
+                'weight_map_file': data_csv_path,
+                'target_note': None}
+    return args, csv_dict

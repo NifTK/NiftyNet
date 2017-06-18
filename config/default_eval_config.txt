@@ -1,15 +1,35 @@
+[output modality 1]
+path_to_search = /Users/csudre/Temp/Seg
+filename_contains = Lesion
+filename_not_contains =
+
+[ref 1]
+path_to_search = /Users/csudre/Temp/Ref
+filename_contains = Lesion
+filename_not_contains =
+
+[data 1]
+path_to_search = /Users/csudre/Temp/Data
+filename_contains = T2
+filename_not_contains =
+
+[data 2]
+path_to_search = /Users/csudre/Temp/Data
+filename_contains = T1
+filename_not_contains =
+
 [settings]
 
 # default parameters
 threshold = 0.5
-step = 0.1
+step = 0.5
 ext = .nii.gz
 
 #(choice between probabilistic labels 'prob' and discrete labels 'discrete')
-seg_type = prob
+seg_type = discrete
 
 # **statistical analysis system parameters
-save_csv_dir = /Users/wenqili/Desktop/Prepa_Wenqi
+save_csv_dir = /Users/csudre/Temp
 #seg_dir = /Users/wenqili/Desktop/Prepa_Wenqi/seg
 seg_dir = /Users/wenqili/Desktop/Prepa_Wenqi/Statistics/Seg
 ref_dir = /Users/wenqili/Desktop/Prepa_Wenqi/ref
