@@ -7,7 +7,7 @@ from .base_layer import Layer
 
 class ReshapeLayer(Layer):
     """
-    This class defines a simple reshape layer.
+    This class defines a simple reshape layer, principally for passing feature maps to fully connected layers.
     """
 
     def __init__(self,

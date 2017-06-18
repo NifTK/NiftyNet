@@ -34,7 +34,7 @@ class FCLayer(TrainableLayer):
 
     def __init__(self,
                  n_output_chns,
-                 with_bias=False,
+                 with_bias=True,
                  w_initializer=None,
                  w_regularizer=None,
                  b_initializer=None,
@@ -55,7 +55,7 @@ class FCLayer(TrainableLayer):
         input_shape = input_tensor.get_shape().as_list()
         n_input_chns = input_shape[-1]
 
-        # initialize conv kernels/strides and then apply
+        # initialize weight matrix and then apply
         weight_matrix = tf.get_variable(
             'w', shape=[n_input_chns, self.n_output_chns],
             initializer=self.initializers['w'],

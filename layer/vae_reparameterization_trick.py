@@ -12,7 +12,7 @@ def noise_like(input, distribution):
         output = tf.random_uniform(tf.shape(input), minval=0.0, maxval=1.0)
     elif distribution == 'Bernoulli':
         uniform_sample = tf.random_uniform(tf.shape(input), minval=0.0, maxval=1.0)
-        output = tf.where(uniform_sample - 0.5 > 0, tf.zeros_like(input), tf.ones_like(input))
+        output = tf.where(uniform_sample > 0.5, tf.zeros_like(input), tf.ones_like(input))
     else:
         print("Unrecognised noise!")
         quit()
@@ -21,7 +21,7 @@ def noise_like(input, distribution):
 
 class ReparameterizationLayer(Layer):
     """
-    This class defines a simple reparameterization/noise injection layer.
+    This class defines a simple reparameterization layer, for generating a sample from the posterior.
     See Auto-Encoding Varitaional Bayes, Kingma & Welling, 2014
     """
 
@@ -47,5 +47,4 @@ class ReparameterizationLayer(Layer):
             output_tensor = means + average_stochastic_part
 
         return output_tensor
-
 

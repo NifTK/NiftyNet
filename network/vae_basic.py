@@ -54,11 +54,11 @@ class VAE_basic(TrainableLayer):
             name='fc_encoder_logvariances_{}'.format(self.latent_variables))
         print(encoder_logvariances)
 
-        sample_from_posterior = ReparameterizationLayer(
+        sampler_from_posterior = ReparameterizationLayer(
             prior='Gaussian',
             number_of_samples=self.number_of_samples_from_posterior,
             name='reparameterization_{}'.format(self.latent_variables))
-        print(sample_from_posterior)
+        print(sampler_from_posterior)
 
         decoder_means = FullyConnectedLayer(
             n_output_chns=self.data_dimensionality,
@@ -85,10 +85,10 @@ class VAE_basic(TrainableLayer):
         posterior_means = encoder_means(images, is_training)
         posterior_logvariances = encoder_logvariances(images, is_training)
 
-        samle_from_posterior = sample_from_posterior([posterior_means, posterior_logvariances])
+        sample_from_posterior = sampler_from_posterior([posterior_means, posterior_logvariances])
 
-        predicted_means = decoder_means(samle_from_posterior, is_training)
-        predicted_logvariances = decoder_logvariances(samle_from_posterior, is_training)
+        predicted_means = decoder_means(sample_from_posterior, is_training)
+        predicted_logvariances = decoder_logvariances(sample_from_posterior, is_training)
 
         predicted_means = reshape_output(predicted_means)
         predicted_logvariances = reshape_output(predicted_logvariances)

@@ -193,20 +193,17 @@ def variational_lower_bound(predictions, labels):
     :return:
     """
     [posterior_means, posterior_logvariances, predicted_means, predicted_logvariances, originals] = predictions
-
-    sum_of_squares = tf.square(originals - predicted_means)
-    log_likelihood = -0.5 * (predicted_logvariances + np.log(2 * np.pi) + tf.exp(-predicted_logvariances) * sum_of_squares)
-    negative_log_likelihood = -log_likelihood
-
+    squared_differences = tf.square(originals - predicted_means)
+    log_likelihood = -0.5 * (predicted_logvariances + np.log(2 * np.pi) + tf.exp(-predicted_logvariances) * squared_differences)
     KL_divergence = 0.5 * tf.reduce_mean(1 + posterior_logvariances - tf.square(posterior_means) - tf.exp(posterior_logvariances), axis=[1])
-
-    error_to_minimise = tf.reduce_mean(tf.reduce_sum(negative_log_likelihood, axis=[1,2,3,4]) - KL_divergence)
+    error_to_minimise = tf.reduce_mean(tf.reduce_sum(-log_likelihood, axis=[1,2,3,4]) - KL_divergence)
 
     # # The gaussian pixels
     # factor_one = tf.rsqrt(2*np.pi*predicted_variance)
     # factor_two = tf.exp(tf.div(-tf.square(predicted_means),2*predicted_variance))
     # Gaussian_pixels = tf.mul(factor_one, factor_two)
     # predicted_variance = tf.exp(predicted_logvariances)
+    # negative_log_likelihood = -log_likelihood
     # likelihood = tf.exp(log_likelihood)
     # average_KL_divergence = tf.reduce_mean(-input_arguments[2])
     # average_negative_log_likelihood = tf.reduce_mean(negative_log_likelihood)
