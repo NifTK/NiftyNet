@@ -34,9 +34,8 @@ def infer_output_dim(input_dim, stride, kernel_size, padding):
     assert input_dim is not None
     if padding == 'VALID':
         return input_dim * stride + max(kernel_size - stride, 0)
-    if padding == 'SAME':
+    else: # padding == 'SAME':
         return input_dim * stride
-    return
 
 
 class DeconvLayer(TrainableLayer):
