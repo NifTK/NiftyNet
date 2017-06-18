@@ -5,11 +5,12 @@ from layer.base_layer import TrainableLayer
 from layer.reshape import ReshapeLayer
 from layer.fully_connected import FullyConnectedLayer
 from layer.vae_reparameterization_trick import ReparameterizationLayer
+from layer.layer_util import infer_dimensionality
 
 class VAE_basic(TrainableLayer):
     """
-        reimplementation of variational autoencoder (VAE):
-            see Kingma & Welling, 2014, Auto-Encoding Varitaional Bayes
+        This is the most basic implementation of a variational autoencoder (VAE).
+            See Kingma & Welling, 2014, Auto-Encoding Varitaional Bayes
         """
 
     def __init__(self,
@@ -33,7 +34,9 @@ class VAE_basic(TrainableLayer):
 
     def layer_op(self, images, is_training):
 
-        reshape_input = ReshapeLayer([-1,self.data_dimensionality])
+        [data_dimensions, data_dimensionality] = infer_dimensionality(images)
+
+        reshape_input = ReshapeLayer([-1, data_dimensionality])
         print(reshape_input)
 
         encoder_means = FullyConnectedLayer(
@@ -76,7 +79,7 @@ class VAE_basic(TrainableLayer):
             name='fc_decoder_logvariances_{}'.format(self.latent_variables))
         print(decoder_logvariances)
 
-        reshape_output = ReshapeLayer([-1, 32, 32, 32, 1])
+        reshape_output = ReshapeLayer([-1]+data_dimensions)
         print(reshape_output)
 
         originals = images
