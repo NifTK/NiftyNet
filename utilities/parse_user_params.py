@@ -54,25 +54,16 @@ def _eval_path_search(config):
                    for mod_info in data_keywords]
     return output_matcher, ref_matcher, data_matcher
 
-def run():
-    file_parser = argparse.ArgumentParser(add_help=False)
-    file_parser.add_argument(
-        "-c", "--conf",
-        help="Specify configurations from a file", metavar="File")
-    config_file = os.path.join(
-        os.path.dirname(__file__), '..','config','default_config.txt')
-    default_file = {"conf": config_file}
-    file_parser.set_defaults(**default_file)
-    file_arg, remaining_argv = file_parser.parse_known_args()
-
+def default_params(action,config_file= os.path.join(os.path.dirname(__file__), '..','config','default_config.txt')):
     config = configparser.ConfigParser()
-    config.read([file_arg.conf])
-    # initialise search of image modality filenames
-    image_matcher, label_matcher, w_map_matcher = _input_path_search(config)
-    defaults = dict(config.items("settings"))
+    config.read([config_file])
+    args = build_parser([],dict(config['settings'])).parse_args([action])
+    
+    return correct_args_types(args)
 
+def build_parser(parents,defaults):
     parser = argparse.ArgumentParser(
-        parents=[file_parser],
+        parents=parents,
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.set_defaults(**defaults)
@@ -284,6 +275,26 @@ def run():
     #    "--min_numb_labels",
     #    help="Minimum number of different labels present in a patch"
     #)
+    return parser
+    
+def run():
+    file_parser = argparse.ArgumentParser(add_help=False)
+    file_parser.add_argument(
+        "-c", "--conf",
+        help="Specify configurations from a file", metavar="File")
+    config_file = os.path.join(
+        os.path.dirname(__file__), '../config/default_config.txt')
+    default_file = {"conf": config_file}
+    file_parser.set_defaults(**default_file)
+    file_arg, remaining_argv = file_parser.parse_known_args()
+
+    config = configparser.ConfigParser()
+    config.read([file_arg.conf])
+    # initialise search of image modality filenames
+    image_matcher, label_matcher, w_map_matcher = _input_path_search(config)
+    defaults = dict(config.items("settings"))
+
+    parser=build_parser(parents=[file_parser],defaults=defaults)
     args = parser.parse_args(remaining_argv)
 
     # creating output
@@ -307,6 +318,10 @@ def run():
                 'weight_map_file': w_map_csv_path,
                 'target_note': None}
 
+    args = correct_args_types(args)
+    return args, csv_dict
+
+def correct_args_types(args):
     args.reorientation = True if args.reorientation == "True" else False
     args.resampling = True if args.resampling == "True" else False
     args.normalisation = True if args.normalisation == "True" else False
@@ -314,8 +329,7 @@ def run():
     args.rotation = True if args.rotation == "True" else False
     args.spatial_scaling = True if args.spatial_scaling == "True" else False
     args.output_prob = True if args.output_prob == "True" else False
-    return args, csv_dict
-
+    return args
 
 def run_eval():
 
