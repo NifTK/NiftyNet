@@ -7,16 +7,17 @@ import tensorflow as tf
 from utilities.misc_common import look_up_operations
 from . import layer_util
 from .base_layer import Layer
+from .convolution import get_list_parameter
 
-SUPPORTED_OP = {'AVG', 'MAX', 'CONSTANT'}
+SUPPORTED_OP = {'AVG', 'MAX', 'CONVOLUTION'}
 SUPPORTED_PADDING = {'SAME', 'VALID'}
 
 
 class DownSampleLayer(Layer):
     def __init__(self,
                  func,
-                 kernel_size,
-                 stride,
+                 kernel_size=3,
+                 stride=2,
                  padding='SAME',
                  name='pooling'):
         self.func = func.upper()
@@ -32,27 +33,28 @@ class DownSampleLayer(Layer):
     def layer_op(self, input_tensor):
         spatial_rank = layer_util.infer_spatial_rank(input_tensor)
         look_up_operations(self.func, SUPPORTED_OP)
-        if self.func == 'CONSTANT':
-            kernel_shape = np.hstack((
-                [self.kernel_size] * spatial_rank, 1, 1)).flatten()
-            np_kernel = layer_util.trivial_kernel(kernel_shape)
+        kernel_size_all_dims = get_list_parameter(self.kernel_size, spatial_rank)
+        stride_all_dims = get_list_parameter(self.stride, spatial_rank)
+        if self.func == 'CONVOLUTION':
+            full_kernel_size = kernel_size_all_dims + [1, 1]
+            np_kernel = layer_util.trivial_kernel(full_kernel_size)
             kernel = tf.constant(np_kernel, dtype=tf.float32)
             output_tensor = [tf.expand_dims(x, -1)
                              for x in tf.unstack(input_tensor, axis=-1)]
             output_tensor = [tf.nn.convolution(
                 input=inputs,
                 filter=kernel,
-                strides=[self.stride] * spatial_rank,
+                strides=stride_all_dims,
                 padding=self.padding,
                 name='conv') for inputs in output_tensor]
             output_tensor = tf.concat(output_tensor, axis=-1)
         else:
             output_tensor = tf.nn.pool(
                 input=input_tensor,
-                window_shape=[self.kernel_size] * spatial_rank,
+                window_shape=kernel_size_all_dims,
                 pooling_type=self.func,
                 padding=self.padding,
                 dilation_rate=[1] * spatial_rank,
-                strides=[self.stride] * spatial_rank,
+                strides=stride_all_dims,
                 name=self.layer_name)
         return output_tensor
