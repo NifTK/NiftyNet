@@ -165,6 +165,15 @@ class GridWarperLayer(Layer):
     """Returns a tuple containing the shape of the output grid."""
     return self._output_shape
 
+class CompositeGridWarper(GridWarperLayer):
+  """ Composite Spline Grid Warper class
+  
+  The composite grid warper generates a reference grid of n-dimensional points
+  and warps it via a composition of many transforms. To reduce computation, all adjacent linear transformation can be combined parametrically with each other and possibly with some non-linear transforms. 
+  """
+  def __init__(self):
+    raise NotImplementerError
+
 class InterpolatedSplineGridWarper(GridWarperLayer):
   """ Interpolated Spline Grid Warper class
   
