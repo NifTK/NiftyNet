@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function
+
 import argparse
 import os
 import utilities.misc_csv as misc_csv
@@ -8,7 +10,7 @@ try:
 except ImportError:
     import ConfigParser as configparser
 
-from utilities.filename_matching import KeywordsMatching
+from .filename_matching import KeywordsMatching
 
 def _input_path_search(config):
     # match flexible input modality sections
@@ -63,14 +65,11 @@ def run():
     file_parser.set_defaults(**default_file)
     file_arg, remaining_argv = file_parser.parse_known_args()
 
-    try:
-        config = configparser.ConfigParser()
-        config.read([file_arg.conf])
-        # initialise search of image modality filenames
-        image_matcher, label_matcher, w_map_matcher = _input_path_search(config)
-        defaults = dict(config.items("settings"))
-    except Exception as e:
-        raise ValueError('configuration file not found')
+    config = configparser.ConfigParser()
+    config.read([file_arg.conf])
+    # initialise search of image modality filenames
+    image_matcher, label_matcher, w_map_matcher = _input_path_search(config)
+    defaults = dict(config.items("settings"))
 
     parser = argparse.ArgumentParser(
         parents=[file_parser],
@@ -156,8 +155,13 @@ def run():
         help="Indicates if the spatial scaling must be performed"
     )
     parser.add_argument(
+        "--min_percentage",
+        help="the spatial scaling factor in [min_percentage, max_percentage]",
+        type=float
+    )
+    parser.add_argument(
         "--max_percentage",
-        help="the spatial scaling factor in [-max_percentage, max_percentage]",
+        help="the spatial scaling factor in [min_percentage, max_percentage]",
         type=float
     )
     parser.add_argument(
@@ -193,7 +197,8 @@ def run():
     )
     parser.add_argument(
         "--mask_type",
-        choices=['otsu_plus', 'otsu_minus', 'val_plus', 'val_minus'],
+        choices=['otsu_plus', 'otsu_minus',
+                 'threshold_plus', 'threshold_minus', 'mean'],
         help="type of masking strategy used"
     )
     parser.add_argument(
@@ -258,10 +263,10 @@ def run():
         "--save_seg_dir",
         metavar='',
         help="[Inference only] Prediction directory name")  # without '/'
-    parser.add_argument(
-        "--eval_data_dir",
-        metavar='',
-        help="[Inference only] Directory of image to be segmented")  # without '/'
+    #parser.add_argument(
+    #    "--eval_data_dir",
+    #    metavar='',
+    #    help="[Inference only] Directory of image to be segmented")  # without '/'
     parser.add_argument(
         "--output_interp_order",
         metavar='',

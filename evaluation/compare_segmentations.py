@@ -1,34 +1,37 @@
+from __future__ import absolute_import, print_function
+
 import os.path
-import scipy
+
 import nibabel as nib
 import numpy as np
-from pairwise_measures import PairwiseMeasures
-import utilities.misc_common as util
+
 import utilities.csv_table as csv_table
+from .pairwise_measures import PairwiseMeasures
 
 MEASURES = (
-        'ref volume', 'seg volume',
-        'tp', 'fp', 'fn',
-        'connected_elements', 'vol_diff',
-        'outline_error', 'detection_error',
-        'fpr', 'ppv', 'npv', 'sensitivity', 'specificity',
-        'accuracy', 'jaccard', 'dice', 'ave_dist', 'haus_dist'
-        )
+    'ref volume', 'seg volume',
+    'tp', 'fp', 'fn',
+    'connected_elements', 'vol_diff',
+    'outline_error', 'detection_error',
+    'fpr', 'ppv', 'npv', 'sensitivity', 'specificity',
+    'accuracy', 'jaccard', 'dice', 'ave_dist', 'haus_dist'
+)
 OUTPUT_FORMAT = '{:4f}'
 OUTPUT_FILE_PREFIX = 'PairwiseMeasure'
+
 
 def run(param, csv_dict):
     # output
     out_name = '{}_{}_{}.csv'.format(
-            OUTPUT_FILE_PREFIX,
-            os.path.split(param.ref_dir)[1],
-            os.path.split(param.seg_dir)[1])
+        OUTPUT_FILE_PREFIX,
+        os.path.split(param.ref_dir)[1],
+        os.path.split(param.seg_dir)[1])
     print("Writing {} to {}".format(out_name, param.save_csv_dir))
 
     # inputs
     csv_loader = csv_table.CSVTable(csv_dict=csv_dict, allow_missing=False)
     seg_names = [csv_loader._csv_table[m][1][0][0] for m in range(
-        0,len(csv_loader._csv_table))]
+        0, len(csv_loader._csv_table))]
     ref_names = [csv_loader._csv_table[m][2][0][0] for m in range(
         0, len(csv_loader._csv_table))]
     # seg_names = util.list_files(param.seg_dir, param.ext)
@@ -44,9 +47,8 @@ def run(param, csv_dict):
     # prepare a header for csv
     with open(os.path.join(param.save_csv_dir, out_name), 'w+') as out_stream:
         # a trivial PairwiseMeasures obj to produce header_str
-        measure_headers = PairwiseMeasures(0, 0, measures=MEASURES).header_str()
-        print >> out_stream, "Name (ref), Name (seg), Label" + measure_headers + \
-                             '\n'
+        m_headers = PairwiseMeasures(0, 0, measures=MEASURES).header_str()
+        print >> out_stream, "Name (ref), Name (seg), Label" + m_headers + '\n'
 
         # do the pairwise evaluations
         for i, pair_ in enumerate(pair_list):
@@ -59,11 +61,11 @@ def run(param, csv_dict):
             voxel_sizes = seg_nii.header.get_zooms()[0:3]
             seg = seg_nii.get_data()
             ref = ref_nii.get_data()
-            assert(np.all(seg) >= 0)
-            assert(np.all(ref) >= 0)
-            assert(seg.shape == ref.shape)
+            assert (np.all(seg) >= 0)
+            assert (np.all(ref) >= 0)
+            assert (seg.shape == ref.shape)
 
-            if (param.seg_type == 'discrete') and (np.max(seg) <= 1)\
+            if (param.seg_type == 'discrete') and (np.max(seg) <= 1) \
                     and (len(np.unique(seg)) > 2):
                 print('Non-integer class labels for discrete analysis')
                 print('Thresholding to binary map with threshold: {}'.format(
@@ -79,18 +81,19 @@ def run(param, csv_dict):
                 threshold_steps = np.arange(0, 1, param.step)
 
             for j in threshold_steps:
-                if j==0: continue
+                if j == 0: continue
                 if j >= 1:  # discrete eval
                     seg_binary = np.asarray(seg == j, dtype=np.float32)
                     ref_binary = np.asarray(ref == j, dtype=np.float32)
                 elif j < 1:  # prob eval
                     seg_binary = np.asarray(seg >= j, dtype=np.float32)
                     ref_binary = np.asarray(ref >= 0.5, dtype=np.float32)
-                if np.all(seg_binary==0):
+                if np.all(seg_binary == 0):
                     print("Empty foreground in thresholded binary image.")
                     continue
                 PE = PairwiseMeasures(seg_binary, ref_binary,
-                        measures=MEASURES, num_neighbors=6, pixdim=voxel_sizes)
+                                      measures=MEASURES, num_neighbors=6,
+                                      pixdim=voxel_sizes)
                 fixed_fields = "{}, {}, {},".format(ref_name, seg_name, j)
                 print >> out_stream, fixed_fields + PE.to_string(
                     OUTPUT_FORMAT) + '\n'
