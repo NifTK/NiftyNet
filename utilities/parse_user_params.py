@@ -283,7 +283,7 @@ def run():
         "-c", "--conf",
         help="Specify configurations from a file", metavar="File")
     config_file = os.path.join(
-        os.path.dirname(__file__), '../config/default_config.txt')
+        os.path.dirname(__file__), os.path.join('..','config','default_config.txt'))
     default_file = {"conf": config_file}
     file_parser.set_defaults(**default_file)
     file_arg, remaining_argv = file_parser.parse_known_args()
