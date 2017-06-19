@@ -111,8 +111,8 @@ To run NiftyNet on the CS cluster, follow these instructions:
 4) Install dependencies by running the following commands from the NiftyNet directory:
 ```
 export LD_LIBRARY_PATH=/share/apps/python-3.6.0-shared/lib:$LD_LIBRARY_PATH
-/share/apps/python-3.6.0-shared/bin/pip3 install --user tensorflow==1.1
 /share/apps/python-3.6.0-shared/bin/pip3 install --user -r requirements.txt
+/share/apps/python-3.6.0-shared/bin/pip3 install --user tensorflow-gpu==1.1
 ```
 
 5.a) Requesting single GPU, create a submission script (```mySubmissionScript.sh``` in this example) for the NiftyNet task (```run_application.py train --net_name toynet --image_size 42 --label_size 42 --batch_size 1``` in this example):
