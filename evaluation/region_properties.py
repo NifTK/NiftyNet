@@ -1,4 +1,4 @@
-from __future__ import absolute_import, print_function
+from __future__ import print_function
 
 import numpy as np
 import numpy.ma as ma
@@ -13,7 +13,7 @@ class RegionProperties(object):
 
         self.seg = seg
         self.img = img
-        self.img_channels = self.img.shape[3] if img.ndim == 4 else 1
+        self.img_channels = self.img.shape[3] if img.ndim >= 4 else 1
         img_id = range(0, self.img_channels)
         self.m_dict = {
             'centre of mass': (self.centre_of_mass, ['CoMx',
@@ -63,7 +63,7 @@ class RegionProperties(object):
         probs = self.seg.reshape(-1)[foreground_selector]
         regions = np.zeros((foreground_selector.shape[0], self.img_channels))
         for i in np.arange(self.img_channels):
-            regions[:, i] = self.img[..., i].reshape(-1)[foreground_selector]
+            regions[:, i] = self.img[..., i,0].reshape(-1)[foreground_selector]
         return regions, probs
 
     def centre_of_mass(self):
