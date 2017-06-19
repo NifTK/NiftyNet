@@ -5,7 +5,7 @@ import numpy as np
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from layer.convolution import ConvLayer
-from layer.spatial_transformer import ResamplerLayer, AffineGridWarperLayer
+from layer.spatial_transformer import ResamplerLayer, AffineGridWarperLayer, LinearSplineGridWarper
 
 
 class ResamplerTest(tf.test.TestCase):
@@ -78,7 +78,26 @@ class ResamplerTest(tf.test.TestCase):
                                interpolation='LINEAR',
                                boundary='REPLICATE',
                                expected_value=[[[[[1],[2]],[[3],[4]]],[[[5],[6]],[[7],[8]]]],[[[[9.5],[2.5]],[[11.5],[3]]],[[[13.5],[3.5]],[[15.5],[4]]]]])
-
+    def test_interpolation_gridwarper_correctness(self):
+        grid = LinearSplineGridWarper([2,2,3],[2,2,2],[2,2,2])(tf.constant([[[[[1,1,0],[1,1,1]],[[1,0,0],[1,0,1]]],[[[0,1,0],[0,1,1]],[[0,0,0],[0,0,1]]]],
+                                                                            [[[[0,0,0.5],[0,0,1]],[[0,1,0.5],[0,1,1]]],[[[1,0,0.5],[1,0,1]],[[1,1,0.5],[1,1,1]]]]],dtype=tf.float32))
+        self._test_correctness(input=self.get_3d_input1(),
+                               grid=grid,
+                               interpolation='LINEAR',
+                               boundary='REPLICATE',
+                               expected_value=[[[[[7],[8]],[[5],[6]]],[[[3],[4]],[[1],[2]]]],[[[[9.5],[10]],[[11.5],[12]]],[[[13.5],[14]],[[15.5],[16]]]]])
+    def test_interpolation_gridwarper_correctness2(self):
+        field=tf.constant([[[[[0,0,0.5],[0,0,1]],[[0,1,0.5],[0,1,1]]],[[[1,0,0.5],[1,0,1]],[[1,1,0.5],[1,1,1]]]]],dtype=tf.float32)
+        print(field)
+        grid = LinearSplineGridWarper([2,2,3],[3,3,3],[2,2,2])(field)
+        self._test_correctness(input=self.get_3d_input1()[1:,:,:,:,:],
+                               grid=grid,
+                               interpolation='LINEAR',
+                               boundary='REPLICATE',
+                               expected_value=[[[[[9.5],[9.75],[10]],[[10.5],[10.75],[11]],[[11.5],[11.75],[12]]],
+                                                [[[11.5],[11.75],[12]],[[12.5],[12.75],[13]],[[13.5],[13.75],[14]]],
+                                                [[[13.5],[13.75],[14]],[[14.5],[14.75],[15]],[[15.5],[15.75],[16]]]]])
+        
 
 if __name__ == "__main__":
     tf.test.main()

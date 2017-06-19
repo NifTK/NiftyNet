@@ -165,6 +165,144 @@ class GridWarperLayer(Layer):
     """Returns a tuple containing the shape of the output grid."""
     return self._output_shape
 
+class InterpolatedSplineGridWarper(GridWarperLayer):
+  """ Interpolated Spline Grid Warper class
+  
+  The interpolated grid warper generates a reference grid of n-dimensional points
+  and warps it via an affine transormation model determined by an input
+  parameter Tensor representing a deformation field, which is interpolated 
+  for each grid point. The most well known of these is b-spline
+  deformation.
+  """
+  def __init__(self,
+               source_shape,
+               output_shape,
+               field_size,
+               field_transform=None,
+               resampler=None,
+               field_interpretation='DISPLACEMENT',
+               name='interpolated_spline_grid_warper'):
+    """Constructs an InterpolatedSplineGridWarper.
+
+    `source_shape` and `output_shape` are used to define the size of the source
+    and output signal domains, as opposed to the shape of the respective
+    Tensors. For example, for an image of size `width=W` and `height=H`,
+    `{source,output}_shape=[H, W]`; for a volume of size `width=W`, `height=H`
+    and `depth=D`, `{source,output}_shape=[H, W, D]`.
+
+    Args:
+      source_shape: Iterable of integers determining the size of the source
+        signal domain.
+      output_shape: Iterable of integers determining the size of the destination
+        resampled signal domain.
+      field_transform: an object defining the spatial relationship between the 
+        output_grid and the field. 
+        batch_size x4x4 tensor: per-image transform matrix from output coords to field coords
+        None (default):         corners of output map to corners of field with an allowance for
+                                  interpolation (1 for cubic, 0 for linear)
+      resampler: a ResamplerLayer (or equivalent) used to interpolate the 
+        deformation field
+      field_interpretation: a string ('DISPLACEMENT', or 'DEFORMATION')  
+        describing how the field should be interpreted. DISPLACEMENT means the field represents the spatial location that the grid point should be set to; 'DEFORMATION' means the field represents the change in position that should be applied to the grid
+      name: Name of module.
+
+    Raises:
+      TypeError: If output_shape and source_shape are not both iterable.
+    """
+    if field_interpretation=='DEFORMATION':
+      raise NotImplementedError
+    if resampler==None:
+      self._resampler=ResamplerLayer(interpolation='LINEAR',boundary='REPLICATE')
+      self._interpolation = 'LINEAR'
+    else:
+      self._resampler=resampler
+      self._interpolation = self._resampler.interpolation
+    
+    self._source_shape = list(source_shape)
+    self._output_shape = list(output_shape)
+    self._field_shape = list(field_size)
+    self._field_transform = field_transform
+    
+    num_coeff=np.prod(field_size)
+    self._field_interpretation=field_interpretation
+    super(InterpolatedSplineGridWarper, self).__init__(source_shape=source_shape,
+                                           output_shape=output_shape,
+                                           num_coeff=num_coeff,
+                                           name=name)
+
+  def _create_features(self):
+    """Creates the coordinates for resampling. If field_transform is None, these are constant and are
+       created in field space; otherwise, the final coordinates will be transformed by an input tensor representing 
+       a transform from output coordinates to field coordinates, so they are created are created in output coordinate space
+    """
+    embedded_output_shape = list(self._output_shape)+[1]*(len(self._source_shape) - len(self._output_shape))
+    embedded_field_shape = list(self._field_shape)+[1]*(len(self._source_shape) - len(self._output_shape))
+    if self._field_transform==None and self._interpolation == 'CUBIC':
+      range_func= lambda f,x: tf.linspace(1.,f-2.,x)
+    elif self._field_transform==None and self._interpolation != 'CUBIC':
+      range_func= lambda f,x: tf.linspace(0.,f-1.,x)
+    else:
+      range_func= lambda f,x: np.arange(x,dtype=np.float32)
+      embedded_output_shape+=[1] # make homogeneous
+      embedded_field_shape+=[1]
+    ranges = [range_func(f,x) for f,x in zip(embedded_field_shape,embedded_output_shape)]
+    coords= tf.stack([tf.reshape(x,[1,-1]) for x in tf.meshgrid(*ranges, indexing='ij')],2)
+    return coords
+
+  def layer_op(self, inputs):
+    """Assembles the module network and adds it to the graph.
+
+    The internal computation graph is assembled according to the set of
+    constraints provided at construction time.
+
+    Args:
+      inputs: Tensor containing a batch of transformation parameters.
+
+    Returns:
+      A batch of warped grids.
+
+    Raises:
+      Error: If the input tensor size is not consistent with the constraints
+        passed at construction time.
+    """
+    input_shape = tf.shape(inputs)
+    input_dtype = inputs.dtype.as_numpy_dtype
+    batch_size = int(inputs.get_shape()[0])
+    
+    # transform grid into field coordinate space if necessary
+    if self._field_transform==None:
+      coords=self._psi
+    else:
+      coords = tf.matmul(self._psi,self._field_transform[:,:,1:3])
+    # resample
+    coords = tf.reshape(tf.tile(coords,[batch_size,1,1]),[-1]+list(self._output_shape)+[len(self._source_shape)])
+    resampled_coords = self._resampler(inputs, coords)
+    return resampled_coords
+
+
+  
+class LinearSplineGridWarper(InterpolatedSplineGridWarper):
+  """ Linear Spline Grid Warper class
+  
+  The linear spline grid warper is an InterpolatedSplineGridWarper that defaults to linear interpolation.
+  """
+  def __init__(self,
+               source_shape,
+               output_shape,
+               field_size,
+               field_transform=None,
+               boundary='REPLICATE',
+               field_interpretation='DISPLACEMENT',
+               name='linear_spline_grid_warper'):
+    resampler=ResamplerLayer(interpolation='LINEAR',boundary=boundary,name=name+'_resampler')
+    super(LinearSplineGridWarper, self).__init__(
+               source_shape=source_shape,
+               output_shape=output_shape,
+               field_size=field_size,
+               field_transform=field_transform,
+               resampler=resampler,
+               field_interpretation=field_interpretation,
+               name=name)
 
 def _create_affine_features(output_shape, source_shape):
   """Generates n-dimensional homogenous coordinates for a given grid definition.
