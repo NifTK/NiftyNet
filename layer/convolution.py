@@ -27,6 +27,14 @@ def default_w_initializer():
 def default_b_initializer():
     return tf.constant_initializer(0.0)
 
+def get_list_parameter(param, ndim):
+    if(type(param) == int):
+        return [param]*ndim
+    elif(type(param) == list or type(param) == tuple):
+        assert(len(param) == ndim)
+        return list(param)
+    else:
+        raise TypeError('only int, tuple and list are supported, get {0:}'.format(type(param)))
 
 class ConvLayer(TrainableLayer):
     """
@@ -39,6 +47,7 @@ class ConvLayer(TrainableLayer):
                  n_output_chns,
                  kernel_size=3,
                  stride=1,
+                 dilation = 1,
                  padding='SAME',
                  with_bias=False,
                  w_initializer=None,
@@ -50,8 +59,9 @@ class ConvLayer(TrainableLayer):
 
         self.padding = look_up_operations(padding.upper(), SUPPORTED_PADDING)
         self.n_output_chns = n_output_chns
-        self.kernel_size = np.asarray(kernel_size).flatten()
-        self.stride = np.asarray(stride).flatten()
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.dilation = dilation
         self.with_bias = with_bias
 
         self.initializers = {
@@ -66,18 +76,19 @@ class ConvLayer(TrainableLayer):
         spatial_rank = layer_util.infer_spatial_rank(input_tensor)
 
         # initialize conv kernels/strides and then apply
-        w_full_size = np.vstack((
-            [self.kernel_size] * spatial_rank,
-            n_input_chns, self.n_output_chns)).flatten()
-        full_stride = np.vstack((
-            [self.stride] * spatial_rank)).flatten()
+        w_full_size = get_list_parameter(self.kernel_size, spatial_rank)
+        w_full_size.extend([n_input_chns, self.n_output_chns])
+        full_stride = get_list_parameter(self.stride, spatial_rank)
+        full_dilation = get_list_parameter(self.dilation, spatial_rank)
+        
         conv_kernel = tf.get_variable(
-            'w', shape=w_full_size.tolist(),
+            'w', shape=w_full_size,
             initializer=self.initializers['w'],
             regularizer=self.regularizers['w'])
         output_tensor = tf.nn.convolution(input=input_tensor,
                                           filter=conv_kernel,
-                                          strides=full_stride.tolist(),
+                                          strides=full_stride,
+                                          dilation_rate = full_dilation,
                                           padding=self.padding,
                                           name='conv')
         if not self.with_bias:
@@ -104,8 +115,9 @@ class ConvolutionalLayer(TrainableLayer):
 
     def __init__(self,
                  n_output_chns,
-                 kernel_size,
+                 kernel_size=3,
                  stride=1,
+                 dilation=1,
                  padding='SAME',
                  with_bias=False,
                  with_bn=True,
@@ -131,6 +143,7 @@ class ConvolutionalLayer(TrainableLayer):
         self.n_output_chns = n_output_chns
         self.kernel_size = kernel_size
         self.stride = stride
+        self.dilation = dilation
         self.padding = padding
         self.with_bias = with_bias
 
@@ -148,6 +161,7 @@ class ConvolutionalLayer(TrainableLayer):
         conv_layer = ConvLayer(n_output_chns=self.n_output_chns,
                                kernel_size=self.kernel_size,
                                stride=self.stride,
+                               dilation = self.dilation,
                                padding=self.padding,
                                with_bias=self.with_bias,
                                w_initializer=self.initializers['w'],
