@@ -1,11 +1,11 @@
 [image modality 1]
 path_to_search = ./data/PROMISE12
-filename_contains = T2,Case00
+filename_contains = T2,Case2
 filename_not_contains = 
 
 [label modality 1]
 path_to_search = ./data/PROMISE12
-filename_contains = segmentation,Case00
+filename_contains = segmentation,Case2
 filename_not_contains = 
 
 [settings]

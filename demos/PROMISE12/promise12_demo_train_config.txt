@@ -1,12 +1,12 @@
 [image modality 1]
 path_to_search = ./data/PROMISE12
 filename_contains = T2
-filename_not_contains = Case00
+filename_not_contains = Case2
 
 [label modality 1]
 path_to_search = ./data/PROMISE12
 filename_contains = segmentation
-filename_not_contains = Case00
+filename_not_contains = Case2
 
 [settings]
 cuda_devices = ""
