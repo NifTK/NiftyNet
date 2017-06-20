@@ -146,11 +146,11 @@ def run(net_class, param, volume_loader, device_str):
     start_time = time.time()
     with tf.Session(config=config, graph=graph) as sess:
         # prepare output directory
-        if not os.path.exists(param.model_dir + '/models'):
-            os.makedirs(param.model_dir + '/models')
+        if not os.path.exists(os.path.join(param.model_dir,'models')):
+            os.makedirs(os.path.join(param.model_dir, 'models'))
         root_dir = os.path.abspath(param.model_dir)
         # start or load session
-        ckpt_name = '{}/models/model.ckpt'.format(root_dir)
+        ckpt_name = os.path.join(root_dir,'models','model.ckpt')
         if param.starting_iter > 0:
             model_str = '{}-{}'.format(ckpt_name, param.starting_iter)
             saver.restore(sess, model_str)
@@ -160,7 +160,7 @@ def run(net_class, param, volume_loader, device_str):
             print('Weights from random initialisations...')
 
         coord = tf.train.Coordinator()
-        writer = tf.summary.FileWriter(root_dir + '/logs', sess.graph)
+        writer = tf.summary.FileWriter(os.path.join(root_dir,'logs'), sess.graph)
         try:
             print('Filling the queue (this can take a few minutes)')
             train_batch_runner.run_threads(sess, coord, param.num_threads)

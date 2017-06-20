@@ -1,7 +1,7 @@
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
-
+import os
 # sampler
 from engine.uniform_sampler import UniformSampler
 from engine.volume_loader import VolumeLoaderLayer
@@ -18,9 +18,9 @@ class UniformSamplerTest(tf.test.TestCase):
     def test_3d(self):
 
         csv_dict = {'input_image_file':
-                        './testing_data/testing_case_input',
+                        os.path.join('testing_data','testing_case_input'),
                     'target_image_file':
-                        './testing_data/testing_case_target',
+                        os.path.join('testing_data','testing_case_target'),
                     'weight_map_file': None,
                     'target_note': None}
         csv_loader = CSVTable(csv_dict=csv_dict,
@@ -28,7 +28,7 @@ class UniformSamplerTest(tf.test.TestCase):
                               allow_missing=True)
 
         hist_norm = HistNorm(
-            models_filename='./testing_data/standardisation_models.txt',
+            models_filename=os.path.join('testing_data','standardisation_models.txt'),
             binary_masking_func=BinaryMaskingLayer(
                 type='otsu_plus',
                 multimod_fusion='or'),
@@ -75,9 +75,9 @@ class UniformSamplerTest(tf.test.TestCase):
     def test_2d(self):
 
         csv_dict = {'input_image_file':
-                        './testing_data/testing_case_input',
+                        os.path.join('testing_data','testing_case_input'),
                     'target_image_file':
-                        './testing_data/testing_case_target',
+                        os.path.join('testing_data','testing_case_target'),
                     'weight_map_file': None,
                     'target_note': None}
         csv_loader = CSVTable(csv_dict=csv_dict,
@@ -85,7 +85,7 @@ class UniformSamplerTest(tf.test.TestCase):
                               allow_missing=True)
 
         hist_norm = HistNorm(
-            models_filename='./testing_data/standardisation_models.txt',
+            models_filename=os.path.join('testing_data','standardisation_models.txt'),
             binary_masking_func=BinaryMaskingLayer(
                 type='otsu_plus',
                 multimod_fusion='or'),
@@ -132,9 +132,9 @@ class UniformSamplerTest(tf.test.TestCase):
     def test_25d(self):
 
         csv_dict = {'input_image_file':
-                        './testing_data/testing_case_input',
+                        os.path.join('testing_data','testing_case_input'),
                     'target_image_file':
-                        './testing_data/testing_case_target',
+                        'os.path.join('testing_data','testing_case_target'),
                     'weight_map_file': None,
                     'target_note': None}
         csv_loader = CSVTable(csv_dict=csv_dict,
@@ -142,7 +142,7 @@ class UniformSamplerTest(tf.test.TestCase):
                               allow_missing=True)
 
         hist_norm = HistNorm(
-            models_filename='./testing_data/standardisation_models.txt',
+            models_filename=os.path.join('testing_data','standardisation_models.txt'),
             binary_masking_func=BinaryMaskingLayer(
                 type='otsu_plus',
                 multimod_fusion='or'),

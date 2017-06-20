@@ -8,8 +8,8 @@ class SubjectTest(tf.test.TestCase):
     def test_new_subject(self):
 
         test_name = '1023'
-        t1_path = 'testing_data/1023_o_T1_time_01.nii.gz'
-        label_path = 'testing_data/T1_1023_NeuroMorph_Parcellation.nii.gz'
+        t1_path = os.path.join('testing_data','1023_o_T1_time_01.nii.gz')
+        label_path = os.path.join('testing_data','T1_1023_NeuroMorph_Parcellation.nii.gz')
         input = MultiModalFileList([[t1_path]])
         output = MultiModalFileList([[label_path]])
         weights = MultiModalFileList([[label_path]])

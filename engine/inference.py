@@ -80,10 +80,10 @@ def run(net_class, param, volume_loader, device_str):
     start_time = time.time()
     with tf.Session(config=config, graph=graph) as sess:
         root_dir = os.path.abspath(param.model_dir)
-        ckpt = tf.train.get_checkpoint_state(root_dir + '/models/')
+        ckpt = tf.train.get_checkpoint_state(os.path.join(root_dir,'models'))
         if ckpt and ckpt.model_checkpoint_path:
             print('Evaluation from checkpoints')
-        model_str = '{}/models/model.ckpt-{}'.format(root_dir, param.pred_iter)
+        model_str = os.path.join(root_dir,'models','model.ckpt-{}'.format(param.pred_iter))
         print('Using model {}'.format(model_str))
         saver.restore(sess, model_str)
 
