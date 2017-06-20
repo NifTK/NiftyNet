@@ -28,9 +28,15 @@ class KeywordsMatching(object):
                     else:
                         raise ValueError('folder not found {}'.format(path_i))
             elif name == "filename_contains":
-                contain.append(value)
+                value = value.split(',')
+                for val in value:
+                    val = val.strip()
+                    contain.append(val)
             elif name == "filename_not_contains":
-                not_contain.append(value)
+                value = value.split(',')
+                for val in value:
+                    val = val.strip()
+                    not_contain.append(val)
         path = tuple(set(path))
         contain = tuple(set(contain))
         not_contain = tuple(set(not_contain))

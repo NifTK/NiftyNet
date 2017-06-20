@@ -93,8 +93,8 @@ class SelectiveSampler(BaseSampler):
                 is_valid = [spatial_location_check(location, spatial_rank)
                             for location in candidate_locations]
                 is_valid = np.asarray(is_valid, dtype=bool)
-                print("{} good samples from {} candidates".format(
-                    np.sum(is_valid), len(candidate_locations)))
+                # print("{} good samples from {} candidates".format(
+                #     np.sum(is_valid), len(candidate_locations)))
                 for loc in candidate_locations[is_valid]:
                     locations.append(loc)
                 n_trials -= 1

@@ -1,6 +1,6 @@
 [output modality 1]
 path_to_search = /Users/csudre/Temp/Seg
-filename_contains = Lesion
+filename_contains = Lesion,group2
 filename_not_contains =
 
 [ref 1]
