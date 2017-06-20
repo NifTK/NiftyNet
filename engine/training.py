@@ -1,22 +1,19 @@
+
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
-
 import os
 import time
-
 import numpy as np
 import tensorflow as tf
 from six.moves import range
-
 from engine.input_buffer import TrainEvalInputBuffer
 from engine.uniform_sampler import UniformSampler
+from engine.selective_sampler import SelectiveSampler
+from engine.spatial_location_check import SpatialLocationCheckLayer
 from layer.loss import LossFunction
 from utilities import misc_common as util
 from utilities.input_placeholders import ImagePatch
-
 np.random.seed(seed=int(time.time()))
-
-
 def run(net_class, param, volume_loader, device_str):
     # construct graph
     graph = tf.Graph()
@@ -33,7 +30,6 @@ def run(net_class, param, volume_loader, device_str):
             num_image_modality=volume_loader.num_modality(0),
             num_label_modality=volume_loader.num_modality(1),
             num_weight_map=volume_loader.num_modality(2))
-
         # defines data augmentation for training
         augmentations = []
         if param.rotation:
@@ -47,12 +43,25 @@ def run(net_class, param, volume_loader, device_str):
                 min_percentage=param.min_percentage,
                 max_percentage=param.max_percentage))
         # defines how to generate samples of the training element from volume
-        sampler = UniformSampler(patch=patch_holder,
-                                 volume_loader=volume_loader,
-                                 patch_per_volume=param.sample_per_volume,
-                                 data_augmentation_methods=augmentations,
-                                 name='uniform_sampler')
+        # sampler = UniformSampler(patch=patch_holder,
+        #                          volume_loader=volume_loader,
+        #                          patch_per_volume=param.sample_per_volume,
+        #                          data_augmentation_methods=augmentations,
+        #                          name='uniform_sampler')
 
+        spatial_location_check = SpatialLocationCheckLayer(compulsory=([0],
+                                                                       [0]),
+                                                           minimum_ratio=0.000001,
+                                                           min_numb_labels=2,
+                                                           padding=param.border,
+                                                           name='spatial_location_check')
+
+        sampler = SelectiveSampler(patch=patch_holder,
+                                   volume_loader=volume_loader,
+                                   spatial_location_check=spatial_location_check,
+                                   data_augmentation_methods=None,
+                                   patch_per_volume=param.sample_per_volume,
+                                   name="selective_sampler")
         w_regularizer = None
         b_regularizer = None
         if param.reg_type.lower() == 'l2':
@@ -63,7 +72,6 @@ def run(net_class, param, volume_loader, device_str):
             from tensorflow.contrib.layers.python.layers import regularizers
             w_regularizer = regularizers.l1_regularizer(param.decay)
             b_regularizer = regularizers.l1_regularizer(param.decay)
-
         net = net_class(num_classes=param.num_classes,
                         w_regularizer=w_regularizer,
                         b_regularizer=b_regularizer)
@@ -75,10 +83,8 @@ def run(net_class, param, volume_loader, device_str):
             capacity=max(param.queue_length, param.batch_size),
             sampler=sampler,
             shuffle=True)
-
         # optimizer
         train_step = tf.train.AdamOptimizer(learning_rate=param.lr)
-
         tower_misses, tower_losses, tower_grads = [], [], []
         train_pairs = train_batch_runner.pop_batch_op
         images, labels = train_pairs['images'], train_pairs['labels']
@@ -100,16 +106,13 @@ def run(net_class, param, volume_loader, device_str):
                 miss = tf.reduce_mean(tf.cast(
                     tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),
                     dtype=tf.float32))
-
                 grads = train_step.compute_gradients(loss)
                 tower_losses.append(loss)
                 tower_misses.append(miss)
                 tower_grads.append(grads)
-
                 # note: only use batch stats from one GPU for batch_norm
                 if i == 0:
                     bn_updates = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-
         ave_loss = tf.reduce_mean(tower_losses)
         ave_miss = tf.reduce_mean(tower_misses)
         ave_grads = util.average_grads(tower_grads)
@@ -118,31 +121,25 @@ def run(net_class, param, volume_loader, device_str):
         # tracking current batch loss
         summaries = [tf.summary.scalar("total-miss", ave_miss),
                      tf.summary.scalar("total-loss", ave_loss)]
-
         # Track the moving averages of all trainable variables.
         variable_averages = tf.train.ExponentialMovingAverage(0.9)
         var_averages_op = variable_averages.apply(tf.trainable_variables())
-
         # batch norm variables moving mean and var
         batchnorm_updates_op = tf.group(*bn_updates)
-
         # primary operations
         init_op = tf.global_variables_initializer()
         train_op = tf.group(apply_grad_op,
                             var_averages_op,
                             batchnorm_updates_op)
         write_summary_op = tf.summary.merge(summaries)
-
         # saver
         saver = tf.train.Saver(max_to_keep=20)
         tf.Graph.finalize(graph)
-
     # run session
     config = tf.ConfigProto()
     config.log_device_placement = False
     config.allow_soft_placement = True
     # config.gpu_options.allow_growth = True
-
     start_time = time.time()
     with tf.Session(config=config, graph=graph) as sess:
         # prepare output directory
@@ -158,7 +155,6 @@ def run(net_class, param, volume_loader, device_str):
         else:
             sess.run(init_op)
             print('Weights from random initialisations...')
-
         coord = tf.train.Coordinator()
         writer = tf.summary.FileWriter(root_dir + '/logs', sess.graph)
         try:
@@ -197,3 +193,4 @@ def run(net_class, param, volume_loader, device_str):
             print('training.py (time in second) {:.2f}'.format(
                 time.time() - start_time))
             train_batch_runner.close_all()
+
