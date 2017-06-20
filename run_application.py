@@ -51,7 +51,7 @@ class NetFactory(object):
 def main():
     param, csv_dict = parse_user_params.run()
     if util.has_bad_inputs(param):
-        sys.exit(-1)
+        return -1
     if not (param.cuda_devices == '""'):
         os.environ["CUDA_VISIBLE_DEVICES"] = param.cuda_devices
         print("set CUDA_VISIBLE_DEVICES env to {}".format(param.cuda_devices))
@@ -113,5 +113,6 @@ def main():
 
         device_str = "gpu" if param.num_gpus > 0 else "cpu"
         engine.inference.run(net_class, param, volume_loader, device_str)
+    return 0
 if __name__ == "__main__":
-  main()
+  sys.exit(main())
