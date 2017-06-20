@@ -38,21 +38,27 @@ def rectify_header_sform_qform(img_nii):
     if not np.array_equal(norm_qform, np.asarray(pixdim)):
         flag_qform_problem = True
 
-    if not flag_qform_problem and not flag_sform_problem:
-        return img_nii
-    elif flag_qform_problem and not flag_sform_problem:
-        img_nii.set_qform(np.copy(img_nii.get_sform()))
-        return img_nii
-    elif not flag_qform_problem and flag_sform_problem:
-        img_nii.set_sform(np.copy(img_nii.get_qform()))
-        return img_nii
-    else:
-        affine = img_nii.affine
-        pixdim = img_nii.header.get_zooms()
-        new_affine = create_affine_pixdim(affine, pixdim)
-        img_nii.set_sform(new_affine)
-        img_nii.set_qform(new_affine)
-        return img_nii
+    if img_nii.get_header()['sform_code'] > 0:
+        if not flag_sform_problem:
+            return img_nii
+        elif not flag_qform_problem:
+            # recover by copying the qform over the sform
+            img_nii.set_sform(np.copy(img_nii.get_qform()))
+            return img_nii
+    elif img_nii.get_header()['qform_code'] > 0:
+        if not flag_qform_problem:
+            return img_nii
+        elif not flag_sform_problem:
+            # recover by copying the sform over the qform
+            img_nii.set_qform(np.copy(img_nii.get_sform()))
+            return img_nii
+    affine = img_nii.affine
+    pixdim = img_nii.header.get_zooms()
+    new_affine = create_affine_pixdim(affine, pixdim)
+    img_nii.set_sform(new_affine)
+    img_nii.set_qform(new_affine)
+    return img_nii
+
 
 
 #### end of utilities for file headers
