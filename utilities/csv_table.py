@@ -4,15 +4,19 @@ from __future__ import absolute_import, print_function
 import utilities.misc_csv as misc_csv
 from utilities.subject import Subject
 
+
 class SubjectTable(object):
     """
     Generic class for holding a subject list
     """
+
     def __init__(self, subject_table, modality_names=None):
-      self._subject_table=subject_table
-      self.modality_names=modality_names
+        self._subject_table = subject_table
+        self.modality_names = modality_names
+
     def to_subject_list(self):
-      return [Subject.from_csv_row(row, self.modality_names) for row in self._subject_table]
+        return [Subject.from_csv_row(row, self.modality_names)
+                for row in self._subject_table]
 
 
 class CSVTable(SubjectTable):
@@ -38,8 +42,9 @@ class CSVTable(SubjectTable):
             self.create_by_joining_multiple_csv_files(**csv_dict)
         if self._csv_table is None:
             raise RuntimeError('unable to read csv files into a nested list')
-        super(CSVTable,self).__init__(subject_table=self._csv_table, modality_names=modality_names)
-        
+        super(CSVTable, self).__init__(subject_table=self._csv_table,
+                                       modality_names=modality_names)
+
     def create_by_joining_multiple_csv_files(self, **csv_dict):
 
         header = Subject.fields
@@ -107,5 +112,3 @@ class CSVTable(SubjectTable):
                 csv_row.append([[row[3]]])
                 csv_row.append([[row[4]]])
                 self._csv_table.append(csv_row)
-
-

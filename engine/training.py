@@ -1,19 +1,24 @@
-
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
+
 import os
 import time
+
 import numpy as np
 import tensorflow as tf
 from six.moves import range
+
 from engine.input_buffer import TrainEvalInputBuffer
-from engine.uniform_sampler import UniformSampler
-from engine.selective_sampler import SelectiveSampler
 from engine.spatial_location_check import SpatialLocationCheckLayer
+from engine.selective_sampler import SelectiveSampler
+from engine.uniform_sampler import UniformSampler
 from layer.loss import LossFunction
 from utilities import misc_common as util
 from utilities.input_placeholders import ImagePatch
+
 np.random.seed(seed=int(time.time()))
+
+
 def run(net_class, param, volume_loader, device_str):
     # construct graph
     graph = tf.Graph()
@@ -43,25 +48,28 @@ def run(net_class, param, volume_loader, device_str):
                 min_percentage=param.min_percentage,
                 max_percentage=param.max_percentage))
         # defines how to generate samples of the training element from volume
-        # sampler = UniformSampler(patch=patch_holder,
-        #                          volume_loader=volume_loader,
-        #                          patch_per_volume=param.sample_per_volume,
-        #                          data_augmentation_methods=augmentations,
-        #                          name='uniform_sampler')
+        if param.window_sampling == 'uniform':
+            sampler = UniformSampler(patch=patch_holder,
+                                     volume_loader=volume_loader,
+                                     patch_per_volume=param.sample_per_volume,
+                                     data_augmentation_methods=augmentations,
+                                     name='uniform_sampler')
+        elif param.window_sampling == 'selective':
+            # TODO check param, this is for segmentation problems only
+            spatial_location_check = SpatialLocationCheckLayer(
+                compulsory=((0), (0)),
+                minimum_ratio=param.min_sampling_ratio,
+                min_numb_labels=param.min_numb_labels,
+                padding=param.border,
+                name='spatial_location_check')
+            sampler = SelectiveSampler(
+                patch=patch_holder,
+                volume_loader=volume_loader,
+                spatial_location_check=spatial_location_check,
+                data_augmentation_methods=None,
+                patch_per_volume=param.sample_per_volume,
+                name="selective_sampler")
 
-        spatial_location_check = SpatialLocationCheckLayer(compulsory=([0],
-                                                                       [0]),
-                                                           minimum_ratio=0.000001,
-                                                           min_numb_labels=2,
-                                                           padding=param.border,
-                                                           name='spatial_location_check')
-
-        sampler = SelectiveSampler(patch=patch_holder,
-                                   volume_loader=volume_loader,
-                                   spatial_location_check=spatial_location_check,
-                                   data_augmentation_methods=None,
-                                   patch_per_volume=param.sample_per_volume,
-                                   name="selective_sampler")
         w_regularizer = None
         b_regularizer = None
         if param.reg_type.lower() == 'l2':
@@ -143,11 +151,11 @@ def run(net_class, param, volume_loader, device_str):
     start_time = time.time()
     with tf.Session(config=config, graph=graph) as sess:
         # prepare output directory
-        if not os.path.exists(os.path.join(param.model_dir,'models')):
+        if not os.path.exists(os.path.join(param.model_dir, 'models')):
             os.makedirs(os.path.join(param.model_dir, 'models'))
         root_dir = os.path.abspath(param.model_dir)
         # start or load session
-        ckpt_name = os.path.join(root_dir,'models','model.ckpt')
+        ckpt_name = os.path.join(root_dir, 'models', 'model.ckpt')
         if param.starting_iter > 0:
             model_str = '{}-{}'.format(ckpt_name, param.starting_iter)
             saver.restore(sess, model_str)
@@ -156,7 +164,8 @@ def run(net_class, param, volume_loader, device_str):
             sess.run(init_op)
             print('Weights from random initialisations...')
         coord = tf.train.Coordinator()
-        writer = tf.summary.FileWriter(os.path.join(root_dir,'logs'), sess.graph)
+        writer = tf.summary.FileWriter(os.path.join(root_dir, 'logs'),
+                                       sess.graph)
         try:
             print('Filling the queue (this can take a few minutes)')
             train_batch_runner.run_threads(sess, coord, param.num_threads)
@@ -193,4 +202,3 @@ def run(net_class, param, volume_loader, device_str):
             print('training.py (time in second) {:.2f}'.format(
                 time.time() - start_time))
             train_batch_runner.close_all()
-

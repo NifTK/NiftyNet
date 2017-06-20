@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function
 
 import argparse
 import os
+
 import utilities.misc_csv as misc_csv
 
 try:
@@ -11,6 +12,7 @@ except ImportError:
     import ConfigParser as configparser
 
 from .filename_matching import KeywordsMatching
+
 
 def _input_path_search(config):
     # match flexible input modality sections
@@ -33,6 +35,7 @@ def _input_path_search(config):
                      for mod_info in w_map_keywords]
     return image_matcher, label_matcher, w_map_matcher
 
+
 def _eval_path_search(config):
     # match flexible input modality sections
     output_keywords = []
@@ -47,21 +50,26 @@ def _eval_path_search(config):
         elif 'data' in section:
             data_keywords.append(config.items(section))
     output_matcher = [KeywordsMatching.from_tuple(mod_info)
-                     for mod_info in output_keywords]
+                      for mod_info in output_keywords]
     ref_matcher = [KeywordsMatching.from_tuple(mod_info)
-                     for mod_info in ref_keywords]
+                   for mod_info in ref_keywords]
     data_matcher = [KeywordsMatching.from_tuple(mod_info)
-                   for mod_info in data_keywords]
+                    for mod_info in data_keywords]
     return output_matcher, ref_matcher, data_matcher
 
-def default_params(action,config_file= os.path.join(os.path.dirname(__file__), '..','config','default_config.txt')):
+
+def default_params(action, config_file=None):
+    if config_file is None:
+        config_file = os.path.join(os.path.dirname(__file__),
+                                   '..', 'config', 'default_config.txt')
     config = configparser.ConfigParser()
     config.read([config_file])
-    args = build_parser([],dict(config['settings'])).parse_args([action])
-    
+    args = build_parser([], dict(config['settings'])).parse_args([action])
+
     return correct_args_types(args)
 
-def build_parser(parents,defaults):
+
+def build_parser(parents, defaults):
     parser = argparse.ArgumentParser(
         parents=parents,
         description=__doc__,
@@ -98,7 +106,7 @@ def build_parser(parents,defaults):
 
     parser.add_argument(
         "--spatial_rank", metavar='', help="Set input spatial rank",
-        choices=[2,2.5,3], type=float)
+        choices=[2, 2.5, 3], type=float)
     parser.add_argument(
         "--batch_size", metavar='', help="Set batch size of the net", type=int)
     parser.add_argument(
@@ -106,7 +114,8 @@ def build_parser(parents,defaults):
     parser.add_argument(
         "--label_size", metavar='', help="Set label size of the net", type=int)
     parser.add_argument(
-        "--w_map_size", metavar='', help="Set weight map size of the net", type=int)
+        "--w_map_size", metavar='', help="Set weight map size of the net",
+        type=int)
     parser.add_argument(
         "--num_classes", metavar='', help="Set number of classes", type=int)
 
@@ -254,10 +263,6 @@ def build_parser(parents,defaults):
         "--save_seg_dir",
         metavar='',
         help="[Inference only] Prediction directory name")  # without '/'
-    #parser.add_argument(
-    #    "--eval_data_dir",
-    #    metavar='',
-    #    help="[Inference only] Directory of image to be segmented")  # without '/'
     parser.add_argument(
         "--output_interp_order",
         metavar='',
@@ -267,23 +272,30 @@ def build_parser(parents,defaults):
         "--output_prob",
         metavar='',
         help="[Inference only] whether to output multi-class probabilities")
-    #parser.add_argument(
-    #    "--min_sampling_ratio",
-    #    help="Minumum ratio to satisfy in the sampling of different labels"
-    #)
-    #parser.add_argument(
-    #    "--min_numb_labels",
-    #    help="Minimum number of different labels present in a patch"
-    #)
+    parser.add_argument(
+        "--window_sampling",
+        metavar='',
+        choices=['uniform', 'selective']
+    )
+    parser.add_argument(
+       "--min_sampling_ratio",
+       help="Minumum ratio to satisfy in the sampling of different labels"
+    )
+    parser.add_argument(
+       "--min_numb_labels",
+       help="Minimum number of different labels present in a patch"
+    )
     return parser
-    
+
+
 def run():
     file_parser = argparse.ArgumentParser(add_help=False)
     file_parser.add_argument(
         "-c", "--conf",
         help="Specify configurations from a file", metavar="File")
     config_file = os.path.join(
-        os.path.dirname(__file__), os.path.join('..','config','default_config.txt'))
+        os.path.dirname(__file__),
+        os.path.join('..', 'config', 'default_config.txt'))
     default_file = {"conf": config_file}
     file_parser.set_defaults(**default_file)
     file_arg, remaining_argv = file_parser.parse_known_args()
@@ -294,21 +306,21 @@ def run():
     image_matcher, label_matcher, w_map_matcher = _input_path_search(config)
     defaults = dict(config.items("settings"))
 
-    parser=build_parser(parents=[file_parser],defaults=defaults)
-    args = parser.parse_args(remaining_argv)
-
+    parser = build_parser(parents=[file_parser], defaults=defaults)
+    file_args = parser.parse_args(remaining_argv)
+    file_args.conf = file_arg.conf  # update conf path
     # creating output
-    image_csv_path = os.path.join(args.model_dir, 'image_files.csv')
+    image_csv_path = os.path.join(file_args.model_dir, 'image_files.csv')
     misc_csv.write_matched_filenames_to_csv(image_matcher, image_csv_path)
 
     if label_matcher:
-        label_csv_path = os.path.join(args.model_dir, 'label_files.csv')
+        label_csv_path = os.path.join(file_args.model_dir, 'label_files.csv')
         misc_csv.write_matched_filenames_to_csv(label_matcher, label_csv_path)
     else:
         label_csv_path = None
 
     if w_map_matcher:
-        w_map_csv_path = os.path.join(args.model_dir, 'w_map_files.csv')
+        w_map_csv_path = os.path.join(file_args.model_dir, 'w_map_files.csv')
         misc_csv.write_matched_filenames_to_csv(w_map_matcher, w_map_csv_path)
     else:
         w_map_csv_path = None
@@ -318,8 +330,9 @@ def run():
                 'weight_map_file': w_map_csv_path,
                 'target_note': None}
 
-    args = correct_args_types(args)
-    return args, csv_dict
+    file_args = correct_args_types(file_args)
+    return file_args, csv_dict
+
 
 def correct_args_types(args):
     args.reorientation = True if args.reorientation == "True" else False
@@ -331,16 +344,14 @@ def correct_args_types(args):
     args.output_prob = True if args.output_prob == "True" else False
     return args
 
+
 def run_eval():
-
-
-
     file_parser = argparse.ArgumentParser(add_help=False)
     file_parser.add_argument("-c", "--conf",
                              help="Specify configurations from a file",
                              metavar="File")
     config_file = os.path.join(os.path.dirname(__file__),
-                               '..','config','default_eval_config.txt')
+                               '..', 'config', 'default_eval_config.txt')
     defaults = {"conf": config_file}
     file_parser.set_defaults(**defaults)
     file_arg, remaining_argv = file_parser.parse_known_args()
@@ -391,10 +402,10 @@ def run_eval():
     else:
         ref_csv_path = None
     if data_matcher:
-            data_csv_path = os.path.join(args.save_csv_dir, 'data_files.csv')
-            misc_csv.write_matched_filenames_to_csv(data_matcher, data_csv_path)
+        data_csv_path = os.path.join(args.save_csv_dir, 'data_files.csv')
+        misc_csv.write_matched_filenames_to_csv(data_matcher, data_csv_path)
     else:
-            data_csv_path = None
+        data_csv_path = None
     csv_dict = {'input_image_file': image_csv_path,
                 'target_image_file': ref_csv_path,
                 'weight_map_file': data_csv_path,
