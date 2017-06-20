@@ -2,15 +2,15 @@
 from __future__ import absolute_import, print_function
 
 from layer import layer_util
-from layer.base_layer import TrainableLayer
 from layer.convolution import ConvolutionalLayer
 from layer.crop import CropLayer
 from layer.downsample import DownSampleLayer
 from layer.elementwise import ElementwiseLayer
 from layer.upsample import UpSampleLayer
+from network.base_net import BaseNet
 
 
-class DeepMedic(TrainableLayer):
+class DeepMedic(BaseNet):
     """
     reimplementation of DeepMedic:
         Kamnitsas et al., "Efficient multi-scale 3D CNN with fully connected
@@ -26,19 +26,19 @@ class DeepMedic(TrainableLayer):
                  acti_func='prelu',
                  name="DeepMedic"):
 
-        super(DeepMedic, self).__init__(name=name)
+        super(DeepMedic, self).__init__(
+            num_classes=num_classes,
+            w_initializer=w_initializer,
+            w_regularizer=w_regularizer,
+            b_initializer=b_initializer,
+            b_regularizer=b_regularizer,
+            acti_func=acti_func,
+            name=name)
 
         self.d_factor = 3  # downsampling factor
         self.crop_diff = ((self.d_factor - 1) * 16) // 2
         self.conv_features = [30, 30, 40, 40, 40, 40, 50, 50]
         self.fc_features = [150, 150, num_classes]
-        self.acti_func = acti_func
-        self.num_classes = num_classes
-
-        self.initializers = {'w': w_initializer, 'b': b_initializer}
-        self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
-
-        print('using {}'.format(name))
 
     def layer_op(self, images, is_training, layer_id=-1):
         # image_size is defined as the largest context, then:

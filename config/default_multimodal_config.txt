@@ -28,6 +28,7 @@ filename_not_contains = T1
 cuda_devices = ""
 model_dir = ./models/model_toy
 net_name = toynet
+activation_function = 'prelu'
 
 # preprocessing threads parameters
 queue_length = 20

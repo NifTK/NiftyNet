@@ -12,6 +12,7 @@ filename_not_contains =
 cuda_devices = ""
 model_dir = ./models/model_deepmedic
 net_name = deepmedic
+activation_function = 'prelu'
 
 # preprocessing threads parameters
 queue_length = 512

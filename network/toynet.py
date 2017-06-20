@@ -3,9 +3,10 @@ from __future__ import absolute_import, print_function
 
 from layer.base_layer import TrainableLayer
 from layer.convolution import ConvolutionalLayer
+from network.base_net import BaseNet
 
 
-class ToyNet(TrainableLayer):
+class ToyNet(BaseNet):
     def __init__(self,
                  num_classes,
                  w_initializer=None,
@@ -15,12 +16,16 @@ class ToyNet(TrainableLayer):
                  acti_func='prelu',
                  name='ToyNet'):
 
-        super(ToyNet, self).__init__(name=name)
-        self.hidden_features = 10
-        self.num_classes = num_classes
+        super(ToyNet, self).__init__(
+            num_classes=num_classes,
+            w_initializer=w_initializer,
+            w_regularizer=w_regularizer,
+            b_initializer=b_initializer,
+            b_regularizer=b_regularizer,
+            acti_func=acti_func,
+            name=name)
 
-        self.initializers = {'w': w_initializer, 'b': b_initializer}
-        self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
+        self.hidden_features = 10
 
     def layer_op(self, images, is_training):
         conv_1 = ConvolutionalLayer(self.hidden_features,

@@ -82,7 +82,8 @@ def run(net_class, param, volume_loader, device_str):
             b_regularizer = regularizers.l1_regularizer(param.decay)
         net = net_class(num_classes=param.num_classes,
                         w_regularizer=w_regularizer,
-                        b_regularizer=b_regularizer)
+                        b_regularizer=b_regularizer,
+                        acti_fun=param.activation_function)
         loss_func = LossFunction(n_class=param.num_classes,
                                  loss_type=param.loss_type)
         # construct train queue

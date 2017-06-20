@@ -12,6 +12,7 @@ filename_not_contains =
 cuda_devices = ""
 model_dir = ./models/model_highres3dnet
 net_name = highres3dnet
+activation_function = 'relu'
 
 # preprocessing threads parameters
 queue_length = 8

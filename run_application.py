@@ -9,9 +9,9 @@ import utilities.parse_user_params as parse_user_params
 from engine.volume_loader import VolumeLoaderLayer
 from layer.binary_masking import BinaryMaskingLayer
 from layer.histogram_normalisation import \
-    HistogramNormalisationLayer as HistNorm
+    HistogramNormalisationLayer
 from layer.mean_variance_normalisation import \
-    MeanVarNormalisationLayer as MVNorm
+    MeanVarNormalisationLayer
 from utilities.csv_table import CSVTable
 
 
@@ -78,7 +78,7 @@ def main():
     # define layers of volume-level normalisation
     normalisation_layers = []
     if param.normalisation:
-        hist_norm = HistNorm(
+        hist_norm = HistogramNormalisationLayer(
             models_filename=param.histogram_ref_file,
             binary_masking_func=BinaryMaskingLayer(
                 type=param.mask_type,
@@ -87,7 +87,7 @@ def main():
             cutoff=(param.cutoff_min, param.cutoff_max))
         normalisation_layers.append(hist_norm)
     if param.whitening:
-        mean_std_norm = MVNorm(
+        mean_std_norm = MeanVarNormalisationLayer(
             binary_masking_func=BinaryMaskingLayer(
                 type=param.mask_type,
                 multimod_fusion=param.multimod_mask_type))

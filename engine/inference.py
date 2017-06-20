@@ -37,14 +37,15 @@ def run(net_class, param, volume_loader, device_str):
 
         # `patch` instance with image data only
         spatial_rank = patch_holder.spatial_rank
-        sampling_grid_size = patch_holder.label_size - 2 * param.border
+        sampling_grid_size = param.label_size - 2 * param.border
         assert sampling_grid_size > 0
         sampler = GridSampler(patch=patch_holder,
                               volume_loader=volume_loader,
                               grid_size=sampling_grid_size,
                               name='grid_sampler')
 
-        net = net_class(num_classes=param.num_classes)
+        net = net_class(num_classes=param.num_classes,
+                        acti_func=param.activation_function)
         # construct train queue
         seg_batch_runner = DeployInputBuffer(
             batch_size=param.batch_size,
@@ -80,7 +81,10 @@ def run(net_class, param, volume_loader, device_str):
     start_time = time.time()
     with tf.Session(config=config, graph=graph) as sess:
         root_dir = os.path.abspath(param.model_dir)
-        ckpt = tf.train.get_checkpoint_state(os.path.join(root_dir,'models'))
+        print('Model folder {}'.format(root_dir))
+        if not os.path.exists(root_dir):
+            raise ValueError('Model folder not found {}'.format(root_dir))
+        ckpt = tf.train.get_checkpoint_state(os.path.join(root_dir, 'models'))
         if ckpt and ckpt.model_checkpoint_path:
             print('Evaluation from checkpoints')
         model_str = os.path.join(root_dir,
@@ -134,16 +138,15 @@ def run(net_class, param, volume_loader, device_str):
                              batch_id, 1:(1 + int(np.floor(spatial_rank)))]
 
                     # indexing within the patch
-                    assert patch_holder.label_size >= param.border * 2
+                    assert param.label_size >= param.border * 2
                     p_ = param.border
-                    _p = patch_holder.label_size - param.border
+                    _p = param.label_size - param.border
 
                     # indexing relative to the sampled volume
-                    assert patch_holder.image_size >= patch_holder.label_size
-                    image_label_size_diff = patch_holder.image_size - \
-                                            patch_holder.label_size
+                    assert param.image_size >= param.label_size
+                    image_label_size_diff = param.image_size - param.label_size
                     s_ = param.border + int(image_label_size_diff / 2)
-                    _s = s_ + patch_holder.label_size - 2 * param.border
+                    _s = s_ + param.label_size - 2 * param.border
                     # absolute indexing in the prediction volume
                     dest_start, dest_end = (origin + s_), (origin + _s)
 

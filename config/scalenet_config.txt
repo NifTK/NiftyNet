@@ -27,6 +27,7 @@ filename_not_contains = T1
 cuda_devices = ""
 model_dir = ./models/model_scalenet
 net_name = scalenet
+activation_function = 'relu'
 
 # preprocessing threads parameters
 queue_length = 512
