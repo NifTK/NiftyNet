@@ -137,7 +137,9 @@ class UniformSamplerTest(tf.test.TestCase):
             type='otsu_plus',
             multimod_fusion='or')
         hist_norm = HistNorm(
-            models_filename=os.path.join('testing_data'm'standardisation_models.txt'),
+            models_filename=os.path.join(
+                'testing_data',
+                'standardisation_models.txt'),
             binary_masking_func=masking_func,
             norm_type='percentile',
             cutoff=(0.01, 0.99))
