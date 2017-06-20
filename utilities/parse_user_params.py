@@ -94,6 +94,13 @@ def run():
         help="Choose a net from ./network/ ",
         metavar='')
 
+    import layer.activation
+    parser.add_argument(
+        "--activation_function",
+        help="Specify activation function types",
+        choices=list(layer.activation.SUPPORTED_OP),
+        metavar='')
+
     parser.add_argument(
         "--queue_length",
         help="Set size of preprocessing buffer queue",

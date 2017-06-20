@@ -9,10 +9,11 @@ from layer.base_layer import TrainableLayer
 from layer.convolution import ConvLayer
 from layer.deconvolution import DeconvLayer
 from layer.elementwise import ElementwiseLayer
+from network.base_net import BaseNet
 from utilities.misc_common import look_up_operations
 
 
-class VNet(TrainableLayer):
+class VNet(BaseNet):
     """
     implementation of V-Net:
       Milletari et al., "V-Net: Fully convolutional neural networks for
@@ -27,16 +28,17 @@ class VNet(TrainableLayer):
                  b_regularizer=None,
                  acti_func='relu',
                  name='VNet'):
-        super(VNet, self).__init__(name=name)
 
-        self.num_classes = num_classes
+        super(VNet, self).__init__(
+            num_classes=num_classes,
+            w_initializer=w_initializer,
+            w_regularizer=w_regularizer,
+            b_initializer=b_initializer,
+            b_regularizer=b_regularizer,
+            acti_func=acti_func,
+            name=name)
+
         self.n_features = [16, 32, 64, 128, 256]
-        self.acti_func = acti_func
-
-        self.initializers = {'w': w_initializer, 'b': b_initializer}
-        self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
-
-        print('using {}'.format(name))
 
     def layer_op(self, images, is_training, layer_id=-1):
         assert layer_util.check_spatial_dims(images, lambda x: x % 8 == 0)
