@@ -37,12 +37,14 @@ def rectify_header_sform_qform(img_nii):
         flag_sform_problem = True
     if not np.array_equal(norm_qform, np.asarray(pixdim)):
         flag_qform_problem = True
-
+    # print("Qform problem is ", flag_qform_problem , " and sform prob is ",
+    #       flag_sform_problem)
     if not flag_qform_problem and not flag_sform_problem:
         return img_nii
 
     if flag_sform_problem and img_nii.get_header()['sform_code'] > 0:
         if not flag_qform_problem:
+            # print("Updating with existing qform")
             img_nii.set_sform(np.copy(img_nii.get_qform()))
             return img_nii
         else:
@@ -52,6 +54,15 @@ def rectify_header_sform_qform(img_nii):
             img_nii.set_sform(new_affine)
             img_nii.set_qform(new_affine)
             return img_nii
+    elif flag_sform_problem and not flag_qform_problem:
+        img_nii.set_sform(np.copy(img_nii.get_qform()))
+    elif flag_sform_problem and flag_qform_problem:
+        affine = img_nii.affine
+        pixdim = img_nii.header.get_zooms()
+        new_affine = create_affine_pixdim(affine, pixdim)
+        img_nii.set_sform(new_affine)
+        img_nii.set_qform(new_affine)
+        return img_nii
     else:
         img_nii.set_qform(np.copy(img_nii.get_sform()))
         return img_nii
