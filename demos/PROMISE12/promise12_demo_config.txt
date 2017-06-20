@@ -68,7 +68,7 @@ max_iter = 25000
 
 # ** inference only ** system parameters
 border = 5
-pred_iter = 10
+pred_iter = 25000
 save_seg_dir = ./output/promise12_demo
 
 output_interp_order = 0
