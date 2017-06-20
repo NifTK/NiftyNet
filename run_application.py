@@ -48,7 +48,7 @@ class NetFactory(object):
             raise NotImplementedError
 
 
-if __name__ == "__main__":
+def main():
     param, csv_dict = parse_user_params.run()
     if util.has_bad_inputs(param):
         sys.exit(-1)
@@ -113,3 +113,5 @@ if __name__ == "__main__":
 
         device_str = "gpu" if param.num_gpus > 0 else "cpu"
         engine.inference.run(net_class, param, volume_loader, device_str)
+if __name__ == "__main__":
+  main()
