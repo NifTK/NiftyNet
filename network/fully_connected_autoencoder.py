@@ -6,7 +6,7 @@ from layer.reshape import ReshapeLayer
 from layer.fully_connected import FullyConnectedLayer
 from layer.layer_util import infer_dims
 
-class AutoEncoderBasic(TrainableLayer):
+class AE_FullyConnected(TrainableLayer):
     """
         This is the most basic autoencoder, composed of a sequence of
         fully-connected layers.
@@ -19,9 +19,9 @@ class AutoEncoderBasic(TrainableLayer):
                  b_initializer=None,
                  b_regularizer=None,
                  acti_func='relu',
-                 name='AE_basic'):
+                 name='AE_FullyConnected'):
 
-        super(AutoEncoderBasic, self).__init__(name=name)
+        super(AE_FullyConnected, self).__init__(name=name)
         self.layer_sizes_encoder = [256, 128]
         self.acti_func_encoder = ['relu', 'relu']
         self.layer_sizes_decoder = [256]

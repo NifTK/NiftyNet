@@ -9,7 +9,7 @@ from layer.layer_util import infer_dims
 
 import tensorflow as tf
 
-class VAE_basic(TrainableLayer):
+class VAE_FullyConnected(TrainableLayer):
     # """
     #     This is the most basic implementation of a variational autoencoder (VAE).
     #     See Kingma & Welling, 2014, Auto-Encoding Varitaional Bayes
@@ -25,9 +25,9 @@ class VAE_basic(TrainableLayer):
                  b_initializer=None,
                  b_regularizer=None,
                  acti_func='identity',
-                 name='VAE_basic'):
+                 name='VAE_FullyConnected'):
 
-        super(VAE_basic, self).__init__(name=name)
+        super(VAE_FullyConnected, self).__init__(name=name)
         self.layer_sizes_encoder = [256, 128]
         self.acti_func_encoder = ['relu', 'relu']
         self.number_of_latent_variables = 64

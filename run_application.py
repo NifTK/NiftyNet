@@ -43,12 +43,12 @@ class NetFactory(object):
         elif name == "scalenet":
             from network.scalenet import ScaleNet
             return ScaleNet
-        elif name == "autoencoder_basic":
-            from network.autoencoder_basic import AutoEncoderBasic
-            return AutoEncoderBasic
-        elif name == "variational_autoencoder_basic":
-            from network.variational_autoencoder_basic import VAE_basic
-            return VAE_basic
+        elif name == "fully_connected_autoencoder":
+            from network.fully_connected_autoencoder import AE_FullyConnected
+            return AE_FullyConnected
+        elif name == "fully_connected_variational_autoencoder":
+            from network.fully_connected_variational_autoencoder import VAE_FullyConnected
+            return VAE_FullyConnected
         else:
             print("network: \"{}\" not implemented".format(name))
             raise NotImplementedError

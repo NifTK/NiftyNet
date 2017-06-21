@@ -11,7 +11,7 @@ filename_not_contains =
 [settings]
 cuda_devices = ""
 model_dir = ./models/model_monomodal_vae
-net_name = variational_autoencoder_basic
+net_name = fully_connected_variational_autoencoder
 
 # preprocessing threads parameters
 queue_length = 20
