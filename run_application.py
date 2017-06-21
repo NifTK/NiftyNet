@@ -46,8 +46,8 @@ class NetFactory(object):
         elif name == "autoencoder_basic":
             from network.autoencoder_basic import AutoEncoderBasic
             return AutoEncoderBasic
-        elif name == "vae_basic":
-            from network.vae_basic import VAE_basic
+        elif name == "variational_autoencoder_basic":
+            from network.variational_autoencoder_basic import VAE_basic
             return VAE_basic
         else:
             print("network: \"{}\" not implemented".format(name))

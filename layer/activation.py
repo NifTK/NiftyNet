@@ -13,7 +13,6 @@ def prelu(f_in, channelwise_params):
     return pos + neg
 
 def identity(input, name):
-    #
     return input
 
 

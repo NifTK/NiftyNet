@@ -21,7 +21,7 @@ def noise_like(input, distribution):
 
 class ReparameterizationLayer(Layer):
     """
-    This class defines a simple reparameterization layer, for generating approximate samples from the posterior.
+    This class defines a reparameterization layer, for generating approximate samples from the posterior.
     See Auto-Encoding Varitaional Bayes, Kingma & Welling, 2014
     """
 
@@ -36,9 +36,6 @@ class ReparameterizationLayer(Layer):
     def layer_op(self, distribution_parameters):
 
         [means, logvariances] = distribution_parameters
-
-        logvariances = tf.maximum(logvariances, -10 ^ 20)
-        logvariances = tf.minimum(logvariances, 10 ^ 20)
 
         if self.number_of_samples == 1:
             noise_sample = noise_like(means, self.prior)

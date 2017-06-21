@@ -193,12 +193,8 @@ def variational_lower_bound(predictions, labels):
     :return:
     """
 
-    [posterior_means, posterior_logvariances, data_means, data_logvariances, originals] = predictions
-
-    posterior_logvariances = tf.maximum(posterior_logvariances, -10 ^ 20)
-    posterior_logvariances = tf.minimum(posterior_logvariances, 10 ^ 20)
-    data_logvariances = tf.maximum(data_logvariances, -10 ^ 20)
-    data_logvariances = tf.minimum(data_logvariances, 10 ^ 20)
+    [posterior_means, posterior_logvariances, data_means,
+     data_logvariances, originals, data_variances, posterior_variances] = predictions
 
     squared_differences = tf.square(data_means - originals)
     log_likelihood = -0.5 * (data_logvariances + np.log(2 * np.pi) + tf.exp(-data_logvariances) * squared_differences)
