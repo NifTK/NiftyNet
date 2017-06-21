@@ -7,9 +7,17 @@ def rename_checkpoint_to_partial(source,target,transform):
   var_names = [v.split('/') for v,s in vars]
   transform_pairs = []
   for s_name,t_name in transform:
-    s_names=s_name.split('/')
-    t_names=t_name.split('/')
-    transform_pairs += [('/'.join(v),'/'.join(t_names+v[len(s_names):])) for v in var_names if v[:len(s_names)]==s_names]
+    print(vars,s_name,t_name)
+    if s_name[-1]=='/' and t_name[-1]=='/': # scope
+      s_names=s_name.split('/')[:-1]
+      t_names=t_name.split('/')[:-1]
+      transform_pairs += [('/'.join(v),'/'.join(t_names+v[len(s_names):])) for v in var_names if v[:len(s_names)]==s_names]
+    elif s_name[-1]!='/' and t_name[-1]!='/': # variable
+      if s_name in [v for v,s in vars]:
+        transform_pairs.append((s_name,t_name))
+    else:
+      raise ValueError('Cannot rename a variable to a scope or vice versa: %s->%s' %(s_name,t_name))
+  print(transform_pairs)
   g = tf.Graph()
   with g.as_default():
     with tf.Session() as sess:

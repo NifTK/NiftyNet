@@ -25,14 +25,14 @@ class SubjectTest(tf.test.TestCase):
     rename_checkpoint_to_partial(source,target_file,transform)
     generated = self.load_checkpoint(target_file)
     self.assertAllClose(target,generated)
-  def test_simple_rename(self):
+  def test_rename_vars(self):
     self.generic({'foo':[1],'bar/baz':[1,2,3],'bar/bing/boffin':[2]},
                  {'foo2':[1],'bar2/baz2':[1,2,3],'bar2/bing2/boffin2':[2]},
                  (('foo','foo2'),('bar/baz','bar2/baz2'),('bar/bing/boffin','bar2/bing2/boffin2')))
-  def test_simple_rename2(self):
+  def test_rename_scope(self):
     self.generic({'foo':[1],'bar/baz':[1,2,3],'bar/bing/boffin':[2]},
                  {'foo2':[1],'bar2/baz':[1,2,3],'bar2/bing/boffin':[2]},
-                 (('foo','foo2'),('bar','bar2')))
+                 (('foo','foo2'),('bar/','bar2/')))
                  
 if __name__ == "__main__":
     tf.test.main()
