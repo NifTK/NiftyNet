@@ -4,8 +4,8 @@ from __future__ import absolute_import, print_function
 from layer.base_layer import TrainableLayer
 from layer.reshape import ReshapeLayer
 from layer.fully_connected import FullyConnectedLayer
-from layer.vae_reparameterization_trick import ReparameterizationLayer
-from layer.layer_util import infer_dimensionality
+from layer.reparameterization_trick import ReparameterizationLayer
+from layer.layer_util import infer_dims
 
 class VAE_basic(TrainableLayer):
     """
@@ -19,22 +19,20 @@ class VAE_basic(TrainableLayer):
                  w_regularizer=None,
                  b_initializer=None,
                  b_regularizer=None,
-                 acti_func='relu',
+                 acti_func='identity',
                  name='VAE_basic'):
 
         super(VAE_basic, self).__init__(name=name)
-        self.latent_variables = 20
+        self.latent_variables = 128
         self.number_of_samples_from_posterior = 1
         self.acti_func = acti_func
-        self.acti_func_output = 'sigmoid'
-        self.data_dimensionality = 32**3
 
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
     def layer_op(self, images, is_training):
 
-        [data_dimensions, data_dimensionality] = infer_dimensionality(images)
+        [data_dimensions, data_dimensionality] = infer_dims(images)
 
         reshape_input = ReshapeLayer([-1, data_dimensionality])
         print(reshape_input)
@@ -42,7 +40,7 @@ class VAE_basic(TrainableLayer):
         encoder_means = FullyConnectedLayer(
             n_output_chns=self.latent_variables,
             with_bn=False,
-            acti_func=self.acti_func,
+            acti_func='none',
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
             name='fc_encoder_means_{}'.format(self.latent_variables))
@@ -51,7 +49,7 @@ class VAE_basic(TrainableLayer):
         encoder_logvariances = FullyConnectedLayer(
             n_output_chns=self.latent_variables,
             with_bn=False,
-            acti_func=self.acti_func,
+            acti_func='none',
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
             name='fc_encoder_logvariances_{}'.format(self.latent_variables))
@@ -64,16 +62,16 @@ class VAE_basic(TrainableLayer):
         print(sampler_from_posterior)
 
         decoder_means = FullyConnectedLayer(
-            n_output_chns=self.data_dimensionality,
-            acti_func=self.acti_func_output,
+            n_output_chns=data_dimensionality,
+            acti_func='sigmoid',
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
             name='fc_decoder_logvariances_{}'.format(self.latent_variables))
         print(decoder_means)
 
         decoder_logvariances = FullyConnectedLayer(
-            n_output_chns=self.data_dimensionality,
-            acti_func='relu_translated_left',
+            n_output_chns=data_dimensionality,
+            acti_func='none',
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
             name='fc_decoder_logvariances_{}'.format(self.latent_variables))
@@ -95,6 +93,5 @@ class VAE_basic(TrainableLayer):
 
         data_means = reshape_output(data_means)
         data_logvariances = reshape_output(data_logvariances)
-
 
         return [posterior_means, posterior_logvariances, data_means, data_logvariances, originals]

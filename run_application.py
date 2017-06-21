@@ -43,6 +43,9 @@ class NetFactory(object):
         elif name == "scalenet":
             from network.scalenet import ScaleNet
             return ScaleNet
+        elif name == "autoencoder_basic":
+            from network.autoencoder_basic import AutoEncoderBasic
+            return AutoEncoderBasic
         elif name == "vae_basic":
             from network.vae_basic import VAE_basic
             return VAE_basic

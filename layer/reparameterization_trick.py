@@ -37,6 +37,9 @@ class ReparameterizationLayer(Layer):
 
         [means, logvariances] = distribution_parameters
 
+        logvariances = tf.maximum(logvariances, -10 ^ 20)
+        logvariances = tf.minimum(logvariances, 10 ^ 20)
+
         if self.number_of_samples == 1:
             noise_sample = noise_like(means, self.prior)
         else:

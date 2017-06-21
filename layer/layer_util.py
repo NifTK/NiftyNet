@@ -21,7 +21,7 @@ def infer_spatial_rank(input_tensor):
     assert dims > 0
     return dims
 
-def infer_dimensionality(input_tensor):
+def infer_dims(input_tensor):
     """
     e.g. given an input tensor [Batch, X, Y, Z, Feature] the dimensionality is X*Y*Z*Feature
     """

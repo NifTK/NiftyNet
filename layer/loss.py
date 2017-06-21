@@ -26,8 +26,8 @@ class LossFunction(Layer):
 
     def layer_op(self, pred, label, weight_map=None, var_scope=None):
         with tf.device('/cpu:0'):
-            pred = tf.reshape(pred, [-1, self._num_classes])
-            label = tf.reshape(label, [-1])
+            # pred = tf.reshape(pred, [-1, self._num_classes])
+            # label = tf.reshape(label, [-1])
             if self._loss_func_params:
                 data_loss = self._data_loss_func(pred,
                                                  label,
@@ -192,26 +192,30 @@ def variational_lower_bound(predictions, labels):
     :param originals: the original inputs
     :return:
     """
+
     [posterior_means, posterior_logvariances, data_means, data_logvariances, originals] = predictions
-    squared_differences = tf.square(originals - data_means)
+
+    posterior_logvariances = tf.maximum(posterior_logvariances, -10 ^ 20)
+    posterior_logvariances = tf.minimum(posterior_logvariances, 10 ^ 20)
+    data_logvariances = tf.maximum(data_logvariances, -10 ^ 20)
+    data_logvariances = tf.minimum(data_logvariances, 10 ^ 20)
+
+    squared_differences = tf.square(data_means - originals)
     log_likelihood = -0.5 * (data_logvariances + np.log(2 * np.pi) + tf.exp(-data_logvariances) * squared_differences)
     KL_divergence = 0.5 * tf.reduce_mean(1 + posterior_logvariances - tf.square(posterior_means) - tf.exp(posterior_logvariances), axis=[1])
     error_to_minimise = tf.reduce_mean(tf.reduce_sum(-log_likelihood, axis=[1,2,3,4]) - KL_divergence)
 
-    # # The gaussian pixels
-    # factor_one = tf.rsqrt(2*np.pi*predicted_variance)
-    # factor_two = tf.exp(tf.div(-tf.square(data_means),2*predicted_variance))
-    # Gaussian_pixels = tf.mul(factor_one, factor_two)
-    # predicted_variance = tf.exp(data_logvariances)
-    # negative_log_likelihood = -log_likelihood
-    # likelihood = tf.exp(log_likelihood)
-    # average_KL_divergence = tf.reduce_mean(-input_arguments[2])
-    # average_negative_log_likelihood = tf.reduce_mean(negative_log_likelihood)
-    # true_reconstruction_error = average_negative_log_likelihood  # Negative log likelihood per example
-    # true_reconstruction_error = tf.reduce_mean(tf.reduce_sum(likelihood, 1)) # Likelihood per example
-    # average_likelihood = tf.reduce_mean(likelihood)
-
     return error_to_minimise
+
+def l2_loss_tmp(prediction, labels):
+    """
+    :param prediction[0]: the current prediction of the ground truth.
+    :param prediction[1]: the measurement you are approximating with regression.
+    :return: sum(differences squared) / 2 - Note, no square root
+    """
+    residuals = tf.subtract(prediction[0], prediction[1])
+    return tf.nn.l2_loss(residuals)
+
 
 SUPPORTED_OPS = {"CrossEntropy": cross_entropy,
                  "Dice": dice,
@@ -219,5 +223,6 @@ SUPPORTED_OPS = {"CrossEntropy": cross_entropy,
                  "SensSpec": sensitivity_specificity_loss,
                  "L1Loss": l1_loss,
                  "L2Loss": l2_loss,
+                 "L2Losstmp": l2_loss_tmp,
                  "Huber": huber_loss,
                  "VariationalLowerBound": variational_lower_bound}

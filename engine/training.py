@@ -13,6 +13,7 @@ from engine.uniform_sampler import UniformSampler
 from layer.loss import LossFunction
 from utilities import misc_common as util
 from utilities.input_placeholders import ImagePatch
+import matplotlib.pyplot as plt
 
 np.random.seed(seed=int(time.time()))
 
@@ -97,13 +98,13 @@ def run(net_class, param, volume_loader, device_str):
                                                for reg_loss in reg_losses])
                     loss = loss + reg_loss
                 # TODO compute miss for dfferent target types
-                miss = tf.reduce_mean(tf.cast(
-                    tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),
-                    dtype=tf.float32))
+                # miss = tf.reduce_mean(tf.cast(
+                #     tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),
+                #     dtype=tf.float32))
 
                 grads = train_step.compute_gradients(loss)
                 tower_losses.append(loss)
-                tower_misses.append(miss)
+                # tower_misses.append(miss)
                 tower_grads.append(grads)
 
                 # note: only use batch stats from one GPU for batch_norm
@@ -111,13 +112,14 @@ def run(net_class, param, volume_loader, device_str):
                     bn_updates = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
 
         ave_loss = tf.reduce_mean(tower_losses)
-        ave_miss = tf.reduce_mean(tower_misses)
+        # ave_miss = tf.reduce_mean(tower_misses)
         ave_grads = util.average_grads(tower_grads)
         apply_grad_op = train_step.apply_gradients(ave_grads)
         # summary for visualisations
         # tracking current batch loss
-        summaries = [tf.summary.scalar("total-miss", ave_miss),
-                     tf.summary.scalar("total-loss", ave_loss)]
+        # summaries = [tf.summary.scalar("total-miss", ave_miss),
+        #              tf.summary.scalar("total-loss", ave_loss)]
+        summaries = [tf.summary.scalar("total-loss", ave_loss)]
 
         # Track the moving averages of all trainable variables.
         variable_averages = tf.train.ExponentialMovingAverage(0.9)
@@ -168,16 +170,33 @@ def run(net_class, param, volume_loader, device_str):
                 local_time = time.time()
                 if coord.should_stop():
                     break
-                _, loss_value, miss_value = sess.run([train_op,
-                                                      ave_loss,
-                                                      ave_miss])
+                # _, loss_value, miss_value = sess.run([train_op,
+                #                                       ave_loss,
+                #                                       ave_miss])
+                _, loss_value = sess.run([train_op,
+                                                      ave_loss])
                 current_iter = i + param.starting_iter
                 iter_time = time.time() - local_time
-                print('iter {:d}, loss={:.8f},'
-                      'error_rate={:.8f} ({:.3f}s)'.format(
-                    current_iter, loss_value, miss_value, iter_time))
+                # print('iter {:d}, loss={:.8f},'
+                #       'error_rate={:.8f} ({:.3f}s)'.format(
+                #     current_iter, loss_value, miss_value, iter_time))
+                print('iter {:d}, loss={:.8f} ({:.3f}s)'.format(
+                    current_iter, loss_value, iter_time))
                 if (current_iter % 20) == 0:
                     writer.add_summary(sess.run(write_summary_op), current_iter)
+                    # Plot reconstructions for the basic autoencoder
+                    for p in range(0,4):
+                        plt.subplot(4, 2, 2*p+1)
+                        temp1 = sess.run(predictions[0])
+                        temp1 = temp1[p,:,12,:,0]
+                        temp1.reshape(24, 24)
+                        plt.imshow(temp1, cmap='gray')
+                        plt.subplot(4, 2, 2*p+2)
+                        temp2 = sess.run(predictions[1])
+                        temp2 = temp2[p, :, 12, :, 0]
+                        temp2.reshape(24, 24)
+                        plt.imshow(temp2, cmap='gray')
+                    plt.pause(0.0001)
                 if (current_iter % param.save_every_n) == 0 and i > 0:
                     saver.save(sess, ckpt_name, global_step=current_iter)
                     print('Iter {} model saved at {}'.format(
