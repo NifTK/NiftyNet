@@ -28,6 +28,12 @@ class NetFactory(object):
         if name == "highres3dnet":
             from network.highres3dnet import HighRes3DNet
             return HighRes3DNet
+        if name == "highres3dnet_small":
+            from network.highres3dnet_small import HighRes3DNetSmall
+            return HighRes3DNetSmall
+        if name == "highres3dnet_large":
+            from network.highres3dnet_large import HighRes3DNetLarge
+            return HighRes3DNetLarge
         elif name == "toynet":
             from network.toynet import ToyNet
             return ToyNet
