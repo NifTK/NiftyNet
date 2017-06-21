@@ -28,15 +28,15 @@ class VAE_basic(TrainableLayer):
                  name='VAE_basic'):
 
         super(VAE_basic, self).__init__(name=name)
-        self.layer_sizes_encoder = [256, 128] #
+        self.layer_sizes_encoder = [256, 128]
         self.acti_func_encoder = ['relu', 'relu']
-        self.number_of_latent_variables = 32
+        self.number_of_latent_variables = 64
         self.number_of_samples_from_posterior_per_example = 1
         self.layer_sizes_decoder = [128, 256]
         self.acti_func_decoder = ['relu', 'relu']
         self.acti_func_output_means = 'sigmoid'
         self.acti_func_output_logvariances = 'identity'
-        self.logvariance_upper_bound = 80 # For x as little as 100, exp(x) = 2.6 x 10^43, so must bound this above.
+        self.logvariance_upper_bound = 80 # For x as small as 100, exp(x) = 2.6 x 10^43, so must bound this above.
         self.logvariance_lower_bound = -80 # As variance --> 0, logvariance --> -inf, so must bound this below.
 
         self.initializers = {'w': w_initializer, 'b': b_initializer}
