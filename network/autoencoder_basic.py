@@ -23,9 +23,10 @@ class AutoEncoderBasic(TrainableLayer):
 
         super(AutoEncoderBasic, self).__init__(name=name)
         self.layer_sizes_encoder = [256, 128]
-        self.layer_sizes_decoder = [256]
         self.acti_func_encoder = ['relu', 'relu']
-        self.acti_func_decoder = ['relu', 'identity']
+        self.layer_sizes_decoder = [256]
+        self.acti_func_decoder = ['relu']
+        self.acti_func_output = 'identity'
 
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
@@ -62,7 +63,7 @@ class AutoEncoderBasic(TrainableLayer):
         # Define the output layer
         decoders.append(FullyConnectedLayer(
             n_output_chns=data_dimensionality,
-            acti_func=self.acti_func_decoder[-1],
+            acti_func=self.acti_func_output,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
             name='fc_decoder_{}'.format(data_dimensionality)))
