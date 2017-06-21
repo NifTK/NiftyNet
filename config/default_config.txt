@@ -12,7 +12,7 @@ filename_not_contains =
 cuda_devices = ""
 model_dir = ./models/model_monomodal_toy
 net_name = toynet
-activation_function = 'prelu'
+activation_function = prelu
 
 # preprocessing threads parameters
 queue_length = 20
@@ -56,7 +56,7 @@ max_angle = 10.0
 spatial_scaling = True
 min_percentage = -10.0
 max_percentage = 10.0
-window_sampling = 'uniform'
+window_sampling = uniform
 min_numb_labels = 2
 min_sampling_ratio = 0.000001
 

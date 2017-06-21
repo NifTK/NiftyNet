@@ -38,14 +38,14 @@ def rectify_header_sform_qform(img_nii):
     if not np.array_equal(norm_qform, np.asarray(pixdim)):
         flag_qform_problem = True
 
-    if img_nii.get_header()['sform_code'] > 0:
+    if img_nii.header['sform_code'] > 0:
         if not flag_sform_problem:
             return img_nii
         elif not flag_qform_problem:
             # recover by copying the qform over the sform
             img_nii.set_sform(np.copy(img_nii.get_qform()))
             return img_nii
-    elif img_nii.get_header()['qform_code'] > 0:
+    elif img_nii.header['qform_code'] > 0:
         if not flag_qform_problem:
             return img_nii
         elif not flag_sform_problem:

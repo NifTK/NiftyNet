@@ -27,7 +27,7 @@ filename_not_contains = T1
 cuda_devices = ""
 model_dir = ./models/model_scalenet
 net_name = scalenet
-activation_function = 'relu'
+activation_function = relu
 
 # preprocessing threads parameters
 queue_length = 512
@@ -72,7 +72,7 @@ max_angle = 10.0
 spatial_scaling = True
 min_percentage = -10.0
 max_percentage = 10.0
-window_sampling = 'uniform'
+window_sampling = uniform
 min_numb_labels = 2
 min_sampling_ratio = 0.000001
 

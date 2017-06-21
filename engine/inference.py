@@ -69,8 +69,8 @@ def run(net_class, param, volume_loader, device_str):
         net_out = post_process_layer(logits)
         variable_averages = tf.train.ExponentialMovingAverage(0.9)
         saver = tf.train.Saver()
-        #variables_to_restore = variable_averages.variables_to_restore()
-        #saver = tf.train.Saver(var_list=variables_to_restore)
+        variables_to_restore = variable_averages.variables_to_restore()
+        saver = tf.train.Saver(var_list=variables_to_restore)
         tf.Graph.finalize(graph)  # no more graph nodes after this line
 
     # run session

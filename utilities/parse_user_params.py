@@ -98,7 +98,7 @@ def build_parser(parents, defaults):
         "--activation_function",
         help="Specify activation function types",
         choices=list(layer.activation.SUPPORTED_OP),
-        metavar='')
+        metavar='TYPE_STR')
 
     parser.add_argument(
         "--queue_length",
@@ -281,7 +281,7 @@ def build_parser(parents, defaults):
         help="[Inference only] whether to output multi-class probabilities")
     parser.add_argument(
         "--window_sampling",
-        metavar='',
+        metavar='TYPE_STR',
         choices=['uniform', 'selective']
     )
     parser.add_argument(

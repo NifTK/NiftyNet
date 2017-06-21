@@ -83,7 +83,7 @@ def run(net_class, param, volume_loader, device_str):
         net = net_class(num_classes=param.num_classes,
                         w_regularizer=w_regularizer,
                         b_regularizer=b_regularizer,
-                        acti_fun=param.activation_function)
+                        acti_func=param.activation_function)
         loss_func = LossFunction(n_class=param.num_classes,
                                  loss_type=param.loss_type)
         # construct train queue
@@ -142,7 +142,8 @@ def run(net_class, param, volume_loader, device_str):
                             batchnorm_updates_op)
         write_summary_op = tf.summary.merge(summaries)
         # saver
-        saver = tf.train.Saver(max_to_keep=20)
+        variables_to_restore = variable_averages.variables_to_restore()
+        saver = tf.train.Saver(max_to_keep=20, var_list=variables_to_restore)
         tf.Graph.finalize(graph)
     # run session
     config = tf.ConfigProto()

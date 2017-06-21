@@ -18,7 +18,7 @@ from utilities.input_placeholders import ImagePatch
 class UniformSamplerTest(tf.test.TestCase):
     def test_3d(self):
         csv_dict = {'input_image_file': os.path.join('testing_data','testing_case_input'),
-                    'target_image_file': os.path.join('esting_data','testing_case_target'),
+                    'target_image_file': os.path.join('testing_data','testing_case_target'),
                     'weight_map_file': None,
                     'target_note': None}
         csv_loader = CSVTable(csv_dict=csv_dict,
