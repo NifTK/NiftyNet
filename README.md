@@ -20,28 +20,13 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
  <sup>*2.5-D: volumetric images processed as a stack of 2D slices;
 4-D: co-registered multi-modal 3D volumes</sup>
 
-### Dependencies
-* six
-* Python
-* Tensorflow
-* Nibabel
-* Numpy
-* Scipy
-* configparser
-* scikit-image
-
-Please run `pip install -r requirements-gpu.txt` to install all dependencies
-with GPU support (or `pip install -r requirements-cpu.txt` for a CPU support
-only version).
-
-For more information on installing Tensorflow, please follow
-https://www.tensorflow.org/install/
-
+### Usage
+Please follow the links for [demos](demos/README.md) and [Networks](network/README.md).
 
 ### Contributing
 Feature requests and bug reports are collected on [Issues](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/issues).
 
-Contributors are encouraged to take a look at [CONTRIBUTING.md](./CONTRIBUTING.md)
+Contributors are encouraged to take a look at [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ### Citation
 If you use this software, please cite:

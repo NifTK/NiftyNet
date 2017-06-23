@@ -1,5 +1,27 @@
+### Dependencies
+* six
+* Python
+* Tensorflow
+* Nibabel
+* Numpy
+* Scipy
+* configparser
+* scikit-image
+
 ### Usage
-##### (a) To run a toy example
+##### To install dependencies
+
+Please run `pip install -r requirements-gpu.txt` to install all dependencies
+with GPU support (or `pip install -r requirements-cpu.txt` for a CPU support
+only version).
+
+For more information on installing Tensorflow, please follow
+https://www.tensorflow.org/install/
+
+##### (a) To run the demos:
+Please see the `README.md` in each folder of this directory for more details.
+
+##### (b) The "run_application" command:
 To train a "toynet" specified in `network/toynet.py`:
 ``` sh
 cd NiftyNet/
@@ -15,7 +37,7 @@ python run_application.py inference --net_name toynet \
     --save_seg_dir ./seg_output \
     --image_size 80 --label_size 80 --batch_size 8
 ```
-##### (b) To customise configurations
+##### (c) To customise configurations
 Commandline parameters override the default settings defined in `config/default_config.txt`.
 
 Alternatively, to run with a customised config file:
