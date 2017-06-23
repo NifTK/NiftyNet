@@ -15,5 +15,5 @@ sh ../../data/brain_parcellation/get_oasis_data.sh
 sh get_highres3dnet_model.sh
 
 # run brain parcellation
-python -u $NIFTYNET inference -c models/highres3dnet_config_eval.txt --image_size 160 --label_size 160
+python -u $NIFTYNET inference -c ./highres3dnet_config_eval.txt --image_size 160 --label_size 160
 
