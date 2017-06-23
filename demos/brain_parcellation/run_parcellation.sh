@@ -18,7 +18,6 @@ sh get_highres3dnet_model.sh
 export CUDA_VISIBLE_DEVICES=$(python -u $GPU_CHECKER 10000)
 echo "using GPU: $CUDA_VISIBLE_DEVICES"
 
-# run brain parcellation
-python -u $NIFTYNET -c models/highres3dnet_config_eval.txt --image_size 160 --label_size 160
+python -u $NIFTYNET inference -c models/highres3dnet_config_eval.txt --image_size 160 --label_size 160
 
 # please see the output at demos/brain_parcellation/results
