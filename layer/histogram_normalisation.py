@@ -27,7 +27,7 @@ class HistogramNormalisationLayer(Layer):
                  name='hist_norm'):
 
         super(HistogramNormalisationLayer, self).__init__(name=name)
-        self.hist_model_file = models_filename
+        self.hist_model_file = os.path.abspath(models_filename)
 
         if binary_masking_func is not None:
             assert isinstance(binary_masking_func, BinaryMaskingLayer)

@@ -81,7 +81,8 @@ class VolumeLoaderLayer(Layer):
                     norm_layer.train_normalisation_ref(self.subject_list)
                 elif not self.is_training and not standardisor_ready:
                     raise RuntimeError(
-                        "Could not initialise histogram normalisation layer")
+                        "Could not initialise histogram normalisation layer,"
+                        "please check file {}".format(norm_layer.hist_model_file))
 
 
     def layer_op(self):
