@@ -22,4 +22,4 @@ _Please Note:_
 
 * This demo requires an GPU with at least 10GB memory.
 
-* Please change the environment variable `CUDA_VISIBLE_DEVICES` to an appropriate value if necessary. (e.g. `export CUDA_VISIBLE_DEVICES=0` will allow NiftyNet to use the `0` GPU)
+* Please change the environment variable `CUDA_VISIBLE_DEVICES` to an appropriate value if necessary. (e.g. `export CUDA_VISIBLE_DEVICES=0` will allow NiftyNet to use the `0`-th GPU)
