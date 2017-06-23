@@ -22,4 +22,4 @@ _Please Note:_
 
 * This demo requires an GPU with at least 10GB memory.
 
-* `run_parcellation.sh` will automatically select a GPU by `export CUDA_VISIBLE_DEVICES=$(python -u $GPU_CHECKER 10000)`, please change the environment variable `CUDA_VISIBLE_DEVICES` to an appropriate value if necessary.
+* Please change the environment variable `CUDA_VISIBLE_DEVICES` to an appropriate value if necessary. (e.g. `export CUDA_VISIBLE_DEVICES=0` will allow NiftyNet to use the `0` GPU)

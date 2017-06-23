@@ -14,10 +14,6 @@ sh ../../data/brain_parcellation/get_oasis_data.sh
 # download a trained HighRes3DNet parameters
 sh get_highres3dnet_model.sh
 
-# find a large GPU
-export CUDA_VISIBLE_DEVICES=$(python -u $GPU_CHECKER 10000)
-echo "using GPU: $CUDA_VISIBLE_DEVICES"
-
 # run brain parcellation
 python -u $NIFTYNET inference -c models/highres3dnet_config_eval.txt --image_size 160 --label_size 160
 
