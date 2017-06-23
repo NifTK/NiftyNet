@@ -21,7 +21,7 @@ NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
 4-D: co-registered multi-modal 3D volumes</sup>
 
 ### Usage
-Please follow the links for [demos](demos/README.md) and [Networks](network/README.md).
+Please follow the links for [demos](demos/README.md) and [networks](network/README.md).
 
 ### Contributing
 Feature requests and bug reports are collected on [Issues](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/issues).

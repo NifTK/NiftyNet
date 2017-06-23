@@ -19,7 +19,7 @@ For more information on installing Tensorflow, please follow
 https://www.tensorflow.org/install/
 
 ##### (a) To run the demos:
-Please see the `README.md` in each folder of this directory for more details.
+Please see the `README.md` in each folder of this [directory](./demos) for more details.
 
 ##### (b) The "run_application" command:
 To train a "toynet" specified in `network/toynet.py`:
