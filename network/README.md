@@ -45,3 +45,13 @@ image_ size = 57, label_ size = 9, d_ factor = 3
 
 [^5]: Kamnitsas, K., Ledig, C., Newcombe, V. F., Simpson, J. P., Kane, A. D., Menon, D. K., ... & Glocker, B. (2017). Efficient multi-scale 3D CNN with fully connected CRF for accurate brain lesion segmentation. Medical Image Analysis, 36, 61-78.
 ## 
+
+
+
+## To develop a new network architecture
+1. Create a `network/new_net.py` inheriting `BaseNet` from `layer.base_net`
+1. Implement `layer_op()` function using the building blocks in `layer/` or creating new layers
+1. Import `network.new_net` to the `NetFactory` class in `run_application.py`
+1. Train the network with `python run_application.py train -c /path/to/customised_config`
+
+Image data in nifty format (extension .nii or .nii.gz) are supported.

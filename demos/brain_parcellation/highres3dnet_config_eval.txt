@@ -11,7 +11,7 @@ activation_function = relu
 
 # preprocessing threads parameters
 queue_length = 8
-num_threads = 4
+num_threads = 1
 
 # network parameters (controlling memory consumption)
 spatial_rank = 3
@@ -25,7 +25,7 @@ num_classes = 160
 volume_padding_size = 10
 
 #histogram normalisation
-histogram_ref_file = ../../demos/brain_parcellation/models/databrain_std_hist_models_otsu.txt
+histogram_ref_file = ../../demos/brain_parcellation/databrain_std_hist_models_otsu.txt
 multimod_mask_type = and
 norm_type = percentile
 
