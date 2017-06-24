@@ -3,7 +3,6 @@
 # please make sure you installed all dependencies of NiftyNet.
 # cd NiftyNet/; pip install -r requirements-gpu.txt
 NIFTYNET=../../run_application.py
-GPU_CHECKER=../../utilities/check_gpu.py
 
 DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 cd "$DIR"
