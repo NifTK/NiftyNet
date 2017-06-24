@@ -203,14 +203,28 @@ def variational_lower_bound(predictions, labels):
 
     return error_to_minimise
 
-def l2_loss_tmp(prediction, labels):
+def SumSqrdDiff(prediction, labels):
+    """
+    :param prediction[0]: the current prediction of the ground truth.
+    :param prediction[1]: the measurement you are approximating with regression.
+    :return: mean(differences squared)
+    """
+    residuals = tf.subtract(prediction[0], prediction[1])
+    return tf.reduce_mean(tf.square(residuals))
+
+def KL_divergence_Gaussian(means, logvariances):
     """
     :param prediction[0]: the current prediction of the ground truth.
     :param prediction[1]: the measurement you are approximating with regression.
     :return: sum(differences squared) / 2 - Note, no square root
     """
-    residuals = tf.subtract(prediction[0], prediction[1])
-    return tf.nn.l2_loss(residuals)
+    # KL_divergence = 0.5 * tf.reduce_mean(1 + logvariances - tf.square(means) - tf.exp(logvariances), axis=[1])
+    KL_divergence = 0.5 * tf.reduce_sum(1 + logvariances - tf.square(means) - tf.exp(logvariances), axis=[1])
+    KL_divergence = tf.reduce_mean(KL_divergence)
+    return KL_divergence
+
+
+
 
 
 SUPPORTED_OPS = {"CrossEntropy": cross_entropy,
@@ -219,6 +233,6 @@ SUPPORTED_OPS = {"CrossEntropy": cross_entropy,
                  "SensSpec": sensitivity_specificity_loss,
                  "L1Loss": l1_loss,
                  "L2Loss": l2_loss,
-                 "L2Losstmp": l2_loss_tmp,
+                 "SumSqrdDiff": SumSqrdDiff,
                  "Huber": huber_loss,
                  "VariationalLowerBound": variational_lower_bound}

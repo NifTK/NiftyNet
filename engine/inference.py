@@ -60,12 +60,14 @@ def run(net_class, param, volume_loader, device_str):
             post_process_layer = PostProcessingLayer(
                 'SOFTMAX', num_classes=param.num_classes)
         elif not param.output_prob and param.num_classes > 1:
-            post_process_layer = PostProcessingLayer(
-                'ARGMAX', num_classes=param.num_classes)
+            pass
+            # post_process_layer = PostProcessingLayer(
+            #     'ARGMAX', num_classes=param.num_classes)
         else:
             post_process_layer = PostProcessingLayer(
                 'IDENTITY', num_classes=param.num_classes)
-        net_out = post_process_layer(logits)
+        # net_out = post_process_layer(logits)
+        net_out = logits
         variable_averages = tf.train.ExponentialMovingAverage(0.9)
         variables_to_restore = variable_averages.variables_to_restore()
         saver = tf.train.Saver(var_list=variables_to_restore)

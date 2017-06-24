@@ -8,6 +8,7 @@ from layer.reparameterization_trick import ReparameterizationLayer
 from layer.layer_util import infer_dims
 
 import tensorflow as tf
+import numpy as np
 
 class VAE_FullyConnected(TrainableLayer):
     # """
@@ -143,5 +144,11 @@ class VAE_FullyConnected(TrainableLayer):
         data_logvariances = tf.maximum(data_logvariances, self.logvariance_lower_bound)
         data_logvariances = tf.minimum(data_logvariances, self.logvariance_upper_bound)
 
+        squared_differences = tf.square(data_means - images)
+        log_likelihood = -0.5 * (
+        data_logvariances + np.log(2 * np.pi) + tf.exp(-data_logvariances) * squared_differences)
+        KL_divergence = 0.5 * tf.reduce_mean(
+            1 + posterior_logvariances - tf.square(posterior_means) - tf.exp(posterior_logvariances), axis=[1])
+
         return [posterior_means, posterior_logvariances, data_means, data_logvariances,
-                images, data_variances, posterior_variances]
+                images, data_variances, posterior_variances, log_likelihood, KL_divergence]
