@@ -5,11 +5,13 @@ import numpy as np
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from layer.convolution import ConvLayer
-from layer.spatial_transformer import ResamplerLayer, AffineGridWarperLayer, LinearSplineGridWarper
+from layer.spatial_transformer import ResamplerLayer, AffineGridWarperLayer, LinearSplineGridWarper, BSplineGridWarper
 
 
 class ResamplerTest(tf.test.TestCase):
     def get_3d_input1(self):
+        return tf.expand_dims(tf.constant([[[[1,2,-1],[3,4,-2]],[[5,6,-3],[7,8,-4]]],[[[9,10,-5],[11,12,-6]],[[13,14,-7],[15,16,-8]]]],dtype=tf.float32),4)
+    def get_3d_input3(self):
         return tf.expand_dims(tf.constant([[[[1,2,-1],[3,4,-2]],[[5,6,-3],[7,8,-4]]],[[[9,10,-5],[11,12,-6]],[[13,14,-7],[15,16,-8]]]],dtype=tf.float32),4)
     def get_3d_input2(self):
         return tf.concat([self.get_3d_input1(),100+self.get_3d_input1()],4)
@@ -30,7 +32,7 @@ class ResamplerTest(tf.test.TestCase):
                                interpolation='LINEAR',
                                boundary='REPLICATE',
                                expected_value=[[[2.75,102.75],[3.75,103.75]],[[12.75,112.75],[11.25,111.25]]])
-    def test_resampler_3d_replicate_nearest_correctness(self):
+    def test_resampler_3d_multivariate_replicate_nearest_correctness(self):
         self._test_correctness(input=self.get_3d_input2(),
                                grid=tf.constant([[[.25,.25,.25],[.25,.75,.25]],[[.75,.25,.25],[.25,.25,.75]]],dtype=tf.float32),
                                interpolation='NEAREST',
@@ -42,6 +44,12 @@ class ResamplerTest(tf.test.TestCase):
                                interpolation='LINEAR',
                                boundary='REPLICATE',
                                expected_value=[[[2.75],[3.75]],[[12.75],[11.25]]])
+    def test_resampler_3d_replicate_cubic_correctness(self):
+        self._test_correctness(input=self.get_3d_input1(),
+                               grid=tf.constant([[[.25,.25,.25],[.25,.75,.25]],[[.75,.25,.25],[.25,.25,.75]]],dtype=tf.float32),
+                               interpolation='BSPLINE',
+                               boundary='REPLICATE',
+                               expected_value=[[[3.20869954],[3.93501790]],[[12.63008626],[10.33280436]]])
     def test_resampler_3d_replicate_nearest_correctness(self):
         self._test_correctness(input=self.get_3d_input1(),
                                grid=tf.constant([[[.25,.25,.25],[.25,.75,.25]],[[.75,.25,.25],[.25,.25,.75]]],dtype=tf.float32),
