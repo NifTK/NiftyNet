@@ -32,7 +32,7 @@ from itertools import chain
 from six.moves import xrange  # pylint: disable=redefined-builtin
 from utilities.misc_common import look_up_operations
 
-SUPPORTED_INTERPOLATION={'LINEAR','NEAREST'}
+SUPPORTED_INTERPOLATION={'BSPLINE','LINEAR','NEAREST'}
 SUPPORTED_BOUNDARY={'REPLICATE','CIRCULAR','SYMMETRIC'}
 
 class ResamplerLayer(Layer):
@@ -47,7 +47,7 @@ class ResamplerLayer(Layer):
     self.interpolation = look_up_operations(interpolation.upper(), SUPPORTED_INTERPOLATION)
     self.boundary = look_up_operations(boundary.upper(), SUPPORTED_BOUNDARY)
     self.boundary_func_ = {'REPLICATE':self.boundary_replicate,'CIRCULAR':self.boundary_circular,'SYMMETRIC':self.boundary_symmetric}[self.boundary]
-    self.resample_func_ = {'LINEAR':self.resample_linear,'NEAREST':self.resample_nearest}[self.interpolation]
+    self.resample_func_ = {'LINEAR':self.resample_linear,'BSPLINE':self.resample_bspline,'NEAREST':self.resample_nearest}[self.interpolation]
 
   def boundary_replicate(self,sample_coords,input_size):
     return tf.maximum(tf.minimum(sample_coords,input_size-1),tf.zeros_like(input_size))
@@ -56,7 +56,36 @@ class ResamplerLayer(Layer):
   def boundary_symmetric(self,sample_coords,input_size):
     circularSize = input_size+input_size-2
     return (input_size-1)-tf.abs((input_size-1)-tf.mod(tf.mod(sample_coords,circularSize)+circularSize,circularSize))
+  def resample_bspline(self,inputs,sample_coords):
+    input_size=tf.reshape(inputs.get_shape().as_list()[1:-1],[1]*(len(sample_coords.get_shape().as_list())-1)+[-1]  )
+    spatial_rank = layer_util.infer_spatial_rank(inputs)
+    batch_size=sample_coords.get_shape().as_list()[0]
+    grid_shape = sample_coords.get_shape().as_list()[1:-1]
+    if spatial_rank==2:
+      raise NotImplementedError('bspline interpolation not implemented for 2d yet')
+    index_voxel_coords = tf.floor(sample_coords)
+    # Compute voxels to use for interpolation
+    offsets = tf.reshape(tf.stack(tf.meshgrid(list(range(-1,3)),list(range(-1,3)),list(range(-1,3)), indexing='ij'),3),[1,4**spatial_rank]+[1]*len(grid_shape)+[spatial_rank])
+    preboundary_spatial_coords = offsets+tf.expand_dims(tf.cast(index_voxel_coords,tf.int32),1)
+    spatial_coords = self.boundary_func_(preboundary_spatial_coords,input_size)
+    # Compute weights for each voxel
+    build_coefficient = lambda u,d: tf.concat([tf.pow(1-u,3),
+                                             3*tf.pow(u,3) - 6*tf.pow(u,2) + 4,
+                                            -3*tf.pow(u,3) + 3*tf.pow(u,2) + 3*u + 1,
+                                               tf.pow(u,3)],d)/6
 
+    index_weight=sample_coords-index_voxel_coords
+    Bu=build_coefficient(tf.reshape(index_weight[:,:,0],[batch_size,1,1,1,-1]),1)
+    Bv=build_coefficient(tf.reshape(index_weight[:,:,1],[batch_size,1,1,1,-1]),2)
+    Bw=build_coefficient(tf.reshape(index_weight[:,:,2],[batch_size,1,1,1,-1]),3)
+    all_weights=tf.reshape(Bu*Bv*Bw,[batch_size,64,-1,1])
+    # Gather voxel values and compute weighted sum
+    sz=spatial_coords.get_shape().as_list()
+    batch_coords = tf.tile(tf.reshape(tf.range(sz[0]),[sz[0]]+[1]*(len(sz)-1)),[1]+sz[1:-1]+[1])
+    raw_samples = tf.gather_nd(inputs,tf.concat([batch_coords,spatial_coords],-1))
+    return tf.reduce_sum(all_weights*raw_samples,reduction_indices=1)
+
+    
   def resample_linear(self,inputs,sample_coords):
     # Each sample is interpolated as a weighted sum of 2^spatial_rank voxels
     input_size=tf.reshape(inputs.get_shape().as_list()[1:-1],[1]*(len(sample_coords.get_shape().as_list())-1)+[-1]  )
@@ -77,6 +106,7 @@ class ResamplerLayer(Layer):
     sz=spatial_coords.get_shape().as_list()
     batch_coords = tf.tile(tf.reshape(tf.range(sz[0]),[sz[0]]+[1]*(len(sz)-1)),[1]+sz[1:-1]+[1])
     raw_samples = tf.gather_nd(inputs,tf.concat([batch_coords,spatial_coords],-1))
+    print(all_weights,raw_samples)
     return tf.reduce_sum(all_weights*raw_samples,reduction_indices=1)
 
   def resample_nearest(self,inputs,sample_coords):
@@ -208,7 +238,7 @@ class InterpolatedSplineGridWarper(GridWarperLayer):
         output_grid and the field. 
         batch_size x4x4 tensor: per-image transform matrix from output coords to field coords
         None (default):         corners of output map to corners of field with an allowance for
-                                  interpolation (1 for cubic, 0 for linear)
+                                  interpolation (1 for bspline, 0 for linear)
       resampler: a ResamplerLayer (or equivalent) used to interpolate the 
         deformation field
       field_interpretation: a string ('DISPLACEMENT', or 'DEFORMATION')  
@@ -246,9 +276,9 @@ class InterpolatedSplineGridWarper(GridWarperLayer):
     """
     embedded_output_shape = list(self._output_shape)+[1]*(len(self._source_shape) - len(self._output_shape))
     embedded_field_shape = list(self._field_shape)+[1]*(len(self._source_shape) - len(self._output_shape))
-    if self._field_transform==None and self._interpolation == 'CUBIC':
+    if self._field_transform==None and self._interpolation == 'BSPLINE':
       range_func= lambda f,x: tf.linspace(1.,f-2.,x)
-    elif self._field_transform==None and self._interpolation != 'CUBIC':
+    elif self._field_transform==None and self._interpolation != 'BSPLINE':
       range_func= lambda f,x: tf.linspace(0.,f-1.,x)
     else:
       range_func= lambda f,x: np.arange(x,dtype=np.float32)
@@ -305,6 +335,30 @@ class LinearSplineGridWarper(InterpolatedSplineGridWarper):
                name='linear_spline_grid_warper'):
     resampler=ResamplerLayer(interpolation='LINEAR',boundary=boundary,name=name+'_resampler')
     super(LinearSplineGridWarper, self).__init__(
+               source_shape=source_shape,
+               output_shape=output_shape,
+               field_size=field_size,
+               field_transform=field_transform,
+               resampler=resampler,
+               field_interpretation=field_interpretation,
+               name=name)
+class BSplineGridWarper(InterpolatedSplineGridWarper):
+  """ B Spline Grid Warper class
+  
+  The B spline grid warper is an InterpolatedSplineGridWarper that defaults to B spline interpolation. 
+  Note that the B spline interpolation treats the input as control points, but does not interpolate
+  through them.
+  """
+  def __init__(self,
+               source_shape,
+               output_shape,
+               field_size,
+               field_transform=None,
+               boundary='REPLICATE',
+               field_interpretation='DISPLACEMENT',
+               name='b_spline_grid_warper'):
+    resampler=ResamplerLayer(interpolation='BSPLINE',boundary=boundary,name=name+'_resampler')
+    super(BSplineGridWarper, self).__init__(
                source_shape=source_shape,
                output_shape=output_shape,
                field_size=field_size,
