@@ -51,7 +51,7 @@ class HighRes3DNetLarge(BaseNet):
 
     def layer_op(self, images, is_training, layer_id=-1):
         assert (layer_util.check_spatial_dims(
-            images, lambda x: x % 4 == 0))
+            images, lambda x: x % 8 == 0))
         # go through self.layers, create an instance of each layer
         # and plugin data
         layer_instances = []

@@ -11,9 +11,11 @@
 ### Usage
 ##### To install dependencies
 
-Please run `pip install -r requirements-gpu.txt` to install all dependencies
-with GPU support (or `pip install -r requirements-cpu.txt` for a CPU support
-only version).
+Run `pip install -r requirements-gpu.txt` to install all dependencies
+with GPU support, 
+
+Run `pip install -r requirements-cpu.txt` for a CPU support
+only version.
 
 For more information on installing Tensorflow, please follow
 https://www.tensorflow.org/install/
@@ -37,6 +39,9 @@ python run_application.py inference --net_name toynet \
     --save_seg_dir ./seg_output \
     --image_size 80 --label_size 80 --batch_size 8
 ```
+
+Image data in nifty format (extension .nii or .nii.gz) are supported.
+
 ##### (c) To customise configurations
 Commandline parameters override the default settings defined in `config/default_config.txt`.
 
