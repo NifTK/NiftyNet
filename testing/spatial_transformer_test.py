@@ -5,7 +5,7 @@ import numpy as np
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from layer.convolution import ConvLayer
-from layer.spatial_transformer import ResamplerLayer, AffineGridWarperLayer, LinearSplineGridWarper, BSplineGridWarper
+from layer.spatial_transformer import ResamplerLayer, AffineGridWarperLayer, ResampledFieldGridWarperLayer
 
 
 class ResamplerTest(tf.test.TestCase):
@@ -87,7 +87,7 @@ class ResamplerTest(tf.test.TestCase):
                                boundary='REPLICATE',
                                expected_value=[[[[[1],[2]],[[3],[4]]],[[[5],[6]],[[7],[8]]]],[[[[9.5],[2.5]],[[11.5],[3]]],[[[13.5],[3.5]],[[15.5],[4]]]]])
     def test_interpolation_gridwarper_correctness(self):
-        grid = LinearSplineGridWarper([2,2,3],[2,2,2],[2,2,2])(tf.constant([[[[[1,1,0],[1,1,1]],[[1,0,0],[1,0,1]]],[[[0,1,0],[0,1,1]],[[0,0,0],[0,0,1]]]],
+        grid = ResampledFieldGridWarperLayer([2,2,3],[2,2,2],[2,2,2])(tf.constant([[[[[1,1,0],[1,1,1]],[[1,0,0],[1,0,1]]],[[[0,1,0],[0,1,1]],[[0,0,0],[0,0,1]]]],
                                                                             [[[[0,0,0.5],[0,0,1]],[[0,1,0.5],[0,1,1]]],[[[1,0,0.5],[1,0,1]],[[1,1,0.5],[1,1,1]]]]],dtype=tf.float32))
         self._test_correctness(input=self.get_3d_input1(),
                                grid=grid,
@@ -97,7 +97,7 @@ class ResamplerTest(tf.test.TestCase):
     def test_interpolation_gridwarper_correctness2(self):
         field=tf.constant([[[[[0,0,0.5],[0,0,1]],[[0,1,0.5],[0,1,1]]],[[[1,0,0.5],[1,0,1]],[[1,1,0.5],[1,1,1]]]]],dtype=tf.float32)
         print(field)
-        grid = LinearSplineGridWarper([2,2,3],[3,3,3],[2,2,2])(field)
+        grid = ResampledFieldGridWarperLayer([2,2,3],[3,3,3],[2,2,2])(field)
         self._test_correctness(input=self.get_3d_input1()[1:,:,:,:,:],
                                grid=grid,
                                interpolation='LINEAR',
