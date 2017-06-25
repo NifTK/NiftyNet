@@ -10,7 +10,7 @@ from layer.convolution import ConvLayer
 from layer.deconvolution import DeconvLayer
 from layer.elementwise import ElementwiseLayer
 from utilities.misc_common import look_up_operations
-
+from layer.spatial_transformer import ResamplerLayer,AffineGridWarperLayer,BSplineGridWarperLayer, RescalingIntepolatedSplineGridWarperLayer,FastBSplineGridWarperLayer
 
 class VNet(TrainableLayer):
     """
@@ -41,6 +41,24 @@ class VNet(TrainableLayer):
     def layer_op(self, images, is_training, layer_id=-1):
         assert layer_util.check_spatial_dims(images, lambda x: x % 8 == 0)
 
+        r=ResamplerLayer()
+        if 0:
+        
+          #gw=BSplineGridWarperLayer(images.get_shape().as_list()[1:4],images.get_shape().as_list()[1:4],[10,10,10])
+          gw=RescalingIntepolatedSplineGridWarperLayer(images.get_shape().as_list()[1:4],images.get_shape().as_list()[1:4],[10,10,10])
+          identityWarp=tf.stack(tf.meshgrid([0.],tf.linspace(0.,95.,10),tf.linspace(0.,95.,10),tf.linspace(0.,95.,10),indexing='ij')[1:4],4)
+          params=identityWarp+tf.random_normal([1,10,10,10,3], mean=0, stddev=1.)
+
+          #gw=AffineGridWarperLayer(images.get_shape().as_list()[1:4],images.get_shape().as_list()[1:4])
+          #params=tf.tile(tf.random_normal([1, 12], mean=0, stddev=.02)+tf.constant([[1,0,0,0,0,1,0,0,0,0,1,0]],dtype=tf.float32),[int(images.get_shape()[0]),1])
+          grid=gw(params)
+        else:
+          f=FastBSplineGridWarperLayer(images.get_shape().as_list()[1:4],images.get_shape().as_list()[1:4],[9,9,9])
+ 
+          identityWarp=tf.stack(tf.meshgrid([0.],tf.linspace(0.,95.,f.field_shape[0]),tf.linspace(0.,95.,f.field_shape[1]),tf.linspace(0.,95.,f.field_shape[2]),indexing='ij')[1:4],4)
+          params=identityWarp+tf.random_normal([1] + f.field_shape + [3], mean=0, stddev=1.)
+          grid=f(params)
+        images=r(images,grid)
         if layer_util.infer_spatial_rank(images) == 2:
             padded_images = tf.tile(images, [1, 1, 1, self.n_features[0]])
         elif layer_util.infer_spatial_rank(images) == 3:
