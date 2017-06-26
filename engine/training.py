@@ -120,7 +120,7 @@ def run(net_class, param, volume_loader, device_str):
                     [tower_additional, tower_additional_names] = QuantitiesToMonitor(predictions, labels,
                                                                                      net.quantities_to_monitor)
                 else:
-                    [tower_additional, tower_additional_names] = QuantitiesToMonitor(predictions, labels, {'': ''})
+                    [tower_additional, tower_additional_names] = QuantitiesToMonitor(predictions, labels, {})
                 tower_grads.append(grads)
                 # note: only use batch stats from one GPU for batch_norm
                 if i == 0:

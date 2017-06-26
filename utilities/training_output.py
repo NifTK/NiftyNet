@@ -16,9 +16,7 @@ def QuantitiesToMonitor(predictions, labels, dictionary):
     quantities_to_monitor = []
     names_of_quantities = []
 
-    if ('miss_rate' in dictionary) and (not dictionary['miss_rate']):
-        pass
-    else:
+    if dictionary.get('miss_rate', True):
         quantities_to_monitor.append(tf.reduce_mean(tf.cast(
             tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),
             dtype=tf.float32)))
