@@ -15,6 +15,7 @@ from engine.uniform_sampler import UniformSampler
 from layer.loss import LossFunction
 from utilities import misc_common as util
 from utilities.input_placeholders import ImagePatch
+from utilities.training_output import QuantitiesToMonitor
 
 np.random.seed(seed=int(time.time()))
 
@@ -94,7 +95,7 @@ def run(net_class, param, volume_loader, device_str):
             shuffle=True)
         # optimizer
         train_step = tf.train.AdamOptimizer(learning_rate=param.lr)
-        tower_misses, tower_losses, tower_grads = [], [], []
+        tower_losses, tower_grads = [], []
         train_pairs = train_batch_runner.pop_batch_op
         images, labels = train_pairs['images'], train_pairs['labels']
         if "weight_maps" in train_pairs:
@@ -112,24 +113,29 @@ def run(net_class, param, volume_loader, device_str):
                                                for reg_loss in reg_losses])
                     loss = loss + reg_loss
                 # TODO compute miss for dfferent target types
-                miss = tf.reduce_mean(tf.cast(
-                    tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),
-                    dtype=tf.float32))
                 grads = train_step.compute_gradients(loss)
                 tower_losses.append(loss)
-                tower_misses.append(miss)
+                # Get the list of quantities to monitor during training
+                if hasattr(net, 'quantities_to_monitor'):
+                    [tower_additional, tower_additional_names] = QuantitiesToMonitor(predictions, labels,
+                                                                                     net.quantities_to_monitor)
+                else:
+                    [tower_additional, tower_additional_names] = QuantitiesToMonitor(predictions, labels, {'': ''})
                 tower_grads.append(grads)
                 # note: only use batch stats from one GPU for batch_norm
                 if i == 0:
                     bn_updates = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         ave_loss = tf.reduce_mean(tower_losses)
-        ave_miss = tf.reduce_mean(tower_misses)
+        average_additional = []
+        for p in range(0, len(tower_additional)):
+            average_additional.append(tf.reduce_mean(tower_additional[p]))
         ave_grads = util.average_grads(tower_grads)
         apply_grad_op = train_step.apply_gradients(ave_grads)
         # summary for visualisations
         # tracking current batch loss
-        summaries = [tf.summary.scalar("total-miss", ave_miss),
-                     tf.summary.scalar("total-loss", ave_loss)]
+        summaries = [tf.summary.scalar("total-loss", ave_loss)]
+        for p in range(0, len(tower_additional)):
+            summaries += [tf.summary.scalar(tower_additional_names[p], tower_additional[p])]
         # Track the moving averages of all trainable variables.
         variable_averages = tf.train.ExponentialMovingAverage(0.9)
         var_averages_op = variable_averages.apply(tf.trainable_variables())
@@ -175,14 +181,15 @@ def run(net_class, param, volume_loader, device_str):
                 local_time = time.time()
                 if coord.should_stop():
                     break
-                _, loss_value, miss_value = sess.run([train_op,
-                                                      ave_loss,
-                                                      ave_miss])
+                values = sess.run([train_op, ave_loss] + average_additional)
                 current_iter = i + param.starting_iter
                 iter_time = time.time() - local_time
-                print('iter {:d}, loss={:.8f},'
-                      'error_rate={:.8f} ({:.3f}s)'.format(
-                    current_iter, loss_value, miss_value, iter_time))
+                output_string = 'iter {:d}, loss={:.8f}'
+                for p in range(0, len(tower_additional)):
+                    output_string += ', ' + tower_additional_names[p] + '={:.8f}'
+                output_string += ' ({:.3f}s)'
+                format_string = [current_iter] + values[1::] + [iter_time]
+                print(output_string.format(*format_string))
                 if (current_iter % 20) == 0:
                     writer.add_summary(sess.run(write_summary_op), current_iter)
                 if (current_iter % param.save_every_n) == 0 and i > 0:
