@@ -39,6 +39,10 @@ If you use this software, please cite:
 }
 ```
 
+### Licensing and Copyright
+
+Copyright 2017 University College London.
+Released under the Apache License, Version 2.0. Please see the LICENSE file for details.
 
 ### Acknowledgements
 This project was supported through an Innovative Engineering for Health award by
