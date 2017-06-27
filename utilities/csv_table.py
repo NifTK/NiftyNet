@@ -32,6 +32,12 @@ class CSVTable(object):
             raise RuntimeError('unable to read csv files into a nested list')
 
     def create_by_joining_multiple_csv_files(self, **csv_dict):
+        """
+        This function creates a CSV table from multiple files read from the
+        argument csv_dict. This is used when the list of inputs, targets,
+        weights... are listed in separate csv files
+        """
+
 
         header = Subject.fields
         csv_to_join = {}
@@ -87,6 +93,12 @@ class CSVTable(object):
             self._csv_table.append(joint_csv_row)
 
     def create_by_reading_single_csv(self, csv_file):
+        '''
+        Creates the csv table by reading a single csv_file that contains for
+        each field a single file input.
+        :param csv_file:
+        :return:
+        '''
         self._csv_table = []
         with open(csv_file, "rb") as infile:
             reader = csv.reader(infile)
@@ -100,6 +112,11 @@ class CSVTable(object):
                 self._csv_table.append(csv_row)
 
     def to_subject_list(self):
+        '''
+        From each element of the CSVTable object create a subject object and
+        append it to the returned subject_list
+        :return subject_list:
+        '''
         subject_list = []
         for row in self._csv_table:
             new_subject = Subject.from_csv_row(row, self.modality_names)
