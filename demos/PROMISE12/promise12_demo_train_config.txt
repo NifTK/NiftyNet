@@ -1,17 +1,18 @@
 [image modality 1]
 path_to_search = ./data/PROMISE12
-filename_contains = T2
-filename_not_contains = Case2
+filename_contains = Case,mhd
+filename_not_contains = Case2,segmentation
 
 [label modality 1]
 path_to_search = ./data/PROMISE12
-filename_contains = segmentation
+filename_contains = Case,segmentation,mhd
 filename_not_contains = Case2
 
 [settings]
 cuda_devices = ""
 model_dir = ./models/model_vnet
 net_name = vnet
+activation_function = prelu
 
 # preprocessing threads parameters
 queue_length = 8
@@ -56,6 +57,9 @@ max_angle = 10.0
 spatial_scaling = True
 min_percentage = -10.0
 max_percentage = 10.0
+min_numb_labels = 2
+min_sampling_ratio = 0.000001
+window_sampling = uniform
 
 # ** training only ** gradient descent and loss parameters
 lr = 0.0001
