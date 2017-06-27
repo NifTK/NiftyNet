@@ -24,7 +24,10 @@ class SubjectTest(tf.test.TestCase):
     target_file=os.path.join('testing_data','partial')
     rename_checkpoint_to_partial(source,target_file,transform)
     generated = self.load_checkpoint(target_file)
-    self.assertAllClose(target,generated)
+    self.assertItemsEqual(target.keys(),generated.keys())
+    for k in target:
+      self.assertAllClose(target[k],generated[k])
+    
   def test_rename_vars(self):
     self.generic({'foo':[1],'bar/baz':[1,2,3],'bar/bing/boffin':[2]},
                  {'foo2':[1],'bar2/baz2':[1,2,3],'bar2/bing2/boffin2':[2]},
