@@ -54,6 +54,7 @@ def correct_image_if_necessary(img):
         
 def rectify_header_sform_qform(img_nii):
     # TODO: check img_nii is a nibabel object
+    pixdim = img.header.get_zooms()
     sform = img_nii.get_sform()
     qform = img_nii.get_qform()
     norm_sform = np.sqrt(np.sum(np.square(sform[0:3, 0:3]), 0))
