@@ -17,6 +17,17 @@ from .filename_matching import KeywordsMatching
 def load_subject_and_filenames_from_csv_file(csv_file,
                                              allow_missing=True,
                                              numb_mod=None):
+    '''
+    Creates list of names and corresponding file list from csv file
+    :param csv_file: file to read built with for each row, the subject name
+    followed by a list of files for different time points and modalities.
+    :param allow_missing: flag (True/False) indicating if missing modalities
+    are possible
+    :param numb_mod: number of modalities to consider (needed to account for
+    multiple time points
+    :return list_subjects: list of subject names
+    :return list_filenames: list of filenames for each subject
+    '''
     if csv_file is None:
         return [], []
     if not os.path.isfile(csv_file):
@@ -42,6 +53,18 @@ def load_subject_and_filenames_from_csv_file(csv_file,
 
 # try to find a direct match between two arrays of list of possible names.
 def match_first_degree(name_list1, name_list2):
+    '''
+    First immediate matching between two possible name lists (exact equality
+    between one item of list1 and of list2
+    :param name_list1: First list of names to match
+    :param name_list2: Second list of names where to find a match
+    :return init_match1:
+    :return init_match2:
+    :return ind_match1: Indices of second list that correspond to each given
+    item of list 1 if exists (-1 otherwise)
+    :return ind_match2: Indices of first list that correspond to each given
+    item of list 2 if exists (-1) otherwise
+    '''
     if name_list1 is None or name_list2 is None:
         return None, None, None, None
     init_match1 = [''] * len(name_list1)
@@ -73,21 +96,34 @@ def match_first_degree(name_list1, name_list2):
 # the matched sequence and the corresponding index of the corresponding
 # element in the list
 def __find_max_overlap_in_list(name, list_names):
+    '''
+    Given a name and list of names to match it to, find the maximum overlap
+    existing
+    :param name: string to match to any of list_names
+    :param list_names: list of candidate strings
+    :return match_seq: matched substring
+    :return index: index of element in list_names to which the match is
+    associated. Returns -1 if there is no found match
+    '''
     match_max = 0
     match_seq = ''
     match_orig = ''
+    match_ratio = 0
     if len(list_names) == 0:
         return '', -1
     for test in list_names:
         match = SequenceMatcher(None, name, test).find_longest_match(
             0, len(name), 0, len(test))
-        if match.size > match_max:
+        if match.size >= match_max and (1.0 * match.size)/len(test) >= \
+                match_ratio:
             match_max = match.size
             match_seq = test[match.b:(match.b + match.size)]
+            match_ratio = match.size/len(test)
             match_orig = test
     if match_max == 0:
         return '', -1
-    other_list = [name for name in list_names if match_seq in name]
+    other_list = [name for name in list_names if match_seq in name and
+                  (1.0*match_max)/len(name) == match_ratio]
     if len(other_list) > 1:
         return '', -1
     return match_seq, list_names.index(match_orig)
@@ -98,6 +134,16 @@ def __find_max_overlap_in_list(name, list_names):
 # match the remaining ones using the maximum overlap. Returns the name
 # match for each list, and the index correspondences.
 def match_second_degree(name_list1, name_list2):
+    '''
+    More subtle matching with first direct matching and then secondary
+    overlap matching between list of list of potential names
+    :param name_list1:
+    :param name_list2:
+    :return init_match1:
+    :return ind_match1: Index of corresponding match in name_list2
+    :return init_match2: Matching string in list2
+    :return ind_match2: Index of corresponding match in name_list1
+    '''
     if name_list1 is None or name_list2 is None:
         return None, None, None, None
     init_match1, init_match2, ind_match1, ind_match2 = match_first_degree(
@@ -130,6 +176,15 @@ def match_second_degree(name_list1, name_list2):
 # From a list of list of names and a list of list of files that are
 # associated, find the name correspondance and therefore the files associations
 def join_subject_id_and_filename_list(name_list, list_files):
+    '''
+    From the list of list of names and the list of list of files
+    corresponding to each constraint find the association between a single
+    name id and the different file lists
+    :param name_list: list of list of names
+    :param list_files: list of list of files (one list per constraint)
+    :return list_combined: List per subject of name and list of files given
+    by the constraints
+    '''
     ind_max = np.argmax([len(names) for names in name_list])
     name_max = name_list[ind_max]
     name_tot = []
@@ -155,6 +210,11 @@ def join_subject_id_and_filename_list(name_list, list_files):
 
 
 def remove_duplicated_names(name_list):
+    '''
+    From a list of list of names remove the items that are duplicated
+    :param name_list: list of list of names to investigate
+    :return duplicates_removed: list of list of names freed of duplicates
+    '''
     flattened_list = [item for sublist in name_list for item in sublist]
     list_duplicated = [item for item in flattened_list
                        if flattened_list.count(item) > 1]
@@ -166,6 +226,14 @@ def remove_duplicated_names(name_list):
 
 
 def write_matched_filenames_to_csv(list_constraints, csv_file):
+    '''
+    Combine all elements of file searching until finally writing the names
+    :param list_constraints: list of constraints (defined by list of paths to
+    search, list of elements the filename should contain and of those that
+    are forbidden
+    :param csv_file: file on which to write the final list of files.
+    :return:
+    '''
     name_tot = []
     list_tot = []
     if list_constraints is None or list_constraints == []:
