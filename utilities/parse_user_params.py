@@ -402,6 +402,12 @@ def build_parser(parents, defaults):
         help="Minimum number of different labels present in a patch",
         default=2
     )
+    parser.add_argument(
+        "--max_checkpoints",
+        help="Maximum number of model checkpoints that will be saved",
+        type=int,
+        default=10000
+    )
 
     # will re-write defaults with config files.
     if defaults:
