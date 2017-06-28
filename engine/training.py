@@ -16,7 +16,7 @@ from layer.loss import LossFunction
 from utilities import misc_common as util
 from utilities.input_placeholders import ImagePatch
 from utilities.training_output import QuantitiesToMonitor
-import matplotlib.pyplot as plt
+from utilities.autoencoder_visualisations import ReconsAE
 
 np.random.seed(seed=int(time.time()))
 
@@ -116,7 +116,13 @@ def run(net_class, param, volume_loader, device_str):
                 # TODO compute miss for dfferent target types
                 grads = train_step.compute_gradients(loss)
                 tower_losses.append(loss)
-                [tower_additional, tower_additional_names] = QuantitiesToMonitor(predictions, labels, param)
+                # Get the list of quantities to monitor during training
+                if hasattr(net, 'quantities_to_monitor'):
+                    [tower_additional, tower_additional_names] = QuantitiesToMonitor(predictions,
+                                                                                     labels,
+                                                                                     net.quantities_to_monitor)
+                else:
+                    [tower_additional, tower_additional_names] = QuantitiesToMonitor(predictions, labels, {})
                 tower_grads.append(grads)
                 # note: only use batch stats from one GPU for batch_norm
                 if i == 0:
@@ -188,50 +194,7 @@ def run(net_class, param, volume_loader, device_str):
                 print(output_string.format(*format_string))
                 if (current_iter % 20) == 0:
                     writer.add_summary(sess.run(write_summary_op), current_iter)
-                    # Plot reconstructions for the basic autoencoder
-                    f_recons = plt.figure(1)
-                    f_recons.suptitle('Reconstructions: originals, reconstructions')
-                    for p in range(0,4):
-                        plt.subplot(4, 2, 2*p+1)
-                        temp1 = sess.run(predictions[0])
-                        temp1 = temp1[p,:,12,:,0]
-                        temp1.reshape(24, 24)
-                        plt.imshow(temp1, cmap='gray')
-                        plt.subplot(4, 2, 2*p+2)
-                        temp2 = sess.run(predictions[1])
-                        temp2 = temp2[p, :, 12, :, 0]
-                        temp2.reshape(24, 24)
-                        plt.imshow(temp2, cmap='gray')
-                    plt.pause(0.0001)
-
-
-                    # # Plot reconstructions for the basic variational autoencoder
-                    # f_recons = plt.figure(1)
-                    # f_recons.suptitle('Reconstructions: originals, predicted means, predicted variances')
-                    # for p in range(0, 4):
-                    #     plt.subplot(4, 3, 3 * p + 1)
-                    #     plt.xticks([])
-                    #     plt.yticks([])
-                    #     temp1 = sess.run(predictions[4])
-                    #     temp1 = temp1[p, :, 12, :, 0]
-                    #     temp1.reshape(24, 24)
-                    #     plt.imshow(temp1, cmap='gray')
-                    #     plt.subplot(4, 3, 3 * p + 2)
-                    #     plt.xticks([])
-                    #     plt.yticks([])
-                    #     temp2 = sess.run(predictions[2])
-                    #     temp2 = temp2[p, :, 12, :, 0]
-                    #     temp2.reshape(24, 24)
-                    #     plt.imshow(temp2, cmap='gray')
-                    #     plt.subplot(4, 3, 3 * p + 3)
-                    #     plt.xticks([])
-                    #     plt.yticks([])
-                    #     temp3 = sess.run(predictions[5])
-                    #     temp3 = temp3[p, :, 12, :, 0]
-                    #     temp3.reshape(24, 24)
-                    #     plt.imshow(temp3, cmap='gray')
-                    # plt.pause(0.0001)
-
+                    ReconsAE(predictions, sess)
                 if (current_iter % param.save_every_n) == 0 and i > 0:
                     saver.save(sess, ckpt_name, global_step=current_iter)
                     print('Iter {} model saved at {}'.format(

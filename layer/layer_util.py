@@ -23,11 +23,11 @@ def infer_spatial_rank(input_tensor):
 
 def infer_dims(input_tensor):
     """
-    e.g. given an input tensor [Batch, X, Y, Z, Feature] the dimensionality is X*Y*Z*Feature
+    I.e., in 3D, given an input tensor [Batch size, X, Y, Z, Features], return [[X,Y,Z,Features], XxYxZxFeatures]
     """
-    dimensions = input_tensor.get_shape()[1::].as_list()
-    dimensionality = np.prod(dimensions)
-    return [dimensions, dimensionality]
+    dims = input_tensor.get_shape()[1::].as_list()
+    dims_prod = np.prod(dims)
+    return [dims, dims_prod]
 
 
 def trivial_kernel(kernel_shape):
