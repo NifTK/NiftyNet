@@ -12,3 +12,4 @@ example_volumes*
 .coverage*
 testing_data*
 examples/*/downloaded
+data/*
