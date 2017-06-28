@@ -13,6 +13,8 @@ from engine.spatial_location_check import SpatialLocationCheckLayer
 from layer.loss import LossFunction
 from utilities import misc_common as util
 from utilities.input_placeholders import ImagePatch
+import engine.logging
+
 np.random.seed(seed=int(time.time()))
 def run(net_class, param, volume_loader, device_str):
     # construct graph
@@ -119,8 +121,10 @@ def run(net_class, param, volume_loader, device_str):
         apply_grad_op = train_step.apply_gradients(ave_grads)
         # summary for visualisations
         # tracking current batch loss
-        summaries = [tf.summary.scalar("total-miss", ave_miss),
-                     tf.summary.scalar("total-loss", ave_loss)]
+        engine.logging.add_to_collections([engine.logging.CONSOLE,engine.logging.LOG],
+                                           tf.summary.scalar("total-miss", ave_miss))
+        engine.logging.add_to_collections([engine.logging.CONSOLE,engine.logging.LOG],
+                                           tf.summary.scalar("total-loss", ave_loss))
         # Track the moving averages of all trainable variables.
         variable_averages = tf.train.ExponentialMovingAverage(0.9)
         var_averages_op = variable_averages.apply(tf.trainable_variables())
@@ -131,7 +135,8 @@ def run(net_class, param, volume_loader, device_str):
         train_op = tf.group(apply_grad_op,
                             var_averages_op,
                             batchnorm_updates_op)
-        write_summary_op = tf.summary.merge(summaries)
+        logged_summaries = list(set([s for c in [engine.logging.LOG,engine.logging.CONSOLE] for s in tf.get_collection(c)]))
+        write_summary_op = tf.summary.merge(logged_summaries)
         # saver
         saver = tf.train.Saver(max_to_keep=20)
         tf.Graph.finalize(graph)
@@ -164,16 +169,19 @@ def run(net_class, param, volume_loader, device_str):
                 local_time = time.time()
                 if coord.should_stop():
                     break
-                _, loss_value, miss_value = sess.run([train_op,
-                                                      ave_loss,
-                                                      ave_miss])
                 current_iter = i + param.starting_iter
-                iter_time = time.time() - local_time
-                print('iter {:d}, loss={:.8f},'
-                      'error_rate={:.8f} ({:.3f}s)'.format(
-                    current_iter, loss_value, miss_value, iter_time))
+                ops_to_run=[train_op]
+                console_summaries=tf.get_collection(engine.logging.CONSOLE)
+                ops_to_run += console_summaries
                 if (current_iter % 20) == 0:
-                    writer.add_summary(sess.run(write_summary_op), current_iter)
+                    ops_to_run += [write_summary_op]
+                values = sess.run(ops_to_run)[1:]
+                if (current_iter % 20) == 0:
+                    writer.add_summary(values.pop(), current_iter)
+                summary_string = ''.join([engine.logging.console_summary_string(v) for v in values])
+                iter_time = time.time() - local_time
+                print(('iter {:d}{}, ({:.3f}s)').format(
+                    current_iter, summary_string, iter_time))
                 if (current_iter % param.save_every_n) == 0 and i > 0:
                     saver.save(sess, ckpt_name, global_step=current_iter)
                     print('Iter {} model saved at {}'.format(
