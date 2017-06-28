@@ -72,7 +72,7 @@ max_iter = 10
 
 # ** inference only ** system parameters
 border = 5
-pred_iter = 10
+inference_iter = 10
 save_seg_dir = ./output/highres3dnet
 
 output_interp_order = 0

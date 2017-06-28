@@ -58,6 +58,10 @@ def main():
     param, csv_dict = parse_user_params.run()
     if util.has_bad_inputs(param):
         return -1
+    else:
+        util.print_save_input_parameters(param, txt_file=os.path.join(param.model_dir,
+                                                                      'settings_' + param.action + '.txt'))
+
     if not (param.cuda_devices == '""'):
         os.environ["CUDA_VISIBLE_DEVICES"] = param.cuda_devices
         print("set CUDA_VISIBLE_DEVICES env to {}".format(param.cuda_devices))

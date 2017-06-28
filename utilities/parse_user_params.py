@@ -356,7 +356,7 @@ def build_parser(parents, defaults):
         default=5
     )
     parser.add_argument(
-        "--infer_iter",
+        "--inference_iter",
         metavar='',
         help="[Inference only] Use the checkpoint at this iteration for "
              "inference",

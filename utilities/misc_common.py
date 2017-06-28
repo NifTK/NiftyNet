@@ -8,6 +8,7 @@ from skimage import measure
 import numpy as np
 import tensorflow as tf
 from scipy import ndimage
+import datetime
 
 LABEL_STRINGS = ['Label', 'LABEL', 'label']
 
@@ -38,19 +39,33 @@ def list_files(img_dir, ext='.nii.gz'):
 
 
 def has_bad_inputs(args):
-    print('Input params:')
+    is_bad = False
     for arg in vars(args):
         user_value = getattr(args, arg)
-        print("-- {}: {}".format(arg, getattr(args, arg)))
         if user_value is None:
             print('{} not set in the config file'.format(arg))
-            return True
+            is_bad = True
     ## at each iteration [batch_size] samples will be read from queue
     # if args.queue_length < args.batch_size:
     #    print('queue_length ({}) should be >= batch_size ({}).'.format(
     #        args.queue_length, args.batch_size))
     #    return True
-    return False
+    return is_bad
+
+
+def print_save_input_parameters(args, txt_file=None):
+    output_config = ['Input params at ' + str(datetime.datetime.now())[:-6]]
+
+    for arg in vars(args):
+        out_str = "-- {}: {}".format(arg, getattr(args, arg))
+        print(out_str)
+        output_config.append(out_str)
+
+    if txt_file:
+        with open(txt_file, 'w') as f:
+            [f.write(s + '\n') for s in output_config]
+
+
 
 
 class MorphologyOps(object):
@@ -161,9 +176,10 @@ def _damerau_levenshtein_distance(s1, s2):
 
     return d[string_1_length - 1, string_2_length - 1]
 
+
 # Print iterations progress
 def printProgressBar(iteration, total,
-                     prefix='', suffix='', decimals=1, length=10, fill = '='):
+                     prefix='', suffix='', decimals=1, length=10, fill='='):
     """
     Call in a loop to create terminal progress bar
     @params:
@@ -179,7 +195,7 @@ def printProgressBar(iteration, total,
         100 * (iteration / float(total)))
     filledLength = int(length * iteration // total)
     bar = fill * filledLength + '-' * (length - filledLength)
-    print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end = '\r')
+    print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end='\r')
     # Print New Line on Complete
     if iteration == total:
         print()
