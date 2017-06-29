@@ -29,7 +29,7 @@ num_classes = 2
 volume_padding_size = 21
 
 #histogram normalisation
-histogram_ref_file = ./example_volumes/monomodal_parcellation/standardisation_models.txt
+histogram_ref_file = ./demos/PROMISE12/standardisation_models.txt
 multimod_mask_type = and
 norm_type = percentile
 cutoff_min = 0.01
@@ -58,7 +58,7 @@ min_percentage = -10.0
 max_percentage = 10.0
 
 # ** training only ** gradient descent and loss parameters
-lr = 0.0001
+lr = 0.00002
 decay = 1e-7
 loss_type = Dice
 reg_type = L2
