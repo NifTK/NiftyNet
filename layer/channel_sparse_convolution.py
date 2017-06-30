@@ -11,9 +11,19 @@ from . import layer_util
 import numpy as np
 
 class ChannelSparseDeconvLayer(layer.deconvolution.DeconvLayer):
+  """ Channel sparse convolutions perform convolulations over
+      a subset of image channels and generate a subset of output
+      channels. This enables spatial dropout without wasted computations
+  """
   def __init__(self,*args,**kwargs):
     super(ChannelSparseDeconvLayer,self).__init__(*args,**kwargs)
   def layer_op(self,input_tensor,input_mask,output_mask):
+    """
+    Parameters:
+    input_tensor: image to convolve with kernel
+    input_mask: 1-Tensor with a binary mask of input channels to use
+    output_mask: 1-Tensor with a binary mask of output channels to generate
+    """
     input_shape = input_tensor.get_shape().as_list()
     n_full_input_chns = input_mask.get_shape().as_list()[0]
     n_sparse_output_chns = tf.reduce_sum(tf.cast(output_mask, tf.float32))
@@ -70,10 +80,19 @@ class ChannelSparseDeconvLayer(layer.deconvolution.DeconvLayer):
     return output_tensor
 
 class ChannelSparseConvLayer(layer.convolution.ConvLayer):
+  """ Channel sparse convolutions perform convolulations over
+      a subset of image channels and generate a subset of output
+      channels. This enables spatial dropout without wasted computations
+  """
   def __init__(self,*args,**kwargs):
     super(ChannelSparseConvLayer,self).__init__(*args,**kwargs)
   def layer_op(self,input_tensor,input_mask,output_mask):
-    sparse_input_shape = input_tensor.get_shape().as_list()
+    """
+    Parameters:
+    input_tensor: image to convolve with kernel
+    input_mask: 1-Tensor with a binary mask of input channels to use
+    output_mask: 1-Tensor with a binary mask of output channels to generate
+    """    sparse_input_shape = input_tensor.get_shape().as_list()
     n_full_input_chns = input_mask.get_shape().as_list()[0]
     spatial_rank = layer_util.infer_spatial_rank(input_tensor)
     # initialize conv kernels/strides and then apply
@@ -109,9 +128,21 @@ class ChannelSparseConvLayer(layer.convolution.ConvLayer):
     return output_tensor
 
 class ChannelSparseBNLayer(layer.bn.BNLayer):
+  """ Channel sparse convolutions perform convolulations over
+      a subset of image channels and generate a subset of output
+      channels. This enables spatial dropout without wasted computations
+  """
   def __init__(self,*args,**kwargs):
     super(ChannelSparseBNLayer,self).__init__(*args,**kwargs)  
   def layer_op(self, inputs, is_training, mask, use_local_stats=False):
+    """
+    Parameters:
+    inputs:      image to normalize. This typically represents a sparse subset of channels
+                 from a sparse convolution.
+    is_training: boolean that is True during training. When True, the layer uses batch
+                 statistics for normalization and records a moving average of means and variances. When False, the layer uses previously computed moving averages for normalization
+    mask:        1-Tensor with a binary mask identifying the sparse channels represented in inputs
+    """
     input_shape = inputs.get_shape()
     mask_shape = mask.get_shape()
 
