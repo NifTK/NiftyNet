@@ -208,6 +208,21 @@ def build_parser(parents, defaults):
         default=3
     )
     parser.add_argument(
+        "--random_flip",
+        help="Indicates whether 'flipping' should be performed "
+             "as a data-augmentation step. Please set --flip_axes"
+             " as well for correct functioning.",
+        default='False'
+    )
+    parser.add_argument(
+        "--flip_axes",
+        help="The axes which can be flipped to augment the data. Supply as "
+             "comma-separated values within single quotes, e.g. '0,1'. Note "
+             "that these are 0-indexed, so choose some combination of 0, 1, 2.",
+        type=str,
+        default=''
+    )
+    parser.add_argument(
         "--spatial_scaling",
         help="Indicates if the spatial scaling must be performed (zooming"
              " as an augmentation step)",
@@ -366,7 +381,7 @@ def build_parser(parents, defaults):
     parser.add_argument(
         "--save_seg_dir",
         metavar='',
-        help="[Inference only] Prediction directory name",# without '/'
+        help="[Inference only] Prediction directory name",  # without '/'
         default=os.path.join(os.path.dirname(__file__), '..', 'model_ckpts', 'inferences')
     )
     parser.add_argument(
@@ -470,6 +485,9 @@ def correct_args_types(args):
     args.rotation = True if args.rotation == "True" else False
     args.spatial_scaling = True if args.spatial_scaling == "True" else False
     args.output_prob = True if args.output_prob == "True" else False
+    args.random_flip = True if args.random_flip == "True" else False
+    args.flip_axes = ([int(x.strip()) for x in args.flip_axes.split(',')
+                       if x.strip() in ['0', '1', '2']])
     return args
 
 
