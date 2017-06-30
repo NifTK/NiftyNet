@@ -89,6 +89,12 @@ def build_parser(parents, defaults):
         metavar='',
         help="Directory to save/load intermediate training models and logs")
     parser.add_argument(
+        "--application_type",
+        help="Choose the type of problem you are solving",
+        choices=['segmentation','autoencoder','other'],
+        metavar='')
+
+    parser.add_argument(
         "--net_name",
         help="Choose a net from ./network/ ",
         metavar='')

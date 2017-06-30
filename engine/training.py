@@ -95,7 +95,7 @@ def run(net_class, param, volume_loader, device_str):
             shuffle=True)
         # optimizer
         train_step = tf.train.AdamOptimizer(learning_rate=param.lr)
-        tower_misses, tower_losses, tower_grads = [], [], []
+        tower_grads = []
         train_pairs = train_batch_runner.pop_batch_op
         images, labels = train_pairs['images'], train_pairs['labels']
         if "weight_maps" in train_pairs:
@@ -118,11 +118,17 @@ def run(net_class, param, volume_loader, device_str):
                                                for reg_loss in reg_losses])
                     loss = loss + reg_loss
                 tf.summary.scalar('loss',loss,[engine.logging.CONSOLE,engine.logging.LOG])
-                # TODO compute miss for dfferent target types
-                miss = tf.reduce_mean(tf.cast(
-                    tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),
-                    dtype=tf.float32))
-                tf.summary.scalar('miss',miss,[engine.logging.CONSOLE,engine.logging.LOG])
+
+                ##################
+                # This should probably be refactored into an application class
+                if param.application_type == 'segmentation':
+                  # TODO compute miss for dfferent target types
+                  miss = tf.reduce_mean(tf.cast(
+                          tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),
+                          dtype=tf.float32))
+                  tf.summary.scalar('miss',miss,[engine.logging.CONSOLE,engine.logging.LOG])
+                ################## 
+
                 # record and clear summaries
                 console_outputs=graph.get_collection_ref(engine.logging.CONSOLE)
                 tower_console_outputs.append(console_outputs[:])
@@ -135,6 +141,7 @@ def run(net_class, param, volume_loader, device_str):
                     bn_updates = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         ave_grads = util.average_grads(tower_grads)
         apply_grad_op = train_step.apply_gradients(ave_grads)
+
         # Add averaged summaries
         console_outputs=graph.get_collection_ref(engine.logging.CONSOLE)
         console_outputs+=console_outputs_cache

@@ -13,7 +13,7 @@ LOG=tf.GraphKeys.SUMMARIES
 def add_to_collections(keys,value):
   for k in keys:
     tf.add_to_collection(k,value)
-	
+
 def console_summary_string(byte_string):
   try:
     e=summary_pb2.Summary()
