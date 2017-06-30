@@ -37,8 +37,8 @@ class VAE_FullyConnected(TrainableLayer):
         self.acti_func_decoder = ['relu', 'relu']
         self.acti_func_output_means = 'sigmoid'
         self.acti_func_output_logvariances = 'identity'
-        self.logvariance_upper_bound = 80 # For x as small as 100, exp(x) = 2.6 x 10^43, so must bound this above.
-        self.logvariance_lower_bound = -80 # As variance --> 0, logvariance --> -inf, so must bound this below.
+        self.logvariance_upper_bound = 80
+        self.logvariance_lower_bound = -80
 
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}

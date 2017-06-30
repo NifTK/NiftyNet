@@ -52,6 +52,9 @@ class NetFactory(object):
         elif name == "convolutional_autoencoder":
             from network.convolutional_autoencoder import AE_convolutional
             return AE_convolutional
+        elif name == "convolutional_variational_autoencoder":
+            from network.convolutional_variational_autoencoder import VAE_convolutional
+            return VAE_convolutional
         else:
             print("network: \"{}\" not implemented".format(name))
             raise NotImplementedError

@@ -16,7 +16,7 @@ from layer.loss import LossFunction
 from utilities import misc_common as util
 from utilities.input_placeholders import ImagePatch
 from utilities.training_output import QuantitiesToMonitor
-from utilities.autoencoder_visualisations import ReconsAE
+from utilities.autoencoder_visualisations import ReconsVAE
 
 np.random.seed(seed=int(time.time()))
 
@@ -194,7 +194,8 @@ def run(net_class, param, volume_loader, device_str):
                 print(output_string.format(*format_string))
                 if (current_iter % 20) == 0:
                     writer.add_summary(sess.run(write_summary_op), current_iter)
-                    ReconsAE(predictions, sess)
+                    # ReconsAE(predictions, sess)
+                    ReconsVAE(predictions, sess)
                 if (current_iter % param.save_every_n) == 0 and i > 0:
                     saver.save(sess, ckpt_name, global_step=current_iter)
                     print('Iter {} model saved at {}'.format(

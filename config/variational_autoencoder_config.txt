@@ -76,5 +76,3 @@ save_seg_dir = ./output/toy
 
 output_interp_order = 0
 output_prob = False
-
-monitor_miss_rate=False

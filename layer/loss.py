@@ -193,13 +193,13 @@ def variational_lower_bound(predictions, labels):
     :return:
     """
 
-    [posterior_means, posterior_logvariances, data_means,
-     data_logvariances, originals, data_variances, posterior_variances] = predictions
+    [posterior_means, posterior_logvariances, data_means, data_logvariances, originals,
+     data_variances, posterior_variances] = predictions
 
     squared_differences = tf.square(data_means - originals)
     log_likelihood = -0.5 * (data_logvariances + np.log(2 * np.pi) + tf.exp(-data_logvariances) * squared_differences)
-    KL_divergence = 0.5 * tf.reduce_mean(1 + posterior_logvariances - tf.square(posterior_means) - tf.exp(posterior_logvariances), axis=[1])
-    error_to_minimise = tf.reduce_mean(tf.reduce_sum(-log_likelihood, axis=[1,2,3,4]) - KL_divergence)
+    KL_divergence = -0.5 * tf.reduce_mean(1 + posterior_logvariances - tf.square(posterior_means) - tf.exp(posterior_logvariances), axis=[1])
+    error_to_minimise = tf.reduce_mean(tf.reduce_sum(-log_likelihood, axis=[1,2,3,4]) + KL_divergence)
 
     return error_to_minimise
 
@@ -228,7 +228,7 @@ def KL_divergence_Gaussian(means, logvariances):
     :return: sum(differences squared) / 2 - Note, no square root
     """
     # KL_divergence = 0.5 * tf.reduce_mean(1 + logvariances - tf.square(means) - tf.exp(logvariances), axis=[1])
-    KL_divergence = 0.5 * tf.reduce_sum(1 + logvariances - tf.square(means) - tf.exp(logvariances), axis=[1])
+    KL_divergence = -0.5 * tf.reduce_sum(1 + logvariances - tf.square(means) - tf.exp(logvariances), axis=[1])
     KL_divergence = tf.reduce_mean(KL_divergence)
     return KL_divergence
 

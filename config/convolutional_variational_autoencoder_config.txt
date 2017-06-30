@@ -10,8 +10,8 @@ filename_not_contains =
 
 [settings]
 cuda_devices = ""
-model_dir = ./models/fully_connected_autoencoder
-net_name = fully_connected_autoencoder
+model_dir = ./models/convolutional_variational_autoencoder
+net_name = convolutional_variational_autoencoder
 activation_function = prelu
 
 # preprocessing threads parameters
@@ -20,7 +20,7 @@ num_threads = 2
 
 # network parameters (controlling memory consumption)
 spatial_rank = 3
-batch_size = 50
+batch_size = 40
 image_size = 24
 label_size = 24
 w_map_size = 24
@@ -61,13 +61,13 @@ min_numb_labels = 2
 min_sampling_ratio = 0.000001
 
 # ** training only ** gradient descent and loss parameters
-lr = 0.01
+lr = 0.001
 decay = 0
-loss_type = SumSqrdDiff
+loss_type = VariationalLowerBound
 reg_type = L2
 starting_iter = 0
 save_every_n = 100
-max_iter = 1000
+max_iter = 10000
 
 # ** inference only ** system parameters
 border = 5
