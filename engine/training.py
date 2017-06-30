@@ -102,6 +102,11 @@ def run(net_class, param, volume_loader, device_str):
             weight_maps = train_pairs['weight_maps']
         else:
             weight_maps = None
+        # Scalar summaries for the console are averaged over GPU runs
+        console_outputs=graph.get_collection_ref(engine.logging.CONSOLE)
+        console_outputs_cache=console_outputs[:]
+        console_outputs.clear()
+        tower_console_outputs=[]
         for i in range(0, max(param.num_gpus, 1)):
             with tf.device("/{}:{}".format(device_str, i)):
                 predictions = net(images, is_training=True)
@@ -112,27 +117,31 @@ def run(net_class, param, volume_loader, device_str):
                     reg_loss = tf.reduce_mean([tf.reduce_mean(reg_loss)
                                                for reg_loss in reg_losses])
                     loss = loss + reg_loss
+                tf.summary.scalar('loss',loss,[engine.logging.CONSOLE,engine.logging.LOG])
                 # TODO compute miss for dfferent target types
                 miss = tf.reduce_mean(tf.cast(
                     tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),
                     dtype=tf.float32))
+                tf.summary.scalar('miss',miss,[engine.logging.CONSOLE,engine.logging.LOG])
+                # record and clear summaries
+                console_outputs=graph.get_collection_ref(engine.logging.CONSOLE)
+                tower_console_outputs.append(console_outputs[:])
+                console_outputs.clear()
+                
                 grads = train_step.compute_gradients(loss)
-                tower_losses.append(loss)
-                tower_misses.append(miss)
                 tower_grads.append(grads)
                 # note: only use batch stats from one GPU for batch_norm
                 if i == 0:
                     bn_updates = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        ave_loss = tf.reduce_mean(tower_losses)
-        ave_miss = tf.reduce_mean(tower_misses)
         ave_grads = util.average_grads(tower_grads)
         apply_grad_op = train_step.apply_gradients(ave_grads)
-        # summary for visualisations
-        # tracking current batch loss
-        engine.logging.add_to_collections([engine.logging.CONSOLE,engine.logging.LOG],
-                                           tf.summary.scalar("total-miss", ave_miss))
-        engine.logging.add_to_collections([engine.logging.CONSOLE,engine.logging.LOG],
-                                           tf.summary.scalar("total-loss", ave_loss))
+        # Add averaged summaries
+        console_outputs=graph.get_collection_ref(engine.logging.CONSOLE)
+        console_outputs+=console_outputs_cache
+        if len(tower_console_outputs)>1:
+          for replicated_output in zip(*tower_console_outputs):
+            avg=tf.reduce_mean([o.op.inputs[1] for o in replicated_output])
+            tf.summary.scalar(replicated_output[0].op.name+'_avg', avg,[engine.logging.CONSOLE,engine.logging.LOG])
         # Track the moving averages of all trainable variables.
         variable_averages = tf.train.ExponentialMovingAverage(0.9)
         var_averages_op = variable_averages.apply(tf.trainable_variables())
