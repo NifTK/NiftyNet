@@ -17,18 +17,29 @@ class ChannelSparseDeconvLayer(layer.deconvolution.DeconvLayer):
   """
   def __init__(self,*args,**kwargs):
     super(ChannelSparseDeconvLayer,self).__init__(*args,**kwargs)
-  def layer_op(self,input_tensor,input_mask,output_mask):
+  def layer_op(self,input_tensor,input_mask=None,output_mask=None):
     """
     Parameters:
     input_tensor: image to convolve with kernel
     input_mask: 1-Tensor with a binary mask of input channels to use
+                 If this is None, all channels are used.
     output_mask: 1-Tensor with a binary mask of output channels to generate
+                 If this is None, all channels are used and the number of output 
+                 channels is set at graph-creation time.
     """
     input_shape = input_tensor.get_shape().as_list()
-    n_full_input_chns = input_mask.get_shape().as_list()[0]
-    n_sparse_output_chns = tf.reduce_sum(tf.cast(output_mask, tf.float32))
+    if input_mask is None:
+      _input_mask=tf.ones([input_shape[-1]])>0
+    else:
+      _input_mask=input_mask
+    if output_mask is None:
+      n_sparse_output_chns = self.n_output_chns
+      _output_mask=tf.ones([self.n_output_chns])>0
+    else:
+      n_sparse_output_chns = tf.reduce_sum(tf.cast(output_mask, tf.float32))
+      _output_mask=output_mask
+    n_full_input_chns = _input_mask.get_shape().as_list()[0]
     spatial_rank = layer_util.infer_spatial_rank(input_tensor)
-
     # initialize conv kernels/strides and then apply
     w_full_size = np.vstack((
         [self.kernel_size] * spatial_rank,
@@ -41,7 +52,7 @@ class ChannelSparseDeconvLayer(layer.deconvolution.DeconvLayer):
         regularizer=self.regularizers['w'])
     sparse_kernel = tf.transpose(tf.boolean_mask(
                        tf.transpose(tf.boolean_mask(
-                         tf.transpose(deconv_kernel,[3,4,2,1,0]),output_mask),[1,0,2,3,4]),input_mask),[4,3,2,1,0])
+                         tf.transpose(deconv_kernel,[3,4,2,1,0]),_output_mask),[1,0,2,3,4]),_input_mask),[4,3,2,1,0])
     if spatial_rank == 2:
         op_ = SUPPORTED_OP['2D']
     elif spatial_rank == 3:
@@ -63,6 +74,12 @@ class ChannelSparseDeconvLayer(layer.deconvolution.DeconvLayer):
                         strides=full_stride.tolist(),
                         padding=self.padding,
                         name='deconv')
+    if output_mask is None:
+      # If all output channels are used, we can specify
+      # the number of output channels which is useful for later layers
+      old_shape=output_tensor.get_shape().as_list()
+      old_shape[-1]=self.n_output_chns
+      output_tensor.set_shape(old_shape)
     if not self.with_bias:
         return output_tensor
 
@@ -72,7 +89,7 @@ class ChannelSparseDeconvLayer(layer.deconvolution.DeconvLayer):
         'b', shape=bias_full_size,
         initializer=self.initializers['b'],
         regularizer=self.regularizers['b'])
-    sparse_bias = tf.boolean_mask(bias_term,output_mask)
+    sparse_bias = tf.boolean_mask(bias_term,_output_mask)
 
     output_tensor = tf.nn.bias_add(output_tensor,
                                    sparse_bias,
@@ -91,9 +108,21 @@ class ChannelSparseConvLayer(layer.convolution.ConvLayer):
     Parameters:
     input_tensor: image to convolve with kernel
     input_mask: 1-Tensor with a binary mask of input channels to use
+                 If this is None, all channels are used.
     output_mask: 1-Tensor with a binary mask of output channels to generate
-    """    sparse_input_shape = input_tensor.get_shape().as_list()
-    n_full_input_chns = input_mask.get_shape().as_list()[0]
+                 If this is None, all channels are used and the number of output 
+                 channels is set at graph-creation time.
+    """    
+    sparse_input_shape = input_tensor.get_shape().as_list()
+    if input_mask is None:
+      _input_mask=tf.ones([sparse_input_shape[-1]])>0
+    else:
+      _input_mask=input_mask
+    if output_mask is None:
+      _output_mask=tf.ones([self.n_output_chns])>0
+    else:
+      _output_mask=output_mask
+    n_full_input_chns = _input_mask.get_shape().as_list()[0]
     spatial_rank = layer_util.infer_spatial_rank(input_tensor)
     # initialize conv kernels/strides and then apply
     w_full_size = np.vstack((
@@ -108,12 +137,18 @@ class ChannelSparseConvLayer(layer.convolution.ConvLayer):
     sparse_kernel = tf.transpose(tf.boolean_mask(
                        tf.transpose(tf.boolean_mask(
                          tf.transpose(conv_kernel,[4,3,2,1,0]),
-                         output_mask),[1,0,2,3,4]),input_mask),[4,3,2,0,1])
+                         _output_mask),[1,0,2,3,4]),_input_mask),[4,3,2,0,1])
     output_tensor = tf.nn.convolution(input=input_tensor,
                                       filter=sparse_kernel,
                                       strides=full_stride.tolist(),
                                       padding=self.padding,
                                       name='conv')
+    if output_mask is None:
+      # If all output channels are used, we can specify
+      # the number of output channels which is useful for later layers
+      old_shape=output_tensor.get_shape().as_list()
+      old_shape[-1]=self.n_output_chns
+      output_tensor.set_shape(old_shape)
     if not self.with_bias:
         return output_tensor
 
@@ -142,10 +177,10 @@ class ChannelSparseBNLayer(layer.bn.BNLayer):
     is_training: boolean that is True during training. When True, the layer uses batch
                  statistics for normalization and records a moving average of means and variances. When False, the layer uses previously computed moving averages for normalization
     mask:        1-Tensor with a binary mask identifying the sparse channels represented in inputs
+
     """
     input_shape = inputs.get_shape()
     mask_shape = mask.get_shape()
-
     # operates on all dims except the last dim
     params_shape = mask_shape[-1:]
     axes = list(range(input_shape.ndims - 1))
