@@ -137,7 +137,7 @@ def run(net_class, param, volume_loader, device_str):
         # tracking current batch loss
         summaries = [tf.summary.scalar("total-loss", ave_loss)]
         for p in range(0, len(tower_additional)):
-            summaries += [tf.summary.scalar(tower_additional_names[p], tower_additional[p])]
+            summaries += [tf.summary.scalar(tower_additional_names[p].replace(" ", "_"), tower_additional[p])]
         # Track the moving averages of all trainable variables.
         variable_averages = tf.train.ExponentialMovingAverage(0.9)
         var_averages_op = variable_averages.apply(tf.trainable_variables())

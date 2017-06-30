@@ -23,7 +23,7 @@ class VAE_convolutional(TrainableLayer):
         2DO: make the use of FC/convolutions optional, so a fully connected AE, and a fully convolutional
         AE, are both possible.
         2DO: make the pooling sizes vectors, so we can pool in x & y but not z, say.
-        2DO: specify kernel sizes as a vector, so we can have greater reach along certain axes.
+        2DO: make the kernel sizes vectors, so we can have greater reach along certain axes.
         2DO: add a denoising option
         """
 
@@ -55,9 +55,9 @@ class VAE_convolutional(TrainableLayer):
 
         self.number_of_latent_variables = 256
         self.number_of_samples_from_posterior_per_example = 1
-        # Exponentiating the logvariance yields the variance, so keep them within reasonable bounds...
-        self.logvariance_upper_bound = 80
-        self.logvariance_lower_bound = -80
+        # Exponentiating the logvariance yields the variance, so keep it within reasonable bounds:
+        self.logvariance_upper_bound = 40
+        self.logvariance_lower_bound = -40
 
         # Specify the encoder here
         if conv_features == None:
@@ -118,7 +118,6 @@ class VAE_convolutional(TrainableLayer):
         else:
             self.acti_func_trans_conv_logvariances = acti_func_trans_conv_logvariances
 
-
         # Choose how to upsample the feature maps in the convolutional decoding layers. Options are:
         # 1. 'DECONV' (recommended) i.e. kernel shape is HxWxDxInxOut,
         # 2. 'CHANNELWISE_DECONV' i.e., kernel shape is HxWxDx1x1,
@@ -141,14 +140,16 @@ class VAE_convolutional(TrainableLayer):
         [data_dims, data_dims_product] = infer_dims(images)
         # Calculate the dimensionality of the data as it emerges from the convolutional part of the encoder
         # NB: we assume for now that we always follow a CNN encoder with 2^N downsampling
-        data_downsampled_dimensions = data_dims
+        data_downsampled_dimensions = data_dims.copy()
         for p in range(0,len(data_downsampled_dimensions)-1):
             data_downsampled_dimensions[p] /= 2**len(self.conv_features)
             data_downsampled_dimensions[p] = int(data_downsampled_dimensions[p])
         data_downsampled_dimensions[-1] = self.conv_features[-1]
         data_downsampled_dimensionality = int(data_dims_product / (2**(3*len(self.conv_features))))
 
-        # number_of_input_channels = data_dims[-1]
+        number_of_input_channels = data_dims[-1]
+        assert (self.trans_conv_features[-1] == number_of_input_channels),\
+            "The number of output channels must match the number of input channels"
 
         # Define the encoding convolution layers
         encoders_cnn = []
