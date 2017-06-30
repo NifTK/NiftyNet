@@ -87,7 +87,7 @@ class RegionProperties(object):
     def sav(self):
         Sn, Snb, Sv, Svb = self.surface()
         Vn, Vnb, Vv, Vvb = self.volume()
-        return Sn / Vn, Snb / Vnb, Sv / Vv, Svb / Vvb
+        return Sn*1.0 / Vn, Snb*1.0 / Vnb, Sv*1.0 / Vv, Svb*1.0 / Vvb
 
     def compactness(self):
         Sn, Snb, Sv, Svb = self.surface()
