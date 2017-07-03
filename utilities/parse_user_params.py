@@ -98,6 +98,7 @@ def build_parser(parents, defaults):
         "--application_type",
         help="Choose the type of problem you are solving",
         choices=['segmentation','autoencoder','other'],
+        default='segmentation',
         metavar='')
 
     parser.add_argument(
