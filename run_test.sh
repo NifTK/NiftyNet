@@ -18,6 +18,7 @@ python -m testing.deepmedic_test
 python -m testing.dilatedcontext_test
 python -m testing.downsample_test
 python -m testing.elementwise_test
+python -m testing.flip_test
 python -m testing.grid_sampler_test
 python -m testing.highres3dnet_test
 python -m testing.highresblock_test
