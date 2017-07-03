@@ -25,7 +25,7 @@ Milletari, F., Navab, N., & Ahmadi, S. A. (2016). [V-net: Fully convolutional ne
 ## ScaleNet
 Implementation of
 
-Fidon, L., Li, W., Garcia-Peraza-Herrera, L.C., Ekanayake, J., Kitchen, N., Ourselin, S., Vercauteren, T. (2017). Scalable convolutional networks for brain tumour segmentation. In MICCAI 2017
+Fidon, L., Li, W., Garcia-Peraza-Herrera, L.C., Ekanayake, J., Kitchen, N., Ourselin, S., Vercauteren, T. (2017). [Scalable convolutional networks for brain tumour segmentation](https://arxiv.org/abs/1706.08124). In MICCAI 2017
 ##### Constraints
 * More than one modality should be used  
 
