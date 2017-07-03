@@ -22,7 +22,7 @@ class KeywordsMatching(object):
             if name == "path_to_search":
                 value = value.split(',')
                 for path_i in value:
-                    path_i = path_i.strip()
+                    path_i = os.path.abspath(path_i.strip())
                     if os.path.exists(path_i):
                         path.append(path_i)
                     else:

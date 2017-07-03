@@ -19,6 +19,7 @@ filename_contains = T1
 filename_not_contains =
 
 [settings]
+application_type = segmentation
 
 # default parameters
 threshold = 0.5

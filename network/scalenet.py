@@ -6,11 +6,12 @@ from six.moves import range
 
 from layer.base_layer import TrainableLayer
 from layer.convolution import ConvolutionalLayer
+from network.base_net import BaseNet
 from network.highres3dnet import HighRes3DNet, HighResBlock
 from utilities.misc_common import look_up_operations
 
 
-class ScaleNet(TrainableLayer):
+class ScaleNet(BaseNet):
     """
     implementation of ScaleNet:
         Fidon et al., "Scalable multimodal convolutional
@@ -25,16 +26,17 @@ class ScaleNet(TrainableLayer):
                  b_regularizer=None,
                  acti_func='prelu',
                  name='ScaleNet'):
-        super(ScaleNet, self).__init__(name=name)
+
+        super(ScaleNet, self).__init__(
+            num_classes=num_classes,
+            w_initializer=w_initializer,
+            w_regularizer=w_regularizer,
+            b_initializer=b_initializer,
+            b_regularizer=b_regularizer,
+            acti_func=acti_func,
+            name=name)
 
         self.n_features = 16
-        self.num_classes = num_classes
-        self.acti_func = acti_func
-
-        self.initializers = {'w': w_initializer, 'b': b_initializer}
-        self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
-
-        print('using {}'.format(name))
 
     def layer_op(self, images, is_training, layer_id=-1):
         n_modality = images.get_shape().as_list()[-1]

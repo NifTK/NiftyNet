@@ -11,3 +11,8 @@ emerald_*
 example_volumes*
 .coverage*
 testing_data*
+*.nii.gz
+*.nii
+*.tar.gz
+*.csv
+data/brain_parcellation/OASIS

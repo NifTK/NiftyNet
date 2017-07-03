@@ -142,7 +142,9 @@ class Subject(object):
         and update the corresponding field if not done yet
         """
         img_object = self.__find_first_nibabel_object()
-        return img_object.header.get_zooms()
+        pixdim = img_object.header.get_zooms()
+        pixdim = pixdim[:3] # TODO: assuming 3 elements
+        return pixdim
 
     def __find_first_nibabel_object(self):
         """
