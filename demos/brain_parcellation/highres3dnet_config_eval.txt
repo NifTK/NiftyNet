@@ -4,6 +4,7 @@ filename_contains = MR
 filename_not_contains = LABEL
 
 [settings]
+application_type = segmentation
 cuda_devices = ""
 model_dir = ./
 net_name = highres3dnet

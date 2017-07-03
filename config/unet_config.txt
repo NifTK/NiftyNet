@@ -9,6 +9,7 @@ filename_contains = Label
 filename_not_contains =
 
 [settings]
+application_type = segmentation
 cuda_devices = ""
 model_dir = ./models/model_unet
 net_name = unet
