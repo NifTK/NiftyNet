@@ -107,7 +107,7 @@ def run(net_class, param, volume_loader, device_str):
         # Scalar summaries for the console are averaged over GPU runs
         console_outputs=graph.get_collection_ref(engine.logging.CONSOLE)
         console_outputs_cache=console_outputs[:]
-        console_outputs.clear()
+        del console_outputs[:]
         tower_console_outputs=[]
         
         for i in range(0, max(param.num_gpus, 1)):
@@ -140,7 +140,7 @@ def run(net_class, param, volume_loader, device_str):
                 # record and clear summaries
                 console_outputs=graph.get_collection_ref(engine.logging.CONSOLE)
                 tower_console_outputs.append(console_outputs[:])
-                console_outputs.clear()
+                del console_outputs[:]
                 
                 with tf.name_scope('ComputeGradients'):
                     grads = train_step.compute_gradients(loss)
