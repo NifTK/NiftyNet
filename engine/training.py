@@ -121,13 +121,12 @@ def run(net_class, param, volume_loader, device_str):
                         reg_loss = tf.reduce_mean([tf.reduce_mean(reg_loss)
                                                 for reg_loss in reg_losses])
                         loss = loss + reg_loss
-                tf.summary.scalar('loss',loss,[engine.logging.CONSOLE,engine.logging.LOG])
 
                 ##################
                 # This should probably be refactored into an application class
                 # Averages are in name_scope for Tensorboard naming; summaries are outside for console naming
                 with tf.name_scope('ConsoleLogging'):
-                    logs=[]
+                    logs=[['loss',loss]]
                     if param.application_type == 'segmentation':
                         # TODO compute miss for dfferent target types
                         logs.append(['miss', tf.reduce_mean(tf.cast(
@@ -163,6 +162,8 @@ def run(net_class, param, volume_loader, device_str):
                     averaged_summaries.append([replicated_output[0].op.name+'_avg',tf.reduce_mean([o.op.inputs[1] for o in replicated_output])])
             for tag,avg in averaged_summaries:
                 tf.summary.scalar(tag, avg,[engine.logging.CONSOLE,engine.logging.LOG])
+        else:
+            console_outputs+=tower_console_outputs[0]
         # Track the moving averages of all trainable variables.
         with tf.name_scope('MovingAverages'):
             variable_averages = tf.train.ExponentialMovingAverage(0.9)
