@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function
-
 from copy import deepcopy
 
 import numpy as np
@@ -84,24 +82,33 @@ class SelectiveSampler(BaseSampler):
             locations = []
             n_locations_to_check = self.patch_per_volume * 10
             spatial_location_check.sampling_from(seg.data)
-            n_trials = 10
+            n_trials = 10000
             while len(locations) < self.patch_per_volume and n_trials > 0:
                 # generates random spatial coordinates
                 candidate_locations = rand_spatial_coordinates(
                     img.spatial_rank,
                     img.data.shape,
                     patch.image_size,
-                    n_locations_to_check)
+                    1)
                 is_valid = [spatial_location_check(location, spatial_rank)
                             for location in candidate_locations]
                 is_valid = np.asarray(is_valid, dtype=bool)
-                print("{} good samples from {} candidates".format(
-                    np.sum(is_valid), len(candidate_locations)))
+                # print("{} good samples from {} candidates".format(
+                #     np.sum(is_valid), len(candidate_locations)))
                 for loc in candidate_locations[is_valid]:
                     locations.append(loc)
                 n_trials -= 1
-            locations = np.vstack(locations)
 
+            while len(locations) < self.patch_per_volume:
+                candidate_locations = rand_spatial_coordinates(
+                    img.spatial_rank,
+                    img.data.shape,
+                    patch.image_size,
+                    1)
+                for loc in candidate_locations:
+                    locations.append(loc)
+            locations = np.vstack(locations)
+            print(len(locations))
             for loc in locations:
                 patch.set_data(idx, loc, img, seg, weight_map)
                 yield patch

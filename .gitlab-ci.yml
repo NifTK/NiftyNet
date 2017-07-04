@@ -35,8 +35,8 @@ testjob:
     - coverage run -a --source . run_application.py train -c config/scalenet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2
     - coverage run -a --source . run_application.py inference -c config/scalenet_config.txt --batch_size 16 --image_size 64 --label_size 64 --queue_length 32
 
-    - coverage run -a --source . run_application.py train -c config/vnet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2
-    - coverage run -a --source . run_application.py inference -c config/vnet_config.txt --batch_size 16 --image_size 64 --label_size 64 --queue_length 32
+    - coverage run -a --source . run_application.py train -c config/vnet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2 --activation_function relu
+    - coverage run -a --source . run_application.py inference -c config/vnet_config.txt --batch_size 16 --image_size 64 --label_size 64 --queue_length 32 --activation_function relu
 
     # need a large GPU to run
     #- coverage run -a --source . run_application.py train -c config/unet_config.txt --batch_size 1 --image_size 96 --label_size 96 --queue_length 5 --num_threads 2
@@ -45,8 +45,8 @@ testjob:
     #- coverage run -a --source . run_application.py train -c config/deepmedic_config.txt --batch_size 8 --queue_length 16 --num_threads 2
     #- coverage run -a --source . run_application.py inference -c config/deepmedic_config.txt --batch_size 64 --queue_length 96
 
-    - coverage run -a --source . run_application.py train --image_size 42 --label_size 42 --batch_size 3 --queue_length 6
-    - coverage run -a --source . run_application.py inference --image_size 84 --label_size 84 --batch_size 7 --queue_length 14
+    - coverage run -a --source . run_application.py train -c config/default_config.txt --image_size 42 --label_size 42 --batch_size 3 --queue_length 6
+    - coverage run -a --source . run_application.py inference -c config/default_config.txt --image_size 84 --label_size 84 --batch_size 7 --queue_length 14
 
     - coverage run -a --source . run_application.py train -c config/default_multimodal_config.txt --image_size 42 --label_size 42 --batch_size 3
     - coverage run -a --source . run_application.py inference -c config/default_multimodal_config.txt --image_size 84 --label_size 84 --batch_size 7
@@ -84,6 +84,8 @@ testjob:
     - coverage run -a --source . -m testing.rand_rotation_test
     - coverage run -a --source . -m testing.rand_spatial_scaling_test
     - coverage run -a --source . -m testing.post_processing_test
+    - coverage run -a --source . -m testing.spatial_transformer_test
+    - coverage run -a --source . -m testing.flip_test
     - coverage report -m
     - echo 'finished test'
   tags:

@@ -1,0 +1,19 @@
+## To load Jupyter Notebooks
+
+1) Install conda
+2) in conda terminal run the following commands:
+
+```conda create -n tensorflow python=3.5```
+
+If you are using bash terminal:
+```source activate tensorflow```
+otherwise:
+```activate tensorflow```
+
+If you are using gpus:
+```pip install --ignore-installed --upgrade https://storage.googleapis.com/tensorflow/windows/gpu/tensorflow_gpu-1.2.0-cp35-cp35m-win_amd64.whl```
+otherwise:
+```pip install --ignore-installed --upgrade https://storage.googleapis.com/tensorflow/windows/cpu/tensorflow-1.2.0-cp35-cp35m-win_amd64.whl```
+
+```conda install nb_conda_kernels```			     
+```jupyter notebook```

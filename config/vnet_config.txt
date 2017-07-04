@@ -9,9 +9,11 @@ filename_contains = Label
 filename_not_contains =
 
 [settings]
+application_type = segmentation
 cuda_devices = ""
 model_dir = ./models/model_vnet
 net_name = vnet
+activation_function = prelu
 
 # preprocessing threads parameters
 queue_length = 8
@@ -56,10 +58,13 @@ max_angle = 10.0
 spatial_scaling = True
 min_percentage = -10.0
 max_percentage = 10.0
+window_sampling = uniform
+min_numb_labels = 2
+min_sampling_ratio = 0.000001
 
 # ** training only ** gradient descent and loss parameters
 lr = 0.0001
-decay = 1e-7
+decay = 0
 loss_type = Dice
 reg_type = L2
 starting_iter = 0
@@ -68,7 +73,7 @@ max_iter = 10
 
 # ** inference only ** system parameters
 border = 5
-pred_iter = 10
+inference_iter = 10
 save_seg_dir = ./output/vnet
 
 output_interp_order = 0

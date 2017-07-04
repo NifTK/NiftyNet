@@ -27,14 +27,14 @@ class HistTest(tf.test.TestCase):
                                    44.7821246138, 50.7930589961, 56.1703089214,
                                    59.2393548654, 63.1565641037, 78.7271261392,
                                    100.0])
-        constraint_T1 = KeywordsMatching(['./testing_data'], ['T1'],
+        constraint_T1 = KeywordsMatching(['testing_data'], ['T1'],
                                          ['Parcellation'])
-        constraint_FLAIR = KeywordsMatching(['./testing_data'], ['FLAIR'], [])
+        constraint_FLAIR = KeywordsMatching(['testing_data'], ['FLAIR'], [])
         constraint_array = [constraint_FLAIR, constraint_T1]
         misc_csv.write_matched_filenames_to_csv(
-            constraint_array, './testing_data/TestPrepareInputHGG.csv')
+            constraint_array, os.path.join('testing_data','TestPrepareInputHGG.csv'))
         csv_dict = {
-            'input_image_file': './testing_data/TestPrepareInputHGG.csv',
+            'input_image_file': os.path.join('testing_data','TestPrepareInputHGG.csv'),
             'target_image_file': None,
             'weight_map_file': None,
             'target_note': None}
@@ -44,7 +44,7 @@ class HistTest(tf.test.TestCase):
         subject_list = csv_loader.to_subject_list()
         self.assertAllClose(len(subject_list), 4)
 
-        model_file = './testing_data/standardisation_models.txt'
+        model_file = os.path.join('testing_data','standardisation_models.txt')
         if os.path.exists(model_file):
             os.remove(model_file)
         masking_func = BinaryMaskingLayer(

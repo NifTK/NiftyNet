@@ -8,6 +8,7 @@ python -m testing.binary_masking_test
 python -m testing.histogram_normalisation_test
 python -m testing.volume_loader_test
 python -m testing.activation_test
+python -m testing.spatial_transformer_test
 python -m testing.post_processing_test
 python -m testing.bn_test
 python -m testing.convolution_test
@@ -17,6 +18,7 @@ python -m testing.deepmedic_test
 python -m testing.dilatedcontext_test
 python -m testing.downsample_test
 python -m testing.elementwise_test
+python -m testing.flip_test
 python -m testing.grid_sampler_test
 python -m testing.highres3dnet_test
 python -m testing.highresblock_test

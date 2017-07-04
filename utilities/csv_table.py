@@ -5,7 +5,21 @@ import utilities.misc_csv as misc_csv
 from utilities.subject import Subject
 
 
-class CSVTable(object):
+class SubjectTable(object):
+    """
+    Generic class for holding a subject list
+    """
+
+    def __init__(self, subject_table, modality_names=None):
+        self._subject_table = subject_table
+        self.modality_names = modality_names
+
+    def to_subject_list(self):
+        return [Subject.from_csv_row(row, self.modality_names)
+                for row in self._subject_table]
+
+
+class CSVTable(SubjectTable):
     """
     This class converts csv files into a nested list _csv_file
     a method is provided to output a list of Subject objects based on the
@@ -20,9 +34,7 @@ class CSVTable(object):
                  csv_dict=None,
                  modality_names=None,
                  allow_missing=True):
-
         self.allow_missing = allow_missing
-        self.modality_names = modality_names
         self._csv_table = None
         if csv_file is not None:
             self.create_by_reading_single_csv(csv_file)
@@ -30,6 +42,8 @@ class CSVTable(object):
             self.create_by_joining_multiple_csv_files(**csv_dict)
         if self._csv_table is None:
             raise RuntimeError('unable to read csv files into a nested list')
+        super(CSVTable, self).__init__(subject_table=self._csv_table,
+                                       modality_names=modality_names)
 
     def create_by_joining_multiple_csv_files(self, **csv_dict):
 
@@ -98,10 +112,3 @@ class CSVTable(object):
                 csv_row.append([[row[3]]])
                 csv_row.append([[row[4]]])
                 self._csv_table.append(csv_row)
-
-    def to_subject_list(self):
-        subject_list = []
-        for row in self._csv_table:
-            new_subject = Subject.from_csv_row(row, self.modality_names)
-            subject_list.append(new_subject)
-        return subject_list

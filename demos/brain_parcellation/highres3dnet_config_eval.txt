@@ -1,0 +1,77 @@
+[image modality]
+path_to_search = ../../data/brain_parcellation/OASIS/
+filename_contains = MR
+filename_not_contains = LABEL
+
+[settings]
+application_type = segmentation
+cuda_devices = ""
+model_dir = ./
+net_name = highres3dnet
+activation_function = relu
+
+# preprocessing threads parameters
+queue_length = 8
+num_threads = 1
+
+# network parameters (controlling memory consumption)
+spatial_rank = 3
+batch_size = 1
+image_size = 96
+label_size = 96
+w_map_size = 96
+num_classes = 160
+
+# affected by network's receptive field
+volume_padding_size = 10
+
+#histogram normalisation
+histogram_ref_file = ../../demos/brain_parcellation/databrain_std_hist_models_otsu.txt
+multimod_mask_type = and
+norm_type = percentile
+
+cutoff_min = 0.001
+cutoff_max = 0.999
+mask_type = mean
+#mask_type = otsu_plus
+
+# volume level preprocessing
+reorientation = True
+resampling = True
+normalisation = True
+whitening = True
+image_interp_order = 3
+label_interp_order = 0
+w_map_interp_order = 3
+
+# ** training only ** system parameters
+num_gpus = 2
+sample_per_volume = 4
+
+# training augmentation
+rotation = True
+min_angle = -10.0
+max_angle = 10.0
+spatial_scaling = True
+min_percentage = -15.0
+max_percentage = 15.0
+window_sampling = uniform
+min_numb_labels = 2
+min_sampling_ratio = 0.00001
+
+# ** training only ** gradient descent and loss parameters
+lr = 0.01
+decay = 0
+loss_type = Dice
+reg_type = L2
+starting_iter = 0
+save_every_n = 4000
+max_iter = 30000
+
+# ** inference only ** system parameters
+border = 20
+pred_iter = 33000
+save_seg_dir = ./results
+
+output_interp_order = 0
+output_prob = False

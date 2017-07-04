@@ -1,5 +1,7 @@
 from __future__ import absolute_import, print_function
 
+import os
+
 import tensorflow as tf
 
 # sampler
@@ -13,8 +15,10 @@ from utilities.input_placeholders import ImagePatch
 class SelectiveSamplerTest(tf.test.TestCase):
     def test_3d(self):
 
-        csv_dict = {'input_image_file': './testing_data/testing_case_input',
-                    'target_image_file': './testing_data/testing_case_target',
+        csv_dict = {'input_image_file': os.path.join('testing_data',
+                                                     'testing_case_input'),
+                    'target_image_file': os.path.join('testing_data',
+                                                      'testing_case_target'),
                     'weight_map_file': None,
                     'target_note': None}
         csv_loader = CSVTable(csv_dict=csv_dict,
@@ -67,8 +71,10 @@ class SelectiveSamplerTest(tf.test.TestCase):
 
     def test_2d(self):
 
-        csv_dict = {'input_image_file': './testing_data/testing_case_input',
-                    'target_image_file': './testing_data/testing_case_target',
+        csv_dict = {'input_image_file': os.path.join('testing_data',
+                                                     'testing_case_input'),
+                    'target_image_file': os.path.join('testing_data',
+                                                      'testing_case_target'),
                     'weight_map_file': None,
                     'target_note': None}
         csv_loader = CSVTable(csv_dict=csv_dict,
@@ -121,8 +127,10 @@ class SelectiveSamplerTest(tf.test.TestCase):
 
     def test_25d(self):
 
-        csv_dict = {'input_image_file': './testing_data/testing_case_input',
-                    'target_image_file': './testing_data/testing_case_target',
+        csv_dict = {'input_image_file': os.path.join('testing_data',
+                                                     'testing_case_input'),
+                    'target_image_file': os.path.join('testing_data',
+                                                      'testing_case_target'),
                     'weight_map_file': None,
                     'target_note': None}
         csv_loader = CSVTable(csv_dict=csv_dict,

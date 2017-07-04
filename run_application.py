@@ -9,9 +9,9 @@ import utilities.parse_user_params as parse_user_params
 from engine.volume_loader import VolumeLoaderLayer
 from layer.binary_masking import BinaryMaskingLayer
 from layer.histogram_normalisation import \
-    HistogramNormalisationLayer as HistNorm
+    HistogramNormalisationLayer
 from layer.mean_variance_normalisation import \
-    MeanVarNormalisationLayer as MVNorm
+    MeanVarNormalisationLayer
 from utilities.csv_table import CSVTable
 
 
@@ -28,6 +28,12 @@ class NetFactory(object):
         if name == "highres3dnet":
             from network.highres3dnet import HighRes3DNet
             return HighRes3DNet
+        if name == "highres3dnet_small":
+            from network.highres3dnet_small import HighRes3DNetSmall
+            return HighRes3DNetSmall
+        if name == "highres3dnet_large":
+            from network.highres3dnet_large import HighRes3DNetLarge
+            return HighRes3DNetLarge
         elif name == "toynet":
             from network.toynet import ToyNet
             return ToyNet
@@ -60,10 +66,14 @@ class NetFactory(object):
             raise NotImplementedError
 
 
-if __name__ == "__main__":
+def main():
     param, csv_dict = parse_user_params.run()
     if util.has_bad_inputs(param):
-        sys.exit(-1)
+        return -1
+    else:
+        util.print_save_input_parameters(param, txt_file=os.path.join(param.model_dir,
+                                                                      'settings_' + param.action + '.txt'))
+
     if not (param.cuda_devices == '""'):
         os.environ["CUDA_VISIBLE_DEVICES"] = param.cuda_devices
         print("set CUDA_VISIBLE_DEVICES env to {}".format(param.cuda_devices))
@@ -89,7 +99,7 @@ if __name__ == "__main__":
     # define layers of volume-level normalisation
     normalisation_layers = []
     if param.normalisation:
-        hist_norm = HistNorm(
+        hist_norm = HistogramNormalisationLayer(
             models_filename=param.histogram_ref_file,
             binary_masking_func=BinaryMaskingLayer(
                 type=param.mask_type,
@@ -98,7 +108,7 @@ if __name__ == "__main__":
             cutoff=(param.cutoff_min, param.cutoff_max))
         normalisation_layers.append(hist_norm)
     if param.whitening:
-        mean_std_norm = MVNorm(
+        mean_std_norm = MeanVarNormalisationLayer(
             binary_masking_func=BinaryMaskingLayer(
                 type=param.mask_type,
                 multimod_fusion=param.multimod_mask_type))
@@ -125,3 +135,6 @@ if __name__ == "__main__":
 
         device_str = "gpu" if param.num_gpus > 0 else "cpu"
         engine.inference.run(net_class, param, volume_loader, device_str)
+    return 0
+if __name__ == "__main__":
+  sys.exit(main())

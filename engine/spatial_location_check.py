@@ -83,4 +83,6 @@ class SpatialLocationCheckLayer(Layer):
         is_compulsory = [x in self.compulsory_labels for x in uniq_]
         satisfied = np.asarray(is_enough, dtype=bool) +\
                 np.asarray(is_compulsory, dtype=bool)
+        if np.sum(satisfied) >= self.min_nlabels:
+            print("ratio is ",ratio_)
         return np.sum(satisfied) >= self.min_nlabels
