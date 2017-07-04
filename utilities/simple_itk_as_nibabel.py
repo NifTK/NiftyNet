@@ -17,9 +17,11 @@ class SimpleITKAsNibabel(nibabel.spatialimages.SpatialImage):
       else:
         raise
     self._header = SimpleITKAsNibabelHeader(self._SimpleITKImage)
-    # get affine transform
+    # get affine transform in LPS
     c=np.array([self._SimpleITKImage.TransformContinuousIndexToPhysicalPoint(p) for p in ((1,0,0),(0,1,0),(0,0,1),(0,0,0))])
     affine = np.transpose(np.concatenate([np.concatenate([c[0:3]-c[3:],c[3:]],0),[[0.],[0.],[0.],[1.]]],1))
+    # convert to RAS to match nibabel
+    affine = np.matmul(np.diag([-1.,-1.,1.,1.]),affine)
     super(SimpleITKAsNibabel,self).__init__(sitk.GetArrayFromImage(self._SimpleITKImage), affine)
 class SimpleITKAsNibabelHeader(nibabel.spatialimages.SpatialHeader):
   def __init__(self, image_reference):
