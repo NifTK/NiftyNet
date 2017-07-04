@@ -132,7 +132,7 @@ class Subject(object):
         and update the corresponding field if not done yet
         """
         img_object = self.__find_first_nibabel_object()
-        util.rectify_header_sform_qform(img_object)
+        util.correct_image_if_necessary(img_object)
         return img_object.affine
 
     @CacheFunctionOutput
@@ -159,9 +159,10 @@ class Subject(object):
         list_files = [item for sublist in input_image_files for item in sublist]
         for filename in list_files:
             if not filename == '' and os.path.exists(filename):
-                path, name, ext = util.split_filename(filename)
-                if 'nii' in ext:
-                    return nib.load(filename)
+                try:
+                  return util.load_image(filename)
+                except:
+                  pass # ignore failures here
         return None
 
     def __reorient_to_stand(self, data_5d):
