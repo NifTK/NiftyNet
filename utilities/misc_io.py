@@ -8,6 +8,15 @@ import nibabel as nib
 import numpy as np
 import scipy.ndimage
 
+image_loaders = [nib.load]
+try:
+    import utilities.simple_itk_as_nibabel
+    image_loaders.append(utilities.simple_itk_as_nibabel.SimpleITKAsNibabel)
+except ImportError:
+    warnings.warn('SimpleITK adapter failed to load, reducing the supported file formats.',ImportWarning)
+
+    
+
 warnings.simplefilter("ignore", UserWarning)
 
 FILE_EXTENSIONS = [".nii.gz", ".tar.gz"]
@@ -23,7 +32,27 @@ def create_affine_pixdim(affine, pixdim):
         np.expand_dims(np.append(np.asarray(pixdim), 1), axis=1), [1, 4])
     return np.multiply(np.divide(affine, to_divide.T), to_multiply.T)
 
+def load_image(filename):
+    # load an image from a supported filetype and return an object
+    # that matches nibabel's spatialimages interface
+    for image_loader in image_loaders:
+      try:
+        img=image_loader(filename)
+        img = correct_image_if_necessary(img)
+        return img
+      except nib.filebasedimages.ImageFileError: # if the image_loader cannot handle the type continue to next loader
+        pass
+    raise nib.filebasedimages.ImageFileError('No loader could load the file') # Throw last error
 
+def correct_image_if_necessary(img):
+  # Check that affine matches zooms
+  pixdim = img.header.get_zooms()
+  if not np.array_equal(np.sqrt(np.sum(np.square(img.affine[0:3, 0:3]), 0)), np.asarray(pixdim)):
+    if hasattr(img,'get_sform'): 
+      # assume it is a malformed NIfTI and try to fix it
+      img=rectify_header_sform_qform(img)
+  return img
+        
 def rectify_header_sform_qform(img_nii):
     # TODO: check img_nii is a nibabel object
     pixdim = img_nii.header.get_zooms()
@@ -155,7 +184,7 @@ def csv_cell_to_volume_5d(csv_cell):
                 data_array[t][m] = expand_to_5d(np.zeros(dimensions))
                 continue
             # load a 3d volume
-            img_nii = nib.load(csv_cell()[t][m])
+            img_nii = load_image(csv_cell()[t][m])
             img_data_shape = img_nii.header.get_data_shape()
             assert np.prod(img_data_shape) > 1
 
