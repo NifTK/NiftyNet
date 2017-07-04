@@ -372,6 +372,20 @@ class VAE_convolutional(TrainableLayer):
         data_variances = tf.exp(data_logvariances)
         posterior_variances = tf.exp(posterior_logvariances)
 
+        squared_differences = tf.square(flow_means - images)
+        log_likelihood = -0.5 * (
+        data_logvariances + np.log(2 * np.pi) + tf.exp(-data_logvariances) * squared_differences)
+        KL_divergence = -0.5 * tf.reduce_mean(
+            1 + posterior_logvariances - tf.square(posterior_means) - tf.exp(posterior_logvariances), axis=[1])
+        KL_divergence = tf.reduce_mean(KL_divergence)
+
+        log_likelihood = tf.reduce_mean(tf.reduce_sum(-log_likelihood, axis=[1, 2, 3, 4]))
+
+        KL = tf.summary.scalar('KL', KL_divergence)
+        tf.add_to_collection('NiftyNetCollectionConsole', KL)
+
+        LL = tf.summary.scalar('log_likelihood', log_likelihood)
+        tf.add_to_collection('NiftyNetCollectionConsole', LL)
 
         return [posterior_means, posterior_logvariances, flow_means, data_logvariances,
                 images, data_variances, posterior_variances]

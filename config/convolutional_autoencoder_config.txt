@@ -9,6 +9,7 @@ filename_contains = T1
 filename_not_contains =
 
 [settings]
+application_type = autoencoding
 cuda_devices = ""
 model_dir = ./models/convolutional_autoencoder
 net_name = convolutional_autoencoder
