@@ -13,7 +13,7 @@ class SimpleITKAsNibabel(nibabel.spatialimages.SpatialImage):
       self._SimpleITKImage = sitk.ReadImage(filename)
     except RuntimeError as err:
       if 'Unable to determine ImageIO reader' in str(err):
-        nibabel.filebasedimages.ImageFileError(str(err))
+        raise nibabel.filebasedimages.ImageFileError(str(err))
       else:
         raise
     self._header = SimpleITKAsNibabelHeader(self._SimpleITKImage)
