@@ -48,7 +48,7 @@ def correct_image_if_necessary(img):
   # Check that affine matches zooms
   pixdim = img.header.get_zooms()
   if not np.array_equal(np.sqrt(np.sum(np.square(img.affine[0:3, 0:3]), 0)), np.asarray(pixdim)):
-    if img.hasattr('get_sform'): 
+    if hasattr(img,'get_sform'): 
       # assume it is a malformed NIfTI and try to fix it
       img=rectify_header_sform_qform(img)
   return img
