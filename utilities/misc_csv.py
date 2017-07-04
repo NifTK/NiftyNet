@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function,division
 import os
 import csv
 import numpy as np
@@ -114,7 +114,7 @@ def __find_max_overlap_in_list(name, list_names):
     for test in list_names:
         match = SequenceMatcher(None, name, test).find_longest_match(
             0, len(name), 0, len(test))
-        if match.size >= match_max and (1.0 * match.size)/len(test) >= \
+        if match.size >= match_max and match.size/len(test) >= \
                 match_ratio:
             match_max = match.size
             match_seq = test[match.b:(match.b + match.size)]
