@@ -184,7 +184,7 @@ def huber_loss(prediction, ground_truth, delta=1.0):
 def variational_lower_bound(predictions, labels):
     """
         This is the variational lower bound derived in
-    Auto-Encoding Varitaional Bayes, Kingma & Welling, 2014
+    Auto-Encoding Variational Bayes, Kingma & Welling, 2014
     :param posterior_means: predicted means for the posterior
     :param posterior_logvariances: predicted log variances for the posterior
     :param data_means: predicted mean parameter for the voxels modelled as Gaussians
@@ -193,12 +193,11 @@ def variational_lower_bound(predictions, labels):
     :return:
     """
 
-    [posterior_means, posterior_logvariances, data_means, data_logvariances, originals,
-     data_variances, posterior_variances] = predictions
+    [posterior_means, posterior_logvariances, data_means, data_logvariances, originals, _, _] = predictions
 
     squared_differences = tf.square(data_means - originals)
     log_likelihood = -0.5 * (data_logvariances + np.log(2 * np.pi) + tf.exp(-data_logvariances) * squared_differences)
-    KL_divergence = -0.5 * tf.reduce_mean(1 + posterior_logvariances - tf.square(posterior_means) - tf.exp(posterior_logvariances), axis=[1])
+    KL_divergence = -0.5 * tf.reduce_sum(1 + posterior_logvariances - tf.square(posterior_means) - tf.exp(posterior_logvariances), axis=[1])
     error_to_minimise = tf.reduce_mean(tf.reduce_sum(-log_likelihood, axis=[1,2,3,4]) + KL_divergence)
 
     return error_to_minimise
@@ -220,20 +219,6 @@ def SumAbsDiff(prediction, labels):
     """
     residuals = tf.subtract(prediction[0], prediction[1])
     return tf.reduce_mean(tf.abs(residuals))
-
-def KL_divergence_Gaussian(means, logvariances):
-    """
-    :param prediction[0]: the current prediction of the ground truth.
-    :param prediction[1]: the measurement you are approximating with regression.
-    :return: sum(differences squared) / 2 - Note, no square root
-    """
-    # KL_divergence = 0.5 * tf.reduce_mean(1 + logvariances - tf.square(means) - tf.exp(logvariances), axis=[1])
-    KL_divergence = -0.5 * tf.reduce_sum(1 + logvariances - tf.square(means) - tf.exp(logvariances), axis=[1])
-    KL_divergence = tf.reduce_mean(KL_divergence)
-    return KL_divergence
-
-
-
 
 
 SUPPORTED_OPS = {"CrossEntropy": cross_entropy,

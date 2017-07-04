@@ -12,13 +12,14 @@ class ReshapeLayer(Layer):
 
     def __init__(self,
                  output_size,
-                 name='reshape'):
+                 name='reshaper'):
         super(ReshapeLayer, self).__init__(name=name)
         self.output_size = output_size
+        self.name = name
 
     def layer_op(self, input_tensor):
 
         output_tensor = tf.reshape(tensor=input_tensor,
                                    shape=self.output_size,
-                                   name='reshape')
+                                   name=self.name)
         return output_tensor

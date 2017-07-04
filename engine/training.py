@@ -17,6 +17,8 @@ from utilities import misc_common as util
 from utilities.input_placeholders import ImagePatch
 import engine.logging
 
+from utilities.autoencoder_visualisations import ReconsVAE
+
 np.random.seed(seed=int(time.time()))
 
 
@@ -222,6 +224,7 @@ def run(net_class, param, volume_loader, device_str):
                     ops_to_run += [write_summary_op]
                 values = sess.run(ops_to_run)[1:]
                 if (current_iter % 20) == 0:
+                    ReconsVAE(predictions, sess)
                     writer.add_summary(values.pop(), current_iter)
                 summary_string = ''.join([engine.logging.console_summary_string(v) for v in values])
                 iter_time = time.time() - local_time

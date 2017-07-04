@@ -110,6 +110,16 @@ class ActivationTest(tf.test.TestCase):
             out = sess.run(out_prelu)
             self.assertAllClose((2, 16, 16, 16, 8), out.shape)
 
+    def test_3d_identity_shape(self):
+        x = self.get_3d_input()
+        identity_layer = ActiLayer(func='identity')
+        out_prelu = identity_layer(x)
+        print(identity_layer)
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out = sess.run(out_prelu)
+            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
+
     def test_3d_dropout_shape(self):
         x = self.get_3d_input()
         dropout_layer = ActiLayer(func='dropout')
@@ -214,6 +224,16 @@ class ActivationTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_prelu)
+            self.assertAllClose((2, 16, 16, 8), out.shape)
+
+    def test_2d_identity_shape(self):
+        x = self.get_2d_input()
+        identity_layer = ActiLayer(func='identity')
+        out_dropout = identity_layer(x, keep_prob=0.8)
+        print(identity_layer)
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out = sess.run(out_dropout)
             self.assertAllClose((2, 16, 16, 8), out.shape)
 
     def test_2d_dropout_shape(self):

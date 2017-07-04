@@ -9,9 +9,9 @@ from layer.convolution import ConvolutionalLayer
 from layer.deconvolution import DeconvolutionalLayer
 from layer.upsample import UpSampleLayer
 from layer.reparameterization_trick import ReparameterizationLayer
-
 import tensorflow as tf
 import numpy as np
+import engine.logging
 
 class VAE_convolutional(TrainableLayer):
     """
@@ -19,7 +19,6 @@ class VAE_convolutional(TrainableLayer):
         followed by a sequence of fully-connected layers, followed by a sequence of
         TRANS_CNN+Unpooling layers.
         
-        NB: trans_conv_features[-1] must equal the number of channels in the input images. Will hard code this soon.
         2DO: make the use of FC/convolutions optional, so a fully connected AE, and a fully convolutional
         AE, are both possible.
         2DO: make the pooling sizes vectors, so we can pool in x & y but not z, say.
@@ -53,11 +52,11 @@ class VAE_convolutional(TrainableLayer):
 
         super(VAE_convolutional, self).__init__(name=name)
 
-        self.number_of_latent_variables = 256
-        self.number_of_samples_from_posterior_per_example = 1
+        self.number_of_latent_variables = 512
+        self.number_of_samples_from_posterior_per_example = 1000
         # Exponentiating the logvariance yields the variance, so keep it within reasonable bounds:
-        self.logvariance_upper_bound = 80
-        self.logvariance_lower_bound = -80
+        self.logvariance_upper_bound = 40
+        self.logvariance_lower_bound = -40
 
         # Specify the encoder here
         if conv_features == None:
@@ -77,7 +76,7 @@ class VAE_convolutional(TrainableLayer):
         else:
             self.acti_func_conv = acti_func_conv
         if layer_sizes_encoder == None:
-            self.layer_sizes_encoder = [256]
+            self.layer_sizes_encoder = [512]
         else:
             self.layer_sizes_encoder = layer_sizes_encoder
         if acti_func_encoder == None:
@@ -86,7 +85,7 @@ class VAE_convolutional(TrainableLayer):
             self.acti_func_encoder = acti_func_encoder
 
         if layer_sizes_decoder == None:
-            self.layer_sizes_decoder = [256]
+            self.layer_sizes_decoder = [512]
         else:
             self.layer_sizes_decoder = layer_sizes_decoder
         if acti_func_decoder == None:
@@ -127,11 +126,6 @@ class VAE_convolutional(TrainableLayer):
         else:
             self.upsampling_mode = upsampling_mode
 
-        # Specify which quantities to calculate and print during training
-        self.quantities_to_monitor = {'miss_rate': False,
-                                      'KLD': True,
-                                      'negative_log_likelihood': True}
-
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
@@ -164,7 +158,7 @@ class VAE_convolutional(TrainableLayer):
                 w_initializer=self.initializers['w'],
                 w_regularizer=None,
                 acti_func=self.acti_func_conv[i],
-                name='encoding_conv_{}_{}'.format(self.conv_kernel_sizes[i], self.conv_features[i])))
+                name='encoder_conv_{}_{}'.format(self.conv_kernel_sizes[i], self.conv_features[i])))
             print(encoders_cnn[-1])
 
             encoders_downsamplers.append(ConvolutionalLayer(
@@ -177,7 +171,7 @@ class VAE_convolutional(TrainableLayer):
                 w_initializer=self.initializers['w'],
                 w_regularizer=None,
                 acti_func='identity',
-                name='encoding_downsampler_{}_{}'.format(2, 2)))
+                name='encoder_downsampler_{}_{}'.format(2, 2)))
             print(encoders_downsamplers[-1])
 
         raster_feature_maps = ReshapeLayer([-1, data_downsampled_dimensionality*self.conv_features[-1]])
@@ -193,7 +187,7 @@ class VAE_convolutional(TrainableLayer):
                 acti_func=self.acti_func_encoder[i],
                 w_initializer=self.initializers['w'],
                 w_regularizer=self.regularizers['w'],
-                name='fc_encoder_{}'.format(self.layer_sizes_encoder[i])))
+                name='encoder_fc_{}'.format(self.layer_sizes_encoder[i])))
             print(encoders_fc[-1])
 
         encoder_means = FullyConnectedLayer(
@@ -202,7 +196,7 @@ class VAE_convolutional(TrainableLayer):
             acti_func='identity',
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
-            name='fc_encoder_means_{}'.format(self.number_of_latent_variables))
+            name='encoder_fc_means_{}'.format(self.number_of_latent_variables))
         print(encoder_means)
 
         encoder_logvariances = FullyConnectedLayer(
@@ -211,7 +205,7 @@ class VAE_convolutional(TrainableLayer):
             acti_func='identity',
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
-            name='fc_encoder_logvariances_{}'.format(self.number_of_latent_variables))
+            name='encoder_fc_logvariances_{}'.format(self.number_of_latent_variables))
         print(encoder_logvariances)
 
         sampler_from_posterior = ReparameterizationLayer(
@@ -230,7 +224,7 @@ class VAE_convolutional(TrainableLayer):
                 acti_func=self.acti_func_decoder[i],
                 w_initializer=self.initializers['w'],
                 w_regularizer=self.regularizers['w'],
-                name='fc_decoder_{}'.format(self.layer_sizes_decoder[i])))
+                name='decoder_fc_{}'.format(self.layer_sizes_decoder[i])))
             print(decoders_fc[-1])
 
         # Define the final decoding fully connected layer
@@ -241,7 +235,7 @@ class VAE_convolutional(TrainableLayer):
             acti_func=self.acti_func_fully_connected_output,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
-            name='fc_decoder_{}'.format(data_downsampled_dimensionality*self.conv_features[-1])))
+            name='decoder_fc_{}'.format(data_downsampled_dimensionality*self.conv_features[-1])))
         print(decoders_fc[-1])
 
         unraster_feature_maps = ReshapeLayer([-1]+data_downsampled_dimensions)
@@ -264,21 +258,8 @@ class VAE_convolutional(TrainableLayer):
                     w_initializer=self.initializers['w'],
                     w_regularizer=None,
                     acti_func='identity',
-                    name='upsampler_means_{}_{}'.format(2, 2)))
+                    name='decoder_upsampler_means_{}_{}'.format(2, 2)))
                 print(decoders_means_upsamplers[-1])
-
-                decoders_logvariances_upsamplers.append(DeconvolutionalLayer(
-                    n_output_chns=self.trans_conv_features[i],
-                    kernel_size=2,
-                    stride=2,
-                    padding='SAME',
-                    with_bias=True,
-                    with_bn=True,
-                    w_initializer=self.initializers['w'],
-                    w_regularizer=None,
-                    acti_func='identity',
-                    name='upsampler_variances_{}_{}'.format(2, 2)))
-                print(decoders_logvariances_upsamplers[-1])
 
             decoders_means_cnn.append(DeconvolutionalLayer(
                 n_output_chns=self.trans_conv_features[i],
@@ -290,8 +271,23 @@ class VAE_convolutional(TrainableLayer):
                 w_initializer=self.initializers['w'],
                 w_regularizer=None,
                 acti_func=self.acti_func_trans_conv_means[i],
-                name='decoding_trans_conv_means_{}_{}'.format(self.trans_conv_kernels_sizes[i], self.trans_conv_features[i])))
+                name='decoder_trans_conv_means_{}_{}'.format(self.trans_conv_kernels_sizes[i], self.trans_conv_features[i])))
             print(decoders_means_cnn[-1])
+
+        for i in range(0, len(self.trans_conv_features)):
+            if self.upsampling_mode == 'DECONV':
+                decoders_logvariances_upsamplers.append(DeconvolutionalLayer(
+                    n_output_chns=self.trans_conv_features[i],
+                    kernel_size=2,
+                    stride=2,
+                    padding='SAME',
+                    with_bias=True,
+                    with_bn=True,
+                    w_initializer=self.initializers['w'],
+                    w_regularizer=None,
+                    acti_func='identity',
+                    name='decoder_upsampler_variances_{}_{}'.format(2, 2)))
+                print(decoders_logvariances_upsamplers[-1])
 
             decoders_logvariances_cnn.append(DeconvolutionalLayer(
                 n_output_chns=self.trans_conv_features[i],
@@ -303,7 +299,7 @@ class VAE_convolutional(TrainableLayer):
                 w_initializer=self.initializers['w'],
                 w_regularizer=None,
                 acti_func=self.acti_func_trans_conv_logvariances[i],
-                name='decoding_trans_conv_variances_{}_{}'.format(self.trans_conv_kernels_sizes[i],
+                name='decoder_trans_conv_variances_{}_{}'.format(self.trans_conv_kernels_sizes[i],
                                                                   self.trans_conv_features[i])))
             print(decoders_logvariances_cnn[-1])
 
@@ -374,18 +370,16 @@ class VAE_convolutional(TrainableLayer):
 
         squared_differences = tf.square(flow_means - images)
         log_likelihood = -0.5 * (
-        data_logvariances + np.log(2 * np.pi) + tf.exp(-data_logvariances) * squared_differences)
-        KL_divergence = -0.5 * tf.reduce_mean(
+            data_logvariances + np.log(2 * np.pi) + tf.exp(-data_logvariances) * squared_differences)
+        log_likelihood = tf.reduce_mean(tf.reduce_sum(log_likelihood, axis=[1, 2, 3, 4]))
+        NLL = tf.summary.scalar('negative_log_likelihood', -log_likelihood)
+        tf.add_to_collection(engine.logging.CONSOLE, NLL)
+
+        KL_divergence = -0.5 * tf.reduce_sum(
             1 + posterior_logvariances - tf.square(posterior_means) - tf.exp(posterior_logvariances), axis=[1])
         KL_divergence = tf.reduce_mean(KL_divergence)
-
-        log_likelihood = tf.reduce_mean(tf.reduce_sum(-log_likelihood, axis=[1, 2, 3, 4]))
-
-        KL = tf.summary.scalar('KL', KL_divergence)
-        tf.add_to_collection('NiftyNetCollectionConsole', KL)
-
-        LL = tf.summary.scalar('log_likelihood', log_likelihood)
-        tf.add_to_collection('NiftyNetCollectionConsole', LL)
+        KL = tf.summary.scalar('KL_divergence', KL_divergence)
+        tf.add_to_collection(engine.logging.CONSOLE, KL)
 
         return [posterior_means, posterior_logvariances, flow_means, data_logvariances,
                 images, data_variances, posterior_variances]

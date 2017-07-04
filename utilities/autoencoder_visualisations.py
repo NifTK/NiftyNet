@@ -2,6 +2,8 @@
 from __future__ import absolute_import, print_function
 
 import matplotlib.pyplot as plt
+import io
+import tensorflow as tf
 
 def ReconsAE(predictions, sess):
     # Plot reconstructions for the basic autoencoder
@@ -47,3 +49,19 @@ def ReconsVAE(predictions, sess):
         temp3.reshape(24, 24)
         plt.imshow(temp3, cmap='gray')
     plt.pause(0.0001)
+    # buf = io.BytesIO()
+    # plt.savefig(buf, format='png')
+    # buf.seek(0)
+    # plt.pause(0.0001)
+    # # Prepare the plot
+    # plot_buf = buf
+    #
+    # # Convert PNG buffer to TF image
+    # image = tf.image.decode_png(plot_buf.getvalue(), channels=4)
+    #
+    # # Add the batch dimension
+    # image = tf.expand_dims(image, 0)
+    #
+    # # Add image summary
+    # summary_op = tf.summary.image("plot", image)
+    # summary = sess.run(summary_op)
