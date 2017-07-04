@@ -56,12 +56,12 @@ class VAE_convolutional(TrainableLayer):
         self.number_of_latent_variables = 256
         self.number_of_samples_from_posterior_per_example = 1
         # Exponentiating the logvariance yields the variance, so keep it within reasonable bounds:
-        self.logvariance_upper_bound = 40
-        self.logvariance_lower_bound = -40
+        self.logvariance_upper_bound = 80
+        self.logvariance_lower_bound = -80
 
         # Specify the encoder here
         if conv_features == None:
-            self.conv_features = [15, 30, 45]
+            self.conv_features = [20, 40, 60]
         else:
             self.conv_features = conv_features
         if conv_kernel_sizes == None:
@@ -77,7 +77,7 @@ class VAE_convolutional(TrainableLayer):
         else:
             self.acti_func_conv = acti_func_conv
         if layer_sizes_encoder == None:
-            self.layer_sizes_encoder = [512]
+            self.layer_sizes_encoder = [256]
         else:
             self.layer_sizes_encoder = layer_sizes_encoder
         if acti_func_encoder == None:
@@ -86,7 +86,7 @@ class VAE_convolutional(TrainableLayer):
             self.acti_func_encoder = acti_func_encoder
 
         if layer_sizes_decoder == None:
-            self.layer_sizes_decoder = [512]
+            self.layer_sizes_decoder = [256]
         else:
             self.layer_sizes_decoder = layer_sizes_decoder
         if acti_func_decoder == None:
@@ -98,7 +98,7 @@ class VAE_convolutional(TrainableLayer):
         else:
             self.acti_func_fully_connected_output = acti_func_fully_connected_output
         if trans_conv_features == None:
-            self.trans_conv_features = [30, 15, 1]
+            self.trans_conv_features = [40, 20, 1]
         else:
             self.trans_conv_features = trans_conv_features
         if trans_conv_kernels_sizes == None:
@@ -119,9 +119,9 @@ class VAE_convolutional(TrainableLayer):
             self.acti_func_trans_conv_logvariances = acti_func_trans_conv_logvariances
 
         # Choose how to upsample the feature maps in the convolutional decoding layers. Options are:
-        # 1. 'DECONV' (recommended) i.e. kernel shape is HxWxDxInxOut,
+        # 1. 'DECONV' (recommended) i.e., kernel shape is HxWxDxInxOut,
         # 2. 'CHANNELWISE_DECONV' i.e., kernel shape is HxWxDx1x1,
-        # 3. 'REPLICATE' i.e. no parameters
+        # 3. 'REPLICATE' i.e., no parameters
         if upsampling_mode == None:
             self.upsampling_mode = 'DECONV'
         else:
@@ -187,7 +187,7 @@ class VAE_convolutional(TrainableLayer):
         encoders_fc = []
         for i in range(0,len(self.layer_sizes_encoder)):
             encoders_fc.append(FullyConnectedLayer(
-                n_output_chns=self.layer_sizes_encoder[i],
+                n_output_nodes=self.layer_sizes_encoder[i],
                 with_bias=True,
                 with_bn=True,
                 acti_func=self.acti_func_encoder[i],
@@ -197,7 +197,7 @@ class VAE_convolutional(TrainableLayer):
             print(encoders_fc[-1])
 
         encoder_means = FullyConnectedLayer(
-            n_output_chns=self.number_of_latent_variables,
+            n_output_nodes=self.number_of_latent_variables,
             with_bn=False,
             acti_func='identity',
             w_initializer=self.initializers['w'],
@@ -206,7 +206,7 @@ class VAE_convolutional(TrainableLayer):
         print(encoder_means)
 
         encoder_logvariances = FullyConnectedLayer(
-            n_output_chns=self.number_of_latent_variables,
+            n_output_nodes=self.number_of_latent_variables,
             with_bn=False,
             acti_func='identity',
             w_initializer=self.initializers['w'],
@@ -224,7 +224,7 @@ class VAE_convolutional(TrainableLayer):
         decoders_fc = []
         for i in range(0, len(self.layer_sizes_decoder)):
             decoders_fc.append(FullyConnectedLayer(
-                n_output_chns=self.layer_sizes_decoder[i],
+                n_output_nodes=self.layer_sizes_decoder[i],
                 with_bias=True,
                 with_bn=True,
                 acti_func=self.acti_func_decoder[i],
@@ -235,7 +235,7 @@ class VAE_convolutional(TrainableLayer):
 
         # Define the final decoding fully connected layer
         decoders_fc.append(FullyConnectedLayer(
-            n_output_chns=data_downsampled_dimensionality*self.conv_features[-1],
+            n_output_nodes=data_downsampled_dimensionality*self.conv_features[-1],
             with_bias=True,
             with_bn=True,
             acti_func=self.acti_func_fully_connected_output,

@@ -20,7 +20,7 @@ num_threads = 2
 
 # network parameters (controlling memory consumption)
 spatial_rank = 3
-batch_size = 40
+batch_size = 25
 image_size = 24
 label_size = 24
 w_map_size = 24
@@ -61,7 +61,7 @@ min_numb_labels = 2
 min_sampling_ratio = 0.000001
 
 # ** training only ** gradient descent and loss parameters
-lr = 0.001
+lr = 0.0001
 decay = 0
 loss_type = VariationalLowerBound
 reg_type = L2
