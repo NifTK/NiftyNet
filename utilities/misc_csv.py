@@ -123,7 +123,7 @@ def __find_max_overlap_in_list(name, list_names):
     if match_max == 0:
         return '', -1
     other_list = [name for name in list_names if match_seq in name and
-                  (1.0*match_max)/len(name) == match_ratio]
+                  match_max/len(name) == match_ratio]
     if len(other_list) > 1:
         return '', -1
     return match_seq, list_names.index(match_orig)
