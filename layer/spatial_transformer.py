@@ -32,7 +32,7 @@ from itertools import chain
 from six.moves import xrange  # pylint: disable=redefined-builtin
 from utilities.misc_common import look_up_operations
 
-SUPPORTED_INTERPOLATION={'LINEAR','NEAREST'}
+SUPPORTED_INTERPOLATION={'BSPLINE','LINEAR','NEAREST'}
 SUPPORTED_BOUNDARY={'REPLICATE','CIRCULAR','SYMMETRIC'}
 
 class ResamplerLayer(Layer):
@@ -47,7 +47,7 @@ class ResamplerLayer(Layer):
     self.interpolation = look_up_operations(interpolation.upper(), SUPPORTED_INTERPOLATION)
     self.boundary = look_up_operations(boundary.upper(), SUPPORTED_BOUNDARY)
     self.boundary_func_ = {'REPLICATE':self.boundary_replicate,'CIRCULAR':self.boundary_circular,'SYMMETRIC':self.boundary_symmetric}[self.boundary]
-    self.resample_func_ = {'LINEAR':self.resample_linear,'NEAREST':self.resample_nearest}[self.interpolation]
+    self.resample_func_ = {'LINEAR':self.resample_linear,'BSPLINE':self.resample_bspline,'NEAREST':self.resample_nearest}[self.interpolation]
 
   def boundary_replicate(self,sample_coords,input_size):
     return tf.maximum(tf.minimum(sample_coords,input_size-1),tf.zeros_like(input_size))
@@ -57,6 +57,35 @@ class ResamplerLayer(Layer):
     circularSize = input_size+input_size-2
     return (input_size-1)-tf.abs((input_size-1)-tf.mod(tf.mod(sample_coords,circularSize)+circularSize,circularSize))
 
+  def resample_bspline(self,inputs,sample_coords):
+    input_size=tf.reshape(inputs.get_shape().as_list()[1:-1],[1]*(len(sample_coords.get_shape().as_list())-1)+[-1]  )
+    spatial_rank = layer_util.infer_spatial_rank(inputs)
+    batch_size=sample_coords.get_shape().as_list()[0]
+    grid_shape = sample_coords.get_shape().as_list()[1:-1]
+    if spatial_rank==2:
+      raise NotImplementedError('bspline interpolation not implemented for 2d yet')
+    index_voxel_coords = tf.floor(sample_coords)
+    # Compute voxels to use for interpolation
+    offsets = tf.reshape(tf.stack(tf.meshgrid(list(range(-1,3)),list(range(-1,3)),list(range(-1,3)), indexing='ij'),3),[1,4**spatial_rank]+[1]*len(grid_shape)+[spatial_rank])
+    preboundary_spatial_coords = offsets+tf.expand_dims(tf.cast(index_voxel_coords,tf.int32),1)
+    spatial_coords = self.boundary_func_(preboundary_spatial_coords,input_size)
+    sz=spatial_coords.get_shape().as_list()
+    # Compute weights for each voxel
+    build_coefficient = lambda u,d: tf.concat([tf.pow(1-u,3),
+                                             3*tf.pow(u,3) - 6*tf.pow(u,2) + 4,
+                                            -3*tf.pow(u,3) + 3*tf.pow(u,2) + 3*u + 1,
+                                               tf.pow(u,3)],d)/6
+
+    index_weight=tf.reshape(sample_coords-index_voxel_coords,[batch_size,-1,3])
+    Bu=build_coefficient(tf.reshape(index_weight[:,:,0],[batch_size,1,1,1,-1]),1)
+    Bv=build_coefficient(tf.reshape(index_weight[:,:,1],[batch_size,1,1,1,-1]),2)
+    Bw=build_coefficient(tf.reshape(index_weight[:,:,2],[batch_size,1,1,1,-1]),3)
+    all_weights=tf.reshape(Bu*Bv*Bw,[batch_size] +sz[1:-1]+[1])
+    # Gather voxel values and compute weighted sum
+    batch_coords = tf.tile(tf.reshape(tf.range(sz[0]),[sz[0]]+[1]*(len(sz)-1)),[1]+sz[1:-1]+[1])
+    raw_samples = tf.gather_nd(inputs,tf.concat([batch_coords,spatial_coords],-1))
+    return tf.reduce_sum(all_weights*raw_samples,reduction_indices=1)
+    
   def resample_linear(self,inputs,sample_coords):
     # Each sample is interpolated as a weighted sum of 2^spatial_rank voxels
     input_size=tf.reshape(inputs.get_shape().as_list()[1:-1],[1]*(len(sample_coords.get_shape().as_list())-1)+[-1]  )
@@ -102,7 +131,7 @@ class GridWarperLayer(Layer):
   warping model).
   """
 
-  def __init__(self, source_shape, output_shape, num_coeff, name, **kwargs):
+  def __init__(self, source_shape, output_shape, coeff_shape, name, **kwargs):
     """Constructs a GridWarper module and initializes the source grid params.
 
     `source_shape` and `output_shape` are used to define the size of the source
@@ -116,8 +145,8 @@ class GridWarperLayer(Layer):
         signal domain.
       output_shape: Iterable of integers determining the size of the destination
         resampled signal domain.
-      num_coeff: Number of coefficients parametrizing the grid warp.
-        For example, a 2D affine transformation will be defined by the 6
+      coeff_shape: Shape of coefficients parametrizing the grid warp.
+        For example, a 2D affine transformation will be defined by the [6]
         parameters populating the corresponding 2x3 affine matrix.
       name: Name of Module.
       **kwargs: Extra kwargs to be forwarded to the `create_features` function,
@@ -137,18 +166,18 @@ class GridWarperLayer(Layer):
                        .format(len(self._output_shape),
                                len(self._source_shape)))
 
-    self._num_coeff = num_coeff
+    self._coeff_shape = coeff_shape
     self._psi = self._create_features(**kwargs)
 
   @abc.abstractmethod
   def _create_features(self, **kwargs):
-    """Generates matrix of features, of size `[num_coeff, num_points]`."""
+    """Precomputes features (e.g. sampling patterns, unconstrained feature matrices)."""
     pass
 
   @property
-  def n_coeff(self):
+  def coeff_shape(self):
     """Returns number of coefficients of warping function."""
-    return self._n_coeff
+    return self._coeff_shape
 
   @property
   def psi(self):
@@ -166,6 +195,205 @@ class GridWarperLayer(Layer):
     return self._output_shape
 
 
+class BSplineFieldImageGridWarperLayer(GridWarperLayer):
+  """ The fast BSpline Grid Warper defines a grid based on
+      sampling coordinate values from a spatially varying displacement
+      field  (passed as a tensor input) along a regular cartesian grid 
+      pattern aligned with the field. Specifically,
+  this class defines a grid based on BSpline smoothing, as described by Rueckert et al.
+      To ensure that it can be done efficiently, several assumptions are made:
+      1) The grid is a cartesian grid aligned with the field.
+      2) Knots occur every M,N,O grid points (in X,Y,Z) This allows the 
+         smoothing to be represented as a 4x4x4 convolutional kernel with MxNxO channels
+  """
+  def __init__(self,
+               source_shape,
+               output_shape,
+               knot_spacing,
+               name='interpolated_spline_grid_warper_layer'):
+    """Constructs an BSplineFieldImageGridWarperLayer.
+    Args:
+      source_shape: Iterable of integers determining the size of the source
+        signal domain.
+      output_shape: Iterable of integers determining the size of the destination
+        resampled signal domain.
+      knot_spacing: List of intervals (in voxels) in each dimension where 
+        displacements are defined in the field.
+      interpolation: type of interpolation as used by tf.image.resize_images
+      name: Name of Module."""
+    coeff_shape=[4+(n-1)//k for n,k in zip(output_shape,knot_spacing)]
+    self._knot_spacing=knot_spacing
+    super(BSplineFieldImageGridWarperLayer, self).__init__(source_shape=source_shape,
+                                           output_shape=output_shape,
+                                           coeff_shape=coeff_shape,
+                                           name=name)  
+  def _create_features(self):
+    """ Creates the convolutional kernel"""
+    build_coefficient = lambda u,d: np.reshape(np.stack([(np.power(1-u,3))/6,
+                                     (3*np.power(u,3) - 6*np.power(u,2) + 4)/6,
+                                     (-3*np.power(u,3) + 3*np.power(u,2) + 3*u + 1)/6,
+                                      np.power(u,3)/6],0),np.roll([4,1,1,len(u),1,1],d))
+    coeffs = [build_coefficient(np.arange(k)/k,d) for d,k in enumerate(self._knot_spacing)]
+    kernels = tf.constant(np.reshape(np.prod(coeffs),[4,4,4,1,-1]),dtype=tf.float32)
+    return kernels
+  def layer_op(self,field):
+    batch_size=int(field.get_shape().as_list()[0])
+    spatial_rank = int(field.get_shape().as_list()[-1])
+    resampled=tf.stack([tf.nn.conv3d(field[:,:,:,:,d:d+1],self._psi,strides=[1,1,1,1,1],padding='VALID') for d in [0,1,2]],5)
+    permuted_shape=[batch_size]+[f-3 for f in self._coeff_shape]+self._knot_spacing+[spatial_rank]
+    print(permuted_shape)
+    permuted=tf.transpose(tf.reshape(resampled,permuted_shape),[0,1,4,2,5,3,6,7])
+    reshaped=tf.reshape(permuted,[batch_size]+[(f-3)*k for f,k in zip(self._coeff_shape,self._knot_spacing)]+[spatial_rank])
+    cropped = reshaped[:,:self._output_shape[0],:self._output_shape[1],:self._output_shape[2],:]
+    return cropped
+
+class RescaledFieldImageGridWarperLayer(GridWarperLayer):
+  """ The rescaled field grid warper defines a grid based on
+      sampling coordinate values from a spatially varying displacement
+      field  (passed as a tensor input) along a regular cartesian grid 
+      pattern aligned with the field. Specifically, this class defines
+      a grid by resampling the field (using tf.rescale_images with 
+      align_corners=False) to the output_shape.
+  """
+  def __init__(self,
+               source_shape,
+               output_shape,
+               coeff_shape,
+               interpolation=tf.image.ResizeMethod.BICUBIC,
+               name='rescaling_interpolated_spline_grid_warper_layer'):
+    """ Constructs an RescaledFieldImageGridWarperLayer.
+    Args:
+      source_shape: Iterable of integers determining the size of the source
+        signal domain.
+      output_shape: Iterable of integers determining the size of the destination
+        resampled signal domain.
+      coeff_shape: Shape of displacement field.
+      interpolation: type of interpolation as used by tf.image.resize_images
+      name: Name of Module.
+
+    """
+    self._interpolation=interpolation
+    if self._interpolation=='LINEAR':
+      self._interpolation=tf.image.ResizeMethod.BILINEAR
+    elif self._interpolation=='CUBIC':
+      self._interpolation=tf.image.ResizeMethod.BICUBIC
+    
+    super(RescaledFieldImageGridWarperLayer, self).__init__(source_shape=source_shape,
+                                           output_shape=output_shape,
+                                           coeff_shape=coeff_shape,
+                                           field_interpretation=field_interpretation,
+                                           name=name)
+  def layer_op(self,field):
+    input_shape = tf.shape(field)
+    input_dtype = field.dtype.as_numpy_dtype
+    batch_size = int(field.get_shape()[0])    
+    coords_intermediate = tf.image.resize_images(tf.reshape(field,[batch_size,self._coeff_shape[0],self._coeff_shape[1],-1]),self._output_shape[0:2], self._interpolation,align_corners=False)
+    tmp=tf.reshape(coords_intermediate,[batch_size,self._output_shape[0]*self._output_shape[1],self._coeff_shape[2],-1])
+    tmp2=[batch_size]+list(self._output_shape)+[-1]
+    coords=tf.reshape(tf.image.resize_images(tmp,[self._output_shape[0]*self._output_shape[1],self._output_shape[2]],self._interpolation,align_corners=False),tmp2)
+    return coords
+
+
+class ResampledFieldGridWarperLayer(GridWarperLayer):
+  """ The resampled field grid warper defines a grid based on
+      sampling coordinate values from a spatially varying displacement
+      field  (passed as a tensor input) along an affine grid pattern 
+      in the field. 
+      This enables grids representing small patches of a larger transform, 
+      as well as the composition of multiple transforms before sampling.
+  """
+  def __init__(self,
+               source_shape,
+               output_shape,
+               coeff_shape,
+               field_transform=None,
+               resampler=None,
+               name='resampling_interpolated_spline_grid_warper'):
+    """Constructs an ResampledFieldingGridWarperLayer.
+    Args:
+      source_shape: Iterable of integers determining the size of the source
+        signal domain.
+      output_shape: Iterable of integers determining the size of the destination
+        resampled signal domain.
+      coeff_shape: Shape of displacement field.
+      interpolation: type of interpolation as used by tf.image.resize_images
+      name: Name of Module.
+      field_transform: an object defining the spatial relationship between the 
+        output_grid and the field. 
+        batch_size x4x4 tensor: per-image transform matrix from output coords to field coords
+        None (default):         corners of output map to corners of field with an allowance for
+                                  interpolation (1 for bspline, 0 for linear)
+      resampler: a ResamplerLayer used to interpolate the 
+        deformation field
+      name: Name of module.
+
+    Raises:
+      TypeError: If output_shape and source_shape are not both iterable.
+    """
+    if resampler==None:
+      self._resampler=ResamplerLayer(interpolation='LINEAR',boundary='REPLICATE')
+      self._interpolation = 'LINEAR'
+    else:
+      self._resampler=resampler
+      self._interpolation = self._resampler.interpolation
+    
+    self._field_transform = field_transform
+    
+    super(ResampledFieldGridWarperLayer, self).__init__(source_shape=source_shape,
+                                           output_shape=output_shape,
+                                           coeff_shape=coeff_shape,
+                                           name=name)
+
+  def _create_features(self):
+    """Creates the coordinates for resampling. If field_transform is None, these are constant and are
+       created in field space; otherwise, the final coordinates will be transformed by an input tensor representing 
+       a transform from output coordinates to field coordinates, so they are created are created in output coordinate space
+    """
+    embedded_output_shape = list(self._output_shape)+[1]*(len(self._source_shape) - len(self._output_shape))
+    embedded_coeff_shape = list(self._coeff_shape)+[1]*(len(self._source_shape) - len(self._output_shape))
+    if self._field_transform==None and self._interpolation == 'BSPLINE':
+      range_func= lambda f,x: tf.linspace(1.,f-2.,x)
+    elif self._field_transform==None and self._interpolation != 'BSPLINE':
+      range_func= lambda f,x: tf.linspace(0.,f-1.,x)
+    else:
+      range_func= lambda f,x: np.arange(x,dtype=np.float32)
+      embedded_output_shape+=[1] # make homogeneous
+      embedded_coeff_shape+=[1]
+    ranges = [range_func(f,x) for f,x in zip(embedded_coeff_shape,embedded_output_shape)]
+    coords= tf.stack([tf.reshape(x,[1,-1]) for x in tf.meshgrid(*ranges, indexing='ij')],2)
+    return coords
+
+  def layer_op(self, field):
+    """Assembles the module network and adds it to the graph.
+
+    The internal computation graph is assembled according to the set of
+    constraints provided at construction time.
+
+    Args:
+      field: Tensor containing a batch of transformation parameters.
+
+    Returns:
+      A batch of warped grids.
+
+    Raises:
+      Error: If the input tensor size is not consistent with the constraints
+        passed at construction time.
+    """
+    input_shape = tf.shape(field)
+    input_dtype = field.dtype.as_numpy_dtype
+    batch_size = int(field.get_shape()[0])
+    
+    # transform grid into field coordinate space if necessary
+    if self._field_transform==None:
+      coords=self._psi
+    else:
+      coords = tf.matmul(self._psi,self._field_transform[:,:,1:3])
+    # resample
+    coords = tf.reshape(tf.tile(coords,[batch_size,1,1]),[-1]+list(self._output_shape)+[len(self._source_shape)])
+    resampled_coords = self._resampler(field, coords)
+    return resampled_coords
+
+    
 def _create_affine_features(output_shape, source_shape):
   """Generates n-dimensional homogenous coordinates for a given grid definition.
     `source_shape` and `output_shape` are used to define the size of the source
@@ -247,7 +475,7 @@ class AffineGridWarperLayer(GridWarperLayer):
 
     super(AffineGridWarperLayer, self).__init__(source_shape=source_shape,
                                            output_shape=output_shape,
-                                           num_coeff=6,
+                                           coeff_shape=[6],
                                            name=name,
                                            constraints=self._constraints)
 
@@ -418,7 +646,7 @@ class AffineGridWarperLayer(GridWarperLayer):
       tf.errors.UnimplementedError: If the function is called on a non 2D
         instance of AffineGridWarper.
     """
-    if self._num_coeff != 6:
+    if self._coeff_shape != [6]:
       raise tf.errors.UnimplementedError('AffineGridWarper currently supports'
                                          'inversion only for the 2D case.')
     def _affine_grid_warper_inverse(inputs):
