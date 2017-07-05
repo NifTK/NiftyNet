@@ -202,6 +202,20 @@ def run(net_class, param, volume_loader, device_str):
             sess.run(init_op)
             print('Weights from random initialisations...')
         coord = tf.train.Coordinator()
+        # tensorboard would like to find the logs from different training runs in separate subdirs
+        log_sub_dirs = [name for name in os.listdir(os.path.join(root_dir, 'logs'))
+                        if os.path.isdir(os.path.join(root_dir, 'logs', name))]
+        if log_sub_dirs:
+            try:
+                previous_sub_dir = max([int(name) for name in log_sub_dirs])
+            except:
+                quit('Any immediate sub directories of the log directory must be integer-numbered')
+            if param.starting_iter > 0:
+                current_log_sub_dir = str(previous_sub_dir)
+            else:
+                current_log_sub_dir = str(1 + previous_sub_dir)
+        else:
+            current_log_sub_dir = '0'
         writer = tf.summary.FileWriter(os.path.join(root_dir, 'logs'),
                                        sess.graph)
         try:
