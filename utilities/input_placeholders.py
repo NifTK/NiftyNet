@@ -239,7 +239,9 @@ class ImagePatch(object):
         # input image should be [ h x w x d x mod ]
         if isinstance(img,ColumnData):
           img=img.data
+        if isinstance(seg,ColumnData):
           seg=seg.data
+        if isinstance(w_map,ColumnData):
           w_map=w_map.data
         assert img.ndim == 4
         # TODO:check the colon operator
