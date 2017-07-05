@@ -407,11 +407,12 @@ def build_parser(parents, defaults):
     parser.add_argument(
         "--window_sampling",
         metavar='TYPE_STR',
-        help="Whether to sample patches/volumes from a uniform distribution ("
-             "'uniform' or to preferentially select patches with features "
-             "of interest ('selective'). 'selective' has properties that depend"
-             "on the 'min_sampling_ratio' and the 'min_numb_labels'",
-        choices=['uniform', 'selective'],
+        help="How to sample patches from each loaded image: fixed size uniformly distributed "
+             " ('uniform'), fixed size preferentially selected patches to have features "
+             "of interest ('selective'), or taking the whole image and rescaling it to the "
+             " patch size ('resize'). 'selective' has properties that depend"
+             "on the 'min_sampling_ratio' and the 'min_numb_labels' parameters",
+        choices=['uniform', 'selective','resize'],
         default='uniform'
     )
     parser.add_argument(
