@@ -216,7 +216,7 @@ def run(net_class, param, volume_loader, device_str):
                 current_log_sub_dir = str(1 + previous_sub_dir)
         else:
             current_log_sub_dir = '0'
-        writer = tf.summary.FileWriter(os.path.join(root_dir, 'logs'),
+        writer = tf.summary.FileWriter(os.path.join(root_dir, 'logs', current_log_sub_dir),
                                        sess.graph)
         try:
             print('Filling the queue (this can take a few minutes)')
