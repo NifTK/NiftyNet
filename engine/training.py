@@ -12,6 +12,7 @@ from engine.input_buffer import TrainEvalInputBuffer
 from engine.spatial_location_check import SpatialLocationCheckLayer
 from engine.selective_sampler import SelectiveSampler
 from engine.uniform_sampler import UniformSampler
+from engine.resize_sampler import ResizeSampler
 from layer.loss import LossFunction
 from utilities import misc_common as util
 from utilities.input_placeholders import ImagePatch
@@ -71,6 +72,12 @@ def run(net_class, param, volume_loader, device_str):
                     data_augmentation_methods=None,
                     patch_per_volume=param.sample_per_volume,
                     name="selective_sampler")
+            elif param.window_sampling == 'resize':
+                sampler = ResizeSampler(
+                    patch=patch_holder,
+                    volume_loader=volume_loader,
+                    data_augmentation_methods=None,
+                    name="resize_sampler")
         w_regularizer = None
         b_regularizer = None
         if param.reg_type.lower() == 'l2':
