@@ -36,7 +36,7 @@ def run(param, csv_dict):
         0, len(csv_loader._csv_table))]
     # seg_names = util.list_files(param.seg_dir, param.ext)
     # ref_names = util.list_files(param.ref_dir, param.ext)
-    pair_list = zip(seg_names, ref_names)
+    pair_list = list(zip(seg_names, ref_names))
     # TODO check seg_names ref_names matching
     # TODO do we evaluate all combinations?
     # import itertools
@@ -48,7 +48,7 @@ def run(param, csv_dict):
     with open(os.path.join(param.save_csv_dir, out_name), 'w+') as out_stream:
         # a trivial PairwiseMeasures obj to produce header_str
         m_headers = PairwiseMeasures(0, 0, measures=MEASURES).header_str()
-        print >> out_stream, "Name (ref), Name (seg), Label" + m_headers + '\n'
+        out_stream.write("Name (ref), Name (seg), Label" + m_headers + '\n')
 
         # do the pairwise evaluations
         for i, pair_ in enumerate(pair_list):
@@ -95,5 +95,5 @@ def run(param, csv_dict):
                                       measures=MEASURES, num_neighbors=6,
                                       pixdim=voxel_sizes)
                 fixed_fields = "{}, {}, {},".format(ref_name, seg_name, j)
-                print >> out_stream, fixed_fields + PE.to_string(
-                    OUTPUT_FORMAT) + '\n'
+                out_stream.write(fixed_fields + PE.to_string(
+                    OUTPUT_FORMAT) + '\n')

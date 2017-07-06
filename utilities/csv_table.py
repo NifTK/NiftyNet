@@ -46,6 +46,12 @@ class CSVTable(SubjectTable):
                                        modality_names=modality_names)
 
     def create_by_joining_multiple_csv_files(self, **csv_dict):
+        """
+        This function creates a CSV table from multiple files read from the
+        argument csv_dict. This is used when the list of inputs, targets,
+        weights... are listed in separate csv files
+        """
+
 
         header = Subject.fields
         csv_to_join = {}
@@ -101,6 +107,12 @@ class CSVTable(SubjectTable):
             self._csv_table.append(joint_csv_row)
 
     def create_by_reading_single_csv(self, csv_file):
+        '''
+        Creates the csv table by reading a single csv_file that contains for
+        each field a single file input.
+        :param csv_file:
+        :return:
+        '''
         self._csv_table = []
         with open(csv_file, "rb") as infile:
             reader = csv.reader(infile)
@@ -112,3 +124,4 @@ class CSVTable(SubjectTable):
                 csv_row.append([[row[3]]])
                 csv_row.append([[row[4]]])
                 self._csv_table.append(csv_row)
+
