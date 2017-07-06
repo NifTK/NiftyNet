@@ -27,9 +27,10 @@ import numpy as np
 import PIL
 from PIL.GifImagePlugin import Image as GIF
 
-def image3_animatedGIF(tag,x):
+def image3_animatedGIF(tag,ims):
   #x=numpy.random.randint(0,256,[10,10,10],numpy.uint8)
-  ims=[GIF.fromarray(np.asarray((x[0,i,:,:,0]).astype(np.uint8))) for i in range(x.shape[3])]
+  ims = [np.asarray((ims[i,:,:]).astype(np.uint8)) for i in range(ims.shape[0])]
+  ims=[GIF.fromarray(im) for im in ims]
   s=b''
   for b in PIL.GifImagePlugin.getheader(ims[0])[0]:
     s+=b
@@ -40,8 +41,41 @@ def image3_animatedGIF(tag,x):
   s+=b'\x3B'
   return [summary_pb2.Summary(value=[summary_pb2.Summary.Value(tag=tag,image=summary_pb2.Summary.Image(height=10,width=10,colorspace=1,encoded_image_string=s))]).SerializeToString()]
 
-def image3(tag,x,collections=[tf.GraphKeys.SUMMARIES]):
+def image3(name,tensor,max_outputs=3,collections=[tf.GraphKeys.SUMMARIES],animation_axes=[1],image_axes=[2,3],other_indices={}):
+  ''' Summary for higher dimensional images
+  Parameters:
+  name: string name for the summary
+  tensor:   tensor to summarize. Should be in the range 0..255.
+            By default, assumes tensor is NDHWC, and animates (through D)
+            HxW slices of the 1st channel.
+  collections: list of strings collections to add the summary to
+  animation_axes=[1],image_axes=[2,3]
+  '''
+  if max_outputs==1:
+    suffix='/image'
+  else:
+    suffix='/image/{}'
+  axis_order = [0]+animation_axes+image_axes
+  print(axis_order)
+  # slice tensor
+  slicing = tuple((slice(None) if i in axis_order else slice(other_indices.get(i,0),other_indices.get(i,0)+1) for i in range(len(tensor.shape))))
+  print(slicing,tensor)
+  tensor=tensor[slicing]
+  print(tensor)
+  axis_order_all = axis_order+[i for i in range(len(tensor.shape.as_list())) if i not in axis_order]
+  new_shape=[tensor.shape.as_list()[0],-1,tensor.shape.as_list()[axis_order[-2]],tensor.shape.as_list()[axis_order[-1]]]
+  transposed_tensor = tf.reshape(tf.transpose(tensor,axis_order_all),new_shape)
+  print(transposed_tensor)
+  # split images
   with tf.device('/cpu:0'):
-    T = tf.py_func(image3_animatedGIF,[tag,x],tf.string)
-  [tf.add_to_collection(c,T) for c in collections]
+    for it in range(min(max_outputs,transposed_tensor.shape.as_list()[0])):
+      T = tf.py_func(image3_animatedGIF,[name+suffix.format(it),transposed_tensor[it,:,:,:]],tf.string)
+      [tf.add_to_collection(c,T) for c in collections]
   return T
+def image3_axial(name,tensor,max_outputs=3,collections=[tf.GraphKeys.SUMMARIES]):
+  return image3(name,tensor,max_outputs,collections,[1],[2,3])
+def image3_coronal(name,tensor,max_outputs=3,collections=[tf.GraphKeys.SUMMARIES]):
+  return image3(name,tensor,max_outputs,collections,[2],[1,3])
+def image3_sagittal(name,tensor,max_outputs=3,collections=[tf.GraphKeys.SUMMARIES]):
+  return image3(name,tensor,max_outputs,collections,[3],[1,2])
+  
