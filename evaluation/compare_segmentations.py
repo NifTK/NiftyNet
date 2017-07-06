@@ -16,8 +16,6 @@ MEASURES = (
     'fpr', 'ppv', 'npv', 'sensitivity', 'specificity',
     'accuracy', 'jaccard', 'dice', 'ave_dist', 'haus_dist'
 )
-MEASURES_NEW = ('ref volume', 'seg volume', 'tp', 'fp', 'fn', 'outline_error',
-            'detection_error', 'dice')
 OUTPUT_FORMAT = '{:4f}'
 OUTPUT_FILE_PREFIX = 'PairwiseMeasure'
 
@@ -94,7 +92,7 @@ def run(param, csv_dict):
                     print("Empty foreground in thresholded binary image.")
                     continue
                 PE = PairwiseMeasures(seg_binary, ref_binary,
-                                      measures=MEASURES_NEW, num_neighbors=6,
+                                      measures=MEASURES, num_neighbors=6,
                                       pixdim=voxel_sizes)
                 fixed_fields = "{}, {}, {},".format(ref_name, seg_name, j)
                 out_stream.write(fixed_fields + PE.to_string(
