@@ -24,6 +24,17 @@ SUPPORTED_CUTPOINTS = {'percentile', 'quartile', 'median'}
 
 
 def __compute_percentiles(img, mask, cutoff):
+    '''
+    Creates the list of percentile values to be used as landmarks for the
+    linear fitting.
+    :param img: Image on which to determine the percentiles
+    :param mask: Mask to use over the image to constraint to the relevant
+    information
+    :param cutoff: Values of the minimum and maximum percentiles to use for
+    the linear fitting
+    :return perc_results: list of percentiles value for the given image over
+    the mask
+    '''
     perc = [cutoff[0],
             0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.9,
             cutoff[1]]
@@ -34,6 +45,13 @@ def __compute_percentiles(img, mask, cutoff):
 
 
 def __standardise_cutoff(cutoff, type_hist='quartile'):
+    '''
+    Standardises the cutoff values given in the configuration
+    :param cutoff:
+    :param type_hist: Type of landmark normalisation chosen (median,
+    quartile, percentile)
+    :return cutoff: cutoff with appropriate adapted values
+    '''
     cutoff = np.asarray(cutoff)
     if cutoff is None:
         return DEFAULT_CUTOFF
@@ -58,6 +76,20 @@ def create_mapping_from_multimod_arrayfiles(array_files,
                                             list_modalities,
                                             cutoff,
                                             masking_function):
+    '''
+    Performs the mapping creation based on a list of files. For each of the
+    files (potentially multimodal), the landmarks are defined for each
+    modality and stored in a database. The average of these landmarks is
+    returned providing the landmarks to use for the linear mapping of any
+    new incoming data
+    :param array_files: List of image files to use
+    :param list_modalities: Name of the modalities used for the
+    standardisation and the corresponding order in the multimodal files
+    :param cutoff: Minimum and maximum landmarks percentile values to use for
+     the mapping
+    :param masking_function: Describes how the mask is defined for each image.
+    :return:
+    '''
     perc_database = {}
     for (i, p) in enumerate(array_files):
         printProgressBar(i, len(array_files),
@@ -92,6 +124,12 @@ def create_standard_range():
 
 
 def __averaged_mapping(perc_database, s1, s2):
+    ''''
+    Map the landmarks of the database to the chosen range
+    :param perc_database: perc_database over which to perform the averaging
+    :param s1, s2: limits of the mapping range
+    :return final_map: the average mapping
+    '''
     # assuming shape: n_data_points = perc_database.shape[0]
     #                 n_percentiles = perc_database.shape[1]
     slope = (s2 - s1) / (perc_database[:, -1] - perc_database[:, 0])
@@ -104,6 +142,17 @@ def __averaged_mapping(perc_database, s1, s2):
 
 # TODO: test cases
 def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
+    '''
+    Performs the standardisation of a given image
+    :param img: image to standardise
+    :param mask: mask over which to determine the landmarks
+    :param mapping: mapping landmarks to use for the piecewise linear
+    transformations
+    :param cutoff: cutoff points for the mapping
+    :param type_hist: Type of landmarks scheme to use: choice between
+    quartile percentile and median
+    :return new_img: the standardised image
+    '''
     type_hist = look_up_operations(type_hist.lower(), SUPPORTED_CUTPOINTS)
     if type_hist == 'quartile':
         range_to_use = [0, 3, 6, 9, 12]
@@ -163,6 +212,12 @@ def smooth_threshold(value, mode='high'):
 
 
 def read_mapping_file(mapping_file):
+    '''
+    Reads an existing mapping file with the given modalities.
+    :param mapping_file: file in which mapping is stored
+    :return mapping_dict: dictionary containing the mapping landmarks for
+    each modality stated in the mapping file
+    '''
     mapping_dict = {}
     if not os.path.isfile(mapping_file):
         return mapping_dict
@@ -179,6 +234,12 @@ def read_mapping_file(mapping_file):
 
 
 def force_writing_new_mapping(filename, mapping_dict):
+    '''
+    Writes a mapping dictionary to file
+    :param filename: name of the file in which to write the saved mapping
+    :param mapping_dict: mapping dictionary to save in the file
+    :return:
+    '''
     f = open(filename, 'w+')
     for mod in mapping_dict.keys():
         mapping_string = ' '.join(map(str, mapping_dict[mod]))

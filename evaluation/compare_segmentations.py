@@ -48,14 +48,14 @@ def run(param, csv_dict):
     with open(os.path.join(param.save_csv_dir, out_name), 'w+') as out_stream:
         # a trivial PairwiseMeasures obj to produce header_str
         m_headers = PairwiseMeasures(0, 0, measures=MEASURES).header_str()
-        print >> out_stream, "Name (ref), Name (seg), Label" + m_headers + '\n'
+        out_stream.write("Name (ref), Name (seg), Label" + m_headers + '\n')
 
         # do the pairwise evaluations
         for i, pair_ in enumerate(pair_list):
             seg_name = pair_[0]
             ref_name = pair_[1]
             print('>>> {} of {} evaluations, comparing {} and {}.'.format(
-                i + 1, len(pair_list), ref_name, seg_name))
+                i + 1, len(list(pair_list)), ref_name, seg_name))
             seg_nii = nib.load(os.path.join(param.seg_dir, seg_name))
             ref_nii = nib.load(os.path.join(param.ref_dir, ref_name))
             voxel_sizes = seg_nii.header.get_zooms()[0:3]
@@ -95,5 +95,5 @@ def run(param, csv_dict):
                                       measures=MEASURES, num_neighbors=6,
                                       pixdim=voxel_sizes)
                 fixed_fields = "{}, {}, {},".format(ref_name, seg_name, j)
-                print >> out_stream, fixed_fields + PE.to_string(
-                    OUTPUT_FORMAT) + '\n'
+                out_stream.write(fixed_fields + PE.to_string(
+                    OUTPUT_FORMAT) + '\n')
