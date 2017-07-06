@@ -36,7 +36,7 @@ def run(param, csv_dict):
         0, len(csv_loader._csv_table))]
     # seg_names = util.list_files(param.seg_dir, param.ext)
     # ref_names = util.list_files(param.ref_dir, param.ext)
-    pair_list = zip(seg_names, ref_names)
+    pair_list = list(zip(seg_names, ref_names))
     # TODO check seg_names ref_names matching
     # TODO do we evaluate all combinations?
     # import itertools
@@ -55,7 +55,7 @@ def run(param, csv_dict):
             seg_name = pair_[0]
             ref_name = pair_[1]
             print('>>> {} of {} evaluations, comparing {} and {}.'.format(
-                i + 1, len(list(pair_list)), ref_name, seg_name))
+                i + 1, len(pair_list), ref_name, seg_name))
             seg_nii = nib.load(os.path.join(param.seg_dir, seg_name))
             ref_nii = nib.load(os.path.join(param.ref_dir, ref_name))
             voxel_sizes = seg_nii.header.get_zooms()[0:3]
