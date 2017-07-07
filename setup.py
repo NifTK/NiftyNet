@@ -24,8 +24,6 @@ setup(
         '',
     ],  # TODO
 
-    keywords='',  # TODO
-
     packages=find_packages(exclude=['', '', '']),  # TODO
 
     install_requires=['', '', ''],  # TODO
