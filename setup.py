@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 setup(
     name='NiftyNet',
 
-    version='0.1',  # TODO
+    version='0.1rc1',  # TODO
 
     description=open('pip/description.rst').read(),
     long_description=open('pip/long_description.rst').read(),
