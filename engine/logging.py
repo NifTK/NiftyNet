@@ -56,16 +56,12 @@ def image3(name,tensor,max_outputs=3,collections=[tf.GraphKeys.SUMMARIES],animat
   else:
     suffix='/image/{}'
   axis_order = [0]+animation_axes+image_axes
-  print(axis_order)
   # slice tensor
   slicing = tuple((slice(None) if i in axis_order else slice(other_indices.get(i,0),other_indices.get(i,0)+1) for i in range(len(tensor.shape))))
-  print(slicing,tensor)
   tensor=tensor[slicing]
-  print(tensor)
   axis_order_all = axis_order+[i for i in range(len(tensor.shape.as_list())) if i not in axis_order]
   new_shape=[tensor.shape.as_list()[0],-1,tensor.shape.as_list()[axis_order[-2]],tensor.shape.as_list()[axis_order[-1]]]
   transposed_tensor = tf.reshape(tf.transpose(tensor,axis_order_all),new_shape)
-  print(transposed_tensor)
   # split images
   with tf.device('/cpu:0'):
     for it in range(min(max_outputs,transposed_tensor.shape.as_list()[0])):
