@@ -9,7 +9,7 @@ setup(
     description=open('pip/description.rst').read(),
     long_description=open('pip/long_description.rst').read(),
 
-    url='',  # TODO
+    url='http://niftynet.io/',
 
     author='',  # TODO
     author_email='',  # TODO
