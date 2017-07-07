@@ -1,4 +1,14 @@
 from setuptools import setup, find_packages
+from codecs import open
+
+
+# Get the summary
+with open('pip/description.rst', encoding='utf-8') as f:
+    description = f.read()
+
+# Get the long description
+with open('pip/long_description.rst', encoding='utf-8') as f:
+    long_description = f.read()
 
 
 setup(
@@ -6,8 +16,8 @@ setup(
 
     version='0.1rc1',  # TODO
 
-    description=open('pip/description.rst').read(),
-    long_description=open('pip/long_description.rst').read(),
+    description=description,
+    long_description=long_description,
 
     url='http://niftynet.io/',
 
