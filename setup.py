@@ -11,8 +11,10 @@ setup(
 
     url='http://niftynet.io/',
 
-    author='',  # TODO
-    author_email='',  # TODO
+    author='Wenqi Li, Carole Sudre, Zach Eaton-Rosen,'
+           ' Jorge Cardoso, Tom Vercauteren and other'
+           ' NiftyNet Contributors',
+    author_email='wenqi.li@ucl.ac.uk',
 
     license='',  # TODO
 
