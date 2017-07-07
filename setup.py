@@ -1,8 +1,6 @@
 from setuptools import setup, find_packages
 
 
-desc='NiftyNet is an open-source library for convolutional' \
-     ' networks in medical image analysis.'
 more='NiftyNet was developed by the Centre for Medical Image' \
      ' Computing at University College London (UCL).' \
      '\n' \
@@ -25,7 +23,7 @@ setup(
 
     version='0.1',  # TODO
 
-    description=desc,
+    description=open('pip/description.rst').read(),
     long_description=more,  # TODO
 
     url='',  # TODO
