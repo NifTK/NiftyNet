@@ -40,7 +40,7 @@ mask_type = otsu_plus
 
 # volume level preprocessing
 reorientation = True
-resampling = True
+resampling = False
 normalisation = True
 whitening = True
 image_interp_order = 3
@@ -60,7 +60,7 @@ min_percentage = -10.0
 max_percentage = 10.0
 min_numb_labels = 2
 min_sampling_ratio = 0.000001
-window_sampling = uniform
+window_sampling = resize
 
 # ** training only ** gradient descent and loss parameters
 lr = 0.00002

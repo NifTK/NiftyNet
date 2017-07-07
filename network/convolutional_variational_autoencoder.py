@@ -383,21 +383,25 @@ class VAE_convolutional(TrainableLayer):
         KL = tf.summary.scalar('KL_divergence', KL_divergence)
         tf.add_to_collection(engine.logging.CONSOLE, KL)
 
-        # Add reconstructions to tensorboard
-        recon1 = images[1:4, :, 12, :, 0]
-        recon1 = tf.reshape(recon1, [-1, 24, 24, 1])
-        recon1 = tf.summary.image('Originals', recon1)
-        tf.add_to_collection(engine.logging.LOG, recon1)
+        # # Add reconstructions to tensorboard
+        # recon1 = images[1:4, :, 12, :, 0]
+        # recon1 = tf.reshape(recon1, [-1, 24, 24, 1])
+        # recon1 = tf.summary.image('Originals', recon1)
+        # tf.add_to_collection(engine.logging.LOG, recon1)
+        #
+        # recon2 = flow_means[1:4, :, 12, :, 0]
+        # recon2 = tf.reshape(recon2, [-1, 24, 24, 1])
+        # recon2 = tf.summary.image('Means', recon2)
+        # tf.add_to_collection(engine.logging.LOG, recon2)
+        #
+        # recon3 = data_variances[1:4, :, 12, :, 0]
+        # recon3 = tf.reshape(recon3, [-1, 24, 24, 1])
+        # recon3 = tf.summary.image('Variances', recon3)
+        # tf.add_to_collection(engine.logging.LOG, recon3)
 
-        recon2 = flow_means[1:4, :, 12, :, 0]
-        recon2 = tf.reshape(recon2, [-1, 24, 24, 1])
-        recon2 = tf.summary.image('Means', recon2)
-        tf.add_to_collection(engine.logging.LOG, recon2)
-
-        recon3 = data_variances[1:4, :, 12, :, 0]
-        recon3 = tf.reshape(recon3, [-1, 24, 24, 1])
-        recon3 = tf.summary.image('Variances', recon3)
-        tf.add_to_collection(engine.logging.LOG, recon3)
+        # x = np.random.randint(0, 256, [10, 10, 10, 10, 10], np.uint8)
+        # engine.logging.image3('Original', x)
+        # engine.logging.image3('Original', images)
 
         return [posterior_means, posterior_logvariances, flow_means, data_logvariances,
                 images, data_variances, posterior_variances]

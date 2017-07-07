@@ -235,26 +235,28 @@ class ImagePatch(object):
         self._weight_map = value
 
     ### end of set the corresponding data of each placeholder
-
     def set_data(self, subject_id, spatial_loc, img, seg, w_map):
         # input image should be [ h x w x d x mod ]
-        assert isinstance(img, ColumnData)
-        assert img.data.ndim == 4
+        if isinstance(img,ColumnData):
+          img=img.data
+          seg=seg.data
+          w_map=w_map.data
+        assert img.ndim == 4
         # TODO:check the colon operator
         self.info = np.array(np.hstack([[subject_id], spatial_loc]),
                              dtype=np.int64)
 
         if self.spatial_rank == 3:
             x_, y_, z_, _x, _y, _z = spatial_loc
-            assert _x <= img.data.shape[0]
-            assert _y <= img.data.shape[1]
-            assert _z <= img.data.shape[2]
-            self.image = img.data[x_:_x, y_:_y, z_:_z, :]
+            assert _x <= img.shape[0]
+            assert _y <= img.shape[1]
+            assert _z <= img.shape[2]
+            self.image = img[x_:_x, y_:_y, z_:_z, :]
             if self.has_labels and (seg is not None):
                 diff = int((self.image_size - self.label_size) / 2)
                 assert diff >= 0  # assumes label_size <= image_size
                 x_d, y_d, z_d = (x_ + diff), (y_ + diff), (z_ + diff)
-                self.label = seg.data[x_d: (self.label_size + x_d),
+                self.label = seg[x_d: (self.label_size + x_d),
                                       y_d: (self.label_size + y_d),
                                       z_d: (self.label_size + z_d), :]
 
@@ -263,7 +265,7 @@ class ImagePatch(object):
                 assert diff >= 0
                 x_d, y_d, z_d = (x_ + diff), (y_ + diff), (z_ + diff)
                 self.weight_map = \
-                    w_map.data[x_d: (self.weight_map_size + x_d),
+                    w_map[x_d: (self.weight_map_size + x_d),
                                y_d: (self.weight_map_size + y_d),
                                z_d: (self.weight_map_size + z_d), :]
             return
@@ -275,15 +277,15 @@ class ImagePatch(object):
         if self.spatial_rank == 2.5:
             x_, y_, z_, _x, _y = [int(c) for c in spatial_loc]
 
-        assert _x <= img.data.shape[0]
-        assert _y <= img.data.shape[1]
-        assert z_ < img.data.shape[2]
-        self.image = img.data[x_:_x, y_:_y, z_, :]
+        assert _x <= img.shape[0]
+        assert _y <= img.shape[1]
+        assert z_ < img.shape[2]
+        self.image = img[x_:_x, y_:_y, z_, :]
         if self.has_labels and (seg is not None):
             diff = int((self.image_size - self.label_size) / 2)
             assert diff >= 0  # assumes label_size <= image_size
             x_d, y_d = (x_ + diff), (y_ + diff)
-            self.label = seg.data[x_d: (self.label_size + x_d),
+            self.label = seg[x_d: (self.label_size + x_d),
                                   y_d: (self.label_size + y_d), z_, :]
 
         if self.has_weight_maps and (w_map is not None):
@@ -291,7 +293,7 @@ class ImagePatch(object):
             assert diff >= 0
             x_d, y_d, = (x_ + diff), (y_ + diff)
             self.weight_map = \
-                w_map.data[x_d: (self.weight_map_size + x_d),
+                w_map[x_d: (self.weight_map_size + x_d),
                            y_d: (self.weight_map_size + y_d), z_, :]
         return
 
