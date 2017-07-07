@@ -50,7 +50,7 @@ def run(param, csv_dict):
         print('to folder: {}'.format(param.save_csv_dir))
         # a trivial RegionProperties obj to produce header_str
         header_str = RegionProperties(None, img, MEASURES).header_str()
-        out_stream.write('Dim,Label' + header_str)
+        out_stream.write('Dim,Label' + header_str +'\n')
         # print >> out_stream, 'Dim,Label' + header_str
 
         for d in np.arange(0, seg.shape[3]):
@@ -85,7 +85,8 @@ def run(param, csv_dict):
                     continue
                 roi_stats = RegionProperties(seg_d_binary, img, MEASURES)
                 fixed_fields = '{},{}'.format(d, i)
-                out_stream.write(fixed_fields + roi_stats.to_string(OUTPUT_FORMAT))
+                out_stream.write(fixed_fields + roi_stats.to_string(
+                    OUTPUT_FORMAT) + '\n')
                 # print >> out_stream, \
                 # fixed_fields + roi_stats.to_string(OUTPUT_FORMAT)
         out_stream.close()

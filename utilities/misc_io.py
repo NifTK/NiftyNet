@@ -273,7 +273,7 @@ def save_volume_5d(img_data, filename, save_path, img_ref=None):
         return
     if not os.path.exists(save_path):
         os.makedirs(save_path)
-    img_ref = rectify_header_sform_qform(img_ref)
+    img_ref = correct_image_if_necessary(img_ref)
     affine = img_ref.affine
     img_nii = nib.Nifti1Image(img_data, affine)
     img_nii.set_data_dtype(np.dtype(np.float32))
