@@ -1,11 +1,11 @@
 [image modality 1]
 path_to_search = ./data/PROMISE12
-filename_contains = T2,Case2
-filename_not_contains = 
+filename_contains = Case,mhd
+filename_not_contains = segmentation
 
 [label modality 1]
 path_to_search = ./data/PROMISE12
-filename_contains = segmentation,Case2
+filename_contains = segmentation,Case,mhd
 filename_not_contains = 
 
 [settings]
@@ -27,7 +27,7 @@ w_map_size = 64
 num_classes = 2
 
 # affected by network's receptive field
-volume_padding_size = 21
+volume_padding_size = 0
 
 #histogram normalisation
 histogram_ref_file = ./demos/PROMISE12/standardisation_models.txt
@@ -39,7 +39,7 @@ mask_type = otsu_plus
 
 # volume level preprocessing
 reorientation = True
-resampling = True
+resampling = False
 normalisation = True
 whitening = True
 image_interp_order = 3
@@ -57,6 +57,9 @@ max_angle = 10.0
 spatial_scaling = True
 min_percentage = -10.0
 max_percentage = 10.0
+min_numb_labels = 2
+min_sampling_ratio = 0.000001
+window_sampling = resize
 
 # ** training only ** gradient descent and loss parameters
 lr = 0.00002
@@ -69,7 +72,7 @@ max_iter = 25000
 
 # ** inference only ** system parameters
 border = 5
-pred_iter = 25000
+inference_iter = 25000
 save_seg_dir = ./output/promise12_demo
 
 output_interp_order = 0
