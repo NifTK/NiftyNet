@@ -13,12 +13,13 @@ import tensorflow as tf
 import numpy as np
 import engine.logging
 
+
 class VAE_convolutional(TrainableLayer):
     """
         This is a convolutional autoencoder, composed of a sequence of CNN+Pooling layers,
         followed by a sequence of fully-connected layers, followed by a sequence of
         TRANS_CNN+Unpooling layers.
-        
+
         2DO: make the use of FC/convolutions optional, so a fully connected AE, and a fully convolutional
         AE, are both possible.
         2DO: make the pooling sizes vectors, so we can pool in x & y but not z, say.
@@ -28,26 +29,26 @@ class VAE_convolutional(TrainableLayer):
 
     def __init__(self,
                  num_classes=None,
-                 acti_func = None,
+                 acti_func=None,
                  w_initializer=None,
                  w_regularizer=None,
                  b_initializer=None,
                  b_regularizer=None,
-                 conv_features = None,
-                 conv_kernel_sizes = None,
-                 conv_pooling_factors = None,
-                 acti_func_conv = None,
-                 layer_sizes_encoder = None,
-                 acti_func_encoder = None,
-                 layer_sizes_decoder = None,
-                 acti_func_decoder = None,
-                 acti_func_fully_connected_output = None,
-                 trans_conv_features = None,
-                 trans_conv_kernels_sizes = None,
-                 trans_conv_unpooling_factors = None,
-                 upsampling_mode = None,
-                 acti_func_trans_conv_means = None,
-                 acti_func_trans_conv_logvariances = None,
+                 conv_features=None,
+                 conv_kernel_sizes=None,
+                 conv_pooling_factors=None,
+                 acti_func_conv=None,
+                 layer_sizes_encoder=None,
+                 acti_func_encoder=None,
+                 layer_sizes_decoder=None,
+                 acti_func_decoder=None,
+                 acti_func_fully_connected_output=None,
+                 trans_conv_features=None,
+                 trans_conv_kernels_sizes=None,
+                 trans_conv_unpooling_factors=None,
+                 upsampling_mode=None,
+                 acti_func_trans_conv_means=None,
+                 acti_func_trans_conv_logvariances=None,
                  name='VAE_convolutional'):
 
         super(VAE_convolutional, self).__init__(name=name)
@@ -135,20 +136,20 @@ class VAE_convolutional(TrainableLayer):
         # Calculate the dimensionality of the data as it emerges from the convolutional part of the encoder
         # NB: we assume for now that we always follow a CNN encoder with 2^N downsampling
         data_downsampled_dimensions = data_dims.copy()
-        for p in range(0,len(data_downsampled_dimensions)-1):
-            data_downsampled_dimensions[p] /= 2**len(self.conv_features)
+        for p in range(0, len(data_downsampled_dimensions) - 1):
+            data_downsampled_dimensions[p] /= 2 ** len(self.conv_features)
             data_downsampled_dimensions[p] = int(data_downsampled_dimensions[p])
         data_downsampled_dimensions[-1] = self.conv_features[-1]
-        data_downsampled_dimensionality = int(data_dims_product / (2**(3*len(self.conv_features))))
+        data_downsampled_dimensionality = int(data_dims_product / (2 ** (3 * len(self.conv_features))))
 
         number_of_input_channels = data_dims[-1]
-        assert (self.trans_conv_features[-1] == number_of_input_channels),\
+        assert (self.trans_conv_features[-1] == number_of_input_channels), \
             "The number of output channels must match the number of input channels"
 
         # Define the encoding convolution layers
         encoders_cnn = []
         encoders_downsamplers = []
-        for i in range(0,len(self.conv_features)):
+        for i in range(0, len(self.conv_features)):
             encoders_cnn.append(ConvolutionalLayer(
                 n_output_chns=self.conv_features[i],
                 kernel_size=self.conv_kernel_sizes[i],
@@ -164,7 +165,7 @@ class VAE_convolutional(TrainableLayer):
             encoders_downsamplers.append(ConvolutionalLayer(
                 n_output_chns=self.conv_features[i],
                 kernel_size=2,
-                stride = 2,
+                stride=2,
                 padding='SAME',
                 with_bias=False,
                 with_bn=False,
@@ -174,12 +175,12 @@ class VAE_convolutional(TrainableLayer):
                 name='encoder_downsampler_{}_{}'.format(2, 2)))
             print(encoders_downsamplers[-1])
 
-        raster_feature_maps = ReshapeLayer([-1, data_downsampled_dimensionality*self.conv_features[-1]])
+        raster_feature_maps = ReshapeLayer([-1, data_downsampled_dimensionality * self.conv_features[-1]])
         print(raster_feature_maps)
 
         # Define the encoding fully connected layers
         encoders_fc = []
-        for i in range(0,len(self.layer_sizes_encoder)):
+        for i in range(0, len(self.layer_sizes_encoder)):
             encoders_fc.append(FullyConnectedLayer(
                 n_output_nodes=self.layer_sizes_encoder[i],
                 with_bias=True,
@@ -229,16 +230,16 @@ class VAE_convolutional(TrainableLayer):
 
         # Define the final decoding fully connected layer
         decoders_fc.append(FullyConnectedLayer(
-            n_output_nodes=data_downsampled_dimensionality*self.conv_features[-1],
+            n_output_nodes=data_downsampled_dimensionality * self.conv_features[-1],
             with_bias=True,
             with_bn=True,
             acti_func=self.acti_func_fully_connected_output,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
-            name='decoder_fc_{}'.format(data_downsampled_dimensionality*self.conv_features[-1])))
+            name='decoder_fc_{}'.format(data_downsampled_dimensionality * self.conv_features[-1])))
         print(decoders_fc[-1])
 
-        unraster_feature_maps = ReshapeLayer([-1]+data_downsampled_dimensions)
+        unraster_feature_maps = ReshapeLayer([-1] + data_downsampled_dimensions)
         print(unraster_feature_maps)
 
         # Define the decoding convolution layers
@@ -267,11 +268,12 @@ class VAE_convolutional(TrainableLayer):
                 stride=1,
                 padding='SAME',
                 with_bias=True,
-                with_bn=not (i == len(self.trans_conv_features) - 1), # No BN on output
+                with_bn=not (i == len(self.trans_conv_features) - 1),  # No BN on output
                 w_initializer=self.initializers['w'],
                 w_regularizer=None,
                 acti_func=self.acti_func_trans_conv_means[i],
-                name='decoder_trans_conv_means_{}_{}'.format(self.trans_conv_kernels_sizes[i], self.trans_conv_features[i])))
+                name='decoder_trans_conv_means_{}_{}'.format(self.trans_conv_kernels_sizes[i],
+                                                             self.trans_conv_features[i])))
             print(decoders_means_cnn[-1])
 
         for i in range(0, len(self.trans_conv_features)):
@@ -295,12 +297,12 @@ class VAE_convolutional(TrainableLayer):
                 stride=1,
                 padding='SAME',
                 with_bias=True,
-                with_bn=not (i == len(self.trans_conv_features) - 1), # No BN on output
+                with_bn=not (i == len(self.trans_conv_features) - 1),  # No BN on output
                 w_initializer=self.initializers['w'],
                 w_regularizer=None,
                 acti_func=self.acti_func_trans_conv_logvariances[i],
                 name='decoder_trans_conv_variances_{}_{}'.format(self.trans_conv_kernels_sizes[i],
-                                                                  self.trans_conv_features[i])))
+                                                                 self.trans_conv_features[i])))
             print(decoders_logvariances_cnn[-1])
 
         # Convolutional encoder layers
@@ -353,12 +355,12 @@ class VAE_convolutional(TrainableLayer):
                 flow_logvariances = decoders_logvariances_upsamplers[i](flow_logvariances, is_training)
             elif self.upsampling_mode == 'CHANNELWISE_DECONV':
                 flow_logvariances = UpSampleLayer('CHANNELWISE_DECONV',
-                                           kernel_size=2,
-                                           stride=2)(flow_logvariances)
+                                                  kernel_size=2,
+                                                  stride=2)(flow_logvariances)
             elif self.upsampling_mode == 'REPLICATE':
                 flow_logvariances = UpSampleLayer('REPLICATE',
-                                           kernel_size=2,
-                                           stride=2)(flow_logvariances)
+                                                  kernel_size=2,
+                                                  stride=2)(flow_logvariances)
             flow_logvariances = decoders_logvariances_cnn[i](flow_logvariances, is_training)
 
         # Clip these predictions so flow_variances = exp(flow_logvariances) is well-behaved
@@ -380,6 +382,22 @@ class VAE_convolutional(TrainableLayer):
         KL_divergence = tf.reduce_mean(KL_divergence)
         KL = tf.summary.scalar('KL_divergence', KL_divergence)
         tf.add_to_collection(engine.logging.CONSOLE, KL)
+
+        # Add reconstructions to tensorboard
+        recon1 = images[1:4, :, 12, :, 0]
+        recon1 = tf.reshape(recon1, [-1, 24, 24, 1])
+        recon1 = tf.summary.image('Originals', recon1)
+        tf.add_to_collection(engine.logging.LOG, recon1)
+
+        recon2 = flow_means[1:4, :, 12, :, 0]
+        recon2 = tf.reshape(recon2, [-1, 24, 24, 1])
+        recon2 = tf.summary.image('Means', recon2)
+        tf.add_to_collection(engine.logging.LOG, recon2)
+
+        recon3 = data_variances[1:4, :, 12, :, 0]
+        recon3 = tf.reshape(recon3, [-1, 24, 24, 1])
+        recon3 = tf.summary.image('Variances', recon3)
+        tf.add_to_collection(engine.logging.LOG, recon3)
 
         return [posterior_means, posterior_logvariances, flow_means, data_logvariances,
                 images, data_variances, posterior_variances]

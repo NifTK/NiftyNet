@@ -16,7 +16,6 @@ from layer.loss import LossFunction
 from utilities import misc_common as util
 from utilities.input_placeholders import ImagePatch
 import engine.logging
-from utilities.autoencoder_visualisations import ReconsVAE
 
 np.random.seed(seed=int(time.time()))
 
@@ -180,7 +179,8 @@ def run(net_class, param, volume_loader, device_str):
         write_summary_op = tf.summary.merge(logged_summaries)
         # saver
         variables_to_restore = variable_averages.variables_to_restore()
-        saver = tf.train.Saver(max_to_keep=param.max_checkpoints, var_list=variables_to_restore)
+        # saver = tf.train.Saver(max_to_keep=param.max_checkpoints, var_list=variables_to_restore)
+        saver = tf.train.Saver(max_to_keep=param.max_checkpoints)
         tf.Graph.finalize(graph)
     # run session
     config = tf.ConfigProto()
@@ -203,7 +203,21 @@ def run(net_class, param, volume_loader, device_str):
             sess.run(init_op)
             print('Weights from random initialisations...')
         coord = tf.train.Coordinator()
-        writer = tf.summary.FileWriter(os.path.join(root_dir, 'logs'),
+        # tensorboard would like to find the logs from different training runs in separate subdirs
+        log_sub_dirs = [name for name in os.listdir(os.path.join(root_dir, 'logs'))
+                        if os.path.isdir(os.path.join(root_dir, 'logs', name))]
+        if log_sub_dirs:
+            try:
+                previous_sub_dir = max([int(name) for name in log_sub_dirs])
+            except:
+                quit('Any immediate sub directories of the log directory must be integer-numbered')
+            if param.starting_iter > 0:
+                current_log_sub_dir = str(previous_sub_dir)
+            else:
+                current_log_sub_dir = str(1+previous_sub_dir)
+        else:
+            current_log_sub_dir = '0'
+        writer = tf.summary.FileWriter(os.path.join(root_dir, 'logs', current_log_sub_dir),
                                        sess.graph)
         try:
             print('Filling the queue (this can take a few minutes)')
@@ -221,7 +235,6 @@ def run(net_class, param, volume_loader, device_str):
                 values = sess.run(ops_to_run)[1:]
                 if (current_iter % 20) == 0:
                     writer.add_summary(values.pop(), current_iter)
-                    ReconsVAE(predictions, sess)
                 summary_string = ''.join([engine.logging.console_summary_string(v) for v in values])
                 iter_time = time.time() - local_time
                 print(('iter {:d}{}, ({:.3f}s)').format(
