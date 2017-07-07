@@ -72,10 +72,10 @@ def image3(name,tensor,max_outputs=3,collections=[tf.GraphKeys.SUMMARIES],animat
       T = tf.py_func(image3_animatedGIF,[name+suffix.format(it),transposed_tensor[it,:,:,:]],tf.string)
       [tf.add_to_collection(c,T) for c in collections]
   return T
-def image3_axial(name,tensor,max_outputs=3,collections=[tf.GraphKeys.SUMMARIES]):
+def image3_sagittal(name,tensor,max_outputs=3,collections=[tf.GraphKeys.SUMMARIES]):
   return image3(name,tensor,max_outputs,collections,[1],[2,3])
 def image3_coronal(name,tensor,max_outputs=3,collections=[tf.GraphKeys.SUMMARIES]):
   return image3(name,tensor,max_outputs,collections,[2],[1,3])
-def image3_sagittal(name,tensor,max_outputs=3,collections=[tf.GraphKeys.SUMMARIES]):
+def image3_axial(name,tensor,max_outputs=3,collections=[tf.GraphKeys.SUMMARIES]):
   return image3(name,tensor,max_outputs,collections,[3],[1,2])
   
