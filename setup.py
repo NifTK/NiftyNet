@@ -16,7 +16,7 @@ setup(
            ' NiftyNet Contributors',
     author_email='wenqi.li@ucl.ac.uk',
 
-    license='',  # TODO
+    license='License :: OSI Approved :: Apache Software License',
 
     classifiers=[
         '',
