@@ -1,12 +1,14 @@
 from setuptools import setup, find_packages
 
 
+desc='NiftyNet is an open-source library for convolutional' \
+     ' networks in medical image analysis.'
 setup(
     name='NiftyNet',
 
     version='0.1',  # TODO
 
-    description='',  # TODO
+    description=desc,
     long_description='',  # TODO
 
     url='',  # TODO
