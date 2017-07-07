@@ -8,6 +8,7 @@ from utilities.misc_common import look_up_operations
 from . import layer_util
 from .base_layer import TrainableLayer
 from .deconvolution import DeconvLayer
+from .convolution import get_list_parameter
 
 SUPPORTED_OP = {'REPLICATE', 'CHANNELWISE_DECONV'}
 
@@ -24,8 +25,8 @@ class UpSampleLayer(TrainableLayer):
 
     def __init__(self,
                  func,
-                 kernel_size,
-                 stride,
+                 kernel_size=3,
+                 stride=2,
                  w_initializer=None,
                  w_regularizer=None,
                  with_bias=False,
@@ -54,12 +55,15 @@ class UpSampleLayer(TrainableLayer):
                     "consider using `CHANNELWISE_DECONV` operation.")
             # simply replicate input values to
             # local regions of (kernel_size ** spatial_rank) element
-            repmat = np.hstack((self.kernel_size ** spatial_rank,
-                                [1] * spatial_rank, 1)).flatten()
+            kernel_size_all_dims = get_list_parameter(self.kernel_size, spatial_rank)
+            pixel_num = 1
+            for x in kernel_size_all_dims:
+                pixel_num = pixel_num * x
+            repmat = np.hstack((pixel_num, [1] * spatial_rank, 1)).flatten()
             output_tensor = tf.tile(input=input_tensor, multiples=repmat)
             output_tensor = tf.batch_to_space_nd(
                 output_tensor,
-                [self.kernel_size] * spatial_rank,
+                kernel_size_all_dims,
                 [[0, 0]] * spatial_rank)
 
         elif self.func == 'CHANNELWISE_DECONV':
