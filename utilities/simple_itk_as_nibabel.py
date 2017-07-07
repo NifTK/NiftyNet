@@ -22,7 +22,7 @@ class SimpleITKAsNibabel(nibabel.spatialimages.SpatialImage):
     affine = np.transpose(np.concatenate([np.concatenate([c[0:3]-c[3:],c[3:]],0),[[0.],[0.],[0.],[1.]]],1))
     # convert to RAS to match nibabel
     affine = np.matmul(np.diag([-1.,-1.,1.,1.]),affine)
-    super(SimpleITKAsNibabel,self).__init__(sitk.GetArrayFromImage(self._SimpleITKImage), affine)
+    super(SimpleITKAsNibabel,self).__init__(sitk.GetArrayFromImage(self._SimpleITKImage).transpose(), affine)
 class SimpleITKAsNibabelHeader(nibabel.spatialimages.SpatialHeader):
   def __init__(self, image_reference):
     super(SimpleITKAsNibabelHeader,self).__init__(data_dtype=sitk.GetArrayViewFromImage(image_reference).dtype,shape=sitk.GetArrayViewFromImage(image_reference).shape,
