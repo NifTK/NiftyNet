@@ -40,7 +40,9 @@ class KeywordsMatching(object):
                     if os.path.exists(path_i):
                         path.append(path_i)
                     else:
-                        raise ValueError('folder not found {}'.format(path_i))
+                        raise ValueError('data input folder {} not found, did'
+                                         ' you maybe forget to download data?'
+                                         .format(path_i))
             elif name == "filename_contains":
                 value = value.split(',')
                 for val in value:
