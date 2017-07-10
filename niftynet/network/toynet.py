@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-from layer.base_layer import TrainableLayer
-from layer.convolution import ConvolutionalLayer
-from network.base_net import BaseNet
+from niftynet.layer.base_layer import TrainableLayer
+from niftynet.layer.convolution import ConvolutionalLayer
+from niftynet.network.base_net import BaseNet
 
 
 class ToyNet(BaseNet):

@@ -3,15 +3,15 @@ from __future__ import absolute_import, print_function
 
 from six.moves import range
 
-from layer import layer_util
-from layer.activation import ActiLayer
-from layer.base_layer import TrainableLayer
-from layer.bn import BNLayer
-from layer.convolution import ConvLayer, ConvolutionalLayer
-from layer.dilatedcontext import DilatedTensor
-from layer.elementwise import ElementwiseLayer
-from network.base_net import BaseNet
-from network.highres3dnet import HighResBlock
+from niftynet.layer import layer_util
+from niftynet.layer.activation import ActiLayer
+from niftynet.layer.base_layer import TrainableLayer
+from niftynet.layer.bn import BNLayer
+from niftynet.layer.convolution import ConvLayer, ConvolutionalLayer
+from niftynet.layer.dilatedcontext import DilatedTensor
+from niftynet.layer.elementwise import ElementwiseLayer
+from niftynet.network.base_net import BaseNet
+from niftynet.network.highres3dnet import HighResBlock
 
 
 class HighRes3DNetLarge(BaseNet):

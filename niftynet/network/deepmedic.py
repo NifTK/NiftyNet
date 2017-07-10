@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-from layer import layer_util
-from layer.convolution import ConvolutionalLayer
-from layer.crop import CropLayer
-from layer.downsample import DownSampleLayer
-from layer.elementwise import ElementwiseLayer
-from layer.upsample import UpSampleLayer
-from network.base_net import BaseNet
+from niftynet.layer import layer_util
+from niftynet.layer.convolution import ConvolutionalLayer
+from niftynet.layer.crop import CropLayer
+from niftynet.layer.downsample import DownSampleLayer
+from niftynet.layer.elementwise import ElementwiseLayer
+from niftynet.layer.upsample import UpSampleLayer
+from niftynet.network.base_net import BaseNet
 
 
 class DeepMedic(BaseNet):

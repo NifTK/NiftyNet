@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-from layer import layer_util
-from layer.base_layer import TrainableLayer
-from layer.convolution import ConvolutionalLayer
-from layer.deconvolution import DeconvolutionalLayer
-from layer.downsample import DownSampleLayer
-from layer.elementwise import ElementwiseLayer
-from layer.crop import CropLayer
-from utilities.misc_common import look_up_operations
+from niftynet.layer import layer_util
+from niftynet.layer.base_layer import TrainableLayer
+from niftynet.layer.convolution import ConvolutionalLayer
+from niftynet.layer.deconvolution import DeconvolutionalLayer
+from niftynet.layer.downsample import DownSampleLayer
+from niftynet.layer.elementwise import ElementwiseLayer
+from niftynet.layer.crop import CropLayer
+from niftynet.utilities.misc_common import look_up_operations
 
 
 class UNet3D(TrainableLayer):

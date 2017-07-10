@@ -3,14 +3,14 @@ from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 
-from layer import layer_util
-from layer.activation import ActiLayer
-from layer.base_layer import TrainableLayer
-from layer.convolution import ConvLayer
-from layer.deconvolution import DeconvLayer
-from layer.elementwise import ElementwiseLayer
-from network.base_net import BaseNet
-from utilities.misc_common import look_up_operations
+from niftynet.layer import layer_util
+from niftynet.layer.activation import ActiLayer
+from niftynet.layer.base_layer import TrainableLayer
+from niftynet.layer.convolution import ConvLayer
+from niftynet.layer.deconvolution import DeconvLayer
+from niftynet.layer.elementwise import ElementwiseLayer
+from niftynet.network.base_net import BaseNet
+from niftynet.utilities.misc_common import look_up_operations
 
 
 class VNet(BaseNet):
