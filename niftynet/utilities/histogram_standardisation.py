@@ -6,8 +6,8 @@ import os
 import numpy as np
 import numpy.ma as ma
 
-import utilities.misc_io as io
-from utilities.misc_common import look_up_operations, printProgressBar
+import niftynet.utilities.misc_io as io
+from niftynet.utilities.misc_common import look_up_operations, printProgressBar
 
 """
 Implementation of

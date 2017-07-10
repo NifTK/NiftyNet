@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function
 import argparse
 import os
 
-import utilities.misc_csv as misc_csv
+import niftynet.utilities.misc_csv as misc_csv
 
 try:
     import configparser

@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function
 import os,re
 
 import numpy as np
-import utilities.misc_io as util
+import niftynet.utilities.misc_io as util
 
 
 class KeywordsMatching(object):
