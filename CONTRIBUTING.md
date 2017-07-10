@@ -8,6 +8,8 @@ We'd like to follow this python style guide: [pythonstyle]
 
 [pythonstyle]: https://google.github.io/styleguide/pyguide.html
 
+When submitting merge requests, please merge to the dev branch.
+
 Before submitting a merge request, please make sure your branch passes all
 unit tests, by running:
 ``` sh
