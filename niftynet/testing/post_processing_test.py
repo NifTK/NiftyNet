@@ -2,7 +2,7 @@ from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 
-from layer.post_processing import PostProcessingLayer
+from niftynet.layer.post_processing import PostProcessingLayer
 
 
 class PostProcessingTest(tf.test.TestCase):

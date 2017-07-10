@@ -1,7 +1,7 @@
 from __future__ import absolute_import, print_function
 import tensorflow as tf
 
-from layer.elementwise import ElementwiseLayer
+from niftynet.layer.elementwise import ElementwiseLayer
 
 
 class ElementwiseTest(tf.test.TestCase):

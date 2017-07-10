@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
-from network.highres3dnet import HighResBlock
+from niftynet.network.highres3dnet import HighResBlock
 
 
 class HighResBlockTest(tf.test.TestCase):

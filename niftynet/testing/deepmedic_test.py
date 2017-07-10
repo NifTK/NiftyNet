@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
-from network.deepmedic import DeepMedic
+from niftynet.network.deepmedic import DeepMedic
 
 
 class DeepMedicTest(tf.test.TestCase):

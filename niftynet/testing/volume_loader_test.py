@@ -2,13 +2,13 @@ from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 import os
-import utilities.misc_csv as misc_csv
-from engine.volume_loader import VolumeLoaderLayer
-from layer.binary_masking import BinaryMaskingLayer
-from layer.histogram_normalisation import \
+import niftynet.utilities.misc_csv as misc_csv
+from niftynet.engine.volume_loader import VolumeLoaderLayer
+from niftynet.layer.binary_masking import BinaryMaskingLayer
+from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer as HistNorm
-from utilities.csv_table import CSVTable
-from utilities.filename_matching import KeywordsMatching
+from niftynet.utilities.csv_table import CSVTable
+from niftynet.utilities.filename_matching import KeywordsMatching
 
 
 class SubjectTest(tf.test.TestCase):

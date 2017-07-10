@@ -1,7 +1,7 @@
 from __future__ import absolute_import, print_function
 import tensorflow as tf
 
-from layer.downsample import DownSampleLayer
+from niftynet.layer.downsample import DownSampleLayer
 
 
 class DownSampleTest(tf.test.TestCase):

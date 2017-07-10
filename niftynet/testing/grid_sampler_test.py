@@ -4,15 +4,15 @@ import tensorflow as tf
 import os
 
 # sampler
-from engine.grid_sampler import GridSampler
-from engine.volume_loader import VolumeLoaderLayer
-from layer.binary_masking import BinaryMaskingLayer
-from layer.histogram_normalisation import \
+from niftynet.engine.grid_sampler import GridSampler
+from niftynet.engine.volume_loader import VolumeLoaderLayer
+from niftynet.layer.binary_masking import BinaryMaskingLayer
+from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer as HistNorm
-from layer.mean_variance_normalisation import \
+from niftynet.layer.mean_variance_normalisation import \
     MeanVarNormalisationLayer as MVNorm
-from utilities.csv_table import CSVTable
-from utilities.input_placeholders import ImagePatch
+from niftynet.utilities.csv_table import CSVTable
+from niftynet.utilities.input_placeholders import ImagePatch
 
 
 class UniformSamplerTest(tf.test.TestCase):

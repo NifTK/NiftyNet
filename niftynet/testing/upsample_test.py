@@ -2,7 +2,7 @@ from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 
-from layer.upsample import UpSampleLayer
+from niftynet.layer.upsample import UpSampleLayer
 
 
 class UpSampleTest(tf.test.TestCase):

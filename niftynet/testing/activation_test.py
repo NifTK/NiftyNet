@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
-from layer.activation import ActiLayer
+from niftynet.layer.activation import ActiLayer
 
 
 class ActivationTest(tf.test.TestCase):

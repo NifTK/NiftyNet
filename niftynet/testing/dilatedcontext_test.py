@@ -1,7 +1,7 @@
 from __future__ import absolute_import, print_function
 import tensorflow as tf
 
-from layer.dilatedcontext import DilatedTensor
+from niftynet.layer.dilatedcontext import DilatedTensor
 
 
 class BNTest(tf.test.TestCase):

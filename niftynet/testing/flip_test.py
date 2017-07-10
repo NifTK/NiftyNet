@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 import tensorflow as tf
-from layer.rand_flip import RandomFlipLayer
+from niftynet.layer.rand_flip import RandomFlipLayer
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
 

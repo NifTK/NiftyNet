@@ -3,8 +3,8 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
-from layer.deconvolution import DeconvLayer
-from layer.deconvolution import DeconvolutionalLayer
+from niftynet.layer.deconvolution import DeconvLayer
+from niftynet.layer.deconvolution import DeconvolutionalLayer
 
 
 class DeconvTest(tf.test.TestCase):

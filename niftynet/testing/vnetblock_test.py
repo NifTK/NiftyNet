@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
-from network.vnet import VNetBlock
+from niftynet.network.vnet import VNetBlock
 
 
 class VNetBlockTest(tf.test.TestCase):

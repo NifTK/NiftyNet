@@ -4,8 +4,8 @@ import tensorflow as tf
 import numpy as np
 from tensorflow.contrib.layers.python.layers import regularizers
 
-from layer.convolution import ConvLayer
-from layer.spatial_transformer import ResamplerLayer, AffineGridWarperLayer, ResampledFieldGridWarperLayer
+from niftynet.layer.convolution import ConvLayer
+from niftynet.layer.spatial_transformer import ResamplerLayer, AffineGridWarperLayer, ResampledFieldGridWarperLayer
 
 
 class ResamplerTest(tf.test.TestCase):

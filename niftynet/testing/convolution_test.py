@@ -3,8 +3,8 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
-from layer.convolution import ConvLayer
-from layer.convolution import ConvolutionalLayer
+from niftynet.layer.convolution import ConvLayer
+from niftynet.layer.convolution import ConvolutionalLayer
 
 
 class ConvTest(tf.test.TestCase):

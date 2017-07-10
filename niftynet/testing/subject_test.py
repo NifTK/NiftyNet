@@ -4,8 +4,8 @@ import os
 
 import tensorflow as tf
 
-from utilities.subject import MultiModalFileList
-from utilities.subject import Subject
+from niftynet.utilities.subject import MultiModalFileList
+from niftynet.utilities.subject import Subject
 
 
 class SubjectTest(tf.test.TestCase):

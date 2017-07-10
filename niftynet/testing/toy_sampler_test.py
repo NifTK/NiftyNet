@@ -2,8 +2,8 @@ from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 
-from engine.toy_sampler import ToySampler
-from utilities.input_placeholders import ImagePatch
+from niftynet.engine.toy_sampler import ToySampler
+from niftynet.utilities.input_placeholders import ImagePatch
 
 
 class ToySamplerTest(tf.test.TestCase):

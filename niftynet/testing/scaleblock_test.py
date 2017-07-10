@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
-from network.scalenet import ScaleBlock
+from niftynet.network.scalenet import ScaleBlock
 
 
 class ScaleBlockTest(tf.test.TestCase):

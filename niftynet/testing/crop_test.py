@@ -1,7 +1,7 @@
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
-from layer.crop import CropLayer
+from niftynet.layer.crop import CropLayer
 
 
 class CropTest(tf.test.TestCase):

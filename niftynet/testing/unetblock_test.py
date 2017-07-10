@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
-from network.unet import UNetBlock
+from niftynet.network.unet import UNetBlock
 
 
 class UNetBlockTest(tf.test.TestCase):

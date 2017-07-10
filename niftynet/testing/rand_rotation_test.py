@@ -2,8 +2,8 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 import numpy as np
 
-from layer.rand_rotation import RandomRotationLayer
-from utilities.subject import ColumnData
+from niftynet.layer.rand_rotation import RandomRotationLayer
+from niftynet.utilities.subject import ColumnData
 
 
 class RandRotationTest(tf.test.TestCase):

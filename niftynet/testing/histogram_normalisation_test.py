@@ -5,14 +5,14 @@ import os
 import numpy as np
 import tensorflow as tf
 
-import utilities.misc_csv as misc_csv
-from layer.binary_masking import BinaryMaskingLayer
-from layer.histogram_normalisation import \
+import niftynet.utilities.misc_csv as misc_csv
+from niftynet.layer.binary_masking import BinaryMaskingLayer
+from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer as HistNorm
-from layer.mean_variance_normalisation import \
+from niftynet.layer.mean_variance_normalisation import \
     MeanVarNormalisationLayer as MVNorm
-from utilities.csv_table import CSVTable
-from utilities.filename_matching import KeywordsMatching
+from niftynet.utilities.csv_table import CSVTable
+from niftynet.utilities.filename_matching import KeywordsMatching
 
 
 class HistTest(tf.test.TestCase):

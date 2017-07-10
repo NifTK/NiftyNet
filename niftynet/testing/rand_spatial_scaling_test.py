@@ -3,8 +3,8 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 import numpy as np
 
-from layer.rand_spatial_scaling import RandomSpatialScalingLayer
-from utilities.subject import ColumnData
+from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
+from niftynet.utilities.subject import ColumnData
 
 
 class RandRotationTest(tf.test.TestCase):

@@ -3,8 +3,8 @@ from __future__ import absolute_import, print_function
 import numpy as np
 import tensorflow as tf
 
-from layer.mean_variance_normalisation import MeanVarNormalisationLayer
-from layer.binary_masking import BinaryMaskingLayer
+from niftynet.layer.mean_variance_normalisation import MeanVarNormalisationLayer
+from niftynet.layer.binary_masking import BinaryMaskingLayer
 
 
 class BinaryMaskingTEst(tf.test.TestCase):

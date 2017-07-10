@@ -5,11 +5,11 @@ import os
 import tensorflow as tf
 
 # sampler
-from engine.selective_sampler import SelectiveSampler
-from engine.spatial_location_check import SpatialLocationCheckLayer
-from engine.volume_loader import VolumeLoaderLayer
-from utilities.csv_table import CSVTable
-from utilities.input_placeholders import ImagePatch
+from niftynet.engine.selective_sampler import SelectiveSampler
+from niftynet.engine.spatial_location_check import SpatialLocationCheckLayer
+from niftynet.engine.volume_loader import VolumeLoaderLayer
+from niftynet.utilities.csv_table import CSVTable
+from niftynet.utilities.input_placeholders import ImagePatch
 
 
 class SelectiveSamplerTest(tf.test.TestCase):
