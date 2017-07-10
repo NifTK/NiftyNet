@@ -25,7 +25,7 @@ import numpy as np
 import tensorflow as tf
 from .base_layer import Layer
 from .base_layer import LayerFromCallable
-from layer import layer_util
+from niftynet.layer import layer_util
 
 import abc
 from itertools import chain
