@@ -13,8 +13,8 @@ import threading
 
 import tensorflow as tf
 
-from engine.base_sampler import BaseSampler
-from utilities.input_placeholders import ImagePatch
+from niftynet.engine.base_sampler import BaseSampler
+from niftynet.utilities.input_placeholders import ImagePatch
 
 
 class InputBatchQueueRunner(object):

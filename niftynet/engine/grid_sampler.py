@@ -3,8 +3,8 @@ from __future__ import absolute_import, print_function
 
 import numpy as np
 
-import utilities.misc_io as io
-from engine.base_sampler import BaseSampler
+import niftynet.utilities.misc_io as io
+from niftynet.engine.base_sampler import BaseSampler
 
 SUPPORTED_SPATIAL_RANKS = {2.0, 2.5, 3.0}
 

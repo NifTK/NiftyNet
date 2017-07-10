@@ -3,9 +3,9 @@ from copy import deepcopy
 
 import numpy as np
 
-import utilities.misc_io as io
-from engine.base_sampler import BaseSampler
-from engine.uniform_sampler import rand_spatial_coordinates
+import niftynet.utilities.misc_io as io
+from niftynet.engine.base_sampler import BaseSampler
+from niftynet.engine.uniform_sampler import rand_spatial_coordinates
 
 
 class SelectiveSampler(BaseSampler):

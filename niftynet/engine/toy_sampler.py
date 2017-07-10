@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function
 import numpy as np
 from six.moves import range
 
-from engine.base_sampler import BaseSampler
+from niftynet.engine.base_sampler import BaseSampler
 
 
 class ToySampler(BaseSampler):

@@ -5,8 +5,8 @@ from copy import deepcopy
 
 import numpy as np
 
-import utilities.misc_io as io
-from engine.base_sampler import BaseSampler
+import niftynet.utilities.misc_io as io
+from niftynet.engine.base_sampler import BaseSampler
 
 
 def rand_spatial_coordinates(spatial_rank, img_size, win_size, n_samples):
