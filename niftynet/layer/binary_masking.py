@@ -5,7 +5,7 @@ import numpy as np
 import scipy.ndimage as ndimg
 from scipy.ndimage.morphology import binary_fill_holes as fill_holes
 
-from utilities.misc_common import look_up_operations
+from niftynet.utilities.misc_common import look_up_operations
 from .base_layer import Layer
 
 try:

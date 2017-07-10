@@ -4,8 +4,8 @@ from __future__ import absolute_import, print_function
 import numpy as np
 import tensorflow as tf
 
-from layer.base_layer import Layer
-from utilities.misc_common import look_up_operations
+from niftynet.layer.base_layer import Layer
+from niftynet.utilities.misc_common import look_up_operations
 
 
 class LossFunction(Layer):

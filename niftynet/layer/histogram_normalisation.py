@@ -5,7 +5,7 @@ import os
 
 import numpy as np
 
-import utilities.histogram_standardisation as hs
+import niftynet.utilities.histogram_standardisation as hs
 from .base_layer import Layer
 from .binary_masking import BinaryMaskingLayer
 
