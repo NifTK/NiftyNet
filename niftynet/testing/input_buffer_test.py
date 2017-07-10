@@ -5,9 +5,9 @@ import sys
 
 import tensorflow as tf
 
-from engine.input_buffer import DeployInputBuffer, TrainEvalInputBuffer
-from engine.toy_sampler import ToySampler
-from utilities.input_placeholders import ImagePatch
+from niftynet.engine.input_buffer import DeployInputBuffer, TrainEvalInputBuffer
+from niftynet.engine.toy_sampler import ToySampler
+from niftynet.utilities.input_placeholders import ImagePatch
 
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w')
 
