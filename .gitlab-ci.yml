@@ -103,6 +103,8 @@ pip-installer:
     - niftynet_dir=$(pwd)
     - cd $venv
     - source bin/activate
+    # install dependencies for GPU
+    - pip install -r $niftynet_dir/requirements-gpu.txt
     # install using setup.py in NiftyNet folder
     - pip install $niftynet_dir
     # using already downloaded data instead of downloading it every time
