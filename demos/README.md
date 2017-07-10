@@ -27,6 +27,8 @@ Please see the `README.md` in each folder of this [directory](./demos) for more 
 To train a "toynet" specified in `network/toynet.py`:
 ``` sh
 cd NiftyNet/
+wget -N https://www.dropbox.com/s/y7mdh4m9ptkibax/example_volumes.tar.gz
+tar -xzvf example_volumes.tar.gz
 python run_application.py train --net_name toynet \
     --image_size 42 --label_size 42 --batch_size 1
 ```

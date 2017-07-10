@@ -213,6 +213,7 @@ def run(net_class, param, volume_loader, device_str):
         coord = tf.train.Coordinator()
         # Place logs from each new training run in a new folder for better tensorboard visualization
         if not os.path.exists(os.path.join(root_dir, 'logs')):
+<<<<<<< HEAD
             os.makedirs(os.path.join(root_dir, 'logs'))
         log_sub_dirs = [name for name in os.listdir(os.path.join(root_dir, 'logs')) if name.isdecimal()]
         if log_sub_dirs and param.starting_iter == 0:
@@ -220,6 +221,14 @@ def run(net_class, param, volume_loader, device_str):
         elif log_sub_dirs and param.starting_iter > 0:
             log_sub_dir = str(
                 max([int(name) for name in log_sub_dirs if os.path.isdir(os.path.join(root_dir, 'logs', name))]))
+=======
+          os.makedirs(os.path.join(root_dir, 'logs'))
+        log_sub_dirs = [name for name in os.listdir(os.path.join(root_dir, 'logs')) if name.isdecimal()]
+        if log_sub_dirs and param.starting_iter==0:
+            log_sub_dir = str(max([int(name) for name in log_sub_dirs])+1)
+        elif log_sub_dirs and param.starting_iter > 0:
+            log_sub_dir = str(max([int(name) for name in log_sub_dirs if os.path.isdir(os.path.join(root_dir, 'logs', name))]))
+>>>>>>> 9bc0de4644df2520dc5885182a8d25e9d9510a50
         else:
             log_sub_dir = '0'
         writer = tf.summary.FileWriter(os.path.join(root_dir, 'logs', log_sub_dir),
