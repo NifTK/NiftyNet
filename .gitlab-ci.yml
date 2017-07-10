@@ -93,7 +93,7 @@ testjob:
 
 pip-installer:
   only:
-    - 69-push-to-pip-repository-after-commit-to-master
+    - 69-push-to-pip-repository-after-commit-to-master-off-dev
   script:
     # create a virtual env to test pip installer
     - venv="niftynet-pip-installer-venv"
