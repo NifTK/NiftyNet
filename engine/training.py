@@ -210,6 +210,8 @@ def run(net_class, param, volume_loader, device_str):
             print('Weights from random initialisations...')
         coord = tf.train.Coordinator()
         # Place logs from each new training run in a new folder for better tensorboard visualization
+        if not os.path.exists(os.path.join(root_dir, 'logs')):
+          os.makedirs(os.path.join(root_dir, 'logs'))
         log_sub_dirs = [name for name in os.listdir(os.path.join(root_dir, 'logs')) if name.isdecimal()]
         if log_sub_dirs and param.starting_iter==0:
             log_sub_dir = str(max([int(name) for name in log_sub_dirs])+1)
