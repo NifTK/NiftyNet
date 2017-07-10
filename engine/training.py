@@ -209,21 +209,15 @@ def run(net_class, param, volume_loader, device_str):
             sess.run(init_op)
             print('Weights from random initialisations...')
         coord = tf.train.Coordinator()
-        # tensorboard would like to find the logs from different training runs in separate subdirs
-        log_sub_dirs = [name for name in os.listdir(os.path.join(root_dir, 'logs'))
-                        if os.path.isdir(os.path.join(root_dir, 'logs', name))]
-        if log_sub_dirs:
-            try:
-                previous_sub_dir = max([int(name) for name in log_sub_dirs])
-            except:
-                quit('Any immediate sub directories of the log directory must be integer-numbered')
-            if param.starting_iter > 0:
-                current_log_sub_dir = str(previous_sub_dir)
-            else:
-                current_log_sub_dir = str(1 + previous_sub_dir)
+        # Place logs from each new training run in a new folder for better tensorboard visualization
+        log_sub_dirs = [name for name in os.listdir(os.path.join(root_dir, 'logs')) if name.isdecimal()]
+        if log_sub_dirs and param.starting_iter==0:
+            log_sub_dir = str(max([int(name) for name in log_sub_dirs])+1)
+        elif log_sub_dirs and param.starting_iter > 0:
+            log_sub_dir = str(max([int(name) for name in log_sub_dirs if os.path.isdir(os.path.join(root_dir, 'logs', name))]))
         else:
-            current_log_sub_dir = '0'
-        writer = tf.summary.FileWriter(os.path.join(root_dir, 'logs', current_log_sub_dir),
+            log_sub_dir = '0'
+        writer = tf.summary.FileWriter(os.path.join(root_dir, 'logs', log_sub_dir),
                                        sess.graph)
         try:
             print('Filling the queue (this can take a few minutes)')
