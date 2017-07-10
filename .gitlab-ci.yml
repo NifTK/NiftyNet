@@ -90,3 +90,16 @@ testjob:
     - echo 'finished test'
   tags:
     - gift-linux
+
+pip-installer:
+  only:
+    - 69-push-to-pip-repository-after-commit-to-master
+  script:
+    - wget -N https://www.dropbox.com/s/y7mdh4m9ptkibax/example_volumes.tar.gz
+    - tar -xzvf example_volumes.tar.gz
+    - wget -N https://www.dropbox.com/s/94wa4fl8f8k3aie/testing_data.tar.gz
+    - tar -xzvf testing_data.tar.gz
+    - python -m testing.mean_variance_normalisation_test
+    - python -m testing.binary_masking_test
+  tags:
+    - gift-adelie
