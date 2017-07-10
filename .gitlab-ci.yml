@@ -86,40 +86,6 @@ testjob:
     - coverage run -a --source . -m testing.post_processing_test
     - coverage run -a --source . -m testing.spatial_transformer_test
     - coverage run -a --source . -m testing.flip_test
-    - coverage run -a --source . -m niftynet.testing.binary_masking_test
-    - coverage run -a --source . -m niftynet.testing.histogram_normalisation_test
-    - coverage run -a --source . -m niftynet.testing.activation_test
-    - coverage run -a --source . -m niftynet.testing.bn_test
-    - coverage run -a --source . -m niftynet.testing.convolution_test
-    - coverage run -a --source . -m niftynet.testing.deconvolution_test
-    - coverage run -a --source . -m niftynet.testing.downsample_test
-    - coverage run -a --source . -m niftynet.testing.elementwise_test
-    - coverage run -a --source . -m niftynet.testing.highres3dnet_test
-    - coverage run -a --source . -m niftynet.testing.highresblock_test
-    - coverage run -a --source . -m niftynet.testing.upsample_test
-    - coverage run -a --source . -m niftynet.testing.toynet_test
-    - coverage run -a --source . -m niftynet.testing.crop_test
-    - coverage run -a --source . -m niftynet.testing.deepmedic_test
-    - coverage run -a --source . -m niftynet.testing.vnetblock_test
-    - coverage run -a --source . -m niftynet.testing.vnet_test
-    - coverage run -a --source . -m niftynet.testing.unetblock_test
-      #- coverage run -a --source . -m niftynet.testing.unet_test
-    - coverage run -a --source . -m niftynet.testing.scaleblock_test
-    - coverage run -a --source . -m niftynet.testing.scalenet_test
-    - coverage run -a --source . -m niftynet.testing.toy_sampler_test
-    - coverage run -a --source . -m niftynet.testing.input_buffer_test
-    - coverage run -a --source . -m niftynet.testing.dilatedcontext_test
-    - coverage run -a --source . -m niftynet.testing.loss_test
-    - coverage run -a --source . -m niftynet.testing.subject_test
-    - coverage run -a --source . -m niftynet.testing.volume_loader_test
-    - coverage run -a --source . -m niftynet.testing.uniform_sampler_test
-    - coverage run -a --source . -m niftynet.testing.grid_sampler_test
-    - coverage run -a --source . -m niftynet.testing.selective_sampler_test
-    - coverage run -a --source . -m niftynet.testing.rand_rotation_test
-    - coverage run -a --source . -m niftynet.testing.rand_spatial_scaling_test
-    - coverage run -a --source . -m niftynet.testing.post_processing_test
-    - coverage run -a --source . -m niftynet.testing.spatial_transformer_test
-    - coverage run -a --source . -m niftynet.testing.flip_test
     - coverage report -m
     - echo 'finished test'
   tags:
@@ -127,7 +93,7 @@ testjob:
 
 pip-installer:
   only:
-    - 69-push-to-pip-repository-after-commit-to-master-off-dev
+    - 69-push-to-pip-repository-after-commit-to-master
   script:
     # create a virtual env to test pip installer
     - venv="niftynet-pip-installer-venv"
