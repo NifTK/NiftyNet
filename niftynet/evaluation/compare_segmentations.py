@@ -5,7 +5,7 @@ import os.path
 import nibabel as nib
 import numpy as np
 
-import utilities.csv_table as csv_table
+import niftynet.utilities.csv_table as csv_table
 from .pairwise_measures import PairwiseMeasures
 
 MEASURES = (

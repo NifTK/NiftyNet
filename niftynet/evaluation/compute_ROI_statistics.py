@@ -4,10 +4,10 @@ import os.path
 
 import numpy as np
 
-import utilities.csv_table as csv_table
-import utilities.misc_io as io
-import utilities.subject as subject
-from utilities.misc_common import MorphologyOps
+import niftynet.utilities.csv_table as csv_table
+import niftynet.utilities.misc_io as io
+import niftynet.utilities.subject as subject
+from niftynet.utilities.misc_common import MorphologyOps
 from .region_properties import RegionProperties
 
 MEASURES = ('centre of mass', 'volume', 'surface', 'surface volume ratio',
