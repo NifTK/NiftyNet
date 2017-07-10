@@ -95,6 +95,11 @@ pip-installer:
   only:
     - 69-push-to-pip-repository-after-commit-to-master
   script:
+    # create a virtual env to test pip installer
+    - venv="niftynet-pip-installer-venv"
+    - virtualenv $venv
+    - cd $venv
+    - source bin/activate
     # using already downloaded data instead of downloading it every time
     - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
     - ln -s /home/gitlab-runner/environments/niftynet/data/testing_data ./testing_data
@@ -134,5 +139,7 @@ pip-installer:
     - python -m niftynet.testing.upsample_test
     - python -m niftynet.testing.vnet_test
     - python -m niftynet.testing.vnetblock_test
+    # deactivate virtual environment
+    - deactivate
   tags:
     - gift-adelie
