@@ -42,7 +42,14 @@ setup(
         'Topic :: Scientific/Engineering :: Medical Science Apps.',
     ],  # TODO
 
-    packages=find_packages(exclude=['', '', '']),  # TODO
+    packages=find_packages(
+        exclude=[
+            'config',
+            'data',
+            'demos',
+            'testing',
+		]
+	),  # TODO
 
     install_requires=['', '', ''],  # TODO
 
