@@ -9,7 +9,7 @@ filename_contains = T1
 filename_not_contains =
 
 [settings]
-application_type = autoencoding
+application_type = autoencoder
 cuda_devices = ""
 model_dir = ./models/fully_connected_autoencoder
 net_name = fully_connected_autoencoder

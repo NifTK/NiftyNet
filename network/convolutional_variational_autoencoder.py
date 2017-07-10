@@ -317,7 +317,7 @@ class VAE_convolutional(TrainableLayer):
         # Predict the mean and variance parameters of the posterior distribution
         posterior_means = encoder_means(flow, is_training)
         posterior_logvariances = encoder_logvariances(flow, is_training)
-        # Clip these predictions so posterior_variances = exp(posterior_logvariances) is well-behaved
+        # Clip these predictions, so posterior_variances = exp(posterior_logvariances) is well-behaved
         posterior_logvariances = tf.maximum(posterior_logvariances, self.logvariance_lower_bound)
         posterior_logvariances = tf.minimum(posterior_logvariances, self.logvariance_upper_bound)
         # Combine elementwise, with noise, to get an approximate sample from the posterior
@@ -363,45 +363,35 @@ class VAE_convolutional(TrainableLayer):
                                                   stride=2)(flow_logvariances)
             flow_logvariances = decoders_logvariances_cnn[i](flow_logvariances, is_training)
 
-        # Clip these predictions so flow_variances = exp(flow_logvariances) is well-behaved
+        # Clip these predictions, so flow_variances = exp(flow_logvariances) is well-behaved
         data_logvariances = tf.maximum(flow_logvariances, self.logvariance_lower_bound)
         data_logvariances = tf.minimum(data_logvariances, self.logvariance_upper_bound)
 
         data_variances = tf.exp(data_logvariances)
         posterior_variances = tf.exp(posterior_logvariances)
 
+        # Print the latest KL and likelihood
         squared_differences = tf.square(flow_means - images)
         log_likelihood = -0.5 * (
             data_logvariances + np.log(2 * np.pi) + tf.exp(-data_logvariances) * squared_differences)
         log_likelihood = tf.reduce_mean(tf.reduce_sum(log_likelihood, axis=[1, 2, 3, 4]))
         NLL = tf.summary.scalar('negative_log_likelihood', -log_likelihood)
         tf.add_to_collection(engine.logging.CONSOLE, NLL)
-
         KL_divergence = -0.5 * tf.reduce_sum(
             1 + posterior_logvariances - tf.square(posterior_means) - tf.exp(posterior_logvariances), axis=[1])
         KL_divergence = tf.reduce_mean(KL_divergence)
         KL = tf.summary.scalar('KL_divergence', KL_divergence)
         tf.add_to_collection(engine.logging.CONSOLE, KL)
 
-        # # Add reconstructions to tensorboard
-        # recon1 = images[1:4, :, 12, :, 0]
-        # recon1 = tf.reshape(recon1, [-1, 24, 24, 1])
-        # recon1 = tf.summary.image('Originals', recon1)
-        # tf.add_to_collection(engine.logging.LOG, recon1)
-        #
-        # recon2 = flow_means[1:4, :, 12, :, 0]
-        # recon2 = tf.reshape(recon2, [-1, 24, 24, 1])
-        # recon2 = tf.summary.image('Means', recon2)
-        # tf.add_to_collection(engine.logging.LOG, recon2)
-        #
-        # recon3 = data_variances[1:4, :, 12, :, 0]
-        # recon3 = tf.reshape(recon3, [-1, 24, 24, 1])
-        # recon3 = tf.summary.image('Variances', recon3)
-        # tf.add_to_collection(engine.logging.LOG, recon3)
-
-        # x = np.random.randint(0, 256, [10, 10, 10, 10, 10], np.uint8)
-        # engine.logging.image3('Original', x)
-        # engine.logging.image3('Original', images)
+        # Animated 3D reconstructions
+        def norm(input):
+            min = tf.reduce_min(input)
+            max = tf.reduce_max(input)
+            return 255 * (input-min) / (max-min)
+        # Could choose which axis to use from the configuration file
+        engine.logging.image3_coronal('Originals', norm(images))
+        engine.logging.image3_coronal('Means', norm(flow_means))
+        engine.logging.image3_coronal('Variances', norm(data_variances))
 
         return [posterior_means, posterior_logvariances, flow_means, data_logvariances,
                 images, data_variances, posterior_variances]

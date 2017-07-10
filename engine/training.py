@@ -53,10 +53,10 @@ def run(net_class, param, volume_loader, device_str):
         with tf.name_scope('Sampling'):
             if param.window_sampling == 'uniform':
                 sampler = UniformSampler(patch=patch_holder,
-                                        volume_loader=volume_loader,
-                                        patch_per_volume=param.sample_per_volume,
-                                        data_augmentation_methods=augmentations,
-                                        name='uniform_sampler')
+                                         volume_loader=volume_loader,
+                                         patch_per_volume=param.sample_per_volume,
+                                         data_augmentation_methods=augmentations,
+                                         name='uniform_sampler')
             elif param.window_sampling == 'selective':
                 # TODO check param, this is for segmentation problems only
                 spatial_location_check = SpatialLocationCheckLayer(
@@ -89,11 +89,11 @@ def run(net_class, param, volume_loader, device_str):
             w_regularizer = regularizers.l1_regularizer(param.decay)
             b_regularizer = regularizers.l1_regularizer(param.decay)
         net = net_class(num_classes=param.num_classes,
-                            w_regularizer=w_regularizer,
-                            b_regularizer=b_regularizer,
-                            acti_func=param.activation_function)
+                        w_regularizer=w_regularizer,
+                        b_regularizer=b_regularizer,
+                        acti_func=param.activation_function)
         loss_func = LossFunction(n_class=param.num_classes,
-                                loss_type=param.loss_type)
+                                 loss_type=param.loss_type)
         # construct train queue
         with tf.name_scope('DataQueue'):
             train_batch_runner = TrainEvalInputBuffer(
@@ -112,11 +112,11 @@ def run(net_class, param, volume_loader, device_str):
         else:
             weight_maps = None
         # Scalar summaries for the console are averaged over GPU runs
-        console_outputs=graph.get_collection_ref(engine.logging.CONSOLE)
-        console_outputs_cache=console_outputs[:]
+        console_outputs = graph.get_collection_ref(engine.logging.CONSOLE)
+        console_outputs_cache = console_outputs[:]
         del console_outputs[:]
-        tower_console_outputs=[]
-        
+        tower_console_outputs = []
+
         for i in range(0, max(param.num_gpus, 1)):
             with tf.device("/{}:{}".format(device_str, i)):
                 predictions = net(images, is_training=True)
@@ -126,28 +126,28 @@ def run(net_class, param, volume_loader, device_str):
                         reg_losses = graph.get_collection(
                             tf.GraphKeys.REGULARIZATION_LOSSES)
                         reg_loss = tf.reduce_mean([tf.reduce_mean(reg_loss)
-                                                for reg_loss in reg_losses])
+                                                   for reg_loss in reg_losses])
                         loss = loss + reg_loss
 
                 ##################
                 # This should probably be refactored into an application class
                 # Averages are in name_scope for Tensorboard naming; summaries are outside for console naming
                 with tf.name_scope('ConsoleLogging'):
-                    logs=[['loss',loss]]
+                    logs = [['loss', loss]]
                     if param.application_type == 'segmentation':
                         # TODO compute miss for dfferent target types
                         logs.append(['miss', tf.reduce_mean(tf.cast(
-                              tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),
-                              dtype=tf.float32))])
-                for tag,val in logs:
-                    tf.summary.scalar(tag,val,[engine.logging.CONSOLE,engine.logging.LOG])
-                ################## 
+                            tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),
+                            dtype=tf.float32))])
+                for tag, val in logs:
+                    tf.summary.scalar(tag, val, [engine.logging.CONSOLE, engine.logging.LOG])
+                ##################
 
                 # record and clear summaries
-                console_outputs=graph.get_collection_ref(engine.logging.CONSOLE)
+                console_outputs = graph.get_collection_ref(engine.logging.CONSOLE)
                 tower_console_outputs.append(console_outputs[:])
                 del console_outputs[:]
-                
+
                 with tf.name_scope('ComputeGradients'):
                     grads = train_step.compute_gradients(loss)
                 tower_grads.append(grads)
@@ -159,18 +159,19 @@ def run(net_class, param, volume_loader, device_str):
             apply_grad_op = train_step.apply_gradients(ave_grads)
 
         # Add averaged summaries
-        console_outputs=graph.get_collection_ref(engine.logging.CONSOLE)
-        console_outputs+=console_outputs_cache
-        if len(tower_console_outputs)>1:
+        console_outputs = graph.get_collection_ref(engine.logging.CONSOLE)
+        console_outputs += console_outputs_cache
+        if len(tower_console_outputs) > 1:
             # Averages are in name_scope for Tensorboard naming; summaries are outside for console naming
-            with tf.name_scope('AccumulateConsoleLogs'): 
-                averaged_summaries=[]
+            with tf.name_scope('AccumulateConsoleLogs'):
+                averaged_summaries = []
                 for replicated_output in zip(*tower_console_outputs):
-                    averaged_summaries.append([replicated_output[0].op.name+'_avg',tf.reduce_mean([o.op.inputs[1] for o in replicated_output])])
-            for tag,avg in averaged_summaries:
-                tf.summary.scalar(tag, avg,[engine.logging.CONSOLE,engine.logging.LOG])
+                    averaged_summaries.append([replicated_output[0].op.name + '_avg',
+                                               tf.reduce_mean([o.op.inputs[1] for o in replicated_output])])
+            for tag, avg in averaged_summaries:
+                tf.summary.scalar(tag, avg, [engine.logging.CONSOLE, engine.logging.LOG])
         else:
-            console_outputs+=tower_console_outputs[0]
+            console_outputs += tower_console_outputs[0]
         # Track the moving averages of all trainable variables.
         with tf.name_scope('MovingAverages'):
             variable_averages = tf.train.ExponentialMovingAverage(0.9)
@@ -182,12 +183,12 @@ def run(net_class, param, volume_loader, device_str):
         train_op = tf.group(apply_grad_op,
                             var_averages_op,
                             batchnorm_updates_op)
-        logged_summaries = list(set([s for c in [engine.logging.LOG,engine.logging.CONSOLE] for s in tf.get_collection(c)]))
+        logged_summaries = list(
+            set([s for c in [engine.logging.LOG, engine.logging.CONSOLE] for s in tf.get_collection(c)]))
         write_summary_op = tf.summary.merge(logged_summaries)
         # saver
         variables_to_restore = variable_averages.variables_to_restore()
-        # saver = tf.train.Saver(max_to_keep=param.max_checkpoints, var_list=variables_to_restore)
-        saver = tf.train.Saver(max_to_keep=param.max_checkpoints)
+        saver = tf.train.Saver(max_to_keep=param.max_checkpoints, var_list=variables_to_restore)
         tf.Graph.finalize(graph)
     # run session
     config = tf.ConfigProto()
@@ -210,21 +211,18 @@ def run(net_class, param, volume_loader, device_str):
             sess.run(init_op)
             print('Weights from random initialisations...')
         coord = tf.train.Coordinator()
-        # tensorboard would like to find the logs from different training runs in separate subdirs
-        log_sub_dirs = [name for name in os.listdir(os.path.join(root_dir, 'logs'))
-                        if os.path.isdir(os.path.join(root_dir, 'logs', name))]
-        if log_sub_dirs:
-            try:
-                previous_sub_dir = max([int(name) for name in log_sub_dirs])
-            except:
-                quit('Any immediate sub directories of the log directory must be integer-numbered')
-            if param.starting_iter > 0:
-                current_log_sub_dir = str(previous_sub_dir)
-            else:
-                current_log_sub_dir = str(1+previous_sub_dir)
+        # Place logs from each new training run in a new folder for better tensorboard visualization
+        if not os.path.exists(os.path.join(root_dir, 'logs')):
+            os.makedirs(os.path.join(root_dir, 'logs'))
+        log_sub_dirs = [name for name in os.listdir(os.path.join(root_dir, 'logs')) if name.isdecimal()]
+        if log_sub_dirs and param.starting_iter == 0:
+            log_sub_dir = str(max([int(name) for name in log_sub_dirs]) + 1)
+        elif log_sub_dirs and param.starting_iter > 0:
+            log_sub_dir = str(
+                max([int(name) for name in log_sub_dirs if os.path.isdir(os.path.join(root_dir, 'logs', name))]))
         else:
-            current_log_sub_dir = '0'
-        writer = tf.summary.FileWriter(os.path.join(root_dir, 'logs', current_log_sub_dir),
+            log_sub_dir = '0'
+        writer = tf.summary.FileWriter(os.path.join(root_dir, 'logs', log_sub_dir),
                                        sess.graph)
         try:
             print('Filling the queue (this can take a few minutes)')
@@ -234,8 +232,8 @@ def run(net_class, param, volume_loader, device_str):
                 if coord.should_stop():
                     break
                 current_iter = i + param.starting_iter
-                ops_to_run=[train_op]
-                console_summaries=tf.get_collection(engine.logging.CONSOLE)
+                ops_to_run = [train_op]
+                console_summaries = tf.get_collection(engine.logging.CONSOLE)
                 ops_to_run += console_summaries
                 if (current_iter % 20) == 0:
                     ops_to_run += [write_summary_op]
