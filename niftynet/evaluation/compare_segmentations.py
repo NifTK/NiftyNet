@@ -6,7 +6,7 @@ import nibabel as nib
 import numpy as np
 
 import niftynet.utilities.csv_table as csv_table
-from .pairwise_measures import PairwiseMeasures
+from niftynet.evaluation.pairwise_measures import PairwiseMeasures
 
 MEASURES = (
     'ref volume', 'seg volume',

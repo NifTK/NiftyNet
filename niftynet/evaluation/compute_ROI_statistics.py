@@ -8,7 +8,7 @@ import niftynet.utilities.csv_table as csv_table
 import niftynet.utilities.misc_io as io
 import niftynet.utilities.subject as subject
 from niftynet.utilities.misc_common import MorphologyOps
-from .region_properties import RegionProperties
+from niftynet.evaluation.region_properties import RegionProperties
 
 MEASURES = ('centre of mass', 'volume', 'surface', 'surface volume ratio',
             'compactness', 'mean', 'weighted_mean', 'skewness',
