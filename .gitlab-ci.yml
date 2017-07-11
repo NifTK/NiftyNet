@@ -17,8 +17,8 @@ testjob:
     - python -c "import tensorflow as tf; from tensorflow.python.client import device_lib; print device_lib.list_local_devices()"
     - ls -la /dev | grep nvidia
 
-    - echo $(python testing/get_gpu_index.py)
-    - export CUDA_VISIBLE_DEVICES=$(python testing/get_gpu_index.py)
+    - echo $(python tests/get_gpu_index.py)
+    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
 
     # download data
     - wget -q https://www.dropbox.com/s/y7mdh4m9ptkibax/example_volumes.tar.gz
