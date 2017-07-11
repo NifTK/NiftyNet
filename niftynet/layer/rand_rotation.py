@@ -5,7 +5,7 @@ import tensorflow as tf
 import numpy as np
 import scipy.ndimage
 
-from .base_layer import Layer
+from niftynet.layer.base_layer import Layer
 
 
 class RandomRotationLayer(Layer):

@@ -2,7 +2,7 @@ from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 
-from .base_layer import TrainableLayer
+from niftynet.layer.base_layer import TrainableLayer
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.framework import function
 import numpy

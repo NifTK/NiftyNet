@@ -4,8 +4,8 @@ from __future__ import absolute_import, print_function
 import numpy as np
 import numpy.ma as ma
 
-from .base_layer import Layer
-from .binary_masking import BinaryMaskingLayer
+from niftynet.layer.base_layer import Layer
+from niftynet.layer.binary_masking import BinaryMaskingLayer
 
 """
 This class defines image-level normalisation by subtracting

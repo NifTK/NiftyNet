@@ -6,7 +6,7 @@ import scipy.ndimage as ndimg
 from scipy.ndimage.morphology import binary_fill_holes as fill_holes
 
 from niftynet.utilities.misc_common import look_up_operations
-from .base_layer import Layer
+from niftynet.layer.base_layer import Layer
 
 try:
     from skimage import filters

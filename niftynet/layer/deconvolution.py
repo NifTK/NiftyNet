@@ -5,10 +5,10 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.utilities.misc_common import look_up_operations
-from . import layer_util
-from .activation import ActiLayer
-from .base_layer import TrainableLayer
-from .bn import BNLayer
+from niftynet.layer import layer_util
+from niftynet.layer.activation import ActiLayer
+from niftynet.layer.base_layer import TrainableLayer
+from niftynet.layer.bn import BNLayer
 
 SUPPORTED_OP = {'2D': tf.nn.conv2d_transpose,
                 '3D': tf.nn.conv3d_transpose}

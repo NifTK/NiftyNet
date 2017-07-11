@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 from tensorflow.python.training import moving_averages
 
-from .base_layer import TrainableLayer
+from niftynet.layer.base_layer import TrainableLayer
 
 
 class BNLayer(TrainableLayer):

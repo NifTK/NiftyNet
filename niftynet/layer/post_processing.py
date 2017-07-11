@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.utilities.misc_common import look_up_operations
-from .base_layer import Layer
+from niftynet.layer.base_layer import Layer
 
 SUPPORTED_OPS = {"SOFTMAX", "ARGMAX", "IDENTITY"}
 

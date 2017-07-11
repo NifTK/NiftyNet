@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 
-from . import layer_util
+from niftynet.layer import layer_util
 
 
 class DilatedTensor(object):

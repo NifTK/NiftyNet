@@ -4,8 +4,8 @@ from __future__ import absolute_import, print_function
 import numpy as np
 import tensorflow as tf
 
-from . import layer_util
-from .base_layer import Layer
+from niftynet.layer import layer_util
+from niftynet.layer.base_layer import Layer
 
 
 class CropLayer(Layer):

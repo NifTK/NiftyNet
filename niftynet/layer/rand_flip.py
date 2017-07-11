@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function
 import warnings
 import numpy as np
 
-from .base_layer import Layer
+from niftynet.layer.base_layer import Layer
 
 warnings.simplefilter("ignore", UserWarning)
 warnings.simplefilter("ignore", RuntimeWarning)

@@ -23,8 +23,8 @@ from __future__ import print_function
 # Dependency imports
 import numpy as np
 import tensorflow as tf
-from .base_layer import Layer
-from .base_layer import LayerFromCallable
+from niftynet.layer.base_layer import Layer
+from niftynet.layer.base_layer import LayerFromCallable
 from niftynet.layer import layer_util
 
 import abc

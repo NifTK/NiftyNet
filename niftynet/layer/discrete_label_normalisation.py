@@ -6,8 +6,8 @@ import os
 import numpy as np
 
 import niftynet.utilities.histogram_standardisation as hs
-from .base_layer import Layer
-from .binary_masking import BinaryMaskingLayer
+from niftynet.layer.base_layer import Layer
+from niftynet.layer.binary_masking import BinaryMaskingLayer
 
 
 """

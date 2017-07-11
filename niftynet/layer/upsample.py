@@ -5,9 +5,9 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.utilities.misc_common import look_up_operations
-from . import layer_util
-from .base_layer import TrainableLayer
-from .deconvolution import DeconvLayer
+from niftynet.layer import layer_util
+from niftynet.layer.base_layer import TrainableLayer
+from niftynet.layer.deconvolution import DeconvLayer
 
 SUPPORTED_OP = {'REPLICATE', 'CHANNELWISE_DECONV'}
 
