@@ -47,6 +47,7 @@ setup(
             'config',
             'data',
             'demos',
+            'tests',
 		]
 	),  # TODO
 
