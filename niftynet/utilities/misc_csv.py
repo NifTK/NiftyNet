@@ -6,7 +6,7 @@ import numpy as np
 from difflib import SequenceMatcher
 import sys
 
-from .filename_matching import KeywordsMatching
+from niftynet.utilities.filename_matching import KeywordsMatching
 
 
 # From a unique csv file with for each subject the list of files to use,

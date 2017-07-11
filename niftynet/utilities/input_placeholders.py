@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 
 
-from .subject import ColumnData
+from niftynet.utilities.subject import ColumnData
 
 ############ prefered usage example ##########
 # test_patch = ImagePatch(spatial_rank=3,
