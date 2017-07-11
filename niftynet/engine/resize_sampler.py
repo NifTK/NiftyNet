@@ -6,8 +6,8 @@ from copy import deepcopy
 import math
 import numpy as np
 import scipy.ndimage
-import utilities.misc_io as io
-from engine.base_sampler import BaseSampler
+import niftynet.utilities.misc_io as io
+from niftynet.engine.base_sampler import BaseSampler
 
 
 class ResizeSampler(BaseSampler):

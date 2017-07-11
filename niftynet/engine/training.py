@@ -8,15 +8,15 @@ import numpy as np
 import tensorflow as tf
 from six.moves import range
 
-from engine.input_buffer import TrainEvalInputBuffer
-from engine.spatial_location_check import SpatialLocationCheckLayer
-from engine.selective_sampler import SelectiveSampler
-from engine.uniform_sampler import UniformSampler
-from engine.resize_sampler import ResizeSampler
-from layer.loss import LossFunction
-from utilities import misc_common as util
-from utilities.input_placeholders import ImagePatch
-import engine.logging
+from niftynet.engine.input_buffer import TrainEvalInputBuffer
+from niftynet.engine.spatial_location_check import SpatialLocationCheckLayer
+from niftynet.engine.selective_sampler import SelectiveSampler
+from niftynet.engine.uniform_sampler import UniformSampler
+from niftynet.engine.resize_sampler import ResizeSampler
+from niftynet.layer.loss import LossFunction
+from niftynet.utilities import misc_common as util
+from niftynet.utilities.input_placeholders import ImagePatch
+import niftynet.engine.logging
 
 np.random.seed(seed=int(time.time()))
 
