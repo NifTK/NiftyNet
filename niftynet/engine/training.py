@@ -40,12 +40,12 @@ def run(net_class, param, volume_loader, device_str):
         # defines data augmentation for training
         augmentations = []
         if param.rotation:
-            from layer.rand_rotation import RandomRotationLayer
+            from niftynet.layer.rand_rotation import RandomRotationLayer
             augmentations.append(RandomRotationLayer(
                 min_angle=param.min_angle,
                 max_angle=param.max_angle))
         if param.spatial_scaling:
-            from layer.rand_spatial_scaling import RandomSpatialScalingLayer
+            from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
             augmentations.append(RandomSpatialScalingLayer(
                 min_percentage=param.min_percentage,
                 max_percentage=param.max_percentage))

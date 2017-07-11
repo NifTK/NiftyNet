@@ -2,12 +2,12 @@
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
-import layer.convolution
-import layer.deconvolution
-import layer.bn
+import niftynet.layer.convolution
+import niftynet.layer.deconvolution
+import niftynet.layer.bn
 from tensorflow.python.training import moving_averages
-from utilities.misc_common import look_up_operations
-from . import layer_util
+from niftynet.utilities.misc_common import look_up_operations
+from niftynet.layer import layer_util
 import numpy as np
 
 class ChannelSparseDeconvLayer(layer.deconvolution.DeconvLayer):

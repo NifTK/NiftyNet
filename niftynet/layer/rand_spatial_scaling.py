@@ -6,7 +6,7 @@ import warnings
 import numpy as np
 import scipy.ndimage
 
-from .base_layer import Layer
+from niftynet.layer.base_layer import Layer
 
 warnings.simplefilter("ignore", UserWarning)
 warnings.simplefilter("ignore", RuntimeWarning)

@@ -10,11 +10,11 @@ import scipy
 import tensorflow as tf
 from six.moves import range
 
-from engine.grid_sampler import GridSampler
-from engine.resize_sampler import ResizeSampler
-from engine.input_buffer import DeployInputBuffer
-from utilities.input_placeholders import ImagePatch
-from layer.post_processing import PostProcessingLayer
+from niftynet.engine.grid_sampler import GridSampler
+from niftynet.engine.resize_sampler import ResizeSampler
+from niftynet.engine.input_buffer import DeployInputBuffer
+from niftynet.utilities.input_placeholders import ImagePatch
+from niftynet.layer.post_processing import PostProcessingLayer
 
 
 # run on single GPU with single thread

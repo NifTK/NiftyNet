@@ -11,7 +11,7 @@ try:
 except ImportError:
     import ConfigParser as configparser
 
-from .filename_matching import KeywordsMatching
+from niftynet.utilities.filename_matching import KeywordsMatching
 
 
 def _input_path_search(config):
@@ -108,11 +108,11 @@ def build_parser(parents, defaults):
         default='highres3dnet'
     )
 
-    import layer.activation
+    import niftynet.layer.activation
     parser.add_argument(
         "--activation_function",
         help="Specify activation function types",
-        choices=list(layer.activation.SUPPORTED_OP),
+        choices=list(niftynet.layer.activation.SUPPORTED_OP),
         metavar='TYPE_STR',
         default='prelu'
     )
