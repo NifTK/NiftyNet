@@ -51,41 +51,41 @@ testjob:
     - coverage run -a --source . run_application.py train -c config/default_multimodal_config.txt --image_size 42 --label_size 42 --batch_size 3
     - coverage run -a --source . run_application.py inference -c config/default_multimodal_config.txt --image_size 84 --label_size 84 --batch_size 7
 
-    - coverage run -a --source . -m testing.mean_variance_normalisation_test
-    - coverage run -a --source . -m testing.binary_masking_test
-    - coverage run -a --source . -m testing.histogram_normalisation_test
-    - coverage run -a --source . -m testing.activation_test
-    - coverage run -a --source . -m testing.bn_test
-    - coverage run -a --source . -m testing.convolution_test
-    - coverage run -a --source . -m testing.deconvolution_test
-    - coverage run -a --source . -m testing.downsample_test
-    - coverage run -a --source . -m testing.elementwise_test
-    - coverage run -a --source . -m testing.highres3dnet_test
-    - coverage run -a --source . -m testing.highresblock_test
-    - coverage run -a --source . -m testing.upsample_test
-    - coverage run -a --source . -m testing.toynet_test
-    - coverage run -a --source . -m testing.crop_test
-    - coverage run -a --source . -m testing.deepmedic_test
-    - coverage run -a --source . -m testing.vnetblock_test
-    - coverage run -a --source . -m testing.vnet_test
-    - coverage run -a --source . -m testing.unetblock_test
-      #- coverage run -a --source . -m testing.unet_test
-    - coverage run -a --source . -m testing.scaleblock_test
-    - coverage run -a --source . -m testing.scalenet_test
-    - coverage run -a --source . -m testing.toy_sampler_test
-    - coverage run -a --source . -m testing.input_buffer_test
-    - coverage run -a --source . -m testing.dilatedcontext_test
-    - coverage run -a --source . -m testing.loss_test
-    - coverage run -a --source . -m testing.subject_test
-    - coverage run -a --source . -m testing.volume_loader_test
-    - coverage run -a --source . -m testing.uniform_sampler_test
-    - coverage run -a --source . -m testing.grid_sampler_test
-    - coverage run -a --source . -m testing.selective_sampler_test
-    - coverage run -a --source . -m testing.rand_rotation_test
-    - coverage run -a --source . -m testing.rand_spatial_scaling_test
-    - coverage run -a --source . -m testing.post_processing_test
-    - coverage run -a --source . -m testing.spatial_transformer_test
-    - coverage run -a --source . -m testing.flip_test
+    - coverage run -a --source . -m tests.mean_variance_normalisation_test
+    - coverage run -a --source . -m tests.binary_masking_test
+    - coverage run -a --source . -m tests.histogram_normalisation_test
+    - coverage run -a --source . -m tests.activation_test
+    - coverage run -a --source . -m tests.bn_test
+    - coverage run -a --source . -m tests.convolution_test
+    - coverage run -a --source . -m tests.deconvolution_test
+    - coverage run -a --source . -m tests.downsample_test
+    - coverage run -a --source . -m tests.elementwise_test
+    - coverage run -a --source . -m tests.highres3dnet_test
+    - coverage run -a --source . -m tests.highresblock_test
+    - coverage run -a --source . -m tests.upsample_test
+    - coverage run -a --source . -m tests.toynet_test
+    - coverage run -a --source . -m tests.crop_test
+    - coverage run -a --source . -m tests.deepmedic_test
+    - coverage run -a --source . -m tests.vnetblock_test
+    - coverage run -a --source . -m tests.vnet_test
+    - coverage run -a --source . -m tests.unetblock_test
+      #- coverage run -a --source . -m tests.unet_test
+    - coverage run -a --source . -m tests.scaleblock_test
+    - coverage run -a --source . -m tests.scalenet_test
+    - coverage run -a --source . -m tests.toy_sampler_test
+    - coverage run -a --source . -m tests.input_buffer_test
+    - coverage run -a --source . -m tests.dilatedcontext_test
+    - coverage run -a --source . -m tests.loss_test
+    - coverage run -a --source . -m tests.subject_test
+    - coverage run -a --source . -m tests.volume_loader_test
+    - coverage run -a --source . -m tests.uniform_sampler_test
+    - coverage run -a --source . -m tests.grid_sampler_test
+    - coverage run -a --source . -m tests.selective_sampler_test
+    - coverage run -a --source . -m tests.rand_rotation_test
+    - coverage run -a --source . -m tests.rand_spatial_scaling_test
+    - coverage run -a --source . -m tests.post_processing_test
+    - coverage run -a --source . -m tests.spatial_transformer_test
+    - coverage run -a --source . -m tests.flip_test
     - coverage report -m
     - echo 'finished test'
   tags:
