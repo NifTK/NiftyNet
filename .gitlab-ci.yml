@@ -96,6 +96,10 @@ pip-installer:
     - 69-push-to-pip-repository-after-commit-to-master-off-dev
     - 69-push-to-pip-repository-after-commit-to-master-off-dev-restructure-hierarchy
   script:
+    # following three lines copied over from dev script:
+    - ls -la /dev | grep nvidia
+    - echo $(python tests/get_gpu_index.py)
+    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
     # create a virtual env to test pip installer
     - venv="niftynet-pip-installer-venv"
     - virtualenv $venv
