@@ -112,7 +112,7 @@ def run(net_class, param, volume_loader, device_str):
         else:
             weight_maps = None
         # Scalar summaries for the console are averaged over GPU runs
-        console_outputs=graph.get_collection_ref(engine.logging.CONSOLE)
+        console_outputs=graph.get_collection_ref(niftynet.engine.logging.CONSOLE)
         console_outputs_cache=console_outputs[:]
         del console_outputs[:]
         tower_console_outputs=[]
@@ -140,11 +140,11 @@ def run(net_class, param, volume_loader, device_str):
                               tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),
                               dtype=tf.float32))])
                 for tag,val in logs:
-                    tf.summary.scalar(tag,val,[engine.logging.CONSOLE,engine.logging.LOG])
+                    tf.summary.scalar(tag,val,[niftynet.engine.logging.CONSOLE,niftynet.engine.logging.LOG])
                 ################## 
 
                 # record and clear summaries
-                console_outputs=graph.get_collection_ref(engine.logging.CONSOLE)
+                console_outputs=graph.get_collection_ref(niftynet.engine.logging.CONSOLE)
                 tower_console_outputs.append(console_outputs[:])
                 del console_outputs[:]
                 
@@ -159,7 +159,7 @@ def run(net_class, param, volume_loader, device_str):
             apply_grad_op = train_step.apply_gradients(ave_grads)
 
         # Add averaged summaries
-        console_outputs=graph.get_collection_ref(engine.logging.CONSOLE)
+        console_outputs=graph.get_collection_ref(niftynet.engine.logging.CONSOLE)
         console_outputs+=console_outputs_cache
         if len(tower_console_outputs)>1:
             # Averages are in name_scope for Tensorboard naming; summaries are outside for console naming
@@ -168,7 +168,7 @@ def run(net_class, param, volume_loader, device_str):
                 for replicated_output in zip(*tower_console_outputs):
                     averaged_summaries.append([replicated_output[0].op.name+'_avg',tf.reduce_mean([o.op.inputs[1] for o in replicated_output])])
             for tag,avg in averaged_summaries:
-                tf.summary.scalar(tag, avg,[engine.logging.CONSOLE,engine.logging.LOG])
+                tf.summary.scalar(tag, avg,[niftynet.engine.logging.CONSOLE,niftynet.engine.logging.LOG])
         else:
             console_outputs+=tower_console_outputs[0]
         # Track the moving averages of all trainable variables.
@@ -182,7 +182,7 @@ def run(net_class, param, volume_loader, device_str):
         train_op = tf.group(apply_grad_op,
                             var_averages_op,
                             batchnorm_updates_op)
-        logged_summaries = list(set([s for c in [engine.logging.LOG,engine.logging.CONSOLE] for s in tf.get_collection(c)]))
+        logged_summaries = list(set([s for c in [niftynet.engine.logging.LOG,niftynet.engine.logging.CONSOLE] for s in tf.get_collection(c)]))
         write_summary_op = tf.summary.merge(logged_summaries)
         # saver
         variables_to_restore = variable_averages.variables_to_restore()
@@ -230,14 +230,14 @@ def run(net_class, param, volume_loader, device_str):
                     break
                 current_iter = i + param.starting_iter
                 ops_to_run=[train_op]
-                console_summaries=tf.get_collection(engine.logging.CONSOLE)
+                console_summaries=tf.get_collection(niftynet.engine.logging.CONSOLE)
                 ops_to_run += console_summaries
                 if (current_iter % 20) == 0:
                     ops_to_run += [write_summary_op]
                 values = sess.run(ops_to_run)[1:]
                 if (current_iter % 20) == 0:
                     writer.add_summary(values.pop(), current_iter)
-                summary_string = ''.join([engine.logging.console_summary_string(v) for v in values])
+                summary_string = ''.join([niftynet.engine.logging.console_summary_string(v) for v in values])
                 iter_time = time.time() - local_time
                 print(('iter {:d}{}, ({:.3f}s)').format(
                     current_iter, summary_string, iter_time))
