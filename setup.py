@@ -44,6 +44,7 @@ setup(
 
     packages=find_packages(
         exclude=[
+            'pip',
             'config',
             'data',
             'demos',
