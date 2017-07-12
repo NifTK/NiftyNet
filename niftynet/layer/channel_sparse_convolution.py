@@ -162,7 +162,7 @@ class ChannelSparseConvLayer(niftynet.layer.convolution.ConvLayer):
                                        name='add_bias')
     return output_tensor
 
-class ChannelSparseBNLayer(layer.bn.BNLayer):
+class ChannelSparseBNLayer(niftynet.layer.bn.BNLayer):
   """ Channel sparse convolutions perform convolulations over
       a subset of image channels and generate a subset of output
       channels. This enables spatial dropout without wasted computations
