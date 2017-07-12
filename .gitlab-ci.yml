@@ -115,6 +115,8 @@ pip-installer:
     - source bin/activate
     # install dependencies for GPU
     - pip install -r $niftynet_dir/requirements-gpu.txt
+    - pip install simpleitk
+    - pip install scikit-learn
     # install using setup.py in NiftyNet folder
     - pip install $niftynet_dir
     # check whether all packages are importable
