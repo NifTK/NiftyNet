@@ -105,6 +105,10 @@ pip-installer:
     # create a virtual env to test pip installer
     - venv="niftynet-pip-installer-venv"
     - virtualenv $venv
+    # create a Python file that will import all available packages from the pip installer
+    - package_importer="import_niftynet_packages.py"
+    # traverse the file hierarchy recursively to discover all packages
+    - find niftynet -type f \( ! -name . \) -print | sed 's/\.\.\///g;s/\//\./g;s/\.py//g' | grep -v __ | sed 's/niftynet/import niftynet/g' > $venv/$package_importer
     # save NiftyNet folder path just in case
     - niftynet_dir=$(pwd)
     - cd $venv
@@ -113,6 +117,9 @@ pip-installer:
     - pip install -r $niftynet_dir/requirements-gpu.txt
     # install using setup.py in NiftyNet folder
     - pip install $niftynet_dir
+    # check whether all packages are importable
+    - cat $package_importer
+    - python $package_importer
     # deactivate virtual environment
     - deactivate
   tags:
