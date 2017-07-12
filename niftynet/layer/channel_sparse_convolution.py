@@ -10,7 +10,7 @@ from niftynet.utilities.misc_common import look_up_operations
 from niftynet.layer import layer_util
 import numpy as np
 
-class ChannelSparseDeconvLayer(layer.deconvolution.DeconvLayer):
+class ChannelSparseDeconvLayer(niftynet.layer.deconvolution.DeconvLayer):
   """ Channel sparse convolutions perform convolulations over
       a subset of image channels and generate a subset of output
       channels. This enables spatial dropout without wasted computations
@@ -96,7 +96,7 @@ class ChannelSparseDeconvLayer(layer.deconvolution.DeconvLayer):
                                    name='add_bias')
     return output_tensor
 
-class ChannelSparseConvLayer(layer.convolution.ConvLayer):
+class ChannelSparseConvLayer(niftynet.layer.convolution.ConvLayer):
   """ Channel sparse convolutions perform convolulations over
       a subset of image channels and generate a subset of output
       channels. This enables spatial dropout without wasted computations
