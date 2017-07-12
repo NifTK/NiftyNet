@@ -5,8 +5,9 @@ import niftynet.engine
 def ApplicationFactory(param):
   from niftynet.application.segmentation_application import SegmentationApplication
   from niftynet.application.autoencoder_application import AutoencoderApplication
+  from niftynet.application.gan_application import GANApplication
   
-  application_dict = {'segmentation':SegmentationApplication,'autoencoder':AutoencoderApplication}
+  application_dict = {'segmentation':SegmentationApplication,'autoencoder':AutoencoderApplication,'gan':GANApplication}
   return application_dict[param.application_type]
 
 
@@ -63,6 +64,8 @@ class BaseApplication(object):
     Returns a list of the output tensors from the network
     """
     return self._net(train_dict['images'],is_training),train_dict['info']
+
+  @abc.abstractmethod
   def loss_func(self,train_dict,net_outputs):
     pass
    
@@ -94,6 +97,7 @@ class BaseApplication(object):
       grads=[self.optimizer.compute_gradients(loss)]   
     # add compute gradients ops for each type of optimizer_op
     return grads
+
   def regularizers(self):
     w_regularizer = None
     b_regularizer = None
@@ -111,7 +115,6 @@ class BaseApplication(object):
   def inference_loop(self, sess, coord, net_out):
     pass
 
-  @abc.abstractmethod
   def train_op_generator(self,apply_ops):
     """ 
     Returns a generator defining the sequence of optimization ops to run. These must

@@ -99,7 +99,6 @@ class InputBatchQueueRunner(object):
                 if self._coordinator.should_stop():
                     break
 
-                assert isinstance(patch, ImagePatch)
                 patch_dict = patch.as_dict(self.sampler.placeholders)
                 self._session.run(self._enqueue_op, feed_dict=patch_dict)
                 #print("push {}".format(patch.info))
