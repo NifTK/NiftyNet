@@ -202,24 +202,6 @@ def variational_lower_bound(predictions, labels):
 
     return error_to_minimise
 
-def SumSqrdDiff(prediction, labels):
-    """
-    :param prediction[0]: the current prediction of the ground truth.
-    :param prediction[1]: the measurement you are approximating with regression.
-    :return: mean(differences squared)
-    """
-    residuals = tf.subtract(prediction[0], prediction[1])
-    return tf.reduce_mean(tf.square(residuals))
-
-def SumAbsDiff(prediction, labels):
-    """
-    :param prediction[0]: the current prediction of the ground truth.
-    :param prediction[1]: the measurement you are approximating with regression.
-    :return: mean(differences squared)
-    """
-    residuals = tf.subtract(prediction[0], prediction[1])
-    return tf.reduce_mean(tf.abs(residuals))
-
 
 SUPPORTED_OPS = {"CrossEntropy": cross_entropy,
                  "Dice": dice,
@@ -227,7 +209,5 @@ SUPPORTED_OPS = {"CrossEntropy": cross_entropy,
                  "SensSpec": sensitivity_specificity_loss,
                  "L1Loss": l1_loss,
                  "L2Loss": l2_loss,
-                 "SumSqrdDiff": SumSqrdDiff,
                  "Huber": huber_loss,
-                 "VariationalLowerBound": variational_lower_bound,
-                 "SumAbsDiff": SumAbsDiff}
+                 "VariationalLowerBound": variational_lower_bound}
