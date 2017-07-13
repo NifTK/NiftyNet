@@ -16,9 +16,10 @@ import numpy as np
 
 class VAE(TrainableLayer):
     """
-        This is a convolutional autoencoder, composed of a sequence of {convolutions & down-sampling} blocks,
-        followed by a sequence of fully-connected layers, followed by a sequence of
-        {transpose convolutions & up-sampling} blocks.
+        This is a convolutional variational autoencoder, composed of a sequence of
+        {convolutions & down-sampling} blocks, followed by a sequence of fully-connected
+        layers, followed by a sequence of {transpose convolutions & up-sampling} blocks.
+        See Auto-Encoding Variational Bayes, Kingma & Welling, 2014.
 
         2DO: make the use of FC/convolutions optional, so a fully connected AE, and a fully convolutional
         AE, are both possible.
@@ -58,7 +59,7 @@ class VAE(TrainableLayer):
 
         # Set the bound on logvariance, to keep variance = exp(logvariance) within reasonable limits:
         self.logvariance_upper_bound = 40
-        self.logvariance_lower_bound = -40
+        self.logvariance_lower_bound = -self.logvariance_upper_bound
 
         # Specify the encoder here
         if conv_features == None:
@@ -142,12 +143,12 @@ class VAE(TrainableLayer):
         # Calculate the dimensionality of the data as it emerges from the convolutional part of the encoder
         # NB: we assume for now that we follow each convolutional encoder layer with 2x2x2 downsampling
         [data_dims, data_dims_product] = infer_dims(images)
-        data_downsampled_dimensions = data_dims.copy()
-        for p in range(0, len(data_downsampled_dimensions) - 1):
-            data_downsampled_dimensions[p] /= 2 ** len(self.conv_features)
-            data_downsampled_dimensions[p] = int(data_downsampled_dimensions[p])
-        data_downsampled_dimensions[-1] = self.conv_features[-1]
-        data_downsampled_dimensionality = int(data_dims_product / (2 ** (3 * len(self.conv_features))))
+        downsampled_dims = data_dims.copy()
+        for p in range(0, len(downsampled_dims) - 1):
+            downsampled_dims[p] /= 2 ** len(self.conv_features)
+            downsampled_dims[p] = int(downsampled_dims[p])
+        downsampled_dims[-1] = self.conv_features[-1]
+        downsampled_dim = int(data_dims_product / (2 ** (3 * len(self.conv_features))))
 
         number_of_input_channels = data_dims[-1]
         assert (self.trans_conv_features[-1] == number_of_input_channels), \
@@ -182,7 +183,7 @@ class VAE(TrainableLayer):
                 name='encoder_downsampler_{}_{}'.format(2, 2)))
             print(encoders_downsamplers[-1])
 
-        raster_feature_maps = ReshapeLayer([-1, data_downsampled_dimensionality * self.conv_features[-1]])
+        raster_feature_maps = ReshapeLayer([-1, downsampled_dim * self.conv_features[-1]])
         print(raster_feature_maps)
 
         # Define the encoding fully connected layers
@@ -237,16 +238,16 @@ class VAE(TrainableLayer):
 
         # Define the final decoding fully connected layer
         decoders_fc.append(FullyConnectedLayer(
-            n_output_nodes=data_downsampled_dimensionality * self.conv_features[-1],
+            n_output_nodes=downsampled_dim * self.conv_features[-1],
             with_bias=True,
             with_bn=True,
             acti_func=self.acti_func_fully_connected_output,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
-            name='decoder_fc_{}'.format(data_downsampled_dimensionality * self.conv_features[-1])))
+            name='decoder_fc_{}'.format(downsampled_dim * self.conv_features[-1])))
         print(decoders_fc[-1])
 
-        unraster_feature_maps = ReshapeLayer([-1] + data_downsampled_dimensions)
+        unraster_feature_maps = ReshapeLayer([-1] + downsampled_dims)
         print(unraster_feature_maps)
 
         # Define the decoding convolution layers
@@ -326,20 +327,19 @@ class VAE(TrainableLayer):
         posterior_means = encoder_means(flow, is_training)
         posterior_logvars = clip(encoder_logvariances(flow, is_training))
         # We want access to the codes later...
-        codes = sampler_from_posterior([posterior_means, posterior_logvars])
+        codes = sampler_from_posterior(posterior_means, posterior_logvars)
         flow = codes
 
         # Fully connected decoder layers
         for i in range(0, len(self.layer_sizes_decoder) + 1):
             flow = decoders_fc[i](flow, is_training)
-        # Reshape the flow into HxWxDx(ChannelsIn)x(ChannelsOut) format
-        flow = unraster_feature_maps(flow)
+        flow = unraster_feature_maps(flow) # Reshape the flow into HxWxDx(ChannelsIn)x(ChannelsOut) format
 
-        # We up-sample means and variances separately from the output of the fully-connected layers
+        # Up-sample means and variances separately from the output of the fully-connected layers
         flow_means = flow
         flow_logvars = flow
 
-        # Convolutional decoder layers, for predicting mu in the Gaussian model of the input
+        # Convolutional decoder layers, for predicting mu in the Gaussian model of the data
         for i in range(0, len(self.trans_conv_features)):
             if self.upsampling_mode == 'DECONV':
                 flow_means = decoders_means_upsamplers[i](flow_means, is_training)
@@ -353,7 +353,7 @@ class VAE(TrainableLayer):
                                            stride=2)(flow_means)
             flow_means = decoders_means_cnn[i](flow_means, is_training)
 
-        # Convolutional decoder layers, for predicting (log) variance in the Gaussian model of the input
+        # Convolutional decoder layers, for predicting (log) variance in the Gaussian model of the data
         for i in range(0, len(self.trans_conv_features)):
             if self.upsampling_mode == 'DECONV':
                 flow_logvars = decoders_logvars_upsamplers[i](flow_logvars, is_training)
@@ -378,13 +378,13 @@ class VAE(TrainableLayer):
         KL = tf.summary.scalar('KL_divergence', KL_divergence)
         tf.add_to_collection(niftynet.engine.logging.CONSOLE, KL)
 
-        # Monitor the negative log likelihood of the parameters given the training data
+        # Monitor the negative log likelihood of the parameters given the data
         log_likelihood = data_logvars + np.log(2 * np.pi) + tf.exp(-data_logvars) * tf.square(flow_means - images)
         log_likelihood = -0.5 * tf.reduce_mean(tf.reduce_sum(log_likelihood, axis=[1, 2, 3, 4]))
         NLL = tf.summary.scalar('negative_log_likelihood', -log_likelihood)
         tf.add_to_collection(niftynet.engine.logging.CONSOLE, NLL)
 
-        # Send (animated!) 3D reconstructions to TensorBoard
+        # Send animated 3D reconstructions to TensorBoard
         def normalise(input):
             min = tf.reduce_min(input)
             max = tf.reduce_max(input)

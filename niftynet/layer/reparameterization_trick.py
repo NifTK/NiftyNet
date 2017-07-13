@@ -19,8 +19,8 @@ def noise_shaped_like(shape, distribution):
 
 class ReparameterizationLayer(Layer):
     """
-    This class defines a reparameterization layer, for generating approximate samples from the posterior.
-    See Auto-Encoding Variational Bayes, Kingma & Welling, 2014
+    This class defines a 'reparameterization layer', for generating approximate samples from the posterior of a VAE;
+    see Auto-Encoding Variational Bayes, Kingma & Welling, 2014
     """
 
     def __init__(self,
@@ -31,9 +31,7 @@ class ReparameterizationLayer(Layer):
         self.prior = prior
         self.number_of_samples = number_of_samples
 
-    def layer_op(self, distribution_parameters):
-
-        [means, logvariances] = distribution_parameters
+    def layer_op(self, means, logvariances):
 
         if self.number_of_samples == 1:
             noise_sample = noise_shaped_like(tf.shape(means), self.prior)

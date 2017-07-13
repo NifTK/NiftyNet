@@ -23,7 +23,7 @@ def infer_spatial_rank(input_tensor):
 
 def infer_dims(input_tensor):
     """
-    I.e., in 3D, given an input tensor [Batch size,X,Y,Z,channels], return [[X,Y,Z,channels], XxYxZxchannels]
+    Given an input tensor of size [batch size, X, Y, Z, channels], return [[X, Y, Z, channels], X*Y*Z*channels]
     """
     dims = input_tensor.get_shape()[1::].as_list()
     dims_prod = np.prod(dims)
