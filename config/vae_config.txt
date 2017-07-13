@@ -13,7 +13,6 @@ application_type = autoencoder
 cuda_devices = ""
 model_dir = ./models/vae
 net_name = vae
-activation_function = prelu
 
 # preprocessing threads parameters
 queue_length = 20
@@ -25,7 +24,7 @@ batch_size = 25
 image_size = 24
 label_size = 24
 w_map_size = 24
-num_classes = 160
+num_classes = 0
 
 # affected by network's receptive field
 volume_padding_size = 0
@@ -52,14 +51,8 @@ sample_per_volume = 1
 
 # training augmentation
 rotation = False
-min_angle = -10.0
-max_angle = 10.0
 spatial_scaling = False
-min_percentage = -10.0
-max_percentage = 10.0
 window_sampling = uniform
-min_numb_labels = 2
-min_sampling_ratio = 0.000001
 
 # ** training only ** gradient descent and loss parameters
 lr = 0.0001
