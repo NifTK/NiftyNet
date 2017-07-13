@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-from layer.base_layer import TrainableLayer
-from layer.reshape import ReshapeLayer
-from layer.fully_connected import FullyConnectedLayer
-from layer.layer_util import infer_dims
-from layer.convolution import ConvolutionalLayer
-from layer.deconvolution import DeconvolutionalLayer
-from layer.upsample import UpSampleLayer
+from niftynet.layer.base_layer import TrainableLayer
+from niftynet.layer.reshape import ReshapeLayer
+from niftynet.layer.fully_connected import FullyConnectedLayer
+from niftynet.layer.layer_util import infer_dims
+from niftynet.layer.convolution import ConvolutionalLayer
+from niftynet.layer.deconvolution import DeconvolutionalLayer
+from niftynet.layer.upsample import UpSampleLayer
 
 class AE_convolutional(TrainableLayer):
     """
