@@ -49,18 +49,9 @@ class NetFactory(object):
         elif name == "scalenet":
             from niftynet.network.scalenet import ScaleNet
             return ScaleNet
-        elif name == "fully_connected_autoencoder":
-            from niftynet.network.fully_connected_autoencoder import AE_FullyConnected
-            return AE_FullyConnected
-        elif name == "fully_connected_variational_autoencoder":
-            from niftynet.network.fully_connected_variational_autoencoder import VAE_FullyConnected
-            return VAE_FullyConnected
-        elif name == "convolutional_autoencoder":
-            from niftynet.network.convolutional_autoencoder import AE_convolutional
-            return AE_convolutional
-        elif name == "convolutional_variational_autoencoder":
-            from niftynet.network.convolutional_variational_autoencoder import VAE_convolutional
-            return VAE_convolutional
+        elif name == "vae":
+            from niftynet.network.vae import VAE
+            return VAE
         else:
             print("network: \"{}\" not implemented".format(name))
             raise NotImplementedError

@@ -11,8 +11,8 @@ filename_not_contains =
 [settings]
 application_type = autoencoder
 cuda_devices = ""
-model_dir = ./models/convolutional_autoencoder
-net_name = convolutional_autoencoder
+model_dir = ./models/vae
+net_name = vae
 activation_function = prelu
 
 # preprocessing threads parameters
@@ -21,7 +21,7 @@ num_threads = 2
 
 # network parameters (controlling memory consumption)
 spatial_rank = 3
-batch_size = 30
+batch_size = 25
 image_size = 24
 label_size = 24
 w_map_size = 24
@@ -62,9 +62,9 @@ min_numb_labels = 2
 min_sampling_ratio = 0.000001
 
 # ** training only ** gradient descent and loss parameters
-lr = 0.01
+lr = 0.0001
 decay = 0
-loss_type = SumAbsDiff
+loss_type = VariationalLowerBound
 reg_type = L2
 starting_iter = 0
 save_every_n = 100

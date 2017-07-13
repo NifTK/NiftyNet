@@ -14,7 +14,7 @@ import tensorflow as tf
 import numpy as np
 
 
-class VAE_convolutional(TrainableLayer):
+class VAE(TrainableLayer):
     """
         This is a convolutional autoencoder, composed of a sequence of CNN+Pooling layers,
         followed by a sequence of fully-connected layers, followed by a sequence of
@@ -49,9 +49,9 @@ class VAE_convolutional(TrainableLayer):
                  upsampling_mode=None,
                  acti_func_trans_conv_means=None,
                  acti_func_trans_conv_logvariances=None,
-                 name='VAE_convolutional'):
+                 name='VAE'):
 
-        super(VAE_convolutional, self).__init__(name=name)
+        super(VAE, self).__init__(name=name)
 
         self.number_of_latent_variables = 512
         self.number_of_samples_from_posterior_per_example = 1
