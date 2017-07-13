@@ -25,9 +25,9 @@ from niftynet.utilities.csv_table import CSVTable
 class NetFactory(object):
     @staticmethod
     def create(name):
-        if name == "simple_gan":
-            from niftynet.network.simple_gan import SimpleGAN
-            return SimpleGAN
+        if name == "simulator_gan":
+            from niftynet.network.simulator_gan import SimulatorGAN
+            return SimulatorGAN
         else:
             print("network: \"{}\" not implemented".format(name))
             raise NotImplementedError

@@ -415,7 +415,9 @@ class GANPatch(object):
     @property
     def full_conditioning_shape(self):
         if self.has_conditioning:
-            return self.conditioning_size
+            spatial_dims = (self._conditioning_size,) * int(np.floor(self.spatial_rank))
+            spatial_dims = spatial_dims + (self._num_conditioning_modality,)
+            return spatial_dims
         return None
 
     @property
@@ -464,7 +466,7 @@ class GANPatch(object):
             conditioning_placeholders = tf.placeholder(
                 dtype=self._conditioning_dtype,
                 shape=self.full_conditioning_shape,
-                name='labels')
+                name='conditioning')
             placeholders_list.append(conditioning_placeholders)
 
         return tuple(placeholders_list)
@@ -510,7 +512,7 @@ class GANPatch(object):
     def conditioning(self, value):
         assert self.has_conditioning
         assert value.shape == tuple(self.full_conditioning_shape)
-        self._label = value
+        self._conditioning = value
 
     ### end of set the corresponding data of each placeholder
     def set_data(self, subject_id, spatial_loc, img, cond, noise):
@@ -555,7 +557,7 @@ class GANPatch(object):
             diff = int((self.image_size - self.conditioning_size) / 2)
             assert diff >= 0  # assumes label_size <= image_size
             x_d, y_d = (x_ + diff), (y_ + diff)
-            self.label = cond[x_d: (self.conditioning_size + x_d),
+            self.conditioning = cond[x_d: (self.conditioning_size + x_d),
                                   y_d: (self.conditioning_size + y_d), z_, :]
 
         return
@@ -564,7 +566,6 @@ class GANPatch(object):
         out_list = [self.image, self.noise, self.info]
         if self.has_conditioning:
             out_list.append(self.conditioning)
-
         assert not any([x is None for x in out_list])
         assert len(out_list) == len(placeholders)
         return {placeholders: tuple(out_list)}

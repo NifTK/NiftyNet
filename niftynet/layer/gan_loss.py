@@ -34,11 +34,12 @@ class LossFunction(Layer):
 
 
 
-def cross_entropy(pred, is_real):
+def cross_entropy(pred, is_real, softness=.1):
     if is_real:
-      entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=1. * tf.ones_like(pred))
+      target = (1.-softness) * tf.ones_like(pred)
     else:
-      entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=.0 * tf.ones_like(pred))
+        target = softness * tf.ones_like(pred)
+    entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=target)
     return tf.reduce_mean(entropy)
 
 

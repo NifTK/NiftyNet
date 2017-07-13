@@ -8,8 +8,9 @@ import tensorflow as tf
 from niftynet.engine import logging
 from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.application.common import BaseApplication
-
 import time
+
+
 class GANApplication(BaseApplication):
   def __init__(self,net_class, param, volume_loader):
     self._net_class = net_class
@@ -31,7 +32,7 @@ class GANApplication(BaseApplication):
                 patch=self._inference_patch_holder,
                 volume_loader=self._volume_loader,
                 data_augmentation_methods=None)
-            # ops to resize image back
+        # ops to resize image back
         self._ph=tf.placeholder(tf.float32,[None])
         self._sz=tf.placeholder(tf.int32,[None])
         reshaped=tf.image.resize_images(tf.reshape(self._ph,[1]+[self._param.label_size]*2+[-1]),self._sz[0:2])
@@ -47,7 +48,8 @@ class GANApplication(BaseApplication):
             image_size=self._param.image_size,
             noise_size=self._param.noise_size,
             conditioning_size=self._param.conditioning_size,
-            num_image_modality=self._volume_loader.num_modality(0))
+            num_image_modality=self._volume_loader.num_modality(0),
+            num_conditioning_modality=self._volume_loader.num_modality(1))
         # defines data augmentation for training
         augmentations = []
         if self._param.rotation:
@@ -67,34 +69,36 @@ class GANApplication(BaseApplication):
                 volume_loader=self._volume_loader,
                 data_augmentation_methods=None)
         return sampler
+
   def net(self,train_dict,is_training):
     if not self._net:
       self._net=self._net_class()
-    return self._net(train_dict['Sampling/noise'],train_dict['Sampling/images'],is_training)
+    conditioning = train_dict.get('Sampling/conditioning',None)
+    return self._net(train_dict['Sampling/noise'],train_dict['Sampling/images'],conditioning,is_training)
+
   def net_inference(self,train_dict,is_training):
     if not self._net:
       self._net=self._net_class()
     net_outputs = self._net(train_dict['images'],is_training)
     return self._post_process_outputs(net_outputs),train_dict['info']
+
   def loss_func(self,train_dict,net_outputs):
     real_logits = net_outputs[1]
-    fake_logits = net_outputs[2]
-    diff = net_outputs[3]
+    fake_logits = net_outputs[2] 
     lossG = self._loss_func(fake_logits,True)
     lossD=self._loss_func(real_logits,True)+self._loss_func(fake_logits,False)
-    lossL2 = tf.reduce_mean(tf.square(diff))
-    return lossG,lossD,lossL2
+    return lossG,lossD
+
   def train(self,train_dict):
     """
     Returns a list of possible compute_gradients ops to be run each training iteration.
     Default implementation returns gradients for all variables from one Adam optimizer
     """
-    # optimizer
     with tf.name_scope('Optimizer'):
       self.optimizer = tf.train.AdamOptimizer(learning_rate=self._param.lr,)
     net_outputs = self.net(train_dict, is_training=True)
     with tf.name_scope('Loss'):
-        lossG,lossD,lossL2 = self.loss_func(train_dict,net_outputs)
+        lossG,lossD = self.loss_func(train_dict,net_outputs)
         if self._param.decay > 0:
             reg_losses = tf.get_collection(
                 tf.GraphKeys.REGULARIZATION_LOSSES)
@@ -110,9 +114,10 @@ class GANApplication(BaseApplication):
     for tag,val in logs:
         tf.summary.scalar(tag,val,[logging.CONSOLE,logging.LOG])
     with tf.name_scope('ComputeGradients'):
-      grads=[self.optimizer.compute_gradients(lossG,var_list=tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,scope='generator')),
-             self.optimizer.compute_gradients(lossD,var_list=tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,scope='discriminator')),
-             self.optimizer.compute_gradients(lossL2,var_list=tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,scope='generator/G_shift'))]   
+      generator_variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
+      discriminator_variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,scope='discriminator')
+      grads=[self.optimizer.compute_gradients(lossG,var_list=generator_variables),
+             self.optimizer.compute_gradients(lossD,var_list=discriminator_variables)]
     # add compute gradients ops for each type of optimizer_op
     return grads
 
@@ -142,8 +147,11 @@ class GANApplication(BaseApplication):
                      batch_id, 1:(1 + int(np.floor(spatial_rank)))]
 
             i_spatial_rank=int(np.ceil(spatial_rank))
-            zoom=[d/p for p,d in zip([self._param.label_size]*i_spatial_rank,pred_img.shape[0:i_spatial_rank])]+[1,1]
-            pred_img=sess.run([self._reshaped],feed_dict={self._ph:np.reshape(predictions,[-1]),self._sz:pred_img.shape})[0]
+            output_size = [self._param.image_size]*i_spatial_rank + [1]
+            pred_size = pred_img.shape[0:i_spatial_rank] + [1]
+            zoom=[d/p for p,d in zip(output_size,pred_size)]
+            ph=np.reshape(predictions,[-1])
+            pred_img=sess.run([self._reshaped],feed_dict={self._ph: ph,self._sz:pred_img.shape})[0]
             subject_i.save_network_output(
                         pred_img,
                         self._param.save_seg_dir,
@@ -159,12 +167,10 @@ class GANApplication(BaseApplication):
         print('processed {} image patches ({:.3f}s)'.format(
             len(spatial_info), time.time() - local_time))  
     return all_saved_flag
+
   def logs(self,train_dict,net_outputs):
     return []
+
   def train_op_generator(self,apply_ops):
-    for it in range(100):
-      yield apply_ops[2:]
-    for it in range(100):
-      yield apply_ops[1:2]
     while True:
-      yield apply_ops[:2]
+      yield apply_ops

@@ -23,35 +23,12 @@ def _input_path_search(config):
         if 'image' in section:
             image_keywords.append(config.items(section))
         elif 'conditioning' in section:
-            label_keywords.append(config.items(section))
+            conditioning_keywords.append(config.items(section))
     image_matcher = [KeywordsMatching.from_tuple(mod_info)
                      for mod_info in image_keywords]
     conditioning_matcher = [KeywordsMatching.from_tuple(mod_info)
                      for mod_info in conditioning_keywords]
     return image_matcher, conditioning_matcher
-
-
-def _eval_path_search(config):
-    # match flexible input modality sections
-    output_keywords = []
-    ref_keywords = []
-    data_keywords = []
-    for section in config.sections():
-        section = section.lower()
-        if 'output' in section:
-            output_keywords.append(config.items(section))
-        elif 'ref' in section:
-            ref_keywords.append(config.items(section))
-        elif 'data' in section:
-            data_keywords.append(config.items(section))
-    output_matcher = [KeywordsMatching.from_tuple(mod_info)
-                      for mod_info in output_keywords]
-    ref_matcher = [KeywordsMatching.from_tuple(mod_info)
-                   for mod_info in ref_keywords]
-    data_matcher = [KeywordsMatching.from_tuple(mod_info)
-                    for mod_info in data_keywords]
-    return output_matcher, ref_matcher, data_matcher
-
 
 def default_params(action, config_file=None):
     if config_file is None:
@@ -382,12 +359,6 @@ def build_parser(parents, defaults):
         default=0
     )
     parser.add_argument(
-        "--output_prob",
-        metavar='',
-        help="[Inference only] whether to output multi-class probabilities",
-        default='False'
-    )
-    parser.add_argument(
         "--window_sampling",
         metavar='TYPE_STR',
         help="How to sample patches from each loaded image: fixed size uniformly distributed "
@@ -398,16 +369,7 @@ def build_parser(parents, defaults):
         choices=['resize'],
         default='resize'
     )
-    parser.add_argument(
-        "--min_sampling_ratio",
-        help="Minimum ratio to satisfy in the sampling of different labels",
-        default=0.00001
-    )
-    parser.add_argument(
-        "--min_numb_labels",
-        help="Minimum number of different labels present in a patch",
-        default=2
-    )
+
     parser.add_argument(
         "--max_checkpoints",
         help="Maximum number of model checkpoints that will be saved",
@@ -448,8 +410,8 @@ def run():
     misc_csv.write_matched_filenames_to_csv(image_matcher, image_csv_path)
 
     if conditioning_matcher:
-        conditioning_csv_path = os.path.join(file_args.model_dir, 'label_files.csv')
-        misc_csv.write_matched_filenames_to_csv(conditioning_matcher, label_csv_path)
+        conditioning_csv_path = os.path.join(file_args.model_dir, 'conditioning_files.csv')
+        misc_csv.write_matched_filenames_to_csv(conditioning_matcher, conditioning_csv_path)
     else:
         conditioning_csv_path = None
 
@@ -469,7 +431,6 @@ def correct_args_types(args):
     args.whitening = True if args.whitening == "True" else False
     args.rotation = True if args.rotation == "True" else False
     args.spatial_scaling = True if args.spatial_scaling == "True" else False
-    args.output_prob = True if args.output_prob == "True" else False
     args.random_flip = True if args.random_flip == "True" else False
     args.flip_axes = ([int(x.strip()) for x in args.flip_axes.split(',')
                        if x.strip() in ['0', '1', '2']])
