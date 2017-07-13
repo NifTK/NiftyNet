@@ -189,6 +189,8 @@ class DeconvolutionalLayer(TrainableLayer):
         output_tensor = deconv_layer(input_tensor)
 
         if self.with_bn:
+            if is_training is None:
+                raise ValueError('is_training argument should be True or False unless with_bn is False')
             bn_layer = BNLayer(
                 regularizer=self.regularizers['w'],
                 moving_decay=self.moving_decay,
