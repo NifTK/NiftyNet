@@ -54,7 +54,7 @@ class VAE_convolutional(TrainableLayer):
         super(VAE_convolutional, self).__init__(name=name)
 
         self.number_of_latent_variables = 512
-        self.number_of_samples_from_posterior_per_example = 1000
+        self.number_of_samples_from_posterior_per_example = 1
         # Exponentiating the logvariance yields the variance, so keep it within reasonable bounds:
         self.logvariance_upper_bound = 40
         self.logvariance_lower_bound = -40
@@ -114,7 +114,7 @@ class VAE_convolutional(TrainableLayer):
         else:
             self.acti_func_trans_conv_means = acti_func_trans_conv_means
         if acti_func_trans_conv_logvariances == None:
-            self.acti_func_trans_conv_logvariances = ['relu', 'relu', 'identity']
+            self.acti_func_trans_conv_logvariances = ['relu', 'relu', None]
         else:
             self.acti_func_trans_conv_logvariances = acti_func_trans_conv_logvariances
 
@@ -171,7 +171,7 @@ class VAE_convolutional(TrainableLayer):
                 with_bn=False,
                 w_initializer=self.initializers['w'],
                 w_regularizer=None,
-                acti_func='identity',
+                acti_func=None,
                 name='encoder_downsampler_{}_{}'.format(2, 2)))
             print(encoders_downsamplers[-1])
 
@@ -194,7 +194,7 @@ class VAE_convolutional(TrainableLayer):
         encoder_means = FullyConnectedLayer(
             n_output_nodes=self.number_of_latent_variables,
             with_bn=False,
-            acti_func='identity',
+            acti_func=None,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
             name='encoder_fc_means_{}'.format(self.number_of_latent_variables))
@@ -203,7 +203,7 @@ class VAE_convolutional(TrainableLayer):
         encoder_logvariances = FullyConnectedLayer(
             n_output_nodes=self.number_of_latent_variables,
             with_bn=False,
-            acti_func='identity',
+            acti_func=None,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
             name='encoder_fc_logvariances_{}'.format(self.number_of_latent_variables))
@@ -258,7 +258,7 @@ class VAE_convolutional(TrainableLayer):
                     with_bn=True,
                     w_initializer=self.initializers['w'],
                     w_regularizer=None,
-                    acti_func='identity',
+                    acti_func=None,
                     name='decoder_upsampler_means_{}_{}'.format(2, 2)))
                 print(decoders_means_upsamplers[-1])
 
@@ -287,7 +287,7 @@ class VAE_convolutional(TrainableLayer):
                     with_bn=True,
                     w_initializer=self.initializers['w'],
                     w_regularizer=None,
-                    acti_func='identity',
+                    acti_func=None,
                     name='decoder_upsampler_variances_{}_{}'.format(2, 2)))
                 print(decoders_logvariances_upsamplers[-1])
 

@@ -67,7 +67,7 @@ decay = 0
 loss_type = VariationalLowerBound
 reg_type = L2
 starting_iter = 0
-save_every_n = 100
+save_every_n = 10
 max_iter = 10
 
 # ** inference only ** system parameters

@@ -12,9 +12,6 @@ def prelu(f_in, channelwise_params):
     neg = channelwise_params * (f_in - tf.abs(f_in)) * 0.5
     return pos + neg
 
-def identity(input, name):
-    return input
-
 
 SUPPORTED_OP = {'relu': tf.nn.relu,
                 'relu6': tf.nn.relu6,
@@ -24,8 +21,7 @@ SUPPORTED_OP = {'relu': tf.nn.relu,
                 'sigmoid': tf.nn.sigmoid,
                 'tanh': tf.nn.tanh,
                 'prelu': prelu,
-                'dropout': tf.nn.dropout,
-                'identity': identity}
+                'dropout': tf.nn.dropout}
 
 
 class ActiLayer(TrainableLayer):
