@@ -17,8 +17,8 @@ testjob:
     - python -c "import tensorflow as tf; from tensorflow.python.client import device_lib; print device_lib.list_local_devices()"
     - ls -la /dev | grep nvidia
 
-    - echo $(python testing/get_gpu_index.py)
-    - export CUDA_VISIBLE_DEVICES=$(python testing/get_gpu_index.py)
+    - echo $(python tests/get_gpu_index.py)
+    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
 
     # download data
     - wget -q https://www.dropbox.com/s/y7mdh4m9ptkibax/example_volumes.tar.gz
@@ -51,42 +51,108 @@ testjob:
     - coverage run -a --source . run_application.py train -c config/default_multimodal_config.txt --image_size 42 --label_size 42 --batch_size 3
     - coverage run -a --source . run_application.py inference -c config/default_multimodal_config.txt --image_size 84 --label_size 84 --batch_size 7
 
-    - coverage run -a --source . -m testing.mean_variance_normalisation_test
-    - coverage run -a --source . -m testing.binary_masking_test
-    - coverage run -a --source . -m testing.histogram_normalisation_test
-    - coverage run -a --source . -m testing.activation_test
-    - coverage run -a --source . -m testing.bn_test
-    - coverage run -a --source . -m testing.convolution_test
-    - coverage run -a --source . -m testing.deconvolution_test
-    - coverage run -a --source . -m testing.downsample_test
-    - coverage run -a --source . -m testing.elementwise_test
-    - coverage run -a --source . -m testing.highres3dnet_test
-    - coverage run -a --source . -m testing.highresblock_test
-    - coverage run -a --source . -m testing.upsample_test
-    - coverage run -a --source . -m testing.toynet_test
-    - coverage run -a --source . -m testing.crop_test
-    - coverage run -a --source . -m testing.deepmedic_test
-    - coverage run -a --source . -m testing.vnetblock_test
-    - coverage run -a --source . -m testing.vnet_test
-    - coverage run -a --source . -m testing.unetblock_test
-      #- coverage run -a --source . -m testing.unet_test
-    - coverage run -a --source . -m testing.scaleblock_test
-    - coverage run -a --source . -m testing.scalenet_test
-    - coverage run -a --source . -m testing.toy_sampler_test
-    - coverage run -a --source . -m testing.input_buffer_test
-    - coverage run -a --source . -m testing.dilatedcontext_test
-    - coverage run -a --source . -m testing.loss_test
-    - coverage run -a --source . -m testing.subject_test
-    - coverage run -a --source . -m testing.volume_loader_test
-    - coverage run -a --source . -m testing.uniform_sampler_test
-    - coverage run -a --source . -m testing.grid_sampler_test
-    - coverage run -a --source . -m testing.selective_sampler_test
-    - coverage run -a --source . -m testing.rand_rotation_test
-    - coverage run -a --source . -m testing.rand_spatial_scaling_test
-    - coverage run -a --source . -m testing.post_processing_test
-    - coverage run -a --source . -m testing.spatial_transformer_test
-    - coverage run -a --source . -m testing.flip_test
+    - coverage run -a --source . -m tests.mean_variance_normalisation_test
+    - coverage run -a --source . -m tests.binary_masking_test
+    - coverage run -a --source . -m tests.histogram_normalisation_test
+    - coverage run -a --source . -m tests.activation_test
+    - coverage run -a --source . -m tests.bn_test
+    - coverage run -a --source . -m tests.convolution_test
+    - coverage run -a --source . -m tests.deconvolution_test
+    - coverage run -a --source . -m tests.downsample_test
+    - coverage run -a --source . -m tests.elementwise_test
+    - coverage run -a --source . -m tests.highres3dnet_test
+    - coverage run -a --source . -m tests.highresblock_test
+    - coverage run -a --source . -m tests.upsample_test
+    - coverage run -a --source . -m tests.toynet_test
+    - coverage run -a --source . -m tests.crop_test
+    - coverage run -a --source . -m tests.deepmedic_test
+    - coverage run -a --source . -m tests.vnetblock_test
+    - coverage run -a --source . -m tests.vnet_test
+    - coverage run -a --source . -m tests.unetblock_test
+      #- coverage run -a --source . -m tests.unet_test
+    - coverage run -a --source . -m tests.scaleblock_test
+    - coverage run -a --source . -m tests.scalenet_test
+    - coverage run -a --source . -m tests.toy_sampler_test
+    - coverage run -a --source . -m tests.input_buffer_test
+    - coverage run -a --source . -m tests.dilatedcontext_test
+    - coverage run -a --source . -m tests.loss_test
+    - coverage run -a --source . -m tests.subject_test
+    - coverage run -a --source . -m tests.volume_loader_test
+    - coverage run -a --source . -m tests.uniform_sampler_test
+    - coverage run -a --source . -m tests.grid_sampler_test
+    - coverage run -a --source . -m tests.selective_sampler_test
+    - coverage run -a --source . -m tests.rand_rotation_test
+    - coverage run -a --source . -m tests.rand_spatial_scaling_test
+    - coverage run -a --source . -m tests.post_processing_test
+    - coverage run -a --source . -m tests.spatial_transformer_test
+    - coverage run -a --source . -m tests.flip_test
     - coverage report -m
     - echo 'finished test'
   tags:
     - gift-linux
+
+pip-installer:
+  only:
+    - 69-push-to-pip-repository-after-commit-to-master-off-dev
+    - 69-push-to-pip-repository-after-commit-to-master-off-dev-restructure-hierarchy
+  script:
+    # following three lines copied over from dev script:
+    - ls -la /dev | grep nvidia
+    - echo $(python tests/get_gpu_index.py)
+    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
+    # create a virtual env to test pip installer
+    - venv="niftynet-pip-installer-venv"
+    - virtualenv $venv
+    # save NiftyNet folder path just in case
+    - niftynet_dir=$(pwd)
+    - cd $venv
+    - source bin/activate
+    # install dependencies for GPU
+    - pip install -r $niftynet_dir/requirements-gpu.txt
+    # install using setup.py in NiftyNet folder
+    - pip install $niftynet_dir
+    # go back to source folder to run tests
+    - cd $niftynet_dir
+    # using already downloaded data instead of downloading it every time
+    - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
+    - ln -s /home/gitlab-runner/environments/niftynet/data/testing_data ./testing_data
+    # start the tests
+    - python -m tests.mean_variance_normalisation_test
+    - python -m tests.binary_masking_test
+    - python -m tests.histogram_normalisation_test
+    - python -m tests.volume_loader_test
+    - python -m tests.activation_test
+    - python -m tests.spatial_transformer_test
+    - python -m tests.post_processing_test
+    - python -m tests.bn_test
+    - python -m tests.convolution_test
+    - python -m tests.crop_test
+    - python -m tests.deconvolution_test
+    - python -m tests.deepmedic_test
+    - python -m tests.dilatedcontext_test
+    - python -m tests.downsample_test
+    - python -m tests.elementwise_test
+    - python -m tests.grid_sampler_test
+    - python -m tests.highres3dnet_test
+    - python -m tests.highresblock_test
+    - python -m tests.input_buffer_test
+    - python -m tests.loss_test
+    - python -m tests.rand_rotation_test
+    - python -m tests.rand_spatial_scaling_test
+    - python -m tests.scaleblock_test
+    - python -m tests.scalenet_test
+    - python -m tests.selective_sampler_test
+    - python -m tests.subject_test
+    - python -m tests.test_sample
+    - python -m tests.toy_sampler_test
+    - python -m tests.toynet_test
+    #python -m tests.unet_test
+    - python -m tests.unetblock_test
+    - python -m tests.uniform_sampler_test
+    - python -m tests.upsample_test
+    - python -m tests.vnet_test
+    - python -m tests.vnetblock_test
+    # deactivate virtual environment
+    - deactivate
+  tags:
+    - gift-adelie
