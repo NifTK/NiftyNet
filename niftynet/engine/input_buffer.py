@@ -81,7 +81,7 @@ class InputBatchQueueRunner(object):
         queue_input_dict = dict(zip(self.sampler.placeholder_names,
                                     self.sampler.placeholders))
         self._enqueue_op = self._queue.enqueue(queue_input_dict)
-        self._dequeue_op = self._queue.dequeue_many(self.batch_size)
+        self._dequeue_op = self._queue.dequeue_many
         self._query_queue_size_op = self._queue.size()
         self._close_queue_op = self._queue.close(cancel_pending_enqueues=True)
 
@@ -139,9 +139,9 @@ class InputBatchQueueRunner(object):
             return 0
         return self._session.run(self._query_queue_size_op)
 
-    @property
-    def pop_batch_op(self):
-        return self._dequeue_op
+    def pop_batch_op(self, device_id):
+        with tf.name_scope('pop_batch_{}'.format(device_id)):
+            return self._dequeue_op(self.batch_size)
 
     def run_threads(self, session, coord, num_threads=1):
         print('Starting preprocessing threads...')

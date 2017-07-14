@@ -105,20 +105,22 @@ def run(net_class, param, volume_loader, device_str):
         with tf.name_scope('Optimizer'):
             train_step = tf.train.AdamOptimizer(learning_rate=param.lr)
         tower_grads = []
-        train_pairs = train_batch_runner.pop_batch_op
-        images, labels = train_pairs['Sampling/images'], train_pairs['Sampling/labels']
-        if "weight_maps" in train_pairs:
-            weight_maps = train_pairs['Sampling/weight_maps']
-        else:
-            weight_maps = None
         # Scalar summaries for the console are averaged over GPU runs
         console_outputs=graph.get_collection_ref(niftynet.engine.logging.CONSOLE)
         console_outputs_cache=console_outputs[:]
         del console_outputs[:]
         tower_console_outputs=[]
-        
+
         for i in range(0, max(param.num_gpus, 1)):
             with tf.device("/{}:{}".format(device_str, i)):
+
+                train_pairs = train_batch_runner.pop_batch_op(i)
+                images, labels = train_pairs['Sampling/images'], train_pairs['Sampling/labels']
+                if "weight_maps" in train_pairs:
+                    weight_maps = train_pairs['Sampling/weight_maps']
+                else:
+                    weight_maps = None
+
                 predictions = net(images, is_training=True)
                 with tf.name_scope('Loss'):
                     loss = loss_func(predictions, labels, weight_maps)
@@ -141,13 +143,13 @@ def run(net_class, param, volume_loader, device_str):
                               dtype=tf.float32))])
                 for tag,val in logs:
                     tf.summary.scalar(tag,val,[niftynet.engine.logging.CONSOLE,niftynet.engine.logging.LOG])
-                ################## 
+                ##################
 
                 # record and clear summaries
                 console_outputs=graph.get_collection_ref(niftynet.engine.logging.CONSOLE)
                 tower_console_outputs.append(console_outputs[:])
                 del console_outputs[:]
-                
+
                 with tf.name_scope('ComputeGradients'):
                     grads = train_step.compute_gradients(loss)
                 tower_grads.append(grads)
@@ -163,7 +165,7 @@ def run(net_class, param, volume_loader, device_str):
         console_outputs+=console_outputs_cache
         if len(tower_console_outputs)>1:
             # Averages are in name_scope for Tensorboard naming; summaries are outside for console naming
-            with tf.name_scope('AccumulateConsoleLogs'): 
+            with tf.name_scope('AccumulateConsoleLogs'):
                 averaged_summaries=[]
                 for replicated_output in zip(*tower_console_outputs):
                     averaged_summaries.append([replicated_output[0].op.name+'_avg',tf.reduce_mean([o.op.inputs[1] for o in replicated_output])])
