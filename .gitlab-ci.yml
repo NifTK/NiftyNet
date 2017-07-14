@@ -109,8 +109,9 @@ pip-installer:
     # save NiftyNet folder path just in case
     - niftynet_dir=$(pwd)
     # create a virtual env to test pip installer
-    - venv="niftynet-pip-installer-venv"
-    - virtualenv $venv
+    - venv="niftynet-pip-installer-venv-py2"
+    - mypython=$(which python2)
+    - virtualenv -p $mypython $venv
     - cd $venv
     - source bin/activate
     # install dependencies for GPU
