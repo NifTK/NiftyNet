@@ -130,5 +130,27 @@ pip-installer:
     # deactivate virtual environment
     - deactivate
     - cd $niftynet_dir
+    # ============= Python 3 ============================
+    # create a virtual env to test pip installer
+    - venv="niftynet-pip-installer-venv-py3"
+    - mypython=$(which python3)
+    - virtualenv -p $mypython $venv
+    - cd $venv
+    - source bin/activate
+    # print Python version to CI output
+    - which python
+    - python --version
+    # install dependencies for GPU
+    - pip install -r $niftynet_dir/requirements-gpu.txt
+    - pip install simpleitk
+    - pip install scikit-learn
+    # install using setup.py in NiftyNet folder
+    - pip install $niftynet_dir
+    # check whether all packages are importable
+    - cat $package_importer
+    - python $package_importer
+    # deactivate virtual environment
+    - deactivate
+    - cd $niftynet_dir
   tags:
     - gift-adelie
