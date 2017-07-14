@@ -59,7 +59,7 @@ def run(net_class, param, volume_loader, device_str):
             batch_size=param.batch_size,
             capacity=max(param.queue_length, param.batch_size),
             sampler=sampler)
-        test_pairs = seg_batch_runner.pop_batch_op
+        test_pairs = seg_batch_runner.pop_batch_op()
         info = test_pairs['info']
         logits = net(test_pairs['images'], is_training=False)
 
@@ -123,35 +123,35 @@ def run(net_class, param, volume_loader, device_str):
                                     pred_img,
                                     param.save_seg_dir,
                                     param.output_interp_order)
-           
+
                             if patch_holder.is_stopping_signal(
                                     spatial_info[batch_id]):
                                 print('received finishing batch')
                                 all_saved_flag = True
                                 seg_batch_runner.close_all()
                                 break
-           
+
                             img_id = spatial_info[batch_id, 0]
                             subject_i = volume_loader.get_subject(img_id)
                             pred_img = subject_i.matrix_like_input_data_5d(
                                 spatial_rank=spatial_rank,
                                 n_channels=post_process_layer.num_output_channels(),
                                 interp_order=param.output_interp_order)
-           
+
                         # try to expand prediction dims to match the output volume
                         predictions = seg_maps[batch_id]
                         while predictions.ndim < pred_img.ndim:
                             predictions = np.expand_dims(predictions, axis=-1)
-           
+
                         # assign predicted patch to the allocated output volume
                         origin = spatial_info[
                                  batch_id, 1:(1 + int(np.floor(spatial_rank)))]
-           
+
                         # indexing within the patch
                         assert param.label_size >= param.border * 2
                         p_ = param.border
                         _p = param.label_size - param.border
-           
+
                         # indexing relative to the sampled volume
                         assert param.image_size >= param.label_size
                         image_label_size_diff = param.image_size - param.label_size
@@ -159,7 +159,7 @@ def run(net_class, param, volume_loader, device_str):
                         _s = s_ + param.label_size - 2 * param.border
                         # absolute indexing in the prediction volume
                         dest_start, dest_end = (origin + s_), (origin + _s)
-           
+
                         assert np.all(dest_start >= 0)
                         img_dims = pred_img.shape[0:int(np.floor(spatial_rank))]
                         assert np.all(dest_end <= img_dims)
@@ -200,11 +200,11 @@ def run(net_class, param, volume_loader, device_str):
                         predictions = seg_maps[batch_id]
                         while predictions.ndim < pred_img.ndim:
                             predictions = np.expand_dims(predictions, axis=-1)
-            
+
                         # assign predicted patch to the allocated output volume
                         origin = spatial_info[
                                  batch_id, 1:(1 + int(np.floor(spatial_rank)))]
-            
+
                         i_spatial_rank=int(np.ceil(spatial_rank))
                         zoom=[d/p for p,d in zip([param.label_size]*i_spatial_rank,pred_img.shape[0:i_spatial_rank])]+[1,1]
                         print(predictions.shape)
@@ -214,7 +214,7 @@ def run(net_class, param, volume_loader, device_str):
                                     pred_img,
                                     param.save_seg_dir,
                                     param.output_interp_order)
-            
+
                         if patch_holder.is_stopping_signal(
                                     spatial_info[batch_id]):
                                 print('received finishing batch')
@@ -223,8 +223,8 @@ def run(net_class, param, volume_loader, device_str):
 
             # try to expand prediction dims to match the output volume
                 print('processed {} image patches ({:.3f}s)'.format(
-                    len(spatial_info), time.time() - local_time))  
-                
+                    len(spatial_info), time.time() - local_time))
+
         except KeyboardInterrupt:
             print('User cancelled training')
         except tf.errors.OutOfRangeError as e:

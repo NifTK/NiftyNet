@@ -30,7 +30,7 @@ class InputQueueTest(tf.test.TestCase):
         test_queue = TrainEvalInputBuffer(batch_size=2,
                                           capacity=8,
                                           sampler=test_sampler)
-        out_1 = test_queue.pop_batch_op
+        out_1 = test_queue.pop_batch_op()
 
         with self.test_session() as sess:
             coord = tf.train.Coordinator()
@@ -56,7 +56,7 @@ class InputQueueTest(tf.test.TestCase):
         deploy_queue = DeployInputBuffer(batch_size=5,
                                          capacity=8,
                                          sampler=test_sampler)
-        out_2 = deploy_queue.pop_batch_op
+        out_2 = deploy_queue.pop_batch_op()
         with self.test_session() as sess:
             coord = tf.train.Coordinator()
             deploy_queue.run_threads(sess, coord, num_threads=1)
@@ -89,7 +89,7 @@ class InputQueueTest(tf.test.TestCase):
         test_queue = TrainEvalInputBuffer(batch_size=2,
                                           capacity=8,
                                           sampler=test_sampler)
-        out_1 = test_queue.pop_batch_op
+        out_1 = test_queue.pop_batch_op()
 
         with self.test_session() as sess:
             coord = tf.train.Coordinator()
@@ -115,7 +115,7 @@ class InputQueueTest(tf.test.TestCase):
         deploy_queue = DeployInputBuffer(batch_size=5,
                                          capacity=8,
                                          sampler=test_sampler)
-        out_2 = deploy_queue.pop_batch_op
+        out_2 = deploy_queue.pop_batch_op()
         with self.test_session() as sess:
             coord = tf.train.Coordinator()
             deploy_queue.run_threads(sess, coord, num_threads=1)

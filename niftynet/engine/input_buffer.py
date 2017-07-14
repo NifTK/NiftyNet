@@ -139,7 +139,7 @@ class InputBatchQueueRunner(object):
             return 0
         return self._session.run(self._query_queue_size_op)
 
-    def pop_batch_op(self, device_id):
+    def pop_batch_op(self, device_id=0):
         with tf.name_scope('pop_batch_{}'.format(device_id)):
             return self._dequeue_op(self.batch_size)
 
