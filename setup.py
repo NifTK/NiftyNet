@@ -49,8 +49,8 @@ setup(
             'data',
             'demos',
             'tests',
-		]
-	),  # TODO
+        ]
+    ),  # TODO
 
     install_requires=['', '', ''],  # TODO
 
