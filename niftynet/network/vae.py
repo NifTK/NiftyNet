@@ -54,11 +54,11 @@ class VAE(TrainableLayer):
 
         super(VAE, self).__init__(name=name)
 
-        self.number_of_latent_variables = 512
+        self.number_of_latent_variables = 256
         self.number_of_samples_from_posterior_per_example = 1
 
         # Set the bound on logvariance, to keep variance = exp(logvariance) within reasonable limits:
-        self.logvariance_upper_bound = 40
+        self.logvariance_upper_bound = 80
         self.logvariance_lower_bound = -self.logvariance_upper_bound
 
         # Specify the encoder here
@@ -86,13 +86,12 @@ class VAE(TrainableLayer):
             self.acti_func_encoder = ['relu']
         else:
             self.acti_func_encoder = acti_func_encoder
-
         if layer_sizes_decoder == None:
-            self.layer_sizes_decoder = [512]
+            self.layer_sizes_decoder = self.layer_sizes_encoder[::-1]  # By default, we initialise a symmetric AE
         else:
             self.layer_sizes_decoder = layer_sizes_decoder
         if acti_func_decoder == None:
-            self.acti_func_decoder = ['relu']
+            self.acti_func_decoder = self.acti_func_encoder[::-1]  # By default, we initialise a symmetric AE
         else:
             self.acti_func_decoder = acti_func_decoder
         if acti_func_fully_connected_output == None:
@@ -100,7 +99,7 @@ class VAE(TrainableLayer):
         else:
             self.acti_func_fully_connected_output = acti_func_fully_connected_output
         if trans_conv_features == None:
-            self.trans_conv_features = [40, 20, 1]
+            self.trans_conv_features = self.conv_features[-2::-1] + [1] # By default, we initialise a symmetric AE
         else:
             self.trans_conv_features = trans_conv_features
         if trans_conv_kernels_sizes == None:
@@ -120,10 +119,10 @@ class VAE(TrainableLayer):
         else:
             self.acti_func_trans_conv_logvariances = acti_func_trans_conv_logvariances
 
-        # Choose how to upsample the feature maps in the convolutional decoding layers. Options are:
-        # 1. 'DECONV' (recommended) i.e., kernel shape is HxWxDxInxOut,
-        # 2. 'CHANNELWISE_DECONV' i.e., kernel shape is HxWxDx1x1,
-        # 3. 'REPLICATE' i.e., no parameters
+        # Choose how to upsample the feature maps in the convolutional decoding layers from
+        # 1. 'DECONV' (recommended): kernel shape is HxWxDxInxOut,
+        # 2. 'CHANNELWISE_DECONV': kernel shape is HxWxDx1x1,
+        # 3. 'REPLICATE': no parameters
         if upsampling_mode == None:
             self.upsampling_mode = 'DECONV'
         else:
@@ -134,8 +133,13 @@ class VAE(TrainableLayer):
 
     def layer_op(self, images, is_training):
 
+        def normalise(input):
+            min_val = tf.reduce_min(input)
+            max_val = tf.reduce_max(input)
+            return 255 * (input-min_val) / (max_val-min_val)
+
         def clip(input):
-            # We will clip logvars, so that variances = exp(logvars) is well-behaved
+            # This is for clipping logvars, so that variances = exp(logvars) is well-behaved
             output = tf.maximum(input, self.logvariance_lower_bound)
             output = tf.minimum(output, self.logvariance_upper_bound)
             return output
@@ -326,20 +330,17 @@ class VAE(TrainableLayer):
 
         posterior_means = encoder_means(flow, is_training)
         posterior_logvars = clip(encoder_logvariances(flow, is_training))
-        # We want access to the codes later...
         codes = sampler_from_posterior(posterior_means, posterior_logvars)
-        flow = codes
 
         # Fully connected decoder layers
+        flow = codes
         for i in range(0, len(self.layer_sizes_decoder) + 1):
             flow = decoders_fc[i](flow, is_training)
-        flow = unraster_feature_maps(flow) # Reshape the flow into HxWxDx(ChannelsIn)x(ChannelsOut) format
+        flow = unraster_feature_maps(flow)
 
-        # Up-sample means and variances separately from the output of the fully-connected layers
+        # Convolutional decoder layers for predicting mu in the Gaussian model of the data
+        # from the output of the fully-connected layers
         flow_means = flow
-        flow_logvars = flow
-
-        # Convolutional decoder layers, for predicting mu in the Gaussian model of the data
         for i in range(0, len(self.trans_conv_features)):
             if self.upsampling_mode == 'DECONV':
                 flow_means = decoders_means_upsamplers[i](flow_means, is_training)
@@ -353,7 +354,9 @@ class VAE(TrainableLayer):
                                            stride=2)(flow_means)
             flow_means = decoders_means_cnn[i](flow_means, is_training)
 
-        # Convolutional decoder layers, for predicting (log) variance in the Gaussian model of the data
+        # Convolutional decoder layers for predicting the (log) variance in the Gaussian model of the data
+        # from the output of the fully-connected layers
+        flow_logvars = flow
         for i in range(0, len(self.trans_conv_features)):
             if self.upsampling_mode == 'DECONV':
                 flow_logvars = decoders_logvars_upsamplers[i](flow_logvars, is_training)
@@ -368,30 +371,25 @@ class VAE(TrainableLayer):
             flow_logvars = decoders_logvars_cnn[i](flow_logvars, is_training)
 
         data_logvars = clip(flow_logvars)
-
         data_variances = tf.exp(data_logvars)
         posterior_variances = tf.exp(posterior_logvars)
 
         # Monitor the KL divergence of the (approximate) posterior from the prior
         KL_divergence = 1 + posterior_logvars - tf.square(posterior_means) - tf.exp(posterior_logvars)
         KL_divergence = -0.5 * tf.reduce_mean(tf.reduce_sum(KL_divergence, axis=[1]))
-        KL = tf.summary.scalar('KL_divergence', KL_divergence)
-        tf.add_to_collection(niftynet.engine.logging.CONSOLE, KL)
+        KLD = tf.summary.scalar('KL_divergence', KL_divergence)
+        tf.add_to_collection(niftynet.engine.logging.CONSOLE, KLD)
 
-        # Monitor the negative log likelihood of the parameters given the data
+        # Monitor the (negative log) likelihood of the parameters given the data
         log_likelihood = data_logvars + np.log(2 * np.pi) + tf.exp(-data_logvars) * tf.square(flow_means - images)
         log_likelihood = -0.5 * tf.reduce_mean(tf.reduce_sum(log_likelihood, axis=[1, 2, 3, 4]))
         NLL = tf.summary.scalar('negative_log_likelihood', -log_likelihood)
         tf.add_to_collection(niftynet.engine.logging.CONSOLE, NLL)
 
         # Send animated 3D reconstructions to TensorBoard
-        def normalise(input):
-            min = tf.reduce_min(input)
-            max = tf.reduce_max(input)
-            return 255 * (input-min) / (max-min)
         niftynet.engine.logging.image3_coronal('Originals', normalise(images))
         niftynet.engine.logging.image3_coronal('Means', normalise(flow_means))
         niftynet.engine.logging.image3_coronal('Variances', normalise(data_variances))
 
         return [posterior_means, posterior_logvars, flow_means, data_logvars,
-                images, data_variances, posterior_variances]
+                images, data_variances, posterior_variances, codes]

@@ -186,7 +186,8 @@ def run(net_class, param, volume_loader, device_str):
         write_summary_op = tf.summary.merge(logged_summaries)
         # saver
         variables_to_restore = variable_averages.variables_to_restore()
-        saver = tf.train.Saver(max_to_keep=param.max_checkpoints, var_list=variables_to_restore)
+        # saver = tf.train.Saver(max_to_keep=param.max_checkpoints, var_list=variables_to_restore)
+        saver = tf.train.Saver(max_to_keep=param.max_checkpoints)
         tf.Graph.finalize(graph)
     # run session
     config = tf.ConfigProto()

@@ -16,7 +16,6 @@ from niftynet.engine.input_buffer import DeployInputBuffer
 from niftynet.utilities.input_placeholders import ImagePatch
 from niftynet.layer.post_processing import PostProcessingLayer
 
-
 # run on single GPU with single thread
 def run(net_class, param, volume_loader, device_str):
     # construct graph
@@ -104,127 +103,75 @@ def run(net_class, param, volume_loader, device_str):
 
         coord = tf.train.Coordinator()
         all_saved_flag = False
+
+        def nii_save(array, filename, output_dir=param.save_seg_dir):
+            import nibabel as nib
+            import sys
+            new_image = nib.Nifti1Image(array, affine=np.eye(4))
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+            file_path = output_dir + '/' + filename + '.nii'
+            if sys.platform == "win32":
+                file_path.replace('/', '\\')
+            nib.save(new_image, file_path)
+
         try:
             seg_batch_runner.run_threads(sess, coord, num_threads=1)
-            img_id, pred_img, subject_i = None, None, None
-            if param.window_sampling in ['uniform', 'selective']:
+
+            if param.vae_inference_application == 'forward_pass':
+                # Pass each volume through the network and save the reconstructions
+                img_id, pred_img, subject_i = None, None, None
                 while True:
                     local_time = time.time()
                     if coord.should_stop():
                         break
                     seg_maps, spatial_info = sess.run([net_out, info])
-                    # go through each one in a batch
-                    for batch_id in range(seg_maps.shape[0]):
-                        if spatial_info[batch_id, 0] != img_id:
-                            # when subject_id changed
-                            # save current map and reset cumulative map variable
-                            if subject_i is not None:
-                                subject_i.save_network_output(
-                                    pred_img,
-                                    param.save_seg_dir,
-                                    param.output_interp_order)
-
-                            if patch_holder.is_stopping_signal(
-                                    spatial_info[batch_id]):
-                                print('received finishing batch')
-                                all_saved_flag = True
-                                seg_batch_runner.close_all()
-                                break
-
-                            img_id = spatial_info[batch_id, 0]
-                            subject_i = volume_loader.get_subject(img_id)
-                            pred_img = subject_i.matrix_like_input_data_5d(
-                                spatial_rank=spatial_rank,
-                                n_channels=post_process_layer.num_output_channels(),
-                                interp_order=param.output_interp_order)
-
-                        # try to expand prediction dims to match the output volume
-                        predictions = seg_maps[batch_id]
-                        while predictions.ndim < pred_img.ndim:
-                            predictions = np.expand_dims(predictions, axis=-1)
-
-                        # assign predicted patch to the allocated output volume
-                        origin = spatial_info[
-                                 batch_id, 1:(1 + int(np.floor(spatial_rank)))]
-
-                        # indexing within the patch
-                        assert param.label_size >= param.border * 2
-                        p_ = param.border
-                        _p = param.label_size - param.border
-
-                        # indexing relative to the sampled volume
-                        assert param.image_size >= param.label_size
-                        image_label_size_diff = param.image_size - param.label_size
-                        s_ = param.border + int(image_label_size_diff / 2)
-                        _s = s_ + param.label_size - 2 * param.border
-                        # absolute indexing in the prediction volume
-                        dest_start, dest_end = (origin + s_), (origin + _s)
-
-                        assert np.all(dest_start >= 0)
-                        img_dims = pred_img.shape[0:int(np.floor(spatial_rank))]
-                        assert np.all(dest_end <= img_dims)
-                        if spatial_rank == 3:
-                            x_, y_, z_ = dest_start
-                            _x, _y, _z = dest_end
-                            pred_img[x_:_x, y_:_y, z_:_z, ...] = \
-                                predictions[p_:_p, p_:_p, p_:_p, ...]
-                        elif spatial_rank == 2:
-                            x_, y_ = dest_start
-                            _x, _y = dest_end
-                            pred_img[x_:_x, y_:_y, ...] = \
-                                predictions[p_:_p, p_:_p, ...]
-                        elif spatial_rank == 2.5:
-                            x_, y_ = dest_start
-                            _x, _y = dest_end
-                            z_ = spatial_info[batch_id, 3]
-                            pred_img[x_:_x, y_:_y, z_:(z_ + 1), ...] = \
-                                predictions[p_:_p, p_:_p, ...]
-                        else:
-                            raise ValueError("unsupported spatial rank")
-                    print('processed {} image patches ({:.3f}s)'.format(
-                        len(spatial_info), time.time() - local_time))
-            elif param.window_sampling in ['resize']:
-                while True:
-                    local_time = time.time()
-                    if coord.should_stop():
-                        break
-                    seg_maps, spatial_info = sess.run([net_out, info])
+                    seg_maps = seg_maps[2]  # These are the data means
                     # go through each one in a batch
                     for batch_id in range(seg_maps.shape[0]):
                         img_id = spatial_info[batch_id, 0]
                         subject_i = volume_loader.get_subject(img_id)
-                        pred_img = subject_i.matrix_like_input_data_5d(
-                            spatial_rank=spatial_rank,
-                            n_channels=post_process_layer.num_output_channels(),
-                            interp_order=param.output_interp_order)
                         predictions = seg_maps[batch_id]
-                        while predictions.ndim < pred_img.ndim:
-                            predictions = np.expand_dims(predictions, axis=-1)
-
-                        # assign predicted patch to the allocated output volume
-                        origin = spatial_info[
-                                 batch_id, 1:(1 + int(np.floor(spatial_rank)))]
-
-                        i_spatial_rank = int(np.ceil(spatial_rank))
-                        zoom = [d / p for p, d in
-                                zip([param.label_size] * i_spatial_rank, pred_img.shape[0:i_spatial_rank])] + [1, 1]
-                        print(predictions.shape)
-                        pred_img[...] = scipy.ndimage.interpolation.zoom(predictions, zoom)
-                        print(pred_img.shape)
+                        predictions = np.expand_dims(predictions, axis = -1)  # ...NII requirements...
                         subject_i.save_network_output(
-                            pred_img,
+                            predictions,
                             param.save_seg_dir,
                             param.output_interp_order)
-
                         if patch_holder.is_stopping_signal(
                                 spatial_info[batch_id]):
                             print('received finishing batch')
                             all_saved_flag = True
                             break
+                all_saved_flag = True
+            elif param.vae_inference_application == 'sample':
+                # Generate one batch of samples from the prior, decode it, and save
+                local_time = time.time()
+                variance = float(param.linear_interpolation_variance)
+                noise = np.random.normal(0, variance, (param.batch_size, net.number_of_latent_variables))
+                dictionary_tmp = {logits[-1]: noise}.copy()
+                current_decoded_interpolated_code = logits[2].eval(feed_dict=dictionary_tmp)
+                for p in range(0, current_decoded_interpolated_code.shape[0]):
+                    nii_save(current_decoded_interpolated_code[p,:,:,:,0], 'DecodedSampleFromThePrior_' + str(p))
+                all_saved_flag = True
+            elif param.vae_inference_application == 'linear_interpolation':
+                # In the code space, linearly interpolate between the encodings of the first two volumes in the queue,
+                # decode the interpolation steps, and save
+                net_output = sess.run(net_out)
+                real_codes = net_output[-1]
+                originals = net_output[4]
+                line = np.reshape(np.linspace(0, 1, num=param.batch_size), (param.batch_size,1))
+                lin_interp_codes = line * (real_codes[1,:] - real_codes[0,:]) + real_codes[1,:]
+                dictionary_tmp = {logits[-1]: lin_interp_codes}.copy()
+                current_decoded_interpolated_code = logits[2].eval(feed_dict=dictionary_tmp)
+                nii_save(originals[0, :, :, :, :], 'LinearInterpolationOriginalStart')
+                for p in range(0,current_decoded_interpolated_code.shape[0]):
+                    nii_save(current_decoded_interpolated_code[p, :, :, :, :], 'LinearInterpolation_' + str(p))
+                nii_save(originals[1, :, :, :, :], 'LinearInterpolationOriginalFinish')
+                all_saved_flag = True
+            else:
+                print('ERROR: the only VAE inference options are (1) forward_pass; (2) sample; and (3) linear_interpolation')
 
-                            # try to expand prediction dims to match the output volume
-                print('processed {} image patches ({:.3f}s)'.format(
-                    len(spatial_info), time.time() - local_time))
+
 
         except KeyboardInterrupt:
             print('User cancelled training')

@@ -338,7 +338,7 @@ class Subject(object):
             return
 
         # In case multiple modalities output, have to swap
-        # the dimensions to ensure modalties in the 5th
+        # the dimensions to ensure modalities in the 5th
         # dimension (nifty standards)
         if data.shape[3] > 1:
             print("Ensuring NIfTI dimension standards")

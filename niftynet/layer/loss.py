@@ -177,7 +177,7 @@ def variational_lower_bound(predictions, labels):
     :return:
     """
 
-    [posterior_means, posterior_logvar, data_means, data_logvar, originals, _, _] = predictions
+    [posterior_means, posterior_logvar, data_means, data_logvar, originals, _, _, _] = predictions
 
     log_likelihood = (data_logvar + np.log(2 * np.pi) + tf.exp(-data_logvar) * tf.square(data_means - originals))
     log_likelihood = -0.5 * tf.reduce_sum(log_likelihood, axis=[1, 2, 3, 4])
@@ -185,9 +185,7 @@ def variational_lower_bound(predictions, labels):
     KL_divergence = (1 + posterior_logvar - tf.square(posterior_means) - tf.exp(posterior_logvar))
     KL_divergence = -0.5 * tf.reduce_sum(KL_divergence, axis=[1])
 
-    error_to_minimise = tf.reduce_mean(KL_divergence - log_likelihood)
-
-    return error_to_minimise
+    return tf.reduce_mean(KL_divergence - log_likelihood)
 
 
 def huber_loss(prediction, ground_truth, delta=1.0):
