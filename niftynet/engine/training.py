@@ -127,9 +127,10 @@ def run(net_class, param, volume_loader, device_str):
                     if param.decay > 0:
                         reg_losses = graph.get_collection(
                             tf.GraphKeys.REGULARIZATION_LOSSES)
-                        reg_loss = tf.reduce_mean([tf.reduce_mean(reg_loss)
-                                                for reg_loss in reg_losses])
-                        loss = loss + reg_loss
+                        if reg_losses:
+                            reg_loss = tf.reduce_mean([tf.reduce_mean(reg_loss)
+                                                    for reg_loss in reg_losses])
+                            loss = loss + reg_loss
 
                 ##################
                 # This should probably be refactored into an application class
