@@ -42,10 +42,10 @@ def generalised_dice_loss(pred, labels, type_weight='Square'):
     n_voxels = labels.get_shape()[0].value
     n_classes = pred.get_shape()[1].value
     pred = tf.nn.softmax(pred)
-    ids = tf.constant(np.arange(n_voxels), dtype=tf.int64)
+    ids = tf.range(n_voxels, dtype=tf.int64)
     ids = tf.stack([ids, labels], axis=1)
     one_hot = tf.SparseTensor(indices=ids,
-                              values=[1.0] * n_voxels,
+                              values==tf.ones([n_voxels],tf.float),
                               dense_shape=[n_voxels, n_classes])
 
     ref_vol = tf.sparse_reduce_sum(one_hot, reduction_axes=[0]) + 0.1
@@ -87,10 +87,10 @@ def sensitivity_specificity_loss(pred, labels, r=0.05):
     n_voxels = labels.get_shape()[0].value
     n_classes = pred.get_shape()[1].value
     pred = tf.nn.softmax(pred)
-    ids = tf.constant(np.arange(n_voxels), dtype=tf.int64)
+    ids =  tf.range(n_voxels, dtype=tf.int64)
     ids = tf.stack([ids, labels], axis=1)
     one_hot = tf.SparseTensor(indices=ids,
-                              values=[1.0] * n_voxels,
+                              values==tf.ones([n_voxels],tf.float),
                               dense_shape=[n_voxels, n_classes])
     one_hot = tf.sparse_tensor_to_dense(one_hot)
     # value of unity everywhere except for the previous 'hot' locations
