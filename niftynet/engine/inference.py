@@ -39,7 +39,7 @@ def run(net_class, param, volume_loader, device_str):
 
         # `patch` instance with image data only
         spatial_rank = patch_holder.spatial_rank
-        if param.window_sampling in ['uniform', 'selective']:
+        if param.window_sampling in ['uniform','selective']:
             sampling_grid_size = param.label_size - 2 * param.border
             assert sampling_grid_size > 0
             sampler = GridSampler(patch=patch_holder,
@@ -48,10 +48,10 @@ def run(net_class, param, volume_loader, device_str):
                                   name='grid_sampler')
         elif param.window_sampling in ['resize']:
             sampler = ResizeSampler(
-                patch=patch_holder,
-                volume_loader=volume_loader,
-                data_augmentation_methods=None,
-                name="resize_sampler")
+                    patch=patch_holder,
+                    volume_loader=volume_loader,
+                    data_augmentation_methods=None,
+                    name="resize_sampler")
         net = net_class(num_classes=param.num_classes,
                         acti_func=param.activation_function)
         # construct train queue
@@ -59,7 +59,7 @@ def run(net_class, param, volume_loader, device_str):
             batch_size=param.batch_size,
             capacity=max(param.queue_length, param.batch_size),
             sampler=sampler)
-        test_pairs = seg_batch_runner.pop_batch_op
+        test_pairs = seg_batch_runner.pop_batch_op()
         info = test_pairs['info']
         logits = net(test_pairs['images'], is_training=False)
 
@@ -77,8 +77,8 @@ def run(net_class, param, volume_loader, device_str):
         net_out = post_process_layer(logits)
         variable_averages = tf.train.ExponentialMovingAverage(0.9)
         saver = tf.train.Saver()
-        # variables_to_restore = variable_averages.variables_to_restore()
-        # saver = tf.train.Saver(var_list=variables_to_restore)
+        variables_to_restore = variable_averages.variables_to_restore()
+        saver = tf.train.Saver(var_list=variables_to_restore)
         tf.Graph.finalize(graph)  # no more graph nodes after this line
 
     # run session
@@ -107,7 +107,7 @@ def run(net_class, param, volume_loader, device_str):
         try:
             seg_batch_runner.run_threads(sess, coord, num_threads=1)
             img_id, pred_img, subject_i = None, None, None
-            if param.window_sampling in ['uniform', 'selective']:
+            if param.window_sampling in ['uniform','selective']:
                 while True:
                     local_time = time.time()
                     if coord.should_stop():
@@ -194,9 +194,9 @@ def run(net_class, param, volume_loader, device_str):
                         img_id = spatial_info[batch_id, 0]
                         subject_i = volume_loader.get_subject(img_id)
                         pred_img = subject_i.matrix_like_input_data_5d(
-                            spatial_rank=spatial_rank,
-                            n_channels=post_process_layer.num_output_channels(),
-                            interp_order=param.output_interp_order)
+                                spatial_rank=spatial_rank,
+                                n_channels=post_process_layer.num_output_channels(),
+                                interp_order=param.output_interp_order)
                         predictions = seg_maps[batch_id]
                         while predictions.ndim < pred_img.ndim:
                             predictions = np.expand_dims(predictions, axis=-1)
@@ -205,24 +205,23 @@ def run(net_class, param, volume_loader, device_str):
                         origin = spatial_info[
                                  batch_id, 1:(1 + int(np.floor(spatial_rank)))]
 
-                        i_spatial_rank = int(np.ceil(spatial_rank))
-                        zoom = [d / p for p, d in
-                                zip([param.label_size] * i_spatial_rank, pred_img.shape[0:i_spatial_rank])] + [1, 1]
+                        i_spatial_rank=int(np.ceil(spatial_rank))
+                        zoom=[d/p for p,d in zip([param.label_size]*i_spatial_rank,pred_img.shape[0:i_spatial_rank])]+[1,1]
                         print(predictions.shape)
                         pred_img[...] = scipy.ndimage.interpolation.zoom(predictions, zoom)
                         print(pred_img.shape)
                         subject_i.save_network_output(
-                            pred_img,
-                            param.save_seg_dir,
-                            param.output_interp_order)
+                                    pred_img,
+                                    param.save_seg_dir,
+                                    param.output_interp_order)
 
                         if patch_holder.is_stopping_signal(
-                                spatial_info[batch_id]):
-                            print('received finishing batch')
-                            all_saved_flag = True
-                            break
+                                    spatial_info[batch_id]):
+                                print('received finishing batch')
+                                all_saved_flag = True
+                                break
 
-                            # try to expand prediction dims to match the output volume
+            # try to expand prediction dims to match the output volume
                 print('processed {} image patches ({:.3f}s)'.format(
                     len(spatial_info), time.time() - local_time))
 
