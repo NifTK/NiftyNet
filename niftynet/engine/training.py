@@ -17,6 +17,7 @@ from niftynet.layer.loss import LossFunction
 from niftynet.utilities import misc_common as util
 from niftynet.utilities.input_placeholders import ImagePatch
 import niftynet.engine.logging
+from niftynet.engine.restorer import global_variables_initialize_or_restorer
 
 np.random.seed(seed=int(time.time()))
 
@@ -181,7 +182,7 @@ def run(net_class, param, volume_loader, device_str):
             # batch norm variables moving mean and var
             batchnorm_updates_op = tf.group(*bn_updates)
         # primary operations
-        init_op = tf.global_variables_initializer()
+        init_op = global_variables_initialize_or_restorer()
         train_op = tf.group(apply_grad_op,
                             var_averages_op,
                             batchnorm_updates_op)
