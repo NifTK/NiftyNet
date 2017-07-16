@@ -68,11 +68,11 @@ class ResizeSampler(BaseSampler):
             i_spatial_rank=int(math.ceil(spatial_rank))
             zoom=[p/d for p,d in zip([patch.image_size]*i_spatial_rank,img.data.shape)]+[1]
             
-            img = scipy.ndimage.interpolation.zoom(img.data, zoom)
+            img = scipy.ndimage.interpolation.zoom(img.data, zoom, order=img.interp_order)
             if seg is not None:
-              seg = scipy.ndimage.interpolation.zoom(seg.data, zoom)
+              seg = scipy.ndimage.interpolation.zoom(seg.data, zoom, order=seg.interp_order)
             if weight_map is not None:
-              weight_map = scipy.ndimage.interpolation.zoom(weight_map.data, zoom)
+              weight_map = scipy.ndimage.interpolation.zoom(weight_map.data, zoom, order=weight_map.interp_order)
             loc=[0]*i_spatial_rank+[patch.image_size]*i_spatial_rank
             patch.set_data(idx, loc, img, seg, weight_map)
             yield patch
