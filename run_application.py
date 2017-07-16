@@ -122,12 +122,13 @@ def main():
         device_str = "gpu" if param.num_gpus > 0 else "cpu"
         niftynet.engine.training.run(net_class, param, volume_loader, device_str)
     else:
-        # import niftynet.engine.inference
-        import niftynet.engine.vae_inference
+        if param.net_name == 'vae':
+            import niftynet.engine.vae_inference as inference
+        else:
+            import niftynet.engine.inference as inference
 
         device_str = "gpu" if param.num_gpus > 0 else "cpu"
-        # niftynet.engine.inference.run(net_class, param, volume_loader, device_str)
-        niftynet.engine.vae_inference.run(net_class, param, volume_loader, device_str)
+        inference.run(net_class, param, volume_loader, device_str)
     return 0
 if __name__ == "__main__":
   sys.exit(main())

@@ -70,7 +70,6 @@ vae_inference_application = linear_interpolation
 border = 5
 inference_iter = 1100
 save_seg_dir = ./output/vae
-linear_interpolation_step_size = 100
 linear_interpolation_variance = 1
 output_interp_order = 0
 output_prob = False

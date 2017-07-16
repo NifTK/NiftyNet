@@ -8,8 +8,8 @@ from niftynet.layer.layer_util import infer_dims
 from niftynet.layer.convolution import ConvolutionalLayer
 from niftynet.layer.deconvolution import DeconvolutionalLayer
 from niftynet.layer.upsample import UpSampleLayer
-from niftynet.layer.reparameterization_trick import ReparameterizationLayer
-import niftynet.engine.logging
+import niftynet.engine.logging.CONSOLE as CONSOLE
+import niftynet.engine.logging.image3_coronal as image3_coronal
 import tensorflow as tf
 import numpy as np
 
@@ -55,7 +55,8 @@ class VAE(TrainableLayer):
         super(VAE, self).__init__(name=name)
 
         self.number_of_latent_variables = 256
-        self.number_of_samples_from_posterior_per_example = 1
+        self.number_of_samples_from_posterior = 1
+        self.prior_distribution = 'Gaussian'
 
         # Set the bound on logvariance, to keep variance = exp(logvariance) within reasonable limits:
         self.logvariance_upper_bound = 80
@@ -99,15 +100,15 @@ class VAE(TrainableLayer):
         else:
             self.acti_func_fully_connected_output = acti_func_fully_connected_output
         if trans_conv_features == None:
-            self.trans_conv_features = self.conv_features[-2::-1] + [1] # By default, we initialise a symmetric AE
+            self.trans_conv_features = self.conv_features[-2::-1] + [1]  # By default, we initialise a symmetric AE
         else:
             self.trans_conv_features = trans_conv_features
         if trans_conv_kernels_sizes == None:
-            self.trans_conv_kernels_sizes = [3, 3, 3]
+            self.trans_conv_kernels_sizes = self.conv_kernel_sizes[::-1]  # By default, we initialise a symmetric AE
         else:
             self.trans_conv_kernels_sizes = trans_conv_kernels_sizes
         if trans_conv_unpooling_factors == None:
-            self.trans_conv_unpooling_factors = [2, 2, 2]
+            self.trans_conv_unpooling_factors = self.conv_pooling_factors[::-1]  # By default, we initialise a symmetric AE
         else:
             self.trans_conv_unpooling_factors = trans_conv_unpooling_factors
         if acti_func_trans_conv_means == None:
@@ -120,7 +121,7 @@ class VAE(TrainableLayer):
             self.acti_func_trans_conv_logvariances = acti_func_trans_conv_logvariances
 
         # Choose how to upsample the feature maps in the convolutional decoding layers from
-        # 1. 'DECONV' (recommended): kernel shape is HxWxDxInxOut,
+        # 1. 'DECONV' (recommended): kernel shape is HxWxDxChannelsInxChannelsOut,
         # 2. 'CHANNELWISE_DECONV': kernel shape is HxWxDx1x1,
         # 3. 'REPLICATE': no parameters
         if upsampling_mode == None:
@@ -142,6 +143,19 @@ class VAE(TrainableLayer):
             # This is for clipping logvars, so that variances = exp(logvars) is well-behaved
             output = tf.maximum(input, self.logvariance_lower_bound)
             output = tf.minimum(output, self.logvariance_upper_bound)
+            return output
+
+        def noise_shaped_like(shape, distribution):
+            if distribution == 'Gaussian':
+                output = tf.random_normal(shape, 0.0, 1.0)
+            elif distribution == 'Uniform':
+                output = tf.random_uniform(shape, minval=0.0, maxval=1.0)
+            elif distribution == 'Bernoulli':
+                uniform_sample = tf.random_uniform(shape, minval=0.0, maxval=1.0)
+                output = tf.where(uniform_sample > 0.5, tf.zeros(shape), tf.ones(shape))
+            else:
+                print("Unrecognised noise!")
+                quit()
             return output
 
         # Calculate the dimensionality of the data as it emerges from the convolutional part of the encoder
@@ -220,12 +234,6 @@ class VAE(TrainableLayer):
             w_regularizer=self.regularizers['w'],
             name='encoder_fc_logvars_{}'.format(self.number_of_latent_variables))
         print(encoder_logvariances)
-
-        sampler_from_posterior = ReparameterizationLayer(
-            prior='Gaussian',
-            number_of_samples=self.number_of_samples_from_posterior_per_example,
-            name='reparameterization_{}'.format(self.number_of_latent_variables))
-        print(sampler_from_posterior)
 
         # Define the decoding fully connected layers
         decoders_fc = []
@@ -324,22 +332,28 @@ class VAE(TrainableLayer):
             flow = encoders_downsamplers[i](flow, is_training)
         flow = raster_feature_maps(flow)
 
-        # Fully connected encoder layers
+        # Fully-connected encoder layers
         for i in range(0, len(self.layer_sizes_encoder)):
             flow = encoders_fc[i](flow, is_training)
 
         posterior_means = encoder_means(flow, is_training)
         posterior_logvars = clip(encoder_logvariances(flow, is_training))
-        codes = sampler_from_posterior(posterior_means, posterior_logvars)
+        if self.number_of_samples_from_posterior == 1:
+            noise_sample = noise_shaped_like(tf.shape(posterior_means), self.prior_distribution)
+        else:
+            shape_of_expanded_sample = tf.concat([tf.constant(self.number_of_samples_from_posterior,
+                                                              shape=[1, ]), tf.shape(posterior_means)], 0)
+            noise_sample = noise_shaped_like(shape_of_expanded_sample, self.prior_distribution)
+            noise_sample = tf.reduce_mean(noise_sample, axis=0)
+        codes = posterior_means + tf.exp(0.5 * posterior_logvars) * noise_sample
 
-        # Fully connected decoder layers
+        # Fully-connected decoder layers
         flow = codes
         for i in range(0, len(self.layer_sizes_decoder) + 1):
             flow = decoders_fc[i](flow, is_training)
         flow = unraster_feature_maps(flow)
 
         # Convolutional decoder layers for predicting mu in the Gaussian model of the data
-        # from the output of the fully-connected layers
         flow_means = flow
         for i in range(0, len(self.trans_conv_features)):
             if self.upsampling_mode == 'DECONV':
@@ -355,7 +369,6 @@ class VAE(TrainableLayer):
             flow_means = decoders_means_cnn[i](flow_means, is_training)
 
         # Convolutional decoder layers for predicting the (log) variance in the Gaussian model of the data
-        # from the output of the fully-connected layers
         flow_logvars = flow
         for i in range(0, len(self.trans_conv_features)):
             if self.upsampling_mode == 'DECONV':
@@ -377,19 +390,17 @@ class VAE(TrainableLayer):
         # Monitor the KL divergence of the (approximate) posterior from the prior
         KL_divergence = 1 + posterior_logvars - tf.square(posterior_means) - tf.exp(posterior_logvars)
         KL_divergence = -0.5 * tf.reduce_mean(tf.reduce_sum(KL_divergence, axis=[1]))
-        KLD = tf.summary.scalar('KL_divergence', KL_divergence)
-        tf.add_to_collection(niftynet.engine.logging.CONSOLE, KLD)
+        tf.add_to_collection(CONSOLE, tf.summary.scalar('KL_divergence', KL_divergence))
 
         # Monitor the (negative log) likelihood of the parameters given the data
         log_likelihood = data_logvars + np.log(2 * np.pi) + tf.exp(-data_logvars) * tf.square(flow_means - images)
         log_likelihood = -0.5 * tf.reduce_mean(tf.reduce_sum(log_likelihood, axis=[1, 2, 3, 4]))
-        NLL = tf.summary.scalar('negative_log_likelihood', -log_likelihood)
-        tf.add_to_collection(niftynet.engine.logging.CONSOLE, NLL)
+        tf.add_to_collection(CONSOLE, tf.summary.scalar('negative_log_likelihood', -log_likelihood))
 
         # Send animated 3D reconstructions to TensorBoard
-        niftynet.engine.logging.image3_coronal('Originals', normalise(images))
-        niftynet.engine.logging.image3_coronal('Means', normalise(flow_means))
-        niftynet.engine.logging.image3_coronal('Variances', normalise(data_variances))
+        image3_coronal('Originals', normalise(images))
+        image3_coronal('Means', normalise(flow_means))
+        image3_coronal('Variances', normalise(data_variances))
 
         return [posterior_means, posterior_logvars, flow_means, data_logvars,
                 images, data_variances, posterior_variances, codes]
