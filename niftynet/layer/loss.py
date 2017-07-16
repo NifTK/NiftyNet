@@ -45,7 +45,7 @@ def generalised_dice_loss(pred, labels, type_weight='Square'):
     ids = tf.range(n_voxels, dtype=tf.int64)
     ids = tf.stack([ids, labels], axis=1)
     one_hot = tf.SparseTensor(indices=ids,
-                              values==tf.ones([n_voxels],tf.float),
+                              values=tf.ones([n_voxels],dtype=tf.float32),
                               dense_shape=[n_voxels, n_classes])
 
     ref_vol = tf.sparse_reduce_sum(one_hot, reduction_axes=[0]) + 0.1
@@ -90,7 +90,7 @@ def sensitivity_specificity_loss(pred, labels, r=0.05):
     ids =  tf.range(n_voxels, dtype=tf.int64)
     ids = tf.stack([ids, labels], axis=1)
     one_hot = tf.SparseTensor(indices=ids,
-                              values==tf.ones([n_voxels],tf.float),
+                              values=tf.ones([n_voxels],dtype=tf.float32),
                               dense_shape=[n_voxels, n_classes])
     one_hot = tf.sparse_tensor_to_dense(one_hot)
     # value of unity everywhere except for the previous 'hot' locations
@@ -126,10 +126,10 @@ def dice(pred, labels):
     n_classes = pred.get_shape()[1].value
     pred = tf.nn.softmax(pred)
     # construct sparse matrix for labels to save space
-    ids = tf.constant(np.arange(n_voxels), dtype=tf.int64)
+    ids =  tf.range(n_voxels, dtype=tf.int64)
     ids = tf.stack([ids, labels], axis=1)
     one_hot = tf.SparseTensor(indices=ids,
-                              values=[1.0] * n_voxels,
+                              values=tf.ones([n_voxels],dtype=tf.float32),
                               dense_shape=[n_voxels, n_classes])
     # dice
     dice_numerator = 2.0 * tf.sparse_reduce_sum(one_hot * pred,
