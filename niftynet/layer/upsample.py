@@ -4,10 +4,10 @@ from __future__ import absolute_import, print_function
 import numpy as np
 import tensorflow as tf
 
-from niftynet.utilities.misc_common import look_up_operations
 from niftynet.layer import layer_util
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.deconvolution import DeconvLayer
+from niftynet.utilities.misc_common import look_up_operations
 
 SUPPORTED_OP = {'REPLICATE', 'CHANNELWISE_DECONV'}
 
@@ -50,17 +50,19 @@ class UpSampleLayer(TrainableLayer):
             if self.kernel_size != self.stride:
                 raise ValueError(
                     "`kernel_size` != `stride` currently not"
-                    "supported in upsampling layer. Please"
+                    "supported in `REPLICATE` mode. Please"
                     "consider using `CHANNELWISE_DECONV` operation.")
             # simply replicate input values to
             # local regions of (kernel_size ** spatial_rank) element
-            repmat = np.hstack((self.kernel_size ** spatial_rank,
-                                [1] * spatial_rank, 1)).flatten()
+            kernel_size_all_dims = layer_util.expand_spatial_params(
+                self.kernel_size, spatial_rank)
+            pixel_num = np.prod(kernel_size_all_dims)
+            repmat = np.hstack((pixel_num, [1] * spatial_rank, 1)).flatten()
             output_tensor = tf.tile(input=input_tensor, multiples=repmat)
             output_tensor = tf.batch_to_space_nd(
-                output_tensor,
-                [self.kernel_size] * spatial_rank,
-                [[0, 0]] * spatial_rank)
+                input=output_tensor,
+                block_shape=kernel_size_all_dims,
+                crops=[[0, 0]] * spatial_rank)
 
         elif self.func == 'CHANNELWISE_DECONV':
             output_tensor = [tf.expand_dims(x, -1)

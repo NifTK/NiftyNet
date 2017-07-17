@@ -4,11 +4,11 @@ from __future__ import absolute_import, print_function
 import numpy as np
 import tensorflow as tf
 
-from niftynet.utilities.misc_common import look_up_operations
 from niftynet.layer import layer_util
 from niftynet.layer.activation import ActiLayer
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.bn import BNLayer
+from niftynet.utilities.misc_common import look_up_operations
 
 SUPPORTED_PADDING = {'SAME', 'VALID'}
 
@@ -39,6 +39,7 @@ class ConvLayer(TrainableLayer):
                  n_output_chns,
                  kernel_size=3,
                  stride=1,
+                 dilation=1,
                  padding='SAME',
                  with_bias=False,
                  w_initializer=None,
@@ -50,8 +51,9 @@ class ConvLayer(TrainableLayer):
 
         self.padding = look_up_operations(padding.upper(), SUPPORTED_PADDING)
         self.n_output_chns = n_output_chns
-        self.kernel_size = np.asarray(kernel_size).flatten()
-        self.stride = np.asarray(stride).flatten()
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.dilation = dilation
         self.with_bias = with_bias
 
         self.initializers = {
@@ -66,18 +68,23 @@ class ConvLayer(TrainableLayer):
         spatial_rank = layer_util.infer_spatial_rank(input_tensor)
 
         # initialize conv kernels/strides and then apply
-        w_full_size = np.vstack((
-            [self.kernel_size] * spatial_rank,
-            n_input_chns, self.n_output_chns)).flatten()
-        full_stride = np.vstack((
-            [self.stride] * spatial_rank)).flatten()
+        w_full_size = layer_util.expand_spatial_params(
+            self.kernel_size, spatial_rank)
+        # expand kernel size to include number of features
+        w_full_size.extend([n_input_chns, self.n_output_chns])
+        full_stride = layer_util.expand_spatial_params(
+            self.stride, spatial_rank)
+        full_dilation = layer_util.expand_spatial_params(
+            self.dilation, spatial_rank)
+
         conv_kernel = tf.get_variable(
-            'w', shape=w_full_size.tolist(),
+            'w', shape=w_full_size,
             initializer=self.initializers['w'],
             regularizer=self.regularizers['w'])
         output_tensor = tf.nn.convolution(input=input_tensor,
                                           filter=conv_kernel,
-                                          strides=full_stride.tolist(),
+                                          strides=full_stride,
+                                          dilation_rate=full_dilation,
                                           padding=self.padding,
                                           name='conv')
         if not self.with_bias:
@@ -88,7 +95,8 @@ class ConvLayer(TrainableLayer):
             'b', shape=self.n_output_chns,
             initializer=self.initializers['b'],
             regularizer=self.regularizers['b'])
-        output_tensor = tf.nn.bias_add(output_tensor, bias_term,
+        output_tensor = tf.nn.bias_add(output_tensor,
+                                       bias_term,
                                        name='add_bias')
         return output_tensor
 
@@ -104,8 +112,9 @@ class ConvolutionalLayer(TrainableLayer):
 
     def __init__(self,
                  n_output_chns,
-                 kernel_size,
+                 kernel_size=3,
                  stride=1,
+                 dilation=1,
                  padding='SAME',
                  with_bias=False,
                  with_bn=True,
@@ -131,6 +140,7 @@ class ConvolutionalLayer(TrainableLayer):
         self.n_output_chns = n_output_chns
         self.kernel_size = kernel_size
         self.stride = stride
+        self.dilation = dilation
         self.padding = padding
         self.with_bias = with_bias
 
@@ -148,6 +158,7 @@ class ConvolutionalLayer(TrainableLayer):
         conv_layer = ConvLayer(n_output_chns=self.n_output_chns,
                                kernel_size=self.kernel_size,
                                stride=self.stride,
+                               dilation=self.dilation,
                                padding=self.padding,
                                with_bias=self.with_bias,
                                w_initializer=self.initializers['w'],
@@ -159,7 +170,8 @@ class ConvolutionalLayer(TrainableLayer):
 
         if self.with_bn:
             if is_training is None:
-                raise ValueError('is_training argument should be True or False unless with_bn is False')
+                raise ValueError('is_training argument should be '
+                                 'True or False unless with_bn is False')
             bn_layer = BNLayer(
                 regularizer=self.regularizers['w'],
                 moving_decay=self.moving_decay,

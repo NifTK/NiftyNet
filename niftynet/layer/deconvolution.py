@@ -4,11 +4,11 @@ from __future__ import absolute_import, print_function
 import numpy as np
 import tensorflow as tf
 
-from niftynet.utilities.misc_common import look_up_operations
 from niftynet.layer import layer_util
 from niftynet.layer.activation import ActiLayer
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.bn import BNLayer
+from niftynet.utilities.misc_common import look_up_operations
 
 SUPPORTED_OP = {'2D': tf.nn.conv2d_transpose,
                 '3D': tf.nn.conv3d_transpose}
@@ -30,12 +30,21 @@ def default_b_initializer():
     return tf.constant_initializer(0.0)
 
 
-def infer_output_dim(input_dim, stride, kernel_size, padding):
-    assert input_dim is not None
+def infer_output_dims(input_dims, strides, kernel_sizes, padding):
+    '''
+        infer output dims from list,
+        the dim can be different in different directions.
+        Note: dilation is not considerted here.
+    '''
+    assert (len(input_dims) == len(strides))
+    assert (len(input_dims) == len(kernel_sizes))
     if padding == 'VALID':
-        return input_dim * stride + max(kernel_size - stride, 0)
-    else: # padding == 'SAME':
-        return input_dim * stride
+        output_dims = [
+            dim * strides[i] + max(kernel_sizes[i] - strides[i], 0)
+            for (i, dim) in enumerate(input_dims)]
+    else:
+        output_dims = [dim * strides[i] for (i, dim) in enumerate(input_dims)]
+    return output_dims
 
 
 class DeconvLayer(TrainableLayer):
@@ -59,11 +68,10 @@ class DeconvLayer(TrainableLayer):
 
         super(DeconvLayer, self).__init__(name=name)
 
-
         self.padding = look_up_operations(padding.upper(), SUPPORTED_PADDING)
         self.n_output_chns = n_output_chns
-        self.kernel_size = np.asarray(kernel_size).flatten()
-        self.stride = np.asarray(stride).flatten()
+        self.kernel_size = kernel_size
+        self.stride = stride
         self.with_bias = with_bias
 
         self.initializers = {
@@ -78,13 +86,15 @@ class DeconvLayer(TrainableLayer):
         spatial_rank = layer_util.infer_spatial_rank(input_tensor)
 
         # initialize conv kernels/strides and then apply
-        w_full_size = np.vstack((
-            [self.kernel_size] * spatial_rank,
-            self.n_output_chns, n_input_chns)).flatten()
-        full_stride = np.vstack((
-            1, [self.stride] * spatial_rank, 1)).flatten()
+        kernel_size_all_dim = layer_util.expand_spatial_params(
+            self.kernel_size, spatial_rank)
+        w_full_size = kernel_size_all_dim + [self.n_output_chns, n_input_chns]
+        stride_all_dim = layer_util.expand_spatial_params(
+            self.stride, spatial_rank)
+        full_stride = [1] + stride_all_dim + [1]
+
         deconv_kernel = tf.get_variable(
-            'w', shape=w_full_size.tolist(),
+            'w', shape=w_full_size,
             initializer=self.initializers['w'],
             regularizer=self.regularizers['w'])
         if spatial_rank == 2:
@@ -95,17 +105,15 @@ class DeconvLayer(TrainableLayer):
             raise ValueError(
                 "Only 2D and 3D spatial deconvolutions are supported")
 
-        output_dim = infer_output_dim(input_shape[1],
-                                      self.stride,
-                                      self.kernel_size,
-                                      self.padding)
-        full_output_size = np.vstack((input_shape[0],
-                                      [output_dim] * spatial_rank,
-                                      self.n_output_chns)).flatten()
+        output_dims = infer_output_dims(input_shape[1:-1],
+                                        stride_all_dim,
+                                        kernel_size_all_dim,
+                                        self.padding)
+        full_output_size = [input_shape[0]] + output_dims + [self.n_output_chns]
         output_tensor = op_(value=input_tensor,
                             filter=deconv_kernel,
-                            output_shape=full_output_size.tolist(),
-                            strides=full_stride.tolist(),
+                            output_shape=full_output_size,
+                            strides=full_stride,
                             padding=self.padding,
                             name='deconv')
         if not self.with_bias:
@@ -134,8 +142,8 @@ class DeconvolutionalLayer(TrainableLayer):
 
     def __init__(self,
                  n_output_chns,
-                 kernel_size,
-                 stride,
+                 kernel_size=3,
+                 stride=1,
                  padding='SAME',
                  with_bias=False,
                  with_bn=True,
@@ -190,7 +198,8 @@ class DeconvolutionalLayer(TrainableLayer):
 
         if self.with_bn:
             if is_training is None:
-                raise ValueError('is_training argument should be True or False unless with_bn is False')
+                raise ValueError('is_training argument should be '
+                                 'True or False unless with_bn is False')
             bn_layer = BNLayer(
                 regularizer=self.regularizers['w'],
                 moving_decay=self.moving_decay,

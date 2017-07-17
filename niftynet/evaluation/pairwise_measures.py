@@ -1,7 +1,8 @@
 from __future__ import absolute_import, print_function
 
 import numpy as np
-from sklearn.neighbors import DistanceMetric
+#from sklearn.neighbors import DistanceMetric
+from scipy.spatial.distance import cdist
 
 from niftynet.utilities.misc_common import MorphologyOps, CacheFunctionOutput
 
@@ -141,15 +142,25 @@ class PairwiseMeasures(object):
     def vol_diff(self):
         return np.abs(self.n_pos_ref() - self.n_pos_seg()) / self.n_pos_ref()
 
+    #@CacheFunctionOutput
+    #def _boundaries_dist_mat(self):
+    #    dist = DistanceMetric.get_metric('euclidean')
+    #    border_ref = MorphologyOps(self.ref, self.neigh).border_map()
+    #    border_seg = MorphologyOps(self.seg, self.neigh).border_map()
+    #    coord_ref = np.multiply(np.argwhere(border_ref > 0), self.pixdim)
+    #    coord_seg = np.multiply(np.argwhere(border_seg > 0), self.pixdim)
+    #    pairwise_dist = dist.pairwise(coord_ref, coord_seg)
+    #    return pairwise_dist
+
     @CacheFunctionOutput
     def _boundaries_dist_mat(self):
-        dist = DistanceMetric.get_metric('euclidean')
         border_ref = MorphologyOps(self.ref, self.neigh).border_map()
         border_seg = MorphologyOps(self.seg, self.neigh).border_map()
         coord_ref = np.multiply(np.argwhere(border_ref > 0), self.pixdim)
         coord_seg = np.multiply(np.argwhere(border_seg > 0), self.pixdim)
-        pairwise_dist = dist.pairwise(coord_ref, coord_seg)
+        pairwise_dist = cdist(coord_ref, coord_seg)
         return pairwise_dist
+
 
     def average_distance(self):
         pairwise_dist = self._boundaries_dist_mat()

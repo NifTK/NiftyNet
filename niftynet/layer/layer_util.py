@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
+
 import numpy as np
 
 
@@ -32,7 +33,7 @@ def trivial_kernel(kernel_shape):
      [[[0]], [[0]], [[0]]]]
     kernel_shape[-1] and kernel_shape[-2] should be 1, so that it operates
     on the spatial dims only.  However, there is no exact spatial centre
-    if np.all((kernel_shape % 2) == 0), however it is fine in many cases
+    if np.any((kernel_shape % 2) == 0). This is fine in many cases
     as np.sum(trivial_kernel(kernel_shape)) == 1
     """
     assert kernel_shape[-1] == 1
@@ -42,6 +43,22 @@ def trivial_kernel(kernel_shape):
     flattened = kernel.reshape(-1)
     flattened[np.prod(kernel_shape) // 2] = 1
     return flattened.reshape(kernel_shape)
+
+
+def expand_spatial_params(input_param, spatial_rank):
+    """
+    expand input parameter
+    e.g., kernel_size=3 is converted to kernel_size=[3, 3, 3]
+    for 3D images
+    """
+
+    if (type(input_param) == int):
+        return [input_param] * spatial_rank
+    else:
+        input_param = np.asarray(input_param).flatten().tolist()
+        assert len(input_param) == spatial_rank, \
+            'param length should be the same as the spatial rank'
+        return input_param
 
 # class RequireKeywords(object):
 #    def __init__(self, *list_of_keys):
