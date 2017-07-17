@@ -106,6 +106,10 @@ pip-installer:
     - package_importer="$(pwd)/import_niftynet_packages.py"
     # traverse the file hierarchy recursively to discover all packages
     - find niftynet -type f \( ! -name . \) -print | grep '.py$' | grep -v __init__ | sed 's/\.\.\///g;s/\//\./g;s/\.py//g;s/niftynet/import niftynet/g' > $package_importer
+    # create the NiftyNet wheel
+    - rm -rf dist  # remove dist directory, just in case
+    - python setup.py bdist_wheel
+    - niftynet_wheel=$(ls $(pwd)/dist/*.whl)  # there will be only one file!
     # save NiftyNet folder path just in case
     - niftynet_dir=$(pwd)
     # ============= Python 2 ============================
@@ -122,8 +126,8 @@ pip-installer:
     - pip install -r $niftynet_dir/requirements-gpu.txt
     - pip install simpleitk
     - pip install scikit-learn
-    # install using setup.py in NiftyNet folder
-    - pip install $niftynet_dir
+    # install using built NiftyNet wheel
+    - pip install $niftynet_wheel
     # check whether all packages are importable
     - cat $package_importer
     - python $package_importer
@@ -144,8 +148,8 @@ pip-installer:
     - pip install -r $niftynet_dir/requirements-gpu.txt
     - pip install simpleitk
     - pip install scikit-learn
-    # install using setup.py in NiftyNet folder
-    - pip install $niftynet_dir
+    # install using built NiftyNet wheel
+    - pip install $niftynet_wheel
     # check whether all packages are importable
     - cat $package_importer
     - python $package_importer
