@@ -15,8 +15,8 @@ Features
 * Implemented recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
 * Comprehensive evaluation metrics for medical image segmentation
 
-Getting started
-===============
+Getting started and contributing
+================================
 
 Please follow the instructions on the `NiftyNet source code repository`_.
 
