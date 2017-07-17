@@ -15,5 +15,11 @@ Features
 * Implemented recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
 * Comprehensive evaluation metrics for medical image segmentation
 
+Getting started
+===============
+
+Please follow the instructions on the `NiftyNet source code repository`_.
+
+.. _`NiftyNet source code repository`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 .. _`Centre for Medical Image Computing`: http://cmic.cs.ucl.ac.uk/
 .. _`University College London (UCL)`: http://www.ucl.ac.uk/
