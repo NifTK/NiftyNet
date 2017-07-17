@@ -1,3 +1,10 @@
+NiftyNet
+========
+
+NiftyNet is an open-source convolutional neural networks (CNN) platform for
+research in medical image analysis and computer-assisted intervention.
+**NiftyNet is not intended for clinical use**.
+
 Features
 ========
 
