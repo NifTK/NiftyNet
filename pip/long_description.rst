@@ -1,5 +1,3 @@
-NiftyNet was developed by the `Centre for Medical Image Computing`_ at `University College London (UCL)`_.
-
 Features:
 
 * Easy-to-customise interfaces of network components
