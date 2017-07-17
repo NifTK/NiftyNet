@@ -15,4 +15,5 @@ testing_data*
 *.nii
 *.tar.gz
 *.csv
+*.swp
 data/brain_parcellation/OASIS
