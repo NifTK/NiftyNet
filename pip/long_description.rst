@@ -44,11 +44,18 @@ Please see the LICENSE file in the `NiftyNet source code repository`_ for detail
 Acknowledgements
 ================
 
-This project was supported through an Innovative Engineering for Health award by the Wellcome Trust and EPSRC (WT101957, NS/A000027/1), the National Institute for Health Research University College London Hospitals Biomedical Research Centre (NIHR BRC UCLH/UCL High Impact Initiative), UCL EPSRC CDT Scholarship Award (EP/L016478/1), a UCL Overseas Research Scholarship, a UCL Graduate Research Scholarship, and the Health Innovation Challenge Fund by the Department of Health and Wellcome Trust (HICF-T4-275, WT 97914).
-The authors would like to acknowledge that the work presented here made use of Emerald, a GPU-accelerated High Performance Computer, made available by the Science & Engineering South Consortium operated in partnership with the STFC Rutherford-Appleton Laboratory.
+This project is grateful for the support from the `Wellcome Trust`_, the `Engineering and Physical Sciences Research Council (EPSRC)`_, the `National Institute for Health Research (NIHR)`_, the `Department of Health (DoH)`_, `University College London (UCL)`_, the `Science and Engineering South Consortium (SES)`_, the `STFC Rutherford-Appleton Laboratory`_, and `NVIDIA`_.
 
 .. _`TensorFlow`: https://www.tensorflow.org/
 .. _`Wellcome EPSRC Centre for Interventional and Surgical Sciences`: http://www.ucl.ac.uk/surgical-interventional-sciences
 .. _`NiftyNet source code repository`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 .. _`Centre for Medical Image Computing`: http://cmic.cs.ucl.ac.uk/
+.. _`Centre for Medical Image Computing (CMIC)`: http://cmic.cs.ucl.ac.uk/
 .. _`University College London (UCL)`: http://www.ucl.ac.uk/
+.. _`Wellcome Trust`: https://wellcome.ac.uk/
+.. _`Engineering and Physical Sciences Research Council (EPSRC)`: https://www.epsrc.ac.uk/
+.. _`National Institute for Health Research (NIHR)`: https://www.nihr.ac.uk/
+.. _`Department of Health (DoH)`: https://www.gov.uk/government/organisations/department-of-health
+.. _`Science and Engineering South Consortium (SES)`: https://www.ses.ac.uk/
+.. _`STFC Rutherford-Appleton Laboratory`: http://www.stfc.ac.uk/about-us/where-we-work/rutherford-appleton-laboratory/
+.. _`NVIDIA`: http://www.nvidia.com
