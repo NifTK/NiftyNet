@@ -1,7 +1,7 @@
 import tensorflow as tf
 import os
 from niftynet.utilities.restore_initializer import restore_initializer
-
+from tensorflow.contrib.framework import list_variables
 RESTORABLE='NiftyNetObjectsToRestore'
 
 def resolve_checkpoint(checkpoint_name):
@@ -11,6 +11,7 @@ def resolve_checkpoint(checkpoint_name):
     # in a paths file
     if os.path.exists(checkpoint_name+'.index'):
         return checkpoint_name
+    raise ValueError('Invalid checkpoint {}'.format(checkpoint_name))
 def global_variables_initialize_or_restorer(var_list=None):
     # For any scope added to RESTORABLE collection:
     # variable will be restored from a checkpoint if it exists in the
@@ -21,7 +22,8 @@ def global_variables_initialize_or_restorer(var_list=None):
     restored_vars={}
     for scope, checkpoint_name, checkpoint_scope in restorable:
         variables_in_scope = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,scope=scope)
-        variables_in_file = [v for v,s in tf.contrib.framework.list_variables(resolve_checkpoint(checkpoint_name))]
+        checkpoint_file=resolve_checkpoint(checkpoint_name)
+        variables_in_file = [v for v,s in list_variables(checkpoint_file)]
         rename = lambda x: x.replace(scope,checkpoint_scope).replace(':0','')
         to_restore = [v for v in variables_in_scope if v in var_list and \
                                                        rename(v.name) in variables_in_file]

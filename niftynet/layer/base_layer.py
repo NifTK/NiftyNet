@@ -26,7 +26,8 @@ class Layer(object):
     def restore_from_checkpoint(self, checkpoint_name, scope=None):
         if scope is None:
             scope=self.layer_scope().name
-        tf.add_to_collection(RESTORABLE,(self.layer_scope().name,checkpoint_name,scope))
+        tf.add_to_collection(RESTORABLE,(self.layer_scope().name,
+                                         checkpoint_name,scope))
 
     def to_string(self):
         layer_scope_name = self.layer_scope().name
