@@ -23,7 +23,7 @@ setup(
     url='http://niftynet.io/',
 
     author='NiftyNet Consortium',
-    author_email='wenqi.li@ucl.ac.uk',
+    author_email='nifty-net@live.ucl.ac.uk',
 
     license='License :: OSI Approved :: Apache Software License',
 
