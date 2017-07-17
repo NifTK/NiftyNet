@@ -3,8 +3,9 @@ from codecs import open
 
 
 # Get the summary
-description = 'NiftyNet is an open-source library for convolutional' +\
-              ' networks in medical image analysis.'
+description = 'NiftyNet is an open-source platform for convolutional' \+
+              ' neural networks in medical image analysis and' \+
+              ' computer-assisted intervention.'
 
 # Get the long description
 with open('pip/long_description.rst', encoding='utf-8') as f:
