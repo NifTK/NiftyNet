@@ -22,9 +22,7 @@ setup(
 
     url='http://niftynet.io/',
 
-    author='Wenqi Li, Carole Sudre, Zach Eaton-Rosen,'
-           ' Jorge Cardoso, Tom Vercauteren and other'
-           ' NiftyNet Contributors',
+    author='NiftyNet Consortium',
     author_email='wenqi.li@ucl.ac.uk',
 
     license='License :: OSI Approved :: Apache Software License',
