@@ -41,6 +41,11 @@ Copyright (c) 2017, University College London.
 NiftyNet is released under the Apache License, Version 2.0.
 Please see the LICENSE file in the `NiftyNet source code repository`_ for details.
 
+Acknowledgements
+================
+
+This project was supported through an Innovative Engineering for Health award by the Wellcome Trust and EPSRC (WT101957, NS/A000027/1), the National Institute for Health Research University College London Hospitals Biomedical Research Centre (NIHR BRC UCLH/UCL High Impact Initiative), UCL EPSRC CDT Scholarship Award (EP/L016478/1), a UCL Overseas Research Scholarship, a UCL Graduate Research Scholarship, and the Health Innovation Challenge Fund by the Department of Health and Wellcome Trust (HICF-T4-275, WT 97914).
+The authors would like to acknowledge that the work presented here made use of Emerald, a GPU-accelerated High Performance Computer, made available by the Science & Engineering South Consortium operated in partnership with the STFC Rutherford-Appleton Laboratory.
 
 .. _`NiftyNet source code repository`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 .. _`Centre for Medical Image Computing`: http://cmic.cs.ucl.ac.uk/
