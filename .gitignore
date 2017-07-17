@@ -17,3 +17,6 @@ testing_data*
 *.csv
 *.swp
 data/brain_parcellation/OASIS
+dist
+build
+*.egg-info
