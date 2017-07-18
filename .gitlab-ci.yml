@@ -2,7 +2,7 @@ testjob:
   only:
     - master
     - dev
-    - supports-axbxc-patch
+    - dev-staging
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi

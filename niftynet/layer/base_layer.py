@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function
 
 import numpy as np
 import tensorflow as tf
+from niftynet.engine.restorer import RESTORABLE
 
 
 class Layer(object):
@@ -46,6 +47,12 @@ class TrainableLayer(Layer):
     def trainable_variables(self):
         return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
                                  self.layer_scope().name)
+
+    def restore_from_checkpoint(self, checkpoint_name, scope=None):
+        if scope is None:
+            scope=self.layer_scope().name
+        tf.add_to_collection(RESTORABLE,(self.layer_scope().name,
+                                         checkpoint_name,scope))
 
     def regularizer_loss(self):
         return tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES,
