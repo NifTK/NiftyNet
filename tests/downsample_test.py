@@ -1,4 +1,5 @@
 from __future__ import absolute_import, print_function
+
 import tensorflow as tf
 
 from niftynet.layer.downsample import DownSampleLayer
@@ -30,7 +31,6 @@ class DownSampleTest(tf.test.TestCase):
             sess.run(tf.global_variables_initializer())
             out = sess.run(output_data)
             self.assertAllClose(output_shape, out.shape)
-
 
     def test_3d_max_shape(self):
         input_param = {'func': 'MAX',

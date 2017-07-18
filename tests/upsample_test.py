@@ -6,60 +6,92 @@ from niftynet.layer.upsample import UpSampleLayer
 
 
 class UpSampleTest(tf.test.TestCase):
-    def test_3d_shape(self):
-        input_shape = (2, 16, 16, 16, 8)
+    def get_3d_input(self):
+        input_shape = (4, 16, 16, 16, 8)
         x = tf.ones(input_shape)
-        y = tf.zeros(input_shape)
-        x = tf.concat([x, y], 0)
+        return x
 
-        up_sample_layer = UpSampleLayer('REPLICATE', 3, 3)
-        out_up_sample_rep_1 = up_sample_layer(x)
-        print(up_sample_layer.to_string())
+    def get_2d_input(self):
+        input_shape = (4, 16, 16, 8)
+        x = tf.ones(input_shape)
+        return x
 
-        up_sample_layer = UpSampleLayer('REPLICATE', 2, 2)
-        out_up_sample_rep_2 = up_sample_layer(x)
-        print(up_sample_layer.to_string())
+    def _test_upsample_shape(self, rank, param_dict, output_shape):
+        if rank == 3:
+            input_data = self.get_3d_input()
+        elif rank == 2:
+            input_data = self.get_2d_input()
 
-        up_sample_layer = UpSampleLayer('CHANNELWISE_DECONV', 2, 2)
-        out_up_sample_deconv = up_sample_layer(x)
-        print(up_sample_layer.to_string())
-
+        upsample_layer = UpSampleLayer(**param_dict)
+        output_data = upsample_layer(input_data)
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
-            out = sess.run(out_up_sample_rep_1)
-            self.assertAllClose((4, 48, 48, 48, 8), out.shape)
-            out = sess.run(out_up_sample_rep_2)
-            self.assertAllClose((4, 32, 32, 32, 8), out.shape)
-            out = sess.run(out_up_sample_deconv)
-            self.assertAllClose((4, 32, 32, 32, 8), out.shape)
-            # self.assertAllClose(np.zeros(input_shape), out)
+            output = sess.run(output_data)
+            self.assertAllClose(output_shape, output.shape)
 
-    def test_2d_shape(self):
-        input_shape = (2, 16, 16, 8)
-        x = tf.ones(input_shape)
-        y = tf.zeros(input_shape)
-        x = tf.concat([x, y], 0)
+    def test_3d_default_replicate(self):
+        input_param = {'func': 'REPLICATE',
+                       'kernel_size': 3,
+                       'stride': 3}
+        self._test_upsample_shape(rank=3,
+                                  param_dict=input_param,
+                                  output_shape=(4, 48, 48, 48, 8))
 
-        up_sample_layer = UpSampleLayer('REPLICATE', 3, 3)
-        out_up_sample_rep_1 = up_sample_layer(x)
-        print(up_sample_layer.to_string())
+    def test_3d_default_channelwise_deconv(self):
+        input_param = {'func': 'CHANNELWISE_DECONV',
+                       'kernel_size': 3,
+                       'stride': 3}
+        self._test_upsample_shape(rank=3,
+                                  param_dict=input_param,
+                                  output_shape=(4, 48, 48, 48, 8))
 
-        up_sample_layer = UpSampleLayer('REPLICATE', 2, 2)
-        out_up_sample_rep_2 = up_sample_layer(x)
-        print(up_sample_layer.to_string())
+    def test_3d_replicate(self):
+        input_param = {'func': 'REPLICATE',
+                       'kernel_size': [3, 1, 3],
+                       'stride': [3, 1, 3]}
+        self._test_upsample_shape(rank=3,
+                                  param_dict=input_param,
+                                  output_shape=(4, 48, 16, 48, 8))
 
-        up_sample_layer = UpSampleLayer('CHANNELWISE_DECONV', 2, 2)
-        out_up_sample_deconv = up_sample_layer(x)
-        print(up_sample_layer.to_string())
+    def test_3d_channelwise_deconv(self):
+        input_param = {'func': 'CHANNELWISE_DECONV',
+                       'kernel_size': [1, 3, 2],
+                       'stride': [1, 2, 3]}
+        self._test_upsample_shape(rank=3,
+                                  param_dict=input_param,
+                                  output_shape=(4, 16, 32, 48, 8))
 
-        with self.test_session() as sess:
-            sess.run(tf.global_variables_initializer())
-            out = sess.run(out_up_sample_rep_1)
-            self.assertAllClose((4, 48, 48, 8), out.shape)
-            out = sess.run(out_up_sample_rep_2)
-            self.assertAllClose((4, 32, 32, 8), out.shape)
-            out = sess.run(out_up_sample_deconv)
-            self.assertAllClose((4, 32, 32, 8), out.shape)
+    def test_2d_default_replicate(self):
+        input_param = {'func': 'REPLICATE',
+                       'kernel_size': 3,
+                       'stride': 3}
+        self._test_upsample_shape(rank=2,
+                                  param_dict=input_param,
+                                  output_shape=(4, 48, 48, 8))
+
+    def test_2d_default_channelwise_deconv(self):
+        input_param = {'func': 'CHANNELWISE_DECONV',
+                       'kernel_size': 3,
+                       'stride': 3}
+        self._test_upsample_shape(rank=2,
+                                  param_dict=input_param,
+                                  output_shape=(4, 48, 48, 8))
+
+    def test_2d_replicate(self):
+        input_param = {'func': 'REPLICATE',
+                       'kernel_size': [3, 1],
+                       'stride': [3, 1]}
+        self._test_upsample_shape(rank=2,
+                                  param_dict=input_param,
+                                  output_shape=(4, 48, 16, 8))
+
+    def test_2d_channelwise_deconv(self):
+        input_param = {'func': 'CHANNELWISE_DECONV',
+                       'kernel_size': [1, 3],
+                       'stride': [1, 2]}
+        self._test_upsample_shape(rank=2,
+                                  param_dict=input_param,
+                                  output_shape=(4, 16, 32, 8))
 
 
 if __name__ == "__main__":
