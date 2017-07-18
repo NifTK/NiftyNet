@@ -4,15 +4,15 @@ from __future__ import absolute_import, print_function
 import os
 import sys
 
-import utilities.misc_common as util
-import utilities.parse_user_params as parse_user_params
-from engine.volume_loader import VolumeLoaderLayer
-from layer.binary_masking import BinaryMaskingLayer
-from layer.histogram_normalisation import \
+import niftynet.utilities.misc_common as util
+import niftynet.utilities.parse_user_params as parse_user_params
+from niftynet.engine.volume_loader import VolumeLoaderLayer
+from niftynet.layer.binary_masking import BinaryMaskingLayer
+from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
-from layer.mean_variance_normalisation import \
+from niftynet.layer.mean_variance_normalisation import \
     MeanVarNormalisationLayer
-from utilities.csv_table import CSVTable
+from niftynet.utilities.csv_table import CSVTable
 
 
 # if sys.version_info[0] >= 3:
@@ -26,28 +26,28 @@ class NetFactory(object):
     @staticmethod
     def create(name):
         if name == "highres3dnet":
-            from network.highres3dnet import HighRes3DNet
+            from niftynet.network.highres3dnet import HighRes3DNet
             return HighRes3DNet
         if name == "highres3dnet_small":
-            from network.highres3dnet_small import HighRes3DNetSmall
+            from niftynet.network.highres3dnet_small import HighRes3DNetSmall
             return HighRes3DNetSmall
         if name == "highres3dnet_large":
-            from network.highres3dnet_large import HighRes3DNetLarge
+            from niftynet.network.highres3dnet_large import HighRes3DNetLarge
             return HighRes3DNetLarge
         elif name == "toynet":
-            from network.toynet import ToyNet
+            from niftynet.network.toynet import ToyNet
             return ToyNet
         elif name == "unet":
-            from network.unet import UNet3D
+            from niftynet.network.unet import UNet3D
             return UNet3D
         elif name == "vnet":
-            from network.vnet import VNet
+            from niftynet.network.vnet import VNet
             return VNet
         elif name == "deepmedic":
-            from network.deepmedic import DeepMedic
+            from niftynet.network.deepmedic import DeepMedic
             return DeepMedic
         elif name == "scalenet":
-            from network.scalenet import ScaleNet
+            from niftynet.network.scalenet import ScaleNet
             return ScaleNet
         else:
             print("network: \"{}\" not implemented".format(name))
@@ -114,15 +114,15 @@ def main():
     print('found {} subjects'.format(len(volume_loader.subject_list)))
 
     if param.action == "train":
-        import engine.training
+        import niftynet.engine.training
 
         device_str = "gpu" if param.num_gpus > 0 else "cpu"
-        engine.training.run(net_class, param, volume_loader, device_str)
+        niftynet.engine.training.run(net_class, param, volume_loader, device_str)
     else:
-        import engine.inference
+        import niftynet.engine.inference
 
         device_str = "gpu" if param.num_gpus > 0 else "cpu"
-        engine.inference.run(net_class, param, volume_loader, device_str)
+        niftynet.engine.inference.run(net_class, param, volume_loader, device_str)
     return 0
 
 
