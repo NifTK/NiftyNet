@@ -55,7 +55,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            '',  # TODO
+            'niftynet=niftynet:main',  # TODO
         ],
     },
 )
