@@ -16,6 +16,8 @@ MEASURES = (
     'fpr', 'ppv', 'npv', 'sensitivity', 'specificity',
     'accuracy', 'jaccard', 'dice', 'ave_dist', 'haus_dist'
 )
+# MEASURES_NEW = ('ref volume', 'seg volume', 'tp', 'fp', 'fn', 'outline_error',
+#             'detection_error', 'dice')
 OUTPUT_FORMAT = '{:4f}'
 OUTPUT_FILE_PREFIX = 'PairwiseMeasure'
 

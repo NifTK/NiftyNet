@@ -25,6 +25,13 @@ FILE_EXTENSIONS = [".nii.gz", ".tar.gz"]
 #### utilities for file headers
 
 def create_affine_pixdim(affine, pixdim):
+    '''
+    Given an existing affine transformation and the pixel dimension to apply,
+    create a new affine matrix that satisfies the new pixel dimension
+    :param affine: original affine matrix
+    :param pixdim: pixel dimensions to apply
+    :return:
+    '''
     norm_affine = np.sqrt(np.sum(np.square(affine[:, 0:3]), 0))
     to_divide = np.tile(
         np.expand_dims(np.append(norm_affine, 1), axis=1), [1, 4])
@@ -54,6 +61,12 @@ def correct_image_if_necessary(img):
   return img
         
 def rectify_header_sform_qform(img_nii):
+    '''
+    Look at the sform and qform of the nifti object and correct it if any
+    incompatibilities with pixel dimensions
+    :param img_nii:
+    :return:
+    '''
     # TODO: check img_nii is a nibabel object
     pixdim = img_nii.header.get_zooms()
     sform = img_nii.get_sform()
@@ -96,6 +109,13 @@ def rectify_header_sform_qform(img_nii):
 ### resample/reorientation original volumes
 # Perform the reorientation to ornt_fin of the data array given ornt_init
 def do_reorientation(data_array, ornt_init, ornt_fin):
+    '''
+    Performs the reorientation (changing order of axes)
+    :param data_array: Array to reorient
+    :param ornt_init: Initial orientation
+    :param ornt_fin: Target orientation
+    :return data_reoriented: New data array in its reoriented form
+    '''
     if np.array_equal(ornt_init, ornt_fin):
         return data_array
     ornt_transf = nib.orientations.ornt_transform(ornt_init, ornt_fin)
@@ -109,6 +129,15 @@ def do_reorientation(data_array, ornt_init, ornt_fin):
 # this function assumes the same interp_order for multi-modal images
 # do we need separate interp_order for each modality?
 def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
+    '''
+    Performs the resampling (used to go to and from anisotropic to isotropic
+    data)
+    :param data_array: Data array to resample
+    :param pixdim_init: Initial pixel dimension
+    :param pixdim_fin: Targeted pixel dimension
+    :param interp_order: Interpolation order applied
+    :return data_resampled: Array containing the resampled data
+    '''
     if data_array is None:
         # warnings.warn("None array, nothing to resample")
         return
@@ -141,6 +170,11 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
 
 
 def split_filename(file_name):
+    '''
+    Operation on filename to separate path, basename and extension of a filename
+    :param file_name: Filename to treat
+    :return pth, fname, ext:
+    '''
     pth = os.path.dirname(file_name)
     fname = os.path.basename(file_name)
 
@@ -222,15 +256,30 @@ def csv_cell_to_volume_5d(csv_cell):
 
 
 def expand_to_5d(img_data):
+    '''
+    Expands an array up to 5d if it is not the case yet
+    :param img_data:
+    :return:
+    '''
     while img_data.ndim < 5:
         img_data = np.expand_dims(img_data, axis=-1)
     return img_data
 
 
 def pad_zeros_to_5d(data_array, max_mod, max_time):
+    '''
+    Performs padding of element of a data array if not all modalities or time
+    points are present in the data cells.
+    :param data_array: data_array (1st dimension time, 2nd modalities)
+    :param max_mod: number of modalities
+    :param max_time: number of time points to consider
+    :return data_array: Data_array with consistent data cells with the number
+    of modalities and number of time points
+    '''
     if len(data_array) == max_time and len(data_array[0]) == max_mod:
         return data_array
-    if len(data_array) == 1:
+    if len(data_array) == 1:  # Time points already agregated in the
+        # individual data array cells
         for m in range(0, len(data_array[0])):
             if data_array[0][m].shape[4] < max_time:
                 data = data_array[0][m]
@@ -256,6 +305,13 @@ def pad_zeros_to_5d(data_array, max_mod, max_time):
 
 
 def create_5d_from_array(data_array):
+    '''
+    From a array of separate data elements, create the final 5d array to use.
+     The first dimension of the data_array is time, the second is modalities
+    :param data_array: array of sub data elements to concatenate into a 5d
+    element
+    :return data_5d: Resulting 5d array (3 spatial dimension, modalities, time)
+    '''
     data_5d = []
     for t in range(0, len(data_array)):
         data_mod_temp = []
@@ -269,6 +325,14 @@ def create_5d_from_array(data_array):
 
 
 def save_volume_5d(img_data, filename, save_path, img_ref=None):
+    '''
+    Save the img_data to nifti image
+    :param img_data: 5d img to save
+    :param filename: filename under which to save the img_data
+    :param save_path:
+    :param img_ref: reference img to use for the setting of header.
+    :return:
+    '''
     if img_data is None:
         return
     if not os.path.exists(save_path):
@@ -283,6 +347,12 @@ def save_volume_5d(img_data, filename, save_path, img_ref=None):
 
 
 def match_volume_shape_to_patch_definition(image_data, patch):
+    '''
+    Reduce 5d to 4d (time series not allowed so far) or augment to 4d
+    :param image_data:
+    :param patch:
+    :return:
+    '''
     if image_data is None:
         return None
     if patch is None:
@@ -296,6 +366,11 @@ def match_volume_shape_to_patch_definition(image_data, patch):
 
 
 def spatial_padding_to_indexes(spatial_padding):
+    '''
+    Utility function to create the indices resulting from padding strategy.
+    :param spatial_padding:
+    :return indices: list of indices resulting from the padding.
+    '''
     indexes = np.zeros((len(spatial_padding), 2), dtype=np.int)
     for (i, s) in enumerate(spatial_padding):
         if len(s) == 1:

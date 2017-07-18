@@ -43,8 +43,10 @@ class BinaryMaskingLayer(Layer):
         elif self.type == 'threshold_minus':
             mask[image < thr] = 1
         elif self.type == 'otsu_plus':
-            thr = filters.threshold_otsu(image) if \
+            thr = otsu_threshold(image) if \
                 np.any(image) else self.threshold
+            # thr = filters.threshold_otsu(image) if \
+            #     np.any(image) else self.threshold
             mask[image > thr] = 1
         elif self.type == 'otsu_minus':
             thr = filters.threshold_otsu(image) if \

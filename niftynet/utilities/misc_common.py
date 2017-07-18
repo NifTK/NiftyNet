@@ -14,6 +14,11 @@ LABEL_STRINGS = ['Label', 'LABEL', 'label']
 
 
 def average_grads(tower_grads):
+    '''
+    Performs and return the average of the gradients calculated from multiple GPUS
+    :param tower_grads:
+    :return ave_grads:
+    '''
     # average gradients computed from multiple GPUs
     ave_grads = []
     for grad_and_vars in zip(*tower_grads):
@@ -31,6 +36,13 @@ def average_grads(tower_grads):
 
 
 def list_files(img_dir, ext='.nii.gz'):
+    '''
+
+    :param img_dir:
+    :param ext:
+    :return names: list of filenames in the list of img_dir
+    that have the ext extension
+    '''
     names = [fn for fn in os.listdir(img_dir) if fn.lower().endswith(ext)]
     if not names:
         print('no files in {}'.format(img_dir))
@@ -39,6 +51,12 @@ def list_files(img_dir, ext='.nii.gz'):
 
 
 def has_bad_inputs(args):
+    '''
+    Check if all input params have been properly set in the configuration file.
+    :param args:
+    :return:
+    '''
+    print('Input params:')
     is_bad = False
     for arg in vars(args):
         user_value = getattr(args, arg)
@@ -69,11 +87,19 @@ def print_save_input_parameters(args, txt_file=None):
 
 
 class MorphologyOps(object):
+    '''
+    Class that performs the morphological operations needed to get notably
+    connected component. To be used in the evaluation
+    '''
     def __init__(self, binary_img, neigh):
         self.binary_map = np.asarray(binary_img, dtype=np.int8)
         self.neigh = neigh
 
     def border_map(self):
+        '''
+        Creates the border for a 3D image
+        :return:
+        '''
         west = ndimage.shift(self.binary_map, [-1, 0, 0], order=0)
         east = ndimage.shift(self.binary_map, [1, 0, 0], order=0)
         north = ndimage.shift(self.binary_map, [0, 1, 0], order=0)
@@ -85,7 +111,7 @@ class MorphologyOps(object):
         return border
 
     def foreground_component(self):
-        return measure.label(self.binary_map, background=0)
+        return ndimage.label(self.binary_map, background=0)
 
 
 class CacheFunctionOutput(object):
@@ -177,11 +203,31 @@ def _damerau_levenshtein_distance(s1, s2):
     return d[string_1_length - 1, string_2_length - 1]
 
 
+def otsu_threshold(img):
+    ''' Implementation of otsu thresholding'''
+    flattened_img = img.flatten()
+    hist, bin_edges = np.histogram(flattened_img, bins=256, density=True)
+    target_max = 0
+    threshold = 0
+    sum_im = 0
+    for i in range(0, 256):
+        mean_ip = np.mean(img[img > bin_edges[i]])
+        mean_im = np.mean(img[img < bin_edges[i]])
+        sum_im = sum_im + hist[i]
+        sum_ip = 1 - sum_im
+        target = sum_ip*sum_im*np.square(mean_ip-mean_im)
+        if target > target_max:
+            target_max = target
+            threshold = bin_edges[i]
+    return threshold
+
+
 # Print iterations progress
 def printProgressBar(iteration, total,
                      prefix='', suffix='', decimals=1, length=10, fill='='):
     """
-    Call in a loop to create terminal progress bar
+    Call in a loop to create terminal progress bar - To be used when
+    performing the initial histogram normalisation
     @params:
         iteration   - Required  : current iteration (Int)
         total       - Required  : total iterations (Int)

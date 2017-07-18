@@ -1,8 +1,8 @@
 from __future__ import absolute_import, print_function
 
 import numpy as np
-#from sklearn.neighbors import DistanceMetric
-from scipy.spatial.distance import cdist
+from sklearn.neighbors import DistanceMetric
+from scipy import ndimage
 
 from niftynet.utilities.misc_common import MorphologyOps, CacheFunctionOutput
 
@@ -34,8 +34,8 @@ class PairwiseMeasures(object):
             'informedness': (self.informedness, 'Informedness'),
             'markedness': (self.markedness, 'Markedness'),
             'vol_diff': (self.vol_diff, 'VolDiff'),
-            'ave_dist': (self.average_distance, 'AveDist'),
-            'haus_dist': (self.hausdorff_distance, 'HausDist'),
+            'ave_dist': (self.measured_average_distance, 'AveDist'),
+            'haus_dist': (self.measured_hausdorff_distance, 'HausDist'),
             'connected_elements': (self.connected_elements, 'TPc,FPc,FNc'),
             'outline_error': (self.outline_error, 'OER,OEFP,OEFN'),
             'detection_error': (self.detection_error, 'DE,DEFP,DEFN'),
@@ -142,36 +142,51 @@ class PairwiseMeasures(object):
     def vol_diff(self):
         return np.abs(self.n_pos_ref() - self.n_pos_seg()) / self.n_pos_ref()
 
-    #@CacheFunctionOutput
-    #def _boundaries_dist_mat(self):
-    #    dist = DistanceMetric.get_metric('euclidean')
-    #    border_ref = MorphologyOps(self.ref, self.neigh).border_map()
-    #    border_seg = MorphologyOps(self.seg, self.neigh).border_map()
-    #    coord_ref = np.multiply(np.argwhere(border_ref > 0), self.pixdim)
-    #    coord_seg = np.multiply(np.argwhere(border_seg > 0), self.pixdim)
-    #    pairwise_dist = dist.pairwise(coord_ref, coord_seg)
-    #    return pairwise_dist
+    # @CacheFunctionOutput
+    # def _boundaries_dist_mat(self):
+    #     dist = DistanceMetric.get_metric('euclidean')
+    #     border_ref = MorphologyOps(self.ref, self.neigh).border_map()
+    #     border_seg = MorphologyOps(self.seg, self.neigh).border_map()
+    #     coord_ref = np.multiply(np.argwhere(border_ref > 0), self.pixdim)
+    #     coord_seg = np.multiply(np.argwhere(border_seg > 0), self.pixdim)
+    #     pairwise_dist = dist.pairwise(coord_ref, coord_seg)
+    #     return pairwise_dist
 
     @CacheFunctionOutput
-    def _boundaries_dist_mat(self):
+    def border_distance(self):
         border_ref = MorphologyOps(self.ref, self.neigh).border_map()
         border_seg = MorphologyOps(self.seg, self.neigh).border_map()
-        coord_ref = np.multiply(np.argwhere(border_ref > 0), self.pixdim)
-        coord_seg = np.multiply(np.argwhere(border_seg > 0), self.pixdim)
-        pairwise_dist = cdist(coord_ref, coord_seg)
-        return pairwise_dist
+        oppose_ref = 1 - self.ref
+        oppose_seg = 1 - self.seg
+        distance_ref = ndimage.distance_transform_edt(oppose_ref)
+        distance_seg = ndimage.distance_transform_edt(oppose_seg)
+        distance_border_seg = border_ref * distance_seg
+        distance_border_ref = border_seg * distance_ref
+        return distance_border_ref, distance_border_seg
 
+    def measured_distance(self):
+        ref_border_dist, seg_border_dist = self.border_distance()
+        average_distance = (np.sum(ref_border_dist) + np.sum(
+            seg_border_dist)) / (np.sum(self.ref+self.seg))
+        hausdorff_distance = np.max([np.max(ref_border_dist),np.max(seg_border_dist)])
+        return hausdorff_distance, average_distance
 
-    def average_distance(self):
-        pairwise_dist = self._boundaries_dist_mat()
-        return (np.sum(np.min(pairwise_dist, 0)) + \
-                np.sum(np.min(pairwise_dist, 1))) / \
-               (np.sum(self.ref + self.seg))
+    def measured_average_distance(self):
+        return self.measured_distance()[1]
 
-    def hausdorff_distance(self):
-        pairwise_dist = self._boundaries_dist_mat()
-        return np.max((np.max(np.min(pairwise_dist, 0)),
-                       np.max(np.min(pairwise_dist, 1))))
+    def measured_hausdorff_distance(self):
+        return self.measured_distance()[0]
+
+    # def average_distance(self):
+    #     pairwise_dist = self._boundaries_dist_mat()
+    #     return (np.sum(np.min(pairwise_dist, 0)) + \
+    #             np.sum(np.min(pairwise_dist, 1))) / \
+    #            (np.sum(self.ref + self.seg))
+    #
+    # def hausdorff_distance(self):
+    #     pairwise_dist = self._boundaries_dist_mat()
+    #     return np.max((np.max(np.min(pairwise_dist, 0)),
+    #                    np.max(np.min(pairwise_dist, 1))))
 
     @CacheFunctionOutput
     def _connected_components(self):

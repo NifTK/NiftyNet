@@ -11,6 +11,11 @@ STANDARD_ORIENTATION = [[0, 1], [1, 1], [2, 1]]
 
 
 class MultiModalFileList(object):
+    '''
+    Object containing the list of files to use to build a 5d array (
+    modalities and time points. Consists in a list of list of filenames.
+    First dimension (time), second dimension (modalities)
+    '''
     def __init__(self, multi_mod_filenames):
         # list of multi-modality images filenames
         # each list element is a filename of a single-mod volume
@@ -38,6 +43,10 @@ class MultiModalFileList(object):
 
 
 class ColumnData(object):
+    '''
+    Object for a subject data that contains, the name, the data, the spatial
+    rank and the interpolation order to apply on the data if need be.
+    '''
     def __init__(self, column_name, data, spatial_rank, interp_order):
         self._name = column_name
         self._data = data
@@ -71,7 +80,15 @@ class ColumnData(object):
 
 class Subject(object):
     """
-    This class specifies all properties of a subject
+    This class specifies all properties of a subject. For now, 4 fields of
+    input are considered:
+        - input_image_file: data to process
+        - target_image_file: targeted data (segmentation result, generated
+        image...)
+        - weight_map_file: local weights to apply (to be used for the error
+        maps or weighting of loss functions)
+        - target_note: text content that can reflect for instance the class
+        of a whole image
     """
 
     fields = ('input_image_file',
@@ -95,6 +112,12 @@ class Subject(object):
 
     @classmethod
     def from_csv_row(cls, row, modality_names=None):
+        '''
+        Creates a subject object from the information of a csv row
+        :param row:
+        :param modality_names:
+        :return:
+        '''
         new_subject = cls(name=row[0])
         csv_cell_list = [MultiModalFileList(column) if column != '' else None
                          for column in row[1:]]
@@ -166,6 +189,12 @@ class Subject(object):
         return None
 
     def __reorient_to_stand(self, data_5d):
+        '''
+        Reorient a 5d array to the standard orientation (R-A-S). To be used
+        at training to get all data in the same orientation
+        :param data_5d:
+        :return:
+        '''
         if (data_5d is None) or (data_5d.shape is ()):
             return None
         image_affine = self._read_original_affine()
@@ -176,6 +205,12 @@ class Subject(object):
                                      STANDARD_ORIENTATION)
 
     def __reorient_to_original(self, data_5d):
+        '''
+        Reorient 5d data array to the original orientations specified in the
+        original affine matrix. To be used before saving notably
+        :param data_5d:
+        :return:
+        '''
         if (data_5d is None) or (data_5d.shape is ()):
             return None
         image_affine = self._read_original_affine()
@@ -186,6 +221,13 @@ class Subject(object):
                                      ornt_original)
 
     def __resample_to_isotropic(self, data_5d, interp_order):
+        '''
+        Perform the resampling of a 5d array to isotropic data.
+        :param data_5d:
+        :param interp_order: Order of the interpolation strategy to use
+        (same used for all modalities)
+        :return:
+        '''
         if (data_5d is None) or (data_5d.shape is ()):
             return None
         image_pixdim = self._read_original_pixdim()
@@ -195,6 +237,13 @@ class Subject(object):
                                   interp_order=interp_order)
 
     def __resample_to_original(self, data_5d, interp_order):
+        '''
+        From presumably isotropic data, go back to original pix dimensions.
+        :param data_5d:
+        :param interp_order: Order of the interpolation strategy to use
+        :return:
+        '''
+        # TODO allow for different interpolation order across modalities.
         if (data_5d is None) or (data_5d.shape is ()):
             return None
         image_pixdim = self._read_original_pixdim()
@@ -300,6 +349,11 @@ class Subject(object):
         return output_dict
 
     def modalities_dict(self):
+        '''
+        Creates the modality dictionary to be used for the histogram
+        normalisation (whether names are given or not)
+        :return:
+        '''
         num_modality = self.column(0).num_modality
         if self.modality_names is not None:
             return dict(zip(self.modality_names, range(0, num_modality)))
@@ -334,6 +388,15 @@ class Subject(object):
         return np.ones(zeros_shape, dtype=data_type) * init_value
 
     def save_network_output(self, data, save_path, interp_order=3):
+        '''
+        At inference time save the result of the inference as the appropriate
+         nifti image
+        :param data: data to save
+        :param save_path: path where to save the data
+        :param interp_order: interpolation order strategy to apply if
+        resampling is required.
+        :return:
+        '''
         if data is None:
             return
 
