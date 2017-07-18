@@ -10,7 +10,7 @@ p3 = Popen(['sed', 's: MiB::'], stdin=p2.stdout, stdout=PIPE)
 output, error = p3.communicate()
 
 free_memory = [float(x) for x in output.split('\n')[:-1]]
-if free_memory[0] > 1000:
+if free_memory[0] > free_memory[1]:
     print('1')
 else:
     print('0')
