@@ -131,6 +131,10 @@ pip-installer:
     # check whether all packages are importable
     - cat $package_importer
     - python $package_importer
+    # test niftynet command
+    - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
+    - niftynet train -c $niftynet_dir/config/default_config.txt --net_name toynet --image_size 10 --label_size 10 --batch_size 1
+    - niftynet inference -c $niftynet_dir/config/default_config.txt --net_name toynet --image_size 10 --label_size 10 --batch_size 1
     # deactivate virtual environment
     - deactivate
     - cd $niftynet_dir
@@ -153,6 +157,10 @@ pip-installer:
     # check whether all packages are importable
     - cat $package_importer
     - python $package_importer
+    # test niftynet command
+    - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
+    - niftynet train -c $niftynet_dir/config/default_config.txt --net_name toynet --image_size 10 --label_size 10 --batch_size 1
+    - niftynet inference -c $niftynet_dir/config/default_config.txt --net_name toynet --image_size 10 --label_size 10 --batch_size 1
     # deactivate virtual environment
     - deactivate
     - cd $niftynet_dir
