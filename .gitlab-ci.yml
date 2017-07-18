@@ -86,7 +86,7 @@ testjob:
     - coverage run -a --source . -m tests.rand_spatial_scaling_test
     - coverage run -a --source . -m tests.post_processing_test
     - coverage run -a --source . -m tests.spatial_transformer_test
-    - coverage run -a --source . -m tests.flip_test
+    - coverage run -a --source . -m tests.rand_flip_test
     - coverage report -m
     - echo 'finished test'
   tags:

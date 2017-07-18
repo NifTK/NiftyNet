@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
+
 import os
 
 import numpy as np
 import tensorflow as tf
+
 from niftynet.layer.rand_flip import RandomFlipLayer
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
@@ -16,7 +18,8 @@ class RandFlipTest(tf.test.TestCase):
         flip_layer.randomise(spatial_rank=2)
         transformed_a = flip_layer._apply_transformation(a)
         with self.test_session() as sess:
-            self.assertTrue(np.array_equal(transformed_a, np.array([[2, 3], [0, 1]])))
+            self.assertTrue(
+                np.array_equal(transformed_a, np.array([[2, 3], [0, 1]])))
 
     def test_no_flip(self):
         a = np.array([[0, 1], [2, 3]])
