@@ -88,7 +88,7 @@ class DeconvLayer(TrainableLayer):
         # initialize conv kernels/strides and then apply
         kernel_size_all_dim = layer_util.expand_spatial_params(
             self.kernel_size, spatial_rank)
-        w_full_size = kernel_size_all_dim + [self.n_output_chns, n_input_chns]
+        w_full_size = kernel_size_all_dim + (self.n_output_chns, n_input_chns)
         stride_all_dim = layer_util.expand_spatial_params(
             self.stride, spatial_rank)
         full_stride = [1] + stride_all_dim + [1]

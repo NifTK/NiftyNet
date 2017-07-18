@@ -53,12 +53,12 @@ def expand_spatial_params(input_param, spatial_rank):
     """
 
     if (type(input_param) == int):
-        return [input_param] * spatial_rank
+        return (input_param, ) * spatial_rank
     else:
         input_param = np.asarray(input_param).flatten().tolist()
         assert len(input_param) == spatial_rank, \
             'param length should be the same as the spatial rank'
-        return input_param
+        return tuple(input_param)
 
 # class RequireKeywords(object):
 #    def __init__(self, *list_of_keys):

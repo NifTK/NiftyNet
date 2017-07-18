@@ -71,7 +71,7 @@ class ConvLayer(TrainableLayer):
         w_full_size = layer_util.expand_spatial_params(
             self.kernel_size, spatial_rank)
         # expand kernel size to include number of features
-        w_full_size.extend([n_input_chns, self.n_output_chns])
+        w_full_size = w_full_size + (n_input_chns, self.n_output_chns)
         full_stride = layer_util.expand_spatial_params(
             self.stride, spatial_rank)
         full_dilation = layer_util.expand_spatial_params(

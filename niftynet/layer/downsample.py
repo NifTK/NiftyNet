@@ -36,7 +36,7 @@ class DownSampleLayer(Layer):
         stride_all_dims = layer_util.expand_spatial_params(
             self.stride, spatial_rank)
         if self.func == 'CONSTANT':
-            full_kernel_size = kernel_size_all_dims + [1, 1]
+            full_kernel_size = kernel_size_all_dims + (1, 1)
             np_kernel = layer_util.trivial_kernel(full_kernel_size)
             kernel = tf.constant(np_kernel, dtype=tf.float32)
             output_tensor = [tf.expand_dims(x, -1)
