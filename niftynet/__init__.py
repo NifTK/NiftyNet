@@ -124,5 +124,7 @@ def main():
         device_str = "gpu" if param.num_gpus > 0 else "cpu"
         engine.inference.run(net_class, param, volume_loader, device_str)
     return 0
+
+
 if __name__ == "__main__":
-  sys.exit(main())
+    sys.exit(main())
