@@ -12,10 +12,10 @@ warnings.simplefilter("ignore", RuntimeWarning)
 
 class RandomFlipLayer(Layer):
     """
-     Add a random flipping layer as pre-processing. 
+     Add a random flipping layer as pre-processing.
      flip_axes: a list of indices over which to flip
-     flip_probability: the probability of performing the flip 
-                      (default = 0.5) 
+     flip_probability: the probability of performing the flip
+                      (default = 0.5)
     """
 
     def __init__(self,

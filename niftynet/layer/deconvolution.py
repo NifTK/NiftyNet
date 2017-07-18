@@ -91,7 +91,7 @@ class DeconvLayer(TrainableLayer):
         w_full_size = kernel_size_all_dim + (self.n_output_chns, n_input_chns)
         stride_all_dim = layer_util.expand_spatial_params(
             self.stride, spatial_rank)
-        full_stride = [1] + stride_all_dim + [1]
+        full_stride = (1,) + stride_all_dim + (1,)
 
         deconv_kernel = tf.get_variable(
             'w', shape=w_full_size,
