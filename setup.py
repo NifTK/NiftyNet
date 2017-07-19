@@ -51,7 +51,15 @@ setup(
         ]
     ),  # TODO
 
-    install_requires=['', '', ''],  # TODO
+    install_requires=[
+        'six>=1.10',
+        'nibabel>=2.1.0',
+        'numpy>=1.11',
+        'scipy>=0.18',
+        'configparser',
+        'scikit-image>0.12',
+        'tensorflow-gpu==1.1',
+        ],
 
     entry_points={
         'console_scripts': [
