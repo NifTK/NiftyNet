@@ -124,6 +124,8 @@ pip-installer:
     - python --version
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
+    # install SimpleITK for package importer test to work properly
+    - pip install simpleitk
     # check whether all packages are importable
     - cat $package_importer
     - python $package_importer
@@ -146,6 +148,8 @@ pip-installer:
     - python --version
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
+    # install SimpleITK for package importer test to work properly
+    - pip install simpleitk
     # check whether all packages are importable
     - cat $package_importer
     - python $package_importer
