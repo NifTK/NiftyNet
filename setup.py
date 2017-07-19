@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-from codecs import open
 
 
 # Get the summary
@@ -8,7 +7,7 @@ description = 'A convolutional neural networks platform' +\
               ' computer-assisted intervention.'
 
 # Get the long description
-with open('pip/long_description.rst', encoding='utf-8') as f:
+with open('pip/long_description.rst') as f:
     long_description = f.read()
 
 
