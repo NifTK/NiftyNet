@@ -122,10 +122,6 @@ pip-installer:
     # print Python version to CI output
     - which python
     - python --version
-    # install dependencies for GPU
-    - pip install -r $niftynet_dir/requirements-gpu.txt
-    - pip install simpleitk
-    - pip install scikit-learn
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # check whether all packages are importable
@@ -148,10 +144,6 @@ pip-installer:
     # print Python version to CI output
     - which python
     - python --version
-    # install dependencies for GPU
-    - pip install -r $niftynet_dir/requirements-gpu.txt
-    - pip install simpleitk
-    - pip install scikit-learn
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # check whether all packages are importable
