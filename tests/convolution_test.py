@@ -117,6 +117,15 @@ class ConvTest(tf.test.TestCase):
                                      param_dict=input_param,
                                      output_shape=(2, 16, 16, 16, 10))
 
+    def test_3d_convlayer_dilation_default_shape(self):
+        input_param = {'n_output_chns': 10,
+                       'kernel_size': 3,
+                       'stride': 1,
+                       'dilation': [1, 2, 1]}
+        self._test_conv_output_shape(rank=3,
+                                     param_dict=input_param,
+                                     output_shape=(2, 16, 16, 16, 10))
+
     def test_3d_convlayer_bias_shape(self):
         input_param = {'n_output_chns': 10,
                        'kernel_size': 3,
@@ -216,6 +225,15 @@ class ConvTest(tf.test.TestCase):
         self._test_conv_output_shape(rank=2,
                                      param_dict=input_param,
                                      output_shape=(2, 8, 8, 10))
+
+    def test_2d_conv_dilation_default_shape(self):
+        input_param = {'n_output_chns': 10,
+                       'kernel_size': [5, 3],
+                       'stride': [1, 1],
+                       'dilation': [2, 1]}
+        self._test_conv_output_shape(rank=2,
+                                     param_dict=input_param,
+                                     output_shape=(2, 16, 16, 10))
 
     def test_2d_conv_bias_shape(self):
         input_param = {'n_output_chns': 10,
