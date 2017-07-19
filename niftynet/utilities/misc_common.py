@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import datetime
 import os
 from functools import partial
 
 import numpy as np
 import tensorflow as tf
 from scipy import ndimage
-import datetime
 
 LABEL_STRINGS = ['Label', 'LABEL', 'label']
 
@@ -83,13 +83,12 @@ def print_save_input_parameters(args, txt_file=None):
             [f.write(s + '\n') for s in output_config]
 
 
-
-
 class MorphologyOps(object):
     '''
     Class that performs the morphological operations needed to get notably
     connected component. To be used in the evaluation
     '''
+
     def __init__(self, binary_img, neigh):
         self.binary_map = np.asarray(binary_img, dtype=np.int8)
         self.neigh = neigh
@@ -202,33 +201,56 @@ def _damerau_levenshtein_distance(s1, s2):
     return d[string_1_length - 1, string_2_length - 1]
 
 
-def otsu_threshold(img):
+def otsu_threshold(img, nbins=256):
     ''' Implementation of otsu thresholding'''
-    hist, bin_edges = np.histogram(img.ravel(), bins=256)
+    hist, bin_edges = np.histogram(img.ravel(), bins=nbins)
     hist = hist.astype(float)
     bin_size = bin_edges[1] - bin_edges[0]
-    bin_centers = bin_edges[:-1] + bin_size/2
-
+    bin_centers = bin_edges[:-1] + bin_size / 2
 
     weight_1 = np.copy(hist)
     mean_1 = np.copy(hist)
     weight_2 = np.copy(hist)
     mean_2 = np.copy(hist)
     for i in range(1, hist.shape[0]):
-        weight_1[i] = weight_1[i-1] + hist[i]
-        mean_1[i] = mean_1[i-1] + hist[i] * bin_centers[i]
+        weight_1[i] = weight_1[i - 1] + hist[i]
+        mean_1[i] = mean_1[i - 1] + hist[i] * bin_centers[i]
 
-        weight_2[-i-1] = weight_2[-i] + hist[-i-1]
-        mean_2[-i-1] = mean_2[-i] + hist[-i-1] * bin_centers[-i-1]
+        weight_2[-i - 1] = weight_2[-i] + hist[-i - 1]
+        mean_2[-i - 1] = mean_2[-i] + hist[-i - 1] * bin_centers[-i - 1]
 
     target_max = 0
     threshold = bin_centers[0]
-    for i in range(0, hist.shape[0]-1):
-        target = weight_1[i] * weight_2[i+1] * (
-                mean_1[i]/weight_1[i] - mean_2[i+1]/weight_2[i+1])**2
+    for i in range(0, hist.shape[0] - 1):
+        target = weight_1[i] * weight_2[i + 1] * \
+            (mean_1[i] / weight_1[i] - mean_2[i + 1] / weight_2[i + 1]) ** 2
         if target > target_max:
             target_max, threshold = target, bin_centers[i]
     return threshold
+
+
+# def otsu_threshold(img, nbins=256):
+#     ''' Implementation of otsu thresholding'''
+#     hist, bin_edges = np.histogram(img.ravel(), bins=nbins, density=True)
+#     hist = hist.astype(float) * (bin_edges[1] - bin_edges[0])
+#     centre_bins = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+#
+#     hist_mul_val = hist * centre_bins
+#     sum_tot = np.sum(hist_mul_val)
+#
+#     threshold, target_max = centre_bins[0], 0
+#     sum_im, mean_im = 0, 0
+#     for i in range(0, hist.shape[0]-1):
+#         mean_im = mean_im + hist_mul_val[i]
+#         mean_ip = sum_tot - mean_im
+#
+#         sum_im = sum_im + hist[i]
+#         sum_ip = 1 - sum_im
+#
+#         target = sum_ip * sum_im * np.square(mean_ip/sum_ip - mean_im/sum_im)
+#         if target > target_max:
+#             threshold, target_max = centre_bins[i], target
+#     return threshold
 
 
 # Print iterations progress
