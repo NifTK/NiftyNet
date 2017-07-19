@@ -47,6 +47,7 @@ testjob:
     #- coverage run -a --source . run_application.py inference -c config/deepmedic_config.txt --batch_size 64 --queue_length 96
 
     - coverage run -a --source . run_application.py train -c config/default_config.txt --image_size 42 --label_size 42 --batch_size 3 --queue_length 6
+    - coverage run -a --source . run_application.py train -c config/default_config.txt --image_size 42 --label_size 42 --batch_size 3 --queue_length 6 --starting_iter 10 --max_iter 15
     - coverage run -a --source . run_application.py inference -c config/default_config.txt --image_size 84 --label_size 84 --batch_size 7 --queue_length 14
 
     - coverage run -a --source . run_application.py train -c config/default_multimodal_config.txt --image_size 42 --label_size 42 --batch_size 3
