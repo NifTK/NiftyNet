@@ -133,8 +133,8 @@ pip-installer:
     - python $package_importer
     # test niftynet command
     - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
-    - niftynet train -c $niftynet_dir/config/default_config.txt --net_name toynet --image_size 10 --label_size 10 --batch_size 1 --save_every_n 10
-    - niftynet inference -c $niftynet_dir/config/default_config.txt --net_name toynet --image_size 10 --label_size 10 --batch_size 1
+    - niftynet train -c $niftynet_dir/config/default_config.txt --net_name toynet --image_size 42 --label_size 42 --batch_size 1 --save_every_n 10
+    - niftynet inference -c $niftynet_dir/config/default_config.txt --net_name toynet --image_size 80 --label_size 80 --batch_size 8
     # deactivate virtual environment
     - deactivate
     - cd $niftynet_dir
@@ -159,8 +159,8 @@ pip-installer:
     - python $package_importer
     # test niftynet command
     - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
-    - niftynet train -c $niftynet_dir/config/default_config.txt --net_name toynet --image_size 10 --label_size 10 --batch_size 1 --save_every_n 10
-    - niftynet inference -c $niftynet_dir/config/default_config.txt --net_name toynet --image_size 10 --label_size 10 --batch_size 1
+    - niftynet train -c $niftynet_dir/config/default_config.txt --net_name toynet --image_size 42 --label_size 42 --batch_size 1 --save_every_n 10
+    - niftynet inference -c $niftynet_dir/config/default_config.txt --net_name toynet --image_size 80 --label_size 80 --batch_size 8
     # deactivate virtual environment
     - deactivate
     - cd $niftynet_dir
