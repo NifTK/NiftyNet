@@ -22,7 +22,7 @@ def run(net_class, param, volume_loader, device_str):
         # construct inference queue and graph
         # TODO change batch size param - batch size could be larger in test case
         sampler = application.inference_sampler()
-        
+
         # construct train queue
         seg_batch_runner = DeployInputBuffer(
             batch_size=param.batch_size,

@@ -61,7 +61,7 @@ def _eval_path_search(config):
 def default_params(action, config_file=None):
     if config_file is None:
         config_file = os.path.join(os.path.dirname(__file__),
-                                   '..', 'config', 'default_config.txt')
+                                   '..', '..', 'config', 'default_config.txt')
     config = configparser.ConfigParser()
     config.read([config_file])
     args = build_parser([], dict(config['settings'])).parse_args([action])
