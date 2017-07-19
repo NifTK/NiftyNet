@@ -24,7 +24,7 @@ setup(
     author='NiftyNet Consortium',
     author_email='nifty-net@live.ucl.ac.uk',
 
-    license='License :: OSI Approved :: Apache Software License',
+    license='Apache 2.0',
 
     classifiers=[
         'Development Status :: 3 - Alpha',
