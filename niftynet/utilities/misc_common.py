@@ -3,7 +3,6 @@ from __future__ import absolute_import, print_function
 
 import os
 from functools import partial
-from skimage import measure
 
 import numpy as np
 import tensorflow as tf
@@ -210,21 +209,20 @@ def otsu_threshold(img):
     bin_size = bin_edges[1] - bin_edges[0]
     bin_centers = bin_edges[:-1] + bin_size/2
 
-    threshold = bin_centers[0]
 
     weight_1 = np.copy(hist)
     mean_1 = np.copy(hist)
-    weight_2 = np.copy(hist[::-1])
-    mean_2 = np.copy(hist[::-1])
+    weight_2 = np.copy(hist)
+    mean_2 = np.copy(hist)
     for i in range(1, hist.shape[0]):
         weight_1[i] = weight_1[i-1] + hist[i]
-        weight_2[i] = weight_2[i-1] + hist[-i-1]
         mean_1[i] = mean_1[i-1] + hist[i] * bin_centers[i]
-        mean_2[i] = mean_2[i-1] + hist[-i-1] * bin_centers[-i-1]
-    weight_2 = weight_2[::-1]
-    mean_2 = mean_2[::-1]
+
+        weight_2[-i-1] = weight_2[-i] + hist[-i-1]
+        mean_2[-i-1] = mean_2[-i] + hist[-i-1] * bin_centers[-i-1]
 
     target_max = 0
+    threshold = bin_centers[0]
     for i in range(0, hist.shape[0]-1):
         target = weight_1[i] * weight_2[i+1] * (
                 mean_1[i]/weight_1[i] - mean_2[i+1]/weight_2[i+1])**2

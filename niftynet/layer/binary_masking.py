@@ -9,11 +9,6 @@ from niftynet.utilities.misc_common import look_up_operations
 from niftynet.utilities.misc_common import otsu_threshold
 from niftynet.layer.base_layer import Layer
 
-try:
-    from skimage import filters
-except ImportError:
-    from skimage import filter as filters
-
 """
 This class defines methods to generate a binary image from an input image.
 The binary image can be used as an automatic foreground selector, so that later
@@ -46,11 +41,9 @@ class BinaryMaskingLayer(Layer):
         elif self.type == 'otsu_plus':
             thr = otsu_threshold(image) if \
                 np.any(image) else self.threshold
-            # thr = filters.threshold_otsu(image) if \
-            #     np.any(image) else self.threshold
             mask[image > thr] = 1
         elif self.type == 'otsu_minus':
-            thr = filters.threshold_otsu(image) if \
+            thr = otsu_threshold(image) if \
                 np.any(image) else self.threshold
             mask[image < thr] = 1
         elif self.type == 'mean':
