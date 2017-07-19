@@ -347,22 +347,19 @@ def save_volume_5d(img_data, filename, save_path, img_ref=None):
 
 
 def match_volume_shape_to_patch_definition(image_data, patch):
-    '''
-    Reduce 5d to 4d (time series not allowed so far) or augment to 4d
-    :param image_data:
-    :param patch:
-    :return:
+    ''' 
+    Adjusts the shape of the image data to match the requested
+    patch. This depends on the patch.spatial_rank.
+    For spatial rank 2.5 and 3, reshapes to 4D input volume [H x W x D x Modalities]
+    For spatial rank 2, reshapes to 4D input volume [H x W x 1 x Modalities]
     '''
     if image_data is None:
         return None
     if patch is None:
         return None
-    # always casting to 4D input volume [H x W x D x Modality]
-    while image_data.ndim > 4:
-        image_data = image_data[..., 0]
-    while image_data.ndim < 4:
-        image_data = np.expand_dims(image_data, axis=-1)
-    return image_data
+    spatial_shape = list(image_data.shape[:int(np.ceil(patch.spatial_rank))])
+    spatial_shape += [1]*(3-int(np.ceil(patch.spatial_rank)))
+    return np.reshape(image_data,spatial_shape+[-1])
 
 
 def spatial_padding_to_indexes(spatial_padding):

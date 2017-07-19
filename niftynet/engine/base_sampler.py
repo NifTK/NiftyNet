@@ -19,7 +19,6 @@ class BaseSampler(Layer):
     def __init__(self, patch, name='sampler'):
         super(BaseSampler, self).__init__(name=name)
 
-        assert isinstance(patch, ImagePatch)
         self.patch = patch
         self._placeholders = self.patch.create_placeholders()
 

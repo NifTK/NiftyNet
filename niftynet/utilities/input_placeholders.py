@@ -321,3 +321,263 @@ class ImagePatch(object):
         if info is None:
             raise ValueError('wrong data format')
         return np.all(info == self.stopping_signal)
+
+class GANPatch(object):
+    """
+    This class defines the output element of an image sampler and
+    the element in the input buffer.
+
+
+    It assumes all images have same length in all spatial dims
+    i.e., image_shape = [image_size] * int(np.floor(spatial_rank))
+    and full_image_shape = [image_spatial_shape] + [number_of_modalities]
+
+    *_size an integer specifying how many voxels along one dimension
+    *_shape a tuple of integer specifying the patch shape
+
+    currently assumes the samples have the same length in all spatial dims
+    """
+
+    def __init__(self,
+                 spatial_rank,
+                 image_size,
+                 noise_size,
+                 conditioning_size=None,
+                 image_dtype=tf.float32,
+                 conditioning_dtype=tf.float32,
+                 num_image_modality=1,
+                 num_conditioning_modality=0):
+
+        self._spatial_rank = float(spatial_rank)
+        assert self._spatial_rank in SUPPORTED_SPATIAL_RANKS
+
+        # sizes
+        self._image_size = image_size
+        self._noise_size = noise_size
+        self._conditioning_size = conditioning_size
+
+        # types
+        self._image_dtype = image_dtype
+        self._noise_dtype = tf.float32
+        self._conditioning_dtype = conditioning_dtype
+        
+        self._num_image_modality = num_image_modality
+        self._num_conditioning_modality = num_conditioning_modality
+        
+        # actual data
+        self._image = None
+        self._noise = None
+        self._conditioning = None
+        self._valid = None
+
+    @property
+    def spatial_rank(self):
+        # spatial_rank == 3 for volumetric images
+        # spatial_rank == 2 for 2D images
+        # spatial_rank == 2.5 for 3D volume but processed as 2D sequences
+        return self._spatial_rank
+
+    @property
+    def has_conditioning(self):
+        return (self._conditioning_size is not None) and \
+               (self._num_conditioning_modality > 0)
+
+    @property
+    def image_size(self):
+        return self._image_size
+
+    @property
+    def noise_size(self):
+        return self._noise_size
+
+    @property
+    def conditioning_size(self):
+        if self.has_conditioning:
+            return self._conditioning_size
+        return None
+
+    @property
+    def full_image_shape(self):
+        # 2D patch:   [d x d x n_mod]
+        # 2.5D patch: [d x d x n_mod]
+        # 3D patch:   [d x d x d x n_mod]
+
+        spatial_dims = (self.image_size,) * int(np.floor(self.spatial_rank))
+        spatial_dims = spatial_dims + (self._num_image_modality,)
+        return spatial_dims
+
+    @property
+    def full_noise_shape(self):
+
+        noise_dims = (self.noise_size,)
+        return noise_dims
+
+    @property
+    def full_conditioning_shape(self):
+        if self.has_conditioning:
+            spatial_dims = (self._conditioning_size,) * int(np.floor(self.spatial_rank))
+            spatial_dims = spatial_dims + (self._num_conditioning_modality,)
+            return spatial_dims
+        return None
+
+    @property
+    def full_info_shape(self):
+        """
+        `info` contains the spatial location of a image patch
+        it will be used to put the sampled patch back to the original volume
+        the first dim: volume id
+        the size of the other dims: spatial_rank * 2, indicating starting
+        and end point of a patch in each dim
+        3D:   [volume_id, x_start, y_start, z_start, x_end, y_end, z_end]
+        2.5D: [volume_id, x_start, y_start, z_start, x_end, y_end]
+        2D:   [volume_id, x_start, y_start, x_end, y_end]
+        """
+        return (1 + int(self.spatial_rank * 2.0),)
+
+    def create_placeholders(self):
+        """
+        The placeholders are defined so that the input buffer knows how
+        to initialise an input queue
+        """
+
+        placeholders_list = []
+        # image (required placeholder)
+        image_placeholders = tf.placeholder(dtype=self._image_dtype,
+                                            shape=self.full_image_shape,
+                                            name='images')
+        placeholders_list.append(image_placeholders)
+
+        # noise (required placeholder)
+        noise_placeholders = tf.placeholder(dtype=self._noise_dtype,
+                                            shape=self.full_noise_shape,
+                                            name='noise')
+        placeholders_list.append(noise_placeholders)
+
+        # location information (required placeholder)
+        # datatype is fixed to tf.int64
+        location_info_dtype = tf.int64
+        info_placeholders = tf.placeholder(dtype=location_info_dtype,
+                                           shape=self.full_info_shape,
+                                           name='info')
+        placeholders_list.append(info_placeholders)
+
+        # optional label placeholder
+        if self.has_conditioning:
+            conditioning_placeholders = tf.placeholder(
+                dtype=self._conditioning_dtype,
+                shape=self.full_conditioning_shape,
+                name='conditioning')
+            placeholders_list.append(conditioning_placeholders)
+
+        return tuple(placeholders_list)
+
+    ### set the corresponding data of each placeholder
+    @property
+    def image(self):
+        assert self._image is not None
+        return self._image
+
+    @property
+    def noise(self):
+        assert self._noise is not None
+        return self._noise
+
+    @property
+    def info(self):
+        assert self._info is not None
+        return self._info
+
+    @property
+    def conditioning(self):
+        if self.has_conditioning:
+            return self._conditioning
+        return None
+
+    @image.setter
+    def image(self, value):
+        assert value.shape == tuple(self.full_image_shape)
+        self._image = value
+
+    @noise.setter
+    def noise(self, value):
+        assert value.shape == tuple(self.full_noise_shape)
+        self._noise = value
+
+    @info.setter
+    def info(self, value):
+        assert value.shape == tuple(self.full_info_shape)
+        self._info = value
+
+    @conditioning.setter
+    def conditioning(self, value):
+        assert self.has_conditioning
+        assert value.shape == tuple(self.full_conditioning_shape)
+        self._conditioning = value
+
+    ### end of set the corresponding data of each placeholder
+    def set_data(self, subject_id, spatial_loc, img, cond, noise):
+        # input image should be [ h x w x d x mod ]
+        if isinstance(img,ColumnData):
+          img=img.data
+        if isinstance(cond,ColumnData):
+          cond=cond.data
+        assert img.ndim == 4
+        # TODO:check the colon operator
+        self.info = np.array(np.hstack([[subject_id], spatial_loc]),
+                             dtype=np.int64)
+        self.noise = noise
+        if self.spatial_rank == 3:
+            x_, y_, z_, _x, _y, _z = spatial_loc
+            assert _x <= img.shape[0]
+            assert _y <= img.shape[1]
+            assert _z <= img.shape[2]
+            self.image = img[x_:_x, y_:_y, z_:_z, :]
+            if self.has_conditioning and (cond is not None):
+                diff = int((self.image_size - self.conditioning_size) / 2)
+                assert diff >= 0  # assumes label_size <= image_size
+                x_d, y_d, z_d = (x_ + diff), (y_ + diff), (z_ + diff)
+                self.conditioning = cond[x_d: (self.conditioning_size + x_d),
+                                         y_d: (self.conditioning_size + y_d),
+                                         z_d: (self.conditioning_size + z_d), :]
+
+            return
+
+        if self.spatial_rank == 2:
+            x_, y_, _x, _y, = [int(c) for c in spatial_loc]
+            z_ = 0
+
+        if self.spatial_rank == 2.5:
+            x_, y_, z_, _x, _y = [int(c) for c in spatial_loc]
+
+        assert _x <= img.shape[0]
+        assert _y <= img.shape[1]
+        assert z_ < img.shape[2]
+        self.image = img[x_:_x, y_:_y, z_, :]
+        if self.has_conditioning and (cond is not None):
+            diff = int((self.image_size - self.conditioning_size) / 2)
+            assert diff >= 0  # assumes label_size <= image_size
+            x_d, y_d = (x_ + diff), (y_ + diff)
+            self.conditioning = cond[x_d: (self.conditioning_size + x_d),
+                                  y_d: (self.conditioning_size + y_d), z_, :]
+
+        return
+
+    def as_dict(self, placeholders):
+        out_list = [self.image, self.noise, self.info]
+        if self.has_conditioning:
+            out_list.append(self.conditioning)
+        assert not any([x is None for x in out_list])
+        assert len(out_list) == len(placeholders)
+        return {placeholders: tuple(out_list)}
+
+    @property
+    def stopping_signal(self):
+        return -1 * np.ones(self.full_info_shape)
+
+    def fill_with_stopping_info(self):
+        self.info = self.stopping_signal
+
+    def is_stopping_signal(self, info):
+        if info is None:
+            raise ValueError('wrong data format')
+        return np.all(info == self.stopping_signal)
