@@ -41,7 +41,7 @@ If you use this software, please cite:
 
 ### Licensing and Copyright
 
-Copyright 2017 University College London.
+Copyright 2017 NiftyNet Contributors.
 Released under the Apache License, Version 2.0. Please see the LICENSE file for details.
 
 ### Acknowledgements
