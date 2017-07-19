@@ -205,44 +205,34 @@ def _damerau_levenshtein_distance(s1, s2):
 
 def otsu_threshold(img):
     ''' Implementation of otsu thresholding'''
-    hist, bin_edges = np.histogram(img.ravel(), bins=256, density=True)
+    hist, bin_edges = np.histogram(img.ravel(), bins=256)
     hist = hist.astype(float)
+    bin_size = bin_edges[1] - bin_edges[0]
+    bin_centers = bin_edges[:-1] + bin_size/2
+
+    threshold = bin_centers[0]
+
+    weight_1 = np.copy(hist)
+    mean_1 = np.copy(hist)
+    weight_2 = np.copy(hist[::-1])
+    mean_2 = np.copy(hist[::-1])
+    for i in range(1, hist.shape[0]):
+        weight_1[i] = weight_1[i-1] + hist[i]
+        weight_2[i] = weight_2[i-1] + hist[-i-1]
+        mean_1[i] = mean_1[i-1] + hist[i] * bin_centers[i]
+        mean_2[i] = mean_2[i-1] + hist[-i-1] * bin_centers[-i-1]
+    mean_1 = mean_1 / weight_1
+    mean_2 = mean_2 / weight_2
+
+    weight_2 = weight_2[::-1]
+    mean_2 = mean_2[::-1]
+
     target_max = 0
-    threshold = bin_edges[0]
-    sum_im = 0
-
-    mean_ip = np.cumsum(hist)
-    mean_im = np.cumsum(hist[::-1])[::-1]
-    for i in range(0, 256):
-        sum_im = sum_im + hist[i]
-        sum_ip = 1 - sum_im
-        target = sum_ip * sum_im * np.square(mean_ip[i] - mean_im[i])
+    for i in range(0, hist.shape[0]-1):
+        target = weight_1[i] * weight_2[i+1] * (mean_1[i] - mean_2[i+1])**2
         if target > target_max:
-            target_max, threshold = target, bin_edges[i]
+            target_max, threshold = target, bin_centers[i]
     return threshold
-
-#def otsu_threshold(image):
-#    ''' Implementation of otsu thresholding'''
-#    hist, bin_edges = np.histogram(image.ravel(), bins=256)
-#    hist = hist.astype(float)
-#    bin_size = (bin_edges[1:] - bin_edges[:-1])[0]
-#    bin_centers = bin_edges[:-1] - bin_size/2
-#
-#    # class probabilities for all possible thresholds
-#    weight1 = np.cumsum(hist)
-#    weight2 = np.cumsum(hist[::-1])[::-1]
-#    # class means for all possible thresholds
-#    mean1 = np.cumsum(hist * bin_centers) / weight1
-#    mean2 = (np.cumsum((hist * bin_centers)[::-1]) / weight2[::-1])[::-1]
-#
-#    # Clip ends to align class 1 and class 2 variables:
-#    # The last value of `weight1`/`mean1` should pair with zero values in
-#    # `weight2`/`mean2`, which do not exist.
-#    variance12 = weight1[:-1] * weight2[1:] * (mean1[:-1] - mean2[1:]) ** 2
-#
-#    idx = np.argmax(variance12)
-#    threshold = bin_centers[:-1][idx]
-#    return threshold
 
 
 # Print iterations progress
