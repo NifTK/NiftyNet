@@ -221,15 +221,15 @@ def otsu_threshold(img):
         weight_2[i] = weight_2[i-1] + hist[-i-1]
         mean_1[i] = mean_1[i-1] + hist[i] * bin_centers[i]
         mean_2[i] = mean_2[i-1] + hist[-i-1] * bin_centers[-i-1]
-    mean_1 = mean_1 / weight_1
-    mean_2 = mean_2 / weight_2
+    #mean_1 = mean_1 / weight_1
+    #mean_2 = mean_2 / weight_2
 
     weight_2 = weight_2[::-1]
     mean_2 = mean_2[::-1]
 
     target_max = 0
     for i in range(0, hist.shape[0]-1):
-        target = weight_1[i] * weight_2[i+1] * (mean_1[i] - mean_2[i+1])**2
+        target = weight_1[i] * weight_2[i+1] * (mean_1[i]/weight_1[i] - mean_2[i+1]/weight_2[i+1])**2
         if target > target_max:
             target_max, threshold = target, bin_centers[i]
     return threshold
