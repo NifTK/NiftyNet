@@ -6,7 +6,6 @@
 * Numpy
 * Scipy
 * configparser
-* scikit-image
 
 ### Usage
 ##### To install dependencies
