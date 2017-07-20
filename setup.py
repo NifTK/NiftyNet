@@ -58,7 +58,6 @@ setup(
         'configparser',
         'scikit-image>0.12',
         'tensorflow-gpu==1.1',
-        'scikit-learn',
         ],
 
     entry_points={
