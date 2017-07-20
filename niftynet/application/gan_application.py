@@ -1,26 +1,98 @@
-from niftynet.engine.spatial_location_check import SpatialLocationCheckLayer
 from niftynet.engine.gan_sampler import GANSampler
-from niftynet.layer.gan_loss import LossFunction
-from niftynet.utilities.input_placeholders import GANPatch
-import numpy as np
-import scipy
-import tensorflow as tf
-from niftynet.engine import logging
-from niftynet.layer.post_processing import PostProcessingLayer
-from niftynet.application.common import BaseApplication
 import time
+
+import numpy as np
+import tensorflow as tf
+
+import niftynet.utilities.param_shortcuts_expanding as param_util
+from niftynet.application.base_application import BaseApplication
+from niftynet.engine import logging
+from niftynet.engine.gan_sampler import GANSampler
+from niftynet.engine.volume_loader import VolumeLoaderLayer
+from niftynet.layer.binary_masking import BinaryMaskingLayer
+from niftynet.layer.gan_loss import LossFunction
+from niftynet.layer.histogram_normalisation import \
+    HistogramNormalisationLayer
+from niftynet.layer.mean_variance_normalisation import \
+    MeanVarNormalisationLayer
+from niftynet.utilities.csv_table import CSVTable
+from niftynet.utilities.input_placeholders import GANPatch
+from niftynet.engine.input_buffer import TrainEvalInputBuffer, DeployInputBuffer
+
+
+class GanNetFactory(object):
+    @staticmethod
+    def create(name):
+        if name == "simulator_gan":
+            from niftynet.network.simulator_gan import SimulatorGAN
+            return SimulatorGAN
+        if name == "simple_gan":
+            from niftynet.network.simple_gan import SimpleGAN
+            return SimpleGAN
+        else:
+            print("network: \"{}\" not implemented".format(name))
+            raise NotImplementedError
 
 
 class GANApplication(BaseApplication):
-  def __init__(self,net_class, param, volume_loader):
-    self._net_class = net_class
-    self._param = param
-    self._volume_loader = volume_loader
-    self._loss_func = LossFunction(loss_type=self._param.loss_type)
-    self.num_objectives=2
-    w_regularizer,b_regularizer=self.regularizers()
-    self._net=None
-  def inference_sampler(self):
+
+    def set_param(self, param):
+        self._param = param
+        self._volume_loader = None
+        self._sampler = None
+        self._loss_func = LossFunction(loss_type=self._param.loss_type)
+
+    # def __init__(self, param):
+    #     # super(GANApplication, self).__init__()
+    #     self._net_class = None
+    #     self._param = param
+    #     self._volume_loader = None
+    #     self._loss_func = LossFunction(loss_type=self._param.loss_type)
+    #     self.num_objectives = 2
+    #     self._net = None
+    #     self._net_class_module = NetFactory.create(param.net_name)
+
+    def initialise_dataset_loader(self, csv_dict):
+        # read each line of csv files into an instance of Subject
+        csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
+
+        # expanding user input parameters
+        spatial_padding = param_util.expand_padding_params(
+            self._param.volume_padding_size, self._param.spatial_rank)
+        interp_order = (self._param.image_interp_order,
+                        self._param.conditioning_interp_order)
+
+        # define layers of volume-level normalisation
+        normalisation_layers = []
+        if self._param.normalisation:
+            hist_norm = HistogramNormalisationLayer(
+                models_filename=self._param.histogram_ref_file,
+                binary_masking_func=BinaryMaskingLayer(
+                    type=self._param.mask_type,
+                    multimod_fusion=self._param.multimod_mask_type),
+                norm_type=self._param.norm_type,
+                cutoff=(self._param.cutoff_min, self._param.cutoff_max))
+            normalisation_layers.append(hist_norm)
+        if self._param.whitening:
+            mean_std_norm = MeanVarNormalisationLayer(
+                binary_masking_func=BinaryMaskingLayer(
+                    type=self._param.mask_type,
+                    multimod_fusion=self._param.multimod_mask_type))
+            normalisation_layers.append(mean_std_norm)
+
+        # define how to load image volumes
+        self._volume_loader = VolumeLoaderLayer(
+            csv_loader,
+            standardisor=normalisation_layers,
+            is_training=(self._param.action == "train"),
+            do_reorientation=self._param.reorientation,
+            do_resampling=self._param.resampling,
+            spatial_padding=spatial_padding,
+            interp_order=interp_order)
+
+    def inference_sampler(self):
+        assert self._volume_loader is not None, \
+            "Please call initialise_dataset_loader first"
         self._inference_patch_holder = GANPatch(
             spatial_rank=self._param.spatial_rank,
             image_size=self._param.image_size,
@@ -29,20 +101,38 @@ class GANApplication(BaseApplication):
             num_image_modality=self._volume_loader.num_modality(0))
 
         sampler = GANSampler(
-                patch=self._inference_patch_holder,
-                volume_loader=self._volume_loader,
-                data_augmentation_methods=None)
+            patch=self._inference_patch_holder,
+            volume_loader=self._volume_loader,
+            data_augmentation_methods=None)
         # ops to resize image back
-        self._ph=tf.placeholder(tf.float32,[None])
-        self._sz=tf.placeholder(tf.int32,[None])
-        reshaped=tf.image.resize_images(tf.reshape(self._ph,[1]+[self._param.label_size]*2+[-1]),self._sz[0:2])
-        if self._param.spatial_rank==3:
-            reshaped=tf.reshape(reshaped,[1,self._sz[0]*self._sz[1],self._param.label_size,-1])
-            reshaped=tf.image.resize_images(reshaped,[self._sz[0]*self._sz[1],self._sz[2]])
-        self._reshaped=tf.reshape(reshaped,self._sz)
-        return sampler
-    
-  def sampler(self):
+        self._ph = tf.placeholder(tf.float32, [None])
+        self._sz = tf.placeholder(tf.int32, [None])
+        reshaped = tf.image.resize_images(
+            tf.reshape(self._ph, [1] + [self._param.label_size] * 2 + [-1]),
+            self._sz[0:2])
+        if self._param.spatial_rank == 3:
+            reshaped = tf.reshape(reshaped, [1, self._sz[0] * self._sz[1],
+                                             self._param.label_size, -1])
+            reshaped = tf.image.resize_images(reshaped,
+                                              [self._sz[0] * self._sz[1],
+                                               self._sz[2]])
+        self._reshaped = tf.reshape(reshaped, self._sz)
+        input_buffer= DeployInputBuffer(
+            batch_size=self._param.batch_size,
+            capacity=max(self._param.queue_length, self._param.batch_size),
+            sampler=sampler)
+        return input_buffer
+
+    def initialise_sampler(self, is_training):
+        if is_training:
+            self._sampler = self.training_sampler()
+        else:
+            self._sampler = self.inference_sampler()
+        return self._sampler
+
+    def training_sampler(self):
+        assert self._volume_loader is not None, \
+            "Please call initialise_dataset_loader first"
         patch_holder = GANPatch(
             spatial_rank=self._param.spatial_rank,
             image_size=self._param.image_size,
@@ -58,7 +148,8 @@ class GANApplication(BaseApplication):
                 min_angle=self._param.min_angle,
                 max_angle=self._param.max_angle))
         if self._param.spatial_scaling:
-            from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
+            from niftynet.layer.rand_spatial_scaling import \
+                RandomSpatialScalingLayer
             augmentations.append(RandomSpatialScalingLayer(
                 min_percentage=self._param.min_percentage,
                 max_percentage=self._param.max_percentage))
@@ -68,109 +159,155 @@ class GANApplication(BaseApplication):
                 patch=patch_holder,
                 volume_loader=self._volume_loader,
                 data_augmentation_methods=None)
-        return sampler
+        input_buffer = TrainEvalInputBuffer(
+            batch_size=self._param.batch_size,
+            capacity=max(self._param.queue_length, self._param.batch_size),
+            sampler=sampler,
+            shuffle=True)
+        return input_buffer
 
-  def net(self,train_dict,is_training):
-    if not self._net:
-      self._net=self._net_class()
-    conditioning = train_dict.get('Sampling/conditioning',None)
-    return self._net(train_dict['Sampling/noise'],train_dict['Sampling/images'],conditioning,is_training)
+    def initialise_network(self):
+        self._net =  GanNetFactory.create(self._param.net_name)()
+        return self._net
 
-  def net_inference(self,train_dict,is_training):
-    if not self._net:
-      self._net=self._net_class()
-    net_outputs = self._net(train_dict['images'],is_training)
-    return self._post_process_outputs(net_outputs),train_dict['info']
+    def _connect_data_and_network(self, is_training, replicate_id):
+        with tf.name_scope('Optimizer'):
+            self.optimizer = tf.train.AdamOptimizer(
+                learning_rate=self._param.lr)
+        if is_training:
+            data_dict = self._sampler.pop_batch_op(replicate_id)
+            noise = data_dict['Sampling/noise']
+            images = data_dict['Sampling/images']
+            conditioning = data_dict.get('Sampling/conditioning', None)
+            net_output = self._net(noise, images, conditioning, is_training)
+            lossG, lossD = self.loss_func(data_dict, net_output)
+            if self._param.decay > 0:
+                reg_losses = tf.get_collection(
+                    tf.GraphKeys.REGULARIZATION_LOSSES)
+                if reg_losses:
+                    reg_loss = tf.reduce_mean([tf.reduce_mean(reg_loss)
+                                               for reg_loss in reg_losses])
+                    lossD = lossD + reg_loss
+                    lossG = lossG + reg_loss
+            with tf.name_scope('ComputeGradients'):
+                generator_variables = tf.get_collection(
+                    tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
+                generator_grads = self.optimizer.compute_gradients(
+                        lossG, var_list=generator_variables)
 
-  def loss_func(self,train_dict,net_outputs):
-    real_logits = net_outputs[1]
-    fake_logits = net_outputs[2] 
-    lossG = self._loss_func(fake_logits,True)
-    lossD=self._loss_func(real_logits,True)+self._loss_func(fake_logits,False)
-    return lossG,lossD
+                discriminator_variables = tf.get_collection(
+                    tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator')
+                discriminator_grads = self.optimizer.compute_gradients(
+                        lossD, var_list=discriminator_variables)
 
-  def train(self,train_dict):
-    """
-    Returns a list of possible compute_gradients ops to be run each training iteration.
-    Default implementation returns gradients for all variables from one Adam optimizer
-    """
-    with tf.name_scope('Optimizer'):
-      self.optimizer = tf.train.AdamOptimizer(learning_rate=self._param.lr,)
-    net_outputs = self.net(train_dict, is_training=True)
-    with tf.name_scope('Loss'):
-        lossG,lossD = self.loss_func(train_dict,net_outputs)
-        if self._param.decay > 0:
-            reg_losses = tf.get_collection(
-                tf.GraphKeys.REGULARIZATION_LOSSES)
-            if reg_losses:
-                reg_loss = tf.reduce_mean([tf.reduce_mean(reg_loss)
-                                    for reg_loss in reg_losses])
-                lossD = lossD + reg_loss
-                lossG = lossG + reg_loss
-    # Averages are in name_scope for Tensorboard naming; summaries are outside for console naming
-    logs=[['lossD',lossD],['lossG',lossG]]
-    with tf.name_scope('ConsoleLogging'):
-        logs+=self.logs(train_dict,net_outputs)
-    for tag,val in logs:
-        tf.summary.scalar(tag,val,[logging.CONSOLE,logging.LOG])
-    with tf.name_scope('ComputeGradients'):
-      generator_variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
-      discriminator_variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,scope='discriminator')
-      grads=[self.optimizer.compute_gradients(lossG,var_list=generator_variables),
-             self.optimizer.compute_gradients(lossD,var_list=discriminator_variables)]
-    # add compute gradients ops for each type of optimizer_op
-    return grads
+                grads = [generator_grads, discriminator_grads]
+            return grads
+        else:
+            return None
 
-  def inference_loop(self, sess, coord, net_out):
-    all_saved_flag = False
-    img_id, pred_img, subject_i = None, None, None
-    spatial_rank = self._inference_patch_holder.spatial_rank
-    while True:
-        local_time = time.time()
-        if coord.should_stop():
-            break
-        seg_maps, spatial_info = sess.run(net_out)
-        # go through each one in a batch
-        for batch_id in range(seg_maps.shape[0]):
-            img_id = spatial_info[batch_id, 0]
-            subject_i = self._volume_loader.get_subject(img_id)
-            pred_img = subject_i.matrix_like_input_data_5d(
+    def net_inference(self, train_dict, is_training):
+        if not self._net:
+            self._net = self._net_class()
+        net_outputs = self._net(train_dict['images'], is_training)
+        return self._post_process_outputs(net_outputs), train_dict['info']
+
+    def loss_func(self, train_dict, net_outputs):
+        real_logits = net_outputs[1]
+        fake_logits = net_outputs[2]
+        lossG = self._loss_func(fake_logits, True)
+        lossD = self._loss_func(real_logits, True) + self._loss_func(
+            fake_logits, False)
+        return lossG, lossD
+
+    def train(self, train_dict):
+        """
+        Returns a list of possible compute_gradients ops to be run each training iteration.
+        Default implementation returns gradients for all variables from one Adam optimizer
+        """
+        with tf.name_scope('Optimizer'):
+            self.optimizer = tf.train.AdamOptimizer(
+                learning_rate=self._param.lr, )
+        net_outputs = self.net(train_dict, is_training=True)
+        with tf.name_scope('Loss'):
+            lossG, lossD = self.loss_func(train_dict, net_outputs)
+            if self._param.decay > 0:
+                reg_losses = tf.get_collection(
+                    tf.GraphKeys.REGULARIZATION_LOSSES)
+                if reg_losses:
+                    reg_loss = tf.reduce_mean([tf.reduce_mean(reg_loss)
+                                               for reg_loss in reg_losses])
+                    lossD = lossD + reg_loss
+                    lossG = lossG + reg_loss
+        # Averages are in name_scope for Tensorboard naming; summaries are outside for console naming
+        logs = [['lossD', lossD], ['lossG', lossG]]
+        with tf.name_scope('ConsoleLogging'):
+            logs += self.logs(train_dict, net_outputs)
+        for tag, val in logs:
+            tf.summary.scalar(tag, val, [logging.CONSOLE, logging.LOG])
+        with tf.name_scope('ComputeGradients'):
+            generator_variables = tf.get_collection(
+                tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
+            discriminator_variables = tf.get_collection(
+                tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator')
+            grads = [self.optimizer.compute_gradients(lossG,
+                                                      var_list=generator_variables),
+                     self.optimizer.compute_gradients(lossD,
+                                                      var_list=discriminator_variables)]
+        # add compute gradients ops for each type of optimizer_op
+        return grads
+
+    def inference_loop(self, sess, coord, net_out):
+        all_saved_flag = False
+        img_id, pred_img, subject_i = None, None, None
+        spatial_rank = self._inference_patch_holder.spatial_rank
+        while True:
+            local_time = time.time()
+            if coord.should_stop():
+                break
+            seg_maps, spatial_info = sess.run(net_out)
+            # go through each one in a batch
+            for batch_id in range(seg_maps.shape[0]):
+                img_id = spatial_info[batch_id, 0]
+                subject_i = self._volume_loader.get_subject(img_id)
+                pred_img = subject_i.matrix_like_input_data_5d(
                     spatial_rank=spatial_rank,
                     n_channels=self._num_output_channels_func(),
                     interp_order=self._param.output_interp_order)
-            predictions = seg_maps[batch_id]
-            while predictions.ndim < pred_img.ndim:
-                predictions = np.expand_dims(predictions, axis=-1)
+                predictions = seg_maps[batch_id]
+                while predictions.ndim < pred_img.ndim:
+                    predictions = np.expand_dims(predictions, axis=-1)
 
-            # assign predicted patch to the allocated output volume
-            origin = spatial_info[
-                     batch_id, 1:(1 + int(np.floor(spatial_rank)))]
+                # assign predicted patch to the allocated output volume
+                origin = spatial_info[
+                         batch_id, 1:(1 + int(np.floor(spatial_rank)))]
 
-            i_spatial_rank=int(np.ceil(spatial_rank))
-            output_size = [self._param.image_size]*i_spatial_rank + [1]
-            pred_size = pred_img.shape[0:i_spatial_rank] + [1]
-            zoom=[d/p for p,d in zip(output_size,pred_size)]
-            ph=np.reshape(predictions,[-1])
-            pred_img=sess.run([self._reshaped],feed_dict={self._ph: ph,self._sz:pred_img.shape})[0]
-            subject_i.save_network_output(
-                        pred_img,
-                        self._param.save_seg_dir,
-                        self._param.output_interp_order)
+                i_spatial_rank = int(np.ceil(spatial_rank))
+                output_size = [self._param.image_size] * i_spatial_rank + [1]
+                pred_size = pred_img.shape[0:i_spatial_rank] + [1]
+                zoom = [d / p for p, d in zip(output_size, pred_size)]
+                ph = np.reshape(predictions, [-1])
+                pred_img = sess.run([self._reshaped], feed_dict={self._ph: ph,
+                                                                 self._sz: pred_img.shape})[
+                    0]
+                subject_i.save_network_output(
+                    pred_img,
+                    self._param.save_seg_dir,
+                    self._param.output_interp_order)
 
-            if self._inference_patch_holder.is_stopping_signal(
+                if self._inference_patch_holder.is_stopping_signal(
                         spatial_info[batch_id]):
                     print('received finishing batch')
                     all_saved_flag = True
                     return all_saved_flag
 
-            # try to expand prediction dims to match the output volume
-        print('processed {} image patches ({:.3f}s)'.format(
-            len(spatial_info), time.time() - local_time))  
-    return all_saved_flag
+                    # try to expand prediction dims to match the output volume
+            print('processed {} image patches ({:.3f}s)'.format(
+                len(spatial_info), time.time() - local_time))
+        return all_saved_flag
 
-  def logs(self,train_dict,net_outputs):
-    return []
+    def logs(self, train_dict, net_outputs):
+        return []
 
-  def train_op_generator(self,apply_ops):
-    while True:
-      yield apply_ops
+    def train_op_generator(self, apply_ops):
+        while True:
+            yield apply_ops

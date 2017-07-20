@@ -9,7 +9,7 @@ import scipy
 import tensorflow as tf
 from niftynet.engine.grid_sampler import GridSampler
 from niftynet.layer.post_processing import PostProcessingLayer
-from niftynet.application.common import BaseApplication
+from niftynet.application.base_application import BaseApplication
 
 import time
 

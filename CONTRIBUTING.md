@@ -16,3 +16,4 @@ unit tests, by running:
 cd NiftyNet/
 sh run_test.sh
 ```
+(`run_test.sh` script requires `wget` and `tar` to prepare testing images.)

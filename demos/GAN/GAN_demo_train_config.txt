@@ -1,13 +1,13 @@
 [image modality 1]
-path_to_search = ./data/PROMISE12_mini
-filename_contains = Case,nii
-filename_not_contains = 
+path_to_search = ./example_volumes/monomodal_parcellation
+filename_contains = pat,T1
+filename_not_contains = Label
 
 [settings]
 application_type = gan
 cuda_devices = ""
 model_dir = ./models/model_simple_gan
-net_name = simple_gan
+net_name = simulator_gan
 activation_function = prelu
 
 # preprocessing threads parameters
@@ -24,7 +24,7 @@ noise_size = 100
 volume_padding_size = 0
 
 #histogram normalisation
-histogram_ref_file = ./demos/PROMISE12/standardisation_models.txt
+histogram_ref_file = ./example_volumes/monomodal_parcellation/standardisation_models.txt
 multimod_mask_type = and
 norm_type = percentile
 cutoff_min = 0.01

@@ -14,7 +14,7 @@ from niftynet.utilities import misc_common as util
 from niftynet.utilities.input_placeholders import ImagePatch
 import niftynet.engine.logging
 from niftynet.application.common import ApplicationFactory
-        
+
 np.random.seed(seed=int(time.time()))
 
 

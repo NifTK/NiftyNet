@@ -57,6 +57,7 @@ class VolumeLoaderLayer(Layer):
         self.subject_list = None
         self.current_id = None
         self.__initialise_subject_list()
+        print('found {} subjects'.format(len(self.subject_list)))
 
     def __initialise_subject_list(self):
         """
