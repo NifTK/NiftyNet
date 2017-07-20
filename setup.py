@@ -56,7 +56,6 @@ setup(
         'numpy>=1.11',
         'scipy>=0.18',
         'configparser',
-        'scikit-image>0.12',
         'tensorflow-gpu==1.1',
         ],
 
