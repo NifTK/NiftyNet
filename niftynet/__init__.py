@@ -43,6 +43,9 @@ class NetFactory(object):
         elif name == "vnet":
             from niftynet.network.vnet import VNet
             return VNet
+        elif name == "dense_vnet":
+            from niftynet.network.dense_vnet import DenseVNet
+            return DenseVNet
         elif name == "deepmedic":
             from niftynet.network.deepmedic import DeepMedic
             return DeepMedic
