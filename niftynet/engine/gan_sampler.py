@@ -71,6 +71,7 @@ class GANSampler(BaseSampler):
             # resize image to patch size
             noise = np.random.randn(patch.noise_size)
             if spatial_rank==3:
+                spatial_rank = 3
                 loc=[0]*spatial_rank+[patch.image_size]*spatial_rank
                 img = scipy.ndimage.interpolation.zoom(img.data, zoom)
                 patch.set_data(idx, loc, img, cond, noise)

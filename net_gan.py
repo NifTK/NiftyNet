@@ -19,9 +19,9 @@ def main():
                                          'settings_' + param.action + '.txt')
         util.print_save_input_parameters(param, txt_file=settings_filename)
 
-    app_driver = ApplicationDriver(param, is_training=(param.action == "train"))
-    app_driver.initialise_application(csv_dict)
-    #app_driver.run_application()
+    app_driver = ApplicationDriver()
+    app_driver.initialise_application(csv_dict, param)
+    app_driver.run_application()
     return 0
 
 

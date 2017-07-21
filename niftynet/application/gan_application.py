@@ -123,12 +123,14 @@ class GANApplication(BaseApplication):
             sampler=sampler)
         return input_buffer
 
+    def get_sampler(self):
+        return self._sampler
+
     def initialise_sampler(self, is_training):
         if is_training:
             self._sampler = self.training_sampler()
         else:
             self._sampler = self.inference_sampler()
-        return self._sampler
 
     def training_sampler(self):
         assert self._volume_loader is not None, \
@@ -168,13 +170,22 @@ class GANApplication(BaseApplication):
 
     def initialise_network(self):
         self._net =  GanNetFactory.create(self._param.net_name)()
-        return self._net
 
-    def _connect_data_and_network(self, is_training, replicate_id):
+    def set_gradients_op(self, gradient_op):
+        self._gradient_op = gradient_op
+
+    def set_output_op(self, output_op):
+        self._output_op = output_op
+
+    def connect_data_and_network(self, is_training, training_grads=None):
+
         with tf.name_scope('Optimizer'):
             self.optimizer = tf.train.AdamOptimizer(
                 learning_rate=self._param.lr)
+
         if is_training:
+            assert training_grads is not None
+            replicate_id = len(training_grads)
             data_dict = self._sampler.pop_batch_op(replicate_id)
             noise = data_dict['Sampling/noise']
             images = data_dict['Sampling/images']
@@ -201,9 +212,15 @@ class GANApplication(BaseApplication):
                         lossD, var_list=discriminator_variables)
 
                 grads = [generator_grads, discriminator_grads]
-            return grads
+                training_grads.append(grads)
+            return net_output
         else:
-            return None
+            data_dict = self._sampler.pop_batch_op()
+            noise = data_dict['Sampling/noise']
+            images = data_dict['Sampling/images']
+            conditioning = data_dict.get('Sampling/conditioning', None)
+            net_output = self._net(noise, images, conditioning, is_training)
+            return net_output
 
     def net_inference(self, train_dict, is_training):
         if not self._net:
@@ -307,6 +324,10 @@ class GANApplication(BaseApplication):
 
     def logs(self, train_dict, net_outputs):
         return []
+
+    def get_iterative_op(self, start_iter=0, end_iter=1):
+        for iter in range(start_iter, end_iter):
+            yield iter, self._gradient_op
 
     def train_op_generator(self, apply_ops):
         while True:

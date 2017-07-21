@@ -11,12 +11,48 @@ from scipy import ndimage
 
 LABEL_STRINGS = ['Label', 'LABEL', 'label']
 
+def list_depth_count(input_list):
+    """
+    This function count the maximum depth of a nested list
+    This is used to check compatibility of users' input and sysmte API
+    only to be used for list or tuple
+    """
+    if type(input_list) not in [type(()), type([])]:
+        return 0
+    if len(input_list) == 0:
+        return 1
+    return 1 + max(map(list_depth_count, input_list))
 
-def average_grads(tower_grads):
+def average_gradients(multi_device_gradients):
+    # the input gradients are grouped by device,
+    # this function average the gradients of multiple devices
+    if (multi_device_gradients is None) or (len(multi_device_gradients) < 2):
+        # nothing to average
+        return multi_device_gradients
+
+    nested_grads_depth = list_depth_count(multi_device_gradients)
+    assert nested_grads_depth == 3 or nested_grads_depth == 4, \
+        "The list of gradients are nested in an unsusal way." \
+        "application's gradient is not compatibale with app driver." \
+        "Please check the return value of _connect_data_and_network()" \
+        "of the application"
+
+    if nested_grads_depth == 4:
+        gradients = zip(*multi_device_gradients)
+        averaged_grads = [__average_grads(g) for g in gradients]
+    elif nested_grads_depth == 3:
+        averaged_grads = __average_grads(multi_device_gradients)
+    assert len(averaged_grads) == 2
+    assert len(averaged_grads[0]) == 30
+    assert len(averaged_grads[1]) == 55
+    return averaged_grads
+
+
+def __average_grads(tower_grads):
     '''
-    Performs and return the average of the gradients calculated from multiple GPUS
-    :param tower_grads:
-    :return ave_grads:
+    Performs and return the average of the gradients
+    :param tower_grads: in form of [[tower_1_grad], [tower_2_grad], ...]
+    :return ave_grads: in form of [ave_grad]
     '''
     # average gradients computed from multiple GPUs
     ave_grads = []

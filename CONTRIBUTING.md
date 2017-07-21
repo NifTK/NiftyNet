@@ -1,4 +1,4 @@
-We'd like to follow this python style guide: [pythonstyle]
+We'd like to follow this python style guide: [pep8]
 
 > Please be consistent.
 > If you're editing code, take a few minutes to look at the code around you and
@@ -6,7 +6,7 @@ We'd like to follow this python style guide: [pythonstyle]
 > you should too. If their comments have little boxes of hash marks around them,
 > make your comments have little boxes of hash marks around them too.
 
-[pythonstyle]: https://google.github.io/styleguide/pyguide.html
+[pep8]: https://www.python.org/dev/peps/pep-0008/
 
 When submitting merge requests, please merge to the dev branch.
 
