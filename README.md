@@ -20,7 +20,7 @@ NiftyNet is a consortium of multiple research groups (WEISS -- [Wellcome EPSRC C
  <sup>*2.5-D: volumetric images processed as a stack of 2D slices;
 4-D: co-registered multi-modal 3D volumes</sup>
 
-### Usage
+### Getting started
 Please follow the links for [demos](./demos) and [network (re-)implementations](./niftynet/network).
 
 ### Contributing
@@ -28,7 +28,7 @@ Feature requests and bug reports are collected on [Issues](https://cmiclab.cs.uc
 
 Contributors are encouraged to take a look at [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-### Citation
+### Citing NiftyNet
 If you use this software, please cite:
 ```
 @InProceedings{niftynet17,
