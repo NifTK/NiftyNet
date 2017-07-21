@@ -57,6 +57,7 @@ setup(
         'scipy>=0.18',
         'configparser',
         'tensorflow-gpu==1.1',
+        'pillow',
         ],
 
     entry_points={
