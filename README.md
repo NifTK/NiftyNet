@@ -29,7 +29,7 @@ Feature requests and bug reports are collected on [Issues](https://cmiclab.cs.uc
 Contributors are encouraged to take a look at [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ### Citing NiftyNet
-If you use this software, please cite:
+If you use NiftyNet, please cite the following paper:
 ```
 @InProceedings{niftynet17,
   author = {Li, Wenqi and Wang, Guotai and Fidon, Lucas and Ourselin, Sebastien and Cardoso, M. Jorge and Vercauteren, Tom},
