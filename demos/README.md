@@ -19,16 +19,16 @@ only version.
 For more information on installing Tensorflow, please follow
 https://www.tensorflow.org/install/
 
-##### (a) To run the demos:
+##### (a) Running the demos:
 Please see the `README.md` in each folder of this [directory](./demos) for more details.
 
-##### (b) The "run_application" command:
+##### (b) Running a NiftyNet "toynet" example:
 To train a "toynet" specified in `network/toynet.py`:
 ``` sh
 cd NiftyNet/
 wget -N https://www.dropbox.com/s/y7mdh4m9ptkibax/example_volumes.tar.gz
 tar -xzvf example_volumes.tar.gz
-python run_application.py train --net_name toynet \
+python niftynet/__init__.py train --net_name toynet \
     --image_size 42 --label_size 42 --batch_size 1
 ```
 (GPU computing is enabled by default; to train with CPU only please use `--num_gpus 0`)
@@ -36,7 +36,7 @@ python run_application.py train --net_name toynet \
 After the training process, to do segmentation with a trained "toynet":
 ``` sh
 cd NiftyNet/
-python run_application.py inference --net_name toynet \
+python niftynet/__init__.py inference --net_name toynet \
     --save_seg_dir ./seg_output \
     --image_size 80 --label_size 80 --batch_size 8
 ```
@@ -51,11 +51,11 @@ Alternatively, to run with a customised config file:
 ``` sh
 cd NiftyNet/
 # training
-python run_application.py train -c /path/to/customised_config
+python niftynet/__init__.py train -c /path/to/customised_config
 # inference
-python run_application.py inference -c /path/to/customised_config
+python niftynet/__init__.py inference -c /path/to/customised_config
 ```
 where `/path/to/customised_config` implements all parameters listed by running:
 ```sh
-python run_application.py -h
+python niftynet/__init__.py -h
 ```
