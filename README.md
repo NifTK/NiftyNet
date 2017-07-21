@@ -42,7 +42,7 @@ If you use NiftyNet, please cite the following paper:
 ### Licensing and Copyright
 
 Copyright 2017 NiftyNet Contributors.
-Released under the Apache License, Version 2.0. Please see the LICENSE file for details.
+NiftyNet is released under the Apache License, Version 2.0. Please see the LICENSE file for details.
 
 ### Acknowledgements
 This project is grateful for the support from the [Wellcome Trust][wt], the [Engineering and Physical Sciences Research Council (EPSRC)][epsrc], the [National Institute for Health Research (NIHR)][nihr], the [Department of Health (DoH)][doh], [University College London (UCL)][ucl], the [Science and Engineering South Consortium (SES)][ses], the [STFC Rutherford-Appleton Laboratory][ral], and [NVIDIA][nvidia].
