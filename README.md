@@ -4,10 +4,10 @@
 [![build status](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/build.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
 [![coverage report](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/coverage.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
 
-NiftyNet is an open-source library for convolutional networks in medical image analysis.
+NiftyNet is a [TensorFlow][tf]-based open-source convolutional neural networks (CNN) platform for research in medical image analysis and computer-assisted intervention.
+NiftyNet is a consortium of multiple research groups (WEISS -- [Wellcome EPSRC Centre for Interventional and Surgical Sciences][weiss], CMIC -- [Centre for Medical Image Computing][cmic], HIG -- High-dimensional Imaging Group), where WEISS acts as a consortium lead.
+**NiftyNet is not intended for clinical use**.
 
-NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
-[University College London (UCL)][ucl].
 
 ### Features
 * Easy-to-customise interfaces of network components
@@ -45,18 +45,17 @@ Copyright 2017 NiftyNet Contributors.
 Released under the Apache License, Version 2.0. Please see the LICENSE file for details.
 
 ### Acknowledgements
-This project was supported through an Innovative Engineering for Health award by
-the Wellcome Trust and EPSRC (WT101957, NS/A000027/1), the National Institute
-for Health Research University College London Hospitals Biomedical Research
-Centre (NIHR BRC UCLH/UCL High Impact Initiative), UCL EPSRC CDT Scholarship
-Award (EP/L016478/1), a UCL Overseas Research Scholarship, a UCL Graduate
-Research Scholarship, and the Health Innovation Challenge Fund by the
-Department of Health and Wellcome Trust (HICF-T4-275, WT 97914). The authors
-would like to acknowledge that the work presented here made use of Emerald, a
-GPU-accelerated High Performance Computer, made available by the Science &
-Engineering South Consortium operated in partnership with the STFC
-Rutherford-Appleton Laboratory.
+This project is grateful for the support from the [Wellcome Trust][wt], the [Engineering and Physical Sciences Research Council (EPSRC)][epsrc], the [National Institute for Health Research (NIHR)][nihr], the [Department of Health (DoH)][doh], [University College London (UCL)][ucl], the [Science and Engineering South Consortium (SES)][ses], the [STFC Rutherford-Appleton Laboratory][ral], and [NVIDIA][nvidia].
 
 [cmic]: http://cmic.cs.ucl.ac.uk
 [ucl]: http://www.ucl.ac.uk
+[tf]: https://www.tensorflow.org/
+[weiss]: http://www.ucl.ac.uk/surgical-interventional-sciences
+[wt]: https://wellcome.ac.uk/
+[epsrc]: https://www.epsrc.ac.uk/
+[nihr]: https://www.nihr.ac.uk/
+[doh]: https://www.gov.uk/government/organisations/department-of-health
+[ses]: https://www.ses.ac.uk/
+[ral]: http://www.stfc.ac.uk/about-us/where-we-work/rutherford-appleton-laboratory/
+[nvidia]: http://www.nvidia.com
 
