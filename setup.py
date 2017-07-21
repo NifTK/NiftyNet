@@ -42,7 +42,7 @@ setup(
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
         'Topic :: Scientific/Engineering :: Image Recognition',
         'Topic :: Scientific/Engineering :: Medical Science Apps.',
-    ],  # TODO
+    ],
 
     packages=find_packages(
         exclude=[
@@ -66,7 +66,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'net_segmentation=niftynet:main',  # TODO
+            'net_segmentation=niftynet:main',
         ],
     },
 )
