@@ -528,10 +528,6 @@ class GANPatch(object):
         self.noise = noise
         if self.spatial_rank == 3:
             x_, y_, z_, _x, _y, _z = spatial_loc
-            if _x > img.shape[0]:
-                print(img.shape)
-                print(_x)
-                import pdb; pdb.set_trace()
             assert _x <= img.shape[0]
             assert _y <= img.shape[1]
             assert _z <= img.shape[2]

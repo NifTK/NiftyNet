@@ -18,6 +18,7 @@ from niftynet.layer.mean_variance_normalisation import \
 from niftynet.utilities.csv_table import CSVTable
 from niftynet.utilities.input_placeholders import GANPatch
 from niftynet.engine.input_buffer import TrainEvalInputBuffer, DeployInputBuffer
+from niftynet.utilities import misc_common as util
 
 
 class GanNetFactory(object):
@@ -171,8 +172,20 @@ class GANApplication(BaseApplication):
     def initialise_network(self):
         self._net =  GanNetFactory.create(self._param.net_name)()
 
-    def set_gradients_op(self, gradient_op):
-        self._gradient_op = gradient_op
+    def set_network_update_op(self, gradients):
+        grad_list_depth = util.list_depth_count(gradients)
+        if grad_list_depth == 3:
+            # nested depth 3 means: gradients list is nested in terms of:
+            # list of networks -> list of network variables
+            self._gradient_op = [self.optimizer.apply_gradients(grad)
+                                 for grad in gradients]
+        elif grad_list_depth == 2:
+            # nested depth 2 means:
+            # gradients list is a list of variables
+            self._gradient_op = self.optimizer.apply_gradients(gradients)
+        else:
+            raise NotImplementedError(
+                'This app supports updating a network, or list of networks')
 
     def set_output_op(self, output_op):
         self._output_op = output_op
@@ -212,6 +225,7 @@ class GANApplication(BaseApplication):
                         lossD, var_list=discriminator_variables)
 
                 grads = [generator_grads, discriminator_grads]
+                #grads = generator_grads
                 training_grads.append(grads)
             return net_output
         else:

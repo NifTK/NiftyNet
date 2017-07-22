@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, division
 
 from copy import deepcopy
 
@@ -67,7 +67,7 @@ class GANSampler(BaseSampler):
             for aug in local_layers:
                 aug.randomise(spatial_rank=spatial_rank)
                 img, seg, weight_map = aug(img), aug(seg), aug(weight_map)
-            zoom = [float(p)/d for p,d in zip([patch.image_size]*3,img.data.shape[:3])]+[1]
+            zoom = [p/d for p,d in zip([patch.image_size]*3,img.data.shape[:3])]+[1]
             # resize image to patch size
             noise = np.random.randn(patch.noise_size)
             if spatial_rank==3:

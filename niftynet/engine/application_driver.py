@@ -30,6 +30,9 @@ class ApplicationDriver(object):
         self.num_gpus = 0
 
         self._init_op = None
+        self._moving_ave_op = None
+        self._bn_updates_op = None
+
         self.max_checkpoints = 20
 
     def initialise_application(self, csv_dict, param):
@@ -64,10 +67,19 @@ class ApplicationDriver(object):
             sess.run(self._init_op)
             coord = tf.train.Coordinator()
             self.app.get_sampler().run_threads(sess, coord, self.num_threads)
-            for iter_i, app_op in self.app.get_iterative_op(0, 1):
+            for iter_i, app_op in self.app.get_iterative_op(0, 10):
                 if coord.should_stop():
                     break
-                output = sess.run(app_op)
+                print(iter_i)
+                if self.is_training:
+                    train_ops = []
+                    if isinstance(app_op, list):
+                        _ = [train_ops.append(op) for op in app_op]
+                    else:
+                        train_ops.append(app_op)
+                    train_ops.append(self._bn_updates_op)
+                    train_ops.append(self._moving_ave_op)
+                    sess.run(train_ops)
 
     def _create_application_instance(self, app_type_string):
         self._app_module = ApplicationFactory.import_module(app_type_string)
@@ -92,13 +104,24 @@ class ApplicationDriver(object):
                     output = self.app.connect_data_and_network(
                         self.is_training, training_grads)
                     net_outputs.append(output)
+
+                    # common operations
+                    if gpu_id == 0:
+                        self._bn_updates_op = tf.get_collection(
+                            tf.GraphKeys.UPDATE_OPS)
+
             self.app.set_output_op(net_outputs)
+            variable_averages = tf.train.ExponentialMovingAverage(0.9)
+            self._moving_ave_op = variable_averages.apply(
+                tf.trainable_variables())
+
             if self.is_training:
                 averaged_grads = util.average_gradients(training_grads)
-                self.app.set_gradients_op(averaged_grads)
+                self.app.set_network_update_op(averaged_grads)
 
             self._init_op = tf.global_variables_initializer()
             self.saver = tf.train.Saver(max_to_keep=self.max_checkpoints)
+        tf.Graph.finalize(graph)
         return graph
 
     def _device_string(self, id=0, is_training=False, is_worker=True):
