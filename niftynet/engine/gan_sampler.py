@@ -67,14 +67,14 @@ class GANSampler(BaseSampler):
             for aug in local_layers:
                 aug.randomise(spatial_rank=spatial_rank)
                 img, seg, weight_map = aug(img), aug(seg), aug(weight_map)
-            zoom = [p/d for p,d in zip([patch.image_size]*3,img.data.shape[:3])]+[1]
+            zoom = [float(p)/d for p,d in zip([patch.image_size]*3,img.data.shape[:3])]+[1]
             # resize image to patch size
             noise = np.random.randn(patch.noise_size)
             if spatial_rank==3:
                 spatial_rank = 3
                 loc=[0]*spatial_rank+[patch.image_size]*spatial_rank
-                img = scipy.ndimage.interpolation.zoom(img.data, zoom)
-                patch.set_data(idx, loc, img, cond, noise)
+                test_img = scipy.ndimage.interpolation.zoom(img.data, zoom)
+                patch.set_data(idx, loc, test_img, cond, noise)
                 yield patch
             elif spatial_rank==2.5:
                 loc=[0,0,0]+[patch.image_size]*2

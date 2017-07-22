@@ -29,6 +29,9 @@ class ApplicationDriver(object):
         self.num_threads = 0
         self.num_gpus = 0
 
+        self._init_op = None
+        self.max_checkpoints = 20
+
     def initialise_application(self, csv_dict, param):
         self.is_training = param.action == "train"
 
@@ -39,6 +42,8 @@ class ApplicationDriver(object):
             os.environ["CUDA_VISIBLE_DEVICES"] = param.cuda_devices
             print("set CUDA_VISIBLE_DEVICES to {}".format(param.cuda_devices))
 
+        self.max_checkpoints = param.max_checkpoints
+
         # create an application and assign user-specified parameters
         self.app = self._create_application_instance(param.application_type)
         self.app.set_param(param)
@@ -48,17 +53,18 @@ class ApplicationDriver(object):
         self._app_graph = self._create_graph()
 
     def run_application(self):
-        if self._app_graph is None:
-            return
+        assert self._app_graph is not None,\
+            "please call initialise_application first"
 
         config = tf.ConfigProto()
         config.log_device_placement = False
         config.allow_soft_placement = True
 
         with tf.Session(config=config, graph=self._app_graph) as sess:
+            sess.run(self._init_op)
             coord = tf.train.Coordinator()
             self.app.get_sampler().run_threads(sess, coord, self.num_threads)
-            for iter, app_op in self.app.get_iterative_op(0, 1):
+            for iter_i, app_op in self.app.get_iterative_op(0, 1):
                 if coord.should_stop():
                     break
                 output = sess.run(app_op)
@@ -91,6 +97,8 @@ class ApplicationDriver(object):
                 averaged_grads = util.average_gradients(training_grads)
                 self.app.set_gradients_op(averaged_grads)
 
+            self._init_op = tf.global_variables_initializer()
+            self.saver = tf.train.Saver(max_to_keep=self.max_checkpoints)
         return graph
 
     def _device_string(self, id=0, is_training=False, is_worker=True):

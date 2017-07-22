@@ -357,9 +357,16 @@ def match_volume_shape_to_patch_definition(image_data, patch):
         return None
     if patch is None:
         return None
-    spatial_shape = list(image_data.shape[:int(np.ceil(patch.spatial_rank))])
-    spatial_shape += [1]*(3-int(np.ceil(patch.spatial_rank)))
-    return np.reshape(image_data,spatial_shape+[-1])
+    # spatial_shape = list(image_data.shape[:int(np.ceil(patch.spatial_rank))])
+    # spatial_shape += [1]*(3-int(np.ceil(patch.spatial_rank)))
+    # return np.reshape(image_data,spatial_shape+[-1])
+
+    #  always casting to 4D input volume [H x W x D x Modality]
+    while image_data.ndim > 4:
+        image_data = image_data[..., 0]
+    while image_data.ndim < 4:
+        image_data = np.expand_dims(image_data, axis=-1)
+    return image_data
 
 
 def spatial_padding_to_indexes(spatial_padding):

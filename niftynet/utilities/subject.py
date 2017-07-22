@@ -260,8 +260,8 @@ class Subject(object):
             return data_5d
         # pad the first few dims according to the length of spatial_padding
         ndim = data_5d.ndim
-        if (type(spatial_padding) is int) or \
-                (not all(isinstance(i, tuple) for i in spatial_padding)):
+        if isinstance(spatial_padding, int) or \
+                not all(isinstance(i, tuple) for i in spatial_padding):
             raise ValueError(
                 "spatial_padding should be a tuple: ((M,N), (P,Q),...)")
         all_padding = spatial_padding + tuple()

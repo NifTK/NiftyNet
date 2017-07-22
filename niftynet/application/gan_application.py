@@ -326,8 +326,8 @@ class GANApplication(BaseApplication):
         return []
 
     def get_iterative_op(self, start_iter=0, end_iter=1):
-        for iter in range(start_iter, end_iter):
-            yield iter, self._gradient_op
+        for iter_i in range(start_iter, end_iter):
+            yield iter_i, self._gradient_op
 
     def train_op_generator(self, apply_ops):
         while True:

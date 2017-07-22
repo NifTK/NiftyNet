@@ -13,11 +13,11 @@ LABEL_STRINGS = ['Label', 'LABEL', 'label']
 
 def list_depth_count(input_list):
     """
-    This function count the maximum depth of a nested list
+    This function count the maximum depth of a nested list (recursively)
     This is used to check compatibility of users' input and sysmte API
     only to be used for list or tuple
     """
-    if type(input_list) not in [type(()), type([])]:
+    if not (isinstance(input_list, list) or isinstance(input_type, tuple)):
         return 0
     if len(input_list) == 0:
         return 1
