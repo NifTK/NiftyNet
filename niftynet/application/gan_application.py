@@ -172,7 +172,7 @@ class GANApplication(BaseApplication):
     def initialise_network(self):
         self._net =  GanNetFactory.create(self._param.net_name)()
 
-    def set_network_update_op(self, gradients):
+    def create_network_update_op(self, gradients):
         grad_list_depth = util.list_depth_count(gradients)
         if grad_list_depth == 3:
             # nested depth 3 means: gradients list is nested in terms of:
