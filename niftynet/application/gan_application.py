@@ -187,9 +187,6 @@ class GANApplication(BaseApplication):
             raise NotImplementedError(
                 'This app supports updating a network, or list of networks')
 
-    def set_output_op(self, output_op):
-        self._output_op = output_op
-
     def connect_data_and_network(self, is_training, training_grads=None):
 
         with tf.name_scope('Optimizer'):
@@ -213,19 +210,28 @@ class GANApplication(BaseApplication):
                                                for reg_loss in reg_losses])
                     lossD = lossD + reg_loss
                     lossG = lossG + reg_loss
+            ## Averages are in name_scope for Tensorboard naming; summaries are outside for console naming
+            #logs = [['lossD', lossD], ['lossG', lossG]]
+            #with tf.name_scope('ConsoleLogging'):
+            #    logs += self.logs(train_dict, net_outputs)
+            #for tag, val in logs:
+            #    tf.summary.scalar(tag, val, [logging.CONSOLE, logging.LOG])
+
             with tf.name_scope('ComputeGradients'):
+                # gradients of generator
                 generator_variables = tf.get_collection(
                     tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
                 generator_grads = self.optimizer.compute_gradients(
                         lossG, var_list=generator_variables)
 
+                # gradients of discriminator
                 discriminator_variables = tf.get_collection(
                     tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator')
                 discriminator_grads = self.optimizer.compute_gradients(
                         lossD, var_list=discriminator_variables)
-
                 grads = [generator_grads, discriminator_grads]
-                #grads = generator_grads
+
+                # add the grads back to application_driver's training_grads
                 training_grads.append(grads)
             return net_output
         else:
@@ -336,12 +342,29 @@ class GANApplication(BaseApplication):
                 len(spatial_info), time.time() - local_time))
         return all_saved_flag
 
+    def stop(self):
+        self._sampler.close_all()
+
     def logs(self, train_dict, net_outputs):
         return []
 
-    def get_iterative_op(self, start_iter=0, end_iter=1):
+    def iterative_op(self, start_iter=0, end_iter=1):
         for iter_i in range(start_iter, end_iter):
             yield iter_i, self._gradient_op
+
+    def set_all_output_ops(self, output_op):
+        self._output_op = output_op
+
+    def eval_variables(self):
+        return self._output_op[0][0][1]
+
+    def process_output_values(self, values, is_training):
+        # do nothing
+        pass
+        #if is_training:
+        #    print(values)
+        #else:
+        #    print(values)
 
     def train_op_generator(self, apply_ops):
         while True:

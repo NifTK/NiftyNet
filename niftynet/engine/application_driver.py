@@ -1,8 +1,11 @@
 import os
+import time
 
 import tensorflow as tf
 
 from niftynet.utilities import misc_common as util
+
+FILE_PREFIX = 'model.ckpt'
 
 
 class ApplicationFactory(object):
@@ -60,7 +63,7 @@ class ApplicationDriver(object):
 
         self.initial_iter = param.starting_iter \
             if self.is_training else param.inference_iter
-        self.final_iter = param.max_iter
+        self.final_iter = max(param.starting_iter, param.max_iter) + 1
 
     def run_application(self):
         assert self.graph is not None, \
@@ -81,7 +84,7 @@ class ApplicationDriver(object):
             "Model folder not found {}, please check" \
             "config parameter: model_dir".format(self.model_dir)
         checkpoint = os.path.join(
-            self.model_dir, 'model.ckpt-{}'.format(self.initial_iter))
+            self.model_dir, '{}-{}'.format(FILE_PREFIX, self.initial_iter))
         assert tf.train.get_checkpoint_state(self.model_dir) is not None, \
             "Model file not found {}*, please check" \
             "config parameter: model_dir and *_iter".format(checkpoint)
@@ -90,24 +93,58 @@ class ApplicationDriver(object):
         return
 
     def _training_loop(self, sess):
-        self._randomly_init_or_restore_variables(sess)
 
-        coord = tf.train.Coordinator()
-        self.app.get_sampler().run_threads(sess, coord, self.num_threads)
-        for (iter_i, train_op) in \
-                self.app.get_iterative_op(self.initial_iter, self.final_iter):
-            #save_path = os.path.join(self.model_dir, 'model.ckpt')
-            #self.saver.save(sess, save_path, global_step=iter_i)
-            #import pdb; pdb.set_trace()
-            if coord.should_stop():
-                break
-            print(iter_i)
-            sess.run(train_op)
+        iter_i = -1
+        start_time = time.time()
+        save_path = os.path.join(self.model_dir, FILE_PREFIX)
 
-            if iter_i % self.save_every_n == 0 and iter_i > 0:
-                save_path = os.path.join(self.model_dir, 'model.ckpt')
+        try:
+            coord = tf.train.Coordinator()
+            self._randomly_init_or_restore_variables(sess)
+            self.app.get_sampler().run_threads(sess, coord, self.num_threads)
+
+            for (iter_i, train_op) in \
+                    self.app.iterative_op(self.initial_iter, self.final_iter):
+
+                local_time = time.time()
+                if coord.should_stop():
+                    break
+
+                # update the network model parameters
+                sess.run(train_op)
+                # query values of the updated network model
+                output = sess.run(self.app.eval_variables())
+                self.app.process_output_values(output, self.is_training)
+
+                if iter_i % self.save_every_n == 0 and iter_i > 0:
+                    self.saver.save(sess, save_path, global_step=iter_i)
+                    print('iter {} saved at {}'.format(iter_i, save_path))
+
+                summary_string = ''
+                iter_time = time.time() - local_time
+                print(('iter {}, {} ({:.3f}s)').format(iter_i,
+                                                       summary_string,
+                                                       iter_time))
+
+        except KeyboardInterrupt:
+            print('User cancelled training')
+        except tf.errors.OutOfRangeError as e:
+            pass
+        except Exception:
+            import sys, traceback
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_exception(exc_type,
+                                      exc_value,
+                                      exc_traceback,
+                                      file=sys.stdout)
+        finally:
+            if iter_i > 0:
                 self.saver.save(sess, save_path, global_step=iter_i)
-                print('Iter {} model saved at {}'.format(iter_i, save_path))
+                print('Iteration {} saved at {}'.format(iter_i, save_path))
+            print('stopping sampling threads')
+            self.app.stop()
+            print("{} stopped (time in second {:.2f}).".format(
+                type(self.app).__name__, (time.time() - start_time)))
 
     def _inference_loop(self, sess):
         pass
@@ -138,9 +175,6 @@ class ApplicationDriver(object):
                         # batch normalisation updates from 1st device only
                         bn_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
 
-            # assigning output variables back to each application
-            self.app.set_output_op(net_outputs)
-
             # moving average operation
             variable_averages = tf.train.ExponentialMovingAverage(0.9)
             trainables = tf.trainable_variables()
@@ -154,6 +188,9 @@ class ApplicationDriver(object):
                     averaged_grads = util.average_gradients(training_grads)
                     self.app.create_network_update_op(averaged_grads)
 
+            # assigning output variables back to each application
+            self.app.set_all_output_ops([net_outputs, tf.global_variables()])
+
             # initialisation operation
             self._init_op = tf.global_variables_initializer()
 
@@ -163,6 +200,15 @@ class ApplicationDriver(object):
         # no more operation definitions after this point
         tf.Graph.finalize(graph)
         return graph
+
+    def _device_string(self, id=0, is_worker=True):
+        if self.num_gpus <= 0:  # user specified no gpu at all
+            return '/cpu:{}'.format(id)
+        if self.is_training:
+            device = 'gpu' if is_worker else 'cpu'
+            return '/{}:{}'.format(device, id)
+        else:
+            return '/gpu:0'  # always use one GPU for inference
 
     @staticmethod
     def _create_app(app_type_string):
@@ -187,19 +233,10 @@ class ApplicationDriver(object):
 
     @staticmethod
     def _set_cuda_device(cuda_devices):
-        # TODO: refactor this OS-denpendent function
+        # TODO: refactor this OS-dependent function
         if not (cuda_devices == '""'):
             os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
             print("set CUDA_VISIBLE_DEVICES to {}".format(cuda_devices))
         else:
             # using Tensorflow default choice
             pass
-
-    def _device_string(self, id=0, is_worker=True):
-        if self.num_gpus <= 0:  # user specified no gpu at all
-            return '/cpu:{}'.format(id)
-        if self.is_training:
-            device = 'gpu' if is_worker else 'cpu'
-            return '/{}:{}'.format(device, id)
-        else:
-            return '/gpu:0'  # always use one GPU for inference

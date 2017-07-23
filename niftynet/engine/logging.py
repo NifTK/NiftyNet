@@ -74,4 +74,4 @@ def image3_coronal(name,tensor,max_outputs=3,collections=[tf.GraphKeys.SUMMARIES
   return image3(name,tensor,max_outputs,collections,[2],[1,3])
 def image3_axial(name,tensor,max_outputs=3,collections=[tf.GraphKeys.SUMMARIES]):
   return image3(name,tensor,max_outputs,collections,[3],[1,2])
-  
+
