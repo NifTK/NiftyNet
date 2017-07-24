@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 
 import tensorflow as tf
@@ -6,7 +7,6 @@ import tensorflow as tf
 from niftynet.utilities import misc_common as util
 
 FILE_PREFIX = 'model.ckpt'
-
 
 class ApplicationFactory(object):
     from niftynet.application.segmentation_application import \
@@ -23,9 +23,9 @@ class ApplicationFactory(object):
     def import_module(type_string):
         return ApplicationFactory.application_dict[type_string]
 
-
 class ApplicationDriver(object):
     def __init__(self):
+
         self.app = None
         self.graph = None
         self.saver = None
@@ -42,7 +42,9 @@ class ApplicationDriver(object):
 
         self._init_op = None
 
+
     def initialise_application(self, csv_dict, param):
+
         self.is_training = (param.action == "train")
 
         # hardware-related parameters
@@ -52,6 +54,11 @@ class ApplicationDriver(object):
         self.max_checkpoints = param.max_checkpoints
         self.save_every_n = param.save_every_n
         self.model_dir = ApplicationDriver._touch_folder(param.model_dir)
+
+        # set output logs to stdout and log file
+        log_file_name = os.path.join(self.model_dir,
+                                     '{}_{}'.format(param.action, 'log'))
+        ApplicationDriver.set_logger(file_name=log_file_name)
 
         # create an application and assign user-specified parameters
         self.app = ApplicationDriver._create_app(param.application_type)
@@ -64,6 +71,7 @@ class ApplicationDriver(object):
         self.initial_iter = param.starting_iter \
             if self.is_training else param.inference_iter
         self.final_iter = max(param.starting_iter, param.max_iter) + 1
+
 
     def run_application(self):
         assert self.graph is not None, \
@@ -78,7 +86,7 @@ class ApplicationDriver(object):
     def _randomly_init_or_restore_variables(self, sess):
         if self.is_training and self.initial_iter == 0:
             sess.run(self._init_op)
-            print('trainable parameters from random initialisations ...')
+            tf.logging.info('Parameters from random initialisations ...')
             return
         assert os.path.exists(self.model_dir), \
             "Model folder not found {}, please check" \
@@ -88,7 +96,7 @@ class ApplicationDriver(object):
         assert tf.train.get_checkpoint_state(self.model_dir) is not None, \
             "Model file not found {}*, please check" \
             "config parameter: model_dir and *_iter".format(checkpoint)
-        print('Restore parameters from {} ...'.format(checkpoint))
+        tf.logging.info('Accessing {} ...'.format(checkpoint))
         self.saver.restore(sess, checkpoint)
         return
 
@@ -103,6 +111,7 @@ class ApplicationDriver(object):
             self._randomly_init_or_restore_variables(sess)
             self.app.get_sampler().run_threads(sess, coord, self.num_threads)
 
+            tf.logging.info('starting from iter {}'.format(self.initial_iter))
             for (iter_i, train_op) in \
                     self.app.iterative_op(self.initial_iter, self.final_iter):
 
@@ -116,18 +125,19 @@ class ApplicationDriver(object):
                 output = sess.run(self.app.eval_variables())
                 self.app.process_output_values(output, self.is_training)
 
-                if iter_i % self.save_every_n == 0 and iter_i > 0:
-                    self.saver.save(sess, save_path, global_step=iter_i)
-                    print('iter {} saved at {}'.format(iter_i, save_path))
-
                 summary_string = ''
                 iter_time = time.time() - local_time
-                print(('iter {}, {} ({:.3f}s)').format(iter_i,
-                                                       summary_string,
-                                                       iter_time))
+                tf.logging.info(('iter {}, {} ({:.3f}s)').format(
+                    iter_i, summary_string, iter_time))
+
+                if iter_i % self.save_every_n == 0 and iter_i > 0:
+                    self.saver.save(sess, save_path, global_step=iter_i)
+                    tf.logging.info(
+                        'iter {} saved at {}'.format(iter_i, save_path))
+
 
         except KeyboardInterrupt:
-            print('User cancelled training')
+            tf.logging.warning('User cancelled training')
         except tf.errors.OutOfRangeError as e:
             pass
         except Exception:
@@ -140,11 +150,14 @@ class ApplicationDriver(object):
         finally:
             if iter_i > 0:
                 self.saver.save(sess, save_path, global_step=iter_i)
-                print('Iteration {} saved at {}'.format(iter_i, save_path))
-            print('stopping sampling threads')
+                tf.logging.info(
+                    'iter {} saved at {}'.format(iter_i, save_path))
+
+            tf.logging.info('stopping sampling threads')
             self.app.stop()
-            print("{} stopped (time in second {:.2f}).".format(
-                type(self.app).__name__, (time.time() - start_time)))
+            tf.logging.info(
+                "{} stopped (time in second {:.2f}).".format(
+                    type(self.app).__name__, (time.time() - start_time)))
 
     def _inference_loop(self, sess):
         pass
@@ -228,7 +241,7 @@ class ApplicationDriver(object):
         if not os.path.exists(model_dir):
             os.makedirs(model_dir)
         absolute_dir = os.path.abspath(model_dir)
-        print('accessing output folder: {}'.format(absolute_dir))
+        tf.logging.info('accessing output folder: {}'.format(absolute_dir))
         return absolute_dir
 
     @staticmethod
@@ -236,7 +249,27 @@ class ApplicationDriver(object):
         # TODO: refactor this OS-dependent function
         if not (cuda_devices == '""'):
             os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
-            print("set CUDA_VISIBLE_DEVICES to {}".format(cuda_devices))
+            tf.logging.info(
+                "set CUDA_VISIBLE_DEVICES to {}".format(cuda_devices))
         else:
             # using Tensorflow default choice
             pass
+
+    @staticmethod
+    def set_logger(file_name=None):
+        import logging as log
+        tf.logging._logger.handlers = []
+        tf.logging._logger = log.getLogger('tensorflow')
+        tf.logging.set_verbosity(tf.logging.INFO)
+
+        f = log.Formatter('%(levelname)s:niftynet: %(message)s')
+        std_handler = log.StreamHandler(sys.stdout)
+        std_handler.setFormatter(f)
+        tf.logging._logger.addHandler(std_handler)
+
+        if file_name is not None:
+            f = log.Formatter(
+                '%(levelname)s:niftynet:%(asctime)s: %(message)s')
+            file_handler = log.FileHandler(file_name)
+            file_handler.setFormatter(f)
+            tf.logging._logger.addHandler(file_handler)

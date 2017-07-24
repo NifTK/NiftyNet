@@ -6,7 +6,7 @@ import tensorflow as tf
 
 import niftynet.utilities.param_shortcuts_expanding as param_util
 from niftynet.application.base_application import BaseApplication
-from niftynet.engine import logging
+from niftynet.engine import nn_logging as logging
 from niftynet.engine.gan_sampler import GANSampler
 from niftynet.engine.volume_loader import VolumeLoaderLayer
 from niftynet.layer.binary_masking import BinaryMaskingLayer

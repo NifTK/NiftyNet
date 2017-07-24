@@ -13,7 +13,6 @@ from niftynet.layer.elementwise import ElementwiseLayer
 from niftynet.network.base_net import BaseNet
 from niftynet.utilities.misc_common import look_up_operations
 from niftynet.layer.base_layer import LayerFromCallable
-from niftynet.engine import logging
 from niftynet.layer.gan_blocks import GANImageBlock, BaseGenerator, BaseDiscriminator
 
 
@@ -53,18 +52,18 @@ class ImageGenerator(BaseGenerator):
                 return tf.reshape(r2, [sz_x[0]]+sz+[sz_x[-1]])
         elif spatial_rank == 2:
                 resize_func = tf.image.resize_bilinear
-            
+
         def concat_cond(x, i):
             if not conditioning is None and generator_shortcuts[i]:
                 with tf.name_scope('concat_conditioning'):
                     return tf.concat([x, resize_func(conditioning, x.get_shape().as_list()[1:-1])], axis=3)
             else:
                 return x
-            
+
         def conv(ch, x):
             with tf.name_scope('conv'):
                 return tf.nn.relu(ConvolutionalLayer(ch, 3, w_initializer=w_init)(x, is_training=is_training))
-            
+
         def up(ch, x):
             with tf.name_scope('up'):
                 deconv=DeconvolutionalLayer(ch, 3, stride=2, w_initializer=w_init)(x, is_training=is_training)
@@ -118,7 +117,7 @@ class ImageDiscriminator(BaseDiscriminator):
             with tf.name_scope('conv'):
                 return leaky_relu(ConvolutionalLayer(ch, 3, w_initializer=w_init)(x, is_training=is_training))
 
-        def conv(ch, x, s): 
+        def conv(ch, x, s):
             with tf.name_scope('join'):
                 return leaky_relu(ConvolutionalLayer(ch, 3, w_initializer=w_init)(x, is_training=is_training)+s)
 
