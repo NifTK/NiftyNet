@@ -6,7 +6,7 @@ import tensorflow as tf
 
 import niftynet.utilities.param_shortcuts_expanding as param_util
 from niftynet.application.base_application import BaseApplication
-from niftynet.engine import nn_logging as logging
+from niftynet.engine import logs_collector as logging
 from niftynet.engine.gan_sampler import GANSampler
 from niftynet.engine.volume_loader import VolumeLoaderLayer
 from niftynet.layer.binary_masking import BinaryMaskingLayer
@@ -172,7 +172,7 @@ class GANApplication(BaseApplication):
     def initialise_network(self):
         self._net =  GanNetFactory.create(self._param.net_name)()
 
-    def create_network_update_op(self, gradients):
+    def set_network_update_op(self, gradients):
         grad_list_depth = util.list_depth_count(gradients)
         if grad_list_depth == 3:
             # nested depth 3 means: gradients list is nested in terms of:
@@ -187,35 +187,42 @@ class GANApplication(BaseApplication):
             raise NotImplementedError(
                 'This app supports updating a network, or list of networks')
 
-    def connect_data_and_network(self, is_training, training_grads=None):
+    def connect_data_and_network(self,
+                                 training_grads_collector=None,
+                                 logs_collector=None):
 
         with tf.name_scope('Optimizer'):
             self.optimizer = tf.train.AdamOptimizer(
                 learning_rate=self._param.lr)
+        is_training = training_grads_collector is not None
 
         if is_training:
-            assert training_grads is not None
-            replicate_id = len(training_grads)
-            data_dict = self._sampler.pop_batch_op(replicate_id)
+            # a new pop_batch_op for each gpu tower
+            device_id = training_grads_collector.current_tower_id()
+            data_dict = self._sampler.pop_batch_op(device_id)
+
             noise = data_dict['Sampling/noise']
             images = data_dict['Sampling/images']
             conditioning = data_dict.get('Sampling/conditioning', None)
             net_output = self._net(noise, images, conditioning, is_training)
+
             lossG, lossD = self.loss_func(data_dict, net_output)
             if self._param.decay > 0:
                 reg_losses = tf.get_collection(
                     tf.GraphKeys.REGULARIZATION_LOSSES)
-                if reg_losses:
-                    reg_loss = tf.reduce_mean([tf.reduce_mean(reg_loss)
-                                               for reg_loss in reg_losses])
+                if reg_losses is not None and len(reg_losses) > 0:
+                    reg_loss = tf.reduce_mean(
+                        [tf.reduce_mean(l_reg) for l_reg in reg_losses])
                     lossD = lossD + reg_loss
                     lossG = lossG + reg_loss
-            ## Averages are in name_scope for Tensorboard naming; summaries are outside for console naming
-            #logs = [['lossD', lossD], ['lossG', lossG]]
+
+            # Averages are in name_scope for Tensorboard naming; summaries are outside for console naming
+            logs = [['lossD', lossD], ['lossG', lossG]]
             #with tf.name_scope('ConsoleLogging'):
             #    logs += self.logs(train_dict, net_outputs)
             #for tag, val in logs:
             #    tf.summary.scalar(tag, val, [logging.CONSOLE, logging.LOG])
+            #import pdb; pdb.set_trace()
 
             with tf.name_scope('ComputeGradients'):
                 # gradients of generator
@@ -232,7 +239,7 @@ class GANApplication(BaseApplication):
                 grads = [generator_grads, discriminator_grads]
 
                 # add the grads back to application_driver's training_grads
-                training_grads.append(grads)
+                training_grads_collector.add_to_collection(grads)
             return net_output
         else:
             data_dict = self._sampler.pop_batch_op()
@@ -348,7 +355,7 @@ class GANApplication(BaseApplication):
     def logs(self, train_dict, net_outputs):
         return []
 
-    def iterative_op(self, start_iter=0, end_iter=1):
+    def training_ops(self, start_iter=0, end_iter=1):
         for iter_i in range(start_iter, end_iter):
             yield iter_i, self._gradient_op
 

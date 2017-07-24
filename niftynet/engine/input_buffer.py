@@ -86,7 +86,7 @@ class InputBatchQueueRunner(object):
         self._close_queue_op = self._queue.close(cancel_pending_enqueues=True)
 
     def _push(self, thread_id):
-        print('New thread: {}'.format(thread_id))
+        tf.logging.info('New thread: {}'.format(thread_id))
         try:
             if self.shuffle:
                 iterator = self.sampler()
@@ -101,7 +101,6 @@ class InputBatchQueueRunner(object):
 
                 patch_dict = patch.as_dict(self.sampler.placeholders)
                 self._session.run(self._enqueue_op, feed_dict=patch_dict)
-                #print("push {}".format(patch.info))
 
             # push a set of stopping patches
             for i in range(0, self.capacity):
@@ -143,7 +142,7 @@ class InputBatchQueueRunner(object):
             return self._dequeue_op(self.batch_size)
 
     def run_threads(self, session, coord, num_threads=1):
-        print('Starting preprocessing threads...')
+        tf.logging.info('Starting preprocessing threads...')
         self._session = session
         self._coordinator = coord
         for idx in range(num_threads):
@@ -168,7 +167,7 @@ class InputBatchQueueRunner(object):
             #                       stop_grace_period_secs=0,
             #                       ignore_live_threads=True)
         except RuntimeError as e:
-            print(e)
+            tf.logging.fatal(e)
         finally:
             if not self._session._closed:
                 self._session.run(self._close_queue_op)

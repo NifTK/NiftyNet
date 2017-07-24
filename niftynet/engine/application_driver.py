@@ -4,7 +4,8 @@ import time
 
 import tensorflow as tf
 
-from niftynet.utilities import misc_common as util
+from niftynet.utilities.training_gradients_collector import \
+    TrainingGradientsCollector
 
 FILE_PREFIX = 'model.ckpt'
 
@@ -51,26 +52,25 @@ class ApplicationDriver(object):
         ApplicationDriver._set_cuda_device(param.cuda_devices)
         self.num_threads = max(param.num_threads, 1)
         self.num_gpus = param.num_gpus
-        self.max_checkpoints = param.max_checkpoints
-        self.save_every_n = param.save_every_n
         self.model_dir = ApplicationDriver._touch_folder(param.model_dir)
-
         # set output logs to stdout and log file
-        log_file_name = os.path.join(self.model_dir,
-                                     '{}_{}'.format(param.action, 'log'))
+        log_file_name = os.path.join(
+            self.model_dir, '{}_{}'.format(param.action, 'log'))
         ApplicationDriver.set_logger(file_name=log_file_name)
+
+        # model-related parameters
+        self.initial_iter = param.starting_iter \
+            if self.is_training else param.inference_iter
+        self.final_iter = max(param.starting_iter, param.max_iter) + 1
+        self.save_every_n = param.save_every_n
+        self.max_checkpoints = param.max_checkpoints
 
         # create an application and assign user-specified parameters
         self.app = ApplicationDriver._create_app(param.application_type)
         self.app.set_param(param)
-
         # initialise data input, and the tf graph
         self.app.initialise_dataset_loader(csv_dict)
         self.graph = self._create_graph()
-
-        self.initial_iter = param.starting_iter \
-            if self.is_training else param.inference_iter
-        self.final_iter = max(param.starting_iter, param.max_iter) + 1
 
 
     def run_application(self):
@@ -88,14 +88,19 @@ class ApplicationDriver(object):
             sess.run(self._init_op)
             tf.logging.info('Parameters from random initialisations ...')
             return
+        # check model's folder
         assert os.path.exists(self.model_dir), \
             "Model folder not found {}, please check" \
             "config parameter: model_dir".format(self.model_dir)
+
+        # check model's file
         checkpoint = os.path.join(
             self.model_dir, '{}-{}'.format(FILE_PREFIX, self.initial_iter))
         assert tf.train.get_checkpoint_state(self.model_dir) is not None, \
             "Model file not found {}*, please check" \
             "config parameter: model_dir and *_iter".format(checkpoint)
+
+        # restore session
         tf.logging.info('Accessing {} ...'.format(checkpoint))
         self.saver.restore(sess, checkpoint)
         return
@@ -112,15 +117,16 @@ class ApplicationDriver(object):
             self.app.get_sampler().run_threads(sess, coord, self.num_threads)
 
             tf.logging.info('starting from iter {}'.format(self.initial_iter))
-            for (iter_i, train_op) in \
-                    self.app.iterative_op(self.initial_iter, self.final_iter):
 
+            # running through training_op from application
+            for (iter_i, train_op) in self.app.training_ops(self.initial_iter,
+                                                            self.final_iter):
                 local_time = time.time()
                 if coord.should_stop():
                     break
-
                 # update the network model parameters
                 sess.run(train_op)
+
                 # query values of the updated network model
                 output = sess.run(self.app.eval_variables())
                 self.app.process_output_values(output, self.is_training)
@@ -174,15 +180,16 @@ class ApplicationDriver(object):
 
             # defining and collecting variables from multiple gpus
             net_outputs = []
-            training_grads = [] if self.is_training else None
             bn_ops = None
+            gradients_collector = TrainingGradientsCollector() \
+                if self.is_training else None
             for gpu_id in range(0, max(self.num_gpus, 1)):
                 worker_device = self._device_string(gpu_id, is_worker=True)
                 with tf.device(worker_device):
                     # compute gradients for one device of multiple device
                     # data parallelism
                     output = self.app.connect_data_and_network(
-                        self.is_training, training_grads)
+                        gradients_collector)
                     net_outputs.append(output)
                     if gpu_id == 0 and self.is_training:
                         # batch normalisation updates from 1st device only
@@ -198,8 +205,8 @@ class ApplicationDriver(object):
                 updates_op = [moving_ave_op]
                 updates_op.extend(bn_ops) if bn_ops is not None else None
                 with graph.control_dependencies(updates_op):
-                    averaged_grads = util.average_gradients(training_grads)
-                    self.app.create_network_update_op(averaged_grads)
+                    averaged_grads = gradients_collector.average_gradients()
+                    self.app.set_network_update_op(averaged_grads)
 
             # assigning output variables back to each application
             self.app.set_all_output_ops([net_outputs, tf.global_variables()])

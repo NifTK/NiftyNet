@@ -8,6 +8,16 @@ from tensorflow.core.framework import summary_pb2
 CONSOLE='NiftyNetCollectionConsole'
 LOG=tf.GraphKeys.SUMMARIES
 
+class LogsCollector(object):
+    def __init__(self):
+        pass
+
+    def add_to_console():
+        pass
+
+    def add_to_tensorboard():
+        pass
+
 
 
 def add_to_collections(keys,value):
