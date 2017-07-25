@@ -6,7 +6,7 @@ import tensorflow as tf
 
 import niftynet.utilities.param_shortcuts_expanding as param_util
 from niftynet.application.base_application import BaseApplication
-from niftynet.engine import logs_collector as logging
+from niftynet.engine import network_tensor_collector as logging
 from niftynet.engine.gan_sampler import GANSampler
 from niftynet.engine.volume_loader import VolumeLoaderLayer
 from niftynet.layer.binary_masking import BinaryMaskingLayer
@@ -170,7 +170,7 @@ class GANApplication(BaseApplication):
         return input_buffer
 
     def initialise_network(self):
-        self._net =  GanNetFactory.create(self._param.net_name)()
+        self._net = GanNetFactory.create(self._param.net_name)()
 
     def set_network_update_op(self, gradients):
         grad_list_depth = util.list_depth_count(gradients)
@@ -187,9 +187,8 @@ class GANApplication(BaseApplication):
             raise NotImplementedError(
                 'This app supports updating a network, or list of networks')
 
-    def connect_data_and_network(self,
-                                 training_grads_collector=None,
-                                 logs_collector=None):
+    def connect_data_and_network(
+        self, outputs_collector=None, training_grads_collector=None):
 
         with tf.name_scope('Optimizer'):
             self.optimizer = tf.train.AdamOptimizer(
@@ -216,13 +215,18 @@ class GANApplication(BaseApplication):
                     lossD = lossD + reg_loss
                     lossG = lossG + reg_loss
 
-            # Averages are in name_scope for Tensorboard naming; summaries are outside for console naming
-            logs = [['lossD', lossD], ['lossG', lossG]]
-            #with tf.name_scope('ConsoleLogging'):
-            #    logs += self.logs(train_dict, net_outputs)
-            #for tag, val in logs:
-            #    tf.summary.scalar(tag, val, [logging.CONSOLE, logging.LOG])
-            #import pdb; pdb.set_trace()
+            # variables to display in STDOUT
+            outputs_collector.print_to_console(
+                var=lossD, name='lossD', average_over_devices=True)
+            outputs_collector.print_to_console(
+                var=lossG, name='lossG', average_over_devices=False)
+            # variables to display in tensorboard
+            outputs_collector.print_to_tf_summary(
+                var=lossG, name='lossG',
+                average_over_devices=False, summary_type='scalar')
+            outputs_collector.print_to_tf_summary(
+                var=lossG, name='lossD',
+                average_over_devices=True, summary_type='scalar')
 
             with tf.name_scope('ComputeGradients'):
                 # gradients of generator

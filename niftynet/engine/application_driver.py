@@ -3,11 +3,12 @@ import sys
 import time
 
 import tensorflow as tf
-
-from niftynet.utilities.training_gradients_collector import \
-    TrainingGradientsCollector
+from niftynet.engine.graph_variables_collector import OutputsCollector
+from niftynet.engine.graph_variables_collector import GradientsCollector
 
 FILE_PREFIX = 'model.ckpt'
+CONSOLE_LOG_FORMAT = '%(levelname)s:niftynet: %(message)s'
+FILE_LOG_FORMAT = '%(levelname)s:niftynet:%(asctime)s: %(message)s'
 
 class ApplicationFactory(object):
     from niftynet.application.segmentation_application import \
@@ -36,26 +37,31 @@ class ApplicationDriver(object):
         self.num_gpus = 0
 
         self.model_dir = None
+        self.session_dir = None
         self.max_checkpoints = 20
         self.save_every_n = 10
         self.initial_iter = 0
         self.final_iter = 0
 
         self._init_op = None
-
+        self.outputs_collector = None
+        self.gradients_collector = None
 
     def initialise_application(self, csv_dict, param):
 
         self.is_training = (param.action == "train")
 
         # hardware-related parameters
-        ApplicationDriver._set_cuda_device(param.cuda_devices)
         self.num_threads = max(param.num_threads, 1)
         self.num_gpus = param.num_gpus
+        ApplicationDriver._set_cuda_device(param.cuda_devices)
         self.model_dir = ApplicationDriver._touch_folder(param.model_dir)
+        self.session_dir = os.path.join(self.model_dir, FILE_PREFIX)
+        self.summary_dir = os.path.join(self.model_dir, 'logs')
+
         # set output logs to stdout and log file
         log_file_name = os.path.join(
-            self.model_dir, '{}_{}'.format(param.action, 'log'))
+            self.model_dir, '{}_{}'.format(param.action, 'log_console'))
         ApplicationDriver.set_logger(file_name=log_file_name)
 
         # model-related parameters
@@ -64,6 +70,11 @@ class ApplicationDriver(object):
         self.final_iter = max(param.starting_iter, param.max_iter) + 1
         self.save_every_n = param.save_every_n
         self.max_checkpoints = param.max_checkpoints
+
+        self.outputs_collector = OutputsCollector(
+            n_devices=max(self.num_gpus, 1))
+        self.gradients_collector = GradientsCollector(
+            n_devices=max(self.num_gpus, 1)) if self.is_training else None
 
         # create an application and assign user-specified parameters
         self.app = ApplicationDriver._create_app(param.application_type)
@@ -83,6 +94,58 @@ class ApplicationDriver(object):
             else:
                 self._inference_loop(session)
 
+    def _create_graph(self):
+        graph = tf.Graph()
+        main_device = self._device_string(0, is_worker=False)
+        # start constructing the graph, handling training and inference cases
+        with graph.as_default(), tf.device(main_device):
+            # initialise sampler and network, these are connected in
+            # the context of multiple gpus
+            self.app.initialise_sampler(is_training=self.is_training)
+            self.app.initialise_network()
+
+            # for data parallelism --
+            #     defining and collecting variables from multiple devices
+            for gpu_id in range(0, max(self.num_gpus, 1)):
+                worker_device = self._device_string(gpu_id, is_worker=True)
+                scope_string = 'worker_{}'.format(gpu_id)
+                with tf.name_scope(scope_string) as scope:
+                    with tf.device(worker_device):
+                        # setup network for each of the multiple devices
+                        self.app.connect_data_and_network(
+                            self.outputs_collector,
+                            self.gradients_collector)
+                        # global batch norm statistics from the last device
+                        bn_ops = tf.get_collection(
+                            tf.GraphKeys.UPDATE_OPS, scope) \
+                            if self.is_training else None
+
+            # assemble all training operations
+            if self.is_training:
+                updates_op = []
+                # model moving average operation
+                mva_op = ApplicationDriver._model_moving_averaging_op()
+                if not mva_op.type == "NoOp":
+                    updates_op.extend(mva_op)
+                # batch normalisation moving averages operation
+                if bn_ops is not None and len(bn_ops) > 0:
+                    updates_op.extend(bn_ops)
+                # combine them with model parameter updating operation
+                with graph.control_dependencies(updates_op):
+                    self.app.set_network_update_op(
+                        self.gradients_collector.gradients)
+
+            # initialisation operation
+            self._init_op = tf.global_variables_initializer()
+            self.outputs_collector.finalise_output_op()
+
+            # saving operation
+            self.saver = tf.train.Saver(max_to_keep=self.max_checkpoints)
+
+        # no more operation definitions after this point
+        tf.Graph.finalize(graph)
+        return graph
+
     def _randomly_init_or_restore_variables(self, sess):
         if self.is_training and self.initial_iter == 0:
             sess.run(self._init_op)
@@ -94,8 +157,7 @@ class ApplicationDriver(object):
             "config parameter: model_dir".format(self.model_dir)
 
         # check model's file
-        checkpoint = os.path.join(
-            self.model_dir, '{}-{}'.format(FILE_PREFIX, self.initial_iter))
+        checkpoint = '{}-{}'.format(self.session_dir, self.initial_iter)
         assert tf.train.get_checkpoint_state(self.model_dir) is not None, \
             "Model file not found {}*, please check" \
             "config parameter: model_dir and *_iter".format(checkpoint)
@@ -105,42 +167,41 @@ class ApplicationDriver(object):
         self.saver.restore(sess, checkpoint)
         return
 
+
     def _training_loop(self, sess):
 
         iter_i = -1
         start_time = time.time()
         save_path = os.path.join(self.model_dir, FILE_PREFIX)
+        writer = tf.summary.FileWriter(self.summary_dir, sess.graph)
 
         try:
             coord = tf.train.Coordinator()
             self._randomly_init_or_restore_variables(sess)
-            self.app.get_sampler().run_threads(sess, coord, self.num_threads)
-
+            tf.logging.info('Filling queues (this can take a few minutes)')
             tf.logging.info('starting from iter {}'.format(self.initial_iter))
+            self.app.get_sampler().run_threads(sess, coord, self.num_threads)
 
             # running through training_op from application
             for (iter_i, train_op) in self.app.training_ops(self.initial_iter,
                                                             self.final_iter):
-                local_time = time.time()
                 if coord.should_stop():
                     break
+
+                local_time = time.time()
                 # update the network model parameters
                 sess.run(train_op)
 
-                # query values of the updated network model
-                output = sess.run(self.app.eval_variables())
-                self.app.process_output_values(output, self.is_training)
+                # print variables of the updated network
+                console_str = self.outputs_collector.vars_to_string(sess)
+                iter_duration = time.time() - local_time
+                tf.logging.info('iter {}, {} ({:.3f}s)'.format(
+                    iter_i, console_str, iter_duration))
 
-                summary_string = ''
-                iter_time = time.time() - local_time
-                tf.logging.info(('iter {}, {} ({:.3f}s)').format(
-                    iter_i, summary_string, iter_time))
-
-                if iter_i % self.save_every_n == 0 and iter_i > 0:
-                    self.saver.save(sess, save_path, global_step=iter_i)
-                    tf.logging.info(
-                        'iter {} saved at {}'.format(iter_i, save_path))
-
+                if iter_i % self.save_every_n == 0:
+                    self.outputs_collector.vars_to_tf_summary(
+                        writer, sess, iter_i)
+                    self._save_model(sess, iter_i)
 
         except KeyboardInterrupt:
             tf.logging.warning('User cancelled training')
@@ -154,72 +215,22 @@ class ApplicationDriver(object):
                                       exc_traceback,
                                       file=sys.stdout)
         finally:
-            if iter_i > 0:
-                self.saver.save(sess, save_path, global_step=iter_i)
-                tf.logging.info(
-                    'iter {} saved at {}'.format(iter_i, save_path))
-
+            self._save_model(sess, iter_i)
             tf.logging.info('stopping sampling threads')
             self.app.stop()
-            tf.logging.info(
-                "{} stopped (time in second {:.2f}).".format(
+            tf.logging.info("{} stopped (time in second {:.2f}).".format(
                     type(self.app).__name__, (time.time() - start_time)))
 
     def _inference_loop(self, sess):
         pass
 
-    def _create_graph(self):
-        graph = tf.Graph()
-        main_device = self._device_string(0, is_worker=False)
-        # start constructing the graph, handling training and inference cases
-        with graph.as_default(), tf.device(main_device):
-            # initialise sampler and network, these are connected in
-            # the context of multiple gpus
-            self.app.initialise_sampler(is_training=self.is_training)
-            self.app.initialise_network()
-
-            # defining and collecting variables from multiple gpus
-            net_outputs = []
-            bn_ops = None
-            gradients_collector = TrainingGradientsCollector() \
-                if self.is_training else None
-            for gpu_id in range(0, max(self.num_gpus, 1)):
-                worker_device = self._device_string(gpu_id, is_worker=True)
-                with tf.device(worker_device):
-                    # compute gradients for one device of multiple device
-                    # data parallelism
-                    output = self.app.connect_data_and_network(
-                        gradients_collector)
-                    net_outputs.append(output)
-                    if gpu_id == 0 and self.is_training:
-                        # batch normalisation updates from 1st device only
-                        bn_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-
-            # moving average operation
-            variable_averages = tf.train.ExponentialMovingAverage(0.9)
-            trainables = tf.trainable_variables()
-            moving_ave_op = variable_averages.apply(trainables)
-
-            # training operation
-            if self.is_training:
-                updates_op = [moving_ave_op]
-                updates_op.extend(bn_ops) if bn_ops is not None else None
-                with graph.control_dependencies(updates_op):
-                    averaged_grads = gradients_collector.average_gradients()
-                    self.app.set_network_update_op(averaged_grads)
-
-            # assigning output variables back to each application
-            self.app.set_all_output_ops([net_outputs, tf.global_variables()])
-
-            # initialisation operation
-            self._init_op = tf.global_variables_initializer()
-
-            # saving operation
-            self.saver = tf.train.Saver(max_to_keep=self.max_checkpoints)
-
-        # no more operation definitions after this point
-        tf.Graph.finalize(graph)
-        return graph
+    def _save_model(self, session, iter_i):
+        if iter_i <= 0:
+            return
+        self.saver.save(sess=session,
+                        save_path=self.session_dir,
+                        global_step=iter_i)
+        tf.logging.info('iter {} saved: {}'.format(iter_i, self.session_dir))
 
     def _device_string(self, id=0, is_worker=True):
         if self.num_gpus <= 0:  # user specified no gpu at all
@@ -229,18 +240,6 @@ class ApplicationDriver(object):
             return '/{}:{}'.format(device, id)
         else:
             return '/gpu:0'  # always use one GPU for inference
-
-    @staticmethod
-    def _create_app(app_type_string):
-        _app_module = ApplicationFactory.import_module(app_type_string)
-        return _app_module()
-
-    @staticmethod
-    def _tf_config():
-        config = tf.ConfigProto()
-        config.log_device_placement = False
-        config.allow_soft_placement = True
-        return config
 
     @staticmethod
     def _touch_folder(model_dir):
@@ -259,8 +258,25 @@ class ApplicationDriver(object):
             tf.logging.info(
                 "set CUDA_VISIBLE_DEVICES to {}".format(cuda_devices))
         else:
-            # using Tensorflow default choice
-            pass
+            pass # using Tensorflow default choice
+
+    @staticmethod
+    def _model_moving_averaging_op(decay=0.9):
+        variable_averages = tf.train.ExponentialMovingAverage(decay)
+        trainables = tf.trainable_variables()
+        return variable_averages.apply(var_list=trainables)
+
+    @staticmethod
+    def _create_app(app_type_string):
+        _app_module = ApplicationFactory.import_module(app_type_string)
+        return _app_module()
+
+    @staticmethod
+    def _tf_config():
+        config = tf.ConfigProto()
+        config.log_device_placement = False
+        config.allow_soft_placement = True
+        return config
 
     @staticmethod
     def set_logger(file_name=None):
@@ -269,14 +285,13 @@ class ApplicationDriver(object):
         tf.logging._logger = log.getLogger('tensorflow')
         tf.logging.set_verbosity(tf.logging.INFO)
 
-        f = log.Formatter('%(levelname)s:niftynet: %(message)s')
+        f = log.Formatter(CONSOLE_LOG_FORMAT)
         std_handler = log.StreamHandler(sys.stdout)
         std_handler.setFormatter(f)
         tf.logging._logger.addHandler(std_handler)
 
         if file_name is not None:
-            f = log.Formatter(
-                '%(levelname)s:niftynet:%(asctime)s: %(message)s')
+            f = log.Formatter(FILE_LOG_FORMAT)
             file_handler = log.FileHandler(file_name)
             file_handler.setFormatter(f)
             tf.logging._logger.addHandler(file_handler)
