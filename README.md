@@ -47,7 +47,7 @@ If you use NiftyNet, please cite the following paper:
 
 ### Licensing and Copyright
 
-Copyright 2017 NiftyNet Contributors.
+Copyright 2017 University College London and the NiftyNet Contributors.
 NiftyNet is released under the Apache License, Version 2.0. Please see the LICENSE file for details.
 
 ### Acknowledgements
