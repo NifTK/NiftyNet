@@ -70,14 +70,14 @@ def run(net_class, param, volume_loader, device_str):
                     patch=patch_holder,
                     volume_loader=volume_loader,
                     spatial_location_check=spatial_location_check,
-                    data_augmentation_methods=None,
+                    data_augmentation_methods=augmentations,
                     patch_per_volume=param.sample_per_volume,
                     name="selective_sampler")
             elif param.window_sampling == 'resize':
                 sampler = ResizeSampler(
                     patch=patch_holder,
                     volume_loader=volume_loader,
-                    data_augmentation_methods=None,
+                    data_augmentation_methods=augmentations,
                     name="resize_sampler")
         w_regularizer = None
         b_regularizer = None
