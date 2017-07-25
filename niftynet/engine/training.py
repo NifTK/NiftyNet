@@ -40,6 +40,10 @@ def run(net_class, param, volume_loader, device_str):
             num_weight_map=volume_loader.num_modality(2))
         # defines data augmentation for training
         augmentations = []
+        if param.random_flip:
+            from layer.rand_flip import RandomFlipLayer
+            augmentations.append(RandomFlipLayer(
+                flip_axes=param.flip_axes))
         if param.rotation:
             from niftynet.layer.rand_rotation import RandomRotationLayer
             augmentations.append(RandomRotationLayer(
