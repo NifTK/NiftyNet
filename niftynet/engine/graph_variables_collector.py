@@ -7,9 +7,10 @@ from tensorflow.core.framework import summary_pb2
 from niftynet.utilities import misc_common as util
 from niftynet.utilities.misc_common import look_up_operations
 
-CONSOLE='NiftyNetCollectionConsole'
-TF_SUMMARIES=tf.GraphKeys.SUMMARIES
-SUPPORTED_SUMMARY = {'scalar': tf.summary.scalar}
+CONSOLE='niftynetconsole'
+TF_SUMMARIES='niftynetsummaries'
+SUPPORTED_SUMMARY = {'scalar': tf.summary.scalar,
+                     'histogram': tf.summary.histogram}
 
 
 class GradientsCollector(object):
@@ -79,6 +80,11 @@ class OutputsCollector(object):
         self.summary_op = look_up_operations(summary_type, SUPPORTED_SUMMARY)
         self._add_to_dict(self.tf_summary_vars,
                           var, name, average_over_devices)
+        values = self.tf_summary_vars.get(name, None)
+        if isinstance(values, tf.Tensor):
+            self.summary_op(name=name,
+                            tensor=values,
+                            collections=[TF_SUMMARIES])
 
     def vars_to_string(self, sess, formatter='{}={}'):
         console_string = ''
@@ -97,17 +103,19 @@ class OutputsCollector(object):
             if values is None:
                 continue
             if isinstance(values, list):
-                self.console_vars[var_name] = tf.reduce_mean(values)
+                self.console_vars[var_name] = tf.reduce_mean(values,
+                                                             name=var_name)
 
         for var_name in self.tf_summary_vars:
             values = self.tf_summary_vars.get(var_name, None)
             if values is None:
                 continue
             if isinstance(values, list):
-                values = tf.reduce_mean(values)
-            self.summary_op(name=var_name,
-                            tensor=values,
-                            collections=[TF_SUMMARIES])
+                self.tf_summary_vars[var_name] = tf.reduce_mean(values,
+                                                                name=var_name)
+                tf.summary.scalar(name=var_name,
+                                  tensor=self.tf_summary_vars[var_name],
+                                  collections=[TF_SUMMARIES])
         self._merge_op = tf.summary.merge_all(key=TF_SUMMARIES)
 
 

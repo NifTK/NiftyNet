@@ -137,6 +137,7 @@ class ApplicationDriver(object):
 
             # initialisation operation
             self._init_op = tf.global_variables_initializer()
+
             self.outputs_collector.finalise_output_op()
 
             # saving operation
