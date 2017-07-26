@@ -95,15 +95,18 @@ class ResamplerLayer(Layer):
     # Compute voxels to use for interpolation
     reshapeOffsetForBroadcasting=lambda x: tf.reshape(x,[1,2**spatial_rank]+[1]*len(grid_shape)+[spatial_rank])
     offsets = [[int(c) for c in format(it,'0%ib'%spatial_rank)] for it in range(2**spatial_rank)]
-    preboundary_spatial_coords = reshapeOffsetForBroadcasting(offsets)+tf.expand_dims(tf.cast(index_voxel_coords,tf.int32),1)
+    preboundary_spatial_coords = reshapeOffsetForBroadcasting(offsets)+\
+                                 tf.expand_dims(tf.cast(index_voxel_coords,tf.int32),1)
     spatial_coords = self.boundary_func_(preboundary_spatial_coords,input_size)
     # Compute weights for each voxel
     index_weight=sample_coords-index_voxel_coords
     offset_complement = [[1-int(c) for c in format(it,'0%ib'%spatial_rank)] for it in range(2**spatial_rank)]
     offset_signs = [[(-1.)**o for o in os] for os in offset_complement]
-    all_weights=tf.reduce_prod(tf.cast(reshapeOffsetForBroadcasting(offset_complement),tf.float32)+reshapeOffsetForBroadcasting(offset_signs)*tf.expand_dims(index_weight,1),reduction_indices=-1,keep_dims=True)
+    sz = spatial_coords.get_shape().as_list()
+    all_weights=tf.reduce_prod(tf.cast(reshapeOffsetForBroadcasting(offset_complement),tf.float32)+
+                               reshapeOffsetForBroadcasting(offset_signs)*tf.expand_dims(index_weight,1),
+                               axis=len(sz)-1,keep_dims=True)
     # Gather voxel values and compute weighted sum
-    sz=spatial_coords.get_shape().as_list()
     batch_coords = tf.tile(tf.reshape(tf.range(sz[0]),[sz[0]]+[1]*(len(sz)-1)),[1]+sz[1:-1]+[1])
     raw_samples = tf.gather_nd(inputs,tf.concat([batch_coords,spatial_coords],-1))
     return tf.reduce_sum(all_weights*raw_samples,reduction_indices=1)
