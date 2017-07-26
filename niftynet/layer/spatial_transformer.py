@@ -50,7 +50,7 @@ class ResamplerLayer(Layer):
     self.resample_func_ = {'LINEAR':self.resample_linear,'BSPLINE':self.resample_bspline,'NEAREST':self.resample_nearest}[self.interpolation]
 
   def boundary_replicate(self,sample_coords,input_size):
-    return tf.maximum(tf.minimum(sample_coords,input_size-1),tf.zeros_like(input_size))
+    return tf.maximum(tf.minimum(sample_coords,input_size-1),0)
   def boundary_circular(self,sample_coords,input_size):
     return tf.mod(tf.mod(sample_coords,input_size)+input_size,input_size)
   def boundary_symmetric(self,sample_coords,input_size):
@@ -85,11 +85,60 @@ class ResamplerLayer(Layer):
     batch_coords = tf.tile(tf.reshape(tf.range(sz[0]),[sz[0]]+[1]*(len(sz)-1)),[1]+sz[1:-1]+[1])
     raw_samples = tf.gather_nd(inputs,tf.concat([batch_coords,spatial_coords],-1))
     return tf.reduce_sum(all_weights*raw_samples,reduction_indices=1)
-    
+
+  def resample_linear_2d(self,inputs,sample_coords):
+    input_size = inputs.get_shape().as_list()[1:-1]
+
+    xy=tf.unstack(sample_coords,axis=len(sample_coords.get_shape())-1)
+    index_voxel_coords = [tf.floor(x) for x in xy]
+    index_weight=[tf.expand_dims(x-i,-1) for x,i in zip(xy,index_voxel_coords)]
+    spatial_coords=[self.boundary_func_(tf.cast(x,tf.int32), input_size[idx]) for idx,x in enumerate(index_voxel_coords)]
+    spatial_coords_plus1=[self.boundary_func_(tf.cast(x+1.,tf.int32), input_size[idx]) for idx,x in enumerate(index_voxel_coords)]
+    sz = spatial_coords[0].get_shape().as_list()
+    batch_coords = tf.tile(tf.reshape(tf.range(sz[0]), [sz[0]] + [1] * (len(sz) - 1)), [1] + sz[1:] )
+    raw_samples00 = tf.gather_nd(inputs, tf.stack([batch_coords,spatial_coords[0],spatial_coords[1]], -1))
+    raw_samples01 = tf.gather_nd(inputs, tf.stack([batch_coords,spatial_coords[0],spatial_coords_plus1[1]], -1))
+    raw_samples10 = tf.gather_nd(inputs, tf.stack([batch_coords,spatial_coords_plus1[0],spatial_coords[1]], -1))
+    raw_samples11 = tf.gather_nd(inputs, tf.stack([batch_coords,spatial_coords_plus1[0],spatial_coords_plus1[1]], -1))
+
+    return ((raw_samples00 * (1 - index_weight[0]) + raw_samples10 * index_weight[0])*(1-index_weight[1])+
+            (raw_samples01 * (1 - index_weight[0]) + raw_samples11 * index_weight[0])*(index_weight[1]))
+
+  def resample_linear_3d(self,inputs,sample_coords):
+    input_size = inputs.get_shape().as_list()[1:-1]
+
+    xy=tf.unstack(sample_coords,axis=len(sample_coords.get_shape())-1)
+    index_voxel_coords = [tf.floor(x) for x in xy]
+    index_weight=[tf.expand_dims(x-i,-1) for x,i in zip(xy,index_voxel_coords)]
+    spatial_coords=[self.boundary_func_(tf.cast(x,tf.int32), input_size[idx]) for idx,x in enumerate(index_voxel_coords)]
+    spatial_coords_plus1=[self.boundary_func_(tf.cast(x+1.,tf.int32), input_size[idx]) for idx,x in enumerate(index_voxel_coords)]
+    sz = spatial_coords[0].get_shape().as_list()
+    batch_coords = tf.tile(tf.reshape(tf.range(sz[0]), [sz[0]] + [1] * (len(sz) - 1)), [1] + sz[1:] )
+    sc = spatial_coords
+    scp = spatial_coords_plus1
+
+    raw_samples000 = tf.gather_nd(inputs, tf.stack([batch_coords,sc[0], sc[1], sc[2]], -1))
+    raw_samples001 = tf.gather_nd(inputs, tf.stack([batch_coords,sc[0], sc[1], scp[2]], -1))
+    raw_samples010 = tf.gather_nd(inputs, tf.stack([batch_coords,sc[0], scp[1],sc[2]], -1))
+    raw_samples011 = tf.gather_nd(inputs, tf.stack([batch_coords,sc[0], scp[1],scp[2]], -1))
+    raw_samples100 = tf.gather_nd(inputs, tf.stack([batch_coords,scp[0],sc[1], sc[2]], -1))
+    raw_samples101 = tf.gather_nd(inputs, tf.stack([batch_coords,scp[0],sc[1], scp[2]], -1))
+    raw_samples110 = tf.gather_nd(inputs, tf.stack([batch_coords,scp[0],scp[1],sc[2]], -1))
+    raw_samples111 = tf.gather_nd(inputs, tf.stack([batch_coords,scp[0],scp[1],scp[2]], -1))
+
+    return ((raw_samples000 * (1 - index_weight[0]) + raw_samples100 * index_weight[0])*(1-index_weight[1])+
+            (raw_samples010 * (1 - index_weight[0]) + raw_samples110 * index_weight[0])*(index_weight[1])) *(1-index_weight[2])  + \
+           ((raw_samples001 * (1 - index_weight[0]) + raw_samples101 * index_weight[0]) * (1 - index_weight[1]) +
+            (raw_samples011 * (1 - index_weight[0]) + raw_samples111 * index_weight[0]) * (index_weight[1])) *index_weight[2]
+
   def resample_linear(self,inputs,sample_coords):
     # Each sample is interpolated as a weighted sum of 2^spatial_rank voxels
     input_size=tf.reshape(inputs.get_shape().as_list()[1:-1],[1]*(len(sample_coords.get_shape().as_list())-1)+[-1]  )
     spatial_rank = layer_util.infer_spatial_rank(inputs)
+    if spatial_rank==2:
+      return self.resample_linear_2d(inputs,sample_coords)
+    if spatial_rank==3:
+      return self.resample_linear_3d(inputs,sample_coords)
     grid_shape = sample_coords.get_shape().as_list()[1:-1]
     index_voxel_coords = tf.floor(sample_coords)
     # Compute voxels to use for interpolation
@@ -109,6 +158,7 @@ class ResamplerLayer(Layer):
     # Gather voxel values and compute weighted sum
     batch_coords = tf.tile(tf.reshape(tf.range(sz[0]),[sz[0]]+[1]*(len(sz)-1)),[1]+sz[1:-1]+[1])
     raw_samples = tf.gather_nd(inputs,tf.concat([batch_coords,spatial_coords],-1))
+
     return tf.reduce_sum(all_weights*raw_samples,reduction_indices=1)
 
   def resample_nearest(self,inputs,sample_coords):
