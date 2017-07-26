@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 
 # Get the summary
-description = 'A convolutional neural networks platform' +\
+description = 'An open-source convolutional neural networks platform' +\
               ' for research in medical image analysis and' +\
-              ' computer-assisted intervention.'
+              ' image-guided therapy'
 
 # Get the long description
 with open('pip/long_description.rst') as f:

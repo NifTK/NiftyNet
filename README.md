@@ -5,18 +5,28 @@
 [![build status](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/build.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
 [![coverage report](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/coverage.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
 
-NiftyNet is a [TensorFlow][tf]-based open-source convolutional neural networks (CNN) platform for research in medical image analysis and computer-assisted intervention.
-NiftyNet is a consortium of multiple research groups (WEISS -- [Wellcome EPSRC Centre for Interventional and Surgical Sciences][weiss], CMIC -- [Centre for Medical Image Computing][cmic], HIG -- High-dimensional Imaging Group), where WEISS acts as a consortium lead.
-**NiftyNet is not intended for clinical use**.
+NiftyNet is a [TensorFlow][tf]-based open-source convolutional neural networks (CNN) platform for research in medical image analysis and image-guided therapy.
+NiftyNet's modular structure is designed for sharing networks and pre-trained models.
+Using this modular structure you can:
+
+* Get started with established pre-trained networks using built-in tools
+* Adapt existing networks to your imaging data
+* Quickly build new solutions to your own image analysis problems
+
+NiftyNet is a consortium of research groups (WEISS -- [Wellcome EPSRC Centre for Interventional and Surgical Sciences][weiss], CMIC -- [Centre for Medical Image Computing][cmic], HIG -- High-dimensional Imaging Group), where WEISS acts as the consortium lead.
 
 
 ### Features
 
+NiftyNet currently supports medical image segmentation and generative adversarial networks.
+**NiftyNet is not intended for clinical use**.
+Other features of NiftyNet include:
+
 * Easy-to-customise interfaces of network components
-* Designed for sharing networks and pretrained models
-* Designed to support 2-D, 2.5-D, 3-D, 4-D inputs*
+* Sharing networks and pretrained models
+* Support for 2-D, 2.5-D, 3-D, 4-D inputs*
 * Efficient discriminative training with multiple-GPU support
-* Implemented recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
+* Implementation of recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
 * Comprehensive evaluation metrics for medical image segmentation
 
  <sup>*2.5-D: volumetric images processed as a stack of 2D slices;
