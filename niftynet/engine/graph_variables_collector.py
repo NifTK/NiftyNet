@@ -76,7 +76,6 @@ class OutputsCollector(object):
     def print_to_tf_summary(self, var, name,
                             average_over_devices=False,
                             summary_type='scalar'):
-
         self.summary_op = look_up_operations(summary_type, SUPPORTED_SUMMARY)
         self._add_to_dict(self.tf_summary_vars,
                           var, name, average_over_devices)
@@ -86,16 +85,8 @@ class OutputsCollector(object):
                             tensor=values,
                             collections=[TF_SUMMARIES])
 
-    def vars_to_string(self, sess, formatter='{}={}'):
-        console_string = ''
-        for name in self.console_vars:
-            value = sess.run(self.console_vars[name])
-            console_string += ' ' + formatter.format(name, value) + ','
-        return console_string[1:-1]
-
-    def vars_to_tf_summary(self, writer, sess, iter_i):
-        if len(self.tf_summary_vars) > 0:
-            writer.add_summary(sess.run(self._merge_op), iter_i)
+    def variables(self):
+        return self.console_vars, self._merge_op
 
     def finalise_output_op(self):
         for var_name in self.console_vars:

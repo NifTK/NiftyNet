@@ -178,9 +178,9 @@ class ApplicationDriver(object):
 
         try:
             coord = tf.train.Coordinator()
+            tf.logging.info('starting from iter {}'.format(self.initial_iter))
             self._randomly_init_or_restore_variables(sess)
             tf.logging.info('Filling queues (this can take a few minutes)')
-            tf.logging.info('starting from iter {}'.format(self.initial_iter))
             self.app.get_sampler().run_threads(sess, coord, self.num_threads)
 
             # running through training_op from application
@@ -188,21 +188,30 @@ class ApplicationDriver(object):
                                                             self.final_iter):
                 if coord.should_stop():
                     break
-
                 local_time = time.time()
+
                 # update the network model parameters
-                sess.run(train_op)
+                console_vars, summary_op = self.outputs_collector.variables()
+
+                if iter_i % self.save_every_n == 0:
+                    # update model, writing summary and save sess
+                    vars_to_run = [train_op, console_vars, summary_op]
+                    _, console_val, summary = sess.run(vars_to_run)
+                    writer.add_summary(summary, iter_i)
+                    self._save_model(sess, iter_i)
+                else:
+                    # update model and write STDOUT logs
+                    vars_to_run = [train_op, console_vars]
+                    _, console_val = sess.run(vars_to_run)
 
                 # print variables of the updated network
-                console_str = self.outputs_collector.vars_to_string(sess)
+                console_str = ', '.join(
+                    '{}={}'.format(key, val) \
+                    for (key, val) in console_val.items())
                 iter_duration = time.time() - local_time
                 tf.logging.info('iter {}, {} ({:.3f}s)'.format(
                     iter_i, console_str, iter_duration))
 
-                if iter_i % self.save_every_n == 0:
-                    self.outputs_collector.vars_to_tf_summary(
-                        writer, sess, iter_i)
-                    self._save_model(sess, iter_i)
 
         except KeyboardInterrupt:
             tf.logging.warning('User cancelled training')
