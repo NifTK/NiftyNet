@@ -53,7 +53,8 @@ class ApplicationDriver(object):
 
         # hardware-related parameters
         self.num_threads = max(param.num_threads, 1)
-        self.num_gpus = param.num_gpus
+        self.num_gpus = param.num_gpus \
+            if self.is_training else min(param.num_gpus, 1)
         ApplicationDriver._set_cuda_device(param.cuda_devices)
         self.model_dir = ApplicationDriver._touch_folder(param.model_dir)
         self.session_dir = os.path.join(self.model_dir, FILE_PREFIX)
@@ -191,11 +192,11 @@ class ApplicationDriver(object):
                 local_time = time.time()
 
                 # update the network model parameters
-                console_vars, summary_op = self.outputs_collector.variables()
-
+                console_vars, summary_ops = self.outputs_collector.variables()
                 if iter_i % self.save_every_n == 0:
-                    # update model, writing summary and save sess
-                    vars_to_run = [train_op, console_vars, summary_op]
+                    # update and save model,
+                    # writing STDOUT logs and tensorboard summary
+                    vars_to_run = [train_op, console_vars, summary_ops]
                     _, console_val, summary = sess.run(vars_to_run)
                     writer.add_summary(summary, iter_i)
                     self._save_model(sess, iter_i)
@@ -211,7 +212,6 @@ class ApplicationDriver(object):
                 iter_duration = time.time() - local_time
                 tf.logging.info('iter {}, {} ({:.3f}s)'.format(
                     iter_i, console_str, iter_duration))
-
 
         except KeyboardInterrupt:
             tf.logging.warning('User cancelled training')

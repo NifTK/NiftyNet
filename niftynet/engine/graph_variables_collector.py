@@ -18,13 +18,14 @@ class GradientsCollector(object):
         self._gradients = []
         self.n_devices = n_devices
 
-    def current_tower_id(self):
-        return len(self._gradients)
-
     def add_to_collection(self, gradients):
         self._gradients.append(gradients)
-        assert len(self._gradients) <= self.n_devices, \
+        assert self.current_tower_id <= self.n_devices, \
             "call add_to_collection once per device"
+
+    @property
+    def current_tower_id(self):
+        return len(self._gradients)
 
     @property
     def gradients(self):
@@ -69,46 +70,47 @@ class OutputsCollector(object):
                 new_name = '{}_{}'.format(name, _uniq_id)
             var_dict[new_name] = var
 
-    def print_to_console(self, var, name, average_over_devices=False):
+    def print_to_console(self, var, name,
+                         average_over_devices=False):
         self._add_to_dict(self.console_vars,
                           var, name, average_over_devices)
 
     def print_to_tf_summary(self, var, name,
                             average_over_devices=False,
                             summary_type='scalar'):
-        self.summary_op = look_up_operations(summary_type, SUPPORTED_SUMMARY)
+        summary_op = look_up_operations(summary_type, SUPPORTED_SUMMARY)
         self._add_to_dict(self.tf_summary_vars,
                           var, name, average_over_devices)
         values = self.tf_summary_vars.get(name, None)
         if isinstance(values, tf.Tensor):
-            self.summary_op(name=name,
-                            tensor=values,
-                            collections=[TF_SUMMARIES])
+            summary_op(name=name, tensor=values, collections=[TF_SUMMARIES])
 
     def variables(self):
         return self.console_vars, self._merge_op
 
     def finalise_output_op(self):
+        """
+        This function checks the dictionary, if the variable needs to
+        be averaged over devices, then a reduce_mean node is added to
+        the graph.
+        This function should be called in create_graph function
+        """
         for var_name in self.console_vars:
             values = self.console_vars.get(var_name, None)
-            if values is None:
-                continue
             if isinstance(values, list):
-                self.console_vars[var_name] = tf.reduce_mean(values,
-                                                             name=var_name)
+                self.console_vars[var_name] = tf.reduce_mean(
+                    values, name=var_name)
 
         for var_name in self.tf_summary_vars:
             values = self.tf_summary_vars.get(var_name, None)
-            if values is None:
-                continue
             if isinstance(values, list):
-                self.tf_summary_vars[var_name] = tf.reduce_mean(values,
-                                                                name=var_name)
-                tf.summary.scalar(name=var_name,
+                self.tf_summary_vars[var_name] = tf.reduce_mean(
+                    values, name=var_name)
+                summary_name = '{}_device_average_'.format(var_name)
+                tf.summary.scalar(name=summary_name,
                                   tensor=self.tf_summary_vars[var_name],
                                   collections=[TF_SUMMARIES])
         self._merge_op = tf.summary.merge_all(key=TF_SUMMARIES)
-
 
 
 def add_to_collections(keys,value):

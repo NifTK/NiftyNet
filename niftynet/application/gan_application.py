@@ -1,3 +1,4 @@
+from __future__ import absolute_import, print_function
 from niftynet.engine.gan_sampler import GANSampler
 import time
 
@@ -109,11 +110,11 @@ class GANApplication(BaseApplication):
         self._ph = tf.placeholder(tf.float32, [None])
         self._sz = tf.placeholder(tf.int32, [None])
         reshaped = tf.image.resize_images(
-            tf.reshape(self._ph, [1] + [self._param.label_size] * 2 + [-1]),
+            tf.reshape(self._ph, [1] + [self._param.image_size] * 2 + [-1]),
             self._sz[0:2])
         if self._param.spatial_rank == 3:
             reshaped = tf.reshape(reshaped, [1, self._sz[0] * self._sz[1],
-                                             self._param.label_size, -1])
+                                             self._param.image_size, -1])
             reshaped = tf.image.resize_images(reshaped,
                                               [self._sz[0] * self._sz[1],
                                                self._sz[2]])
@@ -197,7 +198,7 @@ class GANApplication(BaseApplication):
 
         if is_training:
             # a new pop_batch_op for each gpu tower
-            device_id = training_grads_collector.current_tower_id()
+            device_id = training_grads_collector.current_tower_id
             data_dict = self._sampler.pop_batch_op(device_id)
 
             noise = data_dict['Sampling/noise']
@@ -246,18 +247,18 @@ class GANApplication(BaseApplication):
                 training_grads_collector.add_to_collection(grads)
             return net_output
         else:
-            data_dict = self._sampler.pop_batch_op()
-            noise = data_dict['Sampling/noise']
-            images = data_dict['Sampling/images']
-            conditioning = data_dict.get('Sampling/conditioning', None)
-            net_output = self._net(noise, images, conditioning, is_training)
-            return net_output
+            raise NotImplementedError
+            #data_dict = self._sampler.pop_batch_op()
+            #images = data_dict['images']
+            #net_output = self._net(images, False)
+            #return net_output
 
     def net_inference(self, train_dict, is_training):
-        if not self._net:
-            self._net = self._net_class()
-        net_outputs = self._net(train_dict['images'], is_training)
-        return self._post_process_outputs(net_outputs), train_dict['info']
+        raise NotImplementedError
+        #if not self._net:
+        #    self._net = self._net_class()
+        #net_outputs = self._net(train_dict['images'], is_training)
+        #return self._post_process_outputs(net_outputs), train_dict['info']
 
     def loss_func(self, train_dict, net_outputs):
         real_logits = net_outputs[1]
