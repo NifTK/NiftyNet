@@ -113,8 +113,9 @@ class ResamplerLayer(Layer):
     sz = spatial_coords[0].get_shape().as_list()
     batch_coords = tf.tile(tf.reshape(tf.range(sz[0]), [sz[0]] + [1] * (len(sz) - 1)), [1] + sz[1:] )
     sc=(spatial_coords,spatial_coords_plus1)
-    binary_code = [[int(c) for c in format(i,'0%ib'%spatial_rank)] for i in range(2**spatial_rank)]
-    samples = [tf.gather_nd(inputs, tf.stack([batch_coords] + [sc[code][idx] for idx,code in enumerate(bc)] , -1)) for bc in binary_code]
+    binary_codes = [[int(c) for c in format(i,'0%ib'%spatial_rank)] for i in range(2**spatial_rank)]
+    make_sample = lambda bc: tf.gather_nd(inputs, tf.stack([batch_coords] + [sc[c][i] for i,c in enumerate(bc)] , -1))
+    samples = [make_sample(bc) for bc in binary_codes]
     def pyramid_combination(samples,weight,weight_c):
       if len(weight)==1:
         return samples[0]*weight_c[0]+samples[1]*weight[0]
