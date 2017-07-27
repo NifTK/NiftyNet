@@ -110,6 +110,7 @@ pip-installer:
     - rm -rf dist  # remove dist directory, just in case
     - python setup.py bdist_wheel
     - niftynet_wheel=$(ls $(pwd)/dist/*.whl)  # there will be only one file!
+    - echo $niftynet_wheel
     # save NiftyNet folder path just in case
     - niftynet_dir=$(pwd)
     # ============= Python 2 ============================
