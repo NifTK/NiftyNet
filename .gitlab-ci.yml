@@ -30,28 +30,28 @@ testjob:
     # run python code with coverage wrapper
     - coverage erase
 
-    - coverage run -a --source . run_application.py train -c config/highres3dnet_config.ini --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2
-    - coverage run -a --source . run_application.py inference -c config/highres3dnet_config.ini --batch_size 8 --image_size 64 --label_size 64 --queue_length 32
+    - coverage run -a --source . run_application.py train -c config/highres3dnet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2
+    - coverage run -a --source . run_application.py inference -c config/highres3dnet_config.txt --batch_size 8 --image_size 64 --label_size 64 --queue_length 32
 
-    - coverage run -a --source . run_application.py train -c config/scalenet_config.ini --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2
-    - coverage run -a --source . run_application.py inference -c config/scalenet_config.ini --batch_size 16 --image_size 64 --label_size 64 --queue_length 32
+    - coverage run -a --source . run_application.py train -c config/scalenet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2
+    - coverage run -a --source . run_application.py inference -c config/scalenet_config.txt --batch_size 16 --image_size 64 --label_size 64 --queue_length 32
 
-    - coverage run -a --source . run_application.py train -c config/vnet_config.ini --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2 --activation_function relu
-    - coverage run -a --source . run_application.py inference -c config/vnet_config.ini --batch_size 16 --image_size 64 --label_size 64 --queue_length 32 --activation_function relu
+    - coverage run -a --source . run_application.py train -c config/vnet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2 --activation_function relu
+    - coverage run -a --source . run_application.py inference -c config/vnet_config.txt --batch_size 16 --image_size 64 --label_size 64 --queue_length 32 --activation_function relu
 
     # need a large GPU to run
-    #- coverage run -a --source . run_application.py train -c config/unet_config.ini --batch_size 1 --image_size 96 --label_size 96 --queue_length 5 --num_threads 2
-    #- coverage run -a --source . run_application.py inference -c config/unet_config.ini --batch_size 1 --image_size 96 --label_size 96 --queue_length 5
+    #- coverage run -a --source . run_application.py train -c config/unet_config.txt --batch_size 1 --image_size 96 --label_size 96 --queue_length 5 --num_threads 2
+    #- coverage run -a --source . run_application.py inference -c config/unet_config.txt --batch_size 1 --image_size 96 --label_size 96 --queue_length 5
 
-    #- coverage run -a --source . run_application.py train -c config/deepmedic_config.ini --batch_size 8 --queue_length 16 --num_threads 2
-    #- coverage run -a --source . run_application.py inference -c config/deepmedic_config.ini --batch_size 64 --queue_length 96
+    #- coverage run -a --source . run_application.py train -c config/deepmedic_config.txt --batch_size 8 --queue_length 16 --num_threads 2
+    #- coverage run -a --source . run_application.py inference -c config/deepmedic_config.txt --batch_size 64 --queue_length 96
 
-    - coverage run -a --source . run_application.py train -c config/default_config.ini --image_size 42 --label_size 42 --batch_size 3 --queue_length 6
-    - coverage run -a --source . run_application.py train -c config/default_config.ini --image_size 42 --label_size 42 --batch_size 3 --queue_length 6 --starting_iter 10 --max_iter 15
-    - coverage run -a --source . run_application.py inference -c config/default_config.ini --image_size 84 --label_size 84 --batch_size 7 --queue_length 14
+    - coverage run -a --source . run_application.py train -c config/default_config.txt --image_size 42 --label_size 42 --batch_size 3 --queue_length 6
+    - coverage run -a --source . run_application.py train -c config/default_config.txt --image_size 42 --label_size 42 --batch_size 3 --queue_length 6 --starting_iter 10 --max_iter 15
+    - coverage run -a --source . run_application.py inference -c config/default_config.txt --image_size 84 --label_size 84 --batch_size 7 --queue_length 14
 
-    - coverage run -a --source . run_application.py train -c config/default_multimodal_config.ini --image_size 42 --label_size 42 --batch_size 3
-    - coverage run -a --source . run_application.py inference -c config/default_multimodal_config.ini --image_size 84 --label_size 84 --batch_size 7
+    - coverage run -a --source . run_application.py train -c config/default_multimodal_config.txt --image_size 42 --label_size 42 --batch_size 3
+    - coverage run -a --source . run_application.py inference -c config/default_multimodal_config.txt --image_size 84 --label_size 84 --batch_size 7
 
     - coverage run -a --source . -m tests.mean_variance_normalisation_test
     - coverage run -a --source . -m tests.binary_masking_test
