@@ -2,8 +2,23 @@ from setuptools import setup, find_packages
 from subprocess import check_output
 
 
-# Get the version
-version_git = check_output(['git', 'describe']).rstrip()
+# Describe the version relative to last tag
+version_buf = check_output(['git', 'describe', '--match', 'v[0-9]*']).rstrip()
+# exclude the 'v' for PEP440 compatibility, see
+# https://www.python.org/dev/peps/pep-0440/#public-version-identifiers
+version_buf = version_buf[1:]
+tokens = version_buf.split('-')
+if len(tokens) > 1:  # not a tagged commit
+    # Format according to PEP440, see:
+    # https://www.python.org/dev/peps/pep-0440/#local-version-identifiers
+    version_git = '{}+{}.{}'.format(tokens[0], tokens[1], tokens[2])
+elif len(tokens) == 1:  # tagged commit
+    # Format according to PEP440, see:
+    # https://www.python.org/dev/peps/pep-0440/#public-version-identifiers
+    version_git = tokens[0]
+else:
+    raise ValueError('Unexpected "git describe" output:'
+                     '{}'.format(version_buf))
 
 # Get the summary
 description = 'An open-source convolutional neural networks platform' +\
