@@ -188,7 +188,7 @@ def look_up_operations(type_str, supported):
     if isinstance(supported, set):
         set_to_check = supported
     elif isinstance(supported, dict):
-        set_to_check = set(supported.keys())
+        set_to_check = set(supported)
     else:
         set_to_check = set()
 

@@ -66,7 +66,7 @@ class HistogramNormalisationLayer(Layer):
             return self.modalities
         # remove if exists in currently loaded mapping dict
         modalities_to_train = dict(self.modalities)
-        for mod in self.modalities.keys():
+        for mod in self.modalities:
             if mod in self.mapping:
                 del modalities_to_train[mod]
         return modalities_to_train
@@ -87,7 +87,7 @@ class HistogramNormalisationLayer(Layer):
             return
         array_files = [subject.column(0) for subject in subjects]
         print("training normalisation histogram references for {}, "
-              "using {} subjects".format(mod_to_train.keys(), len(array_files)))
+              "using {} subjects".format(list(mod_to_train), len(array_files)))
         trained_mapping = hs.create_mapping_from_multimod_arrayfiles(
             array_files, mod_to_train, self.cutoff, self.binary_masking_func)
 

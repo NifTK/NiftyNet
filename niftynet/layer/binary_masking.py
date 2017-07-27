@@ -17,6 +17,7 @@ processing layers can only operate on the `True` locations within the image.
 SUPPORTED_MASK_TYPES = {'threshold_plus', 'threshold_minus',
                         'otsu_plus', 'otsu_minus', 'mean'}
 
+SUPPORTED_MULTIMOD_MASK_TYPES = {'or', 'and', 'multi'}
 
 class BinaryMaskingLayer(Layer):
     def __init__(self,
@@ -26,7 +27,9 @@ class BinaryMaskingLayer(Layer):
 
         super(BinaryMaskingLayer, self).__init__(name='binary_masking')
         self.type = look_up_operations(type.lower(), SUPPORTED_MASK_TYPES)
-        self.multimod_fusion = multimod_fusion
+        self.multimod_fusion = look_up_operations(
+                multimod_fusion.lower(), SUPPORTED_MULTIMOD_MASK_TYPES)
+
         self.threshold = threshold
 
     def __make_mask_3d(self, image):
