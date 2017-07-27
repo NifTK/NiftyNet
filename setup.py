@@ -1,12 +1,25 @@
 from setuptools import setup, find_packages
 from subprocess import check_output
+from packaging import version
+import re
 
 
 # Describe the version relative to last tag
-version_buf = check_output(['git', 'describe', '--match', 'v[0-9]*']).rstrip()
-# exclude the 'v' for PEP440 compatibility, see
+command_git = ['git', 'describe', '--match', 'v[0-9]*']
+version_buf = check_output(command_git).rstrip()
+
+# Exclude the 'v' for PEP440 conformity, see
 # https://www.python.org/dev/peps/pep-0440/#public-version-identifiers
 version_buf = version_buf[1:]
+
+# Regex for checking PEP 440 conformity
+# https://www.python.org/dev/peps/pep-0440/#id79
+pep440_regex = re.compile(
+    r"^\s*" + version.VERSION_PATTERN + r"\s*$",
+    re.VERBOSE | re.IGNORECASE,
+)
+
+# Split the git describe output, as it may not be a tagged commit
 tokens = version_buf.split('-')
 if len(tokens) > 1:  # not a tagged commit
     # Format a developmental release identifier according to PEP440, see:
@@ -19,6 +32,13 @@ elif len(tokens) == 1:  # tagged commit
 else:
     raise ValueError('Unexpected "git describe" output:'
                      '{}'.format(version_buf))
+
+# Check PEP 440 conformity
+if pep440_regex.match(version_git) is None:
+    raise ValueError('The version tag {} constructed from {} output'
+                     ' (generated using the "{}" command) does not'
+                     ' conform to PEP 440'.format(
+                         version_git, version_buf, ' '.join(command_git)))
 
 # Get the summary
 description = 'An open-source convolutional neural networks platform' +\
