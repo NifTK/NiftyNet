@@ -7,7 +7,7 @@ import tensorflow as tf
 
 import niftynet.utilities.param_shortcuts_expanding as param_util
 from niftynet.application.base_application import BaseApplication
-from niftynet.engine import network_tensor_collector as logging
+from niftynet.engine import graph_variables_collector as logging
 from niftynet.engine.gan_sampler import GANSampler
 from niftynet.engine.volume_loader import VolumeLoaderLayer
 from niftynet.layer.binary_masking import BinaryMaskingLayer
@@ -335,9 +335,9 @@ class GANApplication(BaseApplication):
                 pred_size = pred_img.shape[0:i_spatial_rank] + [1]
                 zoom = [d / p for p, d in zip(output_size, pred_size)]
                 ph = np.reshape(predictions, [-1])
-                pred_img = sess.run([self._reshaped], feed_dict={self._ph: ph,
-                                                                 self._sz: pred_img.shape})[
-                    0]
+                pred_img = sess.run(
+                        [self._reshaped],
+                        feed_dict={self._ph: ph, self._sz: pred_img.shape})[0]
                 subject_i.save_network_output(
                     pred_img,
                     self._param.save_seg_dir,

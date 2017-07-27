@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-import os,re
+import os
+import re
 
-import numpy as np
 import niftynet.utilities.misc_io as util
 
 
@@ -12,6 +12,7 @@ class KeywordsMatching(object):
     This class is responsible for the search of the appropriate files to use
     as input based on the constraints given in the config file
     '''
+
     def __init__(self, list_paths=(), list_contain=(), list_not_contain=()):
         self.list_paths = list_paths
         self.list_contain = list_contain
@@ -67,14 +68,22 @@ class KeywordsMatching(object):
         name_list_final).
         :returns list_final, name_list_final
         '''
-        path_file=[(p,filename) for p in self.list_paths for filename in os.listdir(p)]
-        func_match = lambda x:     all(c in x[1] for c in self.list_contain) and not any(c in x[1] for c in self.list_not_contain)
-        matching_path_file=list(filter(func_match,path_file))
-        list_final=[os.path.join(p,filename) for p,filename in matching_path_file]
-        name_list_final=[self.extract_subject_id_from(filename) for p,filename in matching_path_file]
+        path_file = [(p, filename)
+                     for p in self.list_paths
+                     for filename in os.listdir(p)]
+        matching_path_file = list(filter(self.__is_a_candidate, path_file))
+        list_final = [os.path.join(p, filename)
+                      for p, filename in matching_path_file]
+        name_list_final = [self.__extract_subject_id_from(filename)
+                           for p, filename in matching_path_file]
         return list_final, name_list_final
 
-    def extract_subject_id_from(self, filename):
+    def __is_a_candidate(self, x):
+        all_pos_match = all(c in x[1] for c in self.list_contain)
+        all_neg_match = not any(c in x[1] for c in self.list_not_contain)
+        return all_pos_match and all_neg_match
+
+    def __extract_subject_id_from(self, filename):
         '''
         This function returns a list of potential subject names from a given
         filename, knowing the imposed constraints. Constraints strings are
@@ -87,10 +96,11 @@ class KeywordsMatching(object):
         '''
         path, name, ext = util.split_filename(filename)
         # split name into parts that might be the subject_id
-        noncapturing_regex_delimiters=['(?:'+re.escape(c)+')' for c in self.list_contain]
-        potential_names=re.split('|'.join(noncapturing_regex_delimiters),name)
+        noncapturing_regex_delimiters = ['(?:' + re.escape(c) + ')'
+                                         for c in self.list_contain]
+        potential_names = re.split(
+            '|'.join(noncapturing_regex_delimiters), name)
         # filter out non-alphanumeric characters and blank strings
-        potential_names=[re.sub(r'\W+', '', name) for name in potential_names]
-        potential_names=[name for name in potential_names if name is not '']
+        potential_names = [re.sub(r'\W+', '', name) for name in potential_names]
+        potential_names = [name for name in potential_names if name is not '']
         return potential_names
-

@@ -3,12 +3,14 @@ import sys
 import time
 
 import tensorflow as tf
-from niftynet.engine.graph_variables_collector import OutputsCollector
+
 from niftynet.engine.graph_variables_collector import GradientsCollector
+from niftynet.engine.graph_variables_collector import OutputsCollector
 
 FILE_PREFIX = 'model.ckpt'
 CONSOLE_LOG_FORMAT = '%(levelname)s:niftynet: %(message)s'
 FILE_LOG_FORMAT = '%(levelname)s:niftynet:%(asctime)s: %(message)s'
+
 
 class ApplicationFactory(object):
     from niftynet.application.segmentation_application import \
@@ -25,6 +27,7 @@ class ApplicationFactory(object):
     def import_module(type_string):
         return ApplicationFactory.application_dict[type_string]
 
+
 class ApplicationDriver(object):
     def __init__(self):
 
@@ -38,6 +41,7 @@ class ApplicationDriver(object):
 
         self.model_dir = None
         self.session_dir = None
+        self.summary_dir = None
         self.max_checkpoints = 20
         self.save_every_n = 10
         self.initial_iter = 0
@@ -83,7 +87,6 @@ class ApplicationDriver(object):
         # initialise data input, and the tf graph
         self.app.initialise_dataset_loader(csv_dict)
         self.graph = self._create_graph()
-
 
     def run_application(self):
         assert self.graph is not None, \
@@ -169,7 +172,6 @@ class ApplicationDriver(object):
         self.saver.restore(sess, checkpoint)
         return
 
-
     def _training_loop(self, sess):
 
         iter_i = -1
@@ -229,7 +231,7 @@ class ApplicationDriver(object):
             tf.logging.info('stopping sampling threads')
             self.app.stop()
             tf.logging.info("{} stopped (time in second {:.2f}).".format(
-                    type(self.app).__name__, (time.time() - start_time)))
+                type(self.app).__name__, (time.time() - start_time)))
 
     def _inference_loop(self, sess):
         pass
@@ -268,7 +270,7 @@ class ApplicationDriver(object):
             tf.logging.info(
                 "set CUDA_VISIBLE_DEVICES to {}".format(cuda_devices))
         else:
-            pass # using Tensorflow default choice
+            pass  # using Tensorflow default choice
 
     @staticmethod
     def _model_moving_averaging_op(decay=0.9):

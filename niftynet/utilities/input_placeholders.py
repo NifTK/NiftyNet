@@ -7,22 +7,28 @@ import tensorflow as tf
 
 from niftynet.utilities.subject import ColumnData
 
-############ prefered usage example ##########
-# test_patch = ImagePatch(spatial_rank=3,
-#                         image_size=32,
-#                         label_size=32,
-#                         weight_map_size=32,
-#                         image_dtype=tf.float32,
-#                         label_dtype=tf.int64,
-#                         weight_map_dtype=tf.float32,
-#                         num_image_modality=1,
-#                         num_label_modality=1,
-#                         num_weight_map=1)
-################################################
-
-
 SUPPORTED_SPATIAL_RANKS = {2.0, 2.5, 3.0}
 
+
+class BasePatch(object):
+
+    def __init__(self):
+        pass
+
+    def placeholders(self):
+        return None
+
+    def set_data(self):
+        return None
+
+    def stopping_signal(self):
+        return None
+
+    def is_stopping_signal(self, info):
+        return None
+
+    def to_dict(self):
+        return None
 
 
 class ImagePatch(object):
@@ -321,6 +327,7 @@ class ImagePatch(object):
         if info is None:
             raise ValueError('wrong data format')
         return np.all(info == self.stopping_signal)
+
 
 class GANPatch(object):
     """
