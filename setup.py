@@ -1,5 +1,9 @@
 from setuptools import setup, find_packages
+from subprocess import check_output
 
+
+# Get the version
+version_git = check_output(['git', 'describe']).rstrip()
 
 # Get the summary
 description = 'An open-source convolutional neural networks platform' +\
@@ -14,7 +18,7 @@ with open('pip/long_description.rst') as f:
 setup(
     name='NiftyNet',
 
-    version='0.1rc1',  # TODO
+    version=version_git,
 
     description=description,
     long_description=long_description,
