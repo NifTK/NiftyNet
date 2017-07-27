@@ -34,23 +34,28 @@ def parse_arguments_by_section(parser, section, defaults, args_from_cmd):
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    if section == 'application':
+    if section == 'APPLICATION':
         section_parser = __add_application_args(section_parser)
-    elif section == 'network':
+    elif section == 'NETWORK':
         pass
-    elif section == 'training' and section_parser.action == 'train':
+    elif section == 'TRAINING':
         pass
-    elif section == 'inference' and section_parser.action == 'inference':
+    elif section == 'INFERENCE':
         pass
     else:
         pass
 
     if defaults:
         section_parser.set_defaults(**defaults)
-    section_args = section_parser.parse_args(args_from_cmd)
-    return section_args
+    section_args, unknown = section_parser.parse_known_args(args_from_cmd)
+    return section_args, unknown
 
 def __add_application_args(parser):
+    parser.add_argument(
+        "action",
+        help="train or inference",
+        choices=['train', 'inference'])
+
     parser.add_argument(
         "--type",
         help="Choose the type of problem you are solving",
@@ -422,9 +427,6 @@ def build_parser(parents, defaults):
 
 def run():
     meta_parser = argparse.ArgumentParser(add_help=False)
-    meta_parser.add_argument("-action",
-                             help="train or inference",
-                             choices=['train', 'inference'])
     meta_parser.add_argument("-c", "--conf",
                              help="Specify configurations from a file",
                              metavar="File", )
@@ -438,23 +440,26 @@ def run():
         raise IOError("Configuration file not found {}".format(meta_args.conf))
 
     all_args = {}
+    args_remaining = args_from_cmd
     for section in config.sections():
         if section not in SYSTEM_SECTIONS:
             continue
         section_defaults = dict(config.items(section))
-        import pdb; pdb.set_trace()
-        section_args = parse_arguments_by_section(
-                [meta_parser], section, section_defaults, args_from_cmd)
+        section_args, args_remaining = parse_arguments_by_section(
+                [meta_parser], section, section_defaults, args_remaining)
         all_args[section] = section_args
+    if not args_remaining == []:
+        raise ValueError(
+            'unknown parameter: {}'.format(args_remaining))
     all_args['config_file'] = meta_args.conf  # update conf path
-    import pdb; pdb.set_trace()
 
     csv_dict = {}
     for (input_name, input_file_matcher) in input_sources.items():
+        model_dir = all_args['APPLICATION'].model_dir
         file_csv_path = os.path.join(
-                meta_argss.model_dir, '{}{}'.format(input_name, '.csv'))
+            model_dir, '{}{}'.format(input_name, '.csv'))
         misc_csv.write_matched_filenames_to_csv(
-                input_file_matcher, file_csv_path)
+            input_file_matcher, file_csv_path)
         csv_dict[input_name] = file_csv_path
     import pdb; pdb.set_trace()
     all_args = correct_args_types(all_args)
