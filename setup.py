@@ -101,7 +101,7 @@ setup(
         'configparser',
         'tensorflow-gpu==1.1',
         'pillow',
-        ],
+    ],
 
     entry_points={
         'console_scripts': [
