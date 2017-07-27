@@ -9,11 +9,11 @@ version_buf = check_output(['git', 'describe', '--match', 'v[0-9]*']).rstrip()
 version_buf = version_buf[1:]
 tokens = version_buf.split('-')
 if len(tokens) > 1:  # not a tagged commit
-    # Format according to PEP440, see:
-    # https://www.python.org/dev/peps/pep-0440/#local-version-identifiers
-    version_git = '{}+{}.{}'.format(tokens[0], tokens[1], tokens[2])
+    # Format a developmental release identifier according to PEP440, see:
+    # https://www.python.org/dev/peps/pep-0440/#developmental-releases
+    version_git = '{}.dev{}'.format(tokens[0], tokens[1])
 elif len(tokens) == 1:  # tagged commit
-    # Format according to PEP440, see:
+    # Format a public version identifier according to PEP440, see:
     # https://www.python.org/dev/peps/pep-0440/#public-version-identifiers
     version_git = tokens[0]
 else:
