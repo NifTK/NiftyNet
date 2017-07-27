@@ -2,6 +2,7 @@ from setuptools import setup, find_packages
 from subprocess import check_output
 from packaging import version
 import re
+import os
 
 
 # Describe the version relative to last tag
@@ -11,6 +12,22 @@ version_buf = check_output(command_git).rstrip()
 # Exclude the 'v' for PEP440 conformity, see
 # https://www.python.org/dev/peps/pep-0440/#public-version-identifiers
 version_buf = version_buf[1:]
+
+# Create a niftynet/info.py module that will keep the
+# version descriptor returned by Git
+info_module = open(os.path.join('niftynet', 'info.py'), 'w')
+info_module.write('# -*- coding: utf-8 -*-\n')
+info_module.write('"""NiftyNet version tracker.\n')
+info_module.write('\n')
+info_module.write('This module only holds the NiftyNet version,')
+info_module.write(' generated using the \n')
+info_module.write('``{}`` command.\n'.format(' '.join(command_git)))
+info_module.write('\n')
+info_module.write('"""\n')
+info_module.write('\n')
+info_module.write('\n')
+info_module.write('version = "{}"\n'.format(version_buf))
+info_module.close()
 
 # Regex for checking PEP 440 conformity
 # https://www.python.org/dev/peps/pep-0440/#id79
