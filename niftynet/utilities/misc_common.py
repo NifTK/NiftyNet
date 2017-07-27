@@ -70,7 +70,7 @@ def has_bad_inputs(args):
     return is_bad
 
 
-def print_save_input_parameters(args, ini_file=None):
+def print_save_input_parameters(args, txt_file=None):
     output_config = ['Input params at ' + str(datetime.datetime.now())[:-6]]
 
     for arg in vars(args):
@@ -78,8 +78,8 @@ def print_save_input_parameters(args, ini_file=None):
         print(out_str)
         output_config.append(out_str)
 
-    if ini_file:
-        with open(ini_file, 'w') as f:
+    if txt_file:
+        with open(txt_file, 'w') as f:
             [f.write(s + '\n') for s in output_config]
 
 

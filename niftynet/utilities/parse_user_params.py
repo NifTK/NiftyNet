@@ -61,7 +61,7 @@ def _eval_path_search(config):
 def default_params(action, config_file=None):
     if config_file is None:
         config_file = os.path.join(os.path.dirname(__file__),
-                                   '..', 'config', 'default_config.ini')
+                                   '..', 'config', 'default_config.txt')
     config = configparser.ConfigParser()
     config.read([config_file])
     args = build_parser([], dict(config['settings'])).parse_args([action])
@@ -505,7 +505,7 @@ def run_eval():
                              help="Specify configurations from a file",
                              metavar="File")
     config_file = os.path.join(os.path.dirname(__file__),
-                               '..', 'config', 'default_eval_config.ini')
+                               '..', 'config', 'default_eval_config.txt')
     defaults = {"conf": config_file}
     file_parser.set_defaults(**defaults)
     file_arg, remaining_argv = file_parser.parse_known_args()

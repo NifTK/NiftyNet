@@ -45,7 +45,7 @@ python run_application.py inference --net_name toynet \
 Image data in nifty format (extension .nii or .nii.gz) are supported.
 
 ##### (c) To customise configurations
-Commandline parameters override the default settings defined in `config/default_config.ini`.
+Commandline parameters override the default settings defined in `config/default_config.txt`.
 
 Alternatively, to run with a customised config file:
 
