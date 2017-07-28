@@ -1,6 +1,7 @@
 stages:
   - dev_test
   - pip_test
+  - pip_publish
 
 testjob:
   stage: dev_test
@@ -168,5 +169,28 @@ pip-installer:
     # deactivate virtual environment
     - deactivate
     - cd $niftynet_dir
+  tags:
+    - gift-adelie
+
+pip-camera-ready:
+  stage: pip_publish
+  only:
+    - tags
+  script:
+    # Copy wheel created in previous stage to a specific location on GIFT-Adelie
+    - source ci/findwheel.sh
+    - echo $niftynet_wheel
+    # Creat camera-ready folder if doesn't exist
+    - camera_ready_dir=/home/gitlab-runner/environments/niftynet/pip/camera-ready
+    - mkdir -p $camera_ready_dir
+    - ls -lrtha $camera_ready_dir
+    # Clean up the camera-ready folder if already there
+    - rm -rf $camera_ready_dir/*.whl
+    # Finally do copy
+    - cp $niftynet_wheel $camera_ready_dir
+    - ls -lrtha $camera_ready_dir
+    # Instruct developer which file to publish
+    - echo "Camera-ready pip installer bundle (wheel) created:"
+    - echo "$(ls $camera_ready_dir/*.whl)"
   tags:
     - gift-adelie
