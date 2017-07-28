@@ -3,6 +3,7 @@ testjob:
     - master
     - dev
     - dev-staging
+    - tags
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
