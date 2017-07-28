@@ -108,7 +108,7 @@ setup(
             'demos',
             'tests',
         ]
-    ),  # TODO
+    ),
 
     install_requires=[
         'six>=1.10',
