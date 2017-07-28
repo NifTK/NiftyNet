@@ -73,7 +73,7 @@ This project is grateful for the support from the [Wellcome Trust][wt], the [Eng
 [cmic]: http://cmic.cs.ucl.ac.uk
 [ucl]: http://www.ucl.ac.uk
 [tf]: https://www.tensorflow.org/
-[weiss]: http://www.ucl.ac.uk/surgical-interventional-sciences
+[weiss]: http://www.ucl.ac.uk/weiss
 [wt]: https://wellcome.ac.uk/
 [epsrc]: https://www.epsrc.ac.uk/
 [nihr]: https://www.nihr.ac.uk/
