@@ -1,4 +1,9 @@
+stages:
+  - dev_test
+  - pip_test
+
 testjob:
+  stage: dev_test
   only:
     - master
     - dev
@@ -94,6 +99,7 @@ testjob:
     - gift-linux
 
 pip-installer:
+  stage: pip_test
   only:
     - 69-push-to-pip-repository-after-commit-to-master-off-dev
     - 69-push-to-pip-repository-after-commit-to-master-off-dev-restructure-hierarchy
