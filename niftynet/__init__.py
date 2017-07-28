@@ -128,6 +128,3 @@ def main():
         niftynet.engine.inference.run(net_class, param, volume_loader, device_str)
     return 0
 
-
-if __name__ == "__main__":
-    sys.exit(main())
