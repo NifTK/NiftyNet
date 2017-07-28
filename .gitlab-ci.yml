@@ -178,6 +178,7 @@ pip-camera-ready:
     - tags
   script:
     # Copy wheel created in previous stage to a specific location on GIFT-Adelie
+    - export niftynet_dir=$(pwd)
     - source ci/findwheel.sh
     - echo $niftynet_wheel
     # Creat camera-ready folder if doesn't exist
