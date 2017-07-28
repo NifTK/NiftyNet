@@ -2,7 +2,6 @@
 from __future__ import absolute_import, print_function
 
 import os
-import sys
 
 import niftynet.utilities.misc_common as util
 import niftynet.utilities.parse_user_params as parse_user_params
