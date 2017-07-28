@@ -2,7 +2,7 @@
 
 # please make sure you installed all dependencies of NiftyNet.
 # cd NiftyNet/; pip install -r requirements-gpu.txt
-NIFTYNET=../../niftynet/__init__.py
+NIFTYNET=../../net_segmentation.py
 
 DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 cd "$DIR"
