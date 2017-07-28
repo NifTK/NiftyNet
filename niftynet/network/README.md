@@ -56,4 +56,4 @@ image_ size = 57, label_ size = 9, d_ factor = 3
 1. Create a `niftynet/network/new_net.py` inheriting `BaseNet` from `niftynet.layer.base_net`
 1. Implement `layer_op()` function using the building blocks in `niftynet/layer/` or creating new layers
 1. Import `niftynet.network.new_net` to the `NetFactory` class in `niftynet/__init__.py`
-1. Train the network with `python niftynet/__init__.py train -c /path/to/customised_config`
+1. Train the network with `python net_segmentation.py train -c /path/to/customised_config`
