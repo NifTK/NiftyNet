@@ -97,6 +97,7 @@ pip-installer:
   only:
     - 69-push-to-pip-repository-after-commit-to-master-off-dev
     - 69-push-to-pip-repository-after-commit-to-master-off-dev-restructure-hierarchy
+    - tags
   script:
     # following three lines copied over from dev script:
     - ls -la /dev | grep nvidia
