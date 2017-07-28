@@ -35,7 +35,9 @@ Other features of NiftyNet include:
 
 ### Installation
 
-[`pip install niftynet`](https://pypi.org/project/NiftyNet/)
+[`pip install niftynet`](https://pypi.org/project/NiftyNet/)*
+
+<sup>*This will install the GPU version of NiftyNet.</sup>
 
 
 ### Getting started
