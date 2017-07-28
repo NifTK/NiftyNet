@@ -20,7 +20,7 @@ num_threads = 2
 
 # network parameters (controlling memory consumption)
 spatial_rank = 3
-batch_size = 25
+batch_size = 100
 image_size = 24
 label_size = 24
 w_map_size = 24
@@ -65,8 +65,8 @@ save_every_n = 100
 max_iter = 10000
 
 # ** inference only ** system parameters
-# Options are (1) forward_pass; (2) sample; and (3) linear_interpolation
-vae_inference_application = linear_interpolation
+# Options are (1) encode; (2); encode-decode; (3) sample; and (4) linear_interpolation
+vae_inference_application = encode-decode
 border = 5
 inference_iter = 1100
 save_seg_dir = ./output/vae

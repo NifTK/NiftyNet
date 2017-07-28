@@ -118,8 +118,30 @@ def run(net_class, param, volume_loader, device_str):
         try:
             seg_batch_runner.run_threads(sess, coord, num_threads=1)
 
-            if param.vae_inference_application == 'forward_pass':
-                # Pass each volume through the network and save the reconstructions
+            if param.vae_inference_application == 'encode':
+                # Pass each volume through just the encoder and save the codes (i.e, the latent variables)
+                img_id, pred_img, subject_i = None, None, None
+                while True:
+                    if coord.should_stop():
+                        break
+                    current_output, spatial_info = sess.run([net_out, info])
+                    current_output = current_output[-1]  # These are the embeddings
+                    # go through each one in a batch
+                    for batch_id in range(current_output.shape[0]):
+                        img_id = spatial_info[batch_id, 0]
+                        subject_i = volume_loader.get_subject(img_id)
+                        code_i = current_output[batch_id]
+                        # Pickle the pairs of volumes and codes (export to MAT too?)
+
+                        if patch_holder.is_stopping_signal(
+                                spatial_info[batch_id]):
+                            print('received finishing batch')
+                            all_saved_flag = True
+                            break
+                all_saved_flag = True
+
+            elif param.vae_inference_application == 'encode-decode':
+                # Pass each volume through the network and save the reconstructions (i.e., the predicted means)
                 img_id, pred_img, subject_i = None, None, None
                 while True:
                     if coord.should_stop():
@@ -166,7 +188,7 @@ def run(net_class, param, volume_loader, device_str):
                 nii_save(originals[1, :, :, :, :], 'LinearInterpolationOriginalFinish')
                 all_saved_flag = True
             else:
-                print('ERROR: the only VAE inference options are (1) forward_pass; (2) sample; and (3) linear_interpolation')
+                print('ERROR: the only VAE inference options are (1) encode; (2) encode-decode; (3) sample; and (4) linear_interpolation')
 
 
 
