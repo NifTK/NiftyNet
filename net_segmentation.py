@@ -13,7 +13,7 @@ from niftynet.layer.histogram_normalisation import \
 from niftynet.layer.mean_variance_normalisation import \
     MeanVarNormalisationLayer
 from niftynet.utilities.csv_table import CSVTable
-
+from niftynet.engine.application_driver import ApplicationDriver
 
 # if sys.version_info[0] >= 3:
 #    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w')
@@ -59,11 +59,16 @@ from niftynet.utilities.csv_table import CSVTable
 
 def main():
     param, csv_dict = parse_user_params.run()
-    #if util.has_bad_inputs(param):
-    #    return -1
-    #else:
-    #    util.print_save_input_parameters(param, txt_file=os.path.join(param.model_dir,
-    #                                                                  'settings_' + param.action + '.txt'))
+    if util.has_bad_inputs(param):
+        return -1
+
+    settings_filename = os.path.join(
+            param['APPLICATION'].model_dir,
+            'settings_' + param['APPLICATION'].action + '.txt')
+    util.print_save_input_parameters(param, txt_file=settings_filename)
+    app_driver = ApplicationDriver()
+    #app_driver.initialise_application(param, csv_dict)
+    return 0
 
     #if not (param.cuda_devices == '""'):
     #    os.environ["CUDA_VISIBLE_DEVICES"] = param.cuda_devices

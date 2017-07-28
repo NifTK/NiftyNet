@@ -225,7 +225,7 @@ def remove_duplicated_names(name_list):
     return duplicates_removed
 
 
-def write_matched_filenames_to_csv(list_constraints, csv_file):
+def match_and_write_filenames_to_csv(list_constraints, csv_file):
     '''
     Combine all elements of file searching until finally writing the names
     :param list_constraints: list of constraints (defined by list of paths to

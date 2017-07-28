@@ -86,36 +86,41 @@ def list_files(img_dir, ext='.nii.gz'):
     return names
 
 
-def has_bad_inputs(args):
+def has_bad_inputs(input_args):
     '''
     Check if all input params have been properly set in the configuration file.
-    :param args:
+    :param input_args:
     :return:
     '''
-    print('Input params:')
     is_bad = False
-    for arg in vars(args):
-        user_value = getattr(args, arg)
-        if user_value is None:
-            print('{} not set in the config file'.format(arg))
-            is_bad = True
-    ## at each iteration [batch_size] samples will be read from queue
-    # if args.queue_length < args.batch_size:
-    #    print('queue_length ({}) should be >= batch_size ({}).'.format(
-    #        args.queue_length, args.batch_size))
-    #    return True
+    import niftynet.utilities.parse_user_params
+    for section in input_args:
+        if section not in niftynet.utilities.parse_user_params.SYSTEM_SECTIONS:
+            continue
+        section_args = input_args[section]
+        for input_arg in vars(section_args):
+            user_value = getattr(section_args, input_arg)
+            if user_value is None:
+                print('{} not set in the config file'.format(input_arg))
+                is_bad = True
+
     return is_bad
 
 
 def print_save_input_parameters(args, txt_file=None):
     output_config = ['Input params at ' + str(datetime.datetime.now())[:-6]]
 
-    for arg in vars(args):
-        out_str = "-- {}: {}".format(arg, getattr(args, arg))
-        print(out_str)
-        output_config.append(out_str)
+    for section in args:
+        header_str = '[{}]'.format(section.upper())
+        print(header_str)
+        output_config.append(header_str)
+        section_args = args[section]
+        for arg in vars(section_args):
+            out_str = "-- {}: {}".format(arg, getattr(section_args, arg))
+            print(out_str)
+            output_config.append(out_str)
 
-    if txt_file:
+    if txt_file is not None:
         with open(txt_file, 'w') as f:
             [f.write(s + '\n') for s in output_config]
 

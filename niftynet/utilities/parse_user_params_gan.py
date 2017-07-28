@@ -407,11 +407,11 @@ def run():
     file_args.conf = file_arg.conf  # update conf path
     # creating output
     image_csv_path = os.path.join(file_args.model_dir, 'image_files.csv')
-    misc_csv.write_matched_filenames_to_csv(image_matcher, image_csv_path)
+    misc_csv.match_and_write_filenames_to_csv(image_matcher, image_csv_path)
 
     if conditioning_matcher:
         conditioning_csv_path = os.path.join(file_args.model_dir, 'conditioning_files.csv')
-        misc_csv.write_matched_filenames_to_csv(conditioning_matcher, conditioning_csv_path)
+        misc_csv.match_and_write_filenames_to_csv(conditioning_matcher, conditioning_csv_path)
     else:
         conditioning_csv_path = None
 

@@ -31,7 +31,7 @@ class HistTest(tf.test.TestCase):
                                          ['Parcellation'])
         constraint_FLAIR = KeywordsMatching(['testing_data'], ['FLAIR'], [])
         constraint_array = [constraint_FLAIR, constraint_T1]
-        misc_csv.write_matched_filenames_to_csv(
+        misc_csv.match_and_write_filenames_to_csv(
             constraint_array, os.path.join('testing_data','TestPrepareInputHGG.csv'))
         csv_dict = {
             'input_image_file': os.path.join('testing_data','TestPrepareInputHGG.csv'),

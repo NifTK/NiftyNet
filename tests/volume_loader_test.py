@@ -18,12 +18,12 @@ class SubjectTest(tf.test.TestCase):
         constraint_FLAIR = KeywordsMatching(['testing_data'], ['FLAIR'],
                                             [])
         constraint_array = [constraint_FLAIR, constraint_T1]
-        misc_csv.write_matched_filenames_to_csv(
+        misc_csv.match_and_write_filenames_to_csv(
             constraint_array, os.path.join('testing_data','TestPrepareInputHGG.csv'))
 
         constraint_Label = KeywordsMatching(['testing_data'],
                                             ['Parcellation'], [])
-        misc_csv.write_matched_filenames_to_csv(
+        misc_csv.match_and_write_filenames_to_csv(
             [constraint_Label], os.path.join('testing_data','TestPrepareOutputHGG.csv'))
 
         csv_dict = {

@@ -6,13 +6,12 @@ import os
 import re
 
 import niftynet.utilities.misc_csv as misc_csv
+from niftynet.utilities.filename_matching import KeywordsMatching
 
 try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
-
-from niftynet.utilities.filename_matching import KeywordsMatching
 
 SYSTEM_SECTIONS = {'APPLICATION', 'NETWORK', 'TRAINING', 'INFERENCE'}
 DEFAULT_MODEL_DIR = os.path.join(
@@ -33,53 +32,58 @@ def run():
     if meta_args.conf and os.path.exists(meta_args.conf):
         config = configparser.ConfigParser()
         config.read([meta_args.conf])
-        # initialise search of image modality filenames
-        input_sources = _input_path_search(config)
     else:
-        raise IOError("Configuration file not found {}".format(meta_args.conf))
+        raise IOError(
+            "Configuration file not found {}".format(meta_args.conf))
 
     all_args = {}
     args_remaining = args_from_cmd
     for section in config.sections():
-        if section not in SYSTEM_SECTIONS:
-            continue
+        # try to rename user-specified sections for consistency
+        new_section = re.sub('[^0-9a-zA-Z]+', '_', section)
+        section = __rename_section(config, section, new_section)
+
         section_defaults = dict(config.items(section))
         section_args, args_remaining = _parse_arguments_by_section(
-            [meta_parser], section, section_defaults, args_remaining)
+            [], section, section_defaults, args_remaining)
         all_args[section] = section_args
+
     if not args_remaining == []:
         raise ValueError(
             'unknown parameter: {}'.format(args_remaining))
-    all_args['config_file'] = meta_args.conf  # update conf path
 
+    # converting user-specified sections as input data sources
     csv_dict = {}
-    for (input_name, input_file_matcher) in input_sources.items():
-        model_dir = all_args['APPLICATION'].model_dir
-        file_csv_path = os.path.join(
-            model_dir, '{}{}'.format(input_name, '.csv'))
-        misc_csv.write_matched_filenames_to_csv(
-            input_file_matcher, file_csv_path)
-        csv_dict[input_name] = file_csv_path
-    import pdb;
-    pdb.set_trace()
+    for section in all_args:
+        if section in SYSTEM_SECTIONS:
+            continue
+        section_args = all_args[section]
+        input_csv = section_args.csv_file
+        if input_csv is None or not os.path.isfile(input_csv):
+            model_dir = all_args['APPLICATION'].model_dir
+            input_csv = os.path.join(model_dir,
+                                     '{}{}'.format(section, '.csv'))
+            csv_dict[section] = input_csv
+        # write a new csv file if it doesn't exist
+        if not os.path.isfile(input_csv):
+            print('writing new csv')
+            section_tuple = section_args.__dict__.items()
+            matcher = KeywordsMatching.from_tuple(section_tuple)
+            misc_csv.match_and_write_filenames_to_csv([matcher], input_csv)
+
+        if not os.path.isfile(input_csv):
+            raise ValueError(
+                    "unable to find/create list of input filenames"
+                    "as a csv file {} for config"
+                    "section [{}]".format(input_csv, section))
+    # update conf path
+    all_args['config_file'] = argparse.Namespace(path=meta_args.conf)
     return all_args, csv_dict
 
 
-def _input_path_search(config):
-    input_sources = {}
-    # match all input modality sections (non-system sections)
-    for section in config.sections():
-        new_section = re.sub('[^0-9a-zA-Z]+', '_', section)
-        section = __rename_section(config, section, new_section)
-        if section not in SYSTEM_SECTIONS:
-            items = config.items(section)
-            input_sources[section] = [KeywordsMatching.from_tuple(items)]
-    return input_sources
-
-
-def _parse_arguments_by_section(parser, section, defaults, args_from_cmd):
+def _parse_arguments_by_section(parents, section, defaults, args_from_cmd):
     section_parser = argparse.ArgumentParser(
-        parents=parser,
+        parents=parents,
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
@@ -92,11 +96,51 @@ def _parse_arguments_by_section(parser, section, defaults, args_from_cmd):
     elif section == 'INFERENCE':
         section_parser = __add_inference_args(section_parser)
     else:
-        pass
-    if defaults:
+        section_parser = __add_data_source_args(section_parser)
+    if defaults is not None:
         section_parser.set_defaults(**defaults)
+    # TODO: setting multiple user-specified sections from cmd
     section_args, unknown = section_parser.parse_known_args(args_from_cmd)
     return section_args, unknown
+
+
+def __add_data_source_args(parser):
+    parser.add_argument(
+        "--csv_file",
+        metavar='',
+        type=str,
+        help="Input list of subjects in csv files")
+
+    parser.add_argument(
+        "--path_to_search",
+        metavar='',
+        type=str,
+        help="Input data folder to find a list of input image files")
+
+    parser.add_argument(
+        "--filename_contains",
+        metavar='',
+        type=str,
+        help="keywords in input file names, matched filenames will be used.")
+
+    parser.add_argument(
+        "--filename_not_contains",
+        metavar='',
+        type=str,
+        help="keywords in input file names, negatively matches filenames")
+
+    parser.add_argument(
+        "--size",
+        type=str2array,
+        help="input data size")
+
+    parser.add_argument(
+        "--interp_order",
+        type=int,
+        choices=[0, 1, 2, 3],
+        help="interpolation order of the input images")
+
+    return parser
 
 
 def __add_application_args(parser):
@@ -151,7 +195,7 @@ def __add_application_args(parser):
 
 def __add_network_args(parser):
     parser.add_argument(
-        "--net_name",
+        "--name",
         help="Choose a net from NiftyNet/niftynet/network/",
         metavar='')
 
@@ -250,26 +294,26 @@ def __add_network_args(parser):
         "--reorientation",
         help="Indicates if the loaded images are put by default in the RAS "
              "orientation",
-        type=str2bool,
+        type=str2boolean,
         default=False)
 
     parser.add_argument(
         "--resampling",
         help="Indicates if the volumes must be resampled to an isotropic "
              "resolution of 1mm x 1mm x 1mm",
-        type=str2bool,
+        type=str2boolean,
         default=False)
 
     parser.add_argument(
         "--normalisation",
         help="Indicates if the normalisation must be performed",
-        type=str2bool,
+        type=str2boolean,
         default=True)
 
     parser.add_argument(
         "--whitening",
         help="Indicates if the whitening of the data should be applied",
-        type=str2bool,
+        type=str2boolean,
         default=True)
 
     return parser
@@ -287,7 +331,7 @@ def __add_training_args(parser):
     parser.add_argument(
         "--rotation",
         help="Indicates if a rotation should be applied to the volume",
-        type=str2bool,
+        type=str2boolean,
         default=False)
 
     # TODO: changed parameters to tuple
@@ -302,7 +346,7 @@ def __add_training_args(parser):
         "--spatial_scaling",
         help="Indicates if the spatial scaling must be performed (zooming"
              " as an augmentation step)",
-        type=str2bool,
+        type=str2boolean,
         default=False)
 
     parser.add_argument(
@@ -339,7 +383,7 @@ def __add_training_args(parser):
         help="Indicates whether 'flipping' should be performed "
              "as a data-augmentation step. Please set --flip_axes"
              " as well for correct functioning.",
-        type=str2bool,
+        type=str2boolean,
         default=False)
 
     parser.add_argument(
@@ -423,7 +467,7 @@ def __add_inference_args(parser):
         "--output_prob",
         metavar='',
         help="[Inference only] whether to output multi-class probabilities",
-        type=str2bool,
+        type=str2boolean,
         default=False)
 
     return parser
@@ -532,7 +576,7 @@ def __rename_section(configparser, old_name, new_name):
     return new_name
 
 
-def str2bool(string_input):
+def str2boolean(string_input):
     if string_input.lower() in TRUE_VALUE:
         return True
     elif string_input.lower() in FALSE_VALUE:
@@ -541,6 +585,7 @@ def str2bool(string_input):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
+# TODO: passing arrays to application
 def str2array(string_input):
     if string_input[0] in ARRAY_TYPES:
         expected_right_most = ARRAY_TYPES[string_input[0]]
@@ -556,10 +601,10 @@ def str2array(string_input):
             array = map(float, string_input.split(','))
         except ValueError:
             raise argparse.ArgumentTypeError(
-                'unknown array input {}'.format(string_input))
+                'array expected, unknown array input {}'.format(string_input))
     if len(array) < 1:
         raise argparse.ArgumentTypeError(
-            'unknown array input {}'.format(string_input))
+            'array expected, unknown array input {}'.format(string_input))
     if len(array) == 1:
         return array[0]
     return tuple(array)

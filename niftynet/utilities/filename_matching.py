@@ -32,6 +32,8 @@ class KeywordsMatching(object):
         '''
         path, contain, not_contain = [], [], []
         for (name, value) in input_tuple:
+            if not isinstance(value, str):
+                continue
             if len(value) <= 1 or value == '""':
                 continue
             if name == "path_to_search":
