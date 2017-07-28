@@ -118,7 +118,7 @@ pip-installer:
     - export niftynet_dir=$(pwd)
     # create the NiftyNet wheel
     - rm -rf dist  # remove dist directory, just in case
-    - python setup.py bdist_wheel
+    - sh ci/bundlewheel.sh
     - source ci/findwheel.sh
     - echo $niftynet_wheel
     # ============= Python 2 ============================
