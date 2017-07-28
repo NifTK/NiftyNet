@@ -5,14 +5,8 @@ import os
 import sys
 
 import niftynet.utilities.misc_common as util
-import niftynet.utilities.parse_user_params as parse_user_params
-from niftynet.engine.volume_loader import VolumeLoaderLayer
-from niftynet.layer.binary_masking import BinaryMaskingLayer
-from niftynet.layer.histogram_normalisation import \
-    HistogramNormalisationLayer
-from niftynet.layer.mean_variance_normalisation import \
-    MeanVarNormalisationLayer
-from niftynet.utilities.csv_table import CSVTable
+import niftynet.utilities.user_parameters_parser as user_parameters_parser
+
 from niftynet.engine.application_driver import ApplicationDriver
 
 # if sys.version_info[0] >= 3:
@@ -21,53 +15,21 @@ from niftynet.engine.application_driver import ApplicationDriver
 #    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 
-
-#class NetFactory(object):
-#    @staticmethod
-#    def create(name):
-#        if name == "highres3dnet":
-#            from niftynet.network.highres3dnet import HighRes3DNet
-#            return HighRes3DNet
-#        if name == "highres3dnet_small":
-#            from niftynet.network.highres3dnet_small import HighRes3DNetSmall
-#            return HighRes3DNetSmall
-#        if name == "highres3dnet_large":
-#            from niftynet.network.highres3dnet_large import HighRes3DNetLarge
-#            return HighRes3DNetLarge
-#        elif name == "toynet":
-#            from niftynet.network.toynet import ToyNet
-#            return ToyNet
-#        elif name == "unet":
-#            from niftynet.network.unet import UNet3D
-#            return UNet3D
-#        elif name == "vnet":
-#            from niftynet.network.vnet import VNet
-#            return VNet
-#        elif name == "dense_vnet":
-#            from niftynet.network.dense_vnet import DenseVNet
-#            return DenseVNet
-#        elif name == "deepmedic":
-#            from niftynet.network.deepmedic import DeepMedic
-#            return DeepMedic
-#        elif name == "scalenet":
-#            from niftynet.network.scalenet import ScaleNet
-#            return ScaleNet
-#        else:
-#            print("network: \"{}\" not implemented".format(name))
-#            raise NotImplementedError
-
-
 def main():
-    param, csv_dict = parse_user_params.run()
-    if util.has_bad_inputs(param):
+    system_param, input_data_param = user_parameters_parser.run()
+    if util.has_bad_inputs(system_param):
         return -1
 
-    settings_filename = os.path.join(
-            param['APPLICATION'].model_dir,
-            'settings_' + param['APPLICATION'].action + '.txt')
-    util.print_save_input_parameters(param, txt_file=settings_filename)
+    # print all parameters to txt file for future reference
+    all_param = {}
+    all_param.update(system_param)
+    all_param.update(input_data_param)
+    txt_file = 'settings_{}.txt'.format(system_param['APPLICATION'].action)
+    txt_file = os.path.join(system_param['APPLICATION'].model_dir, txt_file)
+    util.print_save_input_parameters(all_param, txt_file)
+
     app_driver = ApplicationDriver()
-    #app_driver.initialise_application(param, csv_dict)
+    app_driver.initialise_application(system_param, input_data_param)
     return 0
 
     #if not (param.cuda_devices == '""'):

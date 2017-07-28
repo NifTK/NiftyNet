@@ -93,10 +93,7 @@ def has_bad_inputs(input_args):
     :return:
     '''
     is_bad = False
-    import niftynet.utilities.parse_user_params
     for section in input_args:
-        if section not in niftynet.utilities.parse_user_params.SYSTEM_SECTIONS:
-            continue
         section_args = input_args[section]
         for input_arg in vars(section_args):
             user_value = getattr(section_args, input_arg)
@@ -107,18 +104,27 @@ def has_bad_inputs(input_args):
     return is_bad
 
 
-def print_save_input_parameters(args, txt_file=None):
-    output_config = ['Input params at ' + str(datetime.datetime.now())[:-6]]
+def __print_argparse_section(args, section):
+    output_string = []
+    header_str = '[{}]'.format(section.upper())
+    print(header_str)
+    output_string.append(header_str)
+    section_args = args[section]
+    for arg in vars(section_args):
+        out_str = "-- {}: {}".format(arg, getattr(section_args, arg))
+        print(out_str)
+        output_string.append(out_str)
+    return output_string
 
+
+def print_save_input_parameters(args, txt_file=None):
+    import niftynet.utilities.user_parameters_parser as param_parser
+    output_config = ['Input params at ' + str(datetime.datetime.now())[:-6]]
     for section in args:
-        header_str = '[{}]'.format(section.upper())
-        print(header_str)
-        output_config.append(header_str)
-        section_args = args[section]
-        for arg in vars(section_args):
-            out_str = "-- {}: {}".format(arg, getattr(section_args, arg))
-            print(out_str)
-            output_config.append(out_str)
+        if section not in param_parser.SYSTEM_SECTIONS:
+            output_config.extend(__print_argparse_section(args, section))
+    for section in param_parser.SYSTEM_SECTIONS:
+        output_config.extend(__print_argparse_section(args, section))
 
     if txt_file is not None:
         with open(txt_file, 'w') as f:
@@ -183,7 +189,7 @@ class CacheFunctionOutput(object):
 
 
 def look_up_operations(type_str, supported):
-    assert isinstance(type_str, str) or isinstance(type_str, unicode)
+    assert isinstance(type_str, basestring)
     if type_str in supported and isinstance(supported, dict):
         return supported[type_str]
 

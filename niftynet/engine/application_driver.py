@@ -19,9 +19,9 @@ class ApplicationFactory(object):
         AutoencoderApplication
     from niftynet.application.gan_application import GANApplication
 
-    application_dict = {'segmentation': SegmentationApplication,
-                        'autoencoder': AutoencoderApplication,
-                        'gan': GANApplication}
+    application_dict = {'net_segmentation.py': SegmentationApplication,
+                        'net_autoencoder.py': AutoencoderApplication,
+                        'net_gan.py': GANApplication}
 
     @staticmethod
     def import_module(type_string):
@@ -51,30 +51,35 @@ class ApplicationDriver(object):
         self.outputs_collector = None
         self.gradients_collector = None
 
-    def initialise_application(self, csv_dict, param):
+    def initialise_application(self, system_param, data_param):
 
-        self.is_training = (param.action == "train")
+        app_param = system_param['APPLICATION']
+        net_param = system_param['NETWORK']
+        train_param = system_param['TRAINING']
+        infer_param = system_param['INFERENCE']
+        custom_param = system_param['CUSTOM']
 
+        self.is_training = (app_param.action == "train")
         # hardware-related parameters
-        self.num_threads = max(param.num_threads, 1)
-        self.num_gpus = param.num_gpus \
-            if self.is_training else min(param.num_gpus, 1)
-        ApplicationDriver._set_cuda_device(param.cuda_devices)
-        self.model_dir = ApplicationDriver._touch_folder(param.model_dir)
+        self.num_threads = max(app_param.num_threads, 1)
+        self.num_gpus = app_param.num_gpus \
+            if self.is_training else min(app_param.num_gpus, 1)
+        ApplicationDriver._set_cuda_device(app_param.cuda_devices)
+        # set output folders
+        self.model_dir = ApplicationDriver._touch_folder(app_param.model_dir)
         self.session_dir = os.path.join(self.model_dir, FILE_PREFIX)
         self.summary_dir = os.path.join(self.model_dir, 'logs')
-
         # set output logs to stdout and log file
         log_file_name = os.path.join(
-            self.model_dir, '{}_{}'.format(param.action, 'log_console'))
+            self.model_dir, '{}_{}'.format(app_param.action, 'log_console'))
         ApplicationDriver.set_logger(file_name=log_file_name)
 
         # model-related parameters
-        self.initial_iter = param.starting_iter \
-            if self.is_training else param.inference_iter
-        self.final_iter = max(param.starting_iter, param.max_iter) + 1
-        self.save_every_n = param.save_every_n
-        self.max_checkpoints = param.max_checkpoints
+        self.initial_iter = train_param.starting_iter \
+            if self.is_training else infer_param.inference_iter
+        self.final_iter = train_param.max_iter
+        self.save_every_n = train_param.save_every_n
+        self.max_checkpoints = train_param.max_checkpoints
 
         self.outputs_collector = OutputsCollector(
             n_devices=max(self.num_gpus, 1))
@@ -82,10 +87,15 @@ class ApplicationDriver(object):
             n_devices=max(self.num_gpus, 1)) if self.is_training else None
 
         # create an application and assign user-specified parameters
-        self.app = ApplicationDriver._create_app(param.application_type)
-        self.app.set_param(param)
+        self.app = ApplicationDriver._create_app(custom_param.name)
+        if self.is_training:
+            self.app.set_model_param(
+                net_param, train_param, self.is_training)
+        else:
+            self.app.set_model_param(
+                net_param, infer_param, self.is_training)
         # initialise data input, and the tf graph
-        self.app.initialise_dataset_loader(csv_dict)
+        self.app.initialise_dataset_loader(data_param, custom_param)
         self.graph = self._create_graph()
 
     def run_application(self):

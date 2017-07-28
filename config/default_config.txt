@@ -1,7 +1,5 @@
 [image modality 1]
-path_to_search = ./example_volumes/monomodal_parcellation
-filename_contains = T1
-filename_not_contains =
+csv_file=./models/model_monomodal_toy/RANDOM_NOISE.cs
 
 [label modality 1]
 path_to_search = ./example_volumes/monomodal_parcellation

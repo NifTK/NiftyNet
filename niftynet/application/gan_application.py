@@ -38,7 +38,7 @@ class GanNetFactory(object):
 
 class GANApplication(BaseApplication):
 
-    def set_param(self, param):
+    def set_param(self, param, is_training=True):
         self._param = param
         self._volume_loader = None
         self._sampler = None
@@ -361,6 +361,7 @@ class GANApplication(BaseApplication):
         return []
 
     def training_ops(self, start_iter=0, end_iter=1):
+        end_iter = max(start_iter, end_iter)
         for iter_i in range(start_iter, end_iter):
             yield iter_i, self._gradient_op
 

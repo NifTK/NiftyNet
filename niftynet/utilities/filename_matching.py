@@ -32,7 +32,7 @@ class KeywordsMatching(object):
         '''
         path, contain, not_contain = [], [], []
         for (name, value) in input_tuple:
-            if not isinstance(value, str):
+            if not isinstance(value, basestring):
                 continue
             if len(value) <= 1 or value == '""':
                 continue
@@ -49,13 +49,11 @@ class KeywordsMatching(object):
             elif name == "filename_contains":
                 value = value.split(',')
                 for val in value:
-                    val = val.strip()
-                    contain.append(val)
+                    contain.append(val.strip())
             elif name == "filename_not_contains":
                 value = value.split(',')
                 for val in value:
-                    val = val.strip()
-                    not_contain.append(val)
+                    not_contain.append(val.strip())
         path = tuple(set(path))
         contain = tuple(set(contain))
         not_contain = tuple(set(not_contain))
