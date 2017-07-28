@@ -32,6 +32,12 @@ Other features of NiftyNet include:
  <sup>*2.5-D: volumetric images processed as a stack of 2D slices;
 4-D: co-registered multi-modal 3D volumes</sup>
 
+
+### Installation
+
+[`pip install niftynet`](https://pypi.org/project/NiftyNet/)
+
+
 ### Getting started
 
 Please follow the links for [demos](./demos) and [network (re-)implementations](./niftynet/network).
