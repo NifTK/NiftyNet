@@ -15,4 +15,9 @@ testing_data*
 *.nii
 *.tar.gz
 *.csv
+*.swp
 data/brain_parcellation/OASIS
+dist
+build
+*.egg-info
+niftynet/info.py

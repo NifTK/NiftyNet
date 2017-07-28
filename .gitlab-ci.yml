@@ -1,4 +1,10 @@
+stages:
+  - dev_test
+  - pip_test
+  - pip_publish
+
 testjob:
+  stage: dev_test
   only:
     - master
     - dev
@@ -31,28 +37,28 @@ testjob:
     # run python code with coverage wrapper
     - coverage erase
 
-    - coverage run -a --source . run_application.py train -c config/highres3dnet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2
-    - coverage run -a --source . run_application.py inference -c config/highres3dnet_config.txt --batch_size 8 --image_size 64 --label_size 64 --queue_length 32
+    - coverage run -a --source . net_segmentation.py train -c config/highres3dnet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2
+    - coverage run -a --source . net_segmentation.py inference -c config/highres3dnet_config.txt --batch_size 8 --image_size 64 --label_size 64 --queue_length 32
 
-    - coverage run -a --source . run_application.py train -c config/scalenet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2
-    - coverage run -a --source . run_application.py inference -c config/scalenet_config.txt --batch_size 16 --image_size 64 --label_size 64 --queue_length 32
+    - coverage run -a --source . net_segmentation.py train -c config/scalenet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2
+    - coverage run -a --source . net_segmentation.py inference -c config/scalenet_config.txt --batch_size 16 --image_size 64 --label_size 64 --queue_length 32
 
-    - coverage run -a --source . run_application.py train -c config/vnet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2 --activation_function relu
-    - coverage run -a --source . run_application.py inference -c config/vnet_config.txt --batch_size 16 --image_size 64 --label_size 64 --queue_length 32 --activation_function relu
+    - coverage run -a --source . net_segmentation.py train -c config/vnet_config.txt --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2 --activation_function relu
+    - coverage run -a --source . net_segmentation.py inference -c config/vnet_config.txt --batch_size 16 --image_size 64 --label_size 64 --queue_length 32 --activation_function relu
 
     # need a large GPU to run
-    #- coverage run -a --source . run_application.py train -c config/unet_config.txt --batch_size 1 --image_size 96 --label_size 96 --queue_length 5 --num_threads 2
-    #- coverage run -a --source . run_application.py inference -c config/unet_config.txt --batch_size 1 --image_size 96 --label_size 96 --queue_length 5
+    #- coverage run -a --source . net_segmentation.py train -c config/unet_config.txt --batch_size 1 --image_size 96 --label_size 96 --queue_length 5 --num_threads 2
+    #- coverage run -a --source . net_segmentation.py inference -c config/unet_config.txt --batch_size 1 --image_size 96 --label_size 96 --queue_length 5
 
-    #- coverage run -a --source . run_application.py train -c config/deepmedic_config.txt --batch_size 8 --queue_length 16 --num_threads 2
-    #- coverage run -a --source . run_application.py inference -c config/deepmedic_config.txt --batch_size 64 --queue_length 96
+    #- coverage run -a --source . net_segmentation.py train -c config/deepmedic_config.txt --batch_size 8 --queue_length 16 --num_threads 2
+    #- coverage run -a --source . net_segmentation.py inference -c config/deepmedic_config.txt --batch_size 64 --queue_length 96
 
-    - coverage run -a --source . run_application.py train -c config/default_config.txt --image_size 42 --label_size 42 --batch_size 3 --queue_length 6
-    - coverage run -a --source . run_application.py train -c config/default_config.txt --image_size 42 --label_size 42 --batch_size 3 --queue_length 6 --starting_iter 10 --max_iter 15
-    - coverage run -a --source . run_application.py inference -c config/default_config.txt --image_size 84 --label_size 84 --batch_size 7 --queue_length 14
+    - coverage run -a --source . net_segmentation.py train -c config/default_config.txt --image_size 42 --label_size 42 --batch_size 3 --queue_length 6
+    - coverage run -a --source . net_segmentation.py train -c config/default_config.txt --image_size 42 --label_size 42 --batch_size 3 --queue_length 6 --starting_iter 10 --max_iter 15
+    - coverage run -a --source . net_segmentation.py inference -c config/default_config.txt --image_size 84 --label_size 84 --batch_size 7 --queue_length 14
 
-    - coverage run -a --source . run_application.py train -c config/default_multimodal_config.txt --image_size 42 --label_size 42 --batch_size 3
-    - coverage run -a --source . run_application.py inference -c config/default_multimodal_config.txt --image_size 84 --label_size 84 --batch_size 7
+    - coverage run -a --source . net_segmentation.py train -c config/default_multimodal_config.txt --image_size 42 --label_size 42 --batch_size 3
+    - coverage run -a --source . net_segmentation.py inference -c config/default_multimodal_config.txt --image_size 84 --label_size 84 --batch_size 7
 
     - coverage run -a --source . -m tests.mean_variance_normalisation_test
     - coverage run -a --source . -m tests.binary_masking_test
@@ -95,67 +101,101 @@ testjob:
     - gift-linux
 
 pip-installer:
+  stage: pip_test
   only:
     - 69-push-to-pip-repository-after-commit-to-master-off-dev
     - 69-push-to-pip-repository-after-commit-to-master-off-dev-restructure-hierarchy
+    - tags
   script:
     # following three lines copied over from dev script:
     - ls -la /dev | grep nvidia
     - echo $(python tests/get_gpu_index.py)
     - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
-    # create a virtual env to test pip installer
-    - venv="niftynet-pip-installer-venv"
-    - virtualenv $venv
+    # create a Python file that will import all available packages from the pip installer
+    - package_importer="$(pwd)/import_niftynet_packages.py"
+    # traverse the file hierarchy recursively to discover all packages
+    - find niftynet -type f \( ! -name . \) -print | grep '.py$' | grep -v __init__ | sed 's/\.\.\///g;s/\//\./g;s/\.py//g;s/niftynet/import niftynet/g' > $package_importer
     # save NiftyNet folder path just in case
-    - niftynet_dir=$(pwd)
+    - export niftynet_dir=$(pwd)
+    # create the NiftyNet wheel
+    - rm -rf dist  # remove dist directory, just in case
+    - sh ci/bundlewheel.sh
+    - source ci/findwheel.sh
+    - echo $niftynet_wheel
+    # ============= Python 2 ============================
+    # create a virtual env to test pip installer
+    - venv="niftynet-pip-installer-venv-py2"
+    - mypython=$(which python2)
+    - virtualenv -p $mypython $venv
     - cd $venv
     - source bin/activate
-    # install dependencies for GPU
-    - pip install -r $niftynet_dir/requirements-gpu.txt
-    # install using setup.py in NiftyNet folder
-    - pip install $niftynet_dir
-    # go back to source folder to run tests
-    - cd $niftynet_dir
-    # using already downloaded data instead of downloading it every time
+    # print Python version to CI output
+    - which python
+    - python --version
+    # install using built NiftyNet wheel
+    - pip install $niftynet_wheel
+    # install SimpleITK for package importer test to work properly
+    - pip install simpleitk
+    # check whether all packages are importable
+    - cat $package_importer
+    - python $package_importer
+    # test niftynet command
     - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
-    - ln -s /home/gitlab-runner/environments/niftynet/data/testing_data ./testing_data
-    # start the tests
-    - python -m tests.mean_variance_normalisation_test
-    - python -m tests.binary_masking_test
-    - python -m tests.histogram_normalisation_test
-    - python -m tests.volume_loader_test
-    - python -m tests.activation_test
-    - python -m tests.spatial_transformer_test
-    - python -m tests.post_processing_test
-    - python -m tests.bn_test
-    - python -m tests.convolution_test
-    - python -m tests.crop_test
-    - python -m tests.deconvolution_test
-    - python -m tests.deepmedic_test
-    - python -m tests.dilatedcontext_test
-    - python -m tests.downsample_test
-    - python -m tests.elementwise_test
-    - python -m tests.grid_sampler_test
-    - python -m tests.highres3dnet_test
-    - python -m tests.highresblock_test
-    - python -m tests.input_buffer_test
-    - python -m tests.loss_test
-    - python -m tests.rand_rotation_test
-    - python -m tests.rand_spatial_scaling_test
-    - python -m tests.scaleblock_test
-    - python -m tests.scalenet_test
-    - python -m tests.selective_sampler_test
-    - python -m tests.subject_test
-    - python -m tests.test_sample
-    - python -m tests.toy_sampler_test
-    - python -m tests.toynet_test
-    #python -m tests.unet_test
-    - python -m tests.unetblock_test
-    - python -m tests.uniform_sampler_test
-    - python -m tests.upsample_test
-    - python -m tests.vnet_test
-    - python -m tests.vnetblock_test
+    - net_segmentation train -c $niftynet_dir/config/default_config.txt --net_name toynet --image_size 42 --label_size 42 --batch_size 1 --save_every_n 10
+    - net_segmentation inference -c $niftynet_dir/config/default_config.txt --net_name toynet --image_size 80 --label_size 80 --batch_size 8
     # deactivate virtual environment
     - deactivate
+    - cd $niftynet_dir
+    # ============= Python 3 ============================
+    # create a virtual env to test pip installer
+    - venv="niftynet-pip-installer-venv-py3"
+    - mypython=$(which python3)
+    - virtualenv -p $mypython $venv
+    - cd $venv
+    - source bin/activate
+    # print Python version to CI output
+    - which python
+    - python --version
+    # install using built NiftyNet wheel
+    - pip install $niftynet_wheel
+    # install SimpleITK for package importer test to work properly
+    - pip install simpleitk
+    # check whether all packages are importable
+    - cat $package_importer
+    - python $package_importer
+    # test niftynet command
+    - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
+    - net_segmentation train -c $niftynet_dir/config/default_config.txt --net_name toynet --image_size 42 --label_size 42 --batch_size 1 --save_every_n 10
+    - net_segmentation inference -c $niftynet_dir/config/default_config.txt --net_name toynet --image_size 80 --label_size 80 --batch_size 8
+    # deactivate virtual environment
+    - deactivate
+    - cd $niftynet_dir
+  tags:
+    - gift-adelie
+
+pip-camera-ready:
+  stage: pip_publish
+  only:
+    - tags
+  script:
+    # Copy wheel created in previous stage to a specific location on GIFT-Adelie
+    - export niftynet_dir=$(pwd)
+    # create the NiftyNet wheel
+    - rm -rf dist  # remove dist directory, just in case
+    - sh ci/bundlewheel.sh
+    - source ci/findwheel.sh
+    - echo $niftynet_wheel
+    # Creat camera-ready folder if doesn't exist
+    - camera_ready_dir=/home/gitlab-runner/environments/niftynet/pip/camera-ready
+    - mkdir -p $camera_ready_dir
+    - ls -lrtha $camera_ready_dir
+    # Clean up the camera-ready folder if already there
+    - rm -rf $camera_ready_dir/*.whl
+    # Finally do copy
+    - cp $niftynet_wheel $camera_ready_dir
+    - ls -lrtha $camera_ready_dir
+    # Instruct developer which file to publish
+    - echo "Camera-ready pip installer bundle (wheel) created:"
+    - echo "$(ls $camera_ready_dir/*.whl)"
   tags:
     - gift-adelie
