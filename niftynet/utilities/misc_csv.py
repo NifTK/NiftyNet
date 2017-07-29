@@ -66,7 +66,7 @@ def match_first_degree(name_list1, name_list2):
     item of list 2 if exists (-1) otherwise
     '''
     if name_list1 is None or name_list2 is None:
-        return None, None, None, None
+        return None, None, None, Nonekj
     init_match1 = [''] * len(name_list1)
     init_match2 = [''] * len(name_list2)
     ind_match1 = [-1] * len(name_list1)

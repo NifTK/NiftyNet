@@ -1,31 +1,43 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import print_function
+
 import os
 import sys
 import time
 
 import tensorflow as tf
 
+from niftynet.utilities.misc_common import look_up_operations
 from niftynet.engine.graph_variables_collector import GradientsCollector
 from niftynet.engine.graph_variables_collector import OutputsCollector
 
 FILE_PREFIX = 'model.ckpt'
 CONSOLE_LOG_FORMAT = '%(levelname)s:niftynet: %(message)s'
 FILE_LOG_FORMAT = '%(levelname)s:niftynet:%(asctime)s: %(message)s'
+SUPPORTED_APP = {'net_segmentation.py',
+                 'net_autoencoder.py',
+                 'net_gan.py'}
 
 
 class ApplicationFactory(object):
-    from niftynet.application.segmentation_application import \
-        SegmentationApplication
-    from niftynet.application.autoencoder_application import \
-        AutoencoderApplication
-    from niftynet.application.gan_application import GANApplication
-
-    application_dict = {'net_segmentation.py': SegmentationApplication,
-                        'net_autoencoder.py': AutoencoderApplication,
-                        'net_gan.py': GANApplication}
-
     @staticmethod
     def import_module(type_string):
-        return ApplicationFactory.application_dict[type_string]
+        type_string = look_up_operations(type_string, SUPPORTED_APP)
+        app_module = None
+        if type_string == 'net_segmentation.py':
+            from niftynet.application.segmentation_application import \
+                SegmentationApplication
+            app_module = SegmentationApplication
+        if type_string == 'net_autoencoder.py':
+            from niftynet.application.autoencoder_application import \
+                AutoencoderApplication
+            app_module = AutoencoderApplication
+        if type_string == 'net_gan.py':
+            from niftynet.application.autoencoder_application import \
+                GANApplication
+            app_module = GANApplication
+        return app_module
 
 
 class ApplicationDriver(object):
@@ -96,7 +108,7 @@ class ApplicationDriver(object):
                 net_param, infer_param, self.is_training)
         # initialise data input, and the tf graph
         self.app.initialise_dataset_loader(data_param, custom_param)
-        self.graph = self._create_graph()
+        #self.graph = self._create_graph()
 
     def run_application(self):
         assert self.graph is not None, \

@@ -13,6 +13,8 @@ try:
 except ImportError:
     import ConfigParser as configparser
 
+# sections not in SYSTEM_SECTIONS or CUSTOM_SECTIONS will be
+# treated as input data source specifications
 SYSTEM_SECTIONS = {'APPLICATION', 'NETWORK', 'TRAINING', 'INFERENCE'}
 CUSTOM_SECTIONS = {'net_segmentation.py': 'SEGMENTATION',
                    'net_gan.py': 'GAN'}
@@ -64,7 +66,25 @@ def run():
     return system_args, input_data_args
 
 
-def _parse_arguments_by_section(parents, section, defaults, args_from_cmd):
+def _parse_arguments_by_section(
+        parents, section, args_from_config_file, args_from_cmd):
+    """
+    This function first add parameter fields to a parser,
+    according to the section name.
+    Then it loads values from configuration files as tentative params.
+    Finally it overrides existing pairs of 'name, value' with commandline
+    inputs.
+
+    Commandline inputs only overrides system/custom parameters.
+    input data related parameters needs to be defined in config file.
+    :param parents: a list, parsers will be created as
+    subparsers of parents
+    :param section: section name to be parsed
+    :param args_from_config_file: loaded parameters from config file
+    :param args_from_cmd: dictionary commandline parameters
+    :return: parsed parameters of the section and unknown
+    commandline params.
+    """
     section_parser = argparse.ArgumentParser(
         parents=parents,
         description=__doc__,
@@ -82,9 +102,11 @@ def _parse_arguments_by_section(parents, section, defaults, args_from_cmd):
         section_parser = add_customised_args(section_parser, section.upper())
     else:
         section_parser = add_input_data_args(section_parser)
-    if defaults is not None:
-        section_parser.set_defaults(**defaults)
+    # loading all parameters a config file first
+    if args_from_config_file is not None:
+        section_parser.set_defaults(**args_from_config_file)
     # TODO: setting multiple user-specified sections from cmd
+    # input command line input overrides config file
     section_args, unknown = section_parser.parse_known_args(args_from_cmd)
     return section_args, unknown
 
@@ -103,7 +125,7 @@ def _make_csv_files(all_args, section):
         misc_csv.match_and_write_filenames_to_csv([matcher], input_csv)
     section_args.csv_file = input_csv
     if not os.path.isfile(section_args.csv_file):
-        raise ValueError(
+        raise IOError(
             "unable to find/create list of input filenames"
             "as a csv file {} for config"
             "section [{}]".format(section_args.csv_file, section))

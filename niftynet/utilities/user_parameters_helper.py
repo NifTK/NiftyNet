@@ -56,9 +56,8 @@ def numarray(string_input):
     if len(array) < 1:
         raise argparse.ArgumentTypeError(
             'array expected, unknown array input {}'.format(string_input))
-    if len(array) == 1:
-        return array[0]
-    return tuple(array)
+    array = tuple(array)
+    return array
 
 
 def stringarray(string_input):

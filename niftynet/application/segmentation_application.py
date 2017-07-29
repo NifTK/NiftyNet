@@ -12,7 +12,7 @@ from niftynet.engine.uniform_sampler import UniformSampler
 from niftynet.layer.loss import LossFunction
 from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.utilities.input_placeholders import ImagePatch
-from niftynet.engine.volume_loader import VolumeLoaderLayer
+#from niftynet.engine.volume_loader import VolumeLoaderLayer
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
@@ -79,8 +79,10 @@ class SegmentationApplication(BaseApplication):
 
     def initialise_dataset_loader(self, data_param, segmentation_param):
         # read each line of csv files into an instance of Subject
-        import pdb; pdb.set_trace()
-        csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
+        from niftynet.io.volume_reader import VolumeReader
+        reader = VolumeReader()
+        reader.initialise_reader(data_param, segmentation_param)
+        #csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
 
     def initialise_sampler(self, is_training):
         pass
