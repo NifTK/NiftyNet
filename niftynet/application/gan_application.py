@@ -210,7 +210,7 @@ class GANApplication(BaseApplication):
             if self._param.decay > 0:
                 reg_losses = tf.get_collection(
                     tf.GraphKeys.REGULARIZATION_LOSSES)
-                if reg_losses is not None and len(reg_losses) > 0:
+                if reg_losses:
                     reg_loss = tf.reduce_mean(
                         [tf.reduce_mean(l_reg) for l_reg in reg_losses])
                     lossD = lossD + reg_loss

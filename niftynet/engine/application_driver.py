@@ -154,7 +154,7 @@ class ApplicationDriver(object):
                 if not mva_op.type == "NoOp":
                     updates_op.extend(mva_op)
                 # batch normalisation moving averages operation
-                if bn_ops is not None and len(bn_ops) > 0:
+                if bn_ops:
                     updates_op.extend(bn_ops)
                 # combine them with model parameter updating operation
                 with graph.control_dependencies(updates_op):

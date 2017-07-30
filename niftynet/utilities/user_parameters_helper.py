@@ -9,7 +9,6 @@ import re
 TRUE_VALUE = {'yes', 'true', 't', 'y', '1'}
 FALSE_VALUE = {'no', 'false', 'f', 'n', '0'}
 ARRAY_TYPES = {"(": ")", "[": "]"}
-NULL_STRING_TUPLE = (None,)
 
 
 def str2boolean(string_input):
@@ -70,6 +69,20 @@ def stringarray(string_input):
     return tuple(list_of_values)
 
 
+def validate_input_tuple(input_str, element_type=basestring):
+    assert input_str, \
+        "input {} does not exists".format(element_type)
+    if isinstance(input_str, element_type):
+        new_tuple = (input_str,)
+    else:
+        try:
+            new_tuple = tuple(input_str)
+        except TypeError:
+            raise ValueError("can't cast to tuple of {}".format(element_type))
+    assert all([isinstance(item, element_type) for item in new_tuple]), \
+        "the input should be a tuple of {}".format(element_type)
+    return new_tuple
+
 def standardise_section_name(configparser, old_name):
     """
     rename configparser section
@@ -117,5 +130,5 @@ def add_input_name_args(parser, supported_input):
             metavar='',
             help="names of grouping the input sections".format(input_name),
             type=stringarray,
-            default=NULL_STRING_TUPLE)
+            default=())
     return parser

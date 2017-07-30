@@ -85,9 +85,10 @@ class SegmentationApplication(BaseApplication):
         from niftynet.io.volume_reader import VolumeReader
         reader = VolumeReader()
         reader.initialise_reader(data_param, segmentation_param)
-        output = reader(self.is_training)
+        #output = reader(self.is_training)
+        output = reader(False)
         for field in output:
-            output[field].load_as_5d_matrix()
+            print(output[field].load_as_5d_matrix(False, True).shape)
         import pdb; pdb.set_trace()
         #csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
 

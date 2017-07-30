@@ -11,7 +11,6 @@ import tensorflow as tf
 
 from niftynet.io.input_type import ImageFactory
 from niftynet.layer.base_layer import Layer
-from niftynet.utilities.user_parameters_helper import NULL_STRING_TUPLE
 
 
 class VolumeReader(Layer):
@@ -39,7 +38,7 @@ class VolumeReader(Layer):
             self.output_fields = [field_name
                                   for field_name in task_param
                                   if field_name in SUPPORTED_INPUT and
-                                  task_param[field_name] != NULL_STRING_TUPLE]
+                                  task_param[field_name] != ()]
         self.output_list = self._filename_to_image_list(data_param, task_param)
         self.current_id = -1
 
