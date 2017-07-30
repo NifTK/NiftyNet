@@ -1,6 +1,6 @@
 # Model zoo
 
-This page summarises the implemented network models in [network](./network).
+This page summarises the implemented network models in [network](./niftynet/network).
 
 All networks can be applied in 2D, 2.5D and 3D configurations and are reimplemented from their original presentation with their default parameters.
 
