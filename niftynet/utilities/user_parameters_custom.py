@@ -48,16 +48,6 @@ def __add_segmentation_args(parser):
         type=str2boolean,
         default=False)
 
-    parser.add_argument(
-        "--image",
-        metavar='',
-        help="name of the input image sections",
-        type=stringarray)
-
-    parser.add_argument(
-        "--label",
-        metavar='',
-        help="name of the input traininglabel sections",
-        type=stringarray)
-
+    from niftynet.application.segmentation_application import SUPPORTED_INPUT
+    parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser

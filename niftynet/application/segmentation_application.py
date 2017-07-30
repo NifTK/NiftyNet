@@ -21,6 +21,8 @@ from niftynet.layer.mean_variance_normalisation import \
 from niftynet.utilities.csv_table import CSVTable
 
 
+SUPPORTED_INPUT = {'image', 'label', 'weight'}
+
 class NetFactory(object):
     @staticmethod
     def create(name):
@@ -82,6 +84,8 @@ class SegmentationApplication(BaseApplication):
         from niftynet.io.volume_reader import VolumeReader
         reader = VolumeReader()
         reader.initialise_reader(data_param, segmentation_param)
+        output = reader(self.is_training)
+        import pdb; pdb.set_trace()
         #csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
 
     def initialise_sampler(self, is_training):

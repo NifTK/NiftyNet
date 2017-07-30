@@ -121,6 +121,7 @@ def add_input_data_args(parser):
         "--interp_order",
         type=int,
         choices=[0, 1, 2, 3],
+        default=3,
         help="interpolation order of the input images")
 
     return parser

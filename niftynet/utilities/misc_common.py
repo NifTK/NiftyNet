@@ -9,6 +9,7 @@ import numpy as np
 import tensorflow as tf
 from scipy import ndimage
 
+
 LABEL_STRINGS = ['Label', 'LABEL', 'label']
 
 def list_depth_count(input_list):
@@ -98,7 +99,8 @@ def has_bad_inputs(input_args):
         for input_arg in vars(section_args):
             user_value = getattr(section_args, input_arg)
             if user_value is None:
-                print('{} not set in the config file'.format(input_arg))
+                print('{} not set in section [{}] the config file'.format(
+                    input_arg, section))
                 is_bad = True
 
     return is_bad

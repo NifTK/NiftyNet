@@ -9,6 +9,7 @@ import re
 TRUE_VALUE = {'yes', 'true', 't', 'y', '1'}
 FALSE_VALUE = {'no', 'false', 'f', 'n', '0'}
 ARRAY_TYPES = {"(": ")", "[": "]"}
+NULL_STRING_TUPLE = (None,)
 
 
 def str2boolean(string_input):
@@ -61,6 +62,8 @@ def numarray(string_input):
 
 
 def stringarray(string_input):
+    if isinstance(string_input, tuple):
+        return string_input
     values = string_input.split(',')
     list_of_values = [standardise_string(component.strip())
                       for component in values]
@@ -105,3 +108,14 @@ def check_required_sections(config, app_type):
         assert required_custom_section in user_sections, \
             '{} requires configuration section [{}] in config file'.format(
                 app_type, param_parser.CUSTOM_SECTIONS[app_type])
+
+
+def add_input_name_args(parser, supported_input):
+    for input_name in supported_input:
+        parser.add_argument(
+            "--{}".format(input_name),
+            metavar='',
+            help="names of grouping the input sections".format(input_name),
+            type=stringarray,
+            default=NULL_STRING_TUPLE)
+    return parser
