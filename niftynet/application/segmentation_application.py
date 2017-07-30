@@ -59,6 +59,7 @@ class NetFactory(object):
 
 
 class SegmentationApplication(BaseApplication):
+
     # def __init__(self, net_class, param, volume_loader):
     #     self._net_class = net_class
     #     self._param = param
@@ -85,6 +86,8 @@ class SegmentationApplication(BaseApplication):
         reader = VolumeReader()
         reader.initialise_reader(data_param, segmentation_param)
         output = reader(self.is_training)
+        for field in output:
+            output[field].load_as_5d_matrix()
         import pdb; pdb.set_trace()
         #csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
 

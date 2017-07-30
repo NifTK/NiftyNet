@@ -3,21 +3,22 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from niftynet.layer.base_layer import Layer
+import os
+
+import numpy as np
+import pandas
+import tensorflow as tf
+
 from niftynet.io.input_type import ImageFactory
+from niftynet.layer.base_layer import Layer
 from niftynet.utilities.user_parameters_helper import NULL_STRING_TUPLE
 
-import pandas
-import os
-import tensorflow as tf
-import numpy as np
 
 class VolumeReader(Layer):
-
     def __init__(self):
         self.file_list = None
         self.output_fields = None
-        self.outputs = None
+        self.output_list = None
         self.current_id = None
         super(VolumeReader, self).__init__(name='volume_reader')
 
@@ -27,41 +28,49 @@ class VolumeReader(Layer):
         e.g., for multimodal segmentation 'image' corresponds to multiple
         modality sections, 'label' corresponds to one modality section
         """
-        app_type = task_param.name
-        self.file_list = self._load_file_list(data_param)
+        app_type = task_param['name']
+        self.file_list = VolumeReader._load_and_merge_csv_files(data_param)
 
         if app_type == "net_segmentation.py":
-            from niftynet.application.segmentation_application\
+            from niftynet.application.segmentation_application \
                 import SUPPORTED_INPUT
-            self.output_fields = [field for field in vars(task_param)
-                                  if field in SUPPORTED_INPUT and
-                                  vars(task_param)[field] != NULL_STRING_TUPLE]
-        self.outputs = self.filename_to_image_list(data_param, task_param)
+            # only choose fields that are supported by the application
+            # (SUPPORTED_INPUT) and have user parameter specification
+            self.output_fields = [field_name
+                                  for field_name in task_param
+                                  if field_name in SUPPORTED_INPUT and
+                                  task_param[field_name] != NULL_STRING_TUPLE]
+        self.output_list = self._filename_to_image_list(data_param, task_param)
         self.current_id = -1
-
-    def filename_to_image_list(self, data_param, task_param):
-        volume_list = []
-        for idx in range(len(self.file_list)):
-            # initialise a reader output dictionary
-            subject_dict = dict(zip(self.output_fields,
-                                    (None,)*len(self.output_fields)))
-            for input_name in self.output_fields:
-                modalities = tuple(vars(task_param)[input_name])
-                subject_dict[input_name] = self.__create_volume(
-                        idx, modalities, data_param)
-            volume_list.append(subject_dict)
-        return volume_list
 
     def layer_op(self, is_training=False):
         if is_training:
-            idx = np.random.randint(len(self.outputs))
+            idx = np.random.randint(len(self.output_list))
         else:
             # this is not thread safe
             idx = self.current_id + 1
             self.current_id = idx
-        return self.outputs[idx]
+        return self.output_list[idx]
 
-    def __create_volume(self, idx, modalities, data_param):
+    def _filename_to_image_list(self, data_param, task_param):
+        """
+        converting a list of filenames to a list of image objects
+        useful properties (e.g. interp_order) are added to each object
+        """
+        volume_list = []
+        for row_id in range(len(self.file_list)):
+            # initialise a reader output dictionary
+            subject_dict = dict(zip(self.output_fields,
+                                    (None,) * len(self.output_fields)))
+            for input_name in self.output_fields:
+                modalities = tuple(task_param[input_name])
+                subject_dict[input_name] = self._create_image(row_id,
+                                                              modalities,
+                                                              data_param)
+            volume_list.append(subject_dict)
+        return volume_list
+
+    def _create_image(self, idx, modalities, data_param):
         """
         data_param consists of discription of each modality
         This function combines modalities according to the 'modalities'
@@ -78,19 +87,19 @@ class VolumeReader(Layer):
                 "not found in config: input sections {}".format(
                     modalities, list(data_param)))
             raise
-
-        image = ImageFactory.create_instance(
-            file_path=file_path,
-            name=modalities,
-            interp_order=interp_order)
+        image_properties = {'file_path': file_path,
+                            'name': modalities,
+                            'interp_order': interp_order}
+        image = ImageFactory.create_instance(**image_properties)
         return image
 
-
-    def _load_file_list(self, data_param):
+    @staticmethod
+    def _load_and_merge_csv_files(data_param):
         """
         Converts a list of csv_files in data_param
-        in to a joint list (using extact matching)
-        This function returns a pandas.core.frame.DataFrame of joint list
+        in to a joint list of file names (by matching the first column)
+        This function returns a <pandas.core.frame.DataFrame> of the
+        joint list
         """
         file_list = None
         for modality_name in data_param:

@@ -8,7 +8,9 @@ from abc import ABCMeta, abstractmethod
 
 import tensorflow as tf
 
+import  niftynet.io.misc_io as util
 from niftynet.io.misc_io import infer_ndims_from_file
+from niftynet.io.misc_io import load_image
 
 
 class Loadable(object):
@@ -26,6 +28,8 @@ class DataFromFile(Loadable):
     def __init__(self, file_path, name):
         self.file_path = file_path
         self.name = name
+        assert len(self.file_path) == len(self.name), \
+            "file_path and modalitiy names are not consistent."
 
     @property
     def file_path(self):
@@ -34,7 +38,8 @@ class DataFromFile(Loadable):
 
     @file_path.setter
     def file_path(self, path_array):
-        assert path_array is not None, "no file path provided for input volume"
+        assert path_array is not None, \
+            "no file path provided for input volume"
         if isinstance(path_array, basestring):
             self._file_path = (path_array,)
         elif isinstance(path_array, list):
@@ -78,6 +83,25 @@ class SpatialImage2D(DataFromFile):
         self.interp_order = interp_order
         self._pixdim = None
 
+    @property
+    def interp_order(self):
+        assert isinstance(self._interp_order, tuple)
+        return self._interp_order
+
+    @interp_order.setter
+    def interp_order(self, interp_order):
+        if isinstance(interp_order, int):
+            self._interp_order = (interp_order,)
+        elif isinstance(interp_order, list):
+            self._interp_order = tuple(interp_order)
+        elif isinstance(interp_order, tuple):
+            self._interp_order = interp_order  # pylint: disable=W0201
+        else:
+            tf.logging.fatal('interp_order: prefer a tuple of integers')
+            raise ValueError
+        assert len(self.interp_order) == len(self.file_path), \
+            "length of interp_order and file_path not consistent"
+
     def load_as_5d_matrix(self):
         print('called spatial image 2d')
 
@@ -87,8 +111,15 @@ class SpatialImage3D(SpatialImage2D):
         super(SpatialImage3D, self).__init__(file_path=file_path,
                                              name=name,
                                              interp_order=interp_order)
-        self._orientation = None
         self._affine = None
+        self.load_header()
+
+    def load_header(self):
+        __obj = load_image(self.file_path[0])
+        util.correct_image_if_necessary(__obj)
+        self._affine = __obj.affine
+        self._pixdim = __obj.header.get_zooms()[:3]
+
 
     def load_as_5d_matrix(self):
         print('called spatial image 3d')

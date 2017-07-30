@@ -6,9 +6,8 @@ from random import shuffle
 import numpy as np
 
 from niftynet.layer.base_layer import Layer
-
 from niftynet.layer.histogram_normalisation import HistogramNormalisationLayer
-from niftynet.layer.mean_variance_normalisation import MeanVarNormalisationLayer
+
 
 class VolumeLoaderLayer(Layer):
     """

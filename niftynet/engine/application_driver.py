@@ -69,7 +69,7 @@ class ApplicationDriver(object):
         net_param = system_param['NETWORK']
         train_param = system_param['TRAINING']
         infer_param = system_param['INFERENCE']
-        custom_param = system_param['CUSTOM']
+        custom_param = vars(system_param['CUSTOM']) # convert to a dictionary
 
         self.is_training = (app_param.action == "train")
         # hardware-related parameters
@@ -99,7 +99,7 @@ class ApplicationDriver(object):
             n_devices=max(self.num_gpus, 1)) if self.is_training else None
 
         # create an application and assign user-specified parameters
-        self.app = ApplicationDriver._create_app(custom_param.name)
+        self.app = ApplicationDriver._create_app(custom_param['name'])
         if self.is_training:
             self.app.set_model_param(
                 net_param, train_param, self.is_training)
