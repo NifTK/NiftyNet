@@ -4,13 +4,14 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import numpy as np
 from abc import ABCMeta, abstractmethod
 
 import tensorflow as tf
 
-import  niftynet.io.misc_io as util
-from niftynet.io.misc_io import infer_ndims_from_file
-from niftynet.io.misc_io import load_image
+import niftynet.io.misc_io as misc
+import nibabel as nib # TODO: move this to misc
+STD_ORIENTATION = [[0, 1], [1, 1], [2, 1]]
 
 
 class Loadable(object):
@@ -20,7 +21,7 @@ class Loadable(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def load_as_5d_matrix(self):
+    def load_as_5d_matrix(self, *args, **kwargs):
         raise NotImplementedError
 
 
@@ -38,7 +39,7 @@ class DataFromFile(Loadable):
 
     @file_path.setter
     def file_path(self, path_array):
-        assert path_array is not None, \
+        assert path_array is not None and len(path_array) > 0, \
             "no file path provided for input volume"
         if isinstance(path_array, basestring):
             self._file_path = (path_array,)
@@ -73,7 +74,7 @@ class DataFromFile(Loadable):
             raise ValueError
 
     def load_as_5d_matrix(self):
-        print('called data from file')
+        raise NotImplementedError
 
 
 class SpatialImage2D(DataFromFile):
@@ -104,6 +105,7 @@ class SpatialImage2D(DataFromFile):
 
     def load_as_5d_matrix(self):
         print('called spatial image 2d')
+        raise NotImplementedError
 
 
 class SpatialImage3D(SpatialImage2D):
@@ -115,14 +117,34 @@ class SpatialImage3D(SpatialImage2D):
         self.load_header()
 
     def load_header(self):
-        __obj = load_image(self.file_path[0])
-        util.correct_image_if_necessary(__obj)
+        __obj = misc.load_image(self.file_path[0])
+        misc.correct_image_if_necessary(__obj)
         self._affine = __obj.affine
+        # assumes len(pixdims) == 3
         self._pixdim = __obj.header.get_zooms()[:3]
 
+    def load_as_5d_matrix(self, do_resampling=False, do_reorientation=False):
+        if len(self._file_path) > 1:
+            # 3D image from multiple 2d files
+            raise NotImplementedError
+        # assuming len(self._file_path) == 1
+        image_obj = misc.load_image(self.file_path[0])
+        image_data = image_obj.get_data().astype(np.float32)
+        image_data = misc.expand_to_5d(image_data)
 
-    def load_as_5d_matrix(self):
-        print('called spatial image 3d')
+        if do_resampling:
+            image_data = misc.do_resmapling(image_data,
+                                            self._pixdim,
+                                            [1, 1, 1],
+                                            self._interp_order[0])
+        if do_reorientation:
+            __orientation = nib.orientations.axcodes2ornt(
+                    nib.aff2axcodes(image_affine))
+            image_data = misc.do_reorientation(image_data,
+                                               __orientation,
+                                               STD_ORIENTATION)
+        return image_data
+
 
 
 class SpatialImage4D(SpatialImage3D):
@@ -132,7 +154,7 @@ class SpatialImage4D(SpatialImage3D):
                                              interp_order=interp_order)
 
     def load_as_5d_matrix(self):
-        SpatialImage3D.load_as_5d_matrix(self)
+        #SpatialImage3D.load_as_5d_matrix(self)
         print('called spatial image 4d')
 
 
@@ -145,9 +167,9 @@ class ImageFactory(object):
 
         if is_image_from_multi_files:
             multi_mod_dim = 1 if len(file_path) > 1 else 0
-            ndims = infer_ndims_from_file(file_path[0]) + multi_mod_dim
+            ndims = misc.infer_ndims_from_file(file_path[0]) + multi_mod_dim
         else:
-            ndims = infer_ndims_from_file(file_path)
+            ndims = misc.infer_ndims_from_file(file_path)
 
         if ndims == 2:
             image_type = SpatialImage2D
