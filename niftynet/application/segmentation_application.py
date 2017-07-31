@@ -83,12 +83,18 @@ class SegmentationApplication(BaseApplication):
     def initialise_dataset_loader(self, data_param, segmentation_param):
         # read each line of csv files into an instance of Subject
         from niftynet.io.volume_reader import VolumeReader
-        reader = VolumeReader()
+        reader = VolumeReader(SUPPORTED_INPUT)
         reader.initialise_reader(data_param, segmentation_param)
-        #output = reader(self.is_training)
+
+        reader_2 = VolumeReader(['label', 'test'])
+        reader_2.initialise_reader(data_param, segmentation_param)
+
         output = reader(False)
-        for field in output:
+        output_2 = reader_2(False)
+        for field in reader.output_fields:
             print(output[field].get_data(False, True).shape)
+        for field in reader_2.output_fields:
+            print(output_2[field].get_data(False, True).shape)
         import pdb; pdb.set_trace()
         #csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
 

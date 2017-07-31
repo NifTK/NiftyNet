@@ -11,15 +11,27 @@ import tensorflow as tf
 
 from niftynet.io.input_type import ImageFactory
 from niftynet.layer.base_layer import Layer
+from niftynet.utilities.user_parameters_helper import validate_input_tuple
 
 
 class VolumeReader(Layer):
-    def __init__(self):
+    def __init__(self, output_fields):
+        self.output_fields = output_fields
         self.file_list = None
-        self.output_fields = None
         self.output_list = None
         self.current_id = None
         super(VolumeReader, self).__init__(name='volume_reader')
+
+    @property
+    def output_fields(self):
+        return self._output_fields
+
+    @output_fields.setter
+    def output_fields(self, fields_tuple):
+        # output_fields is a sequence of output names
+        # each name might correspond to a list of multiple input sources
+        # this should be specified in CUSTOM section in the config
+        self._output_fields = validate_input_tuple(fields_tuple, basestring)
 
     def initialise_reader(self, data_param, task_param):
         """
@@ -38,9 +50,12 @@ class VolumeReader(Layer):
         elif app_type == "net_gan.py":
             from niftynet.application.gan_application \
                 import SUPPORTED_INPUT
+
+        if not self.output_fields:
+            self.output_fields = SUPPORTED_INPUT
         self.output_fields = [field_name
                               for field_name in task_param
-                              if field_name in SUPPORTED_INPUT and
+                              if field_name in self.output_fields and
                               task_param[field_name] != ()]
         self.output_list = self._filename_to_image_list(data_param, task_param)
         self.current_id = -1

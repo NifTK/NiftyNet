@@ -65,7 +65,7 @@ class InputBatchQueueRunner(object):
                 capacity=self.capacity,
                 min_after_dequeue=self.min_queue_size,
                 dtypes=self.sampler.placeholder_dtypes,
-                shapes=self.sampler.placeholder_shapes,
+                shapes=None,
                 names=self.sampler.placeholder_names,
                 name="shuffled_queue")
         else:
@@ -73,7 +73,7 @@ class InputBatchQueueRunner(object):
                 # pylint: disable=redefined-variable-type
                 capacity=self.capacity,
                 dtypes=self.sampler.placeholder_dtypes,
-                shapes=self.sampler.placeholder_shapes,
+                shapes=None,
                 names=self.sampler.placeholder_names,
                 name="FIFO_queue")
 
