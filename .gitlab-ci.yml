@@ -37,7 +37,6 @@ testjob:
     # run python code with coverage wrapper
     - coverage erase
 
-<<<<<<< HEAD
     - coverage run -a --source . net_segmentation.py train -c config/highres3dnet_config.ini --batch_size 1 --image_size 32 --label_size 32 --queue_length 5 --num_threads 2
     - coverage run -a --source . net_segmentation.py inference -c config/highres3dnet_config.ini --batch_size 8 --image_size 64 --label_size 64 --queue_length 32
 
