@@ -21,28 +21,6 @@ def infer_spatial_rank(input_tensor):
     assert dims > 0
     return dims
 
-def infer_dims(input_tensor):
-    """
-    Given an input tensor of size [batch size, X, Y, Z, channels], return [[X, Y, Z, channels], X*Y*Z*channels]
-    """
-    dims = input_tensor.get_shape()[1::].as_list()
-    dims_prod = np.prod(dims)
-    return [dims, dims_prod]
-
-
-def infer_downsampled_dimensions(images, conv_features):
-    # Calculate the dimensionality of the data as it emerges from the convolutional part of the encoder
-    # We assume for now that we only do 2x2x2 downsampling (this will be generalised imminently...).
-    [data_dims, data_dims_product] = infer_dims(images)
-    downsampled_dims = data_dims.copy()
-    for p in range(0, len(downsampled_dims) - 1):
-        downsampled_dims[p] /= 2 ** len(conv_features)
-        downsampled_dims[p] = int(downsampled_dims[p])
-    downsampled_dims[-1] = conv_features[-1]
-    downsampled_dim = int(data_dims_product / (2 ** (3 * len(conv_features))))
-    return [downsampled_dims, downsampled_dim]
-
-
 def trivial_kernel(kernel_shape):
     """
     This function generates a trivial kernel with all 0s except for the

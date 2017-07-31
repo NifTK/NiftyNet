@@ -4,7 +4,6 @@ from __future__ import absolute_import, print_function
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.reshape import ReshapeLayer
 from niftynet.layer.fully_connected import FullyConnectedLayer
-from niftynet.layer.layer_util import infer_dims, infer_downsampled_dimensions
 from niftynet.layer.convolution import ConvolutionalLayer
 from niftynet.layer.deconvolution import DeconvolutionalLayer
 from niftynet.layer.upsample import UpSampleLayer
@@ -16,11 +15,11 @@ import numpy as np
 
 class VAE(TrainableLayer):
     """
-        This is a denoising convolutional variational autoencoder, composed of a sequence of
-        {convolutions & down-sampling} blocks, followed by a sequence of fully-connected
-        layers, followed by a sequence of {transpose convolutions & up-sampling} blocks.
+        This is a denoising, convolutional, variational autoencoder (VAE), composed of a sequence of
+        {convolutions then downsampling} blocks, followed by a sequence of fully-connected
+        layers, followed by a sequence of {transpose convolutions then upsampling} blocks.
         See Auto-Encoding Variational Bayes, Kingma & Welling, 2014.
-        2do: easier to train varieties of VAE, e.g., constant variance with MSE
+        2DO: share the fully-connected parameters from the mean and logvar decoders.
         """
 
     def __init__(self,
@@ -34,104 +33,131 @@ class VAE(TrainableLayer):
 
         super(VAE, self).__init__(name=name)
 
-        # The following options completely specify the VAE.
-        # 'upsampling_mode' determines how the feature maps in the decoding layers are upsampled. The options are,
-        # 1. 'DECONV' (recommended): kernel shape is HxWxDxChannelsInxChannelsOut,
-        # 2. 'CHANNELWISE_DECONV': kernel shape is HxWxDx1x1,
-        # 3. 'REPLICATE': no parameters.
+        # The following options completely specify the model. Note that the network need not be symmetric.
 
         # 1) Denoising
+        # If (and only if) 'denoising_variance' is greater than zero, Gaussian noise with zero mean
+        # and 'denoising_variance' variance is added to the input.
         self.denoising_variance = 0.001
+
         # 2) The convolutional layers
-        self.conv_features = [15, 25, 35]
+        # All four lists must be the same length.
+        # NB: the elements of 'conv_pooling_factors' are the amounts of pooling along each dimension.
+        self.conv_output_channels = [15, 25, 35]
         self.conv_kernel_sizes = [3, 3, 3]
         self.conv_pooling_factors = [2, 2, 2]
         self.acti_func_conv = ['relu', 'relu', 'relu']
-        # 3) The fully connected layers
+
+        # 3) The fully-connected layers
+        # 'layer_sizes_encoder' and 'acti_func_encoder' must be equal in length.
+        # 'acti_func_decoder' must be one element longer than 'layer_sizes_decoder', because the final
+        # element of 'acti_func_decoder' is the activation function for the final fully-connected layer
+        # (which is added to the network automatically), whose dimensionality matches that of the input
+        # to the fully-connected layers.
         self.layer_sizes_encoder = [512]
         self.acti_func_encoder = ['relu']
         self.layer_sizes_decoder = self.layer_sizes_encoder[::-1]
-        self.acti_func_decoder = self.acti_func_encoder[::-1]
-        self.acti_func_fully_connected_output = 'relu'
+        self.acti_func_decoder = self.acti_func_encoder[::-1] + ['relu']
+
         # 4) The transpose convolutional layers (means)
-        self.trans_conv_features_means = self.conv_features[-2::-1]  # Excluding output channels
-        self.trans_conv_kernels_sizes_means = self.conv_kernel_sizes[::-1]  # length = one more than #kernels
-        self.trans_conv_unpooling_factors_means = self.conv_pooling_factors[::-1]  # length = one more than #kernels
-        self.acti_func_trans_conv_means = ['relu', 'relu', None]  # length = one more than #kernels
+        # 'trans_conv_output_channels_means' is one element shorter than 'trans_conv_kernel_sizes_means',
+        # 'trans_conv_unpooling_factors_means', and 'trans_conv_unpooling_factors_means' because the final element of
+        # 'trans_conv_output_channels_means' must be the number of channels in the input, and this is added to the list
+        # automatically.
+        # NB: 'upsampling_mode' determines how the feature maps in the decoding layers are upsampled. The options are,
+        # 1. 'DECONV' (recommended): kernel shape is HxWxDxChannelsInxChannelsOut,
+        # 2. 'CHANNELWISE_DECONV': kernel shape is HxWxDx1x1,
+        # 3. 'REPLICATE': no parameters.
+        self.trans_conv_output_channels_means = self.conv_output_channels[-2::-1]
+        self.trans_conv_kernel_sizes_means = self.conv_kernel_sizes[::-1]
+        self.trans_conv_unpooling_factors_means = self.conv_pooling_factors[::-1]
+        self.acti_func_trans_conv_means = self.acti_func_conv[-2::-1] + [None]
         self.upsampling_mode_means = 'DECONV'
+
         # 5) The transpose convolutional layers (log variances)
-        self.trans_conv_features_logvars = self.trans_conv_features_means
-        self.trans_conv_kernels_sizes_logvars = self.trans_conv_kernels_sizes_means
+        # The parameter constraints are as above.
+        self.trans_conv_output_channels_logvars = self.trans_conv_output_channels_means
+        self.trans_conv_kernel_sizes_logvars = self.trans_conv_kernel_sizes_means
         self.trans_conv_unpooling_factors_logvars = self.trans_conv_unpooling_factors_means
-        self.acti_func_trans_conv_logvars = ['relu', 'relu', None]
+        self.acti_func_trans_conv_logvars = self.acti_func_trans_conv_means
         self.upsampling_mode_logvars = self.upsampling_mode_means
+
         # 6) The sampler
         self.number_of_latent_variables = 256
         self.number_of_samples_from_posterior = 10
-        # 7) Training stability
-        self.logvariance_upper_bound = 80
-        self.logvariance_lower_bound = -self.logvariance_upper_bound
+
+        # 7) Clip logvars to avoid infs & nans
+        # variance = exp(logvars), so keep this variable within reasonable limits.
+        self.logvars_upper_bound = 80
+        self.logvars_lower_bound = -self.logvars_upper_bound
 
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
     def layer_op(self, images, is_training):
 
-        def clip(input):
-            # This is for clipping logvars, so that variances = exp(logvars) behaves well
-            output = tf.maximum(input, self.logvariance_lower_bound)
-            output = tf.minimum(output, self.logvariance_upper_bound)
+        def clip(x):
+            output = tf.maximum(x, self.logvars_lower_bound)
+            output = tf.minimum(output, self.logvars_upper_bound)
             return output
 
-        def normalise(input):
-            min_val = tf.reduce_min(input)
-            max_val = tf.reduce_max(input)
-            return 255 * (input - min_val) / (max_val - min_val)
+        def normalise(x):
+            min_val = tf.reduce_min(x)
+            max_val = tf.reduce_max(x)
+            return 255 * (x - min_val) / (max_val - min_val)
 
-        number_of_input_channels = (images.get_shape()[1::].as_list())[-1]
-        self.trans_conv_features_means = self.trans_conv_features_means + [number_of_input_channels]
-        self.trans_conv_features_logvars = self.trans_conv_features_logvars + [number_of_input_channels]
-        [downsampled_dims, downsampled_dim] = infer_downsampled_dimensions(images, self.conv_features)
+        def infer_downsampled_shape(x, output_channels, pooling_factors):
+            # Calculate the shape of the data as it emerges from the convolutional part of the encoder
+            downsampled_shape = x.get_shape()[1::].as_list()
+            downsampled_shape[-1] = output_channels[-1]
+            downsampled_shape[0:-1] = downsampled_shape[0:-1] / np.prod(pooling_factors)
+            return [int(x) for x in downsampled_shape]
 
-        encoder = ConvolutionalEncoder(self.denoising_variance,
-                              self.conv_features,
+        # Derive shape information from the input
+        input_shape = images.get_shape()[1::].as_list()
+        number_of_input_channels = input_shape[-1]
+        downsampled_shape = infer_downsampled_shape(images, self.conv_output_channels, self.conv_pooling_factors)
+        serialised_shape = int(np.prod(downsampled_shape))
+
+        encoder = ConvEncoder(self.denoising_variance,
+                              self.conv_output_channels,
                               self.conv_kernel_sizes,
                               self.conv_pooling_factors,
                               self.acti_func_conv,
                               self.layer_sizes_encoder,
                               self.acti_func_encoder,
-                              downsampled_dim)
+                              serialised_shape)
 
-        sampler = GaussianSampler(self.number_of_latent_variables,
-                                  self.number_of_samples_from_posterior,
-                                  self.logvariance_upper_bound,
-                                  self.logvariance_lower_bound)
+        approx_sampler = GaussianSampler(self.number_of_latent_variables,
+                                         self.number_of_samples_from_posterior,
+                                         self.logvars_upper_bound,
+                                         self.logvars_lower_bound)
 
-        decoder_means = ConvolutionalDecoder(self.layer_sizes_decoder + [downsampled_dim * self.conv_features[-1]],
-                                    self.acti_func_decoder + [self.acti_func_fully_connected_output],
-                                    self.trans_conv_features_means,
-                                    self.trans_conv_kernels_sizes_means,
+        decoder_means = ConvDecoder(self.layer_sizes_decoder + [serialised_shape],
+                                    self.acti_func_decoder,
+                                    self.trans_conv_output_channels_means + [number_of_input_channels],
+                                    self.trans_conv_kernel_sizes_means,
                                     self.trans_conv_unpooling_factors_means,
                                     self.acti_func_trans_conv_means,
                                     self.upsampling_mode_means,
-                                    shape_of_downsampled_feature_maps = downsampled_dims,
-                                    name='ConvolutionalDecoder_means')
+                                    downsampled_shape,
+                                    name='ConvDecoder_means')
 
-        decoder_logvars = ConvolutionalDecoder(self.layer_sizes_decoder + [downsampled_dim * self.conv_features[-1]],
-                                      self.acti_func_decoder + [self.acti_func_fully_connected_output],
-                                      self.trans_conv_features_logvars,
-                                      self.trans_conv_kernels_sizes_logvars,
+        decoder_logvars = ConvDecoder(self.layer_sizes_decoder + [serialised_shape],
+                                      self.acti_func_decoder,
+                                      self.trans_conv_output_channels_logvars + [number_of_input_channels],
+                                      self.trans_conv_kernel_sizes_logvars,
                                       self.trans_conv_unpooling_factors_logvars,
                                       self.acti_func_trans_conv_logvars,
                                       self.upsampling_mode_logvars,
-                                      shape_of_downsampled_feature_maps = downsampled_dims,
-                                      name='ConvolutionalDecoder_logvars')
+                                      downsampled_shape,
+                                      name='ConvDecoder_logvars')
 
         # Encode the input
         encoding = encoder(images, is_training)
 
-        # Sample (approximately) from the posterior distribution, P(latent variables|input)
-        [sample, posterior_means, posterior_logvars] = sampler(encoding, is_training)
+        # Sample from the posterior distribution P(latent variables|input)
+        [sample, posterior_means, posterior_logvars] = approx_sampler(encoding, is_training)
 
         # Decode the samples
         [data_means, data_logvars] = [decoder_means(sample, is_training), clip(decoder_logvars(sample, is_training))]
@@ -146,6 +172,7 @@ class VAE(TrainableLayer):
         log_likelihood = -0.5 * tf.reduce_mean(tf.reduce_sum(log_likelihood, axis=[1, 2, 3, 4]))
         tf.add_to_collection(logging.CONSOLE, tf.summary.scalar('negative_log_likelihood', -log_likelihood))
 
+        posterior_variances = tf.exp(posterior_logvars)
         data_variances = tf.exp(data_logvars)
 
         # Monitor reconstructions
@@ -153,42 +180,40 @@ class VAE(TrainableLayer):
         logging.image3_coronal('Means', normalise(data_means))
         logging.image3_coronal('Variances', normalise(data_variances))
 
-        posterior_variances = tf.exp(posterior_logvars)
-
         return [posterior_means, posterior_logvars, data_means, data_logvars,
                 images, data_variances, posterior_variances, sample]
 
 
-class ConvolutionalEncoder(TrainableLayer):
+class ConvEncoder(TrainableLayer):
     """
-        This is a generic encoder composed of {convolutions & downsampling} blocks followed by
-        fully connected layers.
+        This is a generic encoder composed of {convolutions then downsampling} blocks followed by
+        fully-connected layers.
         """
     def __init__(self,
                  denoising_variance,
-                 conv_features,
+                 conv_output_channels,
                  conv_kernel_sizes,
                  conv_pooling_factors,
                  acti_func_conv,
                  layer_sizes_encoder,
                  acti_func_encoder,
-                 downsampled_dim,
+                 serialised_shape,
                  w_initializer=None,
                  w_regularizer=None,
                  b_initializer=None,
                  b_regularizer=None,
-                 name='ConvolutionalEncoder'):
+                 name='ConvEncoder'):
 
-        super(ConvolutionalEncoder, self).__init__(name=name)
+        super(ConvEncoder, self).__init__(name=name)
 
         self.denoising_variance = denoising_variance
-        self.conv_features = conv_features
+        self.conv_output_channels = conv_output_channels
         self.conv_kernel_sizes = conv_kernel_sizes
         self.conv_pooling_factors = conv_pooling_factors
         self.acti_func_conv = acti_func_conv
         self.layer_sizes_encoder = layer_sizes_encoder
         self.acti_func_encoder = acti_func_encoder
-        self.downsampled_dim = downsampled_dim
+        self.serialised_shape = serialised_shape
 
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
@@ -199,9 +224,9 @@ class ConvolutionalEncoder(TrainableLayer):
         # Define the encoding convolutional layers
         encoders_cnn = []
         encoders_downsamplers = []
-        for i in range(0, len(self.conv_features)):
+        for i in range(0, len(self.conv_output_channels)):
             encoders_cnn.append(ConvolutionalLayer(
-                n_output_chns=self.conv_features[i],
+                n_output_chns=self.conv_output_channels[i],
                 kernel_size=self.conv_kernel_sizes[i],
                 padding='SAME',
                 with_bias=True,
@@ -209,23 +234,24 @@ class ConvolutionalEncoder(TrainableLayer):
                 w_initializer=self.initializers['w'],
                 w_regularizer=None,
                 acti_func=self.acti_func_conv[i],
-                name='encoder_conv_{}_{}'.format(self.conv_kernel_sizes[i], self.conv_features[i])))
+                name='encoder_conv_{}_{}'.format(self.conv_kernel_sizes[i], self.conv_output_channels[i])))
             print(encoders_cnn[-1])
 
             encoders_downsamplers.append(ConvolutionalLayer(
-                n_output_chns=self.conv_features[i],
-                kernel_size=2,
-                stride=2,
+                n_output_chns=self.conv_output_channels[i],
+                kernel_size=self.conv_pooling_factors[i],
+                stride=self.conv_pooling_factors[i],
                 padding='SAME',
                 with_bias=False,
                 with_bn=False,
                 w_initializer=self.initializers['w'],
                 w_regularizer=None,
                 acti_func=None,
-                name='encoder_downsampler_2_2'))
+                name = 'encoder_downsampler_{}_{}'.format(self.conv_pooling_factors[i], self.conv_pooling_factors[i])))
+
             print(encoders_downsamplers[-1])
 
-        serialise_feature_maps = ReshapeLayer([-1, self.downsampled_dim * self.conv_features[-1]])
+        serialise_feature_maps = ReshapeLayer([-1, self.serialised_shape])
         print(serialise_feature_maps)
 
         # Define the encoding fully-connected layers
@@ -248,7 +274,7 @@ class ConvolutionalEncoder(TrainableLayer):
             flow = images
 
         # Convolutional encoder layers
-        for i in range(0, len(self.conv_features)):
+        for i in range(0, len(self.conv_output_channels)):
             flow = encoders_downsamplers[i]( encoders_cnn[i](flow, is_training), is_training)
 
         # Flatten the feature maps
@@ -269,8 +295,8 @@ class GaussianSampler(TrainableLayer):
     def __init__(self,
                  number_of_latent_variables,
                  number_of_samples_from_posterior,
-                 logvariance_upper_bound,
-                 logvariance_lower_bound,
+                 logvars_upper_bound,
+                 logvars_lower_bound,
                  w_initializer=None,
                  w_regularizer=None,
                  b_initializer=None,
@@ -281,8 +307,8 @@ class GaussianSampler(TrainableLayer):
 
         self.number_of_latent_variables = number_of_latent_variables
         self.number_of_samples = number_of_samples_from_posterior
-        self.logvariance_upper_bound = logvariance_upper_bound
-        self.logvariance_lower_bound = logvariance_lower_bound
+        self.logvars_upper_bound = logvars_upper_bound
+        self.logvars_lower_bound = logvars_lower_bound
 
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
@@ -292,8 +318,8 @@ class GaussianSampler(TrainableLayer):
 
         def clip(input):
             # This is for clipping logvars, so that variances = exp(logvars) behaves well
-            output = tf.maximum(input, self.logvariance_lower_bound)
-            output = tf.minimum(output, self.logvariance_upper_bound)
+            output = tf.maximum(input, self.logvars_lower_bound)
+            output = tf.minimum(output, self.logvars_upper_bound)
             return output
 
         encoder_means = FullyConnectedLayer(
@@ -305,18 +331,18 @@ class GaussianSampler(TrainableLayer):
             name='encoder_fc_means_{}'.format(self.number_of_latent_variables))
         print(encoder_means)
 
-        encoder_logvariances = FullyConnectedLayer(
+        encoder_logvars = FullyConnectedLayer(
             n_output_nodes=self.number_of_latent_variables,
             with_bn=False,
             acti_func=None,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
             name='encoder_fc_logvars_{}'.format(self.number_of_latent_variables))
-        print(encoder_logvariances)
+        print(encoder_logvars)
 
         # Predict the posterior distribution's parameters
         posterior_means = encoder_means(codes, is_training)
-        posterior_logvars = clip(encoder_logvariances(codes, is_training))
+        posterior_logvars = clip(encoder_logvars(codes, is_training))
 
         if self.number_of_samples == 1:
             noise_sample = tf.random_normal(tf.shape(posterior_means), 0.0, 1.0)
@@ -328,36 +354,36 @@ class GaussianSampler(TrainableLayer):
 
 
 
-class ConvolutionalDecoder(TrainableLayer):
+class ConvDecoder(TrainableLayer):
     """
-        This is a generic decoder composed of fully connected layers followed by {upsampling & transpose convolution}
-        blocks.
+        This is a generic decoder composed of fully-connected layers followed by {upsampling then transpose convolution}
+        blocks. NB: no batch normalisation on the final (transpose convolutional) layer.
         """
     def __init__(self,
                  layer_sizes_decoder,
                  acti_func_decoder,
-                 trans_conv_features,
-                 trans_conv_kernels_sizes,
+                 trans_conv_output_channels,
+                 trans_conv_kernel_sizes,
                  trans_conv_unpooling_factors,
                  acti_func_trans_conv,
                  upsampling_mode,
-                 shape_of_downsampled_feature_maps,
+                 downsampled_shape,
                  w_initializer=None,
                  w_regularizer=None,
                  b_initializer=None,
                  b_regularizer=None,
-                 name='ConvolutionalDecoder'):
+                 name='ConvDecoder'):
 
-        super(ConvolutionalDecoder, self).__init__(name=name)
+        super(ConvDecoder, self).__init__(name=name)
 
         self.layer_sizes_decoder = layer_sizes_decoder
         self.acti_func_decoder = acti_func_decoder
-        self.trans_conv_features = trans_conv_features
-        self.trans_conv_kernels_sizes = trans_conv_kernels_sizes
+        self.trans_conv_output_channels = trans_conv_output_channels
+        self.trans_conv_kernel_sizes = trans_conv_kernel_sizes
         self.trans_conv_unpooling_factors = trans_conv_unpooling_factors
         self.acti_func_trans_conv = acti_func_trans_conv
         self.upsampling_mode = upsampling_mode
-        self.downsampled_dims = shape_of_downsampled_feature_maps
+        self.downsampled_shape = downsampled_shape
 
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
@@ -377,38 +403,39 @@ class ConvolutionalDecoder(TrainableLayer):
                 name='decoder_fc_{}'.format(self.layer_sizes_decoder[i])))
             print(decoders_fc[-1])
 
-        reconstitute_feature_maps = ReshapeLayer([-1] + self.downsampled_dims)
+        reconstitute_feature_maps = ReshapeLayer([-1] + self.downsampled_shape)
         print(reconstitute_feature_maps)
 
         # Define the decoding convolutional layers
         decoders_cnn = []
         decoders_upsamplers = []
-        for i in range(0, len(self.trans_conv_features)):
+        for i in range(0, len(self.trans_conv_output_channels)):
             if self.upsampling_mode == 'DECONV':
                 decoders_upsamplers.append(DeconvolutionalLayer(
-                    n_output_chns=self.trans_conv_features[i],
-                    kernel_size=2,
-                    stride=2,
+                    n_output_chns=self.trans_conv_output_channels[i],
+                    kernel_size=self.trans_conv_unpooling_factors[i],
+                    stride=self.trans_conv_unpooling_factors[i],
                     padding='SAME',
                     with_bias=True,
                     with_bn=True,
                     w_initializer=self.initializers['w'],
                     w_regularizer=None,
                     acti_func=None,
-                    name='decoder_upsampler_2_2'))
+                    name='decoder_upsampler_{}_{}'.format(self.trans_conv_unpooling_factors[i],
+                                                          self.trans_conv_unpooling_factors[i])))
                 print(decoders_upsamplers[-1])
 
             decoders_cnn.append(DeconvolutionalLayer(
-                n_output_chns=self.trans_conv_features[i],
-                kernel_size=self.trans_conv_kernels_sizes[i],
+                n_output_chns=self.trans_conv_output_channels[i],
+                kernel_size=self.trans_conv_kernel_sizes[i],
                 stride=1,
                 padding='SAME',
                 with_bias=True,
-                with_bn=not (i == len(self.trans_conv_features) - 1),  # No BN on output
+                with_bn=not (i == len(self.trans_conv_output_channels) - 1),  # No BN on output
                 w_initializer=self.initializers['w'],
                 w_regularizer=None,
                 acti_func=self.acti_func_trans_conv[i],
-                name='decoder_trans_conv_{}_{}'.format(self.trans_conv_kernels_sizes[i], self.trans_conv_features[i])))
+                name='decoder_trans_conv_{}_{}'.format(self.trans_conv_kernel_sizes[i], self.trans_conv_output_channels[i])))
             print(decoders_cnn[-1])
 
         # Fully-connected decoder layers
@@ -420,17 +447,17 @@ class ConvolutionalDecoder(TrainableLayer):
         flow = reconstitute_feature_maps(flow)
 
         # Convolutional decoder layers
-        for i in range(0, len(self.trans_conv_features)):
+        for i in range(0, len(self.trans_conv_output_channels)):
             if self.upsampling_mode == 'DECONV':
                 flow = decoders_upsamplers[i](flow, is_training)
             elif self.upsampling_mode == 'CHANNELWISE_DECONV':
                 flow = UpSampleLayer('CHANNELWISE_DECONV',
-                                     kernel_size=2,
-                                     stride=2)(flow)
+                                     kernel_size=self.trans_conv_unpooling_factors[i],
+                                     stride=self.trans_conv_unpooling_factors[i])(flow)
             elif self.upsampling_mode == 'REPLICATE':
                 flow = UpSampleLayer('REPLICATE',
-                                     kernel_size=2,
-                                     stride=2)(flow)
+                                     kernel_size=self.trans_conv_unpooling_factors[i],
+                                     stride=self.trans_conv_unpooling_factors[i])(flow)
             flow = decoders_cnn[i](flow, is_training)
 
         return flow
