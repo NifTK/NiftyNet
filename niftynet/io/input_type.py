@@ -24,7 +24,12 @@ class Loadable(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def load_as_5d_matrix(self, *args, **kwargs):
+    def get_data(self, *args, **kwargs):
+        # this function loads a numpy array of the image object
+        # if the array has less than 5 dimensions
+        # (corresponding to 3 sptial dimensions, spatial, temporal)
+        # it extends the array to 5d
+        # if ndims>5 returns without modifying the array
         raise NotImplementedError
 
 
@@ -57,7 +62,7 @@ class DataFromFile(Loadable):
     def name(self, name_array):
         self._name = validate_input_tuple(name_array, basestring)
 
-    def load_as_5d_matrix(self):
+    def get_data(self):
         raise NotImplementedError
 
 
@@ -79,7 +84,7 @@ class SpatialImage2D(DataFromFile):
         assert len(self.interp_order) == len(self.file_path), \
             "length of interp_order and file_path not consistent"
 
-    def load_as_5d_matrix(self, is_resampling=False):
+    def get_data(self, is_resampling=False):
         if len(self._file_path) > 1:
             # 2D image from multiple files
             raise NotImplementedError
@@ -106,7 +111,7 @@ class SpatialImage3D(SpatialImage2D):
         # assumes len(pixdims) == 3
         self._pixdim = __obj.header.get_zooms()[:3]
 
-    def load_as_5d_matrix(self, do_resampling=False, do_reorientation=False):
+    def get_data(self, do_resampling=False, do_reorientation=False):
         if len(self._file_path) > 1:
             # 3D image from multiple 2d files
             raise NotImplementedError
@@ -135,7 +140,7 @@ class SpatialImage4D(SpatialImage3D):
                                              name=name,
                                              interp_order=interp_order)
 
-    def load_as_5d_matrix(self, do_resampling=False, do_reorientation=False):
+    def get_data(self, do_resampling=False, do_reorientation=False):
         if len(self._file_path) == 1:
             # 4D image from a single file
             raise NotImplementedError
@@ -149,8 +154,8 @@ class SpatialImage4D(SpatialImage3D):
             mod_3d = SpatialImage3D(file_path=__file_path,
                                     name=__name,
                                     interp_order=__interp_order)
-            mod_data_5d = mod_3d.load_as_5d_matrix(do_resampling,
-                                                   do_reorientation)
+            mod_data_5d = mod_3d.get_data(do_resampling,
+                                          do_reorientation)
             mod_list.append(mod_data_5d)
         try:
             image_data = np.concatenate(mod_list, axis=3)
@@ -162,10 +167,30 @@ class SpatialImage4D(SpatialImage3D):
         return image_data
 
 
+class VectorND(DataFromFile):
+    def __init__(self, file_path, name):
+        super(VectorND, self).__init__(file_path=file_path,
+                                       name=name)
+
+    def get_data(self, do_resampling=False, do_reorientation=False):
+        if do_resampling:
+            raise NotImplementedError
+        if do_reorientation:
+            raise NotImplementedError
+
+        if len(self._file_path) > 1:
+            # 4D image from a single file
+            raise NotImplementedError
+        image_obj = misc.load_image(self.file_path[0])
+        image_data = image_obj.get_data().astype(np.float32)
+        return image_data
+
+
 class ImageFactory(object):
     INSTANCE_DICT = {2: SpatialImage2D,
                      3: SpatialImage3D,
-                     4: SpatialImage4D}
+                     4: SpatialImage4D,
+                     5: VectorND}
 
     @classmethod
     def create_instance(cls, file_path, **kwargs):

@@ -11,11 +11,13 @@ import scipy.ndimage
 image_loaders = [nib.load]
 try:
     import niftynet.utilities.simple_itk_as_nibabel
-    image_loaders.append(niftynet.utilities.simple_itk_as_nibabel.SimpleITKAsNibabel)
+
+    image_loaders.append(
+        niftynet.utilities.simple_itk_as_nibabel.SimpleITKAsNibabel)
 except ImportError:
-    warnings.warn('SimpleITK adapter failed to load, reducing the supported file formats.',ImportWarning)
-
-
+    warnings.warn(
+        'SimpleITK adapter failed to load, reducing the supported file formats.',
+        ImportWarning)
 
 warnings.simplefilter("ignore", UserWarning)
 
@@ -27,6 +29,7 @@ FILE_EXTENSIONS = [".nii.gz", ".tar.gz"]
 def infer_ndims_from_file(file_path):
     image_header = load_image(file_path).header
     return int(image_header['dim'][0])
+
 
 def create_affine_pixdim(affine, pixdim):
     '''
@@ -43,26 +46,34 @@ def create_affine_pixdim(affine, pixdim):
         np.expand_dims(np.append(np.asarray(pixdim), 1), axis=1), [1, 4])
     return np.multiply(np.divide(affine, to_divide.T), to_multiply.T)
 
+
 def load_image(filename):
     # load an image from a supported filetype and return an object
     # that matches nibabel's spatialimages interface
     for image_loader in image_loaders:
-      try:
-        img=image_loader(filename)
-        img = correct_image_if_necessary(img)
-        return img
-      except nib.filebasedimages.ImageFileError: # if the image_loader cannot handle the type continue to next loader
-        pass
-    raise nib.filebasedimages.ImageFileError('No loader could load the file') # Throw last error
+        try:
+            img = image_loader(filename)
+            img = correct_image_if_necessary(img)
+            return img
+        except nib.filebasedimages.ImageFileError:  # if the image_loader cannot handle the type continue to next loader
+            pass
+    raise nib.filebasedimages.ImageFileError(
+        'No loader could load the file')  # Throw last error
+
 
 def correct_image_if_necessary(img):
-  # Check that affine matches zooms
-  pixdim = img.header.get_zooms()
-  if not np.array_equal(np.sqrt(np.sum(np.square(img.affine[0:3, 0:3]), 0)), np.asarray(pixdim)):
-    if hasattr(img,'get_sform'):
-      # assume it is a malformed NIfTI and try to fix it
-      img=rectify_header_sform_qform(img)
-  return img
+    if img.header['dim'][0] == 5:
+        # do nothing for high-dimensional array
+        return img
+    # Check that affine matches zooms
+    pixdim = img.header.get_zooms()
+    if not np.array_equal(np.sqrt(np.sum(np.square(img.affine[0:3, 0:3]), 0)),
+                          np.asarray(pixdim)):
+        if hasattr(img, 'get_sform'):
+            # assume it is a malformed NIfTI and try to fix it
+            img = rectify_header_sform_qform(img)
+    return img
+
 
 def rectify_header_sform_qform(img_nii):
     '''
@@ -99,12 +110,11 @@ def rectify_header_sform_qform(img_nii):
             img_nii.set_qform(np.copy(img_nii.get_sform()))
             return img_nii
     affine = img_nii.affine
-    pixdim = img_nii.header.get_zooms()[:3] # TODO: assuming 3 elements
+    pixdim = img_nii.header.get_zooms()[:3]  # TODO: assuming 3 elements
     new_affine = create_affine_pixdim(affine, pixdim)
     img_nii.set_sform(new_affine)
     img_nii.set_qform(new_affine)
     return img_nii
-
 
 
 #### end of utilities for file headers
@@ -388,5 +398,3 @@ def spatial_padding_to_indexes(spatial_padding):
         else:
             raise ValueError("unknown spatial_padding format")
     return indexes.flatten()
-
-

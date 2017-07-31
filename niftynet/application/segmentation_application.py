@@ -88,7 +88,7 @@ class SegmentationApplication(BaseApplication):
         #output = reader(self.is_training)
         output = reader(False)
         for field in output:
-            print(output[field].load_as_5d_matrix(False, True).shape)
+            print(output[field].get_data(False, True).shape)
         import pdb; pdb.set_trace()
         #csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
 
