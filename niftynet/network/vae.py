@@ -42,7 +42,8 @@ class VAE(TrainableLayer):
 
         # 2) The convolutional layers
         # All four lists must be the same length.
-        # NB: the elements of 'conv_pooling_factors' are the amounts of pooling along each dimension.
+        # NB: the ith element of 'conv_pooling_factors' is the amount of pooling in the ith layer
+        # along ALL (spatial) dimensions.
         self.conv_output_channels = [15, 25, 35]
         self.conv_kernel_sizes = [3, 3, 3]
         self.conv_pooling_factors = [2, 2, 2]
