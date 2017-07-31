@@ -35,15 +35,24 @@ class VolumeReader(Layer):
                 import SUPPORTED_INPUT
             # only choose fields that are supported by the application
             # (SUPPORTED_INPUT) and have user parameter specification
-            self.output_fields = [field_name
-                                  for field_name in task_param
-                                  if field_name in SUPPORTED_INPUT and
-                                  task_param[field_name] != ()]
+        elif app_type == "net_gan.py":
+            from niftynet.application.gan_application \
+                import SUPPORTED_INPUT
+        self.output_fields = [field_name
+                              for field_name in task_param
+                              if field_name in SUPPORTED_INPUT and
+                              task_param[field_name] != ()]
         self.output_list = self._filename_to_image_list(data_param, task_param)
         self.current_id = -1
 
     def layer_op(self, is_training=False):
+        """
+        this layer returns a dictionary
+          keys: self.output_fields
+          values: image volume objects
+        """
         if is_training:
+            # this is thread safe, don't access self.current_id
             idx = np.random.randint(len(self.output_list))
         else:
             # this is not thread safe
@@ -58,15 +67,12 @@ class VolumeReader(Layer):
         """
         volume_list = []
         for row_id in range(len(self.file_list)):
-            # initialise a reader output dictionary
-            subject_dict = dict(zip(self.output_fields,
-                                    (None,) * len(self.output_fields)))
-            for input_name in self.output_fields:
-                modalities = tuple(task_param[input_name])
-                subject_dict[input_name] = self._create_image(row_id,
-                                                              modalities,
-                                                              data_param)
-            volume_list.append(subject_dict)
+            # combine fieldnames and volumes as a dictionary
+            volume_dict = {field: self._create_image(row_id,
+                                                     task_param[field],
+                                                     data_param)
+                           for field in self.output_fields}
+            volume_list.append(volume_dict)
         return volume_list
 
     def _create_image(self, idx, modalities, data_param):

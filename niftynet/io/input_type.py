@@ -40,6 +40,21 @@ class DataFromFile(Loadable):
         assert len(self.file_path) == len(self.name), \
             "file_path and modalitiy names are not consistent."
 
+        # read data types from file
+        self._dtype = None
+        self._read_dtype()
+
+    def _read_dtype(self):
+        self._dtype = [misc.load_image(_file).header.get_data_dtype()
+                       for _file in self.file_path]
+        self._dtype = tuple(self._dtype)
+
+    @property
+    def dtype(self):
+        if not self._dtype:
+            self._read_dtype()
+        return self._dtype
+
     @property
     def file_path(self):
         assert isinstance(self._file_path, tuple)
@@ -89,7 +104,7 @@ class SpatialImage2D(DataFromFile):
             # 2D image from multiple files
             raise NotImplementedError
         image_obj = misc.load_image(self.file_path[0])
-        image_data = image_obj.get_data().astype(np.float32)
+        image_data = image_obj.get_data()
         image_data = misc.expand_to_5d(image_data)
         if is_resampling:
             raise NotImplementedError
@@ -105,11 +120,11 @@ class SpatialImage3D(SpatialImage2D):
         self.load_header()
 
     def load_header(self):
-        __obj = misc.load_image(self.file_path[0])
-        misc.correct_image_if_necessary(__obj)
-        self._affine = __obj.affine
+        _obj = misc.load_image(self.file_path[0])
+        misc.correct_image_if_necessary(_obj)
+        self._affine = _obj.affine
         # assumes len(pixdims) == 3
-        self._pixdim = __obj.header.get_zooms()[:3]
+        self._pixdim = _obj.header.get_zooms()[:3]
 
     def get_data(self, do_resampling=False, do_reorientation=False):
         if len(self._file_path) > 1:
@@ -117,10 +132,11 @@ class SpatialImage3D(SpatialImage2D):
             raise NotImplementedError
         # assuming len(self._file_path) == 1
         image_obj = misc.load_image(self.file_path[0])
-        image_data = image_obj.get_data().astype(np.float32)
+        image_data = image_obj.get_data()
         image_data = misc.expand_to_5d(image_data)
 
         if do_resampling and self._pixdim is not None:
+            # verbose: warning when interpolate_order>1 for integers
             image_data = misc.do_resampling(image_data,
                                             self._pixdim,
                                             STD_PIXDIM,
@@ -159,6 +175,9 @@ class SpatialImage4D(SpatialImage3D):
             mod_list.append(mod_data_5d)
         try:
             image_data = np.concatenate(mod_list, axis=3)
+            #if len(set(self.dtype)) > 1:
+            #    tf.logging.warning("cast input images from {} to {}".format(
+            #        self.dtype, image_data.dtype))
         except ValueError:
             tf.logging.fatal(
                 "multi-modal data shapes not consistent -- currently"
@@ -177,12 +196,12 @@ class VectorND(DataFromFile):
             raise NotImplementedError
         if do_reorientation:
             raise NotImplementedError
-
         if len(self._file_path) > 1:
             # 4D image from a single file
             raise NotImplementedError
+
         image_obj = misc.load_image(self.file_path[0])
-        image_data = image_obj.get_data().astype(np.float32)
+        image_data = image_obj.get_data()
         return image_data
 
 
