@@ -55,7 +55,8 @@ def load_image(filename):
             img = image_loader(filename)
             img = correct_image_if_necessary(img)
             return img
-        except nib.filebasedimages.ImageFileError:  # if the image_loader cannot handle the type continue to next loader
+        except nib.filebasedimages.ImageFileError:
+            # if the image_loader cannot handle the type continue to next loader
             pass
     raise nib.filebasedimages.ImageFileError(
         'No loader could load the file')  # Throw last error

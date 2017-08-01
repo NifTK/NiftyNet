@@ -16,11 +16,33 @@ from niftynet.utilities.user_parameters_helper import validate_input_tuple
 
 class VolumeReader(Layer):
     def __init__(self, output_fields):
+        # list of file names
+        self._file_list = None
+
         self.output_fields = output_fields
-        self.file_list = None
+        self._input_sources = None
+        self._dtypes = None
+
+        # list of image objects
         self.output_list = None
         self.current_id = None
         super(VolumeReader, self).__init__(name='volume_reader')
+
+    @property
+    def dtypes(self):
+        if not self.output_list:
+            tf.logging.fatal("please initialise the reader first")
+            raise RuntimeError
+        random_image = self.layer_op(shuffle=True)
+        return {field: random_image[field].dtype
+                for field in self.output_fields}
+
+    @property
+    def input_sources(self):
+        if not self._input_sources:
+            tf.logging.fatal("please initialise the reader first")
+            raise RuntimeError
+        return self._input_sources
 
     @property
     def output_fields(self):
@@ -40,7 +62,7 @@ class VolumeReader(Layer):
         modality sections, 'label' corresponds to one modality section
         """
         app_type = task_param['name']
-        self.file_list = VolumeReader._load_and_merge_csv_files(data_param)
+        self._file_list = VolumeReader._load_and_merge_csv_files(data_param)
 
         if app_type == "net_segmentation.py":
             from niftynet.application.segmentation_application \
@@ -57,37 +79,48 @@ class VolumeReader(Layer):
                               for field_name in task_param
                               if field_name in self.output_fields and
                               task_param[field_name] != ()]
-        self.output_list = self._filename_to_image_list(data_param, task_param)
+        self._input_sources = {field: task_param[field]
+                               for field in self.output_fields}
+        self.output_list = self._filename_to_image_list(data_param)
         self.current_id = -1
 
-    def layer_op(self, is_training=False):
+        tf.logging.info('initialised reader: loading {} from {}'.format(
+            self.output_fields, self.input_sources))
+
+    def layer_op(self, shuffle=False):
         """
         this layer returns a dictionary
           keys: self.output_fields
           values: image volume objects
         """
-        if is_training:
+        if shuffle:
             # this is thread safe, don't access self.current_id
             idx = np.random.randint(len(self.output_list))
+            return self.output_list[idx]
         else:
             # this is not thread safe
             idx = self.current_id + 1
             self.current_id = idx
-        return self.output_list[idx]
 
-    def _filename_to_image_list(self, data_param, task_param):
+            if idx < len(self.output_list) and idx >= 0:
+                return self.output_list[idx]
+            else:
+                # return nothing if current_id is not valid
+                return None
+
+    def _filename_to_image_list(self, data_param):
         """
         converting a list of filenames to a list of image objects
         useful properties (e.g. interp_order) are added to each object
         """
         volume_list = []
-        for row_id in range(len(self.file_list)):
+        for row_id in range(len(self._file_list)):
             # combine fieldnames and volumes as a dictionary
-            volume_dict = {field: self._create_image(row_id,
-                                                     task_param[field],
-                                                     data_param)
-                           for field in self.output_fields}
-            volume_list.append(volume_dict)
+            _dict = {field: self._create_image(row_id,
+                                               self.input_sources[field],
+                                               data_param)
+                     for field in self.input_sources}
+            volume_list.append(_dict)
         return volume_list
 
     def _create_image(self, idx, modalities, data_param):
@@ -97,7 +130,7 @@ class VolumeReader(Layer):
         parameter and create <niftynet.io.input_type.SpatialImage*D>
         """
         try:
-            file_path = tuple([self.file_list.loc[idx, mod]
+            file_path = tuple([self._file_list.loc[idx, mod]
                                for mod in modalities])
             interp_order = tuple([data_param[mod].interp_order
                                   for mod in modalities])
@@ -121,7 +154,7 @@ class VolumeReader(Layer):
         This function returns a <pandas.core.frame.DataFrame> of the
         joint list
         """
-        file_list = None
+        _file_list = None
         for modality_name in data_param:
             csv_file = data_param.get(modality_name, '').csv_file
             if not os.path.isfile(csv_file):
@@ -129,16 +162,16 @@ class VolumeReader(Layer):
                 raise IOError
             csv_list = pandas.read_csv(
                 csv_file, header=None, names=['subject_id', modality_name])
-            if file_list is None:
-                file_list = csv_list
+            if _file_list is None:
+                _file_list = csv_list
                 continue
-            # merge file_list based on subject_ids (first column of each csv)
-            n_rows = file_list.shape[0]
-            file_list = pandas.merge(file_list, csv_list, on='subject_id')
-            if file_list.shape[0] != n_rows:
+            # merge _file_list based on subject_ids (first column of each csv)
+            n_rows = _file_list.shape[0]
+            _file_list = pandas.merge(_file_list, csv_list, on='subject_id')
+            if _file_list.shape[0] != n_rows:
                 tf.logging.warning("rows not matched in {}".format(csv_file))
-        if file_list.size == 0:
+        if _file_list.size == 0:
             tf.logging.fatal("no common subject_ids in filename lists,"
                              "please check the csv files.")
             raise IOError
-        return file_list
+        return _file_list

@@ -85,18 +85,8 @@ class SegmentationApplication(BaseApplication):
         from niftynet.io.volume_reader import VolumeReader
         reader = VolumeReader(SUPPORTED_INPUT)
         reader.initialise_reader(data_param, segmentation_param)
-
-        reader_2 = VolumeReader(['label', 'test'])
-        reader_2.initialise_reader(data_param, segmentation_param)
-
-        output = reader(False)
-        output_2 = reader_2(False)
-        for field in reader.output_fields:
-            print(output[field].get_data(False, True).shape)
-        for field in reader_2.output_fields:
-            print(output_2[field].get_data(False, True).shape)
-        import pdb; pdb.set_trace()
-        #csv_loader = CSVTable(csv_dict=csv_dict, allow_missing=True)
+        from niftynet.engine.sampler_uniform import UniformSampler
+        sampler = UniformSampler(reader, data_param)
 
     def initialise_sampler(self, is_training):
         pass

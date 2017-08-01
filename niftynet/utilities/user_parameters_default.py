@@ -113,7 +113,7 @@ def add_input_data_args(parser):
         help="keywords in input file names, negatively matches filenames")
 
     parser.add_argument(
-        "--size",
+        "--window_size",
         type=numarray,
         help="input data size")
 
