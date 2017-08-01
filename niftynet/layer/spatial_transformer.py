@@ -33,7 +33,7 @@ from six.moves import xrange  # pylint: disable=redefined-builtin
 from niftynet.utilities.misc_common import look_up_operations
 
 SUPPORTED_INTERPOLATION={'BSPLINE','LINEAR','NEAREST'}
-SUPPORTED_BOUNDARY={'REPLICATE','CIRCULAR','SYMMETRIC'}
+SUPPORTED_BOUNDARY={'ZERO','REPLICATE','CIRCULAR','SYMMETRIC'}
 
 class ResamplerLayer(Layer):
   """ Resampler  class
@@ -46,11 +46,18 @@ class ResamplerLayer(Layer):
     super(ResamplerLayer, self).__init__(name=name)
     self.interpolation = look_up_operations(interpolation.upper(), SUPPORTED_INTERPOLATION)
     self.boundary = look_up_operations(boundary.upper(), SUPPORTED_BOUNDARY)
-    self.boundary_func_ = {'REPLICATE':self.boundary_replicate,'CIRCULAR':self.boundary_circular,'SYMMETRIC':self.boundary_symmetric}[self.boundary]
-    self.resample_func_ = {'LINEAR':self.resample_linear,'BSPLINE':self.resample_bspline,'NEAREST':self.resample_nearest}[self.interpolation]
+    if self.boundary == 'ZERO' and self.interpolation in ['BSPLINE', 'NEAREST']:
+      raise NotImplementedError('Zero padding is only supported for linear interpolation currently')
+    self.boundary_func_ = {'ZERO': self.boundary_replicate,  # zero is replicate with special edge handling (hack)
+                           'REPLICATE':self.boundary_replicate,
+                           'CIRCULAR':self.boundary_circular,
+                           'SYMMETRIC':self.boundary_symmetric}[self.boundary]
+    self.resample_func_ = {'LINEAR':self.resample_linear,
+                           'BSPLINE':self.resample_bspline,
+                           'NEAREST':self.resample_nearest}[self.interpolation]
 
   def boundary_replicate(self,sample_coords,input_size):
-    return tf.maximum(tf.minimum(sample_coords,input_size-1),tf.zeros_like(input_size))
+    return tf.maximum(tf.minimum(sample_coords,input_size-1),0)
   def boundary_circular(self,sample_coords,input_size):
     return tf.mod(tf.mod(sample_coords,input_size)+input_size,input_size)
   def boundary_symmetric(self,sample_coords,input_size):
@@ -58,7 +65,7 @@ class ResamplerLayer(Layer):
     return (input_size-1)-tf.abs((input_size-1)-tf.mod(tf.mod(sample_coords,circularSize)+circularSize,circularSize))
 
   def resample_bspline(self,inputs,sample_coords):
-    input_size=tf.reshape(inputs.get_shape().as_list()[1:-1],[1]*(len(sample_coords.get_shape().as_list())-1)+[-1]  )
+    input_size=tf.reshape(inputs.get_shape().as_list()[1:-1],[1]*(len(sample_coords.get_shape().as_list())-1)+[-1])
     spatial_rank = layer_util.infer_spatial_rank(inputs)
     batch_size=sample_coords.get_shape().as_list()[0]
     grid_shape = sample_coords.get_shape().as_list()[1:-1]
@@ -66,7 +73,8 @@ class ResamplerLayer(Layer):
       raise NotImplementedError('bspline interpolation not implemented for 2d yet')
     index_voxel_coords = tf.floor(sample_coords)
     # Compute voxels to use for interpolation
-    offsets = tf.reshape(tf.stack(tf.meshgrid(list(range(-1,3)),list(range(-1,3)),list(range(-1,3)), indexing='ij'),3),[1,4**spatial_rank]+[1]*len(grid_shape)+[spatial_rank])
+    grid=tf.meshgrid(list(range(-1,3)),list(range(-1,3)),list(range(-1,3)), indexing='ij')
+    offsets = tf.reshape(tf.stack(grid,3),[1,4**spatial_rank]+[1]*len(grid_shape)+[spatial_rank])
     preboundary_spatial_coords = offsets+tf.expand_dims(tf.cast(index_voxel_coords,tf.int32),1)
     spatial_coords = self.boundary_func_(preboundary_spatial_coords,input_size)
     sz=spatial_coords.get_shape().as_list()
@@ -76,37 +84,45 @@ class ResamplerLayer(Layer):
                                             -3*tf.pow(u,3) + 3*tf.pow(u,2) + 3*u + 1,
                                                tf.pow(u,3)],d)/6
 
-    index_weight=tf.reshape(sample_coords-index_voxel_coords,[batch_size,-1,3])
-    Bu=build_coefficient(tf.reshape(index_weight[:,:,0],[batch_size,1,1,1,-1]),1)
-    Bv=build_coefficient(tf.reshape(index_weight[:,:,1],[batch_size,1,1,1,-1]),2)
-    Bw=build_coefficient(tf.reshape(index_weight[:,:,2],[batch_size,1,1,1,-1]),3)
+    weight=tf.reshape(sample_coords-index_voxel_coords,[batch_size,-1,3])
+    Bu=build_coefficient(tf.reshape(weight[:,:,0],[batch_size,1,1,1,-1]),1)
+    Bv=build_coefficient(tf.reshape(weight[:,:,1],[batch_size,1,1,1,-1]),2)
+    Bw=build_coefficient(tf.reshape(weight[:,:,2],[batch_size,1,1,1,-1]),3)
     all_weights=tf.reshape(Bu*Bv*Bw,[batch_size] +sz[1:-1]+[1])
     # Gather voxel values and compute weighted sum
     batch_coords = tf.tile(tf.reshape(tf.range(sz[0]),[sz[0]]+[1]*(len(sz)-1)),[1]+sz[1:-1]+[1])
     raw_samples = tf.gather_nd(inputs,tf.concat([batch_coords,spatial_coords],-1))
     return tf.reduce_sum(all_weights*raw_samples,reduction_indices=1)
-    
+
   def resample_linear(self,inputs,sample_coords):
-    # Each sample is interpolated as a weighted sum of 2^spatial_rank voxels
-    input_size=tf.reshape(inputs.get_shape().as_list()[1:-1],[1]*(len(sample_coords.get_shape().as_list())-1)+[-1]  )
+    input_size = inputs.get_shape().as_list()[1:-1]
     spatial_rank = layer_util.infer_spatial_rank(inputs)
-    grid_shape = sample_coords.get_shape().as_list()[1:-1]
-    index_voxel_coords = tf.floor(sample_coords)
-    # Compute voxels to use for interpolation
-    reshapeOffsetForBroadcasting=lambda x: tf.reshape(x,[1,2**spatial_rank]+[1]*len(grid_shape)+[spatial_rank])
-    offsets = [[int(c) for c in format(it,'0%ib'%spatial_rank)] for it in range(2**spatial_rank)]
-    preboundary_spatial_coords = reshapeOffsetForBroadcasting(offsets)+tf.expand_dims(tf.cast(index_voxel_coords,tf.int32),1)
-    spatial_coords = self.boundary_func_(preboundary_spatial_coords,input_size)
-    # Compute weights for each voxel
-    index_weight=sample_coords-index_voxel_coords
-    offset_complement = [[1-int(c) for c in format(it,'0%ib'%spatial_rank)] for it in range(2**spatial_rank)]
-    offset_signs = [[(-1.)**o for o in os] for os in offset_complement]
-    all_weights=tf.reduce_prod(tf.cast(reshapeOffsetForBroadcasting(offset_complement),tf.float32)+reshapeOffsetForBroadcasting(offset_signs)*tf.expand_dims(index_weight,1),reduction_indices=-1,keep_dims=True)
-    # Gather voxel values and compute weighted sum
-    sz=spatial_coords.get_shape().as_list()
-    batch_coords = tf.tile(tf.reshape(tf.range(sz[0]),[sz[0]]+[1]*(len(sz)-1)),[1]+sz[1:-1]+[1])
-    raw_samples = tf.gather_nd(inputs,tf.concat([batch_coords,spatial_coords],-1))
-    return tf.reduce_sum(all_weights*raw_samples,reduction_indices=1)
+
+    xy=tf.unstack(sample_coords,axis=len(sample_coords.get_shape())-1)
+    index_voxel_coords = [tf.floor(x) for x in xy]
+    spatial_coords=[self.boundary_func_(tf.cast(x,tf.int32), input_size[idx])
+                    for idx,x in enumerate(index_voxel_coords)]
+    spatial_coords_plus1=[self.boundary_func_(tf.cast(x+1.,tf.int32), input_size[idx])
+                          for idx,x in enumerate(index_voxel_coords)]
+    if self.boundary == 'ZERO':  #
+      weight = [tf.expand_dims(x - tf.cast(i, tf.float32), -1) for x, i in zip(xy, spatial_coords)]
+      weight_c = [tf.expand_dims(tf.cast(i, tf.float32) - x, -1) for x, i in zip(xy, spatial_coords_plus1)]
+    else:
+      weight = [tf.expand_dims(x - i, -1) for x, i in zip(xy, index_voxel_coords)]
+      weight_c = [1. - w for w in weight]
+    sz = spatial_coords[0].get_shape().as_list()
+    batch_coords = tf.tile(tf.reshape(tf.range(sz[0]), [sz[0]] + [1] * (len(sz) - 1)), [1] + sz[1:] )
+    sc=(spatial_coords,spatial_coords_plus1)
+    binary_codes = [[int(c) for c in format(i,'0%ib'%spatial_rank)] for i in range(2**spatial_rank)]
+    make_sample = lambda bc: tf.gather_nd(inputs, tf.stack([batch_coords] + [sc[c][i] for i,c in enumerate(bc)] , -1))
+    samples = [make_sample(bc) for bc in binary_codes]
+    def pyramid_combination(samples,weight,weight_c):
+      if len(weight)==1:
+        return samples[0]*weight_c[0]+samples[1]*weight[0]
+      else:
+        return pyramid_combination(samples[::2], weight[:-1], weight_c[:-1]) * weight_c[-1] + \
+               pyramid_combination(samples[1::2], weight[:-1], weight_c[:-1]) * weight[-1]
+    return pyramid_combination(samples, weight, weight_c)
 
   def resample_nearest(self,inputs,sample_coords):
     input_size=tf.reshape(inputs.get_shape().as_list()[1:-1],[1]*(len(sample_coords.get_shape().as_list())-1)+[-1]  )
@@ -239,11 +255,14 @@ class BSplineFieldImageGridWarperLayer(GridWarperLayer):
   def layer_op(self,field):
     batch_size=int(field.get_shape().as_list()[0])
     spatial_rank = int(field.get_shape().as_list()[-1])
-    resampled=tf.stack([tf.nn.conv3d(field[:,:,:,:,d:d+1],self._psi,strides=[1,1,1,1,1],padding='VALID') for d in [0,1,2]],5)
+    resampled_list=[tf.nn.conv3d(field[:, :, :, :, d:d + 1], self._psi, strides=[1]*5, padding='VALID')
+                    for d in [0, 1, 2]]
+    resampled=tf.stack(resampled_list,5)
     permuted_shape=[batch_size]+[f-3 for f in self._coeff_shape]+self._knot_spacing+[spatial_rank]
     print(permuted_shape)
     permuted=tf.transpose(tf.reshape(resampled,permuted_shape),[0,1,4,2,5,3,6,7])
-    reshaped=tf.reshape(permuted,[batch_size]+[(f-3)*k for f,k in zip(self._coeff_shape,self._knot_spacing)]+[spatial_rank])
+    valid_size=[(f-3)*k for f,k in zip(self._coeff_shape,self._knot_spacing)]
+    reshaped=tf.reshape(permuted,[batch_size]+valid_size+[spatial_rank])
     cropped = reshaped[:,:self._output_shape[0],:self._output_shape[1],:self._output_shape[2],:]
     return cropped
 
@@ -286,11 +305,15 @@ class RescaledFieldImageGridWarperLayer(GridWarperLayer):
   def layer_op(self,field):
     input_shape = tf.shape(field)
     input_dtype = field.dtype.as_numpy_dtype
-    batch_size = int(field.get_shape()[0])    
-    coords_intermediate = tf.image.resize_images(tf.reshape(field,[batch_size,self._coeff_shape[0],self._coeff_shape[1],-1]),self._output_shape[0:2], self._interpolation,align_corners=False)
-    tmp=tf.reshape(coords_intermediate,[batch_size,self._output_shape[0]*self._output_shape[1],self._coeff_shape[2],-1])
-    tmp2=[batch_size]+list(self._output_shape)+[-1]
-    coords=tf.reshape(tf.image.resize_images(tmp,[self._output_shape[0]*self._output_shape[1],self._output_shape[2]],self._interpolation,align_corners=False),tmp2)
+    batch_size = int(field.get_shape()[0])
+    reshaped_field=tf.reshape(field, [batch_size, self._coeff_shape[0], self._coeff_shape[1], -1])
+    coords_intermediate = tf.image.resize_images(reshaped_field,self._output_shape[0:2],
+                                                 self._interpolation,align_corners=False)
+    sz_xy_z1=[batch_size,self._output_shape[0]*self._output_shape[1],self._coeff_shape[2],-1]
+    tmp=tf.reshape(coords_intermediate,sz_xy_z1)
+    final_sz=[batch_size]+list(self._output_shape)+[-1]
+    sz_xy_z2=[self._output_shape[0]*self._output_shape[1],self._output_shape[2]]
+    coords=tf.reshape(tf.image.resize_images(tmp,sz_xy_z2,self._interpolation,align_corners=False),final_sz)
     return coords
 
 
@@ -345,9 +368,12 @@ class ResampledFieldGridWarperLayer(GridWarperLayer):
                                            name=name)
 
   def _create_features(self):
-    """Creates the coordinates for resampling. If field_transform is None, these are constant and are
-       created in field space; otherwise, the final coordinates will be transformed by an input tensor representing 
-       a transform from output coordinates to field coordinates, so they are created are created in output coordinate space
+    """Creates the coordinates for resampling. If field_transform is
+    None, these are constant and are created in field space; otherwise,
+    the final coordinates will be transformed by an input tensor
+    representing a transform from output coordinates to field
+    coordinates, so they are created are created in output coordinate
+    space
     """
     embedded_output_shape = list(self._output_shape)+[1]*(len(self._source_shape) - len(self._output_shape))
     embedded_coeff_shape = list(self._coeff_shape)+[1]*(len(self._source_shape) - len(self._output_shape))

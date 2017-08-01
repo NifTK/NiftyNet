@@ -1,35 +1,57 @@
 # NiftyNet
+
 <img src="https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/raw/master/niftynet-logo.png" width="263" height="155">
 
 [![build status](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/build.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
 [![coverage report](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/coverage.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
 
-NiftyNet is an open-source library for convolutional networks in medical image analysis.
+NiftyNet is a [TensorFlow][tf]-based open-source convolutional neural networks (CNN) platform for research in medical image analysis and image-guided therapy.
+NiftyNet's modular structure is designed for sharing networks and pre-trained models.
+Using this modular structure you can:
 
-NiftyNet was developed by the [Centre for Medical Image Computing][cmic] at
-[University College London (UCL)][ucl].
+* Get started with established pre-trained networks using built-in tools
+* Adapt existing networks to your imaging data
+* Quickly build new solutions to your own image analysis problems
+
+NiftyNet is a consortium of research groups (WEISS -- [Wellcome EPSRC Centre for Interventional and Surgical Sciences][weiss], CMIC -- [Centre for Medical Image Computing][cmic], HIG -- High-dimensional Imaging Group), where WEISS acts as the consortium lead.
+
 
 ### Features
+
+NiftyNet currently supports medical image segmentation and generative adversarial networks.
+**NiftyNet is not intended for clinical use**.
+Other features of NiftyNet include:
+
 * Easy-to-customise interfaces of network components
-* Designed for sharing networks and pretrained models
-* Designed to support 2-D, 2.5-D, 3-D, 4-D inputs*
+* Sharing networks and pretrained models
+* Support for 2-D, 2.5-D, 3-D, 4-D inputs*
 * Efficient discriminative training with multiple-GPU support
-* Implemented recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
+* Implementation of recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
 * Comprehensive evaluation metrics for medical image segmentation
 
  <sup>*2.5-D: volumetric images processed as a stack of 2D slices;
 4-D: co-registered multi-modal 3D volumes</sup>
 
-### Usage
-Please follow the links for [demos](./demos) and [network (re-)implementations](./network).
+
+### Installation
+
+[`pip install niftynet`](https://pypi.org/project/NiftyNet/) (This will install the GPU version of NiftyNet.)
+
+
+### Getting started
+
+Please follow the links for [demos](./demos) and [network (re-)implementations](./niftynet/network).
 
 ### Contributing
+
 Feature requests and bug reports are collected on [Issues](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/issues).
 
 Contributors are encouraged to take a look at [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-### Citation
-If you use this software, please cite:
+### Citing NiftyNet
+
+If you use NiftyNet, please cite the following paper:
+
 ```
 @InProceedings{niftynet17,
   author = {Li, Wenqi and Wang, Guotai and Fidon, Lucas and Ourselin, Sebastien and Cardoso, M. Jorge and Vercauteren, Tom},
@@ -41,22 +63,22 @@ If you use this software, please cite:
 
 ### Licensing and Copyright
 
-Copyright 2017 University College London.
-Released under the Apache License, Version 2.0. Please see the LICENSE file for details.
+Copyright 2017 University College London and the NiftyNet Contributors.
+NiftyNet is released under the Apache License, Version 2.0. Please see the LICENSE file for details.
 
 ### Acknowledgements
-This project was supported through an Innovative Engineering for Health award by
-the Wellcome Trust and EPSRC (WT101957, NS/A000027/1), the National Institute
-for Health Research University College London Hospitals Biomedical Research
-Centre (NIHR BRC UCLH/UCL High Impact Initiative), UCL EPSRC CDT Scholarship
-Award (EP/L016478/1), a UCL Overseas Research Scholarship, a UCL Graduate
-Research Scholarship, and the Health Innovation Challenge Fund by the
-Department of Health and Wellcome Trust (HICF-T4-275, WT 97914). The authors
-would like to acknowledge that the work presented here made use of Emerald, a
-GPU-accelerated High Performance Computer, made available by the Science &
-Engineering South Consortium operated in partnership with the STFC
-Rutherford-Appleton Laboratory.
+
+This project is grateful for the support from the [Wellcome Trust][wt], the [Engineering and Physical Sciences Research Council (EPSRC)][epsrc], the [National Institute for Health Research (NIHR)][nihr], the [Department of Health (DoH)][doh], [University College London (UCL)][ucl], the [Science and Engineering South Consortium (SES)][ses], the [STFC Rutherford-Appleton Laboratory][ral], and [NVIDIA][nvidia].
 
 [cmic]: http://cmic.cs.ucl.ac.uk
 [ucl]: http://www.ucl.ac.uk
+[tf]: https://www.tensorflow.org/
+[weiss]: http://www.ucl.ac.uk/weiss
+[wt]: https://wellcome.ac.uk/
+[epsrc]: https://www.epsrc.ac.uk/
+[nihr]: https://www.nihr.ac.uk/
+[doh]: https://www.gov.uk/government/organisations/department-of-health
+[ses]: https://www.ses.ac.uk/
+[ral]: http://www.stfc.ac.uk/about-us/where-we-work/rutherford-appleton-laboratory/
+[nvidia]: http://www.nvidia.com
 

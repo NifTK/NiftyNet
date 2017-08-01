@@ -33,7 +33,7 @@ def _input_path_search(config):
 def default_params(action, config_file=None):
     if config_file is None:
         config_file = os.path.join(os.path.dirname(__file__),
-                                   '..', 'config', 'default_config.txt')
+                                   '..', 'config', 'default_config.ini')
     config = configparser.ConfigParser()
     config.read([config_file])
     args = build_parser([], dict(config['settings'])).parse_args([action])
@@ -436,3 +436,70 @@ def correct_args_types(args):
                        if x.strip() in ['0', '1', '2']])
     return args
 
+
+def run_eval():
+    file_parser = argparse.ArgumentParser(add_help=False)
+    file_parser.add_argument("-c", "--conf",
+                             help="Specify configurations from a file",
+                             metavar="File")
+    config_file = os.path.join(os.path.dirname(__file__),
+                               '..', 'config', 'default_eval_config.ini')
+    defaults = {"conf": config_file}
+    file_parser.set_defaults(**defaults)
+    file_arg, remaining_argv = file_parser.parse_known_args()
+    try:
+        config = configparser.ConfigParser()
+        config.read([file_arg.conf])
+        # initialise search of image modality filenames
+        output_matcher, ref_matcher, data_matcher = _eval_path_search(
+            config)
+        defaults = dict(config.items("settings"))
+    except Exception as e:
+        raise ValueError('configuration file not found')
+
+    parser = argparse.ArgumentParser(
+        parents=[file_parser],
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.set_defaults(**defaults)
+    parser.add_argument("action",
+                        help="compute ROI statistics or compare segmentation maps",
+                        choices=['roi', 'compare'])
+    parser.add_argument("--threshold",
+                        help="threshold to obtain binary segmentation",
+                        type=float)
+    parser.add_argument("--step",
+                        help="step of increment when considering probabilistic segmentation",
+                        type=float)
+    parser.add_argument("--ref_dir",
+                        help="path to the image to use as reference")
+    parser.add_argument("--seg_dir",
+                        help="path where to find the images to evaluate")
+    parser.add_argument("--img_dir",
+                        help="path where to find the images to evaluate")
+    parser.add_argument("--save_csv_dir",
+                        help="path where to save the output csv file")
+    parser.add_argument("--ext",
+                        help="extension of the image files to be read")
+    parser.add_argument("--seg_type",
+                        help="type of input: discrete maps or probabilistic maps")
+    args = parser.parse_args(remaining_argv)
+    # creating output
+    image_csv_path = os.path.join(args.save_csv_dir, 'image_files.csv')
+    misc_csv.write_matched_filenames_to_csv(output_matcher, image_csv_path)
+
+    if ref_matcher:
+        ref_csv_path = os.path.join(args.save_csv_dir, 'ref_files.csv')
+        misc_csv.write_matched_filenames_to_csv(ref_matcher, ref_csv_path)
+    else:
+        ref_csv_path = None
+    if data_matcher:
+        data_csv_path = os.path.join(args.save_csv_dir, 'data_files.csv')
+        misc_csv.write_matched_filenames_to_csv(data_matcher, data_csv_path)
+    else:
+        data_csv_path = None
+    csv_dict = {'input_image_file': image_csv_path,
+                'target_image_file': ref_csv_path,
+                'weight_map_file': data_csv_path,
+                'target_note': None}
+    return args, csv_dict

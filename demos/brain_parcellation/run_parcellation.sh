@@ -2,7 +2,7 @@
 
 # please make sure you installed all dependencies of NiftyNet.
 # cd NiftyNet/; pip install -r requirements-gpu.txt
-NIFTYNET=../../run_application.py
+NIFTYNET=../../net_segmentation.py
 
 DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 cd "$DIR"
@@ -14,5 +14,5 @@ sh ../../data/brain_parcellation/get_oasis_data.sh
 sh get_highres3dnet_model.sh
 
 # run brain parcellation
-python -u $NIFTYNET inference -c ./highres3dnet_config_eval.txt --image_size 160 --label_size 160
+python -u $NIFTYNET inference -c ./highres3dnet_config_eval.ini --image_size 160 --label_size 160
 
