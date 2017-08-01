@@ -66,6 +66,17 @@ description = 'An open-source convolutional neural networks platform' +\
 with open('pip/long_description.rst') as f:
     long_description = f.read()
 
+# Dependencies, will be used for selectively installing GPU version
+# of TensorFlow if the CPU-only version is not installed
+requirements = [
+    'six>=1.10',
+    'nibabel>=2.1.0',
+    'numpy>=1.11',
+    'scipy>=0.18',
+    'configparser',
+    'tensorflow-gpu==1.1',
+    'pillow',
+]
 
 setup(
     name='NiftyNet',
@@ -110,15 +121,7 @@ setup(
         ]
     ),
 
-    install_requires=[
-        'six>=1.10',
-        'nibabel>=2.1.0',
-        'numpy>=1.11',
-        'scipy>=0.18',
-        'configparser',
-        'tensorflow-gpu==1.1',
-        'pillow',
-    ],
+    install_requires=requirements,
 
     entry_points={
         'console_scripts': [
