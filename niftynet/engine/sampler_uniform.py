@@ -4,6 +4,7 @@ from __future__ import print_function
 
 from copy import deepcopy
 
+import sys
 import numpy as np
 import tensorflow as tf
 
@@ -13,23 +14,44 @@ from niftynet.layer.base_layer import Layer
 from niftynet.engine.input_buffer import InputBatchQueueRunner
 
 
-def rand_spatial_coordinates(img_size, win_size, n_samples):
-    # Please see grid_sampler.py generate_grid_coordinates() for more info
-    if np.any([d < win_size for d in img_size[:len(win_size)]]):
-        raise ValueError('Window size larger than the input image dims'
-                         ' (please make sure that image dims after '
-                         'random spatial scaling are still larger than window'
-                         ' size)')
-    # consisting of starting and ending coordinates
-    all_coords = np.zeros((n_samples, int(spatial_rank * 2.0)), dtype=np.int)
+BUFFER_IMAGE_DTYPE = tf.float32
+BUFFER_POSITION_DTYPE = tf.uint16
 
+
+def _complete_partial_window_sizes(win_size, img_size):
+    img_ndims = len(img_size)
+    # crop win_size list if it's longer than img_size
+    win_size = win_size[:img_ndims]
+    # complete win_size list if it's shorter than img_size
+    while len(win_size) < img_ndims:
+        win_size.append(img_size[len(win_size)])
+    # replace zero with full length in the n-th dim of image
+    win_size = [win if win > 0 else sys.maxint for win in win_size]
+    win_size = [min(win, img) for(win, img) in zip(win_size, img_size)]
+    return win_size
+
+
+def rand_spatial_coordinates(img_sizes, win_sizes, n_samples):
+    if len(set([img_size[:3] for img_size in img_sizes])) > 1:
+        tf.logging.fatal("Don't know how to generate sampling "
+                         "locations:Spatial dimensions of the "
+                         "grouped input sources are not "
+                         "consistent. {}".format(img_sizes))
+        raise NotImplementedError
+    all_coords = []
+    for mod_id, img_size in enumerate(img_sizes):
+        img_ndims = len(img_size)
+        win_size = list(win_sizes[mod_id])
+        win_size = _complete_partial_window_sizes(win_size, img_size)
+        win_sizes[mod_id] = win_size
+
+    import pdb; pdb.set_trace()
+    coords = np.zeros((n_samples, len(img_size)*2), dtype=np.uint16)
     for i in range(0, grid_spatial_rank):
-        all_coords[:, i] = np.random.randint(
+        coords[:, i] = np.random.randint(
             0, max(img_size[i] - win_size, 1), n_samples)
-        all_coords[:, i + full_spatial_rank] = all_coords[:, i] + win_size
-    if spatial_rank == 2.5:
-        all_coords[:, 2] = np.random.randint(
-            0, max(img_size[2] - 1, 1), n_samples)
+        coords[:, i + full_spatial_rank] = all_coords[:, i] + win_size
+    all_coords.append(coords)
     return all_coords
 
 
@@ -39,22 +61,35 @@ class UniformSampler(Layer, InputBatchQueueRunner):
     currently 4D input is supported, Height x Width x Depth x Modality
     """
 
-    def __init__(self, reader, data_param):
+    def __init__(self, reader, data_param, samples_per_subject):
         self.reader = reader
-        self.window_sizes = {field: self.infer_window_sizes(field,
-                                                            data_param)
+
+        # create window sizes and placeholders
+        self.window_sizes = {field: self.infer_window_sizes(field, data_param)
                              for field in self.reader.output_fields}
         self.placeholders = {field: self.create_placeholders(field)
                              for field in self.reader.output_fields}
-
+        self.placeholders['position'] = tf.placeholder(
+            dtype=BUFFER_POSITION_DTYPE, name='position')
         tf.logging.info(
-            "initialising sampler output {}".format(self.window_sizes))
+            "initialised sampler output {}".format(self.window_sizes))
+
+        # initialise input buffer
         InputBatchQueueRunner.__init__(self, 3, 10, self.placeholders)
-        import pdb; pdb.set_trace()
+
+        # find spatial location
+        image_sizes = [image.get_data().shape # TODO: padding
+                       for image in list(self.reader().values())]
+        window_sizes = list(self.window_sizes.values())
+        coords = rand_spatial_coordinates(image_sizes,
+                                          window_sizes,
+                                          samples_per_subject)
 
     def create_placeholders(self, field):
-        dtype = set(self.reader.dtypes[field]).pop()
-        return tf.placeholder(dtype=dtype, name=field)
+        # TODO: decide data types from the inputs??
+        #dtype = set(self.reader.dtypes[field]).pop()
+        #return tf.placeholder(dtype=dtype, name=field)
+        return tf.placeholder(dtype=BUFFER_IMAGE_DTYPE, name=field)
 
     def infer_window_sizes(self, field_name, input_data_param):
         # read window_size property and group them based on output_fields
@@ -72,11 +107,6 @@ class UniformSampler(Layer, InputBatchQueueRunner):
             raise ValueError(
                 "window_size undetermined{}".format(self.reader.input_sources))
         uniq_window = list(uniq_window.pop())
-        while len(uniq_window) < 4:
-            # expanding the window size, so that we can
-            # concatenate on axis=3 the modality dim
-            uniq_window.append(1)
-        uniq_window[3] = uniq_window[3] * len(inputs)
         # integer window sizes supported
         uniq_window = tuple(map(int, uniq_window))
         return uniq_window

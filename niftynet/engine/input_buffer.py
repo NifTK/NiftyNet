@@ -7,7 +7,8 @@ DeployInputBuffer provides FIFO queue. This is designed for making
 patch-based predictions for multiple test volumes.
 """
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import
+from __future__ import print_function
 
 import threading
 
@@ -83,43 +84,43 @@ class InputBatchQueueRunner(object):
         self._dequeue_op = self._queue.dequeue_many
         self._query_queue_size_op = self._queue.size()
         self._close_queue_op = self._queue.close(cancel_pending_enqueues=True)
-        import pdb; pdb.set_trace()
 
     def _push(self, thread_id):
         tf.logging.info('New thread: {}'.format(thread_id))
         try:
-            if self.shuffle:
-                iterator = self.sampler()
-            else:
-                iterator = self.sampler(self.batch_size)
+            print('push thread')
+            #if self.shuffle:
+            #    iterator = self.sampler()
+            #else:
+            #    iterator = self.sampler(self.batch_size)
 
-            for patch in iterator:
-                if self._session._closed:
-                    break
-                if self._coordinator.should_stop():
-                    break
+            #for patch in iterator:
+            #    if self._session._closed:
+            #        break
+            #    if self._coordinator.should_stop():
+            #        break
 
-                patch_dict = patch.as_dict(self._placeholders)
-                self._session.run(self._enqueue_op, feed_dict=patch_dict)
+            #    patch_dict = patch.as_dict(self._placeholders)
+            #    self._session.run(self._enqueue_op, feed_dict=patch_dict)
 
-            # push a set of stopping patches
-            for i in range(0, self.capacity):
-                if self._session._closed:
-                    break
-                if self._coordinator.should_stop():
-                    break
-                patch.fill_with_stopping_info()
-                self._session.run(
-                    self._enqueue_op,
-                    feed_dict=patch.as_dict(self.sampler.placeholders))
+            ## push a set of stopping patches
+            #for i in range(0, self.capacity):
+            #    if self._session._closed:
+            #        break
+            #    if self._coordinator.should_stop():
+            #        break
+            #    patch.fill_with_stopping_info()
+            #    self._session.run(
+            #        self._enqueue_op,
+            #        feed_dict=patch.as_dict(self.sampler.placeholders))
 
         except tf.errors.CancelledError:
             pass
         #except ValueError as e:
-        #    print(e)
+        #    tf.logging.fatal(e)
         #    self.close_all()
         #except RuntimeError as e:
-        #    print(e)
+        #    tf.logging.fatal(e)
         #    self.close_all()
         except Exception as e:
             import sys
@@ -177,7 +178,7 @@ class DeployInputBuffer(InputBatchQueueRunner):
     def __init__(self, batch_size, capacity, sampler):
         super(DeployInputBuffer, self).__init__(batch_size=batch_size,
                                                 capacity=capacity,
-                                                sampler=sampler,
+                                                placeholders_dict=sampler,
                                                 shuffle=False)
 
 
@@ -185,5 +186,5 @@ class TrainEvalInputBuffer(InputBatchQueueRunner):
     def __init__(self, batch_size, capacity, sampler, shuffle=True):
         super(TrainEvalInputBuffer, self).__init__(batch_size=batch_size,
                                                    capacity=capacity,
-                                                   sampler=sampler,
+                                                   samplplaceholders_dicter=sampler,
                                                    shuffle=shuffle)

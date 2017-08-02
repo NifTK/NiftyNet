@@ -86,7 +86,9 @@ class SegmentationApplication(BaseApplication):
         reader = VolumeReader(SUPPORTED_INPUT)
         reader.initialise_reader(data_param, segmentation_param)
         from niftynet.engine.sampler_uniform import UniformSampler
-        sampler = UniformSampler(reader, data_param)
+        sampler = UniformSampler(reader,
+                                 data_param,
+                                 self.action_param.sample_per_volume)
 
     def initialise_sampler(self, is_training):
         pass
