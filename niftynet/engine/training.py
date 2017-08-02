@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 
 import os
 import time
-
+import sys
 import numpy as np
 import tensorflow as tf
 from six.moves import range
@@ -21,12 +21,25 @@ from niftynet.engine.restorer import global_variables_initialize_or_restorer
 
 np.random.seed(seed=int(time.time()))
 
+def initialize_uninitialized(sess):
+    global_vars          = tf.global_variables()
+    is_not_initialized   = sess.run([tf.is_variable_initialized(var) for var in global_vars])
+    not_initialized_vars = [v for (v, f) in zip(global_vars, is_not_initialized) if not f]
+
+    print ([str(i.name) for i in not_initialized_vars]) # only for testing
+    if len(not_initialized_vars):
+        sess.run(tf.variables_initializer(not_initialized_vars))
 
 def run(net_class, param, volume_loader, device_str):
     # construct graph
     graph = tf.Graph()
+
     with graph.as_default(), tf.device('/cpu:0'):
+        learning_rate = tf.placeholder(tf.float32, shape=[])
+        num_weights_map = 0
         # defines a training element
+        if param.pad_label:
+            num_weights_map = np.max([1,volume_loader.num_modality(2)])
         patch_holder = ImagePatch(
             spatial_rank=param.spatial_rank,
             image_size=param.image_size,
@@ -37,7 +50,9 @@ def run(net_class, param, volume_loader, device_str):
             weight_map_dtype=tf.float32,
             num_image_modality=volume_loader.num_modality(0),
             num_label_modality=volume_loader.num_modality(1),
-            num_weight_map=volume_loader.num_modality(2))
+            num_weight_map=num_weights_map,
+            # weights_padding=param.pad_label
+            )
         # defines data augmentation for training
         augmentations = []
         if param.random_flip:
@@ -65,7 +80,7 @@ def run(net_class, param, volume_loader, device_str):
             elif param.window_sampling == 'selective':
                 # TODO check param, this is for segmentation problems only
                 spatial_location_check = SpatialLocationCheckLayer(
-                    compulsory=((0), (0)),
+                    compulsory=([0], [0]),
                     minimum_ratio=param.min_sampling_ratio,
                     min_numb_labels=param.min_numb_labels,
                     padding=param.border,
@@ -97,8 +112,13 @@ def run(net_class, param, volume_loader, device_str):
                             w_regularizer=w_regularizer,
                             b_regularizer=b_regularizer,
                             acti_func=param.activation_function)
+        n_losses = 1
+        print(param.net_name)
+        if param.net_name == 'holistic_scalenet':
+            n_losses = 5
+        print("new losses", n_losses)
         loss_func = LossFunction(n_class=param.num_classes,
-                                loss_type=param.loss_type)
+                                loss_type=param.loss_type,n_losses=n_losses)
         # construct train queue
         with tf.name_scope('DataQueue'):
             train_batch_runner = TrainEvalInputBuffer(
@@ -107,8 +127,13 @@ def run(net_class, param, volume_loader, device_str):
                 sampler=sampler,
                 shuffle=True)
         # optimizer
+
         with tf.name_scope('Optimizer'):
-            train_step = tf.train.AdamOptimizer(learning_rate=param.lr)
+            if param.lr_strategy == 'adam':
+                train_step = tf.train.AdamOptimizer(learning_rate=param.lr)
+            else:
+                train_step = tf.train.GradientDescentOptimizer(
+                    learning_rate=learning_rate)
         tower_grads = []
         # Scalar summaries for the console are averaged over GPU runs
         console_outputs=graph.get_collection_ref(niftynet.engine.logging.CONSOLE)
@@ -128,7 +153,8 @@ def run(net_class, param, volume_loader, device_str):
 
                 predictions = net(images, is_training=True)
                 with tf.name_scope('Loss'):
-                    loss = loss_func(predictions, labels, weight_maps)
+                    loss = loss_func(predictions, labels, weight_maps,
+                                     n_losses=n_losses)
                     if param.decay > 0:
                         reg_losses = graph.get_collection(
                             tf.GraphKeys.REGULARIZATION_LOSSES)
@@ -142,13 +168,31 @@ def run(net_class, param, volume_loader, device_str):
                 # Averages are in name_scope for Tensorboard naming; summaries are outside for console naming
                 with tf.name_scope('ConsoleLogging'):
                     logs=[['loss',loss]]
-                    if param.application_type == 'segmentation':
+                    if param.application_type == 'segmentation' and not \
+                            param.net_name == 'holistic_network':
                         # TODO compute miss for dfferent target types
                         logs.append(['miss', tf.reduce_mean(tf.cast(
                               tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),
                               dtype=tf.float32))])
-                for tag,val in logs:
-                    tf.summary.scalar(tag,val,[niftynet.engine.logging.CONSOLE,niftynet.engine.logging.LOG])
+                        if param.num_classes == 2:
+                            tp = tf.reduce_sum(
+                                tf.multiply(tf.argmax(predictions, -1),
+                                            labels[..., 0]))
+                            fn = tf.reduce_sum(
+                                tf.multiply(tf.argmax(predictions, -1),
+                                            1 - labels[..., 0]))
+                            fp = tf.reduce_sum(
+                                tf.multiply(1 - tf.argmax(predictions, -1),
+                                            labels[..., 0]))
+                            dsc = 2*tp/(2*tp+fn+fp)
+                            logs.append(['tp',tp ])
+                            logs.append(['fn', fn])
+                            logs.append(['fp',fp ])
+                            logs.append(['dsc', dsc])
+                for tag, val in logs:
+                    tf.summary.scalar(tag, val,
+                                      [niftynet.engine.logging.CONSOLE,
+                                       niftynet.engine.logging.LOG])
                 ##################
 
                 # record and clear summaries
@@ -156,8 +200,20 @@ def run(net_class, param, volume_loader, device_str):
                 tower_console_outputs.append(console_outputs[:])
                 del console_outputs[:]
 
+                # Choose on what to train things
+                v_to_train = tf.trainable_variables()
+                if not param.full_training:
+                    var_to_train = param.var_to_train.split(',')
+                    print(var_to_train)
+                    v_names = [v.name for v in tf.trainable_variables() if
+                               any(t in v.name for t in var_to_train)]
+                    v_to_train = [v for v in tf.trainable_variables() if
+                                  any(t in v.name for t in var_to_train)
+                                  ]
+                    print(v_names)
+
                 with tf.name_scope('ComputeGradients'):
-                    grads = train_step.compute_gradients(loss)
+                    grads = train_step.compute_gradients(loss, v_to_train)
                 tower_grads.append(grads)
                 # note: only use batch stats from one GPU for batch_norm
                 if i == 0:
@@ -190,12 +246,13 @@ def run(net_class, param, volume_loader, device_str):
         train_op = tf.group(apply_grad_op,
                             var_averages_op,
                             batchnorm_updates_op)
-        logged_summaries = list(set([s for c in [niftynet.engine.logging.LOG,niftynet.engine.logging.CONSOLE] for s in tf.get_collection(c)]))
+        logged_summaries = list(set([s for c in [niftynet.engine.logging.LOG,
+                                                 niftynet.engine.logging.CONSOLE] for s in tf.get_collection(c)]))
         write_summary_op = tf.summary.merge(logged_summaries)
         # saver
         variables_to_restore = variable_averages.variables_to_restore()
         saver = tf.train.Saver(max_to_keep=param.max_checkpoints)
-        tf.Graph.finalize(graph)
+        # tf.Graph.finalize(graph)
     # run session
     config = tf.ConfigProto()
     config.log_device_placement = False
@@ -213,6 +270,7 @@ def run(net_class, param, volume_loader, device_str):
             model_str = '{}-{}'.format(ckpt_name, param.starting_iter)
             saver.restore(sess, model_str)
             print('Loading from {}...'.format(model_str))
+            initialize_uninitialized(sess)
         else:
             sess.run(init_op)
             print('Weights from random initialisations...')
@@ -221,10 +279,11 @@ def run(net_class, param, volume_loader, device_str):
         if not os.path.exists(os.path.join(root_dir, 'logs')):
           os.makedirs(os.path.join(root_dir, 'logs'))
         log_sub_dirs = [name for name in os.listdir(os.path.join(root_dir, 'logs')) if name.isdecimal()]
-        if log_sub_dirs and param.starting_iter==0:
+        if log_sub_dirs and param.starting_iter == 0:
             log_sub_dir = str(max([int(name) for name in log_sub_dirs])+1)
         elif log_sub_dirs and param.starting_iter > 0:
-            log_sub_dir = str(max([int(name) for name in log_sub_dirs if os.path.isdir(os.path.join(root_dir, 'logs', name))]))
+            log_sub_dir = str(max([int(name) for name in log_sub_dirs if
+                                   os.path.isdir(os.path.join(root_dir, 'logs', name))]))
         else:
             log_sub_dir = '0'
         writer = tf.summary.FileWriter(os.path.join(root_dir, 'logs', log_sub_dir),
@@ -232,23 +291,41 @@ def run(net_class, param, volume_loader, device_str):
         try:
             print('Filling the queue (this can take a few minutes)')
             train_batch_runner.run_threads(sess, coord, param.num_threads)
+            out_stream = open(os.path.join(root_dir,'logs','logs_%s.txt'
+                              %log_sub_dir),'a+')
             for i in range(param.max_iter - param.starting_iter):
                 local_time = time.time()
                 if coord.should_stop():
                     break
                 current_iter = i + param.starting_iter
-                ops_to_run=[train_op]
-                console_summaries=tf.get_collection(niftynet.engine.logging.CONSOLE)
+                # print("Incrementing iter")
+                ops_to_run = [train_op]
+                print("Getting Console logging")
+                console_summaries = tf.get_collection(
+                    niftynet.engine.logging.CONSOLE)
                 ops_to_run += console_summaries
-                if (current_iter % 20) == 0:
+                if (current_iter % 100) == 0 and current_iter > 0:
                     ops_to_run += [write_summary_op]
-                values = sess.run(ops_to_run)[1:]
-                if (current_iter % 20) == 0:
+                # print("Getting values")
+                if param.lr_strategy == 'sgd_divide':
+                    lr_to_use = param.lr*np.power(1.0/5,np.floor(
+                        current_iter/300))
+                elif param.lr_strategy == 'sgd_cosine':
+                    lr_to_use = param.lr * np.cos(current_iter*2*np.pi/100)
+                else:
+                    lr_to_use = param.lr
+                values = sess.run(ops_to_run,feed_dict={
+                    learning_rate:lr_to_use})[1:]
+                print("Length values is ",len(values))
+                if (current_iter % 10) == 0 and current_iter > 0:
+
                     writer.add_summary(values.pop(), current_iter)
                 summary_string = ''.join([niftynet.engine.logging.console_summary_string(v) for v in values])
                 iter_time = time.time() - local_time
                 print(('iter {:d}{}, ({:.3f}s)').format(
                     current_iter, summary_string, iter_time))
+                print(('iter {:d}{}, ({:.3f}s)\n').format(
+                    current_iter, summary_string, iter_time), file=out_stream)
                 if (current_iter % param.save_every_n) == 0 and i > 0:
                     saver.save(sess, ckpt_name, global_step=current_iter)
                     print('Iter {} model saved at {}'.format(
