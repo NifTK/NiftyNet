@@ -10,6 +10,7 @@ import tensorflow as tf
 import niftynet.utilities.misc_io as io
 from niftynet.engine.base_sampler import BaseSampler
 from niftynet.layer.base_layer import Layer
+from niftynet.engine.input_buffer import InputBatchQueueRunner
 
 
 def rand_spatial_coordinates(img_size, win_size, n_samples):
@@ -32,7 +33,7 @@ def rand_spatial_coordinates(img_size, win_size, n_samples):
     return all_coords
 
 
-class UniformSampler(Layer):
+class UniformSampler(Layer, InputBatchQueueRunner):
     """
     This class generators samples by uniformly sampling each input volume
     currently 4D input is supported, Height x Width x Depth x Modality
@@ -48,6 +49,7 @@ class UniformSampler(Layer):
 
         tf.logging.info(
             "initialising sampler output {}".format(self.window_sizes))
+        InputBatchQueueRunner.__init__(self, 3, 10, self.placeholders)
         import pdb; pdb.set_trace()
 
     def create_placeholders(self, field):

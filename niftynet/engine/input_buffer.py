@@ -28,17 +28,16 @@ class InputBatchQueueRunner(object):
     close_all() called externally -- all threads quit immediately
     """
 
-    def __init__(self, batch_size, capacity, sampler, shuffle=True):
+    def __init__(self, batch_size, capacity, placeholders_dict, shuffle=True):
 
-        assert isinstance(sampler, BaseSampler)
         assert batch_size > 0
         self.batch_size = batch_size
-        self.sampler = sampler
-
         # define queue properties
         self.capacity = max(capacity, batch_size * 2)
         self.shuffle = shuffle
         self.min_queue_size = self.capacity // 2 if self.shuffle else 0
+        self.fields = list(placeholders_dict)
+        self.placeholders = list(placeholders_dict.values())
 
         # create queue and the associated operations
         self._queue = None
@@ -53,6 +52,7 @@ class InputBatchQueueRunner(object):
         self._coordinator = None
         self._threads = []
 
+
     def _create_queue_and_ops(self):
         """
         Create a shuffled queue or FIFO queue, and create queue
@@ -64,26 +64,26 @@ class InputBatchQueueRunner(object):
             self._queue = tf.RandomShuffleQueue(
                 capacity=self.capacity,
                 min_after_dequeue=self.min_queue_size,
-                dtypes=self.sampler.placeholder_dtypes,
+                dtypes=[holder.dtype for holder in self.placeholders],
                 shapes=None,
-                names=self.sampler.placeholder_names,
+                names=self.fields,
                 name="shuffled_queue")
         else:
             self._queue = tf.FIFOQueue(
                 # pylint: disable=redefined-variable-type
                 capacity=self.capacity,
-                dtypes=self.sampler.placeholder_dtypes,
+                dtypes=[holder.dtype for holder in self.placeholders],
                 shapes=None,
-                names=self.sampler.placeholder_names,
+                names=self.fields,
                 name="FIFO_queue")
 
         # create queue operations
-        queue_input_dict = dict(zip(self.sampler.placeholder_names,
-                                    self.sampler.placeholders))
+        queue_input_dict = dict(zip(self.fields, self.placeholders))
         self._enqueue_op = self._queue.enqueue(queue_input_dict)
         self._dequeue_op = self._queue.dequeue_many
         self._query_queue_size_op = self._queue.size()
         self._close_queue_op = self._queue.close(cancel_pending_enqueues=True)
+        import pdb; pdb.set_trace()
 
     def _push(self, thread_id):
         tf.logging.info('New thread: {}'.format(thread_id))
@@ -99,7 +99,7 @@ class InputBatchQueueRunner(object):
                 if self._coordinator.should_stop():
                     break
 
-                patch_dict = patch.as_dict(self.sampler.placeholders)
+                patch_dict = patch.as_dict(self._placeholders)
                 self._session.run(self._enqueue_op, feed_dict=patch_dict)
 
             # push a set of stopping patches
