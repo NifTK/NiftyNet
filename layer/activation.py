@@ -2,7 +2,7 @@
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
-
+from tensorflow.python.framework import ops
 from utilities.misc_common import look_up_operations
 from .base_layer import TrainableLayer
 
@@ -12,7 +12,16 @@ def prelu(f_in, channelwise_params):
     neg = channelwise_params * (f_in - tf.abs(f_in)) * 0.5
     return pos + neg
 
-
+def selu(x, name):
+    with ops.name_scope(name) as scope:
+        alpha = 1.6732632423543772848170429916717
+        scale = 1.0507009873554804934193349852946
+        return scale*tf.where(x>=0.0, x, alpha*tf.nn.elu(x))
+    
+def leakyRelu(x, name):
+    alpha = 0.01
+    return tf.maximum(alpha*x, x, name)
+        
 SUPPORTED_OP = {'relu': tf.nn.relu,
                 'relu6': tf.nn.relu6,
                 'elu': tf.nn.elu,
@@ -21,6 +30,8 @@ SUPPORTED_OP = {'relu': tf.nn.relu,
                 'sigmoid': tf.nn.sigmoid,
                 'tanh': tf.nn.tanh,
                 'prelu': prelu,
+                'selu': selu,
+                'leakyrelu': leakyRelu,
                 'dropout': tf.nn.dropout}
 
 

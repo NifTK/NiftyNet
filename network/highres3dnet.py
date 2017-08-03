@@ -37,10 +37,8 @@ class HighRes3DNet(TrainableLayer):
             {'name': 'conv_1', 'n_features': 80, 'kernel_size': 1},
             {'name': 'conv_2', 'n_features': num_classes, 'kernel_size': 1}]
         self.acti_func = acti_func
-
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
-
         print('using {}'.format(name))
 
     def layer_op(self, images, is_training, layer_id=-1):
