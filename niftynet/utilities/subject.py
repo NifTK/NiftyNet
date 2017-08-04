@@ -333,7 +333,7 @@ class Subject(object):
         print('Preparing output size {}'.format(zeros_shape))
         return np.ones(zeros_shape, dtype=data_type) * init_value
 
-    def save_network_output(self, data, save_path, interp_order=3):
+    def save_network_output(self, data, save_path, suffix='', interp_order=3):
         if data is None:
             return
 
@@ -361,7 +361,7 @@ class Subject(object):
         if self.load_resampling:
             data = self.__resample_to_original(data, interp_order)
         original_header = self.__find_first_nibabel_object()
-        filename = self.name + '_niftynet_out'
+        filename = self.name + '_niftynet_out' + suffix
         util.save_volume_5d(data, filename, save_path, original_header)
 
     def __str__(self):

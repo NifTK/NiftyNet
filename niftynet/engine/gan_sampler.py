@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, division
 
 from copy import deepcopy
 
@@ -9,7 +9,6 @@ import scipy.ndimage
 import niftynet.utilities.misc_io as io
 from niftynet.engine.base_sampler import BaseSampler
 import warnings
-
 class GANSampler(BaseSampler):
     """
     This class generates samples by rescaling the whole image to the desired size
@@ -73,18 +72,71 @@ class GANSampler(BaseSampler):
             if spatial_rank==3:
                 loc=[0]*spatial_rank+[patch.image_size]*spatial_rank
                 img = scipy.ndimage.interpolation.zoom(img.data, zoom)
+                if cond is not None:
+                    cond = scipy.ndimage.interpolation.zoom(cond.data, zoom)
                 patch.set_data(idx, loc, img, cond, noise)
                 yield patch
             elif spatial_rank==2.5:
                 loc=[0,0,0]+[patch.image_size]*2
                 for it in range(self.patch_per_volume):
                     slice = np.random.randint(0, img.data.shape[2],1)
-                    img = np.expand_dims(scipy.ndimage.interpolation.zoom(img.data[:,:,slice[0],:], zoom[:2]+zoom[-1:]),2)
-                    patch.set_data(idx, loc, img, cond, noise)
+                    imgS = np.expand_dims(scipy.ndimage.interpolation.zoom(img.data[:,:,slice[0],:], zoom[:2]+zoom[-1:]),2)
+                    if cond is not None:
+                        condS = np.expand_dims(scipy.ndimage.interpolation.zoom(cond.data[:,:,slice[0],:], zoom[:2]+zoom[-1:]),2)
+                    patch.set_data(idx, loc, imgS, condS, noise)
                     yield patch
-                    noise = np.random.randn(patch.noise_size)
             elif spatial_rank==2:
                 loc=[0,0]+[patch.image_size]*2
                 img = np.expand_dims(scipy.ndimage.interpolation.zoom(img.data[:,:,0,:], zoom[:2]+zoom[-1:]),2)
+                if cond is not None:
+                    cond = np.expand_dims(scipy.ndimage.interpolation.zoom(cond.data[:,:,0,:], zoom[:2]+zoom[-1:]),2)
                 patch.set_data(idx, loc, img, cond, noise)
                 yield patch
+
+class InterpolatingInferenceGANSampler(GANSampler):
+    def __init__(self, patch, volume_loader, n_interpolants=10, **kwargs):
+        self.n_interpolants=n_interpolants
+        super(InterpolatingInferenceGANSampler,self).__init__(patch,
+                                                              volume_loader,
+                                                              **kwargs)
+    def layer_op(self, batch_size=1):
+        spatial_rank = self.patch.spatial_rank
+        patch = deepcopy(self.patch)
+        while self.volume_loader.has_next:
+            img, cond, weight_map, idx_base = self.volume_loader()
+            img.spatial_rank = spatial_rank
+            img.data = io.match_volume_shape_to_patch_definition(img.data, patch)
+            if cond:
+                cond.data = io.match_volume_shape_to_patch_definition(cond.data, patch)
+            zoom = [p/d for p,d in zip([patch.image_size]*3,img.data.shape[:3])]+[1]
+            # resize image to patch size
+            noise1 = np.random.randn(patch.noise_size)
+            noise2 = np.random.randn(patch.noise_size)
+            for it in range(self.n_interpolants):
+                idx=idx_base*self.n_interpolants+it
+                noise=noise1 * (1. - it / (self.n_interpolants-1+.00001)) + noise2 * (it / (self.n_interpolants-1+.00001))
+                if spatial_rank==3:
+                    loc=[0]*spatial_rank+[patch.image_size]*spatial_rank
+                    img = scipy.ndimage.interpolation.zoom(img.data, zoom)
+                    if cond is not None:
+                        cond = scipy.ndimage.interpolation.zoom(cond.data, zoom)
+                    patch.set_data(idx, loc, img, cond, noise)
+                    yield patch
+                elif spatial_rank==2.5:
+                    zoom = [p / d for p, d in zip([patch.image_size] * 2, img.data.shape[:2])] + [1,1]
+                    imgS = scipy.ndimage.interpolation.zoom(img.data[:, :, :, :], zoom)
+                    if cond is not None:
+                        condS = scipy.ndimage.interpolation.zoom(cond.data[:, :, :, :], zoom)
+
+                    for slice in range(img.data.shape[2]):
+                        loc = [0, 0, slice] + [patch.image_size] * 2
+                        patch.set_data(idx, loc, imgS, condS, noise)
+                        yield patch
+                elif spatial_rank==2:
+                    loc=[0,0]+[patch.image_size]*2
+                    img = np.expand_dims(scipy.ndimage.interpolation.zoom(img.data[:,:,0,:], zoom[:2]+zoom[-1:]),2)
+                    if cond is not None:
+                        cond = np.expand_dims(scipy.ndimage.interpolation.zoom(cond.data[:,:,0,:], zoom[:2]+zoom[-1:]),2)
+                    patch.set_data(idx, loc, img, cond, noise)
+                    yield patch
+
