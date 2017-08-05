@@ -29,7 +29,7 @@ class InputBatchQueueRunner(object):
     close_all() called externally -- all threads quit immediately
     """
 
-    def __init__(self, batch_size, capacity, placeholders_dict, shuffle=True):
+    def __init__(self, batch_size, capacity, shuffle=True):
 
         assert batch_size > 0
         self.batch_size = batch_size
@@ -37,8 +37,6 @@ class InputBatchQueueRunner(object):
         self.capacity = max(capacity, batch_size * 2)
         self.shuffle = shuffle
         self.min_queue_size = self.capacity // 2 if self.shuffle else 0
-        self.__fields = list(placeholders_dict)
-        self.__placeholders = list(placeholders_dict.values())
 
         # create queue and the associated operations
         self._queue = None
@@ -46,7 +44,6 @@ class InputBatchQueueRunner(object):
         self._dequeue_op = None
         self._query_queue_size_op = None
         self._close_queue_op = None
-        self._create_queue_and_ops()
 
         # keep track of session and threads created by this class instance
         self._session = None
@@ -54,33 +51,34 @@ class InputBatchQueueRunner(object):
         self._threads = []
 
 
-    def _create_queue_and_ops(self):
+    def _create_queue_and_ops(self, placeholders_dict):
         """
         Create a shuffled queue or FIFO queue, and create queue
         operations. This should be called before tf.Graph.finalize.
         """
 
+        names = list(placeholders_dict)
+        placeholders = list(placeholders_dict.values())
         # create a queue
         if self.shuffle:
             self._queue = tf.RandomShuffleQueue(
                 capacity=self.capacity,
                 min_after_dequeue=self.min_queue_size,
-                dtypes=[holder.dtype for holder in self.__placeholders],
-                shapes=None,
-                names=self.__fields,
+                dtypes=[holder.dtype for holder in placeholders],
+                shapes=[holder.shape for holder in placeholders],
+                names=names,
                 name="shuffled_queue")
         else:
             self._queue = tf.FIFOQueue(
                 # pylint: disable=redefined-variable-type
                 capacity=self.capacity,
                 dtypes=[holder.dtype for holder in self.__placeholders],
-                shapes=None,
-                names=self.__fields,
+                shapes=[holder.shape for holder in placeholders],
+                names=names,
                 name="FIFO_queue")
 
         # create queue operations
-        queue_input_dict = dict(zip(self.__fields, self.__placeholders))
-        self._enqueue_op = self._queue.enqueue(queue_input_dict)
+        self._enqueue_op = self._queue.enqueue(placeholders_dict)
         self._dequeue_op = self._queue.dequeue_many
         self._query_queue_size_op = self._queue.size()
         self._close_queue_op = self._queue.close(cancel_pending_enqueues=True)
