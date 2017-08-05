@@ -123,7 +123,7 @@ def rectify_header_sform_qform(img_nii):
 
 ### resample/reorientation original volumes
 # Perform the reorientation to ornt_fin of the data array given ornt_init
-def do_reorientation(data_array, ornt_init, ornt_fin):
+def do_reorientation(data_array, init_axcodes, final_axcodes):
     '''
     Performs the reorientation (changing order of axes)
     :param data_array: Array to reorient
@@ -131,6 +131,8 @@ def do_reorientation(data_array, ornt_init, ornt_fin):
     :param ornt_fin: Target orientation
     :return data_reoriented: New data array in its reoriented form
     '''
+    ornt_init = nib.orientations.axcodes2ornt(init_axcodes)
+    ornt_fin = nib.orientations.axcodes2ornt(final_axcodes)
     if np.array_equal(ornt_init, ornt_fin):
         return data_array
     ornt_transf = nib.orientations.ornt_transform(ornt_init, ornt_fin)

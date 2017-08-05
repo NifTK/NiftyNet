@@ -113,9 +113,9 @@ def add_input_data_args(parser):
         help="keywords in input file names, negatively matches filenames")
 
     parser.add_argument(
-        "--window_size",
+        "--spatial_window_size",
         type=numarray,
-        help="input data size")
+        help="specify the spatial size of the input data (ndims <= 3)")
 
     parser.add_argument(
         "--interp_order",
@@ -124,6 +124,19 @@ def add_input_data_args(parser):
         default=3,
         help="interpolation order of the input images")
 
+    parser.add_argument(
+        "--pixdim",
+        type=numarray,
+        default=(),
+        help="voxel width along each dimension")
+
+    parser.add_argument(
+        "--axcodes",
+        type=stringarray,
+        default=(),
+        help="labels for positive end of voxel axes, possible labels are"
+             " ('L','R'),('P','A'),('I','S')"
+             " *see also nibabel.orientations.ornt2axcodes")
     return parser
 
 

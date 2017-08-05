@@ -37,8 +37,8 @@ class InputBatchQueueRunner(object):
         self.capacity = max(capacity, batch_size * 2)
         self.shuffle = shuffle
         self.min_queue_size = self.capacity // 2 if self.shuffle else 0
-        self.fields = list(placeholders_dict)
-        self.placeholders = list(placeholders_dict.values())
+        self.__fields = list(placeholders_dict)
+        self.__placeholders = list(placeholders_dict.values())
 
         # create queue and the associated operations
         self._queue = None
@@ -65,21 +65,21 @@ class InputBatchQueueRunner(object):
             self._queue = tf.RandomShuffleQueue(
                 capacity=self.capacity,
                 min_after_dequeue=self.min_queue_size,
-                dtypes=[holder.dtype for holder in self.placeholders],
+                dtypes=[holder.dtype for holder in self.__placeholders],
                 shapes=None,
-                names=self.fields,
+                names=self.__fields,
                 name="shuffled_queue")
         else:
             self._queue = tf.FIFOQueue(
                 # pylint: disable=redefined-variable-type
                 capacity=self.capacity,
-                dtypes=[holder.dtype for holder in self.placeholders],
+                dtypes=[holder.dtype for holder in self.__placeholders],
                 shapes=None,
-                names=self.fields,
+                names=self.__fields,
                 name="FIFO_queue")
 
         # create queue operations
-        queue_input_dict = dict(zip(self.fields, self.placeholders))
+        queue_input_dict = dict(zip(self.__fields, self.__placeholders))
         self._enqueue_op = self._queue.enqueue(queue_input_dict)
         self._dequeue_op = self._queue.dequeue_many
         self._query_queue_size_op = self._queue.size()
@@ -93,15 +93,14 @@ class InputBatchQueueRunner(object):
             #    iterator = self.sampler()
             #else:
             #    iterator = self.sampler(self.batch_size)
-
-            #for patch in iterator:
-            #    if self._session._closed:
-            #        break
-            #    if self._coordinator.should_stop():
-            #        break
+            for image_window in self():
+                if self._session._closed:
+                    break
+                if self._coordinator.should_stop():
+                    break
 
             #    patch_dict = patch.as_dict(self._placeholders)
-            #    self._session.run(self._enqueue_op, feed_dict=patch_dict)
+                self._session.run(self._enqueue_op, feed_dict=image_window)
 
             ## push a set of stopping patches
             #for i in range(0, self.capacity):

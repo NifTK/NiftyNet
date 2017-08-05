@@ -11,7 +11,7 @@ import tensorflow as tf
 
 from niftynet.io.input_type import ImageFactory
 from niftynet.layer.base_layer import Layer
-from niftynet.utilities.user_parameters_helper import validate_input_tuple
+from niftynet.utilities.user_parameters_helper import make_input_tuple
 
 
 class VolumeReader(Layer):
@@ -53,7 +53,7 @@ class VolumeReader(Layer):
         # output_fields is a sequence of output names
         # each name might correspond to a list of multiple input sources
         # this should be specified in CUSTOM section in the config
-        self._output_fields = validate_input_tuple(fields_tuple, basestring)
+        self._output_fields = make_input_tuple(fields_tuple, basestring)
 
     def initialise_reader(self, data_param, task_param):
         """
@@ -87,7 +87,7 @@ class VolumeReader(Layer):
         tf.logging.info('initialised reader: loading {} from {}'.format(
             self.output_fields, self.input_sources))
 
-    def layer_op(self, shuffle=False):
+    def layer_op(self, shuffle=True):
         """
         this layer returns a dictionary
           keys: self.output_fields
@@ -134,6 +134,10 @@ class VolumeReader(Layer):
                                for mod in modalities])
             interp_order = tuple([data_param[mod].interp_order
                                   for mod in modalities])
+            output_pixdim = tuple([data_param[mod].pixdim
+                                   for mod in modalities])
+            output_axcodes = tuple([data_param[mod].axcodes
+                                   for mod in modalities])
         except KeyError:
             tf.logging.fatal(
                 "Specified modality names {} "
@@ -142,7 +146,9 @@ class VolumeReader(Layer):
             raise
         image_properties = {'file_path': file_path,
                             'name': modalities,
-                            'interp_order': interp_order}
+                            'interp_order': interp_order,
+                            'output_pixdim': output_pixdim,
+                            'output_axcodes': output_axcodes}
         image = ImageFactory.create_instance(**image_properties)
         return image
 

@@ -36,6 +36,8 @@ def numarray(string_input):
     :param string_input: input string representation of an array
     :return: the array or single value when output length is 1
     """
+    if isinstance(string_input, tuple):
+        return string_input
     if string_input is None or string_input == '':
         raise argparse.ArgumentTypeError('parameter not specified.')
     if string_input[0] in ARRAY_TYPES:
@@ -63,13 +65,20 @@ def numarray(string_input):
 def stringarray(string_input):
     if isinstance(string_input, tuple):
         return string_input
+    if string_input[0] in ARRAY_TYPES:
+        expected_right_most = ARRAY_TYPES[string_input[0]]
+        if not string_input[-1] == expected_right_most:
+            raise argparse.ArgumentTypeError(
+                'incorrect array format {}'.format(string_input))
+        else:
+            string_input = string_input[1:-1]
     values = string_input.split(',')
     list_of_values = [standardise_string(component.strip())
                       for component in values]
     return tuple(list_of_values)
 
 
-def validate_input_tuple(input_str, element_type=basestring):
+def make_input_tuple(input_str, element_type=basestring):
     assert input_str, \
         "input {} does not exists".format(element_type)
     if isinstance(input_str, element_type):
