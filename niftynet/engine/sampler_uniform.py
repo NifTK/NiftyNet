@@ -3,46 +3,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
-
 import numpy as np
 import tensorflow as tf
 
 from niftynet.engine.input_buffer import InputBatchQueueRunner
+from niftynet.io.image_window import ImageWindow
+from niftynet.io.image_window import N_SPATIAL
 from niftynet.layer.base_layer import Layer
-
-BUFFER_POSITION_DTYPE = tf.int32
-N_SPATIAL = 3
-LOCATION_FORMAT = "{}_location"
-NP_TF_DTYPES = {'i': tf.int32,
-                'u': tf.int32,
-                'b': tf.int32,
-                'f': tf.float32}
-
-TF_NP_DTYPES = {tf.int32: np.int32,
-                tf.float32: np.float32}
-
-
-def _complete_partial_window_sizes(win_size, img_size):
-    img_ndims = len(img_size)
-    # crop win_size list if it's longer than img_size
-    win_size = list(win_size[:img_ndims])
-    # complete win_size list if it's shorter than img_size
-    while len(win_size) < img_ndims:
-        win_size.append(img_size[len(win_size)])
-    # replace zero with full length in the n-th dim of image
-    win_size = [win if win > 0 else sys.maxint for win in win_size]
-    win_size = [min(win, img) for (win, img) in zip(win_size, img_size)]
-    return tuple(win_size)
-
-
-def infer_tf_dtypes(image_object):
-    uniq_np_dtype = set(image_object.dtype)
-    if len(uniq_np_dtype) > 1:
-        # heterogeneous input data types, promoting to floatings
-        return NP_TF_DTYPES.get('f', None)
-    else:
-        return NP_TF_DTYPES.get(uniq_np_dtype.pop().kind, None)
 
 
 class UniformSampler(Layer, InputBatchQueueRunner):
@@ -52,127 +19,93 @@ class UniformSampler(Layer, InputBatchQueueRunner):
     """
 
     def __init__(self, reader, data_param, samples_per_subject):
+        # TODO: padding
         self.reader = reader
-        self.samples_per_subject = samples_per_subject
-        # initialise input buffer
-        InputBatchQueueRunner.__init__(self, 3, 10, True)
+
+        batch_size = 3
+        capacity = max(samples_per_subject * 2, batch_size * 2)
+        InputBatchQueueRunner.__init__(self,
+                                       batch_size=batch_size,
+                                       capacity=capacity,
+                                       shuffle=True)
         Layer.__init__(self, name='input_buffer')
 
-        names = list(self.reader.output_fields)
-        first_input = self.reader.output_list[0]
-        # TODO: padding
-        input_sizes = [first_input[name].get_data().shape for name in names]
+        self.window = ImageWindow.from_user_spec(self.reader.input_sources,
+                                                 self.reader.shapes,
+                                                 self.reader.dtypes,
+                                                 data_param,
+                                                 samples_per_subject)
+        self._create_queue_and_ops(self.window.placeholders_dict)
+        tf.logging.info("initialised sampler output {}".format(
+            self.window.shapes))
 
-        # create image placeholders
-        dtypes = [infer_tf_dtypes(first_input[name]) for name in names]
-        spatial_shapes = [self.read_window_sizes(name, data_param)
-                          for name in names]
-        self.shapes = [_complete_partial_window_sizes(win_size, img_size)
-                       for win_size, img_size in
-                       zip(spatial_shapes, input_sizes)]
-        placeholders = [
-            tf.placeholder(
-                dtype=dtype,
-                shape=[self.samples_per_subject] + list(shape))
-            for (dtype, shape) in zip(dtypes, self.shapes)]
-        # extend with location placeholders
-        names.extend([LOCATION_FORMAT.format(name) for name in names])
-        placeholders.extend(
-            [tf.placeholder(
-                dtype=BUFFER_POSITION_DTYPE,
-                shape=(self.samples_per_subject, 1 + N_SPATIAL * 2))
-                for _ in names])
-        self.placeholders_dict = dict(zip(names, placeholders))
-        self._create_queue_and_ops(self.placeholders_dict)
-
-        # # create window sizes and placeholders
-        # self.window_sizes = {field: self.read_window_sizes(field, data_param)
-        #                      for field in self.reader.output_fields}
-        # data = self.reader()
-        # self.img_sizes = {field: image.get_data().shape
-        #                   for (field, image) in data.items()}
-        # # complete user's input by matching the image dims
-        # for mod_id, img_size in self.img_sizes.items():
-        #     win_size = _complete_partial_window_sizes(
-        #         self.window_sizes[mod_id], img_size)
-        #     self.window_sizes[mod_id] = win_size
-        tf.logging.info("initialised sampler output {}".format(self.shapes))
-        for output_dict in self():
-            print(output_dict)
-
-    def read_window_sizes(self, field_name, input_data_param):
-        # read window_size property and group them based on output_fields
-        inputs = self.reader.input_sources[field_name]
-        window_sizes = [input_data_param[input_name].spatial_window_size
-                        for input_name in inputs]
-        if not all(window_sizes):
-            window_sizes = filter(None, window_sizes)
-        uniq_window = set(window_sizes)
-        if len(uniq_window) > 1:
-            raise NotImplementedError(
-                "trying to combine input sources "
-                "with different window sizes: {}".format(window_sizes))
-        if not uniq_window:
-            raise ValueError(
-                "window_size undetermined{}".format(self.reader.input_sources))
-        uniq_window = list(uniq_window.pop())
-        # integer window sizes supported
-        uniq_window = tuple(map(int, uniq_window))
-        return uniq_window
+        # running test
+        sess = tf.Session()
+        _iter = 0
+        for x in self():
+            sess.run(self._enqueue_op, feed_dict=x)
+            _iter += 1
+            print('enqueue {}'.format(_iter))
+            if _iter == 2:
+                break
+        out = sess.run(self._dequeue_op(2))
+        print('dequeue')
+        print(out['image'].shape)
+        print(out['image_location'])
+        import pdb; pdb.set_trace()
 
     def layer_op(self):
         while True:
-            data = self.reader()
-            image_sizes = [data[name].get_data().shape
-                           for name in self.reader.output_fields]
-
+            subject_id, data = self.reader()
             if not data:
                 break
-            coordinates = rand_spatial_coordinates(self.reader.current_id,
-                                                   self.shapes,
+            image_sizes = {name: data[name].shape
+                           for name in self.window.fields}
+            coordinates = rand_spatial_coordinates(subject_id,
+                                                   self.window.shapes,
                                                    image_sizes,
-                                                   self.samples_per_subject)
-            coordinates = dict(zip(self.reader.output_fields, coordinates))
+                                                   self.window.n_samples)
             #  initialise output dict
-            output_dict = {}
-            for name, placeholder in self.placeholders_dict.items():
-                shape = placeholder.shape.as_list()
-                dtype = TF_NP_DTYPES.get(placeholder.dtype, np.float32)
-                output_dict[placeholder] = np.zeros(shape, dtype=dtype)
-
+            output_dict = self.window.create_dict()
+            # fill output dict with data
             for name in list(data):
+                # fill output coordinates
                 location_array = output_dict[
-                    self.placeholders_dict[LOCATION_FORMAT.format(name)]]
+                    self.window.coordinates_placeholder(name)]
                 location_array[...] = coordinates[name]
-
-                image = data[name].get_data()
-                image_array = output_dict[self.placeholders_dict[name]]
+                # fill output window array
+                image_array = output_dict[
+                    self.window.data_placeholder(name)]
                 for (i, location) in enumerate(location_array[:, 1:]):
                     x_, y_, z_, _x, _y, _z = location
-                    image_array[i, ...] = image[x_:_x, y_:_y, z_:_z, ...]
+                    image_array[i, ...] = data[name][x_:_x, y_:_y, z_:_z, ...]
             yield output_dict
 
 
 def rand_spatial_coordinates(subject_id, win_sizes, img_sizes, n_samples):
-    if len(set(img_size[:N_SPATIAL] for img_size in img_sizes)) > 1:
+    uniq_spatial_size = set([img_size[:N_SPATIAL]
+                             for img_size in list(img_sizes.values())])
+    if len(uniq_spatial_size) > 1:
         tf.logging.fatal("Don't know how to generate sampling "
                          "locations: Spatial dimensions of the "
                          "grouped input sources are not "
-                         "consistent. {}".format(img_sizes))
+                         "consistent. {}".format(uniq_spatial_sizes))
         raise NotImplementedError
-
+    uniq_spatial_size = uniq_spatial_size.pop()
     # find spatial window location based on the largest spatial window
-    spatial_win_sizes = [win_size[:N_SPATIAL] for win_size in win_sizes]
+    spatial_win_sizes = [win_size[:N_SPATIAL]
+                         for win_size in list(win_sizes.values())]
     spatial_win_sizes = np.asarray(spatial_win_sizes, dtype=np.int32)
     max_spatial_win = np.max(spatial_win_sizes, axis=0)
     max_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
     for i in range(0, N_SPATIAL):
         max_coords[:, i] = np.random.randint(
-            0, max(img_sizes[0][i] - max_spatial_win[i], 1), n_samples)
+            0, max(uniq_spatial_size[i] - max_spatial_win[i], 1), n_samples)
 
     # adjust max spatial coordinates based on each spatial window size
-    all_coordinates = []
-    for win_size in spatial_win_sizes:
+    all_coordinates = {}
+    for mod in list(win_sizes):
+        win_size = win_sizes[mod][:N_SPATIAL]
         subject_id = np.ones((n_samples,), dtype=np.int32) * subject_id
         spatial_coords = np.zeros(
             (n_samples, N_SPATIAL * 2), dtype=np.int32)
@@ -187,7 +120,7 @@ def rand_spatial_coordinates(subject_id, win_sizes, img_sizes, n_samples):
         # include the subject id
         spatial_coords = np.append(
             subject_id[:, None], spatial_coords, axis=1)
-        all_coordinates.append(spatial_coords)
+        all_coordinates[mod] = spatial_coords
     return all_coordinates
 
 

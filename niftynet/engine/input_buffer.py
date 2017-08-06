@@ -9,6 +9,7 @@ patch-based predictions for multiple test volumes.
 
 from __future__ import absolute_import
 from __future__ import print_function
+from __future__ import division
 
 import threading
 
@@ -34,7 +35,7 @@ class InputBatchQueueRunner(object):
         assert batch_size > 0
         self.batch_size = batch_size
         # define queue properties
-        self.capacity = max(capacity, batch_size * 2)
+        self.capacity = max(capacity, batch_size*2)
         self.shuffle = shuffle
         self.min_queue_size = self.capacity // 2 if self.shuffle else 0
 
@@ -50,7 +51,6 @@ class InputBatchQueueRunner(object):
         self._coordinator = None
         self._threads = []
 
-
     def _create_queue_and_ops(self, placeholders_dict):
         """
         Create a shuffled queue or FIFO queue, and create queue
@@ -65,20 +65,20 @@ class InputBatchQueueRunner(object):
                 capacity=self.capacity,
                 min_after_dequeue=self.min_queue_size,
                 dtypes=[holder.dtype for holder in placeholders],
-                shapes=[holder.shape for holder in placeholders],
+                shapes=[holder.shape[1:] for holder in placeholders],
                 names=names,
                 name="shuffled_queue")
         else:
             self._queue = tf.FIFOQueue(
                 # pylint: disable=redefined-variable-type
                 capacity=self.capacity,
-                dtypes=[holder.dtype for holder in self.__placeholders],
-                shapes=[holder.shape for holder in placeholders],
+                dtypes=[holder.dtype for holder in placeholders],
+                shapes=[holder.shape[1:] for holder in placeholders],
                 names=names,
                 name="FIFO_queue")
 
         # create queue operations
-        self._enqueue_op = self._queue.enqueue(placeholders_dict)
+        self._enqueue_op = self._queue.enqueue_many(placeholders_dict)
         self._dequeue_op = self._queue.dequeue_many
         self._query_queue_size_op = self._queue.size()
         self._close_queue_op = self._queue.close(cancel_pending_enqueues=True)
@@ -87,18 +87,13 @@ class InputBatchQueueRunner(object):
         tf.logging.info('New thread: {}'.format(thread_id))
         try:
             print('push thread')
-            #if self.shuffle:
-            #    iterator = self.sampler()
-            #else:
-            #    iterator = self.sampler(self.batch_size)
-            for image_window in self():
+            for output_dict in self():
                 if self._session._closed:
                     break
                 if self._coordinator.should_stop():
                     break
-
-            #    patch_dict = patch.as_dict(self._placeholders)
-                self._session.run(self._enqueue_op, feed_dict=image_window)
+                self._session.run(self._enqueue_op,
+                                  feed_dict=output_dict)
 
             ## push a set of stopping patches
             #for i in range(0, self.capacity):

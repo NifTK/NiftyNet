@@ -11,31 +11,57 @@ import tensorflow as tf
 
 from niftynet.io.input_type import ImageFactory
 from niftynet.layer.base_layer import Layer
+from niftynet.utilities.misc_common import printProgressBar
 from niftynet.utilities.user_parameters_helper import make_input_tuple
 
+NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
 
-class VolumeReader(Layer):
+
+def infer_tf_dtypes(image_object):
+    uniq_np_dtype = set(image_object.dtype)
+    if len(uniq_np_dtype) > 1:
+        # heterogeneous input data types, promoting to floatings
+        return NP_TF_DTYPES.get('f', None)
+    else:
+        return NP_TF_DTYPES.get(uniq_np_dtype.pop().kind, None)
+
+
+class ImageReader(Layer):
     def __init__(self, output_fields):
         # list of file names
         self._file_list = None
 
         self.output_fields = output_fields
         self._input_sources = None
+        self._shapes = None
         self._dtypes = None
 
         # list of image objects
         self.output_list = None
         self.current_id = None
-        super(VolumeReader, self).__init__(name='volume_reader')
+        super(ImageReader, self).__init__(name='volume_reader')
+
+    @property
+    def shapes(self):
+        if not self.output_list:
+            tf.logging.fatal("please initialise the reader first")
+            raise RuntimeError
+        if not self._shapes:
+            random_image = self.output_list[0]
+            self._shapes = {field: random_image[field].get_data().shape
+                            for field in self.output_fields}
+        return self._shapes
 
     @property
     def dtypes(self):
         if not self.output_list:
             tf.logging.fatal("please initialise the reader first")
             raise RuntimeError
-        random_image = self.layer_op(shuffle=True)
-        return {field: random_image[field].dtype
-                for field in self.output_fields}
+        if not self._dtypes:
+            random_image = self.output_list[0]
+            self._dtypes = {field: infer_tf_dtypes(random_image[field])
+                            for field in self.output_fields}
+        return self._dtypes
 
     @property
     def input_sources(self):
@@ -62,7 +88,7 @@ class VolumeReader(Layer):
         modality sections, 'label' corresponds to one modality section
         """
         app_type = task_param['name']
-        self._file_list = VolumeReader._load_and_merge_csv_files(data_param)
+        self._file_list = ImageReader._load_and_merge_csv_files(data_param)
 
         if app_type == "net_segmentation.py":
             from niftynet.application.segmentation_application \
@@ -93,20 +119,25 @@ class VolumeReader(Layer):
           keys: self.output_fields
           values: image volume objects
         """
+        output_image = None
         if shuffle:
             # this is thread safe, don't access self.current_id
             idx = np.random.randint(len(self.output_list))
-            return self.output_list[idx]
+            output_image = self.output_list[idx]
         else:
             # this is not thread safe
             idx = self.current_id + 1
             self.current_id = idx
 
-            if idx < len(self.output_list) and idx >= 0:
-                return self.output_list[idx]
-            else:
-                # return nothing if current_id is not valid
-                return None
+            if idx >= 0 and idx < len(self.output_list):
+                output_image = self.output_list[idx]
+
+        if output_image:
+            image_data_dict = {field: image.get_data()
+                               for field, image in output_image.items()}
+            return idx, image_data_dict
+        else:
+            return None, None
 
     def _filename_to_image_list(self, data_param):
         """
@@ -115,6 +146,9 @@ class VolumeReader(Layer):
         """
         volume_list = []
         for row_id in range(len(self._file_list)):
+            printProgressBar(row_id, len(self._file_list),
+                             prefix='reading datasets headers',
+                             decimals=1, length=10, fill='*')
             # combine fieldnames and volumes as a dictionary
             _dict = {field: self._create_image(row_id,
                                                self.input_sources[field],
@@ -137,7 +171,7 @@ class VolumeReader(Layer):
             output_pixdim = tuple([data_param[mod].pixdim
                                    for mod in modalities])
             output_axcodes = tuple([data_param[mod].axcodes
-                                   for mod in modalities])
+                                    for mod in modalities])
         except KeyError:
             tf.logging.fatal(
                 "Specified modality names {} "

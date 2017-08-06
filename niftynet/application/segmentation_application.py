@@ -82,8 +82,8 @@ class SegmentationApplication(BaseApplication):
 
     def initialise_dataset_loader(self, data_param, segmentation_param):
         # read each line of csv files into an instance of Subject
-        from niftynet.io.volume_reader import VolumeReader
-        reader = VolumeReader(SUPPORTED_INPUT)
+        from niftynet.io.image_reader import ImageReader
+        reader = ImageReader(SUPPORTED_INPUT)
         reader.initialise_reader(data_param, segmentation_param)
         from niftynet.engine.sampler_uniform import UniformSampler
         sampler = UniformSampler(reader,

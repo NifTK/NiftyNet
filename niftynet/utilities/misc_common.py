@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import datetime
 import os
@@ -9,8 +11,8 @@ import numpy as np
 import tensorflow as tf
 from scipy import ndimage
 
-
 LABEL_STRINGS = ['Label', 'LABEL', 'label']
+
 
 def list_depth_count(input_list):
     """
@@ -23,6 +25,7 @@ def list_depth_count(input_list):
     if len(input_list) == 0:
         return 1
     return 1 + max(map(list_depth_count, input_list))
+
 
 def average_gradients(multi_device_gradients):
     # the input gradients are grouped by device,
@@ -60,7 +63,8 @@ def __average_grads(tower_grads):
     # average gradients computed from multiple GPUs
     ave_grads = []
     for grad_and_vars in zip(*tower_grads):
-        grads = [tf.expand_dims(g, 0) for g,_ in grad_and_vars if not g is None]
+        grads = [tf.expand_dims(g, 0) for g, _ in grad_and_vars if
+                 not g is None]
         if not grads:
             continue
         grad = tf.concat(grads, 0)
@@ -273,7 +277,8 @@ def otsu_threshold(img, nbins=256):
     threshold = bin_centers[0]
     for i in range(0, hist.shape[0] - 1):
         target = weight_1[i] * weight_2[i + 1] * \
-            (mean_1[i] / weight_1[i] - mean_2[i + 1] / weight_2[i + 1]) ** 2
+                 (
+                 mean_1[i] / weight_1[i] - mean_2[i + 1] / weight_2[i + 1]) ** 2
         if target > target_max:
             target_max, threshold = target, bin_centers[i]
     return threshold
