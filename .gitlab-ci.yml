@@ -105,6 +105,7 @@ pip-installer:
   only:
     - 69-push-to-pip-repository-after-commit-to-master-off-dev
     - 69-push-to-pip-repository-after-commit-to-master-off-dev-restructure-hierarchy
+    - 131-pip-bundle-does-not-work-with-cpu-only-tensorflow-drop-tensorflow-auto-install
     - tags
   script:
     # following three lines copied over from dev script:
