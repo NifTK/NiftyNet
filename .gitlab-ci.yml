@@ -108,8 +108,6 @@ pip-installer:
     - 131-pip-bundle-does-not-work-with-cpu-only-tensorflow
     - tags
   script:
-    # import the Bash functions from within the utils
-    - source ci/utils.sh
     # following three lines copied over from dev script:
     - ls -la /dev | grep nvidia
     - echo $(python tests/get_gpu_index.py)
