@@ -136,7 +136,7 @@ pip-installer:
     # NiftyNet should not install if TF not installed
     - set +e
     - pip install $niftynet_wheel
-    - [[ "$?" -eq "0" ]]
+    - [[ "$?" != "0" ]]  # if the previous command fails, this returns 0
     - set -e
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
@@ -165,7 +165,7 @@ pip-installer:
     # NiftyNet should not install if TF not installed
     - set +e
     - pip install $niftynet_wheel
-    - [[ "$?" -eq "0" ]]
+    - [[ "$?" != "0" ]]  # if the previous command fails, this returns 0
     - set -e
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
