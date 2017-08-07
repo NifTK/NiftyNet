@@ -139,7 +139,9 @@ pip-installer:
     # NiftyNet console entries should fail gracefully if TF not installed
     # i.e. check that the warning displays the TF website
     - cd $niftynet_dir
+    - set +e
     - python -c "import niftynet" 2>&1 | grep "https://www.tensorflow.org/"
+    - set -e
     - cd $venv_dir
     # NiftyNet should not install if TF not installed
     - set +e
@@ -173,7 +175,9 @@ pip-installer:
     # NiftyNet console entries should fail gracefully if TF not installed
     # i.e. check that the warning displays the TF website
     - cd $niftynet_dir
+    - set +e
     - python -c "import niftynet" 2>&1 | grep "https://www.tensorflow.org/"
+    - set -e
     - cd $venv_dir
     # NiftyNet should not install if TF not installed
     - set +e
