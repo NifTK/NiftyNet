@@ -108,6 +108,8 @@ pip-installer:
     - 131-pip-bundle-does-not-work-with-cpu-only-tensorflow-drop-tensorflow-auto-install
     - tags
   script:
+    # source utils
+    - source ci/utils.sh
     # following three lines copied over from dev script:
     - ls -la /dev | grep nvidia
     - echo $(python tests/get_gpu_index.py)
@@ -135,8 +137,7 @@ pip-installer:
     - python --version
     # NiftyNet should not install if TF not installed
     - set +e
-    - pip install $niftynet_wheel
-    - [[ "$?" != "0" ]]  # if the previous command fails, this returns 0
+    - pip install $niftynet_wheel; fail_on_success
     - set -e
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
@@ -164,8 +165,7 @@ pip-installer:
     - python --version
     # NiftyNet should not install if TF not installed
     - set +e
-    - pip install $niftynet_wheel
-    - [[ "$?" != "0" ]]  # if the previous command fails, this returns 0
+    - pip install $niftynet_wheel; fail_on_success
     - set -e
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
