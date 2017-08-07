@@ -15,18 +15,12 @@ TF_NP_DTYPES = {tf.int32: np.int32, tf.float32: np.float32}
 
 
 class ImageWindow(object):
-    def __init__(self, fields, shapes, dtypes, n_samples=1):
+    def __init__(self, fields, shapes, dtypes):
         self.fields = fields
         self.shapes = shapes
         self.dtypes = dtypes
-        self.n_samples = n_samples
 
-        # create placeholders, required as network input
-        self.placeholders = tuple(
-            tf.placeholder(dtype=dtypes[name],
-                           shape=[n_samples] + list(shapes[name]))
-            for name in fields)
-
+        self.n_samples = None
         self._placeholders_dict = None
 
     @classmethod
@@ -34,8 +28,7 @@ class ImageWindow(object):
                        source_names,
                        image_shapes,
                        image_dtypes,
-                       data_param,
-                       n_samples):
+                       data_param):
         input_fields = tuple(source_names)
         # complete window shapes based on user input and input_image sizes
         spatial_shapes = {
@@ -46,40 +39,42 @@ class ImageWindow(object):
                 spatial_shapes[name], image_shapes[name])
             for name in input_fields}
         # create ImageWindow instance
-        return cls(input_fields, shapes, image_dtypes, n_samples)
+        return cls(input_fields, shapes, image_dtypes)
 
-
-    @property
-    def placeholders_dict(self):
-        if not self._placeholders_dict:
+    def placeholders_dict(self, n_samples=1):
+        if self._placeholders_dict is None or self.n_samples is None:
+            # create placeholders, required as network input
             names = list(self.fields)
-            placeholders = list(self.placeholders)
+            placeholders = [
+                tf.placeholder(dtype=self.dtypes[name],
+                               shape=[n_samples] + list(self.shapes[name]))
+                for name in self.fields]
+
             # extending names placeholders with fields of coordinates
             names.extend([LOCATION_FORMAT.format(name) for name in names])
             placeholders.extend(
                 [tf.placeholder(dtype=BUFFER_POSITION_DTYPE,
-                                shape=(self.n_samples, 1 + N_SPATIAL * 2))
+                                shape=(n_samples, 1 + N_SPATIAL * 2))
                  for _ in self.fields])
+
+            self.n_samples = n_samples
             self._placeholders_dict = dict(zip(names, placeholders))
         return self._placeholders_dict
 
-
-    def create_dict(self):
+    def data_dict(self):
         # dictionary required by tf queue, {placeholder:data_array}
         output_dict = {}
-        for name, placeholder in self.placeholders_dict.items():
+        for name, placeholder in self._placeholders_dict.items():
             shape = placeholder.shape.as_list()
             np_dtype = TF_NP_DTYPES.get(placeholder.dtype, np.float32)
             output_dict[placeholder] = np.zeros(shape, dtype=np_dtype)
         return output_dict
 
-
     def coordinates_placeholder(self, field):
-        return self.placeholders_dict[LOCATION_FORMAT.format(field)]
+        return self._placeholders_dict[LOCATION_FORMAT.format(field)]
 
-
-    def data_placeholder(self, field):
-        return self.placeholders_dict[field]
+    def image_data_placeholder(self, field):
+        return self._placeholders_dict[field]
 
 
 def read_window_sizes(input_mod_list, input_data_param):

@@ -63,8 +63,8 @@ def __average_grads(tower_grads):
     # average gradients computed from multiple GPUs
     ave_grads = []
     for grad_and_vars in zip(*tower_grads):
-        grads = [tf.expand_dims(g, 0) for g, _ in grad_and_vars if
-                 not g is None]
+        grads = [tf.expand_dims(g, 0)
+                 for g, _ in grad_and_vars if not g is None]
         if not grads:
             continue
         grad = tf.concat(grads, 0)
@@ -259,8 +259,8 @@ def otsu_threshold(img, nbins=256):
     ''' Implementation of otsu thresholding'''
     hist, bin_edges = np.histogram(img.ravel(), bins=nbins)
     hist = hist.astype(float)
-    bin_size = bin_edges[1] - bin_edges[0]
-    bin_centers = bin_edges[:-1] + bin_size / 2
+    half_bin_size = (bin_edges[1] - bin_edges[0]) * 0.5
+    bin_centers = bin_edges[:-1] + half_bin_size
 
     weight_1 = np.copy(hist)
     mean_1 = np.copy(hist)
@@ -276,9 +276,9 @@ def otsu_threshold(img, nbins=256):
     target_max = 0
     threshold = bin_centers[0]
     for i in range(0, hist.shape[0] - 1):
-        target = weight_1[i] * weight_2[i + 1] * \
-                 (
-                 mean_1[i] / weight_1[i] - mean_2[i + 1] / weight_2[i + 1]) ** 2
+        ratio_1 = mean_1[i] / weight_1[i]
+        ratio_2 = mean_2[i + 1] / weight_2[i + 1]
+        target = weight_1[i] * weight_2[i + 1] * (ratio_1 - ratio_2) ** 2
         if target > target_max:
             target_max, threshold = target, bin_centers[i]
     return threshold

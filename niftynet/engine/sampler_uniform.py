@@ -21,38 +21,35 @@ class UniformSampler(Layer, InputBatchQueueRunner):
     def __init__(self, reader, data_param, samples_per_subject):
         # TODO: padding
         self.reader = reader
+        self.samples_per_subject = samples_per_subject
 
         batch_size = 3
-        capacity = max(samples_per_subject * 2, batch_size * 2)
-        InputBatchQueueRunner.__init__(self,
-                                       batch_size=batch_size,
-                                       capacity=capacity,
-                                       shuffle=True)
+        capacity = samples_per_subject * 2
+        InputBatchQueueRunner.__init__(self, capacity=capacity, shuffle=True)
         Layer.__init__(self, name='input_buffer')
-
         self.window = ImageWindow.from_user_spec(self.reader.input_sources,
                                                  self.reader.shapes,
-                                                 self.reader.dtypes,
-                                                 data_param,
-                                                 samples_per_subject)
-        self._create_queue_and_ops(self.window.placeholders_dict)
+                                                 self.reader.tf_dtypes,
+                                                 data_param)
+        self._create_queue_and_ops(self.window, samples_per_subject)
         tf.logging.info("initialised sampler output {}".format(
             self.window.shapes))
 
-        # running test
-        sess = tf.Session()
-        _iter = 0
-        for x in self():
-            sess.run(self._enqueue_op, feed_dict=x)
-            _iter += 1
-            print('enqueue {}'.format(_iter))
-            if _iter == 2:
-                break
-        out = sess.run(self._dequeue_op(2))
-        print('dequeue')
-        print(out['image'].shape)
-        print(out['image_location'])
-        import pdb; pdb.set_trace()
+        ## running test
+        #sess = tf.Session()
+        #_iter = 0
+        #for x in self():
+        #    sess.run(self._enqueue_op, feed_dict=x)
+        #    _iter += 1
+        #    print('enqueue {}'.format(_iter))
+        #    if _iter == 2:
+        #        break
+        #out = sess.run(self.pop_batch_op(batch_size=batch_size))
+        #print('dequeue')
+        #print(out['image'].shape)
+        #print(out['image_location'])
+        #import pdb;
+        #pdb.set_trace()
 
     def layer_op(self):
         while True:
@@ -66,7 +63,7 @@ class UniformSampler(Layer, InputBatchQueueRunner):
                                                    image_sizes,
                                                    self.window.n_samples)
             #  initialise output dict
-            output_dict = self.window.create_dict()
+            output_dict = self.window.data_dict()
             # fill output dict with data
             for name in list(data):
                 # fill output coordinates
@@ -75,7 +72,7 @@ class UniformSampler(Layer, InputBatchQueueRunner):
                 location_array[...] = coordinates[name]
                 # fill output window array
                 image_array = output_dict[
-                    self.window.data_placeholder(name)]
+                    self.window.image_data_placeholder(name)]
                 for (i, location) in enumerate(location_array[:, 1:]):
                     x_, y_, z_, _x, _y, _z = location
                     image_array[i, ...] = data[name][x_:_x, y_:_y, z_:_z, ...]

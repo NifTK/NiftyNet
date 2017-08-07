@@ -17,13 +17,8 @@ from niftynet.utilities.user_parameters_helper import make_input_tuple
 NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
 
 
-def infer_tf_dtypes(image_object):
-    uniq_np_dtype = set(image_object.dtype)
-    if len(uniq_np_dtype) > 1:
-        # heterogeneous input data types, promoting to floatings
-        return NP_TF_DTYPES.get('f', None)
-    else:
-        return NP_TF_DTYPES.get(uniq_np_dtype.pop().kind, None)
+def infer_tf_dtypes(image_array):
+    return NP_TF_DTYPES.get(image_array.dtype.kind, tf.float32)
 
 
 class ImageReader(Layer):
@@ -39,7 +34,7 @@ class ImageReader(Layer):
         # list of image objects
         self.output_list = None
         self.current_id = None
-        super(ImageReader, self).__init__(name='volume_reader')
+        super(ImageReader, self).__init__(name='image_reader')
 
     @property
     def shapes(self):
@@ -47,19 +42,19 @@ class ImageReader(Layer):
             tf.logging.fatal("please initialise the reader first")
             raise RuntimeError
         if not self._shapes:
-            random_image = self.output_list[0]
-            self._shapes = {field: random_image[field].get_data().shape
+            _, first_image = self(idx=0)
+            self._shapes = {field: first_image[field].shape
                             for field in self.output_fields}
         return self._shapes
 
     @property
-    def dtypes(self):
+    def tf_dtypes(self):
         if not self.output_list:
             tf.logging.fatal("please initialise the reader first")
             raise RuntimeError
         if not self._dtypes:
-            random_image = self.output_list[0]
-            self._dtypes = {field: infer_tf_dtypes(random_image[field])
+            _, first_image = self(idx=0)
+            self._dtypes = {field: infer_tf_dtypes(first_image[field])
                             for field in self.output_fields}
         return self._dtypes
 
@@ -113,24 +108,32 @@ class ImageReader(Layer):
         tf.logging.info('initialised reader: loading {} from {}'.format(
             self.output_fields, self.input_sources))
 
-    def layer_op(self, shuffle=True):
+    def layer_op(self, idx=None, shuffle=True):
         """
         this layer returns a dictionary
           keys: self.output_fields
-          values: image volume objects
+          values: image volume array
         """
-        output_image = None
-        if shuffle:
-            # this is thread safe, don't access self.current_id
+        if idx is None and shuffle:
+            # training, with random list output
             idx = np.random.randint(len(self.output_list))
-            output_image = self.output_list[idx]
-        else:
-            # this is not thread safe
+
+        if idx is None and not shuffle:
+            # testing, with sequential output
+            # accessing self.current_id, not suitable for multi-thread
             idx = self.current_id + 1
             self.current_id = idx
 
-            if idx >= 0 and idx < len(self.output_list):
-                output_image = self.output_list[idx]
+        if idx is not None:
+            try:
+                idx = int(idx)
+            except ValueError:
+                idx = -1
+
+        output_image = None
+
+        if idx >= 0 and idx < len(self.output_list):
+            output_image = self.output_list[idx]
 
         if output_image:
             image_data_dict = {field: image.get_data()

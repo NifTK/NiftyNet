@@ -30,14 +30,11 @@ class InputBatchQueueRunner(object):
     close_all() called externally -- all threads quit immediately
     """
 
-    def __init__(self, batch_size, capacity, shuffle=True):
-
-        assert batch_size > 0
-        self.batch_size = batch_size
+    def __init__(self, capacity, shuffle=True):
         # define queue properties
-        self.capacity = max(capacity, batch_size*2)
+        self.capacity = capacity
         self.shuffle = shuffle
-        self.min_queue_size = self.capacity // 2 if self.shuffle else 0
+        self._min_queue_size = self.capacity // 2 if self.shuffle else 0
 
         # create queue and the associated operations
         self._queue = None
@@ -51,19 +48,23 @@ class InputBatchQueueRunner(object):
         self._coordinator = None
         self._threads = []
 
-    def _create_queue_and_ops(self, placeholders_dict):
+    def _create_queue_and_ops(self, image_window, n_samples):
         """
         Create a shuffled queue or FIFO queue, and create queue
         operations. This should be called before tf.Graph.finalize.
         """
 
+        placeholders_dict = image_window.placeholders_dict(n_samples)
         names = list(placeholders_dict)
         placeholders = list(placeholders_dict.values())
+        # enqueue size from the first placeholder
+        # to prevent hanging enqueue_op
+        self.capacity = max(self.capacity, n_samples * 2)
         # create a queue
         if self.shuffle:
             self._queue = tf.RandomShuffleQueue(
                 capacity=self.capacity,
-                min_after_dequeue=self.min_queue_size,
+                min_after_dequeue=self._min_queue_size,
                 dtypes=[holder.dtype for holder in placeholders],
                 shapes=[holder.shape[1:] for holder in placeholders],
                 names=names,
@@ -92,8 +93,7 @@ class InputBatchQueueRunner(object):
                     break
                 if self._coordinator.should_stop():
                     break
-                self._session.run(self._enqueue_op,
-                                  feed_dict=output_dict)
+                self._session.run(self._enqueue_op, feed_dict=output_dict)
 
             ## push a set of stopping patches
             #for i in range(0, self.capacity):
@@ -130,9 +130,12 @@ class InputBatchQueueRunner(object):
             return 0
         return self._session.run(self._query_queue_size_op)
 
-    def pop_batch_op(self, device_id=0):
+    def pop_batch_op(self, device_id=0, batch_size=1):
+        assert batch_size <= self.capacity, \
+            "batch size is larger than the buffer size, " \
+            "please increase the queue length or decrease the batch size"
         with tf.name_scope('pop_batch_{}'.format(device_id)):
-            return self._dequeue_op(self.batch_size)
+            return self._dequeue_op(batch_size)
 
     def run_threads(self, session, coord, num_threads=1):
         tf.logging.info('Starting preprocessing threads...')
@@ -166,17 +169,17 @@ class InputBatchQueueRunner(object):
                 self._session.run(self._close_queue_op)
 
 
-class DeployInputBuffer(InputBatchQueueRunner):
-    def __init__(self, batch_size, capacity, sampler):
-        super(DeployInputBuffer, self).__init__(batch_size=batch_size,
-                                                capacity=capacity,
-                                                placeholders_dict=sampler,
-                                                shuffle=False)
-
-
-class TrainEvalInputBuffer(InputBatchQueueRunner):
-    def __init__(self, batch_size, capacity, sampler, shuffle=True):
-        super(TrainEvalInputBuffer, self).__init__(batch_size=batch_size,
-                                                   capacity=capacity,
-                                                   samplplaceholders_dicter=sampler,
-                                                   shuffle=shuffle)
+#class DeployInputBuffer(InputBatchQueueRunner):
+#    def __init__(self, batch_size, capacity, sampler):
+#        super(DeployInputBuffer, self).__init__(batch_size=batch_size,
+#                                                capacity=capacity,
+#                                                placeholders_dict=sampler,
+#                                                shuffle=False)
+#
+#
+#class TrainEvalInputBuffer(InputBatchQueueRunner):
+#    def __init__(self, batch_size, capacity, sampler, shuffle=True):
+#        super(TrainEvalInputBuffer, self).__init__(batch_size=batch_size,
+#                                                   capacity=capacity,
+#                                                   samplplaceholders_dicter=sampler,
+#                                                   shuffle=shuffle)
