@@ -123,7 +123,6 @@ pip-installer:
     # create the NiftyNet wheel
     - rm -rf dist  # remove dist directory, just in case
     - sh ci/bundlewheel.sh
-    - source ci/findwheel.sh
     - echo $niftynet_wheel
     # ============= Python 2, GPU =======================
     - bash -x ci/test_pip_installer.sh -p 2 -c gpu
@@ -142,7 +141,6 @@ pip-camera-ready:
     # create the NiftyNet wheel
     - rm -rf dist  # remove dist directory, just in case
     - sh ci/bundlewheel.sh
-    - source ci/findwheel.sh
     - echo $niftynet_wheel
     # Creat camera-ready folder if doesn't exist
     - camera_ready_dir=/home/gitlab-runner/environments/niftynet/pip/camera-ready
