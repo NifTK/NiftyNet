@@ -133,6 +133,11 @@ pip-installer:
     # print Python version to CI output
     - which python
     - python --version
+    # NiftyNet should not install if TF not installed
+    - set +e
+    - pip install $niftynet_wheel
+    - [[ "$?" -eq "0" ]]
+    - set -e
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
@@ -157,6 +162,11 @@ pip-installer:
     # print Python version to CI output
     - which python
     - python --version
+    # NiftyNet should not install if TF not installed
+    - set +e
+    - pip install $niftynet_wheel
+    - [[ "$?" -eq "0" ]]
+    - set -e
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
