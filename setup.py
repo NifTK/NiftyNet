@@ -74,14 +74,9 @@ requirements = [
     'numpy>=1.11',
     'scipy>=0.18',
     'configparser',
+    'tensorflow-gpu==1.1',
     'pillow',
 ]
-# See if (any) TF is installed yet
-try:
-    import tensorflow as tf
-except ImportError:
-    # No TF: use GPU version by default
-    requirements.append('tensorflow-gpu==1.1')
 
 setup(
     name='NiftyNet',
