@@ -64,27 +64,27 @@ class BinaryMaskingLayer(Layer):
             return self.__make_mask_3d(image)
 
         if image.ndim == 5:
-            mod_to_mask = [m for m in range(0, image.shape[3]) if
-                           np.any(image[..., m, :])]
+            mod_to_mask = [m for m in range(0, image.shape[4]) if
+                           np.any(image[..., :, m])]
             mask = np.zeros_like(image, dtype=bool)
             for mod in mod_to_mask:
-                for t in range(0, image.shape[4]):
-                    mask[..., mod, t] = self.__make_mask_3d(image[..., mod, t])
+                for t in range(0, image.shape[3]):
+                    mask[..., t, mod] = self.__make_mask_3d(image[..., t, mod])
 
             if self.multimod_fusion == 'or':
-                for t in range(0, image.shape[4]):
+                for t in range(0, image.shape[3]):
                     new_mask = np.zeros(image.shape[0:3], dtype=np.bool)
                     for mod in mod_to_mask:
-                        new_mask = np.logical_or(new_mask, mask[..., mod, t])
-                    mask[..., t] = np.tile(np.expand_dims(new_mask, axis=-1),
-                                           [1, mask.shape[3]])
+                        new_mask = np.logical_or(new_mask, mask[..., t, mod])
+                    for mod in mod_to_mask:
+                        mask[..., t, mod] = new_mask
 
             if self.multimod_fusion == 'and':
-                for t in range(0, image.shape[4]):
+                for t in range(0, image.shape[3]):
                     new_mask = np.ones(image.shape[0:3], dtype=np.bool)
                     for mod in mod_to_mask:
-                        new_mask = np.logical_and(new_mask, mask[..., mod, t])
-                    mask[..., t] = np.tile(np.expand_dims(new_mask, axis=-1),
-                                           [1, mask.shape[3]])
+                        new_mask = np.logical_and(new_mask, mask[..., t, mod])
+                    for mod in mod_to_mask:
+                        mask[..., t, mod] = new_mask
             return mask
         raise ValueError('unknown input format')

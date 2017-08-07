@@ -9,19 +9,15 @@ from niftynet.engine.resize_sampler import ResizeSampler
 from niftynet.engine.selective_sampler import SelectiveSampler
 from niftynet.engine.spatial_location_check import SpatialLocationCheckLayer
 from niftynet.engine.uniform_sampler import UniformSampler
-from niftynet.layer.loss import LossFunction
-from niftynet.layer.post_processing import PostProcessingLayer
-from niftynet.utilities.input_placeholders import ImagePatch
-#from niftynet.engine.volume_loader import VolumeLoaderLayer
 from niftynet.layer.binary_masking import BinaryMaskingLayer
+# from niftynet.engine.volume_loader import VolumeLoaderLayer
 from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
-from niftynet.layer.mean_variance_normalisation import \
-    MeanVarNormalisationLayer
-from niftynet.utilities.csv_table import CSVTable
-
+from niftynet.layer.post_processing import PostProcessingLayer
+from niftynet.utilities.input_placeholders import ImagePatch
 
 SUPPORTED_INPUT = {'image', 'label', 'weight'}
+
 
 class NetFactory(object):
     @staticmethod
@@ -59,7 +55,6 @@ class NetFactory(object):
 
 
 class SegmentationApplication(BaseApplication):
-
     # def __init__(self, net_class, param, volume_loader):
     #     self._net_class = net_class
     #     self._param = param
@@ -85,6 +80,19 @@ class SegmentationApplication(BaseApplication):
         from niftynet.io.image_reader import ImageReader
         reader = ImageReader(SUPPORTED_INPUT)
         reader.initialise_reader(data_param, segmentation_param)
+        foreground_masking_layer = BinaryMaskingLayer(
+            type=self.net_param.mask_type,
+            multimod_fusion=self.net_param.multimod_mask_type,
+            threshold=0.0)
+        image_normaliser = HistogramNormalisationLayer(
+            field='image',
+            modalities=segmentation_param['image'],
+            models_filename=self.net_param.histogram_ref_file,
+            binary_masking_func=foreground_masking_layer,
+            norm_type=self.net_param.norm_type,
+            cutoff=self.net_param.cutoff,
+            name='hist_norm_layer')
+        reader.add_preprocessing_layers([image_normaliser])
         from niftynet.engine.sampler_uniform import UniformSampler
         sampler = UniformSampler(reader,
                                  data_param,

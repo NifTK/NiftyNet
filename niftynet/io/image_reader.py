@@ -36,46 +36,6 @@ class ImageReader(Layer):
         self.current_id = None
         super(ImageReader, self).__init__(name='image_reader')
 
-    @property
-    def shapes(self):
-        if not self.output_list:
-            tf.logging.fatal("please initialise the reader first")
-            raise RuntimeError
-        if not self._shapes:
-            _, first_image = self(idx=0)
-            self._shapes = {field: first_image[field].shape
-                            for field in self.output_fields}
-        return self._shapes
-
-    @property
-    def tf_dtypes(self):
-        if not self.output_list:
-            tf.logging.fatal("please initialise the reader first")
-            raise RuntimeError
-        if not self._dtypes:
-            _, first_image = self(idx=0)
-            self._dtypes = {field: infer_tf_dtypes(first_image[field])
-                            for field in self.output_fields}
-        return self._dtypes
-
-    @property
-    def input_sources(self):
-        if not self._input_sources:
-            tf.logging.fatal("please initialise the reader first")
-            raise RuntimeError
-        return self._input_sources
-
-    @property
-    def output_fields(self):
-        return self._output_fields
-
-    @output_fields.setter
-    def output_fields(self, fields_tuple):
-        # output_fields is a sequence of output names
-        # each name might correspond to a list of multiple input sources
-        # this should be specified in CUSTOM section in the config
-        self._output_fields = make_input_tuple(fields_tuple, basestring)
-
     def initialise_reader(self, data_param, task_param):
         """
         task_param specifies how to combine user input modalities
@@ -105,8 +65,16 @@ class ImageReader(Layer):
         self.output_list = self._filename_to_image_list(data_param)
         self.current_id = -1
 
-        tf.logging.info('initialised reader: loading {} from {}'.format(
-            self.output_fields, self.input_sources))
+        tf.logging.info('initialised reader: loading {} from {} ({})'.format(
+            self.output_fields, self.input_sources, len(self.output_list)))
+
+    def add_preprocessing_layers(self, layers):
+        self.preprocesser = []
+        self.preprocesser.extend(layers)
+        for preprocess in self.preprocesser:
+            if not preprocess.is_ready():
+                preprocess.train(self.output_list)
+
 
     def layer_op(self, idx=None, shuffle=True):
         """
@@ -120,7 +88,7 @@ class ImageReader(Layer):
 
         if idx is None and not shuffle:
             # testing, with sequential output
-            # accessing self.current_id, not suitable for multi-thread
+            #  accessing self.current_id, not suitable for multi-thread
             idx = self.current_id + 1
             self.current_id = idx
 
@@ -218,3 +186,43 @@ class ImageReader(Layer):
                              "please check the csv files.")
             raise IOError
         return _file_list
+
+    @property
+    def shapes(self):
+        if not self.output_list:
+            tf.logging.fatal("please initialise the reader first")
+            raise RuntimeError
+        if not self._shapes:
+            _, first_image = self(idx=0)
+            self._shapes = {field: first_image[field].shape
+                            for field in self.output_fields}
+        return self._shapes
+
+    @property
+    def tf_dtypes(self):
+        if not self.output_list:
+            tf.logging.fatal("please initialise the reader first")
+            raise RuntimeError
+        if not self._dtypes:
+            _, first_image = self(idx=0)
+            self._dtypes = {field: infer_tf_dtypes(first_image[field])
+                            for field in self.output_fields}
+        return self._dtypes
+
+    @property
+    def input_sources(self):
+        if not self._input_sources:
+            tf.logging.fatal("please initialise the reader first")
+            raise RuntimeError
+        return self._input_sources
+
+    @property
+    def output_fields(self):
+        return self._output_fields
+
+    @output_fields.setter
+    def output_fields(self, fields_tuple):
+        # output_fields is a sequence of output names
+        # each name might correspond to a list of multiple input sources
+        # this should be specified in CUSTOM section in the config
+        self._output_fields = make_input_tuple(fields_tuple, basestring)

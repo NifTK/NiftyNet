@@ -5,8 +5,8 @@ import os
 
 import numpy as np
 import numpy.ma as ma
+import tensorflow as tf
 
-import niftynet.utilities.misc_io as io
 from niftynet.utilities.misc_common import look_up_operations, printProgressBar
 
 """
@@ -73,7 +73,9 @@ def __standardise_cutoff(cutoff, type_hist='quartile'):
 
 
 def create_mapping_from_multimod_arrayfiles(array_files,
-                                            list_modalities,
+                                            field,
+                                            modalities,
+                                            mod_to_train,
                                             cutoff,
                                             masking_function):
     '''
@@ -95,16 +97,16 @@ def create_mapping_from_multimod_arrayfiles(array_files,
         printProgressBar(i, len(array_files),
                          prefix='normalisation histogram training',
                          decimals=1, length=10, fill='*')
-        img_data = io.csv_cell_to_volume_5d(p)
-        # numb_modalities = img_data.shape[3]
-        numb_timepoints = img_data.shape[4]
-        # to_do = {m: list_modalities[m] for m in list_modalities.keys() if
-        #         list_modalities[m] < numb_modalities}
-        for m in list_modalities.keys():
+        img_data = p[field].get_data()
+        assert img_data.shape[4] == len(modalities), \
+            "number of modalities are not consistent in the input image"
+        for mod_i, m in enumerate(modalities):
+            if m not in mod_to_train:
+                continue
             if m not in perc_database.keys():
                 perc_database[m] = []
-            for t in range(0, numb_timepoints):
-                img_3d = img_data[..., list_modalities[m], t]
+            for t in range(0, img_data.shape[3]):
+                img_3d = img_data[..., t, mod_i]
                 if masking_function is not None:
                     mask_3d = masking_function(img_3d)
                 else:
@@ -112,10 +114,10 @@ def create_mapping_from_multimod_arrayfiles(array_files,
                 perc = __compute_percentiles(img_3d, mask_3d, cutoff)
                 perc_database[m].append(perc)
     mapping = {}
-    for m in list_modalities.keys():
+    for m in list(perc_database):
         perc_database[m] = np.vstack(perc_database[m])
         s1, s2 = create_standard_range()
-        mapping[m] = __averaged_mapping(perc_database[m], s1, s2)
+        mapping[m] = tuple(__averaged_mapping(perc_database[m], s1, s2))
     return mapping
 
 
@@ -192,7 +194,7 @@ def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     new_img[highest_values] = smooth_threshold(
         new_img[highest_values], mode='high')
     # Apply mask and set background to zero
-    #new_img[mask == False] = 0.
+    # new_img[mask == False] = 0.
     return new_img
 
 
@@ -233,7 +235,32 @@ def read_mapping_file(mapping_file):
     return mapping_dict
 
 
-def force_writing_new_mapping(filename, mapping_dict):
+# Function to modify the model file with the mapping if needed according
+# to existent mapping and modalities
+def write_all_mod_mapping(hist_model_file, mapping):
+    # backup existing file first
+    if os.path.exists(hist_model_file):
+        backup_name = '{}.backup'.format(hist_model_file)
+        from shutil import copyfile
+        try:
+            copyfile(hist_model_file, backup_name)
+        except OSError:
+            tf.logging.warning('cannot backup file {}'.format(hist_model_file))
+            raise
+        tf.logging.warning(
+            "moved existing histogram reference file\n"
+            " from {} to {}".format(hist_model_file, backup_name))
+
+    if not os.path.exists(os.path.dirname(hist_model_file)):
+        try:
+            os.makedirs(os.path.dirname(hist_model_file))
+        except OSError:
+            tf.logging.fatal('cannot create {}'.format(hist_model_file))
+            raise
+    __force_writing_new_mapping(hist_model_file, mapping)
+
+
+def __force_writing_new_mapping(filename, mapping_dict):
     '''
     Writes a mapping dictionary to file
     :param filename: name of the file in which to write the saved mapping
