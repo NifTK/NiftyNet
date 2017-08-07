@@ -126,7 +126,7 @@ pip-installer:
     - source ci/findwheel.sh
     - echo $niftynet_wheel
     # ============= Python 2 ============================
-    - bash -x ci/test_pip_installer.sh
+    - bash -x ci/test_pip_installer.sh -p 2 -c gpu
     # ============= Python 3 ============================
     # create a virtual env to test pip installer
     - venv="niftynet-pip-installer-venv-py3"

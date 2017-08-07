@@ -1,8 +1,39 @@
 #!/usr/bin/env bash
 
+# decide on Python version (2/3) and computing
+# engine (cpu/gpu)
+while getopts p:c: option
+do
+    case "${option}"
+    in
+    p) PYTHON_VERSION=${OPTARG};;
+    c) COMP_ENGINE=${OPTARG};;
+    esac
+done
+
+if [[ "$PYTHON_VERSION" == "2" ]];
+then
+    echo "Using Python 2"
+elif [[ "$PYTHON_VERSION" == "3" ]];
+then
+    echo "Using Python 3"
+else
+    exit 1
+fi
+
+if [[ "$COMP_ENGINE" == "gpu" ]];
+then
+    echo "Using the GPU version"
+elif [[ "$COMP_ENGINE" == "cpu" ]];
+then
+    echo "Using the CPU version"
+else
+    exit 1
+fi
+
 # create a virtual env to test pip installer
-venv="niftynet-pip-installer-venv-py2"
-mypython=$(which python2)
+venv="niftynet-pip-installer-venv-py$PYTHON_VERSION-$COMP_ENGINE"
+mypython=$(which python$PYTHON_VERSION)
 virtualenv -p $mypython $venv
 cd $venv
 source bin/activate
