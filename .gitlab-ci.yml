@@ -125,9 +125,9 @@ pip-installer:
     - sh ci/bundlewheel.sh
     - echo $niftynet_wheel
     # ============= Python 2, GPU =======================
-    - bash -x ci/test_pip_installer.sh -p 2 -c gpu
+    - bash -x ci/testwheel.sh -p 2 -c gpu
     # ============= Python 3, GPU =======================
-    - bash -x ci/test_pip_installer.sh -p 3 -c gpu
+    - bash -x ci/testwheel.sh -p 3 -c gpu
   tags:
     - gift-adelie
 
