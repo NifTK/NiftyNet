@@ -120,11 +120,10 @@ pip-installer:
     - find niftynet -type f \( ! -name . \) -print | grep '.py$' | grep -v __init__ | sed 's/\.\.\///g;s/\//\./g;s/\.py//g;s/niftynet/import niftynet/g' > $package_importer
     # save NiftyNet folder path just in case
     - export niftynet_dir=$(pwd)
+    # ============= Python 2, GPU =======================
     # create the NiftyNet wheel
-    - rm -rf dist  # remove dist directory, just in case
     - sh ci/bundlewheel.sh
     - echo $niftynet_wheel
-    # ============= Python 2, GPU =======================
     - bash -x ci/testwheel.sh -p 2 -c gpu
     # ============= Python 3, GPU =======================
     - bash -x ci/testwheel.sh -p 3 -c gpu
