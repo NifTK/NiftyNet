@@ -2,12 +2,11 @@
 
 # decide on Python version (2/3) and computing
 # engine (cpu/gpu)
-while getopts p:c: option
+while getopts p: option
 do
     case "${option}"
     in
     p) PYTHON_VERSION=${OPTARG};;
-    c) COMP_ENGINE=${OPTARG};;
     esac
 done
 
@@ -21,18 +20,8 @@ else
     exit 1
 fi
 
-if [[ "$COMP_ENGINE" == "gpu" ]];
-then
-    echo "Using the GPU version"
-elif [[ "$COMP_ENGINE" == "cpu" ]];
-then
-    echo "Using the CPU version"
-else
-    exit 1
-fi
-
 # create a virtual env to test pip installer
-venv="niftynet-pip-installer-venv-py$PYTHON_VERSION-$COMP_ENGINE"
+venv="niftynet-pip-installer-venv-py$PYTHON_VERSION"
 mypython=$(which python$PYTHON_VERSION)
 virtualenv -p $mypython $venv
 cd $venv
