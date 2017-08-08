@@ -28,7 +28,7 @@ To train a "toynet" specified in `network/toynet.py`:
 cd NiftyNet/
 wget -N https://www.dropbox.com/s/y7mdh4m9ptkibax/example_volumes.tar.gz
 tar -xzvf example_volumes.tar.gz
-net_segmentation train --net_name toynet \
+net_segment train --net_name toynet \
     --image_size 42 --label_size 42 --batch_size 1
 ```
 (GPU computing is enabled by default; to train with CPU only please use `--num_gpus 0`)
@@ -36,7 +36,7 @@ net_segmentation train --net_name toynet \
 After the training process, to do segmentation with a trained "toynet":
 ``` sh
 cd NiftyNet/
-net_segmentation inference --net_name toynet \
+net_segment inference --net_name toynet \
     --save_seg_dir ./seg_output \
     --image_size 80 --label_size 80 --batch_size 8
 ```
@@ -51,11 +51,11 @@ Alternatively, to run with a customised config file:
 ``` sh
 cd NiftyNet/
 # training
-net_segmentation train -c /path/to/customised_config
+net_segment train -c /path/to/customised_config
 # inference
-net_segmentation inference -c /path/to/customised_config
+net_segment inference -c /path/to/customised_config
 ```
 where `/path/to/customised_config` implements all parameters listed by running:
 ```sh
-net_segmentation -h
+net_segment -h
 ```
