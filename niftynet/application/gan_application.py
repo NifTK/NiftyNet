@@ -20,7 +20,7 @@ class GANApplication(BaseApplication):
     self.num_objectives=2
     w_regularizer,b_regularizer=self.regularizers()
     self._net=None
-    self.n_interpolants=2
+    self.n_interpolants=10
   def inference_sampler(self):
         self._inference_patch_holder = GANPatch(
             spatial_rank=self._param.spatial_rank,
@@ -150,7 +150,7 @@ class GANApplication(BaseApplication):
             key=img_id
             if spatial_rank==2.5: # accumulate across multiple slices
                 if key not in image_cache:
-                    image_cache[key] = [[None] * self.n_interpolants]*pred_img.shape[2]
+                    image_cache[key] = [[None] * self.n_interpolants for it in range(pred_img.shape[2])]
                 image_cache[key][spatial_info[batch_id, 3]][int_id] = images[batch_id]
             else:
                 if key not in image_cache:
