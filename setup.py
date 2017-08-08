@@ -26,7 +26,7 @@ info_module.write('\n')
 info_module.write('"""\n')
 info_module.write('\n')
 info_module.write('\n')
-info_module.write('version = "{}"\n'.format(version_buf))
+info_module.write('VERSION_DESCRIPTOR = "{}"\n'.format(version_buf))
 info_module.close()
 
 # Regex for checking PEP 440 conformity
@@ -121,7 +121,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'net_segmentation=niftynet:main',
+            'net_segment=niftynet:main',
         ],
     },
 )
