@@ -116,6 +116,8 @@ def standardise_string(input_string):
     :param input_string: to be standardised
     :return: capitalised string
     """
+    if not isinstance(input_string, basestring):
+        return input_string
     new_name = re.sub('[^0-9a-zA-Z]+', '_', input_string.strip())
     return new_name.upper()
 

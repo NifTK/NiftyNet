@@ -14,7 +14,7 @@ from niftynet.engine.graph_variables_collector import OutputsCollector
 FILE_PREFIX = 'model.ckpt'
 CONSOLE_LOG_FORMAT = '%(levelname)s:niftynet: %(message)s'
 FILE_LOG_FORMAT = '%(levelname)s:niftynet:%(asctime)s: %(message)s'
-SUPPORTED_APP = {'net_segmentation.py',
+SUPPORTED_APP = {'net_segment.py',
                  'net_autoencoder.py',
                  'net_gan.py'}
 
@@ -24,7 +24,7 @@ class ApplicationFactory(object):
     def import_module(type_string):
         type_string = look_up_operations(type_string, SUPPORTED_APP)
         app_module = None
-        if type_string == 'net_segmentation.py':
+        if type_string == 'net_segment.py':
             from niftynet.application.segmentation_application import \
                 SegmentationApplication
             app_module = SegmentationApplication

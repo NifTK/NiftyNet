@@ -105,7 +105,7 @@ def create_mapping_from_multimod_arrayfiles(array_files,
                 continue
             if m not in perc_database.keys():
                 perc_database[m] = []
-            for t in range(0, img_data.shape[3]):
+            for t in range(img_data.shape[3]):
                 img_3d = img_data[..., t, mod_i]
                 if masking_function is not None:
                     mask_3d = masking_function(img_3d)
@@ -164,6 +164,9 @@ def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
         range_to_use = [0, 6, 12]
     else:
         raise ValueError('unknown cutting points type')
+    assert len(mapping) >= len(range_to_use), \
+        "wrong mapping format, please check the histogram reference file"
+    mapping = np.asarray(mapping)
     cutoff = __standardise_cutoff(cutoff, type_hist)
     perc = __compute_percentiles(img, mask, cutoff)
     # Apply linear histogram standardisation
@@ -230,8 +233,13 @@ def read_mapping_file(mapping_file):
             line = line.split()
             if len(line) < 2:
                 continue
-            map_name, map_value = line[0], np.float32(line[1:])
-            mapping_dict[map_name] = map_value
+            try:
+                map_name, map_value = line[0], np.float32(line[1:])
+                mapping_dict[map_name] = tuple(map_value)
+            except ValueError:
+                tf.logging.fatal(
+                    "unknown input format: {}".format(mapping_file))
+                raise
     return mapping_dict
 
 

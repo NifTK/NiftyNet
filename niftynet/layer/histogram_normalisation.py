@@ -99,7 +99,7 @@ class HistogramNormalisationLayer(DataDependentLayer):
         # check modalities to train, using the first subject in subject list
         # to find input modality list
         if self.is_ready():
-            tf.logging.info("Normalisation histogram reference models ready"
+            tf.logging.info("normalisation histogram reference models ready"
                             " for {}:{}".format(self.field, self.modalities))
             return
         mod_to_train = self.__check_modalities_to_train()
