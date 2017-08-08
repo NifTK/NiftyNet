@@ -105,8 +105,11 @@ pip-installer:
   only:
     - 69-push-to-pip-repository-after-commit-to-master-off-dev
     - 69-push-to-pip-repository-after-commit-to-master-off-dev-restructure-hierarchy
+    - 131-pip-bundle-does-not-work-with-cpu-only-tensorflow-drop-tensorflow-auto-install
     - tags
   script:
+    # source utils
+    - source ci/utils.sh
     # following three lines copied over from dev script:
     - ls -la /dev | grep nvidia
     - echo $(python tests/get_gpu_index.py)
@@ -128,10 +131,20 @@ pip-installer:
     - mypython=$(which python2)
     - virtualenv -p $mypython $venv
     - cd $venv
+    - venv_dir=$(pwd)
     - source bin/activate
     # print Python version to CI output
     - which python
     - python --version
+    # NiftyNet console entries should fail gracefully if TF not installed
+    # i.e. check that the warning displays the TF website
+    - cd $niftynet_dir
+    - set +e
+    - python -c "import niftynet" 2>&1 | grep "https://www.tensorflow.org/"
+    - set -e
+    - cd $venv_dir
+    # install TF
+    - pip install tensorflow-gpu==1.1
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
@@ -152,10 +165,20 @@ pip-installer:
     - mypython=$(which python3)
     - virtualenv -p $mypython $venv
     - cd $venv
+    - venv_dir=$(pwd)
     - source bin/activate
     # print Python version to CI output
     - which python
     - python --version
+    # NiftyNet console entries should fail gracefully if TF not installed
+    # i.e. check that the warning displays the TF website
+    - cd $niftynet_dir
+    - set +e
+    - python -c "import niftynet" 2>&1 | grep "https://www.tensorflow.org/"
+    - set -e
+    - cd $venv_dir
+    # install TF
+    - pip install tensorflow-gpu==1.1
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly

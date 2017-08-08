@@ -35,7 +35,15 @@ Other features of NiftyNet include:
 
 ### Installation
 
-[`pip install niftynet`](https://pypi.org/project/NiftyNet/) (This will install the GPU version of NiftyNet.)
+1. Please install the appropriate [TensorFlow][tf] package*:
+   * [`pip install tensorflow-gpu==1.1`][tf-pypi-gpu] for TensorFlow with GPU support
+   * [`pip install tensorflow==1.1`][tf-pypi] for CPU-only TensorFlow
+1. [`pip install niftynet`](https://pypi.org/project/NiftyNet/)
+
+ <sup>*All other NiftyNet dependencies are installed automatically as part of the pip installation process.</sup>
+
+[tf-pypi-gpu]: https://pypi.org/project/tensorflow-gpu/
+[tf-pypi]: https://pypi.org/project/tensorflow/
 
 
 ### Getting started
