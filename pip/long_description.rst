@@ -18,6 +18,7 @@ NiftyNet is a consortium of research groups (WEISS -- `Wellcome EPSRC Centre for
 .. |TfPypiGpu| replace:: ``tensorflow-gpu``
 .. _TfPypiiGpu: https://pypi.org/project/tensorflow-gpu/
 
+
 Features
 ========
 
@@ -34,10 +35,12 @@ Other features of NiftyNet include:
 
 .. [#] 2.5-D: volumetric images processed as a stack of 2D slices; 4-D: co-registered multi-modal 3D volumes
 
+
 Getting started and contributing
 ================================
 
 Please follow the instructions on the `NiftyNet source code repository`_.
+
 
 Citing NiftyNet
 ===============
@@ -53,12 +56,14 @@ If you use NiftyNet, please cite the following paper:
     year = {2017}
   }
 
+
 Licensing and copyright
 =======================
 
 Copyright 2017 University College London and the NiftyNet Contributors.
 NiftyNet is released under the Apache License, Version 2.0.
 Please see the LICENSE file in the `NiftyNet source code repository`_ for details.
+
 
 Acknowledgements
 ================
