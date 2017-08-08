@@ -105,9 +105,11 @@ pip-installer:
   only:
     - 69-push-to-pip-repository-after-commit-to-master-off-dev
     - 69-push-to-pip-repository-after-commit-to-master-off-dev-restructure-hierarchy
-    - 131-pip-bundle-does-not-work-with-cpu-only-tensorflow
+    - 131-pip-bundle-does-not-work-with-cpu-only-tensorflow-drop-tensorflow-auto-install
     - tags
   script:
+    # source utils
+    - source ci/utils.sh
     # following three lines copied over from dev script:
     - ls -la /dev | grep nvidia
     - echo $(python tests/get_gpu_index.py)
@@ -119,12 +121,78 @@ pip-installer:
     # save NiftyNet folder path just in case
     - export niftynet_dir=$(pwd)
     # create the NiftyNet wheel
+    - rm -rf dist  # remove dist directory, just in case
     - sh ci/bundlewheel.sh
+    - source ci/findwheel.sh
     - echo $niftynet_wheel
     # ============= Python 2 ============================
-    - bash -x ci/testwheel.sh -p 2
+    # create a virtual env to test pip installer
+    - venv="niftynet-pip-installer-venv-py2"
+    - mypython=$(which python2)
+    - virtualenv -p $mypython $venv
+    - cd $venv
+    - venv_dir=$(pwd)
+    - source bin/activate
+    # print Python version to CI output
+    - which python
+    - python --version
+    # NiftyNet console entries should fail gracefully if TF not installed
+    # i.e. check that the warning displays the TF website
+    - cd $niftynet_dir
+    - set +e
+    - python -c "import niftynet" 2>&1 | grep "https://www.tensorflow.org/"
+    - set -e
+    - cd $venv_dir
+    # install TF
+    - pip install tensorflow-gpu==1.1
+    # install using built NiftyNet wheel
+    - pip install $niftynet_wheel
+    # install SimpleITK for package importer test to work properly
+    - pip install simpleitk
+    # check whether all packages are importable
+    - cat $package_importer
+    - python $package_importer
+    # test niftynet command
+    - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
+    - net_segmentation train -c $niftynet_dir/config/default_config.ini --net_name toynet --image_size 42 --label_size 42 --batch_size 1 --save_every_n 10
+    - net_segmentation inference -c $niftynet_dir/config/default_config.ini --net_name toynet --image_size 80 --label_size 80 --batch_size 8
+    # deactivate virtual environment
+    - deactivate
+    - cd $niftynet_dir
     # ============= Python 3 ============================
-    - bash -x ci/testwheel.sh -p 3
+    # create a virtual env to test pip installer
+    - venv="niftynet-pip-installer-venv-py3"
+    - mypython=$(which python3)
+    - virtualenv -p $mypython $venv
+    - cd $venv
+    - venv_dir=$(pwd)
+    - source bin/activate
+    # print Python version to CI output
+    - which python
+    - python --version
+    # NiftyNet console entries should fail gracefully if TF not installed
+    # i.e. check that the warning displays the TF website
+    - cd $niftynet_dir
+    - set +e
+    - python -c "import niftynet" 2>&1 | grep "https://www.tensorflow.org/"
+    - set -e
+    - cd $venv_dir
+    # install TF
+    - pip install tensorflow-gpu==1.1
+    # install using built NiftyNet wheel
+    - pip install $niftynet_wheel
+    # install SimpleITK for package importer test to work properly
+    - pip install simpleitk
+    # check whether all packages are importable
+    - cat $package_importer
+    - python $package_importer
+    # test niftynet command
+    - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
+    - net_segmentation train -c $niftynet_dir/config/default_config.ini --net_name toynet --image_size 42 --label_size 42 --batch_size 1 --save_every_n 10
+    - net_segmentation inference -c $niftynet_dir/config/default_config.ini --net_name toynet --image_size 80 --label_size 80 --batch_size 8
+    # deactivate virtual environment
+    - deactivate
+    - cd $niftynet_dir
   tags:
     - gift-adelie
 
@@ -138,6 +206,7 @@ pip-camera-ready:
     # create the NiftyNet wheel
     - rm -rf dist  # remove dist directory, just in case
     - sh ci/bundlewheel.sh
+    - source ci/findwheel.sh
     - echo $niftynet_wheel
     # Creat camera-ready folder if doesn't exist
     - camera_ready_dir=/home/gitlab-runner/environments/niftynet/pip/camera-ready

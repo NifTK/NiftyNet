@@ -68,7 +68,7 @@ def run(param, csv_dict):
             elif len(np.unique(seg_d)) == 2:
                 type_str = "Binary"
                 seg_d = MorphologyOps(seg_d, 24).foreground_component()
-                threshold_steps = np.arange(1, np.max(seg_d))
+                threshold_steps = np.arange(1, seg_d[1])
             else:
                 pass
 
@@ -76,11 +76,11 @@ def run(param, csv_dict):
                 print('{} of {} thresholding steps'.format(
                     n, len(threshold_steps)))
                 if type_str == "Labels" or type_str == "Binary":
-                    seg_d_binary = (seg_d == i)
+                    seg_d_binary = (seg_d[0] == i)
                 else:
-                    seg_d_binary = np.copy(seg_d)
-                    seg_d_binary[seg_d < i] = 0  # threshold prob.
-                if np.count_nonzero(seg_d) == 0:
+                    seg_d_binary = np.copy(seg_d[1])
+                    seg_d_binary[seg_d[0] < i] = 0  # threshold prob.
+                if np.count_nonzero(seg_d_binary) == 0:
                     print("Empty foreground in thresholded image")
                     continue
                 roi_stats = RegionProperties(seg_d_binary, img, MEASURES)

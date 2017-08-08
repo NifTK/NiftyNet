@@ -116,7 +116,6 @@ setup(
         'numpy>=1.11',
         'scipy>=0.18',
         'configparser',
-        'tensorflow-gpu==1.1',
         'pillow',
     ],
 

@@ -2,6 +2,17 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+# Before doing anything else, check TF is installed
+# and fail gracefully if not.
+try:
+    import tensorflow
+except ImportError:
+    raise ImportError('NiftyNet is based on TensorFlow, which'
+                      ' does not seem to be installed on your'
+                      ' system.\nPlease install TensorFlow'
+                      ' (https://www.tensorflow.org/) to be'
+                      ' able to use NiftyNet.')
+
 import os
 import sys
 
