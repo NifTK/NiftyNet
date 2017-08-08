@@ -2,13 +2,14 @@
 from __future__ import absolute_import, print_function, division
 
 import os
-import re
 
 import numpy as np
 import tensorflow as tf
 
 import niftynet.utilities.histogram_standardisation as hs
 from niftynet.layer.base_layer import DataDependentLayer
+from niftynet.utilities.misc_common import printProgressBar
+from niftynet.utilities.user_parameters_helper import standardise_string
 
 
 class DiscreteLabelNormalisationLayer(DataDependentLayer):
@@ -30,7 +31,7 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer):
     def key(self):
         # provide a readable key for the label mapping item
         key_str = "{}_{}".format(self.field, self.modalities)
-        return re.sub('[^0-9a-zA-Z]+', '_', key_str.strip())
+        return standardise_string(key_str)
 
     def layer_op(self, image, mask=None):
         assert self.is_ready(), \
@@ -103,7 +104,10 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer):
 
 def find_set_of_labels(image_list, field, output_key):
     label_set = set()
-    for image in image_list:
+    for idx, image in enumerate(image_list):
+        printProgressBar(idx, len(image_list),
+                         prefix='searching unique labels from training files',
+                         decimals=1, length=10, fill='*')
         unique_label = np.unique(image[field].get_data(),
                                  return_index=False,
                                  return_inverse=False,
