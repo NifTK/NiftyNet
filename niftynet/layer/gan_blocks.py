@@ -21,10 +21,11 @@ class GANImageBlock(TrainableLayer):
         real_logits = self._discriminator(population, conditioning, is_training)
         with tf.name_scope('summaries_images'):
             if len(image.get_shape()) - 2 == 3:
-                logging.image3_axial('real', tf.maximum(0., tf.minimum(255., (population / 2 + 1) * 127)), 1, [logging.LOG])
+                logging.image3_axial('fake', (image / 2 + 1) * 127, 2, [logging.LOG])
+                logging.image3_axial('real', tf.maximum(0., tf.minimum(255., (population / 2 + 1) * 127)), 2, [logging.LOG])
             if len(image.get_shape()) - 2 == 2:
-                tf.summary.image('fake', (image / 2 + 1) * 127, 1, [logging.LOG])
-                tf.summary.image('real', tf.maximum(0., tf.minimum(255., (population / 2 + 1) * 127)), 1, [logging.LOG])
+                tf.summary.image('fake', (image / 2 + 1) * 127, 2, [logging.LOG])
+                tf.summary.image('real', tf.maximum(0., tf.minimum(255., (population / 2 + 1) * 127)), 2, [logging.LOG])
         return image, real_logits, fake_logits
 
 class BaseGenerator(TrainableLayer):
