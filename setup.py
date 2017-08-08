@@ -121,7 +121,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'net_segmentation=niftynet:main',
+            'net_segment=niftynet:main',
         ],
     },
 )
