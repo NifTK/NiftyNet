@@ -106,6 +106,7 @@ class DataDependentLayer(Layer):
     interfaces for training these internal models and querying the
     status.
     """
+
     def __init__(self, name='data_dependent_op'):
         super(DataDependentLayer, self).__init__(name=name)
 

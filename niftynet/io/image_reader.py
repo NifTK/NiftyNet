@@ -2,15 +2,14 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+from copy import deepcopy
 
 import numpy as np
 import pandas
 import tensorflow as tf
-from copy import deepcopy
 
 from niftynet.io.input_type import ImageFactory
-from niftynet.layer.base_layer import Layer
-from niftynet.layer.base_layer import DataDependentLayer
+from niftynet.layer.base_layer import Layer, DataDependentLayer
 from niftynet.utilities.misc_common import printProgressBar
 from niftynet.utilities.user_parameters_helper import make_input_tuple
 
@@ -70,12 +69,14 @@ class ImageReader(Layer):
 
     def prepare_preprocessors(self):
         for layer in self.preprocessors:
-            if isinstance(layer, DataDependentLayer) and not layer.is_ready():
+            if isinstance(layer, DataDependentLayer):
                 layer.train(self.output_list)
 
     def add_preprocessing_layers(self, layers):
-        self.preprocessors = []
-        self.preprocessors.extend(layers)
+        if isinstance(layers, Layer):
+            self.preprocessors.append(layers)
+        else:
+            self.preprocessors.extend(layers)
         self.prepare_preprocessors()
 
     def layer_op(self, idx=None, shuffle=True):
@@ -111,8 +112,8 @@ class ImageReader(Layer):
             preprocessors = [deepcopy(layer) for layer in self.preprocessors]
             # dictionary of mask is cached
             mask = None
-            for preprocess_layer in preprocessors:
-                image_data_dict, mask = preprocess_layer(image_data_dict, mask)
+            for layer in preprocessors:
+                image_data_dict, mask = layer(image_data_dict, mask)
         return idx, image_data_dict
 
     @staticmethod
@@ -151,7 +152,6 @@ class ImageReader(Layer):
         if not self.output_list:
             tf.logging.fatal("please initialise the reader first")
             raise RuntimeError
-        self.prepare_preprocessors()
         if not self._shapes:
             _, first_image = self(idx=0)
             self._shapes = {field: first_image[field].shape
@@ -163,7 +163,6 @@ class ImageReader(Layer):
         if not self.output_list:
             tf.logging.fatal("please initialise the reader first")
             raise RuntimeError
-        self.prepare_preprocessors()
         if not self._dtypes:
             _, first_image = self(idx=0)
             self._dtypes = {field: infer_tf_dtypes(first_image[field])

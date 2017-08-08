@@ -24,7 +24,7 @@ class HistogramNormalisationLayer(DataDependentLayer):
     def __init__(self,
                  field,
                  modalities,
-                 models_filename,
+                 model_filename,
                  binary_masking_func=None,
                  norm_type='percentile',
                  cutoff=(0.05, 0.95),
@@ -33,7 +33,7 @@ class HistogramNormalisationLayer(DataDependentLayer):
 
         :param field:
         :param modalities:
-        :param models_filename:
+        :param model_filename:
         :param binary_masking_func: set to None for global mapping
         :param norm_type:
         :param cutoff:
@@ -41,7 +41,7 @@ class HistogramNormalisationLayer(DataDependentLayer):
         """
 
         super(HistogramNormalisationLayer, self).__init__(name=name)
-        self.hist_model_file = os.path.abspath(models_filename)
+        self.hist_model_file = os.path.abspath(model_filename)
 
         if binary_masking_func is not None:
             assert isinstance(binary_masking_func, BinaryMaskingLayer)
@@ -52,10 +52,12 @@ class HistogramNormalisationLayer(DataDependentLayer):
 
         # mapping is a complete cache of the model file, the total number of
         # modalities are listed in self.modalities tuple
-        self.mapping = hs.read_mapping_file(models_filename)
+        self.mapping = hs.read_mapping_file(model_filename)
         self.modalities = modalities
 
     def layer_op(self, image, mask=None):
+        assert self.is_ready(), \
+            "histogram normalisation layer needs to be trained first."
         if isinstance(image, dict):
             image_5d = np.asarray(image[self.field], dtype=np.float32)
         else:
@@ -96,13 +98,15 @@ class HistogramNormalisationLayer(DataDependentLayer):
     def train(self, image_list):
         # check modalities to train, using the first subject in subject list
         # to find input modality list
-        mod_to_train = self.__check_modalities_to_train()
-        if len(mod_to_train) == 0:
-            tf.logging.info('Normalisation histogram reference models found')
+        if self.is_ready():
+            tf.logging.info("Normalisation histogram reference models ready"
+                            " for {}:{}".format(self.field, self.modalities))
             return
+        mod_to_train = self.__check_modalities_to_train()
         tf.logging.info(
-            "training normalisation histogram references for {}, "
-            "using {} subjects".format(mod_to_train, len(image_list)))
+            "training normalisation histogram references "
+            "for {}:{}, using {} subjects".format(
+                self.field, mod_to_train, len(image_list)))
         trained_mapping = hs.create_mapping_from_multimod_arrayfiles(
             image_list, self.field, self.modalities, mod_to_train,
             self.cutoff, self.binary_masking_func)

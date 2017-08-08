@@ -15,6 +15,8 @@ from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
 from niftynet.layer.mean_variance_normalisation import \
     MeanVarNormalisationLayer
+from niftynet.layer.discrete_label_normalisation import \
+    DiscreteLabelNormalisationLayer
 from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.utilities.input_placeholders import ImagePatch
 
@@ -90,7 +92,7 @@ class SegmentationApplication(BaseApplication):
         histogram_normaliser = HistogramNormalisationLayer(
             field='image',
             modalities=segmentation_param['image'],
-            models_filename=self.net_param.histogram_ref_file,
+            model_filename=self.net_param.histogram_ref_file,
             binary_masking_func=foreground_masking_layer,
             norm_type=self.net_param.norm_type,
             cutoff=self.net_param.cutoff,
@@ -98,8 +100,15 @@ class SegmentationApplication(BaseApplication):
         mean_var_normaliser = MeanVarNormalisationLayer(
             field='image',
             binary_masking_func=foreground_masking_layer)
+
+        label_normaliser = DiscreteLabelNormalisationLayer(
+            field='label',
+            modalities=segmentation_param['label'],
+            model_filename=self.net_param.histogram_ref_file)
+
         reader.add_preprocessing_layers([histogram_normaliser,
-                                         mean_var_normaliser])
+                                         mean_var_normaliser,
+                                         label_normaliser])
         from niftynet.engine.sampler_uniform import UniformSampler
         sampler = UniformSampler(reader,
                                  data_param,

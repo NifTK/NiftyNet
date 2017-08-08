@@ -34,11 +34,11 @@ class UniformSampler(Layer, InputBatchQueueRunner):
         sess = tf.Session()
         _iter = 0
         for x in self():
-           sess.run(self._enqueue_op, feed_dict=x)
-           _iter += 1
-           print('enqueue {}'.format(_iter))
-           if _iter == 2:
-               break
+            sess.run(self._enqueue_op, feed_dict=x)
+            _iter += 1
+            print('enqueue {}'.format(_iter))
+            if _iter == 2:
+                break
         out = sess.run(self.pop_batch_op(batch_size=3))
         print('dequeue')
         print(out['image'].shape)
@@ -53,9 +53,9 @@ class UniformSampler(Layer, InputBatchQueueRunner):
                 break
             image_sizes = {name: data[name].shape
                            for name in self.window.fields}
-            coordinates = rand_spatial_coordinates(image_id, image_sizes,
-                                                   self.window.shapes,
-                                                   self.window.n_samples)
+            coordinates = rand_spatial_coordinates(
+                image_id, image_sizes,
+                self.window.shapes, self.window.n_samples)
             #  initialise output dict
             output_dict = self.window.data_dict()
             # fill output dict with data
