@@ -11,7 +11,7 @@ Using this modular structure you can:
 
 NiftyNet is a consortium of research groups (WEISS -- `Wellcome EPSRC Centre for Interventional and Surgical Sciences`_, CMIC -- `Centre for Medical Image Computing`_, HIG -- High-dimensional Imaging Group), where WEISS acts as the consortium lead.
 
-.. [#] The appropriate `TensorFlow`_ PyPI package (``tensorflow`` or ``tensorflow-gpu``) must be installed manually -- please see the link in the Getting started section below.
+.. [#] Please install the appropriate `TensorFlow`_ PyPI package (``tensorflow`` or ``tensorflow-gpu``) **before** executing ``pip install niftynet`` -- see the instructions on the `NiftyNet source code repository`_ for details.
 
 
 Features
