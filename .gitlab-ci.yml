@@ -10,7 +10,6 @@ testjob:
     - dev
     - dev-staging
     - tags
-    - 69-push-to-pip-repository-after-commit-to-master-off-dev-restructure-hierarchy
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
