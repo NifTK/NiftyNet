@@ -109,7 +109,7 @@ class MorphologyOps(object):
         return border
 
     def foreground_component(self):
-        return ndimage.label(self.binary_map, background=0)
+        return ndimage.label(self.binary_map)
 
 
 class CacheFunctionOutput(object):

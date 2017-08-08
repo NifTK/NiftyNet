@@ -196,10 +196,10 @@ class PairwiseMeasures(object):
 
     def connected_elements(self):
         blobs_ref, blobs_seg, init = self._connected_components()
-        list_blobs_ref = np.unique(blobs_ref[blobs_ref > 0])
-        list_blobs_seg = np.unique(blobs_seg[blobs_seg > 0])
-        mul_blobs_ref = np.multiply(blobs_ref, init)
-        mul_blobs_seg = np.multiply(blobs_seg, init)
+        list_blobs_ref = range(1, blobs_ref[1])
+        list_blobs_seg = range(1, blobs_seg[1])
+        mul_blobs_ref = np.multiply(blobs_ref[0], init)
+        mul_blobs_seg = np.multiply(blobs_seg[0], init)
         list_TP_ref = np.unique(mul_blobs_ref[mul_blobs_ref > 0])
         list_TP_seg = np.unique(mul_blobs_seg[mul_blobs_seg > 0])
 
@@ -210,27 +210,27 @@ class PairwiseMeasures(object):
     @CacheFunctionOutput
     def connected_errormaps(self):
         blobs_ref, blobs_seg, init = self._connected_components()
-        list_blobs_ref = np.unique(blobs_ref[blobs_ref > 0])
-        list_blobs_seg = np.unique(blobs_seg[blobs_seg > 0])
-        mul_blobs_ref = np.multiply(blobs_ref, init)
-        mul_blobs_seg = np.multiply(blobs_seg, init)
+        list_blobs_ref = range(1, blobs_ref[1])
+        list_blobs_seg = range(1, blobs_seg[1])
+        mul_blobs_ref = np.multiply(blobs_ref[0], init)
+        mul_blobs_seg = np.multiply(blobs_seg[0], init)
         list_TP_ref = np.unique(mul_blobs_ref[mul_blobs_ref > 0])
         list_TP_seg = np.unique(mul_blobs_seg[mul_blobs_seg > 0])
 
         list_FN = [x for x in list_blobs_ref if x not in list_TP_ref]
         list_FP = [x for x in list_blobs_seg if x not in list_TP_seg]
         # print(np.max(blobs_ref),np.max(blobs_seg))
-        tpc_map = np.zeros_like(blobs_ref)
-        fpc_map = np.zeros_like(blobs_ref)
-        fnc_map = np.zeros_like(blobs_ref)
+        tpc_map = np.zeros_like(blobs_ref[0])
+        fpc_map = np.zeros_like(blobs_ref[0])
+        fnc_map = np.zeros_like(blobs_ref[0])
         for i in list_TP_ref:
-            tpc_map[blobs_ref == i] = 1
+            tpc_map[blobs_ref[0] == i] = 1
         for i in list_TP_seg:
-            tpc_map[blobs_seg == i] = 1
+            tpc_map[blobs_seg[0] == i] = 1
         for i in list_FN:
-            fnc_map[blobs_ref == i] = 1
+            fnc_map[blobs_ref[0] == i] = 1
         for i in list_FP:
-            fpc_map[blobs_seg == i] = 1
+            fpc_map[blobs_seg[0] == i] = 1
         return tpc_map, fnc_map, fpc_map
 
     def outline_error(self):
