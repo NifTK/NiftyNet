@@ -80,6 +80,7 @@ class SegmentationApplication(BaseApplication):
         from niftynet.io.image_reader import ImageReader
         reader = ImageReader(SUPPORTED_INPUT)
         reader.initialise_reader(data_param, segmentation_param)
+
         foreground_masking_layer = BinaryMaskingLayer(
             type=self.net_param.mask_type,
             multimod_fusion=self.net_param.multimod_mask_type,

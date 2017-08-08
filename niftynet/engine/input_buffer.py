@@ -7,16 +7,11 @@ DeployInputBuffer provides FIFO queue. This is designed for making
 patch-based predictions for multiple test volumes.
 """
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
+from __future__ import absolute_import, print_function, division
 
 import threading
 
 import tensorflow as tf
-
-from niftynet.engine.base_sampler import BaseSampler
-from niftynet.utilities.input_placeholders import ImagePatch
 
 
 class InputBatchQueueRunner(object):
@@ -95,23 +90,23 @@ class InputBatchQueueRunner(object):
                     break
                 self._session.run(self._enqueue_op, feed_dict=output_dict)
 
-            ## push a set of stopping patches
-            #for i in range(0, self.capacity):
-            #    if self._session._closed:
-            #        break
-            #    if self._coordinator.should_stop():
-            #        break
-            #    patch.fill_with_stopping_info()
-            #    self._session.run(
-            #        self._enqueue_op,
-            #        feed_dict=patch.as_dict(self.sampler.placeholders))
+                ## push a set of stopping patches
+                # for i in range(0, self.capacity):
+                #    if self._session._closed:
+                #        break
+                #    if self._coordinator.should_stop():
+                #        break
+                #    patch.fill_with_stopping_info()
+                #    self._session.run(
+                #        self._enqueue_op,
+                #        feed_dict=patch.as_dict(self.sampler.placeholders))
 
         except tf.errors.CancelledError:
             pass
-        #except ValueError as e:
+        # except ValueError as e:
         #    tf.logging.fatal(e)
         #    self.close_all()
-        #except RuntimeError as e:
+        # except RuntimeError as e:
         #    tf.logging.fatal(e)
         #    self.close_all()
         except Exception as e:
@@ -119,7 +114,7 @@ class InputBatchQueueRunner(object):
             import traceback
             exc_type, exc_value, exc_traceback = sys.exc_info()
             traceback.print_exception(
-                    exc_type, exc_value, exc_traceback, file=sys.stdout)
+                exc_type, exc_value, exc_traceback, file=sys.stdout)
             self.close_all()
         finally:
             pass
@@ -159,7 +154,7 @@ class InputBatchQueueRunner(object):
             self._coordinator.request_stop()
             self._coordinator.join(threads=self._threads,
                                    stop_grace_period_secs=0)
-            #self._coordinator.join(threads=self._threads,
+            # self._coordinator.join(threads=self._threads,
             #                       stop_grace_period_secs=0,
             #                       ignore_live_threads=True)
         except RuntimeError as e:
@@ -168,8 +163,7 @@ class InputBatchQueueRunner(object):
             if not self._session._closed:
                 self._session.run(self._close_queue_op)
 
-
-#class DeployInputBuffer(InputBatchQueueRunner):
+# class DeployInputBuffer(InputBatchQueueRunner):
 #    def __init__(self, batch_size, capacity, sampler):
 #        super(DeployInputBuffer, self).__init__(batch_size=batch_size,
 #                                                capacity=capacity,
@@ -177,7 +171,7 @@ class InputBatchQueueRunner(object):
 #                                                shuffle=False)
 #
 #
-#class TrainEvalInputBuffer(InputBatchQueueRunner):
+# class TrainEvalInputBuffer(InputBatchQueueRunner):
 #    def __init__(self, batch_size, capacity, sampler, shuffle=True):
 #        super(TrainEvalInputBuffer, self).__init__(batch_size=batch_size,
 #                                                   capacity=capacity,

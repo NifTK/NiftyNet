@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import numpy as np
 import tensorflow as tf
 
 from niftynet.engine.input_buffer import InputBatchQueueRunner
-from niftynet.io.image_window import ImageWindow
-from niftynet.io.image_window import N_SPATIAL
+from niftynet.io.image_window import ImageWindow, N_SPATIAL
 from niftynet.layer.base_layer import Layer
 
 
@@ -20,13 +17,11 @@ class UniformSampler(Layer, InputBatchQueueRunner):
 
     def __init__(self, reader, data_param, samples_per_subject):
         # TODO: padding
-        self.reader = reader
-        self.samples_per_subject = samples_per_subject
-
-        batch_size = 3
-        capacity = samples_per_subject * 2
-        InputBatchQueueRunner.__init__(self, capacity=capacity, shuffle=True)
         Layer.__init__(self, name='input_buffer')
+        self.reader = reader
+        InputBatchQueueRunner.__init__(self,
+                                       capacity=samples_per_subject * 2,
+                                       shuffle=True)
         self.window = ImageWindow.from_user_spec(self.reader.input_sources,
                                                  self.reader.shapes,
                                                  self.reader.tf_dtypes,
@@ -36,31 +31,30 @@ class UniformSampler(Layer, InputBatchQueueRunner):
             self.window.shapes))
 
         ## running test
-        #sess = tf.Session()
-        #_iter = 0
-        #for x in self():
+        # sess = tf.Session()
+        # _iter = 0
+        # for x in self():
         #    sess.run(self._enqueue_op, feed_dict=x)
         #    _iter += 1
         #    print('enqueue {}'.format(_iter))
         #    if _iter == 2:
         #        break
-        #out = sess.run(self.pop_batch_op(batch_size=batch_size))
-        #print('dequeue')
-        #print(out['image'].shape)
-        #print(out['image_location'])
-        #import pdb;
-        #pdb.set_trace()
+        # out = sess.run(self.pop_batch_op(batch_size=batch_size))
+        # print('dequeue')
+        # print(out['image'].shape)
+        # print(out['image_location'])
+        # import pdb;
+        # pdb.set_trace()
 
     def layer_op(self):
         while True:
-            subject_id, data = self.reader()
+            image_id, data = self.reader()
             if not data:
                 break
             image_sizes = {name: data[name].shape
                            for name in self.window.fields}
-            coordinates = rand_spatial_coordinates(subject_id,
+            coordinates = rand_spatial_coordinates(image_id, image_sizes,
                                                    self.window.shapes,
-                                                   image_sizes,
                                                    self.window.n_samples)
             #  initialise output dict
             output_dict = self.window.data_dict()
@@ -79,19 +73,20 @@ class UniformSampler(Layer, InputBatchQueueRunner):
             yield output_dict
 
 
-def rand_spatial_coordinates(subject_id, win_sizes, img_sizes, n_samples):
+def rand_spatial_coordinates(subject_id, img_sizes, win_sizes, n_samples):
     uniq_spatial_size = set([img_size[:N_SPATIAL]
                              for img_size in list(img_sizes.values())])
     if len(uniq_spatial_size) > 1:
         tf.logging.fatal("Don't know how to generate sampling "
                          "locations: Spatial dimensions of the "
                          "grouped input sources are not "
-                         "consistent. {}".format(uniq_spatial_sizes))
+                         "consistent. {}".format(uniq_spatial_size))
         raise NotImplementedError
     uniq_spatial_size = uniq_spatial_size.pop()
+
     # find spatial window location based on the largest spatial window
     spatial_win_sizes = [win_size[:N_SPATIAL]
-                         for win_size in list(win_sizes.values())]
+                         for win_size in win_sizes.values()]
     spatial_win_sizes = np.asarray(spatial_win_sizes, dtype=np.int32)
     max_spatial_win = np.max(spatial_win_sizes, axis=0)
     max_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
@@ -103,7 +98,6 @@ def rand_spatial_coordinates(subject_id, win_sizes, img_sizes, n_samples):
     all_coordinates = {}
     for mod in list(win_sizes):
         win_size = win_sizes[mod][:N_SPATIAL]
-        subject_id = np.ones((n_samples,), dtype=np.int32) * subject_id
         spatial_coords = np.zeros(
             (n_samples, N_SPATIAL * 2), dtype=np.int32)
         # shift starting coords of the window
@@ -115,6 +109,7 @@ def rand_spatial_coordinates(subject_id, win_sizes, img_sizes, n_samples):
         spatial_coords[:, N_SPATIAL:] = \
             spatial_coords[:, :N_SPATIAL] + win_size[:N_SPATIAL]
         # include the subject id
+        subject_id = np.ones((n_samples,), dtype=np.int32) * int(subject_id)
         spatial_coords = np.append(
             subject_id[:, None], spatial_coords, axis=1)
         all_coordinates[mod] = spatial_coords

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import os
 
@@ -25,15 +23,14 @@ class ImageReader(Layer):
     def __init__(self, output_fields):
         # list of file names
         self._file_list = None
-
-        self.output_fields = output_fields
         self._input_sources = None
         self._shapes = None
         self._dtypes = None
+        self._output_fields = output_fields
 
         # list of image objects
         self.output_list = None
-        self.current_id = None
+        self.current_id = -1
         super(ImageReader, self).__init__(name='image_reader')
 
     def initialise_reader(self, data_param, task_param):
@@ -43,7 +40,7 @@ class ImageReader(Layer):
         modality sections, 'label' corresponds to one modality section
         """
         app_type = task_param['name']
-        self._file_list = ImageReader._load_and_merge_csv_files(data_param)
+        self._file_list = ImageReader.load_and_merge_csv_files(data_param)
 
         if app_type == "net_segmentation.py":
             from niftynet.application.segmentation_application \
@@ -55,16 +52,15 @@ class ImageReader(Layer):
                 import SUPPORTED_INPUT
 
         if not self.output_fields:
+            # by default, reader tries to output all supported fields
             self.output_fields = SUPPORTED_INPUT
-        self.output_fields = [field_name
-                              for field_name in task_param
-                              if field_name in self.output_fields and
-                              task_param[field_name] != ()]
+        self._output_fields = [field_name for field_name in self.output_fields
+                               if task_param.get(field_name)]
         self._input_sources = {field: task_param[field]
                                for field in self.output_fields}
-        self.output_list = self._filename_to_image_list(data_param)
-        self.current_id = -1
-
+        self.output_list = filename_to_image_list(self._file_list,
+                                                  self._input_sources,
+                                                  data_param)
         tf.logging.info('initialised reader: loading {} from {} ({})'.format(
             self.output_fields, self.input_sources, len(self.output_list)))
 
@@ -74,7 +70,6 @@ class ImageReader(Layer):
         for preprocess in self.preprocesser:
             if not preprocess.is_ready():
                 preprocess.train(self.output_list)
-
 
     def layer_op(self, idx=None, shuffle=True):
         """
@@ -98,67 +93,16 @@ class ImageReader(Layer):
             except ValueError:
                 idx = -1
 
-        output_image = None
-
-        if idx >= 0 and idx < len(self.output_list):
-            output_image = self.output_list[idx]
-
-        if output_image:
+        if 0 <= idx < len(self.output_list):
+            image_dict = self.output_list[idx]
             image_data_dict = {field: image.get_data()
-                               for field, image in output_image.items()}
+                               for (field, image) in image_dict.items()}
             return idx, image_data_dict
         else:
             return None, None
 
-    def _filename_to_image_list(self, data_param):
-        """
-        converting a list of filenames to a list of image objects
-        useful properties (e.g. interp_order) are added to each object
-        """
-        volume_list = []
-        for row_id in range(len(self._file_list)):
-            printProgressBar(row_id, len(self._file_list),
-                             prefix='reading datasets headers',
-                             decimals=1, length=10, fill='*')
-            # combine fieldnames and volumes as a dictionary
-            _dict = {field: self._create_image(row_id,
-                                               self.input_sources[field],
-                                               data_param)
-                     for field in self.input_sources}
-            volume_list.append(_dict)
-        return volume_list
-
-    def _create_image(self, idx, modalities, data_param):
-        """
-        data_param consists of discription of each modality
-        This function combines modalities according to the 'modalities'
-        parameter and create <niftynet.io.input_type.SpatialImage*D>
-        """
-        try:
-            file_path = tuple([self._file_list.loc[idx, mod]
-                               for mod in modalities])
-            interp_order = tuple([data_param[mod].interp_order
-                                  for mod in modalities])
-            output_pixdim = tuple([data_param[mod].pixdim
-                                   for mod in modalities])
-            output_axcodes = tuple([data_param[mod].axcodes
-                                    for mod in modalities])
-        except KeyError:
-            tf.logging.fatal(
-                "Specified modality names {} "
-                "not found in config: input sections {}".format(
-                    modalities, list(data_param)))
-            raise
-        image_properties = {'file_path': file_path,
-                            'name': modalities,
-                            'interp_order': interp_order,
-                            'output_pixdim': output_pixdim,
-                            'output_axcodes': output_axcodes}
-        image = ImageFactory.create_instance(**image_properties)
-        return image
-
     @staticmethod
-    def _load_and_merge_csv_files(data_param):
+    def load_and_merge_csv_files(data_param):
         """
         Converts a list of csv_files in data_param
         in to a joint list of file names (by matching the first column)
@@ -176,6 +120,7 @@ class ImageReader(Layer):
             if _file_list is None:
                 _file_list = csv_list
                 continue
+
             # merge _file_list based on subject_ids (first column of each csv)
             n_rows = _file_list.shape[0]
             _file_list = pandas.merge(_file_list, csv_list, on='subject_id')
@@ -226,3 +171,45 @@ class ImageReader(Layer):
         # each name might correspond to a list of multiple input sources
         # this should be specified in CUSTOM section in the config
         self._output_fields = make_input_tuple(fields_tuple, basestring)
+
+
+def filename_to_image_list(file_list, mod_dict, data_param):
+    """
+    converting a list of filenames to a list of image objects
+    useful properties (e.g. interp_order) are added to each object
+    """
+    volume_list = []
+    for idx in range(len(file_list)):
+        printProgressBar(idx, len(file_list),
+                         prefix='reading datasets headers',
+                         decimals=1, length=10, fill='*')
+        # combine fieldnames and volumes as a dictionary
+        _dict = {field: create_image(file_list, idx, modalities, data_param)
+                 for (field, modalities) in mod_dict.items()}
+        volume_list.append(_dict)
+    return volume_list
+
+
+def create_image(file_list, idx, modalities, data_param):
+    """
+    data_param consists of description of each modality
+    This function combines modalities according to the 'modalities'
+    parameter and create <niftynet.io.input_type.SpatialImage*D>
+    """
+    try:
+        file_path = tuple(file_list.loc[idx, mod] for mod in modalities)
+        interp_order = tuple(data_param[mod].interp_order for mod in modalities)
+        pixdim = tuple(data_param[mod].pixdim for mod in modalities)
+        axcodes = tuple(data_param[mod].axcodes for mod in modalities)
+    except KeyError:
+        tf.logging.fatal(
+            "Specified modality names {} "
+            "not found in config: input sections {}".format(
+                modalities, list(data_param)))
+        raise
+    image_properties = {'file_path': file_path,
+                        'name': modalities,
+                        'interp_order': interp_order,
+                        'output_pixdim': pixdim,
+                        'output_axcodes': axcodes}
+    return ImageFactory.create_instance(**image_properties)

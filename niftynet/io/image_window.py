@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import sys
 
@@ -19,8 +17,7 @@ class ImageWindow(object):
         self.fields = fields
         self.shapes = shapes
         self.dtypes = dtypes
-
-        self.n_samples = None
+        self.n_samples = 1
         self._placeholders_dict = None
 
     @classmethod
@@ -32,8 +29,8 @@ class ImageWindow(object):
         input_fields = tuple(source_names)
         # complete window shapes based on user input and input_image sizes
         spatial_shapes = {
-            name: read_window_sizes(source_names[name], data_param)
-            for name in input_fields}
+            name: read_window_sizes(modalities, data_param)
+            for (name, modalities) in source_names}
         shapes = {
             name: complete_partial_window_sizes(
                 spatial_shapes[name], image_shapes[name])
@@ -42,22 +39,24 @@ class ImageWindow(object):
         return cls(input_fields, shapes, image_dtypes)
 
     def placeholders_dict(self, n_samples=1):
-        if self._placeholders_dict is None or self.n_samples is None:
-            # create placeholders, required as network input
+        # placeholders: required as network input
+        if self._placeholders_dict is None or self.n_samples != n_samples:
+            self.n_samples = n_samples
             names = list(self.fields)
+            # extending names with fields of coordinates
+            names.extend([LOCATION_FORMAT.format(name) for name in names])
+
             placeholders = [
                 tf.placeholder(dtype=self.dtypes[name],
-                               shape=[n_samples] + list(self.shapes[name]))
+                               shape=[n_samples] + list(self.shapes[name]),
+                               name=name)
                 for name in self.fields]
-
-            # extending names placeholders with fields of coordinates
-            names.extend([LOCATION_FORMAT.format(name) for name in names])
-            placeholders.extend(
-                [tf.placeholder(dtype=BUFFER_POSITION_DTYPE,
-                                shape=(n_samples, 1 + N_SPATIAL * 2))
-                 for _ in self.fields])
-
-            self.n_samples = n_samples
+            # extending placeholders with fields of coordinates
+            placeholders.extend([
+                tf.placeholder(dtype=BUFFER_POSITION_DTYPE,
+                               shape=[n_samples, 1 + N_SPATIAL * 2],
+                               name=name)
+                for name in self.fields])
             self._placeholders_dict = dict(zip(names, placeholders))
         return self._placeholders_dict
 
@@ -78,23 +77,22 @@ class ImageWindow(object):
 
 
 def read_window_sizes(input_mod_list, input_data_param):
-    # read window_size property and group them based on output_fields
+    # read window_size from config dict
+    # group them based on output_fields
     window_sizes = [input_data_param[input_name].spatial_window_size
                     for input_name in input_mod_list]
     if not all(window_sizes):
         window_sizes = filter(None, window_sizes)
-    uniq_window = set(window_sizes)
-    if len(uniq_window) > 1:
+    uniq_window_set = set(window_sizes)
+    if len(uniq_window_set) > 1:
         raise NotImplementedError(
             "trying to combine input sources "
             "with different window sizes: {}".format(window_sizes))
-    if not uniq_window:
+    if not uniq_window_set:
         raise ValueError(
             "window_size undetermined{}".format(input_mod_list))
-    uniq_window = list(uniq_window.pop())
     # integer window sizes supported
-    uniq_window = tuple(map(int, uniq_window))
-    return uniq_window
+    return tuple(map(int, uniq_window_set.pop()))
 
 
 def complete_partial_window_sizes(win_size, img_size):
