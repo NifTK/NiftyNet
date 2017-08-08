@@ -143,10 +143,6 @@ pip-installer:
     - python -c "import niftynet" 2>&1 | grep "https://www.tensorflow.org/"
     - set -e
     - cd $venv_dir
-    # NiftyNet should not install if TF not installed
-    - set +e
-    - pip install $niftynet_wheel; fail_on_success
-    - set -e
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
@@ -179,10 +175,6 @@ pip-installer:
     - python -c "import niftynet" 2>&1 | grep "https://www.tensorflow.org/"
     - set -e
     - cd $venv_dir
-    # NiftyNet should not install if TF not installed
-    - set +e
-    - pip install $niftynet_wheel; fail_on_success
-    - set -e
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
