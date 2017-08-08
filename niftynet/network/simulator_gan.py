@@ -29,13 +29,15 @@ class ImageGenerator(BaseGenerator):
     def __init__(self, name):
         super(ImageGenerator, self).__init__(name=name)
         self.initializers = {'w': tf.contrib.layers.variance_scaling_initializer(), 'b': tf.constant_initializer(0)}
+        self.noise_channels_per_layer=0
+        self.generator_shortcuts = [True, True, True, True, False]
 
     def layer_op(self, random_source, image_size, conditioning, is_training):
         spatial_rank = len(image_size)-1
-        conditioning_channels = conditioning.get_shape().as_list()[-1] if not conditioning is None else 0
+        add_noise=self.noise_channels_per_layer
+        conditioning_channels = conditioning.get_shape().as_list()[-1]+add_noise if not conditioning is None else add_noise
         batch_size = random_source.get_shape().as_list()[0]
         noise_size = random_source.get_shape().as_list()[1]
-        generator_shortcuts = [True, True, True, True, False]
 
         w_init = tf.random_normal_initializer(0, 0.08)
         b_init = tf.constant_initializer(0.001)
@@ -43,7 +45,7 @@ class ImageGenerator(BaseGenerator):
         sz = [image_size[:-1]]
         keep_prob_ph = 1  # not passed in as a placeholder
         for i in range(4):
-            ch.append(round((ch[-1]+conditioning_channels*generator_shortcuts[i+1])/2))
+            ch.append(round((ch[-1]+conditioning_channels*self.generator_shortcuts[i+1])/2))
             sz = [[i//2 for i in sz[0]]]+sz
         if spatial_rank == 3:
             def resize_func(x, sz):
@@ -55,9 +57,13 @@ class ImageGenerator(BaseGenerator):
                 resize_func = tf.image.resize_bilinear
             
         def concat_cond(x, i):
-            if not conditioning is None and generator_shortcuts[i]:
+            if add_noise:
+                noise = [tf.random_normal(x.get_shape().as_list()[0:-1]+[add_noise],0,.1)]
+            else:
+                noise = []
+            if not conditioning is None and self.generator_shortcuts[i]:
                 with tf.name_scope('concat_conditioning'):
-                    return tf.concat([x, resize_func(conditioning, x.get_shape().as_list()[1:-1])], axis=3)
+                    return tf.concat([x, resize_func(conditioning, x.get_shape().as_list()[1:-1])]+noise, axis=3)
             else:
                 return x
             
@@ -88,8 +94,11 @@ class ImageGenerator(BaseGenerator):
         g_h4 = up_block(ch[3], g_h3, 3)
         g_h5 = up_block(ch[4], g_h4, 4)  # did not implement different epsilon
         with tf.name_scope('final_image'):
+            if add_noise:
+                g_h5 = tf.concat([g_h5, tf.random_normal(g_h5.get_shape().as_list()[0:-1] + [add_noise], 0, .1)], axis=3)
             x_sample = ConvolutionalLayer(1, 3, with_bn=False, w_initializer=w_init)(g_h5, is_training=is_training)
             x_sample = tf.nn.dropout(2.*tf.nn.tanh(x_sample), keep_prob_ph)
+
         with tf.name_scope('summaries_verbose'):
             tf.summary.histogram('hist_g_h2',g_h2,[logging.LOG])
             tf.summary.histogram('hist_g_h3',g_h3,[logging.LOG])
