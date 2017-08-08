@@ -112,14 +112,15 @@ def __find_max_overlap_in_list(name, list_names):
     if len(list_names) == 0:
         return '', -1
     for test in list_names:
-        match = SequenceMatcher(None, name, test).find_longest_match(
-            0, len(name), 0, len(test))
-        if match.size >= match_max and match.size/len(test) >= \
-                match_ratio:
-            match_max = match.size
-            match_seq = test[match.b:(match.b + match.size)]
-            match_ratio = match.size/len(test)
-            match_orig = test
+        if len(test)>0:
+            match = SequenceMatcher(None, name, test).find_longest_match(
+                0, len(name), 0, len(test))
+            if match.size >= match_max and match.size/len(test) >= \
+                    match_ratio:
+                match_max = match.size
+                match_seq = test[match.b:(match.b + match.size)]
+                match_ratio = match.size/len(test)
+                match_orig = test
     if match_max == 0:
         return '', -1
     other_list = [name for name in list_names if match_seq in name and
