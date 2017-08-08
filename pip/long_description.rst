@@ -16,7 +16,7 @@ NiftyNet is a consortium of research groups (WEISS -- `Wellcome EPSRC Centre for
 .. |TfPypi| replace:: ``tensorflow``
 .. _TfPypi: https://pypi.org/project/tensorflow/
 .. |TfPypiGpu| replace:: ``tensorflow-gpu``
-.. _TfPypiiGpu: https://pypi.org/project/tensorflow-gpu/
+.. _TfPypiGpu: https://pypi.org/project/tensorflow-gpu/
 
 
 Features
