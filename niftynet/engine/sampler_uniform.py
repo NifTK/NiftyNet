@@ -98,11 +98,10 @@ def rand_spatial_coordinates(subject_id, img_sizes, win_sizes, n_samples):
     all_coordinates = {}
     for mod in list(win_sizes):
         win_size = win_sizes[mod][:N_SPATIAL]
-        spatial_coords = np.zeros(
-            (n_samples, N_SPATIAL * 2), dtype=np.int32)
+        half_win_diff = np.floor((max_spatial_win - win_size) / 2.0)
         # shift starting coords of the window
         # so that smaller windows are centred within the large windows
-        half_win_diff = np.floor((max_spatial_win - win_size) / 2.0)
+        spatial_coords = np.zeros((n_samples, N_SPATIAL * 2), dtype=np.int32)
         spatial_coords[:, :N_SPATIAL] = \
             max_coords[:, :N_SPATIAL] + half_win_diff[:N_SPATIAL]
 

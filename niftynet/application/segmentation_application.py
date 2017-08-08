@@ -92,7 +92,7 @@ class SegmentationApplication(BaseApplication):
         histogram_normaliser = HistogramNormalisationLayer(
             field='image',
             modalities=segmentation_param['image'],
-            model_filename=self.net_param.histogram_ref_file+'.image.txt',
+            model_filename=self.net_param.histogram_ref_file,
             binary_masking_func=foreground_masking_layer,
             norm_type=self.net_param.norm_type,
             cutoff=self.net_param.cutoff,
@@ -104,7 +104,7 @@ class SegmentationApplication(BaseApplication):
         label_normaliser = DiscreteLabelNormalisationLayer(
             field='label',
             modalities=segmentation_param['label'],
-            model_filename=self.net_param.histogram_ref_file+'.label.txt')
+            model_filename=self.net_param.histogram_ref_file)
 
         reader.add_preprocessing_layers([histogram_normaliser,
                                          mean_var_normaliser,

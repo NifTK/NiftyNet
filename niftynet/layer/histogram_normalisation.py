@@ -41,7 +41,7 @@ class HistogramNormalisationLayer(DataDependentLayer):
         """
 
         super(HistogramNormalisationLayer, self).__init__(name=name)
-        self.hist_model_file = os.path.abspath(model_filename)
+        self.model_file = os.path.abspath(model_filename)
 
         if binary_masking_func is not None:
             assert isinstance(binary_masking_func, BinaryMaskingLayer)
@@ -113,7 +113,9 @@ class HistogramNormalisationLayer(DataDependentLayer):
 
         # merging trained_mapping dict and self.mapping dict
         self.mapping.update(trained_mapping)
-        hs.write_all_mod_mapping(self.hist_model_file, self.mapping)
+        all_maps = hs.read_mapping_file(self.model_file)
+        all_maps.update(self.mapping)
+        hs.write_all_mod_mapping(self.model_file, all_maps)
 
     def _normalise_5d(self, data_array, mask_array):
         assert self.modalities
@@ -123,7 +125,7 @@ class HistogramNormalisationLayer(DataDependentLayer):
         if not self.mapping:
             tf.logging.fatal(
                 "calling normaliser with empty mapping,"
-                "probably {} is not loaded".format(self.hist_model_file))
+                "probably {} is not loaded".format(self.model_file))
             raise RuntimeError
         mask_array = np.asarray(mask_array, dtype=np.bool)
         for mod_id, mod_name in enumerate(self.modalities):

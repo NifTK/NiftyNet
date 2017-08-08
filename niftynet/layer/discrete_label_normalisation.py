@@ -41,22 +41,20 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer):
             label_data = np.asarray(image[self.field])
         else:
             label_data = np.asarray(image)
-
         mapping = self.label_map[self.key]
         assert len(np.unique(label_data)) <= len(mapping), \
             "couldn't find a unique mapping for discrete label maps, " \
             " please check the line starting with {} in {}, " \
             " remove the line to find the model again, or " \
             " check the input label image".format(self.key, self.model_file)
-        mapped_label = np.copy(label_data)
         for (new_id, original) in enumerate(mapping):
-            mapped_label[label_data == original] = new_id
+            label_data[label_data == original] = new_id
 
         if isinstance(image, dict):
-            image[self.field] = mapped_label
+            image[self.field] = label_data
             return image, mask
         else:
-            return mapped_label, mask
+            return label_data, mask
 
     def reverse_op(self, image, mask=None):
         assert self.is_ready(), \
@@ -72,15 +70,14 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer):
             "couldn't find a unique mapping for discrete label maps, " \
             " please check the line starting with {} in {}".format(
                 self.key, self.model_file)
-        mapped_label = np.copy(label_data)
         for (new_id, original) in enumerate(mapping):
-            mapped_label[label_data == new_id] = original
+            label_data[label_data == new_id] = original
 
         if isinstance(image, dict):
-            image[self.field] = mapped_label
+            image[self.field] = label_data
             return image, mask
         else:
-            return mapped_label, mask
+            return label_data, mask
 
     def is_ready(self):
         mapping = self.label_map.get(self.key, None)
@@ -99,7 +96,9 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer):
         label_map = find_set_of_labels(image_list, self.field, self.key)
         # merging trained_mapping dict and self.mapping dict
         self.label_map.update(label_map)
-        hs.write_all_mod_mapping(self.model_file, self.label_map)
+        all_maps = hs.read_mapping_file(self.model_file)
+        all_maps.update(self.label_map)
+        hs.write_all_mod_mapping(self.model_file, all_maps)
 
 
 def find_set_of_labels(image_list, field, output_key):
