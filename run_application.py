@@ -2,7 +2,7 @@
 import warnings
 import time
 warnings.simplefilter('always', DeprecationWarning)
-warnings.warn('run_application.py is deprecated and will be removed; please use net_segmentation.py instead.', DeprecationWarning, stacklevel=2)
+warnings.warn('run_application.py is deprecated and will be removed; please use net_segment.py instead.', DeprecationWarning, stacklevel=2)
 warnings.simplefilter('ignore', DeprecationWarning)
 time.sleep(3)
 

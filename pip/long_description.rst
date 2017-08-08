@@ -66,7 +66,7 @@ Acknowledgements
 This project is grateful for the support from the `Wellcome Trust`_, the `Engineering and Physical Sciences Research Council (EPSRC)`_, the `National Institute for Health Research (NIHR)`_, the `Department of Health (DoH)`_, `University College London (UCL)`_, the `Science and Engineering South Consortium (SES)`_, the `STFC Rutherford-Appleton Laboratory`_, and `NVIDIA`_.
 
 .. _`TensorFlow`: https://www.tensorflow.org/
-.. _`Wellcome EPSRC Centre for Interventional and Surgical Sciences`: http://www.ucl.ac.uk/surgical-interventional-sciences
+.. _`Wellcome EPSRC Centre for Interventional and Surgical Sciences`: http://www.ucl.ac.uk/weiss
 .. _`NiftyNet source code repository`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 .. _`Centre for Medical Image Computing`: http://cmic.cs.ucl.ac.uk/
 .. _`Centre for Medical Image Computing (CMIC)`: http://cmic.cs.ucl.ac.uk/
