@@ -1,7 +1,7 @@
 NiftyNet
 ========
 
-NiftyNet is a `TensorFlow`_-based open-source convolutional neural networks (CNN) platform for research in medical image analysis and image-guided therapy.
+NiftyNet is a `TensorFlow`_-based [#]_ open-source convolutional neural networks (CNN) platform for research in medical image analysis and image-guided therapy.
 NiftyNet's modular structure is designed for sharing networks and pre-trained models.
 Using this modular structure you can:
 
@@ -10,6 +10,13 @@ Using this modular structure you can:
 * Quickly build new solutions to your own image analysis problems
 
 NiftyNet is a consortium of research groups (WEISS -- `Wellcome EPSRC Centre for Interventional and Surgical Sciences`_, CMIC -- `Centre for Medical Image Computing`_, HIG -- High-dimensional Imaging Group), where WEISS acts as the consortium lead.
+
+.. [#] The appropriate `TensorFlow`_ PyPI package (|TfPypi| or |TfPypiGpu|) must be installed manually -- please see the link in the Getting started section below.
+
+.. |TfPypi| replace:: ``tensorflow``
+.. _TfPypi: https://pypi.org/project/tensorflow/
+.. |TfPypiGpu| replace:: ``tensorflow-gpu``
+.. _TfPypiiGpu: https://pypi.org/project/tensorflow-gpu/
 
 Features
 ========
