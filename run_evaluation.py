@@ -13,6 +13,10 @@ if __name__ == "__main__":
 
         niftynet.evaluation.compute_ROI_statistics.run(args, csv_dict)
     elif args.action.lower() == 'compare':
-        import niftynet.evaluation.compare_segmentations
+        if args.application_type == 'segmentation':
+            import niftynet.evaluation.compare_segmentations
 
-        niftynet.evaluation.compare_segmentations.run(args, csv_dict)
+            niftynet.evaluation.compare_segmentations.run(args, csv_dict)
+        elif args.application_type == 'regression':
+            import niftynet.evaluation.compare_regressions
+            niftynet.evaluation.compare_regressions.run(args,csv_dict)

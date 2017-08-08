@@ -264,3 +264,53 @@ class PairwiseMeasures(object):
                 if isinstance(result, tuple) else fmt.format(result)
             result_str += ','
         return result_str[:-1]  # trim the last comma
+
+
+class PairwiseMeasuresRegression(object):
+    def __init__(self, reg_img, ref_img, measures=None):
+
+        self.reg = reg_img
+        self.ref = ref_img
+        self.measures = measures
+
+        self.m_dict = {
+            'mse': (self.mse, 'MSE'),
+            'rmse': (self.rmse, 'RMSE'),
+            'mae': (self.mae, 'MAE'),
+            'r2': (self.r2, 'R2')
+        }
+
+
+    def mse(self):
+        return np.mean(np.square(self.reg - self.ref))
+
+
+    def rmse(self):
+        return np.sqrt(self.mse())
+
+
+    def mae(self):
+        return np.mean(np.abs(self.ref-self.reg))
+
+    def r2(self):
+        ref_var = np.sum(np.square(self.ref-np.mean(self.ref)))
+        reg_var = np.sum(np.square(self.reg-np.mean(self.reg)))
+        cov_refreg = np.sum((self.reg-np.mean(self.reg))*(self.ref-np.mean(
+            self.ref)))
+        return np.square(cov_refreg / np.sqrt(ref_var*reg_var+0.00001))
+
+
+    def header_str(self):
+        result_str = [self.m_dict[key][1] for key in self.measures]
+        result_str = ',' + ','.join(result_str)
+        return result_str
+
+
+    def to_string(self, fmt='{:.4f}'):
+        result_str = ""
+        for key in self.measures:
+            result = self.m_dict[key][0]()
+            result_str += ','.join(fmt.format(x) for x in result) \
+                if isinstance(result, tuple) else fmt.format(result)
+            result_str += ','
+        return result_str[:-1]  # trim the last comma
