@@ -6,9 +6,11 @@ import os
 import numpy as np
 import pandas
 import tensorflow as tf
+from copy import deepcopy
 
 from niftynet.io.input_type import ImageFactory
 from niftynet.layer.base_layer import Layer
+from niftynet.layer.base_layer import DataDependentLayer
 from niftynet.utilities.misc_common import printProgressBar
 from niftynet.utilities.user_parameters_helper import make_input_tuple
 
@@ -31,6 +33,8 @@ class ImageReader(Layer):
         # list of image objects
         self.output_list = None
         self.current_id = -1
+
+        self.preprocessors = []
         super(ImageReader, self).__init__(name='image_reader')
 
     def initialise_reader(self, data_param, task_param):
@@ -64,12 +68,15 @@ class ImageReader(Layer):
         tf.logging.info('initialised reader: loading {} from {} ({})'.format(
             self.output_fields, self.input_sources, len(self.output_list)))
 
+    def prepare_preprocessors(self):
+        for layer in self.preprocessors:
+            if isinstance(layer, DataDependentLayer) and not layer.is_ready():
+                layer.train(self.output_list)
+
     def add_preprocessing_layers(self, layers):
-        self.preprocesser = []
-        self.preprocesser.extend(layers)
-        for preprocess in self.preprocesser:
-            if not preprocess.is_ready():
-                preprocess.train(self.output_list)
+        self.preprocessors = []
+        self.preprocessors.extend(layers)
+        self.prepare_preprocessors()
 
     def layer_op(self, idx=None, shuffle=True):
         """
@@ -93,13 +100,20 @@ class ImageReader(Layer):
             except ValueError:
                 idx = -1
 
-        if 0 <= idx < len(self.output_list):
-            image_dict = self.output_list[idx]
-            image_data_dict = {field: image.get_data()
-                               for (field, image) in image_dict.items()}
-            return idx, image_data_dict
-        else:
-            return None, None
+        if idx < 0 or idx >= len(self.output_list):
+            return -1, None
+
+        image_dict = self.output_list[idx]
+        image_data_dict = {field: image.get_data()
+                           for (field, image) in image_dict.items()}
+
+        if self.preprocessors:
+            preprocessors = [deepcopy(layer) for layer in self.preprocessors]
+            # dictionary of mask is cached
+            mask = None
+            for preprocess_layer in preprocessors:
+                image_data_dict, mask = preprocess_layer(image_data_dict, mask)
+        return idx, image_data_dict
 
     @staticmethod
     def load_and_merge_csv_files(data_param):
@@ -137,6 +151,7 @@ class ImageReader(Layer):
         if not self.output_list:
             tf.logging.fatal("please initialise the reader first")
             raise RuntimeError
+        self.prepare_preprocessors()
         if not self._shapes:
             _, first_image = self(idx=0)
             self._shapes = {field: first_image[field].shape
@@ -148,6 +163,7 @@ class ImageReader(Layer):
         if not self.output_list:
             tf.logging.fatal("please initialise the reader first")
             raise RuntimeError
+        self.prepare_preprocessors()
         if not self._dtypes:
             _, first_image = self(idx=0)
             self._dtypes = {field: infer_tf_dtypes(first_image[field])

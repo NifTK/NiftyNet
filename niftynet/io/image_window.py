@@ -30,7 +30,7 @@ class ImageWindow(object):
         # complete window shapes based on user input and input_image sizes
         spatial_shapes = {
             name: read_window_sizes(modalities, data_param)
-            for (name, modalities) in source_names}
+            for (name, modalities) in source_names.items()}
         shapes = {
             name: complete_partial_window_sizes(
                 spatial_shapes[name], image_shapes[name])

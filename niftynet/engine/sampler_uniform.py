@@ -31,20 +31,20 @@ class UniformSampler(Layer, InputBatchQueueRunner):
             self.window.shapes))
 
         ## running test
-        # sess = tf.Session()
-        # _iter = 0
-        # for x in self():
-        #    sess.run(self._enqueue_op, feed_dict=x)
-        #    _iter += 1
-        #    print('enqueue {}'.format(_iter))
-        #    if _iter == 2:
-        #        break
-        # out = sess.run(self.pop_batch_op(batch_size=batch_size))
-        # print('dequeue')
-        # print(out['image'].shape)
-        # print(out['image_location'])
-        # import pdb;
-        # pdb.set_trace()
+        sess = tf.Session()
+        _iter = 0
+        for x in self():
+           sess.run(self._enqueue_op, feed_dict=x)
+           _iter += 1
+           print('enqueue {}'.format(_iter))
+           if _iter == 2:
+               break
+        out = sess.run(self.pop_batch_op(batch_size=3))
+        print('dequeue')
+        print(out['image'].shape)
+        print(out['image_location'])
+        import pdb;
+        pdb.set_trace()
 
     def layer_op(self):
         while True:
@@ -109,7 +109,7 @@ def rand_spatial_coordinates(subject_id, img_sizes, win_sizes, n_samples):
         spatial_coords[:, N_SPATIAL:] = \
             spatial_coords[:, :N_SPATIAL] + win_size[:N_SPATIAL]
         # include the subject id
-        subject_id = np.ones((n_samples,), dtype=np.int32) * int(subject_id)
+        subject_id = np.ones((n_samples,), dtype=np.int32) * subject_id
         spatial_coords = np.append(
             subject_id[:, None], spatial_coords, axis=1)
         all_coordinates[mod] = spatial_coords

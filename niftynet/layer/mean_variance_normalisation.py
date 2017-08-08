@@ -14,46 +14,54 @@ foreground mean intensity value and dividing by standard deviation
 
 
 class MeanVarNormalisationLayer(Layer):
-    def __init__(self, binary_masking_func=None):
+    def __init__(self, field, binary_masking_func=None):
 
-        layer_name = 'mean_var_norm'
-        super(MeanVarNormalisationLayer, self).__init__(name=layer_name)
+        self.field = field
+        super(MeanVarNormalisationLayer, self).__init__(name='mean_var_norm')
         if binary_masking_func is not None:
             assert isinstance(binary_masking_func, BinaryMaskingLayer)
             self.binary_masking_func = binary_masking_func
 
-    def __whitening_transformation_3d(self, image, mask):
-        # make sure image is a monomodal volume
-        assert image.ndim == 3
-
-        masked_img = ma.masked_array(np.copy(image), np.logical_not(mask))
-        mean = masked_img.mean()
-        std = masked_img.std()
-        image -= mean
-        image /= max(std, 1e-5)
-        return image
-
     def layer_op(self, image, mask=None):
-        image = np.asarray(image, dtype=float)
+        if isinstance(image, dict):
+            image_data = np.asarray(image[self.field], dtype=np.float32)
+        else:
+            image_data = np.asarray(image, dtype=np.float32)
 
         image_mask = None
-        if mask is not None:
-            image_mask = np.asarray(mask, dtype=np.bool)
+        if isinstance(mask, dict):
+            image_mask = mask.get(self.field, None)
+        elif mask is not None:
+            image_mask = mask
+        elif self.binary_masking_func is not None:
+            image_mask = self.binary_masking_func(image_5d)
         else:
-            if self.binary_masking_func is not None:
-                image_mask = self.binary_masking_func(image)
+            # no access to mask, default to the entire image
+            image_mask = np.ones_like(image_5d, dtype=np.bool)
 
-        # no access to mask, default to all foreground
-        if image_mask is None:
-            image_mask = np.ones_like(image, dtype=np.bool)
+        if image_data.ndim == 3:
+            image_data = whitening_transformation(image_data, image_mask)
+        if image_data.ndim == 5:
+            for m in range(0, image_data.shape[4]):
+                image_data[..., m] = whitening_transformation(
+                    image_data[..., m], image_mask[..., m])
 
-        if image.ndim == 3:
-            image = self.__whitening_transformation_3d(image, image_mask)
+        if isinstance(image, dict):
+            image[self.field] = image_data
+            if isinstance(mask, dict):
+                mask[self.field] = image_mask
+            else:
+                mask = {self.field: image_mask}
+            return image, mask
+        else:
+            return image_data, image_mask
 
-        if image.ndim == 5:
-            for m in range(0, image.shape[3]):
-                for t in range(0, image.shape[4]):
-                    image[..., m, t] = self.__whitening_transformation_3d(
-                        image[..., m, t], image_mask[..., m, t])
 
-        return image, image_mask
+def whitening_transformation(image, mask):
+    # make sure image is a monomodal volume
+    masked_img = ma.masked_array(np.copy(image), np.logical_not(mask))
+    mean = masked_img.mean()
+    std = masked_img.std()
+    image -= mean
+    image /= max(std, 1e-5)
+    return image

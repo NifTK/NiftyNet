@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function
 
 import numpy as np
 import tensorflow as tf
+
 from niftynet.engine.restorer import RESTORABLE
 
 
@@ -50,9 +51,9 @@ class TrainableLayer(Layer):
 
     def restore_from_checkpoint(self, checkpoint_name, scope=None):
         if scope is None:
-            scope=self.layer_scope().name
-        tf.add_to_collection(RESTORABLE,(self.layer_scope().name,
-                                         checkpoint_name,scope))
+            scope = self.layer_scope().name
+        tf.add_to_collection(RESTORABLE, (self.layer_scope().name,
+                                          checkpoint_name, scope))
 
     def regularizer_loss(self):
         return tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES,
@@ -98,6 +99,23 @@ class TrainableLayer(Layer):
         self._regularizers = value
 
 
+class DataDependentLayer(Layer):
+    """
+    Some layers require a one-pass training throught the training set
+    to determine their internal models, this abstract provides
+    interfaces for training these internal models and querying the
+    status.
+    """
+    def __init__(self, name='data_dependent_op'):
+        super(DataDependentLayer, self).__init__(name=name)
+
+    def is_ready(self):
+        raise NotImplementedError
+
+    def train(self, *args, **kwargs):
+        raise NotImplementedError
+
+
 class LayerFromCallable(Layer):
     """Module wrapping a function provided by the user.
     Analogous to snt.Module
@@ -107,7 +125,7 @@ class LayerFromCallable(Layer):
         super(LayerFromCallable, self).__init__(name=name)
         if not callable(layer_op):
             raise TypeError("layer_op must be callable.")
-        self._layer_op=layer_op
+        self._layer_op = layer_op
 
     def layer_op(self, *args, **kwargs):
-        return self._layer_op(*args,**kwargs)
+        return self._layer_op(*args, **kwargs)
