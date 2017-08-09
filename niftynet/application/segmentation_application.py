@@ -8,7 +8,7 @@ from niftynet.engine.grid_sampler import GridSampler
 from niftynet.engine.resize_sampler import ResizeSampler
 from niftynet.engine.selective_sampler import SelectiveSampler
 from niftynet.engine.spatial_location_check import SpatialLocationCheckLayer
-from niftynet.engine.uniform_sampler import UniformSampler
+from niftynet.engine.sampler_uniform import UniformSampler
 
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.rand_flip import RandomFlipLayer
@@ -82,114 +82,82 @@ class SegmentationApplication(BaseApplication):
         self.is_training = is_training
         self.net_param = net_param
         self.action_param = action_param
+        self.reader = None
 
     def initialise_dataset_loader(self, data_param, segmentation_param):
         # read each line of csv files into an instance of Subject
-        reader = ImageReader(SUPPORTED_INPUT)
-        reader.initialise_reader(data_param, segmentation_param)
+        self.reader = ImageReader(SUPPORTED_INPUT)
+        self.reader.initialise_reader(data_param, segmentation_param)
 
-        # volume level preprocessing layers
-        foreground_masking_layer = BinaryMaskingLayer(
-            type=self.net_param.mask_type,
-            multimod_fusion=self.net_param.multimod_mask_type,
-            threshold=0.0)
-        histogram_normaliser = HistogramNormalisationLayer(
-            field='image',
-            modalities=segmentation_param['image'],
-            model_filename=self.net_param.histogram_ref_file,
-            binary_masking_func=foreground_masking_layer,
-            norm_type=self.net_param.norm_type,
-            cutoff=self.net_param.cutoff,
-            name='hist_norm_layer')
-        mean_var_normaliser = MeanVarNormalisationLayer(
-            field='image',
-            binary_masking_func=foreground_masking_layer)
-        label_normaliser = DiscreteLabelNormalisationLayer(
-            field='label',
-            modalities=segmentation_param['label'],
-            model_filename=self.net_param.histogram_ref_file)
-        rand_flip_layer = RandomFlipLayer(
-            flip_axes=self.action_param.flip_axes)
-        rand_scaling_layer = RandomSpatialScalingLayer(
-            min_percentage=self.action_param.scaling_percentage[0],
-            max_percentage=self.action_param.scaling_percentage[1])
-        rand_rotate_layer = RandomRotationLayer(
-            min_angle=self.action_param.rotation_angle[0],
-            max_angle=self.action_param.rotation_angle[1])
+        if self.net_param.normalise_foreground_only:
+            foreground_masking_layer = BinaryMaskingLayer(
+                type=self.net_param.foreground_type,
+                multimod_fusion=self.net_param.multimod_foreground_type,
+                threshold=0.0)
+        else:
+            foreground_masking_layer = None
 
-        reader.add_preprocessing_layers([histogram_normaliser,
-                                         mean_var_normaliser,
-                                         label_normaliser,
-                                         rand_flip_layer,
-                                         rand_scaling_layer,
-                                         rand_rotate_layer])
+        normalisation_layers = []
+        if self.net_param.normalisation:
+            histogram_normaliser = HistogramNormalisationLayer(
+                field='image',
+                modalities=segmentation_param['image'],
+                model_filename=self.net_param.histogram_ref_file,
+                binary_masking_func=foreground_masking_layer,
+                norm_type=self.net_param.norm_type,
+                cutoff=self.net_param.cutoff,
+                name='hist_norm_layer')
+            normalisation_layers.append(histogram_normaliser)
+        if self.net_param.whitening:
+            mean_var_normaliser = MeanVarNormalisationLayer(
+                field='image',
+                binary_masking_func=foreground_masking_layer)
+            normalisation_layers.append(mean_var_normaliser)
 
-        from niftynet.engine.sampler_uniform import UniformSampler
-        sampler = UniformSampler(reader,
-                                 data_param,
-                                 self.action_param.sample_per_volume)
+        if segmentation_param['label_normalisation']:
+            label_normaliser = DiscreteLabelNormalisationLayer(
+                field='label',
+                modalities=segmentation_param['label'],
+                model_filename=self.net_param.histogram_ref_file)
+            normalisation_layers.append(label_normaliser)
+
+        if normalisation_layers:
+            self.reader.add_preprocessing_layers(normalisation_layers)
+
+        augmentation_layers = []
+        if self.is_training and self.action_param.random_flip:
+            rand_flip_layer = RandomFlipLayer(
+                flip_axes=self.action_param.flip_axes)
+            augmentation_layers.append(rand_flip_layer)
+
+        if self.is_training and self.action_param.spatial_scaling:
+            rand_scaling_layer = RandomSpatialScalingLayer(
+                min_percentage=self.action_param.scaling_percentage[0],
+                max_percentage=self.action_param.scaling_percentage[1])
+            augmentation_layers.append(rand_scaling_layer)
+
+        if self.is_training and self.action_param.rotation:
+            rand_rotate_layer = RandomRotationLayer(
+                min_angle=self.action_param.rotation_angle[0],
+                max_angle=self.action_param.rotation_angle[1])
+            augmentation_layers.append(rand_rotate_layer)
+
+        if augmentation_layers:
+            self.reader.add_preprocessing_layers(augmentation_layers)
+
 
     def initialise_sampler(self, is_training):
-        pass
+        sampler = UniformSampler(self.reader,
+                                 data_param,
+                                 self.action_param.sample_per_volume)
 
     def initialise_network(self, train_dict, is_training):
         pass
 
     def inference_sampler(self):
-        self._inference_patch_holder = ImagePatch(
-            spatial_rank=self._param.spatial_rank,
-            image_size=self._param.image_size,
-            label_size=self._param.label_size,
-            weight_map_size=self._param.w_map_size,
-            image_dtype=tf.float32,
-            label_dtype=tf.int64,
-            weight_map_dtype=tf.float32,
-            num_image_modality=self._volume_loader.num_modality(0),
-            num_label_modality=self._volume_loader.num_modality(1),
-            num_weight_map=self._volume_loader.num_modality(2))
-
-        # `patch` instance with image data only
-        if self._param.window_sampling in ['uniform', 'selective']:
-            sampling_grid_size = self._param.label_size - 2 * self._param.border
-            assert sampling_grid_size > 0
-            sampler = GridSampler(patch=self._inference_patch_holder,
-                                  volume_loader=self._volume_loader,
-                                  grid_size=sampling_grid_size,
-                                  name='grid_sampler')
-        elif self._param.window_sampling == 'resize':
-            sampler = ResizeSampler(
-                patch=self._inference_patch_holder,
-                volume_loader=self._volume_loader,
-                data_augmentation_methods=None,
-                name="resize_sampler")
-            # ops to resize image back
-            self._ph = tf.placeholder(tf.float32, [None])
-            self._sz = tf.placeholder(tf.int32, [None])
-            reshaped = tf.image.resize_images(
-                tf.reshape(self._ph, [1] + [self._param.label_size] * 2 + [-1]),
-                self._sz[0:2])
-            if self._param.spatial_rank == 3:
-                reshaped = tf.reshape(reshaped, [1, self._sz[0] * self._sz[1],
-                                                 self._param.label_size, -1])
-                reshaped = tf.image.resize_images(reshaped,
-                                                  [self._sz[0] * self._sz[1],
-                                                   self._sz[2]])
-            self._reshaped = tf.reshape(reshaped, self._sz)
         return sampler
 
     def sampler(self):
-        patch_holder = ImagePatch(
-            spatial_rank=self._param.spatial_rank,
-            image_size=self._param.image_size,
-            label_size=self._param.label_size,
-            weight_map_size=self._param.w_map_size,
-            image_dtype=tf.float32,
-            label_dtype=tf.int64,
-            weight_map_dtype=tf.float32,
-            num_image_modality=self._volume_loader.num_modality(0),
-            num_label_modality=self._volume_loader.num_modality(1),
-            num_weight_map=self._volume_loader.num_modality(2))
-        # defines data augmentation for training
         augmentations = []
         if self._param.rotation:
             from niftynet.layer.rand_rotation import RandomRotationLayer

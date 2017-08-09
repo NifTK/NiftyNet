@@ -107,11 +107,7 @@ def find_set_of_labels(image_list, field, output_key):
         printProgressBar(idx, len(image_list),
                          prefix='searching unique labels from training files',
                          decimals=1, length=10, fill='*')
-        unique_label = np.unique(image[field].get_data(),
-                                 return_index=False,
-                                 return_inverse=False,
-                                 return_counts=False,
-                                 axis=None)
+        unique_label = np.unique(image[field].get_data())
         label_set.update(set(unique_label))
     label_set = list(label_set)
     label_set.sort()

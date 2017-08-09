@@ -194,10 +194,10 @@ def add_network_args(parser):
 
     import niftynet.layer.binary_masking
     parser.add_argument(
-        "--multimod_mask_type",
+        "--multimod_foreground_type",
         choices=list(
             niftynet.layer.binary_masking.SUPPORTED_MULTIMOD_MASK_TYPES),
-        help="Way of associating the masks obtained for the different "
+        help="Way of combining the foreground masks from different "
              "modalities. 'and is the intersection, 'or' is the union "
              "and 'multi' permits each modality to use its own mask.",
         default='and')
@@ -223,25 +223,11 @@ def add_network_args(parser):
 
     import niftynet.layer.binary_masking
     parser.add_argument(
-        "--mask_type",
+        "--foreground_type",
         choices=list(
             niftynet.layer.binary_masking.SUPPORTED_MASK_TYPES),
-        help="type of masking strategy used",
+        help="type of foreground masking strategy used",
         default='otsu_plus')
-
-    parser.add_argument(
-        "--reorientation",
-        help="Indicates if the loaded images are put by default in the RAS "
-             "orientation",
-        type=str2boolean,
-        default=False)
-
-    parser.add_argument(
-        "--resampling",
-        help="Indicates if the volumes must be resampled to an isotropic "
-             "resolution of 1mm x 1mm x 1mm",
-        type=str2boolean,
-        default=False)
 
     parser.add_argument(
         "--normalisation",
@@ -255,6 +241,12 @@ def add_network_args(parser):
         type=str2boolean,
         default=True)
 
+    parser.add_argument(
+        "--normalise_foreground_only",
+        help="Indicates whether a foreground mask should be applied when"
+             " normalising volumes",
+        type=str2boolean,
+        default=True)
     return parser
 
 

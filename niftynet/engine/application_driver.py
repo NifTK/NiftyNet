@@ -97,7 +97,7 @@ class ApplicationDriver(object):
         self.gradients_collector = GradientsCollector(
             n_devices=max(self.num_gpus, 1)) if self.is_training else None
 
-        # create an application and assign user-specified parameters
+        ## create an application and assign user-specified parameters
         self.app = ApplicationDriver._create_app(custom_param['name'])
         if self.is_training:
             self.app.set_model_param(
@@ -107,7 +107,8 @@ class ApplicationDriver(object):
                 net_param, infer_param, self.is_training)
         # initialise data input, and the tf graph
         self.app.initialise_dataset_loader(data_param, custom_param)
-        #self.graph = self._create_graph()
+        import pdb; pdb.set_trace()
+        self.graph = self._create_graph()
 
     def run_application(self):
         assert self.graph is not None, \
