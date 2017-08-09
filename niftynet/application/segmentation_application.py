@@ -9,8 +9,12 @@ from niftynet.engine.resize_sampler import ResizeSampler
 from niftynet.engine.selective_sampler import SelectiveSampler
 from niftynet.engine.spatial_location_check import SpatialLocationCheckLayer
 from niftynet.engine.uniform_sampler import UniformSampler
+
+from niftynet.io.image_reader import ImageReader
+from niftynet.layer.rand_flip import RandomFlipLayer
+from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
+from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.binary_masking import BinaryMaskingLayer
-# from niftynet.engine.volume_loader import VolumeLoaderLayer
 from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
 from niftynet.layer.mean_variance_normalisation import \
@@ -81,10 +85,10 @@ class SegmentationApplication(BaseApplication):
 
     def initialise_dataset_loader(self, data_param, segmentation_param):
         # read each line of csv files into an instance of Subject
-        from niftynet.io.image_reader import ImageReader
         reader = ImageReader(SUPPORTED_INPUT)
         reader.initialise_reader(data_param, segmentation_param)
 
+        # volume level preprocessing layers
         foreground_masking_layer = BinaryMaskingLayer(
             type=self.net_param.mask_type,
             multimod_fusion=self.net_param.multimod_mask_type,
@@ -100,15 +104,26 @@ class SegmentationApplication(BaseApplication):
         mean_var_normaliser = MeanVarNormalisationLayer(
             field='image',
             binary_masking_func=foreground_masking_layer)
-
         label_normaliser = DiscreteLabelNormalisationLayer(
             field='label',
             modalities=segmentation_param['label'],
             model_filename=self.net_param.histogram_ref_file)
+        rand_flip_layer = RandomFlipLayer(
+            flip_axes=self.action_param.flip_axes)
+        rand_scaling_layer = RandomSpatialScalingLayer(
+            min_percentage=self.action_param.scaling_percentage[0],
+            max_percentage=self.action_param.scaling_percentage[1])
+        rand_rotate_layer = RandomRotationLayer(
+            min_angle=self.action_param.rotation_angle[0],
+            max_angle=self.action_param.rotation_angle[1])
 
         reader.add_preprocessing_layers([histogram_normaliser,
                                          mean_var_normaliser,
-                                         label_normaliser])
+                                         label_normaliser,
+                                         rand_flip_layer,
+                                         rand_scaling_layer,
+                                         rand_rotate_layer])
+
         from niftynet.engine.sampler_uniform import UniformSampler
         sampler = UniformSampler(reader,
                                  data_param,

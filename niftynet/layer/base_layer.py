@@ -117,6 +117,18 @@ class DataDependentLayer(Layer):
         raise NotImplementedError
 
 
+class RandomisedLayer(Layer):
+    """
+    The layers require a randomisation process, to randomly
+    change some of the layer's states on the fly.
+    """
+    def __init__(self, name='randomised_op'):
+        super(RandomisedLayer, self).__init__(name=name)
+
+    def randomise(self, *args, **kwargs):
+        raise NotImplementedError
+
+
 class LayerFromCallable(Layer):
     """Module wrapping a function provided by the user.
     Analogous to snt.Module

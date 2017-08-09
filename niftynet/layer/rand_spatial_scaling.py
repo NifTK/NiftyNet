@@ -6,13 +6,13 @@ import warnings
 import numpy as np
 import scipy.ndimage
 
-from niftynet.layer.base_layer import Layer
+from niftynet.layer.base_layer import RandomisedLayer
 
 warnings.simplefilter("ignore", UserWarning)
 warnings.simplefilter("ignore", RuntimeWarning)
 
 
-class RandomSpatialScalingLayer(Layer):
+class RandomSpatialScalingLayer(RandomisedLayer):
     """
     generate randomised scaling along each dim for data augmentation
     """
@@ -42,32 +42,22 @@ class RandomSpatialScalingLayer(Layer):
         image = scipy.ndimage.zoom(image, full_zoom, order=interp_order)
         return image
 
-    def layer_op(self, inputs):
+    def layer_op(self, inputs, interp_orders, *args, **kwargs):
         if inputs is None:
             return inputs
-        if inputs.spatial_rank == 3:
-            if inputs.data.ndim == 4:
+
+        if isinstance(inputs, dict) and isinstance(interp_orders, dict):
+            for (field, image) in inputs.items():
+                assert image.shape[-1] == len(interp_orders[field]), \
+                    "interpolation orders should be" \
+                    "specified for each inputs modality"
+
                 transformed_data = []
-                for mod_i in range(inputs.data.shape[-1]):
+                for mod_i, interp_order in enumerate(interp_orders[field]):
                     scaled_data = self._apply_transformation(
-                        inputs.data[..., mod_i], inputs.interp_order)
+                        image[..., mod_i], interp_order)
                     transformed_data.append(scaled_data[..., np.newaxis])
-                inputs.data = np.concatenate(transformed_data, axis=-1)
-            if inputs.data.ndim == 5:
-                transformed_data = []
-                for t in range(inputs.data.shape[-1]):
-                    mod_data = []
-                    for mod_i in range(inputs.data.shape[-2]):
-                        scaled_data = self._apply_transformation(
-                            inputs.data[..., mod_i, t], inputs.interp_order)
-                        mod_data.append(scaled_data[..., np.newaxis])
-                    mod_data = np.concatenate(mod_data, axis=-1)
-                    transformed_data.append(mod_data[..., np.newaxis])
-                inputs.data = np.concatenate(transformed_data, axis=-1)
-        if inputs.interp_order > 0:
-            inputs.data = inputs.data.astype(np.float)
-        elif inputs.interp_order == 0:
-            inputs.data = inputs.data.astype(np.int64)
+                inputs[field] = np.concatenate(transformed_data, axis=-1)
         else:
-            raise ValueError('negative interpolation order')
+            raise NotImplementedError("unknown input format")
         return inputs

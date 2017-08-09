@@ -16,7 +16,7 @@ except ImportError:
 # sections not in SYSTEM_SECTIONS or CUSTOM_SECTIONS will be
 # treated as input data source specifications
 SYSTEM_SECTIONS = {'APPLICATION', 'NETWORK', 'TRAINING', 'INFERENCE'}
-CUSTOM_SECTIONS = {'net_segmentation.py': 'SEGMENTATION',
+CUSTOM_SECTIONS = {'net_segment.py': 'SEGMENTATION',
                    'net_gan.py': 'GAN'}
 
 

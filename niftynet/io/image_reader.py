@@ -9,7 +9,7 @@ import pandas
 import tensorflow as tf
 
 from niftynet.io.input_type import ImageFactory
-from niftynet.layer.base_layer import Layer, DataDependentLayer
+from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
 from niftynet.utilities.misc_common import printProgressBar
 from niftynet.utilities.user_parameters_helper import make_input_tuple
 
@@ -45,7 +45,7 @@ class ImageReader(Layer):
         app_type = task_param['name']
         self._file_list = ImageReader.load_and_merge_csv_files(data_param)
 
-        if app_type == "net_segmentation.py":
+        if app_type == "net_segment.py":
             from niftynet.application.segmentation_application \
                 import SUPPORTED_INPUT
             # only choose fields that are supported by the application
@@ -95,11 +95,10 @@ class ImageReader(Layer):
             idx = self.current_id + 1
             self.current_id = idx
 
-        if idx is not None:
-            try:
-                idx = int(idx)
-            except ValueError:
-                idx = -1
+        try:
+            idx = int(idx)
+        except ValueError:
+            idx = -1
 
         if idx < 0 or idx >= len(self.output_list):
             return -1, None
@@ -107,13 +106,19 @@ class ImageReader(Layer):
         image_dict = self.output_list[idx]
         image_data_dict = {field: image.get_data()
                            for (field, image) in image_dict.items()}
+        interp_order_dict = {field: image.interp_order
+                             for (field, image) in image_dict.items()}
 
         if self.preprocessors:
             preprocessors = [deepcopy(layer) for layer in self.preprocessors]
             # dictionary of mask is cached
             mask = None
             for layer in preprocessors:
-                image_data_dict, mask = layer(image_data_dict, mask)
+                if isinstance(layer, RandomisedLayer):
+                    layer.randomise()
+                    image_data_dict = layer(image_data_dict, interp_order_dict)
+                else:
+                    image_data_dict, mask = layer(image_data_dict, mask)
         return idx, image_data_dict
 
     @staticmethod

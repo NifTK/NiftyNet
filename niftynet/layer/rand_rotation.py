@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-import tensorflow as tf
 import numpy as np
 import scipy.ndimage
 
-from niftynet.layer.base_layer import Layer
+from niftynet.layer.base_layer import RandomisedLayer
 
 
-class RandomRotationLayer(Layer):
+class RandomRotationLayer(RandomisedLayer):
     """
     generate randomised rotation matrix for data augmentation
     """
@@ -27,17 +26,17 @@ class RandomRotationLayer(Layer):
         if spatial_rank == 3:
             self._randomise_transformation_3d()
         else:
-            #currently not supported spatial rank for rand rotation
+            # currently not supported spatial rank for rand rotation
             pass
 
     def _randomise_transformation_3d(self):
         # generate transformation
         angle_x = np.random.uniform(
-                self.min_angle, self.max_angle) * np.pi / 180.0
+            self.min_angle, self.max_angle) * np.pi / 180.0
         angle_y = np.random.uniform(
-                self.min_angle, self.max_angle) * np.pi / 180.0
+            self.min_angle, self.max_angle) * np.pi / 180.0
         angle_z = np.random.uniform(
-                self.min_angle, self.max_angle) * np.pi / 180.0
+            self.min_angle, self.max_angle) * np.pi / 180.0
         transform_x = np.array([[np.cos(angle_x), -np.sin(angle_x), 0.0],
                                 [np.sin(angle_x), np.cos(angle_x), 0.0],
                                 [0.0, 0.0, 1.0]])
@@ -59,28 +58,52 @@ class RandomRotationLayer(Layer):
             image_3d[:, :, :], self._transform.T, c_offset, order=interp_order)
         return image_3d
 
-    def layer_op(self, inputs):
+    def layer_op(self, inputs, interp_orders, *args, **kwargs):
         if inputs is None:
             return inputs
-        if inputs.spatial_rank == 3:
-            if inputs.data.ndim == 4:
-                for mod_i in range(inputs.data.shape[-1]):
-                    inputs.data[..., mod_i] = self._apply_transformation_3d(
-                        inputs.data[..., mod_i], inputs.interp_order)
-            if inputs.data.ndim == 5:
-                for t in range(inputs.data.shape[-1]):
-                    for mod_i in range(inputs.data.shape[-2]):
-                        inputs.data[..., mod_i, t] = \
+
+        if isinstance(inputs, dict) and isinstance(interp_orders, dict):
+            for (field, image) in inputs.items():
+                assert image.shape[-1] == len(interp_orders[field]), \
+                    "interpolation orders should be" \
+                    "specified for each inputs modality"
+                for mod_i, interp_order in enumerate(interp_orders[field]):
+                    if image.ndim == 4:
+                        inputs[field][..., mod_i] = \
                             self._apply_transformation_3d(
-                                inputs.data[..., mod_i, t], inputs.interp_order)
-            if inputs.interp_order > 0:
-                inputs.data = inputs.data.astype(np.float)
-            elif inputs.interp_order == 0:
-                inputs.data = inputs.data.astype(np.int64)
-            else:
-                raise ValueError('negative interpolation order')
-            return inputs
+                                image[..., mod_i], interp_order)
+                    elif image.ndim == 5:
+                        for t in range(image.shape[-2]):
+                            inputs[field][..., t, mod_i] = \
+                                self._apply_transformation_3d(
+                                    image[..., t, mod_i], interp_order)
+                    else:
+                        raise NotImplementedError("unknown input format")
+
         else:
-            # TODO: rotation for spatial_rank is 2
-            # currently not supported 2/2.5D rand rotation
-            return inputs
+            raise NotImplementedError("unknown input format")
+        return inputs
+
+
+        # if inputs.spatial_rank == 3:
+        #    if inputs.data.ndim == 4:
+        #        for mod_i in range(inputs.data.shape[-1]):
+        #            inputs.data[..., mod_i] = self._apply_transformation_3d(
+        #                inputs.data[..., mod_i], inputs.interp_order)
+        #    if inputs.data.ndim == 5:
+        #        for t in range(inputs.data.shape[-1]):
+        #            for mod_i in range(inputs.data.shape[-2]):
+        #                inputs.data[..., mod_i, t] = \
+        #                    self._apply_transformation_3d(
+        #                        inputs.data[..., mod_i, t], inputs.interp_order)
+        #    if inputs.interp_order > 0:
+        #        inputs.data = inputs.data.astype(np.float)
+        #    elif inputs.interp_order == 0:
+        #        inputs.data = inputs.data.astype(np.int64)
+        #    else:
+        #        raise ValueError('negative interpolation order')
+        #    return inputs
+        # else:
+        #    # TODO: rotation for spatial_rank is 2
+        #    # currently not supported 2/2.5D rand rotation
+        #    return inputs

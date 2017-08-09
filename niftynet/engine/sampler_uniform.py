@@ -69,7 +69,16 @@ class UniformSampler(Layer, InputBatchQueueRunner):
                     self.window.image_data_placeholder(name)]
                 for (i, location) in enumerate(location_array[:, 1:]):
                     x_, y_, z_, _x, _y, _z = location
-                    image_array[i, ...] = data[name][x_:_x, y_:_y, z_:_z, ...]
+                    try:
+                        image_array[i, ...] = \
+                            data[name][x_:_x, y_:_y, z_:_z, ...]
+                    except ValueError:
+                        tf.logging.fatal(
+                            "dimensionality miss match, "
+                            "please specify spatial_window_size with a "
+                            " 3D tuple and make sure each element is "
+                            " smaller than the image length in each dim")
+                        raise
             yield output_dict
 
 
