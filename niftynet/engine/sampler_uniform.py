@@ -15,7 +15,7 @@ class UniformSampler(Layer, InputBatchQueueRunner):
     currently 4D input is supported, Height x Width x Depth x Modality
     """
 
-    def __init__(self, reader, data_param, windows_per_image):
+    def __init__(self, reader, data_param, batch_size, windows_per_image):
         # TODO: padding
         self.reader = reader
         Layer.__init__(self, name='input_buffer')
@@ -28,25 +28,26 @@ class UniformSampler(Layer, InputBatchQueueRunner):
                                                  self.reader.tf_dtypes,
                                                  data_param)
         tf.logging.info('initialised window instance')
-        self._create_queue_and_ops(self.window, windows_per_image)
-        tf.logging.info("initialised sampler output {}".format(
-            self.window.shapes))
+        self._create_queue_and_ops(self.window, enqueue_size=windows_per_image,
+                                   dequeue_size=batch_size)
+        tf.logging.info("initialised sampler output {} "
+                        " [-1: dynamic size]".format(self.window.shapes))
 
-        ### running test
-        #sess = tf.Session()
-        #_iter = 0
-        #for x in self():
-        #    sess.run(self._enqueue_op, feed_dict=x)
-        #    _iter += 1
-        #    print('enqueue {}'.format(_iter))
-        #    if _iter == 2:
-        #        break
-        #out = sess.run(self.pop_batch_op(batch_size=3))
-        #print('dequeue')
-        #print(out['image'].shape)
-        #print(out['image_location'])
-        #import pdb;
-        #pdb.set_trace()
+        # ## running test
+        # sess = tf.Session()
+        # _iter = 0
+        # for x in self():
+        #     sess.run(self._enqueue_op, feed_dict=x)
+        #     _iter += 1
+        #     print('enqueue {}'.format(_iter))
+        #     if _iter == 2:
+        #         break
+        # out = sess.run(self.pop_batch_op())
+        # print('dequeue')
+        # print(out['image'].shape)
+        # print(out['image_location'])
+        # import pdb;
+        # pdb.set_trace()
 
     def layer_op(self):
         while True:
@@ -55,25 +56,34 @@ class UniformSampler(Layer, InputBatchQueueRunner):
                 break
             image_sizes = {
                 name: data[name].shape for name in self.window.fields}
+            if self.window.has_dynamic_shapes:
+                static_window_shapes = self.window.shapes.copy()
+                for name in self.window.fields:
+                    static_window_shapes[name] = [
+                        win_size if win_size else image_size
+                        for (win_size, image_size) in
+                        zip(list(self.window.shapes[name]), image_sizes[name])]
+            else:
+                static_window_shapes = self.window.shapes
+
             coordinates = rand_spatial_coordinates(
                 image_id, image_sizes,
-                self.window.shapes, self.window.n_samples)
+                static_window_shapes, self.window.n_samples)
             #  initialise output dict
-            output_dict = self.window.data_dict()
+            output_dict = {}
             # fill output dict with data
             for name in list(data):
                 # fill output coordinates
-                location_array = output_dict[
-                    self.window.coordinates_placeholder(name)]
-                location_array[...] = coordinates[name]
+                location_array = coordinates[name]
+                output_dict[self.window.coordinates_placeholder(name)] = \
+                    location_array
                 # fill output window array
-                image_array = output_dict[
-                    self.window.image_data_placeholder(name)]
+                image_array = []
                 for (i, location) in enumerate(location_array[:, 1:]):
                     x_, y_, z_, _x, _y, _z = location
                     try:
-                        image_array[i, ...] = \
-                            data[name][x_:_x, y_:_y, z_:_z, ...]
+                        image_window = data[name][x_:_x, y_:_y, z_:_z, ...]
+                        image_array.append(image_window[np.newaxis, ...])
                     except ValueError:
                         tf.logging.fatal(
                             "dimensionality miss match in input volumes, "
@@ -81,6 +91,12 @@ class UniformSampler(Layer, InputBatchQueueRunner):
                             "3D tuple and make sure each element is "
                             "smaller than the image length in each dim.")
                         raise
+                if len(image_array) > 1:
+                    output_dict[self.window.image_data_placeholder(name)] = \
+                        np.concatenate(image_array, axis=0)
+                else:
+                    output_dict[self.window.image_data_placeholder(name)] = \
+                        image_array[0]
             yield output_dict
 
 

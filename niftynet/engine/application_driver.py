@@ -127,6 +127,7 @@ class ApplicationDriver(object):
             # initialise sampler and network, these are connected in
             # the context of multiple gpus
             self.app.initialise_sampler(is_training=self.is_training)
+            import pdb; pdb.set_trace()
             self.app.initialise_network()
 
             # for data parallelism --

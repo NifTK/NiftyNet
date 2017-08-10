@@ -40,6 +40,8 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer):
             "discrete_label_normalisation layer needs to be trained first."
         # mask is not used for label mapping
         if isinstance(image, dict):
+            if self.field not in image:
+                return image, mask
             label_data = np.asarray(image[self.field])
         else:
             label_data = np.asarray(image)

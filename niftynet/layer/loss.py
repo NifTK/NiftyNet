@@ -118,8 +118,8 @@ def l2_reg_loss(scope):
 
 
 def cross_entropy(pred, labels):
-    entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pred,
-                                                             labels=labels)
+    entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
+        logits=pred, labels=tf.to_int64(labels))
     return tf.reduce_mean(entropy)
 
 

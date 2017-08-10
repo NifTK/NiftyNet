@@ -59,6 +59,12 @@ def add_application_args(parser):
 
 def add_inference_args(parser):
     parser.add_argument(
+        "--spatial_window_size",
+        type=numarray,
+        help="specify the spatial size of the input data (ndims <= 3)",
+        default=())
+
+    parser.add_argument(
         "--border",
         metavar='',
         help="[Inference only] Width of borders to crop for segmented patch",
@@ -115,7 +121,8 @@ def add_input_data_args(parser):
     parser.add_argument(
         "--spatial_window_size",
         type=numarray,
-        help="specify the spatial size of the input data (ndims <= 3)")
+        help="specify the spatial size of the input data (ndims <= 3)",
+        default=())
 
     parser.add_argument(
         "--interp_order",
@@ -169,6 +176,13 @@ def add_network_args(parser):
         help="Set batch size of the net",
         type=int,
         default=20)
+
+    parser.add_argument(
+        "--dynamic_window_size",
+        metavar='',
+        help="Indicates if the size of the sampling window can be dynamic",
+        type=str2boolean,
+        default=False)
 
     parser.add_argument(
         "--decay",

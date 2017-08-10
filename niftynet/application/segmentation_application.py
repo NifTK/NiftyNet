@@ -4,10 +4,11 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
-from niftynet.engine.grid_sampler import GridSampler
 from niftynet.engine.resize_sampler import ResizeSampler
 from niftynet.engine.selective_sampler import SelectiveSampler
 from niftynet.engine.spatial_location_check import SpatialLocationCheckLayer
+
+from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.sampler_uniform import UniformSampler
 from niftynet.layer.loss import LossFunction
 
@@ -24,7 +25,7 @@ from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
 from niftynet.layer.post_processing import PostProcessingLayer
 
-from niftynet.io.misc_io import remove_time_dim
+
 from niftynet.utilities import misc_common as util
 
 SUPPORTED_INPUT = {'image', 'label', 'weight'}
@@ -92,8 +93,12 @@ class SegmentationApplication(BaseApplication):
     def initialise_dataset_loader(self, data_param, segmentation_param):
         self.data_param = data_param
         self.segmentation_param = segmentation_param
+
         # read each line of csv files into an instance of Subject
-        self.reader = ImageReader(SUPPORTED_INPUT)
+        if self.is_training:
+            self.reader = ImageReader(SUPPORTED_INPUT)
+        else: # in the inference process use image input only
+            self.reader = ImageReader(['image'])
         self.reader.initialise_reader(data_param, segmentation_param)
 
         if self.net_param.normalise_foreground_only:
@@ -116,12 +121,15 @@ class SegmentationApplication(BaseApplication):
                 norm_type=self.net_param.norm_type,
                 cutoff=self.net_param.cutoff,
                 name='hist_norm_layer')
+        else:
+            histogram_normaliser = None
+
+        if self.net_param.histogram_ref_file:
             label_normaliser = DiscreteLabelNormalisationLayer(
                 field='label',
                 modalities=vars(segmentation_param).get('label'),
                 model_filename=self.net_param.histogram_ref_file)
         else:
-            histogram_normaliser = None
             label_normaliser = None
 
         normalisation_layers = []
@@ -132,31 +140,42 @@ class SegmentationApplication(BaseApplication):
         if segmentation_param.label_normalisation:
             normalisation_layers.append(label_normaliser)
 
-        rand_flip_layer = RandomFlipLayer(
-            flip_axes=self.action_param.flip_axes)
-        rand_scaling_layer = RandomSpatialScalingLayer(
-            min_percentage=self.action_param.scaling_percentage[0],
-            max_percentage=self.action_param.scaling_percentage[1])
-        rand_rotate_layer = RandomRotationLayer(
-            min_angle=self.action_param.rotation_angle[0],
-            max_angle=self.action_param.rotation_angle[1])
-
         augmentation_layers = []
-        if self.is_training and self.action_param.random_flip:
-            augmentation_layers.append(rand_flip_layer)
-        if self.is_training and self.action_param.spatial_scaling:
-            augmentation_layers.append(rand_scaling_layer)
-        if self.is_training and self.action_param.rotation:
-            augmentation_layers.append(rand_rotate_layer)
+        if self.is_training:
+            rand_flip_layer = RandomFlipLayer(
+                flip_axes=self.action_param.flip_axes)
+            rand_scaling_layer = RandomSpatialScalingLayer(
+                min_percentage=self.action_param.scaling_percentage[0],
+                max_percentage=self.action_param.scaling_percentage[1])
+            rand_rotate_layer = RandomRotationLayer(
+                min_angle=self.action_param.rotation_angle[0],
+                max_angle=self.action_param.rotation_angle[1])
+
+            if self.action_param.random_flip:
+                augmentation_layers.append(rand_flip_layer)
+            if self.action_param.spatial_scaling:
+                augmentation_layers.append(rand_scaling_layer)
+            if self.action_param.rotation:
+                augmentation_layers.append(rand_rotate_layer)
 
         self.reader.add_preprocessing_layers(
                normalisation_layers+augmentation_layers)
 
-
     def initialise_sampler(self, is_training):
-        self._sampler = UniformSampler(self.reader,
-                                       self.data_param,
-                                       self.action_param.sample_per_volume)
+        if is_training:
+            self._sampler = UniformSampler(
+                reader=self.reader,
+                data_param=self.data_param,
+                batch_size=self.net_param.batch_size,
+                windows_per_image=self.action_param.sample_per_volume)
+            import pdb; pdb.set_trace()
+        else:
+            import pdb; pdb.set_trace()
+            self._sampler = GridSampler(self.reader,
+                                        self.data_param,
+                                        self.net_param.batch_size,
+                                        self.action_param.spatial_window_size)
+
     def get_sampler(self):
         return self._sampler
 
@@ -176,10 +195,8 @@ class SegmentationApplication(BaseApplication):
             self.optimizer = tf.train.AdamOptimizer(
                 learning_rate=self.action_param.lr)
         device_id = training_grads_collector.current_tower_id
-        data_dict = self._sampler.pop_batch_op(device_id,
-                                               self.net_param.batch_size)
-        for field in data_dict:
-            data_dict[field] = remove_time_dim(data_dict[field])
+        data_dict = self._sampler.pop_batch_op(device_id)
+
         net_out = self._net(data_dict['image'], self.is_training)
         loss_func = LossFunction(n_class=self.segmentation_param.num_classes,
                                  loss_type=self.action_param.loss_type)

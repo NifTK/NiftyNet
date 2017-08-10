@@ -13,6 +13,8 @@ import threading
 
 import tensorflow as tf
 
+from niftynet.io.misc_io import remove_time_dim
+
 
 class InputBatchQueueRunner(object):
     """
@@ -28,8 +30,10 @@ class InputBatchQueueRunner(object):
     def __init__(self, capacity, shuffle=True):
         # define queue properties
         self.capacity = capacity
+
         self.shuffle = shuffle
         self._min_queue_size = self.capacity // 2 if self.shuffle else 0
+        self._batch_size = 1
 
         # create queue and the associated operations
         self._queue = None
@@ -43,39 +47,58 @@ class InputBatchQueueRunner(object):
         self._coordinator = None
         self._threads = []
 
-    def _create_queue_and_ops(self, image_window, n_samples):
+        self._window = None
+
+    def _create_queue_and_ops(self, window, enqueue_size=1, dequeue_size=1):
         """
         Create a shuffled queue or FIFO queue, and create queue
         operations. This should be called before tf.Graph.finalize.
         """
+        self._window = window
+        is_dynamic_window = window.has_dynamic_shapes
+        if is_dynamic_window and dequeue_size > 1:
+            tf.logging.warning("using dynamic window size, network batch size "
+                               "is set to 1")
+        if is_dynamic_window and dequeue_size > 1:
+            tf.logging.warning("using dynamic window size, buffer input size "
+                               "is set to 1")
+        self._batch_size = 1 if is_dynamic_window else dequeue_size
+        enqueue_size = 1 if is_dynamic_window else enqueue_size
+        assert dequeue_size <= self.capacity, \
+            "batch size is larger than the buffer size, " \
+            "please increase the queue length or decrease the batch size"
 
-        placeholders_dict = image_window.placeholders_dict(n_samples)
+        placeholders_dict = window.placeholders_dict(n_samples=enqueue_size)
         names = list(placeholders_dict)
         placeholders = list(placeholders_dict.values())
-        # enqueue size from the first placeholder
-        # to prevent hanging enqueue_op
-        self.capacity = max(self.capacity, n_samples * 2)
+        input_dtypes = [holder.dtype for holder in placeholders]
+        input_shapes = [holder.shape[1:] for holder in placeholders] \
+            if not is_dynamic_window else None
+
         # create a queue
         if self.shuffle:
             self._queue = tf.RandomShuffleQueue(
                 capacity=self.capacity,
                 min_after_dequeue=self._min_queue_size,
-                dtypes=[holder.dtype for holder in placeholders],
-                shapes=[holder.shape[1:] for holder in placeholders],
+                dtypes=input_dtypes,
+                shapes=input_shapes,
                 names=names,
                 name="shuffled_queue")
         else:
             self._queue = tf.FIFOQueue(
                 # pylint: disable=redefined-variable-type
                 capacity=self.capacity,
-                dtypes=[holder.dtype for holder in placeholders],
-                shapes=[holder.shape[1:] for holder in placeholders],
+                dtypes=input_dtypes,
+                shapes=input_shapes,
                 names=names,
                 name="FIFO_queue")
-
         # create queue operations
-        self._enqueue_op = self._queue.enqueue_many(placeholders_dict)
-        self._dequeue_op = self._queue.dequeue_many
+        if is_dynamic_window:
+            self._enqueue_op = self._queue.enqueue(placeholders_dict)
+            self._dequeue_op = self._queue.dequeue()
+        else:
+            self._enqueue_op = self._queue.enqueue_many(placeholders_dict)
+            self._dequeue_op = self._queue.dequeue_many(self._batch_size)
         self._query_queue_size_op = self._queue.size()
         self._close_queue_op = self._queue.close(cancel_pending_enqueues=True)
 
@@ -124,12 +147,14 @@ class InputBatchQueueRunner(object):
             return 0
         return self._session.run(self._query_queue_size_op)
 
-    def pop_batch_op(self, device_id=0, batch_size=1):
-        assert batch_size <= self.capacity, \
-            "batch size is larger than the buffer size, " \
-            "please increase the queue length or decrease the batch size"
+    def pop_batch_op(self, device_id=0):
         with tf.name_scope('pop_batch_{}'.format(device_id)):
-            return self._dequeue_op(batch_size)
+            data_output = self._dequeue_op
+            for (name, shape) in self._window.shapes.items():
+                data_output[name].set_shape([self._batch_size] + list(shape))
+            for field in data_output:
+                data_output[field] = remove_time_dim(data_output[field])
+            return data_output
 
     def run_threads(self, session, coord, num_threads=1):
         tf.logging.info('Starting preprocessing threads...')
@@ -161,18 +186,3 @@ class InputBatchQueueRunner(object):
         finally:
             if not self._session._closed:
                 self._session.run(self._close_queue_op)
-
-# class DeployInputBuffer(InputBatchQueueRunner):
-#    def __init__(self, batch_size, capacity, sampler):
-#        super(DeployInputBuffer, self).__init__(batch_size=batch_size,
-#                                                capacity=capacity,
-#                                                placeholders_dict=sampler,
-#                                                shuffle=False)
-#
-#
-# class TrainEvalInputBuffer(InputBatchQueueRunner):
-#    def __init__(self, batch_size, capacity, sampler, shuffle=True):
-#        super(TrainEvalInputBuffer, self).__init__(batch_size=batch_size,
-#                                                   capacity=capacity,
-#                                                   samplplaceholders_dicter=sampler,
-#                                                   shuffle=shuffle)
