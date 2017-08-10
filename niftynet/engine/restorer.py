@@ -30,7 +30,10 @@ def global_variables_initialize_or_restorer(var_list=None):
         for var in to_restore:
             if var in restored_vars:
                 continue
-            checkpoint_subscope,var_name = rename(var.name).rsplit('/',1)
+            if '/' in rename(var.name):
+                checkpoint_subscope,var_name = rename(var.name).rsplit('/',1)
+            else:
+                checkpoint_subscope,var_name = None, rename(var.name)
             initializer = restore_initializer(checkpoint_name,var_name,checkpoint_subscope)
             restored_vars[var] = tf.assign(var, initializer(var.get_shape(),dtype=var.dtype))
     init_others=tf.variables_initializer([v for v in var_list if v not in restored_vars])
