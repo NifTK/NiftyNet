@@ -42,6 +42,8 @@ class HistogramNormalisationLayer(DataDependentLayer):
 
         super(HistogramNormalisationLayer, self).__init__(name=name)
         self.model_file = os.path.abspath(model_filename)
+        assert not os.path.isdir(self.model_file), \
+            "model_filename is a directory, please change histogram_ref_file"
 
         if binary_masking_func:
             assert isinstance(binary_masking_func, BinaryMaskingLayer)

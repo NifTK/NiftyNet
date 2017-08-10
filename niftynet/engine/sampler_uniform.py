@@ -15,20 +15,20 @@ class UniformSampler(Layer, InputBatchQueueRunner):
     currently 4D input is supported, Height x Width x Depth x Modality
     """
 
-    def __init__(self, reader, data_param, samples_per_subject):
+    def __init__(self, reader, data_param, windows_per_image):
         # TODO: padding
-        Layer.__init__(self, name='input_buffer')
         self.reader = reader
+        Layer.__init__(self, name='input_buffer')
         InputBatchQueueRunner.__init__(self,
-                                       capacity=samples_per_subject * 2,
+                                       capacity=windows_per_image * 4,
                                        shuffle=True)
-        tf.logging.info('initialising window instance')
+        tf.logging.info('reading size of preprocessed inputs')
         self.window = ImageWindow.from_user_spec(self.reader.input_sources,
                                                  self.reader.shapes,
                                                  self.reader.tf_dtypes,
                                                  data_param)
-        tf.logging.info('initialising queue')
-        self._create_queue_and_ops(self.window, samples_per_subject)
+        tf.logging.info('initialised window instance')
+        self._create_queue_and_ops(self.window, windows_per_image)
         tf.logging.info("initialised sampler output {}".format(
             self.window.shapes))
 

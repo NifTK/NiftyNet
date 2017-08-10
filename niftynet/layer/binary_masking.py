@@ -34,23 +34,25 @@ class BinaryMaskingLayer(Layer):
         self.threshold = threshold
 
     def __make_mask_3d(self, image):
-
         assert image.ndim == 3
+        image_shape = image.shape
+        image = image.reshape(-1)
         mask = np.zeros_like(image, dtype=np.bool)
         thr = self.threshold
         if self.type == 'threshold_plus':
-            mask[image > thr] = 1
+            mask[image > thr] = True
         elif self.type == 'threshold_minus':
-            mask[image < thr] = 1
+            mask[image < thr] = True
         elif self.type == 'otsu_plus':
             thr = otsu_threshold(image) if np.any(image) else thr
-            mask[image > thr] = 1
+            mask[image > thr] = True
         elif self.type == 'otsu_minus':
             thr = otsu_threshold(image) if np.any(image) else thr
-            mask[image < thr] = 1
+            mask[image < thr] = True
         elif self.type == 'mean_plus':
             thr = np.mean(image)
-            mask[image > thr] = 1
+            mask[image > thr] = True
+        mask = mask.reshape(image_shape)
         mask = ndimg.binary_dilation(mask, iterations=2)
         mask = fill_holes(mask)
         # foreground should not be empty
@@ -58,7 +60,6 @@ class BinaryMaskingLayer(Layer):
             "no foreground based on the specified combination parameters, " \
             "please change choose another `mask_type` or double-check all " \
             "input images"
-        # mask_fin = ndimg.binary_erosion(mask_bis, iterations=2)
         return mask
 
     def layer_op(self, image):
@@ -68,8 +69,8 @@ class BinaryMaskingLayer(Layer):
         if image.ndim == 5:
             mod_to_mask = [m for m in range(image.shape[4])
                            if np.any(image[..., :, m])]
-            mod_mask = None
             mask = np.zeros_like(image, dtype=bool)
+            mod_mask = None
             for mod in mod_to_mask:
                 for t in range(image.shape[3]):
                     mask[..., t, mod] = self.__make_mask_3d(image[..., t, mod])
@@ -82,7 +83,6 @@ class BinaryMaskingLayer(Layer):
                     if mod_mask is None:
                         mod_mask = np.ones(image.shape[:4], dtype=bool)
                     mod_mask = np.logical_and(mod_mask, mask[..., mod])
-
             for mod in mod_to_mask:
                 mask[..., mod] = mod_mask
             return mask

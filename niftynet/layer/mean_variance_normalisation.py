@@ -59,9 +59,6 @@ class MeanVarNormalisationLayer(Layer):
 
 def whitening_transformation(image, mask):
     # make sure image is a monomodal volume
-    masked_img = ma.masked_array(np.copy(image), np.logical_not(mask))
-    mean = masked_img.mean()
-    std = masked_img.std()
-    image -= mean
-    image /= max(std, 1e-5)
+    masked_img = ma.masked_array(image, np.logical_not(mask))
+    image = (image - masked_img.mean()) / max(masked_img.std(), 1e-5)
     return image

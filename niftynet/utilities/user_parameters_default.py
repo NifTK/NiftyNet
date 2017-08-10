@@ -206,7 +206,8 @@ def add_network_args(parser):
         "--histogram_ref_file",
         metavar='',
         type=str,
-        help="A reference file of histogram for intensity normalisation")
+        help="A reference file of histogram for intensity normalisation",
+        default='')
 
     # TODO add choices of normalisation types
     parser.add_argument(
@@ -233,20 +234,20 @@ def add_network_args(parser):
         "--normalisation",
         help="Indicates if the normalisation must be performed",
         type=str2boolean,
-        default=True)
+        default=False)
 
     parser.add_argument(
         "--whitening",
         help="Indicates if the whitening of the data should be applied",
         type=str2boolean,
-        default=True)
+        default=False)
 
     parser.add_argument(
         "--normalise_foreground_only",
         help="Indicates whether a foreground mask should be applied when"
              " normalising volumes",
         type=str2boolean,
-        default=True)
+        default=False)
     return parser
 
 

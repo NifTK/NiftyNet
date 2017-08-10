@@ -104,8 +104,10 @@ class SegmentationApplication(BaseApplication):
         else:
             foreground_masking_layer = None
 
-        normalisation_layers = []
-        if self.net_param.normalisation:
+        mean_var_normaliser = MeanVarNormalisationLayer(
+            field='image',
+            binary_masking_func=foreground_masking_layer)
+        if self.net_param.histogram_ref_file:
             histogram_normaliser = HistogramNormalisationLayer(
                 field='image',
                 modalities=vars(segmentation_param).get('image'),
@@ -114,36 +116,37 @@ class SegmentationApplication(BaseApplication):
                 norm_type=self.net_param.norm_type,
                 cutoff=self.net_param.cutoff,
                 name='hist_norm_layer')
-            normalisation_layers.append(histogram_normaliser)
-        if self.net_param.whitening:
-            mean_var_normaliser = MeanVarNormalisationLayer(
-                field='image',
-                binary_masking_func=foreground_masking_layer)
-            normalisation_layers.append(mean_var_normaliser)
-
-        if segmentation_param.label_normalisation:
             label_normaliser = DiscreteLabelNormalisationLayer(
                 field='label',
                 modalities=vars(segmentation_param).get('label'),
                 model_filename=self.net_param.histogram_ref_file)
+        else:
+            histogram_normaliser = None
+            label_normaliser = None
+
+        normalisation_layers = []
+        if self.net_param.normalisation:
+            normalisation_layers.append(histogram_normaliser)
+        if self.net_param.whitening:
+            normalisation_layers.append(mean_var_normaliser)
+        if segmentation_param.label_normalisation:
             normalisation_layers.append(label_normaliser)
+
+        rand_flip_layer = RandomFlipLayer(
+            flip_axes=self.action_param.flip_axes)
+        rand_scaling_layer = RandomSpatialScalingLayer(
+            min_percentage=self.action_param.scaling_percentage[0],
+            max_percentage=self.action_param.scaling_percentage[1])
+        rand_rotate_layer = RandomRotationLayer(
+            min_angle=self.action_param.rotation_angle[0],
+            max_angle=self.action_param.rotation_angle[1])
 
         augmentation_layers = []
         if self.is_training and self.action_param.random_flip:
-            rand_flip_layer = RandomFlipLayer(
-                flip_axes=self.action_param.flip_axes)
             augmentation_layers.append(rand_flip_layer)
-
         if self.is_training and self.action_param.spatial_scaling:
-            rand_scaling_layer = RandomSpatialScalingLayer(
-                min_percentage=self.action_param.scaling_percentage[0],
-                max_percentage=self.action_param.scaling_percentage[1])
             augmentation_layers.append(rand_scaling_layer)
-
         if self.is_training and self.action_param.rotation:
-            rand_rotate_layer = RandomRotationLayer(
-                min_angle=self.action_param.rotation_angle[0],
-                max_angle=self.action_param.rotation_angle[1])
             augmentation_layers.append(rand_rotate_layer)
 
         self.reader.add_preprocessing_layers(

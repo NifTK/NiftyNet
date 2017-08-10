@@ -82,7 +82,6 @@ class InputBatchQueueRunner(object):
     def _push(self, thread_id):
         tf.logging.info('New thread: {}'.format(thread_id))
         try:
-            print('push thread')
             for output_dict in self():
                 if self._session._closed:
                     break

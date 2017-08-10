@@ -25,6 +25,8 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer):
         self.field = field
         self.modalities = modalities
         self.model_file = os.path.abspath(model_filename)
+        assert not os.path.isdir(self.model_file), \
+            "model_filename is a directory, please change histogram_ref_file"
         self.label_map = hs.read_mapping_file(model_filename)
 
     @property
@@ -41,14 +43,22 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer):
             label_data = np.asarray(image[self.field])
         else:
             label_data = np.asarray(image)
+
         mapping = self.label_map[self.key]
         assert len(np.unique(label_data)) <= len(mapping), \
             "couldn't find a unique mapping for discrete label maps, " \
             " please check the line starting with {} in {}, " \
             " remove the line to find the model again, or " \
             " check the input label image".format(self.key, self.model_file)
+        #map_dict = {}
+        #for new_id, original in enumerate(mapping):
+        #    map_dict[original] = new_id
+        #mapped_data = np.vectorize(map_dict.get)(label_data)
+        image_shape = label_data.shape
+        label_data = label_data.reshape(-1)
         for (new_id, original) in enumerate(mapping):
             label_data[label_data == original] = new_id
+        label_data = label_data.reshape(image_shape)
 
         if isinstance(image, dict):
             image[self.field] = label_data
@@ -70,8 +80,11 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer):
             "couldn't find a unique mapping for discrete label maps, " \
             " please check the line starting with {} in {}".format(
                 self.key, self.model_file)
+        image_shape = label_data.shape
+        label_data = label_data.reshape(-1)
         for (new_id, original) in enumerate(mapping):
             label_data[label_data == new_id] = original
+        label_data = label_data.reshape(image_shape)
 
         if isinstance(image, dict):
             image[self.field] = label_data

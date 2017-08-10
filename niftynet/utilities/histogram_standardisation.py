@@ -155,6 +155,10 @@ def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     quartile percentile and median
     :return new_img: the standardised image
     '''
+    image_shape = img.shape
+    img = img.reshape(-1)
+    mask = mask.reshape(-1)
+
     type_hist = look_up_operations(type_hist.lower(), SUPPORTED_CUTPOINTS)
     if type_hist == 'quartile':
         range_to_use = [0, 3, 6, 9, 12]
@@ -189,7 +193,8 @@ def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     # values are mapped linearly and then smoothed
     new_img = lin_img * img + aff_img
 
-    # Apply smooth thresholding (exponential) below cutoff[0] and over cutoff[1]
+    # Apply smooth thresholding (exponential)
+    # below cutoff[0] and over cutoff[1]
     lowest_values = img <= range_perc[0]
     highest_values = img >= range_perc[-1]
     new_img[lowest_values] = smooth_threshold(
@@ -198,6 +203,7 @@ def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
         new_img[highest_values], mode='high')
     # Apply mask and set background to zero
     # new_img[mask == False] = 0.
+    new_img = new_img.reshape(image_shape)
     return new_img
 
 

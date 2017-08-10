@@ -28,6 +28,7 @@ class ImageReader(Layer):
         self._shapes = None
         self._dtypes = None
         self._output_fields = output_fields
+
         # cache the first image data array for shape/data type info
         self.__first_image = None
 
@@ -118,6 +119,8 @@ class ImageReader(Layer):
             # dictionary of mask is cached
             mask = None
             for layer in preprocessors:
+                if layer is None:
+                    continue
                 if isinstance(layer, RandomisedLayer):
                     layer.randomise()
                     image_data_dict = layer(image_data_dict, interp_order_dict)
