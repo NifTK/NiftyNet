@@ -22,10 +22,12 @@ class UniformSampler(Layer, InputBatchQueueRunner):
         InputBatchQueueRunner.__init__(self,
                                        capacity=samples_per_subject * 2,
                                        shuffle=True)
+        tf.logging.info('initialising window instance')
         self.window = ImageWindow.from_user_spec(self.reader.input_sources,
                                                  self.reader.shapes,
                                                  self.reader.tf_dtypes,
                                                  data_param)
+        tf.logging.info('initialising queue')
         self._create_queue_and_ops(self.window, samples_per_subject)
         tf.logging.info("initialised sampler output {}".format(
             self.window.shapes))
@@ -51,8 +53,8 @@ class UniformSampler(Layer, InputBatchQueueRunner):
             image_id, data = self.reader()
             if not data:
                 break
-            image_sizes = {name: data[name].shape
-                           for name in self.window.fields}
+            image_sizes = {
+                name: data[name].shape for name in self.window.fields}
             coordinates = rand_spatial_coordinates(
                 image_id, image_sizes,
                 self.window.shapes, self.window.n_samples)
@@ -74,10 +76,10 @@ class UniformSampler(Layer, InputBatchQueueRunner):
                             data[name][x_:_x, y_:_y, z_:_z, ...]
                     except ValueError:
                         tf.logging.fatal(
-                            "dimensionality miss match, "
+                            "dimensionality miss match in input volumes, "
                             "please specify spatial_window_size with a "
-                            " 3D tuple and make sure each element is "
-                            " smaller than the image length in each dim")
+                            "3D tuple and make sure each element is "
+                            "smaller than the image length in each dim.")
                         raise
             yield output_dict
 

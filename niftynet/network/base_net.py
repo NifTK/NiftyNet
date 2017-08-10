@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 
+import tensorflow as tf
 from niftynet.layer.base_layer import TrainableLayer
 
 
@@ -25,4 +26,4 @@ class BaseNet(TrainableLayer):
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
-        print('using {}'.format(name))
+        tf.logging.info('using {}'.format(name))

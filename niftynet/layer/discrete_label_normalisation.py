@@ -87,8 +87,8 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer):
         # check modalities to train, using the first subject in subject list
         # to find input modality list
         if self.is_ready():
-            tf.logging.info("label mapping ready for {} n classes: {}".format(
-                self.field, len(self.label_map[self.key])))
+            tf.logging.info("label mapping ready for {}:{}, {} classes".format(
+                self.field, self.modalities, len(self.label_map[self.key])))
             return
         tf.logging.info(
             "Looking for the set of unique discrete labels from input {}"

@@ -15,7 +15,7 @@ try:
 except ImportError:
     warnings.warn('SimpleITK adapter failed to load, reducing the supported file formats.',ImportWarning)
 
-    
+
 
 warnings.simplefilter("ignore", UserWarning)
 
@@ -55,11 +55,11 @@ def correct_image_if_necessary(img):
   # Check that affine matches zooms
   pixdim = img.header.get_zooms()
   if not np.array_equal(np.sqrt(np.sum(np.square(img.affine[0:3, 0:3]), 0)), np.asarray(pixdim)):
-    if hasattr(img,'get_sform'): 
+    if hasattr(img,'get_sform'):
       # assume it is a malformed NIfTI and try to fix it
       img=rectify_header_sform_qform(img)
   return img
-        
+
 def rectify_header_sform_qform(img_nii):
     '''
     Look at the sform and qform of the nifti object and correct it if any
@@ -347,7 +347,7 @@ def save_volume_5d(img_data, filename, save_path, img_ref=None):
 
 
 def match_volume_shape_to_patch_definition(image_data, patch):
-    ''' 
+    '''
     Adjusts the shape of the image data to match the requested
     patch. This depends on the patch.spatial_rank.
     For spatial rank 2.5 and 3, reshapes to 4D input volume [H x W x D x Modalities]

@@ -9,6 +9,7 @@ from niftynet.engine.resize_sampler import ResizeSampler
 from niftynet.engine.selective_sampler import SelectiveSampler
 from niftynet.engine.spatial_location_check import SpatialLocationCheckLayer
 from niftynet.engine.sampler_uniform import UniformSampler
+from niftynet.layer.loss import LossFunction
 
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.rand_flip import RandomFlipLayer
@@ -22,8 +23,9 @@ from niftynet.layer.mean_variance_normalisation import \
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
 from niftynet.layer.post_processing import PostProcessingLayer
-from niftynet.utilities.input_placeholders import ImagePatch
+
 from niftynet.io.misc_io import remove_time_dim
+from niftynet.utilities import misc_common as util
 
 SUPPORTED_INPUT = {'image', 'label', 'weight'}
 
@@ -84,8 +86,12 @@ class SegmentationApplication(BaseApplication):
         self.net_param = net_param
         self.action_param = action_param
         self.reader = None
+        self.data_param = None
+        self.segmentation_param = None
 
     def initialise_dataset_loader(self, data_param, segmentation_param):
+        self.data_param = data_param
+        self.segmentation_param = segmentation_param
         # read each line of csv files into an instance of Subject
         self.reader = ImageReader(SUPPORTED_INPUT)
         self.reader.initialise_reader(data_param, segmentation_param)
@@ -102,7 +108,7 @@ class SegmentationApplication(BaseApplication):
         if self.net_param.normalisation:
             histogram_normaliser = HistogramNormalisationLayer(
                 field='image',
-                modalities=segmentation_param['image'],
+                modalities=vars(segmentation_param).get('image'),
                 model_filename=self.net_param.histogram_ref_file,
                 binary_masking_func=foreground_masking_layer,
                 norm_type=self.net_param.norm_type,
@@ -115,15 +121,12 @@ class SegmentationApplication(BaseApplication):
                 binary_masking_func=foreground_masking_layer)
             normalisation_layers.append(mean_var_normaliser)
 
-        if segmentation_param['label_normalisation']:
+        if segmentation_param.label_normalisation:
             label_normaliser = DiscreteLabelNormalisationLayer(
                 field='label',
-                modalities=segmentation_param['label'],
+                modalities=vars(segmentation_param).get('label'),
                 model_filename=self.net_param.histogram_ref_file)
             normalisation_layers.append(label_normaliser)
-
-        if normalisation_layers:
-            self.reader.add_preprocessing_layers(normalisation_layers)
 
         augmentation_layers = []
         if self.is_training and self.action_param.random_flip:
@@ -143,17 +146,22 @@ class SegmentationApplication(BaseApplication):
                 max_angle=self.action_param.rotation_angle[1])
             augmentation_layers.append(rand_rotate_layer)
 
-        if augmentation_layers:
-            self.reader.add_preprocessing_layers(augmentation_layers)
+        self.reader.add_preprocessing_layers(
+               normalisation_layers+augmentation_layers)
 
-        self._sampler = UniformSampler(self.reader, data_param,
-                                       self.action_param.sample_per_volume)
 
     def initialise_sampler(self, is_training):
-        pass
+        self._sampler = UniformSampler(self.reader,
+                                       self.data_param,
+                                       self.action_param.sample_per_volume)
+    def get_sampler(self):
+        return self._sampler
 
     def initialise_network(self):
-        self._net = NetFactory.create(self.net_param.name)
+        num_classes = self.segmentation_param.num_classes
+        # TODO regularisation
+        self._net = NetFactory.create(self.net_param.name)(
+            num_classes=num_classes)
 
     def inference_sampler(self):
         return sampler
@@ -161,12 +169,46 @@ class SegmentationApplication(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  training_grads_collector=None):
+        with tf.name_scope('Optimizer'):
+            self.optimizer = tf.train.AdamOptimizer(
+                learning_rate=self.action_param.lr)
         device_id = training_grads_collector.current_tower_id
         data_dict = self._sampler.pop_batch_op(device_id,
                                                self.net_param.batch_size)
-        data_dict['image'] = remove_time_dim(data_dict['image'])
-        import pdb; pdb.set_trace()
-        return
+        for field in data_dict:
+            data_dict[field] = remove_time_dim(data_dict[field])
+        net_out = self._net(data_dict['image'], self.is_training)
+        loss_func = LossFunction(n_class=self.segmentation_param.num_classes,
+                                 loss_type=self.action_param.loss_type)
+        loss = loss_func(pred=net_out,
+                         label=data_dict.get('label', None),
+                         weight_map=data_dict.get('weight', None))
+
+        grads = self.optimizer.compute_gradients(loss)
+        training_grads_collector.add_to_collection([grads])
+        outputs_collector.print_to_console(var=loss,
+                                           name='dice_loss',
+                                           average_over_devices=True)
+        outputs_collector.print_to_tf_summary(var=loss,
+                                              name='dice_loss',
+                                              average_over_devices=True,
+                                              summary_type='scalar')
+        return net_out
+
+    def set_network_update_op(self, gradients):
+        grad_list_depth = util.list_depth_count(gradients)
+        if grad_list_depth == 3:
+            # nested depth 3 means: gradients list is nested in terms of:
+            # list of networks -> list of network variables
+            self._gradient_op = [self.optimizer.apply_gradients(grad)
+                                 for grad in gradients]
+        elif grad_list_depth == 2:
+            # nested depth 2 means:
+            # gradients list is a list of variables
+            self._gradient_op = self.optimizer.apply_gradients(gradients)
+        else:
+            raise NotImplementedError(
+                'This app supports updating a network, or list of networks')
 
     def sampler(self):
         augmentations = []
@@ -387,3 +429,10 @@ class SegmentationApplication(BaseApplication):
         return [['miss', tf.reduce_mean(tf.cast(
             tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),
             dtype=tf.float32))]]
+
+    def training_ops(self, start_iter=0, end_iter=1):
+        end_iter = max(start_iter, end_iter)
+        for iter_i in range(start_iter, end_iter):
+            yield iter_i, self._gradient_op
+    def stop(self):
+        self._sampler.close_all()

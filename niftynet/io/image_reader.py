@@ -28,6 +28,9 @@ class ImageReader(Layer):
         self._shapes = None
         self._dtypes = None
         self._output_fields = output_fields
+        # cache the first image data array for shape/data type info
+        self.__first_image = None
+
 
         # list of image objects
         self.output_list = None
@@ -42,7 +45,7 @@ class ImageReader(Layer):
         e.g., for multimodal segmentation 'image' corresponds to multiple
         modality sections, 'label' corresponds to one modality section
         """
-        app_type = task_param['name']
+        app_type = task_param.name
         self._file_list = ImageReader.load_and_merge_csv_files(data_param)
 
         if app_type == "net_segment.py":
@@ -58,14 +61,15 @@ class ImageReader(Layer):
             # by default, reader tries to output all supported fields
             self.output_fields = SUPPORTED_INPUT
         self._output_fields = [field_name for field_name in self.output_fields
-                               if task_param.get(field_name)]
-        self._input_sources = {field: task_param[field]
+                               if vars(task_param).get(field_name)]
+        self._input_sources = {field: vars(task_param).get(field, None)
                                for field in self.output_fields}
         self.output_list = filename_to_image_list(self._file_list,
                                                   self._input_sources,
                                                   data_param)
-        tf.logging.info('initialised reader: loading {} from {} ({})'.format(
-            self.output_fields, self.input_sources, len(self.output_list)))
+        for field in self.output_fields:
+            tf.logging.info('image reader: loading [{}] from {} ({})'.format(
+                field, self.input_sources[field], len(self.output_list)))
 
     def prepare_preprocessors(self):
         for layer in self.preprocessors:
@@ -158,8 +162,9 @@ class ImageReader(Layer):
             tf.logging.fatal("please initialise the reader first")
             raise RuntimeError
         if not self._shapes:
-            _, first_image = self(idx=0)
-            self._shapes = {field: first_image[field].shape
+            if self.__first_image is None:
+                _, self.__first_image = self(idx=0)
+            self._shapes = {field: self.__first_image[field].shape
                             for field in self.output_fields}
         return self._shapes
 
@@ -169,8 +174,9 @@ class ImageReader(Layer):
             tf.logging.fatal("please initialise the reader first")
             raise RuntimeError
         if not self._dtypes:
-            _, first_image = self(idx=0)
-            self._dtypes = {field: infer_tf_dtypes(first_image[field])
+            if self.__first_image is None:
+                _, self.__first_image = self(idx=0)
+            self._dtypes = {field: infer_tf_dtypes(self.__first_image[field])
                             for field in self.output_fields}
         return self._dtypes
 

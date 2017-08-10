@@ -68,7 +68,7 @@ class ApplicationDriver(object):
         net_param = system_param['NETWORK']
         train_param = system_param['TRAINING']
         infer_param = system_param['INFERENCE']
-        custom_param = vars(system_param['CUSTOM']) # convert to a dictionary
+        custom_param = system_param['CUSTOM'] # convert to a dictionary
 
         self.is_training = (app_param.action == "train")
         # hardware-related parameters
@@ -98,7 +98,7 @@ class ApplicationDriver(object):
             n_devices=max(self.num_gpus, 1)) if self.is_training else None
 
         ## create an application and assign user-specified parameters
-        self.app = ApplicationDriver._create_app(custom_param['name'])
+        self.app = ApplicationDriver._create_app(custom_param.name)
         if self.is_training:
             self.app.set_model_param(
                 net_param, train_param, self.is_training)
@@ -140,7 +140,6 @@ class ApplicationDriver(object):
                         self.app.connect_data_and_network(
                             self.outputs_collector,
                             self.gradients_collector)
-                        import pdb; pdb.set_trace()
                         # global batch norm statistics from the last device
                         bn_ops = tf.get_collection(
                             tf.GraphKeys.UPDATE_OPS, scope) \
@@ -216,18 +215,24 @@ class ApplicationDriver(object):
                 local_time = time.time()
 
                 # update the network model parameters
+                console_val = {}
+                summary = None
                 console_vars, summary_ops = self.outputs_collector.variables()
                 if iter_i % self.save_every_n == 0:
                     # update and save model,
                     # writing STDOUT logs and tensorboard summary
                     vars_to_run = [train_op, console_vars, summary_ops]
+                    vars_to_run = filter(lambda x: x is not None, vars_to_run)
                     _, console_val, summary = sess.run(vars_to_run)
-                    writer.add_summary(summary, iter_i)
+                    if summary:
+                        writer.add_summary(summary, iter_i)
                     self._save_model(sess, iter_i)
                 else:
                     # update model and write STDOUT logs
-                    vars_to_run = [train_op, console_vars]
-                    _, console_val = sess.run(vars_to_run)
+                    if console_vars:
+                        _, console_val = sess.run([train_op, console_vars])
+                    else:
+                        sess.run(train_op)
 
                 # print variables of the updated network
                 console_str = ', '.join(

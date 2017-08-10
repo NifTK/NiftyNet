@@ -43,6 +43,7 @@ def generalised_dice_loss(pred, labels, type_weight='Square'):
     n_classes = pred.get_shape()[1].value
     pred = tf.nn.softmax(pred)
     ids = tf.range(n_voxels, dtype=tf.int64)
+    labels = tf.to_int64(labels)
     ids = tf.stack([ids, labels], axis=1)
     one_hot = tf.SparseTensor(indices=ids,
                               values=tf.ones([n_voxels],dtype=tf.float32),
@@ -88,6 +89,7 @@ def sensitivity_specificity_loss(pred, labels, r=0.05):
     n_classes = pred.get_shape()[1].value
     pred = tf.nn.softmax(pred)
     ids =  tf.range(n_voxels, dtype=tf.int64)
+    labels = tf.to_int64(labels)
     ids = tf.stack([ids, labels], axis=1)
     one_hot = tf.SparseTensor(indices=ids,
                               values=tf.ones([n_voxels],dtype=tf.float32),
@@ -127,6 +129,7 @@ def dice(pred, labels):
     pred = tf.nn.softmax(pred)
     # construct sparse matrix for labels to save space
     ids =  tf.range(n_voxels, dtype=tf.int64)
+    labels = tf.to_int64(labels)
     ids = tf.stack([ids, labels], axis=1)
     one_hot = tf.SparseTensor(indices=ids,
                               values=tf.ones([n_voxels],dtype=tf.float32),
@@ -146,8 +149,8 @@ def dice(pred, labels):
 
 def l1_loss(prediction, ground_truth):
     """
-    :param prediction: the current prediction of the ground truth. 
-    :param ground_truth: the measurement you are approximating with regression. 
+    :param prediction: the current prediction of the ground truth.
+    :param ground_truth: the measurement you are approximating with regression.
     :return: mean of the l1 loss across all voxels.
     """
     absolute_residuals = tf.abs(tf.subtract(prediction, ground_truth))
@@ -156,8 +159,8 @@ def l1_loss(prediction, ground_truth):
 
 def l2_loss(prediction, ground_truth):
     """
-    :param prediction: the current prediction of the ground truth. 
-    :param ground_truth: the measurement you are approximating with regression. 
+    :param prediction: the current prediction of the ground truth.
+    :param ground_truth: the measurement you are approximating with regression.
     :return: sum(differences squared) / 2 - Note, no square root
     """
     residuals = tf.subtract(prediction, ground_truth)
@@ -167,11 +170,11 @@ def l2_loss(prediction, ground_truth):
 def huber_loss(prediction, ground_truth, delta=1.0):
     """
     The Huber loss is a smooth piecewise loss function that is quadratic for |x| <= delta, and linear for |x|> delta
-    See https://en.wikipedia.org/wiki/Huber_loss .     
-    :param prediction: the current prediction of the ground truth. 
-    :param ground_truth: the measurement you are approximating with regression. 
+    See https://en.wikipedia.org/wiki/Huber_loss .
+    :param prediction: the current prediction of the ground truth.
+    :param ground_truth: the measurement you are approximating with regression.
     :param delta: the point at which quadratic->linear transition happens.
-    :return: 
+    :return:
     """
     absolute_residuals = tf.abs(tf.subtract(prediction, ground_truth))
     residual_is_outside_delta = tf.less(delta, absolute_residuals)

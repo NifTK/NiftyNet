@@ -42,6 +42,7 @@ def main():
 
     app_driver = ApplicationDriver()
     app_driver.initialise_application(system_param, input_data_param)
+    app_driver.run_application()
     return 0
     #if not (param.cuda_devices == '""'):
     #    os.environ["CUDA_VISIBLE_DEVICES"] = param.cuda_devices
