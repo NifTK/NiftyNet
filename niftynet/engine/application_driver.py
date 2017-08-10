@@ -107,7 +107,6 @@ class ApplicationDriver(object):
                 net_param, infer_param, self.is_training)
         # initialise data input, and the tf graph
         self.app.initialise_dataset_loader(data_param, custom_param)
-        import pdb; pdb.set_trace()
         self.graph = self._create_graph()
 
     def run_application(self):
@@ -141,6 +140,7 @@ class ApplicationDriver(object):
                         self.app.connect_data_and_network(
                             self.outputs_collector,
                             self.gradients_collector)
+                        import pdb; pdb.set_trace()
                         # global batch norm statistics from the last device
                         bn_ops = tf.get_collection(
                             tf.GraphKeys.UPDATE_OPS, scope) \

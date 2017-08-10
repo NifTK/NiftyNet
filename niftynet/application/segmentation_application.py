@@ -23,6 +23,7 @@ from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
 from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.utilities.input_placeholders import ImagePatch
+from niftynet.io.misc_io import remove_time_dim
 
 SUPPORTED_INPUT = {'image', 'label', 'weight'}
 
@@ -145,17 +146,27 @@ class SegmentationApplication(BaseApplication):
         if augmentation_layers:
             self.reader.add_preprocessing_layers(augmentation_layers)
 
+        self._sampler = UniformSampler(self.reader, data_param,
+                                       self.action_param.sample_per_volume)
 
     def initialise_sampler(self, is_training):
-        sampler = UniformSampler(self.reader,
-                                 data_param,
-                                 self.action_param.sample_per_volume)
-
-    def initialise_network(self, train_dict, is_training):
         pass
+
+    def initialise_network(self):
+        self._net = NetFactory.create(self.net_param.name)
 
     def inference_sampler(self):
         return sampler
+
+    def connect_data_and_network(self,
+                                 outputs_collector=None,
+                                 training_grads_collector=None):
+        device_id = training_grads_collector.current_tower_id
+        data_dict = self._sampler.pop_batch_op(device_id,
+                                               self.net_param.batch_size)
+        data_dict['image'] = remove_time_dim(data_dict['image'])
+        import pdb; pdb.set_trace()
+        return
 
     def sampler(self):
         augmentations = []

@@ -43,17 +43,19 @@ class HistogramNormalisationLayer(DataDependentLayer):
         super(HistogramNormalisationLayer, self).__init__(name=name)
         self.model_file = os.path.abspath(model_filename)
 
-        if binary_masking_func is not None:
+        if binary_masking_func:
             assert isinstance(binary_masking_func, BinaryMaskingLayer)
             self.binary_masking_func = binary_masking_func
+        else:
+            self.binary_masking_func = None
         self.norm_type = norm_type
         self.cutoff = cutoff
-        self.field = field
 
         # mapping is a complete cache of the model file, the total number of
         # modalities are listed in self.modalities tuple
-        self.mapping = hs.read_mapping_file(model_filename)
+        self.field = field
         self.modalities = modalities
+        self.mapping = hs.read_mapping_file(model_filename)
 
     def layer_op(self, image, mask=None):
         assert self.is_ready(), \

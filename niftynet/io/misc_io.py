@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function
 
 import os
 import warnings
+import tensorflow as tf
 
 import nibabel as nib
 import numpy as np
@@ -401,3 +402,16 @@ def spatial_padding_to_indexes(spatial_padding):
         else:
             raise ValueError("unknown spatial_padding format")
     return indexes.flatten()
+
+
+def remove_time_dim(tf_tensor):
+    """
+    Given a tensorflow tensor, ndims==6 means:
+    [batch, x, y, z, time, modality]
+    this function remove the time dim if it's one
+    """
+    if tf_tensor.get_shape().ndims != 6:
+        return tf_tensor
+    if tf_tensor.get_shape()[4] != 1:
+        raise NotImplementedError("time sequences not currently supported")
+    return tf.squeeze(tf_tensor, axis=4)

@@ -30,21 +30,21 @@ class UniformSampler(Layer, InputBatchQueueRunner):
         tf.logging.info("initialised sampler output {}".format(
             self.window.shapes))
 
-        ## running test
-        sess = tf.Session()
-        _iter = 0
-        for x in self():
-            sess.run(self._enqueue_op, feed_dict=x)
-            _iter += 1
-            print('enqueue {}'.format(_iter))
-            if _iter == 2:
-                break
-        out = sess.run(self.pop_batch_op(batch_size=3))
-        print('dequeue')
-        print(out['image'].shape)
-        print(out['image_location'])
-        import pdb;
-        pdb.set_trace()
+        ### running test
+        #sess = tf.Session()
+        #_iter = 0
+        #for x in self():
+        #    sess.run(self._enqueue_op, feed_dict=x)
+        #    _iter += 1
+        #    print('enqueue {}'.format(_iter))
+        #    if _iter == 2:
+        #        break
+        #out = sess.run(self.pop_batch_op(batch_size=3))
+        #print('dequeue')
+        #print(out['image'].shape)
+        #print(out['image_location'])
+        #import pdb;
+        #pdb.set_trace()
 
     def layer_op(self):
         while True:
