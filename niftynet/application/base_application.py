@@ -3,6 +3,7 @@ import abc
 import tensorflow as tf
 
 import niftynet.engine
+from niftynet.utilities import misc_common
 
 
 class SingletonApplication(abc.ABCMeta):
@@ -14,6 +15,7 @@ class SingletonApplication(abc.ABCMeta):
             cls._instances[cls] = \
                 super(SingletonApplication, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
+
 
 class BaseApplication(object):
     """ BaseApplication represents an interface that each application type
@@ -28,6 +30,8 @@ class BaseApplication(object):
     #     This defines the ordered sequence of inputs that will be fed to the engine
     #     """
     #     pass
+    def __init__(self):
+        self._gradient_op = None
 
     @abc.abstractmethod
     def initialise_sampler(self, is_training):
@@ -52,26 +56,41 @@ class BaseApplication(object):
         """
         pass
 
-    @abc.abstractmethod
-    def net_inference(self, train_dict, is_training):
-        """
-        This method returns the network output ops for the inference network.    This typically
-        involves instantiating the net_class and calling it with some or all of the fields
-        in the dictionary created by the sampler, and optionally doing any tensorflow-based
-        post-processing. If train_dict contains information needed for inference, it can be
-        added to the network outputs here.
+    # @abc.abstractmethod
+    # def net_inference(self, train_dict, is_training):
+    #     """
+    #     This method returns the network output ops for the inference network.    This typically
+    #     involves instantiating the net_class and calling it with some or all of the fields
+    #     in the dictionary created by the sampler, and optionally doing any tensorflow-based
+    #     post-processing. If train_dict contains information needed for inference, it can be
+    #     added to the network outputs here.
+    #
+    #     Parameters:
+    #     train_dict: a dictionary of tensors as given by the sampler
+    #     is_training: a boolean that is True in training and False in inference
+    #
+    #     Returns a list of the output tensors from the network
+    #     """
+    #     return self._net(train_dict['images'], is_training), train_dict['info']
 
-        Parameters:
-        train_dict: a dictionary of tensors as given by the sampler
-        is_training: a boolean that is True in training and False in inference
+    # @abc.abstractmethod
+    # def loss_func(self, train_dict, net_outputs):
+    #     pass
 
-        Returns a list of the output tensors from the network
-        """
-        return self._net(train_dict['images'], is_training), train_dict['info']
-
-    @abc.abstractmethod
-    def loss_func(self, train_dict, net_outputs):
-        pass
+    def set_network_update_op(self, gradients):
+        grad_list_depth = misc_common.list_depth_count(gradients)
+        if grad_list_depth == 3:
+            # nested depth 3 means: gradients list is nested in terms of:
+            # list of networks -> list of network variables
+            self._gradient_op = [self.optimizer.apply_gradients(grad)
+                                 for grad in gradients]
+        elif grad_list_depth == 2:
+            # nested depth 2 means:
+            # gradients list is a list of variables
+            self._gradient_op = self.optimizer.apply_gradients(gradients)
+        else:
+            raise NotImplementedError(
+                'This app supports updating a network, or list of networks')
 
     def train(self, train_dict):
         """

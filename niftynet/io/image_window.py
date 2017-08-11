@@ -86,15 +86,6 @@ class ImageWindow(object):
         self._placeholders_dict = dict(zip(names, placeholders))
         return self._placeholders_dict
 
-    # def data_dict(self):
-    #     # dictionary required by tf queue, {placeholder:data_array}
-    #     output_dict = {}
-    #     for name, placeholder in self._placeholders_dict.items():
-    #         shape = placeholder.shape.as_list()
-    #         np_dtype = TF_NP_DTYPES.get(placeholder.dtype, np.float32)
-    #         output_dict[placeholder] = np.zeros(shape, dtype=np_dtype)
-    #     return output_dict
-
     def coordinates_placeholder(self, field):
         return self._placeholders_dict[LOCATION_FORMAT.format(field)]
 
@@ -112,6 +103,19 @@ class ImageWindow(object):
                 if not dim_length:
                     return True
         return False
+
+    def match_image_shapes(self, image_shapes):
+        if self.has_dynamic_shapes:
+            static_window_shapes = self.shapes.copy()
+            # fill the None element in dynamic shapes using image_sizes
+            for name in self.fields:
+                static_window_shapes[name] = [
+                    win_size if win_size else image_shape
+                    for (win_size, image_shape) in
+                    zip(list(self.shapes[name]), image_shapes[name])]
+        else:
+            static_window_shapes = self.shapes
+        return static_window_shapes
 
 
 def read_window_sizes(input_mod_list, input_data_param):

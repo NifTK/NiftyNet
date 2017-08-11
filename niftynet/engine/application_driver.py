@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function, division
 
+import logging as log
 import os
 import sys
 import time
 
 import tensorflow as tf
 
-from niftynet.utilities.misc_common import look_up_operations
 from niftynet.engine.graph_variables_collector import GradientsCollector
 from niftynet.engine.graph_variables_collector import OutputsCollector
+from niftynet.utilities.misc_common import look_up_operations
 
 FILE_PREFIX = 'model.ckpt'
 CONSOLE_LOG_FORMAT = '%(levelname)s:niftynet: %(message)s'
@@ -28,14 +29,17 @@ class ApplicationFactory(object):
             from niftynet.application.segmentation_application import \
                 SegmentationApplication
             app_module = SegmentationApplication
-        if type_string == 'net_autoencoder.py':
+        elif type_string == 'net_autoencoder.py':
             from niftynet.application.autoencoder_application import \
                 AutoencoderApplication
             app_module = AutoencoderApplication
-        if type_string == 'net_gan.py':
-            from niftynet.application.autoencoder_application import \
+        elif type_string == 'net_gan.py':
+            from niftynet.application.gan_application import \
                 GANApplication
             app_module = GANApplication
+        else:
+            raise NotImplementedError(
+                'Unknown application name {}'.format(type_string))
         return app_module
 
 
@@ -63,12 +67,11 @@ class ApplicationDriver(object):
         self.gradients_collector = None
 
     def initialise_application(self, system_param, data_param):
-
         app_param = system_param['APPLICATION']
         net_param = system_param['NETWORK']
         train_param = system_param['TRAINING']
         infer_param = system_param['INFERENCE']
-        custom_param = system_param['CUSTOM'] # convert to a dictionary
+        custom_param = system_param['CUSTOM']  # convert to a dictionary
 
         self.is_training = (app_param.action == "train")
         # hardware-related parameters
@@ -97,7 +100,7 @@ class ApplicationDriver(object):
         self.gradients_collector = GradientsCollector(
             n_devices=max(self.num_gpus, 1)) if self.is_training else None
 
-        ## create an application and assign user-specified parameters
+        # create an application and assign user-specified parameters
         self.app = ApplicationDriver._create_app(custom_param.name)
         if self.is_training:
             self.app.set_model_param(
@@ -105,6 +108,7 @@ class ApplicationDriver(object):
         else:
             self.app.set_model_param(
                 net_param, infer_param, self.is_training)
+
         # initialise data input, and the tf graph
         self.app.initialise_dataset_loader(data_param, custom_param)
         self.graph = self._create_graph()
@@ -127,7 +131,6 @@ class ApplicationDriver(object):
             # initialise sampler and network, these are connected in
             # the context of multiple gpus
             self.app.initialise_sampler(is_training=self.is_training)
-            import pdb; pdb.set_trace()
             self.app.initialise_network()
 
             # for data parallelism --
@@ -198,7 +201,6 @@ class ApplicationDriver(object):
 
         iter_i = -1
         start_time = time.time()
-        save_path = os.path.join(self.model_dir, FILE_PREFIX)
         writer = tf.summary.FileWriter(self.summary_dir, sess.graph)
 
         try:
@@ -216,14 +218,13 @@ class ApplicationDriver(object):
                 local_time = time.time()
 
                 # update the network model parameters
+                # TODO: fix when the operations are empty
                 console_val = {}
-                summary = None
                 console_vars, summary_ops = self.outputs_collector.variables()
                 if iter_i % self.save_every_n == 0:
                     # update and save model,
                     # writing STDOUT logs and tensorboard summary
                     vars_to_run = [train_op, console_vars, summary_ops]
-                    vars_to_run = filter(lambda x: x is not None, vars_to_run)
                     _, console_val, summary = sess.run(vars_to_run)
                     if summary:
                         writer.add_summary(summary, iter_i)
@@ -236,12 +237,10 @@ class ApplicationDriver(object):
                         sess.run(train_op)
 
                 # print variables of the updated network
-                console_str = ', '.join(
-                    '{}={}'.format(key, val) \
-                    for (key, val) in console_val.items())
-                iter_duration = time.time() - local_time
+                console_str = ', '.join('{}={}'.format(key, val) \
+                                        for (key, val) in console_val.items())
                 tf.logging.info('iter {}, {} ({:.3f}s)'.format(
-                    iter_i, console_str, iter_duration))
+                    iter_i, console_str, time.time() - local_time))
 
         except KeyboardInterrupt:
             tf.logging.warning('User cancelled training')
@@ -320,7 +319,6 @@ class ApplicationDriver(object):
 
     @staticmethod
     def set_logger(file_name=None):
-        import logging as log
         tf.logging._logger.handlers = []
         tf.logging._logger = log.getLogger('tensorflow')
         tf.logging.set_verbosity(tf.logging.INFO)

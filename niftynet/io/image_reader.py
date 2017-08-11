@@ -126,7 +126,7 @@ class ImageReader(Layer):
                     image_data_dict = layer(image_data_dict, interp_order_dict)
                 else:
                     image_data_dict, mask = layer(image_data_dict, mask)
-        return idx, image_data_dict
+        return idx, image_data_dict, interp_order_dict
 
     @staticmethod
     def load_and_merge_csv_files(data_param):
@@ -166,7 +166,7 @@ class ImageReader(Layer):
             raise RuntimeError
         if not self._shapes:
             if self.__first_image is None:
-                _, self.__first_image = self(idx=0)
+                _, self.__first_image, _ = self(idx=0)
             self._shapes = {field: self.__first_image[field].shape
                             for field in self.output_fields}
         return self._shapes
@@ -178,7 +178,7 @@ class ImageReader(Layer):
             raise RuntimeError
         if not self._dtypes:
             if self.__first_image is None:
-                _, self.__first_image = self(idx=0)
+                _, self.__first_image, _ = self(idx=0)
             self._dtypes = {field: infer_tf_dtypes(self.__first_image[field])
                             for field in self.output_fields}
         return self._dtypes

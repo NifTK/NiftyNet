@@ -34,10 +34,10 @@ class MeanVarNormalisationLayer(Layer):
         elif mask is not None:
             image_mask = mask
         elif self.binary_masking_func is not None:
-            image_mask = self.binary_masking_func(image_5d)
+            image_mask = self.binary_masking_func(image_data)
         else:
             # no access to mask, default to the entire image
-            image_mask = np.ones_like(image_5d, dtype=np.bool)
+            image_mask = np.ones_like(image_data, dtype=np.bool)
 
         if image_data.ndim == 3:
             image_data = whitening_transformation(image_data, image_mask)

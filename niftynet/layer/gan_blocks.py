@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-import numpy as np
 import tensorflow as tf
-#import niftynet.engine.logging as logging
 
 from niftynet.layer.base_layer import TrainableLayer
+
 
 class GANImageBlock(TrainableLayer):
     def __init__(self, generator, discriminator, name='GAN_image_block'):

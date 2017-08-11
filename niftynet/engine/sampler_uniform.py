@@ -16,60 +16,50 @@ class UniformSampler(Layer, InputBatchQueueRunner):
     """
 
     def __init__(self, reader, data_param, batch_size, windows_per_image):
-        # TODO: padding
+        # TODO: volume level padding
         self.reader = reader
         Layer.__init__(self, name='input_buffer')
         InputBatchQueueRunner.__init__(self,
                                        capacity=windows_per_image * 4,
                                        shuffle=True)
-        tf.logging.info('reading size of preprocessed inputs')
+        tf.logging.info('reading size of preprocessed images')
         self.window = ImageWindow.from_user_spec(self.reader.input_sources,
                                                  self.reader.shapes,
                                                  self.reader.tf_dtypes,
                                                  data_param)
         tf.logging.info('initialised window instance')
-        self._create_queue_and_ops(self.window, enqueue_size=windows_per_image,
+        self._create_queue_and_ops(self.window,
+                                   enqueue_size=windows_per_image,
                                    dequeue_size=batch_size)
         tf.logging.info("initialised sampler output {} "
-                        " [-1: dynamic size]".format(self.window.shapes))
-
-        # ## running test
-        # sess = tf.Session()
-        # _iter = 0
-        # for x in self():
-        #     sess.run(self._enqueue_op, feed_dict=x)
-        #     _iter += 1
-        #     print('enqueue {}'.format(_iter))
-        #     if _iter == 2:
-        #         break
-        # out = sess.run(self.pop_batch_op())
-        # print('dequeue')
-        # print(out['image'].shape)
-        # print(out['image_location'])
-        # import pdb;
-        # pdb.set_trace()
+                        " [-1 for dynamic size]".format(self.window.shapes))
 
     def layer_op(self):
+        """
+        This function generates sampling windows to the input buffer
+        image data are from self.reader()
+        it first completes window shapes based on image data,
+        then finds random coordinates based on the window shapes
+        finally extract window with the coordinates and output
+        a dictionary (required by input buffer)
+        :return: output data dictionary {placeholders: data_array}
+        """
         while True:
-            image_id, data = self.reader()
+            image_id, data, _ = self.reader(idx=None, shuffle=True)
             if not data:
                 break
-            image_sizes = {
+            image_shapes = {
                 name: data[name].shape for name in self.window.fields}
-            if self.window.has_dynamic_shapes:
-                static_window_shapes = self.window.shapes.copy()
-                for name in self.window.fields:
-                    static_window_shapes[name] = [
-                        win_size if win_size else image_size
-                        for (win_size, image_size) in
-                        zip(list(self.window.shapes[name]), image_sizes[name])]
-            else:
-                static_window_shapes = self.window.shapes
+            static_window_shapes = self.window.match_image_shapes(image_shapes)
 
+            # find random coordinates based on window and image shapes
             coordinates = rand_spatial_coordinates(
-                image_id, image_sizes,
+                image_id, image_shapes,
                 static_window_shapes, self.window.n_samples)
-            #  initialise output dict, placeholders as dictionary keys
+
+            # initialise output dict, placeholders as dictionary keys
+            # this dictionary will be used in
+            # enqueue operation in the form of: `feed_dict=output_dict`
             output_dict = {}
             # fill output dict with data
             for name in list(data):
@@ -83,8 +73,8 @@ class UniformSampler(Layer, InputBatchQueueRunner):
 
                 # fill output window array
                 image_array = []
-                for (i, location) in enumerate(location_array[:, 1:]):
-                    x_, y_, z_, _x, _y, _z = location
+                for window_id in range(self.window.n_samples):
+                    x_, y_, z_, _x, _y, _z = location_array[window_id, 1:]
                     try:
                         image_window = data[name][x_:_x, y_:_y, z_:_z, ...]
                         image_array.append(image_window[np.newaxis, ...])
@@ -100,6 +90,9 @@ class UniformSampler(Layer, InputBatchQueueRunner):
                         np.concatenate(image_array, axis=0)
                 else:
                     output_dict[image_data_key] = image_array[0]
+            # the output image shape should be
+            # [enqueue_batch_size, x, y, z, time, modality]
+            # where enqueue_batch_size = windows_per_image
             yield output_dict
 
 

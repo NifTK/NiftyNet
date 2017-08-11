@@ -178,13 +178,6 @@ def add_network_args(parser):
         default=20)
 
     parser.add_argument(
-        "--dynamic_window_size",
-        metavar='',
-        help="Indicates if the size of the sampling window can be dynamic",
-        type=str2boolean,
-        default=False)
-
-    parser.add_argument(
         "--decay",
         help="[Training only] Set weight decay",
         type=float,

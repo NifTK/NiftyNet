@@ -203,9 +203,11 @@ class SegmentationApplication(BaseApplication):
         loss = loss_func(pred=net_out,
                          label=data_dict.get('label', None),
                          weight_map=data_dict.get('weight', None))
-
         grads = self.optimizer.compute_gradients(loss)
+
+        # collecting gradients variables
         training_grads_collector.add_to_collection([grads])
+        # collecting output variables
         outputs_collector.print_to_console(var=loss,
                                            name='dice_loss',
                                            average_over_devices=True)
@@ -230,64 +232,6 @@ class SegmentationApplication(BaseApplication):
             raise NotImplementedError(
                 'This app supports updating a network, or list of networks')
 
-    def sampler(self):
-        augmentations = []
-        if self._param.rotation:
-            from niftynet.layer.rand_rotation import RandomRotationLayer
-            augmentations.append(RandomRotationLayer(
-                min_angle=self._param.min_angle,
-                max_angle=self._param.max_angle))
-        if self._param.spatial_scaling:
-            from niftynet.layer.rand_spatial_scaling import \
-                RandomSpatialScalingLayer
-            augmentations.append(RandomSpatialScalingLayer(
-                min_percentage=self._param.min_percentage,
-                max_percentage=self._param.max_percentage))
-        # defines how to generate samples of the training element from volume
-        with tf.name_scope('Sampling'):
-            if self._param.window_sampling == 'uniform':
-                sampler = UniformSampler(patch=patch_holder,
-                                         volume_loader=self._volume_loader,
-                                         patch_per_volume=self._param.sample_per_volume,
-                                         data_augmentation_methods=augmentations,
-                                         name='uniform_sampler')
-            elif self._param.window_sampling == 'selective':
-                # TODO check self._param, this is for segmentation problems only
-                spatial_location_check = SpatialLocationCheckLayer(
-                    compulsory=((0), (0)),
-                    minimum_ratio=self._param.min_sampling_ratio,
-                    min_numb_labels=self._param.min_numb_labels,
-                    padding=self._param.border,
-                    name='spatial_location_check')
-                sampler = SelectiveSampler(
-                    patch=patch_holder,
-                    volume_loader=self._volume_loader,
-                    spatial_location_check=spatial_location_check,
-                    data_augmentation_methods=None,
-                    patch_per_volume=self._param.sample_per_volume,
-                    name="selective_sampler")
-            elif self._param.window_sampling == 'resize':
-                sampler = ResizeSampler(
-                    patch=patch_holder,
-                    volume_loader=self._volume_loader,
-                    data_augmentation_methods=None,
-                    name="resize_sampler")
-        return sampler
-
-    def net(self, train_dict, is_training):
-        return self._net(train_dict['Sampling/images'], is_training)
-
-    def net_inference(self, train_dict, is_training):
-        net_outputs = self._net(train_dict['images'], is_training)
-        return self._post_process_outputs(net_outputs), train_dict['info']
-
-    def loss_func(self, train_dict, net_outputs):
-        if "weight_maps" in train_dict:
-            weight_maps = train_dict['Sampling/weight_maps']
-        else:
-            weight_maps = None
-        return self._loss_func(net_outputs, train_dict['Sampling/labels'],
-                               weight_maps)
 
     def _post_process_outputs(self, net_outputs):
         # converting logits into final output for
@@ -443,16 +387,10 @@ class SegmentationApplication(BaseApplication):
                 len(spatial_info), time.time() - local_time))
         return all_saved_flag
 
-    def logs(self, train_dict, net_outputs):
-        predictions = net_outputs
-        labels = train_dict['Sampling/labels']
-        return [['miss', tf.reduce_mean(tf.cast(
-            tf.not_equal(tf.argmax(predictions, -1), labels[..., 0]),
-            dtype=tf.float32))]]
-
     def training_ops(self, start_iter=0, end_iter=1):
         end_iter = max(start_iter, end_iter)
         for iter_i in range(start_iter, end_iter):
             yield iter_i, self._gradient_op
+
     def stop(self):
         self._sampler.close_all()

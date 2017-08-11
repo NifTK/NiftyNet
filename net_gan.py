@@ -5,22 +5,24 @@ import os
 import sys
 
 import niftynet.utilities.misc_common as util
-import niftynet.utilities.parse_user_params_gan as parse_user_params
+import niftynet.utilities.user_parameters_parser as user_parameters_parser
 from niftynet.engine.application_driver import ApplicationDriver
 
 
 def main():
-    param, csv_dict = parse_user_params.run()
-    if util.has_bad_inputs(param):
+    system_param, input_data_param = user_parameters_parser.run()
+    if util.has_bad_inputs(system_param):
         return -1
-    else:
-        # writing user configurations for future reference
-        settings_filename = os.path.join(param.model_dir,
-                                         'settings_' + param.action + '.txt')
-        util.print_save_input_parameters(param, txt_file=settings_filename)
+
+    all_param = {}
+    all_param.update(system_param)
+    all_param.update(input_data_param)
+    txt_file = 'settings_{}.txt'.format(system_param['APPLICATION'].action)
+    txt_file = os.path.join(system_param['APPLICATION'].model_dir, txt_file)
+    util.print_save_input_parameters(all_param, txt_file)
 
     app_driver = ApplicationDriver()
-    app_driver.initialise_application(csv_dict, param)
+    app_driver.initialise_application(system_param, input_data_param)
     app_driver.run_application()
     return 0
 

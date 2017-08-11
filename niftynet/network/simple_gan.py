@@ -51,12 +51,12 @@ class ImageGenerator(TrainableLayer):
     intermediate_sizes = [[]]*(self._num_layers)+[image_size]
     for it in range(self._num_layers,0,-1):
       intermediate_sizes[it-1]= [round(i/2) for i in intermediate_sizes[it][:-1]]+[self._layer_channels[it-1]]
-    
+
     # Define first kernel noise->image
     noise_to_image_kernel = tf.get_variable("G_fcW1", shape=[1,np.prod(intermediate_sizes[0]),noise_size], initializer=self.initializers['w'])
     noise_to_image_bias = tf.get_variable("G_fcb1", shape=[1,np.prod(intermediate_sizes[0]),1], initializer=self.initializers['b'])
     image = tf.reshape(tf.matmul(tf.tile(noise_to_image_kernel,[batch_size,1,1]),tf.expand_dims(random_source,2))+noise_to_image_bias,[batch_size]+intermediate_sizes[0])
-    # define components of upsampling units 
+    # define components of upsampling units
     acti_func=tf.nn.relu
     dropout_func = lambda x: tf.nn.dropout(x,.5)
     #dropout_func = tf.identity
@@ -83,20 +83,20 @@ class ImageGenerator(TrainableLayer):
     upsample_unit = lambda x,Wt,W,sz: conv_unit(conv_t_unit(x,Wt,sz,norm_func),W,sz,norm_func)
     last_upsample_unit = lambda x,Wt,W,sz: conv_func(conv_t_unit(x,Wt,sz,norm_func),W,[1]+[1]*spatial_rank+[1], "SAME")
     kernel_size=[3]*spatial_rank
-    
+
     for it in range(self._num_layers):
       Wt=tf.get_variable('G_Wt{}'.format(it),shape=kernel_size+[intermediate_sizes[it+1][-1],intermediate_sizes[it][-1]],initializer=self.initializers['w'])
       W =tf.get_variable( 'G_W{}'.format(it),shape=kernel_size+[intermediate_sizes[it+1][-1],intermediate_sizes[it+1][-1]],initializer=self.initializers['w'])
       if it<self._num_layers-1:
         image=upsample_unit(image,Wt,W,intermediate_sizes[it+1])
-      else: 
+      else:
         image=last_upsample_unit(image,Wt,W,intermediate_sizes[it+1]) # NB. no batch_norm for true mean and scale
     channel_scale = tf.get_variable('G_scale',shape=[1]*(spatial_rank+1)+[intermediate_sizes[-1][-1]],initializer=tf.constant_initializer(.1))
     #channel_shift = tf.get_variable('G_shift',shape=[1]*(spatial_rank+1)+[intermediate_sizes[-1][-1]],initializer=tf.constant_initializer(0.))
     channel_shift = tf.get_variable('G_shift',shape=[1]+intermediate_sizes[-1],initializer=tf.constant_initializer(0.))
-    
+
     image = image*channel_scale+channel_shift
-    return tf.nn.tanh(image)  
+    return tf.nn.tanh(image)
 
 class ImageDiscriminator(TrainableLayer):
   def __init__(self, hidden_layer_channels,name):
@@ -141,4 +141,3 @@ class ImageDiscriminator(TrainableLayer):
     logits = tf.layers.dense(tf.reshape(image,[batch_size,-1]),1,activation=None,use_bias=True)
     return logits
 
-    

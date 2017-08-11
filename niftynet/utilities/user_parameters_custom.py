@@ -6,7 +6,7 @@ from __future__ import print_function
 from niftynet.utilities.misc_common import look_up_operations
 from niftynet.utilities.user_parameters_helper import *
 
-SUPPORTED_TASKS = {'SEGMENTATION'}
+SUPPORTED_TASKS = {'SEGMENTATION', 'GAN'}
 
 
 #######################################################################
@@ -29,6 +29,8 @@ def add_customised_args(parser, task_name):
     task_name = look_up_operations(task_name.upper(), SUPPORTED_TASKS)
     if task_name == 'SEGMENTATION':
         return __add_segmentation_args(parser)
+    elif task_name == 'GAN':
+        return __add_gan_args(parser)
     else:
         raise NotImplemented
 
@@ -57,5 +59,24 @@ def __add_segmentation_args(parser):
         default=False)
 
     from niftynet.application.segmentation_application import SUPPORTED_INPUT
+    parser = add_input_name_args(parser, SUPPORTED_INPUT)
+    return parser
+
+def __add_gan_args(parser):
+    parser.add_argument(
+        "--noise_size",
+        metavar='',
+        help="length of the noise vector",
+        type=int,
+        default=-1)
+
+    parser.add_argument(
+        "--window_sampling",
+        metavar='',
+        help="the method of generating window from image",
+        type=str,
+        default='resize')
+
+    from niftynet.application.gan_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser
