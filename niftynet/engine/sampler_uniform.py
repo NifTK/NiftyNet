@@ -69,14 +69,18 @@ class UniformSampler(Layer, InputBatchQueueRunner):
             coordinates = rand_spatial_coordinates(
                 image_id, image_sizes,
                 static_window_shapes, self.window.n_samples)
-            #  initialise output dict
+            #  initialise output dict, placeholders as dictionary keys
             output_dict = {}
             # fill output dict with data
             for name in list(data):
                 # fill output coordinates
+                coordinates_key = self.window.coordinates_placeholder(name)
+                image_data_key = self.window.image_data_placeholder(name)
+
+                # fill the coordinates
                 location_array = coordinates[name]
-                output_dict[self.window.coordinates_placeholder(name)] = \
-                    location_array
+                output_dict[coordinates_key] = location_array
+
                 # fill output window array
                 image_array = []
                 for (i, location) in enumerate(location_array[:, 1:]):
@@ -92,15 +96,24 @@ class UniformSampler(Layer, InputBatchQueueRunner):
                             "smaller than the image length in each dim.")
                         raise
                 if len(image_array) > 1:
-                    output_dict[self.window.image_data_placeholder(name)] = \
+                    output_dict[image_data_key] = \
                         np.concatenate(image_array, axis=0)
                 else:
-                    output_dict[self.window.image_data_placeholder(name)] = \
-                        image_array[0]
+                    output_dict[image_data_key] = image_array[0]
             yield output_dict
 
 
 def rand_spatial_coordinates(subject_id, img_sizes, win_sizes, n_samples):
+    """
+    win_sizes could be different, for example in segmentation network
+    input image window size is 32x32x10,
+    training label window is 16x16x10, the network reduces x-y plane
+    spatial resolution.
+    This function handles this situation by first find the largest
+    window across these window definitions, and generate the coordinates.
+    These coordinates are then adjusted for each of the
+    smaller window sizes.
+    """
     uniq_spatial_size = set([img_size[:N_SPATIAL]
                              for img_size in list(img_sizes.values())])
     if len(uniq_spatial_size) > 1:
@@ -118,6 +131,9 @@ def rand_spatial_coordinates(subject_id, img_sizes, win_sizes, n_samples):
     max_spatial_win = np.max(spatial_win_sizes, axis=0)
     max_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
     for i in range(0, N_SPATIAL):
+        assert uniq_spatial_size[i] >= max_spatial_win[i], \
+            "window size {} is larger than image size{}".format(
+                max_spatial_win[i], uniq_spatial_size[i])
         max_coords[:, i] = np.random.randint(
             0, max(uniq_spatial_size[i] - max_spatial_win[i], 1), n_samples)
 

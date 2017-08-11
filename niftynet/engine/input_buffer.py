@@ -152,6 +152,7 @@ class InputBatchQueueRunner(object):
             data_output = self._dequeue_op
             for (name, shape) in self._window.shapes.items():
                 data_output[name].set_shape([self._batch_size] + list(shape))
+            # currently the time dimension from image is ignored
             for field in data_output:
                 data_output[field] = remove_time_dim(data_output[field])
             return data_output

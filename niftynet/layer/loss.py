@@ -124,16 +124,15 @@ def cross_entropy(pred, labels):
 
 
 def dice(pred, labels):
-    n_voxels = labels.get_shape()[0].value
-    n_classes = pred.get_shape()[1].value
-    pred = tf.nn.softmax(pred)
-    # construct sparse matrix for labels to save space
-    ids =  tf.range(n_voxels, dtype=tf.int64)
     labels = tf.to_int64(labels)
+    pred = tf.cast(pred, tf.float32)
+
+    ids = tf.range(tf.to_int64(tf.shape(labels)[0]), dtype=tf.int64)
     ids = tf.stack([ids, labels], axis=1)
-    one_hot = tf.SparseTensor(indices=ids,
-                              values=tf.ones([n_voxels],dtype=tf.float32),
-                              dense_shape=[n_voxels, n_classes])
+    one_hot = tf.SparseTensor(
+            indices=ids,
+            values=tf.ones_like(labels, dtype=tf.float32),
+            dense_shape=tf.to_int64(tf.shape(pred)))
     # dice
     dice_numerator = 2.0 * tf.sparse_reduce_sum(one_hot * pred,
                                                 reduction_axes=[0])
@@ -142,7 +141,7 @@ def dice(pred, labels):
     epsilon_denominator = 0.00001
 
     dice_score = dice_numerator / (dice_denominator + epsilon_denominator)
-    dice_score.set_shape([n_classes])
+    #dice_score.set_shape([n_classes])
     # minimising (1 - dice_coefficients)
     return 1.0 - tf.reduce_mean(dice_score)
 
