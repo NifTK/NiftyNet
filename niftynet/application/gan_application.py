@@ -165,6 +165,7 @@ class GANApplication(BaseApplication):
                     windows_per_image=self.action_param.sample_per_volume)
         else:
             self._sampler = self.inference_sampler()
+        self._sampler = [self._sampler]
 
     def training_sampler(self):
         pass
@@ -203,7 +204,7 @@ class GANApplication(BaseApplication):
         if self.is_training:
             # a new pop_batch_op for each gpu tower
             device_id = training_grads_collector.current_tower_id
-            data_dict = self._sampler.pop_batch_op(device_id)
+            data_dict = self.get_sampler()[0].pop_batch_op(device_id)
 
             images = data_dict['image']
             noise_shape = [self.net_param.batch_size,
@@ -371,7 +372,8 @@ class GANApplication(BaseApplication):
         # return all_saved_flag
 
     def stop(self):
-        self._sampler.close_all()
+        for sampler in self.get_sampler():
+            sampler.close_all()
 
     def logs(self, train_dict, net_outputs):
         pass
