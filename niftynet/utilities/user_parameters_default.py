@@ -65,13 +65,6 @@ def add_inference_args(parser):
         default=())
 
     parser.add_argument(
-        "--border",
-        metavar='',
-        help="[Inference only] Width of borders to crop for segmented patch",
-        type=numarray,
-        default=5)
-
-    parser.add_argument(
         "--inference_iter",
         metavar='',
         help="[Inference only] Use the checkpoint at this iteration for "

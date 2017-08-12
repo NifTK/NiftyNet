@@ -58,6 +58,13 @@ def __add_segmentation_args(parser):
         type=str2boolean,
         default=False)
 
+    parser.add_argument(
+        "--border",
+        metavar='',
+        help="[Inference only] Width of borders to crop for segmented patch",
+        type=numarray,
+        default=5)
+
     from niftynet.application.segmentation_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser

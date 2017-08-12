@@ -168,13 +168,12 @@ class SegmentationApplication(BaseApplication):
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=self.action_param.sample_per_volume)
-            import pdb; pdb.set_trace()
         else:
-            import pdb; pdb.set_trace()
             self._sampler = GridSampler(self.reader,
                                         self.data_param,
                                         self.net_param.batch_size,
-                                        self.action_param.spatial_window_size)
+                                        self.action_param.spatial_window_size,
+                                        self.segmentation_param.border)
 
     def get_sampler(self):
         return self._sampler

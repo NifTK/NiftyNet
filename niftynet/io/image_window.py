@@ -45,7 +45,7 @@ class ImageWindow(object):
             raise
         for name in self.fields:
             non_spatial_dims = list(self.shapes[name][len(spatial_window):])
-            self.shapes = tuple(spatial_window + non_spatial_dims)
+            self.shapes[name] = tuple(spatial_window + non_spatial_dims)
 
     def placeholders_dict(self, n_samples=1):
         """
