@@ -1,34 +1,23 @@
 from __future__ import absolute_import, print_function
-import time
 
-import numpy as np
 import tensorflow as tf
 
-import niftynet.utilities.param_shortcuts_expanding as param_util
 from niftynet.application.base_application import BaseApplication
-from niftynet.engine import graph_variables_collector as logging
+from niftynet.engine.graph_variables_collector import CONSOLE
+from niftynet.engine.graph_variables_collector import TF_SUMMARIES
+from niftynet.engine.sampler_resize import ResizeSampler
+from niftynet.io.image_reader import ImageReader
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.gan_loss import LossFunction
 from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
 from niftynet.layer.mean_variance_normalisation import \
     MeanVarNormalisationLayer
-
-#from niftynet.engine.input_buffer import TrainEvalInputBuffer, DeployInputBuffer
-
-
-from niftynet.engine.sampler_resize import ResizeSampler
-from niftynet.io.image_reader import ImageReader
 from niftynet.layer.rand_flip import RandomFlipLayer
-from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
-from niftynet.layer.binary_masking import BinaryMaskingLayer
-from niftynet.layer.histogram_normalisation import \
-    HistogramNormalisationLayer
-from niftynet.layer.mean_variance_normalisation import \
-    MeanVarNormalisationLayer
-from niftynet.layer.discrete_label_normalisation import \
-    DiscreteLabelNormalisationLayer
+from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
+
+# from niftynet.engine.input_buffer import TrainEvalInputBuffer, DeployInputBuffer
 
 SUPPORTED_INPUT = {'image'}
 
@@ -48,7 +37,6 @@ class GanFactory(object):
 
 
 class GANApplication(BaseApplication):
-
     # def __init__(self, param):
     #     # super(GANApplication, self).__init__()
     #     self._net_class = None
@@ -76,7 +64,7 @@ class GANApplication(BaseApplication):
         # read each line of csv files into an instance of Subject
         if self.is_training:
             self.reader = ImageReader(SUPPORTED_INPUT)
-        else: # in the inference process use image input only
+        else:  # in the inference process use image input only
             self.reader = ImageReader(['image'])
         self.reader.initialise_reader(data_param, gan_param)
 
@@ -128,7 +116,7 @@ class GANApplication(BaseApplication):
                 augmentation_layers.append(rand_rotate_layer)
 
         self.reader.add_preprocessing_layers(
-               normalisation_layers+augmentation_layers)
+            normalisation_layers + augmentation_layers)
 
     def inference_sampler(self):
         pass
@@ -206,9 +194,8 @@ class GANApplication(BaseApplication):
     def initialise_network(self):
         self._net = GanFactory.create(self.net_param.name)()
 
-
     def connect_data_and_network(
-        self, outputs_collector=None, training_grads_collector=None):
+            self, outputs_collector=None, training_grads_collector=None):
 
         with tf.name_scope('Optimizer'):
             self.optimizer = tf.train.AdamOptimizer(
@@ -243,30 +230,32 @@ class GANApplication(BaseApplication):
                     lossG = lossG + reg_loss
 
             # variables to display in STDOUT
-            outputs_collector.print_to_console(
-                var=lossD, name='lossD', average_over_devices=True)
-            outputs_collector.print_to_console(
-                var=lossG, name='lossG', average_over_devices=False)
+            outputs_collector.add_to_collection(
+                var=lossD, name='lossD', average_over_devices=True,
+                collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=lossG, name='lossG', average_over_devices=False,
+                collection=CONSOLE)
             # variables to display in tensorboard
-            outputs_collector.print_to_tf_summary(
-                var=lossG, name='lossG',
-                average_over_devices=False, summary_type='scalar')
-            outputs_collector.print_to_tf_summary(
-                var=lossG, name='lossD',
-                average_over_devices=True, summary_type='scalar')
+            outputs_collector.add_to_collection(
+                var=lossG, name='lossG', average_over_devices=False,
+                collection=TF_SUMMARIES)
+            outputs_collector.add_to_collection(
+                var=lossG, name='lossD', average_over_devices=True,
+                collection=TF_SUMMARIES)
 
             with tf.name_scope('ComputeGradients'):
                 # gradients of generator
                 generator_variables = tf.get_collection(
                     tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
                 generator_grads = self.optimizer.compute_gradients(
-                        lossG, var_list=generator_variables)
+                    lossG, var_list=generator_variables)
 
                 # gradients of discriminator
                 discriminator_variables = tf.get_collection(
                     tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator')
                 discriminator_grads = self.optimizer.compute_gradients(
-                        lossD, var_list=discriminator_variables)
+                    lossD, var_list=discriminator_variables)
                 grads = [generator_grads, discriminator_grads]
 
                 # add the grads back to application_driver's training_grads
@@ -274,17 +263,17 @@ class GANApplication(BaseApplication):
             return net_output
         else:
             raise NotImplementedError
-            #data_dict = self._sampler.pop_batch_op()
-            #images = data_dict['images']
-            #net_output = self._net(images, False)
-            #return net_output
+            # data_dict = self._sampler.pop_batch_op()
+            # images = data_dict['images']
+            # net_output = self._net(images, False)
+            # return net_output
 
     def net_inference(self, train_dict, is_training):
         raise NotImplementedError
-        #if not self._net:
+        # if not self._net:
         #    self._net = self._net_class()
-        #net_outputs = self._net(train_dict['images'], is_training)
-        #return self._post_process_outputs(net_outputs), train_dict['info']
+        # net_outputs = self._net(train_dict['images'], is_training)
+        # return self._post_process_outputs(net_outputs), train_dict['info']
 
     def loss_func(self, train_dict, net_outputs):
         real_logits = net_outputs[1]
@@ -294,7 +283,7 @@ class GANApplication(BaseApplication):
             fake_logits, False)
         return lossG, lossD
 
-    #def train(self, train_dict):
+    # def train(self, train_dict):
     #    """
     #    Returns a list of possible compute_gradients ops to be run each training iteration.
     #    Default implementation returns gradients for all variables from one Adam optimizer
@@ -333,10 +322,10 @@ class GANApplication(BaseApplication):
 
     def inference_loop(self, sess, coord, net_out):
         pass
-        #all_saved_flag = False
-        #img_id, pred_img, subject_i = None, None, None
-        #spatial_rank = self._inference_patch_holder.spatial_rank
-        #while True:
+        # all_saved_flag = False
+        # img_id, pred_img, subject_i = None, None, None
+        # spatial_rank = self._inference_patch_holder.spatial_rank
+        # while True:
         #    local_time = time.time()
         #    if coord.should_stop():
         #        break
@@ -379,14 +368,14 @@ class GANApplication(BaseApplication):
         #            # try to expand prediction dims to match the output volume
         #    print('processed {} image patches ({:.3f}s)'.format(
         #        len(spatial_info), time.time() - local_time))
-        #return all_saved_flag
+        # return all_saved_flag
 
     def stop(self):
         self._sampler.close_all()
 
     def logs(self, train_dict, net_outputs):
         pass
-        #return []
+        # return []
 
     def training_ops(self, start_iter=0, end_iter=1):
         end_iter = max(start_iter, end_iter)
@@ -395,21 +384,21 @@ class GANApplication(BaseApplication):
 
     def set_all_output_ops(self, output_op):
         pass
-        #self._output_op = output_op
+        # self._output_op = output_op
 
     def eval_variables(self):
         pass
-        #return self._output_op[0][0][1]
+        # return self._output_op[0][0][1]
 
     def process_output_values(self, values, is_training):
         # do nothing
         pass
-        #if is_training:
+        # if is_training:
         #    print(values)
-        #else:
+        # else:
         #    print(values)
 
     def train_op_generator(self, apply_ops):
         pass
-        #while True:
+        # while True:
         #    yield apply_ops

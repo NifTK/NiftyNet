@@ -106,7 +106,7 @@ class ImageReader(Layer):
             idx = -1
 
         if idx < 0 or idx >= len(self.output_list):
-            return -1, None
+            return -1, None, None
 
         image_dict = self.output_list[idx]
         image_data_dict = {field: image.get_data()

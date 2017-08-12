@@ -111,6 +111,7 @@ class InputBatchQueueRunner(object):
                 if self._coordinator.should_stop():
                     break
                 self._session.run(self._enqueue_op, feed_dict=output_dict)
+            import pdb; pdb.set_trace()
 
                 ## push a set of stopping patches
                 # for i in range(0, self.capacity):
@@ -179,11 +180,9 @@ class InputBatchQueueRunner(object):
             self._coordinator.request_stop()
             self._coordinator.join(threads=self._threads,
                                    stop_grace_period_secs=0)
-            # self._coordinator.join(threads=self._threads,
-            #                       stop_grace_period_secs=0,
-            #                       ignore_live_threads=True)
         except RuntimeError as e:
-            tf.logging.info(e)
+            pass
+            #tf.logging.info(e)
         finally:
             if not self._session._closed:
                 self._session.run(self._close_queue_op)

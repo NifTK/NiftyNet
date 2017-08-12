@@ -4,28 +4,23 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
-from niftynet.engine.resize_sampler import ResizeSampler
-from niftynet.engine.selective_sampler import SelectiveSampler
-from niftynet.engine.spatial_location_check import SpatialLocationCheckLayer
-
+from niftynet.engine.graph_variables_collector import CONSOLE
+from niftynet.engine.graph_variables_collector import TF_SUMMARIES
 from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.sampler_uniform import UniformSampler
-from niftynet.layer.loss import LossFunction
-
 from niftynet.io.image_reader import ImageReader
-from niftynet.layer.rand_flip import RandomFlipLayer
-from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
-from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.binary_masking import BinaryMaskingLayer
-from niftynet.layer.histogram_normalisation import \
-    HistogramNormalisationLayer
-from niftynet.layer.mean_variance_normalisation import \
-    MeanVarNormalisationLayer
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
+from niftynet.layer.histogram_normalisation import \
+    HistogramNormalisationLayer
+from niftynet.layer.loss import LossFunction
+from niftynet.layer.mean_variance_normalisation import \
+    MeanVarNormalisationLayer
 from niftynet.layer.post_processing import PostProcessingLayer
-
-
+from niftynet.layer.rand_flip import RandomFlipLayer
+from niftynet.layer.rand_rotation import RandomRotationLayer
+from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 from niftynet.utilities import misc_common as util
 
 SUPPORTED_INPUT = {'image', 'label', 'weight'}
@@ -97,7 +92,7 @@ class SegmentationApplication(BaseApplication):
         # read each line of csv files into an instance of Subject
         if self.is_training:
             self.reader = ImageReader(SUPPORTED_INPUT)
-        else: # in the inference process use image input only
+        else:  # in the inference process use image input only
             self.reader = ImageReader(['image'])
         self.reader.initialise_reader(data_param, segmentation_param)
 
@@ -159,7 +154,7 @@ class SegmentationApplication(BaseApplication):
                 augmentation_layers.append(rand_rotate_layer)
 
         self.reader.add_preprocessing_layers(
-               normalisation_layers+augmentation_layers)
+            normalisation_layers + augmentation_layers)
 
     def initialise_sampler(self, is_training):
         if is_training:
@@ -174,6 +169,7 @@ class SegmentationApplication(BaseApplication):
                                         self.net_param.batch_size,
                                         self.action_param.spatial_window_size,
                                         self.segmentation_param.border)
+        self._sampler = [self._sampler]
 
     def get_sampler(self):
         return self._sampler
@@ -190,31 +186,42 @@ class SegmentationApplication(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  training_grads_collector=None):
-        with tf.name_scope('Optimizer'):
-            self.optimizer = tf.train.AdamOptimizer(
-                learning_rate=self.action_param.lr)
-        device_id = training_grads_collector.current_tower_id
-        data_dict = self._sampler.pop_batch_op(device_id)
-
+        if self.is_training and training_grads_collector:
+            device_id = training_grads_collector.current_tower_id
+        else:
+            device_id = 0
+        data_dict = self.get_sampler()[0].pop_batch_op(device_id)
         net_out = self._net(data_dict['image'], self.is_training)
-        loss_func = LossFunction(n_class=self.segmentation_param.num_classes,
-                                 loss_type=self.action_param.loss_type)
-        loss = loss_func(pred=net_out,
-                         label=data_dict.get('label', None),
-                         weight_map=data_dict.get('weight', None))
-        grads = self.optimizer.compute_gradients(loss)
 
-        # collecting gradients variables
-        training_grads_collector.add_to_collection([grads])
-        # collecting output variables
-        outputs_collector.print_to_console(var=loss,
-                                           name='dice_loss',
-                                           average_over_devices=True)
-        outputs_collector.print_to_tf_summary(var=loss,
-                                              name='dice_loss',
-                                              average_over_devices=True,
-                                              summary_type='scalar')
-        return net_out
+        if self.is_training:
+            with tf.name_scope('Optimizer'):
+                self.optimizer = tf.train.AdamOptimizer(
+                    learning_rate=self.action_param.lr)
+            loss_func = LossFunction(
+                n_class=self.segmentation_param.num_classes,
+                loss_type=self.action_param.loss_type)
+            loss = loss_func(pred=net_out,
+                             label=data_dict.get('label', None),
+                             weight_map=data_dict.get('weight', None))
+            grads = self.optimizer.compute_gradients(loss)
+            # collecting gradients variables
+            training_grads_collector.add_to_collection([grads])
+            # collecting output variables
+            outputs_collector.add_to_collection(var=loss,
+                                                name='dice_loss',
+                                                average_over_devices=True,
+                                                collection=CONSOLE)
+            outputs_collector.add_to_collection(var=loss,
+                                                name='dice_loss',
+                                                average_over_devices=True,
+                                                summary_type='scalar',
+                                                collection=TF_SUMMARIES)
+        else:
+            outputs_collector.add_to_collection(var=net_out,
+                                                name='network_output',
+                                                average_over_devices=False,
+                                                collection=CONSOLE)
+        #return net_out
 
     def set_network_update_op(self, gradients):
         grad_list_depth = util.list_depth_count(gradients)
@@ -230,7 +237,6 @@ class SegmentationApplication(BaseApplication):
         else:
             raise NotImplementedError(
                 'This app supports updating a network, or list of networks')
-
 
     def _post_process_outputs(self, net_outputs):
         # converting logits into final output for
@@ -392,4 +398,5 @@ class SegmentationApplication(BaseApplication):
             yield iter_i, self._gradient_op
 
     def stop(self):
-        self._sampler.close_all()
+        for sampler in self.get_sampler():
+            sampler.close_all()

@@ -7,9 +7,12 @@ import sys
 import time
 
 import tensorflow as tf
+from tensorflow.python.client import device_lib
 
 from niftynet.engine.graph_variables_collector import GradientsCollector
 from niftynet.engine.graph_variables_collector import OutputsCollector
+from niftynet.engine.graph_variables_collector import CONSOLE
+from niftynet.engine.graph_variables_collector import TF_SUMMARIES
 from niftynet.utilities.misc_common import look_up_operations
 
 FILE_PREFIX = 'model.ckpt'
@@ -75,7 +78,8 @@ class ApplicationDriver(object):
 
         self.is_training = (app_param.action == "train")
         # hardware-related parameters
-        self.num_threads = max(app_param.num_threads, 1)
+        self.num_threads = max(app_param.num_threads, 1) \
+            if self.is_training else 1
         self.num_gpus = app_param.num_gpus \
             if self.is_training else min(app_param.num_gpus, 1)
         ApplicationDriver._set_cuda_device(app_param.cuda_devices)
@@ -118,10 +122,49 @@ class ApplicationDriver(object):
             "please call initialise_application first"
         config = ApplicationDriver._tf_config()
         with tf.Session(config=config, graph=self.graph) as session:
-            if self.is_training:
-                self._training_loop(session)
-            else:
-                self._inference_loop(session)
+            # initialise network
+            tf.logging.info('starting from iter {}'.format(self.initial_iter))
+            self._randomly_init_or_restore_variables(session)
+
+            # start samplers' threads
+            self.coord = tf.train.Coordinator()
+            samplers = self.app.get_sampler()
+            tf.logging.info('Filling queues (this can take a few minutes)')
+            for sampler in samplers:
+                sampler.run_threads(session, self.coord, self.num_threads)
+
+            # read data from the queue and process
+            start_time = time.time()
+            # iteratively run the graph
+            loop_status = {}
+            try:
+                if self.is_training:
+                    loop_status['current_iter'] = self.initial_iter
+                    self._training_loop(session, loop_status)
+                else:
+                    loop_status['all_saved_flag'] = False
+                    self._inference_loop(session, loop_status)
+
+            except KeyboardInterrupt:
+                tf.logging.warning('User cancelled training')
+            except tf.errors.OutOfRangeError as e:
+                pass
+            except Exception:
+                import sys, traceback
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                traceback.print_exception(
+                    exc_type, exc_value, exc_traceback, file=sys.stdout)
+            finally:
+                if self.is_training and loop_status.get('current_iter', None):
+                    self._save_model(session, loop_status['current_iter'])
+                elif loop_status.get('all_saved_flag', None):
+                    if not loop_status['all_saved_flag']:
+                        tf.logging.warning('stopped early, incomplete loops')
+
+                tf.logging.info('stopping sampling threads')
+                self.app.stop()
+                tf.logging.info("{} stopped (time in second {:.2f}).".format(
+                    type(self.app).__name__, (time.time() - start_time)))
 
     def _create_graph(self):
         graph = tf.Graph()
@@ -197,71 +240,53 @@ class ApplicationDriver(object):
         self.saver.restore(sess, checkpoint)
         return
 
-    def _training_loop(self, sess):
-
-        iter_i = -1
-        start_time = time.time()
+    def _training_loop(self, sess, loop_status):
         writer = tf.summary.FileWriter(self.summary_dir, sess.graph)
 
-        try:
-            coord = tf.train.Coordinator()
-            tf.logging.info('starting from iter {}'.format(self.initial_iter))
-            self._randomly_init_or_restore_variables(sess)
-            tf.logging.info('Filling queues (this can take a few minutes)')
-            self.app.get_sampler().run_threads(sess, coord, self.num_threads)
+        # running through training_op from application
+        for (iter_i, train_op) in \
+                self.app.training_ops(self.initial_iter, self.final_iter):
 
-            # running through training_op from application
-            for (iter_i, train_op) in self.app.training_ops(self.initial_iter,
-                                                            self.final_iter):
-                if coord.should_stop():
-                    break
-                local_time = time.time()
+            loop_status['current_iter'] = iter_i
+            local_time = time.time()
+            if self.coord.should_stop():
+                break
 
-                # update the network model parameters
-                # TODO: fix when the operations are empty
-                console_val = {}
-                console_vars, summary_ops = self.outputs_collector.variables()
-                if iter_i % self.save_every_n == 0:
-                    # update and save model,
-                    # writing STDOUT logs and tensorboard summary
-                    vars_to_run = [train_op, console_vars, summary_ops]
-                    _, console_val, summary = sess.run(vars_to_run)
-                    if summary:
-                        writer.add_summary(summary, iter_i)
-                    self._save_model(sess, iter_i)
-                else:
-                    # update model and write STDOUT logs
-                    if console_vars:
-                        _, console_val = sess.run([train_op, console_vars])
-                    else:
-                        sess.run(train_op)
+            # prepare variables from the graph to run
+            vars_to_run = dict(train_op=train_op)
+            vars_to_run[CONSOLE] = \
+                self.outputs_collector.variables(collection=CONSOLE)
+            if iter_i % self.save_every_n == 0:
+                # adding tensorboard summary
+                vars_to_run[TF_SUMMARIES] = \
+                    self.outputs_collector.variables(collection=TF_SUMMARIES)
 
-                # print variables of the updated network
-                console_str = ', '.join('{}={}'.format(key, val) \
-                                        for (key, val) in console_val.items())
-                tf.logging.info('iter {}, {} ({:.3f}s)'.format(
-                    iter_i, console_str, time.time() - local_time))
+            # run all variables in one go
+            graph_output = sess.run(vars_to_run)
 
-        except KeyboardInterrupt:
-            tf.logging.warning('User cancelled training')
-        except tf.errors.OutOfRangeError as e:
-            pass
-        except Exception:
-            import sys, traceback
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback.print_exception(exc_type,
-                                      exc_value,
-                                      exc_traceback,
-                                      file=sys.stdout)
-        finally:
-            self._save_model(sess, iter_i)
-            tf.logging.info('stopping sampling threads')
-            self.app.stop()
-            tf.logging.info("{} stopped (time in second {:.2f}).".format(
-                type(self.app).__name__, (time.time() - start_time)))
+            # if application specified summaries
+            summary = graph_output.get(TF_SUMMARIES, {})
+            if summary != {}:
+                writer.add_summary(summary, iter_i)
+                self._save_model(sess, iter_i)
 
-    def _inference_loop(self, sess):
-        pass
+            # print variables of the updated network
+            console = graph_output.get(CONSOLE, {})
+            console_str = ', '.join(
+                '{}={}'.format(key, val) for (key, val) in console.items())
+            tf.logging.info('iter {}, {} ({:.3f}s)'.format(
+                iter_i, console_str, time.time() - local_time))
+
+    def _inference_loop(self, sess, loop_status):
+        loop_status['all_saved_flag'] = False
+        while True:
+            local_time = time.time()
+            if self.coord.should_stop():
+                break
+            out = self.outputs_collector.variables()
+            batch_output = sess.run(out)
+            tf.logging.info('{:.3f}s'.format(time.time() - local_time))
+            import pdb; pdb.set_trace()
 
     def _save_model(self, session, iter_i):
         if iter_i <= 0:
@@ -272,13 +297,18 @@ class ApplicationDriver(object):
         tf.logging.info('iter {} saved: {}'.format(iter_i, self.session_dir))
 
     def _device_string(self, id=0, is_worker=True):
+
+        devices = device_lib.list_local_devices()
+        has_local_gpu = any([x.device_type == 'GPU' for x in devices])
         if self.num_gpus <= 0:  # user specified no gpu at all
             return '/cpu:{}'.format(id)
+        # in training: use gpu only for workers whenever has_local_gpu
+        # in inference: use gpu for everything whenever has_local_gpu
         if self.is_training:
-            device = 'gpu' if is_worker else 'cpu'
+            device = 'gpu' if (is_worker and has_local_gpu) else 'cpu'
             return '/{}:{}'.format(device, id)
         else:
-            return '/gpu:0'  # always use one GPU for inference
+            return '/gpu:0' if has_local_gpu else '/cpu:0'
 
     @staticmethod
     def _touch_folder(model_dir):
