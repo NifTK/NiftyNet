@@ -284,6 +284,7 @@ class ApplicationDriver(object):
                 break
             out = self.outputs_collector.variables()
             batch_output = sess.run(out)
+            # TODO: stopping signal
             self.app.interpret_output(batch_output)
             tf.logging.info('{:.3f}s'.format(time.time() - local_time))
 

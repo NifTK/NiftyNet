@@ -22,7 +22,7 @@ from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 from niftynet.utilities import misc_common as util
-from niftynet.io.image_windows_aggregator import ImageWindowsAggregator
+from niftynet.io.image_windows_aggregator import GridSamplesAggregator
 
 SUPPORTED_INPUT = {'image', 'label', 'weight'}
 
@@ -219,6 +219,7 @@ class SegmentationApplication(BaseApplication):
                                                 summary_type='scalar',
                                                 collection=TF_SUMMARIES)
         else:
+            # TODO: post processing
             outputs_collector.add_to_collection(var=net_out,
                                                 name='window',
                                                 average_over_devices=False,
@@ -227,7 +228,7 @@ class SegmentationApplication(BaseApplication):
                                                 name='location',
                                                 average_over_devices=False,
                                                 collection=CONSOLE)
-            self.output_decoder = ImageWindowsAggregator(
+            self.output_decoder = GridSamplesAggregator(
                 image_reader=self.reader)
         #return net_out
 
@@ -409,6 +410,6 @@ class SegmentationApplication(BaseApplication):
         for sampler in self.get_sampler():
             sampler.close_all()
 
-
     def interpret_output(self, batch_output):
-        self.output_decoder.decode_batch(batch_output)
+        self.output_decoder.decode_batch(batch_output['window'],
+                                         batch_output['location'])
