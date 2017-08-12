@@ -22,6 +22,7 @@ from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 from niftynet.utilities import misc_common as util
+from niftynet.io.image_windows_aggregator import ImageWindowsAggregator
 
 SUPPORTED_INPUT = {'image', 'label', 'weight'}
 
@@ -181,7 +182,8 @@ class SegmentationApplication(BaseApplication):
             num_classes=num_classes)
 
     def inference_sampler(self):
-        return sampler
+        pass
+        # return sampler
 
     def connect_data_and_network(self,
                                  outputs_collector=None,
@@ -218,9 +220,15 @@ class SegmentationApplication(BaseApplication):
                                                 collection=TF_SUMMARIES)
         else:
             outputs_collector.add_to_collection(var=net_out,
-                                                name='network_output',
+                                                name='window',
                                                 average_over_devices=False,
                                                 collection=CONSOLE)
+            outputs_collector.add_to_collection(var=data_dict['image_location'],
+                                                name='location',
+                                                average_over_devices=False,
+                                                collection=CONSOLE)
+            self.output_decoder = ImageWindowsAggregator(
+                image_reader=self.reader)
         #return net_out
 
     def set_network_update_op(self, gradients):
@@ -400,3 +408,7 @@ class SegmentationApplication(BaseApplication):
     def stop(self):
         for sampler in self.get_sampler():
             sampler.close_all()
+
+
+    def interpret_output(self, batch_output):
+        self.output_decoder.decode_batch(batch_output)

@@ -9,9 +9,9 @@ import time
 import tensorflow as tf
 from tensorflow.python.client import device_lib
 
+from niftynet.engine.graph_variables_collector import CONSOLE
 from niftynet.engine.graph_variables_collector import GradientsCollector
 from niftynet.engine.graph_variables_collector import OutputsCollector
-from niftynet.engine.graph_variables_collector import CONSOLE
 from niftynet.engine.graph_variables_collector import TF_SUMMARIES
 from niftynet.utilities.misc_common import look_up_operations
 
@@ -133,11 +133,10 @@ class ApplicationDriver(object):
             for sampler in samplers:
                 sampler.run_threads(session, self.coord, self.num_threads)
 
-            # read data from the queue and process
             start_time = time.time()
-            # iteratively run the graph
             loop_status = {}
             try:
+                # iteratively run the graph
                 if self.is_training:
                     loop_status['current_iter'] = self.initial_iter
                     self._training_loop(session, loop_status)
@@ -203,9 +202,10 @@ class ApplicationDriver(object):
                 if bn_ops:
                     updates_op.extend(bn_ops)
                 # combine them with model parameter updating operation
-                with graph.control_dependencies(updates_op):
-                    self.app.set_network_update_op(
-                        self.gradients_collector.gradients)
+                if self.gradients_collector is not None:
+                    with graph.control_dependencies(updates_op):
+                        self.app.set_network_update_op(
+                            self.gradients_collector.gradients)
 
             # initialisation operation
             self._init_op = tf.global_variables_initializer()
@@ -242,7 +242,6 @@ class ApplicationDriver(object):
 
     def _training_loop(self, sess, loop_status):
         writer = tf.summary.FileWriter(self.summary_dir, sess.graph)
-
         # running through training_op from application
         for (iter_i, train_op) in \
                 self.app.training_ops(self.initial_iter, self.final_iter):
@@ -285,8 +284,8 @@ class ApplicationDriver(object):
                 break
             out = self.outputs_collector.variables()
             batch_output = sess.run(out)
+            self.app.interpret_output(batch_output)
             tf.logging.info('{:.3f}s'.format(time.time() - local_time))
-            import pdb; pdb.set_trace()
 
     def _save_model(self, session, iter_i):
         if iter_i <= 0:
@@ -327,7 +326,8 @@ class ApplicationDriver(object):
             tf.logging.info(
                 "set CUDA_VISIBLE_DEVICES to {}".format(cuda_devices))
         else:
-            pass  # using Tensorflow default choice
+            # using Tensorflow default choice
+            pass
 
     @staticmethod
     def _model_moving_averaging_op(decay=0.9):

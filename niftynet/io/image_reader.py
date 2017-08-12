@@ -17,7 +17,7 @@ NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
 
 
 def infer_tf_dtypes(image_array):
-    return NP_TF_DTYPES.get(image_array.dtype.kind, tf.float32)
+    return NP_TF_DTYPES.get(image_array.dtype[0].kind, tf.float32)
 
 
 class ImageReader(Layer):
@@ -28,10 +28,6 @@ class ImageReader(Layer):
         self._shapes = None
         self._dtypes = None
         self._output_fields = output_fields
-
-        # cache the first image data array for shape/data type info
-        self.__first_image = None
-
 
         # list of image objects
         self.output_list = None
@@ -116,7 +112,7 @@ class ImageReader(Layer):
 
         if self.preprocessors:
             preprocessors = [deepcopy(layer) for layer in self.preprocessors]
-            # dictionary of mask is cached
+            # dictionary of masks is cached
             mask = None
             for layer in preprocessors:
                 if layer is None:
@@ -165,9 +161,12 @@ class ImageReader(Layer):
             tf.logging.fatal("please initialise the reader first")
             raise RuntimeError
         if not self._shapes:
-            if self.__first_image is None:
-                _, self.__first_image, _ = self(idx=0)
-            self._shapes = {field: self.__first_image[field].shape
+            # to have fast access, the spatial dimensions are not accurate
+            # 1) only read from the first image in list
+            # 2) not considering effects of random augmentation layers
+            # but time and modality dimensions should be correct
+            first_image = self.output_list[0]
+            self._shapes = {field: first_image[field].shape
                             for field in self.output_fields}
         return self._shapes
 
@@ -177,9 +176,8 @@ class ImageReader(Layer):
             tf.logging.fatal("please initialise the reader first")
             raise RuntimeError
         if not self._dtypes:
-            if self.__first_image is None:
-                _, self.__first_image, _ = self(idx=0)
-            self._dtypes = {field: infer_tf_dtypes(self.__first_image[field])
+            first_image = self.output_list[0]
+            self._dtypes = {field: infer_tf_dtypes(first_image[field])
                             for field in self.output_fields}
         return self._dtypes
 

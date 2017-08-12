@@ -161,26 +161,18 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     if np.array_equal(pixdim_fin, pixdim_init):
         return data_array
     to_multiply = np.divide(pixdim_init, pixdim_fin[:len(pixdim_init)])
-    if len(to_multiply) < data_array.ndim:
-        ones = np.ones(data_array.ndim - len(to_multiply))
-        to_multiply = np.concatenate((to_multiply, ones))
-    to_multiply = to_multiply[:data_array.ndim]
-    data_resampled = scipy.ndimage.zoom(data_array,
-                                        zoom=to_multiply,
-                                        order=interp_order)
-    #data_resampled = []
-    #for t in range(0, data_array.shape[4]):
-    #    data_mod = []
-    #    for m in range(0, data_array.shape[3]):
-    #        data_3d = data_array[..., m, t]
-    #        # interp_order_m = interp_order[min(len(interp_order) - 1, m)]
-    #        data_new = scipy.ndimage.zoom(data_3d,
-    #                                      to_multiply[0:3],
-    #                                      order=interp_order)
-    #        data_mod.append(data_new[..., np.newaxis])
-    #    data_mod = np.concatenate(data_mod, axis=-1)
-    #    data_resampled.append(data_mod[..., np.newaxis])
-    #data_resampled = np.concatenate(data_resampled, axis=-1)
+    data_resampled = []
+    for t in range(0, data_array.shape[4]):
+        data_mod = []
+        for m in range(0, data_array.shape[3]):
+            data_3d = data_array[..., m, t]
+            data_new = scipy.ndimage.zoom(data_3d,
+                                          to_multiply[0:3],
+                                          order=interp_order)
+            data_mod.append(data_new[..., np.newaxis])
+        data_mod = np.concatenate(data_mod, axis=-1)
+        data_resampled.append(data_mod[..., np.newaxis])
+    data_resampled = np.concatenate(data_resampled, axis=-1)
     return data_resampled
 
 

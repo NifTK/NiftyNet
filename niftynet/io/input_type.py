@@ -36,19 +36,13 @@ class DataFromFile(Loadable):
         self.name = name
         assert len(self.file_path) == len(self.name), \
             "file_path and modalitiy names are not consistent."
-
-        # read data types from file
-        self._dtype = self._read_dtype()
-
-    def _read_dtype(self):
-        _dtype = [misc.load_image(_file).header.get_data_dtype()
-                  for _file in self.file_path]
-        return tuple(_dtype)
+        self._dtype = ()
 
     @property
     def dtype(self):
         if not self._dtype:
-            self._dtype = self._read_dtype()
+            self._dtype = tuple(misc.load_image(_file).header.get_data_dtype()
+                                for _file in self.file_path)
         return self._dtype
 
     @property
@@ -89,6 +83,21 @@ class SpatialImage2D(DataFromFile):
         self.interp_order = interp_order
         self.output_pixdim = output_pixdim
         self._original_pixdim = ()
+        self._original_shape = ()
+
+    @property
+    def shape(self):
+        if not self._original_shape:
+            self._original_shape = tuple(
+                    misc.load_image(_file).header['dim'][1:6]
+                    for _file in self.file_path)
+            non_modality_shapes = set([tuple(shape[:4].tolist())
+                                       for shape in self._original_shape])
+            assert len(non_modality_shapes) == 1, \
+                "combining multimodal images: shapes not consistent"
+            n_modalities = len(self.file_path)
+            self._original_shape = non_modality_shapes.pop() + (n_modalities,)
+        return self._original_shape
 
     @property
     def interp_order(self):
@@ -141,6 +150,26 @@ class SpatialImage3D(SpatialImage2D):
         self.load_header()
 
     @property
+    def shape(self):
+        image_shape = super(SpatialImage3D, self).shape
+        spatial_shape = image_shape[:3]
+        rest_shape = image_shape[3:]
+        if self._affine[0] is not None and self.output_axcodes[0]:
+            src_ornt = nib.aff2axcodes(self._affine[0])
+            dst_ornt = self.output_axcodes[0]
+            src_ornt = nib.orientations.axcodes2ornt(src_ornt)
+            dst_ornt = nib.orientations.axcodes2ornt(dst_ornt)
+            transf = nib.orientations.ornt_transform(src_ornt, dst_ornt)
+            spatial_transf = transf[:,0].astype(np.int).tolist()
+            spatial_shape = tuple(spatial_shape[i] for i in spatial_transf)
+        if self._original_pixdim[0] and self._output_pixdim[0]:
+            zoom_ratio = np.divide(self._original_pixdim[0][:3],
+                                   self._output_pixdim[0][:3])
+            spatial_shape = tuple(int(round(ii * jj)) for ii, jj in
+                                      zip(spatial_shape, zoom_ratio))
+        return spatial_shape + rest_shape
+
+    @property
     def output_axcodes(self):
         assert isinstance(self._output_axcodes, tuple)
         return self._output_axcodes
@@ -169,6 +198,11 @@ class SpatialImage3D(SpatialImage2D):
         image_obj = misc.load_image(self.file_path[0])
         image_data = image_obj.get_data()
         image_data = misc.expand_to_5d(image_data)
+        if self._affine[0] is not None and self.output_axcodes[0]:
+            __orientation = nib.aff2axcodes(self._affine[0])
+            image_data = misc.do_reorientation(
+                image_data, __orientation, self.output_axcodes[0])
+
         if self._original_pixdim[0] and self._output_pixdim[0]:
             assert len(self._original_pixdim[0]) == \
                    len(self.output_pixdim[0]), \
@@ -179,11 +213,6 @@ class SpatialImage3D(SpatialImage2D):
                                             self._original_pixdim[0],
                                             self.output_pixdim[0],
                                             self.interp_order[0])
-
-        if self._affine[0] is not None and self.output_axcodes[0]:
-            __orientation = nib.aff2axcodes(self._affine[0])
-            image_data = misc.do_reorientation(
-                image_data, __orientation, self.output_axcodes[0])
         return image_data
 
 
