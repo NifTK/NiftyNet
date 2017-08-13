@@ -406,4 +406,4 @@ class GANApplication(BaseApplication):
         #    yield apply_ops
 
     def interpret_output(self, batch_output, is_training):
-        pass
+        return True

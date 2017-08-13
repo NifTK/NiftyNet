@@ -284,11 +284,10 @@ class ApplicationDriver(object):
                 break
             out = self.outputs_collector.variables()
             graph_output = sess.run(out)
-            if ApplicationDriver.is_stopping_batch(graph_output):
+            if not self.app.interpret_output(graph_output, is_training=False):
                 tf.logging.info('processed all batches.')
                 loop_status['all_saved_flag'] = True
                 break
-            self.app.interpret_output(graph_output, is_training=False)
             tf.logging.info('{:.3f}s'.format(time.time() - local_time))
 
     def _save_model(self, session, iter_i):
@@ -368,15 +367,3 @@ class ApplicationDriver(object):
             file_handler.setFormatter(f)
             tf.logging._logger.addHandler(file_handler)
 
-    @staticmethod
-    def is_stopping_batch(graph_output):
-        if isinstance(graph_output, dict):
-            for value in graph_output.values():
-                # check location vectors
-                if value.shape[1] != 1 + N_SPATIAL * 2:
-                    continue
-                if np.all(np.asarray(value) == 0):
-                    return True
-            return False
-        else:
-            return False

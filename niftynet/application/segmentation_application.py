@@ -413,8 +413,9 @@ class SegmentationApplication(BaseApplication):
 
     def interpret_output(self, batch_output, is_training):
         if not is_training:
-            self.output_decoder.decode_batch(batch_output['window'],
-                                             batch_output['location'],
-                                             self.segmentation_param.border)
+            return self.output_decoder.decode_batch(
+                batch_output['window'],
+                batch_output['location'],
+                self.segmentation_param.border)
         else:
-            pass
+            return True

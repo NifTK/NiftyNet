@@ -51,10 +51,13 @@ class GridSamplesAggregator(ImageWindowsAggregator):
             image_id, x_, y_, z_, _x, _y, _z = location[batch_id, :]
             if image_id != self.image_id:
                 self._save_current_image()
+                if GridSamplesAggregator._is_stopping_signal(
+                        location[batch_id]):
+                    return False
                 self.image_out = self._initialise_empty_image(
                     image_id=image_id, n_channels=window.shape[-1])
             self.image_out[x_:_x, y_:_y, z_:_z, ...] = window[batch_id, ...]
-        return
+        return True
 
     def _initialise_empty_image(self, image_id, n_channels):
         self.image_id = image_id
@@ -74,7 +77,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         dst_pixdim = original_image.original_pixdim[0]
         dst_axcodes = original_image.original_axcodes[0]
         interp_order = original_image.interp_order[0]
-
+        self.image_out = self.image_out[:, :, :, 1:2]
         if len(self.image_out.shape) == 4:
             # recover a time dimension for nifti format output
             self.image_out = np.expand_dims(self.image_out, axis=3)
@@ -90,6 +93,10 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         misc_io.save_volume_5d(
             self.image_out, filename, self.output_path, affine)
         return
+
+    @staticmethod
+    def _is_stopping_signal(location_vector):
+        return np.all(location_vector[1:4] + location_vector[4:7]) == 0
 
 
 def crop_batch(window, location, border):
