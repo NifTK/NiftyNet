@@ -11,6 +11,7 @@ from __future__ import absolute_import, print_function, division
 
 import threading
 
+import numpy as np
 import tensorflow as tf
 
 from niftynet.io.misc_io import remove_time_dim
@@ -111,18 +112,16 @@ class InputBatchQueueRunner(object):
                 if self._coordinator.should_stop():
                     break
                 self._session.run(self._enqueue_op, feed_dict=output_dict)
-            import pdb; pdb.set_trace()
 
-                ## push a set of stopping patches
-                # for i in range(0, self.capacity):
-                #    if self._session._closed:
-                #        break
-                #    if self._coordinator.should_stop():
-                #        break
-                #    patch.fill_with_stopping_info()
-                #    self._session.run(
-                #        self._enqueue_op,
-                #        feed_dict=patch.as_dict(self.sampler.placeholders))
+            # push a set of stopping patches
+            for i in range(self.capacity + self._batch_size):
+                if self._session._closed:
+                    break
+                if self._coordinator.should_stop():
+                    break
+                for name in list(output_dict):
+                    output_dict[name] = np.zeros_like(output_dict[name])
+                self._session.run(self._enqueue_op, feed_dict=output_dict)
 
         except tf.errors.CancelledError:
             pass
@@ -182,7 +181,7 @@ class InputBatchQueueRunner(object):
                                    stop_grace_period_secs=0)
         except RuntimeError as e:
             pass
-            #tf.logging.info(e)
+            # tf.logging.info(e)
         finally:
             if not self._session._closed:
                 self._session.run(self._close_queue_op)

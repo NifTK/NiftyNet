@@ -22,6 +22,7 @@ class GridSampler(Layer, InputBatchQueueRunner):
                  spatial_window_size=(),
                  window_border=()):
         # TODO: padding
+        self.batch_size = batch_size
         self.reader = reader
         Layer.__init__(self, name='input_buffer')
         InputBatchQueueRunner.__init__(
@@ -46,20 +47,20 @@ class GridSampler(Layer, InputBatchQueueRunner):
             self.window.shapes))
 
         ### running test
-        #sess = tf.Session()
-        #_iter = 0
-        #for x in self():
+        # sess = tf.Session()
+        # _iter = 0
+        # for x in self():
         #    sess.run(self._enqueue_op, feed_dict=x)
         #    _iter += 1
         #    print('enqueue {}'.format(_iter))
         #    if _iter == 2:
         #        break
-        #out = sess.run(self.pop_batch_op(batch_size=3))
-        #print('dequeue')
-        #print(out['image'].shape)
-        #print(out['image_location'])
-        #import pdb;
-        #pdb.set_trace()
+        # out = sess.run(self.pop_batch_op(batch_size=3))
+        # print('dequeue')
+        # print(out['image'].shape)
+        # print(out['image_location'])
+        # import pdb;
+        # pdb.set_trace()
 
     def layer_op(self):
         while True:
@@ -71,14 +72,31 @@ class GridSampler(Layer, InputBatchQueueRunner):
             coordinates = grid_spatial_coordinates(
                 image_id, image_shapes, static_window_shapes, self.border_size)
             n_locations = coordinates.values()[0].shape[0]
-            for i in range(n_locations):
+            extra_locations = self.batch_size - n_locations % self.batch_size \
+                if (n_locations % self.batch_size) > 0 else 0
+            total_locations = n_locations + extra_locations
+            tf.logging.info('grid sampling image sizes: {}'.format(
+                image_shapes))
+            tf.logging.info('grid sampling window sizes: {}'.format(
+                static_window_shapes))
+            if extra_locations > 0:
+                tf.logging.info(
+                    "yielding {} locations from image, "
+                    "extended to {} to be divisible by batch size {}".format(
+                        n_locations, total_locations, self.batch_size))
+            else:
+                tf.logging.info("yielding {} locations from image".format(
+                    n_locations))
+
+            for i in range(total_locations):
+                idx = i % n_locations
                 #  initialise output dict
                 output_dict = {}
                 for name in list(data):
                     assert coordinates[name].shape[0] == n_locations, \
                         "different number of grid samples from the input" \
                         "images, don't know how to combine them in the queue"
-                    x_, y_, z_, _x, _y, _z = coordinates[name][i, 1:]
+                    x_, y_, z_, _x, _y, _z = coordinates[name][idx, 1:]
                     try:
                         image_window = data[name][x_:_x, y_:_y, z_:_z, ...]
                     except ValueError:
@@ -91,7 +109,7 @@ class GridSampler(Layer, InputBatchQueueRunner):
                     # fill output dict with data
                     coordinates_key = self.window.coordinates_placeholder(name)
                     image_data_key = self.window.image_data_placeholder(name)
-                    output_dict[coordinates_key] = coordinates[name][[i], ...]
+                    output_dict[coordinates_key] = coordinates[name][[idx], ...]
                     output_dict[image_data_key] = image_window[np.newaxis, ...]
                 yield output_dict
 

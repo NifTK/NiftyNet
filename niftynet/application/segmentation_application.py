@@ -229,7 +229,8 @@ class SegmentationApplication(BaseApplication):
                                                 average_over_devices=False,
                                                 collection=CONSOLE)
             self.output_decoder = GridSamplesAggregator(
-                image_reader=self.reader)
+                image_reader=self.reader,
+                output_path=self.action_param.save_seg_dir)
         #return net_out
 
     def set_network_update_op(self, gradients):
@@ -410,6 +411,10 @@ class SegmentationApplication(BaseApplication):
         for sampler in self.get_sampler():
             sampler.close_all()
 
-    def interpret_output(self, batch_output):
-        self.output_decoder.decode_batch(batch_output['window'],
-                                         batch_output['location'])
+    def interpret_output(self, batch_output, is_training):
+        if not is_training:
+            self.output_decoder.decode_batch(batch_output['window'],
+                                             batch_output['location'],
+                                             self.segmentation_param.border)
+        else:
+            pass

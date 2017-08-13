@@ -199,6 +199,9 @@ class ImageReader(Layer):
         # this should be specified in CUSTOM section in the config
         self._output_fields = make_input_tuple(fields_tuple, basestring)
 
+    def get_subject_id(self, image_index):
+        return self._file_list.iloc[image_index, 0]
+
 
 def filename_to_image_list(file_list, mod_dict, data_param):
     """

@@ -264,7 +264,7 @@ class GANApplication(BaseApplication):
             return net_output
         else:
             raise NotImplementedError
-            # data_dict = self._sampler.pop_batch_op()
+            # data_dict = self.get_sampler()[0].pop_batch_op()
             # images = data_dict['images']
             # net_output = self._net(images, False)
             # return net_output
@@ -404,3 +404,6 @@ class GANApplication(BaseApplication):
         pass
         # while True:
         #    yield apply_ops
+
+    def interpret_output(self, batch_output, is_training):
+        pass

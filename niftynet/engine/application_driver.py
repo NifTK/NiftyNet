@@ -6,6 +6,7 @@ import os
 import sys
 import time
 
+import numpy as np
 import tensorflow as tf
 from tensorflow.python.client import device_lib
 
@@ -13,6 +14,7 @@ from niftynet.engine.graph_variables_collector import CONSOLE
 from niftynet.engine.graph_variables_collector import GradientsCollector
 from niftynet.engine.graph_variables_collector import OutputsCollector
 from niftynet.engine.graph_variables_collector import TF_SUMMARIES
+from niftynet.io.image_window import N_SPATIAL
 from niftynet.utilities.misc_common import look_up_operations
 
 FILE_PREFIX = 'model.ckpt'
@@ -105,13 +107,10 @@ class ApplicationDriver(object):
             n_devices=max(self.num_gpus, 1)) if self.is_training else None
 
         # create an application and assign user-specified parameters
+        action_param = train_param if self.is_training else infer_param
+
         self.app = ApplicationDriver._create_app(custom_param.name)
-        if self.is_training:
-            self.app.set_model_param(
-                net_param, train_param, self.is_training)
-        else:
-            self.app.set_model_param(
-                net_param, infer_param, self.is_training)
+        self.app.set_model_param(net_param, action_param, self.is_training)
 
         # initialise data input, and the tf graph
         self.app.initialise_dataset_loader(data_param, custom_param)
@@ -262,6 +261,7 @@ class ApplicationDriver(object):
 
             # run all variables in one go
             graph_output = sess.run(vars_to_run)
+            self.app.interpret_output(graph_output, is_training=True)
 
             # if application specified summaries
             summary = graph_output.get(TF_SUMMARIES, {})
@@ -283,9 +283,12 @@ class ApplicationDriver(object):
             if self.coord.should_stop():
                 break
             out = self.outputs_collector.variables()
-            batch_output = sess.run(out)
-            # TODO: stopping signal
-            self.app.interpret_output(batch_output)
+            graph_output = sess.run(out)
+            if ApplicationDriver.is_stopping_batch(graph_output):
+                tf.logging.info('processed all batches.')
+                loop_status['all_saved_flag'] = True
+                break
+            self.app.interpret_output(graph_output, is_training=False)
             tf.logging.info('{:.3f}s'.format(time.time() - local_time))
 
     def _save_model(self, session, iter_i):
@@ -364,3 +367,16 @@ class ApplicationDriver(object):
             file_handler = log.FileHandler(file_name)
             file_handler.setFormatter(f)
             tf.logging._logger.addHandler(file_handler)
+
+    @staticmethod
+    def is_stopping_batch(graph_output):
+        if isinstance(graph_output, dict):
+            for value in graph_output.values():
+                # check location vectors
+                if value.shape[1] != 1 + N_SPATIAL * 2:
+                    continue
+                if np.all(np.asarray(value) == 0):
+                    return True
+            return False
+        else:
+            return False

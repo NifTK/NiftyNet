@@ -161,18 +161,22 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     if np.array_equal(pixdim_fin, pixdim_init):
         return data_array
     to_multiply = np.divide(pixdim_init, pixdim_fin[:len(pixdim_init)])
+    data_shape = data_array.shape
+    if len(data_shape) != 5:
+        raise ValueError("only supports 5D array resampling, "
+                         "input shape {}".format(data_shape))
     data_resampled = []
-    for t in range(0, data_array.shape[4]):
+    for t in range(0, data_shape[3]):
         data_mod = []
-        for m in range(0, data_array.shape[3]):
-            data_3d = data_array[..., m, t]
+        for m in range(0, data_shape[4]):
+            data_3d = data_array[..., t, m]
             data_new = scipy.ndimage.zoom(data_3d,
                                           to_multiply[0:3],
                                           order=interp_order)
-            data_mod.append(data_new[..., np.newaxis])
+            data_mod.append(data_new[..., np.newaxis, np.newaxis])
         data_mod = np.concatenate(data_mod, axis=-1)
-        data_resampled.append(data_mod[..., np.newaxis])
-    data_resampled = np.concatenate(data_resampled, axis=-1)
+        data_resampled.append(data_mod)
+    data_resampled = np.concatenate(data_resampled, axis=-2)
     return data_resampled
 
 
@@ -334,25 +338,32 @@ def create_5d_from_array(data_array):
     return data_5d
 
 
-def save_volume_5d(img_data, filename, save_path, img_ref=None):
+def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
     '''
     Save the img_data to nifti image
     :param img_data: 5d img to save
     :param filename: filename under which to save the img_data
     :param save_path:
-    :param img_ref: reference img to use for the setting of header.
+    :param affine: an affine matrix.
     :return:
     '''
     if img_data is None:
         return
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
-    img_ref = correct_image_if_necessary(img_ref)
-    affine = img_ref.affine
+    try:
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+    except OSError:
+        tf.logging.fatal('writing output images failed.')
+        raise
+
     img_nii = nib.Nifti1Image(img_data, affine)
-    img_nii.set_data_dtype(np.dtype(np.float32))
+    #img_nii.set_data_dtype(np.dtype(np.float32))
     output_name = os.path.join(save_path, filename)
-    nib.save(img_nii, output_name)
+    try:
+        nib.save(img_nii, output_name)
+    except OSError:
+        tf.logging.fatal("writing failed {}".format(output_name))
+        raise
     print('Saved {}'.format(output_name))
 
 
