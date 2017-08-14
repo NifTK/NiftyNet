@@ -165,11 +165,12 @@ class SegmentationApplication(BaseApplication):
                 batch_size=self.net_param.batch_size,
                 windows_per_image=self.action_param.sample_per_volume)
         else:
-            self._sampler = GridSampler(self.reader,
-                                        self.data_param,
-                                        self.net_param.batch_size,
-                                        self.action_param.spatial_window_size,
-                                        self.segmentation_param.border)
+            self._sampler = GridSampler(
+                reader=self.reader,
+                data_param=self.data_param,
+                batch_size=self.net_param.batch_size,
+                spatial_window_size=self.action_param.spatial_window_size,
+                window_border=self.segmentation_param.border)
         self._sampler = [self._sampler]
 
     def get_sampler(self):
@@ -183,7 +184,7 @@ class SegmentationApplication(BaseApplication):
 
     def inference_sampler(self):
         pass
-        # return sampler
+        # return samplseur
 
     def connect_data_and_network(self,
                                  outputs_collector=None,
@@ -219,6 +220,20 @@ class SegmentationApplication(BaseApplication):
                                                 summary_type='scalar',
                                                 collection=TF_SUMMARIES)
         else:
+            # converting logits into final output for
+            # classification probabilities or argmax classification labels
+            output_prob = self.segmentation_param.output_prob
+            num_classes = self.segmentation_param.num_classes
+            if output_prob and num_classes > 1:
+                post_process_layer = PostProcessingLayer(
+                    'SOFTMAX', num_classes=num_classes)
+            elif not output_prob and num_classes > 1:
+                post_process_layer = PostProcessingLayer(
+                    'ARGMAX', num_classes=num_classes)
+            else:
+                post_process_layer = PostProcessingLayer(
+                    'IDENTITY', num_classes=num_classes)
+            net_out = post_process_layer(net_out)
             # TODO: post processing
             outputs_collector.add_to_collection(var=net_out,
                                                 name='window',
@@ -248,159 +263,143 @@ class SegmentationApplication(BaseApplication):
             raise NotImplementedError(
                 'This app supports updating a network, or list of networks')
 
-    def _post_process_outputs(self, net_outputs):
-        # converting logits into final output for
-        # classification probabilities or argmax classification labels
-        if self._param.output_prob and self._param.num_classes > 1:
-            post_process_layer = PostProcessingLayer(
-                'SOFTMAX', num_classes=self._param.num_classes)
-        elif not self._param.output_prob and self._param.num_classes > 1:
-            post_process_layer = PostProcessingLayer(
-                'ARGMAX', num_classes=self._param.num_classes)
-        else:
-            post_process_layer = PostProcessingLayer(
-                'IDENTITY', num_classes=self._param.num_classes)
-        self._num_output_channels_func = post_process_layer.num_output_channels
-        return post_process_layer(net_outputs)
-
     def inference_loop(self, sess, coord, net_out):
         if self._param.window_sampling in ['selective', 'uniform']:
             return self._inference_loop_patch(sess, coord, net_out)
         elif self._param.window_sampling in ['resize']:
             return self._inference_loop_resize(sess, coord, net_out)
 
-    def _inference_loop_resize(self, sess, coord, net_out):
-        all_saved_flag = False
-        img_id, pred_img, subject_i = None, None, None
-        spatial_rank = self._inference_patch_holder.spatial_rank
-        while True:
-            local_time = time.time()
-            if coord.should_stop():
-                break
-            seg_maps, spatial_info = sess.run(net_out)
-            # go through each one in a batch
-            for batch_id in range(seg_maps.shape[0]):
-                img_id = spatial_info[batch_id, 0]
-                subject_i = self._volume_loader.get_subject(img_id)
-                pred_img = subject_i.matrix_like_input_data_5d(
-                    spatial_rank=spatial_rank,
-                    n_channels=self._num_output_channels_func(),
-                    interp_order=self._param.output_interp_order)
-                predictions = seg_maps[batch_id]
-                while predictions.ndim < pred_img.ndim:
-                    predictions = np.expand_dims(predictions, axis=-1)
+    #def _inference_loop_resize(self, sess, coord, net_out):
+    #    all_saved_flag = False
+    #    img_id, pred_img, subject_i = None, None, None
+    #    spatial_rank = self._inference_patch_holder.spatial_rank
+    #    while True:
+    #        local_time = time.time()
+    #        if coord.should_stop():
+    #            break
+    #        seg_maps, spatial_info = sess.run(net_out)
+    #        # go through each one in a batch
+    #        for batch_id in range(seg_maps.shape[0]):
+    #            img_id = spatial_info[batch_id, 0]
+    #            subject_i = self._volume_loader.get_subject(img_id)
+    #            pred_img = subject_i.matrix_like_input_data_5d(
+    #                spatial_rank=spatial_rank,
+    #                n_channels=self._num_output_channels_func(),
+    #                interp_order=self._param.output_interp_order)
+    #            predictions = seg_maps[batch_id]
+    #            while predictions.ndim < pred_img.ndim:
+    #                predictions = np.expand_dims(predictions, axis=-1)
 
-                # assign predicted patch to the allocated output volume
-                origin = spatial_info[
-                         batch_id, 1:(1 + int(np.floor(spatial_rank)))]
+    #            # assign predicted patch to the allocated output volume
+    #            origin = spatial_info[
+    #                     batch_id, 1:(1 + int(np.floor(spatial_rank)))]
 
-                i_spatial_rank = int(np.ceil(spatial_rank))
-                zoom = [d / p for p, d in
-                        zip([self._param.label_size] * i_spatial_rank,
-                            pred_img.shape[0:i_spatial_rank])] + [1, 1]
-                # tic=time.time()
-                # pred_img[...] = scipy.ndimage.interpolation.zoom(predictions, zoom)
-                # print(time.time()-tic)
-                tic = time.time()
-                pred_img = sess.run([self._reshaped], feed_dict={
-                    self._ph: np.reshape(predictions, [-1]),
-                    self._sz: pred_img.shape})[0]
-                print(time.time() - tic)
-                subject_i.save_network_output(
-                    pred_img,
-                    self._param.save_seg_dir,
-                    self._param.output_interp_order)
+    #            i_spatial_rank = int(np.ceil(spatial_rank))
+    #            zoom = [d / p for p, d in
+    #                    zip([self._param.label_size] * i_spatial_rank,
+    #                        pred_img.shape[0:i_spatial_rank])] + [1, 1]
+    #            # tic=time.time()
+    #            # pred_img[...] = scipy.ndimage.interpolation.zoom(predictions, zoom)
+    #            tic = time.time()
+    #            pred_img = sess.run([self._reshaped], feed_dict={
+    #                self._ph: np.reshape(predictions, [-1]),
+    #                self._sz: pred_img.shape})[0]
+    #            print(time.time() - tic)
+    #            subject_i.save_network_output(
+    #                pred_img,
+    #                self._param.save_seg_dir,
+    #                self._param.output_interp_order)
 
-                if self._inference_patch_holder.is_stopping_signal(
-                        spatial_info[batch_id]):
-                    print('received finishing batch')
-                    all_saved_flag = True
-                    return all_saved_flag
+    #            if self._inference_patch_holder.is_stopping_signal(
+    #                    spatial_info[batch_id]):
+    #                print('received finishing batch')
+    #                all_saved_flag = True
+    #                return all_saved_flag
 
-                    # try to expand prediction dims to match the output volume
-            print('processed {} image patches ({:.3f}s)'.format(
-                len(spatial_info), time.time() - local_time))
-        return all_saved_flag
+    #                # try to expand prediction dims to match the output volume
+    #        print('processed {} image patches ({:.3f}s)'.format(
+    #            len(spatial_info), time.time() - local_time))
+    #    return all_saved_flag
 
-    def _inference_loop_patch(self, sess, coord, ):
-        all_saved_flag = False
-        img_id, pred_img, subject_i = None, None, None
-        spatial_rank = self._inference_patch_holder.spatial_rank
-        while True:
-            local_time = time.time()
-            if coord.should_stop():
-                break
-            seg_maps, spatial_info = sess.run(net_out)
-            # go through each one in a batch
-            for batch_id in range(seg_maps.shape[0]):
-                if spatial_info[batch_id, 0] != img_id:
-                    # when subject_id changed
-                    # save current map and reset cumulative map variable
-                    if subject_i is not None:
-                        subject_i.save_network_output(
-                            pred_img,
-                            self._param.save_seg_dir,
-                            self._param.output_interp_order)
+    #def _inference_loop_patch(self, sess, coord, ):
+    #    all_saved_flag = False
+    #    img_id, pred_img, subject_i = None, None, None
+    #    spatial_rank = self._inference_patch_holder.spatial_rank
+    #    while True:
+    #        local_time = time.time()
+    #        if coord.should_stop():
+    #            break
+    #        seg_maps, spatial_info = sess.run(net_out)
+    #        # go through each one in a batch
+    #        for batch_id in range(seg_maps.shape[0]):
+    #            if spatial_info[batch_id, 0] != img_id:
+    #                # when subject_id changed
+    #                # save current map and reset cumulative map variable
+    #                if subject_i is not None:
+    #                    subject_i.save_network_output(
+    #                        pred_img,
+    #                        self._param.save_seg_dir,
+    #                        self._param.output_interp_order)
 
-                    if self._inference_patch_holder.is_stopping_signal(
-                            spatial_info[batch_id]):
-                        print('received finishing batch')
-                        all_saved_flag = True
-                        return all_saved_flag
+    #                if self._inference_patch_holder.is_stopping_signal(
+    #                        spatial_info[batch_id]):
+    #                    print('received finishing batch')
+    #                    all_saved_flag = True
+    #                    return all_saved_flag
 
-                    img_id = spatial_info[batch_id, 0]
-                    subject_i = self._volume_loader.get_subject(img_id)
-                    pred_img = subject_i.matrix_like_input_data_5d(
-                        spatial_rank=spatial_rank,
-                        n_channels=self._num_output_channels,
-                        interp_order=self._param.output_interp_order)
+    #                img_id = spatial_info[batch_id, 0]
+    #                subject_i = self._volume_loader.get_subject(img_id)
+    #                pred_img = subject_i.matrix_like_input_data_5d(
+    #                    spatial_rank=spatial_rank,
+    #                    n_channels=self._num_output_channels,
+    #                    interp_order=self._param.output_interp_order)
 
-                # try to expand prediction dims to match the output volume
-                predictions = seg_maps[batch_id]
-                while predictions.ndim < pred_img.ndim:
-                    predictions = np.expand_dims(predictions, axis=-1)
+    #            # try to expand prediction dims to match the output volume
+    #            predictions = seg_maps[batch_id]
+    #            while predictions.ndim < pred_img.ndim:
+    #                predictions = np.expand_dims(predictions, axis=-1)
 
-                # assign predicted patch to the allocated output volume
-                origin = spatial_info[
-                         batch_id, 1:(1 + int(np.floor(spatial_rank)))]
+    #            # assign predicted patch to the allocated output volume
+    #            origin = spatial_info[
+    #                     batch_id, 1:(1 + int(np.floor(spatial_rank)))]
 
-                # indexing within the patch
-                assert self._param.label_size >= self._param.border * 2
-                p_ = self._param.border
-                _p = self._param.label_size - self._param.border
+    #            # indexing within the patch
+    #            assert self._param.label_size >= self._param.border * 2
+    #            p_ = self._param.border
+    #            _p = self._param.label_size - self._param.border
 
-                # indexing relative to the sampled volume
-                assert self._param.image_size >= self._param.label_size
-                image_label_size_diff = self._param.image_size - self._param.label_size
-                s_ = self._param.border + int(image_label_size_diff / 2)
-                _s = s_ + self._param.label_size - 2 * self._param.border
-                # absolute indexing in the prediction volume
-                dest_start, dest_end = (origin + s_), (origin + _s)
+    #            # indexing relative to the sampled volume
+    #            assert self._param.image_size >= self._param.label_size
+    #            image_label_size_diff = self._param.image_size - self._param.label_size
+    #            s_ = self._param.border + int(image_label_size_diff / 2)
+    #            _s = s_ + self._param.label_size - 2 * self._param.border
+    #            # absolute indexing in the prediction volume
+    #            dest_start, dest_end = (origin + s_), (origin + _s)
 
-                assert np.all(dest_start >= 0)
-                img_dims = pred_img.shape[0:int(np.floor(spatial_rank))]
-                assert np.all(dest_end <= img_dims)
-                if spatial_rank == 3:
-                    x_, y_, z_ = dest_start
-                    _x, _y, _z = dest_end
-                    pred_img[x_:_x, y_:_y, z_:_z, ...] = \
-                        predictions[p_:_p, p_:_p, p_:_p, ...]
-                elif spatial_rank == 2:
-                    x_, y_ = dest_start
-                    _x, _y = dest_end
-                    pred_img[x_:_x, y_:_y, ...] = \
-                        predictions[p_:_p, p_:_p, ...]
-                elif spatial_rank == 2.5:
-                    x_, y_ = dest_start
-                    _x, _y = dest_end
-                    z_ = spatial_info[batch_id, 3]
-                    pred_img[x_:_x, y_:_y, z_:(z_ + 1), ...] = \
-                        predictions[p_:_p, p_:_p, ...]
-                else:
-                    raise ValueError("unsupported spatial rank")
-            print('processed {} image patches ({:.3f}s)'.format(
-                len(spatial_info), time.time() - local_time))
-        return all_saved_flag
+    #            assert np.all(dest_start >= 0)
+    #            img_dims = pred_img.shape[0:int(np.floor(spatial_rank))]
+    #            assert np.all(dest_end <= img_dims)
+    #            if spatial_rank == 3:
+    #                x_, y_, z_ = dest_start
+    #                _x, _y, _z = dest_end
+    #                pred_img[x_:_x, y_:_y, z_:_z, ...] = \
+    #                    predictions[p_:_p, p_:_p, p_:_p, ...]
+    #            elif spatial_rank == 2:
+    #                x_, y_ = dest_start
+    #                _x, _y = dest_end
+    #                pred_img[x_:_x, y_:_y, ...] = \
+    #                    predictions[p_:_p, p_:_p, ...]
+    #            elif spatial_rank == 2.5:
+    #                x_, y_ = dest_start
+    #                _x, _y = dest_end
+    #                z_ = spatial_info[batch_id, 3]
+    #                pred_img[x_:_x, y_:_y, z_:(z_ + 1), ...] = \
+    #                    predictions[p_:_p, p_:_p, ...]
+    #            else:
+    #                raise ValueError("unsupported spatial rank")
+    #        print('processed {} image patches ({:.3f}s)'.format(
+    #            len(spatial_info), time.time() - local_time))
+    #    return all_saved_flag
 
     def training_ops(self, start_iter=0, end_iter=1):
         end_iter = max(start_iter, end_iter)

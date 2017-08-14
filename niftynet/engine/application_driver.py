@@ -282,8 +282,8 @@ class ApplicationDriver(object):
             local_time = time.time()
             if self.coord.should_stop():
                 break
-            out = self.outputs_collector.variables()
-            graph_output = sess.run(out)
+            vars_to_run = self.outputs_collector.variables()
+            graph_output = sess.run(vars_to_run)
             if not self.app.interpret_output(graph_output, is_training=False):
                 tf.logging.info('processed all batches.')
                 loop_status['all_saved_flag'] = True
@@ -299,7 +299,6 @@ class ApplicationDriver(object):
         tf.logging.info('iter {} saved: {}'.format(iter_i, self.session_dir))
 
     def _device_string(self, id=0, is_worker=True):
-
         devices = device_lib.list_local_devices()
         has_local_gpu = any([x.device_type == 'GPU' for x in devices])
         if self.num_gpus <= 0:  # user specified no gpu at all
