@@ -1,10 +1,23 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
+from abc import ABCMeta, abstractmethod
+
 import numpy as np
 import tensorflow as tf
 
 from niftynet.engine.restorer import RESTORABLE
+
+
+class Invertible(object):
+    """
+    interface of Invertible data
+    """
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def inverse_op(self, *args, **kwargs):
+        raise NotImplementedError
 
 
 class Layer(object):
@@ -122,6 +135,7 @@ class RandomisedLayer(Layer):
     The layers require a randomisation process, to randomly
     change some of the layer's states on the fly.
     """
+
     def __init__(self, name='randomised_op'):
         super(RandomisedLayer, self).__init__(name=name)
 

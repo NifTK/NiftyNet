@@ -109,7 +109,6 @@ class ImageReader(Layer):
                            for (field, image) in image_dict.items()}
         interp_order_dict = {field: image.interp_order
                              for (field, image) in image_dict.items()}
-
         if self.preprocessors:
             preprocessors = [deepcopy(layer) for layer in self.preprocessors]
             # dictionary of masks is cached

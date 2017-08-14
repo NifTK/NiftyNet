@@ -6,6 +6,8 @@ import os
 
 import numpy as np
 import tensorflow as tf
+from niftynet.layer.pad import PadLayer
+from niftynet.layer.discrete_label_normalisation import DiscreteLabelNormalisationLayer
 
 import niftynet.io.misc_io as misc_io
 
@@ -64,8 +66,11 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         self.image_id = image_id
         spatial_shape = self.input_image['image'].shape[:3]
         output_image_shape = spatial_shape + (n_channels,)
-        # TODO: define dtype of output
         empty_image = np.zeros(output_image_shape, dtype=dtype)
+
+        for layer in self.reader.preprocessors:
+            if isinstance(layer, PadLayer):
+                empty_image, _ = layer(empty_image)
         return empty_image
 
     def _save_current_image(self):
@@ -78,10 +83,15 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         dst_pixdim = original_image.original_pixdim[0]
         dst_axcodes = original_image.original_axcodes[0]
         interp_order = original_image.interp_order[0]
-        # TODO: post processing
         if len(self.image_out.shape) == 4:
             # recover a time dimension for nifti format output
             self.image_out = np.expand_dims(self.image_out, axis=3)
+
+        for layer in self.reader.preprocessors:
+            if isinstance(layer, PadLayer):
+                self.image_out, _ = layer.inverse_op(self.image_out)
+            if isinstance(layer, DiscreteLabelNormalisationLayer):
+                self.image_out, _ = layer.inverse_op(self.image_out)
         if image_pixdim:
             self.image_out = misc_io.do_resampling(
                 self.image_out, image_pixdim, dst_pixdim, interp_order)

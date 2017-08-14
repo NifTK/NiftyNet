@@ -184,13 +184,12 @@ def add_network_args(parser):
         help="[Training only] Specify regulariser type",
         default='Dice')
 
-    # TODO: anisotropic
     parser.add_argument(
         "--volume_padding_size",
         metavar='',
         help="Set padding size of each volume (in all dimensions)",
         type=numarray,
-        default=5)
+        default=())
 
     import niftynet.layer.binary_masking
     parser.add_argument(
@@ -261,31 +260,17 @@ def add_training_args(parser):
         default=10)
 
     parser.add_argument(
-        "--rotation",
-        help="Indicates if a rotation should be applied to the volume",
-        type=str2boolean,
-        default=False)
-
-    # TODO: changed parameters to tuple
-    parser.add_argument(
         "--rotation_angle",
         help="The min/max angles of rotation when rotation "
              "augmentation is enabled",
         type=numarray,
-        default=(-10.0, 10.0))
-
-    parser.add_argument(
-        "--spatial_scaling",
-        help="Indicates if the spatial scaling must be performed (zooming"
-             " as an augmentation step)",
-        type=str2boolean,
-        default=False)
+        default=())
 
     parser.add_argument(
         "--scaling_percentage",
         help="the spatial scaling factor in [min_percentage, max_percentage]",
         type=numarray,
-        default=(-10.0, 10.0))
+        default=())
 
     parser.add_argument(
         "--window_sampling",
@@ -311,20 +296,12 @@ def add_training_args(parser):
         default=0.00001)
 
     parser.add_argument(
-        "--random_flip",
-        help="Indicates whether 'flipping' should be performed "
-             "as a data-augmentation step. Please set --flip_axes"
-             " as well for correct functioning.",
-        type=str2boolean,
-        default=False)
-
-    parser.add_argument(
-        "--flip_axes",
+        "--random_flipping_axes",
         help="The axes which can be flipped to augment the data. Supply as "
              "comma-separated values within single quotes, e.g. '0,1'. Note "
              "that these are 0-indexed, so choose some combination of 0, 1.",
         type=numarray,
-        default=0)
+        default=-1)
 
     parser.add_argument(
         "--lr",

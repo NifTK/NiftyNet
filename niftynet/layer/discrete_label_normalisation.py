@@ -10,9 +10,10 @@ import niftynet.utilities.histogram_standardisation as hs
 from niftynet.layer.base_layer import DataDependentLayer
 from niftynet.utilities.misc_common import printProgressBar
 from niftynet.utilities.user_parameters_helper import standardise_string
+from niftynet.layer.base_layer import Invertible
 
 
-class DiscreteLabelNormalisationLayer(DataDependentLayer):
+class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
     def __init__(self,
                  field,
                  modalities,
@@ -68,7 +69,7 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer):
         else:
             return label_data, mask
 
-    def reverse_op(self, image, mask=None):
+    def inverse_op(self, image, mask=None):
         assert self.is_ready(), \
             "discrete_label_normalisation layer needs to be trained first."
         # mask is not used for label mapping
@@ -119,6 +120,8 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer):
 def find_set_of_labels(image_list, field, output_key):
     label_set = set()
     for idx, image in enumerate(image_list):
+        assert field in image, \
+            "no {} data provided in for label mapping".format(field)
         printProgressBar(idx, len(image_list),
                          prefix='searching unique labels from training files',
                          decimals=1, length=10, fill='*')
