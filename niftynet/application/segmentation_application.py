@@ -23,6 +23,7 @@ from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 from niftynet.utilities import misc_common as util
 from niftynet.io.image_windows_aggregator import GridSamplesAggregator
+from niftynet.layer.pad import PadLayer
 
 SUPPORTED_INPUT = {'image', 'label', 'weight'}
 
@@ -106,8 +107,7 @@ class SegmentationApplication(BaseApplication):
             foreground_masking_layer = None
 
         mean_var_normaliser = MeanVarNormalisationLayer(
-            field='image',
-            binary_masking_func=foreground_masking_layer)
+            field='image', binary_masking_func=foreground_masking_layer)
         if self.net_param.histogram_ref_file:
             histogram_normaliser = HistogramNormalisationLayer(
                 field='image',
@@ -138,24 +138,25 @@ class SegmentationApplication(BaseApplication):
 
         augmentation_layers = []
         if self.is_training:
-            rand_flip_layer = RandomFlipLayer(
-                flip_axes=self.action_param.flip_axes)
-            rand_scaling_layer = RandomSpatialScalingLayer(
-                min_percentage=self.action_param.scaling_percentage[0],
-                max_percentage=self.action_param.scaling_percentage[1])
-            rand_rotate_layer = RandomRotationLayer(
-                min_angle=self.action_param.rotation_angle[0],
-                max_angle=self.action_param.rotation_angle[1])
+            if self.action_param.random_flipping_axes > 0:
+                augmentation_layers.append(RandomFlipLayer(
+                    flip_axes=self.action_param.random_flipping_axes))
+            if self.action_param.scaling_percentage:
+                augmentation_layers.append(RandomSpatialScalingLayer(
+                    min_percentage=self.action_param.scaling_percentage[0],
+                    max_percentage=self.action_param.scaling_percentage[1]))
+            if self.action_param.rotation_angle:
+                augmentation_layers.append(RandomRotationLayer(
+                    min_angle=self.action_param.rotation_angle[0],
+                    max_angle=self.action_param.rotation_angle[1]))
 
-            if self.action_param.random_flip:
-                augmentation_layers.append(rand_flip_layer)
-            if self.action_param.spatial_scaling:
-                augmentation_layers.append(rand_scaling_layer)
-            if self.action_param.rotation:
-                augmentation_layers.append(rand_rotate_layer)
-
+        volume_padding_layer = []
+        if self.net_param.volume_padding_size:
+            volume_padding_layer.append(PadLayer(
+                field=SUPPORTED_INPUT,
+                border=self.net_param.volume_padding_size))
         self.reader.add_preprocessing_layers(
-            normalisation_layers + augmentation_layers)
+            volume_padding_layer + normalisation_layers + augmentation_layers)
 
     def initialise_sampler(self, is_training):
         if is_training:
@@ -210,15 +211,13 @@ class SegmentationApplication(BaseApplication):
             # collecting gradients variables
             training_grads_collector.add_to_collection([grads])
             # collecting output variables
-            outputs_collector.add_to_collection(var=loss,
-                                                name='dice_loss',
-                                                average_over_devices=True,
-                                                collection=CONSOLE)
-            outputs_collector.add_to_collection(var=loss,
-                                                name='dice_loss',
-                                                average_over_devices=True,
-                                                summary_type='scalar',
-                                                collection=TF_SUMMARIES)
+            outputs_collector.add_to_collection(
+                var=loss, name='dice_loss',
+                average_over_devices=True, collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=loss, name='dice_loss',
+                average_over_devices=True, summary_type='scalar',
+                collection=TF_SUMMARIES)
         else:
             # converting logits into final output for
             # classification probabilities or argmax classification labels
@@ -234,19 +233,16 @@ class SegmentationApplication(BaseApplication):
                 post_process_layer = PostProcessingLayer(
                     'IDENTITY', num_classes=num_classes)
             net_out = post_process_layer(net_out)
-            # TODO: post processing
-            outputs_collector.add_to_collection(var=net_out,
-                                                name='window',
-                                                average_over_devices=False,
-                                                collection=CONSOLE)
-            outputs_collector.add_to_collection(var=data_dict['image_location'],
-                                                name='location',
-                                                average_over_devices=False,
-                                                collection=CONSOLE)
+
+            outputs_collector.add_to_collection(
+                var=net_out, name='window',
+                average_over_devices=False, collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=data_dict['image_location'], name='location',
+                average_over_devices=False, collection=CONSOLE)
             self.output_decoder = GridSamplesAggregator(
                 image_reader=self.reader,
                 output_path=self.action_param.save_seg_dir)
-        #return net_out
 
     def set_network_update_op(self, gradients):
         grad_list_depth = util.list_depth_count(gradients)
