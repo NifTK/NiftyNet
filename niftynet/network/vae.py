@@ -19,7 +19,7 @@ class VAE(TrainableLayer):
         {convolutions then downsampling} blocks, followed by a sequence of fully-connected
         layers, followed by a sequence of {transpose convolutions then upsampling} blocks.
         See Auto-Encoding Variational Bayes, Kingma & Welling, 2014.
-        2DO: share the fully-connected parameters from the mean and logvar decoders.
+        2DO: share the fully-connected parameters between the mean and logvar decoders.
         """
 
     def __init__(self,
@@ -33,63 +33,68 @@ class VAE(TrainableLayer):
 
         super(VAE, self).__init__(name=name)
 
-        # The following options completely specify the model. Note that the network need not be symmetric.
+        # The following options completely specify the model. Note that the network need not be symmetric!
 
         # 1) Denoising
-        # If (and only if) 'denoising_variance' is greater than zero, Gaussian noise with zero mean
+        # NOTES: If (and only if) 'denoising_variance' is greater than zero, Gaussian noise with zero mean
         # and 'denoising_variance' variance is added to the input.
         self.denoising_variance = 0.001
 
         # 2) The convolutional layers
-        # All four lists must be the same length.
-        # NB: the ith element of 'conv_pooling_factors' is the amount of pooling in the ith layer
-        # along ALL (spatial) dimensions.
+        # NOTES: the ith element of 'conv_pooling_factors' is the amount of pooling in the ith layer
+        # (along all spatial dimensions).
+        # CONSTRAINTS: All four lists must be the same length.
         self.conv_output_channels = [15, 25, 35]
         self.conv_kernel_sizes = [3, 3, 3]
         self.conv_pooling_factors = [2, 2, 2]
         self.acti_func_conv = ['relu', 'relu', 'relu']
 
         # 3) The fully-connected layers
-        # 'layer_sizes_encoder' and 'acti_func_encoder' must be equal in length.
+        # NOTES: If 'layer_sizes_decoder_shared' is empty then the data means and log variances are predicted
+        # (separately) directly from the approximate sample from the posterior. Otherwise, this sample is passed
+        # through fully-connected layers of size 'layer_sizes_decoder_shared', with respective activation
+        # functions 'acti_func_decoder_shared'.
+        # CONSTRAINTS: 'layer_sizes_encoder' and 'acti_func_encoder' must be equal in length.
         # 'acti_func_decoder' must be one element longer than 'layer_sizes_decoder', because the final
-        # element of 'acti_func_decoder' is the activation function for the final fully-connected layer
-        # (which is added to the network automatically), whose dimensionality matches that of the input
-        # to the fully-connected layers.
-        self.layer_sizes_encoder = [512]
-        self.acti_func_encoder = ['relu']
+        # element of 'acti_func_decoder' is the activation function of the final fully-connected layer
+        # (which is added to the network automatically, and whose dimensionality equals that of the input
+        # to the fully-connected layers).
+        self.layer_sizes_encoder = [256, 128]
+        self.acti_func_encoder = ['relu', 'relu']
+        self.number_of_latent_variables = 64
+        self.number_of_samples_from_posterior = 100
+        self.layer_sizes_decoder_shared = [128]
+        self.acti_func_decoder_shared = ['relu']
         self.layer_sizes_decoder = self.layer_sizes_encoder[::-1]
         self.acti_func_decoder = self.acti_func_encoder[::-1] + ['relu']
 
-        # 4) The transpose convolutional layers (means)
-        # 'trans_conv_output_channels_means' is one element shorter than 'trans_conv_kernel_sizes_means',
-        # 'trans_conv_unpooling_factors_means', and 'trans_conv_unpooling_factors_means' because the final element of
-        # 'trans_conv_output_channels_means' must be the number of channels in the input, and this is added to the list
-        # automatically.
-        # NB: 'upsampling_mode' determines how the feature maps in the decoding layers are upsampled. The options are,
+        # 4) The transpose convolutional layers (for predicting means)
+        # NOTES: 'upsampling_mode' determines how the feature maps in the decoding layers are upsampled.
+        # The options are,
         # 1. 'DECONV' (recommended): kernel shape is HxWxDxChannelsInxChannelsOut,
         # 2. 'CHANNELWISE_DECONV': kernel shape is HxWxDx1x1,
         # 3. 'REPLICATE': no parameters.
+        # CONSTRAINTS: 'trans_conv_output_channels_means' is one element shorter than 'trans_conv_kernel_sizes_means',
+        # 'trans_conv_unpooling_factors_means', and 'trans_conv_unpooling_factors_means' because the final element of
+        # 'trans_conv_output_channels_means' must be the number of channels in the input, and this is added to the list
+        # automatically.
         self.trans_conv_output_channels_means = self.conv_output_channels[-2::-1]
         self.trans_conv_kernel_sizes_means = self.conv_kernel_sizes[::-1]
         self.trans_conv_unpooling_factors_means = self.conv_pooling_factors[::-1]
-        self.acti_func_trans_conv_means = self.acti_func_conv[-2::-1] + [None]
+        self.acti_func_trans_conv_means = self.acti_func_conv[-2::-1] + ['sigmoid']
         self.upsampling_mode_means = 'DECONV'
 
-        # 5) The transpose convolutional layers (log variances)
-        # The parameter constraints are as above.
+        # 5) The transpose convolutional layers (for predicting (log) variances)
+        # CONSTRAINTS: same as for the mean-predicting layers above.
         self.trans_conv_output_channels_logvars = self.trans_conv_output_channels_means
         self.trans_conv_kernel_sizes_logvars = self.trans_conv_kernel_sizes_means
         self.trans_conv_unpooling_factors_logvars = self.trans_conv_unpooling_factors_means
-        self.acti_func_trans_conv_logvars = self.acti_func_trans_conv_means
+        self.acti_func_trans_conv_logvars = self.acti_func_conv[-2::-1] + [None]
         self.upsampling_mode_logvars = self.upsampling_mode_means
 
-        # 6) The sampler
-        self.number_of_latent_variables = 256
-        self.number_of_samples_from_posterior = 10
-
-        # 7) Clip logvars to avoid infs & nans
-        # variance = exp(logvars), so keep this variable within reasonable limits.
-        self.logvars_upper_bound = 80
+        # 6) Clip logvars to avoid infs & nans
+        # NOTES: variance = exp(logvars), so we must keep logvars within reasonable limits.
+        self.logvars_upper_bound = 50
         self.logvars_lower_bound = -self.logvars_upper_bound
 
         self.initializers = {'w': w_initializer, 'b': b_initializer}
@@ -98,9 +103,7 @@ class VAE(TrainableLayer):
     def layer_op(self, images, is_training):
 
         def clip(x):
-            output = tf.maximum(x, self.logvars_lower_bound)
-            output = tf.minimum(output, self.logvars_upper_bound)
-            return output
+            return tf.clip_by_value(x, self.logvars_lower_bound, self.logvars_upper_bound)
 
         def normalise(x):
             min_val = tf.reduce_min(x)
@@ -129,10 +132,16 @@ class VAE(TrainableLayer):
                               self.acti_func_encoder,
                               serialised_shape)
 
-        approx_sampler = GaussianSampler(self.number_of_latent_variables,
-                                         self.number_of_samples_from_posterior,
-                                         self.logvars_upper_bound,
-                                         self.logvars_lower_bound)
+        approximate_sampler = GaussianSampler(self.number_of_latent_variables,
+                                              self.number_of_samples_from_posterior,
+                                              self.logvars_upper_bound,
+                                              self.logvars_lower_bound)
+
+        # Initialise the shared fully-connected layers if and only if they have been specified
+        if len(self.layer_sizes_decoder_shared) > 0:
+            shared_decoder = FCDecoder(self.layer_sizes_decoder_shared,
+                                       self.acti_func_decoder_shared,
+                                       name='FCDecoder')
 
         decoder_means = ConvDecoder(self.layer_sizes_decoder + [serialised_shape],
                                     self.acti_func_decoder,
@@ -158,9 +167,11 @@ class VAE(TrainableLayer):
         encoding = encoder(images, is_training)
 
         # Sample from the posterior distribution P(latent variables|input)
-        [sample, posterior_means, posterior_logvars] = approx_sampler(encoding, is_training)
+        [sample, posterior_means, posterior_logvars] = approximate_sampler(encoding, is_training)
 
-        # Decode the samples
+        if len(self.layer_sizes_decoder_shared) > 0:
+            sample = shared_decoder(sample, is_training)
+
         [data_means, data_logvars] = [decoder_means(sample, is_training), clip(decoder_logvars(sample, is_training))]
 
         # Monitor the KL divergence of the (approximate) posterior from the prior
@@ -357,8 +368,8 @@ class GaussianSampler(TrainableLayer):
 
 class ConvDecoder(TrainableLayer):
     """
-        This is a generic decoder composed of fully-connected layers followed by {upsampling then transpose convolution}
-        blocks. NB: no batch normalisation on the final (transpose convolutional) layer.
+        This is a generic decoder composed of fully-connected layers followed by {upsampling then transpose
+        convolution} blocks. There is no batch normalisation on the final transpose convolutional layer.
         """
     def __init__(self,
                  layer_sizes_decoder,
@@ -460,5 +471,48 @@ class ConvDecoder(TrainableLayer):
                                      kernel_size=self.trans_conv_unpooling_factors[i],
                                      stride=self.trans_conv_unpooling_factors[i])(flow)
             flow = decoders_cnn[i](flow, is_training)
+
+        return flow
+
+class FCDecoder(TrainableLayer):
+    """
+        This is a generic fully-connected decoder.
+        """
+    def __init__(self,
+                 layer_sizes_decoder,
+                 acti_func_decoder,
+                 w_initializer=None,
+                 w_regularizer=None,
+                 b_initializer=None,
+                 b_regularizer=None,
+                 name='FCDecoder'):
+
+        super(FCDecoder, self).__init__(name=name)
+
+        self.layer_sizes_decoder = layer_sizes_decoder
+        self.acti_func_decoder = acti_func_decoder
+
+        self.initializers = {'w': w_initializer, 'b': b_initializer}
+        self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
+
+    def layer_op(self, codes, is_training):
+
+        # Define the decoding fully-connected layers
+        decoders_fc = []
+        for i in range(0, len(self.layer_sizes_decoder)):
+            decoders_fc.append(FullyConnectedLayer(
+                n_output_nodes=self.layer_sizes_decoder[i],
+                with_bias=True,
+                with_bn=True,
+                acti_func=self.acti_func_decoder[i],
+                w_initializer=self.initializers['w'],
+                w_regularizer=self.regularizers['w'],
+                name='FCDecoder_fc_{}'.format(self.layer_sizes_decoder[i])))
+            print(decoders_fc[-1])
+
+        # Fully-connected decoder layers
+        flow = codes
+        for i in range(0, len(self.layer_sizes_decoder)):
+            flow = decoders_fc[i](flow, is_training)
 
         return flow
