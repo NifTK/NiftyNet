@@ -54,16 +54,18 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                 if self._is_stopping_signal(location[batch_id]):
                     return False
                 self.image_out = self._initialise_empty_image(
-                    image_id=image_id, n_channels=window.shape[-1])
+                    image_id=image_id,
+                    n_channels=window.shape[-1],
+                    dtype=window.dtype)
             self.image_out[x_:_x, y_:_y, z_:_z, ...] = window[batch_id, ...]
         return True
 
-    def _initialise_empty_image(self, image_id, n_channels):
+    def _initialise_empty_image(self, image_id, n_channels, dtype=np.float):
         self.image_id = image_id
         spatial_shape = self.input_image['image'].shape[:3]
         output_image_shape = spatial_shape + (n_channels,)
         # TODO: define dtype of output
-        empty_image = np.ones(output_image_shape) * -1
+        empty_image = np.zeros(output_image_shape, dtype=dtype)
         return empty_image
 
     def _save_current_image(self):
