@@ -49,8 +49,8 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         ImageWindowsAggregator.__init__(self, image_reader=image_reader)
         self.image_out = None
         self.output_path = os.path.abspath(output_path)
-        self.output_interp_order = interp_order
         self.window_border = window_border
+        self.output_interp_order = interp_order
 
     def decode_batch(self, window, location):
         n_samples = location.shape[0]
@@ -92,8 +92,11 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         subject_name = self.reader.get_subject_id(self.image_id)
         filename = "{}_niftynet_out.nii.gz".format(subject_name)
         source_image_obj = self.input_image['image']
-        misc_io.save_data_array(
-            self.output_path, filename, self.image_out, source_image_obj)
+        misc_io.save_data_array(self.output_path,
+                                filename,
+                                self.image_out,
+                                source_image_obj,
+                                self.output_interp_order)
         return
 
     @staticmethod

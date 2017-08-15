@@ -182,7 +182,11 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
 
 ### end of resample/reorientation original volumes
 
-def save_data_array(filefolder, filename, array_to_save, image_object):
+def save_data_array(filefolder,
+                    filename,
+                    array_to_save,
+                    image_object,
+                    interp_order):
     """
     write image data array to hard drive using image_object
     properties such as affine, pixdim and axcodes.
@@ -192,7 +196,6 @@ def save_data_array(filefolder, filename, array_to_save, image_object):
     image_axcodes = image_object.output_axcodes[0]
     dst_pixdim = image_object.original_pixdim[0]
     dst_axcodes = image_object.original_axcodes[0]
-    interp_order = image_object.interp_order[0]
     if len(array_to_save.shape) == 4:
         # recover a time dimension for nifti format output
         array_to_save = np.expand_dims(array_to_save, axis=3)
