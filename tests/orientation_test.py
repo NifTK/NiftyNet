@@ -8,8 +8,8 @@ import nibabel as nib
 
 import numpy as np
 
-from utilities.subject import MultiModalFileList
-from utilities.subject import Subject
+from niftynet.utilities.subject import MultiModalFileList
+from niftynet.utilities.subject import Subject
 
 
 class OrientationTest(tf.test.TestCase):
