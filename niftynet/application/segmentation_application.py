@@ -179,9 +179,24 @@ class SegmentationApplication(BaseApplication):
 
     def initialise_network(self):
         num_classes = self.segmentation_param.num_classes
-        # TODO regularisation
+        w_regularizer = None
+        b_regularizer = None
+        reg_type = self.net_param.reg_type.lower()
+        decay = self.net_param.decay
+        if reg_type == 'l2' and decay > 0:
+            from tensorflow.contrib.layers.python.layers import regularizers
+            w_regularizer = regularizers.l2_regularizer(decay)
+            b_regularizer = regularizers.l2_regularizer(decay)
+        elif reg_type == 'l1' and decay > 0:
+            from tensorflow.contrib.layers.python.layers import regularizers
+            w_regularizer = regularizers.l1_regularizer(decay)
+            b_regularizer = regularizers.l1_regularizer(decay)
+
         self._net = NetFactory.create(self.net_param.name)(
-            num_classes=num_classes)
+            num_classes=num_classes,
+            w_regularizer=w_regularizer,
+            b_regularizer=b_regularizer)
+
 
     def inference_sampler(self):
         pass
@@ -204,18 +219,28 @@ class SegmentationApplication(BaseApplication):
             loss_func = LossFunction(
                 n_class=self.segmentation_param.num_classes,
                 loss_type=self.action_param.loss_type)
-            loss = loss_func(pred=net_out,
-                             label=data_dict.get('label', None),
-                             weight_map=data_dict.get('weight', None))
+            data_loss = loss_func(
+                pred=net_out,
+                label=data_dict.get('label', None),
+                weight_map=data_dict.get('weight', None))
+            if self.net_param.decay > 0.0:
+                reg_losses = tf.get_collection(
+                    tf.GraphKeys.REGULARIZATION_LOSSES)
+                if reg_losses:
+                    reg_loss = tf.reduce_mean(
+                        [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
+                    loss = data_loss + reg_loss
+            else:
+                loss = data_loss
             grads = self.optimizer.compute_gradients(loss)
             # collecting gradients variables
             training_grads_collector.add_to_collection([grads])
             # collecting output variables
             outputs_collector.add_to_collection(
-                var=loss, name='dice_loss',
+                var=data_loss, name='dice_loss',
                 average_over_devices=True, collection=CONSOLE)
             outputs_collector.add_to_collection(
-                var=loss, name='dice_loss',
+                var=data_loss, name='dice_loss',
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
         else:
