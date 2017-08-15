@@ -16,12 +16,8 @@ class PadLayer(Layer, Invertible):
 
     def __init__(self, field, border, name='pad'):
         super(PadLayer, self).__init__(name=name)
-        if isinstance(border, tuple):
-            spatial_border = ()
-            while len(spatial_border) < 3:
-                spatial_border = spatial_border + (border[0],)
         try:
-            spatial_border = tuple(map(lambda x: (x,), spatial_border))
+            spatial_border = tuple(map(lambda x: (x,), border))
         except ValueError:
             tf.logging.fatal("unknown padding param. {}".format(border))
             raise

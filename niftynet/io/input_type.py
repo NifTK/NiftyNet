@@ -300,7 +300,6 @@ class VectorND(DataFromFile):
         image_data = image_obj.get_data()
         return image_data
 
-
 class ImageFactory(object):
     INSTANCE_DICT = {2: SpatialImage2D,
                      3: SpatialImage3D,

@@ -92,6 +92,7 @@ def make_input_tuple(input_str, element_type=basestring):
         "the input should be a tuple of {}".format(element_type)
     return new_tuple
 
+
 def standardise_section_name(configparser, old_name):
     """
     rename configparser section
@@ -143,3 +144,11 @@ def add_input_name_args(parser, supported_input):
             type=stringarray,
             default=())
     return parser
+
+
+def spatialnumarray(string_input):
+    raw_tuple = numarray(string_input)
+    while len(raw_tuple) < 3:
+        raw_tuple = raw_tuple + (raw_tuple[-1],)
+    raw_tuple = raw_tuple[:3]
+    return raw_tuple

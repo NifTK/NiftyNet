@@ -83,6 +83,13 @@ def add_inference_args(parser):
         help="[Inference only] interpolation order of the network output",
         type=int,
         default=0)
+
+    parser.add_argument(
+        "--border",
+        metavar='',
+        help="[Inference only] Width of borders to crop for segmented patch",
+        type=spatialnumarray,
+        default=(0, 0, 0))
     return parser
 
 
@@ -188,8 +195,8 @@ def add_network_args(parser):
         "--volume_padding_size",
         metavar='',
         help="Set padding size of each volume (in all dimensions)",
-        type=numarray,
-        default=())
+        type=spatialnumarray,
+        default=(0, 0, 0))
 
     import niftynet.layer.binary_masking
     parser.add_argument(
@@ -282,18 +289,6 @@ def add_training_args(parser):
              " 'resize': resize image to the patch size.",
         choices=['uniform', 'selective', 'resize'],
         default='uniform')
-
-    parser.add_argument(
-        "--min_numb_labels",
-        help="Minimum number of different labels present in a patch",
-        type=numarray,
-        default=2)
-
-    parser.add_argument(
-        "--min_sampling_ratio",
-        help="Minimum ratio to satisfy in the sampling of different labels",
-        type=float,
-        default=0.00001)
 
     parser.add_argument(
         "--random_flipping_axes",

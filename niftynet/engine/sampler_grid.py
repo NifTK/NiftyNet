@@ -37,8 +37,7 @@ class GridSampler(Layer, InputBatchQueueRunner):
             # this is useful when do inference with a spatial window
             # which is different from the training specifications
             self.window.set_spatial_shape(spatial_window_size)
-
-        self.border_size = complete_spatial_border_size(window_border)
+        self.border_size = window_border
         tf.logging.info('initialised window instance')
         self._create_queue_and_ops(self.window,
                                    enqueue_size=1,
@@ -128,7 +127,7 @@ def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
     all_coordinates = {}
     for name, image_shape in img_sizes.items():
         window_shape = win_sizes[name]
-        grid_size = [win_size - 2 * border_size for (win_size, border_size)
+        grid_size = [win_size - 2 * border for (win_size, border)
                      in zip(window_shape, border_size)]
         assert len(image_shape) >= N_SPATIAL, 'incompatible image shapes'
         assert len(window_shape) >= N_SPATIAL, 'incompatible window shapes'
@@ -179,10 +178,10 @@ def _enumerate_step_points(starting, ending, win_size, step_size):
 
 def complete_spatial_border_size(input_border_size):
     try:
-        input_border_size = map(int, input_border_size)
+        input_border_size = tuple(map(int, input_border_size))
         while len(input_border_size) < N_SPATIAL:
-            input_border_size = input_border_size + (1,)
-        input_border_size = tuple(input_border_size[:N_SPATIAL])
+            input_border_size = input_border_size + (0,)
+        input_border_size = input_border_size[:N_SPATIAL]
     except ValueError:
         tf.logging.fatal("wrong window border size format")
         raise

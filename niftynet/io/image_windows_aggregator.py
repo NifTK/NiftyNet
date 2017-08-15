@@ -6,10 +6,11 @@ import os
 
 import numpy as np
 import tensorflow as tf
-from niftynet.layer.pad import PadLayer
-from niftynet.layer.discrete_label_normalisation import DiscreteLabelNormalisationLayer
 
 import niftynet.io.misc_io as misc_io
+from niftynet.layer.discrete_label_normalisation import \
+    DiscreteLabelNormalisationLayer
+from niftynet.layer.pad import PadLayer
 
 
 class ImageWindowsAggregator(object):
@@ -40,14 +41,20 @@ class ImageWindowsAggregator(object):
 
 
 class GridSamplesAggregator(ImageWindowsAggregator):
-    def __init__(self, image_reader, output_path='./'):
+    def __init__(self,
+                 image_reader,
+                 output_path='./',
+                 window_border=(),
+                 interp_order=0):
         ImageWindowsAggregator.__init__(self, image_reader=image_reader)
         self.image_out = None
         self.output_path = os.path.abspath(output_path)
+        self.output_interp_order = interp_order
+        self.window_border = window_border
 
-    def decode_batch(self, window, location, window_border=0):
+    def decode_batch(self, window, location):
         n_samples = location.shape[0]
-        window, location = crop_batch(window, location, window_border)
+        window, location = crop_batch(window, location, self.window_border)
 
         for batch_id in range(n_samples):
             image_id, x_, y_, z_, _x, _y, _z = location[batch_id, :]
@@ -76,33 +83,17 @@ class GridSamplesAggregator(ImageWindowsAggregator):
     def _save_current_image(self):
         if self.input_image is None:
             return
-        original_image = self.input_image['image']
-        affine = original_image.original_affine[0]
-        image_pixdim = original_image.output_pixdim[0]
-        image_axcodes = original_image.output_axcodes[0]
-        dst_pixdim = original_image.original_pixdim[0]
-        dst_axcodes = original_image.original_axcodes[0]
-        interp_order = original_image.interp_order[0]
-        if len(self.image_out.shape) == 4:
-            # recover a time dimension for nifti format output
-            self.image_out = np.expand_dims(self.image_out, axis=3)
 
-        for layer in self.reader.preprocessors:
+        for layer in reversed(self.reader.preprocessors):
             if isinstance(layer, PadLayer):
                 self.image_out, _ = layer.inverse_op(self.image_out)
             if isinstance(layer, DiscreteLabelNormalisationLayer):
                 self.image_out, _ = layer.inverse_op(self.image_out)
-        if image_pixdim:
-            self.image_out = misc_io.do_resampling(
-                self.image_out, image_pixdim, dst_pixdim, interp_order)
-        if image_axcodes:
-            self.image_out = misc_io.do_reorientation(
-                self.image_out, image_axcodes, dst_axcodes)
-
         subject_name = self.reader.get_subject_id(self.image_id)
         filename = "{}_niftynet_out.nii.gz".format(subject_name)
-        misc_io.save_volume_5d(
-            self.image_out, filename, self.output_path, affine)
+        source_image_obj = self.input_image['image']
+        misc_io.save_data_array(
+            self.output_path, filename, self.image_out, source_image_obj)
         return
 
     @staticmethod
@@ -111,6 +102,8 @@ class GridSamplesAggregator(ImageWindowsAggregator):
 
 
 def crop_batch(window, location, border):
+    if border == ():
+        return window, location
     assert len(border) == 3, "unknown border format (should be an array of" \
                              "three elements corresponding to 3 spatial dims"
 

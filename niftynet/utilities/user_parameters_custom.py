@@ -59,15 +59,21 @@ def __add_segmentation_args(parser):
         default=False)
 
     parser.add_argument(
-        "--border",
-        metavar='',
-        help="[Inference only] Width of borders to crop for segmented patch",
+        "--min_numb_labels",
+        help="Minimum number of different labels present in a patch",
         type=numarray,
-        default=5)
+        default=2)
+
+    parser.add_argument(
+        "--min_sampling_ratio",
+        help="Minimum ratio to satisfy in the sampling of different labels",
+        type=float,
+        default=0.00001)
 
     from niftynet.application.segmentation_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser
+
 
 def __add_gan_args(parser):
     parser.add_argument(

@@ -43,9 +43,12 @@ class ImageWindow(object):
         except ValueError:
             tf.logging.fatal("spatial window should be an array of int")
             raise
-        for name in self.fields:
-            non_spatial_dims = list(self.shapes[name][len(spatial_window):])
-            self.shapes[name] = tuple(spatial_window + non_spatial_dims)
+        self.shapes = {
+            name: complete_partial_window_sizes(
+                spatial_window, self.shapes[name])
+            for name in self.fields}
+        # update based on the latest spatial shapes
+        self.has_dynamic_shapes = self._check_dynamic_shapes()
 
     def placeholders_dict(self, n_samples=1):
         """
@@ -63,7 +66,6 @@ class ImageWindow(object):
 
         if self.has_dynamic_shapes:
             self.n_samples = 1
-
         else:
             self.n_samples = n_samples
 

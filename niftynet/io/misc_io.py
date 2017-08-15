@@ -3,11 +3,11 @@ from __future__ import absolute_import, print_function
 
 import os
 import warnings
-import tensorflow as tf
 
 import nibabel as nib
 import numpy as np
 import scipy.ndimage
+import tensorflow as tf
 
 image_loaders = [nib.load]
 try:
@@ -181,6 +181,28 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
 
 
 ### end of resample/reorientation original volumes
+
+def save_data_array(filefolder, filename, array_to_save, image_object):
+    """
+    write image data array to hard drive using image_object
+    properties such as affine, pixdim and axcodes.
+    """
+    affine = image_object.original_affine[0]
+    image_pixdim = image_object.output_pixdim[0]
+    image_axcodes = image_object.output_axcodes[0]
+    dst_pixdim = image_object.original_pixdim[0]
+    dst_axcodes = image_object.original_axcodes[0]
+    interp_order = image_object.interp_order[0]
+    if len(array_to_save.shape) == 4:
+        # recover a time dimension for nifti format output
+        array_to_save = np.expand_dims(array_to_save, axis=3)
+    if image_pixdim:
+        array_to_save = do_resampling(
+            array_to_save, image_pixdim, dst_pixdim, interp_order)
+    if image_axcodes:
+        array_to_save = do_reorientation(
+            array_to_save, image_axcodes, dst_axcodes)
+    save_volume_5d(array_to_save, filename, filefolder, affine)
 
 
 def split_filename(file_name):
@@ -357,7 +379,7 @@ def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
         raise
 
     img_nii = nib.Nifti1Image(img_data, affine)
-    #img_nii.set_data_dtype(np.dtype(np.float32))
+    # img_nii.set_data_dtype(np.dtype(np.float32))
     output_name = os.path.join(save_path, filename)
     try:
         nib.save(img_nii, output_name)
