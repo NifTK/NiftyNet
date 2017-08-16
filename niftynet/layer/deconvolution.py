@@ -69,7 +69,7 @@ class DeconvLayer(TrainableLayer):
         super(DeconvLayer, self).__init__(name=name)
 
         self.padding = look_up_operations(padding.upper(), SUPPORTED_PADDING)
-        self.n_output_chns = n_output_chns
+        self.n_output_chns = int(n_output_chns)
         self.kernel_size = kernel_size
         self.stride = stride
         self.with_bias = with_bias

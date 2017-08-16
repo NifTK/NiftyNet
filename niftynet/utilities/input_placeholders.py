@@ -220,18 +220,18 @@ class ImagePatch(object):
 
     @image.setter
     def image(self, value):
-        assert value.shape == tuple(self.full_image_shape)
+        assert value.shape == tuple(self.full_image_shape),'{} vs {}'.format(value.shape,tuple(self.full_image_shape))
         self._image = value
 
     @info.setter
     def info(self, value):
-        assert value.shape == tuple(self.full_info_shape)
+        assert value.shape == tuple(self.full_info_shape),'{} vs {}'.format(value.shape,tuple(self.full_info_shape))
         self._info = value
 
     @label.setter
     def label(self, value):
         assert self.has_labels
-        assert value.shape == tuple(self.full_label_shape)
+        assert value.shape == tuple(self.full_label_shape),'{} vs {}'.format(value.shape,tuple(self.full_label_shape))
         self._label = value
 
     @weight_map.setter
@@ -502,23 +502,23 @@ class GANPatch(object):
 
     @image.setter
     def image(self, value):
-        assert value.shape == tuple(self.full_image_shape)
+        assert value.shape == tuple(self.full_image_shape),'{} vs {}'.format(value.shape,tuple(self.full_image_shape))
         self._image = value
 
     @noise.setter
     def noise(self, value):
-        assert value.shape == tuple(self.full_noise_shape)
+        assert value.shape == tuple(self.full_noise_shape),'{} vs {}'.format(value.shape,tuple(self.full_noise_shape))
         self._noise = value
 
     @info.setter
     def info(self, value):
-        assert value.shape == tuple(self.full_info_shape)
+        assert value.shape == tuple(self.full_info_shape),'{} vs {}'.format(value.shape,tuple(self.full_info_shape))
         self._info = value
 
     @conditioning.setter
     def conditioning(self, value):
         assert self.has_conditioning
-        assert value.shape == tuple(self.full_conditioning_shape)
+        assert value.shape == tuple(self.full_conditioning_shape),'{} vs {}'.format(value.shape,tuple(self.full_conditioning_shape))
         self._conditioning = value
 
     ### end of set the corresponding data of each placeholder
