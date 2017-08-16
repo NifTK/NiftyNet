@@ -160,7 +160,11 @@ class GANApplication(BaseApplication):
                 batch_size=self.net_param.batch_size,
                 windows_per_image=self.action_param.sample_per_volume)
         else:
-            self._sampler = RandomVectorSampler()
+            self._sampler = RandomVectorSampler(
+                fields=('vector',),
+                vector_size=(self.gan_param.noise_size,),
+                batch_size=self.net_param.batch_size,
+                n_interpolations=self.gan_param.n_interpolations)
         self._sampler = [self._sampler]
 
     def training_sampler(self):

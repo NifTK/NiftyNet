@@ -16,12 +16,14 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
     currently 4D input is supported, Height x Width x Depth x Modality
     """
 
-    def __init__(self, fields=('vector',), vector_size=(100,), batch_size=10):
-        # self.reader = reader
-        self.n_interpolations = 10
+    def __init__(self,
+                 fields=('vector',),
+                 vector_size=(100,),
+                 batch_size=10,
+                 n_interpolations=10):
+        self.n_interpolations = n_interpolations
         Layer.__init__(self, name='input_buffer')
         capacity = batch_size * 2
-
         InputBatchQueueRunner.__init__(self, capacity=capacity, shuffle=False)
 
         tf.logging.info('reading size of preprocessed images')

@@ -84,11 +84,11 @@ def __add_gan_args(parser):
         default=-1)
 
     parser.add_argument(
-        "--window_sampling",
+        "--n_interpolations",
         metavar='',
         help="the method of generating window from image",
-        type=str,
-        default='resize')
+        type=int,
+        default=10)
 
     from niftynet.application.gan_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
