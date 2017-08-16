@@ -1,5 +1,7 @@
 from __future__ import absolute_import, print_function
 
+import unittest
+
 import tensorflow as tf
 import numpy as np
 
@@ -8,6 +10,8 @@ import niftynet.engine.restorer
 
 from niftynet.layer.convolution import ConvolutionalLayer
 
+
+@unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class RestorerTest(tf.test.TestCase):
     def make_checkpoint(self, checkpoint_name, definition):
         scopes = {}
