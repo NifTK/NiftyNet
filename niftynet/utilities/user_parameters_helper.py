@@ -147,6 +147,9 @@ def add_input_name_args(parser, supported_input):
 
 
 def spatialnumarray(string_input):
+    """
+    This function parse a 3-element tuple from a string input
+    """
     raw_tuple = numarray(string_input)
     while len(raw_tuple) < 3:
         raw_tuple = raw_tuple + (raw_tuple[-1],)

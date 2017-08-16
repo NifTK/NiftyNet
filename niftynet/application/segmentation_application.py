@@ -1,6 +1,3 @@
-import time
-
-import numpy as np
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
@@ -9,6 +6,7 @@ from niftynet.engine.graph_variables_collector import TF_SUMMARIES
 from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.sampler_uniform import UniformSampler
 from niftynet.io.image_reader import ImageReader
+from niftynet.io.image_windows_aggregator import GridSamplesAggregator
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
@@ -17,13 +15,12 @@ from niftynet.layer.histogram_normalisation import \
 from niftynet.layer.loss import LossFunction
 from niftynet.layer.mean_variance_normalisation import \
     MeanVarNormalisationLayer
+from niftynet.layer.pad import PadLayer
 from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 from niftynet.utilities import misc_common as util
-from niftynet.io.image_windows_aggregator import GridSamplesAggregator
-from niftynet.layer.pad import PadLayer
 
 SUPPORTED_INPUT = {'image', 'label', 'weight'}
 
@@ -197,7 +194,6 @@ class SegmentationApplication(BaseApplication):
             w_regularizer=w_regularizer,
             b_regularizer=b_regularizer)
 
-
     def inference_sampler(self):
         pass
         # return samplseur
@@ -292,7 +288,7 @@ class SegmentationApplication(BaseApplication):
         elif self._param.window_sampling in ['resize']:
             return self._inference_loop_resize(sess, coord, net_out)
 
-    #def _inference_loop_resize(self, sess, coord, net_out):
+    # def _inference_loop_resize(self, sess, coord, net_out):
     #    all_saved_flag = False
     #    img_id, pred_img, subject_i = None, None, None
     #    spatial_rank = self._inference_patch_holder.spatial_rank

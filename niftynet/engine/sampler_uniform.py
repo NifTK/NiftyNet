@@ -23,10 +23,11 @@ class UniformSampler(Layer, InputBatchQueueRunner):
                                        capacity=windows_per_image * 4,
                                        shuffle=True)
         tf.logging.info('reading size of preprocessed images')
-        self.window = ImageWindow.from_user_spec(self.reader.input_sources,
-                                                 self.reader.shapes,
-                                                 self.reader.tf_dtypes,
-                                                 data_param)
+        self.window = ImageWindow.from_data_reader_properties(
+            self.reader.input_sources,
+            self.reader.shapes,
+            self.reader.tf_dtypes,
+            data_param)
         tf.logging.info('initialised window instance')
         self._create_queue_and_ops(self.window,
                                    enqueue_size=windows_per_image,

@@ -6,6 +6,7 @@ from niftynet.application.base_application import BaseApplication
 from niftynet.engine.graph_variables_collector import CONSOLE
 from niftynet.engine.graph_variables_collector import TF_SUMMARIES
 from niftynet.engine.sampler_resize import ResizeSampler
+from niftynet.engine.sampler_random_vector import RandomVectorSampler
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.gan_loss import LossFunction
@@ -16,6 +17,7 @@ from niftynet.layer.mean_variance_normalisation import \
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
+from niftynet.io.image_windows_aggregator import BatchSplitingAggregator
 
 # from niftynet.engine.input_buffer import TrainEvalInputBuffer, DeployInputBuffer
 
@@ -51,7 +53,6 @@ class GANApplication(BaseApplication):
         self.is_training = is_training
         self.net_param = net_param
         self.action_param = action_param
-        self._loss_func = LossFunction(loss_type=self.action_param.loss_type)
 
         self.reader = None
         self.data_param = None
@@ -99,21 +100,17 @@ class GANApplication(BaseApplication):
 
         augmentation_layers = []
         if self.is_training:
-            rand_flip_layer = RandomFlipLayer(
-                flip_axes=self.action_param.flip_axes)
-            rand_scaling_layer = RandomSpatialScalingLayer(
-                min_percentage=self.action_param.scaling_percentage[0],
-                max_percentage=self.action_param.scaling_percentage[1])
-            rand_rotate_layer = RandomRotationLayer(
-                min_angle=self.action_param.rotation_angle[0],
-                max_angle=self.action_param.rotation_angle[1])
-
-            if self.action_param.random_flip:
-                augmentation_layers.append(rand_flip_layer)
-            if self.action_param.spatial_scaling:
-                augmentation_layers.append(rand_scaling_layer)
-            if self.action_param.rotation:
-                augmentation_layers.append(rand_rotate_layer)
+            if self.action_param.random_flipping_axes > 0:
+                augmentation_layers.append(RandomFlipLayer(
+                    flip_axes=self.action_param.random_flipping_axes))
+            if self.action_param.scaling_percentage:
+                augmentation_layers.append(RandomSpatialScalingLayer(
+                    min_percentage=self.action_param.scaling_percentage[0],
+                    max_percentage=self.action_param.scaling_percentage[1]))
+            if self.action_param.rotation_angle:
+                augmentation_layers.append(RandomRotationLayer(
+                    min_angle=self.action_param.rotation_angle[0],
+                    max_angle=self.action_param.rotation_angle[1]))
 
         self.reader.add_preprocessing_layers(
             normalisation_layers + augmentation_layers)
@@ -157,51 +154,29 @@ class GANApplication(BaseApplication):
 
     def initialise_sampler(self, is_training):
         if is_training:
-            if self.gan_param.window_sampling == "resize":
-                self._sampler = ResizeSampler(
-                    reader=self.reader,
-                    data_param=self.data_param,
-                    batch_size=self.net_param.batch_size,
-                    windows_per_image=self.action_param.sample_per_volume)
+            self._sampler = ResizeSampler(
+                reader=self.reader,
+                data_param=self.data_param,
+                batch_size=self.net_param.batch_size,
+                windows_per_image=self.action_param.sample_per_volume)
         else:
-            self._sampler = self.inference_sampler()
+            self._sampler = RandomVectorSampler()
         self._sampler = [self._sampler]
 
     def training_sampler(self):
         pass
-        # assert self._volume_loader is not None, \
-        #     "Please call initialise_dataset_loader first"
-        # patch_holder = GANPatch(
-        #     spatial_rank=self._param.spatial_rank,
-        #     image_size=self._param.image_size,
-        #     noise_size=self._param.noise_size,
-        #     conditioning_size=self._param.conditioning_size,
-        #     num_image_modality=self._volume_loader.num_modality(0),
-        #     num_conditioning_modality=self._volume_loader.num_modality(1))
-        #
-        # # defines how to generate samples of the training element from volume
-        # with tf.name_scope('Sampling'):
-        #     sampler = GANSampler(
-        #         patch=patch_holder,
-        #         volume_loader=self._volume_loader,
-        #         data_augmentation_methods=None)
-        # input_buffer = TrainEvalInputBuffer(
-        #     batch_size=self._param.batch_size,
-        #     capacity=max(self._param.queue_length, self._param.batch_size),
-        #     sampler=sampler,
-        #     shuffle=True)
-        # return input_buffer
 
     def initialise_network(self):
         self._net = GanFactory.create(self.net_param.name)()
 
-    def connect_data_and_network(
-            self, outputs_collector=None, training_grads_collector=None):
-
-        with tf.name_scope('Optimizer'):
-            self.optimizer = tf.train.AdamOptimizer(
-                learning_rate=self.action_param.lr)
+    def connect_data_and_network(self,
+                                 outputs_collector=None,
+                                 training_grads_collector=None):
         if self.is_training:
+            with tf.name_scope('Optimizer'):
+                self.optimizer = tf.train.AdamOptimizer(
+                    learning_rate=self.action_param.lr)
+
             # a new pop_batch_op for each gpu tower
             device_id = training_grads_collector.current_tower_id
             data_dict = self.get_sampler()[0].pop_batch_op(device_id)
@@ -220,6 +195,8 @@ class GANApplication(BaseApplication):
                                    conditioning,
                                    self.is_training)
 
+            self._loss_func = LossFunction(
+                loss_type=self.action_param.loss_type)
             lossG, lossD = self.loss_func(data_dict, net_output)
             if self.net_param.decay > 0:
                 reg_losses = tf.get_collection(
@@ -263,8 +240,26 @@ class GANApplication(BaseApplication):
                 training_grads_collector.add_to_collection(grads)
             return net_output
         else:
-            raise NotImplementedError
-            # data_dict = self.get_sampler()[0].pop_batch_op()
+            #raise NotImplementedError
+            data_dict = self.get_sampler()[0].pop_batch_op()
+            image_size = self.data_param[self.gan_param.image[0]].spatial_window_size
+            batch_image_size = (self.net_param.batch_size,)+image_size+(1,)
+            dummy_image = tf.zeros(batch_image_size)
+            net_output = self._net(data_dict['vector'],
+                                   dummy_image,
+                                   None,
+                                   self.is_training)
+            outputs_collector.add_to_collection(
+                var=net_output[0], name='image', average_over_devices=False,
+                collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=data_dict['vector_location'], name='location',
+                average_over_devices=False, collection=CONSOLE)
+
+            self.output_decoder = BatchSplitingAggregator(
+                image_reader=self.reader,
+                output_path=self.action_param.save_seg_dir)
+            return net_output
             # images = data_dict['images']
             # net_output = self._net(images, False)
             # return net_output
@@ -284,92 +279,9 @@ class GANApplication(BaseApplication):
             fake_logits, False)
         return lossG, lossD
 
-    # def train(self, train_dict):
-    #    """
-    #    Returns a list of possible compute_gradients ops to be run each training iteration.
-    #    Default implementation returns gradients for all variables from one Adam optimizer
-    #    """
-    #    with tf.name_scope('Optimizer'):
-    #        self.optimizer = tf.train.AdamOptimizer(
-    #            learning_rate=self._param.lr, )
-    #    net_outputs = self.net(train_dict, is_training=True)
-    #    with tf.name_scope('Loss'):
-    #        lossG, lossD = self.loss_func(train_dict, net_outputs)
-    #        if self._param.decay > 0:
-    #            reg_losses = tf.get_collection(
-    #                tf.GraphKeys.REGULARIZATION_LOSSES)
-    #            if reg_losses:
-    #                reg_loss = tf.reduce_mean([tf.reduce_mean(reg_loss)
-    #                                           for reg_loss in reg_losses])
-    #                lossD = lossD + reg_loss
-    #                lossG = lossG + reg_loss
-    #    # Averages are in name_scope for Tensorboard naming; summaries are outside for console naming
-    #    logs = [['lossD', lossD], ['lossG', lossG]]
-    #    with tf.name_scope('ConsoleLogging'):
-    #        logs += self.logs(train_dict, net_outputs)
-    #    for tag, val in logs:
-    #        tf.summary.scalar(tag, val, [logging.CONSOLE, logging.LOG])
-    #    with tf.name_scope('ComputeGradients'):
-    #        generator_variables = tf.get_collection(
-    #            tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
-    #        discriminator_variables = tf.get_collection(
-    #            tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator')
-    #        grads = [self.optimizer.compute_gradients(lossG,
-    #                                                  var_list=generator_variables),
-    #                 self.optimizer.compute_gradients(lossD,
-    #                                                  var_list=discriminator_variables)]
-    #    # add compute gradients ops for each type of optimizer_op
-    #    return grads
-
     def inference_loop(self, sess, coord, net_out):
         pass
-        # all_saved_flag = False
-        # img_id, pred_img, subject_i = None, None, None
-        # spatial_rank = self._inference_patch_holder.spatial_rank
-        # while True:
-        #    local_time = time.time()
-        #    if coord.should_stop():
-        #        break
-        #    seg_maps, spatial_info = sess.run(net_out)
-        #    # go through each one in a batch
-        #    for batch_id in range(seg_maps.shape[0]):
-        #        img_id = spatial_info[batch_id, 0]
-        #        subject_i = self._volume_loader.get_subject(img_id)
-        #        pred_img = subject_i.matrix_like_input_data_5d(
-        #            spatial_rank=spatial_rank,
-        #            n_channels=self._num_output_channels_func(),
-        #            interp_order=self._param.output_interp_order)
-        #        predictions = seg_maps[batch_id]
-        #        while predictions.ndim < pred_img.ndim:
-        #            predictions = np.expand_dims(predictions, axis=-1)
 
-        #        # assign predicted patch to the allocated output volume
-        #        origin = spatial_info[
-        #                 batch_id, 1:(1 + int(np.floor(spatial_rank)))]
-
-        #        i_spatial_rank = int(np.ceil(spatial_rank))
-        #        output_size = [self._param.image_size] * i_spatial_rank + [1]
-        #        pred_size = pred_img.shape[0:i_spatial_rank] + [1]
-        #        zoom = [d / p for p, d in zip(output_size, pred_size)]
-        #        ph = np.reshape(predictions, [-1])
-        #        pred_img = sess.run(
-        #                [self._reshaped],
-        #                feed_dict={self._ph: ph, self._sz: pred_img.shape})[0]
-        #        subject_i.save_network_output(
-        #            pred_img,
-        #            self._param.save_seg_dir,
-        #            self._param.output_interp_order)
-
-        #        if self._inference_patch_holder.is_stopping_signal(
-        #                spatial_info[batch_id]):
-        #            print('received finishing batch')
-        #            all_saved_flag = True
-        #            return all_saved_flag
-
-        #            # try to expand prediction dims to match the output volume
-        #    print('processed {} image patches ({:.3f}s)'.format(
-        #        len(spatial_info), time.time() - local_time))
-        # return all_saved_flag
 
     def stop(self):
         for sampler in self.get_sampler():
@@ -406,4 +318,10 @@ class GANApplication(BaseApplication):
         #    yield apply_ops
 
     def interpret_output(self, batch_output, is_training):
-        return True
+        if is_training:
+            return True
+        else:
+            return self.output_decoder.decode_batch(
+                batch_output['image'], batch_output['location'])
+
+        #return True

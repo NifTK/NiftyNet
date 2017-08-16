@@ -7,7 +7,7 @@ import tensorflow as tf
 N_SPATIAL = 3
 LOCATION_FORMAT = "{}_location"
 BUFFER_POSITION_DTYPE = tf.int32
-TF_NP_DTYPES = {tf.int32: np.int32, tf.float32: np.float32}
+#TF_NP_DTYPES = {tf.int32: np.int32, tf.float32: np.float32}
 
 
 class ImageWindow(object):
@@ -20,11 +20,11 @@ class ImageWindow(object):
         self._placeholders_dict = None
 
     @classmethod
-    def from_user_spec(cls,
-                       source_names,
-                       image_shapes,
-                       image_dtypes,
-                       data_param):
+    def from_data_reader_properties(cls,
+                                    source_names,
+                                    image_shapes,
+                                    image_dtypes,
+                                    data_param):
         input_fields = tuple(source_names)
         # complete window shapes based on user input and input_image sizes
         spatial_shapes = {
@@ -64,10 +64,8 @@ class ImageWindow(object):
         if self._placeholders_dict is not None:
             return self._placeholders_dict
 
-        if self.has_dynamic_shapes:
-            self.n_samples = 1
-        else:
-            self.n_samples = n_samples
+        # batch size=1 if the shapes are dynamic
+        self.n_samples = 1 if self.has_dynamic_shapes else n_samples
 
         names = list(self.fields)
         placeholders = [
@@ -75,16 +73,15 @@ class ImageWindow(object):
                            shape=[n_samples] + list(self.shapes[name]),
                            name=name)
             for name in names]
-
         # extending names with fields of coordinates
         names.extend([LOCATION_FORMAT.format(name) for name in names])
         # extending placeholders with fields of coordinates
         location_shape = [n_samples, 1 + N_SPATIAL * 2]
-        placeholders.extend([
-            tf.placeholder(dtype=BUFFER_POSITION_DTYPE,
-                           shape=location_shape,
-                           name=name)
-            for name in self.fields])
+        placeholders.extend(
+            [tf.placeholder(dtype=BUFFER_POSITION_DTYPE,
+                            shape=location_shape,
+                            name=name)
+             for name in self.fields])
         self._placeholders_dict = dict(zip(names, placeholders))
         return self._placeholders_dict
 

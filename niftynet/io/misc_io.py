@@ -185,17 +185,22 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
 def save_data_array(filefolder,
                     filename,
                     array_to_save,
-                    image_object,
-                    interp_order):
+                    image_object=None,
+                    interp_order=3):
     """
     write image data array to hard drive using image_object
     properties such as affine, pixdim and axcodes.
     """
-    affine = image_object.original_affine[0]
-    image_pixdim = image_object.output_pixdim[0]
-    image_axcodes = image_object.output_axcodes[0]
-    dst_pixdim = image_object.original_pixdim[0]
-    dst_axcodes = image_object.original_axcodes[0]
+    if image_object is not None:
+        affine = image_object.original_affine[0]
+        image_pixdim = image_object.output_pixdim[0]
+        image_axcodes = image_object.output_axcodes[0]
+        dst_pixdim = image_object.original_pixdim[0]
+        dst_axcodes = image_object.original_axcodes[0]
+    else:
+        affine = np.eye(4)
+        image_pixdim, image_axcodes = (), ()
+
     if len(array_to_save.shape) == 4:
         # recover a time dimension for nifti format output
         array_to_save = np.expand_dims(array_to_save, axis=3)
