@@ -13,9 +13,6 @@ testjob:
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
-    # set env
-    - export PYTHONPATH="/home/wenqi/.local/lib/python2.7/site-packages":$PYTHONPATH
-    - export PATH="/home/wenqi/.local/bin":$PATH
 
     # print system info
     - which nvidia-smi
