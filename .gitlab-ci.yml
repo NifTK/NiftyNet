@@ -117,7 +117,7 @@ quicktest:
     - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
 
     # run only fast tests
-    - QUICKTEST=True coverage run -m unittest discover -s "tests" -p "*_test.py"
+    - QUICKTEST=True python -m unittest discover -s "tests" -p "*_test.py"
 
     - echo 'finished quick tests'
   tags:
