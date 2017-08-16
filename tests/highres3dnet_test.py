@@ -1,10 +1,15 @@
 from __future__ import absolute_import, print_function
+
+import unittest
+
+import os
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.highres3dnet import HighRes3DNet
 
 
+@unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class HighRes3DNetTest(tf.test.TestCase):
     def test_2d_shape(self):
         input_shape = (2, 32, 32, 1)

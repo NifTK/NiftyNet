@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function
 
 import os
+import unittest
 
 import tensorflow as tf
 
@@ -8,6 +9,7 @@ from niftynet.utilities.subject import MultiModalFileList
 from niftynet.utilities.subject import Subject
 
 
+@unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class SubjectTest(tf.test.TestCase):
 
     def test_new_subject(self):

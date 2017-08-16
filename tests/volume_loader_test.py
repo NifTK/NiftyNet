@@ -1,5 +1,7 @@
 from __future__ import absolute_import, print_function
 
+import unittest
+
 import tensorflow as tf
 import os
 import niftynet.utilities.misc_csv as misc_csv
@@ -11,6 +13,7 @@ from niftynet.utilities.csv_table import CSVTable
 from niftynet.utilities.filename_matching import KeywordsMatching
 
 
+@unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class SubjectTest(tf.test.TestCase):
     def test_volume_loader(self):
         constraint_T1 = KeywordsMatching(['testing_data'], ['T1'],

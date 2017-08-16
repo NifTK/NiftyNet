@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function
 
 import os
+import unittest
 
 import tensorflow as tf
 
@@ -16,6 +17,7 @@ from niftynet.utilities.csv_table import CSVTable
 from niftynet.utilities.input_placeholders import ImagePatch
 
 
+@unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class UniformSamplerTest(tf.test.TestCase):
     def test_3d(self):
 

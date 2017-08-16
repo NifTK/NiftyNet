@@ -1,11 +1,15 @@
 from __future__ import absolute_import, print_function
 
+import unittest
+
+import os
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.highres3dnet import HighResBlock
 
 
+@unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class HighResBlockTest(tf.test.TestCase):
     def test_3d_increase_shape(self):
         input_shape = (2, 16, 16, 16, 8)
