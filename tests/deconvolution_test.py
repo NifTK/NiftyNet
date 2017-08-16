@@ -212,7 +212,6 @@ class DeconvTest(tf.test.TestCase):
                                              is_training=False,
                                              dropout_prob=1.0)
 
-    ### 2d tests
     def test_2d_deconv_default_shape(self):
         input_param = {'n_output_chns': 10,
                        'kernel_size': [3, 1],

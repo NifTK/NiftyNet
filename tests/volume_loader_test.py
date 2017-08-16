@@ -22,16 +22,16 @@ class SubjectTest(tf.test.TestCase):
                                             [])
         constraint_array = [constraint_FLAIR, constraint_T1]
         misc_csv.write_matched_filenames_to_csv(
-            constraint_array, os.path.join('testing_data','TestPrepareInputHGG.csv'))
+            constraint_array, os.path.join('testing_data', 'TestPrepareInputHGG.csv'))
 
         constraint_Label = KeywordsMatching(['testing_data'],
                                             ['Parcellation'], [])
         misc_csv.write_matched_filenames_to_csv(
-            [constraint_Label], os.path.join('testing_data','TestPrepareOutputHGG.csv'))
+            [constraint_Label], os.path.join('testing_data', 'TestPrepareOutputHGG.csv'))
 
         csv_dict = {
-            'input_image_file': os.path.join('testing_data','TestPrepareInputHGG.csv'),
-            'target_image_file': os.path.join('testing_data','TestPrepareOutputHGG.csv'),
+            'input_image_file': os.path.join('testing_data', 'TestPrepareInputHGG.csv'),
+            'target_image_file': os.path.join('testing_data', 'TestPrepareOutputHGG.csv'),
             'weight_map_file': None,
             'target_note': None}
         # 'target_note': os.path.join('testing_data','TestComments.csv')}
@@ -41,7 +41,7 @@ class SubjectTest(tf.test.TestCase):
                               allow_missing=True)
 
         hist_norm = HistNorm(
-            models_filename=os.path.join('testing_data','standardisation_models.txt'),
+            models_filename=os.path.join('testing_data', 'standardisation_models.txt'),
             binary_masking_func=BinaryMaskingLayer(
                 type='otsu_plus',
                 multimod_fusion='or'),
