@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function
 
 import os
+import unittest
 
 import tensorflow as tf
 
@@ -12,6 +13,7 @@ from niftynet.utilities.subject import MultiModalFileList
 from niftynet.utilities.subject import Subject
 
 
+@unittest.skip('Test currently disabled')
 class OrientationTest(tf.test.TestCase):
 
     def test_reorientation(self):

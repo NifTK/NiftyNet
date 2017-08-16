@@ -1,11 +1,14 @@
 from __future__ import absolute_import, print_function
 
+import unittest
+
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.unet import UNet3D
 
 
+@unittest.skip('Test currently disabled')
 class UNet3DTest(tf.test.TestCase):
     def test_3d_shape(self):
         input_shape = (2, 96, 96, 96, 1)
