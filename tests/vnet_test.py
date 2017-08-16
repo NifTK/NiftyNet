@@ -1,16 +1,11 @@
 from __future__ import absolute_import, print_function
 
-import unittest
-
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.vnet import VNet
 
-import os
 
-
-@unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class VNetTest(tf.test.TestCase):
     def test_3d_shape(self):
         input_shape = (2, 32, 32, 32, 1)

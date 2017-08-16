@@ -1,8 +1,5 @@
 from __future__ import absolute_import, print_function
 
-import unittest
-
-import os
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
@@ -10,7 +7,6 @@ from niftynet.layer.deconvolution import DeconvLayer
 from niftynet.layer.deconvolution import DeconvolutionalLayer
 
 
-@unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class DeconvTest(tf.test.TestCase):
     def get_2d_input(self):
         input_shape = (2, 16, 16, 8)
