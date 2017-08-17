@@ -76,21 +76,6 @@ def __average_grads(tower_grads):
     return ave_grads
 
 
-def list_files(img_dir, ext='.nii.gz'):
-    '''
-
-    :param img_dir:
-    :param ext:
-    :return names: list of filenames in the list of img_dir
-    that have the ext extension
-    '''
-    names = [fn for fn in os.listdir(img_dir) if fn.lower().endswith(ext)]
-    if not names:
-        print('no files in {}'.format(img_dir))
-        raise IOError
-    return names
-
-
 def has_bad_inputs(input_args):
     '''
     Check if all input params have been properly set in the configuration file.

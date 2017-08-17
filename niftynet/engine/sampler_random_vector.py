@@ -2,7 +2,6 @@
 from __future__ import absolute_import, print_function, division
 
 import numpy as np
-import scipy.ndimage
 import tensorflow as tf
 
 from niftynet.engine.input_buffer import InputBatchQueueRunner
@@ -19,7 +18,7 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
     """
 
     def __init__(self,
-                 fields=('vector',),
+                 names=('vector',),
                  vector_size=(100,),
                  batch_size=10,
                  n_interpolations=10,
@@ -31,10 +30,10 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
         InputBatchQueueRunner.__init__(self, capacity=capacity, shuffle=False)
 
         tf.logging.info('reading size of preprocessed images')
-        self.fields = fields
-        vector_shapes = {fields[0]: vector_size}
-        vector_dtypes = {fields[0]: tf.float32}
-        self.window = ImageWindow(fields=tuple(vector_shapes),
+        self.names = names
+        vector_shapes = {names[0]: vector_size}
+        vector_dtypes = {names[0]: tf.float32}
+        self.window = ImageWindow(names=tuple(vector_shapes),
                                   shapes=vector_shapes,
                                   dtypes=vector_dtypes)
         tf.logging.info('initialised window instance')
@@ -54,24 +53,23 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
         while total_iter > 0:
             total_iter = total_iter - 1 if self.repeat is not None else 1
             embedding_x = np.random.randn(
-                *self.window.shapes[self.window.fields[0]])
+                *self.window.shapes[self.window.names[0]])
             embedding_y = np.random.randn(
-                *self.window.shapes[self.window.fields[0]])
+                *self.window.shapes[self.window.names[0]])
             steps = np.linspace(0, 1, self.n_interpolations)
-            #enqueue_shape = self.window.shapes[self.fields]
             output_vectors = []
             for (idx, mixture) in enumerate(steps):
                 output_vector = \
-                    embedding_x * mixture + embedding_y * (1-mixture)
+                    embedding_x * mixture + embedding_y * (1 - mixture)
                 output_vector = output_vector[np.newaxis, ...]
                 output_vectors.append(output_vector)
             output_vectors = np.concatenate(output_vectors, axis=0)
 
             coordinates = np.ones(
-                    (self.n_interpolations, N_SPATIAL*2+1), dtype=np.int32)
+                (self.n_interpolations, N_SPATIAL * 2 + 1), dtype=np.int32)
 
             output_dict = {}
-            for name in self.fields:
+            for name in self.names:
                 coordinates_key = self.window.coordinates_placeholder(name)
                 image_data_key = self.window.image_data_placeholder(name)
                 output_dict[coordinates_key] = coordinates

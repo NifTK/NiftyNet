@@ -14,7 +14,7 @@ import threading
 import numpy as np
 import tensorflow as tf
 
-from niftynet.io.misc_io import remove_time_dim
+from niftynet.io.misc_io import squeeze_spatial_temporal_dim
 
 
 class InputBatchQueueRunner(object):
@@ -153,8 +153,8 @@ class InputBatchQueueRunner(object):
             for (name, shape) in self._window.shapes.items():
                 data_output[name].set_shape([self._batch_size] + list(shape))
             # currently the time dimension from image is ignored
-            for field in data_output:
-                data_output[field] = remove_time_dim(data_output[field])
+            for name in data_output:
+                data_output[name] = squeeze_spatial_temporal_dim(data_output[name])
             return data_output
 
     def run_threads(self, session, coord, num_threads=1):

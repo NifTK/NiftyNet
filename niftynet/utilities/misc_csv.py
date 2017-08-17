@@ -9,47 +9,6 @@ import sys
 from niftynet.utilities.filename_matching import KeywordsMatching
 
 
-# From a unique csv file with for each subject the list of files to use,
-# build the 2d array of files to load for each subject and create the overall
-# list of such arrays. num_modality indicates the
-# number of modalities before going to further time point
-# TODO: to support multiple time points
-def load_subject_and_filenames_from_csv_file(csv_file,
-                                             allow_missing=True,
-                                             numb_mod=None):
-    '''
-    Creates list of names and corresponding file list from csv file
-    :param csv_file: file to read built with for each row, the subject name
-    followed by a list of files for different time points and modalities.
-    :param allow_missing: flag (True/False) indicating if missing modalities
-    are possible
-    :param numb_mod: number of modalities to consider (needed to account for
-    multiple time points
-    :return list_subjects: list of subject names
-    :return list_filenames: list of filenames for each subject
-    '''
-    if csv_file is None:
-        return [], []
-    if not os.path.isfile(csv_file):
-        return [], []
-    list_subjects = []
-    list_filenames = []
-
-    with open(csv_file, "r") as infile:
-        reader = csv.reader(infile)
-        for row in reader:
-            if ('' in row) and (not allow_missing):
-                continue
-            if ('' in row) and len(set(row[1:])) == 1:
-                continue
-            subject_name, list_files = [row[0]], row[1:]
-            list_subjects.append(subject_name)
-            numb_mod = len(list_files) if numb_mod is None else numb_mod
-            grouped_time_points = [list_files[i:(i + numb_mod)]
-                                   for i in range(0, len(list_files), numb_mod)]
-            list_filenames.append(grouped_time_points)
-    return list_subjects, list_filenames
-
 
 # try to find a direct match between two arrays of list of possible names.
 def match_first_degree(name_list1, name_list2):
@@ -66,7 +25,7 @@ def match_first_degree(name_list1, name_list2):
     item of list 2 if exists (-1) otherwise
     '''
     if name_list1 is None or name_list2 is None:
-        return None, None, None, Nonekj
+        return None, None, None, None
     init_match1 = [''] * len(name_list1)
     init_match2 = [''] * len(name_list2)
     ind_match1 = [-1] * len(name_list1)

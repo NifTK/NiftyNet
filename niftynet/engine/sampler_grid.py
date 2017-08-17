@@ -68,18 +68,25 @@ class GridSampler(Layer, InputBatchQueueRunner):
             image_id, data, _ = self.reader(idx=None, shuffle=False)
             if not data:
                 break
-            image_shapes = {mod: data[mod].shape for mod in self.window.fields}
+            image_shapes = {name: data[name].shape
+                            for name in self.window.names}
             static_window_shapes = self.window.match_image_shapes(image_shapes)
             coordinates = grid_spatial_coordinates(
                 image_id, image_shapes, static_window_shapes, self.border_size)
+
+            # extend the number of sampling locations to be divisible
+            # by batch size
             n_locations = coordinates.values()[0].shape[0]
-            extra_locations = self.batch_size - n_locations % self.batch_size \
-                if (n_locations % self.batch_size) > 0 else 0
+            extra_locations = 0
+            if (n_locations % self.batch_size) > 0:
+                extra_locations = \
+                    self.batch_size - n_locations % self.batch_size
             total_locations = n_locations + extra_locations
-            tf.logging.info('grid sampling image sizes: {}'.format(
-                image_shapes))
-            tf.logging.info('grid sampling window sizes: {}'.format(
-                static_window_shapes))
+
+            tf.logging.info(
+                'grid sampling image sizes: {}'.format(image_shapes))
+            tf.logging.info(
+                'grid sampling window sizes: {}'.format(static_window_shapes))
             if extra_locations > 0:
                 tf.logging.info(
                     "yielding {} locations from image, "

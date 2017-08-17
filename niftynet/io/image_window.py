@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function
 
-import numpy as np
 import tensorflow as tf
 
 N_SPATIAL = 3
 LOCATION_FORMAT = "{}_location"
 BUFFER_POSITION_DTYPE = tf.int32
-#TF_NP_DTYPES = {tf.int32: np.int32, tf.float32: np.float32}
+
+
+# TF_NP_DTYPES = {tf.int32: np.int32, tf.float32: np.float32}
 
 
 class ImageWindow(object):
-    def __init__(self, fields, shapes, dtypes):
-        self.fields = fields
+    def __init__(self, names, shapes, dtypes):
+        self.names = names
         self.shapes = shapes
         self.dtypes = dtypes
         self.n_samples = 1
@@ -25,7 +26,7 @@ class ImageWindow(object):
                                     image_shapes,
                                     image_dtypes,
                                     data_param):
-        input_fields = tuple(source_names)
+        input_names = tuple(source_names)
         # complete window shapes based on user input and input_image sizes
         spatial_shapes = {
             name: read_window_sizes(modalities, data_param)
@@ -33,9 +34,11 @@ class ImageWindow(object):
         shapes = {
             name: complete_partial_window_sizes(
                 spatial_shapes[name], image_shapes[name])
-            for name in input_fields}
+            for name in input_names}
         # create ImageWindow instance
-        return cls(input_fields, shapes, image_dtypes)
+        return cls(names=input_names,
+                   shapes=shapes,
+                   dtypes=image_dtypes)
 
     def set_spatial_shape(self, spatial_window):
         try:
@@ -46,7 +49,7 @@ class ImageWindow(object):
         self.shapes = {
             name: complete_partial_window_sizes(
                 spatial_window, self.shapes[name])
-            for name in self.fields}
+            for name in self.names}
         # update based on the latest spatial shapes
         self.has_dynamic_shapes = self._check_dynamic_shapes()
 
@@ -67,29 +70,29 @@ class ImageWindow(object):
         # batch size=1 if the shapes are dynamic
         self.n_samples = 1 if self.has_dynamic_shapes else n_samples
 
-        names = list(self.fields)
+        names = list(self.names)
         placeholders = [
             tf.placeholder(dtype=self.dtypes[name],
                            shape=[n_samples] + list(self.shapes[name]),
                            name=name)
             for name in names]
-        # extending names with fields of coordinates
+        # extending names with names of coordinates
         names.extend([LOCATION_FORMAT.format(name) for name in names])
-        # extending placeholders with fields of coordinates
+        # extending placeholders with names of coordinates
         location_shape = [n_samples, 1 + N_SPATIAL * 2]
         placeholders.extend(
             [tf.placeholder(dtype=BUFFER_POSITION_DTYPE,
                             shape=location_shape,
                             name=name)
-             for name in self.fields])
+             for name in self.names])
         self._placeholders_dict = dict(zip(names, placeholders))
         return self._placeholders_dict
 
-    def coordinates_placeholder(self, field):
-        return self._placeholders_dict[LOCATION_FORMAT.format(field)]
+    def coordinates_placeholder(self, name):
+        return self._placeholders_dict[LOCATION_FORMAT.format(name)]
 
-    def image_data_placeholder(self, field):
-        return self._placeholders_dict[field]
+    def image_data_placeholder(self, name):
+        return self._placeholders_dict[name]
 
     def _check_dynamic_shapes(self):
         """
@@ -107,11 +110,11 @@ class ImageWindow(object):
         if self.has_dynamic_shapes:
             static_window_shapes = self.shapes.copy()
             # fill the None element in dynamic shapes using image_sizes
-            for name in self.fields:
-                static_window_shapes[name] = [
+            for name in self.names:
+                static_window_shapes[name] = tuple(
                     win_size if win_size else image_shape
                     for (win_size, image_shape) in
-                    zip(list(self.shapes[name]), image_shapes[name])]
+                    zip(list(self.shapes[name]), image_shapes[name]))
         else:
             static_window_shapes = self.shapes
         return static_window_shapes
@@ -119,7 +122,7 @@ class ImageWindow(object):
 
 def read_window_sizes(input_mod_list, input_data_param):
     # read window_size from config dict
-    # group them based on output_fields
+    # group them based on output names
     window_sizes = [input_data_param[input_name].spatial_window_size
                     for input_name in input_mod_list]
     if not all(window_sizes):

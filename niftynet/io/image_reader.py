@@ -21,13 +21,13 @@ def infer_tf_dtypes(image_array):
 
 
 class ImageReader(Layer):
-    def __init__(self, output_fields):
+    def __init__(self, names):
         # list of file names
         self._file_list = None
         self._input_sources = None
         self._shapes = None
         self._dtypes = None
-        self._output_fields = output_fields
+        self._names = names
 
         # list of image objects
         self.output_list = None
@@ -47,32 +47,31 @@ class ImageReader(Layer):
         if app_type == "net_segment.py":
             from niftynet.application.segmentation_application \
                 import SUPPORTED_INPUT
-            # only choose fields that are supported by the application
+            # only choose output names that are supported by the application
             # (SUPPORTED_INPUT) and have user parameter specification
         elif app_type == "net_gan.py":
             from niftynet.application.gan_application \
                 import SUPPORTED_INPUT
 
-        if not self.output_fields:
-            # by default, reader tries to output all supported fields
-            self.output_fields = SUPPORTED_INPUT
+        if not self.names:
+            # by default, reader tries to output all supported output names
+            self.names = SUPPORTED_INPUT
 
-        self._output_fields = [field_name for field_name in self.output_fields
-                               if vars(task_param).get(field_name)]
-        self._input_sources = {field: vars(task_param).get(field, None)
-                               for field in self.output_fields}
+        self._names = [name for name in self.names
+                       if vars(task_param).get(name)]
+        self._input_sources = {name: vars(task_param).get(name, None)
+                               for name in self.names}
         data_to_load = {}
-        for name in self._output_fields:
+        for name in self._names:
             for source in self._input_sources[name]:
                 data_to_load[source] = data_param[source]
         self._file_list = ImageReader.load_and_merge_csv_files(data_to_load)
         self.output_list = filename_to_image_list(self._file_list,
                                                   self._input_sources,
                                                   data_param)
-        for field in self.output_fields:
+        for name in self.names:
             tf.logging.info('image reader: loading [{}] from {} ({})'.format(
-                field, self.input_sources[field], len(self.output_list)))
-
+                name, self.input_sources[name], len(self.output_list)))
 
     def prepare_preprocessors(self):
         for layer in self.preprocessors:
@@ -172,7 +171,7 @@ class ImageReader(Layer):
             # but time and modality dimensions should be correct
             first_image = self.output_list[0]
             self._shapes = {field: first_image[field].shape
-                            for field in self.output_fields}
+                            for field in self.names}
         return self._shapes
 
     @property
@@ -183,7 +182,7 @@ class ImageReader(Layer):
         if not self._dtypes:
             first_image = self.output_list[0]
             self._dtypes = {field: infer_tf_dtypes(first_image[field])
-                            for field in self.output_fields}
+                            for field in self.names}
         return self._dtypes
 
     @property
@@ -194,15 +193,15 @@ class ImageReader(Layer):
         return self._input_sources
 
     @property
-    def output_fields(self):
-        return self._output_fields
+    def names(self):
+        return self._names
 
-    @output_fields.setter
-    def output_fields(self, fields_tuple):
+    @names.setter
+    def names(self, fields_tuple):
         # output_fields is a sequence of output names
         # each name might correspond to a list of multiple input sources
         # this should be specified in CUSTOM section in the config
-        self._output_fields = make_input_tuple(fields_tuple, basestring)
+        self._names = make_input_tuple(fields_tuple, basestring)
 
     def get_subject_id(self, image_index):
         return self._file_list.iloc[image_index, 0]

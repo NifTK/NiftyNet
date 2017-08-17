@@ -212,92 +212,6 @@ def save_data_array(filefolder,
     save_volume_5d(array_to_save, filename, filefolder, affine)
 
 
-def split_filename(file_name):
-    '''
-    Operation on filename to separate path, basename and extension of a filename
-    :param file_name: Filename to treat
-    :return pth, fname, ext:
-    '''
-    pth = os.path.dirname(file_name)
-    fname = os.path.basename(file_name)
-
-    ext = None
-    for special_ext in FILE_EXTENSIONS:
-        ext_len = len(special_ext)
-        if fname[-ext_len:].lower() == special_ext:
-            ext = fname[-ext_len:]
-            fname = fname[:-ext_len] if len(fname) > ext_len else ''
-            break
-    if ext is None:
-        fname, ext = os.path.splitext(fname)
-    return pth, fname, ext
-
-
-def csv_cell_to_volume_5d(csv_cell):
-    """
-    This function create a 5D image matrix from a csv_cell
-    :param csv_cell: an array of file names, e.g. ['path_to_T1', 'path_to_T2']
-    :return: 5D image consisting of images from 'path_to_T1', 'path_to_T2'
-             The five dimensions are H x W x D x Modality x Time point
-    """
-    if csv_cell is None:
-        return None
-    numb_tp = csv_cell.num_time_point
-    numb_mod = csv_cell.num_modality
-    max_time = numb_tp
-    max_mod = numb_mod
-
-    expand_modality_dim = True if numb_mod == 1 else False
-    expand_time_point_dim = True if numb_tp == 1 else False
-
-    flag_dimensions_set = False
-    dimensions = []
-    data_array = []
-    for t in range(0, numb_tp):
-        data_array.append([])
-        for m in range(0, numb_mod):
-            data_array[t].append([])
-            if not os.path.exists(csv_cell()[t][m]):
-                data_array[t][m] = expand_to_5d(np.zeros(dimensions))
-                continue
-            # load a 3d volume
-            img_nii = load_image(csv_cell()[t][m])
-            img_data_shape = img_nii.header.get_data_shape()
-            assert np.prod(img_data_shape) > 1
-
-            if not flag_dimensions_set:
-                dimensions = img_data_shape[0:min(3, len(img_data_shape))]
-                flag_dimensions_set = True
-            else:
-                if not np.all(img_data_shape[:3] == dimensions[:3]):
-                    raise ValueError("The 3d dimensionality of image %s "
-                                     "%s is not consistent with %s "
-                                     % (csv_cell()[m][t],
-                                        ' '.join(map(str, img_data_shape[0:3])),
-                                        ' '.join(map(str, dimensions))))
-            if len(img_data_shape) >= 4 and img_data_shape[3] > 1 \
-                    and not expand_time_point_dim:
-                raise ValueError("You cannot provide already stacked time "
-                                 "points if you stack additional time points ")
-            elif expand_time_point_dim and len(img_data_shape) >= 4:
-                max_time = max(img_data_shape[3], max_time)
-            if len(img_data_shape) >= 5 and img_data_shape[4] > 1 \
-                    and not expand_modality_dim:
-                raise ValueError("You cannot provide already stacked "
-                                 "modalities "
-                                 " if you stack additional modalities ")
-            elif expand_modality_dim and len(img_data_shape) == 5:
-                max_mod = max(max_mod, img_data_shape[4])
-            img_data = img_nii.get_data().astype(np.float32)
-            img_data = expand_to_5d(img_data)
-            img_data = np.swapaxes(img_data, 4, 3)
-            data_array[t][m] = img_data
-    if expand_modality_dim or expand_time_point_dim:
-        data_array = pad_zeros_to_5d(data_array, max_mod, max_time)
-    data_to_save = create_5d_from_array(data_array)
-    return data_to_save
-
-
 def expand_to_5d(img_data):
     '''
     Expands an array up to 5d if it is not the case yet
@@ -307,64 +221,6 @@ def expand_to_5d(img_data):
     while img_data.ndim < 5:
         img_data = np.expand_dims(img_data, axis=-1)
     return img_data
-
-
-def pad_zeros_to_5d(data_array, max_mod, max_time):
-    '''
-    Performs padding of element of a data array if not all modalities or time
-    points are present in the data cells.
-    :param data_array: data_array (1st dimension time, 2nd modalities)
-    :param max_mod: number of modalities
-    :param max_time: number of time points to consider
-    :return data_array: Data_array with consistent data cells with the number
-    of modalities and number of time points
-    '''
-    if len(data_array) == max_time and len(data_array[0]) == max_mod:
-        return data_array
-    if len(data_array) == 1:  # Time points already agregated in the
-        # individual data array cells
-        for m in range(0, len(data_array[0])):
-            if data_array[0][m].shape[4] < max_time:
-                data = data_array[0][m]
-                zeros_to_append = np.zeros([data.shape[0],
-                                            data.shape[1],
-                                            data.shape[2],
-                                            data.shape[3],
-                                            max_time - data.shape[4]])
-                data_array[0][m] = np.concatenate(
-                    [data, zeros_to_append], axis=4)
-    else:
-        for t in range(0, len(data_array)):
-            data = data_array[t][0]
-            if data.shape[3] < max_mod:
-                zeros_to_append = np.zeros([data.shape[0],
-                                            data.shape[1],
-                                            data.shape[2],
-                                            max_mod - data.shape[3],
-                                            data.shape[4]])
-                data_array[t][0] = np.concatenate(
-                    [data, zeros_to_append], axis=3)
-    return data_array
-
-
-def create_5d_from_array(data_array):
-    '''
-    From a array of separate data elements, create the final 5d array to use.
-     The first dimension of the data_array is time, the second is modalities
-    :param data_array: array of sub data elements to concatenate into a 5d
-    element
-    :return data_5d: Resulting 5d array (3 spatial dimension, modalities, time)
-    '''
-    data_5d = []
-    for t in range(0, len(data_array)):
-        data_mod_temp = []
-        for m in range(0, len(data_array[0])):
-            data_temp = data_array[t][m]
-            data_mod_temp.append(data_temp)
-        data_mod_temp = np.concatenate(data_mod_temp, axis=3)
-        data_5d.append(data_mod_temp)
-    data_5d = np.concatenate(data_5d, axis=4)
-    return data_5d
 
 
 def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
@@ -396,47 +252,23 @@ def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
     print('Saved {}'.format(output_name))
 
 
-def match_volume_shape_to_patch_definition(image_data, patch):
-    '''
-    Adjusts the shape of the image data to match the requested
-    patch. This depends on the patch.spatial_rank.
-    For spatial rank 2.5 and 3, reshapes to 4D input volume [H x W x D x Modalities]
-    For spatial rank 2, reshapes to 4D input volume [H x W x 1 x Modalities]
-    '''
-    if image_data is None:
-        return None
-    if patch is None:
-        return None
-    # spatial_shape = list(image_data.shape[:int(np.ceil(patch.spatial_rank))])
-    # spatial_shape += [1]*(3-int(np.ceil(patch.spatial_rank)))
-    # return np.reshape(image_data,spatial_shape+[-1])
+def split_filename(file_name):
+    pth = os.path.dirname(file_name)
+    fname = os.path.basename(file_name)
 
-    #  always casting to 4D input volume [H x W x D x Modality]
-    while image_data.ndim > 4:
-        image_data = image_data[..., 0]
-    while image_data.ndim < 4:
-        image_data = np.expand_dims(image_data, axis=-1)
-    return image_data
+    ext = None
+    for special_ext in FILE_EXTENSIONS:
+        ext_len = len(special_ext)
+        if fname[-ext_len:].lower() == special_ext:
+            ext = fname[-ext_len:]
+            fname = fname[:-ext_len] if len(fname) > ext_len else ''
+            break
+    if not ext:
+        fname, ext = os.path.splitext(fname)
+    return pth, fname, ext
 
 
-def spatial_padding_to_indexes(spatial_padding):
-    '''
-    Utility function to create the indices resulting from padding strategy.
-    :param spatial_padding:
-    :return indices: list of indices resulting from the padding.
-    '''
-    indexes = np.zeros((len(spatial_padding), 2), dtype=np.int)
-    for (i, s) in enumerate(spatial_padding):
-        if len(s) == 1:
-            indexes[i] = [s[0], s[0]]
-        elif len(s) == 2:
-            indexes[i] = [s[0], s[1]]
-        else:
-            raise ValueError("unknown spatial_padding format")
-    return indexes.flatten()
-
-
-def remove_time_dim(tf_tensor):
+def squeeze_spatial_temporal_dim(tf_tensor):
     """
     Given a tensorflow tensor, ndims==6 means:
     [batch, x, y, z, time, modality]

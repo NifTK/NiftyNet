@@ -50,7 +50,7 @@ class UniformSampler(Layer, InputBatchQueueRunner):
             if not data:
                 break
             image_shapes = {
-                name: data[name].shape for name in self.window.fields}
+                name: data[name].shape for name in self.window.names}
             static_window_shapes = self.window.match_image_shapes(image_shapes)
 
             # find random coordinates based on window and image shapes

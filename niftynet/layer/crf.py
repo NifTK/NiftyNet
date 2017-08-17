@@ -11,7 +11,7 @@ import numpy
 Re-implementation of [1] for volumetric image processing.
 
 
-[1] Zheng, Shuai, et al. "Conditional random fields as recurrent neural networks." 
+[1] Zheng, Shuai, et al. "Conditional random names as recurrent neural networks." 
 CVPR 2015.
 """
 
@@ -194,7 +194,7 @@ class CRFAsRNNLayer(TrainableLayer):
     a bilateral and a spatial kernel as in [2].
     Essentially, this layer smooths its input based on a distance in a feature
     space comprising spatial and feature dimensions.
-    [1] Zheng, Shuai, et al. "Conditional random fields as recurrent neural networks." CVPR 2015.
+    [1] Zheng, Shuai, et al. "Conditional random names as recurrent neural networks." CVPR 2015.
     [2] https://arxiv.org/pdf/1210.5644.pdf
     """
     def __init__(self,alpha=5.,beta=5.,gamma=5.,T=5,aspect_ratio=[1.,1.,1.], name="crf_as_rnn"):

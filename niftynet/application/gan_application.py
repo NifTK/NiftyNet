@@ -134,7 +134,7 @@ class GANApplication(BaseApplication):
                 shuffle_buffer=True))
         else:
             self._sampler.append(RandomVectorSampler(
-                fields=('vector',),
+                names=('vector',),
                 vector_size=(self.gan_param.noise_size,),
                 batch_size=self.net_param.batch_size,
                 n_interpolations=self.gan_param.n_interpolations,

@@ -69,7 +69,7 @@ def run():
 def _parse_arguments_by_section(
         parents, section, args_from_config_file, args_from_cmd):
     """
-    This function first add parameter fields to a parser,
+    This function first add parameter names to a parser,
     according to the section name.
     Then it loads values from configuration files as tentative params.
     Finally it overrides existing pairs of 'name, value' with commandline

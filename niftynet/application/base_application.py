@@ -45,7 +45,7 @@ class BaseApplication(object):
     def initialise_network(self, train_dict, is_training):
         """
         This method returns the network output ops for the training network.  This typically
-        involves instantiating the net_class and calling it with some or all of the fields
+        involves instantiating the net_class and calling it with some or all of the names
         in the dictionary created by the sampler.
 
         Parameters:
@@ -60,7 +60,7 @@ class BaseApplication(object):
     # def net_inference(self, train_dict, is_training):
     #     """
     #     This method returns the network output ops for the inference network.    This typically
-    #     involves instantiating the net_class and calling it with some or all of the fields
+    #     involves instantiating the net_class and calling it with some or all of the names
     #     in the dictionary created by the sampler, and optionally doing any tensorflow-based
     #     post-processing. If train_dict contains information needed for inference, it can be
     #     added to the network outputs here.

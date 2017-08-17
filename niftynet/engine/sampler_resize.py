@@ -28,10 +28,10 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
         self.shuffle = bool(shuffle_buffer)
 
         Layer.__init__(self, name='input_buffer')
-        capacity = max(batch_size * 4, windows_per_image * 4)
-        InputBatchQueueRunner.__init__(self,
-                                       capacity=capacity,
-                                       shuffle=self.shuffle)
+        InputBatchQueueRunner.__init__(
+            self,
+            capacity=max(batch_size * 4, windows_per_image * 4),
+            shuffle=self.shuffle)
         tf.logging.info('reading size of preprocessed images')
         self.window = ImageWindow.from_data_reader_properties(
             self.reader.input_sources,
@@ -60,7 +60,7 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
             if not data:
                 break
             image_shapes = {
-                name: data[name].shape for name in self.window.fields}
+                name: data[name].shape for name in self.window.names}
             # window shapes can be dynamic, here they
             # are converted to static ones
             # as now we know the image shapes
@@ -86,8 +86,9 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
                     window_shape = static_window_shapes[name]
                     zoom_ratio = [p / d for p, d
                                   in zip(window_shape, image_shape)]
-                    image_window = zoom_3d(data[name], zoom_ratio,
-                                           interp_orders[name][0])
+                    image_window = zoom_3d(image=data[name],
+                                           ratio=zoom_ratio,
+                                           interp_order=interp_orders[name][0])
                     output_dict[image_data_key] = image_window[np.newaxis, ...]
                 # the output image shape should be
                 # [enqueue_batch_size, x, y, z, time, modality]
@@ -95,15 +96,15 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
                 # per image
                 yield output_dict
 
+
 def zoom_3d(image, ratio, interp_order):
     assert image.ndim == 5, "input images should be 5D array"
     output = []
     for t in range(image.shape[3]):
         output_mod = []
         for m in range(image.shape[4]):
-            zoomed = scipy.ndimage.zoom(image[..., t, m],
-                                        ratio[:3],
-                                        order=interp_order)
+            zoomed = scipy.ndimage.zoom(
+                image[..., t, m], ratio[:3], order=interp_order)
             output_mod.append(zoomed[..., np.newaxis, np.newaxis])
         output_mod = np.concatenate(output_mod, axis=-1)
         output.append(output_mod)
@@ -118,8 +119,8 @@ def dummy_coordinates(image_id, image_sizes):
     """
     all_coordinates = {}
     for mod in list(image_sizes):
-        coords = []
-        coords.append(
-            [image_id] + [0, 0, 0] + list(image_sizes[mod][:N_SPATIAL]))
+        starting_coordinates = [0, 0, 0]
+        image_sptial_shape = list(image_sizes[mod][:N_SPATIAL])
+        coords = [[image_id] + starting_coordinates + image_sptial_shape]
         all_coordinates[mod] = np.asarray(coords)
     return all_coordinates
