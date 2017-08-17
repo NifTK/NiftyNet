@@ -60,7 +60,7 @@ def add_application_args(parser):
 def add_inference_args(parser):
     parser.add_argument(
         "--spatial_window_size",
-        type=numarray,
+        type=int_array,
         help="specify the spatial size of the input data (ndims <= 3)",
         default=())
 
@@ -120,7 +120,7 @@ def add_input_data_args(parser):
 
     parser.add_argument(
         "--spatial_window_size",
-        type=numarray,
+        type=int_array,
         help="specify the spatial size of the input data (ndims <= 3)",
         default=())
 
@@ -133,13 +133,13 @@ def add_input_data_args(parser):
 
     parser.add_argument(
         "--pixdim",
-        type=numarray,
+        type=int_array,
         default=(),
         help="voxel width along each dimension")
 
     parser.add_argument(
         "--axcodes",
-        type=stringarray,
+        type=str_array,
         default=(),
         help="labels for positive end of voxel axes, possible labels are"
              " ('L','R'),('P','A'),('I','S')"
@@ -225,7 +225,7 @@ def add_network_args(parser):
     parser.add_argument(
         "--cutoff",
         help="Cutoff values for the normalisation process",
-        type=numarray,
+        type=float_array,
         default=(0.01, 0.99))
 
     import niftynet.layer.binary_masking
@@ -270,13 +270,13 @@ def add_training_args(parser):
         "--rotation_angle",
         help="The min/max angles of rotation when rotation "
              "augmentation is enabled",
-        type=numarray,
+        type=float_array,
         default=())
 
     parser.add_argument(
         "--scaling_percentage",
         help="the spatial scaling factor in [min_percentage, max_percentage]",
-        type=numarray,
+        type=float_array,
         default=())
 
     parser.add_argument(
@@ -295,7 +295,7 @@ def add_training_args(parser):
         help="The axes which can be flipped to augment the data. Supply as "
              "comma-separated values within single quotes, e.g. '0,1'. Note "
              "that these are 0-indexed, so choose some combination of 0, 1.",
-        type=numarray,
+        type=int_array,
         default=-1)
 
     parser.add_argument(

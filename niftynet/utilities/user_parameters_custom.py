@@ -61,7 +61,7 @@ def __add_segmentation_args(parser):
     parser.add_argument(
         "--min_numb_labels",
         help="Minimum number of different labels present in a patch",
-        type=numarray,
+        type=int_array,
         default=2)
 
     parser.add_argument(

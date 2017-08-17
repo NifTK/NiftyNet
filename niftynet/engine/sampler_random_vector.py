@@ -12,8 +12,10 @@ from niftynet.layer.base_layer import Layer
 
 class RandomVectorSampler(Layer, InputBatchQueueRunner):
     """
-    This class generates samples by rescaling the whole image to the desired size
-    currently 4D input is supported, Height x Width x Depth x Modality
+    This class generates two samples from the standard normal
+    distribution.  These two samples are mixed with n
+    mixing coefficients. The coefficients are generated
+    by np.linspace(0, 1, n_interpolations)
     """
 
     def __init__(self,
@@ -36,19 +38,15 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
         tf.logging.info('initialised window instance')
         self._create_queue_and_ops(self.window,
                                    enqueue_size=self.n_interpolations,
-                                   dequeue_size=self.n_interpolations)
+                                   dequeue_size=batch_size)
         tf.logging.info("initialised sampler output {} "
                         " [-1 for dynamic size]".format(self.window.shapes))
 
     def layer_op(self, *args, **kwargs):
         """
-        This function generates sampling windows to the input buffer
-        image data are from self.reader()
-        it first completes window shapes based on image data,
-        then finds random coordinates based on the window shapes
-        finally resize each image as window and output
-        a dictionary (required by input buffer)
-        :return: output data dictionary {placeholders: data_array}
+        This function first draws two samples, and interpolates them
+        with self.n_interpolations mixing coefficients
+        Location is set to np.ones for all the vectors
         """
         embedding_x = np.random.randn(
             *self.window.shapes[self.window.fields[0]])

@@ -6,6 +6,8 @@ from __future__ import print_function
 import argparse
 import re
 
+from niftynet.utilities.user_parameters_regex import match_array
+
 TRUE_VALUE = {'yes', 'true', 't', 'y', '1'}
 FALSE_VALUE = {'no', 'false', 'f', 'n', '0'}
 ARRAY_TYPES = {"(": ")", "[": "]"}
@@ -25,57 +27,31 @@ def str2boolean(string_input):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
-# TODO: passing arrays to application
-def numarray(string_input):
-    """
-    convert user input config string to an array
-    The array should be in one of the following form:
-    [1, 2, 3, ...]
-    (1, 2, 3, ...)
-    1, 2, 3, ...
-    :param string_input: input string representation of an array
-    :return: the array or single value when output length is 1
-    """
-    if isinstance(string_input, tuple):
-        return string_input
-    if string_input is None or string_input == '':
-        raise argparse.ArgumentTypeError('parameter not specified.')
-    if string_input[0] in ARRAY_TYPES:
-        expected_right_most = ARRAY_TYPES[string_input[0]]
-        if not string_input[-1] == expected_right_most:
-            raise argparse.ArgumentTypeError(
-                'incorrect array format {}'.format(string_input))
-        else:
-            string_input = string_input[1:-1]
+def int_array(string_input):
     try:
-        array = map(int, string_input.split(','))
+        output_tuple = match_array(string_input, 'int')
     except ValueError:
-        try:
-            array = map(float, string_input.split(','))
-        except ValueError:
-            raise argparse.ArgumentTypeError(
-                'array expected, unknown array input {}'.format(string_input))
-    if len(array) < 1:
         raise argparse.ArgumentTypeError(
-            'array expected, unknown array input {}'.format(string_input))
-    array = tuple(array)
-    return array
+            'array of int expected'.format(string_input))
+    return output_tuple
 
 
-def stringarray(string_input):
-    if isinstance(string_input, tuple):
-        return string_input
-    if string_input[0] in ARRAY_TYPES:
-        expected_right_most = ARRAY_TYPES[string_input[0]]
-        if not string_input[-1] == expected_right_most:
-            raise argparse.ArgumentTypeError(
-                'incorrect array format {}'.format(string_input))
-        else:
-            string_input = string_input[1:-1]
-    values = string_input.split(',')
-    list_of_values = [standardise_string(component.strip())
-                      for component in values]
-    return tuple(list_of_values)
+def float_array(string_input):
+    try:
+        output_tuple = match_array(string_input, 'float')
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            'array of float expected'.format(string_input))
+    return output_tuple
+
+
+def str_array(string_input):
+    try:
+        output_tuple = match_array(string_input, 'str')
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            'array of strings expected {}'.format(string_input))
+    return output_tuple
 
 
 def make_input_tuple(input_str, element_type=basestring):
@@ -119,8 +95,8 @@ def standardise_string(input_string):
     """
     if not isinstance(input_string, basestring):
         return input_string
-    new_name = re.sub('[^0-9a-zA-Z]+', '_', input_string.strip())
-    return new_name.upper()
+    new_name = re.sub('[^0-9a-zA-Z]+', '', input_string.strip())
+    return new_name
 
 
 def check_required_sections(config, app_type):
@@ -141,7 +117,7 @@ def add_input_name_args(parser, supported_input):
             "--{}".format(input_name),
             metavar='',
             help="names of grouping the input sections".format(input_name),
-            type=stringarray,
+            type=str_array,
             default=())
     return parser
 
@@ -150,8 +126,8 @@ def spatialnumarray(string_input):
     """
     This function parse a 3-element tuple from a string input
     """
-    raw_tuple = numarray(string_input)
-    while len(raw_tuple) < 3:
-        raw_tuple = raw_tuple + (raw_tuple[-1],)
-    raw_tuple = raw_tuple[:3]
-    return raw_tuple
+    int_tuple = int_array(string_input)
+    while len(int_tuple) < 3:
+        int_tuple = int_tuple + (int_tuple[-1],)
+    int_tuple = int_tuple[:3]
+    return int_tuple
