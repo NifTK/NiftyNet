@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 import tensorflow as tf
 
-import niftynet.utilities.misc_csv as misc_csv
+import niftynet.utilities.util_csv as misc_csv
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer as HistNorm

@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function,division
-import os
+from __future__ import absolute_import, print_function, division
+
 import csv
-import numpy as np
-from difflib import SequenceMatcher
+import os
 import sys
+from difflib import SequenceMatcher
+
+import numpy as np
 
 from niftynet.utilities.filename_matching import KeywordsMatching
 
 
-
-# try to find a direct match between two arrays of list of possible names.
 def match_first_degree(name_list1, name_list2):
     '''
     First immediate matching between two possible name lists (exact equality
@@ -51,9 +51,6 @@ def match_first_degree(name_list1, name_list2):
     return init_match1, init_match2, ind_match1, ind_match2
 
 
-# Find the maximum overlap of n in the list of strings list_names. Returns
-# the matched sequence and the corresponding index of the corresponding
-# element in the list
 def __find_max_overlap_in_list(name, list_names):
     '''
     Given a name and list of names to match it to, find the maximum overlap
@@ -71,30 +68,31 @@ def __find_max_overlap_in_list(name, list_names):
     if len(list_names) == 0:
         return '', -1
     for test in list_names:
-        if len(test)>0:
+        if len(test) > 0:
             match = SequenceMatcher(None, name, test).find_longest_match(
                 0, len(name), 0, len(test))
-            if match.size >= match_max and match.size/len(test) >= \
+            if match.size >= match_max and match.size / len(test) >= \
                     match_ratio:
                 match_max = match.size
                 match_seq = test[match.b:(match.b + match.size)]
-                match_ratio = match.size/len(test)
+                match_ratio = match.size / len(test)
                 match_orig = test
     if match_max == 0:
         return '', -1
     other_list = [name for name in list_names if match_seq in name and
-                  match_max/len(name) == match_ratio]
+                  match_max / len(name) == match_ratio]
     if len(other_list) > 1:
         return '', -1
     return match_seq, list_names.index(match_orig)
 
 
-# Perform the double matching between two lists of list of possible names.
-# First find the direct matches, remove them from the ones still to match and
-# match the remaining ones using the maximum overlap. Returns the name
-# match for each list, and the index correspondences.
 def match_second_degree(name_list1, name_list2):
     '''
+Perform the double matching between two lists of list of possible names.
+First find the direct matches, remove them from the ones still to match and
+match the remaining ones using the maximum overlap. Returns the name
+match for each list, and the index correspondences.
+
     More subtle matching with first direct matching and then secondary
     overlap matching between list of list of potential names
     :param name_list1:
@@ -151,7 +149,8 @@ def join_subject_id_and_filename_list(name_list, list_files):
     ind_tot = []
     name_max_to_use = []
     for c in range(0, len(list_files)):
-        name_match, ind_match, _, _ = match_second_degree(name_max, name_list[c])
+        name_match, ind_match, _, _ = match_second_degree(name_max,
+                                                          name_list[c])
         if c == ind_max:
             name_max_to_use = name_match
         name_tot.append(name_match)
@@ -163,7 +162,7 @@ def join_subject_id_and_filename_list(name_list, list_files):
         'To do : Taking care of the case when the list of a constraint is ' \
         'completely empty'
         for c in range(0, len(list_files)):
-            output = list_files[c][ind_tot[c][i]] if ind_tot[c][i]>-1 else ''
+            output = list_files[c][ind_tot[c][i]] if ind_tot[c][i] > -1 else ''
             list_temp.append(output)
         list_combined.append(list_temp)
     return list_combined
@@ -200,7 +199,7 @@ def match_and_write_filenames_to_csv(list_constraints, csv_file):
         return
     for c in list_constraints:
         list_files, name_list = \
-                KeywordsMatching.matching_subjects_and_filenames(c)
+            KeywordsMatching.matching_subjects_and_filenames(c)
         name_list = remove_duplicated_names(name_list)
         name_tot.append(name_list)
         list_tot.append(list_files)

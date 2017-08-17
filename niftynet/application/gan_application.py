@@ -3,10 +3,11 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
-from niftynet.engine.graph_variables_collector import CONSOLE
-from niftynet.engine.graph_variables_collector import TF_SUMMARIES
-from niftynet.engine.sampler_resize import ResizeSampler
+from niftynet.engine.application_variables import CONSOLE
+from niftynet.engine.application_variables import TF_SUMMARIES
+from niftynet.engine.image_windows_aggregator import BatchSplitingAggregator
 from niftynet.engine.sampler_random_vector import RandomVectorSampler
+from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.gan_loss import LossFunction
@@ -17,7 +18,6 @@ from niftynet.layer.mean_variance_normalisation import \
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
-from niftynet.io.image_windows_aggregator import BatchSplitingAggregator
 
 # from niftynet.engine.input_buffer import TrainEvalInputBuffer, DeployInputBuffer
 

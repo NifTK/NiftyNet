@@ -30,7 +30,7 @@ from niftynet.layer import layer_util
 import abc
 from itertools import chain
 from six.moves import xrange  # pylint: disable=redefined-builtin
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations
 
 SUPPORTED_INTERPOLATION={'BSPLINE','LINEAR','NEAREST'}
 SUPPORTED_BOUNDARY={'ZERO','REPLICATE','CIRCULAR','SYMMETRIC'}

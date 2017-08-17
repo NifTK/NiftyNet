@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import niftynet.utilities.misc_csv as misc_csv
+import niftynet.utilities.util_csv as misc_csv
 from niftynet.utilities.filename_matching import KeywordsMatching
 from niftynet.utilities.user_parameters_custom import *
 from niftynet.utilities.user_parameters_default import *

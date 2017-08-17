@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 import numpy as np
 from scipy import ndimage
 
-from niftynet.utilities.misc_common import MorphologyOps, CacheFunctionOutput
+from niftynet.utilities.util_common import MorphologyOps, CacheFunctionOutput
 
 
 class PairwiseMeasures(object):

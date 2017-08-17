@@ -11,7 +11,7 @@ from niftynet.layer.deconvolution import DeconvolutionalLayer
 from niftynet.layer.bn import BNLayer
 
 from niftynet.network.base_net import BaseNet
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations
 from niftynet.engine import logging
 
 # Note: DenseVNet with dilated convolutions are not yet implemented

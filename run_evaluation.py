@@ -1,7 +1,7 @@
 from __future__ import absolute_import, print_function
 import sys
 
-import niftynet.utilities.misc_common as util
+import niftynet.utilities.util_common as util
 import niftynet.utilities.parse_user_params as parse_user_params
 
 if __name__ == "__main__":

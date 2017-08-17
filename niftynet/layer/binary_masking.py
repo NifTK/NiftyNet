@@ -6,8 +6,8 @@ import scipy.ndimage as ndimg
 from scipy.ndimage.morphology import binary_fill_holes as fill_holes
 
 from niftynet.layer.base_layer import Layer
-from niftynet.utilities.misc_common import look_up_operations
-from niftynet.utilities.misc_common import otsu_threshold
+from niftynet.utilities.util_common import look_up_operations
+from niftynet.utilities.util_common import otsu_threshold
 
 """
 This class defines methods to generate a binary image from an input image.

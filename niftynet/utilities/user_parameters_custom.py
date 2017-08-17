@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations
 from niftynet.utilities.user_parameters_helper import *
 
 SUPPORTED_TASKS = {'SEGMENTATION', 'GAN'}

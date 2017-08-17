@@ -3,7 +3,7 @@ import abc
 import tensorflow as tf
 
 import niftynet.engine
-from niftynet.utilities import misc_common
+from niftynet.utilities import util_common
 
 
 class SingletonApplication(abc.ABCMeta):
@@ -78,7 +78,7 @@ class BaseApplication(object):
     #     pass
 
     def set_network_update_op(self, gradients):
-        grad_list_depth = misc_common.list_depth_count(gradients)
+        grad_list_depth = util_common.list_depth_count(gradients)
         if grad_list_depth == 3:
             # nested depth 3 means: gradients list is nested in terms of:
             # list of networks -> list of network variables

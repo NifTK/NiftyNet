@@ -16,7 +16,7 @@ except ImportError:
 import os
 import sys
 
-import niftynet.utilities.misc_common as util
+import niftynet.utilities.util_common as util
 import niftynet.utilities.user_parameters_parser as user_parameters_parser
 
 from niftynet.engine.application_driver import ApplicationDriver

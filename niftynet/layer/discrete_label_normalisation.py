@@ -8,7 +8,7 @@ import tensorflow as tf
 
 import niftynet.utilities.histogram_standardisation as hs
 from niftynet.layer.base_layer import DataDependentLayer
-from niftynet.utilities.misc_common import printProgressBar
+from niftynet.utilities.util_common import printProgressBar
 from niftynet.utilities.user_parameters_helper import standardise_string
 from niftynet.layer.base_layer import Invertible
 

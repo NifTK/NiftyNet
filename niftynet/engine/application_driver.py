@@ -6,16 +6,14 @@ import os
 import sys
 import time
 
-import numpy as np
 import tensorflow as tf
 from tensorflow.python.client import device_lib
 
-from niftynet.engine.graph_variables_collector import CONSOLE
-from niftynet.engine.graph_variables_collector import GradientsCollector
-from niftynet.engine.graph_variables_collector import OutputsCollector
-from niftynet.engine.graph_variables_collector import TF_SUMMARIES
-from niftynet.io.image_window import N_SPATIAL
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.engine.application_variables import CONSOLE
+from niftynet.engine.application_variables import GradientsCollector
+from niftynet.engine.application_variables import OutputsCollector
+from niftynet.engine.application_variables import TF_SUMMARIES
+from niftynet.utilities.util_common import look_up_operations
 
 FILE_PREFIX = 'model.ckpt'
 CONSOLE_LOG_FORMAT = '%(levelname)s:niftynet: %(message)s'

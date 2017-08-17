@@ -8,7 +8,7 @@ from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.convolution import ConvolutionalLayer
 from niftynet.network.base_net import BaseNet
 from niftynet.network.highres3dnet import HighRes3DNet, HighResBlock
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations
 
 
 class ScaleNet(BaseNet):

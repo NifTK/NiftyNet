@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.base_layer import Layer
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations
 
 
 class LossFunction(Layer):

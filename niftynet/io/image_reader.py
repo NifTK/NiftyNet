@@ -8,9 +8,9 @@ import numpy as np
 import pandas
 import tensorflow as tf
 
-from niftynet.io.input_type import ImageFactory
+from niftynet.io.image_type import ImageFactory
 from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
-from niftynet.utilities.misc_common import printProgressBar
+from niftynet.utilities.util_common import printProgressBar
 from niftynet.utilities.user_parameters_helper import make_input_tuple
 
 NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}

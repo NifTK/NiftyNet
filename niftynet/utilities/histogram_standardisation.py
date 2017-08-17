@@ -7,7 +7,7 @@ import numpy as np
 import numpy.ma as ma
 import tensorflow as tf
 
-from niftynet.utilities.misc_common import look_up_operations, printProgressBar
+from niftynet.utilities.util_common import look_up_operations, printProgressBar
 
 """
 Implementation of

@@ -6,7 +6,7 @@ import niftynet.layer.convolution
 import niftynet.layer.deconvolution
 import niftynet.layer.bn
 from tensorflow.python.training import moving_averages
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations
 from niftynet.layer import layer_util
 import numpy as np
 

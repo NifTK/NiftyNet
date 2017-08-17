@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function
 import numpy as np
 import tensorflow as tf
 
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations
 from niftynet.layer import layer_util
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.convolution import ConvLayer

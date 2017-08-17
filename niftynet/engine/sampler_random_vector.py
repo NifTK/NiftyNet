@@ -3,9 +3,9 @@ from __future__ import absolute_import, print_function, division
 
 import numpy as np
 import tensorflow as tf
-
-from niftynet.engine.input_buffer import InputBatchQueueRunner
 from niftynet.io.image_window import ImageWindow, N_SPATIAL
+
+from niftynet.engine.image_window_buffer import InputBatchQueueRunner
 from niftynet.layer.base_layer import Layer
 
 

@@ -1,12 +1,12 @@
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
-from niftynet.engine.graph_variables_collector import CONSOLE
-from niftynet.engine.graph_variables_collector import TF_SUMMARIES
+from niftynet.engine.application_variables import CONSOLE
+from niftynet.engine.application_variables import TF_SUMMARIES
+from niftynet.engine.image_windows_aggregator import GridSamplesAggregator
 from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.sampler_uniform import UniformSampler
 from niftynet.io.image_reader import ImageReader
-from niftynet.io.image_windows_aggregator import GridSamplesAggregator
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
@@ -20,7 +20,7 @@ from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
-from niftynet.utilities import misc_common as util
+from niftynet.utilities import util_common as util
 
 SUPPORTED_INPUT = {'image', 'label', 'weight'}
 

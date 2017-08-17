@@ -8,7 +8,7 @@ from niftynet.layer import layer_util
 from niftynet.layer.activation import ActiLayer
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.bn import BNLayer
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations
 
 SUPPORTED_OP = {'2D': tf.nn.conv2d_transpose,
                 '3D': tf.nn.conv3d_transpose}

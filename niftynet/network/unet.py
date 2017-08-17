@@ -8,7 +8,7 @@ from niftynet.layer.deconvolution import DeconvolutionalLayer
 from niftynet.layer.downsample import DownSampleLayer
 from niftynet.layer.elementwise import ElementwiseLayer
 from niftynet.layer.crop import CropLayer
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations
 
 
 class UNet3D(TrainableLayer):

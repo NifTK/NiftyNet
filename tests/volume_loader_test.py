@@ -4,7 +4,7 @@ import unittest
 
 import tensorflow as tf
 import os
-import niftynet.utilities.misc_csv as misc_csv
+import niftynet.utilities.util_csv as misc_csv
 from niftynet.engine.volume_loader import VolumeLoaderLayer
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.histogram_normalisation import \

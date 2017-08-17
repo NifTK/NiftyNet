@@ -6,8 +6,8 @@ import warnings
 import tensorflow as tf
 from tensorflow.core.framework import summary_pb2
 
-from niftynet.utilities import misc_common as util
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.utilities import util_common as util
+from niftynet.utilities.util_common import look_up_operations
 
 CONSOLE = 'niftynetconsole'
 TF_SUMMARIES = 'niftynetsummaries'
