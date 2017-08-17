@@ -75,14 +75,30 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
                 image_shape = image_shapes[name]
                 window_shape = static_window_shapes[name]
                 zoom_ratio = [p / d for p, d in zip(window_shape, image_shape)]
-                image_window = scipy.ndimage.interpolation.zoom(
-                    data[name], zoom_ratio, order=interp_orders[name][0])
+                image_window = zoom_3d(data[name],
+                                       zoom_ratio,
+                                       interp_orders[name][0])
                 output_dict[image_data_key] = image_window[np.newaxis, ...]
             # the output image shape should be
             # [enqueue_batch_size, x, y, z, time, modality]
             # here enqueue_batch_size = 1 as we only have one sample
             # per image
             yield output_dict
+
+def zoom_3d(image, ratio, interp_order):
+    assert image.ndim == 5, "input images should be 5D array"
+    output = []
+    for t in range(image.shape[3]):
+        output_mod = []
+        for m in range(image.shape[4]):
+            zoomed = scipy.ndimage.zoom(image[..., t, m],
+                                        ratio[:3],
+                                        order=interp_order)
+            output_mod.append(zoomed[..., np.newaxis, np.newaxis])
+        output_mod = np.concatenate(output_mod, axis=-1)
+        output.append(output_mod)
+    output = np.concatenate(output, axis=-2)
+    return output
 
 
 def dummy_coordinates(image_id, image_sizes):

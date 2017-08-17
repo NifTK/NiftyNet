@@ -10,7 +10,6 @@ from niftynet.utilities.user_parameters_regex import match_array
 
 TRUE_VALUE = {'yes', 'true', 't', 'y', '1'}
 FALSE_VALUE = {'no', 'false', 'f', 'n', '0'}
-ARRAY_TYPES = {"(": ")", "[": "]"}
 
 
 def str2boolean(string_input):
@@ -50,7 +49,8 @@ def str_array(string_input):
         output_tuple = match_array(string_input, 'str')
     except ValueError:
         raise argparse.ArgumentTypeError(
-            'array of strings expected {}'.format(string_input))
+            "array of strings expected, allowed"
+            "characters: [a-zA-Z0-9], but received{}".format(string_input))
     return output_tuple
 
 

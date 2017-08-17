@@ -169,8 +169,7 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     for t in range(0, data_shape[3]):
         data_mod = []
         for m in range(0, data_shape[4]):
-            data_3d = data_array[..., t, m]
-            data_new = scipy.ndimage.zoom(data_3d,
+            data_new = scipy.ndimage.zoom(data_array[..., t, m],
                                           to_multiply[0:3],
                                           order=interp_order)
             data_mod.append(data_new[..., np.newaxis, np.newaxis])
