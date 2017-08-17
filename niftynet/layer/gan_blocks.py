@@ -8,16 +8,18 @@ import niftynet.engine.logging as logging
 from niftynet.layer.base_layer import TrainableLayer
 
 class GANImageBlock(TrainableLayer):
-    def __init__(self, generator, discriminator, name='GAN_image_block'):
+    def __init__(self, generator, discriminator, clip=None, name='GAN_image_block'):
         self._generator = generator
         self._discriminator = discriminator
+        self.clip = clip
         super(GANImageBlock, self).__init__(name=name)
 
     def layer_op(self, random_source, population, conditioning, is_training):
         image = self._generator(random_source, population.get_shape().as_list()[1:], conditioning, is_training)
         fake_logits = self._discriminator(image, conditioning, is_training)
-        with tf.name_scope('clip_real_images'):
-            population = tf.maximum(-2., tf.minimum(2., population))
+        if self.clip:
+            with tf.name_scope('clip_real_images'):
+                population = tf.maximum(-self.clip, tf.minimum(self.clip, population))
         real_logits = self._discriminator(population, conditioning, is_training)
         with tf.name_scope('summaries_images'):
             if len(image.get_shape()) - 2 == 3:
