@@ -47,8 +47,6 @@ class HistTest(tf.test.TestCase):
         self.assertAllClose(len(subject_list), 4)
 
         model_file = os.path.join('testing_data','standardisation_models.txt')
-        if os.path.exists(model_file):
-            os.remove(model_file)
         masking_func = BinaryMaskingLayer(
             type='otsu_plus',
             multimod_fusion='or')
@@ -57,6 +55,8 @@ class HistTest(tf.test.TestCase):
             binary_masking_func=masking_func,
             norm_type='percentile',
             cutoff=(0.05, 0.95))
+        if os.path.exists(model_file):
+            os.remove(model_file)
         hist_norm.train_normalisation_ref(subjects=subject_list)
         out_map = hist_norm.mapping
         self.assertAllClose(out_map['T1'], expected_T1)
