@@ -90,9 +90,7 @@ class GANApplication(BaseApplication):
   def loss_func(self,train_dict,net_outputs):
     real_logits = net_outputs[1]
     fake_logits = net_outputs[2] 
-    lossG = self._loss_func(fake_logits,True)
-    lossD=self._loss_func(real_logits,True)+self._loss_func(fake_logits,False)
-    return lossG,lossD
+    return self._loss_func(real_logits,fake_logits)
 
   def train(self,train_dict):
     """
@@ -100,7 +98,7 @@ class GANApplication(BaseApplication):
     Default implementation returns gradients for all variables from one Adam optimizer
     """
     with tf.name_scope('Optimizer'):
-      self.optimizer = tf.train.AdamOptimizer(learning_rate=self._param.lr,)
+      self.optimizer = tf.train.AdamOptimizer(learning_rate=self._param.lr, beta1=0.5)
     net_outputs = self.net(train_dict, is_training=True)
     with tf.name_scope('Loss'):
         lossG,lossD = self.loss_func(train_dict,net_outputs)
