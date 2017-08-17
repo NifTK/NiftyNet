@@ -16,14 +16,22 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
     currently 4D input is supported, Height x Width x Depth x Modality
     """
 
-    def __init__(self, reader, data_param, batch_size, windows_per_image):
+    def __init__(self,
+                 reader,
+                 data_param,
+                 batch_size,
+                 windows_per_image,
+                 shuffle_buffer=True):
 
         self.reader = reader
+        self.windows_per_image = windows_per_image
+        self.shuffle = bool(shuffle_buffer)
+
         Layer.__init__(self, name='input_buffer')
         capacity = max(batch_size * 4, windows_per_image * 4)
         InputBatchQueueRunner.__init__(self,
                                        capacity=capacity,
-                                       shuffle=True)
+                                       shuffle=self.shuffle)
         tf.logging.info('reading size of preprocessed images')
         self.window = ImageWindow.from_data_reader_properties(
             self.reader.input_sources,
@@ -48,7 +56,7 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
         :return: output data dictionary {placeholders: data_array}
         """
         while True:
-            image_id, data, interp_orders = self.reader()
+            image_id, data, interp_orders = self.reader(shuffle=self.shuffle)
             if not data:
                 break
             image_shapes = {
@@ -61,29 +69,31 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
             # for resize sampler the coordinates are not used
             # simply use the spatial dims of the input image
             all_coordinates = dummy_coordinates(image_id, image_shapes)
+            for _ in range(self.windows_per_image):
+                output_dict = {}
+                for name in list(data):
+                    # prepare output dictionary keys
+                    coordinates_key = \
+                        self.window.coordinates_placeholder(name)
+                    image_data_key = \
+                        self.window.image_data_placeholder(name)
 
-            output_dict = {}
-            for name in list(data):
-                # prepare output dictionary keys
-                coordinates_key = self.window.coordinates_placeholder(name)
-                image_data_key = self.window.image_data_placeholder(name)
+                    # prepare coordinates data
+                    output_dict[coordinates_key] = all_coordinates[name]
 
-                # prepare coordinates data
-                output_dict[coordinates_key] = all_coordinates[name]
-
-                # prepare image data
-                image_shape = image_shapes[name]
-                window_shape = static_window_shapes[name]
-                zoom_ratio = [p / d for p, d in zip(window_shape, image_shape)]
-                image_window = zoom_3d(data[name],
-                                       zoom_ratio,
-                                       interp_orders[name][0])
-                output_dict[image_data_key] = image_window[np.newaxis, ...]
-            # the output image shape should be
-            # [enqueue_batch_size, x, y, z, time, modality]
-            # here enqueue_batch_size = 1 as we only have one sample
-            # per image
-            yield output_dict
+                    # prepare image data
+                    image_shape = image_shapes[name]
+                    window_shape = static_window_shapes[name]
+                    zoom_ratio = [p / d for p, d
+                                  in zip(window_shape, image_shape)]
+                    image_window = zoom_3d(data[name], zoom_ratio,
+                                           interp_orders[name][0])
+                    output_dict[image_data_key] = image_window[np.newaxis, ...]
+                # the output image shape should be
+                # [enqueue_batch_size, x, y, z, time, modality]
+                # here enqueue_batch_size = 1 as we only have one sample
+                # per image
+                yield output_dict
 
 def zoom_3d(image, ratio, interp_order):
     assert image.ndim == 5, "input images should be 5D array"

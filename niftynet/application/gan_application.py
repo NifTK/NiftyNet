@@ -64,10 +64,11 @@ class GANApplication(BaseApplication):
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.reader = ImageReader(SUPPORTED_INPUT)
+            self.reader = ImageReader(['image', 'conditioning'])
         else:  # in the inference process use image input only
-            self.reader = ImageReader(['image'])
-        self.reader.initialise_reader(data_param, gan_param)
+            self.reader = ImageReader(['conditioning'])
+        if self.reader:
+            self.reader.initialise_reader(data_param, gan_param)
 
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(
@@ -112,8 +113,9 @@ class GANApplication(BaseApplication):
                     min_angle=self.action_param.rotation_angle[0],
                     max_angle=self.action_param.rotation_angle[1]))
 
-        self.reader.add_preprocessing_layers(
-            normalisation_layers + augmentation_layers)
+        if self.reader:
+            self.reader.add_preprocessing_layers(
+                normalisation_layers + augmentation_layers)
 
     def inference_sampler(self):
         pass
@@ -122,19 +124,27 @@ class GANApplication(BaseApplication):
         return self._sampler
 
     def initialise_sampler(self, is_training):
+        self._sampler = []
         if is_training:
-            self._sampler = ResizeSampler(
+            self._sampler.append(ResizeSampler(
                 reader=self.reader,
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
-                windows_per_image=self.action_param.sample_per_volume)
+                windows_per_image=1,
+                shuffle_buffer=True))
         else:
-            self._sampler = RandomVectorSampler(
+            self._sampler.append(RandomVectorSampler(
                 fields=('vector',),
                 vector_size=(self.gan_param.noise_size,),
                 batch_size=self.net_param.batch_size,
-                n_interpolations=self.gan_param.n_interpolations)
-        self._sampler = [self._sampler]
+                n_interpolations=self.gan_param.n_interpolations,
+                repeat=None))
+            self._sampler.append(ResizeSampler(
+                reader=self.reader,
+                data_param=self.data_param,
+                batch_size=self.net_param.batch_size,
+                windows_per_image=self.gan_param.n_interpolations,
+                shuffle_buffer=False))
 
     def training_sampler(self):
         pass
@@ -148,8 +158,7 @@ class GANApplication(BaseApplication):
         if self.is_training:
             with tf.name_scope('Optimizer'):
                 self.optimizer = tf.train.AdamOptimizer(
-                    learning_rate=self.action_param.lr,
-                    beta1=0.5)
+                    learning_rate=self.action_param.lr, beta1=0.5)
 
             # a new pop_batch_op for each gpu tower
             device_id = training_grads_collector.current_tower_id
@@ -214,43 +223,36 @@ class GANApplication(BaseApplication):
                 training_grads_collector.add_to_collection(grads)
             return net_output
         else:
-            #raise NotImplementedError
             data_dict = self.get_sampler()[0].pop_batch_op()
-            image_size = self.data_param[self.gan_param.image[0]].spatial_window_size
-            batch_image_size = (self.net_param.batch_size,)+image_size+(1,)
-            dummy_image = tf.zeros(batch_image_size)
+            conditioning_dict = self.get_sampler()[1].pop_batch_op()
+            conditioning = conditioning_dict['conditioning']
+            image_size = conditioning.shape.as_list()[:-1]
+            dummy_image = tf.zeros(image_size + [1])
             net_output = self._net(data_dict['vector'],
                                    dummy_image,
-                                   None,
+                                   conditioning,
                                    self.is_training)
             outputs_collector.add_to_collection(
-                var=net_output[0], name='image', average_over_devices=False,
+                var=net_output[0],
+                name='image',
+                average_over_devices=False,
                 collection=CONSOLE)
             outputs_collector.add_to_collection(
-                var=data_dict['vector_location'], name='location',
+                var=conditioning_dict['conditioning_location'],
+                name='location',
                 average_over_devices=False, collection=CONSOLE)
 
             self.output_decoder = BatchSplitingAggregator(
                 image_reader=self.reader,
                 output_path=self.action_param.save_seg_dir)
             return net_output
-            # images = data_dict['images']
-            # net_output = self._net(images, False)
-            # return net_output
 
     def net_inference(self, train_dict, is_training):
         raise NotImplementedError
-        # if not self._net:
-        #    self._net = self._net_class()
-        # net_outputs = self._net(train_dict['images'], is_training)
-        # return self._post_process_outputs(net_outputs), train_dict['info']
 
     def loss_func(self, train_dict, net_outputs):
         real_logits = net_outputs[1]
         fake_logits = net_outputs[2]
-        #lossG = self._loss_func(fake_logits, True)
-        #lossD = self._loss_func(real_logits, True) + self._loss_func(
-        #    fake_logits, False)
         return self._loss_func(real_logits, fake_logits)
 
     def inference_loop(self, sess, coord, net_out):
@@ -263,7 +265,6 @@ class GANApplication(BaseApplication):
 
     def logs(self, train_dict, net_outputs):
         pass
-        # return []
 
     def training_ops(self, start_iter=0, end_iter=1):
         end_iter = max(start_iter, end_iter)
@@ -272,11 +273,9 @@ class GANApplication(BaseApplication):
 
     def set_all_output_ops(self, output_op):
         pass
-        # self._output_op = output_op
 
     def eval_variables(self):
         pass
-        # return self._output_op[0][0][1]
 
     def process_output_values(self, values, is_training):
         # do nothing
@@ -288,8 +287,6 @@ class GANApplication(BaseApplication):
 
     def train_op_generator(self, apply_ops):
         pass
-        # while True:
-        #    yield apply_ops
 
     def interpret_output(self, batch_output, is_training):
         if is_training:
@@ -297,5 +294,3 @@ class GANApplication(BaseApplication):
         else:
             return self.output_decoder.decode_batch(
                 batch_output['image'], batch_output['location'])
-
-        #return True

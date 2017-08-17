@@ -43,7 +43,6 @@ class ImageReader(Layer):
         modality sections, 'label' corresponds to one modality section
         """
         app_type = task_param.name
-        self._file_list = ImageReader.load_and_merge_csv_files(data_param)
 
         if app_type == "net_segment.py":
             from niftynet.application.segmentation_application \
@@ -57,16 +56,23 @@ class ImageReader(Layer):
         if not self.output_fields:
             # by default, reader tries to output all supported fields
             self.output_fields = SUPPORTED_INPUT
+
         self._output_fields = [field_name for field_name in self.output_fields
                                if vars(task_param).get(field_name)]
         self._input_sources = {field: vars(task_param).get(field, None)
                                for field in self.output_fields}
+        data_to_load = {}
+        for name in self._output_fields:
+            for source in self._input_sources[name]:
+                data_to_load[source] = data_param[source]
+        self._file_list = ImageReader.load_and_merge_csv_files(data_to_load)
         self.output_list = filename_to_image_list(self._file_list,
                                                   self._input_sources,
                                                   data_param)
         for field in self.output_fields:
             tf.logging.info('image reader: loading [{}] from {} ({})'.format(
                 field, self.input_sources[field], len(self.output_list)))
+
 
     def prepare_preprocessors(self):
         for layer in self.preprocessors:
