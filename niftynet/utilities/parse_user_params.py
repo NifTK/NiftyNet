@@ -443,7 +443,7 @@ def build_parser(parents, defaults):
 def run():
     initial_parser = argparse.ArgumentParser(add_help=False)
     version_string = get_niftynet_version()
-    initial_parser.add_argument("--version", action='version', version=version_string)
+    initial_parser.add_argument("-v", "--version", action='version', version=version_string)
     initial_parser.add_argument("-c", "--conf",
                              help="Specify configurations from a file",
                              metavar="File", )
