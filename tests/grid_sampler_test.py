@@ -40,6 +40,9 @@ class UniformSamplerTest(tf.test.TestCase):
         volume_loader = VolumeLoaderLayer(csv_loader,
                                           standardisor=(hist_norm, mv_norm),
                                           is_training=True)
+        volume_loader = VolumeLoaderLayer(csv_loader,
+                                          standardisor=(hist_norm, mv_norm),
+                                          is_training=False)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
         # define output element patch
@@ -98,6 +101,9 @@ class UniformSamplerTest(tf.test.TestCase):
         volume_loader = VolumeLoaderLayer(csv_loader,
                                           (hist_norm, mv_norm),
                                           is_training=True)
+        volume_loader = VolumeLoaderLayer(csv_loader,
+                                          (hist_norm, mv_norm),
+                                          is_training=False)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
         # define output element patch
@@ -151,6 +157,9 @@ class UniformSamplerTest(tf.test.TestCase):
         volume_loader = VolumeLoaderLayer(csv_loader,
                                           (hist_norm, mv_norm),
                                           is_training=True)
+        volume_loader = VolumeLoaderLayer(csv_loader,
+                                          (hist_norm, mv_norm),
+                                          is_training=False)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
         # define output element patch

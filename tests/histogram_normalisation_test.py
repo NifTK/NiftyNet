@@ -46,7 +46,7 @@ class HistTest(tf.test.TestCase):
         subject_list = csv_loader.to_subject_list()
         self.assertAllClose(len(subject_list), 4)
 
-        model_file = os.path.join('testing_data','standardisation_models.txt')
+        model_file = os.path.join('testing_data','std_models.txt')
         masking_func = BinaryMaskingLayer(
             type='otsu_plus',
             multimod_fusion='or')
@@ -80,6 +80,8 @@ class HistTest(tf.test.TestCase):
         self.assertAllClose(np.mean(norm_image), 0.0)
         self.assertAllClose(np.std(norm_image), 1.0)
         self.assertAllClose(order_before, order_after)
+        if os.path.exists(model_file):
+            os.remove(model_file)
 
 
 if __name__ == "__main__":
