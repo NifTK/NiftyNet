@@ -1,0 +1,72 @@
+[image modality 1]
+path_to_search = ./data/ultrasound_simulator_gan_demo
+filename_contains = frame,img
+filename_not_contains = 
+
+[conditioning modality 1]
+path_to_search = ./data/ultrasound_simulator_gan_demo
+filename_contains = frame,coordX
+filename_not_contains = 
+
+[conditioning modality 2]
+path_to_search = ./data/ultrasound_simulator_gan_demo
+filename_contains = frame,coordY
+filename_not_contains = 
+
+[conditioning modality 3]
+path_to_search = ./data/ultrasound_simulator_gan_demo
+filename_contains = frame,coordZ
+filename_not_contains = 
+
+[settings]
+application_type = gan
+cuda_devices = ""
+model_dir = ./models/model_us_simulator_gan_demo
+net_name = simulator_gan
+
+# preprocessing threads parameters
+queue_length = 200
+num_threads = 20
+
+# network parameters (controlling memory consumption)
+spatial_rank = 2
+batch_size = 36
+image_size = 128
+conditioning_size = 128
+noise_size = 100
+
+# affected by network's receptive field
+volume_padding_size = 0
+
+# volume level preprocessing
+reorientation = False
+resampling = False
+normalisation = False
+whitening = False
+image_interp_order = 3
+conditioning_interp_order = 1
+
+# ** training only ** system parameters
+num_gpus = 1
+sample_per_volume = 1
+
+# training augmentation
+rotation = False
+window_sampling = resize
+
+# ** training only ** gradient descent and loss parameters
+lr = 0.0002
+decay = 1e-7
+loss_type = CrossEntropy
+reg_type = None
+starting_iter = 0
+save_every_n = 1000
+max_iter = 5000
+
+# ** inference only ** system parameters
+border = 0
+inference_iter = 5000
+save_seg_dir = ./output/us_simulator_gan_demo
+
+output_interp_order = 0
+output_prob = False

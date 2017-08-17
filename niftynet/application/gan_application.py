@@ -179,7 +179,8 @@ class GANApplication(BaseApplication):
         if self.is_training:
             with tf.name_scope('Optimizer'):
                 self.optimizer = tf.train.AdamOptimizer(
-                    learning_rate=self.action_param.lr)
+                    learning_rate=self.action_param.lr,
+                    beta1=0.5)
 
             # a new pop_batch_op for each gpu tower
             device_id = training_grads_collector.current_tower_id
@@ -278,10 +279,10 @@ class GANApplication(BaseApplication):
     def loss_func(self, train_dict, net_outputs):
         real_logits = net_outputs[1]
         fake_logits = net_outputs[2]
-        lossG = self._loss_func(fake_logits, True)
-        lossD = self._loss_func(real_logits, True) + self._loss_func(
-            fake_logits, False)
-        return lossG, lossD
+        #lossG = self._loss_func(fake_logits, True)
+        #lossD = self._loss_func(real_logits, True) + self._loss_func(
+        #    fake_logits, False)
+        return self._loss_func(real_logits, fake_logits)
 
     def inference_loop(self, sess, coord, net_out):
         pass
