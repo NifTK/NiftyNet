@@ -21,7 +21,7 @@ from niftynet.io.image_windows_aggregator import BatchSplitingAggregator
 
 # from niftynet.engine.input_buffer import TrainEvalInputBuffer, DeployInputBuffer
 
-SUPPORTED_INPUT = {'image'}
+SUPPORTED_INPUT = {'image', 'conditioning'}
 
 
 class GanFactory(object):
@@ -117,37 +117,6 @@ class GANApplication(BaseApplication):
 
     def inference_sampler(self):
         pass
-        # assert self._volume_loader is not None, \
-        #     "Please call initialise_dataset_loader first"
-        # self._inference_patch_holder = GANPatch(
-        #     spatial_rank=self._param.spatial_rank,
-        #     image_size=self._param.image_size,
-        #     noise_size=self._param.noise_size,
-        #     conditioning_size=self._param.conditioning_size,
-        #     num_image_modality=self._volume_loader.num_modality(0))
-        #
-        # sampler = GANSampler(
-        #     patch=self._inference_patch_holder,
-        #     volume_loader=self._volume_loader,
-        #     data_augmentation_methods=None)
-        # # ops to resize image back
-        # self._ph = tf.placeholder(tf.float32, [None])
-        # self._sz = tf.placeholder(tf.int32, [None])
-        # reshaped = tf.image.resize_images(
-        #     tf.reshape(self._ph, [1] + [self._param.image_size] * 2 + [-1]),
-        #     self._sz[0:2])
-        # if self._param.spatial_rank == 3:
-        #     reshaped = tf.reshape(reshaped, [1, self._sz[0] * self._sz[1],
-        #                                      self._param.image_size, -1])
-        #     reshaped = tf.image.resize_images(reshaped,
-        #                                       [self._sz[0] * self._sz[1],
-        #                                        self._sz[2]])
-        # self._reshaped = tf.reshape(reshaped, self._sz)
-        # input_buffer= DeployInputBuffer(
-        #     batch_size=self._param.batch_size,
-        #     capacity=max(self._param.queue_length, self._param.batch_size),
-        #     sampler=sampler)
-        # return input_buffer
 
     def get_sampler(self):
         return self._sampler
@@ -194,7 +163,7 @@ class GANApplication(BaseApplication):
                                                  stddev=1.0,
                                                  dtype=tf.float32))
             tf.stop_gradient(noise)
-            conditioning = None
+            conditioning = data_dict['conditioning']
             net_output = self._net(noise,
                                    images,
                                    conditioning,

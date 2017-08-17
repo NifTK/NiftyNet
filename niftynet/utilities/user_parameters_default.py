@@ -116,7 +116,8 @@ def add_input_data_args(parser):
         "--filename_not_contains",
         metavar='',
         type=str,
-        help="keywords in input file names, negatively matches filenames")
+        help="keywords in input file names, negatively matches filenames",
+        default='')
 
     parser.add_argument(
         "--spatial_window_size",

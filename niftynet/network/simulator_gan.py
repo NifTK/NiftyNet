@@ -45,14 +45,15 @@ class ImageGenerator(BaseGenerator):
         keep_prob_ph = 1  # not passed in as a placeholder
         for i in range(4):
             ch.append(round((ch[-1] + conditioning_channels * self.generator_shortcuts[i]) / 2))
-            sz = [[round(i / 2) for i in sz[0]]] + sz
+            sz = [[int(round(i / 2)) for i in sz[0]]] + sz
         if spatial_rank == 3:
             def resize_func(x, sz):
                 sz_x = x.get_shape().as_list()
                 r1 = tf.image.resize_images(tf.reshape(x, sz_x[:3] + [-1]), sz[0:2])
                 r2 = tf.image.resize_images(tf.reshape(r1, [sz_x[0], sz[0] * sz[1], sz_x[3], -1]),
                                             [sz[0] * sz[1], sz[2]])
-                return tf.reshape(r2, [sz_x[0]] + sz + [sz_x[-1]])
+                resized_3d = tf.reshape(r2, [sz_x[0]] + sz + [sz_x[-1]])
+                return resized_3d
         elif spatial_rank == 2:
             resize_func = tf.image.resize_bilinear
 
@@ -64,7 +65,7 @@ class ImageGenerator(BaseGenerator):
             if conditioning is not None and self.generator_shortcuts[i]:
                 with tf.name_scope('concat_conditioning'):
                     resized_cond = resize_func(conditioning, x.get_shape().as_list()[1:-1])
-                    return tf.concat([x, resized_cond] + noise, axis=3)
+                    return tf.concat([x, resized_cond] + noise, axis=-1)
             else:
                 return x
 
@@ -109,13 +110,13 @@ class ImageGenerator(BaseGenerator):
                                           w_initializer=w_init,
                                           b_initializer=b_init)(g_h5, is_training=is_training)
             x_sample = tf.nn.dropout(tf.nn.tanh(x_sample), keep_prob_ph)
-        with tf.name_scope('summaries_verbose'):
-            tf.summary.histogram('hist_g_h2', g_h2, [logging.LOG])
-            tf.summary.histogram('hist_g_h3', g_h3, [logging.LOG])
-            tf.summary.histogram('hist_g_h4', g_h4, [logging.LOG])
-            tf.summary.histogram('hist_g_h5', g_h5, [logging.LOG])
-            tf.summary.histogram('hist_img', x_sample, [logging.LOG])
-            [tf.summary.histogram(v.name, v, [logging.LOG]) for v in self.trainable_variables()]
+        #with tf.name_scope('summaries_verbose'):
+        #    tf.summary.histogram('hist_g_h2', g_h2, [logging.LOG])
+        #    tf.summary.histogram('hist_g_h3', g_h3, [logging.LOG])
+        #    tf.summary.histogram('hist_g_h4', g_h4, [logging.LOG])
+        #    tf.summary.histogram('hist_g_h5', g_h5, [logging.LOG])
+        #    tf.summary.histogram('hist_img', x_sample, [logging.LOG])
+        #    [tf.summary.histogram(v.name, v, [logging.LOG]) for v in self.trainable_variables()]
         return tf.image.resize_images(x_sample, image_size[:-1])
 
 
@@ -188,12 +189,12 @@ class ImageDiscriminator(BaseDiscriminator):
             d_wo = tf.get_variable("D_Wo", shape=[d_nf_o, 1], initializer=w_init)
             d_bo = tf.get_variable('D_bo', shape=[1], initializer=b_init)
             d_logit = tf.matmul(d_hf, d_wo) + d_bo
-        with tf.name_scope('summaries_verbose'):
-            tf.summary.histogram('hist_d_h2', d_h2, [logging.LOG])
-            tf.summary.histogram('hist_d_h3', d_h3, [logging.LOG])
-            tf.summary.histogram('hist_d_h4', d_h4, [logging.LOG])
-            tf.summary.histogram('hist_d_h5', d_h5, [logging.LOG])
-            tf.summary.histogram('hist_d_h6', d_h6, [logging.LOG])
-            tf.summary.histogram('hist_d_logit', d_logit, [logging.LOG])
-            [tf.summary.histogram(v.name, v, [logging.LOG]) for v in self.trainable_variables()]
+        #with tf.name_scope('summaries_verbose'):
+        #    tf.summary.histogram('hist_d_h2', d_h2, [logging.LOG])
+        #    tf.summary.histogram('hist_d_h3', d_h3, [logging.LOG])
+        #    tf.summary.histogram('hist_d_h4', d_h4, [logging.LOG])
+        #    tf.summary.histogram('hist_d_h5', d_h5, [logging.LOG])
+        #    tf.summary.histogram('hist_d_h6', d_h6, [logging.LOG])
+        #    tf.summary.histogram('hist_d_logit', d_logit, [logging.LOG])
+        #    [tf.summary.histogram(v.name, v, [logging.LOG]) for v in self.trainable_variables()]
         return d_logit

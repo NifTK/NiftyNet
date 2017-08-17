@@ -446,4 +446,10 @@ def remove_time_dim(tf_tensor):
         return tf_tensor
     if tf_tensor.get_shape()[4] != 1:
         raise NotImplementedError("time sequences not currently supported")
-    return tf.squeeze(tf_tensor, axis=4)
+    axis_to_squeeze = []
+    for (idx, axis) in enumerate(tf_tensor.shape.as_list()):
+        if idx == 0 or idx == 5:
+            continue
+        if axis == 1:
+            axis_to_squeeze.append(idx)
+    return tf.squeeze(tf_tensor, axis=axis_to_squeeze)
