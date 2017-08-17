@@ -13,9 +13,6 @@ testjob:
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
-    # set env
-    - export PYTHONPATH="/home/wenqi/.local/lib/python2.7/site-packages":$PYTHONPATH
-    - export PATH="/home/wenqi/.local/bin":$PATH
 
     # print system info
     - which nvidia-smi
@@ -60,45 +57,38 @@ testjob:
     - coverage run -a --source . net_segment.py train -c config/default_multimodal_config.ini --image_size 42 --label_size 42 --batch_size 3
     - coverage run -a --source . net_segment.py inference -c config/default_multimodal_config.ini --image_size 84 --label_size 84 --batch_size 7
 
-    - coverage run -a --source . -m tests.mean_variance_normalisation_test
-    - coverage run -a --source . -m tests.binary_masking_test
-    - coverage run -a --source . -m tests.histogram_normalisation_test
-    - coverage run -a --source . -m tests.activation_test
-    - coverage run -a --source . -m tests.bn_test
-    - coverage run -a --source . -m tests.convolution_test
-    - coverage run -a --source . -m tests.deconvolution_test
-    - coverage run -a --source . -m tests.downsample_test
-    - coverage run -a --source . -m tests.elementwise_test
-    - coverage run -a --source . -m tests.highres3dnet_test
-    - coverage run -a --source . -m tests.highresblock_test
-    - coverage run -a --source . -m tests.upsample_test
-    - coverage run -a --source . -m tests.toynet_test
-    - coverage run -a --source . -m tests.crop_test
-    - coverage run -a --source . -m tests.deepmedic_test
-    - coverage run -a --source . -m tests.vnetblock_test
-    - coverage run -a --source . -m tests.vnet_test
-    - coverage run -a --source . -m tests.unetblock_test
-      #- coverage run -a --source . -m tests.unet_test
-    - coverage run -a --source . -m tests.scaleblock_test
-    - coverage run -a --source . -m tests.scalenet_test
-    - coverage run -a --source . -m tests.toy_sampler_test
-    - coverage run -a --source . -m tests.input_buffer_test
-    - coverage run -a --source . -m tests.dilatedcontext_test
-    - coverage run -a --source . -m tests.loss_test
-    - coverage run -a --source . -m tests.subject_test
-    - coverage run -a --source . -m tests.volume_loader_test
-    - coverage run -a --source . -m tests.uniform_sampler_test
-    - coverage run -a --source . -m tests.grid_sampler_test
-    - coverage run -a --source . -m tests.selective_sampler_test
-    - coverage run -a --source . -m tests.rand_rotation_test
-    - coverage run -a --source . -m tests.rand_spatial_scaling_test
-    - coverage run -a --source . -m tests.post_processing_test
-    - coverage run -a --source . -m tests.spatial_transformer_test
-    - coverage run -a --source . -m tests.rand_flip_test
+    - coverage run -a --source . -m unittest discover -s "tests" -p "*_test.py"
     - coverage report -m
     - echo 'finished test'
   tags:
     - gift-linux
+
+quicktest:
+  stage: dev_test
+  except:
+    - master
+    - dev
+    - dev-staging
+    - tags
+  script:
+    # print system info
+    - which nvidia-smi
+    - nvidia-smi
+    - pwd
+    - python -c "import tensorflow as tf; print tf.__version__"
+    - python -c "import tensorflow as tf; from tensorflow.python.client import device_lib; print device_lib.list_local_devices()"
+    - ls -la /dev | grep nvidia
+
+    - echo $(python tests/get_gpu_index.py)
+    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
+
+    # run only fast tests
+    - QUICKTEST=True python -m unittest discover -s "tests" -p "*_test.py"
+
+    - echo 'finished quick tests'
+  tags:
+    - gift-linux
+
 
 pip-installer:
   stage: pip_test

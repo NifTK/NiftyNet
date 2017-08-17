@@ -1,5 +1,7 @@
 from __future__ import absolute_import, print_function
 
+import unittest
+
 import tensorflow as tf
 import os
 
@@ -15,10 +17,11 @@ from niftynet.utilities.csv_table import CSVTable
 from niftynet.utilities.input_placeholders import ImagePatch
 
 
+@unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class UniformSamplerTest(tf.test.TestCase):
     def test_3d(self):
-        csv_dict = {'input_image_file': os.path.join('testing_data','testing_case_input'),
-                    'target_image_file': os.path.join('testing_data','testing_case_target'),
+        csv_dict = {'input_image_file': os.path.join('testing_data', 'testing_case_input'),
+                    'target_image_file': os.path.join('testing_data', 'testing_case_target'),
                     'weight_map_file': None,
                     'target_note': None}
         csv_loader = CSVTable(csv_dict=csv_dict,
@@ -29,7 +32,7 @@ class UniformSamplerTest(tf.test.TestCase):
             type='otsu_plus',
             multimod_fusion='or')
         hist_norm = HistNorm(
-            models_filename=os.path.join('testing_data','standardisation_models.txt'),
+            models_filename=os.path.join('testing_data', 'standardisation_models.txt'),
             binary_masking_func=masking_func,
             norm_type='percentile',
             cutoff=(0.01, 0.99))
@@ -74,8 +77,8 @@ class UniformSamplerTest(tf.test.TestCase):
                 #        print(key, output[idx].shape)
 
     def test_2d(self):
-        csv_dict = {'input_image_file': os.path.join('testing_data','testing_case_input'),
-                    'target_image_file': os.path.join('testing_data','testing_case_target'),
+        csv_dict = {'input_image_file': os.path.join('testing_data', 'testing_case_input'),
+                    'target_image_file': os.path.join('testing_data', 'testing_case_target'),
                     'weight_map_file': None,
                     'target_note': None}
         csv_loader = CSVTable(csv_dict=csv_dict,
@@ -86,7 +89,7 @@ class UniformSamplerTest(tf.test.TestCase):
             type='otsu_plus',
             multimod_fusion='or')
         hist_norm = HistNorm(
-            models_filename=os.path.join('testing_data','standardisation_models.txt'),
+            models_filename=os.path.join('testing_data', 'standardisation_models.txt'),
             binary_masking_func=masking_func,
             norm_type='percentile',
             cutoff=(0.01, 0.99))
@@ -125,8 +128,8 @@ class UniformSamplerTest(tf.test.TestCase):
                 break
 
     def test_25d(self):
-        csv_dict = {'input_image_file': os.path.join('testing_data','testing_case_input'),
-                    'target_image_file': os.path.join('testing_data','testing_case_target'),
+        csv_dict = {'input_image_file': os.path.join('testing_data', 'testing_case_input'),
+                    'target_image_file': os.path.join('testing_data', 'testing_case_target'),
                     'weight_map_file': None,
                     'target_note': None}
         csv_loader = CSVTable(csv_dict=csv_dict,

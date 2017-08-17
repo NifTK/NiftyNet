@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function
 
 import os
+import unittest
 
 import numpy as np
 import tensorflow as tf
@@ -15,6 +16,7 @@ from niftynet.utilities.csv_table import CSVTable
 from niftynet.utilities.filename_matching import KeywordsMatching
 
 
+@unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class HistTest(tf.test.TestCase):
     def test_volume_loader(self):
         expected_T1 = np.array([0.0, 8.24277910972, 21.4917343731,
