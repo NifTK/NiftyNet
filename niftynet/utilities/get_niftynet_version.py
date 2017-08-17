@@ -12,6 +12,9 @@ def get_niftynet_version():
         # https://www.python.org/dev/peps/pep-0440/#public-version-identifiers
         version_string = version_string[1:]
 
+        # Replace first - with + to match PEP440 local version identifier standard
+        version_string = version_string.replace("-", "+", 1)
+
     except:
         try:
             import pkg_resources
