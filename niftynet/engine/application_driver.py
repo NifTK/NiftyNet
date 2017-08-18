@@ -14,6 +14,7 @@ from niftynet.engine.application_variables import GradientsCollector
 from niftynet.engine.application_variables import OutputsCollector
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.utilities.util_common import look_up_operations
+from niftynet.engine.restorer import global_variables_initialize_or_restorer
 
 FILE_PREFIX = 'model.ckpt'
 CONSOLE_LOG_FORMAT = '%(levelname)s:niftynet: %(message)s'
@@ -212,7 +213,7 @@ class ApplicationDriver(object):
 
             # initialisation operation
             with tf.name_scope('Initialization'):
-                self._init_op = tf.global_variables_initializer()
+                self._init_op = global_variables_initialize_or_restorer()
 
             with tf.name_scope('MergeOutputs'):
                 self.outputs_collector.finalise_output_op()
