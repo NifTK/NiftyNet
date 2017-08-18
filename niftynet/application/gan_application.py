@@ -37,24 +37,20 @@ class GanFactory(object):
 
 
 class GANApplication(BaseApplication):
-    # def __init__(self, param):
-    #     # super(GANApplication, self).__init__()
-    #     self._net_class = None
-    #     self._param = param
-    #     self._volume_loader = None
-    #     self._loss_func = LossFunction(loss_type=self._param.loss_type)
-    #     self.num_objectives = 2
-    #     self._net = None
-    #     self._net_class_module = NetFactory.create(param.net_name)
+    def __init__(self):
+        BaseApplication.__init__(self)
+        self.is_training = True
+
+        self.net_param = None
+        self.action_param = None
+
+        self.data_param = None
+        self.gan_param = None
 
     def set_model_param(self, net_param, action_param, is_training):
         self.is_training = is_training
         self.net_param = net_param
         self.action_param = action_param
-
-        self.reader = None
-        self.data_param = None
-        self.gan_param = None
 
     def initialise_dataset_loader(self, data_param, gan_param):
         self.data_param = data_param
@@ -62,11 +58,11 @@ class GANApplication(BaseApplication):
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.reader = ImageReader(['image', 'conditioning'])
+            self._reader = ImageReader(['image', 'conditioning'])
         else:  # in the inference process use image input only
-            self.reader = ImageReader(['conditioning'])
-        if self.reader:
-            self.reader.initialise_reader(data_param, gan_param)
+            self._reader = ImageReader(['conditioning'])
+        if self._reader:
+            self._reader.initialise_reader(data_param, gan_param)
 
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(
@@ -111,21 +107,15 @@ class GANApplication(BaseApplication):
                     min_angle=self.action_param.rotation_angle[0],
                     max_angle=self.action_param.rotation_angle[1]))
 
-        if self.reader:
-            self.reader.add_preprocessing_layers(
+        if self._reader:
+            self._reader.add_preprocessing_layers(
                 normalisation_layers + augmentation_layers)
 
-    def inference_sampler(self):
-        pass
-
-    def get_sampler(self):
-        return self._sampler
-
-    def initialise_sampler(self, is_training):
+    def initialise_sampler(self):
         self._sampler = []
-        if is_training:
+        if self.is_training:
             self._sampler.append(ResizeSampler(
-                reader=self.reader,
+                reader=self._reader,
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=1,
@@ -138,14 +128,11 @@ class GANApplication(BaseApplication):
                 n_interpolations=self.gan_param.n_interpolations,
                 repeat=None))
             self._sampler.append(ResizeSampler(
-                reader=self.reader,
+                reader=self._reader,
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=self.gan_param.n_interpolations,
                 shuffle_buffer=False))
-
-    def training_sampler(self):
-        pass
 
     def initialise_network(self):
         self._net = GanFactory.create(self.net_param.name)()
@@ -162,7 +149,7 @@ class GANApplication(BaseApplication):
             device_id = training_grads_collector.current_tower_id
             data_dict = self.get_sampler()[0].pop_batch_op(device_id)
 
-            images = data_dict['image']
+            images = tf.cast(data_dict['image'], tf.float32)
             noise_shape = [self.net_param.batch_size,
                            self.gan_param.noise_size]
             noise = tf.Variable(tf.random_normal(shape=noise_shape,
@@ -175,10 +162,11 @@ class GANApplication(BaseApplication):
                                    images,
                                    conditioning,
                                    self.is_training)
-
             self._loss_func = LossFunction(
                 loss_type=self.action_param.loss_type)
-            lossG, lossD = self.loss_func(net_output)
+            real_logits = net_output[1]
+            fake_logits = net_output[2]
+            lossG, lossD = self._loss_func(real_logits, fake_logits)
             if self.net_param.decay > 0:
                 reg_losses = tf.get_collection(
                     tf.GraphKeys.REGULARIZATION_LOSSES)
@@ -219,7 +207,6 @@ class GANApplication(BaseApplication):
 
                 # add the grads back to application_driver's training_grads
                 training_grads_collector.add_to_collection(grads)
-            return net_output
         else:
             data_dict = self.get_sampler()[0].pop_batch_op()
             conditioning_dict = self.get_sampler()[1].pop_batch_op()
@@ -241,53 +228,11 @@ class GANApplication(BaseApplication):
                 average_over_devices=False, collection=CONSOLE)
 
             self.output_decoder = BatchSplitingAggregator(
-                image_reader=self.reader,
+                image_reader=self._reader,
                 output_path=self.action_param.save_seg_dir)
-            return net_output
 
-    def net_inference(self, train_dict, is_training):
-        raise NotImplementedError
-
-    def loss_func(self, net_outputs):
-        real_logits = net_outputs[1]
-        fake_logits = net_outputs[2]
-        return self._loss_func(real_logits, fake_logits)
-
-    def inference_loop(self, sess, coord, net_out):
-        pass
-
-
-    def stop(self):
-        for sampler in self.get_sampler():
-            sampler.close_all()
-
-    def logs(self, train_dict, net_outputs):
-        pass
-
-    def training_ops(self, start_iter=0, end_iter=1):
-        end_iter = max(start_iter, end_iter)
-        for iter_i in range(start_iter, end_iter):
-            yield iter_i, self._gradient_op
-
-    def set_all_output_ops(self, output_op):
-        pass
-
-    def eval_variables(self):
-        pass
-
-    def process_output_values(self, values, is_training):
-        # do nothing
-        pass
-        # if is_training:
-        #    print(values)
-        # else:
-        #    print(values)
-
-    def train_op_generator(self, apply_ops):
-        pass
-
-    def interpret_output(self, batch_output, is_training):
-        if is_training:
+    def interpret_output(self, batch_output):
+        if self.is_training:
             return True
         else:
             return self.output_decoder.decode_batch(

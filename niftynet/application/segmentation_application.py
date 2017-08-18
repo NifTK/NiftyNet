@@ -20,7 +20,6 @@ from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
-from niftynet.utilities import util_common as util
 
 SUPPORTED_INPUT = {'image', 'label', 'weight'}
 
@@ -64,28 +63,21 @@ class NetFactory(object):
 
 
 class SegmentationApplication(BaseApplication):
-    # def __init__(self, net_class, param, volume_loader):
-    #     self._net_class = net_class
-    #     self._param = param
-    #     self._volume_loader = volume_loader
-    #     self._loss_func = LossFunction(n_class=self._param.num_classes,
-    #                                    loss_type=self._param.loss_type)
-    #     self.num_objectives = 1
-    #     w_regularizer, b_regularizer = self.regularizers()
-    #     self._net = net_class(num_classes=self._param.num_classes,
-    #                           w_regularizer=w_regularizer,
-    #                           b_regularizer=b_regularizer,
-    #                           acti_func=self._param.activation_function)
-    #     self._net_inference = net_class(num_classes=self._param.num_classes,
-    #                                     acti_func=self._param.activation_function)
+    def __init__(self):
+        BaseApplication.__init__(self)
+        tf.logging.info('starting segmentation application')
+        self.is_training = True
+
+        self.net_param = None
+        self.action_param = None
+
+        self.data_param = None
+        self.segmentation_param = None
 
     def set_model_param(self, net_param, action_param, is_training):
         self.is_training = is_training
         self.net_param = net_param
         self.action_param = action_param
-        self.reader = None
-        self.data_param = None
-        self.segmentation_param = None
 
     def initialise_dataset_loader(self, data_param, segmentation_param):
         self.data_param = data_param
@@ -93,10 +85,10 @@ class SegmentationApplication(BaseApplication):
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.reader = ImageReader(SUPPORTED_INPUT)
+            self._reader = ImageReader(SUPPORTED_INPUT)
         else:  # in the inference process use image input only
-            self.reader = ImageReader(['image'])
-        self.reader.initialise_reader(data_param, segmentation_param)
+            self._reader = ImageReader(['image'])
+        self._reader.initialise_reader(data_param, segmentation_param)
 
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(
@@ -155,27 +147,24 @@ class SegmentationApplication(BaseApplication):
             volume_padding_layer.append(PadLayer(
                 field=SUPPORTED_INPUT,
                 border=self.net_param.volume_padding_size))
-        self.reader.add_preprocessing_layers(
+        self._reader.add_preprocessing_layers(
             volume_padding_layer + normalisation_layers + augmentation_layers)
 
-    def initialise_sampler(self, is_training):
-        if is_training:
+    def initialise_sampler(self):
+        if self.is_training:
             self._sampler = UniformSampler(
-                reader=self.reader,
+                reader=self._reader,
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=self.action_param.sample_per_volume)
         else:
             self._sampler = GridSampler(
-                reader=self.reader,
+                reader=self._reader,
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 spatial_window_size=self.action_param.spatial_window_size,
                 window_border=self.action_param.border)
         self._sampler = [self._sampler]
-
-    def get_sampler(self):
-        return self._sampler
 
     def initialise_network(self):
         num_classes = self.segmentation_param.num_classes
@@ -197,10 +186,6 @@ class SegmentationApplication(BaseApplication):
             w_regularizer=w_regularizer,
             b_regularizer=b_regularizer,
             acti_func=self.net_param.activation_function)
-
-    def inference_sampler(self):
-        pass
-        # return samplseur
 
     def connect_data_and_network(self,
                                  outputs_collector=None,
@@ -267,44 +252,13 @@ class SegmentationApplication(BaseApplication):
                 var=data_dict['image_location'], name='location',
                 average_over_devices=False, collection=CONSOLE)
             self.output_decoder = GridSamplesAggregator(
-                image_reader=self.reader,
+                image_reader=self._reader,
                 output_path=self.action_param.save_seg_dir,
                 window_border=self.action_param.border,
                 interp_order=self.action_param.output_interp_order)
 
-    def set_network_update_op(self, gradients):
-        grad_list_depth = util.list_depth_count(gradients)
-        if grad_list_depth == 3:
-            # nested depth 3 means: gradients list is nested in terms of:
-            # list of networks -> list of network variables
-            self._gradient_op = [self.optimizer.apply_gradients(grad)
-                                 for grad in gradients]
-        elif grad_list_depth == 2:
-            # nested depth 2 means:
-            # gradients list is a list of variables
-            self._gradient_op = self.optimizer.apply_gradients(gradients)
-        else:
-            raise NotImplementedError(
-                'This app supports updating a network, or list of networks')
-
-    def inference_loop(self, sess, coord, net_out):
-        if self._param.window_sampling in ['selective', 'uniform']:
-            return self._inference_loop_patch(sess, coord, net_out)
-        elif self._param.window_sampling in ['resize']:
-            return self._inference_loop_resize(sess, coord, net_out)
-
-
-    def training_ops(self, start_iter=0, end_iter=1):
-        end_iter = max(start_iter, end_iter)
-        for iter_i in range(start_iter, end_iter):
-            yield iter_i, self._gradient_op
-
-    def stop(self):
-        for sampler in self.get_sampler():
-            sampler.close_all()
-
-    def interpret_output(self, batch_output, is_training):
-        if not is_training:
+    def interpret_output(self, batch_output):
+        if not self.is_training:
             return self.output_decoder.decode_batch(
                 batch_output['window'], batch_output['location'])
         else:

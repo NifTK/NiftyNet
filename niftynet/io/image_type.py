@@ -6,7 +6,7 @@ from __future__ import print_function
 import os
 from abc import ABCMeta, abstractmethod
 
-import nibabel as nib  # TODO: move this to misc
+import nibabel as nib
 import numpy as np
 import tensorflow as tf
 from six import string_types
@@ -300,6 +300,7 @@ class VectorND(DataFromFile):
         image_obj = misc.load_image(self.file_path[0])
         image_data = image_obj.get_data()
         return image_data
+
 
 class ImageFactory(object):
     INSTANCE_DICT = {2: SpatialImage2D,

@@ -93,7 +93,7 @@ class ApplicationDriver(object):
         # set output logs to stdout and log file
         log_file_name = os.path.join(
             self.model_dir, '{}_{}'.format(app_param.action, 'log_console'))
-        ApplicationDriver.set_logger(file_name=log_file_name)
+        ApplicationDriver._set_logger(file_name=log_file_name)
 
         # model-related parameters
         self.initial_iter = train_param.starting_iter \
@@ -174,7 +174,7 @@ class ApplicationDriver(object):
             # the context of multiple gpus
 
             with tf.name_scope('Sampler'):
-                self.app.initialise_sampler(is_training=self.is_training)
+                self.app.initialise_sampler()
             self.app.initialise_network()
 
             # for data parallelism --
@@ -268,7 +268,7 @@ class ApplicationDriver(object):
 
             # run all variables in one go
             graph_output = sess.run(vars_to_run)
-            self.app.interpret_output(graph_output, is_training=True)
+            self.app.interpret_output(graph_output)
 
             # if application specified summaries
             summary = graph_output.get(TF_SUMMARIES, {})
@@ -291,7 +291,7 @@ class ApplicationDriver(object):
                 break
             vars_to_run = self.outputs_collector.variables()
             graph_output = sess.run(vars_to_run)
-            if not self.app.interpret_output(graph_output, is_training=False):
+            if not self.app.interpret_output(graph_output):
                 tf.logging.info('processed all batches.')
                 loop_status['all_saved_flag'] = True
                 break
@@ -357,7 +357,7 @@ class ApplicationDriver(object):
         return config
 
     @staticmethod
-    def set_logger(file_name=None):
+    def _set_logger(file_name=None):
         tf.logging._logger.handlers = []
         tf.logging._logger = log.getLogger('tensorflow')
         tf.logging.set_verbosity(tf.logging.INFO)

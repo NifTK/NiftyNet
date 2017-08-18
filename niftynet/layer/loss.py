@@ -39,7 +39,7 @@ class LossFunction(Layer):
             ground_truth = tf.reshape(ground_truth, [-1])
 
             list_prediction = []
-            if isinstance(list_prediction, list):
+            if isinstance(prediction, list):
                 for pred in prediction:
                     list_prediction.append(
                         tf.reshape(pred, [-1, self._num_classes]))
