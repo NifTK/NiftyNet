@@ -6,7 +6,7 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 import tensorflow as tf
 
-from niftynet.engine.restorer import RESTORABLE
+from niftynet.engine.application_variables import RESTORABLE
 
 
 class Invertible(object):

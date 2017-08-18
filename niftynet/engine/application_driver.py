@@ -7,13 +7,14 @@ import sys
 import time
 
 import tensorflow as tf
-from niftynet.engine.restorer import global_variables_initialize_or_restorer
 from tensorflow.python.client import device_lib
 
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import GradientsCollector
 from niftynet.engine.application_variables import OutputsCollector
 from niftynet.engine.application_variables import TF_SUMMARIES
+from niftynet.engine.application_variables import \
+    global_variables_initialize_or_restorer
 from niftynet.utilities.util_common import look_up_operations
 
 FILE_PREFIX = 'model.ckpt'
@@ -120,6 +121,7 @@ class ApplicationDriver(object):
     def run_application(self):
         assert self.graph is not None, \
             "please call initialise_application first"
+        self.app.check_initialisations()
         config = ApplicationDriver._tf_config()
         with tf.Session(config=config, graph=self.graph) as session:
             # initialise network

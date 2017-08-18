@@ -32,7 +32,7 @@ class GanFactory(object):
             from niftynet.network.simple_gan import SimpleGAN
             return SimpleGAN
         else:
-            print("network: \"{}\" not implemented".format(name))
+            tf.logging.fatal("network: \"{}\" not implemented".format(name))
             raise NotImplementedError
 
 
@@ -52,17 +52,17 @@ class GANApplication(BaseApplication):
         self.net_param = net_param
         self.action_param = action_param
 
-    def initialise_dataset_loader(self, data_param, gan_param):
+    def initialise_dataset_loader(self, data_param=None, task_param=None):
         self.data_param = data_param
-        self.gan_param = gan_param
+        self.gan_param = task_param
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self._reader = ImageReader(['image', 'conditioning'])
+            self.reader = ImageReader(['image', 'conditioning'])
         else:  # in the inference process use image input only
-            self._reader = ImageReader(['conditioning'])
-        if self._reader:
-            self._reader.initialise_reader(data_param, gan_param)
+            self.reader = ImageReader(['conditioning'])
+        if self.reader:
+            self.reader.initialise_reader(data_param, task_param)
 
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(
@@ -78,7 +78,7 @@ class GANApplication(BaseApplication):
         if self.net_param.histogram_ref_file:
             histogram_normaliser = HistogramNormalisationLayer(
                 field='image',
-                modalities=vars(gan_param).get('image'),
+                modalities=vars(task_param).get('image'),
                 model_filename=self.net_param.histogram_ref_file,
                 binary_masking_func=foreground_masking_layer,
                 norm_type=self.net_param.norm_type,
@@ -107,46 +107,46 @@ class GANApplication(BaseApplication):
                     min_angle=self.action_param.rotation_angle[0],
                     max_angle=self.action_param.rotation_angle[1]))
 
-        if self._reader:
-            self._reader.add_preprocessing_layers(
+        if self.reader:
+            self.reader.add_preprocessing_layers(
                 normalisation_layers + augmentation_layers)
 
     def initialise_sampler(self):
-        self._sampler = []
+        self.sampler = []
         if self.is_training:
-            self._sampler.append(ResizeSampler(
-                reader=self._reader,
+            self.sampler.append(ResizeSampler(
+                reader=self.reader,
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=1,
                 shuffle_buffer=True))
         else:
-            self._sampler.append(RandomVectorSampler(
+            self.sampler.append(RandomVectorSampler(
                 names=('vector',),
                 vector_size=(self.gan_param.noise_size,),
                 batch_size=self.net_param.batch_size,
                 n_interpolations=self.gan_param.n_interpolations,
                 repeat=None))
-            self._sampler.append(ResizeSampler(
-                reader=self._reader,
+            self.sampler.append(ResizeSampler(
+                reader=self.reader,
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=self.gan_param.n_interpolations,
                 shuffle_buffer=False))
 
     def initialise_network(self):
-        self._net = GanFactory.create(self.net_param.name)()
+        self.net = GanFactory.create(self.net_param.name)()
 
     def connect_data_and_network(self,
                                  outputs_collector=None,
-                                 training_grads_collector=None):
+                                 gradients_collector=None):
         if self.is_training:
-            with tf.name_scope('Optimizer'):
-                self.optimizer = tf.train.AdamOptimizer(
+            with tf.name_scope('Optimiser'):
+                self.optimiser = tf.train.AdamOptimizer(
                     learning_rate=self.action_param.lr, beta1=0.5)
 
             # a new pop_batch_op for each gpu tower
-            device_id = training_grads_collector.current_tower_id
+            device_id = gradients_collector.current_tower_id
             data_dict = self.get_sampler()[0].pop_batch_op(device_id)
 
             images = tf.cast(data_dict['image'], tf.float32)
@@ -158,15 +158,15 @@ class GANApplication(BaseApplication):
                                                  dtype=tf.float32))
             tf.stop_gradient(noise)
             conditioning = data_dict['conditioning']
-            net_output = self._net(noise,
-                                   images,
-                                   conditioning,
-                                   self.is_training)
-            self._loss_func = LossFunction(
+            net_output = self.net(noise,
+                                  images,
+                                  conditioning,
+                                  self.is_training)
+            loss_func = LossFunction(
                 loss_type=self.action_param.loss_type)
             real_logits = net_output[1]
             fake_logits = net_output[2]
-            lossG, lossD = self._loss_func(real_logits, fake_logits)
+            lossG, lossD = loss_func(real_logits, fake_logits)
             if self.net_param.decay > 0:
                 reg_losses = tf.get_collection(
                     tf.GraphKeys.REGULARIZATION_LOSSES)
@@ -195,28 +195,28 @@ class GANApplication(BaseApplication):
                 # gradients of generator
                 generator_variables = tf.get_collection(
                     tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
-                generator_grads = self.optimizer.compute_gradients(
+                generator_grads = self.optimiser.compute_gradients(
                     lossG, var_list=generator_variables)
 
                 # gradients of discriminator
                 discriminator_variables = tf.get_collection(
                     tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator')
-                discriminator_grads = self.optimizer.compute_gradients(
+                discriminator_grads = self.optimiser.compute_gradients(
                     lossD, var_list=discriminator_variables)
                 grads = [generator_grads, discriminator_grads]
 
                 # add the grads back to application_driver's training_grads
-                training_grads_collector.add_to_collection(grads)
+                gradients_collector.add_to_collection(grads)
         else:
             data_dict = self.get_sampler()[0].pop_batch_op()
             conditioning_dict = self.get_sampler()[1].pop_batch_op()
             conditioning = conditioning_dict['conditioning']
             image_size = conditioning.shape.as_list()[:-1]
             dummy_image = tf.zeros(image_size + [1])
-            net_output = self._net(data_dict['vector'],
-                                   dummy_image,
-                                   conditioning,
-                                   self.is_training)
+            net_output = self.net(data_dict['vector'],
+                                  dummy_image,
+                                  conditioning,
+                                  self.is_training)
             outputs_collector.add_to_collection(
                 var=net_output[0],
                 name='image',
@@ -228,7 +228,7 @@ class GANApplication(BaseApplication):
                 average_over_devices=False, collection=CONSOLE)
 
             self.output_decoder = BatchSplitingAggregator(
-                image_reader=self._reader,
+                image_reader=self.reader,
                 output_path=self.action_param.save_seg_dir)
 
     def interpret_output(self, batch_output):

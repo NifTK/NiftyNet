@@ -58,7 +58,7 @@ class NetFactory(object):
             from niftynet.network.holistic_scalenet import HolisticScaleNet
             return HolisticScaleNet
         else:
-            print("network: \"{}\" not implemented".format(name))
+            tf.logging.fatal("network: \"{}\" not implemented".format(name))
             raise NotImplementedError
 
 
@@ -79,16 +79,16 @@ class SegmentationApplication(BaseApplication):
         self.net_param = net_param
         self.action_param = action_param
 
-    def initialise_dataset_loader(self, data_param, segmentation_param):
+    def initialise_dataset_loader(self, data_param=None, task_param=None):
         self.data_param = data_param
-        self.segmentation_param = segmentation_param
+        self.segmentation_param = task_param
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self._reader = ImageReader(SUPPORTED_INPUT)
+            self.reader = ImageReader(SUPPORTED_INPUT)
         else:  # in the inference process use image input only
-            self._reader = ImageReader(['image'])
-        self._reader.initialise_reader(data_param, segmentation_param)
+            self.reader = ImageReader(['image'])
+        self.reader.initialise_reader(data_param, task_param)
 
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(
@@ -103,7 +103,7 @@ class SegmentationApplication(BaseApplication):
         if self.net_param.histogram_ref_file:
             histogram_normaliser = HistogramNormalisationLayer(
                 field='image',
-                modalities=vars(segmentation_param).get('image'),
+                modalities=vars(task_param).get('image'),
                 model_filename=self.net_param.histogram_ref_file,
                 binary_masking_func=foreground_masking_layer,
                 norm_type=self.net_param.norm_type,
@@ -115,7 +115,7 @@ class SegmentationApplication(BaseApplication):
         if self.net_param.histogram_ref_file:
             label_normaliser = DiscreteLabelNormalisationLayer(
                 field='label',
-                modalities=vars(segmentation_param).get('label'),
+                modalities=vars(task_param).get('label'),
                 model_filename=self.net_param.histogram_ref_file)
         else:
             label_normaliser = None
@@ -125,7 +125,7 @@ class SegmentationApplication(BaseApplication):
             normalisation_layers.append(histogram_normaliser)
         if self.net_param.whitening:
             normalisation_layers.append(mean_var_normaliser)
-        if segmentation_param.label_normalisation:
+        if task_param.label_normalisation:
             normalisation_layers.append(label_normaliser)
 
         augmentation_layers = []
@@ -147,24 +147,24 @@ class SegmentationApplication(BaseApplication):
             volume_padding_layer.append(PadLayer(
                 field=SUPPORTED_INPUT,
                 border=self.net_param.volume_padding_size))
-        self._reader.add_preprocessing_layers(
+        self.reader.add_preprocessing_layers(
             volume_padding_layer + normalisation_layers + augmentation_layers)
 
     def initialise_sampler(self):
         if self.is_training:
-            self._sampler = UniformSampler(
-                reader=self._reader,
+            self.sampler = UniformSampler(
+                reader=self.reader,
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=self.action_param.sample_per_volume)
         else:
-            self._sampler = GridSampler(
-                reader=self._reader,
+            self.sampler = GridSampler(
+                reader=self.reader,
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 spatial_window_size=self.action_param.spatial_window_size,
                 window_border=self.action_param.border)
-        self._sampler = [self._sampler]
+        self.sampler = [self.sampler]
 
     def initialise_network(self):
         num_classes = self.segmentation_param.num_classes
@@ -181,7 +181,7 @@ class SegmentationApplication(BaseApplication):
             w_regularizer = regularizers.l1_regularizer(decay)
             b_regularizer = regularizers.l1_regularizer(decay)
 
-        self._net = NetFactory.create(self.net_param.name)(
+        self.net = NetFactory.create(self.net_param.name)(
             num_classes=num_classes,
             w_regularizer=w_regularizer,
             b_regularizer=b_regularizer,
@@ -189,18 +189,18 @@ class SegmentationApplication(BaseApplication):
 
     def connect_data_and_network(self,
                                  outputs_collector=None,
-                                 training_grads_collector=None):
-        if self.is_training and training_grads_collector:
-            device_id = training_grads_collector.current_tower_id
+                                 gradients_collector=None):
+        if self.is_training and gradients_collector:
+            device_id = gradients_collector.current_tower_id
         else:
             device_id = 0
         data_dict = self.get_sampler()[0].pop_batch_op(device_id)
         image = tf.cast(data_dict['image'], tf.float32)
-        net_out = self._net(image, self.is_training)
+        net_out = self.net(image, self.is_training)
 
         if self.is_training:
-            with tf.name_scope('Optimizer'):
-                self.optimizer = tf.train.AdamOptimizer(
+            with tf.name_scope('Optimiser'):
+                self.optimiser = tf.train.AdamOptimizer(
                     learning_rate=self.action_param.lr)
             loss_func = LossFunction(
                 n_class=self.segmentation_param.num_classes,
@@ -218,9 +218,9 @@ class SegmentationApplication(BaseApplication):
                     loss = data_loss + reg_loss
             else:
                 loss = data_loss
-            grads = self.optimizer.compute_gradients(loss)
+            grads = self.optimiser.compute_gradients(loss)
             # collecting gradients variables
-            training_grads_collector.add_to_collection([grads])
+            gradients_collector.add_to_collection([grads])
             # collecting output variables
             outputs_collector.add_to_collection(
                 var=data_loss, name='dice_loss',
@@ -252,7 +252,7 @@ class SegmentationApplication(BaseApplication):
                 var=data_dict['image_location'], name='location',
                 average_over_devices=False, collection=CONSOLE)
             self.output_decoder = GridSamplesAggregator(
-                image_reader=self._reader,
+                image_reader=self.reader,
                 output_path=self.action_param.save_seg_dir,
                 window_border=self.action_param.border,
                 interp_order=self.action_param.output_interp_order)
