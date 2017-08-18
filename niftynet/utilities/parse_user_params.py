@@ -545,6 +545,13 @@ def run_eval():
                         help="extension of the image files to be read")
     parser.add_argument("--seg_type",
                         help="type of input: discrete maps or probabilistic maps")
+    parser.add_argument("--save_name",
+                        help="name to add to file results to avoid overwriting")
+    parser.add_argument("--save_discrete",
+                        help="indicates if the labelling of the segmentation "
+                             "should be saved")
+    parser.add_argument("--save_maps",
+                        help="indicates if the maps of error should be saved")
     args = parser.parse_args(remaining_argv)
     # creating output
     image_csv_path = os.path.join(args.save_csv_dir, 'image_files.csv')
@@ -564,4 +571,11 @@ def run_eval():
                 'target_image_file': ref_csv_path,
                 'weight_map_file': data_csv_path,
                 'target_note': None}
+    args = correct_args_types_eval(args)
     return args, csv_dict
+
+
+def correct_args_types_eval(args):
+    args.save_discrete = True if args.save_discrete == "True" else False
+    args.save_maps = True if args.save_maps == "True" else False
+    return args
