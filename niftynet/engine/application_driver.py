@@ -375,6 +375,8 @@ class ApplicationDriver(object):
 
     @staticmethod
     def _summary_dir(summary_root, new_sub_dir):
+        if not os.path.exists(summary_root):
+            os.makedirs(summary_root)
         log_sub_dirs = os.listdir(summary_root)
         log_sub_dirs = [n for n in log_sub_dirs if n.isdecimal()]
         if log_sub_dirs and new_sub_dir:
@@ -385,4 +387,3 @@ class ApplicationDriver(object):
         else:
             log_sub_dir = '0'
         return os.path.join(summary_root, log_sub_dir)
-

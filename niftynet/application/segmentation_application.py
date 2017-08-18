@@ -210,7 +210,8 @@ class SegmentationApplication(BaseApplication):
         else:
             device_id = 0
         data_dict = self.get_sampler()[0].pop_batch_op(device_id)
-        net_out = self._net(data_dict['image'], self.is_training)
+        image = tf.cast(data_dict['image'], tf.float32)
+        net_out = self._net(image, self.is_training)
 
         if self.is_training:
             with tf.name_scope('Optimizer'):
@@ -220,8 +221,8 @@ class SegmentationApplication(BaseApplication):
                 n_class=self.segmentation_param.num_classes,
                 loss_type=self.action_param.loss_type)
             data_loss = loss_func(
-                pred=net_out,
-                label=data_dict.get('label', None),
+                prediction=net_out,
+                ground_truth=data_dict.get('label', None),
                 weight_map=data_dict.get('weight', None))
             if self.net_param.decay > 0.0:
                 reg_losses = tf.get_collection(

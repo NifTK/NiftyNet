@@ -178,7 +178,7 @@ class GANApplication(BaseApplication):
 
             self._loss_func = LossFunction(
                 loss_type=self.action_param.loss_type)
-            lossG, lossD = self.loss_func(data_dict, net_output)
+            lossG, lossD = self.loss_func(net_output)
             if self.net_param.decay > 0:
                 reg_losses = tf.get_collection(
                     tf.GraphKeys.REGULARIZATION_LOSSES)
@@ -248,7 +248,7 @@ class GANApplication(BaseApplication):
     def net_inference(self, train_dict, is_training):
         raise NotImplementedError
 
-    def loss_func(self, train_dict, net_outputs):
+    def loss_func(self, net_outputs):
         real_logits = net_outputs[1]
         fake_logits = net_outputs[2]
         return self._loss_func(real_logits, fake_logits)
