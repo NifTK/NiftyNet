@@ -39,6 +39,9 @@ class UniformSamplerTest(tf.test.TestCase):
         mv_norm = MVNorm(binary_masking_func=masking_func)
         volume_loader = VolumeLoaderLayer(csv_loader,
                                           standardisor=(hist_norm, mv_norm),
+                                          is_training=True)
+        volume_loader = VolumeLoaderLayer(csv_loader,
+                                          standardisor=(hist_norm, mv_norm),
                                           is_training=False)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
@@ -97,6 +100,9 @@ class UniformSamplerTest(tf.test.TestCase):
 
         volume_loader = VolumeLoaderLayer(csv_loader,
                                           (hist_norm, mv_norm),
+                                          is_training=True)
+        volume_loader = VolumeLoaderLayer(csv_loader,
+                                          (hist_norm, mv_norm),
                                           is_training=False)
         print('found {} subjects'.format(len(volume_loader.subject_list)))
 
@@ -148,6 +154,9 @@ class UniformSamplerTest(tf.test.TestCase):
             cutoff=(0.01, 0.99))
         mv_norm = MVNorm(binary_masking_func=masking_func)
 
+        volume_loader = VolumeLoaderLayer(csv_loader,
+                                          (hist_norm, mv_norm),
+                                          is_training=True)
         volume_loader = VolumeLoaderLayer(csv_loader,
                                           (hist_norm, mv_norm),
                                           is_training=False)
