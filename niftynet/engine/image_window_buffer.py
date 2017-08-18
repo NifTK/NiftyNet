@@ -57,11 +57,11 @@ class InputBatchQueueRunner(object):
         """
         self._window = window
         is_dynamic_window = window.has_dynamic_shapes
-        if is_dynamic_window and dequeue_size > 1:
-            tf.logging.warning("using dynamic window size, network batch size "
+        if is_dynamic_window and enqueue_size > 1:
+            tf.logging.warning("using dynamic window size, buffer input size "
                                "is set to 1")
         if is_dynamic_window and dequeue_size > 1:
-            tf.logging.warning("using dynamic window size, buffer input size "
+            tf.logging.warning("using dynamic window size, network batch size "
                                "is set to 1")
         self._batch_size = 1 if is_dynamic_window else dequeue_size
         enqueue_size = 1 if is_dynamic_window else enqueue_size
@@ -93,6 +93,7 @@ class InputBatchQueueRunner(object):
                 shapes=input_shapes,
                 names=names,
                 name="FIFO_queue")
+
         # create queue operations
         if is_dynamic_window:
             self._enqueue_op = self._queue.enqueue(placeholders_dict)
@@ -154,7 +155,8 @@ class InputBatchQueueRunner(object):
                 data_output[name].set_shape([self._batch_size] + list(shape))
             # currently the time dimension from image is ignored
             for name in data_output:
-                data_output[name] = squeeze_spatial_temporal_dim(data_output[name])
+                data_output[name] = \
+                    squeeze_spatial_temporal_dim(data_output[name])
             return data_output
 
     def run_threads(self, session, coord, num_threads=1):
