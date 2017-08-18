@@ -12,7 +12,6 @@ except ImportError:
     import ConfigParser as configparser
 
 from niftynet.utilities.filename_matching import KeywordsMatching
-from niftynet.utilities.get_niftynet_version import get_niftynet_version
 
 
 def _input_path_search(config):
@@ -441,20 +440,16 @@ def build_parser(parents, defaults):
 
 
 def run():
-    initial_parser = argparse.ArgumentParser(add_help=False)
-    version_string = get_niftynet_version()
-    initial_parser.add_argument("-v", "--version", action='version', version=version_string)
-    initial_parser.add_argument("-c", "--conf",
+    file_parser = argparse.ArgumentParser(add_help=False)
+    file_parser.add_argument("-c", "--conf",
                              help="Specify configurations from a file",
                              metavar="File", )
 
-    initial_arg, remaining_argv = initial_parser.parse_known_args()
+    file_arg, remaining_argv = file_parser.parse_known_args()
 
-    print(version_string)
-
-    if initial_arg.conf:
+    if file_arg.conf:
         config = configparser.ConfigParser()
-        config.read([initial_arg.conf])
+        config.read([file_arg.conf])
         # initialise search of image modality filenames
         image_matcher, label_matcher, w_map_matcher = _input_path_search(config)
         defaults = dict(config.items("settings"))
@@ -462,9 +457,9 @@ def run():
         # TODO implement defaults to search in 'train' folder
         raise IOError("No configuration file has been provided")
 
-    parser = build_parser(parents=[initial_parser], defaults=defaults)
+    parser = build_parser(parents=[file_parser], defaults=defaults)
     file_args = parser.parse_args(remaining_argv)
-    file_args.conf = initial_arg.conf  # update conf path
+    file_args.conf = file_arg.conf  # update conf path
     # creating output
     image_csv_path = os.path.join(file_args.model_dir, 'image_files.csv')
     misc_csv.write_matched_filenames_to_csv(image_matcher, image_csv_path)
