@@ -14,6 +14,7 @@ from niftynet.engine.application_variables import GradientsCollector
 from niftynet.engine.application_variables import OutputsCollector
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.utilities.util_common import look_up_operations
+from niftynet.engine.restorer import global_variables_initialize_or_restorer
 
 FILE_PREFIX = 'model.ckpt'
 CONSOLE_LOG_FORMAT = '%(levelname)s:niftynet: %(message)s'
@@ -86,7 +87,9 @@ class ApplicationDriver(object):
         # set output folders
         self.model_dir = ApplicationDriver._touch_folder(app_param.model_dir)
         self.session_dir = os.path.join(self.model_dir, FILE_PREFIX)
-        self.summary_dir = os.path.join(self.model_dir, 'logs')
+        summary_root = os.path.join(self.model_dir, 'logs')
+        self.summary_dir = self._summary_dir(summary_root,
+                                             train_param.starting_iter == 0)
         # set output logs to stdout and log file
         log_file_name = os.path.join(
             self.model_dir, '{}_{}'.format(app_param.action, 'log_console'))
@@ -169,7 +172,9 @@ class ApplicationDriver(object):
         with graph.as_default(), tf.device(main_device):
             # initialise sampler and network, these are connected in
             # the context of multiple gpus
-            self.app.initialise_sampler(is_training=self.is_training)
+
+            with tf.name_scope('Sampler'):
+                self.app.initialise_sampler(is_training=self.is_training)
             self.app.initialise_network()
 
             # for data parallelism --
@@ -192,22 +197,26 @@ class ApplicationDriver(object):
             if self.is_training:
                 updates_op = []
                 # model moving average operation
-                mva_op = ApplicationDriver._model_moving_averaging_op()
-                if not mva_op.type == "NoOp":
-                    updates_op.extend(mva_op)
+                with tf.name_scope('MovingAverages'):
+                    mva_op = ApplicationDriver._model_moving_averaging_op()
+                    if not mva_op.type == "NoOp":
+                        updates_op.extend(mva_op)
                 # batch normalisation moving averages operation
                 if bn_ops:
                     updates_op.extend(bn_ops)
                 # combine them with model parameter updating operation
-                if self.gradients_collector is not None:
-                    with graph.control_dependencies(updates_op):
-                        self.app.set_network_update_op(
-                            self.gradients_collector.gradients)
+                with tf.name_scope('ApplyGradients'):
+                    if self.gradients_collector is not None:
+                        with graph.control_dependencies(updates_op):
+                            self.app.set_network_update_op(
+                                self.gradients_collector.gradients)
 
             # initialisation operation
-            self._init_op = tf.global_variables_initializer()
+            with tf.name_scope('Initialization'):
+                self._init_op = global_variables_initialize_or_restorer()
 
-            self.outputs_collector.finalise_output_op()
+            with tf.name_scope('MergeOutputs'):
+                self.outputs_collector.finalise_output_op()
 
             # saving operation
             self.saver = tf.train.Saver(max_to_keep=self.max_checkpoints)
@@ -363,4 +372,17 @@ class ApplicationDriver(object):
             file_handler = log.FileHandler(file_name)
             file_handler.setFormatter(f)
             tf.logging._logger.addHandler(file_handler)
+
+    @staticmethod
+    def _summary_dir(summary_root, new_sub_dir):
+        log_sub_dirs = os.listdir(summary_root)
+        log_sub_dirs = [n for n in log_sub_dirs if n.isdecimal()]
+        if log_sub_dirs and new_sub_dir:
+            log_sub_dir = str(max([int(name) for name in log_sub_dirs]) + 1)
+        elif log_sub_dirs and not new_sub_dir:
+            log_sub_dir = str(max([int(n) for n in log_sub_dirs
+                if os.path.isdir(os.path.join(summary_root, n))]))
+        else:
+            log_sub_dir = '0'
+        return os.path.join(summary_root, log_sub_dir)
 

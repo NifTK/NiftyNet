@@ -10,7 +10,7 @@ from niftynet.utilities import util_common as util
 from niftynet.utilities.util_common import look_up_operations
 
 CONSOLE = 'niftynetconsole'
-TF_SUMMARIES = 'niftynetsummaries'
+TF_SUMMARIES = tf.GraphKeys.SUMMARIES
 SUPPORTED_SUMMARY = {'scalar': tf.summary.scalar,
                      'histogram': tf.summary.histogram}
 

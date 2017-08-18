@@ -10,6 +10,7 @@ from functools import partial
 import numpy as np
 import tensorflow as tf
 from scipy import ndimage
+from six import string_types
 
 LABEL_STRINGS = ['Label', 'LABEL', 'label']
 
@@ -180,7 +181,7 @@ class CacheFunctionOutput(object):
 
 
 def look_up_operations(type_str, supported):
-    assert isinstance(type_str, basestring)
+    assert isinstance(type_str, string_types)
     if type_str in supported and isinstance(supported, dict):
         return supported[type_str]
 

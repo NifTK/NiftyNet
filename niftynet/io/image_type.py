@@ -9,6 +9,7 @@ from abc import ABCMeta, abstractmethod
 import nibabel as nib  # TODO: move this to misc
 import numpy as np
 import tensorflow as tf
+from six import string_types
 
 import niftynet.io.misc_io as misc
 from niftynet.utilities.user_parameters_helper import make_input_tuple
@@ -52,7 +53,7 @@ class DataFromFile(Loadable):
 
     @file_path.setter
     def file_path(self, path_array):
-        self._file_path = make_input_tuple(path_array, basestring)
+        self._file_path = make_input_tuple(path_array, string_types)
         if not all([os.path.isfile(file_name)
                     for file_name in self._file_path]):
             tf.logging.fatal("data file not found".format(self._file_path))
@@ -65,7 +66,7 @@ class DataFromFile(Loadable):
 
     @name.setter
     def name(self, name_array):
-        self._name = make_input_tuple(name_array, basestring)
+        self._name = make_input_tuple(name_array, string_types)
 
     def get_data(self):
         raise NotImplementedError
