@@ -201,7 +201,7 @@ class ApplicationDriver(object):
                     mva_op = ApplicationDriver._model_moving_averaging_op()
                     if not mva_op.type == "NoOp":
                         updates_op.extend(mva_op)
-                    # batch normalisation moving averages operation
+                # batch normalisation moving averages operation
                 if bn_ops:
                     updates_op.extend(bn_ops)
                 # combine them with model parameter updating operation
