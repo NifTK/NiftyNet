@@ -11,10 +11,10 @@ import tensorflow as tf
 
 image_loaders = [nib.load]
 try:
-    import niftynet.utilities.simple_itk_as_nibabel
+    import niftynet.io.simple_itk_as_nibabel
 
     image_loaders.append(
-        niftynet.utilities.simple_itk_as_nibabel.SimpleITKAsNibabel)
+        niftynet.io.simple_itk_as_nibabel.SimpleITKAsNibabel)
 except ImportError:
     warnings.warn(
         'SimpleITK adapter failed to load, reducing the supported file formats.',
