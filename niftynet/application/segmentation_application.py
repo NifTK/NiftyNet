@@ -55,6 +55,9 @@ class NetFactory(object):
         elif name == "scalenet":
             from niftynet.network.scalenet import ScaleNet
             return ScaleNet
+        elif name == "holistic_scalenet":
+            from niftynet.network.holistic_scalenet import HolisticScaleNet
+            return HolisticScaleNet
         else:
             print("network: \"{}\" not implemented".format(name))
             raise NotImplementedError
