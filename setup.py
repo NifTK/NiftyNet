@@ -3,7 +3,7 @@ from packaging import version
 import re
 import os
 
-from utilities.get_niftynet_version import get_niftynet_git_version
+from niftynet.utilities.get_niftynet_version import get_niftynet_git_version
 
 version_buf, version_git, command_git = get_niftynet_git_version()
 
