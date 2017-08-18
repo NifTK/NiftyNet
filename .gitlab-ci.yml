@@ -97,7 +97,6 @@ pip-installer:
     - dev
     - dev-staging
     - tags
-    - revert-33c281ef
   script:
     # source utils
     - source ci/utils.sh
