@@ -100,16 +100,13 @@ def standardise_string(input_string):
     return new_name
 
 
-def check_required_sections(config, app_type):
-    import niftynet.utilities.user_parameters_parser as param_parser
-    required_custom_section = standardise_string(
-        param_parser.CUSTOM_SECTIONS.get(app_type, None))
+def check_required_sections(config, required_custom_section):
+    required_custom_section = standardise_string(required_custom_section)
     if required_custom_section is not None:
         user_sections = [standardise_string(section_name)
                          for section_name in config.sections()]
-        assert required_custom_section in user_sections, \
-            '{} requires configuration section [{}] in config file'.format(
-                app_type, param_parser.CUSTOM_SECTIONS[app_type])
+        if not required_custom_section in user_sections:
+            raise ValueError
 
 
 def add_input_name_args(parser, supported_input):

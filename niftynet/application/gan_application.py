@@ -19,8 +19,6 @@ from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 
-# from niftynet.engine.input_buffer import TrainEvalInputBuffer, DeployInputBuffer
-
 SUPPORTED_INPUT = {'image', 'conditioning'}
 
 

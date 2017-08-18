@@ -114,7 +114,7 @@ class TrainableLayer(Layer):
 
 class DataDependentLayer(Layer):
     """
-    Some layers require a one-pass training throught the training set
+    Some layers require a one-pass training through the training set
     to determine their internal models, this abstract provides
     interfaces for training these internal models and querying the
     status.

@@ -39,6 +39,7 @@ class ImageWindowsAggregator(object):
     def decode_batch(self, *args, **kwargs):
         raise NotImplementedError
 
+
 class BatchSplitingAggregator(ImageWindowsAggregator):
     def __init__(self,
                  image_reader=None,
@@ -76,29 +77,6 @@ class BatchSplitingAggregator(ImageWindowsAggregator):
         return np.all(location_vector[1:4] + location_vector[4:7]) == 0
 
 
-def crop_batch(window, location, border):
-    if border == ():
-        return window, location
-    assert len(border) == 3, "unknown border format (should be an array of" \
-                             "three elements corresponding to 3 spatial dims"
-
-    window_shape = window.shape
-    if len(window_shape) != 5:
-        raise NotImplementedError(
-            "window shape not supported: {}".format(window_shape))
-    spatial_shape = window_shape[1:4]
-    assert all([win_size > 2 * border_size
-                for (win_size, border_size) in zip(spatial_shape, border)]), \
-        "window sizes should be larger than inference border size * 2"
-    window = window[:,
-             border[0]:spatial_shape[0] - border[0],
-             border[1]:spatial_shape[1] - border[1],
-             border[2]:spatial_shape[2] - border[2], ...]
-    for idx in range(3):
-        location[:, idx + 1] = location[:, idx + 1] + border[idx]
-        location[:, idx + 4] = location[:, idx + 4] - border[idx]
-    return window, location
-
 class GridSamplesAggregator(ImageWindowsAggregator):
     def __init__(self,
                  image_reader,
@@ -113,11 +91,13 @@ class GridSamplesAggregator(ImageWindowsAggregator):
 
     def decode_batch(self, window, location):
         n_samples = location.shape[0]
-        window, location = crop_batch(window, location, self.window_border)
+        window, location = self.crop_batch(window, location, self.window_border)
 
         for batch_id in range(n_samples):
             image_id, x_, y_, z_, _x, _y, _z = location[batch_id, :]
             if image_id != self.image_id:
+                # image name changed:
+                #    save current image and create an empty image
                 self._save_current_image()
                 if self._is_stopping_signal(location[batch_id]):
                     return False
@@ -162,26 +142,28 @@ class GridSamplesAggregator(ImageWindowsAggregator):
     def _is_stopping_signal(location_vector):
         return np.all(location_vector[1:4] + location_vector[4:7]) == 0
 
+    @staticmethod
+    def crop_batch(window, location, border):
+        if border == ():
+            return window, location
+        assert len(border) == 3, \
+            "unknown border format (should be an array of" \
+            "three elements corresponding to 3 spatial dims"
 
-def crop_batch(window, location, border):
-    if border == ():
+        window_shape = window.shape
+        if len(window_shape) != 5:
+            raise NotImplementedError(
+                "window shape not supported: {}".format(window_shape))
+        spatial_shape = window_shape[1:4]
+        assert all([win_size > 2 * border_size
+                    for (win_size, border_size)
+                    in zip(spatial_shape, border)]), \
+            "window sizes should be larger than inference border size * 2"
+        window = window[:,
+                 border[0]:spatial_shape[0] - border[0],
+                 border[1]:spatial_shape[1] - border[1],
+                 border[2]:spatial_shape[2] - border[2], ...]
+        for idx in range(3):
+            location[:, idx + 1] = location[:, idx + 1] + border[idx]
+            location[:, idx + 4] = location[:, idx + 4] - border[idx]
         return window, location
-    assert len(border) == 3, "unknown border format (should be an array of" \
-                             "three elements corresponding to 3 spatial dims"
-
-    window_shape = window.shape
-    if len(window_shape) != 5:
-        raise NotImplementedError(
-            "window shape not supported: {}".format(window_shape))
-    spatial_shape = window_shape[1:4]
-    assert all([win_size > 2 * border_size
-                for (win_size, border_size) in zip(spatial_shape, border)]), \
-        "window sizes should be larger than inference border size * 2"
-    window = window[:,
-             border[0]:spatial_shape[0] - border[0],
-             border[1]:spatial_shape[1] - border[1],
-             border[2]:spatial_shape[2] - border[2], ...]
-    for idx in range(3):
-        location[:, idx + 1] = location[:, idx + 1] + border[idx]
-        location[:, idx + 4] = location[:, idx + 4] - border[idx]
-    return window, location

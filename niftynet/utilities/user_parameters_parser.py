@@ -34,7 +34,13 @@ def run():
             "Configuration file not found {}".format(meta_args.conf))
     config = configparser.ConfigParser()
     config.read([meta_args.conf])
-    check_required_sections(config, meta_parser.prog)
+    try:
+        check_required_sections(
+            config, CUSTOM_SECTIONS.get(meta_parser.prog, None))
+    except ValueError:
+        raise ValueError(
+            '{} requires {}, but it is not in the config file.'.format(
+                meta_parser.prog, CUSTOM_SECTIONS.get(meta_parser.prog, None)))
 
     # using configuration as default, and parsing all command line arguments
     args_remaining = args_from_cmd

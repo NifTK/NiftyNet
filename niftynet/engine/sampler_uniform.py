@@ -64,7 +64,6 @@ class UniformSampler(Layer, InputBatchQueueRunner):
             output_dict = {}
             # fill output dict with data
             for name in list(data):
-                # fill output coordinates
                 coordinates_key = self.window.coordinates_placeholder(name)
                 image_data_key = self.window.image_data_placeholder(name)
 

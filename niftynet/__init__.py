@@ -21,13 +21,6 @@ import niftynet.utilities.user_parameters_parser as user_parameters_parser
 from niftynet.engine.application_driver import ApplicationDriver
 
 
-# if sys.version_info[0] >= 3:
-#    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w')
-# else:
-#    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-
-
-
 def main():
     system_param, input_data_param = user_parameters_parser.run()
     if util.has_bad_inputs(system_param):

@@ -160,7 +160,7 @@ def add_network_args(parser):
         help="Specify activation function types",
         choices=list(niftynet.layer.activation.SUPPORTED_OP),
         metavar='TYPE_STR',
-        default='prelu')
+        default='relu')
 
     # TODO: maybe redundant
     parser.add_argument(

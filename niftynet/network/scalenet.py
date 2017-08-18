@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, division
 
 import tensorflow as tf
-from six.moves import range
-
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.convolution import ConvolutionalLayer
 from niftynet.network.base_net import BaseNet

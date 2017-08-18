@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 This module define queues that stores training/evaluation images (and labels)
-TrainEvalInputBuffer provides randomised queue
-
-DeployInputBuffer provides FIFO queue. This is designed for making
-patch-based predictions for multiple test volumes.
 """
 
 from __future__ import absolute_import, print_function, division
@@ -20,7 +16,9 @@ from niftynet.io.misc_io import squeeze_spatial_temporal_dim
 class InputBatchQueueRunner(object):
     """
     This class defines a light wrapper around queue objects
-    for training pair/evaluation pairs.
+    for input windows, and the coordinates describes the original location
+    of the window
+
     After initialisation, run_threads() can be called with tf.session and
     tf.coordinator to start generating samples with multiple threads.
 

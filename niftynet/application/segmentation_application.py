@@ -195,7 +195,8 @@ class SegmentationApplication(BaseApplication):
         self._net = NetFactory.create(self.net_param.name)(
             num_classes=num_classes,
             w_regularizer=w_regularizer,
-            b_regularizer=b_regularizer)
+            b_regularizer=b_regularizer,
+            acti_func=self.net_param.activation_function)
 
     def inference_sampler(self):
         pass
