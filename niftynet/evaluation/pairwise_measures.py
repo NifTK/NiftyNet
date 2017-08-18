@@ -8,13 +8,15 @@ from niftynet.utilities.misc_common import MorphologyOps, CacheFunctionOutput
 
 class PairwiseMeasures(object):
     def __init__(self, seg_img, ref_img,
-                 measures=None, num_neighbors=8, pixdim=[1, 1, 1]):
+                 measures=None, num_neighbors=8, pixdim=[1, 1, 1],
+                 empty=False, list_labels=None):
 
         self.m_dict = {
             'ref volume': (self.n_pos_ref, 'Volume (Ref)'),
             'seg volume': (self.n_pos_seg, 'Volume (Seg)'),
             'ref bg volume': (self.n_neg_ref, 'Volume (Ref bg)'),
             'seg bg volume': (self.n_neg_seg, 'Volume (Seg bg)'),
+            'list_labels': (self.list_labels, 'List Labels Seg'),
             'fp': (self.fp, 'FP'),
             'fn': (self.fn, 'FN'),
             'tp': (self.tp, 'TP'),
@@ -38,9 +40,14 @@ class PairwiseMeasures(object):
             'connected_elements': (self.connected_elements, 'TPc,FPc,FNc'),
             'outline_error': (self.outline_error, 'OER,OEFP,OEFN'),
             'detection_error': (self.detection_error, 'DE,DEFP,DEFN'),
+            'com_dist': (self.com_dist, 'COM distance'),
+            'com_ref' : (self.com_ref, 'COM reference'),
+            'com_seg' : (self.com_seg, 'COM segmentation')
         }
         self.seg = seg_img
         self.ref = ref_img
+        self.list_labels = list_labels
+        self.flag_empty = empty
         self.measures = measures if measures is not None else self.m_dict
         self.neigh = num_neighbors
         self.pixdim = pixdim
@@ -117,6 +124,8 @@ class PairwiseMeasures(object):
         return self.fp() / self.n_neg_ref()
 
     def positive_predictive_values(self):
+        if self.flag_empty:
+            return -1
         return self.tp() / (self.tp() + self.fp())
 
     def negative_predictive_values(self):
@@ -137,6 +146,31 @@ class PairwiseMeasures(object):
     def markedness(self):
         return self.positive_predictive_values() + \
                self.negative_predictive_values() - 1
+
+    def com_dist(self):
+        if self.flag_empty:
+            return -1
+        else:
+            com_ref = ndimage.center_of_mass(self.ref)
+            com_seg = ndimage.center_of_mass(self.seg)
+            com_dist = np.sqrt(np.dot(np.square(np.asarray(com_ref) -
+                                                np.asarray(com_seg)), np.square(
+                                                self.pixdim)))
+            return com_dist
+
+    def com_ref(self):
+        return ndimage.center_of_mass(self.ref)
+
+    def com_seg(self):
+        if self.flag_empty:
+            return -1
+        else:
+            return ndimage.center_of_mass(self.seg)
+
+    def list_labels(self):
+        if self.list_labels is None:
+            return ()
+        return tuple(np.unique(self.list_labels))
 
     def vol_diff(self):
         return np.abs(self.n_pos_ref() - self.n_pos_seg()) / self.n_pos_ref()
@@ -258,10 +292,15 @@ class PairwiseMeasures(object):
 
     def to_string(self, fmt='{:.4f}'):
         result_str = ""
+        list_space = ['com_ref','com_seg','list_labels']
         for key in self.measures:
             result = self.m_dict[key][0]()
-            result_str += ','.join(fmt.format(x) for x in result) \
-                if isinstance(result, tuple) else fmt.format(result)
+            if key in list_space:
+                result_str += ' '.join(fmt.format(x) for x in result) \
+                    if isinstance(result, tuple) else fmt.format(result)
+            else:
+                result_str += ','.join(fmt.format(x) for x in result) \
+                    if isinstance(result, tuple) else fmt.format(result)
             result_str += ','
         return result_str[:-1]  # trim the last comma
 
