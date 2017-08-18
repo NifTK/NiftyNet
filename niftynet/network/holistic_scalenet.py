@@ -42,8 +42,7 @@ class HolisticScaleNet(ScaleNet):
             w_initializer=w_initializer,
             w_regularizer=w_regularizer,
             b_initializer=b_initializer,
-            b_regularizer=b_regularizer,
-        )
+            b_regularizer=b_regularizer)
 
         self.num_scale_res_block = 0
         self.num_res_blocks = [3, 3, 3, 3]
@@ -53,7 +52,6 @@ class HolisticScaleNet(ScaleNet):
         # self.loss = LossFunction(num_classes, loss_type='Dice', decay=0.0)
 
     def layer_op(self, input_tensor, is_training, layer_id=-1):
-        is_training = True
         layer_instances = []
         scores_instances = []
         first_conv_layer = ConvolutionalLayer(
@@ -67,6 +65,7 @@ class HolisticScaleNet(ScaleNet):
         flow = first_conv_layer(input_tensor, is_training)
         layer_instances.append((first_conv_layer, flow))
 
+        # SCALE 1
         with DilatedTensor(flow, dilation_factor=1) as dilated:
             for j in range(self.num_res_blocks[0]):
                 res_block = HighResBlock(
@@ -79,7 +78,6 @@ class HolisticScaleNet(ScaleNet):
                 layer_instances.append((res_block, dilated.tensor))
         flow = dilated.tensor
 
-        # SCALE 1
         score_layer_scale1 = ScoreLayer(
             num_features=self.num_fea_score_layers[0],
             num_classes=self.num_classes)
@@ -194,22 +192,10 @@ class HolisticScaleNet(ScaleNet):
             soft_scores.append(tf.nn.softmax(s))
         fused_score = merge_layer(soft_scores)
         scores_instances.append(fused_score)
-        # with tf.variable_scope('fusion'):
-        #     # softmax is apply before merging to normalise the different predictions
-        #     # and allow to compute a weighted sum probabilistic segmentations
-        #
-        #     fused_score = self._merge_roots([tf.nn.softmax(score_1), tf.nn.softmax(up_score_2),
-        #                                      tf.nn.softmax(up_score_3), tf.nn.softmax(up_score_4)],
-        #                                      merging_type='weighted_average')
-        # self._print_activations(fused_score)
-        # if is_training:
-        #     fused_loss = self.WGDL(fused_score, labels)
-        #     # fused_loss = self.new_dice_loss(fused_score, labels)
-        #     tf.add_to_collection('multiscale_loss', fused_loss/num_scales)
         if is_training:
             return scores_instances
         else:
-            return flow
+            return fused_score
 
 
 class ScoreLayer(TrainableLayer):
