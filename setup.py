@@ -1,17 +1,11 @@
 from setuptools import setup, find_packages
-from subprocess import check_output
 from packaging import version
 import re
 import os
 
+from utilities.get_niftynet_version import get_niftynet_git_version
 
-# Describe the version relative to last tag
-command_git = ['git', 'describe', '--match', 'v[0-9]*']
-version_buf = check_output(command_git).rstrip()
-
-# Exclude the 'v' for PEP440 conformity, see
-# https://www.python.org/dev/peps/pep-0440/#public-version-identifiers
-version_buf = version_buf[1:]
+version_buf, version_git, command_git = get_niftynet_git_version()
 
 # Create a niftynet/info.py module that will keep the
 # version descriptor returned by Git
@@ -35,20 +29,6 @@ pep440_regex = re.compile(
     r"^\s*" + version.VERSION_PATTERN + r"\s*$",
     re.VERBOSE | re.IGNORECASE,
 )
-
-# Split the git describe output, as it may not be a tagged commit
-tokens = version_buf.split('-')
-if len(tokens) > 1:  # not a tagged commit
-    # Format a developmental release identifier according to PEP440, see:
-    # https://www.python.org/dev/peps/pep-0440/#developmental-releases
-    version_git = '{}.dev{}'.format(tokens[0], tokens[1])
-elif len(tokens) == 1:  # tagged commit
-    # Format a public version identifier according to PEP440, see:
-    # https://www.python.org/dev/peps/pep-0440/#public-version-identifiers
-    version_git = tokens[0]
-else:
-    raise ValueError('Unexpected "git describe" output:'
-                     '{}'.format(version_buf))
 
 # Check PEP 440 conformity
 if pep440_regex.match(version_git) is None:
