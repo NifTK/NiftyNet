@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function
 
 import os
 import re
+from six import string_types
 
 import niftynet.io.misc_io as util
 
@@ -32,7 +33,7 @@ class KeywordsMatching(object):
         '''
         path, contain, not_contain = [], [], []
         for (name, value) in input_tuple:
-            if not isinstance(value, basestring):
+            if not isinstance(value, string_types):
                 continue
             if len(value) <= 1 or value == '""':
                 continue

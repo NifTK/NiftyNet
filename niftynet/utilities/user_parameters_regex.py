@@ -48,7 +48,7 @@ def match_array(string_input, type_str):
         filtered_groups = filter(None, matched_str.groups())
         if not filtered_groups:
             return ()
-        values = [v.strip() for v in filtered_groups[0].split(',')]
+        values = [v.strip() for v in list(filtered_groups)[0].split(',')]
         if type_str == 'int':
             return tuple(map(int, values))
         if type_str == 'float':

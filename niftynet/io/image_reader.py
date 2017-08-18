@@ -7,6 +7,7 @@ from copy import deepcopy
 import numpy as np
 import pandas
 import tensorflow as tf
+from six import string_types
 
 from niftynet.io.image_type import ImageFactory
 from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
@@ -201,7 +202,7 @@ class ImageReader(Layer):
         # output_fields is a sequence of output names
         # each name might correspond to a list of multiple input sources
         # this should be specified in CUSTOM section in the config
-        self._names = make_input_tuple(fields_tuple, basestring)
+        self._names = make_input_tuple(fields_tuple, string_types)
 
     def get_subject_id(self, image_index):
         return self._file_list.iloc[image_index, 0]

@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import argparse
 import re
+from six import string_types
 
 from niftynet.utilities.user_parameters_regex import match_array
 
@@ -54,7 +55,7 @@ def str_array(string_input):
     return output_tuple
 
 
-def make_input_tuple(input_str, element_type=basestring):
+def make_input_tuple(input_str, element_type=string_types):
     assert input_str, \
         "input {} does not exists".format(element_type)
     if isinstance(input_str, element_type):
@@ -93,7 +94,7 @@ def standardise_string(input_string):
     :param input_string: to be standardised
     :return: capitalised string
     """
-    if not isinstance(input_string, basestring):
+    if not isinstance(input_string, string_types):
         return input_string
     new_name = re.sub('[^0-9a-zA-Z]+', '', input_string.strip())
     return new_name
