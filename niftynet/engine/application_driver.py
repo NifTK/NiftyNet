@@ -7,6 +7,7 @@ import sys
 import time
 
 import tensorflow as tf
+from niftynet.engine.restorer import global_variables_initialize_or_restorer
 from tensorflow.python.client import device_lib
 
 from niftynet.engine.application_variables import CONSOLE
@@ -14,7 +15,6 @@ from niftynet.engine.application_variables import GradientsCollector
 from niftynet.engine.application_variables import OutputsCollector
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.utilities.util_common import look_up_operations
-from niftynet.engine.restorer import global_variables_initialize_or_restorer
 
 FILE_PREFIX = 'model.ckpt'
 CONSOLE_LOG_FORMAT = '%(levelname)s:niftynet: %(message)s'
@@ -84,13 +84,13 @@ class ApplicationDriver(object):
         self.num_gpus = app_param.num_gpus \
             if self.is_training else min(app_param.num_gpus, 1)
         ApplicationDriver._set_cuda_device(app_param.cuda_devices)
+
         # set output folders
         self.model_dir = ApplicationDriver._touch_folder(app_param.model_dir)
         self.session_dir = os.path.join(self.model_dir, FILE_PREFIX)
         summary_root = os.path.join(self.model_dir, 'logs')
-        self.summary_dir = self._summary_dir(summary_root,
-                                             train_param.starting_iter == 0)
-        # set output logs to stdout and log file
+        self.summary_dir = self._summary_dir(
+            summary_root, train_param.starting_iter == 0)
         log_file_name = os.path.join(
             self.model_dir, '{}_{}'.format(app_param.action, 'log_console'))
         ApplicationDriver._set_logger(file_name=log_file_name)
@@ -111,7 +111,7 @@ class ApplicationDriver(object):
         action_param = train_param if self.is_training else infer_param
 
         self.app = ApplicationDriver._create_app(custom_param.name)
-        self.app.set_model_param(net_param, action_param, self.is_training)
+        self.app.set_app_param(net_param, action_param, self.is_training)
 
         # initialise data input, and the tf graph
         self.app.initialise_dataset_loader(data_param, custom_param)
@@ -383,7 +383,8 @@ class ApplicationDriver(object):
             log_sub_dir = str(max([int(name) for name in log_sub_dirs]) + 1)
         elif log_sub_dirs and not new_sub_dir:
             log_sub_dir = str(max([int(n) for n in log_sub_dirs
-                if os.path.isdir(os.path.join(summary_root, n))]))
+                                   if os.path.isdir(
+                    os.path.join(summary_root, n))]))
         else:
             log_sub_dir = '0'
         return os.path.join(summary_root, log_sub_dir)

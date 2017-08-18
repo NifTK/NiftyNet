@@ -1,13 +1,20 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-import warnings
+import os
 
+import PIL
+import numpy as np
 import tensorflow as tf
+from PIL.GifImagePlugin import Image as GIF
+from tensorflow.contrib.framework import list_variables
 from tensorflow.core.framework import summary_pb2
 
 from niftynet.utilities import util_common as util
+from niftynet.utilities.restore_initializer import restore_initializer
 from niftynet.utilities.util_common import look_up_operations
+
+RESTORABLE = 'NiftyNetObjectsToRestore'
 
 CONSOLE = 'niftynetconsole'
 TF_SUMMARIES = tf.GraphKeys.SUMMARIES
@@ -107,7 +114,8 @@ class OutputsCollector(object):
         This function checks the dictionary, if the variable needs to
         be averaged over devices, then a reduce_mean node is added to
         the graph.
-        This function should be called in create_graph function
+        This function should be called in
+        ApplicationDriver.create_graph function
         """
         for var_name in self.console_vars:
             values = self.console_vars.get(var_name, None)
@@ -127,25 +135,48 @@ class OutputsCollector(object):
         self._merge_op = tf.summary.merge_all(key=TF_SUMMARIES)
 
 
-def add_to_collections(keys, value):
-    for k in keys:
-        tf.add_to_collection(k, value)
+def resolve_checkpoint(checkpoint_name):
+    # For now only supports checkpoint_name where
+    # checkpoint_name.index is in the file system
+    # eventually will support checkpoint names that can be referenced
+    # in a paths file
+    if os.path.exists(checkpoint_name + '.index'):
+        return checkpoint_name
+    raise ValueError('Invalid checkpoint {}'.format(checkpoint_name))
 
 
-def console_summary_string(byte_string):
-    try:
-        e = summary_pb2.Summary()
-        e.ParseFromString(byte_string)
-        return ', {}={:.8f}'.format(e.value[0].tag, e.value[0].simple_value)
-    except:
-        warnings.warn(
-            'Summary could not be converted to string so it will not print on the command line')
-        return ''
-
-
-import numpy as np
-import PIL
-from PIL.GifImagePlugin import Image as GIF
+def global_variables_initialize_or_restorer(var_list=None):
+    # For any scope added to RESTORABLE collection:
+    # variable will be restored from a checkpoint if it exists in the
+    # specified checkpoint and no scope ancestor can restore it.
+    if var_list is None:
+        var_list = tf.global_variables()
+    restorable = sorted(tf.get_collection(RESTORABLE), key=lambda x: x[0])
+    restored_vars = {}
+    for scope, checkpoint_name, checkpoint_scope in restorable:
+        variables_in_scope = tf.get_collection(
+            tf.GraphKeys.GLOBAL_VARIABLES, scope=scope)
+        checkpoint_file = resolve_checkpoint(checkpoint_name)
+        variables_in_file = [v for v, s in list_variables(checkpoint_file)]
+        rename = lambda x: x.replace(scope, checkpoint_scope).replace(':0', '')
+        to_restore = [v for v in variables_in_scope
+                      if v in var_list and rename(v.name) in variables_in_file]
+        for var in to_restore:
+            if var in restored_vars:
+                continue
+            if '/' in rename(var.name):
+                checkpoint_subscope, var_name = rename(var.name).rsplit('/', 1)
+            else:
+                checkpoint_subscope, var_name = None, rename(var.name)
+            initializer = restore_initializer(
+                checkpoint_name, var_name, checkpoint_subscope)
+            restored_vars[var] = tf.assign(var,
+                                           initializer(var.get_shape(),
+                                                       dtype=var.dtype))
+    init_others = tf.variables_initializer(
+        [v for v in var_list if v not in restored_vars])
+    restore_op = tf.group(init_others, *list(restored_vars.values()))
+    return restore_op
 
 
 def image3_animatedGIF(tag, ims):
@@ -161,16 +192,22 @@ def image3_animatedGIF(tag, ims):
         for b in PIL.GifImagePlugin.getdata(i):
             s += b
     s += b'\x3B'
-    return [summary_pb2.Summary(value=[summary_pb2.Summary.Value(tag=tag,
-                                                                 image=summary_pb2.Summary.Image(
-                                                                     height=10,
-                                                                     width=10,
-                                                                     colorspace=1,
-                                                                     encoded_image_string=s))]).SerializeToString()]
+    image_summary = summary_pb2.Summary.Value(
+        tag=tag,
+        image=summary_pb2.Summary.Image(height=10,
+                                        width=10,
+                                        colorspace=1,
+                                        encoded_image_string=s))
+    return [summary_pb2.Summary(value=[image_summary]).SerializeToString()]
 
 
-def image3(name, tensor, max_outputs=3, collections=[tf.GraphKeys.SUMMARIES],
-           animation_axes=[1], image_axes=[2, 3], other_indices={}):
+def image3(name,
+           tensor,
+           max_outputs=3,
+           collections=[tf.GraphKeys.SUMMARIES],
+           animation_axes=[1],
+           image_axes=[2, 3],
+           other_indices={}):
     ''' Summary for higher dimensional images
     Parameters:
     name: string name for the summary

@@ -142,7 +142,6 @@ def __averaged_mapping(perc_database, s1, s2):
     return final_map
 
 
-# TODO: test cases
 def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     '''
     Performs the standardisation of a given image

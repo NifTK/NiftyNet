@@ -16,7 +16,6 @@ class UniformSampler(Layer, InputBatchQueueRunner):
     """
 
     def __init__(self, reader, data_param, batch_size, windows_per_image):
-        # TODO: volume level padding
         self.reader = reader
         Layer.__init__(self, name='input_buffer')
         InputBatchQueueRunner.__init__(self,

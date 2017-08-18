@@ -74,7 +74,7 @@ class SegmentationApplication(BaseApplication):
         self.data_param = None
         self.segmentation_param = None
 
-    def set_model_param(self, net_param, action_param, is_training):
+    def set_app_param(self, net_param, action_param, is_training):
         self.is_training = is_training
         self.net_param = net_param
         self.action_param = action_param

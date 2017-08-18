@@ -162,15 +162,6 @@ def add_network_args(parser):
         metavar='TYPE_STR',
         default='relu')
 
-    # TODO: maybe redundant
-    parser.add_argument(
-        "--spatial_rank",
-        metavar='',
-        help="Set input spatial rank",
-        choices=[2, 2.5, 3],
-        type=float,
-        default=3)
-
     parser.add_argument(
         "--batch_size",
         metavar='',
