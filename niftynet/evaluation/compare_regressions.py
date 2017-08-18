@@ -19,10 +19,19 @@ OUTPUT_FILE_PREFIX = 'PairwiseMeasureReg'
 
 def run(param, csv_dict):
     # output
-    out_name = '{}_{}_{}.csv'.format(
+    out_name = '{}_{}_{}_{}.csv'.format(
         OUTPUT_FILE_PREFIX,
         os.path.split(param.ref_dir)[1],
-        os.path.split(param.seg_dir)[1])
+        os.path.split(param.seg_dir)[1],
+        param.save_name)
+    iteration = 0
+    while os.path.exists(os.path.join(param.save_csv_dir, out_name)):
+        iteration += 1
+        out_name = '{}_{}_{}_{}_{}.csv'.format(
+            OUTPUT_FILE_PREFIX,
+            os.path.split(param.ref_dir)[1],
+            os.path.split(param.seg_dir)[1],
+            param.save_name, str(iteration))
     print("Writing {} to {}".format(out_name, param.save_csv_dir))
 
     # inputs

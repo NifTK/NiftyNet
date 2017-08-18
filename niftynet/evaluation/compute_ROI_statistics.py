@@ -40,9 +40,9 @@ def run(param, csv_dict):
     for (seg_name, img_name, name) in zip(seg_names, img_names, names):
         seg = io.csv_cell_to_volume_5d(seg_name)
         img = io.csv_cell_to_volume_5d(img_name)
-        out_name = '{}_{}.csv'.format(
+        out_name = '{}_{}_{}.csv'.format(
             OUTPUT_FILE_PREFIX,
-            name,
+            name,param.save_name
             # os.path.basename(img_name).rsplit(param.ext)[0]
         )
         out_stream = open(os.path.join(param.save_csv_dir, out_name), 'w+')
