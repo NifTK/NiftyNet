@@ -31,7 +31,6 @@ def infer_spatial_rank(input_tensor):
         "in addition to batch and channel dims"
     return dims
 
-
 def trivial_kernel(kernel_shape):
     """
     This function generates a trivial kernel with all 0s except for the

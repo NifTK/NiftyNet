@@ -36,13 +36,13 @@ class LossFunction(Layer):
                  var_scope=None,):
 
         with tf.device('/cpu:0'):
-            ground_truth = tf.reshape(ground_truth, [-1])
-
-            list_prediction = []
-            if isinstance(prediction, list):
-                for pred in prediction:
-                    list_prediction.append(
-                        tf.reshape(pred, [-1, self._num_classes]))
+            if self._num_classes > 0:
+                pred = tf.reshape(pred, [-1, self._num_classes])
+            label = tf.reshape(label, [-1])
+            if self._loss_func_params:
+                data_loss = self._data_loss_func(pred,
+                                                 label,
+                                                 **self._loss_func_params)
             else:
                 list_prediction.append(
                     tf.reshape(prediction, [-1, self._num_classes]))
@@ -303,7 +303,30 @@ def l2_loss(prediction, ground_truth, weight_map=None):
     return tf.nn.l2_loss(residuals)
 
 
-def huber_loss(prediction, ground_truth, delta=1.0, weight_map=None):
+def variational_lower_bound(predictions, labels):
+    """
+        This is the variational lower bound derived in
+    Auto-Encoding Variational Bayes, Kingma & Welling, 2014
+    :param posterior_means: predicted means for the posterior
+    :param posterior_logvar: predicted log variances for the posterior
+    :param data_means: predicted mean parameter for the voxels modelled as Gaussians
+    :param data_logvar: predicted log variance parameter for the voxels modelled as Gaussians
+    :param originals: the original inputs
+    :return:
+    """
+
+    [posterior_means, posterior_logvar, data_means, data_logvar, originals, _, _, _] = predictions
+
+    log_likelihood = (data_logvar + np.log(2 * np.pi) + tf.exp(-data_logvar) * tf.square(data_means - originals))
+    log_likelihood = -0.5 * tf.reduce_sum(log_likelihood, axis=[1, 2, 3, 4])
+
+    KL_divergence = (1 + posterior_logvar - tf.square(posterior_means) - tf.exp(posterior_logvar))
+    KL_divergence = -0.5 * tf.reduce_sum(KL_divergence, axis=[1])
+
+    return tf.reduce_mean(KL_divergence - log_likelihood)
+
+
+def huber_loss(prediction, ground_truth, delta=1.0):
     """
     The Huber loss is a smooth piecewise loss function
     that is quadratic for |x| <= delta, and linear for |x|> delta
@@ -337,4 +360,5 @@ SUPPORTED_OPS = {"CrossEntropy": cross_entropy,
                  "SensSpec": sensitivity_specificity_loss,
                  "L1Loss": l1_loss,
                  "L2Loss": l2_loss,
+                 "VariationalLowerBound": variational_lower_bound,
                  "Huber": huber_loss}
