@@ -1,15 +1,15 @@
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
+from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.io.image_reader import ImageReader
-from niftynet.layer.pad import PadLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 
 SUPPORTED_INPUT = {'image', 'feature'}
-SUPPORTED_INFERENCE = {'encode', 'encode-decode',
-                       'sample', 'linear_interpolation'}
+SUPPORTED_INFERENCE = {
+    'encode', 'encode-decode', 'sample', 'linear_interpolation'}
 
 
 class AutoencoderApplication(BaseApplication):
@@ -52,25 +52,45 @@ class AutoencoderApplication(BaseApplication):
         self.reader.add_preprocessing_layers(augmentation_layers)
 
     def initialise_sampler(self):
-        """
-        set samplers take self.reader as input and generates
-        sequences of ImageWindow that will be fed to the networks
-        This function sets self.sampler
-        """
-        raise NotImplementedError
+        self.sampler = []
+        if self.is_training:
+            self.sampler.append(ResizeSampler(
+                reader=self.reader,
+                data_param=self.data_param,
+                batch_size=self.net_param.batch_size,
+                windows_per_image=1,
+                shuffle_buffer=True))
+        else:
+            raise NotImplementedError
 
     def initialise_network(self):
-        """
-        This function create an instance of network
-        sets self.net
-        :return: None
-        """
-        raise NotImplementedError
+        w_regularizer = None
+        b_regularizer = None
+        reg_type = self.net_param.reg_type.lower()
+        decay = self.net_param.decay
+        if reg_type == 'l2' and decay > 0:
+            from tensorflow.contrib.layers.python.layers import regularizers
+            w_regularizer = regularizers.l2_regularizer(decay)
+            b_regularizer = regularizers.l2_regularizer(decay)
+        elif reg_type == 'l1' and decay > 0:
+            from tensorflow.contrib.layers.python.layers import regularizers
+            w_regularizer = regularizers.l1_regularizer(decay)
+            b_regularizer = regularizers.l1_regularizer(decay)
+
+        self.net = AutoencoderFactory.create(self.net_param.name)(
+            w_regularizer=w_regularizer,
+            b_regularizer=b_regularizer)
 
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
-        raise NotImplementedError
+        if self.is_training:
+            device_id = gradients_collector.current_tower_id
+            data_dict = self.get_sampler()[0].pop_batch_op(device_id)
+            image = tf.cast(data_dict['image'], dtype=tf.float32)
+            net_output = self.net(image, is_training=True)
+            import pdb;
+            pdb.set_trace()
 
     def interpret_output(self, batch_output):
         raise NotImplementedError

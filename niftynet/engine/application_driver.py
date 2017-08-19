@@ -116,7 +116,6 @@ class ApplicationDriver(object):
 
         # initialise data input, and the tf graph
         self.app.initialise_dataset_loader(data_param, custom_param)
-        import pdb; pdb.set_trace()
         self.graph = self._create_graph()
 
     def run_application(self):

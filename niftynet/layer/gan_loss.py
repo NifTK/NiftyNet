@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.base_layer import Layer
@@ -27,22 +26,31 @@ class LossFunction(Layer):
 
     def layer_op(self, pred_real, pred_fake, var_scope=None):
         with tf.device('/cpu:0'):
-            g_loss = self._data_loss_func['g'](pred_fake, **self._loss_func_params)
-            d_loss = self._data_loss_func['d_fake'](pred_fake, **self._loss_func_params) + \
-                      self._data_loss_func['d_real'](pred_real, **self._loss_func_params)
-        return g_loss, d_loss
+            g_loss = self._data_loss_func['g'](
+                pred_fake,
+                **self._loss_func_params)
+            d_fake = self._data_loss_func['d_fake'](
+                pred_fake,
+                **self._loss_func_params)
+            d_real = self._data_loss_func['d_real'](
+                pred_real,
+                **self._loss_func_params)
+        return g_loss, (d_fake + d_real)
 
 
+def cross_entropy_function(is_real, softness=.1):
+    def cross_entropy(pred, **kwargs):
+        if is_real:
+            target = (1. - softness) * tf.ones_like(pred)
+        else:
+            target = softness * tf.ones_like(pred)
+        entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred,
+                                                          labels=target)
+        return tf.reduce_mean(entropy)
 
-def cross_entropy(pred, is_real, softness=.1):
-    if is_real:
-      target = (1.-softness) * tf.ones_like(pred)
-    else:
-        target = softness * tf.ones_like(pred)
-    entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=pred, labels=target)
-    return tf.reduce_mean(entropy)
+    return cross_entropy
 
 
-SUPPORTED_OPS = {"CrossEntropy": {'g': lambda pred: cross_entropy(pred,True,0),
-                                  'd_fake':lambda pred: cross_entropy(pred,False,0),
-                                  'd_real':lambda pred: cross_entropy(pred,True,.1)}}
+SUPPORTED_OPS = {"CrossEntropy": {'g': cross_entropy_function(True, 0),
+                                  'd_fake': cross_entropy_function(False, 0),
+                                  'd_real': cross_entropy_function(True, .1)}}

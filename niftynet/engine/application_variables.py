@@ -39,7 +39,7 @@ class GradientsCollector(object):
     @property
     def gradients(self):
         # return averaged over devices
-        assert len(self._gradients) > 0, \
+        assert self._gradients, \
             "Please add gradients to collector when constructing the graph"
         return util.average_gradients(self._gradients)
 

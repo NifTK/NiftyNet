@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function, division
 
-import niftynet.engine.logging as logging
+# import niftynet.engine.logging as logging
 import numpy as np
 import tensorflow as tf
 
@@ -224,8 +224,8 @@ class VAE(TrainableLayer):
                         - tf.exp(posterior_logvars)
         KL_divergence = -0.5 * tf.reduce_mean(
             tf.reduce_sum(KL_divergence, axis=[1]))
-        tf.add_to_collection(
-            logging.CONSOLE, tf.summary.scalar('KL_divergence', KL_divergence))
+        # tf.add_to_collection(
+        #     logging.CONSOLE, tf.summary.scalar('KL_divergence', KL_divergence))
 
         # Monitor the (negative log) likelihood of the parameters given the data
         log_likelihood = data_logvars + \
@@ -233,17 +233,17 @@ class VAE(TrainableLayer):
                          tf.exp(-data_logvars) * tf.square(data_means - images)
         log_likelihood = -0.5 * tf.reduce_mean(tf.reduce_sum(
             log_likelihood, axis=[1, 2, 3, 4]))
-        tf.add_to_collection(
-            logging.CONSOLE,
-            tf.summary.scalar('negative_log_likelihood', -log_likelihood))
+        # tf.add_to_collection(
+        #     logging.CONSOLE,
+        #     tf.summary.scalar('negative_log_likelihood', -log_likelihood))
 
         posterior_variances = tf.exp(posterior_logvars)
         data_variances = tf.exp(data_logvars)
 
         # Monitor reconstructions
-        logging.image3_coronal('Originals', normalise(images))
-        logging.image3_coronal('Means', normalise(data_means))
-        logging.image3_coronal('Variances', normalise(data_variances))
+        # logging.image3_coronal('Originals', normalise(images))
+        # logging.image3_coronal('Means', normalise(data_means))
+        # logging.image3_coronal('Variances', normalise(data_variances))
 
         return [posterior_means,
                 posterior_logvars,

@@ -4,8 +4,8 @@ from __future__ import absolute_import, print_function, division
 import numpy as np
 import scipy.ndimage
 import tensorflow as tf
-from niftynet.engine.image_window import ImageWindow, N_SPATIAL
 
+from niftynet.engine.image_window import ImageWindow, N_SPATIAL
 from niftynet.engine.image_window_buffer import InputBatchQueueRunner
 from niftynet.layer.base_layer import Layer
 
@@ -88,9 +88,14 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
                     window_shape = static_window_shapes[name]
                     zoom_ratio = [p / d for p, d
                                   in zip(window_shape, image_shape)]
-                    image_window = zoom_3d(image=data[name],
-                                           ratio=zoom_ratio,
-                                           interp_order=interp_orders[name][0])
+                    if np.all(zoom_ratio == 1):
+                        image_window = data[name]
+                        import pdb; pdb.set_trace()
+                    else:
+                        image_window = zoom_3d(
+                            image=data[name],
+                            ratio=zoom_ratio,
+                            interp_order=interp_orders[name][0])
                     output_dict[image_data_key] = image_window[np.newaxis, ...]
                 # the output image shape should be
                 # [enqueue_batch_size, x, y, z, time, modality]
