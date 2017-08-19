@@ -141,7 +141,8 @@ class ConfigStore:
         else:
             # Always download if the local file is empty, or force by arguments
             force_download = download_if_already_existing or (not current_config and not current_entries)
-            if force_download or self._is_update_required(current_config, remote_config):
+            data_missing = self._are_data_missing(remote_entries, example_id)
+            if force_download or data_missing or self._is_update_required(current_config, remote_config):
                 self._check_minimum_niftynet_version(remote_config)
                 self._download(remote_entries, example_id)
                 self._replace_local_with_remote_config(example_id)
@@ -171,7 +172,7 @@ class ConfigStore:
         for section_name, config_params in remote_config_sections.items():
             if 'action' in config_params:
                 action = config_params.get('action').lower()
-                if action == 'unarchive':
+                if action == 'expand':
                     if 'url' not in config_params:
                         raise ValueError('No URL was found in the download configuration file')
                     local_download_path = self._get_local_download_path(config_params, example_id)
@@ -190,6 +191,20 @@ class ConfigStore:
         local_filename = self._local.get_local_path(example_id)
         remote_filename = self._remote.get_local_path(example_id)
         copyfile(remote_filename, local_filename)
+
+    def _are_data_missing(self, remote_config_sections, example_id):
+        for section_name, config_params in remote_config_sections.items():
+            if 'action' in config_params:
+                action = config_params.get('action').lower()
+                if action == 'expand':
+                    local_download_path = self._get_local_download_path(config_params, example_id)
+                    if not os.path.isdir(local_download_path):
+                        return True
+
+                    non_system_files = [f for f in os.listdir(local_download_path) if not f.startswith('.')]
+                    if not non_system_files:
+                        return True
+        return False
 
 
 class ConfigStoreCache:
