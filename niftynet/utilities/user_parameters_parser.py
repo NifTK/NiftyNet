@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import tensorflow as tf
 import niftynet.utilities.util_csv as misc_csv
 from niftynet.utilities.filename_matching import KeywordsMatching
 from niftynet.utilities.user_parameters_custom import *
@@ -17,7 +18,8 @@ except ImportError:
 # treated as input data source specifications
 SYSTEM_SECTIONS = {'APPLICATION', 'NETWORK', 'TRAINING', 'INFERENCE'}
 CUSTOM_SECTIONS = {'net_segment.py': 'SEGMENTATION',
-                   'net_gan.py': 'GAN'}
+                   'net_gan.py': 'GAN',
+                   'net_autoencoder.py': 'AUTOENCODER'}
 
 
 def run():
@@ -39,7 +41,7 @@ def run():
             config, CUSTOM_SECTIONS.get(meta_parser.prog, None))
     except ValueError:
         raise ValueError(
-            '{} requires {}, but it is not in the config file.'.format(
+            '{} requires [{}] section in the config file'.format(
                 meta_parser.prog, CUSTOM_SECTIONS.get(meta_parser.prog, None)))
 
     # using configuration as default, and parsing all command line arguments
@@ -126,9 +128,14 @@ def _make_csv_files(all_args, section):
                                  '{}{}'.format(section, '.csv'))
     # write a new csv file if it doesn't exist
     if not os.path.isfile(input_csv):
+        print('search file folders ignored, '
+                        'writing csv file {}'.format(input_csv))
         section_tuple = section_args.__dict__.items()
         matcher = KeywordsMatching.from_tuple(section_tuple)
         misc_csv.match_and_write_filenames_to_csv([matcher], input_csv)
+    else:
+        print('using existing csv file {}, '
+                        'file folder parameters ignored'.format(input_csv))
     section_args.csv_file = input_csv
     if not os.path.isfile(section_args.csv_file):
         raise IOError(

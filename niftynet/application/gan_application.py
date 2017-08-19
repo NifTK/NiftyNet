@@ -22,35 +22,17 @@ from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 SUPPORTED_INPUT = {'image', 'conditioning'}
 
 
-class GanFactory(object):
-    @staticmethod
-    def create(name):
-        if name == "simulator_gan":
-            from niftynet.network.simulator_gan import SimulatorGAN
-            return SimulatorGAN
-        if name == "simple_gan":
-            from niftynet.network.simple_gan import SimpleGAN
-            return SimpleGAN
-        else:
-            tf.logging.fatal("network: \"{}\" not implemented".format(name))
-            raise NotImplementedError
-
-
 class GANApplication(BaseApplication):
-    def __init__(self):
+    def __init__(self, net_param, action_param, is_training):
         BaseApplication.__init__(self)
-        self.is_training = True
+        tf.logging.info('starting GAN application')
+        self.is_training = is_training
 
-        self.net_param = None
-        self.action_param = None
+        self.net_param = net_param
+        self.action_param = action_param
 
         self.data_param = None
         self.gan_param = None
-
-    def set_app_param(self, net_param, action_param, is_training):
-        self.is_training = is_training
-        self.net_param = net_param
-        self.action_param = action_param
 
     def initialise_dataset_loader(self, data_param=None, task_param=None):
         self.data_param = data_param
@@ -95,7 +77,7 @@ class GANApplication(BaseApplication):
 
         augmentation_layers = []
         if self.is_training:
-            if self.action_param.random_flipping_axes > 0:
+            if self.action_param.random_flipping_axes != -1:
                 augmentation_layers.append(RandomFlipLayer(
                     flip_axes=self.action_param.random_flipping_axes))
             if self.action_param.scaling_percentage:
@@ -237,3 +219,17 @@ class GANApplication(BaseApplication):
         else:
             return self.output_decoder.decode_batch(
                 batch_output['image'], batch_output['location'])
+
+
+class GanFactory(object):
+    @staticmethod
+    def create(name):
+        if name == "simulator_gan":
+            from niftynet.network.simulator_gan import SimulatorGAN
+            return SimulatorGAN
+        if name == "simple_gan":
+            from niftynet.network.simple_gan import SimpleGAN
+            return SimpleGAN
+        else:
+            tf.logging.fatal("network: \"{}\" not implemented".format(name))
+            raise NotImplementedError

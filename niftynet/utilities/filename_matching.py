@@ -15,9 +15,9 @@ class KeywordsMatching(object):
     '''
 
     def __init__(self, list_paths=(), list_contain=(), list_not_contain=()):
-        self.list_paths = list_paths
-        self.list_contain = list_contain
-        self.list_not_contain = list_not_contain
+        self.path_to_search = list_paths
+        self.filename_contains = list_contain
+        self.filename_not_contains = list_not_contain
 
     @classmethod
     def from_tuple(cls, input_tuple):
@@ -31,11 +31,9 @@ class KeywordsMatching(object):
         :param input_tuple:
         :return:
         '''
-        path, contain, not_contain = [], [], []
+        path, contain, not_contain = [], (), ()
         for (name, value) in input_tuple:
-            if not isinstance(value, string_types):
-                continue
-            if len(value) <= 1 or value == '""':
+            if not value:
                 continue
             if name == "path_to_search":
                 value = value.split(',')
@@ -46,18 +44,12 @@ class KeywordsMatching(object):
                     else:
                         raise ValueError('data input folder {} not found, did'
                                          ' you maybe forget to download data?'
-                                         .format(path_i))
+                                         .format(value))
             elif name == "filename_contains":
-                value = value.split(',')
-                for val in value:
-                    contain.append(val.strip())
+                contain = tuple(set(value))
             elif name == "filename_not_contains":
-                value = value.split(',')
-                for val in value:
-                    not_contain.append(val.strip())
+                not_contain = tuple(set(value))
         path = tuple(set(path))
-        contain = tuple(set(contain))
-        not_contain = tuple(set(not_contain))
         new_matcher = cls(path, contain, not_contain)
         return new_matcher
 
@@ -70,18 +62,21 @@ class KeywordsMatching(object):
         :returns list_final, name_list_final
         '''
         path_file = [(p, filename)
-                     for p in self.list_paths
+                     for p in self.path_to_search
                      for filename in os.listdir(p)]
         matching_path_file = list(filter(self.__is_a_candidate, path_file))
         list_final = [os.path.join(p, filename)
                       for p, filename in matching_path_file]
         name_list_final = [self.__extract_subject_id_from(filename)
                            for p, filename in matching_path_file]
+        if not list_final or not name_list_final:
+            raise IOError('no file matched based on this matcher: {}'.format(
+                self.__dict__))
         return list_final, name_list_final
 
     def __is_a_candidate(self, x):
-        all_pos_match = all(c in x[1] for c in self.list_contain)
-        all_neg_match = not any(c in x[1] for c in self.list_not_contain)
+        all_pos_match = all(c in x[1] for c in self.filename_contains)
+        all_neg_match = not any(c in x[1] for c in self.filename_not_contains)
         return all_pos_match and all_neg_match
 
     def __extract_subject_id_from(self, filename):
@@ -98,7 +93,7 @@ class KeywordsMatching(object):
         path, name, ext = util.split_filename(filename)
         # split name into parts that might be the subject_id
         noncapturing_regex_delimiters = ['(?:' + re.escape(c) + ')'
-                                         for c in self.list_contain]
+                                         for c in self.filename_contains]
         potential_names = re.split(
             '|'.join(noncapturing_regex_delimiters), name)
         # filter out non-alphanumeric characters and blank strings

@@ -50,8 +50,8 @@ def str_array(string_input):
         output_tuple = match_array(string_input, 'str')
     except ValueError:
         raise argparse.ArgumentTypeError(
-            "array of strings expected, allowed"
-            "characters: [a-zA-Z0-9], but received{}".format(string_input))
+            "list of strings expected, for each list element the allowed"
+            "characters: [ a-zA-Z0-9], but received {}".format(string_input))
     return output_tuple
 
 
@@ -96,7 +96,7 @@ def standardise_string(input_string):
     """
     if not isinstance(input_string, string_types):
         return input_string
-    new_name = re.sub('[^0-9a-zA-Z]+', '', input_string.strip())
+    new_name = re.sub('[^0-9a-zA-Z ]+', '', input_string.strip())
     return new_name
 
 

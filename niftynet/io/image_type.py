@@ -310,7 +310,10 @@ class ImageFactory(object):
 
     @classmethod
     def create_instance(cls, file_path, **kwargs):
-
+        if not file_path:
+            tf.logging.fatal('no file_path provided, '
+                             'please check input sources in config file')
+            raise ValueError
         is_image_from_multi_files = \
             isinstance(file_path, tuple) or isinstance(file_path, list)
 

@@ -25,8 +25,6 @@ class VAE(TrainableLayer):
     """
 
     def __init__(self,
-                 num_classes=None,
-                 acti_func=None,
                  w_initializer=None,
                  w_regularizer=None,
                  b_initializer=None,

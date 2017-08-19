@@ -111,11 +111,12 @@ class ApplicationDriver(object):
         # create an application and assign user-specified parameters
         action_param = train_param if self.is_training else infer_param
 
-        self.app = ApplicationDriver._create_app(custom_param.name)
-        self.app.set_app_param(net_param, action_param, self.is_training)
+        app_module = ApplicationDriver._create_app(custom_param.name)
+        self.app = app_module(net_param, action_param, self.is_training)
 
         # initialise data input, and the tf graph
         self.app.initialise_dataset_loader(data_param, custom_param)
+        import pdb; pdb.set_trace()
         self.graph = self._create_graph()
 
     def run_application(self):
@@ -348,8 +349,7 @@ class ApplicationDriver(object):
 
     @staticmethod
     def _create_app(app_type_string):
-        _app_module = ApplicationFactory.import_module(app_type_string)
-        return _app_module()
+        return ApplicationFactory.import_module(app_type_string)
 
     @staticmethod
     def _tf_config():

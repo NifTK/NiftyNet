@@ -29,7 +29,12 @@ FILE_EXTENSIONS = [".nii.gz", ".tar.gz"]
 
 def infer_ndims_from_file(file_path):
     image_header = load_image(file_path).header
-    return int(image_header['dim'][0])
+    try:
+        ndims = int(image_header['dim'][0])
+    except IndexError:
+        tf.logging.fatal('unsupported file header in: {}'.format(file_path))
+        raise IndexError
+    return ndims
 
 
 def create_affine_pixdim(affine, pixdim):

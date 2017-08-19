@@ -11,8 +11,8 @@ from six import string_types
 
 from niftynet.io.image_type import ImageFactory
 from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
-from niftynet.utilities.util_common import printProgressBar
 from niftynet.utilities.user_parameters_helper import make_input_tuple
+from niftynet.utilities.util_common import printProgressBar
 
 NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
 
@@ -43,29 +43,27 @@ class ImageReader(Layer):
         e.g., for multimodal segmentation 'image' corresponds to multiple
         modality sections, 'label' corresponds to one modality section
         """
-        app_type = task_param.name
-
-        if app_type == "net_segment.py":
-            from niftynet.application.segmentation_application \
-                import SUPPORTED_INPUT
-            # only choose output names that are supported by the application
-            # (SUPPORTED_INPUT) and have user parameter specification
-        elif app_type == "net_gan.py":
-            from niftynet.application.gan_application \
-                import SUPPORTED_INPUT
-
         if not self.names:
-            # by default, reader tries to output all supported output names
-            self.names = SUPPORTED_INPUT
-
+            tf.logging.fatal('Please specify data names, this should '
+                             'be a subset of SUPPORTED_INPUT provided '
+                             'in {}'.format(task_param.name))
+            raise ValueError
         self._names = [name for name in self.names
-                       if vars(task_param).get(name)]
-        self._input_sources = {name: vars(task_param).get(name, None)
+                       if vars(task_param).get(name, None)]
+        self._input_sources = {name: vars(task_param).get(name)
                                for name in self.names}
         data_to_load = {}
         for name in self._names:
             for source in self._input_sources[name]:
-                data_to_load[source] = data_param[source]
+                if source not in data_param:
+                    tf.logging.fatal(
+                        'reader name [{}] requires [{}], however it is not '
+                        'specified as a section in the config, '
+                        'current input section names: {}'.format(
+                            name, source, list(data_param)))
+                    raise ValueError
+                else:
+                    data_to_load[source] = data_param[source]
         self._file_list = ImageReader.load_and_merge_csv_files(data_to_load)
         self.output_list = filename_to_image_list(self._file_list,
                                                   self._input_sources,
@@ -155,8 +153,10 @@ class ImageReader(Layer):
             if _file_list.shape[0] != n_rows:
                 tf.logging.warning("rows not matched in {}".format(csv_file))
         if _file_list.size == 0:
-            tf.logging.fatal("no common subject_ids in filename lists,"
-                             "please check the csv files.")
+            tf.logging.fatal(
+                "empty filename lists, please check the csv "
+                "files. (remove csv files to automatically"
+                "search folders and generate new csv files again)")
             raise IOError
         return _file_list
 

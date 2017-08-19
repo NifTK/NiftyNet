@@ -109,13 +109,13 @@ def add_input_data_args(parser):
     parser.add_argument(
         "--filename_contains",
         metavar='',
-        type=str,
+        type=str_array,
         help="keywords in input file names, matched filenames will be used.")
 
     parser.add_argument(
         "--filename_not_contains",
         metavar='',
-        type=str,
+        type=str_array,
         help="keywords in input file names, negatively matches filenames",
         default='')
 
@@ -256,7 +256,7 @@ def add_training_args(parser):
              "each image that was loaded in a given training epoch",
         metavar='',
         type=int,
-        default=10)
+        default=1)
 
     parser.add_argument(
         "--rotation_angle",

@@ -24,60 +24,17 @@ from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 SUPPORTED_INPUT = {'image', 'label', 'weight'}
 
 
-class NetFactory(object):
-    @staticmethod
-    def create(name):
-        if name == "highres3dnet":
-            from niftynet.network.highres3dnet import HighRes3DNet
-            return HighRes3DNet
-        if name == "highres3dnet_small":
-            from niftynet.network.highres3dnet_small import HighRes3DNetSmall
-            return HighRes3DNetSmall
-        if name == "highres3dnet_large":
-            from niftynet.network.highres3dnet_large import HighRes3DNetLarge
-            return HighRes3DNetLarge
-        elif name == "toynet":
-            from niftynet.network.toynet import ToyNet
-            return ToyNet
-        elif name == "unet":
-            from niftynet.network.unet import UNet3D
-            return UNet3D
-        elif name == "vnet":
-            from niftynet.network.vnet import VNet
-            return VNet
-        elif name == "dense_vnet":
-            from niftynet.network.dense_vnet import DenseVNet
-            return DenseVNet
-        elif name == "deepmedic":
-            from niftynet.network.deepmedic import DeepMedic
-            return DeepMedic
-        elif name == "scalenet":
-            from niftynet.network.scalenet import ScaleNet
-            return ScaleNet
-        elif name == "holistic_scalenet":
-            from niftynet.network.holistic_scalenet import HolisticScaleNet
-            return HolisticScaleNet
-        else:
-            tf.logging.fatal("network: \"{}\" not implemented".format(name))
-            raise NotImplementedError
-
-
 class SegmentationApplication(BaseApplication):
-    def __init__(self):
+    def __init__(self, net_param, action_param, is_training):
         BaseApplication.__init__(self)
         tf.logging.info('starting segmentation application')
-        self.is_training = True
+        self.is_training = is_training
 
-        self.net_param = None
-        self.action_param = None
+        self.net_param = net_param
+        self.action_param = action_param
 
         self.data_param = None
         self.segmentation_param = None
-
-    def set_app_param(self, net_param, action_param, is_training):
-        self.is_training = is_training
-        self.net_param = net_param
-        self.action_param = action_param
 
     def initialise_dataset_loader(self, data_param=None, task_param=None):
         self.data_param = data_param
@@ -130,7 +87,7 @@ class SegmentationApplication(BaseApplication):
 
         augmentation_layers = []
         if self.is_training:
-            if self.action_param.random_flipping_axes > 0:
+            if self.action_param.random_flipping_axes != -1:
                 augmentation_layers.append(RandomFlipLayer(
                     flip_axes=self.action_param.random_flipping_axes))
             if self.action_param.scaling_percentage:
@@ -263,3 +220,41 @@ class SegmentationApplication(BaseApplication):
                 batch_output['window'], batch_output['location'])
         else:
             return True
+
+
+class NetFactory(object):
+    @staticmethod
+    def create(name):
+        if name == "highres3dnet":
+            from niftynet.network.highres3dnet import HighRes3DNet
+            return HighRes3DNet
+        if name == "highres3dnet_small":
+            from niftynet.network.highres3dnet_small import HighRes3DNetSmall
+            return HighRes3DNetSmall
+        if name == "highres3dnet_large":
+            from niftynet.network.highres3dnet_large import HighRes3DNetLarge
+            return HighRes3DNetLarge
+        elif name == "toynet":
+            from niftynet.network.toynet import ToyNet
+            return ToyNet
+        elif name == "unet":
+            from niftynet.network.unet import UNet3D
+            return UNet3D
+        elif name == "vnet":
+            from niftynet.network.vnet import VNet
+            return VNet
+        elif name == "dense_vnet":
+            from niftynet.network.dense_vnet import DenseVNet
+            return DenseVNet
+        elif name == "deepmedic":
+            from niftynet.network.deepmedic import DeepMedic
+            return DeepMedic
+        elif name == "scalenet":
+            from niftynet.network.scalenet import ScaleNet
+            return ScaleNet
+        elif name == "holistic_scalenet":
+            from niftynet.network.holistic_scalenet import HolisticScaleNet
+            return HolisticScaleNet
+        else:
+            tf.logging.fatal("network: \"{}\" not implemented".format(name))
+            raise NotImplementedError

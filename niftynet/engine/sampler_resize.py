@@ -12,8 +12,10 @@ from niftynet.layer.base_layer import Layer
 
 class ResizeSampler(Layer, InputBatchQueueRunner):
     """
-    This class generates samples by rescaling the whole image to the desired size
-    currently 4D input is supported, Height x Width x Depth x Modality
+    This class generates samples by rescaling
+    the whole image to the desired size
+    currently 5D input is supported:
+    Height x Width x Depth x time x Modality
     """
 
     def __init__(self,
