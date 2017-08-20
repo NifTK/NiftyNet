@@ -23,7 +23,7 @@ def add_application_args(parser):
     parser.add_argument(
         "--cuda_devices",
         metavar='',
-        help="Set CUDA_VISIBLE_DEVICES variable, e.g. '0,1,2,3'; " \
+        help="Set CUDA_VISIBLE_DEVICES variable, e.g. '0,1,2,3'; "
              "leave blank to use the system default value",
         default='""')
 

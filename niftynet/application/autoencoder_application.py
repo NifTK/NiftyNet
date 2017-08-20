@@ -9,6 +9,9 @@ from niftynet.layer.loss_autoencoder import LossFunction
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
+from niftynet.utilities.util_common import look_up_operations
+from niftynet.engine.image_windows_aggregator import WindowAsImageAggregator
+
 
 SUPPORTED_INPUT = {'image', 'feature'}
 SUPPORTED_INFERENCE = {
@@ -64,7 +67,16 @@ class AutoencoderApplication(BaseApplication):
                 windows_per_image=1,
                 shuffle_buffer=True))
         else:
-            raise NotImplementedError
+            infer_type = look_up_operations(
+                self.autoencoder_param.inference_type,
+                SUPPORTED_INFERENCE)
+            if infer_type in ('encode', 'encode-decode'):
+                self.sampler.append(ResizeSampler(
+                    reader=self.reader,
+                    data_param=self.data_param,
+                    batch_size=self.net_param.batch_size,
+                    windows_per_image=1,
+                    shuffle_buffer=False))
 
     def initialise_network(self):
         w_regularizer = None
@@ -117,12 +129,47 @@ class AutoencoderApplication(BaseApplication):
                 var=data_loss, name='variational_lower_bound',
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
+        else:
+            infer_type = look_up_operations(
+                self.autoencoder_param.inference_type,
+                SUPPORTED_INFERENCE)
+            if infer_type in ('encode', 'encode-decode'):
+                data_dict = self.get_sampler()[0].pop_batch_op()
+                image = tf.cast(data_dict['image'], dtype=tf.float32)
+                net_output = self.net(image, is_training=False)
+
+                outputs_collector.add_to_collection(
+                    var=data_dict['image_location'], name='location',
+                    average_over_devices=True, collection=CONSOLE)
+
+                if infer_type == 'encode-decode':
+                    outputs_collector.add_to_collection(
+                        var=net_output[2], name='generated_image',
+                        average_over_devices=True, collection=CONSOLE)
+                if infer_type == 'encode':
+                    outputs_collector.add_to_collection(
+                        var=net_output[7], name='embedded',
+                        average_over_devices=True, collection=CONSOLE)
+
+                self.output_decoder = WindowAsImageAggregator(
+                    image_reader=self.reader,
+                    output_path=self.action_param.save_seg_dir)
+            else:
+                raise NotImplementedError
 
     def interpret_output(self, batch_output):
         if self.is_training:
             return True
         else:
-            raise NotImplementedError
+            infer_type = look_up_operations(
+                self.autoencoder_param.inference_type,
+                SUPPORTED_INFERENCE)
+            if infer_type == 'encode':
+                return self.output_decoder.decode_batch(
+                    batch_output['embedded'], batch_output['location'])
+            if infer_type == 'encode-decode':
+                return self.output_decoder.decode_batch(
+                    batch_output['generated_image'], batch_output['location'])
 
 
 class AutoencoderFactory(object):

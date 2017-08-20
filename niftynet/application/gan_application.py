@@ -5,7 +5,7 @@ import tensorflow as tf
 from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import TF_SUMMARIES
-from niftynet.engine.image_windows_aggregator import BatchSplitingAggregator
+from niftynet.engine.image_windows_aggregator import WindowAsImageAggregator
 from niftynet.engine.sampler_random_vector import RandomVectorSampler
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.io.image_reader import ImageReader
@@ -109,6 +109,9 @@ class GANApplication(BaseApplication):
                 batch_size=self.net_param.batch_size,
                 n_interpolations=self.gan_param.n_interpolations,
                 repeat=None))
+            # repeat each resized image n times, so that each
+            # image matches one random vector,
+            # (n = self.gan_param.n_interpolations)
             self.sampler.append(ResizeSampler(
                 reader=self.reader,
                 data_param=self.data_param,
@@ -209,7 +212,7 @@ class GANApplication(BaseApplication):
                 name='location',
                 average_over_devices=False, collection=CONSOLE)
 
-            self.output_decoder = BatchSplitingAggregator(
+            self.output_decoder = WindowAsImageAggregator(
                 image_reader=self.reader,
                 output_path=self.action_param.save_seg_dir)
 

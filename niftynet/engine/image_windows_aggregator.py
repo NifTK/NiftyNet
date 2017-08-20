@@ -40,7 +40,7 @@ class ImageWindowsAggregator(object):
         raise NotImplementedError
 
 
-class BatchSplitingAggregator(ImageWindowsAggregator):
+class WindowAsImageAggregator(ImageWindowsAggregator):
     def __init__(self,
                  image_reader=None,
                  output_path='./'):

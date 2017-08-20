@@ -147,7 +147,7 @@ class ApplicationDriver(object):
                     self._inference_loop(session, loop_status)
 
             except KeyboardInterrupt:
-                tf.logging.warning('User cancelled training')
+                tf.logging.warning('User cancelled application')
             except tf.errors.OutOfRangeError as e:
                 pass
             except Exception:
@@ -156,6 +156,7 @@ class ApplicationDriver(object):
                 traceback.print_exception(
                     exc_type, exc_value, exc_traceback, file=sys.stdout)
             finally:
+                tf.logging.info('Cleaning up...')
                 if self.is_training and loop_status.get('current_iter', None):
                     self._save_model(session, loop_status['current_iter'])
                 elif loop_status.get('all_saved_flag', None):

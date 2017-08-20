@@ -37,8 +37,9 @@ def run():
     config = configparser.ConfigParser()
     config.read([meta_args.conf])
     try:
-        check_required_sections(
-            config, CUSTOM_SECTIONS.get(meta_parser.prog, None))
+        required_section_name = look_up_operations(meta_parser.prog,
+                                                   CUSTOM_SECTIONS)
+        search_section_in_config(config, required_section_name)
     except ValueError:
         raise ValueError(
             '{} requires [{}] section in the config file'.format(

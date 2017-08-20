@@ -58,7 +58,8 @@ class OutputsCollector(object):
         ready to run (by tf.Session).
         """
         assert isinstance(var, tf.Tensor), \
-            "only supports adding one tf.Tensor at a time"
+            "only supports adding one tf.Tensor at a time," \
+            "but received {}".format(var)
 
         if do_averaging and self.n_devices > 1:
             # collecting variables across devices as a list

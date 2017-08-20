@@ -103,8 +103,8 @@ class VAE(TrainableLayer):
         self.trans_conv_kernel_sizes_means = self.conv_kernel_sizes[::-1]
         self.trans_conv_unpooling_factors_means = \
             self.conv_pooling_factors[::-1]
-        self.acti_func_trans_conv_means = self.acti_func_conv[-2::-1] + [
-            'sigmoid']
+        self.acti_func_trans_conv_means = \
+            self.acti_func_conv[-2::-1] + ['sigmoid']
         self.upsampling_mode_means = 'DECONV'
 
         # 5) The transpose convolutional layers
@@ -144,7 +144,7 @@ class VAE(TrainableLayer):
         def infer_downsampled_shape(x, output_channels, pooling_factors):
             # Calculate the shape of the data as it emerges from
             # the convolutional part of the encoder
-            downsampled_shape = x.get_shape()[1::].as_list()
+            downsampled_shape = x.get_shape()[1:].as_list()
             downsampled_shape[-1] = output_channels[-1]
             downsampled_shape[0:-1] = \
                 downsampled_shape[0:-1] / np.prod(pooling_factors)
@@ -219,20 +219,20 @@ class VAE(TrainableLayer):
 
         # Monitor the KL divergence of
         # the (approximate) posterior from the prior
-        KL_divergence = 1 + posterior_logvars \
-                        - tf.square(posterior_means) \
-                        - tf.exp(posterior_logvars)
-        KL_divergence = -0.5 * tf.reduce_mean(
-            tf.reduce_sum(KL_divergence, axis=[1]))
+        #KL_divergence = 1 + posterior_logvars \
+        #                - tf.square(posterior_means) \
+        #                - tf.exp(posterior_logvars)
+        #KL_divergence = -0.5 * tf.reduce_mean(
+        #    tf.reduce_sum(KL_divergence, axis=[1]))
         # tf.add_to_collection(
         #     logging.CONSOLE, tf.summary.scalar('KL_divergence', KL_divergence))
 
         # Monitor the (negative log) likelihood of the parameters given the data
-        log_likelihood = data_logvars + \
-                         np.log(2 * np.pi) + \
-                         tf.exp(-data_logvars) * tf.square(data_means - images)
-        log_likelihood = -0.5 * tf.reduce_mean(tf.reduce_sum(
-            log_likelihood, axis=[1, 2, 3, 4]))
+        #log_likelihood = data_logvars + \
+        #                 np.log(2 * np.pi) + \
+        #                 tf.exp(-data_logvars) * tf.square(data_means - images)
+        #log_likelihood = -0.5 * tf.reduce_mean(tf.reduce_sum(
+        #    log_likelihood, axis=[1, 2, 3, 4]))
         # tf.add_to_collection(
         #     logging.CONSOLE,
         #     tf.summary.scalar('negative_log_likelihood', -log_likelihood))

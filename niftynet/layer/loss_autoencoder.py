@@ -42,6 +42,8 @@ def variational_lower_bound(prediction):
     :param originals: the original inputs
     :return:
     """
+
+    # log_2pi = np.log(2*np.pi)
     log_2pi = 1.837877
     assert len(prediction) >= 5, \
         "please see the returns of network/vae.py" \

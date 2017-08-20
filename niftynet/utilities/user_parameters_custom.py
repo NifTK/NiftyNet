@@ -102,7 +102,7 @@ def __add_gan_args(parser):
 def __add_autoencoder_args(parser):
     from niftynet.application.autoencoder_application import SUPPORTED_INFERENCE
     parser.add_argument(
-        "--vae_inference_type",
+        "--inference_type",
         metavar='',
         help="choose an inference type for the trained autoencoder",
         choices=list(SUPPORTED_INFERENCE))

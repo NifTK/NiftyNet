@@ -11,8 +11,7 @@ from niftynet.layer.base_layer import Layer
 
 class GridSampler(Layer, InputBatchQueueRunner):
     """
-    This class generators samples by uniformly sampling each input volume
-    currently 4D input is supported, Height x Width x Depth x Modality
+    This class generators samples with a sliding window
     """
 
     def __init__(self,
@@ -183,15 +182,3 @@ def _enumerate_step_points(starting, ending, win_size, step_size):
         starting = starting + step_size
     sampling_point_set.append(np.max((ending - win_size, 0)))
     return np.unique(sampling_point_set).flatten()
-
-
-def complete_spatial_border_size(input_border_size):
-    try:
-        input_border_size = tuple(map(int, input_border_size))
-        while len(input_border_size) < N_SPATIAL:
-            input_border_size = input_border_size + (0,)
-        input_border_size = input_border_size[:N_SPATIAL]
-    except ValueError:
-        tf.logging.fatal("wrong window border size format")
-        raise
-    return input_border_size

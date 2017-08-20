@@ -17,7 +17,8 @@ try:
         niftynet.io.simple_itk_as_nibabel.SimpleITKAsNibabel)
 except ImportError:
     warnings.warn(
-        'SimpleITK adapter failed to load, reducing the supported file formats.',
+        'SimpleITK adapter failed to load,'
+        ' reducing the supported file formats.',
         ImportWarning)
 
 warnings.simplefilter("ignore", UserWarning)
@@ -62,7 +63,8 @@ def load_image(filename):
             img = correct_image_if_necessary(img)
             return img
         except nib.filebasedimages.ImageFileError:
-            # if the image_loader cannot handle the type continue to next loader
+            # if the image_loader cannot handle the type
+            # continue to next loader
             pass
     raise nib.filebasedimages.ImageFileError(
         'No loader could load the file')  # Throw last error
@@ -74,8 +76,9 @@ def correct_image_if_necessary(img):
         return img
     # Check that affine matches zooms
     pixdim = img.header.get_zooms()
-    if not np.array_equal(np.sqrt(np.sum(np.square(img.affine[0:3, 0:3]), 0)),
-                          np.asarray(pixdim)):
+    if not np.array_equal(
+            np.sqrt(np.sum(np.square(img.affine[0:3, 0:3]), 0)),
+            np.asarray(pixdim)):
         if hasattr(img, 'get_sform'):
             # assume it is a malformed NIfTI and try to fix it
             img = rectify_header_sform_qform(img)
@@ -84,8 +87,8 @@ def correct_image_if_necessary(img):
 
 def rectify_header_sform_qform(img_nii):
     '''
-    Look at the sform and qform of the nifti object and correct it if any
-    incompatibilities with pixel dimensions
+    Look at the sform and qform of the nifti object and
+    correct it if any incompatibilities with pixel dimensions
     :param img_nii:
     :return:
     '''
@@ -277,7 +280,9 @@ def squeeze_spatial_temporal_dim(tf_tensor):
     """
     Given a tensorflow tensor, ndims==6 means:
     [batch, x, y, z, time, modality]
-    this function remove the time dim if it's one
+    this function removes x, y, z, and time dims if
+    the length along the dims is one
+    :return: squeezed tensor
     """
     if tf_tensor.get_shape().ndims != 6:
         return tf_tensor

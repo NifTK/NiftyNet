@@ -180,7 +180,8 @@ class InputBatchQueueRunner(object):
             self._coordinator.join(threads=self._threads,
                                    stop_grace_period_secs=0)
         except RuntimeError as e:
-            tf.logging.fatal('{}'.format(e))
+            #tf.logging.warning('{}'.format(e))
+            pass
         finally:
             if not self._session._closed:
                 self._session.run(self._close_queue_op)

@@ -100,7 +100,7 @@ def standardise_string(input_string):
     return new_name
 
 
-def check_required_sections(config, required_custom_section):
+def search_section_in_config(config, required_custom_section):
     required_custom_section = standardise_string(required_custom_section)
     if required_custom_section is not None:
         user_sections = [standardise_string(section_name)
@@ -122,7 +122,7 @@ def add_input_name_args(parser, supported_input):
 
 def spatialnumarray(string_input):
     """
-    This function parse a 3-element tuple from a string input
+    This function parses a 3-element tuple from a string input
     """
     int_tuple = int_array(string_input)
     while len(int_tuple) < 3:

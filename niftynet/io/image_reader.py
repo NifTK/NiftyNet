@@ -96,7 +96,7 @@ class ImageReader(Layer):
 
         if idx is None and not shuffle:
             # testing, with sequential output
-            #  accessing self.current_id, not suitable for multi-thread
+            # accessing self.current_id, not suitable for multi-thread
             idx = self.current_id + 1
             self.current_id = idx
 
