@@ -175,11 +175,11 @@ def add_network_args(parser):
         type=float,
         default=0)
 
-    import niftynet.layer.loss
+    import niftynet.layer.loss_segmentation
     parser.add_argument(
         "--reg_type",
         metavar='TYPE_STR',
-        choices=list(niftynet.layer.loss.SUPPORTED_OPS),
+        choices=list(niftynet.layer.loss_segmentation.SUPPORTED_OPS),
         help="[Training only] Specify regulariser type",
         default='Dice')
 

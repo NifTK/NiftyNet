@@ -1,8 +1,11 @@
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
+from niftynet.engine.application_variables import CONSOLE
+from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.io.image_reader import ImageReader
+from niftynet.layer.loss_autoencoder import LossFunction
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
@@ -85,15 +88,41 @@ class AutoencoderApplication(BaseApplication):
                                  outputs_collector=None,
                                  gradients_collector=None):
         if self.is_training:
+
+            with tf.name_scope('Optimiser'):
+                self.optimiser = tf.train.AdamOptimizer(
+                    learning_rate=self.action_param.lr)
             device_id = gradients_collector.current_tower_id
             data_dict = self.get_sampler()[0].pop_batch_op(device_id)
             image = tf.cast(data_dict['image'], dtype=tf.float32)
             net_output = self.net(image, is_training=True)
-            import pdb;
-            pdb.set_trace()
+            loss_func = LossFunction(loss_type=self.action_param.loss_type)
+            data_loss = loss_func(net_output)
+            loss = data_loss
+            if self.net_param.decay > 0.0:
+                reg_losses = tf.get_collection(
+                    tf.GraphKeys.REGULARIZATION_LOSSES)
+                if reg_losses:
+                    reg_loss = tf.reduce_mean(
+                        [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
+                    loss = loss + reg_loss
+            grads = self.optimiser.compute_gradients(loss)
+            # collecting gradients variables
+            gradients_collector.add_to_collection([grads])
+
+            outputs_collector.add_to_collection(
+                var=data_loss, name='variational_lower_bound',
+                average_over_devices=True, collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=data_loss, name='variational_lower_bound',
+                average_over_devices=True, summary_type='scalar',
+                collection=TF_SUMMARIES)
 
     def interpret_output(self, batch_output):
-        raise NotImplementedError
+        if self.is_training:
+            return True
+        else:
+            raise NotImplementedError
 
 
 class AutoencoderFactory(object):

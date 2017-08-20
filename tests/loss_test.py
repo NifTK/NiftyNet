@@ -5,7 +5,7 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from niftynet.layer.loss import LossFunction, huber_loss, l1_loss, l2_loss
+from niftynet.layer.loss_segmentation import LossFunction, huber_loss, l1_loss, l2_loss
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
 

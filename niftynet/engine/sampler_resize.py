@@ -52,8 +52,7 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
         This function generates sampling windows to the input buffer
         image data are from self.reader()
         it first completes window shapes based on image data,
-        then finds random coordinates based on the window shapes
-        finally resize each image as window and output
+        then resize each image as window and output
         a dictionary (required by input buffer)
         :return: output data dictionary {placeholders: data_array}
         """
@@ -86,12 +85,13 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
                     # prepare image data
                     image_shape = image_shapes[name]
                     window_shape = static_window_shapes[name]
-                    zoom_ratio = [p / d for p, d
-                                  in zip(window_shape, image_shape)]
-                    if np.all(zoom_ratio == 1):
+
+                    if image_shape == window_shape:
+                        # already in the same shape
                         image_window = data[name]
-                        import pdb; pdb.set_trace()
                     else:
+                        zoom_ratio = [
+                            p / d for p, d in zip(window_shape, image_shape)]
                         image_window = zoom_3d(
                             image=data[name],
                             ratio=zoom_ratio,

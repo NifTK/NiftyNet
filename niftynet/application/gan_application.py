@@ -10,7 +10,7 @@ from niftynet.engine.sampler_random_vector import RandomVectorSampler
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.binary_masking import BinaryMaskingLayer
-from niftynet.layer.gan_loss import LossFunction
+from niftynet.layer.loss_gan import LossFunction
 from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
 from niftynet.layer.mean_variance_normalisation import \

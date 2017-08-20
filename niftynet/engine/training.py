@@ -13,7 +13,7 @@ from niftynet.engine.spatial_location_check import SpatialLocationCheckLayer
 from niftynet.engine.selective_sampler import SelectiveSampler
 from niftynet.engine.uniform_sampler import UniformSampler
 from niftynet.engine.resize_sampler import ResizeSampler
-from niftynet.layer.loss import LossFunction
+from niftynet.layer.loss_segmentation import LossFunction
 from niftynet.utilities import misc_common as util
 from niftynet.utilities.input_placeholders import ImagePatch
 import niftynet.engine.logging

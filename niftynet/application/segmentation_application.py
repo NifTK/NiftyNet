@@ -12,7 +12,7 @@ from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
 from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
-from niftynet.layer.loss import LossFunction
+from niftynet.layer.loss_segmentation import LossFunction
 from niftynet.layer.mean_variance_normalisation import \
     MeanVarNormalisationLayer
 from niftynet.layer.pad import PadLayer
