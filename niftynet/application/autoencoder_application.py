@@ -3,6 +3,7 @@ import tensorflow as tf
 from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import TF_SUMMARIES
+from niftynet.engine.image_windows_aggregator import WindowAsImageAggregator
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.loss_autoencoder import LossFunction
@@ -10,8 +11,6 @@ from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 from niftynet.utilities.util_common import look_up_operations
-from niftynet.engine.image_windows_aggregator import WindowAsImageAggregator
-
 
 SUPPORTED_INPUT = {'image', 'feature'}
 SUPPORTED_INFERENCE = {
@@ -154,6 +153,26 @@ class AutoencoderApplication(BaseApplication):
                 self.output_decoder = WindowAsImageAggregator(
                     image_reader=self.reader,
                     output_path=self.action_param.save_seg_dir)
+            if infer_type == 'sample':
+                image_size = (self.net_param.batch_size,) + \
+                             self.action_param.spatial_window_size + (1,)
+                dummy_image = tf.zeros(image_size)
+                net_output = self.net(dummy_image, is_training=False)
+                noise_shape = net_output[-1].get_shape().as_list()
+                stddev = self.autoencoder_param.noise_stddev
+                noise = tf.random_normal(shape=noise_shape,
+                                         mean=0.0,
+                                         stddev=stddev,
+                                         dtype=tf.float32)
+                # tf.stop_gradient(noise)
+                decoder_output = self.net.decoder_means(
+                    noise, is_training=False)
+                outputs_collector.add_to_collection(
+                    var=decoder_output, name='generated_image',
+                    average_over_devices=True, collection=CONSOLE)
+                self.output_decoder = WindowAsImageAggregator(
+                    image_reader=None,
+                    output_path=self.action_param.save_seg_dir)
             else:
                 raise NotImplementedError
 
@@ -170,6 +189,9 @@ class AutoencoderApplication(BaseApplication):
             if infer_type == 'encode-decode':
                 return self.output_decoder.decode_batch(
                     batch_output['generated_image'], batch_output['location'])
+            if infer_type == 'sample':
+                return self.output_decoder.decode_batch(
+                    batch_output['generated_image'], None)
 
 
 class AutoencoderFactory(object):

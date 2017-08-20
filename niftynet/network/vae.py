@@ -176,11 +176,11 @@ class VAE(TrainableLayer):
         # Initialise the shared fully-connected layers,
         # if and only if they have been specified
         if len(self.layer_sizes_decoder_shared) > 0:
-            shared_decoder = FCDecoder(self.layer_sizes_decoder_shared,
+            self.shared_decoder = FCDecoder(self.layer_sizes_decoder_shared,
                                        self.acti_func_decoder_shared,
                                        name='FCDecoder')
 
-        decoder_means = ConvDecoder(
+        self.decoder_means = ConvDecoder(
             self.layer_sizes_decoder + [serialised_shape],
             self.acti_func_decoder,
             self.trans_conv_output_channels_means + [number_of_input_channels],
@@ -211,31 +211,11 @@ class VAE(TrainableLayer):
             encoding, is_training)
 
         if len(self.layer_sizes_decoder_shared) > 0:
-            sample = shared_decoder(sample, is_training)
+            sample = self.shared_decoder(sample, is_training)
 
         [data_means, data_logvars] = [
-            decoder_means(sample, is_training),
+            self.decoder_means(sample, is_training),
             clip(decoder_logvars(sample, is_training))]
-
-        # Monitor the KL divergence of
-        # the (approximate) posterior from the prior
-        #KL_divergence = 1 + posterior_logvars \
-        #                - tf.square(posterior_means) \
-        #                - tf.exp(posterior_logvars)
-        #KL_divergence = -0.5 * tf.reduce_mean(
-        #    tf.reduce_sum(KL_divergence, axis=[1]))
-        # tf.add_to_collection(
-        #     logging.CONSOLE, tf.summary.scalar('KL_divergence', KL_divergence))
-
-        # Monitor the (negative log) likelihood of the parameters given the data
-        #log_likelihood = data_logvars + \
-        #                 np.log(2 * np.pi) + \
-        #                 tf.exp(-data_logvars) * tf.square(data_means - images)
-        #log_likelihood = -0.5 * tf.reduce_mean(tf.reduce_sum(
-        #    log_likelihood, axis=[1, 2, 3, 4]))
-        # tf.add_to_collection(
-        #     logging.CONSOLE,
-        #     tf.summary.scalar('negative_log_likelihood', -log_likelihood))
 
         posterior_variances = tf.exp(posterior_logvars)
         data_variances = tf.exp(data_logvars)

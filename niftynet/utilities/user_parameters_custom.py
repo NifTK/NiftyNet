@@ -107,6 +107,12 @@ def __add_autoencoder_args(parser):
         help="choose an inference type for the trained autoencoder",
         choices=list(SUPPORTED_INFERENCE))
 
+    parser.add_argument(
+        "--noise_stddev",
+        metavar='',
+        help="standard deviation of noise when inference type is sample",
+        type=float)
+
     from niftynet.application.autoencoder_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser

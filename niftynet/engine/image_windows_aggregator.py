@@ -47,7 +47,7 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
         ImageWindowsAggregator.__init__(self, image_reader=image_reader)
         self.output_path = os.path.abspath(output_path)
 
-    def decode_subject_name(self, location):
+    def decode_subject_name(self, location=None):
         if self.reader:
             image_id = location[0]
             return self.reader.get_subject_id(image_id)
@@ -55,15 +55,23 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
             import uuid
             return uuid.uuid4()
 
-    def decode_batch(self, window, location):
-        n_samples = location.shape[0]
-        for batch_id in range(n_samples):
-            if self._is_stopping_signal(location[batch_id]):
-                return False
-            filename = self.decode_subject_name(location[batch_id])
-            self._save_current_image(
-                batch_id, filename, window[batch_id, ...])
-        return True
+    def decode_batch(self, window, location=None):
+        if location is not None:
+            n_samples = location.shape[0]
+            for batch_id in range(n_samples):
+                if self._is_stopping_signal(location[batch_id]):
+                    return False
+                filename = self.decode_subject_name(location[batch_id])
+                self._save_current_image(
+                    batch_id, filename, window[batch_id, ...])
+            return True
+        else:
+            n_samples = window.shape[0]
+            for batch_id in range(n_samples):
+                filename = self.decode_subject_name()
+                self._save_current_image(
+                    batch_id, filename, window[batch_id,...])
+            return False
 
     def _save_current_image(self, idx, filename, image):
         if image is None:
