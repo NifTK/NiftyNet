@@ -102,7 +102,7 @@ setup(
     entry_points={
         'console_scripts': [
             'net_segment=niftynet:main',
-            'net_download=net_download:main',
+            'net_download=niftynet.utilities.download:main',
         ],
     },
 )
