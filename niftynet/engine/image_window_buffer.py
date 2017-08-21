@@ -119,7 +119,7 @@ class InputBatchQueueRunner(object):
                 if self._coordinator.should_stop():
                     break
                 for name in list(output_dict):
-                    output_dict[name] = np.zeros_like(output_dict[name])
+                    output_dict[name] = np.ones_like(output_dict[name]) * -1
                 self._session.run(self._enqueue_op, feed_dict=output_dict)
 
         except tf.errors.CancelledError:

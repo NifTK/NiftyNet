@@ -70,6 +70,13 @@ class BaseApplication(object):
         raise NotImplementedError
 
     def interpret_output(self, batch_output):
+        """
+        implement output interpretations, e.g., save to hard drive
+        cache output windows
+        :param batch_output: outputs by running the tf graph
+        :return: True indicates the driver should continue the loop
+                 False indicates the drive should stop
+        """
         raise NotImplementedError
 
     def set_network_update_op(self, gradients):

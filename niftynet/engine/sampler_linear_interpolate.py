@@ -41,6 +41,10 @@ class LinearInterpolateSampler(Layer, InputBatchQueueRunner):
         tf.logging.info("initialised sampler output {} "
                         " [-1 for dynamic size]".format(self.window.shapes))
 
+        assert not self.window.has_dynamic_shapes, \
+            "dynamic shapes not supported, please specify " \
+            "spatial_window_size = (1, 1, 1)"
+
     def layer_op(self, *args, **kwargs):
         """
         This function first draws two samples, and interpolates them
@@ -48,12 +52,15 @@ class LinearInterpolateSampler(Layer, InputBatchQueueRunner):
         Location is set to np.ones for all the vectors
         """
         while True:
-            image_id_x, data_x, _ = self.reader(idx=None, shuffle=True)
+            image_id_x, data_x, _ = self.reader(idx=None, shuffle=False)
             image_id_y, data_y, _ = self.reader(idx=None, shuffle=True)
             if not data_x or not data_y:
                 break
+            if image_id_x == image_id_y:
+                continue
             embedding_x = data_x[self.window.names[0]]
             embedding_y = data_y[self.window.names[0]]
+
             steps = np.linspace(0, 1, self.n_interpolations)
             output_vectors = []
             for (idx, mixture) in enumerate(steps):
@@ -64,8 +71,8 @@ class LinearInterpolateSampler(Layer, InputBatchQueueRunner):
             output_vectors = np.concatenate(output_vectors, axis=0)
             coordinates = np.ones(
                 (self.n_interpolations, N_SPATIAL * 2 + 1), dtype=np.int32)
-            coordinates[0,:] = image_id_x
-            coordinates[1,:] = image_id_y
+            coordinates[:, 0] = image_id_x
+            coordinates[:, 1] = image_id_y
 
             output_dict = {}
             for name in self.window.names:

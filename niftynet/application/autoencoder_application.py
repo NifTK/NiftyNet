@@ -90,7 +90,8 @@ class AutoencoderApplication(BaseApplication):
             self.sampler.append(LinearInterpolateSampler(
                 reader=self.reader,
                 data_param=self.data_param,
-                batch_size=self.net_param.batch_size))
+                batch_size=self.net_param.batch_size,
+                n_interpolations=self.autoencoder_param.n_interpolations))
             return
 
     def initialise_network(self):
@@ -198,7 +199,7 @@ class AutoencoderApplication(BaseApplication):
                 net_output = self.net(dummy_image, is_training=False)
                 data_dict = self.get_sampler()[0].pop_batch_op()
                 real_code = data_dict['feature']
-                real_code.set_shape(net_output[-1].get_shape())
+                real_code = tf.reshape(real_code, net_output[-1].get_shape())
                 partially_decoded_sample = self.net.shared_decoder(
                     real_code, is_training=False)
                 decoder_output = self.net.decoder_means(
@@ -211,7 +212,7 @@ class AutoencoderApplication(BaseApplication):
                     var=data_dict['feature_location'], name='location',
                     average_over_devices=True, collection=CONSOLE)
                 self.output_decoder = WindowAsImageAggregator(
-                    image_reader=None,
+                    image_reader=self.reader,
                     output_path=self.action_param.save_seg_dir)
             else:
                 raise NotImplementedError
@@ -225,16 +226,20 @@ class AutoencoderApplication(BaseApplication):
                 SUPPORTED_INFERENCE)
             if infer_type == 'encode':
                 return self.output_decoder.decode_batch(
-                    batch_output['embedded'], batch_output['location'])
+                    batch_output['embedded'],
+                    batch_output['location'][:,0:1])
             if infer_type == 'encode-decode':
                 return self.output_decoder.decode_batch(
-                    batch_output['generated_image'], batch_output['location'])
+                    batch_output['generated_image'],
+                    batch_output['location'][:,0:1])
             if infer_type == 'sample':
                 return self.output_decoder.decode_batch(
-                    batch_output['generated_image'], None)
+                    batch_output['generated_image'],
+                    None)
             if infer_type == 'linear_interpolation':
                 return self.output_decoder.decode_batch(
-                    batch_output['generated_image'], batch_output['location'])
+                    batch_output['generated_image'],
+                    batch_output['location'][:,:2])
 
 
 class AutoencoderFactory(object):
