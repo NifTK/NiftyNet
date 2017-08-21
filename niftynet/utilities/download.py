@@ -5,10 +5,11 @@ import tarfile
 import tempfile
 from shutil import copyfile
 
-import requests
 import six
 from six.moves.urllib.request import urlretrieve
 from six.moves.urllib.parse import urlparse
+from six.moves.urllib.request import urlopen
+
 from os.path import basename
 
 import argparse
@@ -310,8 +311,11 @@ class RemoteConfigStore:
 def url_exists(url):
     """Returns true if the specified url exists, without any redirects"""
 
-    resp = requests.head(url)
-    return resp.status_code == 200
+    try:
+        connection = urlopen(url)
+        return connection.getcode() < 400
+    except Exception as e:
+        return False
 
 
 def main():
