@@ -41,12 +41,25 @@ def download(example_ids, niftynet_base_folder=None, download_if_already_existin
     # If a single id is specified, convert to a list
     example_ids = [example_ids] if not isinstance(example_ids, (tuple, list)) else example_ids
 
-    for example_id in example_ids:
-        if not config_store.exists(example_id):
-            print(example_id + ': FAIL. No NiftyNet example was found for ' + example_id + ".'")
-            return
+    # Check if the server is running by looking for a known file
+    remote_base_url_test = remote_base_url + "README.md"
+    server_ok = url_exists(remote_base_url_test)
 
-        config_store.update_if_required(example_id, download_if_already_existing)
+    any_error = False
+    for example_id in example_ids:
+        if config_store.exists(example_id):
+            update_ok = config_store.update_if_required(example_id, download_if_already_existing)
+            any_error = (not update_ok) or any_error
+        else:
+            any_error = True
+            if server_ok:
+                print(example_id + ': FAIL. No NiftyNet example was found for ' + example_id + ".")
+
+    # If errors occurred and the server is down report a message
+    if any_error and not server_ok:
+        print("The NiftyNetExamples server is not running")
+
+    return any_error
 
 
 def download_file(url, download_path):
@@ -121,7 +134,10 @@ class ConfigStore:
         return self._local.exists(example_id) or self._remote.exists(example_id)
 
     def update_if_required(self, example_id, download_if_already_existing=False):
-        """Downloads data using the configuration file if it is not already up to date"""
+        """
+        Downloads data using the configuration file if it is not already up to date
+        Returns True if no update was required and no errors occurred
+        """
 
         try:
             self._remote.update(example_id)
@@ -138,6 +154,8 @@ class ConfigStore:
                 print(example_id + ": FAIL. Cannot download the examples configuration file. Is the server down?")
             else:
                 print(example_id + ": FAIL. Nothing to download")
+            return False
+
         else:
             # Always download if the local file is empty, or force by arguments
             force_download = download_if_already_existing or (not current_config and not current_entries)
@@ -148,6 +166,8 @@ class ConfigStore:
                 self._replace_local_with_remote_config(example_id)
             else:
                 print(example_id + ": OK. Already downloaded. Use the -r option to download again.")
+
+        return True
 
     @staticmethod
     def _check_minimum_niftynet_version(remote_config):
@@ -279,19 +299,19 @@ class RemoteConfigStore:
     def exists(self, example_id):
         """Returns true if the record exists on the remote server"""
 
-        return self._url_exists(self.get_url(example_id))
+        return url_exists(self.get_url(example_id))
 
     def get_url(self, example_id):
         """Gets the URL for the record for this example_id"""
 
         return six.moves.urllib.parse.urljoin(self._base_url, example_id + '.ini')
 
-    @staticmethod
-    def _url_exists(url):
-        """Returns true if the specified url exists, without any redirects"""
 
-        resp = requests.head(url)
-        return resp.status_code == 200
+def url_exists(url):
+    """Returns true if the specified url exists, without any redirects"""
+
+    resp = requests.head(url)
+    return resp.status_code == 200
 
 
 def main():
@@ -305,7 +325,10 @@ def main():
     arg_parser.add_argument("-v", "--version", action='version', version=version_string)
     args = arg_parser.parse_args()
 
-    download(args.sample_id, args.data_folder, args.retry)
+    if not download(args.sample_id, args.data_folder, args.retry):
+        return -1
+
+    return 0
 
 if __name__ == "__main__":
     main()
