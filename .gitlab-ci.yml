@@ -97,6 +97,7 @@ pip-installer:
     - dev
     - dev-staging
     - tags
+    - 118-create-a-new-action-or-utility-for-downloading-sample-datasets
   script:
     # source utils
     - source ci/utils.sh
