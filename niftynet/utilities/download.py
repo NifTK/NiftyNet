@@ -39,7 +39,7 @@ def download(example_ids, niftynet_base_folder=None, download_if_already_existin
     if not niftynet_base_folder:
         niftynet_base_folder = os.path.join(expanduser("~"), 'niftynet')
 
-    remote_base_url = 'https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExamples/raw/master/'
+    remote_base_url = 'https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/raw/master/'
 
     config_store = ConfigStore(niftynet_base_folder, remote_base_url)
 
