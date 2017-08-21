@@ -165,8 +165,11 @@ class AutoencoderApplication(BaseApplication):
                                          stddev=stddev,
                                          dtype=tf.float32)
                 # tf.stop_gradient(noise)
-                decoder_output = self.net.decoder_means(
+                partially_decoded_sample = self.net.shared_decoder(
                     noise, is_training=False)
+                decoder_output = self.net.decoder_means(
+                    partially_decoded_sample, is_training=False)
+
                 outputs_collector.add_to_collection(
                     var=decoder_output, name='generated_image',
                     average_over_devices=True, collection=CONSOLE)
