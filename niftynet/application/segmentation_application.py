@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
+from niftynet.engine.application_net_factory import ApplicationNetFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.image_windows_aggregator import GridSamplesAggregator
@@ -138,7 +139,7 @@ class SegmentationApplication(BaseApplication):
             w_regularizer = regularizers.l1_regularizer(decay)
             b_regularizer = regularizers.l1_regularizer(decay)
 
-        self.net = NetFactory.create(self.net_param.name)(
+        self.net = ApplicationNetFactory.create(self.net_param.name)(
             num_classes=num_classes,
             w_regularizer=w_regularizer,
             b_regularizer=b_regularizer,
@@ -220,41 +221,3 @@ class SegmentationApplication(BaseApplication):
                 batch_output['window'], batch_output['location'])
         else:
             return True
-
-
-class NetFactory(object):
-    @staticmethod
-    def create(name):
-        if name == "highres3dnet":
-            from niftynet.network.highres3dnet import HighRes3DNet
-            return HighRes3DNet
-        if name == "highres3dnet_small":
-            from niftynet.network.highres3dnet_small import HighRes3DNetSmall
-            return HighRes3DNetSmall
-        if name == "highres3dnet_large":
-            from niftynet.network.highres3dnet_large import HighRes3DNetLarge
-            return HighRes3DNetLarge
-        elif name == "toynet":
-            from niftynet.network.toynet import ToyNet
-            return ToyNet
-        elif name == "unet":
-            from niftynet.network.unet import UNet3D
-            return UNet3D
-        elif name == "vnet":
-            from niftynet.network.vnet import VNet
-            return VNet
-        elif name == "dense_vnet":
-            from niftynet.network.dense_vnet import DenseVNet
-            return DenseVNet
-        elif name == "deepmedic":
-            from niftynet.network.deepmedic import DeepMedic
-            return DeepMedic
-        elif name == "scalenet":
-            from niftynet.network.scalenet import ScaleNet
-            return ScaleNet
-        elif name == "holistic_scalenet":
-            from niftynet.network.holistic_scalenet import HolisticScaleNet
-            return HolisticScaleNet
-        else:
-            tf.logging.fatal("network: \"{}\" not implemented".format(name))
-            raise NotImplementedError

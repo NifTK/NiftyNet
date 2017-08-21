@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
+from niftynet.engine.application_net_factory import ApplicationNetFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.image_windows_aggregator import WindowAsImageAggregator
@@ -10,9 +11,9 @@ from niftynet.engine.sampler_random_vector import RandomVectorSampler
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.binary_masking import BinaryMaskingLayer
-from niftynet.layer.loss_gan import LossFunction
 from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
+from niftynet.layer.loss_gan import LossFunction
 from niftynet.layer.mean_variance_normalisation import \
     MeanVarNormalisationLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
@@ -120,7 +121,7 @@ class GANApplication(BaseApplication):
                 shuffle_buffer=False))
 
     def initialise_network(self):
-        self.net = GanFactory.create(self.net_param.name)()
+        self.net = ApplicationNetFactory.create(self.net_param.name)()
 
     def connect_data_and_network(self,
                                  outputs_collector=None,
@@ -223,16 +224,3 @@ class GANApplication(BaseApplication):
             return self.output_decoder.decode_batch(
                 batch_output['image'], batch_output['location'])
 
-
-class GanFactory(object):
-    @staticmethod
-    def create(name):
-        if name == "simulator_gan":
-            from niftynet.network.simulator_gan import SimulatorGAN
-            return SimulatorGAN
-        if name == "simple_gan":
-            from niftynet.network.simple_gan import SimpleGAN
-            return SimpleGAN
-        else:
-            tf.logging.fatal("network: \"{}\" not implemented".format(name))
-            raise NotImplementedError

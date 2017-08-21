@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
+from niftynet.engine.application_net_factory import ApplicationNetFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.image_windows_aggregator import WindowAsImageAggregator
@@ -108,7 +109,7 @@ class AutoencoderApplication(BaseApplication):
             w_regularizer = regularizers.l1_regularizer(decay)
             b_regularizer = regularizers.l1_regularizer(decay)
 
-        self.net = AutoencoderFactory.create(self.net_param.name)(
+        self.net = ApplicationNetFactory.create(self.net_param.name)(
             w_regularizer=w_regularizer,
             b_regularizer=b_regularizer)
 
@@ -227,11 +228,11 @@ class AutoencoderApplication(BaseApplication):
             if infer_type == 'encode':
                 return self.output_decoder.decode_batch(
                     batch_output['embedded'],
-                    batch_output['location'][:,0:1])
+                    batch_output['location'][:, 0:1])
             if infer_type == 'encode-decode':
                 return self.output_decoder.decode_batch(
                     batch_output['generated_image'],
-                    batch_output['location'][:,0:1])
+                    batch_output['location'][:, 0:1])
             if infer_type == 'sample':
                 return self.output_decoder.decode_batch(
                     batch_output['generated_image'],
@@ -239,15 +240,4 @@ class AutoencoderApplication(BaseApplication):
             if infer_type == 'linear_interpolation':
                 return self.output_decoder.decode_batch(
                     batch_output['generated_image'],
-                    batch_output['location'][:,:2])
-
-
-class AutoencoderFactory(object):
-    @staticmethod
-    def create(name):
-        if name == "vae":
-            from niftynet.network.vae import VAE
-            return VAE
-        else:
-            tf.logging.fatal("network: \"{}\" not implemented".format(name))
-            raise NotImplementedError
+                    batch_output['location'][:, :2])
