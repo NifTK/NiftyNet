@@ -19,7 +19,7 @@ from six.moves.configparser import SafeConfigParser
 from os.path import expanduser
 from distutils.version import LooseVersion
 
-from utilities.get_niftynet_version import get_niftynet_version, get_niftynet_version_string
+from niftynet.utilities.get_niftynet_version import get_niftynet_version, get_niftynet_version_string
 
 
 def download(example_ids, niftynet_base_folder=None, download_if_already_existing=False):
