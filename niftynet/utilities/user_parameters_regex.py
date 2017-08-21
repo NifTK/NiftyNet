@@ -6,7 +6,7 @@ import re
 
 INT = r'(?:[-+]?\d+)'
 FLOAT = r'(?:[-+]?\d*\.\d+|' + INT + r')'
-LITERAL = r'(?:[ a-zA-Z0-9]+)'
+LITERAL = r'(?:[ -_a-zA-Z0-9\:]+)'
 COMMA = r'(?:[,])'
 LEFT_PARENTHESIS = r'(?:\()'
 RIGHT_PARENTHESIS = r'(?:\))'
@@ -41,6 +41,7 @@ STATEMENT = \
     + OR \
     + r'^(' + TUPLE + r')?$'
 
+
 def match_array(string_input, type_str):
     regex = re.compile(STATEMENT)
     matched_str = regex.match(string_input)
@@ -48,7 +49,10 @@ def match_array(string_input, type_str):
         filtered_groups = filter(None, matched_str.groups())
         if not filtered_groups:
             return ()
-        values = [v.strip() for v in list(filtered_groups)[0].split(',')]
+        try:
+            values = [v.strip() for v in list(filtered_groups)[0].split(',')]
+        except IndexError:
+            raise ValueError("unknown array type {}".format(string_input))
         if type_str == 'int':
             return tuple(map(int, values))
         if type_str == 'float':
@@ -62,8 +66,9 @@ def match_array(string_input, type_str):
 
 
 if __name__ == "__main__":
-# TODO add expected outputs, move to unit tests folder
+    # TODO add expected outputs, move to unit tests folder
     strings_to_match = [
+        'c:\program files',
         '2.0, ( 6.0, 9.0',
         '{32.0   , 32.0}',
         '{   32.0, 32.0}',
