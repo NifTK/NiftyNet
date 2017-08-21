@@ -3,9 +3,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
-import niftynet.utilities.util_csv as misc_csv
-from niftynet.utilities.filename_matching import KeywordsMatching
 from niftynet.utilities.user_parameters_custom import *
 from niftynet.utilities.user_parameters_default import *
 
@@ -69,7 +66,14 @@ def run():
             system_args['CUSTOM'] = all_args[section]
             vars(system_args['CUSTOM'])['name'] = meta_parser.prog
         else:
-            input_data_args[section] = _make_csv_files(all_args, section)
+            # set the output path of csv list if not exists
+            csv_path = all_args[section].csv_file
+            if (csv_path is None) or (not os.path.isfile(csv_path)):
+                csv_filename = os.path.join(
+                    all_args['APPLICATION'].model_dir,
+                    '{}{}'.format(section, '.csv'))
+                all_args[section].csv_file = csv_filename
+            input_data_args[section] = all_args[section]
     # update conf path
     system_args['CONFIG_FILE'] = argparse.Namespace(path=meta_args.conf)
     return system_args, input_data_args
@@ -118,117 +122,3 @@ def _parse_arguments_by_section(
     # input command line input overrides config file
     section_args, unknown = section_parser.parse_known_args(args_from_cmd)
     return section_args, unknown
-
-
-def _make_csv_files(all_args, section):
-    #  set section_args.csv_file to a valid csv file
-    section_args = all_args[section]
-    input_csv = section_args.csv_file
-    if (input_csv is None) or (not os.path.isfile(input_csv)):
-        input_csv = os.path.join(all_args['APPLICATION'].model_dir,
-                                 '{}{}'.format(section, '.csv'))
-    # write a new csv file if it doesn't exist
-    if not os.path.isfile(input_csv):
-        print('search file folders ignored, '
-                        'writing csv file {}'.format(input_csv))
-        section_tuple = section_args.__dict__.items()
-        matcher = KeywordsMatching.from_tuple(section_tuple)
-        misc_csv.match_and_write_filenames_to_csv([matcher], input_csv)
-    else:
-        print('using existing csv file {}, '
-                        'file folder parameters ignored'.format(input_csv))
-    section_args.csv_file = input_csv
-    if not os.path.isfile(section_args.csv_file):
-        raise IOError(
-            "unable to find/create list of input filenames"
-            "as a csv file {} for config"
-            "section [{}]".format(section_args.csv_file, section))
-    return section_args
-
-# def _eval_path_search(config):
-#    # match flexible input modality sections
-#    output_keywords = []
-#    ref_keywords = []
-#    data_keywords = []
-#    for section in config.sections():
-#        section = section.lower()
-#        if 'output' in section:
-#            output_keywords.append(config.items(section))
-#        elif 'ref' in section:
-#            ref_keywords.append(config.items(section))
-#        elif 'data' in section:
-#            data_keywords.append(config.items(section))
-#    output_matcher = [KeywordsMatching.from_tuple(mod_info)
-#                      for mod_info in output_keywords]
-#    ref_matcher = [KeywordsMatching.from_tuple(mod_info)
-#                   for mod_info in ref_keywords]
-#    data_matcher = [KeywordsMatching.from_tuple(mod_info)
-#                    for mod_info in data_keywords]
-#    return output_matcher, ref_matcher, data_matcher
-#
-# def run_eval():
-#    meta_parser = argparse.ArgumentParser(add_help=False)
-#    meta_parser.add_argument("-c", "--conf",
-#                             help="Specify configurations from a file",
-#                             metavar="File")
-#    config_file = os.path.join(os.path.dirname(__file__),
-#                               '..', 'config', 'default_eval_config.txt')
-#    defaults = {"conf": config_file}
-#    meta_parser.set_defaults(**defaults)
-#    meta_args, remaining_argv = meta_parser.parse_known_args()
-#    try:
-#        config = configparser.ConfigParser()
-#        config.read([meta_args.conf])
-#        # initialise search of image modality filenames
-#        output_matcher, ref_matcher, data_matcher = _eval_path_search(
-#            config)
-#        defaults = dict(config.items("settings"))
-#    except Exception as e:
-#        raise ValueError('configuration file not found')
-#
-#    parser = argparse.ArgumentParser(
-#        parents=[meta_parser],
-#        description=__doc__,
-#        formatter_class=argparse.RawDescriptionHelpFormatter)
-#    parser.set_defaults(**defaults)
-#    parser.add_argument("action",
-#                        help="compute ROI statistics or compare segmentation maps",
-#                        choices=['roi', 'compare'])
-#    parser.add_argument("--threshold",
-#                        help="threshold to obtain binary segmentation",
-#                        type=float)
-#    parser.add_argument("--step",
-#                        help="step of increment when considering probabilistic segmentation",
-#                        type=float)
-#    parser.add_argument("--ref_dir",
-#                        help="path to the image to use as reference")
-#    parser.add_argument("--seg_dir",
-#                        help="path where to find the images to evaluate")
-#    parser.add_argument("--img_dir",
-#                        help="path where to find the images to evaluate")
-#    parser.add_argument("--save_csv_dir",
-#                        help="path where to save the output csv file")
-#    parser.add_argument("--ext",
-#                        help="extension of the image files to be read")
-#    parser.add_argument("--seg_type",
-#                        help="type of input: discrete maps or probabilistic maps")
-#    args = parser.parse_args(remaining_argv)
-#    # creating output
-#    image_csv_path = os.path.join(args.save_csv_dir, 'image_files.csv')
-#    misc_csv.write_matched_filenames_to_csv(output_matcher, image_csv_path)
-#
-#    if ref_matcher:
-#        ref_csv_path = os.path.join(args.save_csv_dir, 'ref_files.csv')
-#        misc_csv.write_matched_filenames_to_csv(ref_matcher, ref_csv_path)
-#    else:
-#        ref_csv_path = None
-#    if data_matcher:
-#        data_csv_path = os.path.join(args.save_csv_dir, 'data_files.csv')
-#        misc_csv.write_matched_filenames_to_csv(data_matcher, data_csv_path)
-#    else:
-#        data_csv_path = None
-#    csv_dict = {'input_image_file': image_csv_path,
-#                'target_image_file': ref_csv_path,
-#                'weight_map_file': data_csv_path,
-#                'target_note': None}
-#    return args, csv_dict

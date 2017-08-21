@@ -67,6 +67,7 @@ class ApplicationDriver(object):
         self.initial_iter = 0
         self.final_iter = 0
 
+        self._coord = None
         self._init_op = None
         self.outputs_collector = None
         self.gradients_collector = None
@@ -129,11 +130,11 @@ class ApplicationDriver(object):
             self._randomly_init_or_restore_variables(session)
 
             # start samplers' threads
-            self.coord = tf.train.Coordinator()
+            self._coord = tf.train.Coordinator()
             samplers = self.app.get_sampler()
             tf.logging.info('Filling queues (this can take a few minutes)')
             for sampler in samplers:
-                sampler.run_threads(session, self.coord, self.num_threads)
+                sampler.run_threads(session, self._coord, self.num_threads)
 
             start_time = time.time()
             loop_status = {}
@@ -257,7 +258,7 @@ class ApplicationDriver(object):
 
             loop_status['current_iter'] = iter_i
             local_time = time.time()
-            if self.coord.should_stop():
+            if self._coord.should_stop():
                 break
 
             # prepare variables from the graph to run
@@ -290,7 +291,7 @@ class ApplicationDriver(object):
         loop_status['all_saved_flag'] = False
         while True:
             local_time = time.time()
-            if self.coord.should_stop():
+            if self._coord.should_stop():
                 break
             vars_to_run = self.outputs_collector.variables()
             graph_output = sess.run(vars_to_run)

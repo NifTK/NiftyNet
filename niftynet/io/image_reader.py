@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function
 
-import os
 from copy import deepcopy
 
 import numpy as np
-import pandas
 import tensorflow as tf
 from six import string_types
 
+import niftynet.utilities.util_csv as util_csv
 from niftynet.io.image_type import ImageFactory
 from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
 from niftynet.utilities.user_parameters_helper import make_input_tuple
@@ -64,10 +63,10 @@ class ImageReader(Layer):
                     raise ValueError
                 else:
                     data_to_load[source] = data_param[source]
-        self._file_list = ImageReader.load_and_merge_csv_files(data_to_load)
-        self.output_list = filename_to_image_list(self._file_list,
-                                                  self._input_sources,
-                                                  data_param)
+        self._file_list = util_csv.load_and_merge_csv_files(data_to_load)
+        self.output_list = _filename_to_image_list(self._file_list,
+                                                   self._input_sources,
+                                                   data_param)
         for name in self.names:
             tf.logging.info('image reader: loading [{}] from {} ({})'.format(
                 name, self.input_sources[name], len(self.output_list)))
@@ -127,39 +126,6 @@ class ImageReader(Layer):
                     image_data_dict, mask = layer(image_data_dict, mask)
         return idx, image_data_dict, interp_order_dict
 
-    @staticmethod
-    def load_and_merge_csv_files(data_param):
-        """
-        Converts a list of csv_files in data_param
-        in to a joint list of file names (by matching the first column)
-        This function returns a <pandas.core.frame.DataFrame> of the
-        joint list
-        """
-        _file_list = None
-        for modality_name in data_param:
-            csv_file = data_param.get(modality_name, '').csv_file
-            if not os.path.isfile(csv_file):
-                tf.logging.fatal("csv file {} not found.".format(csv_file))
-                raise IOError
-            csv_list = pandas.read_csv(
-                csv_file, header=None, names=['subject_id', modality_name])
-            if _file_list is None:
-                _file_list = csv_list
-                continue
-
-            # merge _file_list based on subject_ids (first column of each csv)
-            n_rows = _file_list.shape[0]
-            _file_list = pandas.merge(_file_list, csv_list, on='subject_id')
-            if _file_list.shape[0] != n_rows:
-                tf.logging.warning("rows not matched in {}".format(csv_file))
-        if _file_list.size == 0:
-            tf.logging.fatal(
-                "empty filename lists, please check the csv "
-                "files. (remove csv files to automatically"
-                "search folders and generate new csv files again)")
-            raise IOError
-        return _file_list
-
     @property
     def shapes(self):
         if not self.output_list:
@@ -208,7 +174,7 @@ class ImageReader(Layer):
         return self._file_list.iloc[image_index, 0]
 
 
-def filename_to_image_list(file_list, mod_dict, data_param):
+def _filename_to_image_list(file_list, mod_dict, data_param):
     """
     converting a list of filenames to a list of image objects
     useful properties (e.g. interp_order) are added to each object
@@ -219,13 +185,13 @@ def filename_to_image_list(file_list, mod_dict, data_param):
                          prefix='reading datasets headers',
                          decimals=1, length=10, fill='*')
         # combine fieldnames and volumes as a dictionary
-        _dict = {field: create_image(file_list, idx, modalities, data_param)
+        _dict = {field: _create_image(file_list, idx, modalities, data_param)
                  for (field, modalities) in mod_dict.items()}
         volume_list.append(_dict)
     return volume_list
 
 
-def create_image(file_list, idx, modalities, data_param):
+def _create_image(file_list, idx, modalities, data_param):
     """
     data_param consists of description of each modality
     This function combines modalities according to the 'modalities'

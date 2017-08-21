@@ -283,10 +283,9 @@ class SpatialImage4D(SpatialImage3D):
         return image_data
 
 
-class VectorND(DataFromFile):
-    def __init__(self, file_path, name):
-        super(VectorND, self).__init__(file_path=file_path,
-                                       name=name)
+class VectorND(SpatialImage2D):
+    def __init__(self, file_path, **kwargs):
+        SpatialImage2D.__init__(self, file_path=file_path,  **kwargs)
 
     def get_data(self, resample_to=None, reorient_to=None):
         if resample_to:
@@ -299,6 +298,7 @@ class VectorND(DataFromFile):
 
         image_obj = misc.load_image(self.file_path[0])
         image_data = image_obj.get_data()
+        import pdb; pdb.set_trace()
         return image_data
 
 
@@ -322,7 +322,6 @@ class ImageFactory(object):
             ndims = misc.infer_ndims_from_file(file_path[0]) + multi_mod_dim
         else:
             ndims = misc.infer_ndims_from_file(file_path)
-
         image_type = cls.INSTANCE_DICT.get(ndims, None)
         if image_type is None:
             raise NotImplementedError

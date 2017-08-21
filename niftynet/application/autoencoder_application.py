@@ -34,11 +34,22 @@ class AutoencoderApplication(BaseApplication):
         self.data_param = data_param
         self.autoencoder_param = task_param
 
+        if not self.is_training:
+            self._infer_type = look_up_operations(
+                self.autoencoder_param.inference_type, SUPPORTED_INFERENCE)
+        else:
+            self._infer_type = None
+
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.reader = ImageReader(SUPPORTED_INPUT)
-        else:  # in the inference process use image input only
             self.reader = ImageReader(['image'])
+        if self._infer_type in ('encode', 'encode-decode'):
+            self.reader = ImageReader(['image'])
+        elif self._infer_type == 'sample':
+            self.reader = ()
+        elif self._infer_type == 'linear_interpolation':
+            self.reader = ImageReader(['feature'])
+
         self.reader.initialise_reader(data_param, task_param)
 
         augmentation_layers = []
@@ -66,10 +77,9 @@ class AutoencoderApplication(BaseApplication):
                 windows_per_image=1,
                 shuffle_buffer=True))
         else:
-            infer_type = look_up_operations(
-                self.autoencoder_param.inference_type,
-                SUPPORTED_INFERENCE)
-            if infer_type in ('encode', 'encode-decode'):
+            if self._infer_type in ('encode',
+                                    'encode-decode',
+                                    'linear_interpolation'):
                 self.sampler.append(ResizeSampler(
                     reader=self.reader,
                     data_param=self.data_param,
@@ -129,10 +139,7 @@ class AutoencoderApplication(BaseApplication):
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
         else:
-            infer_type = look_up_operations(
-                self.autoencoder_param.inference_type,
-                SUPPORTED_INFERENCE)
-            if infer_type in ('encode', 'encode-decode'):
+            if self._infer_type in ('encode', 'encode-decode'):
                 data_dict = self.get_sampler()[0].pop_batch_op()
                 image = tf.cast(data_dict['image'], dtype=tf.float32)
                 net_output = self.net(image, is_training=False)
@@ -141,11 +148,11 @@ class AutoencoderApplication(BaseApplication):
                     var=data_dict['image_location'], name='location',
                     average_over_devices=True, collection=CONSOLE)
 
-                if infer_type == 'encode-decode':
+                if self._infer_type == 'encode-decode':
                     outputs_collector.add_to_collection(
                         var=net_output[2], name='generated_image',
                         average_over_devices=True, collection=CONSOLE)
-                if infer_type == 'encode':
+                if self._infer_type == 'encode':
                     outputs_collector.add_to_collection(
                         var=net_output[7], name='embedded',
                         average_over_devices=True, collection=CONSOLE)
@@ -153,7 +160,8 @@ class AutoencoderApplication(BaseApplication):
                 self.output_decoder = WindowAsImageAggregator(
                     image_reader=self.reader,
                     output_path=self.action_param.save_seg_dir)
-            if infer_type == 'sample':
+                return
+            elif self._infer_type == 'sample':
                 image_size = (self.net_param.batch_size,) + \
                              self.action_param.spatial_window_size + (1,)
                 dummy_image = tf.zeros(image_size)
@@ -164,7 +172,6 @@ class AutoencoderApplication(BaseApplication):
                                          mean=0.0,
                                          stddev=stddev,
                                          dtype=tf.float32)
-                # tf.stop_gradient(noise)
                 partially_decoded_sample = self.net.shared_decoder(
                     noise, is_training=False)
                 decoder_output = self.net.decoder_means(
@@ -176,6 +183,7 @@ class AutoencoderApplication(BaseApplication):
                 self.output_decoder = WindowAsImageAggregator(
                     image_reader=None,
                     output_path=self.action_param.save_seg_dir)
+                return
             else:
                 raise NotImplementedError
 

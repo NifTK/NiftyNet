@@ -7,6 +7,8 @@ import sys
 from difflib import SequenceMatcher
 
 import numpy as np
+import pandas
+import tensorflow as tf
 
 from niftynet.utilities.filename_matching import KeywordsMatching
 
@@ -220,3 +222,45 @@ def match_and_write_filenames_to_csv(list_constraints, csv_file):
             for list_temp in list_combined:
                 file_writer.writerow(list_temp)
     return
+
+
+def load_and_merge_csv_files(data_param):
+    """
+    Converts a list of csv_files in data_param
+    in to a joint list of file names (by matching the first column)
+    This function returns a <pandas.core.frame.DataFrame> of the
+    joint list
+    """
+    _file_list = None
+    for modality_name in data_param:
+        csv_file = data_param.get(modality_name, '').csv_file
+        if not os.path.isfile(csv_file):
+            tf.logging.info('search file folders ignored, '
+                            'writing csv file {}'.format(csv_file))
+            section_tuple = data_param[modality_name].__dict__.items()
+            matcher = KeywordsMatching.from_tuple(section_tuple)
+            match_and_write_filenames_to_csv([matcher], csv_file)
+        else:
+            tf.logging.info('using existing csv file {}, '
+                            'file folder parameters ignored'.format(csv_file))
+        if not os.path.isfile(csv_file):
+            tf.logging.fatal("csv file {} not found.".format(csv_file))
+            raise IOError
+        csv_list = pandas.read_csv(
+            csv_file, header=None, names=['subject_id', modality_name])
+        if _file_list is None:
+            _file_list = csv_list
+            continue
+
+        # merge _file_list based on subject_ids (first column of each csv)
+        n_rows = _file_list.shape[0]
+        _file_list = pandas.merge(_file_list, csv_list, on='subject_id')
+        if _file_list.shape[0] != n_rows:
+            tf.logging.warning("rows not matched in {}".format(csv_file))
+    if _file_list.size == 0:
+        tf.logging.fatal(
+            "empty filename lists, please check the csv "
+            "files. (remove csv files to automatically"
+            "search folders and generate new csv files again)")
+        raise IOError
+    return _file_list
