@@ -22,6 +22,10 @@ from distutils.version import LooseVersion
 
 from niftynet.utilities.get_niftynet_version import get_niftynet_version, get_niftynet_version_string
 
+# Used with the min_download_api settings option to determine if the downloaded configuration file is compatible with
+# this version of NiftyNet downloader code
+DOWNLOAD_API_VERSION = "1.0"
+
 
 def download(example_ids, niftynet_base_folder=None, download_if_already_existing=False):
     """
@@ -162,7 +166,7 @@ class ConfigStore:
             force_download = download_if_already_existing or (not current_config and not current_entries)
             data_missing = self._are_data_missing(remote_entries, example_id)
             if force_download or data_missing or self._is_update_required(current_config, remote_config):
-                self._check_minimum_niftynet_version(remote_config)
+                self._check_minimum_versions(remote_config)
                 self._download(remote_entries, example_id)
                 self._replace_local_with_remote_config(example_id)
             else:
@@ -171,7 +175,15 @@ class ConfigStore:
         return True
 
     @staticmethod
-    def _check_minimum_niftynet_version(remote_config):
+    def _check_minimum_versions(remote_config):
+        # Checks whether a minimum download API is specified
+        if 'min_download_api' in remote_config:
+            min_download_api = remote_config['min_download_api']
+            current_download_api_version = DOWNLOAD_API_VERSION
+            if LooseVersion(min_download_api) > LooseVersion(current_download_api_version):
+                raise ValueError("This example requires a newer version of NiftyNet.")
+
+        # Checks whether a minimum NiftyNet version is specified
         if 'min_niftynet' in remote_config:
             min_niftynet = remote_config['min_niftynet']
             current_version = get_niftynet_version()
