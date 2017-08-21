@@ -100,7 +100,8 @@ class SpatialImage2D(DataFromFile):
                                        for shape in self._original_shape])
             assert len(non_modality_shapes) == 1, \
                 "combining multimodal images: shapes not consistent"
-            n_modalities = len(self.file_path)
+            n_modalities = np.sum(
+                [int(shape[4]) for shape in self._original_shape])
             self._original_shape = non_modality_shapes.pop() + (n_modalities,)
         return self._original_shape
 
@@ -285,7 +286,7 @@ class SpatialImage4D(SpatialImage3D):
 
 class VectorND(SpatialImage2D):
     def __init__(self, file_path, **kwargs):
-        SpatialImage2D.__init__(self, file_path=file_path,  **kwargs)
+        SpatialImage2D.__init__(self, file_path=file_path, **kwargs)
 
     def get_data(self, resample_to=None, reorient_to=None):
         if resample_to:
@@ -298,7 +299,6 @@ class VectorND(SpatialImage2D):
 
         image_obj = misc.load_image(self.file_path[0])
         image_data = image_obj.get_data()
-        import pdb; pdb.set_trace()
         return image_data
 
 

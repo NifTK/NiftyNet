@@ -9,7 +9,7 @@ from niftynet.engine.image_window_buffer import InputBatchQueueRunner
 from niftynet.layer.base_layer import Layer
 
 
-class RandomVectorSampler(Layer, InputBatchQueueRunner):
+class LinearInterpolateSampler(Layer, InputBatchQueueRunner):
     """
     This class generates two samples from the standard normal
     distribution.  These two samples are mixed with n
@@ -18,24 +18,22 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
     """
 
     def __init__(self,
-                 names=('vector',),
-                 vector_size=(100,),
+                 reader,
+                 data_param,
                  batch_size=10,
-                 n_interpolations=10,
-                 repeat=1):
+                 n_interpolations=10):
         self.n_interpolations = n_interpolations
         capacity = batch_size * 2
-        self.repeat = repeat
+        self.reader = reader
         Layer.__init__(self, name='input_buffer')
         InputBatchQueueRunner.__init__(self, capacity=capacity, shuffle=False)
-
         tf.logging.info('reading size of preprocessed images')
-        self.names = names
-        vector_shapes = {names[0]: vector_size}
-        vector_dtypes = {names[0]: tf.float32}
-        self.window = ImageWindow(names=tuple(vector_shapes),
-                                  shapes=vector_shapes,
-                                  dtypes=vector_dtypes)
+        self.window = ImageWindow.from_data_reader_properties(
+            self.reader.input_sources,
+            self.reader.shapes,
+            self.reader.tf_dtypes,
+            data_param)
+
         tf.logging.info('initialised window instance')
         self._create_queue_and_ops(self.window,
                                    enqueue_size=self.n_interpolations,
@@ -49,13 +47,13 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
         with self.n_interpolations mixing coefficients
         Location is set to np.ones for all the vectors
         """
-        total_iter = int(self.repeat) if self.repeat is not None else 1
-        while total_iter > 0:
-            total_iter = total_iter - 1 if self.repeat is not None else 1
-            embedding_x = np.random.randn(
-                *self.window.shapes[self.window.names[0]])
-            embedding_y = np.random.randn(
-                *self.window.shapes[self.window.names[0]])
+        while True:
+            image_id_x, data_x, _ = self.reader(idx=None, shuffle=True)
+            image_id_y, data_y, _ = self.reader(idx=None, shuffle=True)
+            if not data_x or not data_y:
+                break
+            embedding_x = data_x[self.window.names[0]]
+            embedding_y = data_y[self.window.names[0]]
             steps = np.linspace(0, 1, self.n_interpolations)
             output_vectors = []
             for (idx, mixture) in enumerate(steps):
@@ -64,9 +62,10 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
                 output_vector = output_vector[np.newaxis, ...]
                 output_vectors.append(output_vector)
             output_vectors = np.concatenate(output_vectors, axis=0)
-
             coordinates = np.ones(
                 (self.n_interpolations, N_SPATIAL * 2 + 1), dtype=np.int32)
+            coordinates[0,:] = image_id_x
+            coordinates[1,:] = image_id_y
 
             output_dict = {}
             for name in self.window.names:

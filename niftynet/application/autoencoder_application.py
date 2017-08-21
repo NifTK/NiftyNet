@@ -4,6 +4,7 @@ from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.image_windows_aggregator import WindowAsImageAggregator
+from niftynet.engine.sampler_linear_interpolate import LinearInterpolateSampler
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.loss_autoencoder import LossFunction
@@ -76,16 +77,21 @@ class AutoencoderApplication(BaseApplication):
                 batch_size=self.net_param.batch_size,
                 windows_per_image=1,
                 shuffle_buffer=True))
-        else:
-            if self._infer_type in ('encode',
-                                    'encode-decode',
-                                    'linear_interpolation'):
-                self.sampler.append(ResizeSampler(
-                    reader=self.reader,
-                    data_param=self.data_param,
-                    batch_size=self.net_param.batch_size,
-                    windows_per_image=1,
-                    shuffle_buffer=False))
+            return
+        if self._infer_type in ('encode', 'encode-decode'):
+            self.sampler.append(ResizeSampler(
+                reader=self.reader,
+                data_param=self.data_param,
+                batch_size=self.net_param.batch_size,
+                windows_per_image=1,
+                shuffle_buffer=False))
+            return
+        if self._infer_type == 'linear_interpolation':
+            self.sampler.append(LinearInterpolateSampler(
+                reader=self.reader,
+                data_param=self.data_param,
+                batch_size=self.net_param.batch_size))
+            return
 
     def initialise_network(self):
         w_regularizer = None
@@ -184,6 +190,29 @@ class AutoencoderApplication(BaseApplication):
                     image_reader=None,
                     output_path=self.action_param.save_seg_dir)
                 return
+            elif self._infer_type == 'linear_interpolation':
+                # construct the entire network
+                image_size = (self.net_param.batch_size,) + \
+                             self.action_param.spatial_window_size + (1,)
+                dummy_image = tf.zeros(image_size)
+                net_output = self.net(dummy_image, is_training=False)
+                data_dict = self.get_sampler()[0].pop_batch_op()
+                real_code = data_dict['feature']
+                real_code.set_shape(net_output[-1].get_shape())
+                partially_decoded_sample = self.net.shared_decoder(
+                    real_code, is_training=False)
+                decoder_output = self.net.decoder_means(
+                    partially_decoded_sample, is_training=False)
+
+                outputs_collector.add_to_collection(
+                    var=decoder_output, name='generated_image',
+                    average_over_devices=True, collection=CONSOLE)
+                outputs_collector.add_to_collection(
+                    var=data_dict['feature_location'], name='location',
+                    average_over_devices=True, collection=CONSOLE)
+                self.output_decoder = WindowAsImageAggregator(
+                    image_reader=None,
+                    output_path=self.action_param.save_seg_dir)
             else:
                 raise NotImplementedError
 
@@ -203,6 +232,9 @@ class AutoencoderApplication(BaseApplication):
             if infer_type == 'sample':
                 return self.output_decoder.decode_batch(
                     batch_output['generated_image'], None)
+            if infer_type == 'linear_interpolation':
+                return self.output_decoder.decode_batch(
+                    batch_output['generated_image'], batch_output['location'])
 
 
 class AutoencoderFactory(object):

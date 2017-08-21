@@ -66,7 +66,6 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
             # are converted to static ones
             # as now we know the image shapes
             static_window_shapes = self.window.match_image_shapes(image_shapes)
-            import pdb; pdb.set_trace()
 
             # for resize sampler the coordinates are not used
             # simply use the spatial dims of the input image

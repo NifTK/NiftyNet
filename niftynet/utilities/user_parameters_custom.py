@@ -113,6 +113,13 @@ def __add_autoencoder_args(parser):
         help="standard deviation of noise when inference type is sample",
         type=float)
 
+    parser.add_argument(
+        "--n_interpolations",
+        metavar='',
+        help="the method of generating window from image",
+        type=int,
+        default=10)
+
     from niftynet.application.autoencoder_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser
