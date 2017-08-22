@@ -265,7 +265,7 @@ def write_all_mod_mapping(hist_model_file, mapping):
             "moved existing histogram reference file\n"
             " from {} to {}".format(hist_model_file, backup_name))
 
-    touch_folder(hist_model_file)
+    touch_folder(os.path.dirname(hist_model_file))
     __force_writing_new_mapping(hist_model_file, mapping)
 
 

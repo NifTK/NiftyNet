@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function, division
 
-import logging as log
 import os
 import re
-import sys
 import time
 
 import tensorflow as tf
@@ -20,8 +18,6 @@ from niftynet.engine.application_variables import \
 from niftynet.io.misc_io import touch_folder
 
 FILE_PREFIX = 'model.ckpt'
-CONSOLE_LOG_FORMAT = '%(levelname)s:niftynet: %(message)s'
-FILE_LOG_FORMAT = '%(levelname)s:niftynet:%(asctime)s: %(message)s'
 
 
 class ApplicationDriver(object):
@@ -70,9 +66,6 @@ class ApplicationDriver(object):
         summary_root = os.path.join(self.model_dir, 'logs')
         self.summary_dir = self._summary_dir(
             summary_root, train_param.starting_iter == 0)
-        log_file_name = os.path.join(
-            self.model_dir, '{}_{}'.format(app_param.action, 'log_console'))
-        ApplicationDriver._set_logger(file_name=log_file_name)
 
         # model-related parameters
         self.initial_iter = train_param.starting_iter \
@@ -326,23 +319,6 @@ class ApplicationDriver(object):
         config.log_device_placement = False
         config.allow_soft_placement = True
         return config
-
-    @staticmethod
-    def _set_logger(file_name=None):
-        tf.logging._logger.handlers = []
-        tf.logging._logger = log.getLogger('tensorflow')
-        tf.logging.set_verbosity(tf.logging.INFO)
-
-        f = log.Formatter(CONSOLE_LOG_FORMAT)
-        std_handler = log.StreamHandler(sys.stdout)
-        std_handler.setFormatter(f)
-        tf.logging._logger.addHandler(std_handler)
-
-        if file_name is not None:
-            f = log.Formatter(FILE_LOG_FORMAT)
-            file_handler = log.FileHandler(file_name)
-            file_handler.setFormatter(f)
-            tf.logging._logger.addHandler(file_handler)
 
     @staticmethod
     def _summary_dir(summary_root, new_sub_dir):

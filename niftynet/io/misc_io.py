@@ -306,7 +306,6 @@ def touch_folder(model_dir):
     This funciton returns the absolute path of `model_dir` if exists
     otherwise try to create the folder and returns the absolute path
     """
-    model_dir = os.path.dirname(model_dir)
     if not os.path.exists(model_dir):
         try:
             os.makedirs(model_dir)
@@ -317,3 +316,4 @@ def touch_folder(model_dir):
     absolute_dir = os.path.abspath(model_dir)
     #tf.logging.info('accessing output folder: {}'.format(absolute_dir))
     return absolute_dir
+
