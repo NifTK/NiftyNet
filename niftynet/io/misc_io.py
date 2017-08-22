@@ -252,13 +252,7 @@ def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
     '''
     if img_data is None:
         return
-    try:
-        if not os.path.exists(save_path):
-            os.makedirs(save_path)
-    except OSError:
-        tf.logging.fatal('writing output images failed.')
-        raise
-
+    touch_folder(save_path)
     img_nii = nib.Nifti1Image(img_data, affine)
     # img_nii.set_data_dtype(np.dtype(np.float32))
     output_name = os.path.join(save_path, filename)
@@ -305,3 +299,21 @@ def squeeze_spatial_temporal_dim(tf_tensor):
         if axis == 1:
             axis_to_squeeze.append(idx)
     return tf.squeeze(tf_tensor, axis=axis_to_squeeze)
+
+
+def touch_folder(model_dir):
+    """
+    This funciton returns the absolute path of `model_dir` if exists
+    otherwise try to create the folder and returns the absolute path
+    """
+    model_dir = os.path.dirname(model_dir)
+    if not os.path.exists(model_dir):
+        try:
+            os.makedirs(model_dir)
+        except OSError:
+            tf.logging.fatal(
+                'couldnot create model folder: {}'.format(model_dir))
+            raise OSError
+    absolute_dir = os.path.abspath(model_dir)
+    #tf.logging.info('accessing output folder: {}'.format(absolute_dir))
+    return absolute_dir

@@ -7,6 +7,7 @@ import numpy as np
 import numpy.ma as ma
 import tensorflow as tf
 
+from niftynet.io.misc_io import touch_folder
 from niftynet.utilities.util_common import look_up_operations, printProgressBar
 
 """
@@ -264,12 +265,7 @@ def write_all_mod_mapping(hist_model_file, mapping):
             "moved existing histogram reference file\n"
             " from {} to {}".format(hist_model_file, backup_name))
 
-    if not os.path.exists(os.path.dirname(hist_model_file)):
-        try:
-            os.makedirs(os.path.dirname(hist_model_file))
-        except OSError:
-            tf.logging.fatal('cannot create {}'.format(hist_model_file))
-            raise
+    touch_folder(hist_model_file)
     __force_writing_new_mapping(hist_model_file, mapping)
 
 

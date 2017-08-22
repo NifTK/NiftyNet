@@ -11,6 +11,7 @@ import pandas
 import tensorflow as tf
 
 from niftynet.utilities.filename_matching import KeywordsMatching
+from niftynet.io.misc_io import touch_folder
 
 
 def match_first_degree(name_list1, name_list2):
@@ -206,9 +207,7 @@ def match_and_write_filenames_to_csv(list_constraints, csv_file):
         name_tot.append(name_list)
         list_tot.append(list_files)
     list_combined = join_subject_id_and_filename_list(name_tot, list_tot)
-    output_dir = os.path.dirname(csv_file)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    touch_folder(csv_file)
 
     # csv writer has different behaviour in python 2/3
     if sys.version_info[0] >= 3:

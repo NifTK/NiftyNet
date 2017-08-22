@@ -2,6 +2,7 @@
 from __future__ import absolute_import, print_function, division
 
 import logging as log
+import re
 import os
 import sys
 import time
@@ -15,6 +16,7 @@ from niftynet.engine.application_variables import OutputsCollector
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.application_variables import \
     global_variables_initialize_or_restorer
+from niftynet.io.misc_io import touch_folder
 from niftynet.utilities.util_common import look_up_operations
 
 FILE_PREFIX = 'model.ckpt'
@@ -88,7 +90,8 @@ class ApplicationDriver(object):
         ApplicationDriver._set_cuda_device(app_param.cuda_devices)
 
         # set output folders
-        self.model_dir = ApplicationDriver._touch_folder(app_param.model_dir)
+        models_path = os.path.join(app_param.model_dir, 'models')
+        self.model_dir = touch_folder(models_path)
         self.session_dir = os.path.join(self.model_dir, FILE_PREFIX)
         summary_root = os.path.join(self.model_dir, 'logs')
         self.summary_dir = self._summary_dir(
@@ -323,15 +326,6 @@ class ApplicationDriver(object):
             return '/gpu:0' if has_local_gpu else '/cpu:0'
 
     @staticmethod
-    def _touch_folder(model_dir):
-        model_dir = os.path.join(model_dir, 'models')
-        if not os.path.exists(model_dir):
-            os.makedirs(model_dir)
-        absolute_dir = os.path.abspath(model_dir)
-        tf.logging.info('accessing output folder: {}'.format(absolute_dir))
-        return absolute_dir
-
-    @staticmethod
     def _set_cuda_device(cuda_devices):
         # TODO: refactor this OS-dependent function
         if not (cuda_devices == '""'):
@@ -378,16 +372,22 @@ class ApplicationDriver(object):
 
     @staticmethod
     def _summary_dir(summary_root, new_sub_dir):
-        if not os.path.exists(summary_root):
-            os.makedirs(summary_root)
-        log_sub_dirs = os.listdir(summary_root)
-        log_sub_dirs = [n for n in log_sub_dirs if unicode(n).isdecimal()]
+        summary_root = touch_folder(summary_root)
+        try:
+            log_sub_dirs = os.listdir(summary_root)
+        except OSError:
+            tf.logging.fatal('not a directory {}'.format(summary_root))
+            raise OSError
+        log_sub_dirs = [name for name in log_sub_dirs
+                        if re.findall('^[0-9]+$', name)]
         if log_sub_dirs and new_sub_dir:
-            log_sub_dir = str(max([int(name) for name in log_sub_dirs]) + 1)
+            latest_id = max([int(name) for name in log_sub_dirs])
+            log_sub_dir = str(latest_id + 1)
         elif log_sub_dirs and not new_sub_dir:
-            log_sub_dir = str(max([int(n) for n in log_sub_dirs
-                                   if os.path.isdir(
-                    os.path.join(summary_root, n))]))
+            latest_valid_id = max(
+                [int(name) for name in log_sub_dirs
+                 if os.path.isdir(os.path.join(summary_root, name))])
+            log_sub_dir = str(latest_valid_id)
         else:
             log_sub_dir = '0'
         return os.path.join(summary_root, log_sub_dir)

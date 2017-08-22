@@ -7,7 +7,7 @@ import re
 
 INT = r'(?:[-+]?\d+)'
 FLOAT = r'(?:[-+]?\d*\.\d+|' + INT + r')'
-LITERAL = r'(?:[ -_a-zA-Z0-9\:]+)'
+LITERAL = r'(?:[-_a-zA-Z0-9 \\:]+)'
 COMMA = r'(?:[,])'
 LEFT_PARENTHESIS = r'(?:\()'
 RIGHT_PARENTHESIS = r'(?:\))'

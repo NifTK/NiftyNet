@@ -19,6 +19,7 @@ import niftynet.utilities.util_common as util
 import niftynet.utilities.user_parameters_parser as user_parameters_parser
 
 from niftynet.engine.application_driver import ApplicationDriver
+from niftynet.io.misc_io import touch_folder
 
 
 def main():
@@ -31,7 +32,8 @@ def main():
     all_param.update(system_param)
     all_param.update(input_data_param)
     txt_file = 'settings_{}.txt'.format(system_param['APPLICATION'].action)
-    txt_file = os.path.join(system_param['APPLICATION'].model_dir, txt_file)
+    model_folder = touch_folder(system_param['APPLICATION'].model_dir)
+    txt_file = os.path.join(model_folder, txt_file)
     util.print_save_input_parameters(all_param, txt_file)
 
     app_driver = ApplicationDriver()
