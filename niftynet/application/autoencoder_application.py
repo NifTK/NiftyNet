@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
-from niftynet.engine.application_net_factory import ApplicationNetFactory
+from niftynet.engine.application_factory import ApplicationNetFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.image_windows_aggregator import WindowAsImageAggregator
@@ -20,6 +20,8 @@ SUPPORTED_INFERENCE = {
 
 
 class AutoencoderApplication(BaseApplication):
+    REQUIRED_CONFIG_SECTION = "AUTOENCODER"
+
     def __init__(self, net_param, action_param, is_training):
         BaseApplication.__init__(self)
         tf.logging.info('starting autoencoder application')

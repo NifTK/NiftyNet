@@ -20,14 +20,22 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     Each application type should support to use
     the standard training and inference driver
     """
+    REQUIRED_CONFIG_SECTION = None
+
     is_training = True
+
+    # input of the network
     reader = None
     sampler = None
+
+    # the network
     net = None
 
+    # training the network
     optimiser = None
     gradient_op = None
 
+    # interpret network output
     output_decoder = None
 
     def check_initialisations(self):

@@ -152,7 +152,8 @@ def add_input_data_args(parser):
 def add_network_args(parser):
     parser.add_argument(
         "--name",
-        help="Choose a net from NiftyNet/niftynet/network/",
+        help="Choose a net from NiftyNet/niftynet/network/ or from"
+             "user specified module string",
         metavar='')
 
     import niftynet.layer.activation

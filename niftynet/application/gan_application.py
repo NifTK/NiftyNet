@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
-from niftynet.engine.application_net_factory import ApplicationNetFactory
+from niftynet.engine.application_factory import ApplicationNetFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.image_windows_aggregator import WindowAsImageAggregator
@@ -24,6 +24,8 @@ SUPPORTED_INPUT = {'image', 'conditioning'}
 
 
 class GANApplication(BaseApplication):
+    REQUIRED_CONFIG_SECTION = "GAN"
+
     def __init__(self, net_param, action_param, is_training):
         BaseApplication.__init__(self)
         tf.logging.info('starting GAN application')

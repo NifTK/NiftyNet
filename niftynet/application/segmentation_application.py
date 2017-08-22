@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
-from niftynet.engine.application_net_factory import ApplicationNetFactory
+from niftynet.engine.application_factory import ApplicationNetFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.image_windows_aggregator import GridSamplesAggregator
@@ -26,6 +26,8 @@ SUPPORTED_INPUT = {'image', 'label', 'weight'}
 
 
 class SegmentationApplication(BaseApplication):
+    REQUIRED_CONFIG_SECTION = "SEGMENTATION"
+
     def __init__(self, net_param, action_param, is_training):
         BaseApplication.__init__(self)
         tf.logging.info('starting segmentation application')

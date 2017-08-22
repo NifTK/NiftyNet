@@ -2,14 +2,15 @@
 from __future__ import absolute_import, print_function, division
 
 import logging as log
-import re
 import os
+import re
 import sys
 import time
 
 import tensorflow as tf
 from tensorflow.python.client import device_lib
 
+from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import GradientsCollector
 from niftynet.engine.application_variables import OutputsCollector
@@ -17,37 +18,10 @@ from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.application_variables import \
     global_variables_initialize_or_restorer
 from niftynet.io.misc_io import touch_folder
-from niftynet.utilities.util_common import look_up_operations
 
 FILE_PREFIX = 'model.ckpt'
 CONSOLE_LOG_FORMAT = '%(levelname)s:niftynet: %(message)s'
 FILE_LOG_FORMAT = '%(levelname)s:niftynet:%(asctime)s: %(message)s'
-SUPPORTED_APP = {'net_segment.py',
-                 'net_autoencoder.py',
-                 'net_gan.py'}
-
-
-class ApplicationFactory(object):
-    @staticmethod
-    def import_module(type_string):
-        type_string = look_up_operations(type_string, SUPPORTED_APP)
-        app_module = None
-        if type_string == 'net_segment.py':
-            from niftynet.application.segmentation_application import \
-                SegmentationApplication
-            app_module = SegmentationApplication
-        elif type_string == 'net_autoencoder.py':
-            from niftynet.application.autoencoder_application import \
-                AutoencoderApplication
-            app_module = AutoencoderApplication
-        elif type_string == 'net_gan.py':
-            from niftynet.application.gan_application import \
-                GANApplication
-            app_module = GANApplication
-        else:
-            raise NotImplementedError(
-                'Unknown application name {}'.format(type_string))
-        return app_module
 
 
 class ApplicationDriver(object):
@@ -344,7 +318,7 @@ class ApplicationDriver(object):
 
     @staticmethod
     def _create_app(app_type_string):
-        return ApplicationFactory.import_module(app_type_string)
+        return ApplicationFactory.create(app_type_string)
 
     @staticmethod
     def _tf_config():

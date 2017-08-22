@@ -3,6 +3,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from niftynet.engine.application_factory import ApplicationFactory
+from niftynet.engine.application_factory import SUPPORTED_APP
 from niftynet.utilities.user_parameters_custom import *
 from niftynet.utilities.user_parameters_default import *
 from niftynet.utilities.versioning import get_niftynet_version_string
@@ -12,13 +14,7 @@ try:
 except ImportError:
     import ConfigParser as configparser
 
-# sections not in SYSTEM_SECTIONS or CUSTOM_SECTIONS will be
-# treated as input data source specifications
 SYSTEM_SECTIONS = {'APPLICATION', 'NETWORK', 'TRAINING', 'INFERENCE'}
-CUSTOM_SECTIONS = {'net_segment.py': 'SEGMENTATION',
-                   'net_gan.py': 'GAN',
-                   'net_autoencoder.py': 'AUTOENCODER'}
-
 
 def run():
     # meta_parser: to find out location of the configuration file
@@ -29,6 +25,9 @@ def run():
     meta_parser.add_argument("-c", "--conf",
                              help="Specify configurations from a file",
                              metavar="File", )
+    meta_parser.add_argument("-a", "--application_name",
+                             help="Specify application name",
+                             default="", )
     meta_args, args_from_cmd = meta_parser.parse_known_args()
     print(version_string)
 
@@ -39,13 +38,20 @@ def run():
     config = configparser.ConfigParser()
     config.read([meta_args.conf])
     try:
-        required_section_name = look_up_operations(meta_parser.prog,
-                                                   CUSTOM_SECTIONS)
+        if meta_parser.prog[:-3] in SUPPORTED_APP:
+            module_name = meta_parser.prog[:-3]
+        else:
+            module_name = meta_args.application_name
+        app_module = ApplicationFactory.create(module_name)
+        assert app_module.REQUIRED_CONFIG_SECTION, \
+            "REQUIRED_CONFIG_SECTION should be static variable " \
+            "in {}".format(app_module)
+        required_section_name = app_module.REQUIRED_CONFIG_SECTION
         search_section_in_config(config, required_section_name)
     except ValueError:
         raise ValueError(
             '{} requires [{}] section in the config file'.format(
-                meta_parser.prog, CUSTOM_SECTIONS.get(meta_parser.prog, None)))
+                module_name, required_section_name))
 
     # using configuration as default, and parsing all command line arguments
     args_remaining = args_from_cmd
@@ -54,8 +60,12 @@ def run():
         # try to rename user-specified sections for consistency
         section = standardise_section_name(config, section)
         section_defaults = dict(config.items(section))
-        section_args, args_remaining = _parse_arguments_by_section(
-            [], section, section_defaults, args_remaining)
+        section_args, args_remaining = \
+            _parse_arguments_by_section([],
+                                        section,
+                                        section_defaults,
+                                        args_remaining,
+                                        required_section_name)
         all_args[section] = section_args
     if not args_remaining == []:
         raise ValueError('unknown parameter: {}'.format(args_remaining))
@@ -67,9 +77,9 @@ def run():
     for section in all_args:
         if section in SYSTEM_SECTIONS:
             system_args[section] = all_args[section]
-        elif section in set(CUSTOM_SECTIONS.values()):
+        elif section == required_section_name:
             system_args['CUSTOM'] = all_args[section]
-            vars(system_args['CUSTOM'])['name'] = meta_parser.prog
+            vars(system_args['CUSTOM'])['name'] = module_name
         else:
             # set the output path of csv list if not exists
             csv_path = all_args[section].csv_file
@@ -84,8 +94,11 @@ def run():
     return system_args, input_data_args
 
 
-def _parse_arguments_by_section(
-        parents, section, args_from_config_file, args_from_cmd):
+def _parse_arguments_by_section(parents,
+                                section,
+                                args_from_config_file,
+                                args_from_cmd,
+                                required_section):
     """
     This function first adds parameter names to a parser,
     according to the section name.
@@ -116,7 +129,7 @@ def _parse_arguments_by_section(
         section_parser = add_training_args(section_parser)
     elif section == 'INFERENCE':
         section_parser = add_inference_args(section_parser)
-    elif section in set(CUSTOM_SECTIONS.values()):
+    elif section == required_section:
         section_parser = add_customised_args(section_parser, section.upper())
     else:
         section_parser = add_input_data_args(section_parser)
