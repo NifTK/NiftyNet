@@ -381,7 +381,7 @@ class ApplicationDriver(object):
         if not os.path.exists(summary_root):
             os.makedirs(summary_root)
         log_sub_dirs = os.listdir(summary_root)
-        log_sub_dirs = [n for n in log_sub_dirs if n.isdecimal()]
+        log_sub_dirs = [n for n in log_sub_dirs if unicode(n).isdecimal()]
         if log_sub_dirs and new_sub_dir:
             log_sub_dir = str(max([int(name) for name in log_sub_dirs]) + 1)
         elif log_sub_dirs and not new_sub_dir:

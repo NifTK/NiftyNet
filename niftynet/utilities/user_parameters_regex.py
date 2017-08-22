@@ -2,6 +2,7 @@
 # kindly provided by
 # Luis Carlos Garcia Peraza Herrera <luis.herrera.14@ucl.ac.uk>
 
+from __future__ import unicode_literals
 import re
 
 INT = r'(?:[-+]?\d+)'

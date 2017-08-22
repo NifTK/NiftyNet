@@ -347,10 +347,9 @@ class ConvEncoder(TrainableLayer):
             print(encoders_fc[-1])
 
         # Add Gaussian noise to the input
-        if self.denoising_variance > 0:
-            flow = images + tf.random_normal(tf.shape(images),
-                                             0.0,
-                                             self.denoising_variance)
+        if self.denoising_variance > 0 and is_training:
+            flow = images + tf.random_normal(
+                    tf.shape(images), 0.0, self.denoising_variance)
         else:
             flow = images
 
