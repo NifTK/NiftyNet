@@ -5,6 +5,7 @@ from __future__ import print_function
 
 from niftynet.utilities.user_parameters_custom import *
 from niftynet.utilities.user_parameters_default import *
+from niftynet.utilities.versioning import get_niftynet_version_string
 
 try:
     import configparser
@@ -22,10 +23,14 @@ CUSTOM_SECTIONS = {'net_segment.py': 'SEGMENTATION',
 def run():
     # meta_parser: to find out location of the configuration file
     meta_parser = argparse.ArgumentParser(add_help=False)
+    version_string = get_niftynet_version_string()
+    meta_parser.add_argument("-v", "--version",
+                             action='version', version=version_string)
     meta_parser.add_argument("-c", "--conf",
                              help="Specify configurations from a file",
                              metavar="File", )
     meta_args, args_from_cmd = meta_parser.parse_known_args()
+    print(version_string)
 
     # read configurations, to be parsed by sections
     if (meta_args.conf is None) or (not os.path.isfile(meta_args.conf)):
@@ -82,7 +87,7 @@ def run():
 def _parse_arguments_by_section(
         parents, section, args_from_config_file, args_from_cmd):
     """
-    This function first add parameter names to a parser,
+    This function first adds parameter names to a parser,
     according to the section name.
     Then it loads values from configuration files as tentative params.
     Finally it overrides existing pairs of 'name, value' with commandline

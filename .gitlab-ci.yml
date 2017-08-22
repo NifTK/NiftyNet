@@ -107,7 +107,7 @@ pip-installer:
     # create a Python file that will import all available packages from the pip installer
     - package_importer="$(pwd)/import_niftynet_packages.py"
     # traverse the file hierarchy recursively to discover all packages
-    - find niftynet -type f \( ! -name . \) -print | grep '.py$' | grep -v __init__ | sed 's/\.\.\///g;s/\//\./g;s/\.py//g;s/niftynet/import niftynet/g' > $package_importer
+    - find niftynet -type f \( ! -name . \) -print | grep '.py$' | grep -v __init__ | sed 's/\.\.\///g;s/\//\./g;s/\.py//g;s/^niftynet/import niftynet/g' > $package_importer
     # save NiftyNet folder path just in case
     - export niftynet_dir=$(pwd)
     # create the NiftyNet wheel
