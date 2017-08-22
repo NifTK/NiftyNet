@@ -6,7 +6,7 @@ import re
 
 INT = r'(?:[-+]?\d+)'
 FLOAT = r'(?:[-+]?\d*\.\d+|' + INT + r')'
-LITERAL = r'(?:[ -_a-zA-Z0-9\:]+)'
+LITERAL = r'(?:[-_a-zA-Z0-9\:]+)'
 COMMA = r'(?:[,])'
 LEFT_PARENTHESIS = r'(?:\()'
 RIGHT_PARENTHESIS = r'(?:\))'
@@ -101,7 +101,7 @@ if __name__ == "__main__":
         if matched_str:
             filtered_groups = filter(None, matched_str.groups())
             if filtered_groups:
-                values = [v.strip() for v in filtered_groups[0].split(',')]
+                values = [v.strip() for v in list(filtered_groups)[0].split(',')]
             else:
                 values = []
             print('String:', strval, 'Matched!', values)
