@@ -1,3 +1,4 @@
+from six import with_metaclass
 from niftynet.utilities import util_common
 
 
@@ -13,14 +14,12 @@ class SingletonApplication(type):
         return cls._instances
 
 
-class BaseApplication(object):
+class BaseApplication(with_metaclass(SingletonApplication, object)):
     """
     BaseApplication represents an interface.
     Each application type should support to use
     the standard training and inference driver
     """
-    __metaclass__ = SingletonApplication
-
     is_training = True
     reader = None
     sampler = None
