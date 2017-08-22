@@ -6,7 +6,7 @@ import re
 
 INT = r'(?:[-+]?\d+)'
 FLOAT = r'(?:[-+]?\d*\.\d+|' + INT + r')'
-LITERAL = r'(?:[-_a-zA-Z0-9\:]+)'
+LITERAL = r'(?:[ -_a-zA-Z0-9\:]+)'
 COMMA = r'(?:[,])'
 LEFT_PARENTHESIS = r'(?:\()'
 RIGHT_PARENTHESIS = r'(?:\))'
@@ -46,7 +46,7 @@ def match_array(string_input, type_str):
     regex = re.compile(STATEMENT)
     matched_str = regex.match(string_input)
     if matched_str:
-        filtered_groups = filter(None, matched_str.groups())
+        filtered_groups = list(filter(None, matched_str.groups()))
         if not filtered_groups:
             return ()
         try:
@@ -99,9 +99,9 @@ if __name__ == "__main__":
     for strval in strings_to_match:
         matched_str = regex.match(strval)
         if matched_str:
-            filtered_groups = filter(None, matched_str.groups())
+            filtered_groups = list(filter(None, matched_str.groups()))
             if filtered_groups:
-                values = [v.strip() for v in list(filtered_groups)[0].split(',')]
+                values = [v.strip() for v in filtered_groups[0].split(',')]
             else:
                 values = []
             print('String:', strval, 'Matched!', values)
