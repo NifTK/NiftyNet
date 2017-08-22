@@ -14,8 +14,8 @@ SUPPORTED_PADDING = {'SAME', 'VALID'}
 class DownSampleLayer(Layer):
     def __init__(self,
                  func,
-                 kernel_size,
-                 stride,
+                 kernel_size=3,
+                 stride=2,
                  padding='SAME',
                  name='pooling'):
         self.func = func.upper()

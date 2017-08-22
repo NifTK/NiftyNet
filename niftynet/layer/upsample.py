@@ -24,8 +24,8 @@ class UpSampleLayer(TrainableLayer):
 
     def __init__(self,
                  func,
-                 kernel_size,
-                 stride,
+                 kernel_size=3,
+                 stride=2,
                  w_initializer=None,
                  w_regularizer=None,
                  with_bias=False,
