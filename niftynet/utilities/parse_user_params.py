@@ -12,7 +12,7 @@ except ImportError:
     import ConfigParser as configparser
 
 from niftynet.utilities.filename_matching import KeywordsMatching
-from niftynet.utilities.get_niftynet_version import get_niftynet_version
+from niftynet.utilities.get_niftynet_version import get_niftynet_version_string
 
 
 def _input_path_search(config):
@@ -442,7 +442,7 @@ def build_parser(parents, defaults):
 
 def run():
     initial_parser = argparse.ArgumentParser(add_help=False)
-    version_string = get_niftynet_version()
+    version_string = get_niftynet_version_string()
     initial_parser.add_argument("-v", "--version", action='version', version=version_string)
     initial_parser.add_argument("-c", "--conf",
                              help="Specify configurations from a file",

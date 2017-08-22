@@ -1,5 +1,19 @@
 
 
+def get_niftynet_version_string():
+    """
+    Return a user-visible string describing the name and product version
+
+    This is a safe function that will never throw an exception
+    """
+
+    version_string = get_niftynet_version()
+    if not version_string:
+        version_string = "unknown"
+
+    return "NiftyNet version " + version_string
+
+
 def get_niftynet_version():
     """
     Return a user-visible string describing the product version
@@ -22,10 +36,7 @@ def get_niftynet_version():
         except:
             version_string = None
 
-    if not version_string:
-        version_string = "unknown"
-
-    return "NiftyNet version " + version_string
+    return version_string
 
 
 def get_niftynet_git_version():
