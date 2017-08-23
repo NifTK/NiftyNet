@@ -6,7 +6,8 @@ import tensorflow as tf
 import numpy as np
 
 import tokenize, os, itertools
-import niftynet.engine.restorer
+from niftynet.engine.application_variables \
+    import RESTORABLE, global_variables_initialize_or_restorer
 
 from niftynet.layer.convolution import ConvolutionalLayer
 
@@ -33,7 +34,7 @@ class RestorerTest(tf.test.TestCase):
         tf.reset_default_graph()
         block1 = ConvolutionalLayer(3, 3, with_bn=False, name='foo')
         b1 = block1(tf.ones([1., 5., 5., 1.]))
-        tf.add_to_collection(niftynet.engine.restorer.RESTORABLE,
+        tf.add_to_collection(RESTORABLE,
                              ('foo', checkpoint_name, 'bar'))
         block2 = ConvolutionalLayer(4, 3, name='bar', with_bn=False,
                                     w_initializer=tf.constant_initializer(1.))
@@ -44,9 +45,9 @@ class RestorerTest(tf.test.TestCase):
         block4 = ConvolutionalLayer(3, 3, with_bn=False, name='foo3')
         block4.restore_from_checkpoint(checkpoint_name)
         b4 = block4(tf.ones([1., 5., 5., 1.]))
-        tf.add_to_collection(niftynet.engine.restorer.RESTORABLE,
+        tf.add_to_collection(RESTORABLE,
                              ('foo', checkpoint_name, 'bar'))
-        init_op = niftynet.engine.restorer.global_variables_initialize_or_restorer()
+        init_op = global_variables_initialize_or_restorer()
         all_vars = tf.global_variables()
         with self.test_session() as sess:
             sess.run(init_op)
@@ -67,7 +68,7 @@ class RestorerTest(tf.test.TestCase):
         block1 = ConvolutionalLayer(4, 3, name='bar', with_bn=False,
                                     w_initializer=tf.constant_initializer(1.))
         b2 = block1(tf.ones([1., 5., 5., 1.]))
-        init_op = niftynet.engine.restorer.global_variables_initialize_or_restorer()
+        init_op = global_variables_initialize_or_restorer()
         all_vars = tf.global_variables()
         with self.test_session() as sess:
             sess.run(init_op)
