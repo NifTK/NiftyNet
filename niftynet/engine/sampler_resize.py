@@ -22,6 +22,7 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
                  reader,
                  data_param,
                  batch_size,
+                 windows_per_image=1,
                  shuffle_buffer=True):
 
         self.reader = reader

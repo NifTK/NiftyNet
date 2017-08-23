@@ -149,6 +149,18 @@ class AutoencoderApplication(BaseApplication):
                 var=data_loss, name='variational_lower_bound',
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
+            outputs_collector.add_to_collection(
+                var=net_output[4], name='Originals',
+                average_over_devices=False, summary_type='image3_coronal',
+                collection=TF_SUMMARIES)
+            outputs_collector.add_to_collection(
+                var=net_output[2], name='Means',
+                average_over_devices=False, summary_type='image3_coronal',
+                collection=TF_SUMMARIES)
+            outputs_collector.add_to_collection(
+                var=net_output[5], name='Variances',
+                average_over_devices=False, summary_type='image3_coronal',
+                collection=TF_SUMMARIES)
         else:
             if self._infer_type in ('encode', 'encode-decode'):
                 data_dict = self.get_sampler()[0].pop_batch_op()
