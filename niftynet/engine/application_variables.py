@@ -108,7 +108,7 @@ class OutputsCollector(object):
         elif collection == TF_SUMMARIES:
             return self._merge_op if self._merge_op is not None else {}
         else:
-            raise ValueError("unknown output variables type")
+            raise ValueError("unknown output variables type_str")
 
     def finalise_output_op(self):
         """

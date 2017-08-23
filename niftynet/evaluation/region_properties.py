@@ -58,7 +58,7 @@ class RegionProperties(object):
         self.vol_vox = np.prod(pixdim)
 
     def __compute_mask(self):
-        # TODO: check whether this works for probabilities type
+        # TODO: check whether this works for probabilities type_str
         foreground_selector = np.where((self.seg > 0).reshape(-1))[0]
         probs = self.seg.reshape(-1)[foreground_selector]
         regions = np.zeros((foreground_selector.shape[0], self.img_channels))

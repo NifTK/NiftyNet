@@ -167,7 +167,7 @@ def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     elif type_hist == 'median':
         range_to_use = [0, 6, 12]
     else:
-        raise ValueError('unknown cutting points type')
+        raise ValueError('unknown cutting points type_str')
     assert len(mapping) >= len(range_to_use), \
         "wrong mapping format, please check the histogram reference file"
     mapping = np.asarray(mapping)

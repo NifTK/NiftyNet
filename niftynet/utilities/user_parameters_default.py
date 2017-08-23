@@ -70,7 +70,8 @@ def add_inference_args(parser):
         metavar='',
         help="[Inference only] Use the checkpoint at this iteration for "
              "inference",
-        type=int)
+        type=int,
+        default=-1)
 
     parser.add_argument(
         "--save_seg_dir",
@@ -177,12 +178,13 @@ def add_network_args(parser):
         type=float,
         default=0)
 
+    import niftynet.layer.loss_segmentation
     parser.add_argument(
         "--reg_type",
         metavar='TYPE_STR',
-        choices=['L1','L2','None'],
-        help="[Training only] Specify regulariser type",
-        default='L2')
+        choices=list(niftynet.layer.loss_segmentation.SUPPORTED_OPS),
+        help="[Training only] Specify regulariser type_str",
+        default='Dice')
 
     parser.add_argument(
         "--volume_padding_size",
@@ -226,7 +228,7 @@ def add_network_args(parser):
         "--foreground_type",
         choices=list(
             niftynet.layer.binary_masking.SUPPORTED_MASK_TYPES),
-        help="type of foreground masking strategy used",
+        help="type_str of foreground masking strategy used",
         default='otsu_plus')
 
     parser.add_argument(
@@ -300,7 +302,7 @@ def add_training_args(parser):
     parser.add_argument(
         "--loss_type",
         metavar='TYPE_STR',
-        help="[Training only] Specify loss type",
+        help="[Training only] Specify loss type_str",
         default='Dice')
 
     parser.add_argument(

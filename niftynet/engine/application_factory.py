@@ -49,20 +49,31 @@ SUPPORTED_LOSS_GAN = {
 }
 
 SUPPORTED_LOSS_SEGMENTATION = {
-    "CrossEntropy": 'niftynet.layer.loss_segmentation.cross_entropy',
-    "Dice": 'niftynet.layer.loss_segmentation.dice',
-    "Dice_NS": 'niftynet.layer.loss_segmentation.dice_nosquare',
-    "GDSC": 'niftynet.layer.loss_segmentation.generalised_dice_loss',
-    "WGDL": 'niftynet.layer.loss_segmentation.wasserstein_generalised_dice_loss',
-    "SensSpec": 'niftynet.layer.loss_segmentation.sensitivity_specificity_loss',
-    "L1Loss": 'niftynet.layer.loss_segmentation.l1_loss',
-    "L2Loss": 'niftynet.layer.loss_segmentation.l2_loss',
-    "Huber": 'niftynet.layer.loss_segmentation.huber_loss'
+    "CrossEntropy":
+        'niftynet.layer.loss_segmentation.cross_entropy',
+    "Dice":
+        'niftynet.layer.loss_segmentation.dice',
+    "Dice_NS":
+        'niftynet.layer.loss_segmentation.dice_nosquare',
+    "GDSC":
+        'niftynet.layer.loss_segmentation.generalised_dice_loss',
+    "WGDL":
+        'niftynet.layer.loss_segmentation.wasserstein_generalised_dice_loss',
+    "SensSpec":
+        'niftynet.layer.loss_segmentation.sensitivity_specificity_loss',
+    "L1Loss":
+        'niftynet.layer.loss_segmentation.l1_loss',
+    "L2Loss":
+        'niftynet.layer.loss_segmentation.l2_loss',
+    "Huber":
+        'niftynet.layer.loss_segmentation.huber_loss'
 }
 
 SUPPORTED_LOSS_AUTOENCODER = {
-    "VariationalLowerBound": 'niftynet.layer.loss_autoencoder.variational_lower_bound',
+    "VariationalLowerBound":
+        'niftynet.layer.loss_autoencoder.variational_lower_bound',
 }
+
 
 def select_module(module_name, lookup_table):
     if module_name in lookup_table:
@@ -79,33 +90,41 @@ def select_module(module_name, lookup_table):
     except ImportError:
         raise ImportError
 
-class GenericFactory(object):
-    SUPPORTED = {}
-    type = 'object'
+
+class ModuleFactory(object):
+    SUPPORTED = None
+    type_str = 'object'
+
     @classmethod
     def create(cls, name):
         try:
             return select_module(name, cls.SUPPORTED)
         except ImportError:
-            tf.logging.fatal("{}: \"{}\" not implemented".format(cls.type,name))
+            tf.logging.fatal(
+                "{}: \"{}\" not implemented".format(cls.type_str, name))
             raise NotImplementedError
 
-class ApplicationNetFactory(GenericFactory):
+
+class ApplicationNetFactory(ModuleFactory):
     SUPPORTED = SUPPORTED_NETWORK
-    type = 'network'
+    type_str = 'network'
 
-class ApplicationFactory(GenericFactory):
+
+class ApplicationFactory(ModuleFactory):
     SUPPORTED = SUPPORTED_APP
-    type = 'application'
+    type_str = 'application'
 
-class LossGANFactory(GenericFactory):
+
+class LossGANFactory(ModuleFactory):
     SUPPORTED = SUPPORTED_LOSS_GAN
-    type = 'GAN loss'
+    type_str = 'GAN loss'
 
-class LossSegmentationFactory(GenericFactory):
+
+class LossSegmentationFactory(ModuleFactory):
     SUPPORTED = SUPPORTED_LOSS_SEGMENTATION
-    type = 'segmentation loss'
+    type_str = 'segmentation loss'
 
-class LossAutoencoderFactory(GenericFactory):
+
+class LossAutoencoderFactory(ModuleFactory):
     SUPPORTED = SUPPORTED_LOSS_AUTOENCODER
-    type = 'autoencoder loss'
+    type_str = 'autoencoder loss'

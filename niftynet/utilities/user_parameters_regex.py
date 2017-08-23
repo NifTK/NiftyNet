@@ -53,7 +53,7 @@ def match_array(string_input, type_str):
         try:
             values = [v.strip() for v in list(filtered_groups)[0].split(',')]
         except IndexError:
-            raise ValueError("unknown array type {}".format(string_input))
+            raise ValueError("unknown array type_str {}".format(string_input))
         if type_str == 'int':
             return tuple(map(int, values))
         if type_str == 'float':
@@ -61,7 +61,7 @@ def match_array(string_input, type_str):
         if type_str == 'str':
             return tuple(values)
         else:
-            raise ValueError("unknown array type {}".format(string_input))
+            raise ValueError("unknown array type_str {}".format(string_input))
     else:
         raise ValueError("invalid parameter {}".format(string_input))
 

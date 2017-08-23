@@ -17,7 +17,7 @@ class SingletonApplication(type):
 class BaseApplication(with_metaclass(SingletonApplication, object)):
     """
     BaseApplication represents an interface.
-    Each application type should support to use
+    Each application type_str should support to use
     the standard training and inference driver
     """
     REQUIRED_CONFIG_SECTION = None

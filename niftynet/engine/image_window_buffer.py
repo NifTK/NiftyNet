@@ -85,7 +85,7 @@ class InputBatchQueueRunner(object):
                 name="shuffled_queue")
         else:
             self._queue = tf.FIFOQueue(
-                # pylint: disable=redefined-variable-type
+                # pylint: disable=redefined-variable-type_str
                 capacity=self.capacity,
                 dtypes=input_dtypes,
                 shapes=input_shapes,

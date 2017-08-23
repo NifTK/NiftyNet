@@ -210,11 +210,25 @@ class ApplicationDriver(object):
             "config parameter: model_dir".format(self.model_dir)
 
         # check model's file
-        checkpoint = '{}-{}'.format(self.session_dir, self.initial_iter)
-        assert tf.train.get_checkpoint_state(self.model_dir) is not None, \
-            "Model file not found {}*, please check" \
-            "config parameter: model_dir and *_iter".format(checkpoint)
-
+        ckpt_state = tf.train.get_checkpoint_state(self.model_dir)
+        if ckpt_state is None:
+            tf.logging.fatal(
+                "{}/checkpoints not found, please check" \
+                "config parameter: model_dir".format(self.model_dir))
+        if self.initial_iter < 0:
+            checkpoint = ckpt_state.model_checkpoint_path
+            assert checkpoint, 'checkpoint path not found ' \
+                               'in {}/checkpoints'.format(self.model_dir)
+            try:
+                self.initial_iter = int(checkpoint.rsplit('-')[-1])
+                tf.logging.info('set initial_iter to {} based '
+                                'on checkpoints'.format(self.initial_iter))
+            except ValueError:
+                tf.logging.fatal('failed to get interation number'
+                                 'from checkpoint path')
+                raise ValueError
+        else:
+            checkpoint = '{}-{}'.format(self.session_dir, self.initial_iter)
         # restore session
         tf.logging.info('Accessing {} ...'.format(checkpoint))
         self.saver.restore(sess, checkpoint)

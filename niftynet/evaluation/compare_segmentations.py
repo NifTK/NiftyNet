@@ -159,7 +159,7 @@ def run(param, csv_dict):
                     seg_binary = np.asarray(seg >= j, dtype=np.float32)
                     ref_binary = np.asarray(ref >= 0.5, dtype=np.float32)
                     if param.save_maps and param.seg_type == 'binary':
-                        #Creation of the error maps per type and saving
+                        #Creation of the error maps per type_str and saving
                         temp_pe = PairwiseMeasures(seg_binary, ref_binary,
                                                    measures=(
                                                        'outline_error'),

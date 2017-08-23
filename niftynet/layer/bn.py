@@ -11,7 +11,7 @@ class BNLayer(TrainableLayer):
     """
     Batch normalisation layer, with trainable mean value 'beta' and
     std 'gamma'.  'beta' is initialised to 0.0 and 'gamma' is initialised
-    to 1.0.  This class assumes 'beta' and 'gamma' share the same type of
+    to 1.0.  This class assumes 'beta' and 'gamma' share the same type_str of
     regulariser.
     """
 

@@ -235,7 +235,7 @@ class BSplineFieldImageGridWarperLayer(GridWarperLayer):
         resampled signal domain.
       knot_spacing: List of intervals (in voxels) in each dimension where 
         displacements are defined in the field.
-      interpolation: type of interpolation as used by tf.image.resize_images
+      interpolation: type_str of interpolation as used by tf.image.resize_images
       name: Name of Module."""
     coeff_shape=[4+(n-1)//k for n,k in zip(output_shape,knot_spacing)]
     self._knot_spacing=knot_spacing
@@ -287,7 +287,7 @@ class RescaledFieldImageGridWarperLayer(GridWarperLayer):
       output_shape: Iterable of integers determining the size of the destination
         resampled signal domain.
       coeff_shape: Shape of displacement field.
-      interpolation: type of interpolation as used by tf.image.resize_images
+      interpolation: type_str of interpolation as used by tf.image.resize_images
       name: Name of Module.
 
     """
@@ -339,7 +339,7 @@ class ResampledFieldGridWarperLayer(GridWarperLayer):
       output_shape: Iterable of integers determining the size of the destination
         resampled signal domain.
       coeff_shape: Shape of displacement field.
-      interpolation: type of interpolation as used by tf.image.resize_images
+      interpolation: type_str of interpolation as used by tf.image.resize_images
       name: Name of Module.
       field_transform: an object defining the spatial relationship between the 
         output_grid and the field. 

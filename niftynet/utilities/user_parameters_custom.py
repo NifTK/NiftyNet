@@ -105,13 +105,13 @@ def __add_autoencoder_args(parser):
     parser.add_argument(
         "--inference_type",
         metavar='',
-        help="choose an inference type for the trained autoencoder",
+        help="choose an inference type_str for the trained autoencoder",
         choices=list(SUPPORTED_INFERENCE))
 
     parser.add_argument(
         "--noise_stddev",
         metavar='',
-        help="standard deviation of noise when inference type is sample",
+        help="standard deviation of noise when inference type_str is sample",
         type=float)
 
     parser.add_argument(
