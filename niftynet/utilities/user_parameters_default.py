@@ -177,13 +177,12 @@ def add_network_args(parser):
         type=float,
         default=0)
 
-    import niftynet.layer.loss_segmentation
     parser.add_argument(
         "--reg_type",
         metavar='TYPE_STR',
-        choices=list(niftynet.layer.loss_segmentation.SUPPORTED_OPS),
+        choices=['L1','L2','None'],
         help="[Training only] Specify regulariser type",
-        default='Dice')
+        default='L2')
 
     parser.add_argument(
         "--volume_padding_size",
