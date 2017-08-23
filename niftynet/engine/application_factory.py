@@ -2,6 +2,8 @@ import importlib
 
 import tensorflow as tf
 
+from niftynet.utilities.util_common import _damerau_levenshtein_distance as edit_distance
+
 SUPPORTED_APP = {
     'net_segment':
         'niftynet.application.segmentation_application.SegmentationApplication',
@@ -75,21 +77,34 @@ SUPPORTED_LOSS_AUTOENCODER = {
 }
 
 
-def select_module(module_name, lookup_table):
+def select_module(module_name, type, lookup_table):
     if module_name in lookup_table:
-        module_name = lookup_table.get(module_name, None)
-    try:
-        module_name, class_name = module_name.rsplit('.', 1)
-    except ValueError:
-        tf.logging.fatal('incorrect module name format {}'.format(module_name))
-        raise ValueError
+        module_name = lookup_table[module_name]
 
     try:
-        the_module = getattr(importlib.import_module(module_name), class_name)
+        module,class_name = module_name.rsplit('.',1)
+        the_module = getattr(importlib.import_module(module),class_name)
         return the_module
-    except ImportError:
-        raise ImportError
-
+    except:
+        # Two possibilities: a typo for a lookup table entry
+        #                 or a non-existing module
+        dists = {k: edit_distance(k, module_name) for k in lookup_table.keys()}
+        closest = min(dists, key=dists.get)
+        if dists[closest] <= 3:
+            err = '{2}: By "{0}", did you mean "{1}"?\n "{0}" is ' \
+                  'not a valid option.'.format(module_name, closest, type)
+            tf.logging.fatal(err)
+            raise ValueError(err)
+        else:
+            if '.' not in module_name:
+                err = '{}: Incorrect module name format {}. '\
+                      'Expected "module.object".'.format(type,module_name)
+                tf.logging.fatal(err)
+                raise ValueError(err)
+            err = '{}: Could not import object'\
+                  '"{}" from "{}"'.format(type,class_name,module)
+            tf.logging.fatal(err)
+            raise
 
 class ModuleFactory(object):
     SUPPORTED = None
@@ -97,12 +112,7 @@ class ModuleFactory(object):
 
     @classmethod
     def create(cls, name):
-        try:
-            return select_module(name, cls.SUPPORTED)
-        except ImportError:
-            tf.logging.fatal(
-                "{}: \"{}\" not implemented".format(cls.type_str, name))
-            raise NotImplementedError
+        return select_module(name, cls.type_str, cls.SUPPORTED)
 
 
 class ApplicationNetFactory(ModuleFactory):

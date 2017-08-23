@@ -110,14 +110,16 @@ class LossFunctionErrorsTest(tf.test.TestCase):
             with self.assertRaises(ValueError) as cm:
                 LossFunction(0, loss_type='dice')
             self.assertAllEqual(str(cm.exception),
-                                'By "dice", did you mean "Dice"?\n "dice" is not a valid option.')
+                                'segmentation loss: By "dice", did you mean '\
+                                '"Dice"?\n "dice" is not a valid option.')
 
     def test_suggestion_for_gdsc_typo(self):
         with self.test_session():
             with self.assertRaises(ValueError) as cm:
                 LossFunction(0, loss_type='GSDC')
             self.assertAllEqual(str(cm.exception),
-                                'By "GSDC", did you mean "GDSC"?\n "GSDC" is not a valid option.')
+                                'segmentation loss: By "GSDC", did you mean '\
+                                '"GDSC"?\n "GSDC" is not a valid option.')
 
 class HuberLossTests(tf.test.TestCase):
     def test_huber_loss(self):
