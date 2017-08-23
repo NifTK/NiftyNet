@@ -1,37 +1,18 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-import os
-
-import PIL
-import numpy as np
 import tensorflow as tf
-from PIL.GifImagePlugin import Image as GIF
 from tensorflow.contrib.framework import list_variables
-from tensorflow.core.framework import summary_pb2
 
+from niftynet.io.misc_io import image3_axial
+from niftynet.io.misc_io import image3_coronal
+from niftynet.io.misc_io import image3_sagittal
+from niftynet.io.misc_io import resolve_checkpoint
 from niftynet.utilities import util_common as util
 from niftynet.utilities.restore_initializer import restore_initializer
 from niftynet.utilities.util_common import look_up_operations
 
-
-def image3_sagittal(name, tensor, max_outputs=3,
-                    collections=[tf.GraphKeys.SUMMARIES]):
-    return image3(name, tensor, max_outputs, collections, [1], [2, 3])
-
-
-def image3_coronal(name, tensor, max_outputs=3,
-                   collections=[tf.GraphKeys.SUMMARIES]):
-    return image3(name, tensor, max_outputs, collections, [2], [1, 3])
-
-
-def image3_axial(name, tensor, max_outputs=3,
-                 collections=[tf.GraphKeys.SUMMARIES]):
-    return image3(name, tensor, max_outputs, collections, [3], [1, 2])
-
-
 RESTORABLE = 'NiftyNetObjectsToRestore'
-
 CONSOLE = 'niftynetconsole'
 TF_SUMMARIES = tf.GraphKeys.SUMMARIES
 SUPPORTED_SUMMARY = {'scalar': tf.summary.scalar,
@@ -155,82 +136,6 @@ class OutputsCollector(object):
         self._merge_op = tf.summary.merge_all(key=TF_SUMMARIES)
 
 
-def image3_animatedGIF(tag, ims):
-    # x=numpy.random.randint(0,256,[10,10,10],numpy.uint8)
-    ims = [np.asarray((ims[i, :, :]).astype(np.uint8))
-           for i in range(ims.shape[0])]
-    ims = [GIF.fromarray(im) for im in ims]
-    s = b''
-    for b in PIL.GifImagePlugin.getheader(ims[0])[0]:
-        s += b
-    s += b'\x21\xFF\x0B\x4E\x45\x54\x53\x43\x41\x50\x45\x32\x2E\x30\x03\x01\x00\x00\x00'
-    for i in ims:
-        for b in PIL.GifImagePlugin.getdata(i):
-            s += b
-    s += b'\x3B'
-    image_summary = summary_pb2.Summary.Value(
-        tag=tag,
-        image=summary_pb2.Summary.Image(height=10,
-                                        width=10,
-                                        colorspace=1,
-                                        encoded_image_string=str(s)))
-    return [summary_pb2.Summary(value=[image_summary]).SerializeToString()]
-
-
-def image3(name,
-           tensor,
-           max_outputs=3,
-           collections=[tf.GraphKeys.SUMMARIES],
-           animation_axes=[1],
-           image_axes=[2, 3],
-           other_indices={}):
-    ''' Summary for higher dimensional images
-    Parameters:
-    name: string name for the summary
-    tensor:   tensor to summarize. Should be in the range 0..255.
-              By default, assumes tensor is NDHWC, and animates (through D)
-              HxW slices of the 1st channel.
-    collections: list of strings collections to add the summary to
-    animation_axes=[1],image_axes=[2,3]
-    '''
-    if max_outputs == 1:
-        suffix = '/image'
-    else:
-        suffix = '/image/{}'
-    axis_order = [0] + animation_axes + image_axes
-    # slice tensor
-    slicing = tuple((slice(None) if i in axis_order else slice(
-        other_indices.get(i, 0), other_indices.get(i, 0) + 1) for i in
-                     range(len(tensor.shape))))
-    tensor = tensor[slicing]
-    axis_order_all = axis_order + [i for i in range(len(tensor.shape.as_list()))
-                                   if i not in axis_order]
-    new_shape = [tensor.shape.as_list()[0], -1,
-                 tensor.shape.as_list()[axis_order[-2]],
-                 tensor.shape.as_list()[axis_order[-1]]]
-    transposed_tensor = tf.reshape(tf.transpose(tensor, axis_order_all),
-                                   new_shape)
-    # split images
-    with tf.device('/cpu:0'):
-        for it in range(min(max_outputs, transposed_tensor.shape.as_list()[0])):
-            T = tf.py_func(image3_animatedGIF,
-                           [name + suffix.format(it),
-                            transposed_tensor[it, :, :, :]],
-                           tf.string)
-            [tf.add_to_collection(c, T) for c in collections]
-    return T
-
-
-def resolve_checkpoint(checkpoint_name):
-    # For now only supports checkpoint_name where
-    # checkpoint_name.index is in the file system
-    # eventually will support checkpoint names that can be referenced
-    # in a paths file
-    if os.path.exists(checkpoint_name + '.index'):
-        return checkpoint_name
-    raise ValueError('Invalid checkpoint {}'.format(checkpoint_name))
-
-
 def global_variables_initialize_or_restorer(var_list=None):
     # For any scope added to RESTORABLE collection:
     # variable will be restored from a checkpoint if it exists in the
@@ -243,7 +148,7 @@ def global_variables_initialize_or_restorer(var_list=None):
         variables_in_scope = tf.get_collection(
             tf.GraphKeys.GLOBAL_VARIABLES, scope=scope)
         checkpoint_file = resolve_checkpoint(checkpoint_name)
-        variables_in_file = [v for v, s in list_variables(checkpoint_file)]
+        variables_in_file = [v for (v, s) in list_variables(checkpoint_file)]
         rename = lambda x: x.replace(scope, checkpoint_scope).replace(':0', '')
         to_restore = [v for v in variables_in_scope
                       if v in var_list and rename(v.name) in variables_in_file]
@@ -256,9 +161,8 @@ def global_variables_initialize_or_restorer(var_list=None):
                 checkpoint_subscope, var_name = None, rename(var.name)
             initializer = restore_initializer(
                 checkpoint_name, var_name, checkpoint_subscope)
-            restored_vars[var] = tf.assign(var,
-                                           initializer(var.get_shape(),
-                                                       dtype=var.dtype))
+            restored_vars[var] = tf.assign(
+                var, initializer(var.get_shape(), dtype=var.dtype))
     init_others = tf.variables_initializer(
         [v for v in var_list if v not in restored_vars])
     restore_op = tf.group(init_others, *list(restored_vars.values()))

@@ -4,10 +4,13 @@ from __future__ import absolute_import, print_function
 import os
 import warnings
 
+import PIL
 import nibabel as nib
 import numpy as np
 import scipy.ndimage
 import tensorflow as tf
+from PIL.GifImagePlugin import Image as GIF
+from tensorflow.core.framework import summary_pb2
 
 image_loaders = [nib.load]
 try:
@@ -314,6 +317,109 @@ def touch_folder(model_dir):
                 'couldnot create model folder: {}'.format(model_dir))
             raise OSError
     absolute_dir = os.path.abspath(model_dir)
-    #tf.logging.info('accessing output folder: {}'.format(absolute_dir))
+    # tf.logging.info('accessing output folder: {}'.format(absolute_dir))
     return absolute_dir
 
+
+def _image3_animated_gif(tag, ims):
+    # x=numpy.random.randint(0,256,[10,10,10],numpy.uint8)
+    ims = [np.asarray((ims[i, :, :]).astype(np.uint8))
+           for i in range(ims.shape[0])]
+    ims = [GIF.fromarray(im) for im in ims]
+    s = b''
+    for b in PIL.GifImagePlugin.getheader(ims[0])[0]:
+        s += b
+    s += b'\x21\xFF\x0B\x4E\x45\x54\x53\x43\x41\x50' \
+         b'\x45\x32\x2E\x30\x03\x01\x00\x00\x00'
+    for i in ims:
+        for b in PIL.GifImagePlugin.getdata(i):
+            s += b
+    s += b'\x3B'
+    summary_image_str = summary_pb2.Summary.Image(
+        height=10, width=10, colorspace=1, encoded_image_string=str(s))
+    image_summary = summary_pb2.Summary.Value(
+        tag=tag, image=summary_image_str)
+    return [summary_pb2.Summary(value=[image_summary]).SerializeToString()]
+
+
+def resolve_checkpoint(checkpoint_name):
+    # For now only supports checkpoint_name where
+    # checkpoint_name.index is in the file system
+    # eventually will support checkpoint names that can be referenced
+    # in a paths file
+    if os.path.isfile(checkpoint_name + '.index'):
+        return checkpoint_name
+    raise ValueError('Invalid checkpoint {}'.format(checkpoint_name))
+
+
+def _image3(name,
+            tensor,
+            max_outputs=3,
+            collections=[tf.GraphKeys.SUMMARIES],
+            animation_axes=[1],
+            image_axes=[2, 3],
+            other_indices={}):
+    ''' Summary for higher dimensional images
+    Parameters:
+    name: string name for the summary
+    tensor:   tensor to summarize. Should be in the range 0..255.
+              By default, assumes tensor is NDHWC, and animates (through D)
+              HxW slices of the 1st channel.
+    collections: list of strings collections to add the summary to
+    animation_axes=[1],image_axes=[2,3]
+    '''
+    if max_outputs == 1:
+        suffix = '/image'
+    else:
+        suffix = '/image/{}'
+    axis_order = [0] + animation_axes + image_axes
+    # slice tensor
+    slicing = []
+    for i in range(len(tensor.shape)):
+        if i in axis_order:
+            other_ind = other_indices.get(i, 0)
+            slicing.append(slice(other_ind, other_ind + 1))
+        else:
+            slicing.append(slice(None))
+    slicing = tuple(slicing)
+    tensor = tensor[slicing]
+    axis_order_all = \
+        axis_order + [i for i in range(len(tensor.shape.as_list()))
+                      if i not in axis_order]
+    original_shape = tensor.shape.as_list()
+    new_shape = [original_shape[0], -1,
+                 original_shape[axis_order[-2]],
+                 original_shape[axis_order[-1]]]
+    transposed_tensor = tf.transpose(tensor, axis_order_all)
+    transposed_tensor = tf.reshape(transposed_tensor, new_shape)
+    # split images
+    with tf.device('/cpu:0'):
+        for it in range(min(max_outputs, transposed_tensor.shape.as_list()[0])):
+            inp = [name + suffix.format(it), transposed_tensor[it, :, :, :]]
+            summary_op = tf.py_func(_image3_animated_gif,
+                                    inp,
+                                    tf.string)
+            for c in collections:
+                tf.add_to_collection(c, summary_op)
+    return summary_op
+
+
+def image3_sagittal(name,
+                    tensor,
+                    max_outputs=3,
+                    collections=[tf.GraphKeys.SUMMARIES]):
+    return _image3(name, tensor, max_outputs, collections, [1], [2, 3])
+
+
+def image3_coronal(name,
+                   tensor,
+                   max_outputs=3,
+                   collections=[tf.GraphKeys.SUMMARIES]):
+    return _image3(name, tensor, max_outputs, collections, [2], [1, 3])
+
+
+def image3_axial(name,
+                 tensor,
+                 max_outputs=3,
+                 collections=[tf.GraphKeys.SUMMARIES]):
+    return _image3(name, tensor, max_outputs, collections, [3], [1, 2])
