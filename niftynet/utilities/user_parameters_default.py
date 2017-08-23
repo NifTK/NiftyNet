@@ -193,6 +193,18 @@ def add_network_args(parser):
         type=spatialnumarray,
         default=(0, 0, 0))
 
+    parser.add_argument(
+        "--window_sampling",
+        metavar='TYPE_STR',
+        help="How to sample patches from each loaded image:"
+             " 'uniform': fixed size uniformly distributed,"
+             " 'selective': selective sampling by properties of"
+             "  'min_sampling_ratio' and the 'min_numb_labels' parameters"
+             " 'resize': resize image to the patch size.",
+        choices=['uniform', 'selective', 'resize'],
+        default='uniform')
+
+
     import niftynet.layer.binary_masking
     parser.add_argument(
         "--multimod_foreground_type",
@@ -273,17 +285,6 @@ def add_training_args(parser):
         help="the spatial scaling factor in [min_percentage, max_percentage]",
         type=float_array,
         default=())
-
-    parser.add_argument(
-        "--window_sampling",
-        metavar='TYPE_STR',
-        help="How to sample patches from each loaded image:"
-             " 'uniform': fixed size uniformly distributed,"
-             " 'selective': selective sampling by properties of"
-             "  'min_sampling_ratio' and the 'min_numb_labels' parameters"
-             " 'resize': resize image to the patch size.",
-        choices=['uniform', 'selective', 'resize'],
-        default='uniform')
 
     parser.add_argument(
         "--random_flipping_axes",

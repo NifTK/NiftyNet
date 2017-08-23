@@ -5,8 +5,10 @@ from niftynet.engine.application_factory import ApplicationNetFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.image_windows_aggregator import GridSamplesAggregator
+from niftynet.engine.image_windows_aggregator import ResizeSamplesAggregator
 from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.sampler_uniform import UniformSampler
+from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.discrete_label_normalisation import \
@@ -38,6 +40,13 @@ class SegmentationApplication(BaseApplication):
 
         self.data_param = None
         self.segmentation_param = None
+        self.SUPPORTED_SAMPLING = {'uniform': (self.initialise_uniform_sampler,
+                                      self.initialise_grid_sampler,
+                                      self.initialise_grid_aggregator),
+                          'resize': (self.initialise_resize_sampler,
+                                     self.initialise_resize_sampler,
+                                     self.initialise_resize_aggregator),
+                          }
 
     def initialise_dataset_loader(self, data_param=None, task_param=None):
         self.data_param = data_param
@@ -110,21 +119,47 @@ class SegmentationApplication(BaseApplication):
         self.reader.add_preprocessing_layers(
             volume_padding_layer + normalisation_layers + augmentation_layers)
 
+    def initialise_uniform_sampler(self):
+        self.sampler = [UniformSampler(
+            reader = self.reader,
+            data_param = self.data_param,
+            batch_size = self.net_param.batch_size,
+            windows_per_image = self.action_param.sample_per_volume)]
+
+    def initialise_resize_sampler(self):
+        self.sampler = [ResizeSampler(
+            reader = self.reader,
+            data_param = self.data_param,
+            batch_size = self.net_param.batch_size,
+            shuffle_buffer = self.is_training)]
+
+    def initialise_grid_sampler(self):
+        self.sampler = [GridSampler(
+            reader = self.reader,
+            data_param = self.data_param,
+            batch_size = self.net_param.batch_size,
+            spatial_window_size = self.action_param.spatial_window_size,
+            window_border = self.action_param.border)]
+
+    def initialise_grid_aggregator(self):
+        self.output_decoder = GridSamplesAggregator(
+            image_reader=self.reader,
+            output_path=self.action_param.save_seg_dir,
+            window_border=self.action_param.border,
+            interp_order=self.action_param.output_interp_order)
+
+    def initialise_resize_aggregator(self):
+        self.output_decoder = ResizeSamplesAggregator(
+            image_reader=self.reader,
+            output_path=self.action_param.save_seg_dir,
+            window_border=self.action_param.border,
+            interp_order=self.action_param.output_interp_order)
+
     def initialise_sampler(self):
         if self.is_training:
-            self.sampler = UniformSampler(
-                reader=self.reader,
-                data_param=self.data_param,
-                batch_size=self.net_param.batch_size,
-                windows_per_image=self.action_param.sample_per_volume)
+            self.SUPPORTED_SAMPLING[self.net_param.window_sampling][0]()
         else:
-            self.sampler = GridSampler(
-                reader=self.reader,
-                data_param=self.data_param,
-                batch_size=self.net_param.batch_size,
-                spatial_window_size=self.action_param.spatial_window_size,
-                window_border=self.action_param.border)
-        self.sampler = [self.sampler]
+            self.SUPPORTED_SAMPLING[self.net_param.window_sampling][1]()
 
     def initialise_network(self):
         num_classes = self.segmentation_param.num_classes
@@ -211,11 +246,8 @@ class SegmentationApplication(BaseApplication):
             outputs_collector.add_to_collection(
                 var=data_dict['image_location'], name='location',
                 average_over_devices=False, collection=CONSOLE)
-            self.output_decoder = GridSamplesAggregator(
-                image_reader=self.reader,
-                output_path=self.action_param.save_seg_dir,
-                window_border=self.action_param.border,
-                interp_order=self.action_param.output_interp_order)
+            init_agg = self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]
+            init_agg()
 
     def interpret_output(self, batch_output):
         if not self.is_training:
