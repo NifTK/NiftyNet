@@ -247,7 +247,7 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
 def dice(prediction, ground_truth, weight_map=None):
     ground_truth = tf.to_int64(ground_truth)
     prediction = tf.cast(prediction, tf.float32)
-
+    prediction = tf.nn.softmax(prediction)
     ids = tf.range(tf.to_int64(tf.shape(ground_truth)[0]), dtype=tf.int64)
     ids = tf.stack([ids, ground_truth], axis=1)
     one_hot = tf.SparseTensor(
@@ -327,7 +327,7 @@ def huber_loss(prediction, ground_truth, delta=1.0, weight_map=None):
         voxelwise_loss = tf.multiply(voxelwise_loss, weight_map)
         sum_weights = tf.reduce_sum(weight_map)
     else:
-        sum_weights = tf.size(absolute_residuals)
+        sum_weights = tf.to_float(tf.size(absolute_residuals))
     sum_loss = tf.reduce_sum(voxelwise_loss)
     return tf.truediv(sum_loss, sum_weights)
 
