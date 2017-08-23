@@ -1,14 +1,22 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import math
+
 import tensorflow as tf
+from tensorflow.python.training import moving_averages
+
+import numpy as np
+
 import niftynet.layer.convolution
 import niftynet.layer.deconvolution
 import niftynet.layer.bn
-from tensorflow.python.training import moving_averages
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations
 from niftynet.layer import layer_util
-import numpy as np
+from niftynet.layer.activation import ActiLayer
+from niftynet.layer.base_layer import TrainableLayer
+
+
 
 class ChannelSparseDeconvLayer(niftynet.layer.deconvolution.DeconvLayer):
   """ Channel sparse convolutions perform convolulations over
@@ -125,13 +133,19 @@ class ChannelSparseConvLayer(niftynet.layer.convolution.ConvLayer):
     n_full_input_chns = _input_mask.get_shape().as_list()[0]
     spatial_rank = layer_util.infer_spatial_rank(input_tensor)
     # initialize conv kernels/strides and then apply
-    w_full_size = np.vstack((
-        [self.kernel_size] * spatial_rank,
-        n_full_input_chns, self.n_output_chns)).flatten()
-    full_stride = np.vstack((
-        [self.stride] * spatial_rank)).flatten()
+    w_full_size = layer_util.expand_spatial_params(
+        self.kernel_size, spatial_rank)
+    # expand kernel size to include number of features
+    w_full_size = w_full_size + (n_full_input_chns, self.n_output_chns)
+
+    full_stride = layer_util.expand_spatial_params(
+        self.stride, spatial_rank)
+
+    full_dilation = layer_util.expand_spatial_params(
+        self.dilation, spatial_rank)
+
     conv_kernel = tf.get_variable(
-        'w', shape=w_full_size.tolist(),
+        'w', shape=w_full_size,
         initializer=self.initializers['w'],
         regularizer=self.regularizers['w'])
     sparse_kernel = tf.transpose(tf.boolean_mask(
@@ -140,7 +154,8 @@ class ChannelSparseConvLayer(niftynet.layer.convolution.ConvLayer):
                          _output_mask),[1,0,2,3,4]),_input_mask),[4,3,2,0,1])
     output_tensor = tf.nn.convolution(input=input_tensor,
                                       filter=sparse_kernel,
-                                      strides=full_stride.tolist(),
+                                      strides=full_stride,
+                                      dilation_rate=full_dilation,
                                       padding=self.padding,
                                       name='conv')
     if output_mask is None:
@@ -158,7 +173,7 @@ class ChannelSparseConvLayer(niftynet.layer.convolution.ConvLayer):
         initializer=self.initializers['b'],
         regularizer=self.regularizers['b'])
     sparse_bias = tf.boolean_mask(bias_term,output_mask)
-    output_tensor = tf.nn.bias_add(output_tensor, bias_term,
+    output_tensor = tf.nn.bias_add(output_tensor, sparse_bias,
                                        name='add_bias')
     return output_tensor
 
@@ -167,8 +182,9 @@ class ChannelSparseBNLayer(niftynet.layer.bn.BNLayer):
       a subset of image channels and generate a subset of output
       channels. This enables spatial dropout without wasted computations
   """
-  def __init__(self,*args,**kwargs):
-    super(ChannelSparseBNLayer,self).__init__(*args,**kwargs)  
+  def __init__(self,n_dense_channels, *args,**kwargs):
+    self.n_dense_channels = n_dense_channels
+    super(ChannelSparseBNLayer,self).__init__(*args,**kwargs)
   def layer_op(self, inputs, is_training, mask, use_local_stats=False):
     """
     Parameters:
@@ -179,10 +195,17 @@ class ChannelSparseBNLayer(niftynet.layer.bn.BNLayer):
     mask:        1-Tensor with a binary mask identifying the sparse channels represented in inputs
 
     """
+    if mask is None:
+        mask=tf.ones([self.n_dense_channels])>0
+    else:
+        mask=mask
+
     input_shape = inputs.get_shape()
     mask_shape = mask.get_shape()
     # operates on all dims except the last dim
     params_shape = mask_shape[-1:]
+    assert params_shape[0]==self.n_dense_channels, \
+        'Mask size {} must match n_dense_channels {}.'.format(params_shape[0],self.n_dense_channels)
     axes = list(range(input_shape.ndims - 1))
     # create trainable variables and moving average variables
     beta = tf.get_variable(
@@ -237,4 +260,98 @@ class ChannelSparseBNLayer(niftynet.layer.bn.BNLayer):
     outputs.set_shape(inputs.get_shape())
     return outputs
 
-  
+class ChannelSparseConvolutionalLayer(TrainableLayer):
+      """
+      This class defines a composite layer with optional components:
+          channel sparse convolution -> batchwise-spatial dropout -> batch_norm -> activation
+      The b_initializer and b_regularizer are applied to the ChannelSparseConvLayer
+      The w_initializer and w_regularizer are applied to the ChannelSparseConvLayer,
+      the batch normalisation layer, and the activation layer (for 'prelu')
+      """
+
+      def __init__(self,
+                   n_output_chns,
+                   kernel_size=3,
+                   stride=1,
+                   dilation=1,
+                   padding='SAME',
+                   with_bias=False,
+                   with_bn=True,
+                   acti_func=None,
+                   w_initializer=None,
+                   w_regularizer=None,
+                   b_initializer=None,
+                   b_regularizer=None,
+                   moving_decay=0.9,
+                   eps=1e-5,
+                   name="conv"):
+
+          self.acti_func = acti_func
+          self.with_bn = with_bn
+          self.layer_name = '{}'.format(name)
+          if self.with_bn:
+              self.layer_name += '_bn'
+          if self.acti_func is not None:
+              self.layer_name += '_{}'.format(self.acti_func)
+          super(ChannelSparseConvolutionalLayer, self).__init__(name=self.layer_name)
+
+          # for ConvLayer
+          self.n_output_chns = n_output_chns
+          self.kernel_size = kernel_size
+          self.stride = stride
+          self.dilation = dilation
+          self.padding = padding
+          self.with_bias = with_bias
+
+          # for BNLayer
+          self.moving_decay = moving_decay
+          self.eps = eps
+
+          self.initializers = {
+              'w': w_initializer if w_initializer else niftynet.layer.convolution.default_w_initializer(),
+              'b': b_initializer if b_initializer else niftynet.layer.convolution.default_b_initializer()}
+
+          self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
+
+      def layer_op(self, input_tensor, input_mask=None, is_training=None, keep_prob=None):
+          conv_layer = ChannelSparseConvLayer(n_output_chns=self.n_output_chns,
+                                 kernel_size=self.kernel_size,
+                                 stride=self.stride,
+                                 dilation=self.dilation,
+                                 padding=self.padding,
+                                 with_bias=self.with_bias,
+                                 w_initializer=self.initializers['w'],
+                                 w_regularizer=self.regularizers['w'],
+                                 b_initializer=self.initializers['b'],
+                                 b_regularizer=self.regularizers['b'],
+                                 name='conv_')
+          if keep_prob is not None:
+              output_mask = tf.to_float(tf.random_shuffle(tf.range(self.n_output_chns))) \
+                            < keep_prob*self.n_output_chns
+              n_output_ch = math.ceil(keep_prob*self.n_output_chns)
+          else:
+              output_mask = tf.ones([self.n_output_chns])>0
+              n_output_ch = self.n_output_chns
+
+          output_tensor = conv_layer(input_tensor,input_mask,output_mask)
+
+          if self.with_bn:
+              if is_training is None:
+                  raise ValueError('is_training argument should be '
+                                   'True or False unless with_bn is False')
+              bn_layer = ChannelSparseBNLayer(self.n_output_chns,
+                  regularizer=self.regularizers['w'],
+                  moving_decay=self.moving_decay,
+                  eps=self.eps,
+                  name='bn_')
+              output_tensor = bn_layer(output_tensor, is_training, output_mask)
+
+          if self.acti_func is not None:
+              acti_layer = ActiLayer(
+                  func=self.acti_func,
+                  regularizer=self.regularizers['w'],
+                  name='acti_')
+              output_tensor = acti_layer(output_tensor)
+          output_tensor.set_shape(output_tensor.get_shape().as_list()[:-1]+\
+                                  [n_output_ch])
+          return output_tensor, output_mask
