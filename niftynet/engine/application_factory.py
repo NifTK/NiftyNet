@@ -44,6 +44,25 @@ SUPPORTED_NETWORK = {
     "vae": 'niftynet.network.vae.VAE'
 }
 
+SUPPORTED_LOSS_GAN = {
+    'CrossEntropy': 'niftynet.layer.loss_gan.cross_entropy',
+}
+
+SUPPORTED_LOSS_SEGMENTATION = {
+    "CrossEntropy": 'niftynet.layer.loss_segmentation.cross_entropy',
+    "Dice": 'niftynet.layer.loss_segmentation.dice',
+    "Dice_NS": 'niftynet.layer.loss_segmentation.dice_nosquare',
+    "GDSC": 'niftynet.layer.loss_segmentation.generalised_dice_loss',
+    "WGDL": 'niftynet.layer.loss_segmentation.wasserstein_generalised_dice_loss',
+    "SensSpec": 'niftynet.layer.loss_segmentation.sensitivity_specificity_loss',
+    "L1Loss": 'niftynet.layer.loss_segmentation.l1_loss',
+    "L2Loss": 'niftynet.layer.loss_segmentation.l2_loss',
+    "Huber": 'niftynet.layer.loss_segmentation.huber_loss'
+}
+
+SUPPORTED_LOSS_AUTOENCODER = {
+    "VariationalLowerBound": 'niftynet.layer.loss_autoencoder.variational_lower_bound',
+}
 
 def select_module(module_name, lookup_table):
     if module_name in lookup_table:
@@ -60,22 +79,33 @@ def select_module(module_name, lookup_table):
     except ImportError:
         raise ImportError
 
-
-class ApplicationNetFactory(object):
-    @staticmethod
-    def create(name):
+class GenericFactory(object):
+    SUPPORTED = {}
+    type = 'object'
+    @classmethod
+    def create(cls, name):
         try:
-            return select_module(name, SUPPORTED_NETWORK)
+            return select_module(name, cls.SUPPORTED)
         except ImportError:
-            tf.logging.fatal("network: \"{}\" not implemented".format(name))
+            tf.logging.fatal("{}: \"{}\" not implemented".format(cls.type,name))
             raise NotImplementedError
 
+class ApplicationNetFactory(GenericFactory):
+    SUPPORTED = SUPPORTED_NETWORK
+    type = 'network'
 
-class ApplicationFactory(object):
-    @staticmethod
-    def create(name):
-        try:
-            return select_module(name, SUPPORTED_APP)
-        except ImportError:
-            tf.logging.fatal("application: \"{}\" not implemented".format(name))
-            raise NotImplementedError
+class ApplicationFactory(GenericFactory):
+    SUPPORTED = SUPPORTED_APP
+    type = 'application'
+
+class LossGANFactory(GenericFactory):
+    SUPPORTED = SUPPORTED_LOSS_GAN
+    type = 'GAN loss'
+
+class LossSegmentationFactory(GenericFactory):
+    SUPPORTED = SUPPORTED_LOSS_SEGMENTATION
+    type = 'segmentation loss'
+
+class LossAutoencoderFactory(GenericFactory):
+    SUPPORTED = SUPPORTED_LOSS_AUTOENCODER
+    type = 'autoencoder loss'

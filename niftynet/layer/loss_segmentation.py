@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.base_layer import Layer
-from niftynet.utilities.util_common import look_up_operations
+from niftynet.engine.application_factory import LossSegmentationFactory
 
 M_tree = np.array([[0., 1., 1., 1., 1.],
                    [1., 0., 0.6, 0.2, 0.5],
@@ -28,7 +28,7 @@ class LossFunction(Layer):
         self.make_callable_loss_func(loss_type)
 
     def make_callable_loss_func(self, type_str):
-        self._data_loss_func = look_up_operations(type_str, SUPPORTED_OPS)
+        self._data_loss_func = LossSegmentationFactory.create(type_str)
 
     def layer_op(self,
                  prediction,

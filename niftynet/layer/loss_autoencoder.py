@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.layer.base_layer import Layer
-from niftynet.utilities.util_common import look_up_operations
+from niftynet.engine.application_factory import LossAutoencoderFactory
 
 
 class LossFunction(Layer):
@@ -22,7 +22,7 @@ class LossFunction(Layer):
         self.make_callable_loss_func(loss_type)
 
     def make_callable_loss_func(self, type_str):
-        self._data_loss_func = look_up_operations(type_str, SUPPORTED_OPS)
+        self._data_loss_func = LossAutoencoderFactory.create(type_str)
 
     def layer_op(self, prediction, var_scope=None):
         with tf.device('/cpu:0'):
