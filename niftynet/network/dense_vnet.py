@@ -8,11 +8,12 @@ from niftynet.layer.activation import ActiLayer
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.convolution import ConvolutionalLayer
 from niftynet.layer.deconvolution import DeconvolutionalLayer
+from niftynet.layer.channel_sparse_convolution import ChannelSparseConvolutionalLayer
 from niftynet.layer.bn import BNLayer
 
 from niftynet.network.base_net import BaseNet
 from niftynet.utilities.util_common import look_up_operations
-from niftynet.engine import logging
+from niftynet.engine.application_variables import image3_axial
 
 # Note: DenseVNet with dilated convolutions are not yet implemented
 class DenseVNet(BaseNet):
@@ -49,6 +50,7 @@ class DenseVNet(BaseNet):
              'n_seg_channels': (12, 24, 24),
              'n_input_channels': (24, 24, 24),
              'dilation_rates': ([1]*5,[1]*10,[1]*10), # Note dilation rates are not yet supported
+             'final_kernel': 3
              }
         self.hyperparameters.update(hyperparameters)
         if any([d!=1 for ds in self.hyperparameters['dilation_rates'] for d in ds]):
@@ -60,8 +62,6 @@ class DenseVNet(BaseNet):
              'use_coords': False,
              }
         self.architecture_parameters.update(architecture_parameters)
-        if self.architecture_parameters['use_bdo'] == True:
-            raise NotImplementedError('Batch channelwise dropout is not yet implemented')
         if self.architecture_parameters['use_dense_connections'] == False:
             raise NotImplementedError('Non-dense connections are not yet implemented')
         if self.architecture_parameters['use_coords'] == True:
@@ -95,31 +95,36 @@ class DenseVNet(BaseNet):
 
         down = tf.concat([downsampled_img,initial_features],channel_dim)
         for dense_ch, seg_ch, down_ch, dil_rate, idx in v_params:
-            sd=DenseFeatureStackBlockWithSkipAndDownsample(dense_ch,
-                                                           3,
-                                                           dil_rate,
-                                                           seg_ch,
-                                                           down_ch,
-                                                           acti_func='relu')
+            sd=DenseFeatureStackBlockWithSkipAndDownsample(
+                dense_ch,
+                3,
+                dil_rate,
+                seg_ch,
+                down_ch,
+                self.architecture_parameters['use_bdo'],
+                acti_func='relu')
             skip,down = sd(down,
                            is_training=is_training,
                            keep_prob=hp['p_channels_selected'])
-            tf.summary.scalar('skip{}'.format(idx),tf.reduce_mean(tf.square(skip)),[logging.LOG])
+            tf.summary.scalar('skip{}'.format(idx),tf.reduce_mean(tf.square(skip)),[tf.GraphKeys.SUMMARIES])
             if not down is None:
-                tf.summary.scalar('down{}'.format(idx),tf.reduce_mean(tf.square(down)),[logging.LOG])
+                tf.summary.scalar('down{}'.format(idx),tf.reduce_mean(tf.square(down)),[tf.GraphKeys.SUMMARIES])
             all_segmentation_features.append(image_resize(skip,output_shape))
+        hack=True
+        if hack == True:
+            all_segmentation_features=[all_segmentation_features[0]]+all_segmentation_features
         segmentation = ConvolutionalLayer(
-                 self.num_classes,
-                 kernel_size=3,
+                 self.num_classes+1,
+                 kernel_size=hp['final_kernel'],
                  with_bn=False,
                  with_bias=True)(tf.concat(all_segmentation_features,channel_dim),
                                 is_training=is_training)
         if self.architecture_parameters['use_prior']:
             segmentation = segmentation+SpatialPriorBlock([12]*spatial_rank,output_shape)
         segmentation=image_resize(segmentation,input_size[1:-1])
-        tf.summary.scalar('segmentation'.format(idx), tf.reduce_mean(tf.square(segmentation)), [logging.LOG])
-        logging.image3_axial('seg',tf.nn.softmax(segmentation)[:,:,:,:,1:]*255.,3,[logging.LOG])
-        logging.image3_axial('img',tf.minimum(255.,tf.maximum(0.,(tf.to_float(downsampled_img)/2.+1.)*127.)),3,[logging.LOG])
+        tf.summary.scalar('segmentation'.format(idx), tf.reduce_mean(tf.square(segmentation)), [tf.GraphKeys.SUMMARIES])
+        #image3_axial('seg',tf.nn.softmax(segmentation)[:,:,:,:,1:]*255.,3,[tf.GraphKeys.SUMMARIES])
+        #image3_axial('img',tf.minimum(255.,tf.maximum(0.,(tf.to_float(downsampled_img)/2.+1.)*127.)),3,[tf.GraphKeys.SUMMARIES])
         return segmentation
 
 def image_resize(image,output_size):
@@ -153,30 +158,48 @@ class SpatialPriorBlock(TrainableLayer):
         return tf.log(image_resize(prior,output_shape))
 
 
+
 class DenseFeatureStackBlock(TrainableLayer):
     def __init__(self,
                  n_dense_channels,
                  kernel_size,
                  dilation_rates,
+                 use_bdo,
                  name='dense_feature_stack_block',
                  **kwargs):
         super(DenseFeatureStackBlock, self).__init__(name=name)
         self.n_dense_channels = n_dense_channels
         self.kernel_size = kernel_size
         self.dilation_rates = dilation_rates
+        self.use_bdo = use_bdo
         self.kwargs=kwargs
     def layer_op(self, input_tensor, is_training=None, keep_prob=None):
         channel_dim = len(input_tensor.get_shape())-1
         stack = [input_tensor]
+        input_mask=tf.ones([input_tensor.get_shape().as_list()[-1]])>0
         for idx,d in enumerate(self.dilation_rates):
-            stack.append(ConvolutionalLayer(
-                self.n_dense_channels,
-                kernel_size=self.kernel_size,
-                **self.kwargs)(tf.concat(stack,channel_dim),
-                               is_training=is_training,
-                               keep_prob=keep_prob))
-            tf.summary.scalar('stack{}'.format(idx),tf.reduce_mean(tf.square(stack[-1])),[logging.LOG])
-
+            if idx==len(self.dilation_rates)-1:
+                keep_prob=None # no dropout on last layer of the stack
+            if self.use_bdo:
+                conv = ChannelSparseConvolutionalLayer(self.n_dense_channels,
+                                                       kernel_size=self.kernel_size,
+                                                       **self.kwargs)
+                conv,new_input_mask = conv(tf.concat(stack, channel_dim),
+                                       input_mask=input_mask,
+                                       is_training=is_training,
+                                       keep_prob=keep_prob)
+                input_mask = tf.concat([input_mask,new_input_mask],0)
+            else:
+                conv = ConvolutionalLayer(self.n_dense_channels,
+                                          kernel_size=self.kernel_size,
+                                          **self.kwargs)
+                conv = conv(tf.concat(stack, channel_dim),
+                            is_training=is_training,
+                            keep_prob=keep_prob)
+            stack.append(conv)
+            tf.summary.scalar('stack{}'.format(idx),
+                              tf.reduce_mean(tf.square(stack[-1])),
+                              [tf.GraphKeys.SUMMARIES])
         return stack
 
 
@@ -187,6 +210,7 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
                  dilation_rates,
                  n_seg_channels,
                  n_downsample_channels,
+                 use_bdo,
                  name='dense_feature_stack_block',
                  **kwargs):
         super(DenseFeatureStackBlockWithSkipAndDownsample, self).__init__(name=name)
@@ -195,6 +219,7 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
         self.dilation_rates = dilation_rates
         self.n_seg_channels=n_seg_channels
         self.n_downsample_channels=n_downsample_channels
+        self.use_bdo=use_bdo
         self.kwargs=kwargs
 
     def layer_op(self, input_tensor, is_training=None, keep_prob=None):
@@ -202,6 +227,7 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
             self.n_dense_channels,
             self.kernel_size,
             self.dilation_rates,
+            self.use_bdo,
             **(self.kwargs))(input_tensor,
                            is_training=is_training,
                            keep_prob=keep_prob)
