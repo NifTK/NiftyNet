@@ -319,6 +319,13 @@ def add_training_args(parser):
         default=500)
 
     parser.add_argument(
+        "--tensorboard_every_n",
+        metavar='',
+        help="[Training only] tensorboard summary frequency",
+        type=int,
+        default=20)
+
+    parser.add_argument(
         "--max_iter",
         metavar='',
         help="[Training only] Total number of iterations",

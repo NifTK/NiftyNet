@@ -36,6 +36,7 @@ class ApplicationDriver(object):
         self.summary_dir = None
         self.max_checkpoints = 20
         self.save_every_n = 10
+        self.tensorboard_every_n = 20
         self.initial_iter = 0
         self.final_iter = 0
 
@@ -72,6 +73,7 @@ class ApplicationDriver(object):
             if self.is_training else infer_param.inference_iter
         self.final_iter = train_param.max_iter
         self.save_every_n = train_param.save_every_n
+        self.tensorboard_every_n = train_param.tensorboard_every_n
         self.max_checkpoints = train_param.max_checkpoints
 
         self.outputs_collector = OutputsCollector(
@@ -249,7 +251,7 @@ class ApplicationDriver(object):
             vars_to_run = dict(train_op=train_op)
             vars_to_run[CONSOLE] = \
                 self.outputs_collector.variables(collection=CONSOLE)
-            if iter_i % self.save_every_n == 0:
+            if iter_i % self.tensorboard_every_n == 0:
                 # adding tensorboard summary
                 vars_to_run[TF_SUMMARIES] = \
                     self.outputs_collector.variables(collection=TF_SUMMARIES)
@@ -257,11 +259,12 @@ class ApplicationDriver(object):
             # run all variables in one go
             graph_output = sess.run(vars_to_run)
             self.app.interpret_output(graph_output)
-
             # if application specified summaries
             summary = graph_output.get(TF_SUMMARIES, {})
             if summary != {}:
                 writer.add_summary(summary, iter_i)
+
+            if iter_i % self.save_every_n == 0:
                 self._save_model(sess, iter_i)
 
             # print variables of the updated network
