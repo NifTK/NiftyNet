@@ -400,10 +400,10 @@ def _image3(name,
     slicing = []
     for i in range(len(tensor.shape)):
         if i in axis_order:
+            slicing.append(slice(None))
+        else:
             other_ind = other_indices.get(i, 0)
             slicing.append(slice(other_ind, other_ind + 1))
-        else:
-            slicing.append(slice(None))
     slicing = tuple(slicing)
     tensor = tensor[slicing]
     axis_order_all = \
