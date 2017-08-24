@@ -2,8 +2,10 @@ import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_factory import ApplicationNetFactory
+from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import TF_SUMMARIES
+from niftynet.engine.application_variables import NETORK_OUTPUT
 from niftynet.engine.image_windows_aggregator import GridSamplesAggregator
 from niftynet.engine.image_windows_aggregator import ResizeSamplesAggregator
 from niftynet.engine.sampler_grid import GridSampler
@@ -196,7 +198,9 @@ class SegmentationApplication(BaseApplication):
 
         if self.is_training:
             with tf.name_scope('Optimiser'):
-                self.optimiser = tf.train.AdamOptimizer(
+                optimiser_class = OptimiserFactory.create(
+                    name=self.action_param.optimiser)
+                self.optimiser = optimiser_class.get_instance(
                     learning_rate=self.action_param.lr)
             loss_func = LossFunction(
                 n_class=self.segmentation_param.num_classes,
@@ -243,13 +247,13 @@ class SegmentationApplication(BaseApplication):
 
             outputs_collector.add_to_collection(
                 var=net_out, name='window',
-                average_over_devices=False, collection=CONSOLE)
+                average_over_devices=False, collection=NETORK_OUTPUT)
             outputs_collector.add_to_collection(
                 var=data_dict['image_location'], name='location',
-                average_over_devices=False, collection=CONSOLE)
-            init_agg = self.SUPPORTED_SAMPLING[self.net_param.window_sampling][
-                2]
-            init_agg()
+                average_over_devices=False, collection=NETORK_OUTPUT)
+            init_aggregator = \
+                    self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]
+            init_aggregator()
 
     def interpret_output(self, batch_output):
         if not self.is_training:

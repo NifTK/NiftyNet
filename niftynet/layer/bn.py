@@ -6,6 +6,8 @@ from tensorflow.python.training import moving_averages
 
 from niftynet.layer.base_layer import TrainableLayer
 
+BN_COLLECTION_NAME = tf.GraphKeys.UPDATE_OPS
+
 
 class BNLayer(TrainableLayer):
     """
@@ -70,8 +72,8 @@ class BNLayer(TrainableLayer):
             moving_mean, mean, self.moving_decay).op
         update_moving_variance = moving_averages.assign_moving_average(
             moving_variance, variance, self.moving_decay).op
-        tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_moving_mean)
-        tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_moving_variance)
+        tf.add_to_collection(BN_COLLECTION_NAME, update_moving_mean)
+        tf.add_to_collection(BN_COLLECTION_NAME, update_moving_variance)
 
         # call the normalisation function
         if is_training or use_local_stats:
@@ -110,49 +112,3 @@ class BNLayer(TrainableLayer):
         #     data_format='NHWC',
         #     zero_debias_moving_mean=False,
         #     scope=None)
-        
-    def layer_op1(self, inputs, is_training, use_local_stats=False):
-        input_shape = inputs.get_shape()
-
-        # operates on all dims except the last dim
-        params_shape = input_shape[-1:]
-        axes = list(range(input_shape.ndims - 1))
-
-        # create trainable variables and moving average variables
-        beta = tf.get_variable(
-            'beta',
-            shape=params_shape,
-            initializer=self.initializers['beta'],
-            regularizer=self.regularizers['beta'],
-            dtype=tf.float32, trainable=True)
-        gamma = tf.get_variable(
-            'gamma',
-            shape=params_shape,
-            initializer=self.initializers['gamma'],
-            regularizer=self.regularizers['gamma'],
-            dtype=tf.float32, trainable=True)
-
-        moving_mean = tf.get_variable(
-            'moving_mean',
-            shape=params_shape,
-            initializer=self.initializers['moving_mean'],
-            dtype=tf.float32, trainable=False)
-        moving_var = tf.get_variable(
-            'moving_var',
-            shape=params_shape,
-            initializer=self.initializers['moving_variance'],
-            dtype=tf.float32, trainable=False)
-        
-        if(is_training):
-            batch_mean, batch_var = tf.nn.moments(inputs, axes)
-            train_mean = tf.assign(moving_mean,
-                               moving_mean * self.moving_decay + batch_mean * (1 - self.moving_decay))
-            train_var = tf.assign(moving_var,
-                              moving_var * self.moving_decay + batch_var * (1 - self.moving_decay))
-            with tf.control_dependencies([train_mean, train_var]):
-                return tf.nn.batch_normalization(inputs,
-                                                 batch_mean, batch_var, beta, gamma, self.eps)
-        else:
-            return tf.nn.batch_normalization(inputs,
-                                             moving_mean, moving_var, beta, gamma, self.eps)
-        

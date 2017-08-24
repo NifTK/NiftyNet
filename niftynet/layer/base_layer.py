@@ -5,15 +5,15 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 import tensorflow as tf
+from six import with_metaclass
 
 from niftynet.engine.application_variables import RESTORABLE
 
 
-class Invertible(object):
+class Invertible(with_metaclass(ABCMeta, object)):
     """
     interface of Invertible data
     """
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def inverse_op(self, *args, **kwargs):

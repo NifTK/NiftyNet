@@ -107,6 +107,10 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
                 sampler.close_all()
 
     def training_ops(self, start_iter=0, end_iter=1):
+        """
+        Specify the network update operation at each iteration
+        app can override this updating method if necessary
+        """
         end_iter = max(start_iter, end_iter)
         for iter_i in range(start_iter, end_iter):
             yield iter_i, self.gradient_op

@@ -47,7 +47,7 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
         """
         This function first draws two samples, and interpolates them
         with self.n_interpolations mixing coefficients
-        Location is set to np.ones for all the vectors
+        Location coordinates are set to np.ones for all the vectors
         """
         total_iter = int(self.repeat) if self.repeat is not None else 1
         while total_iter > 0:

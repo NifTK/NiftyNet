@@ -2,7 +2,8 @@ import importlib
 
 import tensorflow as tf
 
-from niftynet.utilities.util_common import _damerau_levenshtein_distance as edit_distance
+from niftynet.utilities.util_common import \
+    _damerau_levenshtein_distance as edit_distance
 
 SUPPORTED_APP = {
     'net_segment':
@@ -76,14 +77,21 @@ SUPPORTED_LOSS_AUTOENCODER = {
         'niftynet.layer.loss_autoencoder.variational_lower_bound',
 }
 
+SUPPORTED_OPTIMIZERS = {
+    'adam': 'niftynet.engine.application_optimiser.Adam',
+    'gradientdescent': 'niftynet.engine.application_optimiser.GradientDescent',
+    'momentum': 'niftynet.engine.application_optimiser.Momentum',
+    'adagrad': 'niftynet.engine.application_optimiser.Adagrad',
+}
+
 
 def select_module(module_name, type, lookup_table):
     if module_name in lookup_table:
         module_name = lookup_table[module_name]
 
     try:
-        module,class_name = module_name.rsplit('.',1)
-        the_module = getattr(importlib.import_module(module),class_name)
+        module, class_name = module_name.rsplit('.', 1)
+        the_module = getattr(importlib.import_module(module), class_name)
         return the_module
     except:
         # Two possibilities: a typo for a lookup table entry
@@ -97,14 +105,15 @@ def select_module(module_name, type, lookup_table):
             raise ValueError(err)
         else:
             if '.' not in module_name:
-                err = '{}: Incorrect module name format {}. '\
-                      'Expected "module.object".'.format(type,module_name)
+                err = '{}: Incorrect module name format {}. ' \
+                      'Expected "module.object".'.format(type, module_name)
                 tf.logging.fatal(err)
                 raise ValueError(err)
-            err = '{}: Could not import object'\
-                  '"{}" from "{}"'.format(type,class_name,module)
+            err = '{}: Could not import object' \
+                  '"{}" from "{}"'.format(type, class_name, module)
             tf.logging.fatal(err)
             raise
+
 
 class ModuleFactory(object):
     SUPPORTED = None
@@ -138,3 +147,8 @@ class LossSegmentationFactory(ModuleFactory):
 class LossAutoencoderFactory(ModuleFactory):
     SUPPORTED = SUPPORTED_LOSS_AUTOENCODER
     type_str = 'autoencoder loss'
+
+
+class OptimiserFactory(ModuleFactory):
+    SUPPORTED = SUPPORTED_OPTIMIZERS
+    type_str = 'optimizer'

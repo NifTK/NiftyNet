@@ -2,7 +2,6 @@
 from __future__ import absolute_import, print_function, division
 
 import os
-import re
 import time
 
 import tensorflow as tf
@@ -11,11 +10,13 @@ from tensorflow.python.client import device_lib
 from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import GradientsCollector
+from niftynet.engine.application_variables import NETORK_OUTPUT
 from niftynet.engine.application_variables import OutputsCollector
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.application_variables import \
     global_variables_initialize_or_restorer
-from niftynet.io.misc_io import touch_folder
+from niftynet.io.misc_io import touch_folder, get_latest_subfolder
+from niftynet.layer.bn import BN_COLLECTION_NAME
 
 FILE_PREFIX = 'model.ckpt'
 
@@ -65,7 +66,7 @@ class ApplicationDriver(object):
         self.model_dir = touch_folder(models_path)
         self.session_dir = os.path.join(self.model_dir, FILE_PREFIX)
         summary_root = os.path.join(self.model_dir, 'logs')
-        self.summary_dir = self._summary_dir(
+        self.summary_dir = get_latest_subfolder(
             summary_root, train_param.starting_iter == 0)
 
         # model-related parameters
@@ -165,8 +166,7 @@ class ApplicationDriver(object):
                             self.outputs_collector,
                             self.gradients_collector)
                         # global batch norm statistics from the last device
-                        bn_ops = tf.get_collection(
-                            tf.GraphKeys.UPDATE_OPS, scope) \
+                        bn_ops = tf.get_collection(BN_COLLECTION_NAME, scope) \
                             if self.is_training else None
 
             # assemble all training operations
@@ -251,6 +251,8 @@ class ApplicationDriver(object):
             vars_to_run = dict(train_op=train_op)
             vars_to_run[CONSOLE] = \
                 self.outputs_collector.variables(collection=CONSOLE)
+            vars_to_run[NETORK_OUTPUT] = \
+                self.outputs_collector.variables(collection=NETORK_OUTPUT)
             if iter_i % self.tensorboard_every_n == 0:
                 # adding tensorboard summary
                 vars_to_run[TF_SUMMARIES] = \
@@ -258,7 +260,7 @@ class ApplicationDriver(object):
 
             # run all variables in one go
             graph_output = sess.run(vars_to_run)
-            self.app.interpret_output(graph_output)
+            self.app.interpret_output(graph_output[NETORK_OUTPUT])
             # if application specified summaries
             summary = graph_output.get(TF_SUMMARIES, {})
             if summary != {}:
@@ -280,13 +282,21 @@ class ApplicationDriver(object):
             local_time = time.time()
             if self._coord.should_stop():
                 break
-            vars_to_run = self.outputs_collector.variables()
+            vars_to_run = dict()
+            vars_to_run[NETORK_OUTPUT] = \
+                self.outputs_collector.variables(collection=NETORK_OUTPUT)
+            vars_to_run[CONSOLE] = \
+                self.outputs_collector.variables(collection=CONSOLE)
             graph_output = sess.run(vars_to_run)
-            if not self.app.interpret_output(graph_output):
+            if not self.app.interpret_output(graph_output[NETORK_OUTPUT]):
                 tf.logging.info('processed all batches.')
                 loop_status['all_saved_flag'] = True
                 break
-            tf.logging.info('{:.3f}s'.format(time.time() - local_time))
+            console = graph_output.get(CONSOLE, {})
+            console_str = ', '.join(
+                '{}={}'.format(key, val) for (key, val) in console.items())
+            tf.logging.info('{} ({:.3f}s)'.format(
+                console_str, time.time() - local_time))
 
     def _save_model(self, session, iter_i):
         if iter_i <= 0:
@@ -336,25 +346,3 @@ class ApplicationDriver(object):
         config.log_device_placement = False
         config.allow_soft_placement = True
         return config
-
-    @staticmethod
-    def _summary_dir(summary_root, new_sub_dir):
-        summary_root = touch_folder(summary_root)
-        try:
-            log_sub_dirs = os.listdir(summary_root)
-        except OSError:
-            tf.logging.fatal('not a directory {}'.format(summary_root))
-            raise OSError
-        log_sub_dirs = [name for name in log_sub_dirs
-                        if re.findall('^[0-9]+$', name)]
-        if log_sub_dirs and new_sub_dir:
-            latest_id = max([int(name) for name in log_sub_dirs])
-            log_sub_dir = str(latest_id + 1)
-        elif log_sub_dirs and not new_sub_dir:
-            latest_valid_id = max(
-                [int(name) for name in log_sub_dirs
-                 if os.path.isdir(os.path.join(summary_root, name))])
-            log_sub_dir = str(latest_valid_id)
-        else:
-            log_sub_dir = '0'
-        return os.path.join(summary_root, log_sub_dir)
