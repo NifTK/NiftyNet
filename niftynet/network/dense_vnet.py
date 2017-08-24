@@ -110,9 +110,6 @@ class DenseVNet(BaseNet):
             if not down is None:
                 tf.summary.scalar('down{}'.format(idx),tf.reduce_mean(tf.square(down)),[tf.GraphKeys.SUMMARIES])
             all_segmentation_features.append(image_resize(skip,output_shape))
-        hack=True
-        if hack == True:
-            all_segmentation_features=[all_segmentation_features[0]]+all_segmentation_features
         segmentation = ConvolutionalLayer(
                  self.num_classes+1,
                  kernel_size=hp['final_kernel'],
