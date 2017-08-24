@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, print_function, division
 
 import os
@@ -16,7 +17,7 @@ from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.application_variables import \
     global_variables_initialize_or_restorer
 from niftynet.io.misc_io import touch_folder, get_latest_subfolder
-from niftynet.layer.bn import BN_COLLECTION_NAME
+from niftynet.layer.bn import BN_COLLECTION
 
 FILE_PREFIX = 'model.ckpt'
 
@@ -166,26 +167,20 @@ class ApplicationDriver(object):
                             self.outputs_collector,
                             self.gradients_collector)
                         # global batch norm statistics from the last device
-                        bn_ops = tf.get_collection(BN_COLLECTION_NAME, scope) \
+                        bn_ops = tf.get_collection(BN_COLLECTION, scope) \
                             if self.is_training else None
 
             # assemble all training operations
-            if self.is_training:
+            if self.is_training and self.gradients_collector:
                 updates_op = []
-                # model moving average operation
-                with tf.name_scope('MovingAverages'):
-                    mva_op = ApplicationDriver._model_moving_averaging_op()
-                    if not mva_op.type == "NoOp":
-                        updates_op.extend(mva_op)
                 # batch normalisation moving averages operation
                 if bn_ops:
                     updates_op.extend(bn_ops)
                 # combine them with model parameter updating operation
                 with tf.name_scope('ApplyGradients'):
-                    if self.gradients_collector is not None:
-                        with graph.control_dependencies(updates_op):
-                            self.app.set_network_update_op(
-                                self.gradients_collector.gradients)
+                    with graph.control_dependencies(updates_op):
+                        self.app.set_network_update_op(
+                            self.gradients_collector.gradients)
 
             # initialisation operation
             with tf.name_scope('Initialization'):
@@ -233,8 +228,13 @@ class ApplicationDriver(object):
             checkpoint = '{}-{}'.format(self.session_dir, self.initial_iter)
         # restore session
         tf.logging.info('Accessing {} ...'.format(checkpoint))
-        self.saver.restore(sess, checkpoint)
-        return
+        try:
+            self.saver.restore(sess, checkpoint)
+        except tf.errors.NotFoundError:
+            tf.logging.fatal(
+                'checkpoint {} not found or variables to restore do not '
+                'match the current application graph'.format(checkpoint))
+            raise
 
     def _training_loop(self, sess, loop_status):
         writer = tf.summary.FileWriter(self.summary_dir, sess.graph)
@@ -247,12 +247,11 @@ class ApplicationDriver(object):
             if self._coord.should_stop():
                 break
 
-            # prepare variables from the graph to run
+            # variables to the graph
             vars_to_run = dict(train_op=train_op)
-            vars_to_run[CONSOLE] = \
-                self.outputs_collector.variables(collection=CONSOLE)
-            vars_to_run[NETORK_OUTPUT] = \
-                self.outputs_collector.variables(collection=NETORK_OUTPUT)
+            vars_to_run[CONSOLE], vars_to_run[NETORK_OUTPUT] = \
+                self.outputs_collector.variables(CONSOLE), \
+                self.outputs_collector.variables(NETORK_OUTPUT)
             if iter_i % self.tensorboard_every_n == 0:
                 # adding tensorboard summary
                 vars_to_run[TF_SUMMARIES] = \
@@ -260,19 +259,17 @@ class ApplicationDriver(object):
 
             # run all variables in one go
             graph_output = sess.run(vars_to_run)
+
+            # process graph outputs
             self.app.interpret_output(graph_output[NETORK_OUTPUT])
-            # if application specified summaries
+            console_str = self._console_vars_to_str(graph_output[CONSOLE])
             summary = graph_output.get(TF_SUMMARIES, {})
-            if summary != {}:
+            if summary:
                 writer.add_summary(summary, iter_i)
 
+            # save current model
             if iter_i % self.save_every_n == 0:
                 self._save_model(sess, iter_i)
-
-            # print variables of the updated network
-            console = graph_output.get(CONSOLE, {})
-            console_str = ', '.join(
-                '{}={}'.format(key, val) for (key, val) in console.items())
             tf.logging.info('iter {}, {} ({:.3f}s)'.format(
                 iter_i, console_str, time.time() - local_time))
 
@@ -282,19 +279,22 @@ class ApplicationDriver(object):
             local_time = time.time()
             if self._coord.should_stop():
                 break
+
+            # build variables to run
             vars_to_run = dict()
-            vars_to_run[NETORK_OUTPUT] = \
-                self.outputs_collector.variables(collection=NETORK_OUTPUT)
-            vars_to_run[CONSOLE] = \
-                self.outputs_collector.variables(collection=CONSOLE)
+            vars_to_run[NETORK_OUTPUT], vars_to_run[CONSOLE] = \
+                self.outputs_collector.variables(NETORK_OUTPUT), \
+                self.outputs_collector.variables(CONSOLE)
+
+            # evaluate the graph variables
             graph_output = sess.run(vars_to_run)
+
+            # process the graph outputs
             if not self.app.interpret_output(graph_output[NETORK_OUTPUT]):
                 tf.logging.info('processed all batches.')
                 loop_status['all_saved_flag'] = True
                 break
-            console = graph_output.get(CONSOLE, {})
-            console_str = ', '.join(
-                '{}={}'.format(key, val) for (key, val) in console.items())
+            console_str = self._console_vars_to_str(graph_output[CONSOLE])
             tf.logging.info('{} ({:.3f}s)'.format(
                 console_str, time.time() - local_time))
 
@@ -305,6 +305,14 @@ class ApplicationDriver(object):
                         save_path=self.session_dir,
                         global_step=iter_i)
         tf.logging.info('iter {} saved: {}'.format(iter_i, self.session_dir))
+
+    @staticmethod
+    def _console_vars_to_str(console_dict):
+        if not console_dict:
+            return ''
+        console_str = ', '.join(
+            '{}={}'.format(key, val) for (key, val) in console_dict.items())
+        return console_str
 
     def _device_string(self, id=0, is_worker=True):
         devices = device_lib.list_local_devices()
@@ -329,12 +337,6 @@ class ApplicationDriver(object):
         else:
             # using Tensorflow default choice
             pass
-
-    @staticmethod
-    def _model_moving_averaging_op(decay=0.9):
-        variable_averages = tf.train.ExponentialMovingAverage(decay)
-        trainables = tf.trainable_variables()
-        return variable_averages.apply(var_list=trainables)
 
     @staticmethod
     def _create_app(app_type_string):
