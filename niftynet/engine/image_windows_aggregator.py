@@ -233,7 +233,6 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         return empty_image
 
     def _save_current_image(self):
-        print('sci')
         if self.input_image is None:
             return
 
