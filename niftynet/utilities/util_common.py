@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import datetime
 import os
+import re
 from functools import partial
 
 import numpy as np
@@ -113,8 +114,9 @@ def print_save_input_parameters(args, txt_file=None):
     for section in args:
         if section not in param_parser.SYSTEM_SECTIONS:
             output_config.extend(__print_argparse_section(args, section))
-    for section in param_parser.SYSTEM_SECTIONS:
-        output_config.extend(__print_argparse_section(args, section))
+    for section in args:
+        if section in param_parser.SYSTEM_SECTIONS:
+            output_config.extend(__print_argparse_section(args, section))
 
     if txt_file is not None:
         with open(txt_file, 'w') as f:
@@ -314,3 +316,13 @@ def printProgressBar(iteration, total,
     # Print New Line on Complete
     if iteration == total:
         print()
+
+
+def set_cuda_device(cuda_devices):
+    if re.findall('\d', cuda_devices):
+        os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
+        tf.logging.info(
+            "set CUDA_VISIBLE_DEVICES to {}".format(cuda_devices))
+    else:
+        # using Tensorflow default choice
+        pass
