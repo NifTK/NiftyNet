@@ -247,9 +247,9 @@ class SegmentationApplication(BaseApplication):
             outputs_collector.add_to_collection(
                 var=data_dict['image_location'], name='location',
                 average_over_devices=False, collection=CONSOLE)
-            init_agg = self.SUPPORTED_SAMPLING[self.net_param.window_sampling][
-                2]
-            init_agg()
+            init_aggregator = \
+                    self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]
+            init_aggregator()
 
     def interpret_output(self, batch_output):
         if not self.is_training:

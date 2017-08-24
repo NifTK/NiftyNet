@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import re
 import os
 import warnings
 
@@ -321,6 +322,39 @@ def touch_folder(model_dir):
     return absolute_dir
 
 
+
+def resolve_checkpoint(checkpoint_name):
+    # For now only supports checkpoint_name where
+    # checkpoint_name.index is in the file system
+    # eventually will support checkpoint names that can be referenced
+    # in a paths file
+    if os.path.isfile(checkpoint_name + '.index'):
+        return checkpoint_name
+    raise ValueError('Invalid checkpoint {}'.format(checkpoint_name))
+
+
+def get_latest_subfolder(parent_folder, create_new=False):
+    parent_folder = touch_folder(parent_folder)
+    try:
+        log_sub_dirs = os.listdir(parent_folder)
+    except OSError:
+        tf.logging.fatal('not a directory {}'.format(parent_folder))
+        raise OSError
+    log_sub_dirs = [name for name in log_sub_dirs
+                    if re.findall('^[0-9]+$', name)]
+    if log_sub_dirs and create_new:
+        latest_id = max([int(name) for name in log_sub_dirs])
+        log_sub_dir = str(latest_id + 1)
+    elif log_sub_dirs and not create_new:
+        latest_valid_id = max(
+            [int(name) for name in log_sub_dirs
+             if os.path.isdir(os.path.join(parent_folder, name))])
+        log_sub_dir = str(latest_valid_id)
+    else:
+        log_sub_dir = '0'
+    return os.path.join(parent_folder, log_sub_dir)
+
+
 def _image3_animated_gif(tag, ims):
     # x=numpy.random.randint(0,256,[10,10,10],numpy.uint8)
     ims = [np.asarray((ims[i, :, :]).astype(np.uint8))
@@ -341,15 +375,6 @@ def _image3_animated_gif(tag, ims):
         tag=tag, image=summary_image_str)
     return [summary_pb2.Summary(value=[image_summary]).SerializeToString()]
 
-
-def resolve_checkpoint(checkpoint_name):
-    # For now only supports checkpoint_name where
-    # checkpoint_name.index is in the file system
-    # eventually will support checkpoint names that can be referenced
-    # in a paths file
-    if os.path.isfile(checkpoint_name + '.index'):
-        return checkpoint_name
-    raise ValueError('Invalid checkpoint {}'.format(checkpoint_name))
 
 
 def _image3(name,
@@ -396,9 +421,7 @@ def _image3(name,
     with tf.device('/cpu:0'):
         for it in range(min(max_outputs, transposed_tensor.shape.as_list()[0])):
             inp = [name + suffix.format(it), transposed_tensor[it, :, :, :]]
-            summary_op = tf.py_func(_image3_animated_gif,
-                                    inp,
-                                    tf.string)
+            summary_op = tf.py_func(_image3_animated_gif, inp, tf.string)
             for c in collections:
                 tf.add_to_collection(c, summary_op)
     return summary_op

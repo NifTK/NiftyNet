@@ -12,7 +12,11 @@ from niftynet.layer.base_layer import Layer
 class UniformSampler(Layer, InputBatchQueueRunner):
     """
     This class generators samples by uniformly sampling each input volume
-    currently 4D input is supported, Height x Width x Depth x Modality
+    currently the coordinates are randomised for spatial dims only,
+    i.e., the first three dims of image.
+
+    This layer can be considered as a `random cropping` layer of the
+    input image.
     """
 
     def __init__(self, reader, data_param, batch_size, windows_per_image):
@@ -104,7 +108,7 @@ def rand_spatial_coordinates(subject_id, img_sizes, win_sizes, n_samples):
     This function handles this situation by first find the largest
     window across these window definitions, and generate the coordinates.
     These coordinates are then adjusted for each of the
-    smaller window sizes.
+    smaller window sizes (the output windows are concentric).
     """
     uniq_spatial_size = set([img_size[:N_SPATIAL]
                              for img_size in list(img_sizes.values())])
@@ -148,65 +152,3 @@ def rand_spatial_coordinates(subject_id, img_sizes, win_sizes, n_samples):
             subject_id[:, None], spatial_coords, axis=1)
         all_coordinates[mod] = spatial_coords
     return all_coordinates
-
-
-    # def __init__(self,
-    #             patch,
-    #             volume_loader,
-    #             patch_per_volume=1,
-    #             data_augmentation_methods=None,
-    #             name="uniform_sampler"):
-
-    #    super(UniformSampler, self).__init__(patch=patch, name=name)
-    #    self.volume_loader = volume_loader
-    #    self.patch_per_volume = patch_per_volume
-    #    if data_augmentation_methods is None:
-    #        self.data_augmentation_layers = []
-    #    else:
-    #        self.data_augmentation_layers = data_augmentation_methods
-
-    # def layer_op(self, batch_size=1):
-    #    """
-    #     problems:
-    #        check how many modalities available
-    #        check the colon operator
-    #        automatically handle mutlimodal by matching dims?
-    #    """
-    #    spatial_rank = self.patch.spatial_rank
-    #    local_layers = [deepcopy(x) for x in self.data_augmentation_layers]
-    #    patch = deepcopy(self.patch)
-    #    while self.volume_loader.has_next:
-    #        img, seg, weight_map, idx = self.volume_loader()
-
-    #        # to make sure all volumetric data have the same spatial dims
-    #        # and match volumetric data shapes to the patch definition
-    #        # (the matched result will be either 3d or 4d)
-    #        img.spatial_rank = spatial_rank
-
-    #        img.data = io.match_volume_shape_to_patch_definition(
-    #            img.data, patch)
-    #        if img.data.ndim == 5:
-    #            raise NotImplementedError
-    #            # time series data are not supported
-    #        if seg is not None:
-    #            seg.spatial_rank = spatial_rank
-    #            seg.data = io.match_volume_shape_to_patch_definition(
-    #                seg.data, patch)
-    #        if weight_map is not None:
-    #            weight_map.spatial_rank = spatial_rank
-    #            weight_map.data = io.match_volume_shape_to_patch_definition(
-    #                weight_map.data, patch)
-
-    #        # apply volume level augmentation
-    #        for aug in local_layers:
-    #            aug.randomise(spatial_rank=spatial_rank)
-    #            img, seg, weight_map = aug(img), aug(seg), aug(weight_map)
-
-    #        # generates random spatial coordinates
-    #        locations = rand_spatial_coordinates(img.spatial_rank,
-    #                                             img.data.shape,
-    #                                             patch.image_size,
-    #                                             self.patch_per_volume)
-    #        for loc in locations:
-    #            patch.set_data(idx, loc, img, seg, weight_map)
-    #            yield patch

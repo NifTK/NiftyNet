@@ -16,6 +16,7 @@ except ImportError:
 
 SYSTEM_SECTIONS = {'APPLICATION', 'NETWORK', 'TRAINING', 'INFERENCE'}
 
+
 def run():
     # meta_parser: to find out location of the configuration file
     meta_parser = argparse.ArgumentParser(add_help=False)
@@ -106,7 +107,7 @@ def _parse_arguments_by_section(parents,
     Finally it overrides existing pairs of 'name, value' with commandline
     inputs.
 
-    Commandline inputs only overrides system/custom parameters.
+    Commandline inputs only override system/custom parameters.
     input data related parameters needs to be defined in config file.
     :param parents: a list, parsers will be created as
     subparsers of parents

@@ -12,8 +12,6 @@ import tensorflow as tf
 from scipy import ndimage
 from six import string_types
 
-LABEL_STRINGS = ['Label', 'LABEL', 'label']
-
 
 def list_depth_count(input_list):
     """
@@ -44,8 +42,8 @@ def average_gradients(multi_device_gradients):
     assert nested_grads_depth == 3 or nested_grads_depth == 4, \
         "The list of gradients are nested in an unsusal way." \
         "application's gradient is not compatibale with app driver." \
-        "Please check the return value of _connect_data_and_network()" \
-        "of the application"
+        "Please check the return value of grapdients_collector " \
+        "in _connect_data_and_network() of the application"
 
     if nested_grads_depth == 4:
         gradients = zip(*multi_device_gradients)
@@ -298,14 +296,13 @@ def otsu_threshold(img, nbins=256):
 def printProgressBar(iteration, total,
                      prefix='', suffix='', decimals=1, length=10, fill='='):
     """
-    Call in a loop to create terminal progress bar - To be used when
-    performing the initial histogram normalisation
+    Call in a loop to create terminal progress bar
     @params:
         iteration   - Required  : current iteration (Int)
         total       - Required  : total iterations (Int)
         prefix      - Optional  : prefix string (Str)
         suffix      - Optional  : suffix string (Str)
-        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        decimals    - Optional  : number of decimals in percent complete (Int)
         length      - Optional  : character length of bar (Int)
         fill        - Optional  : bar fill character (Str)
     """
