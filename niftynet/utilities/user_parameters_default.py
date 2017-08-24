@@ -26,7 +26,8 @@ def add_application_args(parser):
         metavar='',
         help="Set CUDA_VISIBLE_DEVICES variable, e.g. '0,1,2,3'; "
              "leave blank to use the system default value",
-        default='""')
+        type=str,
+        default='')
 
     parser.add_argument(
         "--num_threads",

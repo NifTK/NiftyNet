@@ -6,7 +6,7 @@ from tensorflow.python.training import moving_averages
 
 from niftynet.layer.base_layer import TrainableLayer
 
-BN_COLLECTION_NAME = tf.GraphKeys.UPDATE_OPS
+BN_COLLECTION = tf.GraphKeys.UPDATE_OPS
 
 
 class BNLayer(TrainableLayer):
@@ -72,8 +72,8 @@ class BNLayer(TrainableLayer):
             moving_mean, mean, self.moving_decay).op
         update_moving_variance = moving_averages.assign_moving_average(
             moving_variance, variance, self.moving_decay).op
-        tf.add_to_collection(BN_COLLECTION_NAME, update_moving_mean)
-        tf.add_to_collection(BN_COLLECTION_NAME, update_moving_variance)
+        tf.add_to_collection(BN_COLLECTION, update_moving_mean)
+        tf.add_to_collection(BN_COLLECTION, update_moving_variance)
 
         # call the normalisation function
         if is_training or use_local_stats:

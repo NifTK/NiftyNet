@@ -234,7 +234,7 @@ def load_and_merge_csv_files(data_param):
     for modality_name in data_param:
         csv_file = data_param.get(modality_name, '').csv_file
         if not os.path.isfile(csv_file):
-            tf.logging.info('search file folders ignored, '
+            tf.logging.info('search file folders, '
                             'writing csv file {}'.format(csv_file))
             section_tuple = data_param[modality_name].__dict__.items()
             matcher = KeywordsMatching.from_tuple(section_tuple)
