@@ -4,6 +4,7 @@ import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_factory import ApplicationNetFactory
+from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.image_windows_aggregator import WindowAsImageAggregator
@@ -130,8 +131,10 @@ class GANApplication(BaseApplication):
                                  gradients_collector=None):
         if self.is_training:
             with tf.name_scope('Optimiser'):
-                self.optimiser = tf.train.AdamOptimizer(
-                    learning_rate=self.action_param.lr, beta1=0.5)
+                optimiser_class = OptimiserFactory.create(
+                    name=self.action_param.optimiser)
+                self.optimiser = optimiser_class.get_instance(
+                    learning_rate=self.action_param.lr)
 
             # a new pop_batch_op for each gpu tower
             device_id = gradients_collector.current_tower_id

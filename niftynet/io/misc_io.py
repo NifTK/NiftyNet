@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-import re
 import os
+import re
 import warnings
 
 import PIL
@@ -322,7 +322,6 @@ def touch_folder(model_dir):
     return absolute_dir
 
 
-
 def resolve_checkpoint(checkpoint_name):
     # For now only supports checkpoint_name where
     # checkpoint_name.index is in the file system
@@ -374,7 +373,6 @@ def _image3_animated_gif(tag, ims):
     image_summary = summary_pb2.Summary.Value(
         tag=tag, image=summary_image_str)
     return [summary_pb2.Summary(value=[image_summary]).SerializeToString()]
-
 
 
 def _image3(name,

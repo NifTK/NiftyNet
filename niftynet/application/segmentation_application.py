@@ -2,6 +2,7 @@ import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_factory import ApplicationNetFactory
+from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.image_windows_aggregator import GridSamplesAggregator
@@ -196,7 +197,9 @@ class SegmentationApplication(BaseApplication):
 
         if self.is_training:
             with tf.name_scope('Optimiser'):
-                self.optimiser = tf.train.AdamOptimizer(
+                optimiser_class = OptimiserFactory.create(
+                    name=self.action_param.optimiser)
+                self.optimiser = optimiser_class.get_instance(
                     learning_rate=self.action_param.lr)
             loss_func = LossFunction(
                 n_class=self.segmentation_param.num_classes,

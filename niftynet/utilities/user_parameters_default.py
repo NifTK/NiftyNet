@@ -266,6 +266,12 @@ def add_network_args(parser):
 
 def add_training_args(parser):
     parser.add_argument(
+        "--optimiser",
+        help="choose an optimiser for computing graph gradients and applying",
+        type=str,
+        default='adam')
+
+    parser.add_argument(
         "--sample_per_volume",
         help="[Training only] Set number of samples to take from "
              "each image that was loaded in a given training epoch",

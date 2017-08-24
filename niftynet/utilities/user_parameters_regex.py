@@ -53,7 +53,8 @@ def match_array(string_input, type_str):
         try:
             values = [v.strip() for v in filtered_groups[0].split(',')]
         except IndexError:
-            raise ValueError("unrecognised input string {}".format(string_input))
+            raise ValueError(
+                "unrecognised input string {}".format(string_input))
         if type_str == 'int':
             return tuple(map(int, values))
         if type_str == 'float':
