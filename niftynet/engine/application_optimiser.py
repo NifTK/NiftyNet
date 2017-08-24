@@ -14,6 +14,7 @@ and set config parameter in config file or from command line
 specify `--optimiser newclass.NewOptimisor`
 """
 
+
 class Adam(object):
     @staticmethod
     def get_instance(learning_rate):

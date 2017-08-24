@@ -13,6 +13,7 @@ from niftynet.utilities.restore_initializer import restore_initializer
 from niftynet.utilities.util_common import look_up_operations
 
 RESTORABLE = 'NiftyNetObjectsToRestore'
+NETORK_OUTPUT = 'niftynetout'
 CONSOLE = 'niftynetconsole'
 TF_SUMMARIES = tf.GraphKeys.SUMMARIES
 SUPPORTED_SUMMARY = {'scalar': tf.summary.scalar,
@@ -47,15 +48,16 @@ class GradientsCollector(object):
 class OutputsCollector(object):
     def __init__(self, n_devices=1):
         self.console_vars = {}
-        self.tf_summary_vars = {}
-        self._merge_op = None
+        self.summary_vars = {}
+        self.output_vars = {}
 
+        self._merge_op = None
         self.n_devices = n_devices
 
     def _add_to_dict(self, var_dict, var, name, do_averaging):
         """
-        update the dict, return the variable name if the variable is
-        ready to run (by tf.Session).
+        update the dict, with item of either
+        {name: variable} or {name: list of variable}
         """
         assert isinstance(var, tf.Tensor), \
             "only supports adding one tf.Tensor at a time," \
@@ -73,8 +75,8 @@ class OutputsCollector(object):
                 "in the collector".format(name)
         else:
             # collecting variables and rename if exists
-            _uniq_id = 0
             new_name = name
+            _uniq_id = 0
             while new_name in var_dict:
                 _uniq_id += 1
                 new_name = '{}_{}'.format(name, _uniq_id)
@@ -82,31 +84,26 @@ class OutputsCollector(object):
 
     def add_to_collection(self, var, name,
                           average_over_devices=False,
-                          collection=CONSOLE, **kwargs):
+                          collection=CONSOLE,
+                          summary_type=None):
         if collection == CONSOLE:
             self._add_to_console(var, name, average_over_devices)
-        if collection == TF_SUMMARIES:
-            self._add_to_tf_summary(var, name, average_over_devices, **kwargs)
-
-    def _add_to_console(self, var, name, average_over_devices=False):
-        self._add_to_dict(self.console_vars,
-                          var, name, average_over_devices)
-
-    def _add_to_tf_summary(self, var, name,
-                           average_over_devices=False,
-                           summary_type='scalar'):
-        summary_op = look_up_operations(summary_type, SUPPORTED_SUMMARY)
-        self._add_to_dict(self.tf_summary_vars,
-                          var, name, average_over_devices)
-        values = self.tf_summary_vars.get(name, None)
-        if isinstance(values, tf.Tensor):
-            summary_op(name=name, tensor=values, collections=[TF_SUMMARIES])
+        elif collection == NETORK_OUTPUT:
+            self._add_to_network_output(var, name, average_over_devices)
+        elif collection == TF_SUMMARIES:
+            self._add_to_tf_summary(
+                var, name, average_over_devices, summary_type)
+        else:
+            raise ValueError(
+                "unknown variable collection {}.".format(collection))
 
     def variables(self, collection=CONSOLE):
         if collection == CONSOLE:
             return self.console_vars
         elif collection == TF_SUMMARIES:
             return self._merge_op if self._merge_op is not None else {}
+        elif collection == NETORK_OUTPUT:
+            return self.output_vars
         else:
             raise ValueError("unknown output variables type_str")
 
@@ -118,22 +115,36 @@ class OutputsCollector(object):
         This function should be called in
         ApplicationDriver.create_graph function
         """
-        for var_name in self.console_vars:
-            values = self.console_vars.get(var_name, None)
-            if isinstance(values, list):
-                self.console_vars[var_name] = tf.reduce_mean(
-                    values, name=var_name)
-
-        for var_name in self.tf_summary_vars:
-            values = self.tf_summary_vars.get(var_name, None)
-            if isinstance(values, list):
-                self.tf_summary_vars[var_name] = tf.reduce_mean(
-                    values, name=var_name)
-                summary_name = '{}_device_average_'.format(var_name)
-                tf.summary.scalar(name=summary_name,
-                                  tensor=self.tf_summary_vars[var_name],
-                                  collections=[TF_SUMMARIES])
+        self._average_variables_over_devices(self.console_vars, False)
+        self._average_variables_over_devices(self.output_vars, False)
+        self._average_variables_over_devices(self.summary_vars, True)
         self._merge_op = tf.summary.merge_all(key=TF_SUMMARIES)
+
+    def _add_to_network_output(self, var, name, average_over_devices=False):
+        self._add_to_dict(self.output_vars, var, name, average_over_devices)
+
+    def _add_to_console(self, var, name, average_over_devices=False):
+        self._add_to_dict(self.console_vars, var, name, average_over_devices)
+
+    def _add_to_tf_summary(self, var, name,
+                           average_over_devices=False, summary_type='scalar'):
+        self._add_to_dict(self.summary_vars, var, name, average_over_devices)
+        values = self.summary_vars.get(name, None)
+        if isinstance(values, tf.Tensor):
+            summary_op = look_up_operations(summary_type, SUPPORTED_SUMMARY)
+            summary_op(name=name, tensor=values, collections=[TF_SUMMARIES])
+
+    @staticmethod
+    def _average_variables_over_devices(var_dict, create_tf_summary_op=False):
+        for var_name in var_dict:
+            values = var_dict.get(var_name, None)
+            if not isinstance(values, list):
+                continue
+            var_dict[var_name] = tf.reduce_mean(values, name=var_name)
+            if create_tf_summary_op:
+                tf.summary.scalar(name='{}_device_average_'.format(var_name),
+                                  tensor=var_dict[var_name],
+                                  collections=[TF_SUMMARIES])
 
 
 def global_variables_initialize_or_restorer(var_list=None):

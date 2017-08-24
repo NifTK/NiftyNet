@@ -2,7 +2,6 @@
 from __future__ import absolute_import, print_function, division
 
 import os
-import re
 import time
 
 import tensorflow as tf
@@ -11,12 +10,13 @@ from tensorflow.python.client import device_lib
 from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import GradientsCollector
+from niftynet.engine.application_variables import NETORK_OUTPUT
 from niftynet.engine.application_variables import OutputsCollector
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.application_variables import \
     global_variables_initialize_or_restorer
-from niftynet.layer.bn import BN_COLLECTION_NAME
 from niftynet.io.misc_io import touch_folder, get_latest_subfolder
+from niftynet.layer.bn import BN_COLLECTION_NAME
 
 FILE_PREFIX = 'model.ckpt'
 
@@ -251,6 +251,8 @@ class ApplicationDriver(object):
             vars_to_run = dict(train_op=train_op)
             vars_to_run[CONSOLE] = \
                 self.outputs_collector.variables(collection=CONSOLE)
+            vars_to_run[NETORK_OUTPUT] = \
+                self.outputs_collector.variables(collection=NETORK_OUTPUT)
             if iter_i % self.tensorboard_every_n == 0:
                 # adding tensorboard summary
                 vars_to_run[TF_SUMMARIES] = \
@@ -258,7 +260,7 @@ class ApplicationDriver(object):
 
             # run all variables in one go
             graph_output = sess.run(vars_to_run)
-            self.app.interpret_output(graph_output)
+            self.app.interpret_output(graph_output[NETORK_OUTPUT])
             # if application specified summaries
             summary = graph_output.get(TF_SUMMARIES, {})
             if summary != {}:
@@ -280,13 +282,21 @@ class ApplicationDriver(object):
             local_time = time.time()
             if self._coord.should_stop():
                 break
-            vars_to_run = self.outputs_collector.variables()
+            vars_to_run = dict()
+            vars_to_run[NETORK_OUTPUT] = \
+                self.outputs_collector.variables(collection=NETORK_OUTPUT)
+            vars_to_run[CONSOLE] = \
+                self.outputs_collector.variables(collection=CONSOLE)
             graph_output = sess.run(vars_to_run)
-            if not self.app.interpret_output(graph_output):
+            if not self.app.interpret_output(graph_output[NETORK_OUTPUT]):
                 tf.logging.info('processed all batches.')
                 loop_status['all_saved_flag'] = True
                 break
-            tf.logging.info('{:.3f}s'.format(time.time() - local_time))
+            console = graph_output.get(CONSOLE, {})
+            console_str = ', '.join(
+                '{}={}'.format(key, val) for (key, val) in console.items())
+            tf.logging.info('{} ({:.3f}s)'.format(
+                console_str, time.time() - local_time))
 
     def _save_model(self, session, iter_i):
         if iter_i <= 0:
@@ -336,4 +346,3 @@ class ApplicationDriver(object):
         config.log_device_placement = False
         config.allow_soft_placement = True
         return config
-

@@ -5,6 +5,7 @@ from niftynet.engine.application_factory import ApplicationNetFactory
 from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import TF_SUMMARIES
+from niftynet.engine.application_variables import NETORK_OUTPUT
 from niftynet.engine.image_windows_aggregator import GridSamplesAggregator
 from niftynet.engine.image_windows_aggregator import ResizeSamplesAggregator
 from niftynet.engine.sampler_grid import GridSampler
@@ -246,10 +247,10 @@ class SegmentationApplication(BaseApplication):
 
             outputs_collector.add_to_collection(
                 var=net_out, name='window',
-                average_over_devices=False, collection=CONSOLE)
+                average_over_devices=False, collection=NETORK_OUTPUT)
             outputs_collector.add_to_collection(
                 var=data_dict['image_location'], name='location',
-                average_over_devices=False, collection=CONSOLE)
+                average_over_devices=False, collection=NETORK_OUTPUT)
             init_aggregator = \
                     self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]
             init_aggregator()
