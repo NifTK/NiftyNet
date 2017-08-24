@@ -31,7 +31,6 @@ class InputBatchQueueRunner(object):
         self.capacity = capacity
 
         self.shuffle = shuffle
-        self._min_queue_size = self.capacity // 2 if self.shuffle else 0
         self._batch_size = 1
 
         # create queue and the associated operations
@@ -75,17 +74,17 @@ class InputBatchQueueRunner(object):
             if not is_dynamic_window else None
 
         # create a queue
+        # pylint: disable=redefined-variable-type
         if self.shuffle:
             self._queue = tf.RandomShuffleQueue(
                 capacity=self.capacity,
-                min_after_dequeue=self._min_queue_size,
+                min_after_dequeue=self.capacity // 2 if self.shuffle else 0,
                 dtypes=input_dtypes,
                 shapes=input_shapes,
                 names=names,
                 name="shuffled_queue")
         else:
             self._queue = tf.FIFOQueue(
-                # pylint: disable=redefined-variable-type_str
                 capacity=self.capacity,
                 dtypes=input_dtypes,
                 shapes=input_shapes,
@@ -105,7 +104,8 @@ class InputBatchQueueRunner(object):
     def _push(self, thread_id):
         tf.logging.info('New thread: {}'.format(thread_id))
         try:
-            for output_dict in self():
+            output_dict = None
+            for output_dict in self():  # pylint: disable=not-callable
                 if self._session._closed:
                     break
                 if self._coordinator.should_stop():
@@ -113,7 +113,7 @@ class InputBatchQueueRunner(object):
                 self._session.run(self._enqueue_op, feed_dict=output_dict)
 
             # push a set of stopping patches
-            for i in range(self.capacity + self._batch_size):
+            for _ in range(self.capacity + self._batch_size):
                 if self._session._closed:
                     break
                 if self._coordinator.should_stop():
@@ -130,7 +130,7 @@ class InputBatchQueueRunner(object):
         # except RuntimeError as e:
         #    tf.logging.fatal(e)
         #    self.close_all()
-        except Exception as e:
+        except RuntimeError:
             import sys
             import traceback
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -140,13 +140,30 @@ class InputBatchQueueRunner(object):
         finally:
             pass
 
-    @property
-    def current_queue_size(self):
+    def _current_queue_size(self):
+        # for debugging purpose
         if self._session._closed:
             return 0
         return self._session.run(self._query_queue_size_op)
 
     def pop_batch_op(self, device_id=0):
+        """
+        This function is used when connecting a sampler output
+        to a network. e.g.,
+            data_dict = self.get_sampler()[0].pop_batch_op(device_id)
+            net_output = net_model(data_dict, is_training)
+        Note it squeezes the output tensor of 6 dims
+        [batch, x, y, z, time, modality]
+        by removing all dims along which length is one.
+
+        As the output could be sent to multiple GPUs, device_id
+        specifies a unique name, so that each GPU has a different
+        OP nodes. Setting to the same id indicates sending the same
+        copy of output data to multiple GPUs.
+
+        :param device_id: integer representing the GPU
+        :return: a tensorflow graph op
+        """
         with tf.name_scope('pop_batch_{}'.format(device_id)):
             data_output = self._dequeue_op
             for (name, shape) in self._window.shapes.items():
@@ -158,6 +175,20 @@ class InputBatchQueueRunner(object):
             return data_output
 
     def run_threads(self, session, coord, num_threads=1):
+        """
+        This function should be called by application.driver,
+        where a session and coordinator is maintained, it
+        starts sampling threads to fill the queue.
+
+        Note that the threads will be blocked if there's no
+        dequeue_op runnning, or number of samples is less
+        than the dequeue batch size.
+
+        :param session: a tensorflow session
+        :param coord: a tensorflow coordinator
+        :param num_threads: integer specifies the number of threads
+        :return:
+        """
         tf.logging.info('Starting preprocessing threads...')
         self._session = session
         self._coordinator = coord
@@ -179,8 +210,7 @@ class InputBatchQueueRunner(object):
             self._coordinator.request_stop()
             self._coordinator.join(threads=self._threads,
                                    stop_grace_period_secs=0)
-        except RuntimeError as e:
-            #tf.logging.warning('{}'.format(e))
+        except RuntimeError:
             pass
         finally:
             if not self._session._closed:
