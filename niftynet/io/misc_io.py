@@ -375,7 +375,7 @@ def _image3_animated_gif(tag, ims):
     return [summary_pb2.Summary(value=[image_summary]).SerializeToString()]
 
 
-def _image3(name,
+def image3(name,
             tensor,
             max_outputs=3,
             collections=[tf.GraphKeys.SUMMARIES],
@@ -400,10 +400,10 @@ def _image3(name,
     slicing = []
     for i in range(len(tensor.shape)):
         if i in axis_order:
+            slicing.append(slice(None))
+        else:
             other_ind = other_indices.get(i, 0)
             slicing.append(slice(other_ind, other_ind + 1))
-        else:
-            slicing.append(slice(None))
     slicing = tuple(slicing)
     tensor = tensor[slicing]
     axis_order_all = \
@@ -429,18 +429,18 @@ def image3_sagittal(name,
                     tensor,
                     max_outputs=3,
                     collections=[tf.GraphKeys.SUMMARIES]):
-    return _image3(name, tensor, max_outputs, collections, [1], [2, 3])
+    return image3(name, tensor, max_outputs, collections, [1], [2, 3])
 
 
 def image3_coronal(name,
                    tensor,
                    max_outputs=3,
                    collections=[tf.GraphKeys.SUMMARIES]):
-    return _image3(name, tensor, max_outputs, collections, [2], [1, 3])
+    return image3(name, tensor, max_outputs, collections, [2], [1, 3])
 
 
 def image3_axial(name,
                  tensor,
                  max_outputs=3,
                  collections=[tf.GraphKeys.SUMMARIES]):
-    return _image3(name, tensor, max_outputs, collections, [3], [1, 2])
+    return image3(name, tensor, max_outputs, collections, [3], [1, 2])
