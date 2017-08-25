@@ -40,26 +40,27 @@ def average_gradients(multi_device_gradients):
         return multi_device_gradients[0]
 
     nested_grads_depth = list_depth_count(multi_device_gradients)
-    assert nested_grads_depth == 3 or nested_grads_depth == 4, \
-        "The list of gradients are nested in an unsusal way." \
-        "application's gradient is not compatibale with app driver." \
-        "Please check the return value of grapdients_collector " \
-        "in _connect_data_and_network() of the application"
-
     if nested_grads_depth == 4:
         gradients = zip(*multi_device_gradients)
         averaged_grads = [__average_grads(g) for g in gradients]
     elif nested_grads_depth == 3:
         averaged_grads = __average_grads(multi_device_gradients)
+    else:
+        tf.logging.fatal(
+            "The list of gradients are nested in an unsusal way."
+            "application's gradient is not compatible with app driver."
+            "Please check the return value of grapdients_collector "
+            "in _connect_data_and_network() of the application")
+        raise RuntimeError
     return averaged_grads
 
 
 def __average_grads(tower_grads):
-    '''
+    """
     Performs and return the average of the gradients
     :param tower_grads: in form of [[tower_1_grad], [tower_2_grad], ...]
     :return ave_grads: in form of [ave_grad]
-    '''
+    """
     # average gradients computed from multiple GPUs
     ave_grads = []
     for grad_and_vars in zip(*tower_grads):
@@ -77,11 +78,11 @@ def __average_grads(tower_grads):
 
 
 def has_bad_inputs(input_args):
-    '''
+    """
     Check if all input params have been properly set in the configuration file.
     :param input_args:
     :return:
-    '''
+    """
     is_bad = False
     for section in input_args:
         section_args = input_args[section]
@@ -124,20 +125,20 @@ def print_save_input_parameters(args, txt_file=None):
 
 
 class MorphologyOps(object):
-    '''
+    """
     Class that performs the morphological operations needed to get notably
     connected component. To be used in the evaluation
-    '''
+    """
 
     def __init__(self, binary_img, neigh):
         self.binary_map = np.asarray(binary_img, dtype=np.int8)
         self.neigh = neigh
 
     def border_map(self):
-        '''
+        """
         Creates the border for a 3D image
         :return:
-        '''
+        """
         west = ndimage.shift(self.binary_map, [-1, 0, 0], order=0)
         east = ndimage.shift(self.binary_map, [1, 0, 0], order=0)
         north = ndimage.shift(self.binary_map, [0, 1, 0], order=0)
@@ -213,8 +214,10 @@ def look_up_operations(type_str, supported):
 
 
 def _damerau_levenshtein_distance(s1, s2):
-    """Calculates an edit distance, for typo detection. Code based on :
-    https://en.wikipedia.org/wiki/Damerau–Levenshtein_distance"""
+    """
+    Calculates an edit distance, for typo detection. Code based on :
+    https://en.wikipedia.org/wiki/Damerau–Levenshtein_distance
+    """
     d = {}
     string_1_length = len(s1)
     string_2_length = len(s2)
@@ -242,7 +245,13 @@ def _damerau_levenshtein_distance(s1, s2):
 
 
 def otsu_threshold(img, nbins=256):
-    ''' Implementation of otsu thresholding'''
+    """
+    Implementation of otsu thresholding
+
+    :param img:
+    :param nbins:
+    :return:
+    """
     hist, bin_edges = np.histogram(img.ravel(), bins=nbins)
     hist = hist.astype(float)
     half_bin_size = (bin_edges[1] - bin_edges[0]) * 0.5
@@ -271,7 +280,7 @@ def otsu_threshold(img, nbins=256):
 
 
 # def otsu_threshold(img, nbins=256):
-#     ''' Implementation of otsu thresholding'''
+#     """ Implementation of otsu thresholding """
 #     hist, bin_edges = np.histogram(img.ravel(), bins=nbins, density=True)
 #     hist = hist.astype(float) * (bin_edges[1] - bin_edges[0])
 #     centre_bins = 0.5 * (bin_edges[:-1] + bin_edges[1:])

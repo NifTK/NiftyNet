@@ -200,6 +200,7 @@ class ApplicationDriver(object):
 
             # for data parallelism --
             #     defining and collecting variables from multiple devices
+            bn_ops = None
             for gpu_id in range(0, max(self.num_gpus, 1)):
                 worker_device = self._device_string(gpu_id, is_worker=True)
                 scope_string = 'worker_{}'.format(gpu_id)
@@ -209,9 +210,9 @@ class ApplicationDriver(object):
                         self.app.connect_data_and_network(
                             self.outputs_collector,
                             self.gradients_collector)
-                        # global batch norm statistics from the last device
-                        bn_ops = tf.get_collection(BN_COLLECTION, scope) \
-                            if self.is_training else None
+                        if self.is_training:
+                            # global batch norm statistics from the last device
+                            bn_ops = tf.get_collection(BN_COLLECTION, scope)
 
             # assemble all training operations
             if self.is_training and self.gradients_collector:
@@ -231,7 +232,6 @@ class ApplicationDriver(object):
 
             with tf.name_scope('MergeOutputs'):
                 self.outputs_collector.finalise_output_op()
-
             # saving operation
             self.saver = tf.train.Saver(max_to_keep=self.max_checkpoints)
 
@@ -253,7 +253,7 @@ class ApplicationDriver(object):
         ckpt_state = tf.train.get_checkpoint_state(self.model_dir)
         if ckpt_state is None:
             tf.logging.fatal(
-                "%s/checkpoint not found, please check" \
+                "%s/checkpoint not found, please check"
                 "config parameter: model_dir", self.model_dir)
         if self.initial_iter > 0:
             checkpoint = '{}-{}'.format(self.session_prefix, self.initial_iter)

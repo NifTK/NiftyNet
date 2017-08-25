@@ -128,8 +128,7 @@ class AutoencoderApplication(BaseApplication):
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
                     learning_rate=self.action_param.lr)
-            device_id = gradients_collector.current_tower_id
-            data_dict = self.get_sampler()[0].pop_batch_op(device_id)
+            data_dict = self.get_sampler()[0].pop_batch_op()
             image = tf.cast(data_dict['image'], dtype=tf.float32)
             net_output = self.net(image, is_training=True)
             loss_func = LossFunction(loss_type=self.action_param.loss_type)

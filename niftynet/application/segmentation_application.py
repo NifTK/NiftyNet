@@ -188,11 +188,7 @@ class SegmentationApplication(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
-        if self.is_training and gradients_collector:
-            device_id = gradients_collector.current_tower_id
-        else:
-            device_id = 0
-        data_dict = self.get_sampler()[0].pop_batch_op(device_id)
+        data_dict = self.get_sampler()[0].pop_batch_op()
         image = tf.cast(data_dict['image'], tf.float32)
         net_out = self.net(image, self.is_training)
 
@@ -224,7 +220,7 @@ class SegmentationApplication(BaseApplication):
             # collecting output variables
             outputs_collector.add_to_collection(
                 var=data_loss, name='dice_loss',
-                average_over_devices=True, collection=CONSOLE)
+                average_over_devices=False, collection=CONSOLE)
             outputs_collector.add_to_collection(
                 var=data_loss, name='dice_loss',
                 average_over_devices=True, summary_type='scalar',

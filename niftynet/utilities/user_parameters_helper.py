@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import argparse
 import re
+
 from six import string_types
 
 from niftynet.utilities.user_parameters_regex import match_array

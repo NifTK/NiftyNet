@@ -43,13 +43,13 @@ def infer_ndims_from_file(file_path):
 
 
 def create_affine_pixdim(affine, pixdim):
-    '''
+    """
     Given an existing affine transformation and the pixel dimension to apply,
     create a new affine matrix that satisfies the new pixel dimension
     :param affine: original affine matrix
     :param pixdim: pixel dimensions to apply
     :return:
-    '''
+    """
     norm_affine = np.sqrt(np.sum(np.square(affine[:, 0:3]), 0))
     to_divide = np.tile(
         np.expand_dims(np.append(norm_affine, 1), axis=1), [1, 4])
@@ -90,12 +90,12 @@ def correct_image_if_necessary(img):
 
 
 def rectify_header_sform_qform(img_nii):
-    '''
+    """
     Look at the sform and qform of the nifti object and
     correct it if any incompatibilities with pixel dimensions
     :param img_nii:
     :return:
-    '''
+    """
     # TODO: check img_nii is a nibabel object
     pixdim = img_nii.header.get_zooms()
     sform = img_nii.get_sform()
@@ -137,13 +137,13 @@ def rectify_header_sform_qform(img_nii):
 ### resample/reorientation original volumes
 # Perform the reorientation to ornt_fin of the data array given ornt_init
 def do_reorientation(data_array, init_axcodes, final_axcodes):
-    '''
+    """
     Performs the reorientation (changing order of axes)
     :param data_array: Array to reorient
     :param ornt_init: Initial orientation
     :param ornt_fin: Target orientation
     :return data_reoriented: New data array in its reoriented form
-    '''
+    """
     ornt_init = nib.orientations.axcodes2ornt(init_axcodes)
     ornt_fin = nib.orientations.axcodes2ornt(final_axcodes)
     if np.array_equal(ornt_init, ornt_fin):
@@ -159,14 +159,14 @@ def do_reorientation(data_array, init_axcodes, final_axcodes):
 # this function assumes the same interp_order for multi-modal images
 # do we need separate interp_order for each modality?
 def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
-    '''
+    """
     Performs the resampling
     :param data_array: Data array to resample
     :param pixdim_init: Initial pixel dimension
     :param pixdim_fin: Targeted pixel dimension
     :param interp_order: Interpolation order applied
     :return data_resampled: Array containing the resampled data
-    '''
+    """
     if data_array is None:
         # do nothing
         return
@@ -235,25 +235,25 @@ def save_data_array(filefolder,
 
 
 def expand_to_5d(img_data):
-    '''
+    """
     Expands an array up to 5d if it is not the case yet
     :param img_data:
     :return:
-    '''
+    """
     while img_data.ndim < 5:
         img_data = np.expand_dims(img_data, axis=-1)
     return img_data
 
 
 def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
-    '''
+    """
     Save the img_data to nifti image
     :param img_data: 5d img to save
     :param filename: filename under which to save the img_data
     :param save_path:
     :param affine: an affine matrix.
     :return:
-    '''
+    """
     if img_data is None:
         return
     touch_folder(save_path)
@@ -382,7 +382,8 @@ def image3(name,
             animation_axes=[1],
             image_axes=[2, 3],
             other_indices={}):
-    ''' Summary for higher dimensional images
+    """
+    Summary for higher dimensional images
     Parameters:
     name: string name for the summary
     tensor:   tensor to summarize. Should be in the range 0..255.
@@ -390,7 +391,7 @@ def image3(name,
               HxW slices of the 1st channel.
     collections: list of strings collections to add the summary to
     animation_axes=[1],image_axes=[2,3]
-    '''
+    """
     if max_outputs == 1:
         suffix = '/image'
     else:

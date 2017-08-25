@@ -138,8 +138,7 @@ class GANApplication(BaseApplication):
                     learning_rate=self.action_param.lr)
 
             # a new pop_batch_op for each gpu tower
-            device_id = gradients_collector.current_tower_id
-            data_dict = self.get_sampler()[0].pop_batch_op(device_id)
+            data_dict = self.get_sampler()[0].pop_batch_op()
 
             images = tf.cast(data_dict['image'], tf.float32)
             noise_shape = [self.net_param.batch_size,

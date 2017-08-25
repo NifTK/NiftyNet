@@ -36,7 +36,7 @@ class InputBatchQueueRunner(object):
         # create queue and the associated operations
         self._queue = None
         self._enqueue_op = None
-        self._dequeue_op = None
+        self._dequeue_func = None
         self._query_queue_size_op = None
         self._close_queue_op = None
 
@@ -61,12 +61,12 @@ class InputBatchQueueRunner(object):
             tf.logging.warning("using dynamic window size, network batch size "
                                "is set to 1")
         self._batch_size = 1 if is_dynamic_window else dequeue_size
-        enqueue_size = 1 if is_dynamic_window else enqueue_size
+        _enqueue_size = 1 if is_dynamic_window else enqueue_size
         assert dequeue_size <= self.capacity, \
             "batch size is larger than the buffer size, " \
             "please increase the queue length or decrease the batch size"
 
-        placeholders_dict = window.placeholders_dict(n_samples=enqueue_size)
+        placeholders_dict = window.placeholders_dict(n_samples=_enqueue_size)
         names = list(placeholders_dict)
         placeholders = list(placeholders_dict.values())
         input_dtypes = [holder.dtype for holder in placeholders]
@@ -94,10 +94,10 @@ class InputBatchQueueRunner(object):
         # create queue operations
         if is_dynamic_window:
             self._enqueue_op = self._queue.enqueue(placeholders_dict)
-            self._dequeue_op = self._queue.dequeue()
+            self._dequeue_func = self._queue.dequeue
         else:
             self._enqueue_op = self._queue.enqueue_many(placeholders_dict)
-            self._dequeue_op = self._queue.dequeue_many(self._batch_size)
+            self._dequeue_func = self._queue.dequeue_many
         self._query_queue_size_op = self._queue.size()
         self._close_queue_op = self._queue.close(cancel_pending_enqueues=True)
 
@@ -146,7 +146,7 @@ class InputBatchQueueRunner(object):
             return 0
         return self._session.run(self._query_queue_size_op)
 
-    def pop_batch_op(self, device_id=0):
+    def pop_batch_op(self):
         """
         This function is used when connecting a sampler output
         to a network. e.g.,
@@ -156,22 +156,20 @@ class InputBatchQueueRunner(object):
         [batch, x, y, z, time, modality]
         by removing all dims along which length is one.
 
-        As the output could be sent to multiple GPUs, device_id
-        specifies a unique name, so that each GPU has a different
-        OP nodes. Setting to the same id indicates sending the same
-        copy of output data to multiple GPUs.
-
         :param device_id: integer representing the GPU
         :return: a tensorflow graph op
         """
-        with tf.name_scope('pop_batch_{}'.format(device_id)):
-            data_output = self._dequeue_op
-            for (name, shape) in self._window.shapes.items():
-                data_output[name].set_shape([self._batch_size] + list(shape))
-            for name in data_output:
-                data_output[name] = \
-                    squeeze_spatial_temporal_dim(data_output[name])
-            return data_output
+        if self._window.has_dynamic_shapes:
+            data_output = self._dequeue_func()
+        else:
+            data_output = self._dequeue_func(self._batch_size)
+        for (name, shape) in self._window.shapes.items():
+            data_output[name].set_shape([self._batch_size] + list(shape))
+
+        for name in data_output:
+            data_output[name] = \
+                squeeze_spatial_temporal_dim(data_output[name])
+        return data_output
 
     def run_threads(self, session, coord, num_threads=1):
         """

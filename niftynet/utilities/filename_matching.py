@@ -8,10 +8,10 @@ import niftynet.io.misc_io as util
 
 
 class KeywordsMatching(object):
-    '''
+    """
     This class is responsible for the search of the appropriate files to use
     as input based on the constraints given in the config file
-    '''
+    """
 
     def __init__(self, list_paths=(), list_contain=(), list_not_contain=()):
         self.path_to_search = list_paths
@@ -20,7 +20,7 @@ class KeywordsMatching(object):
 
     @classmethod
     def from_tuple(cls, input_tuple):
-        '''
+        """
         In the config file, constraints for a given search can be of three
         types:
         path_to_search, filename_contains and filename_not_contains. Each
@@ -29,7 +29,7 @@ class KeywordsMatching(object):
         of constraints for each of these subtypes.
         :param input_tuple:
         :return:
-        '''
+        """
         path, contain, not_contain = [], (), ()
         for (name, value) in input_tuple:
             if not value:
@@ -53,13 +53,13 @@ class KeywordsMatching(object):
         return new_matcher
 
     def matching_subjects_and_filenames(self):
-        ''''
+        """
         This function perform the search of the relevant files (stored in
         list_final) and extract
         the corresponding possible list of subject names (stored in
         name_list_final).
         :returns list_final, name_list_final
-        '''
+        """
         path_file = [(p, filename)
                      for p in self.path_to_search
                      for filename in os.listdir(p)]
@@ -79,7 +79,7 @@ class KeywordsMatching(object):
         return all_pos_match and all_neg_match
 
     def __extract_subject_id_from(self, filename):
-        '''
+        """
         This function returns a list of potential subject names from a given
         filename, knowing the imposed constraints. Constraints strings are
         removed from the filename to provide the list of possible names. If
@@ -88,7 +88,7 @@ class KeywordsMatching(object):
         :param filename:
         :return name_pot: list of potential subject name given the constraint
          list and the initial filename
-        '''
+        """
         path, name, ext = util.split_filename(filename)
         # split name into parts that might be the subject_id
         noncapturing_regex_delimiters = ['(?:' + re.escape(c) + ')'
