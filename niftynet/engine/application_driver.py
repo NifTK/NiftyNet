@@ -18,7 +18,6 @@ import time
 
 import tensorflow as tf
 
-
 from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import GradientsCollector
@@ -44,8 +43,8 @@ class ApplicationDriver(object):
     to be compatible with this driver.
     """
 
+    # pylint: disable=too-many-instance-attributes
     def __init__(self):
-
         self.app = None
         self.graph = None
         self.saver = None
@@ -130,7 +129,7 @@ class ApplicationDriver(object):
     def run_application(self):
         """
         Initialise a TF graph, connect data sampler and network within
-        the graph context, run training loops and test loops.
+        the graph context, run training loops or inference loops.
 
         The training loop terminates when self.final_iter reached.
         The inference loop terminates when there is no more
@@ -142,14 +141,13 @@ class ApplicationDriver(object):
         config = ApplicationDriver._tf_config()
         with tf.Session(config=config, graph=self.graph) as session:
             # initialise network
-            tf.logging.info('starting from iter {}'.format(self.initial_iter))
+            tf.logging.info('starting from iter %d', self.initial_iter)
             self._rand_init_or_restore_vars(session)
 
             # start samplers' threads
-            self._coord = tf.train.Coordinator()
-            samplers = self.app.get_sampler()
             tf.logging.info('Filling queues (this can take a few minutes)')
-            for sampler in samplers:
+            self._coord = tf.train.Coordinator()
+            for sampler in self.app.get_sampler():
                 sampler.run_threads(session, self._coord, self.num_threads)
 
             start_time = time.time()
@@ -183,8 +181,9 @@ class ApplicationDriver(object):
 
                 tf.logging.info('stopping sampling threads')
                 self.app.stop()
-                tf.logging.info("{} stopped (time in second {:.2f}).".format(
-                    type(self.app).__name__, (time.time() - start_time)))
+                tf.logging.info(
+                    "%s stopped (time in second %.2f).",
+                    type(self.app).__name__, (time.time() - start_time))
 
     def _create_graph(self):
         graph = tf.Graph()
@@ -253,30 +252,30 @@ class ApplicationDriver(object):
         ckpt_state = tf.train.get_checkpoint_state(self.model_dir)
         if ckpt_state is None:
             tf.logging.fatal(
-                "{}/checkpoints not found, please check" \
-                "config parameter: model_dir".format(self.model_dir))
-        if self.initial_iter < 0:
+                "%s/checkpoint not found, please check" \
+                "config parameter: model_dir", self.model_dir)
+        if self.initial_iter > 0:
+            checkpoint = '{}-{}'.format(self.session_prefix, self.initial_iter)
+        else:
             checkpoint = ckpt_state.model_checkpoint_path
             assert checkpoint, 'checkpoint path not found ' \
                                'in {}/checkpoints'.format(self.model_dir)
             try:
                 self.initial_iter = int(checkpoint.rsplit('-')[-1])
-                tf.logging.info('set initial_iter to {} based '
-                                'on checkpoints'.format(self.initial_iter))
+                tf.logging.info('set initial_iter to %d based '
+                                'on checkpoints', self.initial_iter)
             except ValueError:
-                tf.logging.fatal('failed to get interation number'
+                tf.logging.fatal('failed to get iteration number'
                                  'from checkpoint path')
                 raise ValueError
-        else:
-            checkpoint = '{}-{}'.format(self.session_prefix, self.initial_iter)
         # restore session
-        tf.logging.info('Accessing {} ...'.format(checkpoint))
+        tf.logging.info('Accessing %s ...', checkpoint)
         try:
             self.saver.restore(sess, checkpoint)
         except tf.errors.NotFoundError:
             tf.logging.fatal(
-                'checkpoint {} not found or variables to restore do not '
-                'match the current application graph'.format(checkpoint))
+                'checkpoint %s not found or variables to restore do not '
+                'match the current application graph', checkpoint)
             raise
 
     def _training_loop(self, sess, loop_status):
@@ -313,8 +312,8 @@ class ApplicationDriver(object):
             # save current model
             if iter_i % self.save_every_n == 0:
                 self._save_model(sess, iter_i)
-            tf.logging.info('iter {}, {} ({:.3f}s)'.format(
-                iter_i, console_str, time.time() - local_time))
+            tf.logging.info('iter %d, %s (%.3fs)',
+                            iter_i, console_str, time.time() - local_time)
 
     def _inference_loop(self, sess, loop_status):
         loop_status['all_saved_flag'] = False
@@ -338,8 +337,8 @@ class ApplicationDriver(object):
                 loop_status['all_saved_flag'] = True
                 break
             console_str = self._console_vars_to_str(graph_output[CONSOLE])
-            tf.logging.info('{} ({:.3f}s)'.format(
-                console_str, time.time() - local_time))
+            tf.logging.info(
+                '%s (%.3fs)', console_str, time.time() - local_time)
 
     def _save_model(self, session, iter_i):
         if iter_i <= 0:
@@ -347,23 +346,21 @@ class ApplicationDriver(object):
         self.saver.save(sess=session,
                         save_path=self.session_prefix,
                         global_step=iter_i)
-        tf.logging.info(
-            'iter {} saved: {}'.format(iter_i, self.session_prefix))
+        tf.logging.info('iter %d saved: %s', iter_i, self.session_prefix)
 
     def _device_string(self, device_id=0, is_worker=True):
-        from tensorflow.python.client import \
-            device_lib  # pylint: disable=no-name-in-module
+        # pylint: disable=no-name-in-module
+        from tensorflow.python.client import device_lib
         devices = device_lib.list_local_devices()
         has_local_gpu = any([x.device_type == 'GPU' for x in devices])
         if self.num_gpus <= 0:  # user specified no gpu at all
             return '/cpu:{}'.format(device_id)
-        # in training: use gpu only for workers whenever has_local_gpu
-        # in inference: use gpu for everything whenever has_local_gpu
         if self.is_training:
+            # in training: use gpu only for workers whenever has_local_gpu
             device = 'gpu' if (is_worker and has_local_gpu) else 'cpu'
             return '/{}:{}'.format(device, device_id)
-        else:
-            return '/gpu:0' if has_local_gpu else '/cpu:0'
+        # in inference: use gpu for everything whenever has_local_gpu
+        return '/gpu:0' if has_local_gpu else '/cpu:0'
 
     @staticmethod
     def _console_vars_to_str(console_dict):

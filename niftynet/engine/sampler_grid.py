@@ -34,7 +34,8 @@ class GridSampler(Layer, InputBatchQueueRunner):
             data_param)
 
         if spatial_window_size:
-            # override all spatial window defined in input modalities sections
+            # override all spatial window defined in input
+            # modalities sections
             # this is useful when do inference with a spatial window
             # which is different from the training specifications
             self.window.set_spatial_shape(spatial_window_size)
@@ -43,8 +44,7 @@ class GridSampler(Layer, InputBatchQueueRunner):
         self._create_queue_and_ops(self.window,
                                    enqueue_size=1,
                                    dequeue_size=batch_size)
-        tf.logging.info("initialised sampler output {}".format(
-            self.window.shapes))
+        tf.logging.info("initialised sampler output %s", self.window.shapes)
 
         ### running test
         # sess = tf.Session()
@@ -83,14 +83,14 @@ class GridSampler(Layer, InputBatchQueueRunner):
             total_locations = n_locations + extra_locations
 
             tf.logging.info(
-                'grid sampling image sizes: {}'.format(image_shapes))
+                'grid sampling image sizes: %s', image_shapes)
             tf.logging.info(
-                'grid sampling window sizes: {}'.format(static_window_shapes))
+                'grid sampling window sizes: %s', static_window_shapes)
             if extra_locations > 0:
                 tf.logging.info(
-                    "yielding {} locations from image, "
-                    "extended to {} to be divisible by batch size {}".format(
-                        n_locations, total_locations, self.batch_size))
+                    "yielding %d locations from image, "
+                    "extended to %d to be divisible by batch size %d",
+                    n_locations, total_locations, self.batch_size)
             else:
                 tf.logging.info("yielding {} locations from image".format(
                     n_locations))
@@ -127,6 +127,7 @@ def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
     step sizes specified in grid_size parameter
     :param subject_id: integer value indicates the position of of this
     image in image_reader.file_list
+
     :param img_sizes: a dictionary of image shapes, {input_name: shape}
     :param win_sizes: a dictionary of window shapes, {input_name: shape}
     :param border_size:
@@ -164,6 +165,7 @@ def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
 def _enumerate_step_points(starting, ending, win_size, step_size):
     """
     generate all possible sampling size in between starting and ending
+
     :param starting: integer of starting value
     :param ending: integer of ending value
     :param win_size: integer of window length

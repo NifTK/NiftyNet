@@ -102,7 +102,7 @@ class InputBatchQueueRunner(object):
         self._close_queue_op = self._queue.close(cancel_pending_enqueues=True)
 
     def _push(self, thread_id):
-        tf.logging.info('New thread: {}'.format(thread_id))
+        tf.logging.info('New thread: %d', thread_id)
         try:
             output_dict = None
             for output_dict in self():  # pylint: disable=not-callable
@@ -168,7 +168,6 @@ class InputBatchQueueRunner(object):
             data_output = self._dequeue_op
             for (name, shape) in self._window.shapes.items():
                 data_output[name].set_shape([self._batch_size] + list(shape))
-            # currently the time dimension from image is ignored
             for name in data_output:
                 data_output[name] = \
                     squeeze_spatial_temporal_dim(data_output[name])

@@ -10,8 +10,8 @@ import numpy as np
 import pandas
 import tensorflow as tf
 
-from niftynet.utilities.filename_matching import KeywordsMatching
 from niftynet.io.misc_io import touch_folder
+from niftynet.utilities.filename_matching import KeywordsMatching
 
 
 def match_first_degree(name_list1, name_list2):
@@ -232,18 +232,21 @@ def load_and_merge_csv_files(data_param):
     """
     _file_list = None
     for modality_name in data_param:
-        csv_file = data_param.get(modality_name, '').csv_file
-        if not os.path.isfile(csv_file):
-            tf.logging.info('search file folders, '
-                            'writing csv file {}'.format(csv_file))
+        csv_file = data_param[modality_name].csv_file
+        if hasattr(data_param[modality_name], 'path_to_search'):
+            tf.logging.info(
+                '[%s] search file folders, writing csv file %s',
+                modality_name, csv_file)
             section_tuple = data_param[modality_name].__dict__.items()
             matcher = KeywordsMatching.from_tuple(section_tuple)
             match_and_write_filenames_to_csv([matcher], csv_file)
         else:
-            tf.logging.info('using existing csv file {}, '
-                            'file folder parameters ignored'.format(csv_file))
+            tf.logging.info(
+                '[%s] using existing csv file %s, skipped folder search',
+                modality_name, csv_file)
         if not os.path.isfile(csv_file):
-            tf.logging.fatal("csv file {} not found.".format(csv_file))
+            tf.logging.fatal(
+                "[%s] csv file %s not found.", modality_name, csv_file)
             raise IOError
         csv_list = pandas.read_csv(
             csv_file, header=None, names=['subject_id', modality_name])
@@ -255,7 +258,10 @@ def load_and_merge_csv_files(data_param):
         n_rows = _file_list.shape[0]
         _file_list = pandas.merge(_file_list, csv_list, on='subject_id')
         if _file_list.shape[0] != n_rows:
-            tf.logging.warning("rows not matched in {}".format(csv_file))
+            tf.logging.warning("rows not matched in %s", csv_file)
+    import pdb;
+    pdb.set_trace()
+
     if _file_list.size == 0:
         tf.logging.fatal(
             "empty filename lists, please check the csv "

@@ -101,13 +101,15 @@ def add_input_data_args(parser):
         "--csv_file",
         metavar='',
         type=str,
-        help="Input list of subjects in csv files")
+        help="Input list of subjects in csv files",
+        default='')
 
     parser.add_argument(
         "--path_to_search",
         metavar='',
         type=str,
-        help="Input data folder to find a list of input image files")
+        help="Input data folder to find a list of input image files",
+        default='')
 
     parser.add_argument(
         "--filename_contains",

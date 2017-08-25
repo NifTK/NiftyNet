@@ -82,14 +82,16 @@ def run():
             system_args['CUSTOM'] = all_args[section]
             vars(system_args['CUSTOM'])['name'] = module_name
         else:
-            # set the output path of csv list if not exists
-            csv_path = all_args[section].csv_file
-            if (csv_path is None) or (not os.path.isfile(csv_path)):
-                csv_filename = os.path.join(
-                    all_args['APPLICATION'].model_dir,
-                    '{}{}'.format(section, '.csv'))
-                all_args[section].csv_file = csv_filename
             input_data_args[section] = all_args[section]
+            # set the output path of csv list if not exists
+            csv_path = input_data_args[section].csv_file
+            if not os.path.isfile(csv_path):
+                csv_filename = os.path.join(all_args['APPLICATION'].model_dir,
+                                            '{}.csv'.format(section))
+                input_data_args[section].csv_file = csv_filename
+            else:
+                # don't search files if csv specified in config
+                delattr(input_data_args[section], 'path_to_search')
     # update conf path
     system_args['CONFIG_FILE'] = argparse.Namespace(path=meta_args.conf)
     return system_args, input_data_args

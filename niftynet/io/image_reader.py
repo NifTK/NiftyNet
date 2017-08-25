@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""This module loads images from csv files and outputs numpy arrays"""
 from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
@@ -21,6 +22,30 @@ def infer_tf_dtypes(image_array):
 
 
 class ImageReader(Layer):
+    """
+    For a concrete example:
+    _input_sources define multiple modality mappings, e.g.,
+    _input_sources {'image': ('T1', 'T2'),
+                    'label': ('manual_map',)}
+    means
+    'image' consists of two components, formed by
+    concatenating 'T1' and 'T2' input source images.
+    'label' consists of one component, loading from 'manual_map'
+
+    self._names: a tuple of the output names of this reader.
+    ('image', 'labels')
+
+    self._shapes: the shapes after combining input sources
+    {'image': (192, 160, 192, 1, 2), 'label': (192, 160, 192, 1, 1)}
+
+    self._dtypes: store the dictionary of tensorflow shapes
+    {'image': tf.float32, 'label': tf.float32}
+
+    self.output_list is a list of dictionaries, with each item:
+    {'image': <niftynet.io.image_type.SpatialImage4D object>,
+     'label': <niftynet.io.image_type.SpatialImage3D object>}
+    """
+
     def __init__(self, names):
         # list of file names
         self._file_list = None
@@ -45,7 +70,7 @@ class ImageReader(Layer):
         if not self.names:
             tf.logging.fatal('Please specify data names, this should '
                              'be a subset of SUPPORTED_INPUT provided '
-                             'in {}'.format(task_param.name))
+                             'in %s', task_param.name)
             raise ValueError
         self._names = [name for name in self.names
                        if vars(task_param).get(name, None)]
@@ -56,10 +81,10 @@ class ImageReader(Layer):
             for source in self._input_sources[name]:
                 if source not in data_param:
                     tf.logging.fatal(
-                        'reader name [{}] requires [{}], however it is not '
+                        'reader name [%s] requires [%s], however it is not '
                         'specified as a section in the config, '
-                        'current input section names: {}'.format(
-                            name, source, list(data_param)))
+                        'current input section names: %s',
+                        name, source, list(data_param))
                     raise ValueError
                 else:
                     data_to_load[source] = data_param[source]
@@ -68,8 +93,9 @@ class ImageReader(Layer):
                                                    self._input_sources,
                                                    data_param)
         for name in self.names:
-            tf.logging.info('image reader: loading [{}] from {} ({})'.format(
-                name, self.input_sources[name], len(self.output_list)))
+            tf.logging.info('image reader: loading [%s] from %s (%d)',
+                            name, self.input_sources[name],
+                            len(self.output_list))
 
     def prepare_preprocessors(self):
         for layer in self.preprocessors:
@@ -83,6 +109,7 @@ class ImageReader(Layer):
             self.preprocessors.extend(layers)
         self.prepare_preprocessors()
 
+    # pylint: disable=arguments-differ
     def layer_op(self, idx=None, shuffle=True):
         """
         this layer returns a dictionary
