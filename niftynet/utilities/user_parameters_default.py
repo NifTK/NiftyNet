@@ -6,7 +6,11 @@ from __future__ import unicode_literals
 
 import os
 
-from niftynet.utilities.user_parameters_helper import *
+from niftynet.utilities.user_parameters_helper import float_array
+from niftynet.utilities.user_parameters_helper import int_array
+from niftynet.utilities.user_parameters_helper import spatialnumarray
+from niftynet.utilities.user_parameters_helper import str2boolean
+from niftynet.utilities.user_parameters_helper import str_array
 
 DEFAULT_INFERENCE_OUTPUT = os.path.join(
     os.path.dirname(__file__), '..', '..', 'models', 'outputs')
@@ -206,7 +210,6 @@ def add_network_args(parser):
              " 'resize': resize image to the patch size.",
         choices=['uniform', 'selective', 'resize'],
         default='uniform')
-
 
     import niftynet.layer.binary_masking
     parser.add_argument(

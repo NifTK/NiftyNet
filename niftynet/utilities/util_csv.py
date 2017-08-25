@@ -259,8 +259,6 @@ def load_and_merge_csv_files(data_param):
         _file_list = pandas.merge(_file_list, csv_list, on='subject_id')
         if _file_list.shape[0] != n_rows:
             tf.logging.warning("rows not matched in %s", csv_file)
-    import pdb;
-    pdb.set_trace()
 
     if _file_list.size == 0:
         tf.logging.fatal(

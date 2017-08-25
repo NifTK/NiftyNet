@@ -4,10 +4,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from niftynet.utilities.user_parameters_helper import *
-from niftynet.utilities.util_common import look_up_operations
-
-SUPPORTED_TASKS = {'SEGMENTATION', 'GAN', 'AUTOENCODER'}
+from niftynet.utilities.user_parameters_helper import add_input_name_args
+from niftynet.utilities.user_parameters_helper import int_array
+from niftynet.utilities.user_parameters_helper import str2boolean
 
 
 #######################################################################
@@ -29,13 +28,9 @@ SUPPORTED_TASKS = {'SEGMENTATION', 'GAN', 'AUTOENCODER'}
 
 
 def add_customised_args(parser, task_name):
-    task_name = look_up_operations(task_name.upper(), SUPPORTED_TASKS)
-    if task_name == 'SEGMENTATION':
-        return __add_segmentation_args(parser)
-    elif task_name == 'GAN':
-        return __add_gan_args(parser)
-    elif task_name == 'AUTOENCODER':
-        return __add_autoencoder_args(parser)
+    task_name = task_name.upper()
+    if task_name in SUPPORTED_ARG_SECTIONS:
+        return SUPPORTED_ARG_SECTIONS[task_name](parser)
     else:
         raise NotImplemented
 
@@ -124,3 +119,10 @@ def __add_autoencoder_args(parser):
     from niftynet.application.autoencoder_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser
+
+
+SUPPORTED_ARG_SECTIONS = {
+    'SEGMENTATION': __add_segmentation_args,
+    'AUTOENCODER': __add_autoencoder_args,
+    'GAN': __add_gan_args
+}

@@ -54,8 +54,8 @@ class ApplicationDriver(object):
         self.num_gpus = 0
 
         self.model_dir = None
-        self.session_prefix = None
         self.summary_dir = None
+        self.session_prefix = None
         self.max_checkpoints = 20
         self.save_every_n = 10
         self.tensorboard_every_n = 20
@@ -185,6 +185,7 @@ class ApplicationDriver(object):
                     "%s stopped (time in second %.2f).",
                     type(self.app).__name__, (time.time() - start_time))
 
+    # pylint: disable=not-context-manager
     def _create_graph(self):
         graph = tf.Graph()
         main_device = self._device_string(0, is_worker=False)

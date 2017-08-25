@@ -100,13 +100,15 @@ def standardise_string(input_string):
     return new_name
 
 
-def search_section_in_config(config, required_custom_section):
+def has_section_in_config(config, required_custom_section):
     required_custom_section = standardise_string(required_custom_section)
     if required_custom_section is not None:
         user_sections = [standardise_string(section_name)
                          for section_name in config.sections()]
         if not required_custom_section in user_sections:
             raise ValueError
+        else:
+            return True
 
 
 def add_input_name_args(parser, supported_input):

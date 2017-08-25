@@ -1,12 +1,24 @@
 # -*- coding: utf-8 -*-
+"""
+Parse user configuration file
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import argparse
+import os
+
 from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.engine.application_factory import SUPPORTED_APP
-from niftynet.utilities.user_parameters_custom import *
-from niftynet.utilities.user_parameters_default import *
+from niftynet.utilities.user_parameters_custom import add_customised_args
+from niftynet.utilities.user_parameters_default import add_application_args
+from niftynet.utilities.user_parameters_default import add_inference_args
+from niftynet.utilities.user_parameters_default import add_input_data_args
+from niftynet.utilities.user_parameters_default import add_network_args
+from niftynet.utilities.user_parameters_default import add_training_args
+from niftynet.utilities.user_parameters_helper import has_section_in_config
+from niftynet.utilities.user_parameters_helper import standardise_section_name
 from niftynet.utilities.versioning import get_niftynet_version_string
 
 try:
@@ -18,24 +30,35 @@ SYSTEM_SECTIONS = {'APPLICATION', 'NETWORK', 'TRAINING', 'INFERENCE'}
 
 
 def run():
-    # meta_parser: to find out location of the configuration file
+    """
+    meta_parser is first used to find out location
+    of the configuration file. based on the application_name
+    or meta_parser.prog name, the section parsers are organised
+    to find system parameters and application specific
+    parameters
+
+    :return: system parameters is a group of parameters including
+        SYSTEM_SECTIONS and app_module.REQUIRED_CONFIG_SECTION
+        input_data_args is a group of input data sources to be
+        used by niftynet.io.ImageReader
+    """
     meta_parser = argparse.ArgumentParser(add_help=False)
     version_string = get_niftynet_version_string()
     meta_parser.add_argument("-v", "--version",
-                             action='version', version=version_string)
+                             action='version',
+                             version=version_string)
     meta_parser.add_argument("-c", "--conf",
                              help="Specify configurations from a file",
                              metavar="File", )
     meta_parser.add_argument("-a", "--application_name",
                              help="Specify application name",
                              default="", )
-    meta_args, args_from_cmd = meta_parser.parse_known_args()
+    meta_args, args_from_cmdline = meta_parser.parse_known_args()
     print(version_string)
 
     # read configurations, to be parsed by sections
     if (meta_args.conf is None) or (not os.path.isfile(meta_args.conf)):
-        raise IOError(
-            "Configuration file not found {}".format(meta_args.conf))
+        raise IOError("Configuration file not found {}".format(meta_args.conf))
     config = configparser.ConfigParser()
     config.read([meta_args.conf])
     try:
@@ -47,29 +70,28 @@ def run():
         assert app_module.REQUIRED_CONFIG_SECTION, \
             "REQUIRED_CONFIG_SECTION should be static variable " \
             "in {}".format(app_module)
-        required_section_name = app_module.REQUIRED_CONFIG_SECTION
-        search_section_in_config(config, required_section_name)
+        has_section_in_config(config, app_module.REQUIRED_CONFIG_SECTION)
     except ValueError:
         raise ValueError(
             '{} requires [{}] section in the config file'.format(
-                module_name, required_section_name))
+                module_name, app_module.REQUIRED_CONFIG_SECTION))
 
     # using configuration as default, and parsing all command line arguments
-    args_remaining = args_from_cmd
     all_args = {}
     for section in config.sections():
         # try to rename user-specified sections for consistency
         section = standardise_section_name(config, section)
         section_defaults = dict(config.items(section))
-        section_args, args_remaining = \
+        section_args, args_from_cmdline = \
             _parse_arguments_by_section([],
                                         section,
                                         section_defaults,
-                                        args_remaining,
-                                        required_section_name)
+                                        args_from_cmdline,
+                                        app_module.REQUIRED_CONFIG_SECTION)
         all_args[section] = section_args
-    if not args_remaining == []:
-        raise ValueError('unknown parameter: {}'.format(args_remaining))
+    # command line parameters should be valid
+    assert not args_from_cmdline, \
+        'unknown parameter: {}'.format(args_from_cmdline)
 
     # split parsed results in all_args
     # into dictionary of system_args and input_data_args
@@ -78,7 +100,7 @@ def run():
     for section in all_args:
         if section in SYSTEM_SECTIONS:
             system_args[section] = all_args[section]
-        elif section == required_section_name:
+        elif section == app_module.REQUIRED_CONFIG_SECTION:
             system_args['CUSTOM'] = all_args[section]
             vars(system_args['CUSTOM'])['name'] = module_name
         else:
@@ -91,7 +113,11 @@ def run():
                 input_data_args[section].csv_file = csv_filename
             else:
                 # don't search files if csv specified in config
-                delattr(input_data_args[section], 'path_to_search')
+                try:
+                    delattr(input_data_args[section], 'path_to_search')
+                except AttributeError:
+                    pass
+
     # update conf path
     system_args['CONFIG_FILE'] = argparse.Namespace(path=meta_args.conf)
     return system_args, input_data_args
@@ -139,7 +165,10 @@ def _parse_arguments_by_section(parents,
     # loading all parameters a config file first
     if args_from_config_file is not None:
         section_parser.set_defaults(**args_from_config_file)
-    # TODO: setting multiple user-specified sections from cmd
     # input command line input overrides config file
-    section_args, unknown = section_parser.parse_known_args(args_from_cmd)
-    return section_args, unknown
+    if (section in SYSTEM_SECTIONS) or (section == required_section):
+        section_args, unknown = section_parser.parse_known_args(args_from_cmd)
+        return section_args, unknown
+    # don't parse user cmd for input source sections
+    section_args, _ = section_parser.parse_known_args([])
+    return section_args, args_from_cmd

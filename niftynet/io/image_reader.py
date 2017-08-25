@@ -79,15 +79,16 @@ class ImageReader(Layer):
         data_to_load = {}
         for name in self._names:
             for source in self._input_sources[name]:
-                if source not in data_param:
+                try:
+                    data_to_load[source] = data_param[source]
+                except KeyError:
                     tf.logging.fatal(
                         'reader name [%s] requires [%s], however it is not '
                         'specified as a section in the config, '
                         'current input section names: %s',
                         name, source, list(data_param))
                     raise ValueError
-                else:
-                    data_to_load[source] = data_param[source]
+
         self._file_list = util_csv.load_and_merge_csv_files(data_to_load)
         self.output_list = _filename_to_image_list(self._file_list,
                                                    self._input_sources,
