@@ -18,6 +18,7 @@ CONSOLE = 'niftynetconsole'
 TF_SUMMARIES = tf.GraphKeys.SUMMARIES
 SUPPORTED_SUMMARY = {'scalar': tf.summary.scalar,
                      'histogram': tf.summary.histogram,
+                     'image': tf.summary.image,
                      'image3_sagittal': image3_sagittal,
                      'image3_coronal': image3_coronal,
                      'image3_axial': image3_axial}
@@ -139,7 +140,7 @@ class OutputsCollector(object):
         values = self.summary_vars.get(name, None)
         if isinstance(values, tf.Tensor):
             summary_op = look_up_operations(summary_type, SUPPORTED_SUMMARY)
-            summary_op(name=name, tensor=values, collections=[TF_SUMMARIES])
+            summary_op(name, values, collections=[TF_SUMMARIES])
 
     @staticmethod
     def _average_variables_over_devices(var_dict, create_tf_summary_op=False):

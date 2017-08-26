@@ -235,7 +235,7 @@ class ApplicationDriver(object):
             with tf.name_scope('Initialization'):
                 self._init_op = global_variables_initialize_or_restorer()
 
-            with tf.name_scope('MergeOutputs'):
+            with tf.name_scope('MergedOutputs'):
                 self.outputs_collector.finalise_output_op()
             # saving operation
             self.saver = tf.train.Saver(max_to_keep=self.max_checkpoints)
