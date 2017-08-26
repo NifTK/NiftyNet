@@ -46,8 +46,9 @@ class ResamplerLayer(Layer):
     super(ResamplerLayer, self).__init__(name=name)
     self.interpolation = look_up_operations(interpolation.upper(), SUPPORTED_INTERPOLATION)
     self.boundary = look_up_operations(boundary.upper(), SUPPORTED_BOUNDARY)
-    if self.boundary == 'ZERO' and self.interpolation in ['BSPLINE', 'NEAREST']:
-      raise NotImplementedError('Zero padding is only supported for linear interpolation currently')
+    if self.boundary == 'ZERO' and self.interpolation in ['BSPLINE']:
+      raise NotImplementedError('Zero padding is only supported for linear and '
+                                'nearest neighbor interpolation currently')
     self.boundary_func_ = {'ZERO': self.boundary_replicate,  # zero is replicate with special edge handling (hack)
                            'REPLICATE':self.boundary_replicate,
                            'CIRCULAR':self.boundary_circular,
@@ -127,10 +128,16 @@ class ResamplerLayer(Layer):
   def resample_nearest(self,inputs,sample_coords):
     input_size=tf.reshape(inputs.get_shape().as_list()[1:-1],[1]*(len(sample_coords.get_shape().as_list())-1)+[-1]  )
     spatial_rank = layer_util.infer_spatial_rank(inputs)
-    spatial_coords = self.boundary_func_(tf.cast(tf.round(sample_coords),tf.int32),input_size);
+    spatial_coords = self.boundary_func_(tf.cast(tf.round(sample_coords), tf.int32), input_size);
     sz=spatial_coords.get_shape().as_list()
     batch_coords = tf.tile(tf.reshape(tf.range(sz[0]),[sz[0]]+[1]*(len(sz)-1)),[1]+sz[1:-1]+[1])
-    return tf.gather_nd(inputs,tf.concat([batch_coords,spatial_coords],-1))
+    output = tf.gather_nd(inputs,tf.concat([batch_coords,spatial_coords],-1))
+    if self.boundary == 'ZERO':
+      scale = 1./tf.to_float(input_size-1)
+      mask = tf.to_float(tf.logical_and(tf.reduce_any(sample_coords>0,axis=-1,keep_dims=True),
+                                        tf.reduce_any(scale*sample_coords<1,axis=-1,keep_dims=True)))
+      output=output*mask
+    return output
     
   def layer_op(self, inputs, sample_coords):
     return self.resample_func_(inputs,sample_coords)

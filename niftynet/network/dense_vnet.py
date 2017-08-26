@@ -10,6 +10,7 @@ from niftynet.layer.convolution import ConvolutionalLayer
 from niftynet.layer.deconvolution import DeconvolutionalLayer
 from niftynet.layer.channel_sparse_convolution import ChannelSparseConvolutionalLayer
 from niftynet.layer.bn import BNLayer
+from niftynet.layer.spatial_transformer import ResamplerLayer,AffineGridWarperLayer
 
 from niftynet.network.base_net import BaseNet
 from niftynet.utilities.util_common import look_up_operations
@@ -51,7 +52,8 @@ class DenseVNet(BaseNet):
              'n_input_channels': (24, 24, 24),
              'dilation_rates': ([1] * 5, [1] * 10, [1] * 10),
              # Note dilation rates are not yet supported
-             'final_kernel': 3
+             'final_kernel': 3,
+             'augmentation_scale': .1
              }
         self.hyperparameters.update(hyperparameters)
         if any([d != 1 for ds in self.hyperparameters['dilation_rates']
@@ -74,6 +76,10 @@ class DenseVNet(BaseNet):
 
     def layer_op(self, input_tensor, is_training, layer_id=-1):
         hp = self.hyperparameters
+        if is_training and hp['augmentation_scale']>0:
+            aug = Affine3DAugmentationLayer(hp['augmentation_scale'],
+                                            'LINEAR','ZERO')
+            input_tensor=aug(input_tensor)
         channel_dim = len(input_tensor.get_shape()) - 1
         input_size = input_tensor.get_shape().as_list()
         spatial_rank = len(input_size) - 2
@@ -122,13 +128,16 @@ class DenseVNet(BaseNet):
         if self.architecture_parameters['use_prior']:
             segmentation = segmentation + \
                            SpatialPriorBlock([12] * spatial_rank, output_shape)
+        if is_training and hp['augmentation_scale']>0:
+            inverse_aug = aug.inverse()
+            segmentation = inverse_aug(segmentation)
         segmentation = image_resize(segmentation, input_size[1:-1])
-        image3_axial('seg', tf.nn.softmax(segmentation)[:, :, :, :, 1:] * 255.,
-                     3, [tf.GraphKeys.SUMMARIES])
-        image3_axial('img',
-                     tf.minimum(255., tf.maximum(0.,
-                                                 (tf.to_float(downsampled_img) / 2. + 1.) * 127.)),
-                     3, [tf.GraphKeys.SUMMARIES])
+        seg_summary = tf.to_float(tf.expand_dims(tf.argmax(segmentation,-1),-1)) * (255./self.num_classes-1)
+        m,v = tf.nn.moments(input_tensor,axes=[1,2,3],keep_dims=True)
+        img_summary = tf.minimum(255., tf.maximum(0.,
+                         (tf.to_float(input_tensor-m) / (tf.sqrt(v) * 2.) + 1.) * 127.))
+        image3_axial('imgseg', tf.concat([img_summary,seg_summary],1) ,
+                     5, [tf.GraphKeys.SUMMARIES])
         return segmentation
 
 
@@ -257,3 +266,75 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
                                is_training=is_training,
                                keep_prob=keep_prob)
         return seg, down
+
+class Affine3DAugmentationLayer(TrainableLayer):
+    def __init__(self,scale,interpolation,
+                 boundary, transform_func=None,
+                 name='AffineAugmentation'):
+        # transform_func should be a function returning
+        # a relative transform (mapping <-1..1,-1..1,-1.1>
+        # to <-1..1,-1..1,-1.1>)
+        super(Affine3DAugmentationLayer,
+              self).__init__(name=name)
+        self.scale=scale
+        if transform_func is None:
+            self.transform_func = self.random_transform
+        else:
+            self.transform_func = transform_func
+        self._transform=None
+        self.interpolation = interpolation
+        self.boundary = boundary
+
+    def random_transform(self,batch_size):
+        if self._transform is None:
+            corners = [[[-1.,-1.,-1.],[-1.,-1.,1.],[-1.,1.,-1.],[-1.,1.,1.],[1.,-1.,-1.],[1.,-1.,1.],[1.,1.,-1.],[1.,1.,1.]]]
+            corners = tf.tile(corners,[batch_size,1,1])
+            corners2 = corners * \
+                                   (1-tf.random_uniform([batch_size,8,3],0,self.scale))
+            corners_homog = tf.concat([corners,tf.ones([batch_size,8,1])],2)
+            corners2_homog = tf.concat([corners2,tf.ones([batch_size,8,1])],2)
+            _transform = tf.matrix_solve_ls(corners_homog,corners2_homog)
+            self._transform = tf.transpose(_transform,[0,2,1])
+        return self._transform
+
+    def inverse_transform(self, batch_size):
+        return tf.matrix_inverse(self.transform_func(batch_size))
+
+    def layer_op(self, input_tensor):
+        sz = input_tensor.get_shape().as_list()
+        grid_warper = AffineGridWarperLayer(sz[1:-1],
+                                            sz[1:-1])
+
+        resampler = ResamplerLayer(interpolation=self.interpolation,
+                                   boundary=self.boundary)
+        relative_transform = self.transform_func(sz[0])
+        to_relative=tf.tile([[[2./(sz[1]-1), 0., 0., -1.],
+                              [0., 2. / (sz[2] - 1), 0., -1.],
+                              [0., 0., 2. / (sz[3] - 1), -1.],
+                              [0., 0., 0., 1.]]],[sz[0],1,1])
+        from_relative=tf.matrix_inverse(to_relative)
+        voxel_transform = tf.matmul(from_relative,
+                                    tf.matmul(relative_transform,to_relative))
+        warp_parameters = tf.reshape(voxel_transform[:, 0:3, 0:4],
+                                     [sz[0], 12])
+        grid = grid_warper(warp_parameters)
+        return resampler(input_tensor,grid)
+
+    def inverse(self, interpolation=None, boundary=None):
+        if interpolation is None:
+            interpolation = self.interpolation
+        if boundary is None:
+            boundary = self.boundary
+
+        return Affine3DAugmentationLayer(self.scale,
+                                       interpolation,
+                                       boundary,
+                                       self.inverse_transform)
+
+
+
+
+
+
+
+
