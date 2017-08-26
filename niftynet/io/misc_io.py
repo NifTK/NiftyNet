@@ -368,8 +368,12 @@ def _image3_animated_gif(tag, ims):
         for b in PIL.GifImagePlugin.getdata(i):
             s += b
     s += b'\x3B'
+    try: #For python 2/3 compatibility
+        s=str(s)
+    except:
+        pass
     summary_image_str = summary_pb2.Summary.Image(
-        height=10, width=10, colorspace=1, encoded_image_string=str(s))
+        height=10, width=10, colorspace=1, encoded_image_string=s)
     image_summary = summary_pb2.Summary.Value(
         tag=tag, image=summary_image_str)
     return [summary_pb2.Summary(value=[image_summary]).SerializeToString()]
