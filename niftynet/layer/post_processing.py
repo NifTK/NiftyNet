@@ -31,7 +31,7 @@ class PostProcessingLayer(Layer):
         if self.func == "SOFTMAX":
             output_tensor = tf.cast(tf.nn.softmax(inputs), tf.float32)
         elif self.func == "ARGMAX":
-            output_tensor = tf.to_int64(tf.argmax(inputs, -1))
+            output_tensor = tf.argmax(inputs, -1,output_type=tf.int32)
             output_tensor = tf.expand_dims(output_tensor, axis=-1)
         elif self.func == "IDENTITY":
             output_tensor = tf.cast(inputs, tf.float32)
