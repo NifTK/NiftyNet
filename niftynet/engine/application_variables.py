@@ -54,10 +54,12 @@ class OutputsCollector(object):
         self._merge_op = None
         self.n_devices = n_devices
 
-    def _add_to_dict(self, var_dict, var, name, do_averaging):
+    def _add_to_dict(self, var_dict, var, name, do_averaging=False):
         """
         update the dict, with item of either
         {name: variable} or {name: list of variable}
+
+        return: key of the var_dict
         """
         assert isinstance(var, tf.Tensor), \
             "only supports adding one tf.Tensor at a time," \
@@ -73,6 +75,7 @@ class OutputsCollector(object):
             assert len(var_list) <= self.n_devices, \
                 "averaged variable {} has been used " \
                 "in the collector".format(name)
+            return name
         else:
             # collecting variables and rename if exists
             new_name = name
@@ -81,11 +84,12 @@ class OutputsCollector(object):
                 _uniq_id += 1
                 new_name = '{}_{}'.format(name, _uniq_id)
             var_dict[new_name] = var
+            return new_name
 
     def add_to_collection(self, var, name,
                           average_over_devices=False,
                           collection=CONSOLE,
-                          summary_type=None):
+                          summary_type='scalar'):
         if collection == CONSOLE:
             self._add_to_console(var, name, average_over_devices)
         elif collection == NETORK_OUTPUT:
@@ -128,7 +132,10 @@ class OutputsCollector(object):
 
     def _add_to_tf_summary(self, var, name,
                            average_over_devices=False, summary_type='scalar'):
-        self._add_to_dict(self.summary_vars, var, name, average_over_devices)
+        name = self._add_to_dict(
+            self.summary_vars, var, name, average_over_devices)
+        # _add_to_dict might change the name parameter to avoid
+        # naming clash, here uses the returned new name for summary
         values = self.summary_vars.get(name, None)
         if isinstance(values, tf.Tensor):
             summary_op = look_up_operations(summary_type, SUPPORTED_SUMMARY)

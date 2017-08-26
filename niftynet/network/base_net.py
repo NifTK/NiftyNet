@@ -10,7 +10,7 @@ class BaseNet(TrainableLayer):
     """
 
     def __init__(self,
-                 num_classes,
+                 num_classes=0,
                  w_initializer=None,
                  w_regularizer=None,
                  b_initializer=None,

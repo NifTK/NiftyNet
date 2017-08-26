@@ -1,5 +1,6 @@
 from six import with_metaclass
 from niftynet.utilities import util_common
+from niftynet.layer.base_layer import TrainableLayer
 
 
 class SingletonApplication(type):
@@ -45,6 +46,9 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
             raise NotImplementedError('sampler should be initialised')
         if self.net is None:
             raise NotImplementedError('net should be initialised')
+        if not isinstance(self.net, TrainableLayer):
+            raise ValueError('self.net should be an instance'
+                             ' of niftynet.layer.TrainableLayer')
         if self.optimiser is None and self.is_training:
             raise NotImplementedError('optimiser should be initialised')
         if self.gradient_op is None and self.is_training:

@@ -182,7 +182,7 @@ class CacheFunctionOutput(object):
 
 
 def look_up_operations(type_str, supported):
-    assert isinstance(type_str, string_types)
+    assert isinstance(type_str, string_types), 'unrecognised type string'
     if type_str in supported and isinstance(supported, dict):
         return supported[type_str]
 

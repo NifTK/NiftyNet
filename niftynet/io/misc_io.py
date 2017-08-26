@@ -3,9 +3,11 @@ from __future__ import absolute_import, print_function
 
 import os
 import re
+import sys
 import warnings
 
 import PIL
+import logging as log
 import nibabel as nib
 import numpy as np
 import scipy.ndimage
@@ -28,6 +30,8 @@ except ImportError:
 warnings.simplefilter("ignore", UserWarning)
 
 FILE_EXTENSIONS = [".nii.gz", ".tar.gz"]
+CONSOLE_LOG_FORMAT = '%(levelname)s:niftynet: %(message)s'
+FILE_LOG_FORMAT = '%(levelname)s:niftynet:%(asctime)s: %(message)s'
 
 
 #### utilities for file headers
@@ -380,14 +384,13 @@ def _image3_animated_gif(tag, ims):
 
 
 def image3(name,
-            tensor,
-            max_outputs=3,
-            collections=[tf.GraphKeys.SUMMARIES],
-            animation_axes=[1],
-            image_axes=[2, 3],
-            other_indices={}):
-    """
-    Summary for higher dimensional images
+           tensor,
+           max_outputs=3,
+           collections=[tf.GraphKeys.SUMMARIES],
+           animation_axes=[1],
+           image_axes=[2, 3],
+           other_indices={}):
+    """ Summary for higher dimensional images
     Parameters:
     name: string name for the summary
     tensor:   tensor to summarize. Should be in the range 0..255.
@@ -449,3 +452,20 @@ def image3_axial(name,
                  max_outputs=3,
                  collections=[tf.GraphKeys.SUMMARIES]):
     return image3(name, tensor, max_outputs, collections, [3], [1, 2])
+
+
+def set_logger(file_name=None):
+    tf.logging._logger.handlers = []
+    tf.logging._logger = log.getLogger('tensorflow')
+    tf.logging.set_verbosity(tf.logging.INFO)
+
+    f = log.Formatter(CONSOLE_LOG_FORMAT)
+    std_handler = log.StreamHandler(sys.stdout)
+    std_handler.setFormatter(f)
+    tf.logging._logger.addHandler(std_handler)
+
+    if file_name is not None:
+        f = log.Formatter(FILE_LOG_FORMAT)
+        file_handler = log.FileHandler(file_name)
+        file_handler.setFormatter(f)
+        tf.logging._logger.addHandler(file_handler)

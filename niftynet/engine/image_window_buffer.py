@@ -130,7 +130,7 @@ class InputBatchQueueRunner(object):
         # except RuntimeError as e:
         #    tf.logging.fatal(e)
         #    self.close_all()
-        except RuntimeError:
+        except Exception:
             import sys
             import traceback
             exc_type, exc_value, exc_traceback = sys.exc_info()

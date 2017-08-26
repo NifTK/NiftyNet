@@ -77,11 +77,15 @@ class ApplicationDriver(object):
         keys correspond to data properties to be used by image_reader
         :return:
         """
-        app_param = system_param.get('APPLICATION', None)
-        net_param = system_param.get('NETWORK', None)
-        train_param = system_param.get('TRAINING', None)
-        infer_param = system_param.get('INFERENCE', None)
-        custom_param = system_param.get('CUSTOM', None)
+        try:
+            app_param = system_param.get('APPLICATION', None)
+            net_param = system_param.get('NETWORK', None)
+            train_param = system_param.get('TRAINING', None)
+            infer_param = system_param.get('INFERENCE', None)
+            custom_param = system_param.get('CUSTOM', None)
+        except AttributeError:
+            tf.logging.fatal('parameters should be dictionaries')
+            raise
 
         self.is_training = (app_param.action == "train")
         # hardware-related parameters
@@ -141,6 +145,7 @@ class ApplicationDriver(object):
         config = ApplicationDriver._tf_config()
         with tf.Session(config=config, graph=self.graph) as session:
             # initialise network
+
             tf.logging.info('starting from iter %d', self.initial_iter)
             self._rand_init_or_restore_vars(session)
 
@@ -211,7 +216,7 @@ class ApplicationDriver(object):
                             self.outputs_collector,
                             self.gradients_collector)
                         if self.is_training:
-                            # global batch norm statistics from the last device
+                            # batch norm statistics from the last device
                             bn_ops = tf.get_collection(BN_COLLECTION, scope)
 
             # assemble all training operations
@@ -295,7 +300,8 @@ class ApplicationDriver(object):
             vars_to_run[CONSOLE], vars_to_run[NETORK_OUTPUT] = \
                 self.outputs_collector.variables(CONSOLE), \
                 self.outputs_collector.variables(NETORK_OUTPUT)
-            if iter_i % self.tensorboard_every_n == 0:
+            if self.tensorboard_every_n > 0 and \
+                    (iter_i % self.tensorboard_every_n == 0):
                 # adding tensorboard summary
                 vars_to_run[TF_SUMMARIES] = \
                     self.outputs_collector.variables(collection=TF_SUMMARIES)
@@ -311,7 +317,7 @@ class ApplicationDriver(object):
                 writer.add_summary(summary, iter_i)
 
             # save current model
-            if iter_i % self.save_every_n == 0:
+            if (self.save_every_n > 0) and (iter_i % self.save_every_n == 0):
                 self._save_model(sess, iter_i)
             tf.logging.info('iter %d, %s (%.3fs)',
                             iter_i, console_str, time.time() - local_time)

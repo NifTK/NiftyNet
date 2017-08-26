@@ -11,7 +11,7 @@ SUPPORTED_APP = {
     'net_autoencoder':
         'niftynet.application.autoencoder_application.AutoencoderApplication',
     'net_gan':
-        'niftynet.application.gan_application.GANApplication'
+        'niftynet.application.gan_application.GANApplication',
 }
 
 SUPPORTED_NETWORK = {

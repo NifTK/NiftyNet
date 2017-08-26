@@ -23,7 +23,7 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
                  batch_size=10,
                  n_interpolations=10,
                  repeat=1):
-        self.n_interpolations = n_interpolations
+        self.n_interpolations = max(n_interpolations, 1)
         capacity = batch_size * 2
         self.repeat = repeat
         Layer.__init__(self, name='input_buffer')
@@ -49,7 +49,7 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
         with self.n_interpolations mixing coefficients
         Location coordinates are set to np.ones for all the vectors
         """
-        total_iter = int(self.repeat) if self.repeat is not None else 1
+        total_iter = self.repeat if self.repeat is not None else 1
         while total_iter > 0:
             total_iter = total_iter - 1 if self.repeat is not None else 1
             embedding_x = np.random.randn(
