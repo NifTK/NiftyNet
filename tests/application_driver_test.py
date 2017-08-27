@@ -19,7 +19,7 @@ system_param = {
         name='niftynet.application.toy_application.TinyNet'),
     'TRAINING': Namespace(
         starting_iter=0,
-        max_iter=40,
+        max_iter=50,
         save_every_n=0,
         tensorboard_every_n=1,
         max_checkpoints=20,

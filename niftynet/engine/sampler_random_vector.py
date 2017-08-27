@@ -3,8 +3,8 @@ from __future__ import absolute_import, print_function, division
 
 import numpy as np
 import tensorflow as tf
-from niftynet.engine.image_window import ImageWindow, N_SPATIAL
 
+from niftynet.engine.image_window import ImageWindow, N_SPATIAL
 from niftynet.engine.image_window_buffer import InputBatchQueueRunner
 from niftynet.layer.base_layer import Layer
 
@@ -22,13 +22,15 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
                  vector_size=(100,),
                  batch_size=10,
                  n_interpolations=10,
-                 repeat=1):
+                 repeat=1,
+                 queue_length=10):
         self.n_interpolations = max(n_interpolations, 1)
-        capacity = batch_size * 2
         self.repeat = repeat
         Layer.__init__(self, name='input_buffer')
-        InputBatchQueueRunner.__init__(self, capacity=capacity, shuffle=False)
-
+        InputBatchQueueRunner.__init__(
+            self,
+            capacity=max(batch_size * 4, queue_length),
+            shuffle=False)
         tf.logging.info('reading size of preprocessed images')
         self.names = names
         vector_shapes = {names[0]: vector_size}

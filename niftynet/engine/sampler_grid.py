@@ -19,13 +19,15 @@ class GridSampler(Layer, InputBatchQueueRunner):
                  data_param,
                  batch_size,
                  spatial_window_size=(),
-                 window_border=()):
-        # TODO: padding
+                 window_border=(),
+                 queue_length=10):
         self.batch_size = batch_size
         self.reader = reader
         Layer.__init__(self, name='input_buffer')
         InputBatchQueueRunner.__init__(
-            self, capacity=batch_size * 2, shuffle=False)
+            self,
+            capacity=max(batch_size * 4, queue_length),
+            shuffle=False)
         tf.logging.info('reading size of preprocessed inputs')
         self.window = ImageWindow.from_data_reader_properties(
             self.reader.input_sources,

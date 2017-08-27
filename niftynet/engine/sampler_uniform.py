@@ -3,8 +3,8 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 import tensorflow as tf
-from niftynet.engine.image_window import ImageWindow, N_SPATIAL
 
+from niftynet.engine.image_window import ImageWindow, N_SPATIAL
 from niftynet.engine.image_window_buffer import InputBatchQueueRunner
 from niftynet.layer.base_layer import Layer
 
@@ -19,12 +19,18 @@ class UniformSampler(Layer, InputBatchQueueRunner):
     input image.
     """
 
-    def __init__(self, reader, data_param, batch_size, windows_per_image):
+    def __init__(self,
+                 reader,
+                 data_param,
+                 batch_size,
+                 windows_per_image,
+                 queue_length=10):
         self.reader = reader
         Layer.__init__(self, name='input_buffer')
-        InputBatchQueueRunner.__init__(self,
-                                       capacity=windows_per_image * 4,
-                                       shuffle=True)
+        InputBatchQueueRunner.__init__(
+            self,
+            capacity=max(batch_size * 4, queue_length),
+            shuffle=True)
         tf.logging.info('reading size of preprocessed images')
         self.window = ImageWindow.from_data_reader_properties(
             self.reader.input_sources,

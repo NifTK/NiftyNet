@@ -3,8 +3,8 @@ from __future__ import absolute_import, print_function, division
 
 import numpy as np
 import tensorflow as tf
-from niftynet.engine.image_window import ImageWindow, N_SPATIAL
 
+from niftynet.engine.image_window import ImageWindow, N_SPATIAL
 from niftynet.engine.image_window_buffer import InputBatchQueueRunner
 from niftynet.layer.base_layer import Layer
 
@@ -22,12 +22,15 @@ class LinearInterpolateSampler(Layer, InputBatchQueueRunner):
                  reader,
                  data_param,
                  batch_size=10,
-                 n_interpolations=10):
+                 n_interpolations=10,
+                 queue_length=10):
         self.n_interpolations = n_interpolations
-        capacity = batch_size * 2
         self.reader = reader
         Layer.__init__(self, name='input_buffer')
-        InputBatchQueueRunner.__init__(self, capacity=capacity, shuffle=False)
+        InputBatchQueueRunner.__init__(
+            self,
+            capacity=max(batch_size * 4, queue_length),
+            shuffle=False)
         tf.logging.info('reading size of preprocessed images')
         self.window = ImageWindow.from_data_reader_properties(
             self.reader.input_sources,

@@ -13,6 +13,7 @@ import tensorflow as tf
 from niftynet.io.misc_io import squeeze_spatial_temporal_dim
 
 
+# pylint: disable=protected-access
 class InputBatchQueueRunner(object):
     """
     This class defines a light wrapper around queue objects
@@ -25,7 +26,7 @@ class InputBatchQueueRunner(object):
     The sampling threads can be stopped by:
     close_all() called externally -- all threads quit immediately
     """
-
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, capacity, shuffle=True):
         # define queue properties
         self.capacity = capacity
@@ -64,7 +65,7 @@ class InputBatchQueueRunner(object):
         _enqueue_size = 1 if is_dynamic_window else enqueue_size
         assert dequeue_size <= self.capacity, \
             "batch size is larger than the buffer size, " \
-            "please increase the queue length or decrease the batch size"
+            "please increase the queue capacity or decrease the batch size"
 
         placeholders_dict = window.placeholders_dict(n_samples=_enqueue_size)
         names = list(placeholders_dict)
@@ -74,15 +75,18 @@ class InputBatchQueueRunner(object):
             if not is_dynamic_window else None
 
         # create a queue
-        # pylint: disable=redefined-variable-type
+        # disable=redefined-variable-type
         if self.shuffle:
             self._queue = tf.RandomShuffleQueue(
                 capacity=self.capacity,
-                min_after_dequeue=self.capacity // 2 if self.shuffle else 0,
+                min_after_dequeue=self.capacity // 2,
                 dtypes=input_dtypes,
                 shapes=input_shapes,
                 names=names,
                 name="shuffled_queue")
+            assert (self.capacity - self.capacity//2) >= self._batch_size, \
+                "batch size larger than the largest possible dequeue size" \
+                "of the current queue capacity"
         else:
             self._queue = tf.FIFOQueue(
                 capacity=self.capacity,
@@ -103,6 +107,7 @@ class InputBatchQueueRunner(object):
 
     def _push(self, thread_id):
         tf.logging.info('New thread: %d', thread_id)
+        # pylint: disable=broad-except
         try:
             output_dict = None
             for output_dict in self():  # pylint: disable=not-callable
@@ -124,12 +129,6 @@ class InputBatchQueueRunner(object):
 
         except tf.errors.CancelledError:
             pass
-        # except ValueError as e:
-        #    tf.logging.fatal(e)
-        #    self.close_all()
-        # except RuntimeError as e:
-        #    tf.logging.fatal(e)
-        #    self.close_all()
         except Exception:
             import sys
             import traceback

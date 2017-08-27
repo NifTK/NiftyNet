@@ -23,7 +23,8 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
                  data_param,
                  batch_size,
                  windows_per_image=1,
-                 shuffle_buffer=True):
+                 shuffle_buffer=True,
+                 queue_length=10):
 
         self.reader = reader
         self.windows_per_image = windows_per_image
@@ -32,7 +33,7 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
         Layer.__init__(self, name='input_buffer')
         InputBatchQueueRunner.__init__(
             self,
-            capacity=max(batch_size * 4, 4),
+            capacity=max(batch_size * 4, queue_length),
             shuffle=self.shuffle)
         tf.logging.info('reading size of preprocessed images')
         self.window = ImageWindow.from_data_reader_properties(

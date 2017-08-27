@@ -104,10 +104,12 @@ class ToyApplication(BaseApplication):
             collection=TF_SUMMARIES)
 
         outputs_collector.add_to_collection(
-            var=features, name='original_distribution', average_over_devices=False,
+            var=features, name='original_distribution',
+            average_over_devices=False,
             collection=TF_SUMMARIES, summary_type='histogram')
         outputs_collector.add_to_collection(
-            var=fake_features, name='generated_distribution', average_over_devices=False,
+            var=fake_features, name='generated_distribution',
+            average_over_devices=False,
             collection=TF_SUMMARIES, summary_type='histogram')
 
 
@@ -160,3 +162,4 @@ class GNet(BaseNet):
         hidden_feature = conv_1(noise, is_training=True)
         fake_features = conv_2(hidden_feature, is_training=True)
         return fake_features
+
