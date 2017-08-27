@@ -60,22 +60,6 @@ class ToyApplication(BaseApplication):
         real_logits, fake_logits, fake_features = self.net(features, noise)
 
         batch_size = tf.shape(real_logits)[0]
-        #d_loss = \
-        #    tf.losses.sparse_softmax_cross_entropy(
-        #        tf.ones([batch_size, 1], tf.int32), real_logits) + \
-        #    tf.losses.sparse_softmax_cross_entropy(
-        #        tf.zeros([batch_size, 1], tf.int32), fake_logits)
-        #g_loss = \
-        #    tf.losses.sparse_softmax_cross_entropy(
-        #        tf.ones([batch_size, 1], tf.int32), fake_logits)
-        #d_loss = \
-        #    tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-        #        labels=tf.ones_like(real_logits)*.9, logits=real_logits)) + \
-        #    tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-        #        labels=tf.zeros_like(fake_logits), logits=fake_logits))
-        #g_loss = \
-        #    tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-        #        labels=tf.ones_like(fake_logits), logits=fake_logits))
         d_loss = tf.reduce_mean(real_logits - fake_logits)
         g_loss = tf.reduce_mean(fake_logits)
 
