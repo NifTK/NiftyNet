@@ -16,11 +16,11 @@ def selu(x, name):
     alpha = 1.6732632423543772848170429916717
     scale = 1.0507009873554804934193349852946
     return scale*tf.where(x>=0.0, x, alpha*tf.nn.elu(x))
-    
+
 def leakyRelu(x, name):
     alpha = 0.01
     return tf.maximum(alpha*x, x, name)
-        
+
 SUPPORTED_OP = {'relu': tf.nn.relu,
                 'relu6': tf.nn.relu6,
                 'elu': tf.nn.elu,

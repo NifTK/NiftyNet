@@ -22,9 +22,13 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
                  vector_size=(100,),
                  batch_size=10,
                  n_interpolations=10,
+                 mean=0.0,
+                 stddev=1.0,
                  repeat=1,
                  queue_length=10):
         self.n_interpolations = max(n_interpolations, 1)
+        self.mean = mean
+        self.stddev = stddev
         self.repeat = repeat
         Layer.__init__(self, name='input_buffer')
         InputBatchQueueRunner.__init__(
@@ -54,9 +58,13 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
         total_iter = self.repeat if self.repeat is not None else 1
         while total_iter > 0:
             total_iter = total_iter - 1 if self.repeat is not None else 1
-            embedding_x = np.random.randn(
+            embedding_x = np.random.normal(
+                self.mean,
+                self.stddev,
                 *self.window.shapes[self.window.names[0]])
-            embedding_y = np.random.randn(
+            embedding_y = np.random.normal(
+                self.mean,
+                self.stddev,
                 *self.window.shapes[self.window.names[0]])
             steps = np.linspace(0, 1, self.n_interpolations)
             output_vectors = []

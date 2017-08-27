@@ -15,18 +15,20 @@ system_param = {
         cuda_devices='',
         model_dir='./testing_data'),
     'NETWORK': Namespace(
-        batch_size=20,
+        batch_size=50,
         name='niftynet.application.toy_application.TinyNet'),
     'TRAINING': Namespace(
         starting_iter=0,
-        max_iter=50,
+        max_iter=500,
         save_every_n=0,
         tensorboard_every_n=1,
         max_checkpoints=20,
         optimiser='niftynet.engine.application_optimiser.Adagrad',
-        lr=0.02),
+        lr=0.01),
     'CUSTOM': Namespace(
         vector_size=100,
+        mean=10.0,
+        stddev=20.0,
         name='niftynet.application.toy_application.ToyApplication')
 }
 set_logger()

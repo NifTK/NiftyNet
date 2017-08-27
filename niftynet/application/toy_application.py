@@ -35,7 +35,9 @@ class ToyApplication(BaseApplication):
                 names=('vectors',),
                 vector_size=(self.toy_param.vector_size,),
                 batch_size=self.net_param.batch_size,
-                repeat=None)]
+                repeat=None,
+                mean=self.toy_param.mean,
+                stddev=self.toy_param.stddev)]
 
     def initialise_network(self):
         self.net = ApplicationNetFactory.create(self.net_param.name)()
@@ -58,14 +60,24 @@ class ToyApplication(BaseApplication):
         real_logits, fake_logits, fake_features = self.net(features, noise)
 
         batch_size = tf.shape(real_logits)[0]
-        d_loss = \
-            tf.losses.sparse_softmax_cross_entropy(
-                tf.ones([batch_size, 1], tf.int32), real_logits) + \
-            tf.losses.sparse_softmax_cross_entropy(
-                tf.zeros([batch_size, 1], tf.int32), fake_logits)
-        g_loss = \
-            tf.losses.sparse_softmax_cross_entropy(
-                tf.ones([batch_size, 1], tf.int32), fake_logits)
+        #d_loss = \
+        #    tf.losses.sparse_softmax_cross_entropy(
+        #        tf.ones([batch_size, 1], tf.int32), real_logits) + \
+        #    tf.losses.sparse_softmax_cross_entropy(
+        #        tf.zeros([batch_size, 1], tf.int32), fake_logits)
+        #g_loss = \
+        #    tf.losses.sparse_softmax_cross_entropy(
+        #        tf.ones([batch_size, 1], tf.int32), fake_logits)
+        #d_loss = \
+        #    tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+        #        labels=tf.ones_like(real_logits)*.9, logits=real_logits)) + \
+        #    tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+        #        labels=tf.zeros_like(fake_logits), logits=fake_logits))
+        #g_loss = \
+        #    tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+        #        labels=tf.ones_like(fake_logits), logits=fake_logits))
+        d_loss = tf.reduce_mean(real_logits - fake_logits)
+        g_loss = tf.reduce_mean(fake_logits)
 
         with tf.name_scope('ComputeGradients'):
             d_vars = tf.get_collection(
@@ -82,25 +94,26 @@ class ToyApplication(BaseApplication):
             gradients_collector.add_to_collection(grads)
 
         outputs_collector.add_to_collection(
-            var=d_loss, name='ave_d_loss', average_over_devices=True,
-            collection=CONSOLE)
-        outputs_collector.add_to_collection(
-            var=g_loss, name='ave_g_loss', average_over_devices=True,
-            collection=CONSOLE)
-
-        outputs_collector.add_to_collection(
-            var=d_loss, name='d_loss', average_over_devices=False,
+            var=d_loss, name='d_loss', average_over_devices=True,
             collection=TF_SUMMARIES)
         outputs_collector.add_to_collection(
-            var=g_loss, name='g_loss', average_over_devices=False,
+            var=g_loss, name='g_loss', average_over_devices=True,
             collection=TF_SUMMARIES)
 
         g_mean, g_var = tf.nn.moments(fake_features, axes=[0, 1, 2])
+        g_var = tf.sqrt(g_var)
         outputs_collector.add_to_collection(
-            var=g_mean, name='generated_mean', average_over_devices=True,
+            var=g_mean, name='mean', average_over_devices=True,
+            collection=CONSOLE)
+        outputs_collector.add_to_collection(
+            var=g_var, name='var', average_over_devices=True,
+            collection=CONSOLE)
+
+        outputs_collector.add_to_collection(
+            var=g_mean, name='generated_mean', average_over_devices=False,
             collection=TF_SUMMARIES)
         outputs_collector.add_to_collection(
-            var=g_var, name='generated_variance', average_over_devices=True,
+            var=g_var, name='generated_variance', average_over_devices=False,
             collection=TF_SUMMARIES)
 
         outputs_collector.add_to_collection(
@@ -137,12 +150,17 @@ class DNet(BaseNet):
 
     def layer_op(self, features):
         batch_size = features.get_shape().as_list()[0]
-        conv_1 = ConvolutionalLayer(10, 3, with_bn=False)
-        fc_1 = FullyConnectedLayer(2, with_bn=False)
+        conv_1 = ConvolutionalLayer(
+            20, 3, with_bn=False, with_bias=True, acti_func='relu')
+        fc_1 = FullyConnectedLayer(
+            20, with_bn=False, with_bias=True, acti_func='relu')
+        fc_2 = FullyConnectedLayer(
+            2, with_bn=False, with_bias=True)
 
         hidden_feature = conv_1(features, is_training=True)
         hidden_feature = tf.reshape(hidden_feature, [batch_size, -1])
-        logits = fc_1(hidden_feature, is_training=True)
+        hidden_feature = fc_1(hidden_feature, is_training=True)
+        logits = fc_2(hidden_feature, is_training=True)
         return logits
 
 
@@ -153,13 +171,13 @@ class GNet(BaseNet):
     def layer_op(self, noise):
         n_chns = noise.get_shape()[-1]
         conv_1 = ConvolutionalLayer(
-            20, 10, with_bn=False,
-            w_initializer=tf.random_uniform_initializer(-5.0, 5.0))
+            20, 10, with_bn=True, acti_func='selu', with_bias=True)
         conv_2 = ConvolutionalLayer(
-            n_chns, 10, with_bn=False, with_bias=True,
-            w_initializer=tf.random_uniform_initializer(-1.0, 1.0),
-            b_initializer=tf.random_uniform_initializer(4.0, 5.0))
+            20, 10, with_bn=True, acti_func='selu', with_bias=True)
+        conv_3 = ConvolutionalLayer(
+            n_chns, 10, with_bn=False, with_bias=True)
         hidden_feature = conv_1(noise, is_training=True)
-        fake_features = conv_2(hidden_feature, is_training=True)
+        hidden_feature = conv_2(hidden_feature, is_training=True)
+        fake_features = conv_3(hidden_feature, is_training=True)
         return fake_features
 
