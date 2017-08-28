@@ -85,7 +85,8 @@ SUPPORTED_OPTIMIZERS = {
 }
 
 
-def select_module(module_name, type, lookup_table):
+def select_module(module_name, type_str, lookup_table):
+    module_name = '{}'.format(module_name)
     if module_name in lookup_table:
         module_name = lookup_table[module_name]
 
@@ -93,26 +94,28 @@ def select_module(module_name, type, lookup_table):
         module, class_name = module_name.rsplit('.', 1)
         the_module = getattr(importlib.import_module(module), class_name)
         return the_module
-    except:
+    except (AttributeError, ValueError):
         # Two possibilities: a typo for a lookup table entry
         #                 or a non-existing module
         dists = {k: edit_distance(k, module_name) for k in lookup_table.keys()}
         closest = min(dists, key=dists.get)
         if dists[closest] <= 3:
-            err = '{2}: By "{0}", did you mean "{1}"?\n "{0}" is ' \
-                  'not a valid option.'.format(module_name, closest, type)
+            err = 'Could not import {2}: By "{0}", ' \
+                  'did you mean "{1}"?\n "{0}" is ' \
+                  'not a valid option. '.format(module_name, closest, type_str)
             tf.logging.fatal(err)
             raise ValueError(err)
         else:
             if '.' not in module_name:
-                err = '{}: Incorrect module name format {}. ' \
-                      'Expected "module.object".'.format(type, module_name)
+                err = 'Could not import {}: ' \
+                      'Incorrect module name format {}. ' \
+                      'Expected "module.object".'.format(type_str, module_name)
                 tf.logging.fatal(err)
                 raise ValueError(err)
             err = '{}: Could not import object' \
-                  '"{}" from "{}"'.format(type, class_name, module)
+                  '"{}" from "{}"'.format(type_str, class_name, module)
             tf.logging.fatal(err)
-            raise
+            raise ValueError(err)
 
 
 class ModuleFactory(object):

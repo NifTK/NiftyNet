@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
@@ -53,8 +54,8 @@ class ToyApplication(BaseApplication):
 
         # a new pop_batch_op for each gpu tower
         data_x = self.get_sampler()[0].pop_batch_op()
-        features = tf.cast(data_x['vectors'], tf.float32)
-        features = tf.expand_dims(features, axis=-1)
+        features = tf.cast(data_x['vectors'], tf.float32, name='sampler_input')
+        features = tf.expand_dims(features, axis=-1, name='feature_input')
 
         noise = tf.random_uniform(tf.shape(features), 0.0, 1.0)
         real_logits, fake_logits, fake_features = self.net(features, noise)
@@ -108,7 +109,6 @@ class ToyApplication(BaseApplication):
             var=fake_features, name='generated_distribution',
             average_over_devices=False,
             collection=TF_SUMMARIES, summary_type='histogram')
-
 
     def interpret_output(self, batch_output):
         return True
@@ -164,4 +164,3 @@ class GNet(BaseNet):
         hidden_feature = conv_2(hidden_feature, is_training=True)
         fake_features = conv_3(hidden_feature, is_training=True)
         return fake_features
-
