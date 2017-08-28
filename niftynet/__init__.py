@@ -32,15 +32,15 @@ def main():
     all_param = {}
     all_param.update(system_param)
     all_param.update(input_data_param)
-    txt_file = 'settings_{}.txt'.format(system_param['APPLICATION'].action)
-    model_folder = touch_folder(system_param['APPLICATION'].model_dir)
+    txt_file = 'settings_{}.txt'.format(system_param['SYSTEM'].action)
+    model_folder = touch_folder(system_param['SYSTEM'].model_dir)
     txt_file = os.path.join(model_folder, txt_file)
     util.print_save_input_parameters(all_param, txt_file)
 
     # keep all commandline outputs
     log_file_name = os.path.join(
         model_folder,
-        '{}_{}'.format(all_param['APPLICATION'].action, 'niftynet_log'))
+        '{}_{}'.format(all_param['SYSTEM'].action, 'niftynet_log'))
     set_logger(file_name=log_file_name)
 
     # start application

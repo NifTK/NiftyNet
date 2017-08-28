@@ -67,37 +67,37 @@ class ApplicationDriver(object):
         self.outputs_collector = None
         self.gradients_collector = None
 
-    def initialise_application(self, system_param, data_param):
+    def initialise_application(self, workflow_param, data_param):
         """
         This function receives all parameters from user config file,
         create an instance of application.
-        :param system_param: a dictionary of user parameters,
+        :param workflow_param: a dictionary of user parameters,
         keys correspond to sections in the config file
         :param data_param: a dictionary of input image parameters,
         keys correspond to data properties to be used by image_reader
         :return:
         """
         try:
-            app_param = system_param.get('APPLICATION', None)
-            net_param = system_param.get('NETWORK', None)
-            train_param = system_param.get('TRAINING', None)
-            infer_param = system_param.get('INFERENCE', None)
-            custom_param = system_param.get('CUSTOM', None)
+            system_param = workflow_param.get('SYSTEM', None)
+            net_param = workflow_param.get('NETWORK', None)
+            train_param = workflow_param.get('TRAINING', None)
+            infer_param = workflow_param.get('INFERENCE', None)
+            app_param = workflow_param.get('CUSTOM', None)
         except AttributeError:
             tf.logging.fatal('parameters should be dictionaries')
             raise
 
-        self.is_training = (app_param.action == "train")
+        self.is_training = (system_param.action == "train")
         # hardware-related parameters
-        self.num_threads = max(app_param.num_threads, 1) \
+        self.num_threads = max(system_param.num_threads, 1) \
             if self.is_training else 1
-        self.num_gpus = app_param.num_gpus \
-            if self.is_training else min(app_param.num_gpus, 1)
-        set_cuda_device(app_param.cuda_devices)
+        self.num_gpus = system_param.num_gpus \
+            if self.is_training else min(system_param.num_gpus, 1)
+        set_cuda_device(system_param.cuda_devices)
 
         # set output folders
         self.model_dir = touch_folder(
-            os.path.join(app_param.model_dir, 'models'))
+            os.path.join(system_param.model_dir, 'models'))
         self.session_prefix = os.path.join(self.model_dir, FILE_PREFIX)
 
         if self.is_training:
@@ -124,11 +124,11 @@ class ApplicationDriver(object):
             n_devices=max(self.num_gpus, 1))
 
         # create an application instance
-        assert custom_param, 'application specific param. not specified'
-        app_module = ApplicationDriver._create_app(custom_param.name)
+        assert app_param, 'application specific param. not specified'
+        app_module = ApplicationDriver._create_app(app_param.name)
         self.app = app_module(net_param, action_param, self.is_training)
         # initialise data input
-        self.app.initialise_dataset_loader(data_param, custom_param)
+        self.app.initialise_dataset_loader(data_param, app_param)
 
     def run_application(self):
         """

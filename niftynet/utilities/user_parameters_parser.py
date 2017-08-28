@@ -26,7 +26,7 @@ try:
 except ImportError:
     import ConfigParser as configparser
 
-SYSTEM_SECTIONS = {'APPLICATION', 'NETWORK', 'TRAINING', 'INFERENCE'}
+SYSTEM_SECTIONS = {'SYSTEM', 'NETWORK', 'TRAINING', 'INFERENCE'}
 
 
 def run():
@@ -108,7 +108,7 @@ def run():
             # set the output path of csv list if not exists
             csv_path = input_data_args[section].csv_file
             if not os.path.isfile(csv_path):
-                csv_filename = os.path.join(all_args['APPLICATION'].model_dir,
+                csv_filename = os.path.join(all_args['SYSTEM'].model_dir,
                                             '{}.csv'.format(section))
                 input_data_args[section].csv_file = csv_filename
             else:
@@ -150,7 +150,7 @@ def _parse_arguments_by_section(parents,
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    if section == 'APPLICATION':
+    if section == 'SYSTEM':
         section_parser = add_application_args(section_parser)
     elif section == 'NETWORK':
         section_parser = add_network_args(section_parser)
