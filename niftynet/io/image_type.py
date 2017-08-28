@@ -32,7 +32,7 @@ class Loadable(object):
 
 
 class DataFromFile(Loadable):
-    def __init__(self, file_path, name):
+    def __init__(self, file_path, name='loadable_data'):
         self.file_path = file_path
         self.name = name
         assert len(self.file_path) == len(self.name), \
@@ -214,7 +214,10 @@ class SpatialImage3D(SpatialImage2D):
             dst_ornt = nib.orientations.axcodes2ornt(self.output_axcodes[0])
             transf = nib.orientations.ornt_transform(src_ornt, dst_ornt)
             spatial_transf = transf[:, 0].astype(np.int).tolist()
-            spatial_shape = tuple(spatial_shape[i] for i in spatial_transf)
+            new_shape = [0, 0, 0]
+            for i, k in enumerate(spatial_transf):
+                new_shape[k] = spatial_shape[i]
+            spatial_shape = tuple(new_shape)
         if self.original_pixdim[0] and self.output_pixdim[0]:
             zoom_ratio = np.divide(self.original_pixdim[0][:3],
                                    self.output_pixdim[0][:3])
@@ -263,7 +266,8 @@ class SpatialImage4D(SpatialImage3D):
     def get_data(self):
         if len(self.file_path) == 1:
             # 4D image from a single file
-            raise NotImplementedError
+            raise NotImplementedError(
+                "loading 4D image (time sequence) is not supported")
         # assuming len(self._file_path) > 1
         mod_list = []
         for mod in range(len(self.file_path)):
@@ -284,29 +288,80 @@ class SpatialImage4D(SpatialImage3D):
         return image_data
 
 
-class VectorND(SpatialImage2D):
-    def __init__(self, file_path, **kwargs):
-        SpatialImage2D.__init__(self, file_path=file_path, **kwargs)
+class SpatialImage5D(SpatialImage3D):
+    def __init__(self,
+                 file_path,
+                 name,
+                 interp_order,
+                 output_pixdim,
+                 output_axcodes):
+        super(SpatialImage5D, self).__init__(file_path=file_path,
+                                             name=name,
+                                             interp_order=interp_order,
+                                             output_pixdim=output_pixdim,
+                                             output_axcodes=output_axcodes)
 
-    def get_data(self, resample_to=None, reorient_to=None):
-        if resample_to:
-            raise NotImplementedError
-        if reorient_to:
-            raise NotImplementedError
+    def _load_single_5d(self, idx=0):
         if len(self._file_path) > 1:
-            # 4D image from a single file
+            # 3D image from multiple 2d files
             raise NotImplementedError
-
-        image_obj = misc.load_image(self.file_path[0])
+        # assuming len(self._file_path) == 1
+        image_obj = misc.load_image(self.file_path[idx])
         image_data = image_obj.get_data()
+        image_data = misc.expand_to_5d(image_data)
+        assert image_data.shape[3] == 1, "time sequences not supported"
+        if self.original_axcodes[idx] and self.output_axcodes[idx]:
+            output_image = []
+            for t in range(image_data.shape[3]):
+                mod_list = []
+                for mod in range(image_data.shape[4]):
+                    spatial_slice = image_data[..., t:t + 1, mod:mod + 1]
+                    spatial_slice = misc.do_reorientation(
+                        spatial_slice,
+                        self.original_axcodes[idx],
+                        self.output_axcodes[idx])
+                    mod_list.append(spatial_slice)
+                output_image.append(np.concatenate(mod_list, axis=4))
+            image_data = np.concatenate(output_image, axis=3)
+
+        if self.original_pixdim[idx] and self.output_pixdim[idx]:
+            assert len(self._original_pixdim[idx]) == \
+                   len(self.output_pixdim[idx]), \
+                "wrong pixdim format original {} output {}".format(
+                    self._original_pixdim[idx], self.output_pixdim[idx])
+            # verbose: warning when interpolate_order>1 for integers
+            output_image = []
+            for t in range(image_data.shape[3]):
+                mod_list = []
+                for mod in range(image_data.shape[4]):
+                    spatial_slice = image_data[..., t:t + 1, mod:mod + 1]
+                    spatial_slice = misc.do_resampling(
+                        spatial_slice,
+                        self.original_pixdim[idx],
+                        self.output_pixdim[idx],
+                        self.interp_order[idx])
+                    mod_list.append(spatial_slice)
+                output_image.append(np.concatenate(mod_list, axis=4))
+            image_data = np.concatenate(output_image, axis=3)
         return image_data
+
+    def get_data(self):
+        if len(self._file_path) == 1:
+            return self._load_single_5d()
+        else:
+            raise NotImplementedError('concatenating 5D images not supported.')
+        #     image_data = []
+        #     for idx in range(len(self._file_path)):
+        #         image_data.append(self._load_single_5d(idx))
+        #     image_data = np.concatenate(image_data, axis=4)
+        # return image_data
 
 
 class ImageFactory(object):
     INSTANCE_DICT = {2: SpatialImage2D,
                      3: SpatialImage3D,
                      4: SpatialImage4D,
-                     5: VectorND}
+                     5: SpatialImage5D}
 
     @classmethod
     def create_instance(cls, file_path, **kwargs):

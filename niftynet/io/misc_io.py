@@ -42,7 +42,7 @@ def infer_ndims_from_file(file_path):
         ndims = int(image_header['dim'][0])
     except IndexError:
         tf.logging.fatal('unsupported file header in: {}'.format(file_path))
-        raise IndexError
+        raise
     return ndims
 
 
@@ -128,8 +128,11 @@ def rectify_header_sform_qform(img_nii):
             img_nii.set_qform(np.copy(img_nii.get_sform()))
             return img_nii
     affine = img_nii.affine
-    pixdim = img_nii.header.get_zooms()[:3]  # TODO: assuming 3 elements
-    new_affine = create_affine_pixdim(affine, pixdim)
+    pixdim = img_nii.header.get_zooms()
+    while len(pixdim) < 3:
+        pixdim = pixdim + (1.0,)
+    # TODO: assuming 3 elements
+    new_affine = create_affine_pixdim(affine, pixdim[:3])
     img_nii.set_sform(new_affine)
     img_nii.set_qform(new_affine)
     return img_nii

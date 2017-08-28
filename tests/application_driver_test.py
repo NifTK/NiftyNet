@@ -50,7 +50,7 @@ def get_initialised_driver(starting_iter=0):
 
 
 class ApplicationDriverTest(tf.test.TestCase):
-    def test_creat_app(self):
+    def test_create_app(self):
         test_driver = get_initialised_driver(starting_iter=499)
         with self.assertRaisesRegexp(ValueError, 'Could not import'):
             test_driver._create_app('test.test')
@@ -163,7 +163,7 @@ class ApplicationDriverTest(tf.test.TestCase):
                 self.assertAllClose(g_np_ave, g_ave)
         test_driver.app.stop()
 
-    def test_rand_intialisation(self):
+    def test_rand_initialisation(self):
         test_driver = get_initialised_driver(starting_iter=0)
         test_driver.graph = test_driver._create_graph()
         with self.test_session(graph=test_driver.graph) as sess:

@@ -89,7 +89,7 @@ def select_module(module_name, type_str, lookup_table):
     module_name = '{}'.format(module_name)
     if module_name in lookup_table:
         module_name = lookup_table[module_name]
-
+    module, class_name = None, None
     try:
         module, class_name = module_name.rsplit('.', 1)
         the_module = getattr(importlib.import_module(module), class_name)
