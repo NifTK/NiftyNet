@@ -50,7 +50,7 @@ class BinaryMaskingTEst(tf.test.TestCase):
     def test_5d_mean_shape(self):
         x = self.get_5d_input()
         mask_layer = BinaryMaskingLayer(
-            type='mean',
+            type='mean_plus',
             multimod_fusion='and',
             threshold=0.0)
         print(mask_layer)

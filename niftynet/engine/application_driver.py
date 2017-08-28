@@ -263,17 +263,17 @@ class ApplicationDriver(object):
         if self.initial_iter > 0:
             checkpoint = '{}-{}'.format(self.session_prefix, self.initial_iter)
         else:
-            checkpoint = ckpt_state.model_checkpoint_path
-            assert checkpoint, 'checkpoint path not found ' \
-                               'in {}/checkpoints'.format(self.model_dir)
             try:
+                checkpoint = ckpt_state.model_checkpoint_path
+                assert checkpoint, 'checkpoint path not found ' \
+                                   'in {}/checkpoints'.format(self.model_dir)
                 self.initial_iter = int(checkpoint.rsplit('-')[-1])
                 tf.logging.info('set initial_iter to %d based '
                                 'on checkpoints', self.initial_iter)
-            except ValueError:
+            except (ValueError, AttributeError):
                 tf.logging.fatal('failed to get iteration number'
                                  'from checkpoint path')
-                raise ValueError
+                raise
         # restore session
         tf.logging.info('Accessing %s ...', checkpoint)
         try:

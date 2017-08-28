@@ -25,7 +25,7 @@ def get_initialised_driver(starting_iter=0):
             action='train',
             num_threads=2,
             num_gpus=4,
-            cuda_devices='',
+            cuda_devices='6',
             model_dir='./testing_data'),
         'NETWORK': Namespace(
             batch_size=20,
