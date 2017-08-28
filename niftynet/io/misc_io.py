@@ -201,7 +201,8 @@ def save_data_array(filefolder,
                     filename,
                     array_to_save,
                     image_object=None,
-                    interp_order=3):
+                    interp_order=3,
+                    reshape=True):
     """
     write image data array to hard drive using image_object
     properties such as affine, pixdim and axcodes.
@@ -216,18 +217,19 @@ def save_data_array(filefolder,
         affine = np.eye(4)
         image_pixdim, image_axcodes = (), ()
 
-    input_ndim = array_to_save.ndim
-    if input_ndim == 1:
-        # feature vector, should be saved with shape (1, 1, 1, 1, mod)
-        while array_to_save.ndim < 5:
-            array_to_save = np.expand_dims(array_to_save, axis=0)
-    elif input_ndim == 2 or input_ndim == 3:
-        # 2D or 3D images should be saved with shape (x, y, z, 1, 1)
-        while array_to_save.ndim < 5:
-            array_to_save = np.expand_dims(array_to_save, axis=-1)
-    elif input_ndim == 4:
-        # recover a time dimension for nifti format output
-        array_to_save = np.expand_dims(array_to_save, axis=3)
+    if reshape:
+        input_ndim = array_to_save.ndim
+        if input_ndim == 1:
+            # feature vector, should be saved with shape (1, 1, 1, 1, mod)
+            while array_to_save.ndim < 5:
+                array_to_save = np.expand_dims(array_to_save, axis=0)
+        elif input_ndim == 2 or input_ndim == 3:
+            # 2D or 3D images should be saved with shape (x, y, z, 1, 1)
+            while array_to_save.ndim < 5:
+                array_to_save = np.expand_dims(array_to_save, axis=-1)
+        elif input_ndim == 4:
+            # recover a time dimension for nifti format output
+            array_to_save = np.expand_dims(array_to_save, axis=3)
 
     if image_pixdim:
         array_to_save = do_resampling(
