@@ -1,4 +1,13 @@
 # -*- coding: utf-8 -*-
+"""
+Implementation of
+Nyúl László G., Jayaram K. Udupa, and Xuan Zhang.
+"New variants of a method of MRI scale standardization."
+IEEE transactions on medical imaging 19.2 (2000): 143-150.
+
+This implementation only supports input images with floating point number,
+(not integers).
+"""
 from __future__ import absolute_import, print_function, division
 
 import os
@@ -9,16 +18,6 @@ import tensorflow as tf
 
 from niftynet.io.misc_io import touch_folder
 from niftynet.utilities.util_common import look_up_operations, printProgressBar
-
-"""
-Implementation of
-Nyúl László G., Jayaram K. Udupa, and Xuan Zhang.
-"New variants of a method of MRI scale standardization."
-IEEE transactions on medical imaging 19.2 (2000): 143-150.
-
-This implementation only supports input images with floating point number,
-(not integers).
-"""
 
 DEFAULT_CUTOFF = [0.01, 0.99]
 SUPPORTED_CUTPOINTS = {'percentile', 'quartile', 'median'}

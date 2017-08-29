@@ -7,13 +7,13 @@ import numpy.ma as ma
 from niftynet.layer.base_layer import Layer
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 
-"""
-This class defines image-level normalisation by subtracting
-foreground mean intensity value and dividing by standard deviation
-"""
-
 
 class MeanVarNormalisationLayer(Layer):
+    """
+    This class defines image-level normalisation by subtracting
+    foreground mean intensity value and dividing by standard deviation
+    """
+
     def __init__(self, image_name, binary_masking_func=None):
 
         self.image_name = image_name

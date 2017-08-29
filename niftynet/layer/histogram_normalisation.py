@@ -1,4 +1,12 @@
 # -*- coding: utf-8 -*-
+"""
+This class computes histogram based normalisation. A `training`
+process is first used to find an averaged histogram mapping
+from all training volumes.  This layer maintains the mapping array,
+and the layer_op maps the intensity of new volumes to a normalised version.
+The histogram is computed from foreground if a definition is provided for
+foreground (by `binary_masking_func` or a `mask` matrix)
+"""
 from __future__ import absolute_import, print_function, division
 
 import os
@@ -9,15 +17,6 @@ import tensorflow as tf
 import niftynet.utilities.histogram_standardisation as hs
 from niftynet.layer.base_layer import DataDependentLayer
 from niftynet.layer.binary_masking import BinaryMaskingLayer
-
-"""
-This class computes histogram based normalisation. A `training`
-process is first used to find an averaged histogram mapping
-from all training volumes.  This layer maintains the mapping array,
-and the layer_op maps the intensity of new volumes to a normalised version.
-The histogram is computed from foreground if a definition is provided for
-foreground (by `binary_masking_func` or a `mask` matrix)
-"""
 
 
 class HistogramNormalisationLayer(DataDependentLayer):

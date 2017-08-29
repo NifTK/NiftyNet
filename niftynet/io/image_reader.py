@@ -15,7 +15,10 @@ from niftynet.utilities.user_parameters_helper import make_input_tuple
 from niftynet.utilities.util_common import printProgressBar
 
 #NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
-NP_TF_DTYPES = {'i': tf.float32, 'u': tf.float32, 'b': tf.float32, 'f': tf.float32}
+NP_TF_DTYPES = {'i': tf.float32,
+                'u': tf.float32,
+                'b': tf.float32,
+                'f': tf.float32}
 
 
 def infer_tf_dtypes(image_array):
