@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import logging as log
 import os
 import re
 import sys
 import warnings
 
 import PIL
-import logging as log
 import nibabel as nib
 import numpy as np
 import scipy.ndimage

@@ -4,8 +4,8 @@ from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_factory import ApplicationNetFactory
 from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
-from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.application_variables import NETORK_OUTPUT
+from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.image_windows_aggregator import GridSamplesAggregator
 from niftynet.engine.image_windows_aggregator import ResizeSamplesAggregator
 from niftynet.engine.sampler_grid import GridSampler
@@ -74,7 +74,7 @@ class SegmentationApplication(BaseApplication):
             image_name='image', binary_masking_func=foreground_masking_layer)
         if self.net_param.histogram_ref_file:
             histogram_normaliser = HistogramNormalisationLayer(
-                field='image',
+                image_name='image',
                 modalities=vars(task_param).get('image'),
                 model_filename=self.net_param.histogram_ref_file,
                 binary_masking_func=foreground_masking_layer,
@@ -86,7 +86,7 @@ class SegmentationApplication(BaseApplication):
 
         if self.net_param.histogram_ref_file:
             label_normaliser = DiscreteLabelNormalisationLayer(
-                field='label',
+                image_name='label',
                 modalities=vars(task_param).get('label'),
                 model_filename=self.net_param.histogram_ref_file)
         else:
@@ -117,7 +117,7 @@ class SegmentationApplication(BaseApplication):
         volume_padding_layer = []
         if self.net_param.volume_padding_size:
             volume_padding_layer.append(PadLayer(
-                field=SUPPORTED_INPUT,
+                image_name=SUPPORTED_INPUT,
                 border=self.net_param.volume_padding_size))
         self.reader.add_preprocessing_layers(
             volume_padding_layer + normalisation_layers + augmentation_layers)

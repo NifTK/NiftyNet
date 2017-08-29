@@ -234,6 +234,9 @@ def load_and_merge_csv_files(data_param):
     This function returns a <pandas.core.frame.DataFrame> of the
     joint list
     """
+    if not data_param:
+        tf.logging.fatal('nothing to load, please check reader.names')
+        raise ValueError
     _file_list = None
     for modality_name in data_param:
         try:
@@ -268,7 +271,7 @@ def load_and_merge_csv_files(data_param):
         if _file_list.shape[0] != n_rows:
             tf.logging.warning("rows not matched in %s", csv_file)
 
-    if _file_list.size == 0:
+    if _file_list is None or _file_list.size == 0:
         tf.logging.fatal(
             "empty filename lists, please check the csv "
             "files. (remove csv files to automatically"

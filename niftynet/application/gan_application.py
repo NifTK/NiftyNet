@@ -64,7 +64,7 @@ class GANApplication(BaseApplication):
             binary_masking_func=foreground_masking_layer)
         if self.net_param.histogram_ref_file:
             histogram_normaliser = HistogramNormalisationLayer(
-                field='image',
+                image_name='image',
                 modalities=vars(task_param).get('image'),
                 model_filename=self.net_param.histogram_ref_file,
                 binary_masking_func=foreground_masking_layer,

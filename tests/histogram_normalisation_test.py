@@ -2,26 +2,23 @@
 from __future__ import absolute_import, print_function
 
 import os
-import unittest
 
 import numpy as np
 import tensorflow as tf
 
-from tests.test_util import ParserNamespace
+from niftynet.io.image_reader import ImageReader
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
 from niftynet.layer.mean_variance_normalisation import \
-    MeanVarNormalisationLayer as MVNorm
-from niftynet.layer.mean_variance_normalisation import \
     MeanVarNormalisationLayer
-from niftynet.io.image_reader import ImageReader
+from tests.test_util import ParserNamespace
 
 DATA_PARAM = {
     'T1': ParserNamespace(
         csv_file=os.path.join('testing_data', 'T1.csv'),
         path_to_search='testing_data',
-        filename_contains=('_o_T1_time', ),
+        filename_contains=('_o_T1_time',),
         filename_not_contains=('Parcellation',),
         interp_order=3,
         pixdim=None,
@@ -41,7 +38,7 @@ TASK_PARAM = ParserNamespace(image=('T1', 'FLAIR'))
 MODEL_FILE = os.path.join('testing_data', 'std_models.txt')
 
 
-#@unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
+# @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class HistTest(tf.test.TestCase):
     def test_volume_loader(self):
         expected_T1 = np.array(
@@ -65,7 +62,7 @@ class HistTest(tf.test.TestCase):
             type='otsu_plus',
             multimod_fusion='or')
         hist_norm = HistogramNormalisationLayer(
-            field='image',
+            image_name='image',
             modalities=vars(TASK_PARAM).get('image'),
             model_filename=MODEL_FILE,
             binary_masking_func=foreground_masking_layer,
@@ -83,7 +80,7 @@ class HistTest(tf.test.TestCase):
         test_shape = (20, 20, 20, 3, 2)
         rand_image = np.random.uniform(low=-10.0, high=10.0, size=test_shape)
         norm_image = np.copy(rand_image)
-        norm_image_dict, mask_dict = hist_norm({'image':norm_image})
+        norm_image_dict, mask_dict = hist_norm({'image': norm_image})
         norm_image, mask = hist_norm(norm_image, mask_dict)
         self.assertAllClose(norm_image_dict['image'], norm_image)
         self.assertAllClose(mask_dict['image'], mask)

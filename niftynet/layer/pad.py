@@ -14,7 +14,7 @@ class PadLayer(Layer, Invertible):
     and return the padded input.
     """
 
-    def __init__(self, field, border, name='pad'):
+    def __init__(self, image_name, border, name='pad'):
         super(PadLayer, self).__init__(name=name)
         try:
             spatial_border = tuple(map(lambda x: (x,), border))
@@ -22,7 +22,7 @@ class PadLayer(Layer, Invertible):
             tf.logging.fatal("unknown padding param. {}".format(border))
             raise
         self.border = spatial_border
-        self.field = set(field)
+        self.image_name = set(image_name)
 
     def layer_op(self, input_image, mask=None):
         if not isinstance(input_image, dict):
@@ -30,7 +30,7 @@ class PadLayer(Layer, Invertible):
             return np.pad(input_image, full_border, mode='minimum'), mask
 
         for name, image in input_image.items():
-            if name not in self.field:
+            if name not in self.image_name:
                 continue
             full_border = match_ndim(self.border, image.ndim)
             input_image[name] = np.pad(image, full_border, mode='minimum')
@@ -51,7 +51,7 @@ class PadLayer(Layer, Invertible):
             return outputs, mask
 
         for name, image in input_image.items():
-            if name not in self.field:
+            if name not in self.image_name:
                 continue
             try:
                 input_image[name] = image[

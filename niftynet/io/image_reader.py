@@ -14,7 +14,7 @@ from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
 from niftynet.utilities.user_parameters_helper import make_input_tuple
 from niftynet.utilities.util_common import printProgressBar
 
-#NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
+# NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
 NP_TF_DTYPES = {'i': tf.float32,
                 'u': tf.float32,
                 'b': tf.float32,
@@ -56,7 +56,8 @@ class ImageReader(Layer):
         self._input_sources = None
         self._shapes = None
         self._dtypes = None
-        self._names = names
+        self._names = None
+        self.names = names
 
         # list of image objects
         self.output_list = None
@@ -74,10 +75,11 @@ class ImageReader(Layer):
         if not self.names:
             tf.logging.fatal('Please specify data names, this should '
                              'be a subset of SUPPORTED_INPUT provided '
-                             'in %s', task_param.name)
+                             'in application file')
             raise ValueError
         self._names = [name for name in self.names
                        if vars(task_param).get(name, None)]
+
         self._input_sources = {name: vars(task_param).get(name)
                                for name in self.names}
         data_to_load = {}
@@ -94,13 +96,12 @@ class ImageReader(Layer):
                     raise ValueError
 
         self._file_list = util_csv.load_and_merge_csv_files(data_to_load)
-        self.output_list = _filename_to_image_list(self._file_list,
-                                                   self._input_sources,
-                                                   data_param)
+        self.output_list = _filename_to_image_list(
+            self._file_list, self._input_sources, data_param)
         for name in self.names:
-            tf.logging.info('image reader: loading [%s] from %s (%d)',
-                            name, self.input_sources[name],
-                            len(self.output_list))
+            tf.logging.info(
+                'image reader: loading [%s] from %s (%d)',
+                name, self.input_sources[name], len(self.output_list))
 
     def prepare_preprocessors(self):
         for layer in self.preprocessors:
@@ -108,6 +109,9 @@ class ImageReader(Layer):
                 layer.train(self.output_list)
 
     def add_preprocessing_layers(self, layers):
+        assert self.output_list is not None, \
+            'Please initialise the reader first, ' \
+            'before adding preprocessors.'
         if isinstance(layers, Layer):
             self.preprocessors.append(layers)
         else:
@@ -238,7 +242,7 @@ def _create_image(file_list, idx, modalities, data_param):
         tf.logging.fatal(
             "Specified modality names %s "
             "not found in config: input sections %s",
-                modalities, list(data_param))
+            modalities, list(data_param))
         raise
     except AttributeError:
         tf.logging.fatal(

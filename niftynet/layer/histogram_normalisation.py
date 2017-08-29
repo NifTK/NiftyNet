@@ -21,7 +21,7 @@ from niftynet.layer.binary_masking import BinaryMaskingLayer
 
 class HistogramNormalisationLayer(DataDependentLayer):
     def __init__(self,
-                 field,
+                 image_name,
                  modalities,
                  model_filename,
                  binary_masking_func=None,
@@ -30,7 +30,7 @@ class HistogramNormalisationLayer(DataDependentLayer):
                  name='hist_norm'):
         """
 
-        :param field:
+        :param image_name:
         :param modalities:
         :param model_filename:
         :param binary_masking_func: set to None for global mapping
@@ -54,7 +54,7 @@ class HistogramNormalisationLayer(DataDependentLayer):
 
         # mapping is a complete cache of the model file, the total number of
         # modalities are listed in self.modalities tuple
-        self.field = field
+        self.image_name = image_name
         self.modalities = modalities
         self.mapping = hs.read_mapping_file(model_filename)
 
@@ -62,12 +62,12 @@ class HistogramNormalisationLayer(DataDependentLayer):
         assert self.is_ready(), \
             "histogram normalisation layer needs to be trained first."
         if isinstance(image, dict):
-            image_5d = np.asarray(image[self.field], dtype=np.float32)
+            image_5d = np.asarray(image[self.image_name], dtype=np.float32)
         else:
             image_5d = np.asarray(image, dtype=np.float32)
 
         if isinstance(mask, dict):
-            image_mask = mask.get(self.field, None)
+            image_mask = mask.get(self.image_name, None)
         elif mask is not None:
             image_mask = mask
         elif self.binary_masking_func is not None:
@@ -79,11 +79,11 @@ class HistogramNormalisationLayer(DataDependentLayer):
         normalised = self._normalise_5d(image_5d, image_mask)
 
         if isinstance(image, dict):
-            image[self.field] = normalised
+            image[self.image_name] = normalised
             if isinstance(mask, dict):
-                mask[self.field] = image_mask
+                mask[self.image_name] = image_mask
             else:
-                mask = {self.field: image_mask}
+                mask = {self.image_name: image_mask}
             return image, mask
         else:
             return normalised, image_mask
@@ -101,17 +101,22 @@ class HistogramNormalisationLayer(DataDependentLayer):
         # check modalities to train, using the first subject in subject list
         # to find input modality list
         if self.is_ready():
-            tf.logging.info("normalisation histogram reference models ready"
-                            " for {}:{}".format(self.field, self.modalities))
+            tf.logging.info(
+                "normalisation histogram reference models ready"
+                " for {}:{}".format(self.image_name, self.modalities))
             return
         mod_to_train = self.__check_modalities_to_train()
         tf.logging.info(
             "training normalisation histogram references "
             "for {}:{}, using {} subjects".format(
-                self.field, mod_to_train, len(image_list)))
+                self.image_name, mod_to_train, len(image_list)))
         trained_mapping = hs.create_mapping_from_multimod_arrayfiles(
-            image_list, self.field, self.modalities, mod_to_train,
-            self.cutoff, self.binary_masking_func)
+            image_list,
+            self.image_name,
+            self.modalities,
+            mod_to_train,
+            self.cutoff,
+            self.binary_masking_func)
 
         # merging trained_mapping dict and self.mapping dict
         self.mapping.update(trained_mapping)

@@ -58,7 +58,7 @@ def str_array(string_input):
 
 def make_input_tuple(input_str, element_type=string_types):
     assert input_str, \
-        "input {} does not exists".format(element_type)
+        "invalid input {} for type {}".format(input_str, element_type)
     if isinstance(input_str, element_type):
         new_tuple = (input_str,)
     else:
