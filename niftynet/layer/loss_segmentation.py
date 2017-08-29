@@ -64,7 +64,7 @@ class LossFunction(Layer):
 
 def generalised_dice_loss(prediction,
                           ground_truth,
-                          weight_map=None,
+                          weight_map,
                           type_weight='Square'):
     n_voxels = ground_truth.get_shape()[0].value
     n_classes = prediction.get_shape()[1].value
