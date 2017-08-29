@@ -195,12 +195,15 @@ def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
 
     # Apply smooth thresholding (exponential)
     # below cutoff[0] and over cutoff[1]
-    lowest_values = img <= range_perc[0]
-    highest_values = img >= range_perc[-1]
-    new_img[lowest_values] = smooth_threshold(
-        new_img[lowest_values], mode='low')
-    new_img[highest_values] = smooth_threshold(
-        new_img[highest_values], mode='high')
+    # this might not guarantee one to one mapping
+
+    # lowest_values = img <= range_perc[0]
+    # highest_values = img >= range_perc[-1]
+    # new_img[lowest_values] = smooth_threshold(
+    #     new_img[lowest_values], mode='low')
+    # new_img[highest_values] = smooth_threshold(
+    #     new_img[highest_values], mode='high')
+
     # Apply mask and set background to zero
     # new_img[mask == False] = 0.
     new_img = new_img.reshape(image_shape)

@@ -71,7 +71,7 @@ class SegmentationApplication(BaseApplication):
             foreground_masking_layer = None
 
         mean_var_normaliser = MeanVarNormalisationLayer(
-            field='image', binary_masking_func=foreground_masking_layer)
+            image_name='image', binary_masking_func=foreground_masking_layer)
         if self.net_param.histogram_ref_file:
             histogram_normaliser = HistogramNormalisationLayer(
                 field='image',

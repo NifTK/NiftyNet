@@ -6,11 +6,7 @@ import tensorflow as tf
 
 from niftynet.engine.application_driver import ApplicationDriver
 from niftynet.io.misc_io import set_logger
-
-
-class Namespace(object):
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
+from tests.test_util import ParserNamespace
 
 
 def _run_test_application():
@@ -21,16 +17,16 @@ def _run_test_application():
 
 def get_initialised_driver(starting_iter=0):
     system_param = {
-        'SYSTEM': Namespace(
+        'SYSTEM': ParserNamespace(
             action='train',
             num_threads=2,
             num_gpus=4,
             cuda_devices='6',
             model_dir='./testing_data'),
-        'NETWORK': Namespace(
+        'NETWORK': ParserNamespace(
             batch_size=20,
             name='tests.toy_application.TinyNet'),
-        'TRAINING': Namespace(
+        'TRAINING': ParserNamespace(
             starting_iter=starting_iter,
             max_iter=500,
             save_every_n=20,
@@ -38,7 +34,7 @@ def get_initialised_driver(starting_iter=0):
             max_checkpoints=20,
             optimiser='niftynet.engine.application_optimiser.Adagrad',
             lr=0.01),
-        'CUSTOM': Namespace(
+        'CUSTOM': ParserNamespace(
             vector_size=100,
             mean=10.0,
             stddev=2.0,

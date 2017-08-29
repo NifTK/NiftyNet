@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
-import os
+
 from subprocess import Popen, PIPE
 
 bash_string = "nvidia-smi --query-gpu=memory.free --format=csv"

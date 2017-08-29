@@ -323,8 +323,7 @@ def touch_folder(model_dir):
         try:
             os.makedirs(model_dir)
         except OSError:
-            tf.logging.fatal(
-                'couldnot create model folder: {}'.format(model_dir))
+            tf.logging.fatal('could not create model folder: %s', model_dir)
             raise OSError
     absolute_dir = os.path.abspath(model_dir)
     # tf.logging.info('accessing output folder: {}'.format(absolute_dir))

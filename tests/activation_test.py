@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
@@ -17,86 +18,46 @@ class ActivationTest(tf.test.TestCase):
         x = tf.ones(input_shape)
         return x
 
+    def run_test(self, is_3d, type_str, expected_shape):
+        if is_3d:
+            x = self.get_3d_input()
+        else:
+            x = self.get_2d_input()
+        activation_layer = ActiLayer(func=type_str)
+        out_acti = activation_layer(x)
+        print(activation_layer)
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+            out = sess.run(out_acti)
+            self.assertAllClose(out.shape, expected_shape)
+
     # 3d test
     def test_3d_relu_shape(self):
-        x = self.get_3d_input()
-        relu_layer = ActiLayer(func='relu')
-        out_relu = relu_layer(x)
-        print(relu_layer)
-        with self.test_session() as sess:
-            sess.run(tf.global_variables_initializer())
-            out = sess.run(out_relu)
-            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
+        self.run_test(True, 'relu', (2, 16, 16, 16, 8))
 
     def test_3d_relu6_shape(self):
-        x = self.get_3d_input()
-        relu6_layer = ActiLayer(func='relu6')
-        out_relu6 = relu6_layer(x)
-        print(relu6_layer)
-        with self.test_session() as sess:
-            sess.run(tf.global_variables_initializer())
-            out = sess.run(out_relu6)
-            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
+        self.run_test(True, 'relu6', (2, 16, 16, 16, 8))
 
     def test_3d_elu_shape(self):
-        x = self.get_3d_input()
-        elu_layer = ActiLayer(func='elu')
-        out_elu = elu_layer(x)
-        print(elu_layer)
-        with self.test_session() as sess:
-            sess.run(tf.global_variables_initializer())
-            out = sess.run(out_elu)
-            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
+        self.run_test(True, 'elu', (2, 16, 16, 16, 8))
+
+    def test_3d_selu_shape(self):
+        self.run_test(True, 'selu', (2, 16, 16, 16, 8))
 
     def test_3d_softplus_shape(self):
-        x = self.get_3d_input()
-        softplus_layer = ActiLayer(func='softplus')
-        out_softplus = softplus_layer(x)
-        print(softplus_layer)
-        with self.test_session() as sess:
-            sess.run(tf.global_variables_initializer())
-            out = sess.run(out_softplus)
-            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
+        self.run_test(True, 'softplus', (2, 16, 16, 16, 8))
 
     def test_3d_softsign_shape(self):
-        x = self.get_3d_input()
-        softsign_layer = ActiLayer(func='softsign')
-        out_softsign = softsign_layer(x)
-        print(softsign_layer)
-        with self.test_session() as sess:
-            sess.run(tf.global_variables_initializer())
-            out = sess.run(out_softsign)
-            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
+        self.run_test(True, 'softsign', (2, 16, 16, 16, 8))
 
     def test_3d_sigmoid_shape(self):
-        x = self.get_3d_input()
-        sigmoid_layer = ActiLayer(func='sigmoid')
-        out_sigmoid = sigmoid_layer(x)
-        print(sigmoid_layer)
-        with self.test_session() as sess:
-            sess.run(tf.global_variables_initializer())
-            out = sess.run(out_sigmoid)
-            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
+        self.run_test(True, 'sigmoid', (2, 16, 16, 16, 8))
 
     def test_3d_tanh_shape(self):
-        x = self.get_3d_input()
-        tanh_layer = ActiLayer(func='tanh')
-        out_tanh = tanh_layer(x)
-        print(tanh_layer)
-        with self.test_session() as sess:
-            sess.run(tf.global_variables_initializer())
-            out = sess.run(out_tanh)
-            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
+        self.run_test(True, 'tanh', (2, 16, 16, 16, 8))
 
     def test_3d_prelu_shape(self):
-        x = self.get_3d_input()
-        prelu_layer = ActiLayer(func='prelu')
-        out_prelu = prelu_layer(x)
-        print(prelu_layer)
-        with self.test_session() as sess:
-            sess.run(tf.global_variables_initializer())
-            out = sess.run(out_prelu)
-            self.assertAllClose((2, 16, 16, 16, 8), out.shape)
+        self.run_test(True, 'prelu', (2, 16, 16, 16, 8))
 
     def test_3d_prelu_reg_shape(self):
         x = self.get_3d_input()
@@ -125,84 +86,31 @@ class ActivationTest(tf.test.TestCase):
 
     # 2d test
     def test_2d_relu_shape(self):
-        x = self.get_2d_input()
-        relu_layer = ActiLayer(func='relu')
-        out_relu = relu_layer(x)
-        print(relu_layer)
-        with self.test_session() as sess:
-            sess.run(tf.global_variables_initializer())
-            out = sess.run(out_relu)
-            self.assertAllClose((2, 16, 16, 8), out.shape)
+        self.run_test(False, 'relu', (2, 16, 16, 8))
 
     def test_2d_relu6_shape(self):
-        x = self.get_2d_input()
-        relu6_layer = ActiLayer(func='relu6')
-        out_relu6 = relu6_layer(x)
-        print(relu6_layer)
-        with self.test_session() as sess:
-            sess.run(tf.global_variables_initializer())
-            out = sess.run(out_relu6)
-            self.assertAllClose((2, 16, 16, 8), out.shape)
+        self.run_test(False, 'relu6', (2, 16, 16, 8))
 
     def test_2d_elu_shape(self):
-        x = self.get_2d_input()
-        elu_layer = ActiLayer(func='elu')
-        out_elu = elu_layer(x)
-        print(elu_layer)
-        with self.test_session() as sess:
-            sess.run(tf.global_variables_initializer())
-            out = sess.run(out_elu)
-            self.assertAllClose((2, 16, 16, 8), out.shape)
+        self.run_test(False, 'elu', (2, 16, 16, 8))
 
     def test_2d_softplus_shape(self):
-        x = self.get_2d_input()
-        softplus_layer = ActiLayer(func='softplus')
-        out_softplus = softplus_layer(x)
-        print(softplus_layer)
-        with self.test_session() as sess:
-            sess.run(tf.global_variables_initializer())
-            out = sess.run(out_softplus)
-            self.assertAllClose((2, 16, 16, 8), out.shape)
+        self.run_test(False, 'softplus', (2, 16, 16, 8))
 
     def test_2d_softsign_shape(self):
-        x = self.get_2d_input()
-        softsign_layer = ActiLayer(func='softsign')
-        out_softsign = softsign_layer(x)
-        print(softsign_layer)
-        with self.test_session() as sess:
-            sess.run(tf.global_variables_initializer())
-            out = sess.run(out_softsign)
-            self.assertAllClose((2, 16, 16, 8), out.shape)
+        self.run_test(False, 'softsign', (2, 16, 16, 8))
 
     def test_2d_sigmoid_shape(self):
-        x = self.get_2d_input()
-        sigmoid_layer = ActiLayer(func='sigmoid')
-        out_sigmoid = sigmoid_layer(x)
-        print(sigmoid_layer)
-        with self.test_session() as sess:
-            sess.run(tf.global_variables_initializer())
-            out = sess.run(out_sigmoid)
-            self.assertAllClose((2, 16, 16, 8), out.shape)
+        self.run_test(False, 'sigmoid', (2, 16, 16, 8))
 
     def test_2d_tanh_shape(self):
-        x = self.get_2d_input()
-        tanh_layer = ActiLayer(func='tanh')
-        out_tanh = tanh_layer(x)
-        print(tanh_layer)
-        with self.test_session() as sess:
-            sess.run(tf.global_variables_initializer())
-            out = sess.run(out_tanh)
-            self.assertAllClose((2, 16, 16, 8), out.shape)
+        self.run_test(False, 'tanh', (2, 16, 16, 8))
 
     def test_2d_prelu_shape(self):
-        x = self.get_2d_input()
-        prelu_layer = ActiLayer(func='prelu')
-        out_prelu = prelu_layer(x)
-        print(prelu_layer)
-        with self.test_session() as sess:
-            sess.run(tf.global_variables_initializer())
-            out = sess.run(out_prelu)
-            self.assertAllClose((2, 16, 16, 8), out.shape)
+        self.run_test(False, 'prelu', (2, 16, 16, 8))
+
+    def test_2d_selu_shape(self):
+        self.run_test(False, 'selu', (2, 16, 16, 8))
 
     def test_2d_prelu_reg_shape(self):
         x = self.get_2d_input()

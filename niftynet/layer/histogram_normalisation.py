@@ -67,7 +67,6 @@ class HistogramNormalisationLayer(DataDependentLayer):
         else:
             image_5d = np.asarray(image, dtype=np.float32)
 
-        image_mask = None
         if isinstance(mask, dict):
             image_mask = mask.get(self.field, None)
         elif mask is not None:

@@ -233,10 +233,15 @@ def _create_image(file_list, idx, modalities, data_param):
         axcodes = tuple(data_param[mod].axcodes for mod in modalities)
     except KeyError:
         tf.logging.fatal(
-            "Specified modality names {} "
-            "not found in config: input sections {}".format(
-                modalities, list(data_param)))
+            "Specified modality names %s "
+            "not found in config: input sections %s",
+                modalities, list(data_param))
         raise
+    except AttributeError:
+        tf.logging.fatal(
+            'data params must contain: interp_order, pixdim, axcodes')
+        raise
+
     image_properties = {'file_path': file_path,
                         'name': modalities,
                         'interp_order': interp_order,
