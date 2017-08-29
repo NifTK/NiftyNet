@@ -143,7 +143,7 @@ def add_input_data_args(parser):
 
     parser.add_argument(
         "--pixdim",
-        type=int_array,
+        type=float_array,
         default=(),
         help="voxel width along each dimension")
 
@@ -185,13 +185,12 @@ def add_network_args(parser):
         type=float,
         default=0)
 
-    import niftynet.layer.loss_segmentation
     parser.add_argument(
         "--reg_type",
         metavar='TYPE_STR',
-        choices=list(niftynet.layer.loss_segmentation.SUPPORTED_OPS),
         help="[Training only] Specify regulariser type_str",
-        default='Dice')
+        type=str,
+        default='L2')
 
     parser.add_argument(
         "--volume_padding_size",
@@ -205,10 +204,8 @@ def add_network_args(parser):
         metavar='TYPE_STR',
         help="How to sample patches from each loaded image:"
              " 'uniform': fixed size uniformly distributed,"
-             " 'selective': selective sampling by properties of"
-             "  'min_sampling_ratio' and the 'min_numb_labels' parameters"
              " 'resize': resize image to the patch size.",
-        choices=['uniform', 'selective', 'resize'],
+        choices=['uniform', 'resize'],
         default='uniform')
 
     import niftynet.layer.binary_masking
