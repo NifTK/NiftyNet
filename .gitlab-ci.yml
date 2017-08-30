@@ -70,6 +70,7 @@ quicktest:
     - dev
     - dev-staging
     - tags
+    - 130-create-a-mirror-of-the-code-on-github
   script:
     # print system info
     - which nvidia-smi
