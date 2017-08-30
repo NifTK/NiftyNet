@@ -25,6 +25,7 @@ class ImageWindow(object):
     read the data specifications and fill the placeholder
     with data.
     """
+
     def __init__(self, names, shapes, dtypes):
         self.names = names
         self.shapes = shapes
@@ -43,7 +44,22 @@ class ImageWindow(object):
         Create a window instance with input data properties
         each property is grouped into dict, with pairs of
         image_name: data_value. Some input images is a
-        concatenated data array from multiple data sources,
+        concatenated data array from multiple data sources.
+        example of input:
+        source_names={
+            'image': (u'modality1', u'modality2'),
+            'label': (u'modality3',)},
+        image_shapes={
+            'image': (192, 160, 192, 1, 2),
+            'label': (192, 160, 192, 1, 1)},
+        image_dtypes={
+            'image': tf.float32,
+            'label': tf.float32},
+        data_param={
+            'modality1': ParserNamespace(spatial_window_size=(10, 10, 2)),
+            'modality2': ParserNamespace(spatial_window_size=(10, 10, 2)),
+            'modality3': ParserNamespace(spatial_window_size=(5, 5, 1))}
+
         see niftynet.io.ImageReader for more details.
 
         :param source_names: input image names
@@ -52,15 +68,23 @@ class ImageWindow(object):
         :param data_param: dict of each input source specifications
         :return: an ImageWindow instance
         """
-        input_names = tuple(source_names)
-        # complete window shapes based on user input and input_image sizes
-        spatial_shapes = {
-            name: _read_window_sizes(modalities, data_param)
-            for (name, modalities) in source_names.items()}
-        shapes = {
-            name: _complete_partial_window_sizes(
-                spatial_shapes[name], image_shapes[name])
-            for name in input_names}
+        try:
+            input_names = tuple(source_names)
+        except TypeError:
+            tf.logging.fatal('image names should be a dictionary of strings')
+            raise
+        try:
+            # complete window shapes based on user input and input_image sizes
+            spatial_shapes = {
+                name: _read_window_sizes(modalities, data_param)
+                for (name, modalities) in source_names.items()}
+            shapes = {
+                name: _complete_partial_window_sizes(
+                    spatial_shapes[name], image_shapes[name])
+                for name in input_names}
+        except KeyError:
+            tf.logging.fatal('data_param wrong format %s', data_param)
+            raise
         # create ImageWindow instance
         return cls(names=input_names,
                    shapes=shapes,
@@ -86,6 +110,29 @@ class ImageWindow(object):
             for name in self.names}
         # update based on the latest spatial shapes
         self.has_dynamic_shapes = self._check_dynamic_shapes()
+        if self._placeholders_dict is not None:
+            self._update_placeholders_dict(n_samples=self.n_samples)
+
+    def _update_placeholders_dict(self, n_samples=1):
+        # batch size=1 if the shapes are dynamic
+        self.n_samples = 1 if self.has_dynamic_shapes else n_samples
+
+        names = list(self.names)
+        placeholders = [
+            tf.placeholder(dtype=self.dtypes[name],
+                           shape=[self.n_samples] + list(self.shapes[name]),
+                           name=name)
+            for name in names]
+        # extending names with names of coordinates
+        names.extend([LOCATION_FORMAT.format(name) for name in names])
+        # extending placeholders with names of coordinates
+        location_shape = [self.n_samples, 1 + N_SPATIAL * 2]
+        placeholders.extend(
+            [tf.placeholder(dtype=BUFFER_POSITION_DTYPE,
+                            shape=location_shape,
+                            name=name)
+             for name in self.names])
+        self._placeholders_dict = dict(zip(names, placeholders))
 
     def placeholders_dict(self, n_samples=1):
         """
@@ -101,26 +148,7 @@ class ImageWindow(object):
 
         if self._placeholders_dict is not None:
             return self._placeholders_dict
-
-        # batch size=1 if the shapes are dynamic
-        self.n_samples = 1 if self.has_dynamic_shapes else n_samples
-
-        names = list(self.names)
-        placeholders = [
-            tf.placeholder(dtype=self.dtypes[name],
-                           shape=[n_samples] + list(self.shapes[name]),
-                           name=name)
-            for name in names]
-        # extending names with names of coordinates
-        names.extend([LOCATION_FORMAT.format(name) for name in names])
-        # extending placeholders with names of coordinates
-        location_shape = [n_samples, 1 + N_SPATIAL * 2]
-        placeholders.extend(
-            [tf.placeholder(dtype=BUFFER_POSITION_DTYPE,
-                            shape=location_shape,
-                            name=name)
-             for name in self.names])
-        self._placeholders_dict = dict(zip(names, placeholders))
+        self._update_placeholders_dict(n_samples)
         return self._placeholders_dict
 
     def coordinates_placeholder(self, name):
@@ -131,7 +159,11 @@ class ImageWindow(object):
         :param name: input name string
         :return: coordinates placeholder
         """
-        return self._placeholders_dict[LOCATION_FORMAT.format(name)]
+        try:
+            return self._placeholders_dict[LOCATION_FORMAT.format(name)]
+        except TypeError:
+            tf.logging.fatal('call placeholders_dict to initialise first')
+            raise
 
     def image_data_placeholder(self, name):
         """
@@ -140,7 +172,11 @@ class ImageWindow(object):
         :param name: input name string
         :return: image placeholder
         """
-        return self._placeholders_dict[name]
+        try:
+            return self._placeholders_dict[name]
+        except TypeError:
+            tf.logging.fatal('call placeholders_dict to initialise first')
+            raise
 
     def _check_dynamic_shapes(self):
         """
@@ -188,8 +224,13 @@ def _read_window_sizes(input_mod_list, input_data_param):
         by param. parser
     :return: spatial window size
     """
-    window_sizes = [input_data_param[input_name].spatial_window_size
-                    for input_name in input_mod_list]
+    try:
+        window_sizes = [input_data_param[input_name].spatial_window_size
+                        for input_name in input_mod_list]
+    except (AttributeError, TypeError, KeyError):
+        tf.logging.fatal('unknown input_data_param format %s %s',
+                         input_mod_list, input_data_param)
+        raise
     if not all(window_sizes):
         window_sizes = filter(None, window_sizes)
     uniq_window_set = set(window_sizes)
@@ -199,9 +240,20 @@ def _read_window_sizes(input_mod_list, input_data_param):
             "trying to combine input sources "
             "with different window sizes: %s", window_sizes)
         raise NotImplementedError
+    window_shape = None
     if uniq_window_set:
-        return tuple(map(int, uniq_window_set.pop()))
-    return ()
+        window_shape = uniq_window_set.pop()
+    try:
+        return tuple(map(int, window_shape))
+    except (TypeError, ValueError):
+        pass
+    try:
+        # try to make it a tuple
+        return int(window_shape),
+    except (TypeError, ValueError):
+        tf.logging.fatal('unknown spatial_window_size param %s, %s',
+                         input_mod_list, input_data_param)
+        raise
 
 
 def _complete_partial_window_sizes(win_size, img_size):
