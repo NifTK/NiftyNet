@@ -7,12 +7,12 @@ import numpy as np
 
 import tokenize, os, itertools
 from niftynet.engine.application_variables \
-    import RESTORABLE, global_variables_initialize_or_restorer
+    import RESTORABLE, global_vars_init_or_restore
 
 from niftynet.layer.convolution import ConvolutionalLayer
 
 
-@unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
+#@unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class RestorerTest(tf.test.TestCase):
     def make_checkpoint(self, checkpoint_name, definition):
         scopes = {}
@@ -47,7 +47,7 @@ class RestorerTest(tf.test.TestCase):
         b4 = block4(tf.ones([1., 5., 5., 1.]))
         tf.add_to_collection(RESTORABLE,
                              ('foo', checkpoint_name, 'bar'))
-        init_op = global_variables_initialize_or_restorer()
+        init_op = global_vars_init_or_restore()
         all_vars = tf.global_variables()
         with self.test_session() as sess:
             sess.run(init_op)
@@ -68,7 +68,7 @@ class RestorerTest(tf.test.TestCase):
         block1 = ConvolutionalLayer(4, 3, name='bar', with_bn=False,
                                     w_initializer=tf.constant_initializer(1.))
         b2 = block1(tf.ones([1., 5., 5., 1.]))
-        init_op = global_variables_initialize_or_restorer()
+        init_op = global_vars_init_or_restore()
         all_vars = tf.global_variables()
         with self.test_session() as sess:
             sess.run(init_op)

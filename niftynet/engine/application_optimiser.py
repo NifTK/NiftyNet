@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function
-
-import tensorflow as tf
 
 """
-To customise optimisers including 
-new optimisation methods, learning rate decay schedule, 
+To customise optimisers including
+new optimisation methods, learning rate decay schedule,
 or customise other optional parameters of the optimiser:
 
-create a `newclass.py` that has a class `NewOptimisor` and implement 
+create a `newclass.py` that has a class `NewOptimisor` and implement
 `get_instance()`.
 and set config parameter in config file or from command line
 specify `--optimiser newclass.NewOptimisor`
 """
+
+from __future__ import absolute_import, print_function
+
+import tensorflow as tf
 
 
 class Adam(object):

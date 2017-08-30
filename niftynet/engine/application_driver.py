@@ -25,7 +25,7 @@ from niftynet.engine.application_variables import NETORK_OUTPUT
 from niftynet.engine.application_variables import OutputsCollector
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.application_variables import \
-    global_variables_initialize_or_restorer
+    global_vars_init_or_restore
 from niftynet.io.misc_io import get_latest_subfolder
 from niftynet.io.misc_io import touch_folder
 from niftynet.layer.bn import BN_COLLECTION
@@ -233,7 +233,7 @@ class ApplicationDriver(object):
 
             # initialisation operation
             with tf.name_scope('Initialization'):
-                self._init_op = global_variables_initialize_or_restorer()
+                self._init_op = global_vars_init_or_restore()
 
             with tf.name_scope('MergedOutputs'):
                 self.outputs_collector.finalise_output_op()
