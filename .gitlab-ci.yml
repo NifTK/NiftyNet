@@ -9,7 +9,6 @@ testjob:
     - master
     - dev
     - dev-staging
-    - tags
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
@@ -98,7 +97,6 @@ pip-installer:
     - master
     - dev
     - dev-staging
-    - tags
   script:
     # source utils
     - source ci/utils.sh
@@ -190,8 +188,10 @@ pip-installer:
 
 pip-camera-ready:
   stage: pip_publish
-  only:
+  except:
     - tags
+    - 130-create-a-mirror-of-the-code-on-github
+    - 130-create-a-mirror-of-the-code-on-github-bash-or-test
   script:
     # Copy wheel created in previous stage to a specific location on GIFT-Adelie
     - export niftynet_dir=$(pwd)
