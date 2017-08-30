@@ -155,9 +155,16 @@ def do_reorientation(data_array, init_axcodes, final_axcodes):
     ornt_fin = nib.orientations.axcodes2ornt(final_axcodes)
     if np.array_equal(ornt_init, ornt_fin):
         return data_array
-    ornt_transf = nib.orientations.ornt_transform(ornt_init, ornt_fin)
-    data_reoriented = nib.orientations.apply_orientation(
-        data_array, ornt_transf)
+    if np.any(np.isnan(ornt_init)) or np.any(np.isnan(ornt_fin)):
+        tf.logging.fatal("unknown axcodes %s, %s", ornt_init, ornt_fin)
+        raise ValueError
+    try:
+        ornt_transf = nib.orientations.ornt_transform(ornt_init, ornt_fin)
+        data_reoriented = nib.orientations.apply_orientation(
+            data_array, ornt_transf)
+    except (ValueError, IndexError):
+        tf.logging.fatal('reorientation undecided %s, %s', ornt_init, ornt_fin)
+        raise ValueError
     return data_reoriented
 
 
@@ -175,10 +182,15 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     :return data_resampled: Array containing the resampled data
     """
     if data_array is None:
-        # do nothing
         return
     if np.array_equal(pixdim_fin, pixdim_init):
         return data_array
+    try:
+        assert len(pixdim_init) <= len(pixdim_fin)
+    except (TypeError, AssertionError):
+        tf.logging.fatal("unkown pixdim format original %s output %s",
+                         pixdim_init, pixdim_fin)
+        raise
     to_multiply = np.divide(pixdim_init, pixdim_fin[:len(pixdim_init)])
     data_shape = data_array.shape
     if len(data_shape) != 5:
@@ -376,8 +388,8 @@ def _image3_animated_gif(tag, ims):
         for b in PIL.GifImagePlugin.getdata(i):
             s += b
     s += b'\x3B'
-    try: #For python 2/3 compatibility
-        s=str(s)
+    try:  # For python 2/3 compatibility
+        s = str(s)
     except:
         pass
     summary_image_str = summary_pb2.Summary.Image(
