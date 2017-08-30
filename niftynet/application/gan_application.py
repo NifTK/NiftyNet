@@ -106,14 +106,16 @@ class GANApplication(BaseApplication):
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=1,
-                shuffle_buffer=True))
+                shuffle_buffer=True,
+                queue_length=self.net_param.queue_length))
         else:
             self.sampler.append(RandomVectorSampler(
                 names=('vector',),
                 vector_size=(self.gan_param.noise_size,),
                 batch_size=self.net_param.batch_size,
                 n_interpolations=self.gan_param.n_interpolations,
-                repeat=None))
+                repeat=None,
+                queue_length=self.net_param.queue_length))
             # repeat each resized image n times, so that each
             # image matches one random vector,
             # (n = self.gan_param.n_interpolations)
@@ -122,7 +124,8 @@ class GANApplication(BaseApplication):
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=self.gan_param.n_interpolations,
-                shuffle_buffer=False))
+                shuffle_buffer=False,
+                queue_length=self.net_param.queue_length))
 
     def initialise_network(self):
         self.net = ApplicationNetFactory.create(self.net_param.name)()

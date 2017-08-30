@@ -82,7 +82,8 @@ class AutoencoderApplication(BaseApplication):
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=1,
-                shuffle_buffer=True))
+                shuffle_buffer=True,
+                queue_length=self.net_param.queue_length))
             return
         if self._infer_type in ('encode', 'encode-decode'):
             self.sampler.append(ResizeSampler(
@@ -90,14 +91,16 @@ class AutoencoderApplication(BaseApplication):
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=1,
-                shuffle_buffer=False))
+                shuffle_buffer=False,
+                queue_length=self.net_param.queue_length))
             return
         if self._infer_type == 'linear_interpolation':
             self.sampler.append(LinearInterpolateSampler(
                 reader=self.reader,
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
-                n_interpolations=self.autoencoder_param.n_interpolations))
+                n_interpolations=self.autoencoder_param.n_interpolations,
+                queue_length=self.net_param.queue_length))
             return
 
     def initialise_network(self):

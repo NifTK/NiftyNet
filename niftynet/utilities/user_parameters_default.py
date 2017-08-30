@@ -53,12 +53,6 @@ def add_application_args(parser):
         help="Directory to save/load intermediate training models and logs",
         default=DEFAULT_MODEL_DIR)
 
-    parser.add_argument(
-        "--queue_length",
-        help="Set size of preprocessing buffer queue",
-        metavar='',
-        type=int,
-        default=20)
 
     return parser
 
@@ -207,6 +201,13 @@ def add_network_args(parser):
              " 'resize': resize image to the patch size.",
         choices=['uniform', 'resize'],
         default='uniform')
+
+    parser.add_argument(
+        "--queue_length",
+        help="Set size of preprocessing buffer queue",
+        metavar='',
+        type=int,
+        default=20)
 
     import niftynet.layer.binary_masking
     parser.add_argument(
