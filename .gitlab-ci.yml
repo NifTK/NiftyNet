@@ -85,6 +85,7 @@ quicktest:
     - dev-staging
     - tags
     - supports-axbxc-patch
+    - 112-publish-api-docs-online
   script:
     # print system info
     - which nvidia-smi
