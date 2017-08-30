@@ -35,6 +35,12 @@ def add_customised_args(parser, task_name):
         raise NotImplemented
 
 
+def __add_regression_args(parser):
+    from niftynet.application.segmentation_application import SUPPORTED_INPUT
+    parser = add_input_name_args(parser, SUPPORTED_INPUT)
+    return parser
+
+
 def __add_segmentation_args(parser):
     parser.add_argument(
         "--num_classes",
@@ -122,6 +128,7 @@ def __add_autoencoder_args(parser):
 
 
 SUPPORTED_ARG_SECTIONS = {
+    'REGRESSION': __add_regression_args,
     'SEGMENTATION': __add_segmentation_args,
     'AUTOENCODER': __add_autoencoder_args,
     'GAN': __add_gan_args

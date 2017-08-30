@@ -17,6 +17,8 @@ from niftynet.utilities.util_common import \
 
 # pylint: disable=too-few-public-methods
 SUPPORTED_APP = {
+    'net_regress':
+        'niftynet.application.regression_application.RegressionApplication',
     'net_segment':
         'niftynet.application.segmentation_application.SegmentationApplication',
     'net_autoencoder':
@@ -81,6 +83,18 @@ SUPPORTED_LOSS_SEGMENTATION = {
         'niftynet.layer.loss_segmentation.l2_loss',
     "Huber":
         'niftynet.layer.loss_segmentation.huber_loss'
+}
+
+
+SUPPORTED_LOSS_REGRESSION = {
+    "L1Loss":
+        'niftynet.layer.loss_regression.l1_loss',
+    "L2Loss":
+        'niftynet.layer.loss_regression.l2_loss',
+    "MSE":
+        'niftynet.layer.loss_regression.mse_loss',
+    "Huber":
+        'niftynet.layer.loss_regression.huber_loss'
 }
 
 SUPPORTED_LOSS_AUTOENCODER = {
@@ -156,6 +170,11 @@ class LossGANFactory(ModuleFactory):
 class LossSegmentationFactory(ModuleFactory):
     SUPPORTED = SUPPORTED_LOSS_SEGMENTATION
     type_str = 'segmentation loss'
+
+
+class LossRegressionFactory(ModuleFactory):
+    SUPPORTED = SUPPORTED_LOSS_REGRESSION
+    type_str = 'regression loss'
 
 
 class LossAutoencoderFactory(ModuleFactory):
