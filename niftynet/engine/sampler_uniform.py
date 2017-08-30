@@ -37,6 +37,7 @@ class UniformSampler(Layer, InputBatchQueueRunner):
             self.reader.shapes,
             self.reader.tf_dtypes,
             data_param)
+
         tf.logging.info('initialised window instance')
         self._create_queue_and_ops(self.window,
                                    enqueue_size=windows_per_image,

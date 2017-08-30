@@ -54,20 +54,33 @@ class InputBatchQueueRunner(object):
         operations. This should be called before tf.Graph.finalize.
         """
         self._window = window
-        is_dynamic_window = window.has_dynamic_shapes
+        try:
+            is_dynamic_window = window.has_dynamic_shapes
+        except AttributeError:
+            tf.logging.fatal(
+                "unrecognised window format, expecting a"
+                "niftynet.engine.image_window.ImageWindow instance")
+            raise
         if is_dynamic_window and enqueue_size > 1:
-            tf.logging.warning("using dynamic window size, buffer input size "
-                               "is set to 1")
+            tf.logging.warning(
+                "using dynamic window size, buffer input size is set to 1")
         if is_dynamic_window and dequeue_size > 1:
-            tf.logging.warning("using dynamic window size, network batch size "
-                               "is set to 1")
+            tf.logging.warning(
+                "using dynamic window size, network batch size is set to 1")
         self._batch_size = 1 if is_dynamic_window else dequeue_size
         _enqueue_size = 1 if is_dynamic_window else enqueue_size
         assert dequeue_size <= self.capacity, \
             "batch size is larger than the buffer size, " \
             "please increase the queue capacity or decrease the batch size"
 
-        placeholders_dict = window.placeholders_dict(n_samples=_enqueue_size)
+        try:
+            placeholders_dict = window.placeholders_dict(_enqueue_size)
+        except AttributeError:
+            tf.logging.fatal(
+                "unrecognised window format, expecting a"
+                "niftynet.engine.image_window.ImageWindow instance")
+            raise
+
         names = list(placeholders_dict)
         placeholders = list(placeholders_dict.values())
         input_dtypes = [holder.dtype for holder in placeholders]
@@ -105,12 +118,20 @@ class InputBatchQueueRunner(object):
         self._query_queue_size_op = self._queue.size()
         self._close_queue_op = self._queue.close(cancel_pending_enqueues=True)
 
+    def __call__(self):
+        tf.logging.fatal(
+            'input queue should be used with a'
+            'niftynet.layer.base_layer.Layer instance,'
+            'where a layer_op is implemented as providing'
+            'enqueue data')
+        raise NotImplementedError
+
     def _push(self, thread_id):
         tf.logging.info('New thread: %d', thread_id)
         # pylint: disable=broad-except
         try:
             output_dict = None
-            for output_dict in self():  # pylint: disable=not-callable
+            for output_dict in self():
                 if self._session._closed:
                     break
                 if self._coordinator.should_stop():
@@ -127,6 +148,8 @@ class InputBatchQueueRunner(object):
                     output_dict[name] = np.ones_like(output_dict[name]) * -1
                 self._session.run(self._enqueue_op, feed_dict=output_dict)
 
+        except NotImplementedError:
+            self.close_all()
         except tf.errors.CancelledError:
             pass
         except Exception:
@@ -166,8 +189,7 @@ class InputBatchQueueRunner(object):
             data_output[name].set_shape([self._batch_size] + list(shape))
 
         for name in data_output:
-            data_output[name] = \
-                squeeze_spatial_temporal_dim(data_output[name])
+            data_output[name] = squeeze_spatial_temporal_dim(data_output[name])
         return data_output
 
     def run_threads(self, session, coord, num_threads=1):
@@ -201,13 +223,13 @@ class InputBatchQueueRunner(object):
         """
 
         if not self._threads:
-            raise RuntimeError("the queue is not currently running")
+            tf.logging.warning("the queue threads is not currently running")
         try:
             self._coordinator.request_stop()
             self._coordinator.join(threads=self._threads,
                                    stop_grace_period_secs=0)
-        except RuntimeError:
+        except (RuntimeError, AttributeError):
             pass
         finally:
-            if not self._session._closed:
+            if (self._session is not None) and (not self._session._closed):
                 self._session.run(self._close_queue_op)

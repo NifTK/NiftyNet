@@ -88,8 +88,8 @@ class DataFromFile(Loadable):
             pass
         try:
             assert all([os.path.isfile(file_name) for file_name in path_array])
-            self._file_path = tuple(os.path.abspath(file_name)
-                                    for file_name in path_array)
+            self._file_path = \
+                tuple(os.path.abspath(file_name) for file_name in path_array)
             return
         except (TypeError, AssertionError, AttributeError):
             tf.logging.fatal(
@@ -267,7 +267,7 @@ class SpatialImage2D(DataFromFile):
         except (TypeError, ValueError):
             tf.logging.fatal(
                 "output interp_order should be an integer or"
-                "a sequence of integer that matches len(self.file_path)")
+                "a sequence of integers that matches len(self.file_path)")
             raise ValueError
 
     @property
