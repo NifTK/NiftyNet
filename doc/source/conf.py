@@ -16,6 +16,7 @@ import subprocess
 import os
 import sys
 import pip
+import shutil
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -31,7 +32,10 @@ root_dir_rel = os.path.join('..', '..')
 root_dir_abs = os.path.abspath(root_dir_rel)
 module_path = root_dir_abs
 sys.path.insert(0, module_path)
-logo_path = os.path.join('..', root_dir_rel, 'niftynet-logo.png')
+logo_file = 'niftynet-logo.png'
+logo_path_abs = os.path.join(root_dir_abs, logo_file)
+static_images_folder = 'images'
+logo_path = os.path.join(static_images_folder, logo_file)
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -43,6 +47,11 @@ exclude_patterns = [
     'setup.py',
 ]
 
+# Add any paths that contain custom static files (such as style sheets) here,
+# relative to this directory. They are copied after the builtin static files,
+# so a file named "default.css" will overwrite the builtin "default.css".
+html_static_path = ['_static']
+
 
 def generate_apidocs(*args):
     """Generate API docs automatically by trawling the available modules"""
@@ -50,6 +59,10 @@ def generate_apidocs(*args):
     # installed automatically via the requirements file installation hook
     # on ReadTheDocs.
     pip.main(['install', 'simpleitk'])
+
+    # Copy logo to static sub-folder for RTD to be able to locate it
+    os.mkdir(static_images_path)
+    shutil.copy(logo_path_abs, os.path.join(html_static_path, static_images_folder))
 
     global working_dir, module_path
     output_path = working_dir
@@ -137,11 +150,6 @@ html_theme_options = {
                    ' and image-guided therapy',
     'touch_icon': logo_path,
 }
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
 
 
 # -- Options for HTMLHelp output ------------------------------------------
