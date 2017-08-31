@@ -21,6 +21,16 @@ working_dir = os.path.abspath(os.path.dirname(__file__))
 module_path = os.path.abspath(os.path.join(working_dir, '..', '..'))
 sys.path.insert(0, module_path)
 
+# List of patterns, relative to source directory, that match files and
+# directories to ignore when looking for source files.
+# This patterns also effect to html_static_path and html_extra_path
+exclude_patterns = [
+    'tests',
+    'run_*',
+    'net_*',
+    'setup.py',
+]
+
 
 def generate_apidocs(*args):
     """Generate API docs automatically by trawling the available modules"""
@@ -30,7 +40,8 @@ def generate_apidocs(*args):
     if hasattr(sys, 'real_prefix'):  # called from a virtualenv
         apidoc_command_path = os.path.join(sys.prefix, 'bin', 'sphinx-apidoc')
         apidoc_command_path = os.path.abspath(apidoc_command_path)
-    subprocess.check_call([apidoc_command_path, '-o', output_path, module_path])
+    subprocess.check_call([apidoc_command_path, '-o', output_path, module_path,
+                           *exclude_patterns])
 
 
 def setup(app):
@@ -92,16 +103,6 @@ release = u''
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
 language = None
-
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = [
-    'tests',
-    'run_*',
-    'net_*',
-    'setup.py',
-]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
