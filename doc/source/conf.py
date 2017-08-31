@@ -50,7 +50,8 @@ exclude_patterns = [
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+static_folder = '_static'
+html_static_path = [static_folder]
 
 
 def generate_apidocs(*args):
@@ -61,7 +62,7 @@ def generate_apidocs(*args):
     pip.main(['install', 'simpleitk'])
 
     # Copy logo to static sub-folder for RTD to be able to locate it
-    static_images_path = os.path.join(html_static_path, static_images_folder)
+    static_images_path = os.path.join(static_folder, static_images_folder)
     os.mkdir(static_images_path)
     shutil.copy(logo_path_abs, static_images_path)
 
