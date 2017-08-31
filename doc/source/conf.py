@@ -63,7 +63,8 @@ def generate_apidocs(*args):
 
     # Copy logo to static sub-folder for RTD to be able to locate it
     static_images_path = os.path.join(static_folder, static_images_folder)
-    os.mkdir(static_images_path)
+    if not os.path.exists(static_images_path):
+        os.mkdir(static_images_path)
     shutil.copy(logo_path_abs, static_images_path)
 
     global working_dir, module_path
