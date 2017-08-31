@@ -22,6 +22,7 @@ root_dir_rel = os.path.join(working_dir, '..', '..')
 root_dir_abs = os.path.abspath(root_dir_rel)
 module_path = root_dir_abs
 sys.path.insert(0, module_path)
+logo_path = os.path.join('..', root_dir_rel, 'niftynet-logo.png')
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -125,7 +126,6 @@ html_theme = 'alabaster'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-logo_path = os.path.join(root_dir_abs, 'niftynet-logo.png')
 html_theme_options = {
     'logo': logo_path,
     'logo_name': 'true',
