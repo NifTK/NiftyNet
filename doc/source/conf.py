@@ -18,7 +18,8 @@ import sys
 
 
 working_dir = os.path.abspath(os.path.dirname(__file__))
-root_dir_abs = os.path.abspath(os.path.join(working_dir, '..', '..'))
+root_dir_rel = os.path.join(working_dir, '..', '..')
+root_dir_abs = os.path.abspath(root_dir_rel)
 module_path = root_dir_abs
 sys.path.insert(0, module_path)
 
