@@ -179,8 +179,17 @@ html_theme_options = {
     'sidebar_link': nn_red,
     'sidebar_search_button': nn_red,
     'sidebar_list': nn_black,
+    'anchor_hover_fg': nn_black,
+    'anchor_hover_bg': nn_gray,
     'note_bg': nn_gray,
     'note_border': nn_black,
+    'seealso_bg': nn_gray,
+    'seealso_border': nn_black,
+    'warn_bg': nn_red,
+    'warn_border': nn_black,
+    'footnote_bg': nn_gray,
+    'footnote_border': nn_black,
+    'pre_bg': nn_gray,
 }
 
 
