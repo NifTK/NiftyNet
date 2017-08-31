@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+sampling image by a sliding window
+"""
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
@@ -11,7 +14,7 @@ from niftynet.layer.base_layer import Layer
 
 class GridSampler(Layer, InputBatchQueueRunner):
     """
-    This class generators samples with a sliding window
+    This class generators ND image samples with a sliding window
     """
 
     def __init__(self,
@@ -111,19 +114,23 @@ def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
     """
     This function generates all coordinates of feasible windows, with
     step sizes specified in grid_size parameter
+
+    The border size changes the sampling locations but not the
+    corresponding window sizes of the coordinates.
+
     :param subject_id: integer value indicates the position of of this
     image in image_reader.file_list
 
     :param img_sizes: a dictionary of image shapes, {input_name: shape}
     :param win_sizes: a dictionary of window shapes, {input_name: shape}
-    :param border_size:
+    :param border_size: size of padding on both sides of each dim
     :return:
     """
     all_coordinates = {}
     for name, image_shape in img_sizes.items():
         window_shape = win_sizes[name]
-        grid_size = [win_size - 2 * border for (win_size, border)
-                     in zip(window_shape, border_size)]
+        grid_size = [max(win_size - 2 * border, 0)
+                     for (win_size, border) in zip(window_shape, border_size)]
         assert len(image_shape) >= N_SPATIAL, 'incompatible image shapes'
         assert len(window_shape) >= N_SPATIAL, 'incompatible window shapes'
         assert len(grid_size) >= N_SPATIAL, 'incompatible step sizes'
@@ -158,10 +165,16 @@ def _enumerate_step_points(starting, ending, win_size, step_size):
     :param step_size: integer of distance between two sampling points
     :return: a set of unique sampling points
     """
-    starting = max(int(starting), 0)
-    ending = max(int(ending), 0)
-    win_size = max(int(win_size), 1)
-    step_size = max(int(step_size), 1)
+    try:
+        starting = max(int(starting), 0)
+        ending = max(int(ending), 0)
+        win_size = max(int(win_size), 1)
+        step_size = max(int(step_size), 1)
+    except (TypeError, ValueError):
+        tf.logging.fatal(
+            'step points should be specified by integers, received:'
+            '%s, %s, %s, %s', starting, ending, win_size, step_size)
+        raise ValueError
     if starting > ending:
         starting, ending = ending, starting
     sampling_point_set = []

@@ -150,6 +150,7 @@ class InputBatchQueueRunner(object):
 
         except NotImplementedError:
             self.close_all()
+            raise
         except tf.errors.CancelledError:
             pass
         except Exception:
@@ -159,6 +160,7 @@ class InputBatchQueueRunner(object):
             traceback.print_exception(
                 exc_type, exc_value, exc_traceback, file=sys.stdout)
             self.close_all()
+            raise
         finally:
             pass
 
