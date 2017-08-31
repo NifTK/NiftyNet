@@ -158,14 +158,31 @@ html_sidebars = {
 # documentation.
 #
 font_family = ['Helvetica']
+nn_black = '#0A0A0A'
+nn_red = '#CC0000'
+nn_gray = '#DDDDDD'
+nn_dark_red = '#AE1111'
 html_theme_options = {
+    # logo
     'logo': logo_path,
     'logo_name': 'true',
     'description': 'An open-source CNN platform for medical image analysis'
                    ' and image-guided therapy',
     'touch_icon': logo_path,
+    # fonts
     'font_family': font_family,
     'head_font_family': font_family,
+    # colours
+    'body_text': nn_black,
+    'footer_text': nn_black,
+    'link': nn_red,
+    'sidebar_header': nn_black,
+    'sidebar_text': nn_black,
+    'sidebar_link': nn_red,
+    'sidebar_search_button': nn_red,
+    'sidebar_list': nn_black,
+    'note_bg': nn_gray,
+    'note_border': nn_black,
 }
 
 
