@@ -27,6 +27,12 @@ import shutil
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+# Add any paths that contain custom static files (such as style sheets) here,
+# relative to this directory. They are copied after the builtin static files,
+# so a file named "default.css" will overwrite the builtin "default.css".
+static_folder = '_static'
+html_static_path = [static_folder]
+
 working_dir = os.path.abspath(os.path.dirname(__file__))
 root_dir_rel = os.path.join('..', '..')
 root_dir_abs = os.path.abspath(root_dir_rel)
@@ -34,6 +40,8 @@ module_path = root_dir_abs
 sys.path.insert(0, module_path)
 logo_file = 'niftynet-logo.png'
 logo_path_abs = os.path.join(root_dir_abs, logo_file)
+about_html_file = 'about.html'
+about_html_path_abs = os.path.join(working_dir, static_folder, about_html_file)
 static_images_folder = 'images'
 logo_path = os.path.join(static_images_folder, logo_file)
 
@@ -47,12 +55,6 @@ exclude_patterns = [
     'setup.py',
 ]
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-static_folder = '_static'
-html_static_path = [static_folder]
-
 
 def generate_apidocs(*args):
     """Generate API docs automatically by trawling the available modules"""
@@ -61,13 +63,15 @@ def generate_apidocs(*args):
     # on ReadTheDocs.
     pip.main(['install', 'simpleitk'])
 
+    global working_dir, module_path, static_folder, static_images_folder
+
     # Copy logo to static sub-folder for RTD to be able to locate it
     static_images_path = os.path.join(static_folder, static_images_folder)
     if not os.path.exists(static_images_path):
         os.mkdir(static_images_path)
     shutil.copy(logo_path_abs, static_images_path)
+    shutil.copy(about_html_path_abs, static_folder)
 
-    global working_dir, module_path
     output_path = working_dir
     apidoc_command_path = 'sphinx-apidoc'
     if hasattr(sys, 'real_prefix'):  # called from a virtualenv
