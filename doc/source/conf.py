@@ -18,7 +18,8 @@ import sys
 
 
 working_dir = os.path.abspath(os.path.dirname(__file__))
-module_path = os.path.abspath(os.path.join(working_dir, '..', '..'))
+root_dir = os.path.abspath(os.path.join(working_dir, '..', '..'))
+module_path = root_dir
 sys.path.insert(0, module_path)
 
 # List of patterns, relative to source directory, that match files and
@@ -40,8 +41,9 @@ def generate_apidocs(*args):
     if hasattr(sys, 'real_prefix'):  # called from a virtualenv
         apidoc_command_path = os.path.join(sys.prefix, 'bin', 'sphinx-apidoc')
         apidoc_command_path = os.path.abspath(apidoc_command_path)
-    subprocess.check_call([apidoc_command_path, '-o', output_path, module_path,
-                           *exclude_patterns])
+    subprocess.check_call(
+        [apidoc_command_path, '-o', output_path, module_path] +
+        [os.path.join(root_dir, exclude_pattern) for exclude_pattern in exclude_patterns])
 
 
 def setup(app):
