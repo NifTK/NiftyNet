@@ -163,6 +163,7 @@ html_theme_options = {
     # logo
     'logo': logo_path,
     'logo_name': 'true',
+    'logo_text_align': 'center',
     'description': 'An open-source CNN platform for medical image analysis'
                    ' and image-guided therapy',
     'touch_icon': logo_path,
