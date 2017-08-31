@@ -199,6 +199,29 @@ class CoordinatesTest(tf.test.TestCase):
         self.assertAllClose(coords['label'], expected_label)
         pass
 
+    def test_2d_coordinates(self):
+        coords = grid_spatial_coordinates(
+            subject_id=1,
+            img_sizes={'image': (64, 64, 1, 1, 2),
+                       'label': (42, 42, 1, 1, 1)},
+            win_sizes={'image': (63, 63, 1),
+                       'label': (30, 32, 1)},
+            border_size=(2, 3, 4))
+        # first dim cooresponds to subject id
+        expected_image = np.array(
+            [[1, 0, 0, 0, 63, 63, 1],
+             [1, 1, 0, 0, 64, 63, 1],
+             [1, 0, 1, 0, 63, 64, 1],
+             [1, 1, 1, 0, 64, 64, 1]], dtype=np.int32)
+        self.assertAllClose(coords['image'], expected_image)
+        expected_label = np.array(
+            [[1, 0, 0, 0, 30, 32, 1],
+             [1, 12, 0, 0, 42, 32, 1],
+             [1, 0, 10, 0, 30, 42, 1],
+             [1, 12, 10, 0, 42, 42, 1]], dtype=np.int32)
+        self.assertAllClose(coords['label'], expected_label)
+        pass
+
     def test_nopadding_coordinates(self):
         coords = grid_spatial_coordinates(
             subject_id=1,

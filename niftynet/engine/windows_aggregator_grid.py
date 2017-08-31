@@ -19,10 +19,12 @@ from niftynet.layer.pad import PadLayer
 class GridSamplesAggregator(ImageWindowsAggregator):
     def __init__(self,
                  image_reader,
+                 name='image',
                  output_path='./',
                  window_border=(),
                  interp_order=0):
         ImageWindowsAggregator.__init__(self, image_reader=image_reader)
+        self.name = name
         self.image_out = None
         self.output_path = os.path.abspath(output_path)
         self.window_border = window_border
@@ -49,7 +51,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
 
     def _initialise_empty_image(self, image_id, n_channels, dtype=np.float):
         self.image_id = image_id
-        spatial_shape = self.input_image['image'].shape[:3]
+        spatial_shape = self.input_image[self.name].shape[:3]
         output_image_shape = spatial_shape + (n_channels,)
         empty_image = np.zeros(output_image_shape, dtype=dtype)
 

@@ -17,6 +17,7 @@ class ImageWindowsAggregator(object):
     output window data in numpy array. To access image-level
     information the reader is needed.
     """
+
     def __init__(self, image_reader=None):
         self.reader = image_reader
         self._image_id = None
@@ -83,16 +84,32 @@ class ImageWindowsAggregator(object):
         if len(window_shape) != 5:
             raise NotImplementedError(
                 "window shape not supported: {}".format(window_shape))
-        spatial_shape = window_shape[1:4]
+        spatial_shape = window_shape[1:-1]
+        n_spatial = len(spatial_shape)
         assert all([win_size > 2 * border_size
                     for (win_size, border_size)
-                    in zip(spatial_shape, border)]), \
+                    in zip(spatial_shape, border[:n_spatial])]), \
             "window sizes should be larger than inference border size * 2"
-        window = window[:,
-                 border[0]:spatial_shape[0] - border[0],
-                 border[1]:spatial_shape[1] - border[1],
-                 border[2]:spatial_shape[2] - border[2], ...]
-        for idx in range(3):
+        if n_spatial == 1:
+            window = window[:,
+                     border[0]:spatial_shape[0] - border[0],
+                     np.newaxis, np.newaxis, ...]
+        elif n_spatial == 2:
+            window = window[:,
+                     border[0]:spatial_shape[0] - border[0],
+                     border[1]:spatial_shape[1] - border[1],
+                     np.newaxis, ...]
+        elif n_spatial == 3:
+            window = window[:,
+                     border[0]:spatial_shape[0] - border[0],
+                     border[1]:spatial_shape[1] - border[1],
+                     border[2]:spatial_shape[2] - border[2], ...]
+        else:
+            tf.logging.fatal(
+                'unknown output format: shape %s'
+                ' spatial dims are: %s', window_shape, spatial_shape)
+            raise NotImplementedError
+        for idx in range(n_spatial):
             location[:, idx + 1] = location[:, idx + 1] + border[idx]
             location[:, idx + 4] = location[:, idx + 4] - border[idx]
         return window, location
