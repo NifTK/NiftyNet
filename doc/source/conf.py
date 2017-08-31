@@ -124,7 +124,13 @@ html_theme = 'alabaster'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+logo_path = os.path.join(root_dir, 'niftynet-logo.png')
+html_theme_options = {
+    'logo': logo_path,
+    'logo_name': 'true',
+    'description': 'An open-source CNN platform for medical image analysis and image-guided therapy',
+    'touch_icon': logo_path,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
