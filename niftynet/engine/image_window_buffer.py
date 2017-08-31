@@ -26,6 +26,7 @@ class InputBatchQueueRunner(object):
     The sampling threads can be stopped by:
     close_all() called externally -- all threads quit immediately
     """
+
     # pylint: disable=too-many-instance-attributes
     def __init__(self, capacity, shuffle=True):
         # define queue properties
@@ -97,7 +98,7 @@ class InputBatchQueueRunner(object):
                 shapes=input_shapes,
                 names=names,
                 name="shuffled_queue")
-            assert (self.capacity - self.capacity//2) >= self._batch_size, \
+            assert (self.capacity - self.capacity // 2) >= self._batch_size, \
                 "batch size larger than the largest possible dequeue size" \
                 "of the current queue capacity"
         else:

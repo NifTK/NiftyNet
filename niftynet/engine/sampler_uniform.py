@@ -106,7 +106,7 @@ class UniformSampler(Layer, InputBatchQueueRunner):
             yield output_dict
 
 
-def rand_spatial_coordinates(subject_id, img_sizes, win_sizes, n_samples):
+def rand_spatial_coordinates(subject_id, img_sizes, win_sizes, n_samples=1):
     """
     win_sizes could be different, for example in segmentation network
     input image window size is 32x32x10,
@@ -117,6 +117,7 @@ def rand_spatial_coordinates(subject_id, img_sizes, win_sizes, n_samples):
     These coordinates are then adjusted for each of the
     smaller window sizes (the output windows are concentric).
     """
+    n_samples = max(n_samples, 1)
     uniq_spatial_size = set([img_size[:N_SPATIAL]
                              for img_size in list(img_sizes.values())])
     if len(uniq_spatial_size) > 1:
@@ -135,7 +136,7 @@ def rand_spatial_coordinates(subject_id, img_sizes, win_sizes, n_samples):
     max_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
     for i in range(0, N_SPATIAL):
         assert uniq_spatial_size[i] >= max_spatial_win[i], \
-            "window size {} is larger than image size{}".format(
+            "window size {} is larger than image size {}".format(
                 max_spatial_win[i], uniq_spatial_size[i])
         max_coords[:, i] = np.random.randint(
             0, max(uniq_spatial_size[i] - max_spatial_win[i], 1), n_samples)

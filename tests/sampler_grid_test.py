@@ -21,7 +21,7 @@ MULTI_MOD_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(10, 10, 2)
+        spatial_window_size=(8, 10, 2)
     ),
     'FLAIR': ParserNamespace(
         csv_file=os.path.join('testing_data', 'FLAIRsampler.csv'),
@@ -31,7 +31,7 @@ MULTI_MOD_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(10, 10, 2)
+        spatial_window_size=(8, 10, 2)
     )
 }
 MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'))
@@ -45,10 +45,34 @@ MOD_2D_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(10, 10, 1)
+        spatial_window_size=(10, 7, 1)
     ),
 }
 MOD_2D_TASK = ParserNamespace(image=('ultrasound',))
+
+DYNAMIC_MOD_DATA = {
+    'T1': ParserNamespace(
+        csv_file=os.path.join('testing_data', 'T1sampler.csv'),
+        path_to_search='testing_data',
+        filename_contains=('_o_T1_time',),
+        filename_not_contains=('Parcellation',),
+        interp_order=3,
+        pixdim=None,
+        axcodes=None,
+        spatial_window_size=(8, 2)
+    ),
+    'FLAIR': ParserNamespace(
+        csv_file=os.path.join('testing_data', 'FLAIRsampler.csv'),
+        path_to_search='testing_data',
+        filename_contains=('FLAIR_',),
+        filename_not_contains=('Parcellation',),
+        interp_order=3,
+        pixdim=None,
+        axcodes=None,
+        spatial_window_size=(8, 2)
+    )
+}
+DYNAMIC_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'))
 
 
 def get_3d_reader():
@@ -56,9 +80,16 @@ def get_3d_reader():
     reader.initialise_reader(MULTI_MOD_DATA, MULTI_MOD_TASK)
     return reader
 
+
 def get_2d_reader():
     reader = ImageReader(['image'])
     reader.initialise_reader(MOD_2D_DATA, MOD_2D_TASK)
+    return reader
+
+
+def get_dynamic_window_reader():
+    reader = ImageReader(['image'])
+    reader.initialise_reader(DYNAMIC_MOD_DATA, DYNAMIC_MOD_TASK)
     return reader
 
 
@@ -74,21 +105,21 @@ class GridSamplerTest(tf.test.TestCase):
             coordinator = tf.train.Coordinator()
             sampler.run_threads(sess, coordinator, num_threads=2)
             out = sess.run(sampler.pop_batch_op())
-            self.assertAllClose(out['image'].shape, (10, 10, 10, 2, 2))
+            self.assertAllClose(out['image'].shape, (10, 8, 10, 2, 2))
         sampler.close_all()
 
     def test_25d_initialising(self):
         sampler = GridSampler(reader=get_3d_reader(),
                               data_param=MULTI_MOD_DATA,
                               batch_size=10,
-                              spatial_window_size=(1, 20, 20),
+                              spatial_window_size=(1, 20, 15),
                               window_border=(0, 0, 0),
                               queue_length=10)
         with self.test_session() as sess:
             coordinator = tf.train.Coordinator()
             sampler.run_threads(sess, coordinator, num_threads=2)
             out = sess.run(sampler.pop_batch_op())
-            self.assertAllClose(out['image'].shape, (10, 20, 20, 2))
+            self.assertAllClose(out['image'].shape, (10, 20, 15, 2))
         sampler.close_all()
 
     def test_2d_initialising(self):
@@ -102,8 +133,38 @@ class GridSamplerTest(tf.test.TestCase):
             coordinator = tf.train.Coordinator()
             sampler.run_threads(sess, coordinator, num_threads=1)
             out = sess.run(sampler.pop_batch_op())
-            self.assertAllClose(out['image'].shape, (10, 10, 10, 1))
+            self.assertAllClose(out['image'].shape, (10, 10, 7, 1))
         sampler.close_all()
+
+    def test_dynamic_window_initialising(self):
+        sampler = GridSampler(reader=get_dynamic_window_reader(),
+                              data_param=DYNAMIC_MOD_DATA,
+                              batch_size=10,
+                              spatial_window_size=None,
+                              window_border=(0, 0, 0),
+                              queue_length=10)
+        with self.test_session() as sess:
+            coordinator = tf.train.Coordinator()
+            sampler.run_threads(sess, coordinator, num_threads=1)
+            out = sess.run(sampler.pop_batch_op())
+            self.assertAllClose(out['image'].shape, (1, 8, 2, 256, 2))
+        sampler.close_all()
+
+    def test_name_mismatch(self):
+        with self.assertRaisesRegexp(KeyError, ""):
+            sampler = GridSampler(reader=get_dynamic_window_reader(),
+                                  data_param=MOD_2D_DATA,
+                                  batch_size=10,
+                                  spatial_window_size=None,
+                                  window_border=(0, 0, 0),
+                                  queue_length=10)
+        with self.assertRaisesRegexp(KeyError, ""):
+            sampler = GridSampler(reader=get_3d_reader(),
+                                  data_param=MOD_2D_DATA,
+                                  batch_size=10,
+                                  spatial_window_size=None,
+                                  window_border=(0, 0, 0),
+                                  queue_length=10)
 
 
 class CoordinatesTest(tf.test.TestCase):
@@ -176,6 +237,14 @@ class CoordinatesTest(tf.test.TestCase):
              [1, 2, 10, 0, 42, 42, 33],
              [1, 2, 10, 9, 42, 42, 42]], dtype=np.int32)
         self.assertAllClose(coords['label'], expected_label)
+        with self.assertRaisesRegexp(AssertionError, ""):
+            coords_1 = grid_spatial_coordinates(
+                subject_id=1,
+                img_sizes={'image': (64, 64, 64, 1, 2),
+                           'label': (42, 42, 42, 1, 1)},
+                win_sizes={'image': (63, 63, 40),
+                           'label': (80, 80, 33)},
+                border_size=(0, 0, 0))
 
 
 class StepPointsTest(tf.test.TestCase):
