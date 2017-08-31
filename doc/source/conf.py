@@ -157,14 +157,15 @@ html_sidebars = {
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
+font_family = ['Helvetica']
 html_theme_options = {
     'logo': logo_path,
     'logo_name': 'true',
     'description': 'An open-source CNN platform for medical image analysis'
                    ' and image-guided therapy',
     'touch_icon': logo_path,
-    'font_family': 'Helvetica',
-    'head_font_family': 'Helvetica',
+    'font_family': font_family,
+    'head_font_family': font_family,
 }
 
 
