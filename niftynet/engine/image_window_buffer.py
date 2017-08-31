@@ -139,6 +139,10 @@ class InputBatchQueueRunner(object):
                     break
                 self._session.run(self._enqueue_op, feed_dict=output_dict)
 
+            if output_dict is None:
+                tf.logging.fatal('no output from the sampler')
+                raise ValueError
+
             # push a set of stopping patches
             for _ in range(self.capacity + self._batch_size):
                 if self._session._closed:
@@ -210,6 +214,11 @@ class InputBatchQueueRunner(object):
         :param num_threads: integer specifies the number of threads
         :return:
         """
+        num_threads = max(int(num_threads), 1)
+        if num_threads > 1 and isinstance(self._queue, tf.FIFOQueue):
+            tf.logging.warning('Only one thread for FIFO Queues')
+            num_threads = 1
+
         tf.logging.info('Starting preprocessing threads...')
         self._session = session
         self._coordinator = coord
