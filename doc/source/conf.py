@@ -15,6 +15,7 @@
 import subprocess
 import os
 import sys
+import pip
 
 
 working_dir = os.path.abspath(os.path.dirname(__file__))
@@ -37,6 +38,11 @@ exclude_patterns = [
 
 def generate_apidocs(*args):
     """Generate API docs automatically by trawling the available modules"""
+    # SimpleITK is an optional dependency, which is why it doesn't get
+    # installed automatically via the requirements file installation hook
+    # on ReadTheDocs.
+    pip.main(['install', 'simpleitk'])
+
     global working_dir, module_path
     output_path = working_dir
     apidoc_command_path = 'sphinx-apidoc'
