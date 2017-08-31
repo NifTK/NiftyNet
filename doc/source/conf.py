@@ -147,6 +147,7 @@ html_theme = 'alabaster'
 html_sidebars = {
     '**': [
         'about.html',
+        'localtoc.html',
     ]
 }
 
