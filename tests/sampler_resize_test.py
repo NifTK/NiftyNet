@@ -96,7 +96,7 @@ class ResizeSamplerTest(tf.test.TestCase):
             reader=get_3d_reader(),
             data_param=MULTI_MOD_DATA,
             batch_size=1,
-            shuffle_buffer=True,
+            shuffle_buffer=False,
             queue_length=1)
         with self.test_session() as sess:
             coordinator = tf.train.Coordinator()
@@ -118,6 +118,7 @@ class ResizeSamplerTest(tf.test.TestCase):
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, [1, 8, 2, 256, 2])
         sampler.close_all()
+
 
     def test_2d_init(self):
         sampler = ResizeSampler(

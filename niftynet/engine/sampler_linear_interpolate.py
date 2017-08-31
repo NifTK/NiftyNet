@@ -37,6 +37,9 @@ class LinearInterpolateSampler(Layer, InputBatchQueueRunner):
             self.reader.shapes,
             self.reader.tf_dtypes,
             data_param)
+        # only try to use the first spatial shape available
+        image_spatial_shape = self.reader.shapes.values()[0][:3]
+        self.window.set_spatial_shape(image_spatial_shape)
 
         tf.logging.info('initialised window instance')
         self._create_queue_and_ops(self.window,
