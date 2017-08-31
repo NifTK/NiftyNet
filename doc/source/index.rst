@@ -7,7 +7,7 @@
 NiftyNet
 ========
 
-NiftyNet is a `TensorFlow`_-based [#]_ open-source convolutional neural networks (CNN) platform for research in medical image analysis and image-guided therapy.
+NiftyNet is a `TensorFlow`_-based open-source convolutional neural networks (CNN) platform for research in medical image analysis and image-guided therapy.
 NiftyNet's modular structure is designed for sharing networks and pre-trained models.
 Using this modular structure you can:
 
@@ -17,11 +17,11 @@ Using this modular structure you can:
 
 NiftyNet is a consortium of research groups (WEISS -- `Wellcome EPSRC Centre for Interventional and Surgical Sciences`_, CMIC -- `Centre for Medical Image Computing`_, HIG -- High-dimensional Imaging Group), where WEISS acts as the consortium lead.
 
-.. [#] Please see the `NiftyNet source code repository`_ for NiftyNet features and installation instructions.
-
 
 Getting started
 ---------------
+
+Please see the `NiftyNet source code repository`_ for a detailed list of features and installation instructions.
 
 Please follow the links below for the API documentation:
 
