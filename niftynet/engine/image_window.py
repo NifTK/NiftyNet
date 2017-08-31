@@ -118,11 +118,18 @@ class ImageWindow(object):
         self.n_samples = 1 if self.has_dynamic_shapes else n_samples
 
         names = list(self.names)
-        placeholders = [
-            tf.placeholder(dtype=self.dtypes[name],
-                           shape=[self.n_samples] + list(self.shapes[name]),
-                           name=name)
-            for name in names]
+        placeholders = []
+        try:
+            placeholders = [
+                tf.placeholder(
+                    dtype=self.dtypes[name],
+                    shape=[self.n_samples] + list(self.shapes[name]),
+                    name=name)
+                for name in names]
+        except TypeError:
+            tf.logging.fatal(
+                'shape should be defined as dict of iterable %s', self.shapes)
+            raise
         # extending names with names of coordinates
         names.extend([LOCATION_FORMAT.format(name) for name in names])
         # extending placeholders with names of coordinates
@@ -186,9 +193,12 @@ class ImageWindow(object):
          the window size is fully specified.
         """
         for shape in list(self.shapes.values()):
-            for dim_length in shape:
-                if not dim_length:
-                    return True
+            try:
+                for dim_length in shape:
+                    if not dim_length:
+                        return True
+            except TypeError:
+                return False
         return False
 
     def match_image_shapes(self, image_shapes):
