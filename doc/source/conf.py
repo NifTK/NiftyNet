@@ -142,6 +142,17 @@ todo_include_todos = False
 #
 html_theme = 'alabaster'
 
+# html_sidebars is needed to force the inclusion of (at least) about.html so
+# that the logo is displayed.
+html_sidebars = {
+    '**': [
+        'about.html',
+        'navigation.html',
+        'relations.html',
+        'searchbox.html',
+    ]
+}
+
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
