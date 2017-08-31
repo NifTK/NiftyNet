@@ -61,8 +61,9 @@ def generate_apidocs(*args):
     pip.main(['install', 'simpleitk'])
 
     # Copy logo to static sub-folder for RTD to be able to locate it
+    static_images_path = os.path.join(html_static_path, static_images_folder)
     os.mkdir(static_images_path)
-    shutil.copy(logo_path_abs, os.path.join(html_static_path, static_images_folder))
+    shutil.copy(logo_path_abs, static_images_path)
 
     global working_dir, module_path
     output_path = working_dir
