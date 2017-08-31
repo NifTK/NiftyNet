@@ -18,6 +18,14 @@ import sys
 import pip
 
 
+# If extensions (or modules to document with autodoc) are in another directory,
+# add these directories to sys.path here. If the directory is relative to the
+# documentation root, use os.path.abspath to make it absolute, like shown here.
+#
+# import os
+# import sys
+# sys.path.insert(0, os.path.abspath('.'))
+
 working_dir = os.path.abspath(os.path.dirname(__file__))
 root_dir_rel = os.path.join(working_dir, '..', '..')
 root_dir_abs = os.path.abspath(root_dir_rel)
@@ -51,23 +59,13 @@ def generate_apidocs(*args):
         apidoc_command_path = os.path.abspath(apidoc_command_path)
     subprocess.check_call(
         [apidoc_command_path, '-o', output_path, module_path] +
-        [os.path.join(root_dir_abs, exclude_pattern) for exclude_pattern in exclude_patterns])
+        [os.path.join(root_dir_abs, pattern) for pattern in exclude_patterns])
 
 
 def setup(app):
     # Hook to allow for automatic generation of API docs
     # before doc deployment begins.
     app.connect('builder-inited', generate_apidocs)
-
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
-
 
 # -- General configuration ------------------------------------------------
 
@@ -135,7 +133,8 @@ html_theme = 'alabaster'
 html_theme_options = {
     'logo': logo_path,
     'logo_name': 'true',
-    'description': 'An open-source CNN platform for medical image analysis and image-guided therapy',
+    'description': 'An open-source CNN platform for medical image analysis'
+                   ' and image-guided therapy',
     'touch_icon': logo_path,
 }
 
