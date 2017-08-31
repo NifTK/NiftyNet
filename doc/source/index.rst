@@ -28,8 +28,8 @@ Please follow the links below for the API documentation:
 * `Alphabetical index of the public API`_
 * `List of all modules`_
 
-.. _`Alphabetical index of the public API`: genindex
-.. _`List of all modules`: modindex
+.. _`Alphabetical index of the public API`: :ref:`genindex`
+.. _`List of all modules`: :ref:`modindex`
 
 
 
