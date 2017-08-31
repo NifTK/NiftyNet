@@ -18,8 +18,8 @@ import sys
 
 
 working_dir = os.path.abspath(os.path.dirname(__file__))
-root_dir = os.path.abspath(os.path.join(working_dir, '..', '..'))
-module_path = root_dir
+root_dir_abs = os.path.abspath(os.path.join(working_dir, '..', '..'))
+module_path = root_dir_abs
 sys.path.insert(0, module_path)
 
 # List of patterns, relative to source directory, that match files and
@@ -43,7 +43,7 @@ def generate_apidocs(*args):
         apidoc_command_path = os.path.abspath(apidoc_command_path)
     subprocess.check_call(
         [apidoc_command_path, '-o', output_path, module_path] +
-        [os.path.join(root_dir, exclude_pattern) for exclude_pattern in exclude_patterns])
+        [os.path.join(root_dir_abs, exclude_pattern) for exclude_pattern in exclude_patterns])
 
 
 def setup(app):
@@ -124,7 +124,7 @@ html_theme = 'alabaster'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-logo_path = os.path.join(root_dir, 'niftynet-logo.png')
+logo_path = os.path.join(root_dir_abs, 'niftynet-logo.png')
 html_theme_options = {
     'logo': logo_path,
     'logo_name': 'true',
