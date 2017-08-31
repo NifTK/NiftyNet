@@ -12,6 +12,33 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import subprocess
+import os
+import sys
+
+
+working_dir = os.path.abspath(os.path.dirname(__file__))
+module_path = os.path.abspath(os.path.join(working_dir, '..', '..'))
+sys.path.insert(0, module_path)
+
+
+def generate_apidocs(*args):
+    """Generate API docs automatically by trawling the available modules"""
+    global working_dir, module_path
+    output_path = working_dir
+    apidoc_command_path = 'sphinx-apidoc'
+    if hasattr(sys, 'real_prefix'):  # called from a virtualenv
+        apidoc_command_path = os.path.join(sys.prefix, 'bin', 'sphinx-apidoc')
+        apidoc_command_path = os.path.abspath(apidoc_command_path)
+    subprocess.check_call([apidoc_command_path, '-o', output_path, module_path])
+
+
+def setup(app):
+    # Hook to allow for automatic generation of API docs
+    # before doc deployment begins.
+    app.connect('builder-inited', generate_apidocs)
+
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
