@@ -75,21 +75,23 @@ class ImageWindowsAggregator(object):
         :return:
         """
         if border == ():
-            return window, location
+            border = (0, 0, 0)
         assert len(border) == 3, \
             "unknown border format (should be an array of" \
             "three elements corresponding to 3 spatial dims"
 
         window_shape = window.shape
-        if len(window_shape) != 5:
-            raise NotImplementedError(
-                "window shape not supported: {}".format(window_shape))
+        # if len(window_shape) != 5:
+        #     raise NotImplementedError(
+        #         "window shape not supported: {}".format(window_shape))
         spatial_shape = window_shape[1:-1]
         n_spatial = len(spatial_shape)
+        # import pdb; pdb.set_trace()
         assert all([win_size > 2 * border_size
                     for (win_size, border_size)
                     in zip(spatial_shape, border[:n_spatial])]), \
-            "window sizes should be larger than inference border size * 2"
+            "window sizes should be larger than inference border size * 2" \
+            " received: {}: {}".format(spatial_shape, border[:n_spatial])
         if n_spatial == 1:
             window = window[:,
                      border[0]:spatial_shape[0] - border[0],

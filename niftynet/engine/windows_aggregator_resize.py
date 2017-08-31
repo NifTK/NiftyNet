@@ -20,7 +20,7 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
     def __init__(self,
                  image_reader,
                  name='image',
-                 output_path='./',
+                 output_path=os.path.join('.', 'output'),
                  window_border=(),
                  interp_order=0):
         ImageWindowsAggregator.__init__(self, image_reader=image_reader)

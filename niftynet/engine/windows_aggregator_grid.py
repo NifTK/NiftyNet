@@ -20,7 +20,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
     def __init__(self,
                  image_reader,
                  name='image',
-                 output_path='./',
+                 output_path=os.path.join('.', 'output'),
                  window_border=(),
                  interp_order=0):
         ImageWindowsAggregator.__init__(self, image_reader=image_reader)
@@ -71,7 +71,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                 self.image_out, _ = layer.inverse_op(self.image_out)
         subject_name = self.reader.get_subject_id(self.image_id)
         filename = "{}_niftynet_out.nii.gz".format(subject_name)
-        source_image_obj = self.input_image['image']
+        source_image_obj = self.input_image[self.name]
         misc_io.save_data_array(self.output_path,
                                 filename,
                                 self.image_out,

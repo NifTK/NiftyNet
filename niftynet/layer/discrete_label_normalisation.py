@@ -59,9 +59,10 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
         # mapped_data = np.vectorize(map_dict.get)(label_data)
         image_shape = label_data.shape
         label_data = label_data.reshape(-1)
+        mapped_data = np.zeros_like(label_data)
         for (new_id, original) in enumerate(mapping):
-            label_data[label_data == original] = new_id
-        label_data = label_data.reshape(image_shape)
+            mapped_data[label_data == original] = new_id
+        label_data = mapped_data.reshape(image_shape)
 
         if isinstance(image, dict):
             image[self.image_name] = label_data
@@ -85,10 +86,10 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
                 self.key, self.model_file)
         image_shape = label_data.shape
         label_data = label_data.reshape(-1)
+        mapped_data = np.zeros_like(label_data)
         for (new_id, original) in enumerate(mapping):
-            label_data[label_data == new_id] = original
-        label_data = label_data.reshape(image_shape)
-
+            mapped_data[label_data == new_id] = original
+        label_data = mapped_data.reshape(image_shape)
         if isinstance(image, dict):
             image[self.image_name] = label_data
             return image, mask

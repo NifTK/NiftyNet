@@ -151,7 +151,8 @@ def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
                 starting_coords[:, idx] + window_shape[idx]
         max_coordinates = np.max(spatial_coords, axis=0)[N_SPATIAL:]
         assert np.all(max_coordinates <= image_shape[:N_SPATIAL]), \
-            "window size greater than the spatial coordinates"
+            "window size greater than the spatial coordinates {} : {}".format(
+                max_coordinates, image_shape)
         subject_list = np.ones((n_locations, 1), dtype=np.int32) * subject_id
         spatial_coords = np.append(subject_list, spatial_coords, axis=1)
         all_coordinates[name] = spatial_coords

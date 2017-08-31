@@ -27,10 +27,14 @@ class PadLayer(Layer, Invertible):
     def layer_op(self, input_image, mask=None):
         if not isinstance(input_image, dict):
             full_border = match_ndim(self.border, input_image.ndim)
-            return np.pad(input_image, full_border, mode='minimum'), mask
+            input_image = np.pad(input_image, full_border, mode='minimum')
+            return input_image, mask
 
         for name, image in input_image.items():
             if name not in self.image_name:
+                tf.logging.warning(
+                    'could not pad, dict name %s not in %s',
+                    name, self.image_name)
                 continue
             full_border = match_ndim(self.border, image.ndim)
             input_image[name] = np.pad(image, full_border, mode='minimum')
@@ -40,9 +44,9 @@ class PadLayer(Layer, Invertible):
         if not isinstance(input_image, dict):
             try:
                 outputs = input_image[
-                          self.border[0][0]:-self.border[0][0],
-                          self.border[1][0]:-self.border[1][0],
-                          self.border[2][0]:-self.border[2][0], ...]
+                          self.border[0][0]:(-self.border[0][0]),
+                          self.border[1][0]:(-self.border[1][0]),
+                          self.border[2][0]:(-self.border[2][0]), ...]
             except IndexError:
                 tf.logging.fatal(
                     "unable to inverse the padding "
@@ -55,9 +59,9 @@ class PadLayer(Layer, Invertible):
                 continue
             try:
                 input_image[name] = image[
-                                    self.border[0][0]:-self.border[0][0],
-                                    self.border[1][0]:-self.border[1][0],
-                                    self.border[2][0]:-self.border[2][0], ...]
+                                    self.border[0][0]:(-self.border[0][0]),
+                                    self.border[1][0]:(-self.border[1][0]),
+                                    self.border[2][0]:(-self.border[2][0]), ...]
             except IndexError:
                 tf.logging.fatal(
                     "unable to inverse the padding "

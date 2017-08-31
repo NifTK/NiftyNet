@@ -13,7 +13,7 @@ from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
 class WindowAsImageAggregator(ImageWindowsAggregator):
     def __init__(self,
                  image_reader=None,
-                 output_path='./'):
+                 output_path=os.path.join('.', 'output')):
         ImageWindowsAggregator.__init__(self, image_reader=image_reader)
         self.output_path = os.path.abspath(output_path)
         self.output_id = {'base_name': None, 'relative_id': 0}

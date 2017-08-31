@@ -246,7 +246,7 @@ def _read_window_sizes(input_mod_list, input_data_param):
     uniq_window_set = set(window_sizes)
     if len(uniq_window_set) > 1:
         # pylint: disable=logging-format-interpolation
-        tf.logging.info(
+        tf.logging.fatal(
             "trying to combine input sources "
             "with different window sizes: %s", window_sizes)
         raise NotImplementedError
