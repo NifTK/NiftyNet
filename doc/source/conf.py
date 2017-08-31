@@ -156,7 +156,7 @@ html_sidebars = {
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-font_family = ['Helvetica']
+font_family = ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif']
 nn_black = '#0A0A0A'
 nn_red = '#CC0000'
 nn_gray = '#DDDDDD'
