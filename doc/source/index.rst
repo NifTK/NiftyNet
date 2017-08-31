@@ -25,8 +25,12 @@ Please see the `NiftyNet source code repository`_ for a detailed list of feature
 
 Please follow the links below for the API documentation:
 
-* :ref:`genindex`
-* :ref:`modindex`
+* `Alphabetical index of the public API`_
+* `List of all modules`_
+
+.. _`Alphabetical index of the public API`: :ref:`genindex`
+.. _`List of all modules`: :ref:`modindex`
+
 
 
 Citing NiftyNet
