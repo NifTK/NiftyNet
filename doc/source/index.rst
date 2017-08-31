@@ -25,11 +25,11 @@ Please see the `NiftyNet source code repository`_ for a detailed list of feature
 
 Please follow the links below for the API documentation:
 
-* |Alphabetical index of the public API|
-* |List of all modules|
+* `Alphabetical index of the public API`_
+* `List of all modules`_
 
-.. |Alphabetical index of the public API| ref:: genindex
-.. |List of all modules| ref:: modindex
+.. _`Alphabetical index of the public API`: :ref:`genindex`
+.. _`List of all modules`: :ref:`modindex`
 
 
 
