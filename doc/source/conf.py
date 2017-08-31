@@ -163,6 +163,8 @@ html_theme_options = {
     'description': 'An open-source CNN platform for medical image analysis'
                    ' and image-guided therapy',
     'touch_icon': logo_path,
+    'font_family': 'Helvetica',
+    'head_font_family': 'Helvetica',
 }
 
 
