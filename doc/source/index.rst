@@ -9,24 +9,34 @@ NiftyNet
 
 NiftyNet is a `TensorFlow`_-based open-source convolutional neural networks (CNN) platform for research in medical image analysis and image-guided therapy.
 NiftyNet's modular structure is designed for sharing networks and pre-trained models.
-Using this modular structure you can:
-
-* Get started with established pre-trained networks using built-in tools
-* Adapt existing networks to your imaging data
-* Quickly build new solutions to your own image analysis problems
-
 NiftyNet is a consortium of research groups (WEISS -- `Wellcome EPSRC Centre for Interventional and Surgical Sciences`_, CMIC -- `Centre for Medical Image Computing`_, HIG -- High-dimensional Imaging Group), where WEISS acts as the consortium lead.
 
 
 Getting started
 ---------------
 
+Using NiftyNet's modular structure you can:
+
+* Get started with established pre-trained networks using built-in tools
+* Adapt existing networks to your imaging data
+* Quickly build new solutions to your own image analysis problems
+
 Please see the `NiftyNet source code repository`_ for a detailed list of features and installation instructions.
 
-Please follow the links below for the API documentation:
+Examples
+--------
 
-* :ref:`genindex`
-* :ref:`modindex`
+We are working to provide examples here showing how NiftyNet can be used and adapted to different image analysis problems.
+In the mean time please see the `NiftyNet demos`_ and `network (re-)implementations`_.
+
+.. _`NiftyNet demos`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/tree/dev/demos
+.. _`network (re-)implementations`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/tree/dev/niftynet/network
+
+
+API reference
+-------------
+
+Please see the :ref:`modindex`.
 
 
 Citing NiftyNet
@@ -72,12 +82,13 @@ This project is grateful for the support from the `Wellcome Trust`_, the `Engine
 .. _`NVIDIA`: http://www.nvidia.com
 
 
-.. toctree::
-   :maxdepth: 4
-   :caption: Contents:
-
-
 Useful links
 ------------
 
+* :ref:`genindex`
 * :ref:`search`
+
+
+.. toctree::
+   :maxdepth: 4
+   :caption: Contents:
