@@ -142,6 +142,38 @@ todo_include_todos = False
 #
 html_theme = 'classic'
 
+# Theme options are theme-specific and customize the look and feel of a theme
+# further.  For a list of options available for each theme, see the
+# documentation.
+#
+font_family = ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif']
+nn_black = '#0A0A0A'
+nn_red = '#CC0000'
+nn_gray = '#DDDDDD'
+nn_dark_red = '#AE1111'
+nn_white = '#FEFEFE'
+html_theme_options = {
+    'footerbgcolor': nn_gray,
+    'footertextcolor': nn_black,
+    'sidebarbgcolor': nn_white,
+    'sidebartextcolor': nn_black,
+    'sidebarlinkcolor': nn_red,
+    'relbarbgcolor': nn_white,
+    'relbartextcolor': nn_black,
+    'relbarlinkcolor': nn_red,
+    'bgcolor': nn_white,
+    'textcolor': nn_black,
+    'linkcolor': nn_red,
+    'visitedlinkcolor': nn_dark_red,
+    'headbgcolor': nn_white,
+    'headtextcolor': nn_black,
+    'headlinkcolor': nn_red,
+    'codebgcolor': nn_gray,
+    'codetextcolor': nn_black,
+    'bodyfont': font_family,
+    'headfont': font_family,
+}
+
 """
 # TODO: these are needed for customising the alabaster theme
 # html_sidebars is needed to force the inclusion of (at least) about.html so
