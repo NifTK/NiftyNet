@@ -14,6 +14,7 @@ from niftynet.engine.sampler_resize import zoom_3d
 from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
+from niftynet.layer.pad import PadLayer
 
 
 class ResizeSamplesAggregator(ImageWindowsAggregator):
@@ -35,48 +36,49 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         for batch_id in range(n_samples):
             if self._is_stopping_signal(location[batch_id]):
                 return False
-            self.image_id, _, _, _, _, _, _ = location[batch_id, :]
-            self.image_ref = self._initialise_empty_image(
+            self.image_id = location[batch_id, 0]
+            resize_to_shape = self._initialise_image_shape(
                 image_id=self.image_id,
-                n_channels=window.shape[-1],
-                dtype=window.dtype)
-            self._save_current_image(window[batch_id, ...])
-
+                n_channels=window.shape[-1])
+            self._save_current_image(window[batch_id, ...], resize_to_shape)
         return True
 
-    def _initialise_empty_image(self, image_id, n_channels, dtype=np.float):
+    def _initialise_image_shape(self, image_id, n_channels):
         self.image_id = image_id
         spatial_shape = self.input_image[self.name].shape[:3]
         output_image_shape = spatial_shape + (1, n_channels,)
-        empty_image = np.zeros(output_image_shape, dtype=dtype)
+        empty_image = np.zeros(output_image_shape, dtype=np.bool)
+        for layer in self.reader.preprocessors:
+            if isinstance(layer, PadLayer):
+                empty_image, _ = layer(empty_image)
+        return empty_image.shape
 
-        return empty_image
-
-    def _save_current_image(self, image_out):
+    def _save_current_image(self, image_out, resize_to):
         if self.input_image is None:
             return
-
-        for layer in reversed(self.reader.preprocessors):
-            if isinstance(layer, DiscreteLabelNormalisationLayer):
-                image_out, _ = layer.inverse_op(image_out)
-        window_shape = self.input_image[self.name].shape
+        window_shape = resize_to
         while image_out.ndim < 5:
             image_out = image_out[..., np.newaxis, :]
         image_shape = image_out.shape
-        zoom_ratio = [p / d for p, d in zip(window_shape, image_shape)]
+        zoom_ratio = \
+            [float(p) / float(d) for p, d in zip(window_shape, image_shape)]
         image_shape = list(image_shape[:3]) + [1, image_shape[-1]]
         image_out = np.reshape(image_out, image_shape)
+        image_out = zoom_3d(image=image_out,
+                            ratio=zoom_ratio,
+                            interp_order=self.output_interp_order)
 
-        self.image_ref[...] = zoom_3d(
-            image=image_out,
-            ratio=zoom_ratio,
-            interp_order=self.output_interp_order)
+        for layer in reversed(self.reader.preprocessors):
+            if isinstance(layer, PadLayer):
+                image_out, _ = layer.inverse_op(image_out)
+            if isinstance(layer, DiscreteLabelNormalisationLayer):
+                image_out, _ = layer.inverse_op(image_out)
         subject_name = self.reader.get_subject_id(self.image_id)
         filename = "{}_niftynet_out.nii.gz".format(subject_name)
         source_image_obj = self.input_image[self.name]
         misc_io.save_data_array(self.output_path,
                                 filename,
-                                self.image_ref,
+                                image_out,
                                 source_image_obj,
                                 self.output_interp_order)
         return

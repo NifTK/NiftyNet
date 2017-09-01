@@ -164,14 +164,18 @@ class ImageReader(Layer):
 
     @property
     def shapes(self):
+        """
+        image shapes before any preprocessing
+        :return: tuple of integers as image shape
+        """
+        # to have fast access, the spatial dimensions are not accurate
+        # 1) only read from the first image in list
+        # 2) not considering effects of random augmentation layers
+        # but time and modality dimensions should be correct
         if not self.output_list:
             tf.logging.fatal("please initialise the reader first")
             raise RuntimeError
         if not self._shapes:
-            # to have fast access, the spatial dimensions are not accurate
-            # 1) only read from the first image in list
-            # 2) not considering effects of random augmentation layers
-            # but time and modality dimensions should be correct
             first_image = self.output_list[0]
             self._shapes = {field: first_image[field].shape
                             for field in self.names}

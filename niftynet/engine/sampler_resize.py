@@ -91,8 +91,9 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
                         # already in the same shape
                         image_window = data[name]
                     else:
-                        zoom_ratio = [
-                            p / d for p, d in zip(window_shape, image_shape)]
+                        zoom_ratio = \
+                            [float(p) / float(d) for p, d in
+                             zip(window_shape, image_shape)]
                         image_window = zoom_3d(
                             image=data[name],
                             ratio=zoom_ratio,
