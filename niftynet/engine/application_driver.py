@@ -359,15 +359,21 @@ class ApplicationDriver(object):
         # pylint: disable=no-name-in-module
         from tensorflow.python.client import device_lib
         devices = device_lib.list_local_devices()
-        has_local_gpu = any([x.device_type == 'GPU' for x in devices])
+        n_local_gpus = sum([x.device_type == 'GPU' for x in devices])
         if self.num_gpus <= 0:  # user specified no gpu at all
             return '/cpu:{}'.format(device_id)
         if self.is_training:
-            # in training: use gpu only for workers whenever has_local_gpu
-            device = 'gpu' if (is_worker and has_local_gpu) else 'cpu'
+            # in training: use gpu only for workers whenever n_local_gpus
+            device = 'gpu' if (is_worker and n_local_gpus > 0) else 'cpu'
+            if device == 'gpu' and device_id >= n_local_gpus:
+                tf.logging.fatal(
+                    'trying to use gpu id %s, but only has %s GPU(s), '
+                    'please set num_gpus to %s at most',
+                    device_id, n_local_gpus, n_local_gpus)
+                raise ValueError
             return '/{}:{}'.format(device, device_id)
-        # in inference: use gpu for everything whenever has_local_gpu
-        return '/gpu:0' if has_local_gpu else '/cpu:0'
+        # in inference: use gpu for everything whenever n_local_gpus
+        return '/gpu:0' if n_local_gpus > 0 else '/cpu:0'
 
     @staticmethod
     def _console_vars_to_str(console_dict):
