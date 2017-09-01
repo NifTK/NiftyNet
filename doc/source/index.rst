@@ -73,7 +73,7 @@ This project is grateful for the support from the `Wellcome Trust`_, the `Engine
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Contents:
 
 
