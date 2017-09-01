@@ -146,7 +146,6 @@ html_theme = 'classic'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-font_family = ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif']
 nn_black = '#0A0A0A'
 nn_red = '#CC0000'
 nn_gray = '#DDDDDD'
@@ -170,8 +169,6 @@ html_theme_options = {
     'headlinkcolor': nn_red,
     'codebgcolor': nn_gray,
     'codetextcolor': nn_black,
-    'bodyfont': font_family,
-    'headfont': font_family,
 }
 
 """
