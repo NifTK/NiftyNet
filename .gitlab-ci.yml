@@ -27,10 +27,12 @@ testjob:
     - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
 
     # download data
-    - wget -q https://www.dropbox.com/s/y7mdh4m9ptkibax/example_volumes.tar.gz
-    - tar -xzvf example_volumes.tar.gz
-      #- wget -q https://www.dropbox.com/s/94wa4fl8f8k3aie/testing_data.tar.gz
-      #- tar -xzvf testing_data.tar.gz
+    # - wget -q https://www.dropbox.com/s/y7mdh4m9ptkibax/example_volumes.tar.gz
+    # - tar -xzvf example_volumes.tar.gz
+    - wget -q https://www.dropbox.com/s/lioecnpv82r5n6e/example_volumes_v0_2.tar.gz
+    - tar -xzvf example_volumes_v0_2.tar.gz
+    # - wget -q https://www.dropbox.com/s/94wa4fl8f8k3aie/testing_data.tar.gz
+    # - tar -xzvf testing_data.tar.gz
     - wget -q https://www.dropbox.com/s/p7b3t2c3mewtree/testing_data_v0_2.tar.gz
     - tar -xzvf testing_data_v0_2.tar.gz
 
@@ -60,6 +62,15 @@ testjob:
     - coverage run -a --source . net_segment.py train -c config/default_multimodal_segmentation.ini --batch_size 3
     - coverage run -a --source . net_segment.py inference -c config/default_multimodal_segmentation.ini --spatial_window_size 64,64 --batch_size 7
 
+
+    - coverage run -a --source . net_gan.py train -c config/GAN_demo_train_config.ini --max_iter 5
+    - coverage run -a --source . net_gan.py inference -c config/GAN_demo_train_config.ini
+
+    - coverage run -a --source . net_autoencoder.py train -c config/vae_config.ini --max_iter 5
+    - coverage run -a --source . net_autoencoder.py inference -c config/vae_config.ini --inference_type sample
+    - coverage run -a --source . net_autoencoder.py inference -c config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
+    - coverage run -a --source . net_autoencoder.py inference -c config/vae_config.ini --inference_type encode-decode
+
     - coverage run -a --source . -m unittest discover -s "tests" -p "*_test.py"
     - coverage report -m
     - echo 'finished test'
@@ -87,8 +98,10 @@ quicktest:
     - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
 
     # download data
-    - wget -q https://www.dropbox.com/s/y7mdh4m9ptkibax/example_volumes.tar.gz
-    - tar -xzvf example_volumes.tar.gz
+    # - wget -q https://www.dropbox.com/s/y7mdh4m9ptkibax/example_volumes.tar.gz
+    # - tar -xzvf example_volumes.tar.gz
+    - wget -q https://www.dropbox.com/s/lioecnpv82r5n6e/example_volumes_v0_2.tar.gz
+    - tar -xzvf example_volumes_v0_2.tar.gz
       #- wget -q https://www.dropbox.com/s/94wa4fl8f8k3aie/testing_data.tar.gz
       #- tar -xzvf testing_data.tar.gz
     - wget -q https://www.dropbox.com/s/p7b3t2c3mewtree/testing_data_v0_2.tar.gz
