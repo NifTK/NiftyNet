@@ -172,6 +172,8 @@ html_theme_options = {
     'stickysidebar': 'true',
 }
 
+html_logo = logo_path
+
 """
 # TODO: these are needed for customising the alabaster theme
 # html_sidebars is needed to force the inclusion of (at least) about.html so
