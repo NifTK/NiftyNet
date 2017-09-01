@@ -140,8 +140,10 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'classic'
 
+"""
+# TODO: these are needed for customising the alabaster theme
 # html_sidebars is needed to force the inclusion of (at least) about.html so
 # that the logo is displayed.
 html_sidebars = {
@@ -192,6 +194,7 @@ html_theme_options = {
     'footnote_border': nn_black,
     'pre_bg': nn_gray,
 }
+"""
 
 
 # -- Options for HTMLHelp output ------------------------------------------
