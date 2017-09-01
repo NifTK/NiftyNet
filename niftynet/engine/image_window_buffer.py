@@ -133,9 +133,7 @@ class InputBatchQueueRunner(object):
         try:
             output_dict = None
             for output_dict in self():
-                if self._session._closed:
-                    break
-                if self._coordinator.should_stop():
+                if self._session._closed or self._coordinator.should_stop():
                     break
                 self._session.run(self._enqueue_op, feed_dict=output_dict)
 
@@ -145,9 +143,7 @@ class InputBatchQueueRunner(object):
 
             # push a set of stopping patches
             for _ in range(self.capacity + self._batch_size):
-                if self._session._closed:
-                    break
-                if self._coordinator.should_stop():
+                if self._session._closed or self._coordinator.should_stop():
                     break
                 for name in list(output_dict):
                     output_dict[name] = np.ones_like(output_dict[name]) * -1

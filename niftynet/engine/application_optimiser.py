@@ -16,6 +16,8 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 
+# pylint: disable=too-few-public-methods
+
 class Adam(object):
     @staticmethod
     def get_instance(learning_rate):

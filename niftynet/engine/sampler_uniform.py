@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+"""
+Generating uniformly distributed image window from input image
+This can also be considered as a `random cropping` layer of the
+input image
+"""
 from __future__ import absolute_import, division, print_function
 
 import numpy as np

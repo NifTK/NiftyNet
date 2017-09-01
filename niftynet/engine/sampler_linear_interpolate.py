@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+Generating samples by linearly combining two input images
+"""
 from __future__ import absolute_import, print_function, division
 
 import numpy as np

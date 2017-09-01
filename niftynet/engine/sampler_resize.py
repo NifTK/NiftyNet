@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+Resize input image as output window
+"""
 from __future__ import absolute_import, print_function, division
 
 import numpy as np
@@ -107,13 +110,16 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
 
 
 def zoom_3d(image, ratio, interp_order):
+    """
+    Taking 5D image as input, and zoom each 3D slice independently
+    """
     assert image.ndim == 5, "input images should be 5D array"
     output = []
-    for t in range(image.shape[3]):
+    for time_pt in range(image.shape[3]):
         output_mod = []
-        for m in range(image.shape[4]):
+        for mod in range(image.shape[4]):
             zoomed = scipy.ndimage.zoom(
-                image[..., t, m], ratio[:3], order=interp_order)
+                image[..., time_pt, mod], ratio[:3], order=interp_order)
             output_mod.append(zoomed[..., np.newaxis, np.newaxis])
         output_mod = np.concatenate(output_mod, axis=-1)
         output.append(output_mod)

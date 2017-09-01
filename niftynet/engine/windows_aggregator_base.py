@@ -36,6 +36,11 @@ class ImageWindowsAggregator(object):
 
     @property
     def image_id(self):
+        """
+        Index of the image in the output image list maintained by
+        image reader
+        :return: integer of the position in image list
+        """
         return self._image_id
 
     @image_id.setter
@@ -94,18 +99,18 @@ class ImageWindowsAggregator(object):
             " received: {}: {}".format(spatial_shape, border[:n_spatial])
         if n_spatial == 1:
             window = window[:,
-                     border[0]:spatial_shape[0] - border[0],
-                     np.newaxis, np.newaxis, ...]
+                            border[0]:spatial_shape[0] - border[0],
+                            np.newaxis, np.newaxis, ...]
         elif n_spatial == 2:
             window = window[:,
-                     border[0]:spatial_shape[0] - border[0],
-                     border[1]:spatial_shape[1] - border[1],
-                     np.newaxis, ...]
+                            border[0]:spatial_shape[0] - border[0],
+                            border[1]:spatial_shape[1] - border[1],
+                            np.newaxis, ...]
         elif n_spatial == 3:
             window = window[:,
-                     border[0]:spatial_shape[0] - border[0],
-                     border[1]:spatial_shape[1] - border[1],
-                     border[2]:spatial_shape[2] - border[2], ...]
+                            border[0]:spatial_shape[0] - border[0],
+                            border[1]:spatial_shape[1] - border[1],
+                            border[2]:spatial_shape[2] - border[2], ...]
         else:
             tf.logging.fatal(
                 'unknown output format: shape %s'

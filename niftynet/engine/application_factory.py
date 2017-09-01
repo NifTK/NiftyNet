@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+"""
+Loading modules from a string representing the class name
+or a short name that matches the dictionary item defined
+in this module
+"""
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import importlib
 
 import tensorflow as tf
@@ -5,6 +15,7 @@ import tensorflow as tf
 from niftynet.utilities.util_common import \
     _damerau_levenshtein_distance as edit_distance
 
+# pylint: disable=too-few-public-methods
 SUPPORTED_APP = {
     'net_segment':
         'niftynet.application.segmentation_application.SegmentationApplication',

@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+Generating sample arrays from random distributions
+"""
 from __future__ import absolute_import, print_function, division
 
 import numpy as np
@@ -68,7 +71,7 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
                 *self.window.shapes[self.window.names[0]])
             steps = np.linspace(0, 1, self.n_interpolations)
             output_vectors = []
-            for (idx, mixture) in enumerate(steps):
+            for (_, mixture) in enumerate(steps):
                 output_vector = \
                     embedding_x * mixture + embedding_y * (1 - mixture)
                 output_vector = output_vector[np.newaxis, ...]

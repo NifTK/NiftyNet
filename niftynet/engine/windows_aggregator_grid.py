@@ -17,6 +17,11 @@ from niftynet.layer.pad import PadLayer
 
 
 class GridSamplesAggregator(ImageWindowsAggregator):
+    """
+    This class keeps record of the currently cached image,
+    initialised as all zeros, and the values are replaced
+    by image window data decoded from batch
+    """
     def __init__(self,
                  image_reader,
                  name='image',
@@ -78,5 +83,3 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                                 source_image_obj,
                                 self.output_interp_order)
         return
-
-
