@@ -169,6 +169,7 @@ html_theme_options = {
     'headlinkcolor': nn_red,
     'codebgcolor': nn_gray,
     'codetextcolor': nn_black,
+    'stickysidebar': 'true',
 }
 
 """
