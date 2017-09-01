@@ -32,6 +32,7 @@ def int_array(string_input):
     try:
         output_tuple = match_array(string_input, 'int')
     except ValueError:
+        import pdb; pdb.set_trace()
         raise argparse.ArgumentTypeError(
             'array of int expected'.format(string_input))
     return output_tuple

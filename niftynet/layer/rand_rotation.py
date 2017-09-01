@@ -54,8 +54,8 @@ class RandomRotationLayer(RandomisedLayer):
         assert self._transform is not None
         center_ = 0.5 * np.asarray(image_3d.shape, dtype=np.int64)
         c_offset = center_ - center_.dot(self._transform)
-        image_3d[:, :, :] = scipy.ndimage.affine_transform(
-            image_3d[:, :, :], self._transform.T, c_offset, order=interp_order)
+        image_3d[...] = scipy.ndimage.affine_transform(
+            image_3d[...], self._transform.T, c_offset, order=interp_order)
         return image_3d
 
     def layer_op(self, inputs, interp_orders, *args, **kwargs):

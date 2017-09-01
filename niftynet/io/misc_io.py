@@ -204,10 +204,8 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
                                           to_multiply[0:3],
                                           order=interp_order)
             data_mod.append(data_new[..., np.newaxis, np.newaxis])
-        data_mod = np.concatenate(data_mod, axis=-1)
-        data_resampled.append(data_mod)
-    data_resampled = np.concatenate(data_resampled, axis=-2)
-    return data_resampled
+        data_resampled.append(np.concatenate(data_mod, axis=-1))
+    return np.concatenate(data_resampled, axis=-2)
 
 
 ### end of resample/reorientation original volumes

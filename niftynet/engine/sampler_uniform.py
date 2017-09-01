@@ -34,7 +34,7 @@ class UniformSampler(Layer, InputBatchQueueRunner):
         Layer.__init__(self, name='input_buffer')
         InputBatchQueueRunner.__init__(
             self,
-            capacity=max(batch_size * 4, queue_length),
+            capacity=queue_length,
             shuffle=True)
         tf.logging.info('reading size of preprocessed images')
         self.window = ImageWindow.from_data_reader_properties(

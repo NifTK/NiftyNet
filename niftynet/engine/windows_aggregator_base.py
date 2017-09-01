@@ -86,37 +86,44 @@ class ImageWindowsAggregator(object):
             "three elements corresponding to 3 spatial dims"
 
         window_shape = window.shape
-        # if len(window_shape) != 5:
-        #     raise NotImplementedError(
-        #         "window shape not supported: {}".format(window_shape))
         spatial_shape = window_shape[1:-1]
         n_spatial = len(spatial_shape)
-        # import pdb; pdb.set_trace()
-        assert all([win_size > 2 * border_size
-                    for (win_size, border_size)
-                    in zip(spatial_shape, border[:n_spatial])]), \
-            "window sizes should be larger than inference border size * 2" \
-            " received: {}: {}".format(spatial_shape, border[:n_spatial])
+        for idx in range(n_spatial):
+            location[:, idx + 1] = location[:, idx + 1] + border[idx]
+            location[:, idx + 4] = location[:, idx + 4] - border[idx]
+        if np.any(location < 0):
+            return window, location
+
+        cropped_shape = np.max(location[:, 4:7] - location[:, 1:4], axis=0)
+        left = np.floor(
+            (spatial_shape - cropped_shape[:n_spatial])/2.0).astype(np.int)
+        if np.any(left < 0):
+            tf.logging.fatal(
+                'network output window can be '
+                'cropped by specifying the border parameter in config file, '
+                'but here the output window %s is already smaller '
+                'than the input window size minus padding: %s, '
+                'not supported by this aggregator',
+                 spatial_shape, cropped_shape)
+            raise ValueError
         if n_spatial == 1:
             window = window[:,
-                            border[0]:spatial_shape[0] - border[0],
+                            left[0]:(left[0] + cropped_shape[0]),
                             np.newaxis, np.newaxis, ...]
         elif n_spatial == 2:
             window = window[:,
-                            border[0]:spatial_shape[0] - border[0],
-                            border[1]:spatial_shape[1] - border[1],
+                            left[0]:(left[0] + cropped_shape[0]),
+                            left[1]:(left[1] + cropped_shape[1]),
                             np.newaxis, ...]
         elif n_spatial == 3:
             window = window[:,
-                            border[0]:spatial_shape[0] - border[0],
-                            border[1]:spatial_shape[1] - border[1],
-                            border[2]:spatial_shape[2] - border[2], ...]
+                            left[0]:(left[0] + cropped_shape[0]),
+                            left[1]:(left[1] + cropped_shape[1]),
+                            left[2]:(left[2] + cropped_shape[2]),
+                            ...]
         else:
             tf.logging.fatal(
                 'unknown output format: shape %s'
                 ' spatial dims are: %s', window_shape, spatial_shape)
             raise NotImplementedError
-        for idx in range(n_spatial):
-            location[:, idx + 1] = location[:, idx + 1] + border[idx]
-            location[:, idx + 4] = location[:, idx + 4] - border[idx]
         return window, location

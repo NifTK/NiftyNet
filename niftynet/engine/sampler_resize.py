@@ -36,7 +36,7 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
         Layer.__init__(self, name='input_buffer')
         InputBatchQueueRunner.__init__(
             self,
-            capacity=max(batch_size * 4, queue_length),
+            capacity=queue_length,
             shuffle=self.shuffle)
         tf.logging.info('reading size of preprocessed images')
         self.window = ImageWindow.from_data_reader_properties(
@@ -73,7 +73,8 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
 
             # for resize sampler the coordinates are not used
             # simply use the spatial dims of the input image
-            all_coordinates = dummy_coordinates(image_id, image_shapes)
+            all_coordinates = dummy_coordinates(image_id,
+                                                static_window_shapes)
             for _ in range(self.windows_per_image):
                 output_dict = {}
                 for name in list(data):
@@ -121,10 +122,8 @@ def zoom_3d(image, ratio, interp_order):
             zoomed = scipy.ndimage.zoom(
                 image[..., time_pt, mod], ratio[:3], order=interp_order)
             output_mod.append(zoomed[..., np.newaxis, np.newaxis])
-        output_mod = np.concatenate(output_mod, axis=-1)
-        output.append(output_mod)
-    output = np.concatenate(output, axis=-2)
-    return output
+        output.append(np.concatenate(output_mod, axis=-1))
+    return np.concatenate(output, axis=-2)
 
 
 def dummy_coordinates(image_id, image_sizes):

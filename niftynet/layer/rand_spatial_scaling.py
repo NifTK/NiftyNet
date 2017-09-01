@@ -39,8 +39,21 @@ class RandomSpatialScalingLayer(RandomisedLayer):
         full_zoom = np.array(self._rand_zoom)
         while len(full_zoom) < image.ndim:
             full_zoom = np.hstack((full_zoom, [1.0]))
-        image = scipy.ndimage.zoom(image, full_zoom, order=interp_order)
-        return image
+
+        if image.ndim == 4:
+            output = []
+            for mod in range(image.shape[-1]):
+                scaled = scipy.ndimage.zoom(image[..., mod],
+                                            full_zoom[:3],
+                                            order=interp_order)
+                output.append(scaled[..., np.newaxis])
+            return np.concatenate(output, axis=-1)
+        if image.ndim == 3:
+            scaled = scipy.ndimage.zoom(image,
+                                        full_zoom[:3],
+                                        order=interp_order)
+            return scaled[..., np.newaxis]
+        raise NotImplementedError('not implemented random scaling')
 
     def layer_op(self, inputs, interp_orders, *args, **kwargs):
         if inputs is None:

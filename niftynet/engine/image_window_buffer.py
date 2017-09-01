@@ -68,12 +68,16 @@ class InputBatchQueueRunner(object):
         if is_dynamic_window and dequeue_size > 1:
             tf.logging.warning(
                 "using dynamic window size, network batch size is set to 1")
-        self._batch_size = 1 if is_dynamic_window else dequeue_size
         _enqueue_size = 1 if is_dynamic_window else enqueue_size
-        assert dequeue_size <= self.capacity, \
-            "batch size is larger than the buffer size, " \
-            "please increase the queue capacity or decrease the batch size"
-
+        self._batch_size = 1 if is_dynamic_window else dequeue_size
+        self.capacity = int(max(
+            self.capacity, round(self._batch_size * 2.5)))
+        assert self._batch_size <= self.capacity, \
+            "batch size {} is larger than the buffer size {}, " \
+            "please increase the queue capacity " \
+            "or decrease the batch size".format(
+                self._batch_size, self.capacity)
+        tf.logging.info('buffering with %s windows', self.capacity)
         try:
             placeholders_dict = window.placeholders_dict(_enqueue_size)
         except AttributeError:

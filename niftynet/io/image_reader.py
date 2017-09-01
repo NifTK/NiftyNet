@@ -153,6 +153,7 @@ class ImageReader(Layer):
             # dictionary of masks is cached
             mask = None
             for layer in preprocessors:
+                # import time; local_time = time.time()
                 if layer is None:
                     continue
                 if isinstance(layer, RandomisedLayer):
@@ -160,6 +161,7 @@ class ImageReader(Layer):
                     image_data_dict = layer(image_data_dict, interp_order_dict)
                 else:
                     image_data_dict, mask = layer(image_data_dict, mask)
+                # print('%s, %.3f sec'%(layer, -local_time + time.time()))
         return idx, image_data_dict, interp_order_dict
 
     @property
