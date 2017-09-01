@@ -35,7 +35,7 @@ sys.path.insert(0, module_path)
 logo_file = 'niftynet-logo.png'
 logo_path_abs = os.path.join(root_dir_abs, logo_file)
 static_images_folder = 'images'
-logo_path = os.path.join(static_images_folder, logo_file)
+logo_path = os.path.join('..', '..', logo_file)
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
