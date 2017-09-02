@@ -100,7 +100,7 @@ class ImageWindow(object):
         :return:
         """
         try:
-            spatial_window = map(int, spatial_window)
+            spatial_window = list(map(int, spatial_window))
         except ValueError:
             tf.logging.fatal("spatial window should be an array of int")
             raise
