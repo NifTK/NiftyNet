@@ -10,7 +10,7 @@ testjob:
     - dev
     - dev-staging
     - tags
-    - supports-axbxc-patch
+      #- supports-axbxc-patch
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi

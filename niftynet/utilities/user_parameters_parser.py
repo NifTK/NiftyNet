@@ -64,6 +64,8 @@ def run():
     try:
         if meta_parser.prog[:-3] in SUPPORTED_APP:
             module_name = meta_parser.prog[:-3]
+        elif meta_parser.prog in SUPPORTED_APP:
+            module_name = meta_parser.prog
         else:
             module_name = meta_args.application_name
         app_module = ApplicationFactory.create(module_name)
