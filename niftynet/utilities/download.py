@@ -20,7 +20,7 @@ from six.moves.configparser import SafeConfigParser
 from os.path import expanduser
 from distutils.version import LooseVersion
 
-from niftynet.utilities.get_niftynet_version import get_niftynet_version, get_niftynet_version_string
+from niftynet.utilities.versioning import get_niftynet_version, get_niftynet_version_string
 
 # Used with the min_download_api settings option to determine if the downloaded configuration file is compatible with
 # this version of NiftyNet downloader code

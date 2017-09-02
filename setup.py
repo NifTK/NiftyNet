@@ -97,6 +97,7 @@ setup(
         'scipy>=0.18',
         'configparser',
         'pillow',
+        'pandas'
     ],
 
     entry_points={

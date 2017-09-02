@@ -13,7 +13,7 @@ from niftynet.layer.elementwise import ElementwiseLayer
 from niftynet.network.base_net import BaseNet
 from niftynet.utilities.util_common import look_up_operations
 from niftynet.layer.base_layer import LayerFromCallable
-from niftynet.engine import logging
+#from niftynet.engine import logging
 
 
 class GenericGAN(TrainableLayer):
@@ -26,8 +26,8 @@ class GenericGAN(TrainableLayer):
     fake_logits = self._discriminator(image,is_training)
     real_logits = self._discriminator(population/2,is_training)
     diff=image-population/2
-    logging.image3_axial('fake',(image+1)*127,1,[logging.LOG])
-    logging.image3_axial('real',tf.maximum(0.,tf.minimum(255.,(population/2+1)*127)),1,[logging.LOG])
+    #logging.image3_axial('fake',(image+1)*127,1,[logging.LOG])
+    #logging.image3_axial('real',tf.maximum(0.,tf.minimum(255.,(population/2+1)*127)),1,[logging.LOG])
     return image, real_logits, fake_logits, diff
 
 class SimpleGAN(GenericGAN):
