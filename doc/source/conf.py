@@ -108,6 +108,12 @@ source_suffix = '.rst'
 # The master toctree document.
 master_doc = 'index'
 
+# This is for instance for niftynet.engine to be shown under the letter 'e'
+# rather than 'n'. That way the Python module index is displayed more nicely.
+modindex_common_prefix = [
+    'niftynet.'
+]
+
 # General information about the project.
 project = u'NiftyNet'
 copyright = u'2017, NiftyNet Consortium'
