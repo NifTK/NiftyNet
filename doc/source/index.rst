@@ -71,7 +71,7 @@ If you use NiftyNet in your work, please cite `Li et. al. 2017`_:
 
 BibTeX entry:
 
-::
+.. code-block:: bibtex
 
   @InProceedings{niftynet17,
     author = {Li, Wenqi and Wang, Guotai and Fidon, Lucas and Ourselin, Sebastien and Cardoso, M. Jorge and Vercauteren, Tom},
