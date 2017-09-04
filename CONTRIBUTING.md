@@ -25,7 +25,8 @@ Please make sure you have read the following subsections before submitting a mer
 
 ### Python style guide
 
-We'd like to follow this python style guide: [pep8]
+Please follow the [PEP8 Style Guide for Python Code][pep8].
+In particular (from the guide):
 
 > Please be consistent.
 > If you're editing code, take a few minutes to look at the code around you and
