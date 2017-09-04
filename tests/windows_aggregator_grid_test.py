@@ -73,7 +73,7 @@ SINGLE_25D_DATA = {
         filename_contains=('_o_T1_time', '106'),
         filename_not_contains=('Parcellation',),
         interp_order=3,
-        pixdim=(3.0, 5.0, 4.0),
+        pixdim=(3.0, 5.0, 5.0),
         axcodes='LAS',
         spatial_window_size=(40, 30, 1)
     ),
@@ -204,7 +204,8 @@ class GridSamplesAggregatorTest(tf.test.TestCase):
                                    'aggregated',
                                    output_filename)
         self.assertAllClose(
-            nib.load(output_file).shape, [255, 168, 258, 1, 1])
+            nib.load(output_file).shape, [255, 168, 256, 1, 1],
+            rtol=1e-03, atol=1e-03)
         sampler.close_all()
 
     def test_inverse_mapping(self):

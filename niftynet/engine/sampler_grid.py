@@ -64,7 +64,7 @@ class GridSampler(Layer, InputBatchQueueRunner):
 
             # extend the number of sampling locations to be divisible
             # by batch size
-            n_locations = coordinates.values()[0].shape[0]
+            n_locations = list(coordinates.values())[0].shape[0]
             extra_locations = 0
             if (n_locations % self.batch_size) > 0:
                 extra_locations = \

@@ -283,3 +283,4 @@ def __force_writing_new_mapping(filename, mapping_dict):
         mapping_string = ' '.join(map(str, mapping_dict[mod]))
         string_fin = '{} {}\n'.format(mod, mapping_string)
         f.write(string_fin)
+    return
