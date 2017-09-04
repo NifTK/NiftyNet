@@ -1,7 +1,12 @@
+## Submitting merge requests
+
 The main source code repository for NiftyNet is [CMICLab][cmiclab-niftynet].
 All merge requests should be submitted via CMICLab.
 
 [cmiclab-niftynet]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
+
+
+### Python style guide
 
 We'd like to follow this python style guide: [pep8]
 
@@ -12,6 +17,9 @@ We'd like to follow this python style guide: [pep8]
 > make your comments have little boxes of hash marks around them too.
 
 [pep8]: https://www.python.org/dev/peps/pep-0008/
+
+
+### Testing your changes
 
 When submitting merge requests, please merge to the dev branch.
 
