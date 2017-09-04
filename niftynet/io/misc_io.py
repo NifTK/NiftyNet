@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import logging as log
 import os
@@ -14,6 +14,8 @@ import scipy.ndimage
 import tensorflow as tf
 from PIL.GifImagePlugin import Image as GIF
 from tensorflow.core.framework import summary_pb2
+
+IS_PYTHON2 = False if sys.version_info[0] > 2 else True
 
 image_loaders = [nib.load]
 try:
@@ -386,10 +388,8 @@ def _image3_animated_gif(tag, ims):
         for b in PIL.GifImagePlugin.getdata(i):
             s += b
     s += b'\x3B'
-    try:  # For python 2/3 compatibility
+    if IS_PYTHON2:
         s = str(s)
-    except:
-        pass
     summary_image_str = summary_pb2.Summary.Image(
         height=10, width=10, colorspace=1, encoded_image_string=s)
     image_summary = summary_pb2.Summary.Value(

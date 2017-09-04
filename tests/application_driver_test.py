@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import six
 import numpy as np
 import tensorflow as tf
 
@@ -64,7 +65,7 @@ class ApplicationDriverTest(tf.test.TestCase):
             coord = tf.train.Coordinator()
             for sampler in test_driver.app.get_sampler():
                 sampler.run_threads(sess, coord, test_driver.num_threads)
-            i, train_op = test_driver.app.training_ops(0, 5).next()
+            i, train_op = six.next(test_driver.app.training_ops(0, 5))
             test_driver.app.stop()
             try:
                 while True:
@@ -81,7 +82,7 @@ class ApplicationDriverTest(tf.test.TestCase):
             coord = tf.train.Coordinator()
             for sampler in test_driver.app.get_sampler():
                 sampler.run_threads(sess, coord, test_driver.num_threads)
-            i, train_op = test_driver.app.training_ops(0, 5).next()
+            i, train_op = six.next(test_driver.app.training_ops(0, 5))
             test_tensor = test_driver.graph.get_tensor_by_name(
                 'G/conv_bn_selu/conv_/w:0')
             var_0 = sess.run(test_tensor)
