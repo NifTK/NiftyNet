@@ -50,6 +50,11 @@ Other features of NiftyNet include:
 
 Please follow the links for [demos](./demos) and [network (re-)implementations](./niftynet/network).
 
+The API documentation is available on [Read the Docs][rtd-niftynet].
+
+[rtd-niftynet]: http://niftynet.rtfd.io/
+
+
 ### Contributing
 
 Feature requests and bug reports are collected on [Issues](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/issues).
