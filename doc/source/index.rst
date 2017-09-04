@@ -23,8 +23,9 @@ Using NiftyNet's modular structure you can:
 
 Please see the `NiftyNet source code repository`_ for a detailed list of features and installation instructions.
 
+
 Examples
---------
+^^^^^^^^
 
 We are working to provide examples here showing how NiftyNet can be used and adapted to different image analysis problems.
 In the mean time please see the `NiftyNet demos`_ and `network (re-)implementations`_.
@@ -34,9 +35,28 @@ In the mean time please see the `NiftyNet demos`_ and `network (re-)implementati
 
 
 API reference
--------------
+^^^^^^^^^^^^^
 
 Please see the :ref:`modindex`.
+
+
+Useful links
+^^^^^^^^^^^^
+
+:ref:`genindex`
+
+:ref:`search`
+
+`NiftyNet website`_
+
+`NiftyNet source code on CmicLab`_
+
+`NiftyNet source code mirror on GitHub`_
+
+
+.. _`NiftyNet website`: http://niftynet.io/
+.. _`NiftyNet source code on CmicLab`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
+.. _`NiftyNet source code mirror on GitHub`: https://github.com/NifTK/NiftyNet
 
 
 Citing NiftyNet
@@ -80,13 +100,6 @@ This project is grateful for the support from the `Wellcome Trust`_, the `Engine
 .. _`Science and Engineering South Consortium (SES)`: https://www.ses.ac.uk/
 .. _`STFC Rutherford-Appleton Laboratory`: http://www.stfc.ac.uk/about-us/where-we-work/rutherford-appleton-laboratory/
 .. _`NVIDIA`: http://www.nvidia.com
-
-
-Useful links
-------------
-
-* :ref:`genindex`
-* :ref:`search`
 
 
 .. toctree::
