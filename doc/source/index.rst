@@ -77,6 +77,8 @@ BibTeX entry:
     year = {2017}
   }
 
+.. _`Li et. al. 2017`: http://doi.org/10.1007/978-3-319-59050-9_28
+
 .. |LiEtAl2017Title| replace:: *On the Compactness, Efficiency, and Representation of 3D Convolutional Networks\: Brain Parcellation as a Pretext Task\.*
 .. _LiEtAl2017Title: http://doi.org/10.1007/978-3-319-59050-9_28
 
