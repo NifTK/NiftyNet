@@ -1,7 +1,7 @@
 ## NiftyNet
 
 The main source code repository for NiftyNet is [CMICLab][cmiclab-niftynet].
-NiftyNet codebase is also mirrored on [GitHub][github-niftynet].
+The NiftyNet codebase is also mirrored on [GitHub][github-niftynet].
 
 [cmiclab-niftynet]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 [github-niftynet]: https://github.com/NifTK/NiftyNet
@@ -18,7 +18,7 @@ Bug reports and feature requests should be submitted by creating an issue on [CM
 ## Submitting merge requests
 
 All merge requests should be submitted via [CMICLab][cmiclab-niftynet-mr].
-Please make sure you read the following subsections before submitting a merge request.
+Please make sure you have read the following subsections before submitting a merge request.
 
 [cmiclab-niftynet-mr]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/merge_requests/new
 
