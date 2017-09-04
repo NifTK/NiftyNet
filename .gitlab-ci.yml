@@ -86,6 +86,7 @@ quicktest:
     - tags
     - supports-axbxc-patch
     - 112-publish-api-docs-online
+    - 147-revise-contribution-guidelines-to-include-github
   script:
     # print system info
     - which nvidia-smi
