@@ -74,7 +74,8 @@ def generate_apidocs(*args):
         apidoc_command_path = os.path.join(sys.prefix, 'bin', 'sphinx-apidoc')
         apidoc_command_path = os.path.abspath(apidoc_command_path)
     subprocess.check_call(
-        [apidoc_command_path, '--separate', '-o', output_path, module_path] +
+        [apidoc_command_path, '--force', '--separate'] +
+        ['-o', output_path, module_path] +
         [os.path.join(root_dir_abs, pattern) for pattern in exclude_patterns])
 
 
