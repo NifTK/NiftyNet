@@ -1,3 +1,8 @@
+The main source code repository for NiftyNet is [CMICLab][cmiclab-niftynet].
+All merge requests should be submitted via CMICLab.
+
+[cmiclab-niftynet]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
+
 We'd like to follow this python style guide: [pep8]
 
 > Please be consistent.
