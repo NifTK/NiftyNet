@@ -48,6 +48,15 @@ class Momentum(object):
             name='Momentum',
             use_nesterov=False)
 
+class NesterovMomentum(object):
+    @staticmethod
+    def get_instance(learning_rate):
+        return tf.train.MomentumOptimizer(
+            learning_rate=learning_rate,
+            momentum=0.9,
+            use_locking=False,
+            name='Momentum',
+            use_nesterov=True)
 
 class GradientDescent(object):
     @staticmethod

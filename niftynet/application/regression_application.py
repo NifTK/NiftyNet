@@ -21,9 +21,10 @@ from niftynet.layer.pad import PadLayer
 from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
+from niftynet.layer.crop import CropLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 
-SUPPORTED_INPUT = {'image', 'label', 'weight'}
+SUPPORTED_INPUT = {'image', 'output', 'weight'}
 
 
 class RegressionApplication(BaseApplication):
@@ -58,10 +59,10 @@ class RegressionApplication(BaseApplication):
         self.reader.initialise_reader(data_param, task_param)
 
         mean_var_normaliser = MeanVarNormalisationLayer(
-            field='image')
+            image_name='image')
         if self.net_param.histogram_ref_file:
             histogram_normaliser = HistogramNormalisationLayer(
-                field='image',
+                image_name='image',
                 modalities=vars(task_param).get('image'),
                 model_filename=self.net_param.histogram_ref_file,
                 norm_type=self.net_param.norm_type,
@@ -93,7 +94,7 @@ class RegressionApplication(BaseApplication):
         volume_padding_layer = []
         if self.net_param.volume_padding_size:
             volume_padding_layer.append(PadLayer(
-                field=SUPPORTED_INPUT,
+                image_name=SUPPORTED_INPUT,
                 border=self.net_param.volume_padding_size))
         self.reader.add_preprocessing_layers(
             volume_padding_layer + normalisation_layers + augmentation_layers)
@@ -168,17 +169,17 @@ class RegressionApplication(BaseApplication):
         net_out = self.net(image, self.is_training)
 
         if self.is_training:
+            crop_layer = CropLayer(border=8, name='crop-88')
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
                     learning_rate=self.action_param.lr)
             loss_func = LossFunction(
-                n_class=1,
                 loss_type=self.action_param.loss_type)
             data_loss = loss_func(
-                prediction=net_out,
-                ground_truth=data_dict.get('label', None),
+                prediction=crop_layer(net_out),
+                ground_truth=data_dict.get('output', None),
                 weight_map=data_dict.get('weight', None))
             if self.net_param.decay > 0.0:
                 reg_losses = tf.get_collection(
@@ -201,14 +202,9 @@ class RegressionApplication(BaseApplication):
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
         else:
-            # converting logits into final output for
-            # classification probabilities or argmax classification labels
-            output_prob = True
-
-
-            post_process_layer = PostProcessingLayer(
-                'IDENTITY', num_classes=1)
-            net_out = post_process_layer(net_out)
+            crop_layer = CropLayer(border=0, name='crop-88')
+            post_process_layer = PostProcessingLayer('IDENTITY')
+            net_out = post_process_layer(crop_layer(net_out))
 
             outputs_collector.add_to_collection(
                 var=net_out, name='window',

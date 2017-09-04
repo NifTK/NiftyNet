@@ -91,8 +91,10 @@ SUPPORTED_LOSS_REGRESSION = {
         'niftynet.layer.loss_regression.l1_loss',
     "L2Loss":
         'niftynet.layer.loss_regression.l2_loss',
-    "MSE":
-        'niftynet.layer.loss_regression.mse_loss',
+    "RMSE":
+        'niftynet.layer.loss_regression.rmse_loss',
+    "MAE":
+        'niftynet.layer.loss_regression.mae_loss',
     "Huber":
         'niftynet.layer.loss_regression.huber_loss'
 }
@@ -106,6 +108,8 @@ SUPPORTED_OPTIMIZERS = {
     'adam': 'niftynet.engine.application_optimiser.Adam',
     'gradientdescent': 'niftynet.engine.application_optimiser.GradientDescent',
     'momentum': 'niftynet.engine.application_optimiser.Momentum',
+    'nesterov': 'niftynet.engine.application_optimiser.NesterovMomentum',
+
     'adagrad': 'niftynet.engine.application_optimiser.Adagrad',
 }
 

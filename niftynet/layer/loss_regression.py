@@ -9,7 +9,6 @@ from niftynet.engine.application_factory import LossRegressionFactory
 
 class LossFunction(Layer):
     def __init__(self,
-                 n_class,
                  loss_type='L2Loss',
                  loss_func_params={},
                  name='loss_function'):
@@ -75,19 +74,43 @@ def l2_loss(prediction, ground_truth, weight_map=None):
     :param ground_truth: the measurement you are approximating with regression.
     :return: sum(differences squared) / 2 - Note, no square root
     """
+
     residuals = tf.subtract(prediction, ground_truth)
     if weight_map is not None:
         residuals = tf.multiply(residuals, weight_map)
     return tf.nn.l2_loss(residuals)
 
 
-def mse_loss(prediction, ground_truth, weight_map=None):
+def rmse_loss(prediction, ground_truth, weight_map=None):
     """
     :param prediction: the current prediction of the ground truth.
     :param ground_truth: the measurement you are approximating with regression.
-    :return: sum(differences squared) / 2 - Note, no square root
+    :param weight_map: a weight map for the cost function. .
+    :return: sqrt(mean(differences squared))
     """
-    return tf.losses.mean_squared_error(prediction,ground_truth)
+    if weight_map is not None:
+        residuals = tf.subtract(prediction, ground_truth)
+        residuals = tf.pow(residuals, 2)
+        residuals = tf.multiply(residuals, weight_map)
+        return tf.sqrt(tf.reduce_mean(residuals)/tf.reduce_mean(weight_map))
+    else:
+        return tf.sqrt(tf.losses.mean_squared_error(prediction, ground_truth))
+
+
+def mae_loss(prediction, ground_truth, weight_map=None):
+    """
+    :param prediction: the current prediction of the ground truth.
+    :param ground_truth: the measurement you are approximating with regression.
+    :param weight_map: a weight map for the cost function. .
+    :return: mean(abs(ground_truth-prediction))
+    """
+    if weight_map is not None:
+        residuals = tf.subtract(prediction, ground_truth)
+        residuals = tf.abs(residuals)
+        residuals = tf.multiply(residuals, weight_map)
+        return tf.reduce_mean(residuals)/tf.reduce_mean(weight_map)
+    else:
+        return tf.reduce_mean(tf.abs(tf.subtract(prediction, ground_truth)))
 
 
 def huber_loss(prediction, ground_truth, delta=1.0, weight_map=None):
@@ -119,5 +142,5 @@ def huber_loss(prediction, ground_truth, delta=1.0, weight_map=None):
 
 SUPPORTED_OPS = {"L1Loss": l1_loss,
                  "L2Loss": l2_loss,
-                 "MSE": mse_loss,
+                 "RMSE": rmse_loss,
                  "Huber": huber_loss}

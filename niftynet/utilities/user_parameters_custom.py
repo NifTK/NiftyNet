@@ -36,7 +36,7 @@ def add_customised_args(parser, task_name):
 
 
 def __add_regression_args(parser):
-    from niftynet.application.segmentation_application import SUPPORTED_INPUT
+    from niftynet.application.regression_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser
 
