@@ -17,11 +17,11 @@ from tensorflow.core.framework import summary_pb2
 
 IS_PYTHON2 = False if sys.version_info[0] > 2 else True
 
-image_loaders = [nib.load]
+IMAGE_LOADERS = [nib.load]
 try:
     import niftynet.io.simple_itk_as_nibabel
 
-    image_loaders.append(
+    IMAGE_LOADERS.append(
         niftynet.io.simple_itk_as_nibabel.SimpleITKAsNibabel)
 except ImportError:
     warnings.warn(
@@ -67,7 +67,7 @@ def create_affine_pixdim(affine, pixdim):
 def load_image(filename):
     # load an image from a supported filetype and return an object
     # that matches nibabel's spatialimages interface
-    for image_loader in image_loaders:
+    for image_loader in IMAGE_LOADERS:
         try:
             img = image_loader(filename)
             img = correct_image_if_necessary(img)

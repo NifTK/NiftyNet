@@ -3,8 +3,8 @@ from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 
-from niftynet.layer.base_layer import Layer
 from niftynet.engine.application_factory import LossGANFactory
+from niftynet.layer.base_layer import Layer
 
 
 class LossFunction(Layer):
@@ -39,7 +39,7 @@ class LossFunction(Layer):
 
 
 def cross_entropy_function(is_real, softness=.1):
-    def cross_entropy(pred, **kwargs):
+    def cross_entropy_op(pred, **kwargs):
         if is_real:
             target = (1. - softness) * tf.ones_like(pred)
         else:
@@ -48,8 +48,9 @@ def cross_entropy_function(is_real, softness=.1):
                                                           labels=target)
         return tf.reduce_mean(entropy)
 
-    return cross_entropy
+    return cross_entropy_op
 
-cross_entropy =  {'g': cross_entropy_function(True, 0),
-                  'd_fake': cross_entropy_function(False, 0),
-                  'd_real': cross_entropy_function(True, .1)}
+
+cross_entropy = {'g': cross_entropy_function(True, 0),
+                 'd_fake': cross_entropy_function(False, 0),
+                 'd_real': cross_entropy_function(True, .1)}

@@ -20,7 +20,7 @@ def list_depth_count(input_list):
     This is used to check compatibility of users' input and sysmte API
     only to be used for list or tuple
     """
-    if not (isinstance(input_list, list) or isinstance(input_list, tuple)):
+    if not isinstance(input_list, (list, tuple)):
         return 0
     if len(input_list) == 0:
         return 1
@@ -30,7 +30,7 @@ def list_depth_count(input_list):
 def average_gradients(multi_device_gradients):
     # the input gradients are grouped by device,
     # this function average the gradients of multiple devices
-    if multi_device_gradients is None or len(multi_device_gradients) == 0:
+    if multi_device_gradients is None or not multi_device_gradients:
         # nothing to average
         return multi_device_gradients
 
@@ -304,8 +304,8 @@ def otsu_threshold(img, nbins=256):
 
 
 # Print iterations progress
-def printProgressBar(iteration, total,
-                     prefix='', suffix='', decimals=1, length=10, fill='='):
+def print_progress_bar(iteration, total,
+                       prefix='', suffix='', decimals=1, length=10, fill='='):
     """
     Call in a loop to create terminal progress bar
     @params:
@@ -320,15 +320,15 @@ def printProgressBar(iteration, total,
     percent = ("{0:." + str(decimals) + "f}").format(
         100 * (iteration / float(total)))
     filledLength = int(length * iteration // total)
-    bar = fill * filledLength + '-' * (length - filledLength)
-    print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end='\r')
+    bars = fill * filledLength + '-' * (length - filledLength)
+    print('\r%s |%s| %s%% %s' % (prefix, bars, percent, suffix), end='\r')
     # Print New Line on Complete
     if iteration == total:
         print()
 
 
 def set_cuda_device(cuda_devices):
-    if re.findall('\d', cuda_devices):
+    if re.findall("\\d", cuda_devices):
         os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
         tf.logging.info(
             "set CUDA_VISIBLE_DEVICES to {}".format(cuda_devices))

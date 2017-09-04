@@ -53,7 +53,7 @@ class GANApplication(BaseApplication):
 
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(
-                type=self.net_param.foreground_type,
+                type_str=self.net_param.foreground_type,
                 multimod_fusion=self.net_param.multimod_foreground_type,
                 threshold=0.0)
         else:
@@ -229,6 +229,5 @@ class GANApplication(BaseApplication):
     def interpret_output(self, batch_output):
         if self.is_training:
             return True
-        else:
-            return self.output_decoder.decode_batch(
-                batch_output['image'], batch_output['location'])
+        return self.output_decoder.decode_batch(
+            batch_output['image'], batch_output['location'])

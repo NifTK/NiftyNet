@@ -40,7 +40,8 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         window, location = self.crop_batch(window, location, self.window_border)
 
         for batch_id in range(n_samples):
-            image_id, x_, y_, z_, _x, _y, _z = location[batch_id, :]
+            image_id, x_start, y_start, z_start, x_end, y_end, z_end = \
+                location[batch_id, :]
             if image_id != self.image_id:
                 # image name changed:
                 #    save current image and create an empty image
@@ -51,7 +52,9 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                     image_id=image_id,
                     n_channels=window.shape[-1],
                     dtype=window.dtype)
-            self.image_out[x_:_x, y_:_y, z_:_z, ...] = window[batch_id, ...]
+            self.image_out[x_start:x_end,
+                           y_start:y_end,
+                           z_start:z_end, ...] = window[batch_id, ...]
         return True
 
     def _initialise_empty_image(self, image_id, n_channels, dtype=np.float):

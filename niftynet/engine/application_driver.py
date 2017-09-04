@@ -192,6 +192,9 @@ class ApplicationDriver(object):
 
     # pylint: disable=not-context-manager
     def _create_graph(self):
+        """
+        tensorflow graph is only created within this function
+        """
         graph = tf.Graph()
         main_device = self._device_string(0, is_worker=False)
         # start constructing the graph, handling training and inference cases
@@ -245,6 +248,10 @@ class ApplicationDriver(object):
         return graph
 
     def _rand_init_or_restore_vars(self, sess):
+        """
+        Randomly initialising all trainable variables defined in session,
+        or loading checkpoint files as variable initialisations
+        """
         if self.is_training and self.initial_iter == 0:
             sess.run(self._init_op)
             tf.logging.info('Parameters from random initialisations ...')
@@ -285,6 +292,15 @@ class ApplicationDriver(object):
             raise
 
     def _training_loop(self, sess, loop_status):
+        """
+        Training loop is running through the training_ops generator
+        defined for each application (the application can specify
+        training ops based on the current iteration number, this allows
+        for complex optimisation schedules).
+
+        At every iteration it also evaluates all variables returned by
+        the output_collector.
+        """
         writer = tf.summary.FileWriter(self.summary_dir, sess.graph)
         # running through training_op from application
         for (iter_i, train_op) in \
@@ -323,6 +339,11 @@ class ApplicationDriver(object):
                             iter_i, console_str, time.time() - local_time)
 
     def _inference_loop(self, sess, loop_status):
+        """
+        Runs all variables returned by outputs_collector,
+        this loop stops when the return value of
+        application.interpret_output is False.
+        """
         loop_status['all_saved_flag'] = False
         while True:
             local_time = time.time()
@@ -348,6 +369,9 @@ class ApplicationDriver(object):
                 '%s (%.3fs)', console_str, time.time() - local_time)
 
     def _save_model(self, session, iter_i):
+        """
+        save session parameters to the hard drive
+        """
         if iter_i <= 0:
             return
         self.saver.save(sess=session,
@@ -356,6 +380,9 @@ class ApplicationDriver(object):
         tf.logging.info('iter %d saved: %s', iter_i, self.session_prefix)
 
     def _device_string(self, device_id=0, is_worker=True):
+        """
+        assigning CPU/GPU based on user specifications
+        """
         # pylint: disable=no-name-in-module
         from tensorflow.python.client import device_lib
         devices = device_lib.list_local_devices()
@@ -377,6 +404,9 @@ class ApplicationDriver(object):
 
     @staticmethod
     def _console_vars_to_str(console_dict):
+        """
+        Printing values of variable evaluations to command line output
+        """
         if not console_dict:
             return ''
         console_str = ', '.join(
@@ -385,10 +415,16 @@ class ApplicationDriver(object):
 
     @staticmethod
     def _create_app(app_type_string):
+        """
+        Import the application module
+        """
         return ApplicationFactory.create(app_type_string)
 
     @staticmethod
     def _tf_config():
+        """
+        tensorflow system configurations
+        """
         config = tf.ConfigProto()
         config.log_device_placement = False
         config.allow_soft_placement = True

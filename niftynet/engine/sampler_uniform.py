@@ -13,7 +13,7 @@ from niftynet.engine.image_window import ImageWindow, N_SPATIAL
 from niftynet.engine.image_window_buffer import InputBatchQueueRunner
 from niftynet.layer.base_layer import Layer
 
-
+# pylint: disable=too-many-arguments
 class UniformSampler(Layer, InputBatchQueueRunner):
     """
     This class generators samples by uniformly sampling each input volume
@@ -47,9 +47,10 @@ class UniformSampler(Layer, InputBatchQueueRunner):
         self._create_queue_and_ops(self.window,
                                    enqueue_size=windows_per_image,
                                    dequeue_size=batch_size)
-        tf.logging.info("initialised sampler output {} "
-                        " [-1 for dynamic size]".format(self.window.shapes))
+        tf.logging.info("initialised sampler output %s "
+                        " [-1 for dynamic size]", self.window.shapes)
 
+    # pylint: disable=too-many-locals
     def layer_op(self):
         """
         This function generates sampling windows to the input buffer
@@ -89,9 +90,11 @@ class UniformSampler(Layer, InputBatchQueueRunner):
                 # fill output window array
                 image_array = []
                 for window_id in range(self.window.n_samples):
-                    x_, y_, z_, _x, _y, _z = location_array[window_id, 1:]
+                    x_start, y_start, z_start, x_end, y_end, z_end = \
+                        location_array[window_id, 1:]
                     try:
-                        image_window = data[name][x_:_x, y_:_y, z_:_z, ...]
+                        image_window = data[name][
+                            x_start:x_end, y_start:y_end, z_start:z_end, ...]
                         image_array.append(image_window[np.newaxis, ...])
                     except ValueError:
                         tf.logging.fatal(
@@ -129,7 +132,7 @@ def rand_spatial_coordinates(subject_id, img_sizes, win_sizes, n_samples=1):
         tf.logging.fatal("Don't know how to generate sampling "
                          "locations: Spatial dimensions of the "
                          "grouped input sources are not "
-                         "consistent. {}".format(uniq_spatial_size))
+                         "consistent. %s", uniq_spatial_size)
         raise NotImplementedError
     uniq_spatial_size = uniq_spatial_size.pop()
 

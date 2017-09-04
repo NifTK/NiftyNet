@@ -12,7 +12,7 @@ import niftynet.utilities.util_csv as util_csv
 from niftynet.io.image_type import ImageFactory
 from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
 from niftynet.utilities.user_parameters_helper import make_input_tuple
-from niftynet.utilities.util_common import printProgressBar
+from niftynet.utilities.util_common import print_progress_bar
 
 # NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
 NP_TF_DTYPES = {'i': tf.float32,
@@ -223,9 +223,9 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
     """
     volume_list = []
     for idx in range(len(file_list)):
-        printProgressBar(idx, len(file_list),
-                         prefix='reading datasets headers',
-                         decimals=1, length=10, fill='*')
+        print_progress_bar(idx, len(file_list),
+                           prefix='reading datasets headers',
+                           decimals=1, length=10, fill='*')
         # combine fieldnames and volumes as a dictionary
         _dict = {field: _create_image(file_list, idx, modalities, data_param)
                  for (field, modalities) in mod_dict.items()}

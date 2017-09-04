@@ -3,6 +3,7 @@
 # Luis Carlos Garcia Peraza Herrera <luis.herrera.14@ucl.ac.uk>
 
 from __future__ import unicode_literals
+
 import re
 
 INT = r'(?:[-+]?\d+)'
@@ -65,48 +66,3 @@ def match_array(string_input, type_str):
             raise ValueError("unknown array type_str {}".format(string_input))
     else:
         raise ValueError("invalid parameter {}".format(string_input))
-
-
-if __name__ == "__main__":
-    # TODO add expected outputs, move to unit tests folder
-    strings_to_match = [
-        'c:\program files',
-        '2.0, ( 6.0, 9.0',
-        '{32.0   , 32.0}',
-        '{   32.0, 32.0}',
-        'a, c, b, f, d, e',
-        '(), ()',
-        '{), (}',
-        '(),',
-        '()',
-        '{}',
-        '32, (32),',
-        '32, (),',
-        '32',
-        '({)',
-        '(()',
-        '',
-        '32, 32',
-        '32,',
-        '-32',
-        '-32.0, a',
-        '-a, 32.0',
-        '(-32,a)',
-        '-32.0',
-        '(-a)',
-        '(-32.0, 10.0, 2.99987, 5.6, 3.5, 5.6)',
-    ]
-    regex = re.compile(STATEMENT)
-
-    for strval in strings_to_match:
-        matched_str = regex.match(strval)
-        if matched_str:
-            filtered_groups = list(filter(None, matched_str.groups()))
-            if filtered_groups:
-                values = [v.strip() for v in filtered_groups[0].split(',')]
-            else:
-                values = []
-            print('String:', strval, 'Matched!', values)
-        # print('String:', strval, 'Matched!')
-        else:
-            print('String:', strval, 'Error!')

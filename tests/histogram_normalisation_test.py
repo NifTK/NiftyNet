@@ -59,7 +59,7 @@ class HistTest(tf.test.TestCase):
         self.assertAllClose(len(reader._file_list), 4)
 
         foreground_masking_layer = BinaryMaskingLayer(
-            type='otsu_plus',
+            type_str='otsu_plus',
             multimod_fusion='or')
         hist_norm = HistogramNormalisationLayer(
             image_name='image',

@@ -1,7 +1,13 @@
 stages:
+  - pylint_test
   - dev_test
   - pip_test
   - pip_publish
+
+pylintjob:
+  stage: pylint_test
+  script:
+    - pylint --rcfile=pylintrc niftynet/engine
 
 testjob:
   stage: dev_test

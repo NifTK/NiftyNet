@@ -22,12 +22,12 @@ SUPPORTED_MULTIMOD_MASK_TYPES = {'or', 'and', 'multi'}
 
 class BinaryMaskingLayer(Layer):
     def __init__(self,
-                 type='otsu_plus',
+                 type_str='otsu_plus',
                  multimod_fusion='or',
                  threshold=0.0):
 
         super(BinaryMaskingLayer, self).__init__(name='binary_masking')
-        self.type = look_up_operations(type.lower(), SUPPORTED_MASK_TYPES)
+        self.type_str = look_up_operations(type_str.lower(), SUPPORTED_MASK_TYPES)
         self.multimod_fusion = look_up_operations(
             multimod_fusion.lower(), SUPPORTED_MULTIMOD_MASK_TYPES)
 
@@ -39,17 +39,17 @@ class BinaryMaskingLayer(Layer):
         image = image.reshape(-1)
         mask = np.zeros_like(image, dtype=np.bool)
         thr = self.threshold
-        if self.type == 'threshold_plus':
+        if self.type_str == 'threshold_plus':
             mask[image > thr] = True
-        elif self.type == 'threshold_minus':
+        elif self.type_str == 'threshold_minus':
             mask[image < thr] = True
-        elif self.type == 'otsu_plus':
+        elif self.type_str == 'otsu_plus':
             thr = otsu_threshold(image) if np.any(image) else thr
             mask[image > thr] = True
-        elif self.type == 'otsu_minus':
+        elif self.type_str == 'otsu_minus':
             thr = otsu_threshold(image) if np.any(image) else thr
             mask[image < thr] = True
-        elif self.type == 'mean_plus':
+        elif self.type_str == 'mean_plus':
             thr = np.mean(image)
             mask[image > thr] = True
         mask = mask.reshape(image_shape)

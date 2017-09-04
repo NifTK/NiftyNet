@@ -22,7 +22,7 @@ class BinaryMaskingTEst(tf.test.TestCase):
     def test_3d_plus_shape(self):
         x = self.get_3d_input()
         mask_layer = BinaryMaskingLayer(
-            type='otsu_plus',
+            type_str='otsu_plus',
             multimod_fusion='or',
             threshold=0.0)
         mean_var_layer = MeanVarNormalisationLayer(
@@ -34,7 +34,7 @@ class BinaryMaskingTEst(tf.test.TestCase):
     def test_3d_minus_shape(self):
         x = self.get_3d_input()
         mask_layer = BinaryMaskingLayer(
-            type='otsu_minus',
+            type_str='otsu_minus',
             multimod_fusion='or',
             threshold=0.0)
         mean_var_layer = MeanVarNormalisationLayer(
@@ -46,7 +46,7 @@ class BinaryMaskingTEst(tf.test.TestCase):
     def test_5d_shape(self):
         x = self.get_5d_input()
         mask_layer = BinaryMaskingLayer(
-            type='threshold_minus',
+            type_str='threshold_minus',
             multimod_fusion='and',
             threshold=0.0)
         mean_var_layer = MeanVarNormalisationLayer(
@@ -58,7 +58,7 @@ class BinaryMaskingTEst(tf.test.TestCase):
     def test_5d_mean_shape(self):
         x = self.get_5d_input()
         mask_layer = BinaryMaskingLayer(
-            type='mean_plus',
+            type_str='mean_plus',
             multimod_fusion='and',
             threshold=0.0)
         mean_var_layer = MeanVarNormalisationLayer(

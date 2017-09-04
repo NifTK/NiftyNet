@@ -10,7 +10,7 @@ import niftynet.utilities.histogram_standardisation as hs
 from niftynet.layer.base_layer import DataDependentLayer
 from niftynet.layer.base_layer import Invertible
 from niftynet.utilities.user_parameters_helper import standardise_string
-from niftynet.utilities.util_common import printProgressBar
+from niftynet.utilities.util_common import print_progress_bar
 
 
 class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
@@ -67,8 +67,7 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
         if isinstance(image, dict):
             image[self.image_name] = label_data
             return image, mask
-        else:
-            return label_data, mask
+        return label_data, mask
 
     def inverse_op(self, image, mask=None):
         assert self.is_ready(), \
@@ -93,8 +92,7 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
         if isinstance(image, dict):
             image[self.image_name] = label_data
             return image, mask
-        else:
-            return label_data, mask
+        return label_data, mask
 
     def is_ready(self):
         mapping = self.label_map.get(self.key, None)
@@ -127,9 +125,9 @@ def find_set_of_labels(image_list, field, output_key):
     for idx, image in enumerate(image_list):
         assert field in image, \
             "no {} data provided in for label mapping".format(field)
-        printProgressBar(idx, len(image_list),
-                         prefix='searching unique labels from training files',
-                         decimals=1, length=10, fill='*')
+        print_progress_bar(idx, len(image_list),
+                           prefix='searching unique labels from training files',
+                           decimals=1, length=10, fill='*')
         unique_label = np.unique(image[field].get_data())
         if len(unique_label) > 500 or len(unique_label) <= 1:
             tf.logging.warning(

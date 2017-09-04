@@ -64,7 +64,7 @@ class SegmentationApplication(BaseApplication):
 
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(
-                type=self.net_param.foreground_type,
+                type_str=self.net_param.foreground_type,
                 multimod_fusion=self.net_param.multimod_foreground_type,
                 threshold=0.0)
         else:
@@ -258,5 +258,4 @@ class SegmentationApplication(BaseApplication):
         if not self.is_training:
             return self.output_decoder.decode_batch(
                 batch_output['window'], batch_output['location'])
-        else:
-            return True
+        return True
