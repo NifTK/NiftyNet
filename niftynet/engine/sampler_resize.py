@@ -48,8 +48,8 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
         self._create_queue_and_ops(self.window,
                                    enqueue_size=1,
                                    dequeue_size=batch_size)
-        tf.logging.info("initialised sampler output {} "
-                        " [-1 for dynamic size]".format(self.window.shapes))
+        tf.logging.info("initialised sampler output %s "
+                        " [-1 for dynamic size]", self.window.shapes)
 
     def layer_op(self, *args, **kwargs):
         """

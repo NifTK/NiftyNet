@@ -104,7 +104,7 @@ class ImageWindowsAggregator(object):
                 'but here the output window %s is already smaller '
                 'than the input window size minus padding: %s, '
                 'not supported by this aggregator',
-                 spatial_shape, cropped_shape)
+                spatial_shape, cropped_shape)
             raise ValueError
         if n_spatial == 1:
             window = window[:,

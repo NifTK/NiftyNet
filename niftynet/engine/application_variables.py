@@ -57,6 +57,9 @@ class GradientsCollector(object):
 
     @property
     def _current_tower_id(self):
+        """
+        returns the list length of the collected as a multi-device index
+        """
         try:
             return len(self._gradients)
         except TypeError:
@@ -196,13 +199,22 @@ class OutputsCollector(object):
         self._merge_op = tf.summary.merge_all(key=TF_SUMMARIES)
 
     def _add_to_network_output(self, var, name, average_over_devices=False):
+        """
+        add a variable to be decoded in application.interprete_output
+        """
         self._add_to_dict(self.output_vars, var, name, average_over_devices)
 
     def _add_to_console(self, var, name, average_over_devices=False):
+        """
+        add a variable to be displayed in command line
+        """
         self._add_to_dict(self.console_vars, var, name, average_over_devices)
 
     def _add_to_tf_summary(self, var, name,
                            average_over_devices=False, summary_type='scalar'):
+        """
+        add a variable to be displayed in tensorboard
+        """
         name = self._add_to_dict(
             self.summary_vars, var, name, average_over_devices)
         # _add_to_dict might change the name parameter to avoid
@@ -214,6 +226,10 @@ class OutputsCollector(object):
 
     @staticmethod
     def _average_variables_over_devices(var_dict, create_tf_summary_op=False):
+        """
+        The last step of creating a tensorflow graph,
+        new ops are added by using reduce_mean over multi-devices
+        """
         for var_name in var_dict:
             values = var_dict.get(var_name, None)
             if not isinstance(values, list):
