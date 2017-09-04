@@ -25,7 +25,8 @@ def str2boolean(string_input):
     elif string_input.lower() in FALSE_VALUE:
         return False
     else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+        raise argparse.ArgumentTypeError(
+            'Boolean value expected, received {}'.format(string_input))
 
 
 def int_array(string_input):
@@ -33,7 +34,7 @@ def int_array(string_input):
         output_tuple = match_array(string_input, 'int')
     except ValueError:
         raise argparse.ArgumentTypeError(
-            'array of int expected'.format(string_input))
+            'array of int expected, received {}'.format(string_input))
     return output_tuple
 
 
@@ -42,7 +43,7 @@ def float_array(string_input):
         output_tuple = match_array(string_input, 'float')
     except ValueError:
         raise argparse.ArgumentTypeError(
-            'array of float expected'.format(string_input))
+            'array of float expected, received {}'.format(string_input))
     return output_tuple
 
 

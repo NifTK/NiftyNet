@@ -33,8 +33,7 @@ class HolisticScaleNet(ScaleNet):
                  b_initializer=None,
                  b_regularizer=None,
                  acti_func='elu',
-                 name='HolisticScaleNet'
-                 ):
+                 name='HolisticScaleNet'):
         super(HolisticScaleNet, self).__init__(
             num_classes=num_classes,
             acti_func=acti_func,
@@ -194,8 +193,7 @@ class HolisticScaleNet(ScaleNet):
         scores_instances.append(fused_score)
         if is_training:
             return scores_instances
-        else:
-            return fused_score
+        return fused_score
 
 
 class ScoreLayer(TrainableLayer):
@@ -215,8 +213,6 @@ class ScoreLayer(TrainableLayer):
         self.regularizers = {'w': w_regularizer}
 
     def layer_op(self, input_tensor, is_training, layer_id=-1):
-        n_modality = input_tensor.get_shape().as_list()[-1]
-        n_chns = input_tensor.get_shape().as_list()[-2]
         rank = input_tensor.get_shape().ndims
         perm = [i for i in range(rank)]
         perm[-2], perm[-1] = perm[-1], perm[-2]

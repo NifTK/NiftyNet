@@ -35,6 +35,7 @@ from niftynet.utilities.util_common import look_up_operations
 SUPPORTED_INTERPOLATION={'BSPLINE','LINEAR','NEAREST'}
 SUPPORTED_BOUNDARY={'ZERO','REPLICATE','CIRCULAR','SYMMETRIC'}
 
+
 class ResamplerLayer(Layer):
   """ Resampler  class
   

@@ -3,8 +3,8 @@ from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 
-from niftynet.utilities.util_common import look_up_operations
 from niftynet.layer.base_layer import TrainableLayer
+from niftynet.utilities.util_common import look_up_operations
 
 
 def prelu(f_in, channelwise_params):
@@ -12,14 +12,17 @@ def prelu(f_in, channelwise_params):
     neg = channelwise_params * (f_in - tf.abs(f_in)) * 0.5
     return pos + neg
 
+
 def selu(x, name):
     alpha = 1.6732632423543772848170429916717
     scale = 1.0507009873554804934193349852946
-    return scale*tf.where(x>=0.0, x, alpha*tf.nn.elu(x))
+    return scale * tf.where(x >= 0.0, x, alpha * tf.nn.elu(x))
+
 
 def leakyRelu(x, name):
     alpha = 0.01
-    return tf.maximum(alpha*x, x, name)
+    return tf.maximum(alpha * x, x, name)
+
 
 SUPPORTED_OP = {'relu': tf.nn.relu,
                 'relu6': tf.nn.relu6,

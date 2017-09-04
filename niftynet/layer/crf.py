@@ -3,8 +3,6 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.layer.base_layer import TrainableLayer
-from tensorflow.python.ops import control_flow_ops
-from tensorflow.python.framework import function
 import numpy
 
 """
@@ -46,7 +44,7 @@ def permutohedral_prepare(position_vectors):
     _,rank=tf.nn.top_k(-index,nCh+1,sorted=True) # This can be done more efficiently if necessary following the permutohedral paper
 
     # if the point doesn't lie on the plane (sum != 0) bring it back 
-    rank=tf.to_int32(rank)+sumV;
+    rank=tf.to_int32(rank)+sumV
     addMinusSub=tf.to_int32(rank<0)*(nCh+1)-tf.to_int32(rank>=nCh+1)*(nCh+1)
     rank=rank+addMinusSub
     rem0=rem0+addMinusSub
@@ -235,7 +233,7 @@ class CRFAsRNNLayer(TrainableLayer):
       permutohedrals = [permutohedral_prepare(coords) for coords in kernel_coords]
 
       nCh=U.get_shape()[-1]
-      mu = tf.get_variable('Compatibility',initializer=tf.constant(numpy.reshape(numpy.eye(nCh),[1,1,1,nCh,nCh]),dtype=tf.float32));
+      mu = tf.get_variable('Compatibility',initializer=tf.constant(numpy.reshape(numpy.eye(nCh),[1,1,1,nCh,nCh]),dtype=tf.float32))
       kernel_weights = [tf.get_variable("FilterWeights"+str(idx), shape=[1,1,1,1,nCh], initializer=tf.zeros_initializer()) for idx,k in enumerate(permutohedrals)]
     
       for t in range(self._T):
