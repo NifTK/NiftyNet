@@ -174,60 +174,6 @@ html_theme_options = {
 
 html_logo = logo_path
 
-"""
-# TODO: these are needed for customising the alabaster theme
-# html_sidebars is needed to force the inclusion of (at least) about.html so
-# that the logo is displayed.
-html_sidebars = {
-    '**': [
-        'about.html',
-        'searchbox.html',
-    ]
-}
-
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-#
-font_family = ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif']
-nn_black = '#0A0A0A'
-nn_red = '#CC0000'
-nn_gray = '#DDDDDD'
-nn_dark_red = '#AE1111'
-html_theme_options = {
-    # logo
-    'logo': logo_path,
-    'logo_name': 'true',
-    'logo_text_align': 'center',
-    'description': 'An open-source CNN platform for medical image analysis'
-                   ' and image-guided therapy',
-    'touch_icon': logo_path,
-    # fonts
-    'font_family': font_family,
-    'head_font_family': font_family,
-    # colours
-    'body_text': nn_black,
-    'footer_text': nn_black,
-    'link': nn_red,
-    'sidebar_header': nn_black,
-    'sidebar_text': nn_black,
-    'sidebar_link': nn_red,
-    'sidebar_search_button': nn_red,
-    'sidebar_list': nn_black,
-    'anchor_hover_fg': nn_black,
-    'anchor_hover_bg': nn_gray,
-    'note_bg': nn_gray,
-    'note_border': nn_black,
-    'seealso_bg': nn_gray,
-    'seealso_border': nn_black,
-    'warn_bg': nn_red,
-    'warn_border': nn_black,
-    'footnote_bg': nn_gray,
-    'footnote_border': nn_black,
-    'pre_bg': nn_gray,
-}
-"""
-
 
 # -- Options for HTMLHelp output ------------------------------------------
 
