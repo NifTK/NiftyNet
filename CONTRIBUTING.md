@@ -39,12 +39,13 @@ In particular (from the guide):
 
 ### Testing your changes
 
-When submitting merge requests, please merge to the dev branch.
+Please submit merge requests from your branch to the `dev` branch.
 
 Before submitting a merge request, please make sure your branch passes all
 unit tests, by running:
+
 ``` sh
 cd NiftyNet/
 sh run_test.sh
 ```
-(`run_test.sh` script requires `wget` and `tar` to prepare testing images.)
+(The `run_test.sh` script requires `wget` and `tar` to prepare testing images.)
