@@ -64,7 +64,7 @@ Citing NiftyNet
 
 If you use NiftyNet in your work, please cite `Li et. al. 2017`_:
 
-  Li W., Wang G., Fidon L., Ourselin S., Cardoso M.J., Vercauteren T. (2017) |LiEtAl2017Title| In: Niethammer M. et al. (eds) Information Processing in Medical Imaging. IPMI 2017. Lecture Notes in Computer Science, vol 10265. Springer, Cham. DOI: |LiEtAl2017Doi|
+  Li W., Wang G., Fidon L., Ourselin S., Cardoso M.J., Vercauteren T. (2017) |LiEtAl2017Title| In: Niethammer M. et al. (eds) Information Processing in Medical Imaging. IPMI 2017. Lecture Notes in Computer Science, vol 10265. Springer, Cham. DOI: `10.1007/978-3-319-59050-9_28`_
 
 BibTeX entry:
 
@@ -82,8 +82,7 @@ BibTeX entry:
 .. |LiEtAl2017Title| replace:: *On the Compactness, Efficiency, and Representation of 3D Convolutional Networks\: Brain Parcellation as a Pretext Task\.*
 .. _LiEtAl2017Title: http://doi.org/10.1007/978-3-319-59050-9_28
 
-.. |LiEtAl2017Doi| replace:: 10\.1007\/978\-3\-319\-59050\-9\_28
-.. _LiEtAl2017Doi: http://doi.org/10.1007/978-3-319-59050-9_28
+.. _`10.1007/978-3-319-59050-9_28`: http://doi.org/10.1007/978-3-319-59050-9_28
 
 
 Licensing and copyright
