@@ -16,7 +16,6 @@ import subprocess
 import os
 import sys
 import pip
-import shutil
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -33,7 +32,6 @@ root_dir_abs = os.path.abspath(root_dir_rel)
 module_path = root_dir_abs
 sys.path.insert(0, module_path)
 logo_file = 'niftynet-logo.png'
-logo_path_abs = os.path.join(root_dir_abs, logo_file)
 static_images_folder = 'images'
 logo_path = os.path.join('..', '..', logo_file)
 
@@ -60,12 +58,6 @@ def generate_apidocs(*args):
     # installed automatically via the requirements file installation hook
     # on ReadTheDocs.
     pip.main(['install', 'simpleitk'])
-
-    # Copy logo to static sub-folder for RTD to be able to locate it
-    static_images_path = os.path.join(static_folder, static_images_folder)
-    if not os.path.exists(static_images_path):
-        os.mkdir(static_images_path)
-    shutil.copy(logo_path_abs, static_images_path)
 
     global working_dir, module_path
     output_path = working_dir
