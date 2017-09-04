@@ -7,6 +7,14 @@ NiftyNet codebase is also mirrored on [GitHub][github-niftynet].
 [github-niftynet]: https://github.com/NifTK/NiftyNet
 
 
+## Submitting bug reports and feature requests
+
+Bug reports and feature requests should be submitted by creating an issue on [CMICLab][cmiclab-niftynet-issue] or [GitHub][github-niftynet-issue].
+
+[cmiclab-niftynet-issue]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/issues/new
+[github-niftynet-issue]: https://github.com/NifTK/NiftyNet/issues/new
+
+
 ## Submitting merge requests
 
 All merge requests should be submitted via [CMICLab][cmiclab-niftynet-mr].
