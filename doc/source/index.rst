@@ -62,7 +62,14 @@ Useful links
 Citing NiftyNet
 ---------------
 
-If you use NiftyNet, please cite the following paper:
+If you use NiftyNet in your work, please cite `Li et. al. 2017`_:
+
+| Li W., Wang G., Fidon L., Ourselin S., Cardoso M.J., Vercauteren T. (2017)
+|   On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.
+|   In: Niethammer M. et al. (eds) Information Processing in Medical Imaging. IPMI 2017.
+|   Lecture Notes in Computer Science, vol 10265. Springer, Cham. DOI: 10.1007/978-3-319-59050-9_28
+
+BibTeX entry:
 
 ::
 
@@ -72,6 +79,8 @@ If you use NiftyNet, please cite the following paper:
     booktitle = {International Conference on Information Processing in Medical Imaging (IPMI)},
     year = {2017}
   }
+
+.. _`Li et. al. 2017`: http://doi.org/10.1007/978-3-319-59050-9_28
 
 
 Licensing and copyright
