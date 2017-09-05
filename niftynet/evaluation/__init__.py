@@ -1,1 +1,6 @@
-"""Evaluation criteria for network outputs."""
+"""
+
+.. module:: niftynet.evaluation
+   :synopsis: Evaluation criteria for network outputs.
+
+"""
