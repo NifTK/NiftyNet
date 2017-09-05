@@ -1,1 +1,6 @@
-"""High-level re-usable utilities."""
+"""
+
+.. module:: niftynet.utilities
+   :synopsis: High-level re-usable utilities.
+
+"""
