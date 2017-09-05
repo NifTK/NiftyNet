@@ -1,1 +1,6 @@
-"""Neural network (re-)implementations."""
+"""
+
+.. module:: niftynet.network
+   :synopsis: Neural network (re-)implementations.
+
+"""
