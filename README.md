@@ -60,7 +60,7 @@ Please see tne [network (re-)implementations in NiftyNet][network-impl].
 
 #### API documentation
 
-The API documentation is available on [Read the Docs][rtd-niftynet].
+The API reference is available on [Read the Docs][rtd-niftynet].
 
 [rtd-niftynet]: http://niftynet.rtfd.io/
 
