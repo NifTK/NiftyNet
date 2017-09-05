@@ -1,1 +1,6 @@
-"""Application engine."""
+"""
+
+.. module:: niftynet.engine
+   :synopsis: Application engine.
+
+"""
