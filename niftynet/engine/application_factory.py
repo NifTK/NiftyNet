@@ -51,8 +51,8 @@ SUPPORTED_NETWORK = {
         'niftynet.network.deepmedic.DeepMedic',
     "scalenet":
         'niftynet.network.scalenet.ScaleNet',
-    "holistic_scalenet":
-        'niftynet.network.holistic_scalenet.HolisticScaleNet',
+    "holisticnet":
+        'niftynet.network.holistic_net.HolisticNet',
 
     # autoencoder
     "vae": 'niftynet.network.vae.VAE'
@@ -72,7 +72,7 @@ SUPPORTED_LOSS_SEGMENTATION = {
     "GDSC":
         'niftynet.layer.loss_segmentation.generalised_dice_loss',
     "WGDL":
-        'niftynet.layer.loss_segmentation.wasserstein_generalised_dice_loss',
+        'niftynet.layer.loss_segmentation.generalised_wasserstein_dice_loss',
     "SensSpec":
         'niftynet.layer.loss_segmentation.sensitivity_specificity_loss',
     "L1Loss":
