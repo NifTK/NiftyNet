@@ -36,6 +36,13 @@ def add_customised_args(parser, task_name):
 
 
 def __add_regression_args(parser):
+    parser.add_argument(
+        "--loss_border",
+        metavar='',
+        help="Set the border size for the loss function to ignore",
+        type=int,
+        default=0)
+
     from niftynet.application.regression_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser

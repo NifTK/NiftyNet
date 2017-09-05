@@ -37,6 +37,7 @@ class RegressionApplication(BaseApplication):
 
         self.net_param = net_param
         self.action_param = action_param
+        self.regression_param = None
 
         self.data_param = None
         self.SUPPORTED_SAMPLING = {
@@ -50,6 +51,8 @@ class RegressionApplication(BaseApplication):
 
     def initialise_dataset_loader(self, data_param=None, task_param=None):
         self.data_param = data_param
+        self.regression_param = task_param
+        tf.logging.info("$s", vars(task_param))
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
@@ -172,7 +175,7 @@ class RegressionApplication(BaseApplication):
         net_out = self.net(image, self.is_training)
 
         if self.is_training:
-            crop_layer = CropLayer(border=8, name='crop-88')
+            crop_layer = CropLayer(border=self.regression_param.loss_border, name='crop-88')
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
@@ -182,8 +185,8 @@ class RegressionApplication(BaseApplication):
                 loss_type=self.action_param.loss_type)
             data_loss = loss_func(
                 prediction=crop_layer(net_out),
-                ground_truth=data_dict.get('output', None),
-                weight_map=data_dict.get('weight', None))
+                ground_truth=crop_layer(data_dict.get('output', None)),
+                weight_map=crop_layer(data_dict.get('weight', None)) if data_dict.get('weight', None) else None)
             if self.net_param.decay > 0.0:
                 reg_losses = tf.get_collection(
                     tf.GraphKeys.REGULARIZATION_LOSSES)
