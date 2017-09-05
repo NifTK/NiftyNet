@@ -8,24 +8,17 @@ from niftynet.layer.dilatedcontext import DilatedTensor
 from niftynet.layer.downsample import DownSampleLayer
 from niftynet.layer.upsample import UpSampleLayer
 from niftynet.network.highres3dnet import HighResBlock
+from niftynet.network.base_net import BaseNet
 from niftynet.network.scalenet import ScaleNet
 
-# Distance matrix between labels of BraTS dataset defined manually
-# they are used to calculate the Wasserstein Dice loss
-M_tree = np.array([[0., 1., 1., 1., 1.],
-                   [1., 0., 0.6, 0.2, 0.5],
-                   [1., 0.6, 0., 0.6, 0.7],
-                   [1., 0.2, 0.6, 0., 0.5],
-                   [1., 0.5, 0.7, 0.5, 0.]], dtype=np.float32)
 
-M_01 = np.array([[0., 1., 1., 1., 1.],
-                 [1., 0., 1., 1., 1.],
-                 [1., 1., 0., 1., 1.],
-                 [1., 1., 1., 0., 1.],
-                 [1., 1., 1., 1., 0.]], dtype=np.float32)
-
-
-class HolisticNet(ScaleNet):
+class HolisticNet(BaseNet):
+    """
+    Implementation of HolisticNet detailed in
+    Fidon, L. et. al. (2017) Generalised Wasserstein Dice Score for Imbalanced
+    Multi-class Segmentation using Holistic Convolutional Networks.
+    MICCAI 2017 (BrainLes)
+    """
     def __init__(self,
                  num_classes,
                  w_initializer=None,
@@ -33,7 +26,7 @@ class HolisticNet(ScaleNet):
                  b_initializer=None,
                  b_regularizer=None,
                  acti_func='elu',
-                 name='HolisticScaleNet'):
+                 name='HolisticNet'):
         super(HolisticNet, self).__init__(
             num_classes=num_classes,
             acti_func=acti_func,
@@ -43,7 +36,6 @@ class HolisticNet(ScaleNet):
             b_initializer=b_initializer,
             b_regularizer=b_regularizer)
 
-        self.num_scale_res_block = 0
         self.num_res_blocks = [3, 3, 3, 3]
         self.num_features = [70] * 4
         self.num_fea_score_layers = [[70, 140]] * 4

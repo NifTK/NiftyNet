@@ -254,7 +254,7 @@ def generalised_wasserstein_dice_loss(prediction,
         axis=1)
     true_pos = tf.reduce_sum(tf.multiply(true_pos, 1. - delta), axis=0)
     WGDL = 1. - (2. * true_pos) / (2. * true_pos + all_error)
-    return WGDL
+    return tf.cast(WGDL,dtype=tf.float32)
 
 
 def dice_nosquare(prediction, ground_truth, weight_map=None):
