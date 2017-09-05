@@ -51,6 +51,9 @@ This input source can be used alone, as a `T1` MRI input to an application.
 It can also be used along with other modalities, a multi-modality example
 can be find at [here](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/supports-axbxc-patch/config/default_multimodal_segmentation.ini).
 
+Currently image data in nifty format (extension .nii or .nii.gz) are supported.
+
+
 The following sections describe key parameters that can be specified in the configuration file.
 
 ## [SYSTEM]
