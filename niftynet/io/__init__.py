@@ -1,1 +1,6 @@
-"""High-level input/output operations."""
+"""
+
+.. module:: niftynet.io
+   :synopsis: High-level input/output operations.
+
+"""
