@@ -6,7 +6,7 @@ Please see the `README.md` in each folder of this [directory](./demos) for more 
 
 ##### (b) To run an application 
 
-For example, to run a segmentation network (*):
+For example, to run a segmentation network <sup>(*)</sup>:
 ``` sh
 # training
 net_segment train -c /path/to/customised_config
