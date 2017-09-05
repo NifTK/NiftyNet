@@ -148,6 +148,19 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertEqual(idx, 2)
         self.assertAllClose(data['image'].shape, (276, 178, 266, 1, 1))
 
+    def test_preprocessing_zero_padding(self):
+        reader = ImageReader(['image'])
+        reader.initialise_reader(SINGLE_MOD_DATA, SINGLE_MOD_TASK)
+        idx, data, interp_order = reader()
+        self.assertEqual(SINGLE_MOD_DATA['lesion'].interp_order,
+                         interp_order['image'][0])
+        self.assertAllClose(data['image'].shape, (256, 168, 256, 1, 1))
+        reader.add_preprocessing_layers(
+            [PadLayer(image_name=['image'], border=(0, 0, 0))])
+        idx, data, interp_order = reader(idx=2)
+        self.assertEqual(idx, 2)
+        self.assertAllClose(data['image'].shape, (256, 168, 256, 1, 1))
+
     def test_trainable_preprocessing(self):
         label_file = os.path.join('testing_data', 'label_reader.txt')
         if os.path.exists(label_file):
