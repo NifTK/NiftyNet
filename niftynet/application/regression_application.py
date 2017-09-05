@@ -6,8 +6,8 @@ from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.application_variables import NETORK_OUTPUT
-from niftynet.engine.image_windows_aggregator import GridSamplesAggregator
-from niftynet.engine.image_windows_aggregator import ResizeSamplesAggregator
+from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
+from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.engine.sampler_uniform import UniformSampler
@@ -104,14 +104,16 @@ class RegressionApplication(BaseApplication):
             reader=self.reader,
             data_param=self.data_param,
             batch_size=self.net_param.batch_size,
-            windows_per_image=self.action_param.sample_per_volume)]
+            windows_per_image=self.action_param.sample_per_volume,
+            queue_length=self.net_param.queue_length)]
 
     def initialise_resize_sampler(self):
         self.sampler = [ResizeSampler(
             reader=self.reader,
             data_param=self.data_param,
             batch_size=self.net_param.batch_size,
-            shuffle_buffer=self.is_training)]
+            shuffle_buffer=self.is_training,
+            queue_length=self.net_param.queue_length)]
 
     def initialise_grid_sampler(self):
         self.sampler = [GridSampler(
@@ -119,7 +121,8 @@ class RegressionApplication(BaseApplication):
             data_param=self.data_param,
             batch_size=self.net_param.batch_size,
             spatial_window_size=self.action_param.spatial_window_size,
-            window_border=self.action_param.border)]
+            window_border=self.action_param.border,
+            queue_length=self.net_param.queue_length)]
 
     def initialise_grid_aggregator(self):
         self.output_decoder = GridSamplesAggregator(
