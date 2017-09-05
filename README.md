@@ -48,7 +48,17 @@ Other features of NiftyNet include:
 
 ### Getting started
 
-Please follow the links for [demos](./demos) and [network (re-)implementations](./niftynet/network).
+#### Examples
+
+Please see the [NiftyNet demos][demos].
+
+[demos]: ./demos
+
+#### Network (re-)implementations
+
+Please see tne [network (re-)implementations in NiftyNet][network-impl].
+
+#### API documentation
 
 The API documentation is available on [Read the Docs][rtd-niftynet].
 
