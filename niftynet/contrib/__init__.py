@@ -1,1 +1,6 @@
-"""Experimental code for new features."""
+"""
+
+.. module:: niftynet.contrib
+   :synopsis: Experimental code for new features.
+
+"""
