@@ -65,7 +65,7 @@ Contributors are encouraged to take a look at [CONTRIBUTING.md](./CONTRIBUTING.m
 
 If you use NiftyNet in your work, please cite [Li et. al. 2017][ipmi2017]:
 
-<div style="text-indent:20px">Li W., Wang G., Fidon L., Ourselin S., Cardoso M.J., Vercauteren T. (2017)
+<div>Li W., Wang G., Fidon L., Ourselin S., Cardoso M.J., Vercauteren T. (2017)
 <a href="http://doi.org/10.1007/978-3-319-59050-9_28">On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.</a>
 In: Niethammer M. et al. (eds) Information Processing in Medical Imaging. IPMI 2017.
 Lecture Notes in Computer Science, vol 10265. Springer, Cham. DOI: <a href="http://doi.org/10.1007/978-3-319-59050-9_28">10.1007/978-3-319-59050-9_28</a></div>
