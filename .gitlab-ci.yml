@@ -150,6 +150,7 @@ quicktest:
     - supports-axbxc-patch
     - 112-publish-api-docs-online
     - 147-revise-contribution-guidelines-to-include-github
+    - 150-properly-format-the-bibtex-entry-to-the-ipmi-2017-paper-on-the-main-readme
   script:
     # print system info
     - which nvidia-smi
