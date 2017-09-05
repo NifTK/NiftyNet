@@ -1,6 +1,6 @@
 """
 
 .. module:: niftynet.application
-   :synopsis: Definition of high-level NiftyNet applications.
+   :synopsis: Specific high-level NiftyNet applications.
 
 """
