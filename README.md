@@ -56,7 +56,9 @@ Please see the [NiftyNet demos][demos].
 
 #### Network (re-)implementations
 
-Please see tne [network (re-)implementations in NiftyNet][network-impl].
+Please see the list of [network (re-)implementations in NiftyNet][network-impl].
+
+[network-impl]: ./niftynet/network
 
 #### API documentation
 
