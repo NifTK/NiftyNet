@@ -123,12 +123,6 @@ def add_input_data_args(parser):
         default='')
 
     parser.add_argument(
-        "--spatial_window_size",
-        type=int_array,
-        help="specify the spatial size of the input data (ndims <= 3)",
-        default=())
-
-    parser.add_argument(
         "--interp_order",
         type=int,
         choices=[0, 1, 2, 3],
@@ -148,6 +142,12 @@ def add_input_data_args(parser):
         help="labels for positive end of voxel axes, possible labels are"
              " ('L','R'),('P','A'),('I','S')"
              " *see also nibabel.orientations.ornt2axcodes")
+
+    parser.add_argument(
+        "--spatial_window_size",
+        type=int_array,
+        help="specify the spatial size of the input data (ndims <= 3)",
+        default=())
     return parser
 
 
