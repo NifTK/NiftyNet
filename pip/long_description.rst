@@ -34,7 +34,33 @@ Other features of NiftyNet include:
 Getting started
 ---------------
 
-Please follow the instructions on the `NiftyNet source code repository`_.
+Installation
+^^^^^^^^^^^^
+
+Please follow the `installation instructions`_.
+
+.. _`installation instructions`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet#installation
+
+Examples
+^^^^^^^^
+
+Please see the `NiftyNet demos`_.
+
+.. _`NiftyNet demos`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/tree/dev/demos
+
+Network (re-)implementations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Please see the list of `network (re-)implementations in NiftyNet`_.
+
+.. _`network (re-)implementations in NiftyNet`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/tree/dev/niftynet/network
+
+API documentation
+^^^^^^^^^^^^^^^^^
+
+The API reference is available on `Read the Docs`_.
+
+.. _`Read the Docs`: http://niftynet.rtfd.io/
 
 Contributing
 ^^^^^^^^^^^^
