@@ -188,5 +188,14 @@ def _enumerate_step_points(starting, ending, win_size, step_size):
     while (starting + win_size) <= ending:
         sampling_point_set.append(starting)
         starting = starting + step_size
-    sampling_point_set.append(np.max((ending - win_size, 0)))
-    return np.unique(sampling_point_set).flatten()
+    additional_last_point = ending - win_size
+    sampling_point_set.append(max(additional_last_point, 0))
+    sampling_point_set = np.unique(sampling_point_set).flatten()
+    if len(sampling_point_set) == 2:
+        # in case of too few samples, adding
+        # an additional sampling point to
+        # the middle between starting and ending
+        sampling_point_set = np.append(
+            sampling_point_set, np.round(np.mean(sampling_point_set)))
+    _, uniq_idx = np.unique(sampling_point_set, return_index=True)
+    return sampling_point_set[np.sort(uniq_idx)]
