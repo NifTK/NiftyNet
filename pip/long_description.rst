@@ -31,10 +31,17 @@ Other features of NiftyNet include:
 .. [#] 2.5-D: volumetric images processed as a stack of 2D slices; 4-D: co-registered multi-modal 3D volumes
 
 
-Getting started and contributing
---------------------------------
+Getting started
+---------------
 
 Please follow the instructions on the `NiftyNet source code repository`_.
+
+Contributing
+^^^^^^^^^^^^
+
+Please see the `contribution guidelines`_ on the `NiftyNet source code repository`_.
+
+.. _`contribution guidelines`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/dev/CONTRIBUTING.md
 
 
 Citing NiftyNet
