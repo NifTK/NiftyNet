@@ -15,7 +15,7 @@ NiftyNet is a consortium of research groups (WEISS -- `Wellcome EPSRC Centre for
 
 
 Features
-========
+--------
 
 NiftyNet currently supports medical image segmentation and generative adversarial networks.
 **NiftyNet is not intended for clinical use**.
@@ -32,13 +32,13 @@ Other features of NiftyNet include:
 
 
 Getting started and contributing
-================================
+--------------------------------
 
 Please follow the instructions on the `NiftyNet source code repository`_.
 
 
 Citing NiftyNet
-===============
+---------------
 
 If you use NiftyNet, please cite the following paper:
 
@@ -53,7 +53,7 @@ If you use NiftyNet, please cite the following paper:
 
 
 Licensing and copyright
-=======================
+-----------------------
 
 Copyright 2017 University College London and the NiftyNet Contributors.
 NiftyNet is released under the Apache License, Version 2.0.
@@ -61,7 +61,7 @@ Please see the LICENSE file in the `NiftyNet source code repository`_ for detail
 
 
 Acknowledgements
-================
+----------------
 
 This project is grateful for the support from the `Wellcome Trust`_, the `Engineering and Physical Sciences Research Council (EPSRC)`_, the `National Institute for Health Research (NIHR)`_, the `Department of Health (DoH)`_, `University College London (UCL)`_, the `Science and Engineering South Consortium (SES)`_, the `STFC Rutherford-Appleton Laboratory`_, and `NVIDIA`_.
 
