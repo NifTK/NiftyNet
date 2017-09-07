@@ -69,6 +69,20 @@ Please see the `contribution guidelines`_ on the `NiftyNet source code repositor
 
 .. _`contribution guidelines`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/dev/CONTRIBUTING.md
 
+Useful links
+^^^^^^^^^^^^
+
+`NiftyNet website`_
+
+`NiftyNet source code on CmicLab`_
+
+`NiftyNet source code mirror on GitHub`_
+
+
+.. _`NiftyNet website`: http://niftynet.io/
+.. _`NiftyNet source code on CmicLab`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
+.. _`NiftyNet source code mirror on GitHub`: https://github.com/NifTK/NiftyNet
+
 
 Citing NiftyNet
 ---------------
