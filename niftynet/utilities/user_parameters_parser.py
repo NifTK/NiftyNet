@@ -45,7 +45,7 @@ def run():
         used by niftynet.io.ImageReader
     """
     meta_parser = argparse.ArgumentParser(
-        epilog='Please visit https://github.com/NifTK/NiftyNet/tree/dev/demos '
+        epilog='Please visit https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/tree/dev/demos '
                'for more info.')
     version_string = get_niftynet_version_string()
     meta_parser.add_argument("-v", "--version",
