@@ -1,29 +1,30 @@
 This demo presents the brain tumor segmentation method described in
+
 ```
 Wang et al., Automatic Brain Tumor Segmentation using
 Cascaded Anisotropic Convolutional Neural Networks,
-https://arxiv.org/abs/1709.00382
 ```
+[https://arxiv.org/abs/1709.00382](https://arxiv.org/abs/1709.00382)
 
 ### Overview
 The demo focuses on the first stage of the cascaded CNNs, i.e., automated
 segmentation of whole tumor using the [WNet](anisotropic_nets/wt_net.py).
 
 This folder (also zipped and downloadable via [dropbox link](http://link)) contains details for replicating the results [1], including:
-  * [brats_segmentation.py](brats_segmentation.py) --
+  * [`brats_segmentation.py`](demos/BRATS17/brats_segmentation.py) --
     an application built with NiftyNet, defines the main workflow of network
     training and inference.
-  * [wt_net.py](anisotropic_nets/wt_net.py) --
+  * [`wt_net.py`](demos/BRATS17/anisotropic_nets/wt_net.py) --
     the network definitions.
-  * .ini files --
+  * `.ini` files --
     configuration files define system parameters for running
     segmentation networks, the six files correspond to the combinations of
     [training, inference] and networks in three orientations
     [axial, coronal, sagittal] configurations.
-  * [label_mapping_whole_tumor.txt](label_mapping_whole_tumor.txt) --
+  * [`label_mapping_whole_tumor.txt`](demos/BRATS17/label_mapping_whole_tumor.txt) --
     mapping file used by NiftyNet, to convert the multi-class segmentations
     into a binary problem.
-  * [rename_crop_BRATS17.py](rename_crop_BRATS17.py) --
+  * [`rename_crop_BRATS.py`](demos/BRATS17/rename_crop_BRATS.py) --
     utility script used to rename BRATS17 images into
     `TYPEindex_modality.nii.gz` format and crop with a bounding box to remove
     image background (voxels with intensity value zero).
