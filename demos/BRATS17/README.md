@@ -2,7 +2,7 @@ This demo presents the brain tumor segmentation method described in
 
 ```
 Wang et al., Automatic Brain Tumor Segmentation using
-Cascaded Anisotropic Convolutional Neural Networks,
+Cascaded Anisotropic Convolutional Neural Networks, MICCAI BRATS 2017
 ```
 [https://arxiv.org/abs/1709.00382](https://arxiv.org/abs/1709.00382)
 
@@ -29,7 +29,7 @@ This folder (also zipped and downloadable via [dropbox link](http://link)) conta
     `TYPEindex_modality.nii.gz` format and crop with a bounding box to remove
     image background (voxels with intensity value zero).
 
-*[1] This implementation ranked the first (in terms of averaged averaged Dice score 0.90499) according
+*[1] This implementation ranked the first (in terms of averaged Dice score 0.90499) according
 to the online validation leaderboard of [BRATS challenge 2017](https://www.cbica.upenn.edu/BraTS17/lboardValidation.html).*
 
 ### Preparing data
@@ -43,7 +43,7 @@ To access the data for
  * BRATS 2017, please visit [http://www.med.upenn.edu/sbia/brats2017.html](http://www.med.upenn.edu/sbia/brats2017.html).
 
 To be compatiable with the current NiftyNet configuration files and anisotropic
-networks, the downloaded datasets must first be preprocessed with [rename_crop_BRATS17.py](rename_crop_BRATS17.py).
+networks, the downloaded datasets must first be preprocessed with [rename_crop_BRATS.py](demos/BRATS17/rename_crop_BRATS.py).
 
 ### Running segmentation app as a NiftyNet module
 Using pip installed NiftyNet:
