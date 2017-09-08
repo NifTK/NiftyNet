@@ -66,8 +66,8 @@ The API reference is available on [Read the Docs][rtd-niftynet].
 
 [rtd-niftynet]: http://niftynet.rtfd.io/
 
+#### Contributing
 
-### Contributing
 
 Feature requests and bug reports are collected on [Issues](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/issues).
 
