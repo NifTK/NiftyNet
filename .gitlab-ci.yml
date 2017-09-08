@@ -245,8 +245,8 @@ pip-installer:
     - python $package_importer
     # test niftynet command
     - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
-    - net_segment train -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
-    - net_segment inference -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
+    # - net_segment train -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
+    # - net_segment inference -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
     - net_run train --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
     - net_run inference --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
     - net_run train --app net_gan -c config/GAN_demo_train_config.ini --max_iter 5
@@ -287,8 +287,8 @@ pip-installer:
     - python $package_importer
     # test niftynet command
     - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
-    - net_segment train -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
-    - net_segment inference -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
+    # - net_segment train -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
+    # - net_segment inference -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
     - net_run train --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
     - net_run inference --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
     - net_run train --app net_gan -c config/GAN_demo_train_config.ini --max_iter 5
