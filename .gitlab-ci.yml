@@ -198,6 +198,7 @@ pip-installer:
     - tags
     - supports-axbxc-patch
     - 159-add-net_run-command-line-entry-to-pip-installer
+    - 160-add-net_gan-command-line-entry-to-pip-installer
   script:
     # source utils
     - source ci/utils.sh
