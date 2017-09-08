@@ -257,6 +257,10 @@ pip-installer:
     # - net_gan inference -c $niftynet_dir/config/GAN_demo_train_config.ini
     # - net_run train --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
     # - net_run inference --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini
+    - net_autoencoder train -c $niftynet_dir/config/vae_config.ini --max_iter 5
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type sample
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type encode-decode
     # - net_run train --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --max_iter 5
     # - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type sample
     # - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
@@ -301,6 +305,10 @@ pip-installer:
     # - net_gan inference -c $niftynet_dir/config/GAN_demo_train_config.ini
     # - net_run train --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
     # - net_run inference --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini
+    - net_autoencoder train -c $niftynet_dir/config/vae_config.ini --max_iter 5
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type sample
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type encode-decode
     # - net_run train --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --max_iter 5
     # - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type sample
     # - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
