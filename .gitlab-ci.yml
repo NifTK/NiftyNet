@@ -8,6 +8,7 @@ pylintjob:
   stage: pylint_test
   except:
     - 139-correct-toynet-demo-instructions
+    - 148-publish-niftynet-v0-2-0-on-python-package-index-pypi
   script:
     - pylint --rcfile=tests/pylintrc niftynet/engine
 
@@ -154,6 +155,7 @@ quicktest:
     - 147-revise-contribution-guidelines-to-include-github
     - 150-properly-format-the-bibtex-entry-to-the-ipmi-2017-paper-on-the-main-readme
     - 139-correct-toynet-demo-instructions
+    - 148-publish-niftynet-v0-2-0-on-python-package-index-pypi
   script:
     # print system info
     - which nvidia-smi

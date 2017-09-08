@@ -66,12 +66,25 @@ The API reference is available on [Read the Docs][rtd-niftynet].
 
 [rtd-niftynet]: http://niftynet.rtfd.io/
 
+#### Contributing
 
-### Contributing
+Please see the [contribution guidelines](./CONTRIBUTING.md).
 
-Feature requests and bug reports are collected on [Issues](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/issues).
+#### Useful links
 
-Contributors are encouraged to take a look at [CONTRIBUTING.md](./CONTRIBUTING.md).
+[NiftyNet website][niftynet-io]
+
+[NiftyNet source code on CmicLab][niftynet-cmiclab]
+
+[NiftyNet source code mirror on GitHub][niftynet-github]
+
+NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
+
+[niftynet-io]: http://niftynet.io/
+[niftynet-cmiclab]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
+[niftynet-github]: https://github.com/NifTK/NiftyNet
+[ml-niftynet]: mailto:nifty-net@live.ucl.ac.uk
+
 
 ### Citing NiftyNet
 
