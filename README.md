@@ -68,10 +68,9 @@ The API reference is available on [Read the Docs][rtd-niftynet].
 
 #### Contributing
 
+Please see the [contribution guidelines](./CONTRIBUTING.md).
 
-Feature requests and bug reports are collected on [Issues](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/issues).
 
-Contributors are encouraged to take a look at [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ### Citing NiftyNet
 
