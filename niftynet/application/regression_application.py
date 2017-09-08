@@ -11,6 +11,7 @@ from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.engine.sampler_uniform import UniformSampler
+from niftynet.engine.sampler_weighted import WeightedSampler
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
@@ -24,7 +25,7 @@ from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.crop import CropLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 
-SUPPORTED_INPUT = {'image', 'output', 'weight'}
+SUPPORTED_INPUT = {'image', 'output', 'weight','sampler'}
 
 
 class RegressionApplication(BaseApplication):
@@ -44,6 +45,9 @@ class RegressionApplication(BaseApplication):
             'uniform': (self.initialise_uniform_sampler,
                         self.initialise_grid_sampler,
                         self.initialise_grid_aggregator),
+            'weighted': (self.initialise_weighted_sampler,
+                        self.initialise_grid_sampler,
+                        self.initialise_grid_aggregator),
             'resize': (self.initialise_resize_sampler,
                        self.initialise_resize_sampler,
                        self.initialise_resize_aggregator),
@@ -52,7 +56,6 @@ class RegressionApplication(BaseApplication):
     def initialise_dataset_loader(self, data_param=None, task_param=None):
         self.data_param = data_param
         self.regression_param = task_param
-        tf.logging.info("$s", vars(task_param))
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
@@ -104,6 +107,14 @@ class RegressionApplication(BaseApplication):
 
     def initialise_uniform_sampler(self):
         self.sampler = [UniformSampler(
+            reader=self.reader,
+            data_param=self.data_param,
+            batch_size=self.net_param.batch_size,
+            windows_per_image=self.action_param.sample_per_volume,
+            queue_length=self.net_param.queue_length)]
+
+    def initialise_weighted_sampler(self):
+        self.sampler = [WeightedSampler(
             reader=self.reader,
             data_param=self.data_param,
             batch_size=self.net_param.batch_size,
@@ -186,7 +197,7 @@ class RegressionApplication(BaseApplication):
             data_loss = loss_func(
                 prediction=crop_layer(net_out),
                 ground_truth=crop_layer(data_dict.get('output', None)),
-                weight_map=crop_layer(data_dict.get('weight', None)) if data_dict.get('weight', None) else None)
+                weight_map=None if data_dict.get('weight', None) is None else crop_layer(data_dict.get('weight', None)))
             if self.net_param.decay > 0.0:
                 reg_losses = tf.get_collection(
                     tf.GraphKeys.REGULARIZATION_LOSSES)

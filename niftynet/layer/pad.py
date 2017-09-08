@@ -43,12 +43,12 @@ class PadLayer(Layer, Invertible):
     def inverse_op(self, input_image, mask=None):
         if not isinstance(input_image, dict):
             try:
-                x_ = self.border[0][0] if self.border[0][0] > 0 else 0
-                y_ = self.border[1][0] if self.border[1][0] > 0 else 0
-                z_ = self.border[2][0] if self.border[2][0] > 0 else 0
-                _x = -self.border[0][0] if self.border[0][0] > 0 else input_image.shape[0]
-                _y = -self.border[1][0] if self.border[1][0] > 0 else input_image.shape[1]
-                _z = -self.border[2][0] if self.border[2][0] > 0 else input_image.shape[2]
+                x_ = self.border[0][0] if (input_image.shape[0]/2 > self.border[0][0] > 0) else 0
+                y_ = self.border[1][0] if (input_image.shape[1]/2 > self.border[1][0] > 0) else 0
+                z_ = self.border[2][0] if (input_image.shape[2]/2 > self.border[2][0] > 0) else 0
+                _x = -self.border[0][0] if (input_image.shape[0]/2 > self.border[0][0] > 0) else input_image.shape[0]
+                _y = -self.border[1][0] if (input_image.shape[1]/2 > self.border[1][0] > 0) else input_image.shape[1]
+                _z = -self.border[2][0] if (input_image.shape[2]/2 > self.border[2][0] > 0) else input_image.shape[2]
                 outputs = input_image[x_:_x, y_:_y, z_:_z, ...]
             except IndexError:
                 tf.logging.fatal(
