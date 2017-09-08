@@ -156,6 +156,9 @@ quicktest:
     - 150-properly-format-the-bibtex-entry-to-the-ipmi-2017-paper-on-the-main-readme
     - 139-correct-toynet-demo-instructions
     - 148-publish-niftynet-v0-2-0-on-python-package-index-pypi
+    - 159-add-net_run-command-line-entry-to-pip-installer
+    - 160-add-net_gan-command-line-entry-to-pip-installer
+    - 161-add-net_autoencode-command-line-entry-to-pip-installer
   script:
     # print system info
     - which nvidia-smi
@@ -196,6 +199,9 @@ pip-installer:
     - dev-staging
     - tags
     - supports-axbxc-patch
+    - 159-add-net_run-command-line-entry-to-pip-installer
+    - 160-add-net_gan-command-line-entry-to-pip-installer
+    - 161-add-net_autoencode-command-line-entry-to-pip-installer
   script:
     # source utils
     - source ci/utils.sh
@@ -245,6 +251,20 @@ pip-installer:
     - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
     - net_segment train -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
     - net_segment inference -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
+    - net_run train --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
+    - net_run inference --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
+    - net_gan train -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
+    - net_gan inference -c $niftynet_dir/config/GAN_demo_train_config.ini
+    - net_run train --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
+    - net_run inference --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini
+    - net_autoencoder train -c $niftynet_dir/config/vae_config.ini --max_iter 5
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type sample
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type encode-decode
+    - net_run train --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --max_iter 5
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type sample
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type encode-decode
     # deactivate virtual environment
     - deactivate
     - cd $niftynet_dir
@@ -279,6 +299,21 @@ pip-installer:
     - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
     - net_segment train -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
     - net_segment inference -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
+    - net_run train --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
+    - net_run inference --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
+    - net_gan train -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
+    - net_gan inference -c $niftynet_dir/config/GAN_demo_train_config.ini
+    - net_run train --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
+    - net_run inference --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini
+    - net_autoencoder train -c $niftynet_dir/config/vae_config.ini --max_iter 5
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type sample
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type encode-decode
+    - net_run train --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --max_iter 5
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type sample
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type encode-decode
+
     # deactivate virtual environment
     - deactivate
     - cd $niftynet_dir
