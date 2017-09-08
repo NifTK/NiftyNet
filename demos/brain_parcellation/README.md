@@ -1,4 +1,5 @@
 ## To run the brain parcellation demo
+![Brain parcellation](./example_outputs/screenshot.png)
 
 
 Run `sh run_parcellation.sh`
