@@ -100,7 +100,7 @@ class ImageWindow(object):
         :return:
         """
         try:
-            spatial_window = list(map(int, spatial_window))
+            spatial_window = [int(win_size) for win_size in spatial_window]
         except ValueError:
             tf.logging.fatal("spatial window should be an array of int")
             raise
@@ -242,7 +242,7 @@ def _read_window_sizes(input_mod_list, input_data_param):
                          input_mod_list, input_data_param)
         raise
     if not all(window_sizes):
-        window_sizes = filter(None, window_sizes)
+        window_sizes = [win_size for win_size in window_sizes if win_size]
     uniq_window_set = set(window_sizes)
     if len(uniq_window_set) > 1:
         # pylint: disable=logging-format-interpolation
@@ -254,7 +254,7 @@ def _read_window_sizes(input_mod_list, input_data_param):
     if uniq_window_set:
         window_shape = uniq_window_set.pop()
     try:
-        return tuple(map(int, window_shape))
+        return tuple(int(win_size) for win_size in window_shape)
     except (TypeError, ValueError):
         pass
     try:

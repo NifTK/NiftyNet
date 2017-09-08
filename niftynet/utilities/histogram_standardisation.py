@@ -17,7 +17,7 @@ import numpy.ma as ma
 import tensorflow as tf
 
 from niftynet.io.misc_io import touch_folder
-from niftynet.utilities.util_common import look_up_operations, printProgressBar
+from niftynet.utilities.util_common import look_up_operations, print_progress_bar
 
 DEFAULT_CUTOFF = [0.01, 0.99]
 SUPPORTED_CUTPOINTS = {'percentile', 'quartile', 'median'}
@@ -94,9 +94,9 @@ def create_mapping_from_multimod_arrayfiles(array_files,
     """
     perc_database = {}
     for (i, p) in enumerate(array_files):
-        printProgressBar(i, len(array_files),
-                         prefix='normalisation histogram training',
-                         decimals=1, length=10, fill='*')
+        print_progress_bar(i, len(array_files),
+                           prefix='normalisation histogram training',
+                           decimals=1, length=10, fill='*')
         img_data = p[field].get_data()
         assert img_data.shape[4] == len(modalities), \
             "number of modalities are not consistent in the input image"
@@ -283,3 +283,4 @@ def __force_writing_new_mapping(filename, mapping_dict):
         mapping_string = ' '.join(map(str, mapping_dict[mod]))
         string_fin = '{} {}\n'.format(mod, mapping_string)
         f.write(string_fin)
+    return

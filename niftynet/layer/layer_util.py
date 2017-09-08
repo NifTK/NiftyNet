@@ -17,7 +17,7 @@ def check_spatial_dims(input_tensor, criteria):
         raise ValueError("input tensor's spatial dimensionality not"
                          " not compatible, please tune "
                          "the input window sizes: {}".format(
-                             inspect.getsource(criteria)))
+            inspect.getsource(criteria)))
     else:
         return all_dims_satisfied
 
@@ -27,9 +27,10 @@ def infer_spatial_rank(input_tensor):
     e.g. given an input tensor [Batch, X, Y, Z, Feature] the spatial rank is 3
     """
     dims = input_tensor.get_shape().ndims - 2
-    assert dims > 0, "input tensor should have at least one spatial dim, "\
-        "in addition to batch and channel dims"
+    assert dims > 0, "input tensor should have at least one spatial dim, " \
+                     "in addition to batch and channel dims"
     return dims
+
 
 def trivial_kernel(kernel_shape):
     """
@@ -59,14 +60,15 @@ def expand_spatial_params(input_param, spatial_rank):
     e.g., kernel_size=3 is converted to kernel_size=[3, 3, 3]
     for 3D images
     """
-
-    if (type(input_param) == int):
-        return (input_param, ) * spatial_rank
-    else:
-        input_param = np.asarray(input_param).flatten().tolist()
-        assert len(input_param) == spatial_rank, \
-            'param length should be the same as the spatial rank'
-        return tuple(input_param)
+    try:
+        input_param = int(input_param)
+        return (input_param,) * spatial_rank
+    except (ValueError, TypeError):
+        pass
+    input_param = np.asarray(input_param).flatten().tolist()
+    assert len(input_param) == spatial_rank, \
+        'param length should be the same as the spatial rank'
+    return tuple(input_param)
 
 # class RequireKeywords(object):
 #    def __init__(self, *list_of_keys):

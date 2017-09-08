@@ -174,28 +174,30 @@ class CoordinatesTest(tf.test.TestCase):
             img_sizes={'image': (64, 64, 64, 1, 2),
                        'label': (42, 42, 42, 1, 1)},
             win_sizes={'image': (63, 63, 40),
-                       'label': (30, 32, 33)},
+                       'label': (42, 41, 33)},
             border_size=(2, 3, 4))
         # first dim cooresponds to subject id
         expected_image = np.array(
             [[1, 0, 0, 0, 63, 63, 40],
              [1, 0, 0, 24, 63, 63, 64],
+             [1, 0, 0, 12, 63, 63, 52],
              [1, 1, 0, 0, 64, 63, 40],
              [1, 1, 0, 24, 64, 63, 64],
+             [1, 1, 0, 12, 64, 63, 52],
              [1, 0, 1, 0, 63, 64, 40],
              [1, 0, 1, 24, 63, 64, 64],
+             [1, 0, 1, 12, 63, 64, 52],
              [1, 1, 1, 0, 64, 64, 40],
-             [1, 1, 1, 24, 64, 64, 64]], dtype=np.int32)
+             [1, 1, 1, 24, 64, 64, 64],
+             [1, 1, 1, 12, 64, 64, 52]], dtype=np.int32)
         self.assertAllClose(coords['image'], expected_image)
         expected_label = np.array(
-            [[1, 0, 0, 0, 30, 32, 33],
-             [1, 0, 0, 9, 30, 32, 42],
-             [1, 12, 0, 0, 42, 32, 33],
-             [1, 12, 0, 9, 42, 32, 42],
-             [1, 0, 10, 0, 30, 42, 33],
-             [1, 0, 10, 9, 30, 42, 42],
-             [1, 12, 10, 0, 42, 42, 33],
-             [1, 12, 10, 9, 42, 42, 42]], dtype=np.int32)
+            [[1, 0, 0, 0, 42, 41, 33],
+             [1, 0, 0, 9, 42, 41, 42],
+             [1, 0, 0, 4, 42, 41, 37],
+             [1, 0, 1, 0, 42, 42, 33],
+             [1, 0, 1, 9, 42, 42, 42],
+             [1, 0, 1, 4, 42, 42, 37]], dtype=np.int32)
         self.assertAllClose(coords['label'], expected_label)
         pass
 
@@ -217,8 +219,13 @@ class CoordinatesTest(tf.test.TestCase):
         expected_label = np.array(
             [[1, 0, 0, 0, 30, 32, 1],
              [1, 12, 0, 0, 42, 32, 1],
+             [1, 6, 0, 0, 36, 32, 1],
              [1, 0, 10, 0, 30, 42, 1],
-             [1, 12, 10, 0, 42, 42, 1]], dtype=np.int32)
+             [1, 12, 10, 0, 42, 42, 1],
+             [1, 6, 10, 0, 36, 42, 1],
+             [1, 0, 5, 0, 30, 37, 1],
+             [1, 12, 5, 0, 42, 37, 1],
+             [1, 6, 5, 0, 36, 37, 1]], dtype=np.int32)
         self.assertAllClose(coords['label'], expected_label)
         pass
 
@@ -226,39 +233,62 @@ class CoordinatesTest(tf.test.TestCase):
         coords = grid_spatial_coordinates(
             subject_id=1,
             img_sizes={'image': (64, 64, 64, 1, 2),
-                       'label': (42, 42, 42, 1, 1)},
+                       'label': (64, 64, 42, 1, 1)},
             win_sizes={'image': (63, 63, 40),
-                       'label': (40, 32, 33)},
+                       'label': (50, 62, 40)},
             border_size=(-1, -1, -1))
 
         coords_1 = grid_spatial_coordinates(
             subject_id=1,
             img_sizes={'image': (64, 64, 64, 1, 2),
-                       'label': (42, 42, 42, 1, 1)},
+                       'label': (64, 64, 42, 1, 1)},
             win_sizes={'image': (63, 63, 40),
-                       'label': (40, 32, 33)},
+                       'label': (50, 62, 40)},
             border_size=(0, 0, 0))
         self.assertAllClose(coords['image'], coords_1['image'])
         self.assertAllClose(coords['label'], coords_1['label'])
         expected_image = np.array(
             [[1, 0, 0, 0, 63, 63, 40],
              [1, 0, 0, 24, 63, 63, 64],
+             [1, 0, 0, 12, 63, 63, 52],
              [1, 1, 0, 0, 64, 63, 40],
              [1, 1, 0, 24, 64, 63, 64],
+             [1, 1, 0, 12, 64, 63, 52],
              [1, 0, 1, 0, 63, 64, 40],
              [1, 0, 1, 24, 63, 64, 64],
+             [1, 0, 1, 12, 63, 64, 52],
              [1, 1, 1, 0, 64, 64, 40],
-             [1, 1, 1, 24, 64, 64, 64]], dtype=np.int32)
+             [1, 1, 1, 24, 64, 64, 64],
+             [1, 1, 1, 12, 64, 64, 52]], dtype=np.int32)
         self.assertAllClose(coords['image'], expected_image)
         expected_label = np.array(
-            [[1, 0, 0, 0, 40, 32, 33],
-             [1, 0, 0, 9, 40, 32, 42],
-             [1, 2, 0, 0, 42, 32, 33],
-             [1, 2, 0, 9, 42, 32, 42],
-             [1, 0, 10, 0, 40, 42, 33],
-             [1, 0, 10, 9, 40, 42, 42],
-             [1, 2, 10, 0, 42, 42, 33],
-             [1, 2, 10, 9, 42, 42, 42]], dtype=np.int32)
+            [[1, 0, 0, 0, 50, 62, 40],
+             [1, 0, 0, 2, 50, 62, 42],
+             [1, 0, 0, 1, 50, 62, 41],
+             [1, 14, 0, 0, 64, 62, 40],
+             [1, 14, 0, 2, 64, 62, 42],
+             [1, 14, 0, 1, 64, 62, 41],
+             [1, 7, 0, 0, 57, 62, 40],
+             [1, 7, 0, 2, 57, 62, 42],
+             [1, 7, 0, 1, 57, 62, 41],
+             [1, 0, 2, 0, 50, 64, 40],
+             [1, 0, 2, 2, 50, 64, 42],
+             [1, 0, 2, 1, 50, 64, 41],
+             [1, 14, 2, 0, 64, 64, 40],
+             [1, 14, 2, 2, 64, 64, 42],
+             [1, 14, 2, 1, 64, 64, 41],
+             [1, 7, 2, 0, 57, 64, 40],
+             [1, 7, 2, 2, 57, 64, 42],
+             [1, 7, 2, 1, 57, 64, 41],
+             [1, 0, 1, 0, 50, 63, 40],
+             [1, 0, 1, 2, 50, 63, 42],
+             [1, 0, 1, 1, 50, 63, 41],
+             [1, 14, 1, 0, 64, 63, 40],
+             [1, 14, 1, 2, 64, 63, 42],
+             [1, 14, 1, 1, 64, 63, 41],
+             [1, 7, 1, 0, 57, 63, 40],
+             [1, 7, 1, 2, 57, 63, 42],
+             [1, 7, 1, 1, 57, 63, 41]], dtype=np.int32)
         self.assertAllClose(coords['label'], expected_label)
         with self.assertRaisesRegexp(AssertionError, ""):
             coords_1 = grid_spatial_coordinates(
@@ -288,7 +318,7 @@ class StepPointsTest(tf.test.TestCase):
         self.assertAllClose(loc, [0])
 
         loc = _enumerate_step_points(0, 10, 8, 8)
-        self.assertAllClose(loc, [0, 2])
+        self.assertAllClose(loc, [0, 2, 1])
 
         with self.assertRaisesRegexp(ValueError, ""):
             loc = _enumerate_step_points('foo', 0, 0, 10)

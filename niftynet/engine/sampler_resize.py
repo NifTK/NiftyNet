@@ -25,6 +25,7 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
                  reader,
                  data_param,
                  batch_size,
+                 spatial_window_size=(),
                  windows_per_image=1,
                  shuffle_buffer=True,
                  queue_length=10):
@@ -44,12 +45,18 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
             self.reader.shapes,
             self.reader.tf_dtypes,
             data_param)
+        if spatial_window_size:
+            # override all spatial window defined in input
+            # modalities sections
+            # this is useful when do inference with a spatial window
+            # which is different from the training specifications
+            self.window.set_spatial_shape(spatial_window_size)
         tf.logging.info('initialised window instance')
         self._create_queue_and_ops(self.window,
                                    enqueue_size=1,
                                    dequeue_size=batch_size)
-        tf.logging.info("initialised sampler output {} "
-                        " [-1 for dynamic size]".format(self.window.shapes))
+        tf.logging.info("initialised sampler output %s "
+                        " [-1 for dynamic size]", self.window.shapes)
 
     def layer_op(self, *args, **kwargs):
         """

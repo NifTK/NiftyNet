@@ -1,7 +1,16 @@
 stages:
+  - pylint_test
   - dev_test
   - pip_test
   - pip_publish
+
+pylintjob:
+  stage: pylint_test
+  except:
+    - 139-correct-toynet-demo-instructions
+    - 148-publish-niftynet-v0-2-0-on-python-package-index-pypi
+  script:
+    - pylint --rcfile=tests/pylintrc niftynet/engine
 
 testjob:
   stage: dev_test
@@ -36,9 +45,66 @@ testjob:
     - wget -q https://www.dropbox.com/s/p7b3t2c3mewtree/testing_data_v0_2.tar.gz
     - tar -xzvf testing_data_v0_2.tar.gz
 
-    # run python code with coverage wrapper
-    - coverage erase
+    #### python 3 tests ###################################
+    # save NiftyNet folder path just in case
+    - export niftynet_dir=$(pwd)
 
+    # create a virtual env to dev-test
+    - venv="niftynet-dev-test-py3"
+    - mypython=$(which python3)
+    - virtualenv -p $mypython $venv
+    - cd $venv
+    - venv_dir=$(pwd)
+    - source bin/activate
+    # print Python version to CI output
+    - which python
+    - python --version
+    - cd $niftynet_dir
+
+    - pip install -r requirements-gpu.txt
+
+    - coverage erase
+    # tests
+    - coverage run -a --source . net_segment.py train -c config/highres3dnet_config.ini --batch_size=1 --num_threads=2 --queue_length=40 --max_iter=10
+    - coverage run -a --source . net_segment.py inference -c config/highres3dnet_config.ini --batch_size 8 --spatial_window_size 64,64,64 --queue_length 64
+
+    - coverage run -a --source . net_segment.py train -c config/scalenet_config.ini --batch_size 1 --queue_length 5 --num_threads 2
+    - coverage run -a --source . net_segment.py inference -c config/scalenet_config.ini --batch_size 16 --spatial_window_size 64,64,64 --queue_length 32
+
+    - coverage run -a --source . net_segment.py train -c config/vnet_config.ini --batch_size 1 --queue_length 5 --num_threads 2 --activation_function relu
+    - coverage run -a --source . net_segment.py inference -c config/vnet_config.ini --batch_size 16 --spatial_window_size 64,64,64 --queue_length 32 --activation_function relu
+
+    # need a large GPU to run
+    #- python net_segment.py train -c config/unet_config.ini --batch_size 1 --queue_length 5 --num_threads 2
+    #- python net_segment.py inference -c config/unet_config.ini --batch_size 1 --spatial_window_size 96,96,96 --queue_length 5
+
+    #- python net_segment.py train -c config/deepmedic_config.ini --batch_size 128 --queue_length 48 --num_threads 4
+    #- python net_segment.py inference -c config/deepmedic_config.ini --batch_size 12 --spatial_window_size 135,135,135  --queue_length 128
+
+    - coverage run -a --source . net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6
+    - coverage run -a --source . net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6 --starting_iter 0 --max_iter 15
+    - coverage run -a --source . net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 14
+
+    - coverage run -a --source . net_segment.py train -c config/default_multimodal_segmentation.ini --batch_size 3
+    - coverage run -a --source . net_segment.py inference -c config/default_multimodal_segmentation.ini --spatial_window_size 64,64 --batch_size 7
+
+
+    - coverage run -a --source . net_gan.py train -c config/GAN_demo_train_config.ini --max_iter 5
+    - coverage run -a --source . net_gan.py inference -c config/GAN_demo_train_config.ini
+
+    - coverage run -a --source . net_autoencoder.py train -c config/vae_config.ini --max_iter 5
+    - coverage run -a --source . net_autoencoder.py inference -c config/vae_config.ini --inference_type sample
+    - coverage run -a --source . net_autoencoder.py inference -c config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
+    - coverage run -a --source . net_autoencoder.py inference -c config/vae_config.ini --inference_type encode-decode
+
+    - coverage run -a --source . -m unittest discover -s "tests" -p "*_test.py"
+
+    # deactivate virtual environment
+    - deactivate
+    - cd $niftynet_dir
+    ###############end of python3
+
+    ######### Python 2 ###################### run python2 code with coverage wrapper
     - coverage run -a --source . net_segment.py train -c config/highres3dnet_config.ini --batch_size=1 --num_threads=2 --queue_length=40 --max_iter=10
     - coverage run -a --source . net_segment.py inference -c config/highres3dnet_config.ini --batch_size 8 --spatial_window_size 64,64,64 --queue_length 64
 
@@ -86,6 +152,10 @@ quicktest:
     - tags
     - supports-axbxc-patch
     - 112-publish-api-docs-online
+    - 147-revise-contribution-guidelines-to-include-github
+    - 150-properly-format-the-bibtex-entry-to-the-ipmi-2017-paper-on-the-main-readme
+    - 139-correct-toynet-demo-instructions
+    - 148-publish-niftynet-v0-2-0-on-python-package-index-pypi
   script:
     # print system info
     - which nvidia-smi
@@ -163,7 +233,7 @@ pip-installer:
     - set -e
     - cd $venv_dir
     # install TF
-    - pip install tensorflow-gpu==1.1
+    - pip install tensorflow-gpu==1.2
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
@@ -197,7 +267,7 @@ pip-installer:
     - set -e
     - cd $venv_dir
     # install TF
-    - pip install tensorflow-gpu==1.1
+    - pip install tensorflow-gpu==1.2
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly

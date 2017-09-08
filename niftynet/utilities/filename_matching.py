@@ -78,18 +78,18 @@ class KeywordsMatching(object):
         all_neg_match = not any(c in x[1] for c in self.filename_not_contains)
         return all_pos_match and all_neg_match
 
-    def __extract_subject_id_from(self, filename):
+    def __extract_subject_id_from(self, fullname):
         """
         This function returns a list of potential subject names from a given
         filename, knowing the imposed constraints. Constraints strings are
         removed from the filename to provide the list of possible names. If
         after reduction of the filename from the constraints the name is
         empty the initial filename is returned.
-        :param filename:
+        :param fullname:
         :return name_pot: list of potential subject name given the constraint
          list and the initial filename
         """
-        path, name, ext = util.split_filename(filename)
+        _, name, _ = util.split_filename(fullname)
         # split name into parts that might be the subject_id
         noncapturing_regex_delimiters = ['(?:' + re.escape(c) + ')'
                                          for c in self.filename_contains]
@@ -97,5 +97,5 @@ class KeywordsMatching(object):
             '|'.join(noncapturing_regex_delimiters), name)
         # filter out non-alphanumeric characters and blank strings
         potential_names = [re.sub(r'\W+', '', name) for name in potential_names]
-        potential_names = [name for name in potential_names if name is not '']
+        potential_names = [name for name in potential_names if name != '']
         return potential_names

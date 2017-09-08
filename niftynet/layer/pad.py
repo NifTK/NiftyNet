@@ -49,6 +49,7 @@ class PadLayer(Layer, Invertible):
                 _x = -self.border[0][0] if (input_image.shape[0]/2 > self.border[0][0] > 0) else input_image.shape[0]
                 _y = -self.border[1][0] if (input_image.shape[1]/2 > self.border[1][0] > 0) else input_image.shape[1]
                 _z = -self.border[2][0] if (input_image.shape[2]/2 > self.border[2][0] > 0) else input_image.shape[2]
+
                 outputs = input_image[x_:_x, y_:_y, z_:_z, ...]
             except IndexError:
                 tf.logging.fatal(
@@ -61,10 +62,16 @@ class PadLayer(Layer, Invertible):
             if name not in self.image_name:
                 continue
             try:
-                input_image[name] = image[
-                                    self.border[0][0]:(-self.border[0][0]),
-                                    self.border[1][0]:(-self.border[1][0]),
-                                    self.border[2][0]:(-self.border[2][0]), ...]
+                x_ = max(self.border[0][0], 0)
+                y_ = max(self.border[1][0], 0)
+                z_ = max(self.border[2][0], 0)
+                _x = -self.border[0][0] if self.border[0][0] > 0 \
+                    else image.shape[0]
+                _y = -self.border[1][0] if self.border[1][0] > 0 \
+                    else image.shape[1]
+                _z = -self.border[2][0] if self.border[2][0] > 0 \
+                    else image.shape[2]
+                input_image[name] = image[x_:_x, y_:_y, z_:_z, ...]
             except IndexError:
                 tf.logging.fatal(
                     "unable to inverse the padding "

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import logging as log
 import os
@@ -15,11 +15,13 @@ import tensorflow as tf
 from PIL.GifImagePlugin import Image as GIF
 from tensorflow.core.framework import summary_pb2
 
-image_loaders = [nib.load]
+IS_PYTHON2 = False if sys.version_info[0] > 2 else True
+
+IMAGE_LOADERS = [nib.load]
 try:
     import niftynet.io.simple_itk_as_nibabel
 
-    image_loaders.append(
+    IMAGE_LOADERS.append(
         niftynet.io.simple_itk_as_nibabel.SimpleITKAsNibabel)
 except ImportError:
     warnings.warn(
@@ -65,7 +67,7 @@ def create_affine_pixdim(affine, pixdim):
 def load_image(filename):
     # load an image from a supported filetype and return an object
     # that matches nibabel's spatialimages interface
-    for image_loader in image_loaders:
+    for image_loader in IMAGE_LOADERS:
         try:
             img = image_loader(filename)
             img = correct_image_if_necessary(img)
@@ -386,10 +388,8 @@ def _image3_animated_gif(tag, ims):
         for b in PIL.GifImagePlugin.getdata(i):
             s += b
     s += b'\x3B'
-    try:  # For python 2/3 compatibility
+    if IS_PYTHON2:
         s = str(s)
-    except:
-        pass
     summary_image_str = summary_pb2.Summary.Image(
         height=10, width=10, colorspace=1, encoded_image_string=s)
     image_summary = summary_pb2.Summary.Value(

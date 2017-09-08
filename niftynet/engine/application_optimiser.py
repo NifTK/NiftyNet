@@ -19,8 +19,14 @@ import tensorflow as tf
 # pylint: disable=too-few-public-methods
 
 class Adam(object):
+    """
+    Adam optimiser with default hyper parameters
+    """
     @staticmethod
     def get_instance(learning_rate):
+        """
+        create an instance of the optimiser
+        """
         return tf.train.AdamOptimizer(
             learning_rate=learning_rate,
             beta1=0.9,
@@ -30,8 +36,14 @@ class Adam(object):
 
 
 class Adagrad(object):
+    """
+    Adagrad optimiser with default hyper parameters
+    """
     @staticmethod
     def get_instance(learning_rate):
+        """
+        create an instance of the optimiser
+        """
         return tf.train.AdagradOptimizer(
             learning_rate=learning_rate,
             initial_accumulator_value=0.1,
@@ -39,8 +51,14 @@ class Adagrad(object):
 
 
 class Momentum(object):
+    """
+    Momentum optimiser with default hyper parameters
+    """
     @staticmethod
     def get_instance(learning_rate):
+        """
+        create an instance of the optimiser
+        """
         return tf.train.MomentumOptimizer(
             learning_rate=learning_rate,
             momentum=0.9,
@@ -59,8 +77,14 @@ class NesterovMomentum(object):
             use_nesterov=True)
 
 class GradientDescent(object):
+    """
+    Gradient Descent optimiser with default hyper parameters
+    """
     @staticmethod
     def get_instance(learning_rate):
+        """
+        create an instance of the optimiser
+        """
         return tf.train.GradientDescentOptimizer(
             learning_rate=learning_rate,
             use_locking=False,

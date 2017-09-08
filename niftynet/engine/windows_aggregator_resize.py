@@ -18,6 +18,10 @@ from niftynet.layer.pad import PadLayer
 
 
 class ResizeSamplesAggregator(ImageWindowsAggregator):
+    """
+    This class decodes each item in a batch by resizing each image
+    window and save as a new image volume.
+    """
     def __init__(self,
                  image_reader,
                  name='image',
@@ -31,6 +35,12 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         self.output_interp_order = interp_order
 
     def decode_batch(self, window, location):
+        """
+        resizing each output image window in the batch as an image volume
+        location specifies the original input image (so that the
+        interpolation order, original shape information retained in the
+        generated outputs)
+        """
         n_samples = location.shape[0]
         window, location = self.crop_batch(window, location, self.window_border)
         for batch_id in range(n_samples):
@@ -59,6 +69,12 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         window_shape = resize_to
         while image_out.ndim < 5:
             image_out = image_out[..., np.newaxis, :]
+        if self.window_border and any([b > 0 for b in self.window_border]):
+            np_border = self.window_border
+            while len(np_border) < 5:
+                np_border = np_border + (0,)
+            np_border = [(b,) for b in np_border]
+            image_out = np.pad(image_out, np_border, mode='edge')
         image_shape = image_out.shape
         zoom_ratio = \
             [float(p) / float(d) for p, d in zip(window_shape, image_shape)]

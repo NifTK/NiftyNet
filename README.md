@@ -2,8 +2,8 @@
 
 <img src="https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/raw/master/niftynet-logo.png" width="263" height="155">
 
-[![build status](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/build.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
-[![coverage report](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/coverage.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
+[![build status](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/dev/build.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/dev)
+[![coverage report](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/dev/coverage.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/dev)
 
 NiftyNet is a [TensorFlow][tf]-based open-source convolutional neural networks (CNN) platform for research in medical image analysis and image-guided therapy.
 NiftyNet's modular structure is designed for sharing networks and pre-trained models.
@@ -36,8 +36,8 @@ Other features of NiftyNet include:
 ### Installation
 
 1. Please install the appropriate [TensorFlow][tf] package*:
-   * [`pip install tensorflow-gpu==1.1`][tf-pypi-gpu] for TensorFlow with GPU support
-   * [`pip install tensorflow==1.1`][tf-pypi] for CPU-only TensorFlow
+   * [`pip install tensorflow-gpu==1.2`][tf-pypi-gpu] for TensorFlow with GPU support
+   * [`pip install tensorflow==1.2`][tf-pypi] for CPU-only TensorFlow
 1. [`pip install niftynet`](https://pypi.org/project/NiftyNet/)
 
  <sup>*All other NiftyNet dependencies are installed automatically as part of the pip installation process.</sup>
@@ -48,19 +48,57 @@ Other features of NiftyNet include:
 
 ### Getting started
 
-Please follow the links for [demos](./demos) and [network (re-)implementations](./niftynet/network).
+#### Examples
 
-### Contributing
+Please see the [NiftyNet demos][demos].
 
-Feature requests and bug reports are collected on [Issues](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/issues).
+[demos]: ./demos
 
-Contributors are encouraged to take a look at [CONTRIBUTING.md](./CONTRIBUTING.md).
+#### Network (re-)implementations
+
+Please see the list of [network (re-)implementations in NiftyNet][network-impl].
+
+[network-impl]: ./niftynet/network
+
+#### API documentation
+
+The API reference is available on [Read the Docs][rtd-niftynet].
+
+[rtd-niftynet]: http://niftynet.rtfd.io/
+
+#### Contributing
+
+Please see the [contribution guidelines](./CONTRIBUTING.md).
+
+#### Useful links
+
+[NiftyNet website][niftynet-io]
+
+[NiftyNet source code on CmicLab][niftynet-cmiclab]
+
+[NiftyNet source code mirror on GitHub][niftynet-github]
+
+NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
+
+[niftynet-io]: http://niftynet.io/
+[niftynet-cmiclab]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
+[niftynet-github]: https://github.com/NifTK/NiftyNet
+[ml-niftynet]: mailto:nifty-net@live.ucl.ac.uk
+
 
 ### Citing NiftyNet
 
-If you use NiftyNet, please cite the following paper:
+If you use NiftyNet in your work, please cite [Li et. al. 2017][ipmi2017]:
 
-```
+* Li W., Wang G., Fidon L., Ourselin S., Cardoso M.J., Vercauteren T. (2017)
+[On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.][ipmi2017]
+In: Niethammer M. et al. (eds) Information Processing in Medical Imaging. IPMI 2017.
+Lecture Notes in Computer Science, vol 10265. Springer, Cham.
+DOI: [10.1007/978-3-319-59050-9_28][ipmi2017]
+
+BibTeX entry:
+
+```ini
 @InProceedings{niftynet17,
   author = {Li, Wenqi and Wang, Guotai and Fidon, Lucas and Ourselin, Sebastien and Cardoso, M. Jorge and Vercauteren, Tom},
   title = {On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task},
@@ -68,6 +106,9 @@ If you use NiftyNet, please cite the following paper:
   year = {2017}
 }
 ```
+
+[ipmi2017]: http://doi.org/10.1007/978-3-319-59050-9_28
+
 
 ### Licensing and Copyright
 

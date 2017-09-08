@@ -66,6 +66,18 @@ def generalised_dice_loss(prediction,
                           ground_truth,
                           weight_map,
                           type_weight='Square'):
+    """
+    Function to calculate the Generalised Dice Loss defined in Sudre, C. et. al.
+     (2017) Generalised Dice overlap as a deep learning loss function for highly
+      unbalanced segmentations. DLMIA 2017
+    :param prediction: the logits (before softmax)
+    :param ground_truth: the segmentation ground truth
+    :param weight_map:
+    :param type_weight: type of weighting allowed between labels (choice
+    between Square (square of inverse of volume), Simple (inverse of volume)
+    and Uniform (no weighting))
+    :return: the loss
+    """
     n_voxels = ground_truth.get_shape()[0].value
     n_classes = prediction.get_shape()[1].value
     prediction = tf.nn.softmax(prediction)
@@ -157,6 +169,13 @@ def l2_reg_loss(scope):
 
 
 def cross_entropy(prediction, ground_truth, weight_map=None):
+    """
+    Function to calculate the cross-entropy loss function
+    :param prediction: the logits (before softmax)
+    :param ground_truth: the segmentation ground truth
+    :param weight_map:
+    :return: the cross-entropy loss
+    """
     entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
         logits=prediction, labels=ground_truth)
     if weight_map is not None:
@@ -167,6 +186,16 @@ def cross_entropy(prediction, ground_truth, weight_map=None):
 
 
 def wasserstein_disagreement_map(prediction, ground_truth, M):
+    """
+    Function to calculate the pixel-wise Wasserstein distance between the
+    flattened pred_proba and the flattened labels (ground_truth) with respect
+    to the distance matrix on the label space M.
+
+    :param prediction: the logits after softmax
+    :param ground_truth: segmentation ground_truth
+    :param M: distance matrix on the label space
+    :return: the pixelwise distance map (wass_dis_map)
+    """
     # pixel-wise Wassertein distance (W) between flat_pred_proba and flat_labels
     # wrt the distance matrix on the label space M
     n_classes = prediction.get_shape()[1].value
@@ -186,9 +215,19 @@ def wasserstein_disagreement_map(prediction, ground_truth, M):
     return wass_dis_map
 
 
-def wasserstein_generalised_dice_loss(prediction,
+def generalised_wasserstein_dice_loss(prediction,
                                       ground_truth,
                                       weight_map=None):
+    """
+    Function to calculate the Generalised Wasserstein Dice Loss defined in
+    Fidon, L. et. al. (2017) Generalised Wasserstein Dice Score for Imbalanced
+    Multi-class Segmentation using Holistic Convolutional Networks.
+    MICCAI 2017 (BrainLes)
+    :param prediction: the logits (before softmax)
+    :param ground_truth: the segmentation ground_truth
+    :param weight_map:
+    :return: the loss
+    """
     # apply softmax to pred scores
     ground_truth = tf.cast(ground_truth, dtype=tf.int64)
     pred_proba = tf.nn.softmax(tf.cast(prediction, dtype=tf.float64))
@@ -211,14 +250,21 @@ def wasserstein_generalised_dice_loss(prediction,
     # compute generalisation of true positives for multi-class seg
     one_hot = tf.cast(one_hot, dtype=tf.float64)
     true_pos = tf.reduce_sum(
-        tf.multiply(tf.constant(M[0, :], dtype=tf.float64), one_hot),
+        tf.multiply(tf.constant(M[0, :n_classes], dtype=tf.float64), one_hot),
         axis=1)
     true_pos = tf.reduce_sum(tf.multiply(true_pos, 1. - delta), axis=0)
     WGDL = 1. - (2. * true_pos) / (2. * true_pos + all_error)
-    return WGDL
+    return tf.cast(WGDL,dtype=tf.float32)
 
 
 def dice_nosquare(prediction, ground_truth, weight_map=None):
+    """
+    Function to calculate the classical dice loss
+    :param prediction: the logits (before softmax)
+    :param ground_truth: the segmentation ground_truth
+    :param weight_map:
+    :return: the loss
+    """
     n_voxels = ground_truth.get_shape()[0].value
     n_classes = prediction.get_shape()[1].value
     prediction = tf.nn.softmax(prediction)
@@ -245,6 +291,16 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
 
 
 def dice(prediction, ground_truth, weight_map=None):
+    """
+    Function to calculate the dice loss with the definition given in Milletari,
+     F., Navab, N., & Ahmadi, S. A. (2016) V-net: Fully convolutional neural
+     networks for volumetric medical image segmentation. 3DV 2016 using a
+     square in the denominator
+    :param prediction: the logits (before softmax)
+    :param ground_truth: the segmentation ground_truth
+    :param weight_map:
+    :return: the loss
+    """
     ground_truth = tf.to_int64(ground_truth)
     prediction = tf.cast(prediction, tf.float32)
     prediction = tf.nn.softmax(prediction)
@@ -303,8 +359,6 @@ def l2_loss(prediction, ground_truth, weight_map=None):
     return tf.nn.l2_loss(residuals)
 
 
-
-
 def huber_loss(prediction, ground_truth, delta=1.0, weight_map=None):
     """
     The Huber loss is a smooth piecewise loss function
@@ -313,7 +367,7 @@ def huber_loss(prediction, ground_truth, delta=1.0, weight_map=None):
     :param prediction: the current prediction of the ground truth.
     :param ground_truth: the measurement you are approximating with regression.
     :param delta: the point at which quadratic->linear transition happens.
-    :return:
+    :return: the loss
     """
     absolute_residuals = tf.abs(tf.subtract(prediction, ground_truth))
     residual_is_outside_delta = tf.less(delta, absolute_residuals)
@@ -336,7 +390,7 @@ SUPPORTED_OPS = {"CrossEntropy": cross_entropy,
                  "Dice": dice,
                  "Dice_NS": dice_nosquare,
                  "GDSC": generalised_dice_loss,
-                 "WGDL": wasserstein_generalised_dice_loss,
+                 "WGDL": generalised_wasserstein_dice_loss,
                  "SensSpec": sensitivity_specificity_loss,
                  "L1Loss": l1_loss,
                  "L2Loss": l2_loss,

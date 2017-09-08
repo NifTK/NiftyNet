@@ -10,7 +10,7 @@ import niftynet.utilities.histogram_standardisation as hs
 from niftynet.layer.base_layer import DataDependentLayer
 from niftynet.layer.base_layer import Invertible
 from niftynet.utilities.user_parameters_helper import standardise_string
-from niftynet.utilities.util_common import printProgressBar
+from niftynet.utilities.util_common import print_progress_bar
 
 
 class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
@@ -33,8 +33,9 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
     @property
     def key(self):
         # provide a readable key for the label mapping item
-        key_str = "{}_{}".format(self.image_name, self.modalities)
-        return standardise_string(key_str)
+        key_from = "{}_{}-from".format(self.image_name, self.modalities)
+        key_to = "{}_{}-to".format(self.image_name, self.modalities)
+        return standardise_string(key_from), standardise_string(key_to)
 
     def layer_op(self, image, mask=None):
         assert self.is_ready(), \
@@ -47,28 +48,20 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
         else:
             label_data = np.asarray(image)
 
-        mapping = self.label_map[self.key]
-        assert len(np.unique(label_data)) <= len(mapping), \
-            "couldn't find a unique mapping for discrete label maps, " \
-            " please check the line starting with {} in {}, " \
-            " remove the line to find the model again, or " \
-            " check the input label image".format(self.key, self.model_file)
-        # map_dict = {}
-        # for new_id, original in enumerate(mapping):
-        #    map_dict[original] = new_id
-        # mapped_data = np.vectorize(map_dict.get)(label_data)
+        mapping_from = self.label_map[self.key[0]]
+        mapping_to = self.label_map[self.key[1]]
+
         image_shape = label_data.shape
         label_data = label_data.reshape(-1)
         mapped_data = np.zeros_like(label_data)
-        for (new_id, original) in enumerate(mapping):
+        for (original, new_id) in zip(mapping_from, mapping_to):
             mapped_data[label_data == original] = new_id
         label_data = mapped_data.reshape(image_shape)
 
         if isinstance(image, dict):
             image[self.image_name] = label_data
             return image, mask
-        else:
-            return label_data, mask
+        return label_data, mask
 
     def inverse_op(self, image, mask=None):
         assert self.is_ready(), \
@@ -79,26 +72,33 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
         else:
             label_data = np.asarray(image)
 
-        mapping = self.label_map[self.key]
-        assert len(np.unique(label_data)) <= len(mapping), \
-            "couldn't find a unique mapping for discrete label maps, " \
-            " please check the line starting with {} in {}".format(
-                self.key, self.model_file)
+        mapping_from = self.label_map[self.key[0]]
+        mapping_to = self.label_map[self.key[1]]
+
         image_shape = label_data.shape
         label_data = label_data.reshape(-1)
         mapped_data = np.zeros_like(label_data)
-        for (new_id, original) in enumerate(mapping):
-            mapped_data[label_data == new_id] = original
+        for (new_id, original) in zip(mapping_from, mapping_to):
+            mapped_data[label_data == original] = new_id
         label_data = mapped_data.reshape(image_shape)
         if isinstance(image, dict):
             image[self.image_name] = label_data
             return image, mask
-        else:
-            return label_data, mask
+        return label_data, mask
 
     def is_ready(self):
-        mapping = self.label_map.get(self.key, None)
-        return True if mapping is not None else False
+        mapping_from = self.label_map.get(self.key[0], None)
+        if mapping_from is None:
+            tf.logging.warning('could not find mapping key %s', self.key[0])
+            return False
+        mapping_to = self.label_map.get(self.key[1], None)
+        if mapping_to is None:
+            tf.logging.warning('could not find mapping key %s', self.key[1])
+            return False
+        assert len(mapping_from) == len(mapping_to), \
+            "mapping is not one-to-one, " \
+            "corrupted mapping file? {}".format(self.model_file)
+        return True
 
     def train(self, image_list):
         # check modalities to train, using the first subject in subject list
@@ -109,7 +109,7 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
                 "label mapping ready for {}:{}, {} classes".format(
                     self.image_name,
                     self.modalities,
-                    len(self.label_map[self.key])))
+                    len(self.label_map[self.key[0]])))
             return
         tf.logging.info(
             "Looking for the set of unique discrete labels from input {}"
@@ -127,15 +127,23 @@ def find_set_of_labels(image_list, field, output_key):
     for idx, image in enumerate(image_list):
         assert field in image, \
             "no {} data provided in for label mapping".format(field)
-        printProgressBar(idx, len(image_list),
-                         prefix='searching unique labels from training files',
-                         decimals=1, length=10, fill='*')
+        print_progress_bar(idx, len(image_list),
+                           prefix='searching unique labels from training files',
+                           decimals=1, length=10, fill='*')
         unique_label = np.unique(image[field].get_data())
         if len(unique_label) > 500 or len(unique_label) <= 1:
             tf.logging.warning(
-                'unusual values: number unique '
+                'unusual discrete values: number of unique '
                 'labels to normalise %s', len(unique_label))
         label_set.update(set(unique_label))
     label_set = list(label_set)
     label_set.sort()
-    return {output_key: tuple(label_set)}
+    try:
+        mapping_from_to = {}
+        mapping_from_to[output_key[0]] = tuple(label_set)
+        mapping_from_to[output_key[1]] = tuple(range(0, len(label_set)))
+    except (IndexError, ValueError):
+        tf.logging.fatal("unable to create mappings keys: %s, image name %s",
+            output_key, field)
+        raise
+    return mapping_from_to

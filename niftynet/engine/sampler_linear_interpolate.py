@@ -41,15 +41,15 @@ class LinearInterpolateSampler(Layer, InputBatchQueueRunner):
             self.reader.tf_dtypes,
             data_param)
         # only try to use the first spatial shape available
-        image_spatial_shape = self.reader.shapes.values()[0][:3]
+        image_spatial_shape = list(self.reader.shapes.values())[0][:3]
         self.window.set_spatial_shape(image_spatial_shape)
 
         tf.logging.info('initialised window instance')
         self._create_queue_and_ops(self.window,
                                    enqueue_size=self.n_interpolations,
                                    dequeue_size=batch_size)
-        tf.logging.info("initialised sampler output {} "
-                        " [-1 for dynamic size]".format(self.window.shapes))
+        tf.logging.info("initialised sampler output %s "
+                        " [-1 for dynamic size]", self.window.shapes)
 
         assert not self.window.has_dynamic_shapes, \
             "dynamic shapes not supported, please specify " \
@@ -73,7 +73,7 @@ class LinearInterpolateSampler(Layer, InputBatchQueueRunner):
 
             steps = np.linspace(0, 1, self.n_interpolations)
             output_vectors = []
-            for (idx, mixture) in enumerate(steps):
+            for (_, mixture) in enumerate(steps):
                 output_vector = \
                     embedding_x * mixture + embedding_y * (1 - mixture)
                 output_vector = output_vector[np.newaxis, ...]

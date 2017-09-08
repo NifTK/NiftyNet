@@ -12,6 +12,7 @@ from niftynet.engine.image_window_buffer import InputBatchQueueRunner
 from niftynet.layer.base_layer import Layer
 
 
+# pylint: disable=too-many-locals
 class GridSampler(Layer, InputBatchQueueRunner):
     """
     This class generators ND image samples with a sliding window
@@ -64,7 +65,7 @@ class GridSampler(Layer, InputBatchQueueRunner):
 
             # extend the number of sampling locations to be divisible
             # by batch size
-            n_locations = coordinates.values()[0].shape[0]
+            n_locations = list(coordinates.values())[0].shape[0]
             extra_locations = 0
             if (n_locations % self.batch_size) > 0:
                 extra_locations = \
@@ -81,8 +82,8 @@ class GridSampler(Layer, InputBatchQueueRunner):
                     "extended to %d to be divisible by batch size %d",
                     n_locations, total_locations, self.batch_size)
             else:
-                tf.logging.info("yielding {} locations from image".format(
-                    n_locations))
+                tf.logging.info(
+                    "yielding %s locations from image", n_locations)
 
             for i in range(total_locations):
                 idx = i % n_locations
@@ -92,9 +93,11 @@ class GridSampler(Layer, InputBatchQueueRunner):
                     assert coordinates[name].shape[0] == n_locations, \
                         "different number of grid samples from the input" \
                         "images, don't know how to combine them in the queue"
-                    x_, y_, z_, _x, _y, _z = coordinates[name][idx, 1:]
+                    x_start, y_start, z_start, x_end, y_end, z_end = \
+                        coordinates[name][idx, 1:]
                     try:
-                        image_window = data[name][x_:_x, y_:_y, z_:_z, ...]
+                        image_window = data[name][
+                            x_start:x_end, y_start:y_end, z_start:z_end, ...]
                     except ValueError:
                         tf.logging.fatal(
                             "dimensionality miss match in input volumes, "
@@ -185,5 +188,14 @@ def _enumerate_step_points(starting, ending, win_size, step_size):
     while (starting + win_size) <= ending:
         sampling_point_set.append(starting)
         starting = starting + step_size
-    sampling_point_set.append(np.max((ending - win_size, 0)))
-    return np.unique(sampling_point_set).flatten()
+    additional_last_point = ending - win_size
+    sampling_point_set.append(max(additional_last_point, 0))
+    sampling_point_set = np.unique(sampling_point_set).flatten()
+    if len(sampling_point_set) == 2:
+        # in case of too few samples, adding
+        # an additional sampling point to
+        # the middle between starting and ending
+        sampling_point_set = np.append(
+            sampling_point_set, np.round(np.mean(sampling_point_set)))
+    _, uniq_idx = np.unique(sampling_point_set, return_index=True)
+    return sampling_point_set[np.sort(uniq_idx)]

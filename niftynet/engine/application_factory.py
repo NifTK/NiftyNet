@@ -53,8 +53,8 @@ SUPPORTED_NETWORK = {
         'niftynet.network.deepmedic.DeepMedic',
     "scalenet":
         'niftynet.network.scalenet.ScaleNet',
-    "holistic_scalenet":
-        'niftynet.network.holistic_scalenet.HolisticScaleNet',
+    "holisticnet":
+        'niftynet.network.holistic_net.HolisticNet',
 
     # autoencoder
     "vae": 'niftynet.network.vae.VAE'
@@ -74,7 +74,7 @@ SUPPORTED_LOSS_SEGMENTATION = {
     "GDSC":
         'niftynet.layer.loss_segmentation.generalised_dice_loss',
     "WGDL":
-        'niftynet.layer.loss_segmentation.wasserstein_generalised_dice_loss',
+        'niftynet.layer.loss_segmentation.generalised_wasserstein_dice_loss',
     "SensSpec":
         'niftynet.layer.loss_segmentation.sensitivity_specificity_loss',
     "L1Loss":
@@ -115,6 +115,17 @@ SUPPORTED_OPTIMIZERS = {
 
 
 def select_module(module_name, type_str, lookup_table):
+    """
+    This function first tries to find the absolute module name
+    by matching the static dictionary items, if not found, it
+    tries to import the module by splitting the input module_name
+    as module name and class name to be imported.
+
+    :param moduel_name: string that matches the keys defined in lookup_table
+        or an absolute class name: module.name.ClassName
+    :type_str: type of the module (currently used for better error display)
+    :lookup_table: defines a set of shorthands for absolute class name
+    """
     module_name = '{}'.format(module_name)
     if module_name in lookup_table:
         module_name = lookup_table[module_name]
@@ -148,30 +159,51 @@ def select_module(module_name, type_str, lookup_table):
 
 
 class ModuleFactory(object):
+    """
+    General interface for importing a class by its name.
+    """
     SUPPORTED = None
     type_str = 'object'
 
     @classmethod
     def create(cls, name):
+        """
+        import a class by name
+        """
         return select_module(name, cls.type_str, cls.SUPPORTED)
 
 
 class ApplicationNetFactory(ModuleFactory):
+    """
+    Import a network from niftynet.network or from user specified string
+    """
     SUPPORTED = SUPPORTED_NETWORK
     type_str = 'network'
 
 
 class ApplicationFactory(ModuleFactory):
+    """
+    Import an application from niftynet.application or
+    from user specified string
+    """
     SUPPORTED = SUPPORTED_APP
     type_str = 'application'
 
 
 class LossGANFactory(ModuleFactory):
+    """
+    Import a GAN loss function from niftynet.layer or
+    from user specified string
+    """
     SUPPORTED = SUPPORTED_LOSS_GAN
     type_str = 'GAN loss'
 
 
 class LossSegmentationFactory(ModuleFactory):
+    """
+    Import a segmentation loss function from niftynet.layer or
+    from user specified string
+    """
     SUPPORTED = SUPPORTED_LOSS_SEGMENTATION
     type_str = 'segmentation loss'
 
@@ -182,10 +214,18 @@ class LossRegressionFactory(ModuleFactory):
 
 
 class LossAutoencoderFactory(ModuleFactory):
+    """
+    Import an autoencoder loss function from niftynet.layer or
+    from user specified string
+    """
     SUPPORTED = SUPPORTED_LOSS_AUTOENCODER
     type_str = 'autoencoder loss'
 
 
 class OptimiserFactory(ModuleFactory):
+    """
+    Import an optimiser from niftynet.engine.application_optimiser or
+    from user specified string
+    """
     SUPPORTED = SUPPORTED_OPTIMIZERS
     type_str = 'optimizer'

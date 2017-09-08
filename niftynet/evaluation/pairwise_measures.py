@@ -41,8 +41,8 @@ class PairwiseMeasures(object):
             'outline_error': (self.outline_error, 'OER,OEFP,OEFN'),
             'detection_error': (self.detection_error, 'DE,DEFP,DEFN'),
             'com_dist': (self.com_dist, 'COM distance'),
-            'com_ref' : (self.com_ref, 'COM reference'),
-            'com_seg' : (self.com_seg, 'COM segmentation')
+            'com_ref': (self.com_ref, 'COM reference'),
+            'com_seg': (self.com_seg, 'COM segmentation')
         }
         self.seg = seg_img
         self.ref = ref_img
@@ -150,13 +150,12 @@ class PairwiseMeasures(object):
     def com_dist(self):
         if self.flag_empty:
             return -1
-        else:
-            com_ref = ndimage.center_of_mass(self.ref)
-            com_seg = ndimage.center_of_mass(self.seg)
-            com_dist = np.sqrt(np.dot(np.square(np.asarray(com_ref) -
-                                                np.asarray(com_seg)), np.square(
-                                                self.pixdim)))
-            return com_dist
+        com_ref = ndimage.center_of_mass(self.ref)
+        com_seg = ndimage.center_of_mass(self.seg)
+        com_dist = np.sqrt(np.dot(np.square(np.asarray(com_ref) -
+                                            np.asarray(com_seg)), np.square(
+            self.pixdim)))
+        return com_dist
 
     def com_ref(self):
         return ndimage.center_of_mass(self.ref)
@@ -164,8 +163,7 @@ class PairwiseMeasures(object):
     def com_seg(self):
         if self.flag_empty:
             return -1
-        else:
-            return ndimage.center_of_mass(self.seg)
+        return ndimage.center_of_mass(self.seg)
 
     def list_labels(self):
         if self.list_labels is None:
@@ -200,8 +198,9 @@ class PairwiseMeasures(object):
     def measured_distance(self):
         ref_border_dist, seg_border_dist = self.border_distance()
         average_distance = (np.sum(ref_border_dist) + np.sum(
-            seg_border_dist)) / (np.sum(self.ref+self.seg))
-        hausdorff_distance = np.max([np.max(ref_border_dist),np.max(seg_border_dist)])
+            seg_border_dist)) / (np.sum(self.ref + self.seg))
+        hausdorff_distance = np.max(
+            [np.max(ref_border_dist), np.max(seg_border_dist)])
         return hausdorff_distance, average_distance
 
     def measured_average_distance(self):
@@ -292,7 +291,7 @@ class PairwiseMeasures(object):
 
     def to_string(self, fmt='{:.4f}'):
         result_str = ""
-        list_space = ['com_ref','com_seg','list_labels']
+        list_space = ['com_ref', 'com_seg', 'list_labels']
         for key in self.measures:
             result = self.m_dict[key][0]()
             if key in list_space:
@@ -307,7 +306,6 @@ class PairwiseMeasures(object):
 
 class PairwiseMeasuresRegression(object):
     def __init__(self, reg_img, ref_img, measures=None):
-
         self.reg = reg_img
         self.ref = ref_img
         self.measures = measures
@@ -319,31 +317,27 @@ class PairwiseMeasuresRegression(object):
             'r2': (self.r2, 'R2')
         }
 
-
     def mse(self):
         return np.mean(np.square(self.reg - self.ref))
-
 
     def rmse(self):
         return np.sqrt(self.mse())
 
-
     def mae(self):
-        return np.mean(np.abs(self.ref-self.reg))
+        return np.mean(np.abs(self.ref - self.reg))
 
     def r2(self):
-        ref_var = np.sum(np.square(self.ref-np.mean(self.ref)))
-        reg_var = np.sum(np.square(self.reg-np.mean(self.reg)))
-        cov_refreg = np.sum((self.reg-np.mean(self.reg))*(self.ref-np.mean(
-            self.ref)))
-        return np.square(cov_refreg / np.sqrt(ref_var*reg_var+0.00001))
-
+        ref_var = np.sum(np.square(self.ref - np.mean(self.ref)))
+        reg_var = np.sum(np.square(self.reg - np.mean(self.reg)))
+        cov_refreg = np.sum(
+            (self.reg - np.mean(self.reg)) * (self.ref - np.mean(
+                self.ref)))
+        return np.square(cov_refreg / np.sqrt(ref_var * reg_var + 0.00001))
 
     def header_str(self):
         result_str = [self.m_dict[key][1] for key in self.measures]
         result_str = ',' + ','.join(result_str)
         return result_str
-
 
     def to_string(self, fmt='{:.4f}'):
         result_str = ""

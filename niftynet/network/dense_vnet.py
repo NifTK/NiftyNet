@@ -330,11 +330,3 @@ class Affine3DAugmentationLayer(TrainableLayer):
                                        interpolation,
                                        boundary,
                                        self.inverse_transform)
-
-
-
-
-
-
-
-

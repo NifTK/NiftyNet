@@ -19,6 +19,8 @@ from niftynet.utilities.user_parameters_default import add_network_args
 from niftynet.utilities.user_parameters_default import add_training_args
 from niftynet.utilities.user_parameters_helper import has_section_in_config
 from niftynet.utilities.user_parameters_helper import standardise_section_name
+from niftynet.utilities.util_common import \
+    _damerau_levenshtein_distance as edit_distance
 from niftynet.utilities.versioning import get_niftynet_version_string
 
 try:
@@ -42,7 +44,9 @@ def run():
         input_data_args is a group of input data sources to be
         used by niftynet.io.ImageReader
     """
-    meta_parser = argparse.ArgumentParser(add_help=False)
+    meta_parser = argparse.ArgumentParser(
+        epilog='Please visit https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/tree/dev/demos '
+               'for more info.')
     version_string = get_niftynet_version_string()
     meta_parser.add_argument("-v", "--version",
                              action='version',
@@ -77,6 +81,9 @@ def run():
         raise ValueError(
             '{} requires [{}] section in the config file'.format(
                 module_name, app_module.REQUIRED_CONFIG_SECTION))
+
+    # check keywords in configuration file
+    check_keywords(config)
 
     # using configuration as default, and parsing all command line arguments
     all_args = {}
@@ -174,3 +181,53 @@ def _parse_arguments_by_section(parents,
     # don't parse user cmd for input source sections
     section_args, _ = section_parser.parse_known_args([])
     return section_args, args_from_cmd
+
+
+def check_keywords(config):
+    """
+    check config files, validate keywords provided against
+    parsers' argument list
+    """
+    validation_parser = argparse.ArgumentParser(
+        parents=[],
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        conflict_handler='resolve')
+    config_keywords = []
+    for section in config.sections():
+        validation_parser = add_application_args(validation_parser)
+        validation_parser = add_network_args(validation_parser)
+        validation_parser = add_training_args(validation_parser)
+        validation_parser = add_inference_args(validation_parser)
+        validation_parser = add_input_data_args(validation_parser)
+        try:
+            validation_parser = add_customised_args(
+                validation_parser, section.upper())
+        except (argparse.ArgumentError, NotImplementedError):
+            pass
+
+        if config.items(section):
+            config_keywords.extend(list(dict(config.items(section))))
+
+    default_keywords = []
+    for action in validation_parser._actions:
+        try:
+            default_keywords.append(action.option_strings[0][2:])
+        except (IndexError, AttributeError, ValueError):
+            pass
+    for config_key in config_keywords:
+        if config_key in default_keywords:
+            continue
+        dists = {k: edit_distance(k, config_key)
+                 for k in default_keywords}
+        closest = min(dists, key=dists.get)
+        if dists[closest] <= 5:
+            raise ValueError(
+                'Unknown keywords in config file: By "{0}" ' \
+                'did you mean "{1}"?\n "{0}" is ' \
+                'not a valid option. '.format(config_key, closest))
+        else:
+            raise ValueError(
+                'Unknown keywords in config file: [{}] -- all '
+                ' possible choices are {}'.format(
+                    config_key, default_keywords))

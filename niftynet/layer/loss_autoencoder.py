@@ -3,8 +3,8 @@ from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 
-from niftynet.layer.base_layer import Layer
 from niftynet.engine.application_factory import LossAutoencoderFactory
+from niftynet.layer.base_layer import Layer
 
 
 class LossFunction(Layer):
@@ -24,7 +24,7 @@ class LossFunction(Layer):
     def make_callable_loss_func(self, type_str):
         self._data_loss_func = LossAutoencoderFactory.create(type_str)
 
-    def layer_op(self, prediction, var_scope=None):
+    def layer_op(self, prediction):
         with tf.device('/cpu:0'):
             return self._data_loss_func(prediction, **self._loss_func_params)
 
@@ -53,8 +53,9 @@ def variational_lower_bound(prediction):
     originals = prediction[4]
 
     squared_diff = tf.square(data_means - originals)
-    log_likelihood = data_logvar + log_2pi + tf.exp(-data_logvar) * squared_diff
-    #batch_size = tf.shape(log_likelihood)[0]
+    log_likelihood = data_logvar + log_2pi + \
+                     tf.exp(-data_logvar) * squared_diff
+    # batch_size = tf.shape(log_likelihood)[0]
     batch_size = log_likelihood.get_shape().as_list()[0]
     log_likelihood = tf.reshape(log_likelihood, shape=[batch_size, -1])
     log_likelihood = -0.5 * tf.reduce_sum(log_likelihood, axis=[1])
