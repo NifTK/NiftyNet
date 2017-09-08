@@ -158,6 +158,7 @@ quicktest:
     - 148-publish-niftynet-v0-2-0-on-python-package-index-pypi
     - 159-add-net_run-command-line-entry-to-pip-installer
     - 160-add-net_gan-command-line-entry-to-pip-installer
+    - 161-add-net_autoencode-command-line-entry-to-pip-installer
   script:
     # print system info
     - which nvidia-smi
@@ -200,6 +201,7 @@ pip-installer:
     - supports-axbxc-patch
     - 159-add-net_run-command-line-entry-to-pip-installer
     - 160-add-net_gan-command-line-entry-to-pip-installer
+    - 161-add-net_autoencode-command-line-entry-to-pip-installer
   script:
     # source utils
     - source ci/utils.sh
