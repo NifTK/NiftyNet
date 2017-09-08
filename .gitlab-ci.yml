@@ -154,6 +154,7 @@ quicktest:
     - 147-revise-contribution-guidelines-to-include-github
     - 150-properly-format-the-bibtex-entry-to-the-ipmi-2017-paper-on-the-main-readme
     - 139-correct-toynet-demo-instructions
+    - 149-release-brats-2017-cascaded-anisotropic-network-code
   script:
     # print system info
     - which nvidia-smi
