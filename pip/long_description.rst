@@ -78,6 +78,8 @@ Useful links
 
 `NiftyNet source code mirror on GitHub`_
 
+NiftyNet mailing list: nifty-net@live.ucl.ac.uk
+
 
 .. _`NiftyNet website`: http://niftynet.io/
 .. _`NiftyNet source code on CmicLab`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
