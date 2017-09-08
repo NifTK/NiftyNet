@@ -157,6 +157,7 @@ quicktest:
     - 139-correct-toynet-demo-instructions
     - 148-publish-niftynet-v0-2-0-on-python-package-index-pypi
     - 159-add-net_run-command-line-entry-to-pip-installer
+    - 160-add-net_gan-command-line-entry-to-pip-installer
   script:
     # print system info
     - which nvidia-smi
