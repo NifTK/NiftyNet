@@ -70,6 +70,20 @@ The API reference is available on [Read the Docs][rtd-niftynet].
 
 Please see the [contribution guidelines](./CONTRIBUTING.md).
 
+#### Useful links
+
+[NiftyNet website][niftynet-io]
+
+[NiftyNet source code on CmicLab][niftynet-cmiclab]
+
+[NiftyNet source code mirror on GitHub][niftynet-github]
+
+NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
+
+[niftynet-io]: http://niftynet.io/
+[niftynet-cmiclab]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
+[niftynet-github]: https://github.com/NifTK/NiftyNet
+[ml-niftynet]: mailto:nifty-net@live.ucl.ac.uk
 
 
 ### Citing NiftyNet
