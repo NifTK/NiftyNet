@@ -251,8 +251,8 @@ pip-installer:
     # - net_segment inference -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
     - net_run train --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
     - net_run inference --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
-    - net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
-    - net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini
+    - net_gan train -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
+    - net_gan inference -c $niftynet_dir/config/GAN_demo_train_config.ini
     # - net_run train --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
     # - net_run inference --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini
     # - net_run train --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --max_iter 5
@@ -295,8 +295,8 @@ pip-installer:
     # - net_segment inference -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
     # - net_run train --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
     # - net_run inference --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
-    - net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
-    - net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini
+    - net_gan train -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
+    - net_gan inference -c $niftynet_dir/config/GAN_demo_train_config.ini
     # - net_run train --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
     # - net_run inference --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini
     # - net_run train --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --max_iter 5
