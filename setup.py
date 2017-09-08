@@ -105,6 +105,7 @@ setup(
             'net_segment=niftynet:main',
             'net_download=niftynet.utilities.download:main',
             'net_run=niftynet:main',
+            'net_gan=niftynet:main',
         ],
     },
 )
