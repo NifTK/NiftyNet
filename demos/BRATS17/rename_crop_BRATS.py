@@ -1,5 +1,5 @@
 """
-This script renames BRATS17 dataset to OUTPUT_path,
+This script renames BRATS dataset to OUTPUT_path,
 each subject's images will be cropped and renamed to
 "TYPEindex_modality.nii.gz".
 
@@ -24,7 +24,7 @@ import os
 import nibabel
 import numpy as np
 
-# change here to the directory of downloaded BRATS17 data')
+# change here to the directory of downloaded BRATS data')
 BRATS_path = os.path.join(
     '/Volumes', 'Public', 'Brats17TrainingData')
 # change here to the directory of preferred output directory')

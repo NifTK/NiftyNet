@@ -55,7 +55,7 @@ networks, the downloaded datasets must first be preprocessed with [rename_crop_B
 
 ### Running segmentation app as a NiftyNet module
 Using pip installed NiftyNet:
-```
+```bash
 pip install NiftyNet
 # train WTNet in the sagittal view using BRATSApp
 net_run train -c train_whole_tumor_sagittal.ini --app brats_segmentation.BRATSApp --name anisotropic_nets.wt_net.WTNet
@@ -63,7 +63,7 @@ net_run train -c train_whole_tumor_sagittal.ini --app brats_segmentation.BRATSAp
 net_run inference -c inference_whole_tumor_sagittal.ini --app brats_segmentation.BRATSApp --name anisotropic_nets.wt_net.WTNet
 ```
 or using NiftyNet cloned from [GitHub](https://github.com/NifTK/NiftyNet) or [CMICLab](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet):
-```
+```bash
 cd NiftyNet/
 # train WTNet in the sagittal view using BRATSApp
 python net_run.py train -c train_whole_tumor_sagittal.ini --app brats_segmentation.BRATSApp --name anisotropic_nets.wt_net.WTNet
@@ -79,7 +79,7 @@ on the `$PYTHONPATH` of the system environment, so that NiftyNet can import the
 modules correctly. This can be done by downloading these files, and adding
 them to `$PATHONPATH`, for example, given this folder is downloaded
 to `/home/BRATS17`:
-```
+```bash
 export PYTHONPATH=/home/BRATS17:$PYTHONPATH
 ```
 
