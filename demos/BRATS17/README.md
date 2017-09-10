@@ -20,7 +20,9 @@ to the online validation leaderboard of [BRATS challenge 2017](https://www.cbica
 The demo focuses on the first stage of the cascaded CNNs, i.e., automated
 segmentation of whole tumor using the [WNet](anisotropic_nets/wt_net.py).
 
-This folder (also zipped and downloadable via [dropbox link](http://link)) contains details for replicating the results, including:
+This folder (also zipped and downloadable from
+[here](https://www.dropbox.com/s/macplyp53v0tm1j/BRATS17.tar.gz)) contains
+details for replicating the results, including:
   * [`brats_segmentation.py`](./brats_segmentation.py) --
     an application built with NiftyNet, defines the main workflow of network
     training and inference.
