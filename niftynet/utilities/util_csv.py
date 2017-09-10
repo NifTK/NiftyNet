@@ -244,7 +244,8 @@ def load_and_merge_csv_files(data_param):
         except AttributeError:
             tf.logging.fatal('unrecognised parameter format')
             raise
-        if hasattr(data_param[modality_name], 'path_to_search'):
+        if hasattr(data_param[modality_name], 'path_to_search') and \
+                len(data_param[modality_name].path_to_search):
             tf.logging.info(
                 '[%s] search file folders, writing csv file %s',
                 modality_name, csv_file)
