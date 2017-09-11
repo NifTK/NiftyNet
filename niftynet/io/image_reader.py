@@ -15,6 +15,8 @@ from niftynet.utilities.user_parameters_helper import make_input_tuple
 from niftynet.utilities.util_common import print_progress_bar
 
 # NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
+from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
+
 NP_TF_DTYPES = {'i': tf.float32,
                 'u': tf.float32,
                 'b': tf.float32,
@@ -59,6 +61,8 @@ class ImageReader(Layer):
         self._names = None
         self.names = names
 
+        self._global_config = NiftyNetGlobalConfig()
+
         # list of image objects
         self.output_list = None
         self.current_id = -1
@@ -95,7 +99,8 @@ class ImageReader(Layer):
                         name, source, list(data_param))
                     raise ValueError
 
-        self._file_list = util_csv.load_and_merge_csv_files(data_to_load)
+        default_data_folder = self._global_config.get_niftynet_home_folder()
+        self._file_list = util_csv.load_and_merge_csv_files(data_to_load, default_data_folder)
         self.output_list = _filename_to_image_list(
             self._file_list, self._input_sources, data_param)
         for name in self.names:
