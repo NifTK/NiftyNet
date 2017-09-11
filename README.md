@@ -88,26 +88,24 @@ NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
 
 ### Citing NiftyNet
 
-If you use NiftyNet in your work, please cite [Li et. al. 2017][ipmi2017]:
+If you use NiftyNet in your work, please cite [Gibson and Li et. al. 2017][preprint]:
 
-* Li W., Wang G., Fidon L., Ourselin S., Cardoso M.J., Vercauteren T. (2017)
-[On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.][ipmi2017]
-In: Niethammer M. et al. (eds) Information Processing in Medical Imaging. IPMI 2017.
-Lecture Notes in Computer Science, vol 10265. Springer, Cham.
-DOI: [10.1007/978-3-319-59050-9_28][ipmi2017]
+* E. Gibson\*, W. Li\*, C. Sudre, L. Fidon, D. Shakir, G. Wang, Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, D. C. Barratt, S. Ourselin, M. J. Cardoso and T. Vercauteren (2017)
+[NiftyNet: a deep-learning platform for medical imaging][preprint]
+
 
 BibTeX entry:
 
-```ini
+```
 @InProceedings{niftynet17,
-  author = {Li, Wenqi and Wang, Guotai and Fidon, Lucas and Ourselin, Sebastien and Cardoso, M. Jorge and Vercauteren, Tom},
-  title = {On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task},
-  booktitle = {International Conference on Information Processing in Medical Imaging (IPMI)},
+  author = {Eli  Gibson and Wenqi Li and Carole Sudre and Lucas Fidon and Dzoshkun Shakir and Guotai Wang and Zach Eaton-Rosen and Robert Gray and Tom Doel and Yipeng Hu and Tom Whyntie and Parashkev Nachev and Dean C. Barratt and Sebastien Ourselin and M. Jorge Cardoso and Tom Vercauteren},
+  title = {NiftyNet: a deep-learning platform for medical imaging},
+  booktitle = {Pre-print},
   year = {2017}
 }
 ```
 
-[ipmi2017]: http://doi.org/10.1007/978-3-319-59050-9_28
+[preprint]: https://www.dropbox.com/s/gsagqvpdczhs7s4/NiftyNet_2017.pdf?dl=1
 
 
 ### Licensing and Copyright
@@ -117,10 +115,11 @@ NiftyNet is released under the Apache License, Version 2.0. Please see the LICEN
 
 ### Acknowledgements
 
-This project is grateful for the support from the [Wellcome Trust][wt], the [Engineering and Physical Sciences Research Council (EPSRC)][epsrc], the [National Institute for Health Research (NIHR)][nihr], the [Department of Health (DoH)][doh], [University College London (UCL)][ucl], the [Science and Engineering South Consortium (SES)][ses], the [STFC Rutherford-Appleton Laboratory][ral], and [NVIDIA][nvidia].
+This project is grateful for the support from the [Wellcome Trust][wt], the [Engineering and Physical Sciences Research Council (EPSRC)][epsrc], the [National Institute for Health Research (NIHR)][nihr], the [Department of Health (DoH)][doh], [Cancer Research UK][cruk], [University College London (UCL)][ucl], the [Science and Engineering South Consortium (SES)][ses], the [STFC Rutherford-Appleton Laboratory][ral], and [NVIDIA][nvidia].
 
 [cmic]: http://cmic.cs.ucl.ac.uk
 [ucl]: http://www.ucl.ac.uk
+[cruk]: https://www.cancerresearchuk.org
 [tf]: https://www.tensorflow.org/
 [weiss]: http://www.ucl.ac.uk/weiss
 [wt]: https://wellcome.ac.uk/
