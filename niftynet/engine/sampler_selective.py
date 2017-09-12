@@ -72,11 +72,8 @@ class SelectiveSampler(Layer, InputBatchQueueRunner):
             image_shapes = {
                 name: data[name].shape for name in self.window.names}
             static_window_shapes = self.window.match_image_shapes(image_shapes)
-            candidates = candidate_indices(
-                                                            static_window_shapes['label'],
-
-                                                            data['label'],
-                                                            self.constraint)
+            candidates = candidate_indices(static_window_shapes['label'],
+                                           data['label'], self.constraint)
             if not np.sum(candidates) >= self.window.n_samples:
                 break
 
@@ -138,7 +135,7 @@ def candidate_indices(win_sizes, data, constraint):
     num_labels_add = 0
     if constraint.num_labels > 0:
         num_labels_add = constraint.num_labels - len(list_labels)
-        if num_labels_add <=0:
+        if num_labels_add <= 0:
             num_labels_add = 0
         if len(unique) < constraint.num_labels:
             print('Missing labels')
@@ -159,12 +156,13 @@ def candidate_indices(win_sizes, data, constraint):
         for i in range(0, len(win_sizes)):
             if i < N_SPATIAL:
                 shape_ones[i] -= max_spatial_win
-                padding = padding + [[half_max_size, half_max_size],]
+                padding = padding + [[half_max_size, half_max_size], ]
             else:
-                padding = padding + [[0,0],]
+                padding = padding + [[0, 0], ]
         print(shape_ones, padding)
-        final = np.pad(np.ones(shape_ones), np.asarray(padding, dtype=np.int32),
-                                                       'constant')
+        final = np.pad(np.ones(shape_ones), np.asarray(padding,
+                                                       dtype=np.int32),
+                       'constant')
         new_win_size = np.copy(win_sizes)
         # new_win_size[:N_SPATIAL] = win_sizes[0]/8
         window_mean = np.ones(new_win_size, dtype=np.int32)
@@ -196,7 +194,7 @@ def candidate_indices(win_sizes, data, constraint):
 
 
 def rand_choice_coordinates(subject_id, img_sizes, win_sizes,
-                             candidates, n_samples=1):
+                            candidates, n_samples=1):
     """
     win_sizes could be different, for example in segmentation network
     input image window size is 32x32x10,
@@ -227,8 +225,8 @@ def rand_choice_coordinates(subject_id, img_sizes, win_sizes,
     max_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
     candidates_indices = np.vstack(np.where(candidates == 1)).T
     list_indices = np.arange(len(candidates_indices))
-    print(np.sum(candidates),list_indices)
-    print(len(candidates_indices),candidates_indices.shape)
+    print(np.sum(candidates), list_indices)
+    print(len(candidates_indices), candidates_indices.shape)
     np.random.shuffle(list_indices)
     half_max_spatial_win = np.floor(max_spatial_win / 2.0)
     for i in range(0, n_samples):
