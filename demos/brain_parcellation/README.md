@@ -61,7 +61,8 @@ Using pip installed NiftyNet:
 ```bash
 pip install NiftyNet
 cd ${demopath};
-net_segment inference -c ${demopath}/highres3dnet_config_eval.ini
+net_segment inference -c ${demopath}/highres3dnet_config_eval.ini \
+        --save_seg_dir ${demopath}/results
 ```
 
 or using NiftyNet cloned from [GitHub](https://github.com/NifTK/NiftyNet) or [CMICLab](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet):
