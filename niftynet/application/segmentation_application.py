@@ -11,6 +11,8 @@ from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.engine.sampler_uniform import UniformSampler
+from niftynet.engine.sampler_selective import SelectiveSampler
+from niftynet.engine.sampler_selective import Constraint
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.discrete_label_normalisation import \
@@ -25,6 +27,7 @@ from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
+
 
 SUPPORTED_INPUT = {'image', 'label', 'weight'}
 
@@ -49,6 +52,9 @@ class SegmentationApplication(BaseApplication):
             'resize': (self.initialise_resize_sampler,
                        self.initialise_resize_sampler,
                        self.initialise_resize_aggregator),
+            'selective': (self.initialise_selective_sampler,
+                          self.initialise_grid_sampler,
+                          self.initialise_grid_aggregator)
         }
 
     def initialise_dataset_loader(self, data_param=None, task_param=None):
@@ -121,6 +127,18 @@ class SegmentationApplication(BaseApplication):
                 border=self.net_param.volume_padding_size))
         self.reader.add_preprocessing_layers(
             volume_padding_layer + normalisation_layers + augmentation_layers)
+
+    def initialise_selective_sampler(self):
+        self.sampler = [SelectiveSampler(
+                            reader=self.reader,
+            data_param=self.data_param,
+            batch_size=self.net_param.batch_size,
+            windows_per_image=self.action_param.sample_per_volume,
+            constraint=Constraint(self.action_param.compulsory_labels,
+                                  self.action_param.min_ratio_sampling,
+                                  self.action_param.num_min_labels),
+            queue_length=self.net_param.queue_length
+        )]
 
     def initialise_uniform_sampler(self):
         self.sampler = [UniformSampler(
