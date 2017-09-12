@@ -19,7 +19,7 @@ trained network model, and then using the NiftyNet inference program to
 generate brain parcellation.
 
 
-#### Preparing data
+#### Prepare data and run segmentation network
 0) **Create a folder for the demo, as an example `/home/niftynet/demo/` is used here:**
 ```bash
 # tentative path for demo purpose
@@ -61,7 +61,8 @@ Using pip installed NiftyNet:
 ```bash
 pip install NiftyNet
 cd ${demopath};
-net_segment inference -c ${demopath}/highres3dnet_config_eval.ini
+net_segment inference -c ${demopath}/highres3dnet_config_eval.ini \
+        --save_seg_dir ${demopath}/results
 ```
 
 or using NiftyNet cloned from [GitHub](https://github.com/NifTK/NiftyNet) or [CMICLab](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet):
