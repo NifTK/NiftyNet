@@ -19,7 +19,7 @@ trained network model, and then using the NiftyNet inference program to
 generate brain parcellation.
 
 
-#### Preparing data
+#### Prepare data and run segmentation network
 0) **Create a folder for the demo, as an example `/home/niftynet/demo/` is used here:**
 ```bash
 # tentative path for demo purpose
