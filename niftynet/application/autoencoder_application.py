@@ -11,10 +11,9 @@ from niftynet.engine.sampler_linear_interpolate import LinearInterpolateSampler
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.loss_autoencoder import LossFunction
-from niftynet.layer.rand_flip import RandomFlipLayer
-from niftynet.layer.rand_rotation import RandomRotationLayer
-from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 from niftynet.utilities.util_common import look_up_operations
+from niftynet.layer.mean_variance_normalisation import \
+    MeanVarNormalisationLayer
 
 SUPPORTED_INPUT = {'image', 'feature'}
 SUPPORTED_INFERENCE = {
@@ -58,21 +57,9 @@ class AutoencoderApplication(BaseApplication):
 
         if self.reader:
             self.reader.initialise_reader(data_param, task_param)
-
-            augmentation_layers = []
-            if self.is_training:
-                if self.action_param.random_flipping_axes != -1:
-                    augmentation_layers.append(RandomFlipLayer(
-                        flip_axes=self.action_param.random_flipping_axes))
-                if self.action_param.scaling_percentage:
-                    augmentation_layers.append(RandomSpatialScalingLayer(
-                        min_percentage=self.action_param.scaling_percentage[0],
-                        max_percentage=self.action_param.scaling_percentage[1]))
-                if self.action_param.rotation_angle:
-                    augmentation_layers.append(RandomRotationLayer(
-                        min_angle=self.action_param.rotation_angle[0],
-                        max_angle=self.action_param.rotation_angle[1]))
-            self.reader.add_preprocessing_layers(augmentation_layers)
+        #if self.is_training or self._infer_type in ('encode', 'encode-decode'):
+        #    mean_var_normaliser = MeanVarNormalisationLayer(image_name='image')
+        #    self.reader.add_preprocessing_layers([mean_var_normaliser])
 
     def initialise_sampler(self):
         self.sampler = []
@@ -155,6 +142,7 @@ class AutoencoderApplication(BaseApplication):
                 var=data_loss, name='variational_lower_bound',
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
+
             outputs_collector.add_to_collection(
                 var=net_output[4], name='Originals',
                 average_over_devices=False, summary_type='image3_coronal',
