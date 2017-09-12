@@ -77,7 +77,7 @@ def load_image(filename):
             # continue to next loader
             pass
     raise nib.filebasedimages.ImageFileError(
-        'No loader could load the file')  # Throw last error
+        'No loader could load the file {}'.format(filename))
 
 
 def correct_image_if_necessary(img):

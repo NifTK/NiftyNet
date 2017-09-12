@@ -15,7 +15,8 @@ def default_w_initializer():
     def _initializer(shape, dtype, partition_info):
         stddev = np.sqrt(2.0 / np.prod(shape[:-1]))
         from tensorflow.python.ops import random_ops
-        return random_ops.truncated_normal(shape, 0.0, stddev, dtype=tf.float32)
+        return random_ops.truncated_normal(
+            shape, 0.0, stddev, dtype=tf.float32)
         # return tf.truncated_normal_initializer(
         #    mean=0.0, stddev=stddev, dtype=tf.float32)
 
