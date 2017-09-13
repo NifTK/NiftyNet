@@ -4,7 +4,7 @@ from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_factory import ApplicationNetFactory
 from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
-from niftynet.engine.application_variables import NETORK_OUTPUT
+from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.windows_aggregator_identity import WindowAsImageAggregator
 from niftynet.engine.sampler_linear_interpolate import LinearInterpolateSampler
@@ -163,16 +163,16 @@ class AutoencoderApplication(BaseApplication):
 
                 outputs_collector.add_to_collection(
                     var=data_dict['image_location'], name='location',
-                    average_over_devices=True, collection=NETORK_OUTPUT)
+                    average_over_devices=True, collection=NETWORK_OUTPUT)
 
                 if self._infer_type == 'encode-decode':
                     outputs_collector.add_to_collection(
                         var=net_output[2], name='generated_image',
-                        average_over_devices=True, collection=NETORK_OUTPUT)
+                        average_over_devices=True, collection=NETWORK_OUTPUT)
                 if self._infer_type == 'encode':
                     outputs_collector.add_to_collection(
                         var=net_output[7], name='embedded',
-                        average_over_devices=True, collection=NETORK_OUTPUT)
+                        average_over_devices=True, collection=NETWORK_OUTPUT)
 
                 self.output_decoder = WindowAsImageAggregator(
                     image_reader=self.reader,
@@ -196,7 +196,7 @@ class AutoencoderApplication(BaseApplication):
 
                 outputs_collector.add_to_collection(
                     var=decoder_output, name='generated_image',
-                    average_over_devices=True, collection=NETORK_OUTPUT)
+                    average_over_devices=True, collection=NETWORK_OUTPUT)
                 self.output_decoder = WindowAsImageAggregator(
                     image_reader=None,
                     output_path=self.action_param.save_seg_dir)
@@ -217,10 +217,10 @@ class AutoencoderApplication(BaseApplication):
 
                 outputs_collector.add_to_collection(
                     var=decoder_output, name='generated_image',
-                    average_over_devices=True, collection=NETORK_OUTPUT)
+                    average_over_devices=True, collection=NETWORK_OUTPUT)
                 outputs_collector.add_to_collection(
                     var=data_dict['feature_location'], name='location',
-                    average_over_devices=True, collection=NETORK_OUTPUT)
+                    average_over_devices=True, collection=NETWORK_OUTPUT)
                 self.output_decoder = WindowAsImageAggregator(
                     image_reader=self.reader,
                     output_path=self.action_param.save_seg_dir)
