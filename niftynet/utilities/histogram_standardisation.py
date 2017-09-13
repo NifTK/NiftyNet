@@ -278,9 +278,9 @@ def __force_writing_new_mapping(filename, mapping_dict):
     :param mapping_dict: mapping dictionary to save in the file
     :return:
     """
-    f = open(filename, 'w+')
-    for mod in mapping_dict.keys():
-        mapping_string = ' '.join(map(str, mapping_dict[mod]))
-        string_fin = '{} {}\n'.format(mod, mapping_string)
-        f.write(string_fin)
+    with open(filename, 'w+') as f:
+        for mod in mapping_dict.keys():
+            mapping_string = ' '.join(map(str, mapping_dict[mod]))
+            string_fin = '{} {}\n'.format(mod, mapping_string)
+            f.write(string_fin)
     return
