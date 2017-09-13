@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 
-from niftynet.engine.application_variables import NETORK_OUTPUT
+from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.application_variables import OutputsCollector
 from niftynet.network.toynet import ToyNet
@@ -31,7 +31,7 @@ class OutputCollectorTest(tf.test.TestCase):
                                             average_over_devices=False)
                 collector.add_to_collection(name='bar',
                                             var=bar,
-                                            collection=NETORK_OUTPUT,
+                                            collection=NETWORK_OUTPUT,
                                             average_over_devices=False)
         self.assertDictEqual(collector.console_vars,
                              {'image': image, 'foo': foo})
@@ -72,11 +72,11 @@ class OutputCollectorTest(tf.test.TestCase):
                 foo = tf.zeros([2, 2])
                 collector.add_to_collection(name='image',
                                             var=image,
-                                            collection=NETORK_OUTPUT,
+                                            collection=NETWORK_OUTPUT,
                                             average_over_devices=False)
                 collector.add_to_collection(name='foo',
                                             var=foo,
-                                            collection=NETORK_OUTPUT,
+                                            collection=NETWORK_OUTPUT,
                                             average_over_devices=False)
         self.assertDictEqual(collector.output_vars,
                              {'image': image, 'foo': foo})
@@ -91,15 +91,15 @@ class OutputCollectorTest(tf.test.TestCase):
                 bar = tf.zeros([42])
                 collector.add_to_collection(name='image',
                                             var=image,
-                                            collection=NETORK_OUTPUT,
+                                            collection=NETWORK_OUTPUT,
                                             average_over_devices=False)
                 collector.add_to_collection(name='foo',
                                             var=foo,
-                                            collection=NETORK_OUTPUT,
+                                            collection=NETWORK_OUTPUT,
                                             average_over_devices=False)
                 collector.add_to_collection(name='bar',
                                             var=bar,
-                                            collection=NETORK_OUTPUT,
+                                            collection=NETWORK_OUTPUT,
                                             average_over_devices=True)
         self.assertEqual(
             set(collector.output_vars),

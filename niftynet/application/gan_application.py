@@ -6,7 +6,7 @@ from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_factory import ApplicationNetFactory
 from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
-from niftynet.engine.application_variables import NETORK_OUTPUT
+from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.windows_aggregator_identity import WindowAsImageAggregator
 from niftynet.engine.sampler_random_vector import RandomVectorSampler
@@ -215,12 +215,12 @@ class GANApplication(BaseApplication):
                 var=net_output[0],
                 name='image',
                 average_over_devices=False,
-                collection=NETORK_OUTPUT)
+                collection=NETWORK_OUTPUT)
             outputs_collector.add_to_collection(
                 var=conditioning_dict['conditioning_location'],
                 name='location',
                 average_over_devices=False,
-                collection=NETORK_OUTPUT)
+                collection=NETWORK_OUTPUT)
 
             self.output_decoder = WindowAsImageAggregator(
                 image_reader=self.reader,

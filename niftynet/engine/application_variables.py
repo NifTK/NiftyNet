@@ -17,7 +17,7 @@ from niftynet.utilities.restore_initializer import restore_initializer
 from niftynet.utilities.util_common import look_up_operations
 
 RESTORABLE = 'NiftyNetObjectsToRestore'
-NETORK_OUTPUT = 'niftynetout'
+NETWORK_OUTPUT = 'niftynetout'
 CONSOLE = 'niftynetconsole'
 TF_SUMMARIES = tf.GraphKeys.SUMMARIES
 SUPPORTED_SUMMARY = {'scalar': tf.summary.scalar,
@@ -82,7 +82,7 @@ class OutputsCollector(object):
     """
     Collect all tf.Tensor object, to be evaluated by tf.Session.run()
     These objects are grouped into
-        NETORK_OUTPUT: to be decoded by an aggregator
+        NETWORK_OUTPUT: to be decoded by an aggregator
         CONSOLE: to be printed on command line
         TF_SUMMARIES: to be added to tensorboard visualisation
     """
@@ -151,7 +151,7 @@ class OutputsCollector(object):
         :param name name of the variable (for displaying purposes)
         :param average_over_devices
         :param collection: in choices of
-            [CONSOLE, TF_SUMMARIES, NETORK_OUTPUT]
+            [CONSOLE, TF_SUMMARIES, NETWORK_OUTPUT]
         :param summary_type if adding to TF_SUMMARIES, there are
             a few possible ways to visualise the Tensor value
             see SUPPORTED_SUMMARY
@@ -159,7 +159,7 @@ class OutputsCollector(object):
         """
         if collection == CONSOLE:
             self._add_to_console(var, name, average_over_devices)
-        elif collection == NETORK_OUTPUT:
+        elif collection == NETWORK_OUTPUT:
             self._add_to_network_output(var, name, average_over_devices)
         elif collection == TF_SUMMARIES:
             self._add_to_tf_summary(
@@ -172,14 +172,14 @@ class OutputsCollector(object):
         """
         get tf.Tensors to be evaulated by tf.Session().run()
         :param collection: in choices of
-            [CONSOLE, TF_SUMMARIES, NETORK_OUTPUT]
+            [CONSOLE, TF_SUMMARIES, NETWORK_OUTPUT]
         :return: a variable dictionary
         """
         if collection == CONSOLE:
             return self.console_vars
         elif collection == TF_SUMMARIES:
             return self._merge_op if self._merge_op is not None else {}
-        elif collection == NETORK_OUTPUT:
+        elif collection == NETWORK_OUTPUT:
             return self.output_vars
         else:
             tf.logging.fatal("unknown output %s", collection)

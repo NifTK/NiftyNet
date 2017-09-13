@@ -21,7 +21,7 @@ import tensorflow as tf
 from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import GradientsCollector
-from niftynet.engine.application_variables import NETORK_OUTPUT
+from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import OutputsCollector
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.application_variables import \
@@ -313,9 +313,9 @@ class ApplicationDriver(object):
 
             # variables to the graph
             vars_to_run = dict(train_op=train_op)
-            vars_to_run[CONSOLE], vars_to_run[NETORK_OUTPUT] = \
+            vars_to_run[CONSOLE], vars_to_run[NETWORK_OUTPUT] = \
                 self.outputs_collector.variables(CONSOLE), \
-                self.outputs_collector.variables(NETORK_OUTPUT)
+                self.outputs_collector.variables(NETWORK_OUTPUT)
             if self.tensorboard_every_n > 0 and \
                     (iter_i % self.tensorboard_every_n == 0):
                 # adding tensorboard summary
@@ -326,7 +326,7 @@ class ApplicationDriver(object):
             graph_output = sess.run(vars_to_run)
 
             # process graph outputs
-            self.app.interpret_output(graph_output[NETORK_OUTPUT])
+            self.app.interpret_output(graph_output[NETWORK_OUTPUT])
             console_str = self._console_vars_to_str(graph_output[CONSOLE])
             summary = graph_output.get(TF_SUMMARIES, {})
             if summary:
@@ -352,15 +352,15 @@ class ApplicationDriver(object):
 
             # build variables to run
             vars_to_run = dict()
-            vars_to_run[NETORK_OUTPUT], vars_to_run[CONSOLE] = \
-                self.outputs_collector.variables(NETORK_OUTPUT), \
+            vars_to_run[NETWORK_OUTPUT], vars_to_run[CONSOLE] = \
+                self.outputs_collector.variables(NETWORK_OUTPUT), \
                 self.outputs_collector.variables(CONSOLE)
 
             # evaluate the graph variables
             graph_output = sess.run(vars_to_run)
 
             # process the graph outputs
-            if not self.app.interpret_output(graph_output[NETORK_OUTPUT]):
+            if not self.app.interpret_output(graph_output[NETWORK_OUTPUT]):
                 tf.logging.info('processed all batches.')
                 loop_status['all_saved_flag'] = True
                 break
