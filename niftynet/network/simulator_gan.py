@@ -15,6 +15,13 @@ from niftynet.layer.gan_blocks import GANImageBlock
 
 
 class SimulatorGAN(GANImageBlock):
+    """
+    implementation of
+    Hu et al., "Freehand Ultrasound Image Simulation with Spatially-Conditioned
+    Generative Adversarial Networks", MICCAI RAMBO 2017
+    https://arxiv.org/abs/1707.05392
+    """
+
     def __init__(self, name='simulator_GAN'):
         super(SimulatorGAN, self).__init__(
             generator=ImageGenerator(name='generator'),
@@ -29,7 +36,7 @@ class ImageGenerator(BaseGenerator):
         self.initializers = {'w': tf.random_normal_initializer(0, 0.02),
                              'b': tf.constant_initializer(0.001)}
         self.noise_channels_per_layer = 0
-        self.with_shortcuts = [True, True, True, True, False]
+        self.with_conditionings = [True, True, True, True, False]
 
     def layer_op(self, random_source, image_size, conditioning, is_training):
         keep_prob_ph = 1  # not passed in as a placeholder
@@ -42,12 +49,15 @@ class ImageGenerator(BaseGenerator):
 
         # feature channels design pattern
         ch = [512]
-        sz = [image_size[:-1]]
+        sz = image_size[:-1]
         for i in range(4):
-            new_ch = ch[-1] + conditioning_channels * self.with_shortcuts[i]
+            # compute output n_feature_channels of i-th layer
+            new_ch = ch[-1] + conditioning_channels * self.with_conditionings[i]
             new_ch = round(new_ch / 2)
             ch.append(new_ch)
-            sz = [[int(round(i / 2)) for i in sz[0]]] + sz
+            # compute output spatial size of i-th layer
+            sz = [int(round(spatial_len / 2)) for spatial_len in sz]
+        ch.append(1)  # last layer single channel image
 
         # resizing utilities
         spatial_rank = len(image_size) - 1
@@ -64,18 +74,17 @@ class ImageGenerator(BaseGenerator):
         elif spatial_rank == 2:
             resize_func = tf.image.resize_bilinear
 
-        def concat_cond(x, i):
+        def concat_cond(x, with_conditioning):
+            noise = []
             if add_noise:
                 feature_shape = x.get_shape().as_list()[0:-1]
                 noise_shape = feature_shape + [add_noise]
                 noise = [tf.random_normal(noise_shape, 0.0, 0.1)]
-            else:
-                noise = []
-            if conditioning is not None and self.with_shortcuts[i]:
+
+            if with_conditioning and conditioning is not None:
                 with tf.name_scope('concat_conditioning'):
                     spatial_shape = x.get_shape().as_list()[1:-1]
-                    resized_cond = resize_func(conditioning,
-                                               spatial_shape)
+                    resized_cond = resize_func(conditioning, spatial_shape)
                     return tf.concat([x, resized_cond] + noise, axis=-1)
             return x
 
@@ -84,6 +93,8 @@ class ImageGenerator(BaseGenerator):
                 conv_layer = ConvolutionalLayer(
                     n_output_chns=ch,
                     kernel_size=3,
+                    with_bn=True,
+                    with_bias=False,
                     acti_func='relu',
                     w_initializer=self.initializers['w'])
                 return conv_layer(x, is_training=is_training)
@@ -94,18 +105,21 @@ class ImageGenerator(BaseGenerator):
                     n_output_chns=ch,
                     kernel_size=3,
                     stride=2,
+                    with_bn=True,
+                    with_bias=False,
                     acti_func='relu',
                     w_initializer=self.initializers['w'])
                 return deconv_layer(x, is_training=is_training)
 
-        def up_block(ch, x, i):
+        def up_block(ch, x, with_conditioning):
             with tf.name_scope('up_block'):
                 u = up(ch, x)
-                cond = concat_cond(u, i)
+                cond = concat_cond(u, with_conditioning)
                 return conv(cond.get_shape().as_list()[-1], cond)
 
-        def noise_to_image(sz, ch, rand_tensor):
+        def noise_to_image(sz, ch, rand_tensor, with_conditioning):
             batch_size = rand_tensor.get_shape().as_list()[0]
+            output_shape = [batch_size] + sz + [ch]
             with tf.name_scope('noise_to_image'):
                 g_no_0 = np.prod(sz) * ch
                 fc_layer = FullyConnectedLayer(
@@ -115,32 +129,39 @@ class ImageGenerator(BaseGenerator):
                     w_initializer=self.initializers['w'],
                     b_initializer=self.initializers['b'])
                 g_h1p = fc_layer(rand_tensor, keep_prob=keep_prob_ph)
-                g_h1p = tf.reshape(g_h1p, [batch_size] + sz + [ch])
-                g_h1p = concat_cond(g_h1p, 0)
+                g_h1p = tf.reshape(g_h1p, output_shape)
+                g_h1p = concat_cond(g_h1p, with_conditioning)
                 return conv(ch + conditioning_channels, g_h1p)
 
-        g_h1 = noise_to_image(sz[0], ch[0], random_source)
-        g_h2 = up_block(ch[1], g_h1, 1)
-        g_h3 = up_block(ch[2], g_h2, 2)
-        g_h4 = up_block(ch[3], g_h3, 3)
-        g_h5 = up_block(ch[4], g_h4, 4)  # did not implement different epsilon
-        with tf.name_scope('final_image'):
-            if add_noise:
-                feature_shape = g_h5.get_shape().as_list()[0:-1]
-                noise_shape = feature_shape + [add_noise]
-                noise = tf.random_normal(noise_shape, 0, .1)
-                g_h5 = tf.concat([g_h5, noise], axis=3)
-            conv_layer = ConvolutionalLayer(
-                n_output_chns=1,
-                kernel_size=3,
-                acti_func='tanh',
-                with_bn=False,
-                with_bias=True,
-                w_initializer=self.initializers['w'],
-                b_initializer=self.initializers['b'])
-            x_sample = conv_layer(
-                g_h5, is_training=is_training, keep_prob=keep_prob_ph)
-        return tf.image.resize_images(x_sample, image_size[:-1])
+        def final_image(n_chns, x):
+            with tf.name_scope('final_image'):
+                if add_noise > 0:
+                    feature_shape = x.get_shape().as_list()[0:-1]
+                    noise_shape = feature_shape + [add_noise]
+                    noise = tf.random_normal(noise_shape, 0, .1)
+                    x = tf.concat([x, noise], axis=3)
+                conv_layer = ConvolutionalLayer(
+                    n_output_chns=n_chns,
+                    kernel_size=3,
+                    acti_func='tanh',
+                    with_bn=False,
+                    with_bias=True,
+                    w_initializer=self.initializers['w'],
+                    b_initializer=self.initializers['b'])
+                x_sample = conv_layer(
+                    x, is_training=is_training, keep_prob=keep_prob_ph)
+                return tf.image.resize_images(x_sample, image_size[:-1])
+
+        # let the tensors flow...
+        flow = random_source
+        for (idx, chns) in enumerate(ch):
+            if idx == 0:  # first layer fully-connected
+                flow = noise_to_image(
+                    sz, chns, flow, self.with_conditionings[idx])
+            elif idx == len(ch) - 1:  # final conv without bn
+                return final_image(chns, flow)
+            else:  # upsampling block
+                flow = up_block(chns, flow, self.with_conditionings[idx])
 
 
 class ImageDiscriminator(BaseDiscriminator):
@@ -154,7 +175,6 @@ class ImageDiscriminator(BaseDiscriminator):
 
         self.initializers = {'w': w_init, 'b': b_init}
         self.chns = [32, 64, 128, 256, 512, 1024, 1]
-        # TODO: customise alpha in leakyrelu
 
     def layer_op(self, image, conditioning, is_training):
 
@@ -167,7 +187,7 @@ class ImageDiscriminator(BaseDiscriminator):
                     kernel_size=3,
                     stride=2,
                     with_bn=True,
-                    acti_func='leakyrelu',
+                    acti_func='selu',
                     w_initializer=self.initializers['w'])
                 return conv_layer(x, is_training=is_training)
 
@@ -176,7 +196,7 @@ class ImageDiscriminator(BaseDiscriminator):
                 n_output_chns=ch,
                 kernel_size=3,
                 with_bn=True,
-                acti_func='leakyrelu',
+                acti_func='selu',
                 w_initializer=self.initializers['w'])
             return conv_layer(x, is_training=is_training)
 
@@ -184,14 +204,13 @@ class ImageDiscriminator(BaseDiscriminator):
             conv_layer = ConvolutionalLayer(
                 n_output_chns=ch,
                 kernel_size=3,
-                with_bn=False,
+                with_bn=True,
                 w_initializer=self.initializers['w'])
-            bn_layer = BNLayer()
-            acti_layer = ActiLayer(func='leakyrelu')
+            acti_layer = ActiLayer(func='selu')
 
             # combining two flows
             res_flow = conv_layer(x, is_training=is_training) + s
-            return acti_layer(bn_layer(res_flow, is_training=is_training))
+            return acti_layer(res_flow)
 
         def down_block(ch, x):
             with tf.name_scope('down_resnet'):
@@ -206,7 +225,7 @@ class ImageDiscriminator(BaseDiscriminator):
                     kernel_size=5,
                     with_bias=True,
                     with_bn=False,
-                    acti_func='leakyrelu',
+                    acti_func='selu',
                     w_initializer=self.initializers['w'],
                     b_initializer=self.initializers['b'])
                 d_h1s = conv_layer(image, is_training=is_training)
@@ -230,7 +249,6 @@ class ImageDiscriminator(BaseDiscriminator):
                 flow = feature_block(n_chns, flow)
             elif idx == len(self.chns) - 1:  # last layer
                 flow = tf.reshape(flow, [batch_size, -1])
-                flow = fully_connected(n_chns, flow)
-                return flow
+                return fully_connected(n_chns, flow)
             else:
                 flow = down_block(n_chns, flow)
