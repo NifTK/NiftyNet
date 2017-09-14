@@ -6,6 +6,7 @@ import os
 import re
 import sys
 import warnings
+import importlib
 
 import PIL
 import nibabel as nib
@@ -341,6 +342,19 @@ def touch_folder(model_dir):
     # tf.logging.info('accessing output folder: {}'.format(absolute_dir))
     return absolute_dir
 
+def resolve_module_dir(module_dir_str):
+    if os.path.exists(module_dir_str):
+        print('exists',module_dir_str)
+        return module_dir_str
+    try:
+
+        module_dir_str = os.path.dirname(importlib.import_module(
+            module_dir_str).__file__)
+        print('resolve',module_dir_str)
+        return module_dir_str
+    except:
+        raise ValueError('Could not resolve {}. Make sure it is a folder' 
+                         ' or a module'.format(module_dir_str))
 
 def resolve_checkpoint(checkpoint_name):
     # For now only supports checkpoint_name where

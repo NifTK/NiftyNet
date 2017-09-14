@@ -22,6 +22,7 @@ from niftynet.utilities.user_parameters_helper import standardise_section_name
 from niftynet.utilities.util_common import \
     _damerau_levenshtein_distance as edit_distance
 from niftynet.utilities.versioning import get_niftynet_version_string
+from niftynet.io.misc_io import resolve_module_dir
 
 try:
     import configparser
@@ -101,6 +102,9 @@ def run():
     # command line parameters should be valid
     assert not args_from_cmdline, \
         'unknown parameter: {}'.format(args_from_cmdline)
+
+    all_args['SYSTEM'].model_dir = resolve_module_dir(
+        all_args['SYSTEM'].model_dir)
 
     # split parsed results in all_args
     # into dictionary of system_args and input_data_args
