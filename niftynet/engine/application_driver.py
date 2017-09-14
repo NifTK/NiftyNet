@@ -28,6 +28,7 @@ from niftynet.engine.application_variables import \
     global_vars_init_or_restore
 from niftynet.io.misc_io import get_latest_subfolder
 from niftynet.io.misc_io import touch_folder
+from niftynet.io.misc_io import add_resolution_path
 from niftynet.layer.bn import BN_COLLECTION
 from niftynet.utilities.util_common import set_cuda_device
 
@@ -94,6 +95,9 @@ class ApplicationDriver(object):
         self.num_gpus = system_param.num_gpus \
             if self.is_training else min(system_param.num_gpus, 1)
         set_cuda_device(system_param.cuda_devices)
+
+        # Set up path for filename search
+        add_resolution_path(system_param.model_dir)
 
         # set output folders
         self.model_dir = touch_folder(

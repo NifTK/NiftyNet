@@ -344,17 +344,26 @@ def touch_folder(model_dir):
 
 def resolve_module_dir(module_dir_str):
     if os.path.exists(module_dir_str):
-        print('exists',module_dir_str)
         return module_dir_str
     try:
 
         module_dir_str = os.path.dirname(importlib.import_module(
             module_dir_str).__file__)
-        print('resolve',module_dir_str)
         return module_dir_str
     except:
         raise ValueError('Could not resolve {}. Make sure it is a folder' 
                          ' or a module'.format(module_dir_str))
+
+resolution_paths = [''] # paths to search for files
+
+def add_resolution_path(path):
+    resolution_paths.append(path)
+
+def resolve_filename(filename):
+    for path in resolution_paths:
+        if os.path.exists(os.path.join(path,filename)):
+            return os.path.abspath(os.path.join(path,filename))
+    return os.path.abspath(filename)
 
 def resolve_checkpoint(checkpoint_name):
     # For now only supports checkpoint_name where

@@ -17,6 +17,7 @@ import tensorflow as tf
 import niftynet.utilities.histogram_standardisation as hs
 from niftynet.layer.base_layer import DataDependentLayer
 from niftynet.layer.binary_masking import BinaryMaskingLayer
+from niftynet.io.misc_io import resolve_filename
 
 
 class HistogramNormalisationLayer(DataDependentLayer):
@@ -40,7 +41,7 @@ class HistogramNormalisationLayer(DataDependentLayer):
         """
 
         super(HistogramNormalisationLayer, self).__init__(name=name)
-        self.model_file = os.path.abspath(model_filename)
+        self.model_file = resolve_filename(model_filename)
         assert not os.path.isdir(self.model_file), \
             "model_filename is a directory, please change histogram_ref_file"
 
@@ -56,7 +57,7 @@ class HistogramNormalisationLayer(DataDependentLayer):
         # modalities are listed in self.modalities tuple
         self.image_name = image_name
         self.modalities = modalities
-        self.mapping = hs.read_mapping_file(model_filename)
+        self.mapping = hs.read_mapping_file(self.model_file)
 
     def layer_op(self, image, mask=None):
         assert self.is_ready(), \
