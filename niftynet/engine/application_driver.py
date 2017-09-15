@@ -28,7 +28,6 @@ from niftynet.engine.application_variables import \
     global_vars_init_or_restore
 from niftynet.io.misc_io import get_latest_subfolder
 from niftynet.io.misc_io import touch_folder
-from niftynet.io.misc_io import add_resolution_path
 from niftynet.layer.bn import BN_COLLECTION
 from niftynet.utilities.util_common import set_cuda_device
 
@@ -88,6 +87,8 @@ class ApplicationDriver(object):
             tf.logging.fatal('parameters should be dictionaries')
             raise
 
+        assert os.path.exists(system_param.model_dir), \
+            'Model folder not exists {}'.format(system_param.model_dir)
         self.is_training = (system_param.action == "train")
         # hardware-related parameters
         self.num_threads = max(system_param.num_threads, 1) \
@@ -96,19 +97,17 @@ class ApplicationDriver(object):
             if self.is_training else min(system_param.num_gpus, 1)
         set_cuda_device(system_param.cuda_devices)
 
-        # Set up path for filename search
-        add_resolution_path(system_param.model_dir)
-
-        # set output folders
+        # set output TF model folders
         self.model_dir = touch_folder(
             os.path.join(system_param.model_dir, 'models'))
         self.session_prefix = os.path.join(self.model_dir, FILE_PREFIX)
 
         if self.is_training:
             assert train_param, 'training parameters not specified'
-            summary_root = os.path.join(self.model_dir, 'logs')
+            summary_root = os.path.join(system_param.model_dir, 'logs')
             self.summary_dir = get_latest_subfolder(
-                summary_root, train_param.starting_iter == 0)
+                summary_root,
+                create_new=train_param.starting_iter == 0)
 
             # training iterations-related parameters
             self.initial_iter = train_param.starting_iter
@@ -282,8 +281,10 @@ class ApplicationDriver(object):
                 tf.logging.info('set initial_iter to %d based '
                                 'on checkpoints', self.initial_iter)
             except (ValueError, AttributeError):
-                tf.logging.fatal('failed to get iteration number'
-                                 'from checkpoint path')
+                tf.logging.fatal(
+                    'failed to get iteration number'
+                    'from checkpoint path, please set'
+                    'inference_iter or starting_iter to a positive integer')
                 raise
         # restore session
         tf.logging.info('Accessing %s ...', checkpoint)

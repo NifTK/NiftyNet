@@ -103,9 +103,6 @@ def run():
     assert not args_from_cmdline, \
         'unknown parameter: {}'.format(args_from_cmdline)
 
-    all_args['SYSTEM'].model_dir = resolve_module_dir(
-        all_args['SYSTEM'].model_dir)
-
     # split parsed results in all_args
     # into dictionary of system_args and input_data_args
     system_args = {}
