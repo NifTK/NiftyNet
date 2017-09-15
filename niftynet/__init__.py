@@ -82,5 +82,3 @@ def main():
     app_driver.initialise_application(system_param, input_data_param)
     app_driver.run_application()
     return 0
-
-

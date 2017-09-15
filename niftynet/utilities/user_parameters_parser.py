@@ -22,7 +22,6 @@ from niftynet.utilities.user_parameters_helper import standardise_section_name
 from niftynet.utilities.util_common import \
     _damerau_levenshtein_distance as edit_distance
 from niftynet.utilities.versioning import get_niftynet_version_string
-from niftynet.io.misc_io import resolve_module_dir
 
 try:
     import configparser
