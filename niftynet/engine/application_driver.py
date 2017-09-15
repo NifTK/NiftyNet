@@ -87,6 +87,8 @@ class ApplicationDriver(object):
             tf.logging.fatal('parameters should be dictionaries')
             raise
 
+        assert os.path.exists(system_param.model_dir), \
+            'Model folder not exists {}'.format(system_param.model_dir)
         self.is_training = (system_param.action == "train")
         # hardware-related parameters
         self.num_threads = max(system_param.num_threads, 1) \
@@ -95,16 +97,17 @@ class ApplicationDriver(object):
             if self.is_training else min(system_param.num_gpus, 1)
         set_cuda_device(system_param.cuda_devices)
 
-        # set output folders
+        # set output TF model folders
         self.model_dir = touch_folder(
             os.path.join(system_param.model_dir, 'models'))
         self.session_prefix = os.path.join(self.model_dir, FILE_PREFIX)
 
         if self.is_training:
             assert train_param, 'training parameters not specified'
-            summary_root = os.path.join(self.model_dir, 'logs')
+            summary_root = os.path.join(system_param.model_dir, 'logs')
             self.summary_dir = get_latest_subfolder(
-                summary_root, train_param.starting_iter == 0)
+                summary_root,
+                create_new=train_param.starting_iter == 0)
 
             # training iterations-related parameters
             self.initial_iter = train_param.starting_iter
@@ -278,8 +281,10 @@ class ApplicationDriver(object):
                 tf.logging.info('set initial_iter to %d based '
                                 'on checkpoints', self.initial_iter)
             except (ValueError, AttributeError):
-                tf.logging.fatal('failed to get iteration number'
-                                 'from checkpoint path')
+                tf.logging.fatal(
+                    'failed to get iteration number'
+                    'from checkpoint path, please set'
+                    'inference_iter or starting_iter to a positive integer')
                 raise
         # restore session
         tf.logging.info('Accessing %s ...', checkpoint)

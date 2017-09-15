@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function, unicode_literals
 
+import errno
+import importlib
 import logging as log
 import os
 import re
@@ -328,18 +330,87 @@ def squeeze_spatial_temporal_dim(tf_tensor):
 
 def touch_folder(model_dir):
     """
-    This funciton returns the absolute path of `model_dir` if exists
+    This function returns the absolute path of `model_dir` if exists
     otherwise try to create the folder and returns the absolute path
     """
     if not os.path.exists(model_dir):
         try:
             os.makedirs(model_dir)
-        except OSError:
+        except (OSError, TypeError):
             tf.logging.fatal('could not create model folder: %s', model_dir)
-            raise OSError
+            raise
     absolute_dir = os.path.abspath(model_dir)
     # tf.logging.info('accessing output folder: {}'.format(absolute_dir))
     return absolute_dir
+
+
+def resolve_module_dir(module_dir_str, create_new=False):
+    try:
+        # interpret input as a module string
+        module_from_string = importlib.import_module(module_dir_str)
+        folder_path = os.path.dirname(module_from_string.__file__)
+        return os.path.abspath(folder_path)
+    except (ImportError, AttributeError, TypeError):
+        pass
+
+    try:
+        # interpret last part of input as a module string
+        string_last_part = module_dir_str.rsplit('.', 1)
+        module_from_string = importlib.import_module(string_last_part[-1])
+        folder_path = os.path.dirname(module_from_string.__file__)
+        return os.path.abspath(folder_path)
+    except (ImportError, AttributeError, IndexError, TypeError):
+        pass
+
+    try:
+        # interpret input as a file folder path string
+        if os.path.isdir(module_dir_str):
+            return os.path.abspath(module_dir_str)
+    except TypeError:
+        pass
+
+    try:
+        # interpret input as a file path string
+        if os.path.isfile(module_dir_str):
+            return os.path.abspath(os.path.dirname(module_dir_str))
+    except TypeError:
+        pass
+
+    if create_new:
+        # try to create the folder
+        folder_path = touch_folder(module_dir_str)
+        init_file = os.path.join(folder_path, '__init__.py')
+        try:
+            file_ = os.open(init_file, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except OSError as e:
+            if e.errno == errno.EEXIST:
+                pass
+            else:
+                tf.logging.fatal(
+                    "trying to use '{}' as NiftyNet writing path, "
+                    "however cannot write '{}'".format(
+                        folder_path, init_file))
+                raise
+        else:
+            with os.fdopen(file_, 'w') as file_object:
+                file_object.write("# Created automatically")
+        return folder_path
+    else:
+        raise ValueError(
+            "Could not resolve [{}].\nMake sure it is a valid folder path "
+            "or a module name.\nIf it is string representing a module, "
+            "the parent folder of [{}] should be on "
+            "the system path.\n\nCurrent system path {}.".format(
+                module_dir_str, module_dir_str, sys.path))
+
+
+def to_absolute_path(input_path, model_root):
+    try:
+        if os.path.isabs(input_path):
+            return input_path
+    except TypeError:
+        pass
+    return os.path.abspath(os.path.join(model_root, input_path))
 
 
 def resolve_checkpoint(checkpoint_name):
