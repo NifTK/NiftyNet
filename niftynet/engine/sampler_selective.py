@@ -71,11 +71,13 @@ class SelectiveSampler(Layer, InputBatchQueueRunner):
                 break
             image_shapes = {
                 name: data[name].shape for name in self.window.names}
+            print(image_shapes)
             static_window_shapes = self.window.match_image_shapes(image_shapes)
             candidates = candidate_indices(static_window_shapes['label'],
                                            data['label'], self.constraint)
             if not np.sum(candidates) >= self.window.n_samples:
-                break
+                print('Constraints not fulfilled for this case')
+                continue
 
             # find random coordinates based on window, potential candidates and
             # image shapes
@@ -112,6 +114,16 @@ class SelectiveSampler(Layer, InputBatchQueueRunner):
                             "3D tuple and make sure each element is "
                             "smaller than the image length in each dim.")
                         raise
+                    if name == 'label':
+                        print('Check of constraint validity')
+                        image_window = data[name][
+                                       x_start:x_end, y_start:y_end,
+                                       z_start:z_end, ...]
+                        print(check_constraint(image_window, self.constraint))
+                        # image_window = data[name][
+                        #                x_start+h:x_end+h, y_start+h:y_end+h,
+                        #                z_start:z_end, ...]
+                        # print(check_constraint(image_window, self.constraint))
                 if len(image_array) > 1:
                     output_dict[image_data_key] = \
                         np.concatenate(image_array, axis=0)
@@ -123,9 +135,49 @@ class SelectiveSampler(Layer, InputBatchQueueRunner):
             yield output_dict
 
 
-def candidate_indices(win_sizes, data, constraint):
-    unique = np.unique(data)
+def check_constraint(data, constraint):
+    unique, count = np.unique(np.round(data), return_counts=True)
     list_labels = []
+    data = np.round(data)
+    if constraint.list_labels is not None:
+        list_labels = constraint.list_labels
+        for label in constraint.list_labels:
+            if label not in unique:
+                print('Label %d is not there' % label)
+                return False
+    num_labels_add = 0
+    if constraint.num_labels > 0:
+        num_labels_add = constraint.num_labels - len(list_labels)
+        if num_labels_add <= 0:
+            num_labels_add = 0
+        if len(unique) < constraint.num_labels:
+            print('Missing labels')
+            return False
+    to_add = num_labels_add
+    if constraint.min_ratio > 0:
+        num_min = constraint.min_number_from_ratio(data.shape)
+        print('unique in test is ', unique)
+        for value, c in zip(unique, count):
+            if value in list_labels:
+                if c < num_min:
+                    print('Not enough in label %d', value)
+                    return False
+            else:
+                if c > num_min:
+                    to_add -= 1
+        if to_add > 0:
+            print('to add initial is ', num_labels_add)
+            print('Not enough in additional labels')
+            return False
+    return True
+
+
+
+
+def candidate_indices(win_sizes, data, constraint):
+    unique = np.unique(np.round(data))
+    list_labels = []
+    data = np.round(data)
     if constraint.list_labels is not None:
         list_labels = constraint.list_labels
         for label in constraint.list_labels:
@@ -150,41 +202,41 @@ def candidate_indices(win_sizes, data, constraint):
         # Create segmentation for this label
         list_counts = []
         shape_ones = np.asarray(data.shape)
-        print(shape_ones, max_spatial_win)
+        # print(shape_ones, max_spatial_win)
         half_max_size = np.floor(max_spatial_win / 2)
         padding = []
         for i in range(0, len(win_sizes)):
             if i < N_SPATIAL:
-                shape_ones[i] -= max_spatial_win
+                shape_ones[i] -= 2 * half_max_size
                 padding = padding + [[half_max_size, half_max_size], ]
             else:
                 padding = padding + [[0, 0], ]
-        print(shape_ones, padding)
+        # print(shape_ones, padding)
         final = np.pad(np.ones(shape_ones), np.asarray(padding,
                                                        dtype=np.int32),
                        'constant')
         new_win_size = np.copy(win_sizes)
         # new_win_size[:N_SPATIAL] = win_sizes[0]/8
         window_mean = np.ones(new_win_size, dtype=np.int32)
-        print(unique)
+        # print(unique)
         for value in unique:
             seg_label = np.zeros_like(data, dtype=np.int32)
             seg_label[data == value] = 1
-            print(value, np.sum(seg_label), seg_label.shape,
-                  window_mean.shape, num_min)
+            # print(value, np.sum(seg_label), seg_label.shape,
+            #       window_mean.shape, num_min)
             counts_window = fftconvolve(seg_label, window_mean, 'same')
             valid_places = np.zeros_like(data, dtype=np.int32)
             valid_places[counts_window > np.max([num_min, 1])] = 1
-            print(np.sum(valid_places), value)
+            # print(np.sum(valid_places), value)
             if value in list_labels:
-                print(value, 'in list_labels')
+                # print(value, 'in list_labels')
                 final = valid_places * final
             else:
                 list_counts.append(valid_places)
-        print(len(list_counts))
+        # print(len(list_counts))
         for i in range(0, len(list_counts)):
-            print(final.shape, list_counts[i].shape, np.max(final), np.max(
-                list_counts[i]))
+            # print(final.shape, list_counts[i].shape, np.max(final), np.max(
+            #     list_counts[i]))
             final += list_counts[i]
         print('initialising candidates', num_labels_add)
         candidates = np.zeros_like(data, dtype=np.int32)
@@ -222,24 +274,26 @@ def rand_choice_coordinates(subject_id, img_sizes, win_sizes,
                          for win_size in win_sizes.values()]
     spatial_win_sizes = np.asarray(spatial_win_sizes, dtype=np.int32)
     max_spatial_win = np.max(spatial_win_sizes, axis=0)
+    print('max_spatial_win is ', max_spatial_win)
     max_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
     candidates_indices = np.vstack(np.where(candidates == 1)).T
     list_indices = np.arange(len(candidates_indices))
-    print(np.sum(candidates), list_indices)
-    print(len(candidates_indices), candidates_indices.shape)
+    # print(np.sum(candidates), list_indices)
+    # print(len(candidates_indices), candidates_indices.shape)
     np.random.shuffle(list_indices)
     half_max_spatial_win = np.floor(max_spatial_win / 2.0)
     for i in range(0, n_samples):
         indices_to_add = candidates_indices[list_indices[i]]
+        print(max_coords.shape, indices_to_add)
         for s in range(0, N_SPATIAL):
-            print(max_coords.shape, indices_to_add)
-            max_coords[i, s] = indices_to_add[s] - half_max_spatial_win[0]
-    for i in range(0, N_SPATIAL):
-        assert uniq_spatial_size[i] >= max_spatial_win[i], \
-            "window size {} is larger than image size {}".format(
-                max_spatial_win[i], uniq_spatial_size[i])
-        max_coords[:, i] = np.random.randint(
-            0, max(uniq_spatial_size[i] - max_spatial_win[i], 1), n_samples)
+            max_coords[i, s] = indices_to_add[s] - np.floor(
+                spatial_win_sizes[0]/2)[s]
+    # for i in range(0, N_SPATIAL):
+    #     assert uniq_spatial_size[i] >= max_spatial_win[i], \
+    #         "window size {} is larger than image size {}".format(
+    #             max_spatial_win[i], uniq_spatial_size[i])
+    #     max_coords[:, i] = np.random.randint(
+    #         0, max(uniq_spatial_size[i] - max_spatial_win[i], 1), n_samples)
 
     # adjust max spatial coordinates based on each spatial window size
     all_coordinates = {}
@@ -259,6 +313,7 @@ def rand_choice_coordinates(subject_id, img_sizes, win_sizes,
         spatial_coords = np.append(
             subject_id[:, None], spatial_coords, axis=1)
         all_coordinates[mod] = spatial_coords
+    print('Finished sampling')
     return all_coordinates
 
 

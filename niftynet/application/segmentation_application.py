@@ -131,13 +131,15 @@ class SegmentationApplication(BaseApplication):
     def initialise_selective_sampler(self):
         self.sampler = [SelectiveSampler(
                             reader=self.reader,
-            data_param=self.data_param,
-            batch_size=self.net_param.batch_size,
-            windows_per_image=self.action_param.sample_per_volume,
-            constraint=Constraint(self.action_param.compulsory_labels,
-                                  self.action_param.min_ratio_sampling,
-                                  self.action_param.num_min_labels),
-            queue_length=self.net_param.queue_length
+                            data_param=self.data_param,
+                            batch_size=self.net_param.batch_size,
+                            windows_per_image=
+                            self.action_param.sample_per_volume,
+                            constraint=
+                            Constraint(self.action_param.compulsory_labels,
+                                       self.action_param.min_ratio_sampling,
+                                       self.action_param.num_min_labels),
+                            queue_length=self.net_param.queue_length
         )]
 
     def initialise_uniform_sampler(self):
