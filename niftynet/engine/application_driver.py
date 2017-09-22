@@ -46,7 +46,8 @@ class ApplicationDriver(object):
     # pylint: disable=too-many-instance-attributes
     def __init__(self):
         self.app = None
-        self.graph = None
+        self.graph = tf.Graph()
+
         self.saver = None
 
         self.is_training = True
@@ -132,6 +133,8 @@ class ApplicationDriver(object):
         self.app = app_module(net_param, action_param, self.is_training)
         # initialise data input
         self.app.initialise_dataset_loader(data_param, app_param)
+        with self.graph.as_default(), tf.name_scope('Sampler'):
+            self.app.initialise_sampler()
 
     def run_application(self):
         """
@@ -143,7 +146,6 @@ class ApplicationDriver(object):
         image sample to be processed from image reader.
         :return:
         """
-        self.graph = tf.Graph()
         config = ApplicationDriver._tf_config()
         with tf.Session(config=config, graph=self.graph) as session:
 
@@ -152,8 +154,6 @@ class ApplicationDriver(object):
 
             # start samplers' threads
             try:
-                with tf.name_scope('Sampler'):
-                    self.app.initialise_sampler()
                 samplers = self.app.get_sampler()
                 if samplers is not None:
                     for sampler in samplers:
