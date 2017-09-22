@@ -47,8 +47,8 @@ class ImageWindowsAggregator(object):
     def image_id(self, current_id):
         try:
             self._image_id = int(current_id)
-        except ValueError:
-            tf.logging.fatal("unknown image id format (should be an integer")
+        except (ValueError, TypeError):
+            tf.logging.fatal("unknown image id format (should be an integer)")
 
     def decode_batch(self, *args, **kwargs):
         """

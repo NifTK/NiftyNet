@@ -59,7 +59,7 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_stop_app(self):
         test_driver = get_initialised_driver()
-        test_driver.graph = test_driver._create_graph()
+        test_driver.graph = test_driver._create_graph(test_driver.graph)
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(test_driver._init_op)
             coord = tf.train.Coordinator()
@@ -76,7 +76,7 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_training_update(self):
         test_driver = get_initialised_driver()
-        test_driver.graph = test_driver._create_graph()
+        test_driver.graph = test_driver._create_graph(test_driver.graph)
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(test_driver._init_op)
             coord = tf.train.Coordinator()
@@ -95,7 +95,7 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_multi_device_inputs(self):
         test_driver = get_initialised_driver()
-        test_driver.graph = test_driver._create_graph()
+        test_driver.graph = test_driver._create_graph(test_driver.graph)
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(test_driver._init_op)
             coord = tf.train.Coordinator()
@@ -124,7 +124,7 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_multi_device_gradients(self):
         test_driver = get_initialised_driver()
-        test_driver.graph = test_driver._create_graph()
+        test_driver.graph = test_driver._create_graph(test_driver.graph)
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(test_driver._init_op)
             coord = tf.train.Coordinator()
@@ -162,7 +162,7 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_rand_initialisation(self):
         test_driver = get_initialised_driver(starting_iter=0)
-        test_driver.graph = test_driver._create_graph()
+        test_driver.graph = test_driver._create_graph(test_driver.graph)
         with self.test_session(graph=test_driver.graph) as sess:
             test_tensor = test_driver.graph.get_tensor_by_name(
                 "G/conv_bn_selu/conv_/w:0")
@@ -176,7 +176,7 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_from_latest_file_initialisation(self):
         test_driver = get_initialised_driver(starting_iter=-1)
-        test_driver.graph = test_driver._create_graph()
+        test_driver.graph = test_driver._create_graph(test_driver.graph)
         expected_init = np.array(
             [[-0.03544217, 0.0228963, -0.04585603, 0.16923568, -0.51635778,
               0.60694504, 0.01968583, -0.6252712, 0.28622296, -0.29527491,
@@ -197,7 +197,7 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_not_found_file_initialisation(self):
         test_driver = get_initialised_driver(starting_iter=42)
-        test_driver.graph = test_driver._create_graph()
+        test_driver.graph = test_driver._create_graph(test_driver.graph)
         with self.test_session(graph=test_driver.graph) as sess:
             with self.assertRaisesRegexp(
                     tf.errors.NotFoundError, 'Failed to find'):
@@ -205,7 +205,7 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_from_file_initialisation(self):
         test_driver = get_initialised_driver(starting_iter=40)
-        test_driver.graph = test_driver._create_graph()
+        test_driver.graph = test_driver._create_graph(test_driver.graph)
         expected_init = np.array(
             [[-0.23192197, 0.60880029, -0.24921742, -0.00186354, -0.3345384,
               0.16067748, -0.2210995, -0.19460233, -0.3035436, -0.42839912,

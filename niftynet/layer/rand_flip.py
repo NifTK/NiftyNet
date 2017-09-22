@@ -30,9 +30,8 @@ class RandomFlipLayer(RandomisedLayer):
 
     def randomise(self, spatial_rank=3):
         spatial_rank = int(np.floor(spatial_rank))
-        _rand_flip = np.random.random(
+        self._rand_flip = np.random.random(
             size=spatial_rank) < self._flip_probability
-        self._rand_flip = _rand_flip
 
     def _apply_transformation(self, image):
         assert self._rand_flip is not None, "Flip is unset -- Error!"
@@ -48,5 +47,5 @@ class RandomFlipLayer(RandomisedLayer):
             for (field, image_data) in inputs.items():
                 inputs[field] = self._apply_transformation(image_data)
         else:
-            self._apply_transformation(inputs)
+            inputs = self._apply_transformation(inputs)
         return inputs

@@ -337,7 +337,7 @@ class ConvEncoder(TrainableLayer):
         encoders_fc = []
         for i in range(0, len(self.layer_sizes_encoder)):
             encoders_fc.append(FullyConnectedLayer(
-                n_output_nodes=self.layer_sizes_encoder[i],
+                n_output_chns=self.layer_sizes_encoder[i],
                 with_bias=True,
                 with_bn=True,
                 acti_func=self.acti_func_encoder[i],
@@ -405,7 +405,7 @@ class GaussianSampler(TrainableLayer):
             return output
 
         encoder_means = FullyConnectedLayer(
-            n_output_nodes=self.number_of_latent_variables,
+            n_output_chns=self.number_of_latent_variables,
             with_bn=False,
             acti_func=None,
             w_initializer=self.initializers['w'],
@@ -414,7 +414,7 @@ class GaussianSampler(TrainableLayer):
         print(encoder_means)
 
         encoder_logvars = FullyConnectedLayer(
-            n_output_nodes=self.number_of_latent_variables,
+            n_output_chns=self.number_of_latent_variables,
             with_bn=False,
             acti_func=None,
             w_initializer=self.initializers['w'],
@@ -487,7 +487,7 @@ class ConvDecoder(TrainableLayer):
         decoders_fc = []
         for i in range(0, len(self.layer_sizes_decoder)):
             decoders_fc.append(FullyConnectedLayer(
-                n_output_nodes=self.layer_sizes_decoder[i],
+                n_output_chns=self.layer_sizes_decoder[i],
                 with_bias=True,
                 with_bn=True,
                 acti_func=self.acti_func_decoder[i],
@@ -591,7 +591,7 @@ class FCDecoder(TrainableLayer):
         decoders_fc = []
         for i in range(0, len(self.layer_sizes_decoder)):
             decoders_fc.append(FullyConnectedLayer(
-                n_output_nodes=self.layer_sizes_decoder[i],
+                n_output_chns=self.layer_sizes_decoder[i],
                 with_bias=True,
                 with_bn=True,
                 acti_func=self.acti_func_decoder[i],
