@@ -129,6 +129,7 @@ testjob:
 
 
     - coverage run -a --source . net_gan.py train -c config/GAN_demo_train_config.ini --max_iter 5
+    - coverage run -a --source . net_run.py train -a net_gan -c config/GAN_demo_train_config.ini --max_iter 5
     - coverage run -a --source . net_gan.py inference -c config/GAN_demo_train_config.ini
 
     - coverage run -a --source . net_autoencoder.py train -c config/vae_config.ini --max_iter 5
