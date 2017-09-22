@@ -60,9 +60,9 @@ class PaddingTest(tf.test.TestCase):
     def test_3d_int_pad_shape(self):
         input_param = {'image_name': ('image',),
                        'border': 3}
-        with self.assertRaisesRegexp(TypeError, 'argument'):
+        with self.assertRaisesRegexp(TypeError, 'iter'):
             self.run_test(True, input_param, (22, 22, 16, 8))
-        with self.assertRaisesRegexp(TypeError, 'argument'):
+        with self.assertRaisesRegexp(TypeError, 'iter'):
             self.run_inverse_test(True, input_param, (10, 10, 16, 8))
 
     def test_3d_large_pad_shape(self):
@@ -87,9 +87,9 @@ class PaddingTest(tf.test.TestCase):
     def test_3d_dict_int_pad_shape(self):
         input_param = {'image_name': ('image',),
                        'border': 3}
-        with self.assertRaisesRegexp(TypeError, 'argument'):
+        with self.assertRaisesRegexp(TypeError, 'iter'):
             self.run_test(False, input_param, (22, 22, 16, 8))
-        with self.assertRaisesRegexp(TypeError, 'argument'):
+        with self.assertRaisesRegexp(TypeError, 'iter'):
             self.run_inverse_test(False, input_param, (10, 10, 16, 8))
 
     def test_3d_dict_large_pad_shape(self):
