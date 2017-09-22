@@ -123,7 +123,7 @@ class ImageGenerator(BaseGenerator):
             with tf.name_scope('noise_to_image'):
                 g_no_0 = np.prod(sz) * ch
                 fc_layer = FullyConnectedLayer(
-                    n_output_nodes=g_no_0,
+                    n_output_chns=g_no_0,
                     with_bn=False,
                     with_bias=True,
                     w_initializer=self.initializers['w'],
@@ -236,7 +236,7 @@ class ImageDiscriminator(BaseDiscriminator):
             with tf.name_scope('fully_connected'):
                 # with bn?
                 fc_layer = FullyConnectedLayer(
-                    n_output_nodes=ch, with_bn=False, with_bias=True)
+                    n_output_chns=ch, with_bn=False, with_bias=True)
                 return fc_layer(features, is_training=is_training)
 
         if conditioning is not None:
@@ -248,7 +248,6 @@ class ImageDiscriminator(BaseDiscriminator):
             if idx == 0:  # first layer
                 flow = feature_block(n_chns, flow)
             elif idx == len(self.chns) - 1:  # last layer
-                flow = tf.reshape(flow, [batch_size, -1])
                 return fully_connected(n_chns, flow)
             else:
                 flow = down_block(n_chns, flow)
