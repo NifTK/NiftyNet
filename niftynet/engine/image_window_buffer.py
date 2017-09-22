@@ -31,11 +31,14 @@ class InputBatchQueueRunner(object):
     def __init__(self, capacity, shuffle=True):
         # define queue properties
         self.capacity = capacity
-
         self.shuffle = shuffle
+
+        # dequeue size
         self._batch_size = 1
 
         # create queue and the associated operations
+        self.placeholders_dict = None
+        self.output_tensor = None
         self._queue = None
         self._enqueue_op = None
         self._dequeue_func = None
@@ -79,15 +82,15 @@ class InputBatchQueueRunner(object):
                 self._batch_size, self.capacity)
         tf.logging.info('buffering with %s windows', self.capacity)
         try:
-            placeholders_dict = window.placeholders_dict(_enqueue_size)
+            self.placeholders_dict = window.placeholders_dict(_enqueue_size)
         except AttributeError:
             tf.logging.fatal(
                 "unrecognised window format, expecting a"
                 "niftynet.engine.image_window.ImageWindow instance")
             raise
 
-        names = list(placeholders_dict)
-        placeholders = list(placeholders_dict.values())
+        names = list(self.placeholders_dict)
+        placeholders = list(self.placeholders_dict.values())
         input_dtypes = [holder.dtype for holder in placeholders]
         input_shapes = [holder.shape[1:] for holder in placeholders] \
             if not is_dynamic_window else None
@@ -115,10 +118,10 @@ class InputBatchQueueRunner(object):
 
         # create queue operations
         if is_dynamic_window:
-            self._enqueue_op = self._queue.enqueue(placeholders_dict)
+            self._enqueue_op = self._queue.enqueue(self.placeholders_dict)
             self._dequeue_func = self._queue.dequeue
         else:
-            self._enqueue_op = self._queue.enqueue_many(placeholders_dict)
+            self._enqueue_op = self._queue.enqueue_many(self.placeholders_dict)
             self._dequeue_func = self._queue.dequeue_many
         self._query_queue_size_op = self._queue.size()
         self._close_queue_op = self._queue.close(cancel_pending_enqueues=True)
@@ -185,18 +188,23 @@ class InputBatchQueueRunner(object):
         [batch, x, y, z, time, modality]
         by removing all dims along which length is one.
 
-        :param device_id: integer representing the GPU
-        :return: a tensorflow graph op
+        :param as_numpy_array: a boolean value indicating numpy outputs
+        :return: a tensorflow graph op if not as_numpy_array,
+                 otherwise returns a numpy array
         """
+        assert all([thread.isAlive() for thread in self._threads]), \
+            "input sampling threads are not running"
         if self._window.has_dynamic_shapes:
             data_output = self._dequeue_func()
         else:
             data_output = self._dequeue_func(self._batch_size)
         for (name, shape) in self._window.shapes.items():
             data_output[name].set_shape([self._batch_size] + list(shape))
-
         for name in data_output:
             data_output[name] = squeeze_spatial_temporal_dim(data_output[name])
+
+        # keep a copy of the sampler's output tensors
+        self.output_tensor = data_output
         return data_output
 
     def run_threads(self, session, coord, num_threads=1):
@@ -233,7 +241,6 @@ class InputBatchQueueRunner(object):
         This function stops all threads immediately and close the queue.
         Further enqueue/dequeue operation raises errors
         """
-
         if not self._threads:
             tf.logging.warning("the queue threads is not currently running")
         try:

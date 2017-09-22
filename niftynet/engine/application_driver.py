@@ -143,20 +143,35 @@ class ApplicationDriver(object):
         image sample to be processed from image reader.
         :return:
         """
-        self.graph = self._create_graph()
-        self.app.check_initialisations()
+        self.graph = tf.Graph()
         config = ApplicationDriver._tf_config()
         with tf.Session(config=config, graph=self.graph) as session:
-            # initialise network
 
-            tf.logging.info('starting from iter %d', self.initial_iter)
-            self._rand_init_or_restore_vars(session)
-
-            # start samplers' threads
             tf.logging.info('Filling queues (this can take a few minutes)')
             self._coord = tf.train.Coordinator()
-            for sampler in self.app.get_sampler():
-                sampler.run_threads(session, self._coord, self.num_threads)
+
+            # start samplers' threads
+            try:
+                with tf.name_scope('Sampler'):
+                    self.app.initialise_sampler()
+                samplers = self.app.get_sampler()
+                if samplers is not None:
+                    for sampler in samplers:
+                        sampler.run_threads(
+                            session, self._coord, self.num_threads)
+            except (TypeError, AttributeError, IndexError):
+                tf.logging.fatal(
+                    "samplers not running, pop_batch_op operations "
+                    "are blocked.")
+                raise
+
+            self.graph = self._create_graph(self.graph)
+            self.app.check_initialisations()
+
+            # initialise network
+            # fill variables with random values or values from file
+            tf.logging.info('starting from iter %d', self.initial_iter)
+            self._rand_init_or_restore_vars(session)
 
             start_time = time.time()
             loop_status = {}
@@ -183,9 +198,8 @@ class ApplicationDriver(object):
                 tf.logging.info('Cleaning up...')
                 if self.is_training and loop_status.get('current_iter', None):
                     self._save_model(session, loop_status['current_iter'])
-                elif loop_status.get('all_saved_flag', None):
-                    if not loop_status['all_saved_flag']:
-                        tf.logging.warning('stopped early, incomplete loops')
+                elif not loop_status.get('all_saved_flag', None):
+                    tf.logging.warning('stopped early, incomplete loops')
 
                 tf.logging.info('stopping sampling threads')
                 self.app.stop()
@@ -194,19 +208,17 @@ class ApplicationDriver(object):
                     type(self.app).__name__, (time.time() - start_time))
 
     # pylint: disable=not-context-manager
-    def _create_graph(self):
+    def _create_graph(self, graph=tf.Graph()):
         """
         tensorflow graph is only created within this function
         """
-        graph = tf.Graph()
+        assert isinstance(graph, tf.Graph)
         main_device = self._device_string(0, is_worker=False)
         # start constructing the graph, handling training and inference cases
         with graph.as_default(), tf.device(main_device):
-            # initialise sampler and network, these are connected in
-            # the context of multiple gpus
 
-            with tf.name_scope('Sampler'):
-                self.app.initialise_sampler()
+            # initialise network, these are connected in
+            # the context of multiple gpus
             self.app.initialise_network()
 
             # for data parallelism --
