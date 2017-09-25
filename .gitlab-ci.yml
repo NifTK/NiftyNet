@@ -9,6 +9,7 @@ pylintjob:
   except:
     - 139-correct-toynet-demo-instructions
     - 148-publish-niftynet-v0-2-0-on-python-package-index-pypi
+    - 170-add-niftynet-paper-on-rtd-doc
   script:
     - pylint --rcfile=tests/pylintrc niftynet/engine
 
@@ -159,6 +160,7 @@ quicktest:
     - 159-add-net_run-command-line-entry-to-pip-installer
     - 160-add-net_gan-command-line-entry-to-pip-installer
     - 161-add-net_autoencode-command-line-entry-to-pip-installer
+    - 170-add-niftynet-paper-on-rtd-doc
   script:
     # print system info
     - which nvidia-smi
