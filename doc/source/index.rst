@@ -82,6 +82,13 @@ BibTeX entry:
     eprinttype    = {arXiv},
   }
 
+The NiftyNet platform originated in software developed for `Li et. al. 2017`_:
+
+  Li W., Wang G., Fidon L., Ourselin S., Cardoso M.J., Vercauteren T. (2017)
+  `On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.`_
+  In: Niethammer M. et al. (eds) Information Processing in Medical Imaging. IPMI 2017.
+  Lecture Notes in Computer Science, vol 10265. Springer, Cham. DOI: `10.1007/978-3-319-59050-9_28`_
+
 .. _`NiftyNet: a deep-learning platform for medical imaging. arXiv: 1709.03485`: http://arxiv.org/abs/1709.03485
 .. _`Gibson and Li et. al. 2017`: http://arxiv.org/abs/1709.03485
 .. _`Li et. al. 2017`: http://doi.org/10.1007/978-3-319-59050-9_28
