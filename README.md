@@ -90,7 +90,7 @@ NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
 
 If you use NiftyNet in your work, please cite [Gibson and Li et. al. 2017][preprint]:
 
-* E. Gibson\*, W. Li\*, C. Sudre, L. Fidon, D. Shakir, G. Wang, Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, D. C. Barratt, S. Ourselin, M. J. Cardoso and T. Vercauteren (2017)
+* E. Gibson\*, W. Li\*, C. Sudre, L. Fidon, D. I. Shakir, G. Wang, Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, D. C. Barratt, S. Ourselin, M. J. Cardoso and T. Vercauteren (2017)
 [NiftyNet: a deep-learning platform for medical imaging. arXiv: 1709.03485][preprint]
 
 
