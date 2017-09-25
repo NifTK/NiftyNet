@@ -320,8 +320,13 @@ class ApplicationDriver(object):
         """
         writer = tf.summary.FileWriter(self.summary_dir, sess.graph)
         # running through training_op from application
-        for (iter_i, train_op) in \
-                self.app.training_ops(self.initial_iter, self.final_iter):
+        for iter_ops in self.app.training_ops(self.initial_iter,
+                                              self.final_iter):
+            if len(iter_ops) == 3:
+                iter_i, train_op, data_dict = iter_ops
+            else:
+                iter_i, train_op = iter_ops
+                data_dict = None
 
             loop_status['current_iter'] = iter_i
             local_time = time.time()
@@ -340,7 +345,10 @@ class ApplicationDriver(object):
                     self.outputs_collector.variables(collection=TF_SUMMARIES)
 
             # run all variables in one go
-            graph_output = sess.run(vars_to_run)
+            if data_dict:
+                graph_output = sess.run(vars_to_run, feed_dict=data_dict)
+            else:
+                graph_output = sess.run(vars_to_run)
 
             # process graph outputs
             self.app.interpret_output(graph_output[NETWORK_OUTPUT])

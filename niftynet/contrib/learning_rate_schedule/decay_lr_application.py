@@ -1,30 +1,11 @@
 import tensorflow as tf
 
-from niftynet.application.segmentation_application import SegmentationApplication
-from niftynet.engine.application_factory import ApplicationNetFactory
+from niftynet.application.segmentation_application import \
+    SegmentationApplication
 from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
-from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import TF_SUMMARIES
-from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
-from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
-from niftynet.engine.sampler_grid import GridSampler
-from niftynet.engine.sampler_resize import ResizeSampler
-from niftynet.engine.sampler_uniform import UniformSampler
-from niftynet.io.image_reader import ImageReader
-from niftynet.layer.binary_masking import BinaryMaskingLayer
-from niftynet.layer.discrete_label_normalisation import \
-    DiscreteLabelNormalisationLayer
-from niftynet.layer.histogram_normalisation import \
-    HistogramNormalisationLayer
 from niftynet.layer.loss_segmentation import LossFunction
-from niftynet.layer.mean_variance_normalisation import \
-    MeanVarNormalisationLayer
-from niftynet.layer.pad import PadLayer
-from niftynet.layer.post_processing import PostProcessingLayer
-from niftynet.layer.rand_flip import RandomFlipLayer
-from niftynet.layer.rand_rotation import RandomRotationLayer
-from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 
 SUPPORTED_INPUT = {'image', 'label', 'weight'}
 
@@ -51,7 +32,7 @@ class DecayLearningRateApplication(SegmentationApplication):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
-                    learning_rate=learning_rate)
+                    learning_rate=self.learning_rate)
             loss_func = LossFunction(
                 n_class=self.segmentation_param.num_classes,
                 loss_type=self.action_param.loss_type)
@@ -76,6 +57,9 @@ class DecayLearningRateApplication(SegmentationApplication):
                 var=data_loss, name='dice_loss',
                 average_over_devices=False, collection=CONSOLE)
             outputs_collector.add_to_collection(
+                var=self.learning_rate, name='lr',
+                average_over_devices=False, collection=CONSOLE)
+            outputs_collector.add_to_collection(
                 var=data_loss, name='dice_loss',
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
@@ -90,7 +74,7 @@ class DecayLearningRateApplication(SegmentationApplication):
             start_iter, end_iter = end_iter, start_iter
         current_lr = self.action_param.lr
         for iter_i in range(start_iter, end_iter):
-            if iter_i % 10 == 0:
-                # halved every 10 iteration
-                current_lr = self.action_param.lr / 2.0
-            yield iter_i, self.gradient_op[0], {self.learning_rate, current_lr}
+            if iter_i % 3 == 0 and iter_i > 0:
+                # halved every 3 iteration
+                current_lr = current_lr / 2.0
+            yield iter_i, self.gradient_op[0], {self.learning_rate: current_lr}
