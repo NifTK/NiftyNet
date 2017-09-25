@@ -208,13 +208,12 @@ class SegmentationApplication(BaseApplication):
                 prediction=net_out,
                 ground_truth=data_dict.get('label', None),
                 weight_map=data_dict.get('weight', None))
-            if self.net_param.decay > 0.0:
-                reg_losses = tf.get_collection(
-                    tf.GraphKeys.REGULARIZATION_LOSSES)
-                if reg_losses:
-                    reg_loss = tf.reduce_mean(
-                        [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
-                    loss = data_loss + reg_loss
+            reg_losses = tf.get_collection(
+                tf.GraphKeys.REGULARIZATION_LOSSES)
+            if self.net_param.decay > 0.0 and reg_losses:
+                reg_loss = tf.reduce_mean(
+                    [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
+                loss = data_loss + reg_loss
             else:
                 loss = data_loss
             grads = self.optimiser.compute_gradients(loss)
