@@ -66,10 +66,8 @@ Citing NiftyNet
 
 If you use NiftyNet in your work, please cite `Gibson and Li et. al. 2017`_:
 
-  Li W., Wang G., Fidon L., Ourselin S., Cardoso M.J., Vercauteren T. (2017)
-  `On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.`_
-  In: Niethammer M. et al. (eds) Information Processing in Medical Imaging. IPMI 2017.
-  Lecture Notes in Computer Science, vol 10265. Springer, Cham. DOI: `10.1007/978-3-319-59050-9_28`_
+  E. Gibson\*, W. Li\*, C. Sudre, L. Fidon, D. I. Shakir, G. Wang, Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, D. C. Barratt, S. Ourselin, M. J. Cardoso and T. Vercauteren (2017)
+  `NiftyNet: a deep-learning platform for medical imaging. arXiv: 1709.03485`_
 
 BibTeX entry:
 
@@ -84,6 +82,7 @@ BibTeX entry:
     eprinttype    = {arXiv},
   }
 
+.. _`NiftyNet: a deep-learning platform for medical imaging. arXiv: 1709.03485`: http://arxiv.org/abs/1709.03485
 .. _`Gibson and Li et. al. 2017`: http://arxiv.org/abs/1709.03485
 .. _`Li et. al. 2017`: http://doi.org/10.1007/978-3-319-59050-9_28
 .. _`On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.`: http://doi.org/10.1007/978-3-319-59050-9_28
