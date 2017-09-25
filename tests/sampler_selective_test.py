@@ -145,7 +145,7 @@ class SelectiveSamplerTest(tf.test.TestCase):
                                    data_param=MULTI_MOD_DATA,
                                    batch_size=2,
                                    constraint=
-                                   Constraint(compulsory_labels=[0,1],
+                                   Constraint(compulsory_labels=[0, 1],
                                               min_ratio=0.000001,
                                               min_num_labels=2),
                                    windows_per_image=2,

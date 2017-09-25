@@ -10,8 +10,7 @@ import tensorflow as tf
 from niftynet.engine.image_window import ImageWindow, N_SPATIAL
 from niftynet.engine.image_window_buffer import InputBatchQueueRunner
 from niftynet.layer.base_layer import Layer
-from niftynet.layer.convolution import ConvLayer
-from scipy.ndimage import convolve
+from scipy import ndimage
 from scipy.signal import fftconvolve
 
 
@@ -73,8 +72,10 @@ class SelectiveSampler(Layer, InputBatchQueueRunner):
                 name: data[name].shape for name in self.window.names}
             print(image_shapes)
             static_window_shapes = self.window.match_image_shapes(image_shapes)
-            candidates = candidate_indices(static_window_shapes['label'],
-                                           data['label'], self.constraint)
+            candidates, proba_cand = candidate_indices(static_window_shapes[
+                                                       'label'],
+                                                       data['label'],
+                                                       self.constraint)
             if not np.sum(candidates) >= self.window.n_samples:
                 print('Constraints not fulfilled for this case')
                 continue
@@ -83,7 +84,8 @@ class SelectiveSampler(Layer, InputBatchQueueRunner):
             # image shapes
             coordinates = rand_choice_coordinates(
                 image_id, image_shapes,
-                static_window_shapes, candidates, self.window.n_samples)
+                static_window_shapes, candidates, self.window.n_samples,
+                mean_counts_size=proba_cand)
 
             # initialise output dict, placeholders as dictionary keys
             # this dictionary will be used in
@@ -135,6 +137,32 @@ class SelectiveSampler(Layer, InputBatchQueueRunner):
             yield output_dict
 
 
+def create_label_size_map(data, value):
+    '''
+    This function creates the maps of label size. For each connected
+    component of a label with value :value:, the binary segmentation is
+    replaced by the size of the considered element
+    :param data: segmentation
+    :param value: value of the label to consider
+    :return: count_data
+    '''
+    data = np.round(data)
+    labels = np.unique(data)
+    print("Labels are ", labels)
+    binary_seg = np.copy(data)
+    binary_seg = np.where(binary_seg == value, np.ones_like(data),
+                          np.zeros_like(data))
+    labelled_data, num_features = ndimage.label(binary_seg)
+    print("Labelling features done")
+    unique, count = np.unique(labelled_data, return_counts=True)
+    count_data = np.copy(labelled_data)
+    for u, c in zip(unique, count):
+        if u != 0:
+            count_data = np.where(labelled_data == u, np.ones_like(data)*c,
+                                  count_data)
+    return count_data
+
+
 def check_constraint(data, constraint):
     unique, count = np.unique(np.round(data), return_counts=True)
     list_labels = []
@@ -172,9 +200,18 @@ def check_constraint(data, constraint):
     return True
 
 
-
-
 def candidate_indices(win_sizes, data, constraint):
+    '''
+    This functions creates a binary map of potential candidate indices given
+    the specified constraints and the recalculated probability to select each of
+     these candidates so as to uniformise the sampling according to the size of
+     connected elements
+    :param win_sizes:
+    :param data: segmentation
+    :param constraint: sampling constraint
+    :return: candidates: binary map of potential indices, proba_fin:
+    corresponding maps of associated sampling probability
+    '''
     unique = np.unique(np.round(data))
     list_labels = []
     data = np.round(data)
@@ -218,22 +255,43 @@ def candidate_indices(win_sizes, data, constraint):
         new_win_size = np.copy(win_sizes)
         # new_win_size[:N_SPATIAL] = win_sizes[0]/8
         window_mean = np.ones(new_win_size, dtype=np.int32)
+        mean_counts_size = []
         # print(unique)
         for value in unique:
-            seg_label = np.zeros_like(data, dtype=np.int32)
-            seg_label[data == value] = 1
+            # print(np.sum(data), 'sum in data', np.prod(data.shape),
+            #       ' elements in data')
+            seg_label = np.copy(data)
+            seg_label = np.asarray(seg_label, dtype=np.int32)
+            # print(np.sum(seg_label))
+            seg_label = np.where(seg_label == value, np.ones_like(data),
+                           np.zeros_like(
+                data))
+            print(np.sum(seg_label), " num values in seg_label ", value)
+            label_size = create_label_size_map(seg_label, 1)
             # print(value, np.sum(seg_label), seg_label.shape,
             #       window_mean.shape, num_min)
+            print('Begin fft convolve')
             counts_window = fftconvolve(seg_label, window_mean, 'same')
-            valid_places = np.zeros_like(data, dtype=np.int32)
-            valid_places[counts_window > np.max([num_min, 1])] = 1
+            print('finished fft convolve')
+            valid_places = np.where(counts_window > np.max([num_min, 1]),
+                                    np.ones_like(data), np.zeros_like(data))
+            counts_size = fftconvolve(label_size * valid_places, window_mean,
+                                      'same')
+            mean_counts_size_temp = np.nan_to_num(
+                counts_size * 1.0 / counts_window)
+            mean_counts_size_temp = np.where(counts_window == 0, np.zeros_like(
+                data), mean_counts_size_temp)
+            # print(np.max(counts_size), " max size")
             # print(np.sum(valid_places), value)
             if value in list_labels:
                 # print(value, 'in list_labels')
+                mean_counts_size.append(mean_counts_size_temp)
                 final = valid_places * final
+                print('final calculated for value in list_labels')
             else:
                 list_counts.append(valid_places)
         # print(len(list_counts))
+        print('final characterisation')
         for i in range(0, len(list_counts)):
             # print(final.shape, list_counts[i].shape, np.max(final), np.max(
             #     list_counts[i]))
@@ -242,11 +300,53 @@ def candidate_indices(win_sizes, data, constraint):
         candidates = np.zeros_like(data, dtype=np.int32)
         candidates[final >= num_labels_add+1] = 1
         print(np.sum(candidates), 'number of candidates')
-        return candidates
+        proba_fin = create_probability_weights(candidates, mean_counts_size)
+        return candidates, proba_fin
+
+
+def create_probability_weights(candidates, mean_counts_size):
+    '''
+    This functions creates the probability weighting given the valid
+    candidates and the size of connected components associated to this candidate
+    :param candidates: binary map of the valid candidates
+    :param mean_counts_size: counts attributed to each candidate
+    :return: probability map for the selection of any voxel as candidate
+    '''
+    proba_weight = np.ones_like(candidates)
+    for i in range(0, len(mean_counts_size)):
+        print(candidates.shape, mean_counts_size[i].shape, np.max(candidates),
+              np.max(mean_counts_size[i]))
+
+        possible_mean_count = np.nan_to_num(candidates*mean_counts_size[i])
+        max_count = np.ceil(np.max(possible_mean_count))
+        # print(max_count , 'is max_count')
+        unique, counts = np.unique(np.round(possible_mean_count),
+                                   return_counts=True)
+        numb_counts = np.sum(counts[1:])
+        reciprocal_hist = numb_counts * np.reciprocal(np.asarray(counts[1:],
+                                                                 dtype=
+                                                                 np.float32))
+        sum_rec = np.sum(reciprocal_hist)
+        proba_hist = np.divide(reciprocal_hist, sum_rec)
+        print(unique, counts, sum_rec, len(proba_hist))
+        e_start = unique[1:]
+        e_end = unique[2:]
+        e_end.tolist().append(max_count+1)
+        print(e_start.shape, e_end.shape, e_start[-1], e_end[-1], len(
+            proba_hist))
+        candidates_proba = np.zeros_like(candidates)
+        for (e_s, e_e, h) in zip(e_start, e_end, proba_hist):
+            candidates_proba = np.where((possible_mean_count >= e_s) *
+                                        (possible_mean_count < e_e),
+                                        h * np.ones_like(candidates),
+                                        candidates_proba)
+        proba_weight = np.multiply(proba_weight, candidates_proba)
+        print("Finished probability calculation")
+    return np.divide(proba_weight, np.sum(proba_weight))
 
 
 def rand_choice_coordinates(subject_id, img_sizes, win_sizes,
-                            candidates, n_samples=1):
+                            candidates, n_samples=1, mean_counts_size=None):
     """
     win_sizes could be different, for example in segmentation network
     input image window size is 32x32x10,
@@ -280,10 +380,19 @@ def rand_choice_coordinates(subject_id, img_sizes, win_sizes,
     list_indices = np.arange(len(candidates_indices))
     # print(np.sum(candidates), list_indices)
     # print(len(candidates_indices), candidates_indices.shape)
-    np.random.shuffle(list_indices)
-    half_max_spatial_win = np.floor(max_spatial_win / 2.0)
+    proba = []
+    for (c,  p) in zip(candidates.flatten(), mean_counts_size.flatten()):
+        if c >= 1:
+            proba.append(p)
+
+    if mean_counts_size is not None:
+        list_indices_fin = np.random.choice(list_indices, n_samples,
+                                            replace=False, p=proba)
+    else:
+        list_indices_fin = list_indices
+        np.random.shuffle(list_indices)
     for i in range(0, n_samples):
-        indices_to_add = candidates_indices[list_indices[i]]
+        indices_to_add = candidates_indices[list_indices_fin[i]]
         print(max_coords.shape, indices_to_add)
         for s in range(0, N_SPATIAL):
             max_coords[i, s] = indices_to_add[s] - np.floor(
@@ -335,3 +444,4 @@ class Constraint():
     def num_labels_to_add(self):
         labels_to_add = self.num_labels - len(self.list_labels)
         return np.max([0, labels_to_add])
+
