@@ -43,12 +43,17 @@ FILE_LOG_FORMAT = '%(levelname)s:niftynet:%(asctime)s: %(message)s'
 def infer_ndims_from_file(file_path):
     image_header = load_image(file_path).header
     try:
-        ndims = int(image_header['dim'][0])
-    except IndexError:
-        tf.logging.fatal('unsupported file header in: {}'.format(file_path))
-        raise
-    return ndims
+        return int(image_header['dim'][0])
+    except TypeError:
+        pass
+    try:
+        return int(len(image_header.get_data_shape()))
+    except (TypeError, AttributeError):
+        pass
 
+    tf.logging.fatal('unsupported file header in: {}'.format(file_path))
+    raise IOError('could not get ndims from file header, please '
+                  'consider convert image files to NifTI format. ')
 
 def create_affine_pixdim(affine, pixdim):
     """
@@ -78,8 +83,8 @@ def load_image(filename):
             # if the image_loader cannot handle the type_str
             # continue to next loader
             pass
-    raise nib.filebasedimages.ImageFileError(
-        'No loader could load the file {}'.format(filename))
+    tf.logging.fatal('No loader could load the file {}'.format(filename))
+    raise IOError
 
 
 def correct_image_if_necessary(img):

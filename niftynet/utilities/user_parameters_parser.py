@@ -45,7 +45,8 @@ def run():
         used by niftynet.io.ImageReader
     """
     meta_parser = argparse.ArgumentParser(
-        epilog='Please visit https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/tree/dev/demos '
+        epilog='Please visit '
+               'https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/tree/dev/demos '
                'for more info.')
     version_string = get_niftynet_version_string()
     meta_parser.add_argument("-v", "--version",
@@ -65,6 +66,7 @@ def run():
         raise IOError("Configuration file not found {}".format(meta_args.conf))
     config = configparser.ConfigParser()
     config.read([meta_args.conf])
+    app_module = None
     try:
         if meta_parser.prog[:-3] in SUPPORTED_APP:
             module_name = meta_parser.prog[:-3]
@@ -78,9 +80,16 @@ def run():
             "in {}".format(app_module)
         has_section_in_config(config, app_module.REQUIRED_CONFIG_SECTION)
     except ValueError:
-        raise ValueError(
-            '{} requires [{}] section in the config file'.format(
-                module_name, app_module.REQUIRED_CONFIG_SECTION))
+        if app_module:
+            section_name = app_module.REQUIRED_CONFIG_SECTION
+            raise ValueError(
+                '{} requires [{}] section in the config file'.format(
+                    module_name, section_name))
+        else:
+            raise ValueError(
+                "unknown application {}, or did you forget '-a' "
+                "command argument".format(module_name))
+
 
     # check keywords in configuration file
     check_keywords(config)

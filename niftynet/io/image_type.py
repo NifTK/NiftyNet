@@ -603,8 +603,8 @@ class ImageFactory(object):
                 ndims = misc.infer_ndims_from_file(file_path[0])
                 ndims = ndims + (1 if len(file_path) > 1 else 0)
                 image_type = cls.INSTANCE_DICT.get(ndims, None)
-            except (TypeError, AssertionError):
-                tf.logging.fatal('file not found: %s', file_path)
+            except AssertionError:
+                tf.logging.fatal('Could not load file: %s', file_path)
                 raise IOError
         if image_type is None:
             tf.logging.fatal('not supported image type: %s', file_path)

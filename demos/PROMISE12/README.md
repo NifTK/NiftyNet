@@ -17,3 +17,6 @@ otherwise:
 
 ```conda install nb_conda_kernels```			     
 ```jupyter notebook```
+
+
+_This demo only supports NiftyNet cloned from [GitHub](https://github.com/NifTK/NiftyNet) or [CMICLab](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet)_
