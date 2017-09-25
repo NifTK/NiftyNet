@@ -90,7 +90,6 @@ def run():
                 "unknown application {}, or did you forget '-a' "
                 "command argument".format(module_name))
 
-
     # check keywords in configuration file
     check_keywords(config)
 
@@ -121,20 +120,29 @@ def run():
         elif section == app_module.REQUIRED_CONFIG_SECTION:
             system_args['CUSTOM'] = all_args[section]
             vars(system_args['CUSTOM'])['name'] = module_name
+
+    if all_args['SYSTEM'].model_dir is None:
+        all_args['SYSTEM'].model_dir = os.path.join(
+            os.path.dirname(meta_args.conf), 'model')
+
+    for section in all_args:
+        if section in SYSTEM_SECTIONS:
+            continue
+        if section == app_module.REQUIRED_CONFIG_SECTION:
+            continue
+        input_data_args[section] = all_args[section]
+        # set the output path of csv list if not exists
+        csv_path = input_data_args[section].csv_file
+        if not os.path.isfile(csv_path):
+            csv_filename = os.path.join(
+                all_args['SYSTEM'].model_dir, '{}.csv'.format(section))
+            input_data_args[section].csv_file = csv_filename
         else:
-            input_data_args[section] = all_args[section]
-            # set the output path of csv list if not exists
-            csv_path = input_data_args[section].csv_file
-            if not os.path.isfile(csv_path):
-                csv_filename = os.path.join(all_args['SYSTEM'].model_dir,
-                                            '{}.csv'.format(section))
-                input_data_args[section].csv_file = csv_filename
-            else:
-                # don't search files if csv specified in config
-                try:
-                    delattr(input_data_args[section], 'path_to_search')
-                except AttributeError:
-                    pass
+            # don't search files if csv specified in config
+            try:
+                delattr(input_data_args[section], 'path_to_search')
+            except AttributeError:
+                pass
 
     # update conf path
     system_args['CONFIG_FILE'] = argparse.Namespace(path=meta_args.conf)

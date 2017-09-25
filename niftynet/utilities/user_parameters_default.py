@@ -14,7 +14,7 @@ from niftynet.utilities.user_parameters_helper import str_array
 
 DEFAULT_INFERENCE_OUTPUT = os.path.join('.', 'output')
 
-DEFAULT_MODEL_DIR = os.path.join('.', 'model')
+DEFAULT_MODEL_DIR = None
 
 
 def add_application_args(parser):
