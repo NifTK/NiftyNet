@@ -151,6 +151,17 @@ L<sub>2</sub> Loss | |
 Huber Loss |     The Huber loss is a smooth piecewise loss function that is quadratic for &#x7c;x&#x7c; <= delta, and linear for &#x7c;x&#x7c;> delta. See https://en.wikipedia.org/wiki/Huber_loss| | delta: default 1.0
 Root Mean Square Error | | | 
 
+## Random flip
+This layer introduces flipping along user-specified axes. 
+This can be useful as a data-augmentation step in training. 
+
+File: rand_flip.py 
+Class: RandomFlipLayer
+Fields: 
+
+* flip_axes: which axes to flip on. 
+* flip_probability: default 0.5. The probability of flipping along any of the specified axes. 
+
 ## Random rotation
 File: rand_rotation.py
 Class: RandomRotationLayer
