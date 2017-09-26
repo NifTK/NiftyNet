@@ -70,6 +70,14 @@ def __add_segmentation_args(parser):
         type=float,
         default=0.00001)
 
+    parser.add_argument(
+        "--proba_connect",
+        help="Indicates if the probability weighting should be adjusted in "
+             "the sampling to sample from elements of different sizes",
+        type=str2boolean,
+        default=True)
+
+
     from niftynet.application.segmentation_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser

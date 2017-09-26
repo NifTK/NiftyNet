@@ -266,13 +266,13 @@ def candidate_indices(win_sizes, data, constraint):
             seg_label = np.where(seg_label == value, np.ones_like(data),
                            np.zeros_like(
                 data))
-            print(np.sum(seg_label), " num values in seg_label ", value)
+            # print(np.sum(seg_label), " num values in seg_label ", value)
             label_size = create_label_size_map(seg_label, 1)
             # print(value, np.sum(seg_label), seg_label.shape,
             #       window_mean.shape, num_min)
-            print('Begin fft convolve')
+            # print('Begin fft convolve')
             counts_window = fftconvolve(seg_label, window_mean, 'same')
-            print('finished fft convolve')
+            # print('finished fft convolve')
             valid_places = np.where(counts_window > np.max([num_min, 1]),
                                     np.ones_like(data), np.zeros_like(data))
             counts_size = fftconvolve(label_size * valid_places, window_mean,
@@ -300,7 +300,9 @@ def candidate_indices(win_sizes, data, constraint):
         candidates = np.zeros_like(data, dtype=np.int32)
         candidates[final >= num_labels_add+1] = 1
         print(np.sum(candidates), 'number of candidates')
-        proba_fin = create_probability_weights(candidates, mean_counts_size)
+        proba_fin = None
+        if constraint.proba_connected:
+            proba_fin = create_probability_weights(candidates, mean_counts_size)
         return candidates, proba_fin
 
 
@@ -314,8 +316,8 @@ def create_probability_weights(candidates, mean_counts_size):
     '''
     proba_weight = np.ones_like(candidates)
     for i in range(0, len(mean_counts_size)):
-        print(candidates.shape, mean_counts_size[i].shape, np.max(candidates),
-              np.max(mean_counts_size[i]))
+        # print(candidates.shape, mean_counts_size[i].shape, np.max(candidates),
+        #       np.max(mean_counts_size[i]))
 
         possible_mean_count = np.nan_to_num(candidates*mean_counts_size[i])
         max_count = np.ceil(np.max(possible_mean_count))
@@ -328,12 +330,12 @@ def create_probability_weights(candidates, mean_counts_size):
                                                                  np.float32))
         sum_rec = np.sum(reciprocal_hist)
         proba_hist = np.divide(reciprocal_hist, sum_rec)
-        print(unique, counts, sum_rec, len(proba_hist))
+        # print(unique, counts, sum_rec, len(proba_hist))
         e_start = unique[1:]
         e_end = unique[2:]
         e_end.tolist().append(max_count+1)
-        print(e_start.shape, e_end.shape, e_start[-1], e_end[-1], len(
-            proba_hist))
+        # print(e_start.shape, e_end.shape, e_start[-1], e_end[-1], len(
+        #     proba_hist))
         candidates_proba = np.zeros_like(candidates)
         for (e_s, e_e, h) in zip(e_start, e_end, proba_hist):
             candidates_proba = np.where((possible_mean_count >= e_s) *
@@ -374,18 +376,17 @@ def rand_choice_coordinates(subject_id, img_sizes, win_sizes,
                          for win_size in win_sizes.values()]
     spatial_win_sizes = np.asarray(spatial_win_sizes, dtype=np.int32)
     max_spatial_win = np.max(spatial_win_sizes, axis=0)
-    print('max_spatial_win is ', max_spatial_win)
+    # print('max_spatial_win is ', max_spatial_win)
     max_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
     candidates_indices = np.vstack(np.where(candidates == 1)).T
     list_indices = np.arange(len(candidates_indices))
     # print(np.sum(candidates), list_indices)
     # print(len(candidates_indices), candidates_indices.shape)
-    proba = []
-    for (c,  p) in zip(candidates.flatten(), mean_counts_size.flatten()):
-        if c >= 1:
-            proba.append(p)
-
     if mean_counts_size is not None:
+        proba = []
+        for (c,  p) in zip(candidates.flatten(), mean_counts_size.flatten()):
+            if c >= 1:
+                proba.append(p)
         list_indices_fin = np.random.choice(list_indices, n_samples,
                                             replace=False, p=proba)
     else:
@@ -393,7 +394,7 @@ def rand_choice_coordinates(subject_id, img_sizes, win_sizes,
         np.random.shuffle(list_indices)
     for i in range(0, n_samples):
         indices_to_add = candidates_indices[list_indices_fin[i]]
-        print(max_coords.shape, indices_to_add)
+        # print(max_coords.shape, indices_to_add)
         for s in range(0, N_SPATIAL):
             max_coords[i, s] = indices_to_add[s] - np.floor(
                 spatial_win_sizes[0]/2)[s]
@@ -430,10 +431,12 @@ class Constraint():
     def __init__(self,
                  compulsory_labels=[0, 1],
                  min_ratio=0.000001,
-                 min_num_labels=2):
+                 min_num_labels=2,
+                 flag_proba_uniform=True):
         self.list_labels = compulsory_labels
         self.min_ratio = min_ratio
         self.num_labels = min_num_labels
+        self.proba_connected = flag_proba_uniform
 
     def min_number_from_ratio(self, win_size):
         num_elements = np.prod(win_size)
