@@ -112,14 +112,55 @@ The normalisation follows [the method](http://ieeexplore.ieee.org/abstract/docum
 [^1]: Nyúl, L. G., Udupa, J. K., & Zhang, X. (2000). New variants of a method of MRI scale standardization. IEEE transactions on medical imaging, 19(2), 143-150.
 
 ## Loss functions
-File: loss.py
+Loss functions are application-specific. 
+
+File: loss_segmentation.py
 Class: LossFunction
 Fields:
 
 * n_class: Number of classes/labels
-* loss_type: ['CrossEntropy'/ 'Dice'/ 'GDSC'/ 'SensSpec'/ 'L1Loss'/ 'L2Loss'/ 'Huber'] Name of the loss to be applied
+* loss_type: ['CrossEntropy'/ 'Dice'/ 'Dice_NS'/ 'GDSC'/ 'WGDL'/ 'SensSpec'/ 'L1Loss'/ 'L2Loss'/ 'Huber'] Name of the loss to be applied
 * loss_func_params: Additional parameters to be used for the specified loss
 * name
+
+Following is a brief description of the loss functions for segmentation: 
+
+Loss function| Notes | Citation | Additional Arguments
+------|----------|------ | -----| 
+Cross-entropy |  | 
+Dice Loss |  | "V-net: Fully convolutional neural networks for volumetric medical image segmentation", Milletari, et al, 3DV 2016.
+Dice Loss (no square) | Similar to Dice Loss, but probabilities are not squared in the denominator. |
+Generalised Dice Loss | | "Generalised Dice overlap as a deep learning loss function for highly unbalanced segmentations", Sudre, C. et. al.  DLMIA 2017.
+Generalised Wasserstein Dice Loss | | "Generalised Wasserstein Dice Score for Imbalanced Multi-class Segmentation using Holistic Convolutional Networks", Fidon, L. et. al. MICCAI 2017 (BrainLes).
+Sensitivity-Specificity Loss  | | "Deep Convolutional Encoder Networks for Multiple Sclerosis Lesion Segmentation", Brosch et al, MICCAI 2015. | r: default 0.05. The 'sensitivity ratio' (authors suggest values from 0.01-0.10 will have similar effects)
+
+
+File: loss_regression.py 
+Class: LossFunction
+* n_class: Number of classes/labels
+* loss_type: ['L1Loss'/ 'L2Loss'/ 'Huber'/ 'RMSE'] Name of the loss to be applied
+* loss_func_params: Additional parameters to be used for the specified loss
+* name
+
+Following is a brief description of the regression loss functions: 
+
+Loss function| Notes | Citation | Additional Arguments
+----------|----|---- | ---| 
+L<sub>1</sub> Loss | |
+L<sub>2</sub> Loss | | 
+Huber Loss |     The Huber loss is a smooth piecewise loss function that is quadratic for &#x7c;x&#x7c; <= delta, and linear for &#x7c;x&#x7c;> delta. See https://en.wikipedia.org/wiki/Huber_loss| | delta: default 1.0
+Root Mean Square Error | | | 
+
+## Random flip
+This layer introduces flipping along user-specified axes. 
+This can be useful as a data-augmentation step in training. 
+
+File: rand_flip.py 
+Class: RandomFlipLayer
+Fields: 
+
+* flip_axes: which axes to flip on. 
+* flip_probability: default 0.5. The probability of flipping along any of the specified axes. 
 
 ## Random rotation
 File: rand_rotation.py
@@ -130,7 +171,7 @@ Fields:
 * max_angle: Maximum angle considered in the random range
 
 The random rotation belongs to the set of possible augmentation operations.
-*Note* The random rotation is only applied on 3d data
+*Note* The random rotation is only applied on 3d data.
 
 ## Random spatial scaling
 File: rand_spatial_scaling.py
