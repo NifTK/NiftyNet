@@ -81,8 +81,8 @@ def generalised_dice_loss(prediction,
     n_voxels = ground_truth.get_shape()[0].value
     n_classes = prediction.get_shape()[1].value
     prediction = tf.nn.softmax(prediction)
-    weight_map_nclasses = tf.reshape(
-        tf.tile(weight_map, [n_classes]), prediction.get_shape())
+
+
 
     ids = tf.constant(np.arange(n_voxels), dtype=tf.int64)
     ids = tf.stack([ids, ground_truth], axis=1)
@@ -90,12 +90,20 @@ def generalised_dice_loss(prediction,
                               values=tf.ones([n_voxels], dtype=tf.float32),
                               dense_shape=[n_voxels, n_classes])
 
-    ref_vol = tf.sparse_reduce_sum(
-        weight_map_nclasses * one_hot, reduction_axes=[0]) + 0.1
-    intersect = tf.sparse_reduce_sum(
-        weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
-    seg_vol = tf.reduce_sum(
-        tf.multiply(weight_map_nclasses, prediction), 0) + 0.1
+    if weight_map is not None:
+        weight_map_nclasses = tf.reshape(
+            tf.tile(weight_map, [n_classes]), prediction.get_shape())
+        ref_vol = tf.sparse_reduce_sum(
+            weight_map_nclasses * one_hot, reduction_axes=[0]) + 0.1
+        intersect = tf.sparse_reduce_sum(
+            weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
+        seg_vol = tf.reduce_sum(
+            tf.multiply(weight_map_nclasses, prediction), 0) + 0.1
+    else:
+        ref_vol = tf.sparse_reduce_sum(one_hot, reduction_axes=[0]) + 0.1
+        intersect = tf.sparse_reduce_sum(one_hot * prediction,
+                                         reduction_axes=[0])
+        seg_vol = tf.reduce_sum(prediction, 0) + 0.1
     if type_weight == 'Square':
         weights = tf.reciprocal(tf.square(ref_vol))
     elif type_weight == 'Simple':
