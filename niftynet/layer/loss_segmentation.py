@@ -78,12 +78,10 @@ def generalised_dice_loss(prediction,
     and Uniform (no weighting))
     :return: the loss
     """
+    ground_truth = tf.to_int64(ground_truth)
     n_voxels = ground_truth.get_shape()[0].value
     n_classes = prediction.get_shape()[1].value
     prediction = tf.nn.softmax(prediction)
-
-
-
     ids = tf.constant(np.arange(n_voxels), dtype=tf.int64)
     ids = tf.stack([ids, ground_truth], axis=1)
     one_hot = tf.SparseTensor(indices=ids,
@@ -142,7 +140,7 @@ def sensitivity_specificity_loss(prediction,
         (authors suggest values from 0.01-0.10 will have similar effects)
     :return: the loss
     """
-
+    ground_truth = tf.to_int64(ground_truth)
     n_voxels = ground_truth.get_shape()[0].value
     n_classes = prediction.get_shape()[1].value
     prediction = tf.nn.softmax(prediction)
@@ -273,6 +271,7 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
     :param weight_map:
     :return: the loss
     """
+    ground_truth = tf.to_int64(ground_truth)
     n_voxels = ground_truth.get_shape()[0].value
     n_classes = prediction.get_shape()[1].value
     prediction = tf.nn.softmax(prediction)
