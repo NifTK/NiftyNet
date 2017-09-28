@@ -45,7 +45,8 @@ def run():
         used by niftynet.io.ImageReader
     """
     meta_parser = argparse.ArgumentParser(
-        epilog='Please visit https://github.com/NifTK/NiftyNet/tree/dev/demos '
+        epilog='Please visit '
+               'https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/tree/dev/demos '
                'for more info.')
     version_string = get_niftynet_version_string()
     meta_parser.add_argument("-v", "--version",
@@ -65,6 +66,7 @@ def run():
         raise IOError("Configuration file not found {}".format(meta_args.conf))
     config = configparser.ConfigParser()
     config.read([meta_args.conf])
+    app_module = None
     try:
         if meta_parser.prog[:-3] in SUPPORTED_APP:
             module_name = meta_parser.prog[:-3]
@@ -78,9 +80,15 @@ def run():
             "in {}".format(app_module)
         has_section_in_config(config, app_module.REQUIRED_CONFIG_SECTION)
     except ValueError:
-        raise ValueError(
-            '{} requires [{}] section in the config file'.format(
-                module_name, app_module.REQUIRED_CONFIG_SECTION))
+        if app_module:
+            section_name = app_module.REQUIRED_CONFIG_SECTION
+            raise ValueError(
+                '{} requires [{}] section in the config file'.format(
+                    module_name, section_name))
+        else:
+            raise ValueError(
+                "unknown application {}, or did you forget '-a' "
+                "command argument".format(module_name))
 
     # check keywords in configuration file
     check_keywords(config)
@@ -112,20 +120,29 @@ def run():
         elif section == app_module.REQUIRED_CONFIG_SECTION:
             system_args['CUSTOM'] = all_args[section]
             vars(system_args['CUSTOM'])['name'] = module_name
+
+    if all_args['SYSTEM'].model_dir is None:
+        all_args['SYSTEM'].model_dir = os.path.join(
+            os.path.dirname(meta_args.conf), 'model')
+
+    for section in all_args:
+        if section in SYSTEM_SECTIONS:
+            continue
+        if section == app_module.REQUIRED_CONFIG_SECTION:
+            continue
+        input_data_args[section] = all_args[section]
+        # set the output path of csv list if not exists
+        csv_path = input_data_args[section].csv_file
+        if not os.path.isfile(csv_path):
+            csv_filename = os.path.join(
+                all_args['SYSTEM'].model_dir, '{}.csv'.format(section))
+            input_data_args[section].csv_file = csv_filename
         else:
-            input_data_args[section] = all_args[section]
-            # set the output path of csv list if not exists
-            csv_path = input_data_args[section].csv_file
-            if not os.path.isfile(csv_path):
-                csv_filename = os.path.join(all_args['SYSTEM'].model_dir,
-                                            '{}.csv'.format(section))
-                input_data_args[section].csv_file = csv_filename
-            else:
-                # don't search files if csv specified in config
-                try:
-                    delattr(input_data_args[section], 'path_to_search')
-                except AttributeError:
-                    pass
+            # don't search files if csv specified in config
+            try:
+                delattr(input_data_args[section], 'path_to_search')
+            except AttributeError:
+                pass
 
     # update conf path
     system_args['CONFIG_FILE'] = argparse.Namespace(path=meta_args.conf)

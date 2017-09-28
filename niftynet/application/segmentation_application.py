@@ -4,7 +4,7 @@ from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_factory import ApplicationNetFactory
 from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
-from niftynet.engine.application_variables import NETORK_OUTPUT
+from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
@@ -228,13 +228,12 @@ class SegmentationApplication(BaseApplication):
                 prediction=net_out,
                 ground_truth=data_dict.get('label', None),
                 weight_map=data_dict.get('weight', None))
-            if self.net_param.decay > 0.0:
-                reg_losses = tf.get_collection(
-                    tf.GraphKeys.REGULARIZATION_LOSSES)
-                if reg_losses:
-                    reg_loss = tf.reduce_mean(
-                        [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
-                    loss = data_loss + reg_loss
+            reg_losses = tf.get_collection(
+                tf.GraphKeys.REGULARIZATION_LOSSES)
+            if self.net_param.decay > 0.0 and reg_losses:
+                reg_loss = tf.reduce_mean(
+                    [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
+                loss = data_loss + reg_loss
             else:
                 loss = data_loss
             grads = self.optimiser.compute_gradients(loss)
@@ -266,10 +265,10 @@ class SegmentationApplication(BaseApplication):
 
             outputs_collector.add_to_collection(
                 var=net_out, name='window',
-                average_over_devices=False, collection=NETORK_OUTPUT)
+                average_over_devices=False, collection=NETWORK_OUTPUT)
             outputs_collector.add_to_collection(
                 var=data_dict['image_location'], name='location',
-                average_over_devices=False, collection=NETORK_OUTPUT)
+                average_over_devices=False, collection=NETWORK_OUTPUT)
             init_aggregator = \
                 self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]
             init_aggregator()

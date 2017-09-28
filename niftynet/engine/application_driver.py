@@ -21,7 +21,7 @@ import tensorflow as tf
 from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import GradientsCollector
-from niftynet.engine.application_variables import NETORK_OUTPUT
+from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import OutputsCollector
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.application_variables import \
@@ -46,7 +46,8 @@ class ApplicationDriver(object):
     # pylint: disable=too-many-instance-attributes
     def __init__(self):
         self.app = None
-        self.graph = None
+        self.graph = tf.Graph()
+
         self.saver = None
 
         self.is_training = True
@@ -87,6 +88,8 @@ class ApplicationDriver(object):
             tf.logging.fatal('parameters should be dictionaries')
             raise
 
+        assert os.path.exists(system_param.model_dir), \
+            'Model folder not exists {}'.format(system_param.model_dir)
         self.is_training = (system_param.action == "train")
         # hardware-related parameters
         self.num_threads = max(system_param.num_threads, 1) \
@@ -95,16 +98,17 @@ class ApplicationDriver(object):
             if self.is_training else min(system_param.num_gpus, 1)
         set_cuda_device(system_param.cuda_devices)
 
-        # set output folders
+        # set output TF model folders
         self.model_dir = touch_folder(
             os.path.join(system_param.model_dir, 'models'))
         self.session_prefix = os.path.join(self.model_dir, FILE_PREFIX)
 
         if self.is_training:
             assert train_param, 'training parameters not specified'
-            summary_root = os.path.join(self.model_dir, 'logs')
+            summary_root = os.path.join(system_param.model_dir, 'logs')
             self.summary_dir = get_latest_subfolder(
-                summary_root, train_param.starting_iter == 0)
+                summary_root,
+                create_new=train_param.starting_iter == 0)
 
             # training iterations-related parameters
             self.initial_iter = train_param.starting_iter
@@ -129,6 +133,8 @@ class ApplicationDriver(object):
         self.app = app_module(net_param, action_param, self.is_training)
         # initialise data input
         self.app.initialise_dataset_loader(data_param, app_param)
+        with self.graph.as_default(), tf.name_scope('Sampler'):
+            self.app.initialise_sampler()
 
     def run_application(self):
         """
@@ -140,20 +146,32 @@ class ApplicationDriver(object):
         image sample to be processed from image reader.
         :return:
         """
-        self.graph = self._create_graph()
-        self.app.check_initialisations()
         config = ApplicationDriver._tf_config()
         with tf.Session(config=config, graph=self.graph) as session:
-            # initialise network
 
-            tf.logging.info('starting from iter %d', self.initial_iter)
-            self._rand_init_or_restore_vars(session)
-
-            # start samplers' threads
             tf.logging.info('Filling queues (this can take a few minutes)')
             self._coord = tf.train.Coordinator()
-            for sampler in self.app.get_sampler():
-                sampler.run_threads(session, self._coord, self.num_threads)
+
+            # start samplers' threads
+            try:
+                samplers = self.app.get_sampler()
+                if samplers is not None:
+                    for sampler in samplers:
+                        sampler.run_threads(
+                            session, self._coord, self.num_threads)
+            except (TypeError, AttributeError, IndexError):
+                tf.logging.fatal(
+                    "samplers not running, pop_batch_op operations "
+                    "are blocked.")
+                raise
+
+            self.graph = self._create_graph(self.graph)
+            self.app.check_initialisations()
+
+            # initialise network
+            # fill variables with random values or values from file
+            tf.logging.info('starting from iter %d', self.initial_iter)
+            self._rand_init_or_restore_vars(session)
 
             start_time = time.time()
             loop_status = {}
@@ -180,9 +198,8 @@ class ApplicationDriver(object):
                 tf.logging.info('Cleaning up...')
                 if self.is_training and loop_status.get('current_iter', None):
                     self._save_model(session, loop_status['current_iter'])
-                elif loop_status.get('all_saved_flag', None):
-                    if not loop_status['all_saved_flag']:
-                        tf.logging.warning('stopped early, incomplete loops')
+                elif not loop_status.get('all_saved_flag', None):
+                    tf.logging.warning('stopped early, incomplete loops')
 
                 tf.logging.info('stopping sampling threads')
                 self.app.stop()
@@ -191,19 +208,17 @@ class ApplicationDriver(object):
                     type(self.app).__name__, (time.time() - start_time))
 
     # pylint: disable=not-context-manager
-    def _create_graph(self):
+    def _create_graph(self, graph=tf.Graph()):
         """
         tensorflow graph is only created within this function
         """
-        graph = tf.Graph()
+        assert isinstance(graph, tf.Graph)
         main_device = self._device_string(0, is_worker=False)
         # start constructing the graph, handling training and inference cases
         with graph.as_default(), tf.device(main_device):
-            # initialise sampler and network, these are connected in
-            # the context of multiple gpus
 
-            with tf.name_scope('Sampler'):
-                self.app.initialise_sampler()
+            # initialise network, these are connected in
+            # the context of multiple gpus
             self.app.initialise_network()
 
             # for data parallelism --
@@ -278,8 +293,10 @@ class ApplicationDriver(object):
                 tf.logging.info('set initial_iter to %d based '
                                 'on checkpoints', self.initial_iter)
             except (ValueError, AttributeError):
-                tf.logging.fatal('failed to get iteration number'
-                                 'from checkpoint path')
+                tf.logging.fatal(
+                    'failed to get iteration number'
+                    'from checkpoint path, please set'
+                    'inference_iter or starting_iter to a positive integer')
                 raise
         # restore session
         tf.logging.info('Accessing %s ...', checkpoint)
@@ -303,8 +320,13 @@ class ApplicationDriver(object):
         """
         writer = tf.summary.FileWriter(self.summary_dir, sess.graph)
         # running through training_op from application
-        for (iter_i, train_op) in \
-                self.app.training_ops(self.initial_iter, self.final_iter):
+        for iter_ops in self.app.training_ops(self.initial_iter,
+                                              self.final_iter):
+            if len(iter_ops) == 3:
+                iter_i, train_op, data_dict = iter_ops
+            else:
+                iter_i, train_op = iter_ops
+                data_dict = None
 
             loop_status['current_iter'] = iter_i
             local_time = time.time()
@@ -313,9 +335,9 @@ class ApplicationDriver(object):
 
             # variables to the graph
             vars_to_run = dict(train_op=train_op)
-            vars_to_run[CONSOLE], vars_to_run[NETORK_OUTPUT] = \
+            vars_to_run[CONSOLE], vars_to_run[NETWORK_OUTPUT] = \
                 self.outputs_collector.variables(CONSOLE), \
-                self.outputs_collector.variables(NETORK_OUTPUT)
+                self.outputs_collector.variables(NETWORK_OUTPUT)
             if self.tensorboard_every_n > 0 and \
                     (iter_i % self.tensorboard_every_n == 0):
                 # adding tensorboard summary
@@ -323,10 +345,13 @@ class ApplicationDriver(object):
                     self.outputs_collector.variables(collection=TF_SUMMARIES)
 
             # run all variables in one go
-            graph_output = sess.run(vars_to_run)
+            if data_dict:
+                graph_output = sess.run(vars_to_run, feed_dict=data_dict)
+            else:
+                graph_output = sess.run(vars_to_run)
 
             # process graph outputs
-            self.app.interpret_output(graph_output[NETORK_OUTPUT])
+            self.app.interpret_output(graph_output[NETWORK_OUTPUT])
             console_str = self._console_vars_to_str(graph_output[CONSOLE])
             summary = graph_output.get(TF_SUMMARIES, {})
             if summary:
@@ -352,15 +377,15 @@ class ApplicationDriver(object):
 
             # build variables to run
             vars_to_run = dict()
-            vars_to_run[NETORK_OUTPUT], vars_to_run[CONSOLE] = \
-                self.outputs_collector.variables(NETORK_OUTPUT), \
+            vars_to_run[NETWORK_OUTPUT], vars_to_run[CONSOLE] = \
+                self.outputs_collector.variables(NETWORK_OUTPUT), \
                 self.outputs_collector.variables(CONSOLE)
 
             # evaluate the graph variables
             graph_output = sess.run(vars_to_run)
 
             # process the graph outputs
-            if not self.app.interpret_output(graph_output[NETORK_OUTPUT]):
+            if not self.app.interpret_output(graph_output[NETWORK_OUTPUT]):
                 tf.logging.info('processed all batches.')
                 loop_status['all_saved_flag'] = True
                 break

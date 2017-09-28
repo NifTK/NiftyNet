@@ -8,8 +8,10 @@ pylintjob:
   stage: pylint_test
   except:
     - 139-correct-toynet-demo-instructions
+    - 148-publish-niftynet-v0-2-0-on-python-package-index-pypi
+    - 170-add-niftynet-paper-on-rtd-doc
   script:
-    - pylint --rcfile=pylintrc niftynet/engine
+    - pylint --rcfile=tests/pylintrc niftynet/engine
 
 testjob:
   stage: dev_test
@@ -18,7 +20,7 @@ testjob:
     - dev
     - dev-staging
     - tags
-    - supports-axbxc-patch
+    - fix-python3-ci-tests
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
@@ -62,16 +64,15 @@ testjob:
 
     - pip install -r requirements-gpu.txt
 
-    - coverage erase
     # tests
-    - coverage run -a --source . net_segment.py train -c config/highres3dnet_config.ini --batch_size=1 --num_threads=2 --queue_length=40 --max_iter=10
-    - coverage run -a --source . net_segment.py inference -c config/highres3dnet_config.ini --batch_size 8 --spatial_window_size 64,64,64 --queue_length 64
+    - python net_segment.py train -c config/highres3dnet_config.ini --batch_size=1 --num_threads=2 --queue_length=40 --max_iter=10
+    - python net_segment.py inference -c config/highres3dnet_config.ini --batch_size 8 --spatial_window_size 64,64,64 --queue_length 64
 
-    - coverage run -a --source . net_segment.py train -c config/scalenet_config.ini --batch_size 1 --queue_length 5 --num_threads 2
-    - coverage run -a --source . net_segment.py inference -c config/scalenet_config.ini --batch_size 16 --spatial_window_size 64,64,64 --queue_length 32
+    - python net_segment.py train -c config/scalenet_config.ini --batch_size 1 --queue_length 5 --num_threads 2
+    - python net_segment.py inference -c config/scalenet_config.ini --batch_size 16 --spatial_window_size 64,64,64 --queue_length 32
 
-    - coverage run -a --source . net_segment.py train -c config/vnet_config.ini --batch_size 1 --queue_length 5 --num_threads 2 --activation_function relu
-    - coverage run -a --source . net_segment.py inference -c config/vnet_config.ini --batch_size 16 --spatial_window_size 64,64,64 --queue_length 32 --activation_function relu
+    - python net_segment.py train -c config/vnet_config.ini --batch_size 1 --queue_length 5 --num_threads 2 --activation_function relu
+    - python net_segment.py inference -c config/vnet_config.ini --batch_size 16 --spatial_window_size 64,64,64 --queue_length 32 --activation_function relu
 
     # need a large GPU to run
     #- python net_segment.py train -c config/unet_config.ini --batch_size 1 --queue_length 5 --num_threads 2
@@ -80,23 +81,23 @@ testjob:
     #- python net_segment.py train -c config/deepmedic_config.ini --batch_size 128 --queue_length 48 --num_threads 4
     #- python net_segment.py inference -c config/deepmedic_config.ini --batch_size 12 --spatial_window_size 135,135,135  --queue_length 128
 
-    - coverage run -a --source . net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6
-    - coverage run -a --source . net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6 --starting_iter 0 --max_iter 15
-    - coverage run -a --source . net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 14
+    - python net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6
+    - python net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6 --starting_iter 0 --max_iter 15
+    - python net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 14
 
-    - coverage run -a --source . net_segment.py train -c config/default_multimodal_segmentation.ini --batch_size 3
-    - coverage run -a --source . net_segment.py inference -c config/default_multimodal_segmentation.ini --spatial_window_size 64,64 --batch_size 7
+    - python net_segment.py train -c config/default_multimodal_segmentation.ini --batch_size 3
+    - python net_segment.py inference -c config/default_multimodal_segmentation.ini --spatial_window_size 64,64 --batch_size 7
 
 
-    - coverage run -a --source . net_gan.py train -c config/GAN_demo_train_config.ini --max_iter 5
-    - coverage run -a --source . net_gan.py inference -c config/GAN_demo_train_config.ini
+    - python net_gan.py train -c config/GAN_demo_train_config.ini --max_iter 5
+    - python net_gan.py inference -c config/GAN_demo_train_config.ini
 
-    - coverage run -a --source . net_autoencoder.py train -c config/vae_config.ini --max_iter 5
-    - coverage run -a --source . net_autoencoder.py inference -c config/vae_config.ini --inference_type sample
-    - coverage run -a --source . net_autoencoder.py inference -c config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
-    - coverage run -a --source . net_autoencoder.py inference -c config/vae_config.ini --inference_type encode-decode
+    - python net_autoencoder.py train -c config/vae_config.ini --max_iter 5
+    - python net_autoencoder.py inference -c config/vae_config.ini --inference_type sample
+    - python net_autoencoder.py inference -c config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
+    - python net_autoencoder.py inference -c config/vae_config.ini --inference_type encode-decode
 
-    - coverage run -a --source . -m unittest discover -s "tests" -p "*_test.py"
+    - python -m unittest discover -s "tests" -p "*_test.py"
 
     # deactivate virtual environment
     - deactivate
@@ -129,6 +130,7 @@ testjob:
 
 
     - coverage run -a --source . net_gan.py train -c config/GAN_demo_train_config.ini --max_iter 5
+    - coverage run -a --source . net_run.py train -a net_gan -c config/GAN_demo_train_config.ini --max_iter 5
     - coverage run -a --source . net_gan.py inference -c config/GAN_demo_train_config.ini
 
     - coverage run -a --source . net_autoencoder.py train -c config/vae_config.ini --max_iter 5
@@ -149,11 +151,16 @@ quicktest:
     - dev
     - dev-staging
     - tags
-    - supports-axbxc-patch
+    - fix-python3-ci-tests
     - 112-publish-api-docs-online
     - 147-revise-contribution-guidelines-to-include-github
     - 150-properly-format-the-bibtex-entry-to-the-ipmi-2017-paper-on-the-main-readme
     - 139-correct-toynet-demo-instructions
+    - 148-publish-niftynet-v0-2-0-on-python-package-index-pypi
+    - 159-add-net_run-command-line-entry-to-pip-installer
+    - 160-add-net_gan-command-line-entry-to-pip-installer
+    - 161-add-net_autoencode-command-line-entry-to-pip-installer
+    - 170-add-niftynet-paper-on-rtd-doc
   script:
     # print system info
     - which nvidia-smi
@@ -194,6 +201,9 @@ pip-installer:
     - dev-staging
     - tags
     - supports-axbxc-patch
+    - 159-add-net_run-command-line-entry-to-pip-installer
+    - 160-add-net_gan-command-line-entry-to-pip-installer
+    - 161-add-net_autoencode-command-line-entry-to-pip-installer
   script:
     # source utils
     - source ci/utils.sh
@@ -243,6 +253,20 @@ pip-installer:
     - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
     - net_segment train -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
     - net_segment inference -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
+    - net_run train --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
+    - net_run inference --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
+    - net_gan train -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
+    - net_gan inference -c $niftynet_dir/config/GAN_demo_train_config.ini
+    - net_run train --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
+    - net_run inference --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini
+    - net_autoencoder train -c $niftynet_dir/config/vae_config.ini --max_iter 5
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type sample
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type encode-decode
+    - net_run train --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --max_iter 5
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type sample
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type encode-decode
     # deactivate virtual environment
     - deactivate
     - cd $niftynet_dir
@@ -277,6 +301,21 @@ pip-installer:
     - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
     - net_segment train -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
     - net_segment inference -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
+    - net_run train --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
+    - net_run inference --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
+    - net_gan train -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
+    - net_gan inference -c $niftynet_dir/config/GAN_demo_train_config.ini
+    - net_run train --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
+    - net_run inference --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini
+    - net_autoencoder train -c $niftynet_dir/config/vae_config.ini --max_iter 5
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type sample
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type encode-decode
+    - net_run train --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --max_iter 5
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type sample
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type encode-decode
+
     # deactivate virtual environment
     - deactivate
     - cd $niftynet_dir

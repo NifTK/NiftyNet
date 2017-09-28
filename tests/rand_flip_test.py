@@ -41,6 +41,32 @@ class RandFlipTest(tf.test.TestCase):
             expected_a[-1, -1, -1] = 1
             self.assertTrue(np.array_equal(transformed_a, expected_a))
 
+    def test_no_flip_layer(self):
+        a = np.array([[0, 1], [2, 3]])
+        flip_layer = RandomFlipLayer(flip_axes=[0], flip_probability=0)
+        flip_layer.randomise(spatial_rank=2)
+        transformed_a = flip_layer(a)
+        with self.test_session() as sess:
+            self.assertTrue(np.array_equal(transformed_a, a))
+
+    def test_2d_flip_layer(self):
+        a = np.array([[0, 1], [2, 3]])
+        flip_layer = RandomFlipLayer(flip_axes=[0], flip_probability=1)
+        flip_layer.randomise(spatial_rank=2)
+        transformed_a = flip_layer(a)
+        with self.test_session() as sess:
+            self.assertTrue(
+                np.array_equal(transformed_a, np.array([[2, 3], [0, 1]])))
+
+    def test_2d_flip_layer(self):
+        a = np.array([[0, 1], [2, 3]])
+        a = {'image': a}
+        flip_layer = RandomFlipLayer(flip_axes=[0], flip_probability=1)
+        flip_layer.randomise(spatial_rank=2)
+        transformed_a = flip_layer(a)
+        with self.test_session() as sess:
+            self.assertTrue(
+                np.array_equal(transformed_a['image'], np.array([[2, 3], [0, 1]])))
 
 if __name__ == '__main__':
     tf.test.main()

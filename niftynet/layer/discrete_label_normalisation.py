@@ -28,7 +28,7 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
         self.model_file = os.path.abspath(model_filename)
         assert not os.path.isdir(self.model_file), \
             "model_filename is a directory, please change histogram_ref_file"
-        self.label_map = hs.read_mapping_file(model_filename)
+        self.label_map = hs.read_mapping_file(self.model_file)
 
     @property
     def key(self):
@@ -144,6 +144,6 @@ def find_set_of_labels(image_list, field, output_key):
         mapping_from_to[output_key[1]] = tuple(range(0, len(label_set)))
     except (IndexError, ValueError):
         tf.logging.fatal("unable to create mappings keys: %s, image name %s",
-            output_key, field)
+                         output_key, field)
         raise
     return mapping_from_to

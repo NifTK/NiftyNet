@@ -69,6 +69,12 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         window_shape = resize_to
         while image_out.ndim < 5:
             image_out = image_out[..., np.newaxis, :]
+        if self.window_border and any([b > 0 for b in self.window_border]):
+            np_border = self.window_border
+            while len(np_border) < 5:
+                np_border = np_border + (0,)
+            np_border = [(b,) for b in np_border]
+            image_out = np.pad(image_out, np_border, mode='edge')
         image_shape = image_out.shape
         zoom_ratio = \
             [float(p) / float(d) for p, d in zip(window_shape, image_shape)]

@@ -12,11 +12,9 @@ from niftynet.utilities.user_parameters_helper import spatialnumarray
 from niftynet.utilities.user_parameters_helper import str2boolean
 from niftynet.utilities.user_parameters_helper import str_array
 
-DEFAULT_INFERENCE_OUTPUT = os.path.join(
-    os.path.dirname(__file__), '..', '..', 'models', 'outputs')
+DEFAULT_INFERENCE_OUTPUT = os.path.join('.', 'output')
 
-DEFAULT_MODEL_DIR = os.path.join(
-    os.path.dirname(__file__), '..', '..', 'models', 'model_default')
+DEFAULT_MODEL_DIR = None
 
 
 def add_application_args(parser):
@@ -52,7 +50,6 @@ def add_application_args(parser):
         metavar='',
         help="Directory to save/load intermediate training models and logs",
         default=DEFAULT_MODEL_DIR)
-
 
     return parser
 

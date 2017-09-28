@@ -244,7 +244,8 @@ def load_and_merge_csv_files(data_param):
         except AttributeError:
             tf.logging.fatal('unrecognised parameter format')
             raise
-        if hasattr(data_param[modality_name], 'path_to_search'):
+        if hasattr(data_param[modality_name], 'path_to_search') and \
+                len(data_param[modality_name].path_to_search):
             tf.logging.info(
                 '[%s] search file folders, writing csv file %s',
                 modality_name, csv_file)
@@ -274,7 +275,11 @@ def load_and_merge_csv_files(data_param):
     if _file_list is None or _file_list.size == 0:
         tf.logging.fatal(
             "empty filename lists, please check the csv "
-            "files. (remove csv files to automatically"
-            "search folders and generate new csv files again)")
+            "files. (remove csv_file keyword if it is in the config file "
+            "to automatically search folders and generate new csv "
+            "files again)\n\n"
+            "Please note in the matched file names, each subject name are "
+            "matched by removing any keywords listed `filename_contains` "
+            "in the config.\n\n")
         raise IOError
     return _file_list

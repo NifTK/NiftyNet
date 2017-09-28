@@ -56,7 +56,7 @@ class HistogramNormalisationLayer(DataDependentLayer):
         # modalities are listed in self.modalities tuple
         self.image_name = image_name
         self.modalities = modalities
-        self.mapping = hs.read_mapping_file(model_filename)
+        self.mapping = hs.read_mapping_file(self.model_file)
 
     def layer_op(self, image, mask=None):
         assert self.is_ready(), \

@@ -20,8 +20,8 @@ def selu(x, name):
 
 
 def leakyRelu(x, name):
-    alpha = 0.01
-    return tf.maximum(alpha * x, x, name)
+    half_alpha = 0.01
+    return (0.5 + half_alpha) * x + (0.5 - half_alpha) * abs(x)
 
 
 SUPPORTED_OP = {'relu': tf.nn.relu,

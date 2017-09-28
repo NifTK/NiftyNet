@@ -3,7 +3,7 @@ import nibabel
 import numpy as np
 
 
-class SimpleITKAsNibabel(nibabel.spatialimages.SpatialImage):
+class SimpleITKAsNibabel(nibabel.Nifti1Image):
     """
     Minimal interface to use a SimpleITK image as if it were
     a nibabel object. Currently only supports the subset of the
@@ -18,9 +18,12 @@ class SimpleITKAsNibabel(nibabel.spatialimages.SpatialImage):
                 raise nibabel.filebasedimages.ImageFileError(str(err))
             else:
                 raise
-        self._header = SimpleITKAsNibabelHeader(self._SimpleITKImage)
+        # self._header = SimpleITKAsNibabelHeader(self._SimpleITKImage)
         affine = make_affine(self._SimpleITKImage)
-        super(SimpleITKAsNibabel, self).__init__(
+        # super(SimpleITKAsNibabel, self).__init__(
+        #     sitk.GetArrayFromImage(self._SimpleITKImage).transpose(), affine)
+        nibabel.Nifti1Image.__init__(
+            self,
             sitk.GetArrayFromImage(self._SimpleITKImage).transpose(), affine)
 
 
