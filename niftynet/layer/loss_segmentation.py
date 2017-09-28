@@ -78,24 +78,30 @@ def generalised_dice_loss(prediction,
     and Uniform (no weighting))
     :return: the loss
     """
+    ground_truth = tf.to_int64(ground_truth)
     n_voxels = ground_truth.get_shape()[0].value
     n_classes = prediction.get_shape()[1].value
     prediction = tf.nn.softmax(prediction)
-    weight_map_nclasses = tf.reshape(
-        tf.tile(weight_map, [n_classes]), prediction.get_shape())
-
     ids = tf.constant(np.arange(n_voxels), dtype=tf.int64)
     ids = tf.stack([ids, ground_truth], axis=1)
     one_hot = tf.SparseTensor(indices=ids,
                               values=tf.ones([n_voxels], dtype=tf.float32),
                               dense_shape=[n_voxels, n_classes])
 
-    ref_vol = tf.sparse_reduce_sum(
-        weight_map_nclasses * one_hot, reduction_axes=[0]) + 0.1
-    intersect = tf.sparse_reduce_sum(
-        weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
-    seg_vol = tf.reduce_sum(
-        tf.multiply(weight_map_nclasses, prediction), 0) + 0.1
+    if weight_map is not None:
+        weight_map_nclasses = tf.reshape(
+            tf.tile(weight_map, [n_classes]), prediction.get_shape())
+        ref_vol = tf.sparse_reduce_sum(
+            weight_map_nclasses * one_hot, reduction_axes=[0]) + 0.1
+        intersect = tf.sparse_reduce_sum(
+            weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
+        seg_vol = tf.reduce_sum(
+            tf.multiply(weight_map_nclasses, prediction), 0) + 0.1
+    else:
+        ref_vol = tf.sparse_reduce_sum(one_hot, reduction_axes=[0]) + 0.1
+        intersect = tf.sparse_reduce_sum(one_hot * prediction,
+                                         reduction_axes=[0])
+        seg_vol = tf.reduce_sum(prediction, 0) + 0.1
     if type_weight == 'Square':
         weights = tf.reciprocal(tf.square(ref_vol))
     elif type_weight == 'Simple':
@@ -134,7 +140,7 @@ def sensitivity_specificity_loss(prediction,
         (authors suggest values from 0.01-0.10 will have similar effects)
     :return: the loss
     """
-
+    ground_truth = tf.to_int64(ground_truth)
     n_voxels = ground_truth.get_shape()[0].value
     n_classes = prediction.get_shape()[1].value
     prediction = tf.nn.softmax(prediction)
@@ -265,6 +271,7 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
     :param weight_map:
     :return: the loss
     """
+    ground_truth = tf.to_int64(ground_truth)
     n_voxels = ground_truth.get_shape()[0].value
     n_classes = prediction.get_shape()[1].value
     prediction = tf.nn.softmax(prediction)
