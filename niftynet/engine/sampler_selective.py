@@ -383,13 +383,16 @@ def rand_choice_coordinates(subject_id, img_sizes, win_sizes,
     # print(np.sum(candidates), list_indices)
     # print(len(candidates_indices), candidates_indices.shape)
     if mean_counts_size is not None:
+        print("Probability weighting considered")
         proba = []
         for (c,  p) in zip(candidates.flatten(), mean_counts_size.flatten()):
             if c >= 1:
                 proba.append(p)
+        print(len(list_indices), len(proba))
         list_indices_fin = np.random.choice(list_indices, n_samples,
                                             replace=False, p=proba)
     else:
+        print("No probability weighting needed")
         list_indices_fin = list_indices
         np.random.shuffle(list_indices)
     for i in range(0, n_samples):

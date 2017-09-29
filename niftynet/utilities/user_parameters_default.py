@@ -309,6 +309,14 @@ def add_training_args(parser):
         type=int,
         default=1
     )
+    parser.add_argument(
+        "--proba_connect",
+        help="[Training only] Number of labels to have in the window for "
+             "selective sampler",
+        metavar='',
+        type=str2boolean,
+        default=True
+    )
 
     parser.add_argument(
         "--rotation_angle",
