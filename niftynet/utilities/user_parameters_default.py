@@ -294,6 +294,13 @@ def add_training_args(parser):
         default=())
 
     parser.add_argument(
+        "--elastic_deformation",
+        help="The number of control points and the used standard deviation for a"
+             "B-spline based deformable augmentation [num_controlpoints, std_deformation_sigma]",
+        type=int_array,
+        default=())
+
+    parser.add_argument(
         "--random_flipping_axes",
         help="The axes which can be flipped to augment the data. Supply as "
              "comma-separated values within single quotes, e.g. '0,1'. Note "

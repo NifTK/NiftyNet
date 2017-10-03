@@ -1,3 +1,5 @@
+import warnings
+
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
@@ -6,11 +8,11 @@ from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import TF_SUMMARIES
-from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
-from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.engine.sampler_uniform import UniformSampler
+from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
+from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.discrete_label_normalisation import \
@@ -113,6 +115,19 @@ class SegmentationApplication(BaseApplication):
                 augmentation_layers.append(RandomRotationLayer(
                     min_angle=self.action_param.rotation_angle[0],
                     max_angle=self.action_param.rotation_angle[1]))
+            try:
+                from niftynet.contrib.layer.rand_elastic_deform import RandomElasticDeformationLayer
+
+                if self.action_param.elastic_deformation:
+                    augmentation_layers.append(RandomElasticDeformationLayer(
+                        shapes=self.reader.shapes,
+                        num_controlpoints=self.action_param.elastic_deformation[0],
+                        std_deformation_sigma=self.action_param.elastic_deformation[1]))
+            except ImportError:
+                warnings.warn(
+                    'SimpleITK adapter failed to load,'
+                    'elastic deformations are not supported.',
+                    ImportWarning)
 
         volume_padding_layer = []
         if self.net_param.volume_padding_size:
