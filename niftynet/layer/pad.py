@@ -61,14 +61,14 @@ def _crop_numpy_array(image, border):
     try:
         assert image.ndim >= 3, \
             "input image must have at least 3 spatial dims"
-        x_ = border[0][0] if image.shape[0]/2 > border[0][0] > 0 else 0
-        y_ = border[1][0] if image.shape[1]/2 > border[1][0] > 0 else 0
-        z_ = border[2][0] if image.shape[2]/2 > border[2][0] > 0 else 0
-        _x = -border[0][0] if image.shape[0]/2 > border[0][0] > 0 \
+        x_ = border[0][0] if image.shape[0] / 2 > border[0][0] > 0 else 0
+        y_ = border[1][0] if image.shape[1] / 2 > border[1][0] > 0 else 0
+        z_ = border[2][0] if image.shape[2] / 2 > border[2][0] > 0 else 0
+        _x = -border[0][0] if image.shape[0] / 2 > border[0][0] > 0 \
             else image.shape[0]
-        _y = -border[1][0] if image.shape[1]/2 > border[1][0] > 0 \
+        _y = -border[1][0] if image.shape[1] / 2 > border[1][0] > 0 \
             else image.shape[1]
-        _z = -border[2][0] if image.shape[2]/2 > border[2][0] > 0 \
+        _z = -border[2][0] if image.shape[2] / 2 > border[2][0] > 0 \
             else image.shape[2]
         return image[x_:_x, y_:_y, z_:_z, ...]
     except (IndexError, AssertionError):
