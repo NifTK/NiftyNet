@@ -155,7 +155,7 @@ class RandomCoordinatesTest(tf.test.TestCase):
     def test_coodinates(self):
         coords = weighted_spatial_coordinates(
             subject_id=1,
-            data={'sampler': np.random.rand(42, 42, 42, 1, 1)},
+            data={'sampler': np.random.rand(41, 42, 42, 1, 1)},
             img_sizes={'image': (42, 42, 42, 1, 2),
                        'label': (42, 42, 42, 1, 1)},
             win_sizes={'image': (23, 23, 40),
