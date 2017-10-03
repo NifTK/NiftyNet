@@ -14,7 +14,7 @@ warnings.simplefilter("ignore", RuntimeWarning)
 
 class RandomElasticDeformationLayer(RandomisedLayer):
     """
-    generate randomised scaling along each dim for data augmentation
+    generate randomised elastic deformations along each dim for data augmentation
     """
 
     def __init__(self,
