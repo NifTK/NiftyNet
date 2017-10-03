@@ -153,6 +153,7 @@ class RandomCoordinatesTest(tf.test.TestCase):
     def test_coodinates(self):
         coords = rand_spatial_coordinates(
             subject_id=1,
+            data={},
             img_sizes={'image': (42, 42, 42, 1, 2),
                        'label': (42, 42, 42, 1, 1)},
             win_sizes={'image': (23, 23, 40),
@@ -174,6 +175,7 @@ class RandomCoordinatesTest(tf.test.TestCase):
     def test_25D_coodinates(self):
         coords = rand_spatial_coordinates(
             subject_id=1,
+            data={},
             img_sizes={'image': (42, 42, 42, 1, 1),
                        'label': (42, 42, 42, 1, 1)},
             win_sizes={'image': (23, 23, 1),
@@ -195,6 +197,7 @@ class RandomCoordinatesTest(tf.test.TestCase):
     def test_2D_coodinates(self):
         coords = rand_spatial_coordinates(
             subject_id=1,
+            data={},
             img_sizes={'image': (42, 42, 1, 1, 1),
                        'label': (42, 42, 1, 1, 1)},
             win_sizes={'image': (23, 23, 1),
@@ -217,6 +220,7 @@ class RandomCoordinatesTest(tf.test.TestCase):
         with self.assertRaisesRegexp(IndexError, ""):
             coords = rand_spatial_coordinates(
                 subject_id=1,
+                data={},
                 img_sizes={'image': (42, 42, 1, 1, 1),
                            'label': (42, 42, 1, 1, 1)},
                 win_sizes={'image': (23, 23),
@@ -226,6 +230,7 @@ class RandomCoordinatesTest(tf.test.TestCase):
         with self.assertRaisesRegexp(TypeError, ""):
             coords = rand_spatial_coordinates(
                 subject_id=1,
+                data={},
                 img_sizes={'image': (42, 42, 1, 1, 1),
                            'label': (42, 42, 1, 1, 1)},
                 win_sizes={'image': (23, 23, 1),
@@ -235,6 +240,7 @@ class RandomCoordinatesTest(tf.test.TestCase):
         with self.assertRaisesRegexp(AssertionError, ""):
             coords = rand_spatial_coordinates(
                 subject_id=1,
+                data={},
                 img_sizes={'label': (42, 1, 1, 1)},
                 win_sizes={'image': (23, 23, 1)},
                 n_samples=0)

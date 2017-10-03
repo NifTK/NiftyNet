@@ -44,9 +44,9 @@ class WeightedSampler(UniformSampler):
 
 
 def weighted_spatial_coordinates(subject_id,
+                                 data,
                                  img_sizes,
                                  win_sizes,
-                                 data,
                                  n_samples=1):
     """
     This is the function that actually does the cumulative histogram
@@ -62,6 +62,9 @@ def weighted_spatial_coordinates(subject_id,
     These coordinates are then adjusted for each of the
     smaller window sizes (the output windows are concentric).
     """
+    if data is None or data.get('sampler', None) is None:
+        raise tf.logging.fatal("input weight map not found. please check"
+                               "the configuration file")
     n_samples = max(n_samples, 1)
     uniq_spatial_size = set([img_size[:N_SPATIAL]
                              for img_size in list(img_sizes.values())])
