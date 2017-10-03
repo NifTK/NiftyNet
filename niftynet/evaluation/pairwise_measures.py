@@ -195,13 +195,15 @@ class PairwiseMeasures(object):
         distance_seg = ndimage.distance_transform_edt(oppose_seg)
         distance_border_seg = border_ref * distance_seg
         distance_border_ref = border_seg * distance_ref
-        return distance_border_ref, distance_border_seg
+        return distance_border_ref, distance_border_seg, border_ref, border_seg
 
     def measured_distance(self):
-        ref_border_dist, seg_border_dist = self.border_distance()
+        ref_border_dist, seg_border_dist, ref_border, \
+        seg_border = self.border_distance()
         average_distance = (np.sum(ref_border_dist) + np.sum(
-            seg_border_dist)) / (np.sum(self.ref+self.seg))
-        hausdorff_distance = np.max([np.max(ref_border_dist),np.max(seg_border_dist)])
+            seg_border_dist)) / (np.sum(seg_border+ref_border))
+        hausdorff_distance = np.max([np.max(ref_border_dist), np.max(
+            seg_border_dist)])
         return hausdorff_distance, average_distance
 
     def measured_average_distance(self):
