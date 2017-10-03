@@ -40,71 +40,7 @@ class WeightedSampler(UniformSampler):
                                 windows_per_image=windows_per_image,
                                 queue_length=queue_length)
         tf.logging.info('Initialised weighted sampler window instance')
-
-    def layer_op(self):
-        """
-        This function generates sampling windows to the input buffer
-        image data are from self.reader()
-        it first completes window shapes based on image data,
-        then finds random coordinates based on the window shapes
-        finally extract window with the coordinates and output
-        a dictionary (required by input buffer)
-        :return: output data dictionary {placeholders: data_array}
-        """
-        while True:
-            image_id, data, _ = self.reader(idx=None, shuffle=True)
-            if not data:
-                break
-            image_shapes = {
-                name: data[name].shape for name in self.window.names}
-            static_window_shapes = self.window.match_image_shapes(image_shapes)
-
-            # find random coordinates based on window and image shapes
-            coordinates = weighted_spatial_coordinates(
-                image_id, image_shapes,
-                static_window_shapes, data['sampler'], self.window.n_samples)
-
-            # initialise output dict, placeholders as dictionary keys
-            # this dictionary will be used in
-            # enqueue operation in the form of: `feed_dict=output_dict`
-            output_dict = {}
-            # fill output dict with data
-            for name in list(data):
-                coordinates_key = self.window.coordinates_placeholder(name)
-                image_data_key = self.window.image_data_placeholder(name)
-
-                # fill the coordinates
-                location_array = coordinates[name]
-                output_dict[coordinates_key] = location_array
-
-                # fill output window array
-                image_array = []
-                for window_id in range(self.window.n_samples):
-                    # tf.logging.info("locations  %s",
-                    #                 location_array[window_id, 1:])
-                    x_start, y_start, z_start, x_end, y_end, z_end = \
-                        location_array[window_id, 1:]
-                    try:
-                        image_window = data[name][
-                            x_start:x_end, y_start:y_end, z_start:z_end, ...]
-                        image_array.append(image_window[np.newaxis, ...])
-                    except ValueError:
-                        tf.logging.fatal(
-                            "dimensionality miss match in input volumes, "
-                            "please specify spatial_window_size with a "
-                            "3D tuple and make sure each element is "
-                            "smaller than the image length in each dim.")
-                        raise
-                # [tf.logging.info('%s', item.shape) for item in image_array]
-                if len(image_array) > 1:
-                    output_dict[image_data_key] = \
-                        np.concatenate(image_array, axis=0)
-                else:
-                    output_dict[image_data_key] = image_array[0]
-            # the output image shape should be
-            # [enqueue_batch_size, x, y, z, time, modality]
-            # where enqueue_batch_size = windows_per_image
-            yield output_dict
+        self.spatial_coordinates_generator = weighted_spatial_coordinates
 
 
 def weighted_spatial_coordinates(subject_id,
@@ -133,7 +69,7 @@ def weighted_spatial_coordinates(subject_id,
         tf.logging.fatal("Don't know how to generate sampling "
                          "locations: Spatial dimensions of the "
                          "grouped input sources are not "
-                         "consistent. {}".format(uniq_spatial_size))
+                         "consistent. %s", uniq_spatial_size)
         raise NotImplementedError
     uniq_spatial_size = uniq_spatial_size.pop()
 

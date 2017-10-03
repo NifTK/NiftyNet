@@ -13,6 +13,7 @@ from niftynet.engine.image_window import ImageWindow, N_SPATIAL
 from niftynet.engine.image_window_buffer import InputBatchQueueRunner
 from niftynet.layer.base_layer import Layer
 
+
 # pylint: disable=too-many-arguments
 class UniformSampler(Layer, InputBatchQueueRunner):
     """
@@ -50,6 +51,8 @@ class UniformSampler(Layer, InputBatchQueueRunner):
         tf.logging.info("initialised sampler output %s "
                         " [-1 for dynamic size]", self.window.shapes)
 
+        self.spatial_coordinates_generator = rand_spatial_coordinates
+
     # pylint: disable=too-many-locals
     def layer_op(self):
         """
@@ -70,7 +73,7 @@ class UniformSampler(Layer, InputBatchQueueRunner):
             static_window_shapes = self.window.match_image_shapes(image_shapes)
 
             # find random coordinates based on window and image shapes
-            coordinates = rand_spatial_coordinates(
+            coordinates = self.spatial_coordinates_generator(
                 image_id, image_shapes,
                 static_window_shapes, self.window.n_samples)
 
