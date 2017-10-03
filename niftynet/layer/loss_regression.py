@@ -3,8 +3,8 @@ from __future__ import absolute_import, print_function, division
 
 import tensorflow as tf
 
-from niftynet.layer.base_layer import Layer
 from niftynet.engine.application_factory import LossRegressionFactory
+from niftynet.layer.base_layer import Layer
 
 
 class LossFunction(Layer):
@@ -92,7 +92,7 @@ def rmse_loss(prediction, ground_truth, weight_map=None):
         residuals = tf.subtract(prediction, ground_truth)
         residuals = tf.pow(residuals, 2)
         residuals = tf.multiply(residuals, weight_map)
-        return tf.sqrt(tf.reduce_mean(residuals)/tf.reduce_mean(weight_map))
+        return tf.sqrt(tf.reduce_mean(residuals) / tf.reduce_mean(weight_map))
     else:
         return tf.sqrt(tf.losses.mean_squared_error(prediction, ground_truth))
 
@@ -108,7 +108,7 @@ def mae_loss(prediction, ground_truth, weight_map=None):
         residuals = tf.subtract(prediction, ground_truth)
         residuals = tf.abs(residuals)
         residuals = tf.multiply(residuals, weight_map)
-        return tf.reduce_mean(residuals)/tf.reduce_mean(weight_map)
+        return tf.reduce_mean(residuals) / tf.reduce_mean(weight_map)
     else:
         return tf.reduce_mean(tf.abs(tf.subtract(prediction, ground_truth)))
 

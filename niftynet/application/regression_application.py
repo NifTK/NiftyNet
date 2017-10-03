@@ -4,15 +4,16 @@ from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_factory import ApplicationNetFactory
 from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
+from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import TF_SUMMARIES
-from niftynet.engine.application_variables import NETORK_OUTPUT
-from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
-from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.engine.sampler_uniform import UniformSampler
 from niftynet.engine.sampler_weighted import WeightedSampler
+from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
+from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.io.image_reader import ImageReader
+from niftynet.layer.crop import CropLayer
 from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
 from niftynet.layer.loss_regression import LossFunction
@@ -22,10 +23,9 @@ from niftynet.layer.pad import PadLayer
 from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
-from niftynet.layer.crop import CropLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 
-SUPPORTED_INPUT = {'image', 'output', 'weight','sampler'}
+SUPPORTED_INPUT = {'image', 'output', 'weight', 'sampler'}
 
 
 class RegressionApplication(BaseApplication):
@@ -46,8 +46,8 @@ class RegressionApplication(BaseApplication):
                         self.initialise_grid_sampler,
                         self.initialise_grid_aggregator),
             'weighted': (self.initialise_weighted_sampler,
-                        self.initialise_grid_sampler,
-                        self.initialise_grid_aggregator),
+                         self.initialise_grid_sampler,
+                         self.initialise_grid_aggregator),
             'resize': (self.initialise_resize_sampler,
                        self.initialise_resize_sampler,
                        self.initialise_resize_aggregator),
@@ -186,7 +186,8 @@ class RegressionApplication(BaseApplication):
         net_out = self.net(image, self.is_training)
 
         if self.is_training:
-            crop_layer = CropLayer(border=self.regression_param.loss_border, name='crop-88')
+            crop_layer = CropLayer(border=self.regression_param.loss_border,
+                                   name='crop-88')
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
@@ -194,17 +195,21 @@ class RegressionApplication(BaseApplication):
                     learning_rate=self.action_param.lr)
             loss_func = LossFunction(
                 loss_type=self.action_param.loss_type)
-            data_loss = loss_func(
-                prediction=crop_layer(net_out),
-                ground_truth=crop_layer(data_dict.get('output', None)),
-                weight_map=None if data_dict.get('weight', None) is None else crop_layer(data_dict.get('weight', None)))
-            if self.net_param.decay > 0.0:
-                reg_losses = tf.get_collection(
-                    tf.GraphKeys.REGULARIZATION_LOSSES)
-                if reg_losses:
-                    reg_loss = tf.reduce_mean(
-                        [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
-                    loss = data_loss + reg_loss
+
+            prediction = crop_layer(net_out)
+            ground_truth = crop_layer(data_dict.get('output', None))
+            weight_map = None if data_dict.get('weight', None) is None \
+                else crop_layer(data_dict.get('weight', None))
+            data_loss = loss_func(prediction=prediction,
+                                  ground_truth=ground_truth,
+                                  weight_map=weight_map)
+
+            reg_losses = tf.get_collection(
+                tf.GraphKeys.REGULARIZATION_LOSSES)
+            if self.net_param.decay > 0.0 and reg_losses:
+                reg_loss = tf.reduce_mean(
+                    [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
+                loss = data_loss + reg_loss
             else:
                 loss = data_loss
             grads = self.optimiser.compute_gradients(loss)
@@ -225,10 +230,10 @@ class RegressionApplication(BaseApplication):
 
             outputs_collector.add_to_collection(
                 var=net_out, name='window',
-                average_over_devices=False, collection=NETORK_OUTPUT)
+                average_over_devices=False, collection=NETWORK_OUTPUT)
             outputs_collector.add_to_collection(
                 var=data_dict['image_location'], name='location',
-                average_over_devices=False, collection=NETORK_OUTPUT)
+                average_over_devices=False, collection=NETWORK_OUTPUT)
             init_aggregator = \
                 self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]
             init_aggregator()

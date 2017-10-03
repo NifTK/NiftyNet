@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Generating uniformly distributed image window from input image
-This can also be considered as a `random cropping` layer of the
+Generating image window by weighted sampling map from input image
+This can also be considered as a `weighted random cropping` layer of the
 input image
 """
 from __future__ import absolute_import, division, print_function
@@ -9,17 +9,19 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import tensorflow as tf
 
-from niftynet.engine.image_window import ImageWindow, N_SPATIAL
-from niftynet.engine.image_window_buffer import InputBatchQueueRunner
-from niftynet.layer.base_layer import Layer
+from niftynet.engine.image_window import N_SPATIAL
+from niftynet.engine.sampler_uniform import UniformSampler
 
 
-class WeightedSampler(Layer, InputBatchQueueRunner):
+class WeightedSampler(UniformSampler):
     """
-    This class generators samples from a user provided frequency map for each input volume
-    The sampling likelihood of each voxel (and window arround) is proportional to its frequency
-    This is implemented in a closed form using commulative histograms for efficiency purposes
-    i.e., the first three dims of image.
+    This class generators samples from a user provided
+    frequency map for each input volume
+    The sampling likelihood of each voxel (and window arround)
+    is proportional to its frequency
+
+    This is implemented in a closed form using commulative histograms
+    for efficiency purposes i.e., the first three dims of image.
 
     This layer can be considered as a `weighted random cropping` layer of the
     input image.
@@ -31,25 +33,13 @@ class WeightedSampler(Layer, InputBatchQueueRunner):
                  batch_size,
                  windows_per_image,
                  queue_length=10):
-        self.reader = reader
-        Layer.__init__(self, name='input_buffer')
-        InputBatchQueueRunner.__init__(
-            self,
-            capacity=queue_length,
-            shuffle=True)
-        tf.logging.info('reading size of preprocessed images')
-        self.window = ImageWindow.from_data_reader_properties(
-            self.reader.input_sources,
-            self.reader.shapes,
-            self.reader.tf_dtypes,
-            data_param)
-
+        UniformSampler.__init__(self,
+                                reader=reader,
+                                data_param=data_param,
+                                batch_size=batch_size,
+                                windows_per_image=windows_per_image,
+                                queue_length=queue_length)
         tf.logging.info('Initialised weighted sampler window instance')
-        self._create_queue_and_ops(self.window,
-                                   enqueue_size=windows_per_image,
-                                   dequeue_size=batch_size)
-        tf.logging.info("initialised sampler output {} "
-                        " [-1 for dynamic size]".format(self.window.shapes))
 
     def layer_op(self):
         """
@@ -72,7 +62,7 @@ class WeightedSampler(Layer, InputBatchQueueRunner):
             # find random coordinates based on window and image shapes
             coordinates = weighted_spatial_coordinates(
                 image_id, image_shapes,
-                static_window_shapes, data['sampler'],  self.window.n_samples)
+                static_window_shapes, data['sampler'], self.window.n_samples)
 
             # initialise output dict, placeholders as dictionary keys
             # this dictionary will be used in
@@ -90,10 +80,13 @@ class WeightedSampler(Layer, InputBatchQueueRunner):
                 # fill output window array
                 image_array = []
                 for window_id in range(self.window.n_samples):
-                    # tf.logging.info("locations  %s", location_array[window_id, 1:])
-                    x_, y_, z_, _x, _y, _z = location_array[window_id, 1:]
+                    # tf.logging.info("locations  %s",
+                    #                 location_array[window_id, 1:])
+                    x_start, y_start, z_start, x_end, y_end, z_end = \
+                        location_array[window_id, 1:]
                     try:
-                        image_window = data[name][x_:_x, y_:_y, z_:_z, ...]
+                        image_window = data[name][
+                            x_start:x_end, y_start:y_end, z_start:z_end, ...]
                         image_array.append(image_window[np.newaxis, ...])
                     except ValueError:
                         tf.logging.fatal(
@@ -103,7 +96,6 @@ class WeightedSampler(Layer, InputBatchQueueRunner):
                             "smaller than the image length in each dim.")
                         raise
                 # [tf.logging.info('%s', item.shape) for item in image_array]
-
                 if len(image_array) > 1:
                     output_dict[image_data_key] = \
                         np.concatenate(image_array, axis=0)
@@ -115,11 +107,17 @@ class WeightedSampler(Layer, InputBatchQueueRunner):
             yield output_dict
 
 
-def weighted_spatial_coordinates(subject_id, img_sizes, win_sizes, data, n_samples=1):
+def weighted_spatial_coordinates(subject_id,
+                                 img_sizes,
+                                 win_sizes,
+                                 data,
+                                 n_samples=1):
     """
-    This is the function that actually does the cumulative histogram and sampling.
+    This is the function that actually does the cumulative histogram
+    and sampling.
 
-    also, note that win_sizes could be different, for example in segmentation network
+    also, note that win_sizes could be different,
+    for example in segmentation network
     input image window size is 32x32x10,
     training label window is 16x16x10, the network reduces x-y plane
     spatial resolution.
@@ -144,7 +142,6 @@ def weighted_spatial_coordinates(subject_id, img_sizes, win_sizes, data, n_sampl
                          for win_size in win_sizes.values()]
     spatial_win_sizes = np.asarray(spatial_win_sizes, dtype=np.int32)
     max_spatial_win = np.max(spatial_win_sizes, axis=0)
-    middle_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
 
     # testing window size
     for i in range(0, N_SPATIAL):
@@ -152,31 +149,36 @@ def weighted_spatial_coordinates(subject_id, img_sizes, win_sizes, data, n_sampl
             "window size {} is larger than image size {}".format(
                 max_spatial_win[i], uniq_spatial_size[i])
 
-    # get cropped version of the input image where the centre of the window might be
-    # If the centre of the window was outside of this crop area, the patch would be outside of the field of view
-    windowed_data = data[np.floor(max_spatial_win[0] / 2).astype(int):
-                         -np.floor(max_spatial_win[0] / 2).astype(int) if max_spatial_win[0] > 1 else 1,
-                         np.floor(max_spatial_win[1] / 2).astype(int):
-                         -np.floor(max_spatial_win[1] / 2).astype(int) if max_spatial_win[1] > 1 else 1,
-                         np.floor(max_spatial_win[2] / 2).astype(int):
-                         -np.floor(max_spatial_win[2] / 2).astype(int) if max_spatial_win[2] > 1 else 1, 0, 0]
+    # get cropped version of the input image where the centre of
+    # the window might be. If the centre of the window was outside of
+    # this crop area, the patch would be outside of the field of view
+    half_win = np.floor(max_spatial_win / 2).astype(int)
+    windowed_data = data[
+        half_win[0]:-half_win[0] if max_spatial_win[0] > 1 else 1,
+        half_win[1]:-half_win[1] if max_spatial_win[1] > 1 else 1,
+        half_win[2]:-half_win[2] if max_spatial_win[2] > 1 else 1, 0, 0]
 
     # Get the cumulative sum of the normalised sorted intensities
-    # i.e. first sort the sampling frequencies, normalise them to sum to one, and then accumulate them in order
-    sorted_data = np.cumsum(np.divide(np.sort(windowed_data.flatten()), windowed_data.flatten().sum()))
+    # i.e. first sort the sampling frequencies, normalise them
+    # to sum to one, and then accumulate them in order
+    flat_window = windowed_data.flatten()
+    sorted_data = np.cumsum(np.divide(np.sort(flat_window), flat_window.sum()))
     # get the sorting indexes to that we can invert the sorting later on.
-    sorted_indexes = np.argsort(windowed_data.flatten())
+    sorted_indexes = np.argsort(flat_window)
 
+    middle_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
     for sample in range(0, n_samples):
         # get n_sample from the comulative histogram, spaced by 1/n_samples,
         # plus a random perturbation to give us a stochastic sampler
-        sample_ratio = 1-(np.random.random()*(1 / (n_samples + 1))+(sample / (n_samples + 1)))
+        sample_ratio = 1 - (np.random.random() + sample) / (n_samples + 1)
         # find the index where the comulative it above the sample threshold
         sample_index = np.argmax(sorted_data >= sample_ratio)
         # inver the sample index to the pre-sorted index
         inverted_sample_index = sorted_indexes[sample_index]
-        # get the x,y,z coordinates on the cropped windowed_data (note: we need to re-shift it later due to the crop)
-        middle_coords[sample, :N_SPATIAL] = np.unravel_index(inverted_sample_index, windowed_data.shape)[:N_SPATIAL]
+        # get the x,y,z coordinates on the cropped windowed_data
+        # (note: we need to re-shift it later due to the crop)
+        middle_coords[sample, :N_SPATIAL] = np.unravel_index(
+            inverted_sample_index, windowed_data.shape)[:N_SPATIAL]
 
     # adjust max spatial coordinates based on each mod spatial window size
     all_coordinates = {}
@@ -185,13 +187,17 @@ def weighted_spatial_coordinates(subject_id, img_sizes, win_sizes, data, n_sampl
         half_win_diff = np.floor((max_spatial_win - win_size) / 2.0)
 
         # shift starting coordinates of the window
-        # Note that we did not shift the centre coordinates above to the corner of the window
+        # Note that we did not shift the centre coordinates
+        # above to the corner of the window
         # because the shift is the same as the cropping amount
-        # Also, we need to add half_win_diff/2 so that smaller windows are centred within the large windows
+        # Also, we need to add half_win_diff/2 so that smaller windows
+        # are centred within the large windows
         spatial_coords = np.zeros((n_samples, N_SPATIAL * 2), dtype=np.int32)
-        spatial_coords[:, :N_SPATIAL] = middle_coords[:, :N_SPATIAL] + half_win_diff[:N_SPATIAL]
+        spatial_coords[:, :N_SPATIAL] = \
+            middle_coords[:, :N_SPATIAL] + half_win_diff[:N_SPATIAL]
 
-        # the opposite corner of the window is just adding the mod specific window size
+        # the opposite corner of the window is
+        # just adding the mod specific window size
         spatial_coords[:, N_SPATIAL:] = \
             spatial_coords[:, :N_SPATIAL] + win_size[:N_SPATIAL]
         # include the subject id

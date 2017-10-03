@@ -208,6 +208,10 @@ class LossSegmentationFactory(ModuleFactory):
 
 
 class LossRegressionFactory(ModuleFactory):
+    """
+    Import a regression loss function from niftynet.layer or
+    from user specified string
+    """
     SUPPORTED = SUPPORTED_LOSS_REGRESSION
     type_str = 'regression loss'
 
