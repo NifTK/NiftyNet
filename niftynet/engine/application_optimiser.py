@@ -22,6 +22,7 @@ class Adam(object):
     """
     Adam optimiser with default hyper parameters
     """
+
     @staticmethod
     def get_instance(learning_rate):
         """
@@ -39,6 +40,7 @@ class Adagrad(object):
     """
     Adagrad optimiser with default hyper parameters
     """
+
     @staticmethod
     def get_instance(learning_rate):
         """
@@ -54,6 +56,7 @@ class Momentum(object):
     """
     Momentum optimiser with default hyper parameters
     """
+
     @staticmethod
     def get_instance(learning_rate):
         """
@@ -66,9 +69,17 @@ class Momentum(object):
             name='Momentum',
             use_nesterov=False)
 
+
 class NesterovMomentum(object):
+    """
+    Nesterov Momentum optimiser with default hyper parameters
+    """
+
     @staticmethod
     def get_instance(learning_rate):
+        """
+        create an instance of the optimiser
+        """
         return tf.train.MomentumOptimizer(
             learning_rate=learning_rate,
             momentum=0.9,
@@ -76,10 +87,12 @@ class NesterovMomentum(object):
             name='Momentum',
             use_nesterov=True)
 
+
 class GradientDescent(object):
     """
     Gradient Descent optimiser with default hyper parameters
     """
+
     @staticmethod
     def get_instance(learning_rate):
         """

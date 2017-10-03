@@ -85,7 +85,6 @@ SUPPORTED_LOSS_SEGMENTATION = {
         'niftynet.layer.loss_segmentation.huber_loss'
 }
 
-
 SUPPORTED_LOSS_REGRESSION = {
     "L1Loss":
         'niftynet.layer.loss_regression.l1_loss',
