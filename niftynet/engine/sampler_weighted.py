@@ -17,10 +17,10 @@ class WeightedSampler(UniformSampler):
     """
     This class generators samples from a user provided
     frequency map for each input volume
-    The sampling likelihood of each voxel (and window arround)
+    The sampling likelihood of each voxel (and window around)
     is proportional to its frequency
 
-    This is implemented in a closed form using commulative histograms
+    This is implemented in a closed form using cumulative histograms
     for efficiency purposes i.e., the first three dims of image.
 
     This layer can be considered as a `weighted random cropping` layer of the
@@ -62,9 +62,12 @@ def weighted_spatial_coordinates(subject_id,
     These coordinates are then adjusted for each of the
     smaller window sizes (the output windows are concentric).
     """
+    # requiring a data['sampler'] as the frequency map.
+    # the shape should be [x, y, z, 1, 1]
     if data is None or data.get('sampler', None) is None:
-        raise tf.logging.fatal("input weight map not found. please check"
-                               "the configuration file")
+        tf.logging.fatal("input weight map not found. please check "
+                         "the configuration file")
+        raise RuntimeError
     n_samples = max(n_samples, 1)
     uniq_spatial_size = set([img_size[:N_SPATIAL]
                              for img_size in list(img_sizes.values())])
@@ -88,22 +91,32 @@ def weighted_spatial_coordinates(subject_id,
             "window size {} is larger than image size {}".format(
                 max_spatial_win[i], uniq_spatial_size[i])
 
-    # get cropped version of the input image where the centre of
+    # get cropped version of the input weight map where the centre of
     # the window might be. If the centre of the window was outside of
     # this crop area, the patch would be outside of the field of view
     half_win = np.floor(max_spatial_win / 2).astype(int)
-    windowed_data = data[
-        half_win[0]:-half_win[0] if max_spatial_win[0] > 1 else 1,
-        half_win[1]:-half_win[1] if max_spatial_win[1] > 1 else 1,
-        half_win[2]:-half_win[2] if max_spatial_win[2] > 1 else 1, 0, 0]
-
+    try:
+        cropped_map = data['sampler'][
+            half_win[0]:-half_win[0] if max_spatial_win[0] > 1 else 1,
+            half_win[1]:-half_win[1] if max_spatial_win[1] > 1 else 1,
+            half_win[2]:-half_win[2] if max_spatial_win[2] > 1 else 1,
+            0, 0]
+        assert np.all(cropped_map.shape) > 0
+    except (IndexError, KeyError):
+        tf.logging.fatal("incompatible map: %s", data['sampler'].shape)
+        raise
+    except AssertionError:
+        tf.logging.fatal(
+            "incompatible window size for weighted sampler. "
+            "Please use smaller (fully-specified) spatial window sizes")
+        raise
     # Get the cumulative sum of the normalised sorted intensities
     # i.e. first sort the sampling frequencies, normalise them
     # to sum to one, and then accumulate them in order
-    flat_window = windowed_data.flatten()
-    sorted_data = np.cumsum(np.divide(np.sort(flat_window), flat_window.sum()))
+    flatten_map = cropped_map.flatten()
+    sorted_data = np.cumsum(np.divide(np.sort(flatten_map), flatten_map.sum()))
     # get the sorting indexes to that we can invert the sorting later on.
-    sorted_indexes = np.argsort(flat_window)
+    sorted_indexes = np.argsort(flatten_map)
 
     middle_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
     for sample in range(0, n_samples):
@@ -111,13 +124,19 @@ def weighted_spatial_coordinates(subject_id,
         # plus a random perturbation to give us a stochastic sampler
         sample_ratio = 1 - (np.random.random() + sample) / (n_samples + 1)
         # find the index where the comulative it above the sample threshold
-        sample_index = np.argmax(sorted_data >= sample_ratio)
+        #     import pdb; pdb.set_trace()
+        try:
+            sample_index = np.argmax(sorted_data >= sample_ratio)
+        except ValueError:
+            tf.logging.fatal("unable to choose sampling window based on "
+                             "the current frequency map.")
+            raise
         # inver the sample index to the pre-sorted index
         inverted_sample_index = sorted_indexes[sample_index]
-        # get the x,y,z coordinates on the cropped windowed_data
+        # get the x,y,z coordinates on the cropped_map
         # (note: we need to re-shift it later due to the crop)
         middle_coords[sample, :N_SPATIAL] = np.unravel_index(
-            inverted_sample_index, windowed_data.shape)[:N_SPATIAL]
+            inverted_sample_index, cropped_map.shape)[:N_SPATIAL]
 
     # adjust max spatial coordinates based on each mod spatial window size
     all_coordinates = {}

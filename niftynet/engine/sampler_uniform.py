@@ -176,7 +176,6 @@ def rand_spatial_coordinates(subject_id,
             spatial_coords[:, :N_SPATIAL] + win_size[:N_SPATIAL]
         # include the subject id
         subject_id = np.ones((n_samples,), dtype=np.int32) * subject_id
-        spatial_coords = np.append(
-            subject_id[:, None], spatial_coords, axis=1)
+        spatial_coords = np.append(subject_id[:, None], spatial_coords, axis=1)
         all_coordinates[mod] = spatial_coords
     return all_coordinates
