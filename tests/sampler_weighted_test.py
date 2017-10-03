@@ -6,8 +6,8 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from niftynet.engine.sampler_uniform import UniformSampler
-from niftynet.engine.sampler_uniform import rand_spatial_coordinates
+from niftynet.engine.sampler_weighted import WeightedSampler
+from niftynet.engine.sampler_weighted import weighted_spatial_coordinates
 from niftynet.io.image_reader import ImageReader
 from tests.test_util import ParserNamespace
 
@@ -33,7 +33,8 @@ MULTI_MOD_DATA = {
         spatial_window_size=(7, 10, 2)
     )
 }
-MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'))
+MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'),
+                                 sampler=('T1',))
 
 MOD_2D_DATA = {
     'ultrasound': ParserNamespace(
@@ -47,7 +48,8 @@ MOD_2D_DATA = {
         spatial_window_size=(10, 9, 1)
     ),
 }
-MOD_2D_TASK = ParserNamespace(image=('ultrasound',))
+MOD_2D_TASK = ParserNamespace(image=('ultrasound',),
+                              sampler=('ultrasound',))
 
 DYNAMIC_MOD_DATA = {
     'T1': ParserNamespace(
@@ -71,30 +73,31 @@ DYNAMIC_MOD_DATA = {
         spatial_window_size=(8, 2)
     )
 }
-DYNAMIC_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'))
+DYNAMIC_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'),
+                                   sampler=('FLAIR',))
 
 
 def get_3d_reader():
-    reader = ImageReader(['image'])
+    reader = ImageReader(['image', 'sampler'])
     reader.initialise_reader(MULTI_MOD_DATA, MULTI_MOD_TASK)
     return reader
 
 
 def get_2d_reader():
-    reader = ImageReader(['image'])
+    reader = ImageReader(['image', 'sampler'])
     reader.initialise_reader(MOD_2D_DATA, MOD_2D_TASK)
     return reader
 
 
 def get_dynamic_window_reader():
-    reader = ImageReader(['image'])
+    reader = ImageReader(['image', 'sampler'])
     reader.initialise_reader(DYNAMIC_MOD_DATA, DYNAMIC_MOD_TASK)
     return reader
 
 
-class UniformSamplerTest(tf.test.TestCase):
+class WeightedSamplerTest(tf.test.TestCase):
     def test_3d_init(self):
-        sampler = UniformSampler(reader=get_3d_reader(),
+        sampler = WeightedSampler(reader=get_3d_reader(),
                                  data_param=MULTI_MOD_DATA,
                                  batch_size=2,
                                  windows_per_image=10,
@@ -107,7 +110,7 @@ class UniformSamplerTest(tf.test.TestCase):
         sampler.close_all()
 
     def test_2d_init(self):
-        sampler = UniformSampler(reader=get_2d_reader(),
+        sampler = WeightedSampler(reader=get_2d_reader(),
                                  data_param=MOD_2D_DATA,
                                  batch_size=2,
                                  windows_per_image=10,
@@ -120,7 +123,7 @@ class UniformSamplerTest(tf.test.TestCase):
         sampler.close_all()
 
     def test_dynamic_init(self):
-        sampler = UniformSampler(reader=get_dynamic_window_reader(),
+        sampler = WeightedSampler(reader=get_dynamic_window_reader(),
                                  data_param=DYNAMIC_MOD_DATA,
                                  batch_size=2,
                                  windows_per_image=10,
@@ -128,21 +131,20 @@ class UniformSamplerTest(tf.test.TestCase):
         with self.test_session() as sess:
             coordinator = tf.train.Coordinator()
             sampler.run_threads(sess, coordinator, num_threads=2)
-            out = sess.run(sampler.pop_batch_op())
-            self.assertAllClose(out['image'].shape, (1, 8, 2, 256, 2))
-        sampler.close_all()
+            with self.assertRaisesRegexp(tf.errors.OutOfRangeError, ""):
+                out = sess.run(sampler.pop_batch_op())
 
     def test_ill_init(self):
         with self.assertRaisesRegexp(KeyError, ""):
-            sampler = UniformSampler(reader=get_3d_reader(),
+            sampler = WeightedSampler(reader=get_3d_reader(),
                                      data_param=MOD_2D_DATA,
                                      batch_size=2,
                                      windows_per_image=10,
                                      queue_length=10)
 
     def test_close_early(self):
-        sampler = UniformSampler(reader=get_dynamic_window_reader(),
-                                 data_param=DYNAMIC_MOD_DATA,
+        sampler = WeightedSampler(reader=get_2d_reader(),
+                                 data_param=MOD_2D_DATA,
                                  batch_size=2,
                                  windows_per_image=10,
                                  queue_length=10)
@@ -151,9 +153,9 @@ class UniformSamplerTest(tf.test.TestCase):
 
 class RandomCoordinatesTest(tf.test.TestCase):
     def test_coodinates(self):
-        coords = rand_spatial_coordinates(
+        coords = weighted_spatial_coordinates(
             subject_id=1,
-            data={},
+            data={'sampler': np.random.rand(41, 42, 42, 1, 1)},
             img_sizes={'image': (42, 42, 42, 1, 2),
                        'label': (42, 42, 42, 1, 1)},
             win_sizes={'image': (23, 23, 40),
@@ -173,9 +175,9 @@ class RandomCoordinatesTest(tf.test.TestCase):
             (coords['label'][:, 6] + coords['label'][:, 3]), atol=1.0)
 
     def test_25D_coodinates(self):
-        coords = rand_spatial_coordinates(
+        coords = weighted_spatial_coordinates(
             subject_id=1,
-            data={},
+            data={'sampler': np.random.rand(42, 42, 42, 1, 1)},
             img_sizes={'image': (42, 42, 42, 1, 1),
                        'label': (42, 42, 42, 1, 1)},
             win_sizes={'image': (23, 23, 1),
@@ -195,9 +197,9 @@ class RandomCoordinatesTest(tf.test.TestCase):
             (coords['label'][:, 6] + coords['label'][:, 3]), atol=1.0)
 
     def test_2D_coodinates(self):
-        coords = rand_spatial_coordinates(
+        coords = weighted_spatial_coordinates(
             subject_id=1,
-            data={},
+            data={'sampler': np.random.rand(42, 42, 42, 1, 1)},
             img_sizes={'image': (42, 42, 1, 1, 1),
                        'label': (42, 42, 1, 1, 1)},
             win_sizes={'image': (23, 23, 1),
@@ -218,9 +220,9 @@ class RandomCoordinatesTest(tf.test.TestCase):
 
     def test_ill_coodinates(self):
         with self.assertRaisesRegexp(IndexError, ""):
-            coords = rand_spatial_coordinates(
+            coords = weighted_spatial_coordinates(
                 subject_id=1,
-                data={},
+                data={'sampler': np.random.rand(42, 42, 42)},
                 img_sizes={'image': (42, 42, 1, 1, 1),
                            'label': (42, 42, 1, 1, 1)},
                 win_sizes={'image': (23, 23),
@@ -228,9 +230,9 @@ class RandomCoordinatesTest(tf.test.TestCase):
                 n_samples=10)
 
         with self.assertRaisesRegexp(TypeError, ""):
-            coords = rand_spatial_coordinates(
+            coords = weighted_spatial_coordinates(
                 subject_id=1,
-                data={},
+                data={'sampler': np.random.rand(42, 42, 42, 1, 1)},
                 img_sizes={'image': (42, 42, 1, 1, 1),
                            'label': (42, 42, 1, 1, 1)},
                 win_sizes={'image': (23, 23, 1),
@@ -238,12 +240,22 @@ class RandomCoordinatesTest(tf.test.TestCase):
                 n_samples='test')
 
         with self.assertRaisesRegexp(AssertionError, ""):
-            coords = rand_spatial_coordinates(
+            coords = weighted_spatial_coordinates(
                 subject_id=1,
-                data={},
+                data={'sampler': np.random.rand(42, 42, 42, 1, 1)},
                 img_sizes={'label': (42, 1, 1, 1)},
                 win_sizes={'image': (23, 23, 1)},
                 n_samples=0)
+
+        with self.assertRaisesRegexp(RuntimeError, ""):
+            coords = weighted_spatial_coordinates(
+                subject_id=1,
+                data={},
+                img_sizes={'image': (42, 42, 1, 1, 1),
+                           'label': (42, 42, 1, 1, 1)},
+                win_sizes={'image': (23, 23, 1),
+                           'label': (40, 32, 1)},
+                n_samples=10)
 
 
 if __name__ == "__main__":

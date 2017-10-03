@@ -69,7 +69,7 @@ class PaddingTest(tf.test.TestCase):
         input_param = {'image_name': ('image',),
                        'border': (18,)}
         self.run_test(True, input_param, (52, 16, 16, 8))
-        self.run_inverse_test(True, input_param, (0, 16, 16, 8))
+        self.run_inverse_test(True, input_param, (16, 16, 16, 8))
 
     # 3d dict test
     def test_3d_dict_pad_shape(self):
@@ -96,7 +96,7 @@ class PaddingTest(tf.test.TestCase):
         input_param = {'image_name': ('image',),
                        'border': (18,2,1)}
         self.run_test(False, input_param, (49, 18, 12, 8))
-        self.run_inverse_test(False, input_param, (0, 10, 8, 8))
+        self.run_inverse_test(False, input_param, (13, 10, 8, 8))
 
 
 if __name__ == "__main__":
