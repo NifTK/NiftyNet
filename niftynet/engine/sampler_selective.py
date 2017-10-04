@@ -220,7 +220,7 @@ def candidate_indices(win_sizes, data, constraint):
         for label in constraint.list_labels:
             if label not in unique:
                 print('Label %d is not there' % label)
-                return np.zeros_like(data)
+                return np.zeros_like(data), None
     num_labels_add = 0
     if constraint.num_labels > 0:
         num_labels_add = constraint.num_labels - len(list_labels)
@@ -228,7 +228,7 @@ def candidate_indices(win_sizes, data, constraint):
             num_labels_add = 0
         if len(unique) < constraint.num_labels:
             print('Missing labels')
-            return np.zeros_like(data)
+            return np.zeros_like(data), None
     if constraint.min_ratio > 0:
         num_min = constraint.min_number_from_ratio(win_sizes)
         spatial_win_sizes = win_sizes[:N_SPATIAL]
@@ -383,13 +383,16 @@ def rand_choice_coordinates(subject_id, img_sizes, win_sizes,
     # print(np.sum(candidates), list_indices)
     # print(len(candidates_indices), candidates_indices.shape)
     if mean_counts_size is not None:
+        print("Probability weighting considered")
         proba = []
         for (c,  p) in zip(candidates.flatten(), mean_counts_size.flatten()):
             if c >= 1:
                 proba.append(p)
+        print(len(list_indices), len(proba))
         list_indices_fin = np.random.choice(list_indices, n_samples,
                                             replace=False, p=proba)
     else:
+        print("No probability weighting needed")
         list_indices_fin = list_indices
         np.random.shuffle(list_indices)
     for i in range(0, n_samples):

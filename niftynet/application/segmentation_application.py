@@ -132,6 +132,8 @@ class SegmentationApplication(BaseApplication):
             volume_padding_layer + normalisation_layers + augmentation_layers)
 
     def initialise_selective_sampler(self):
+        print("Initialisation ", self.action_param.compulsory_labels,
+              self.action_param.proba_connect)
         self.sampler = [SelectiveSampler(
                             reader=self.reader,
                             data_param=self.data_param,
@@ -141,7 +143,8 @@ class SegmentationApplication(BaseApplication):
                             constraint=
                             Constraint(self.action_param.compulsory_labels,
                                        self.action_param.min_ratio_sampling,
-                                       self.action_param.num_min_labels),
+                                       self.action_param.num_min_labels,
+                                       self.action_param.proba_connect),
                             queue_length=self.net_param.queue_length
         )]
 
