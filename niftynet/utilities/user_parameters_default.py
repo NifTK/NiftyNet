@@ -281,41 +281,6 @@ def add_training_args(parser):
         default=1)
 
     parser.add_argument(
-        "--min_ratio_sampling",
-        help="[Training only] Minimum ratio of samples in a window for "
-             "selective sampler",
-        metavar='',
-        type=float,
-        default=0
-    )
-
-    parser.add_argument(
-        "--compulsory_labels",
-        help="[Training only] List of labels to have in the window for "
-             "selective sampling",
-        metavar='',
-        type=int_array,
-        default=(0)
-    )
-
-    parser.add_argument(
-        "--num_min_labels",
-        help="[Training only] Number of labels to have in the window for "
-             "selective sampler",
-        metavar='',
-        type=int,
-        default=1
-    )
-    parser.add_argument(
-        "--proba_connect",
-        help="[Training only] Number of labels to have in the window for "
-             "selective sampler",
-        metavar='',
-        type=str2boolean,
-        default=True
-    )
-
-    parser.add_argument(
         "--rotation_angle",
         help="The min/max angles of rotation when rotation "
              "augmentation is enabled",

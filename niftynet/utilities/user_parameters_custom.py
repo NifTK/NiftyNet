@@ -90,6 +90,41 @@ def __add_segmentation_args(parser):
     #     type=str2boolean,
     #     default=True)
 
+    parser.add_argument(
+        "--min_ratio_sampling",
+        help="[Training only] Minimum ratio of samples in a window for "
+             "selective sampler",
+        metavar='',
+        type=float,
+        default=0
+    )
+
+    parser.add_argument(
+        "--compulsory_labels",
+        help="[Training only] List of labels to have in the window for "
+             "selective sampling",
+        metavar='',
+        type=int_array,
+        default=(0)
+    )
+
+    parser.add_argument(
+        "--num_min_labels",
+        help="[Training only] Number of labels to have in the window for "
+             "selective sampler",
+        metavar='',
+        type=int,
+        default=1
+    )
+    parser.add_argument(
+        "--proba_connect",
+        help="[Training only] Number of labels to have in the window for "
+             "selective sampler",
+        metavar='',
+        type=str2boolean,
+        default=True
+    )
+
 
     from niftynet.application.segmentation_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)

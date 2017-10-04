@@ -82,12 +82,9 @@ class ImageReader(Layer):
 
         self._input_sources = {name: vars(task_param).get(name)
                                for name in self.names}
-        print('input sources ',self._input_sources,', and names ', self._names)
         data_to_load = {}
         for name in self._names:
-            print(name)
             for source in self._input_sources[name]:
-                print('source ', source)
                 try:
                     data_to_load[source] = data_param[source]
                 except KeyError:
@@ -101,7 +98,6 @@ class ImageReader(Layer):
         self._file_list = util_csv.load_and_merge_csv_files(data_to_load)
         self.output_list = _filename_to_image_list(
             self._file_list, self._input_sources, data_param)
-        print(self._file_list, self.output_list)
         for name in self.names:
             tf.logging.info(
                 'image reader: loading [%s] from %s (%d)',
