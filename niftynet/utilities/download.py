@@ -4,6 +4,7 @@
 import tarfile
 import tempfile
 from shutil import copyfile
+from shutil import move
 
 import six
 from six.moves.urllib.request import urlretrieve
@@ -91,7 +92,7 @@ def download_file(url, download_path):
 
     # Move the file to the destination folder
     destination_path = os.path.join(download_path, filename)
-    os.rename(downloaded_file, destination_path)
+    move(downloaded_file, destination_path)
 
 
 def download_and_decompress(url, download_path):
