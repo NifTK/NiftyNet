@@ -9,46 +9,45 @@ import tensorflow as tf
 from niftynet.engine.sampler_selective import SelectiveSampler
 from niftynet.engine.sampler_selective import Constraint
 from niftynet.engine.sampler_selective import rand_choice_coordinates
-# from niftynet.engine.sampler_selective import check_constraint
 from niftynet.io.image_reader import ImageReader
 from tests.test_util import ParserNamespace
 
 ### utility function for testing purposes
-# def check_constraint(data, constraint):
-#     unique, count = np.unique(np.round(data), return_counts=True)
-#     list_labels = []
-#     data = np.round(data)
-#     if constraint.list_labels is not None:
-#         list_labels = constraint.list_labels
-#         for label in constraint.list_labels:
-#             if label not in unique:
-#                 print('Label %d is not there' % label)
-#                 return False
-#     num_labels_add = 0
-#     if constraint.num_labels > 0:
-#         num_labels_add = constraint.num_labels - len(list_labels)
-#         if num_labels_add <= 0:
-#             num_labels_add = 0
-#         if len(unique) < constraint.num_labels:
-#             print('Missing labels')
-#             return False
-#     to_add = num_labels_add
-#     if constraint.min_ratio > 0:
-#         num_min = constraint.min_number_from_ratio(data.shape)
-#         print('unique in test is ', unique)
-#         for value, c in zip(unique, count):
-#             if value in list_labels:
-#                 if c < num_min:
-#                     print('Not enough in label %d', value)
-#                     return False
-#             else:
-#                 if c > num_min:
-#                     to_add -= 1
-#         if to_add > 0:
-#             print('to add initial is ', num_labels_add)
-#             print('Not enough in additional labels')
-#             return False
-#     return True
+def check_constraint(data, constraint):
+    unique, count = np.unique(np.round(data), return_counts=True)
+    list_labels = []
+    data = np.round(data)
+    if constraint.list_labels is not None:
+        list_labels = constraint.list_labels
+        for label in constraint.list_labels:
+            if label not in unique:
+                print('Label %d is not there' % label)
+                return False
+    num_labels_add = 0
+    if constraint.num_labels > 0:
+        num_labels_add = constraint.num_labels - len(list_labels)
+        if num_labels_add <= 0:
+            num_labels_add = 0
+        if len(unique) < constraint.num_labels:
+            print('Missing labels')
+            return False
+    to_add = num_labels_add
+    if constraint.min_ratio > 0:
+        num_min = constraint.min_number_from_ratio(data.shape)
+        print('unique in test is ', unique)
+        for value, c in zip(unique, count):
+            if value in list_labels:
+                if c < num_min:
+                    print('Not enough in label %d', value)
+                    return False
+            else:
+                if c > num_min:
+                    to_add -= 1
+        if to_add > 0:
+            print('to add initial is ', num_labels_add)
+            print('Not enough in additional labels')
+            return False
+    return True
 
 
 MULTI_MOD_DATA = {
@@ -72,7 +71,7 @@ MULTI_MOD_DATA = {
         axcodes=None,
         spatial_window_size=(7, 10, 2)
     ),
-    'L': ParserNamespace(
+    'Label': ParserNamespace(
         csv_file=os.path.join('testing_data', 'lesion.csv'),
         path_to_search='testing_data',
         filename_contains=('LesionFin_',),
@@ -95,7 +94,7 @@ LABEL_TASK = {
         spatial_window_size=(7, 10, 2)
     )
 }
-MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'), label=('L'))
+MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'), label=('Label',))
 
 MOD_2D_DATA = {
     'ultrasound': ParserNamespace(
@@ -132,7 +131,7 @@ DYNAMIC_MOD_DATA = {
         axcodes=None,
         spatial_window_size=(8, 2)
     ),
-    'L': ParserNamespace(
+    'Label': ParserNamespace(
         csv_file=os.path.join('testing_data', 'labels.csv'),
         path_to_search='testing_data',
         filename_contains=('T1_','_NeuroMorph_Parcellation',),
@@ -156,7 +155,7 @@ DYNAMIC_MOD_DATA = {
 #         spatial_window_size=(8,2)
 #     )
 # }
-DYNAMIC_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'), label='L')
+DYNAMIC_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'), label=('Label',))
 
 
 def get_3d_reader():
@@ -182,8 +181,8 @@ class SelectiveSamplerTest(tf.test.TestCase):
     pass
     #def test_3d_init(self):
     #    constraint_built = Constraint(compulsory_labels=[1],
-    #                                          min_ratio=0.000001,
-    #                                          min_num_labels=2)
+    #                                  min_ratio=0.000001,
+    #                                  min_num_labels=2)
     #    sampler = SelectiveSampler(reader=get_3d_reader(),
     #                               data_param=MULTI_MOD_DATA,
     #                               batch_size=2,
@@ -192,9 +191,9 @@ class SelectiveSamplerTest(tf.test.TestCase):
     #                               queue_length=10)
     #    with self.test_session() as sess:
     #        coordinator = tf.train.Coordinator()
-    #        sampler.run_threads(sess, coordinator, num_threads=2)
+    #        sampler.run_threads(sess, coordinator, num_threads=1)
     #        out = sess.run(sampler.pop_batch_op())
-    #        # self.assertTrue(check_constraint(out['label'], constraint_built))
+    #        self.assertTrue(check_constraint(out['label'], constraint_built))
     #        self.assertAllClose(out['image'].shape, (2, 7, 10, 2, 2))
     #        self.assertAllClose(out['label'].shape, (2, 7, 10, 2, 1))
     #        print("Test should finish here")
