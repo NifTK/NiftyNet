@@ -6,13 +6,14 @@ from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import TF_SUMMARIES
-from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
-from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.engine.sampler_uniform import UniformSampler
 from niftynet.engine.sampler_selective import SelectiveSampler
 from niftynet.engine.sampler_selective import Constraint
+from niftynet.engine.sampler_weighted import WeightedSampler
+from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
+from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.discrete_label_normalisation import \
@@ -28,8 +29,7 @@ from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 
-
-SUPPORTED_INPUT = {'image', 'label', 'weight'}
+SUPPORTED_INPUT = {'image', 'label', 'weight', 'sampler'}
 
 
 class SegmentationApplication(BaseApplication):
@@ -49,6 +49,9 @@ class SegmentationApplication(BaseApplication):
             'uniform': (self.initialise_uniform_sampler,
                         self.initialise_grid_sampler,
                         self.initialise_grid_aggregator),
+            'weighted': (self.initialise_weighted_sampler,
+                         self.initialise_grid_sampler,
+                         self.initialise_grid_aggregator),
             'resize': (self.initialise_resize_sampler,
                        self.initialise_resize_sampler,
                        self.initialise_resize_aggregator),
@@ -144,6 +147,14 @@ class SegmentationApplication(BaseApplication):
 
     def initialise_uniform_sampler(self):
         self.sampler = [UniformSampler(
+            reader=self.reader,
+            data_param=self.data_param,
+            batch_size=self.net_param.batch_size,
+            windows_per_image=self.action_param.sample_per_volume,
+            queue_length=self.net_param.queue_length)]
+
+    def initialise_weighted_sampler(self):
+        self.sampler = [WeightedSampler(
             reader=self.reader,
             data_param=self.data_param,
             batch_size=self.net_param.batch_size,

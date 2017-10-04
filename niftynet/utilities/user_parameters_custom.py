@@ -35,6 +35,19 @@ def add_customised_args(parser, task_name):
         raise NotImplementedError
 
 
+def __add_regression_args(parser):
+    parser.add_argument(
+        "--loss_border",
+        metavar='',
+        help="Set the border size for the loss function to ignore",
+        type=int,
+        default=0)
+
+    from niftynet.application.regression_application import SUPPORTED_INPUT
+    parser = add_input_name_args(parser, SUPPORTED_INPUT)
+    return parser
+
+
 def __add_segmentation_args(parser):
     parser.add_argument(
         "--num_classes",
@@ -130,6 +143,7 @@ def __add_autoencoder_args(parser):
 
 
 SUPPORTED_ARG_SECTIONS = {
+    'REGRESSION': __add_regression_args,
     'SEGMENTATION': __add_segmentation_args,
     'AUTOENCODER': __add_autoencoder_args,
     'GAN': __add_gan_args
