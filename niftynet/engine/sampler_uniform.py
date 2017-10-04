@@ -171,7 +171,6 @@ def rand_spatial_coordinates(subject_id,
         spatial_coords = np.zeros((n_samples, N_SPATIAL * 2), dtype=np.int32)
         spatial_coords[:, :N_SPATIAL] = \
             max_coords[:, :N_SPATIAL] + half_win_diff[:N_SPATIAL]
-
         spatial_coords[:, N_SPATIAL:] = \
             spatial_coords[:, :N_SPATIAL] + win_size[:N_SPATIAL]
         # include the subject id
