@@ -11,10 +11,8 @@ from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.engine.sampler_uniform import UniformSampler
-<<<<<<< HEAD
-=======
+
 from niftynet.engine.sampler_weighted import WeightedSampler
->>>>>>> 5227cd136b4c5def0b8e3581ef1f572b2125d4f7
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.io.image_reader import ImageReader
