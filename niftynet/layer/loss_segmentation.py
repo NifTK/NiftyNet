@@ -275,8 +275,6 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
     n_voxels = ground_truth.get_shape()[0].value
     n_classes = prediction.get_shape()[1].value
     prediction = tf.nn.softmax(prediction)
-    weight_map_nclasses = tf.reshape(
-        tf.tile(weight_map, [n_classes]), prediction.get_shape())
     # construct sparse matrix for ground_truth to save space
     ids = tf.constant(np.arange(n_voxels), dtype=tf.int64)
     ids = tf.stack([ids, ground_truth], axis=1)
@@ -284,15 +282,24 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
                               values=tf.ones([n_voxels], dtype=tf.float32),
                               dense_shape=[n_voxels, n_classes])
     # dice
-    dice_numerator = 2.0 * tf.sparse_reduce_sum(
-        weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
-    dice_denominator = (
-        tf.reduce_sum(prediction, reduction_indices=[0]) +
-        tf.sparse_reduce_sum(one_hot, reduction_axes=[0]))
+    if weight_map is not None:
+        weight_map_nclasses = tf.reshape(
+            tf.tile(weight_map, [n_classes]), prediction.get_shape())
+        dice_numerator = 2.0 * tf.sparse_reduce_sum(
+            weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
+        dice_denominator = (
+        tf.reduce_sum(prediction * weight_map_nclasses, reduction_indices=[0]) +
+        tf.sparse_reduce_sum(weight_map_nclasses * one_hot,
+                             reduction_axes=[0]))
+    else:
+        dice_numerator = 2.0 * tf.sparse_reduce_sum(one_hot * prediction,
+                                                    reduction_axes=[0])
+        dice_denominator = (tf.reduce_sum(prediction, reduction_indices=[0])
+                            + tf.sparse_reduce_sum(one_hot, reduction_axes=[0]))
     epsilon_denominator = 0.00001
 
     dice_score = dice_numerator / (dice_denominator + epsilon_denominator)
-    dice_score.set_shape([n_classes])
+    # dice_score.set_shape([n_classes])
     # minimising (1 - dice_coefficients)
     return 1.0 - tf.reduce_mean(dice_score)
 
@@ -317,17 +324,23 @@ def dice(prediction, ground_truth, weight_map=None):
         indices=ids,
         values=tf.ones_like(ground_truth, dtype=tf.float32),
         dense_shape=tf.to_int64(tf.shape(prediction)))
-    # if weight_map is not None:
-    #    weight_map_nclasses = tf.reshape(
-    #        tf.tile(weight_map, [n_classes]), prediction.get_shape())
-    #    dice_numerator = 2.0 * tf.sparse_reduce_sum(
-    #        weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
-    # else:
-    dice_numerator = 2.0 * tf.sparse_reduce_sum(
-        one_hot * prediction, reduction_axes=[0])
-    dice_denominator = \
-        tf.reduce_sum(tf.square(prediction), reduction_indices=[0]) + \
-        tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
+    if weight_map is not None:
+        n_classes = prediction.get_shape()[1].value
+        weight_map_nclasses = tf.reshape(
+           tf.tile(weight_map, [n_classes]), prediction.get_shape())
+        dice_numerator = 2.0 * tf.sparse_reduce_sum(
+           weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
+        dice_denominator = tf.reduce_sum(weight_map_nclasses *
+                                         tf.square(prediction),
+                                         reduction_indices=[0]) + \
+                           tf.sparse_reduce_sum(one_hot * weight_map_nclasses,
+                                                reduction_axes=[0])
+    else:
+        dice_numerator = 2.0 * tf.sparse_reduce_sum(one_hot * prediction,
+                                                    reduction_axes=[0])
+        dice_denominator = tf.reduce_sum(tf.square(prediction),
+                                         reduction_indices=[0]) + \
+                           tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
     epsilon_denominator = 0.00001
 
     dice_score = dice_numerator / (dice_denominator + epsilon_denominator)
