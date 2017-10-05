@@ -94,6 +94,20 @@ class DiceTest(tf.test.TestCase):
             one_minus_dice_score = test_loss_func(predicted, labels)
             self.assertAllClose(one_minus_dice_score.eval(), 0.0, atol=1e-5)
 
+    def test_dice_score_weights(self):
+        with self.test_session():
+            weights = tf.constant([1, 1, 0, 0], dtype=tf.float32,
+                                  name='weights')
+            predicted = tf.constant(
+                [[0, 10], [10, 0], [10, 0], [10, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
+            test_loss_func = LossFunction(2,
+                                          loss_type='Dice')
+            one_minus_dice_score = test_loss_func(predicted, labels,
+                                                  weight_map=weights)
+            self.assertAllClose(one_minus_dice_score.eval(), 0.0, atol=1e-4)
+
     def test_wrong_prediction(self):
         with self.test_session():
             predicted = tf.constant(
@@ -101,6 +115,42 @@ class DiceTest(tf.test.TestCase):
                 dtype=tf.float32, name='predicted')
             labels = tf.constant([0], dtype=tf.int64, name='labels')
             test_loss_func = LossFunction(2, loss_type='Dice')
+            one_minus_dice_score = test_loss_func(predicted, labels)
+            self.assertAlmostEqual(one_minus_dice_score.eval(), 1.0)
+
+
+class DiceTest_NS(tf.test.TestCase):
+    def test_dice_score_nosquare(self):
+        with self.test_session():
+            predicted = tf.constant(
+                [[0, 10], [10, 0], [10, 0], [10, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
+            test_loss_func = LossFunction(2, loss_type='Dice_NS')
+            one_minus_dice_score = test_loss_func(predicted, labels)
+            self.assertAllClose(one_minus_dice_score.eval(), 0.0, atol=1e-4)
+
+    def test_dice_score_nosquare_weights(self):
+        with self.test_session():
+            weights = tf.constant([1, 1, 0, 0], dtype=tf.float32,
+                                  name='weights')
+            predicted = tf.constant(
+                [[0, 10], [10, 0], [10, 0], [10, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
+            test_loss_func = LossFunction(2,
+                                          loss_type='Dice_NS')
+            one_minus_dice_score = test_loss_func(predicted, labels,
+                                                  weight_map=weights)
+            self.assertAllClose(one_minus_dice_score.eval(), 0.0, atol=1e-4)
+
+    def test_wrong_prediction(self):
+        with self.test_session():
+            predicted = tf.constant(
+                [[0, 100]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([0], dtype=tf.int64, name='labels')
+            test_loss_func = LossFunction(2, loss_type='Dice_NS')
             one_minus_dice_score = test_loss_func(predicted, labels)
             self.assertAlmostEqual(one_minus_dice_score.eval(), 1.0)
 
