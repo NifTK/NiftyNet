@@ -23,7 +23,7 @@ network should be prepared in the following steps:
    dilation factors, as well as sub-network components of the network.
 
    An example of sub-networks composition is presented in
-   [Simulator Gan](./niftynet/network/simulator_gan.py).
+   [Simulator Gan](./simulator_gan.py).
 
    The layer operation function `layer_op()` should specify how the input
    tensors are connected to network layers.  For basic building blocks, using
@@ -56,7 +56,7 @@ network should be prepared in the following steps:
 
 # Network model references
 This section summarises the implemented network models in
-[network](./niftynet/network).
+[network](./).
 
 All networks can be applied in 2D, 2.5D and 3D configurations and are
 reimplemented from their original presentation with their default parameters.
