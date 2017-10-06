@@ -72,8 +72,9 @@ Also see [how this command is tested][net-segment-test].
 
 ### Bundling a pip installer
 
-The NiftyNet pip installer gets bundled automatically for [Git tags][git-tag] pushed to the repository.
-To see how this is done, please go to the [`pip-camera-ready` section of `.gitlab-ci.yml`][pip-camera-ready] (and see the result in [this build log -- esp. the last few lines lines, which show where the pip installer can be found on the build server)][pip-camera-ready-output]).
+The NiftyNet pip installer gets bundled automatically for [Git tags][git-tag] starting with a `v` (for "version") pushed to the repository.
+The [wheel version][wheel-version-tag] is determined automatically as part of this process.
+To see how this is done in practice, please go to the [`pip-camera-ready` section of `.gitlab-ci.yml`][pip-camera-ready] (and see the result in [this build log -- esp. the last few lines lines, which show where the pip installer can be found on the build server)][pip-camera-ready-output]).
 
 In particular, bundling a pip installer boils down to running the command [`python setup.py bdist_wheel`][python-setuptools] in the top-level directory.
 This creates a [wheel binary package][wheel-binary] in a newly created `dist` directory, e.g. `dist/NiftyNet-0.2.0-py2.py3-none-any.whl`.
