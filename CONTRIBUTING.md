@@ -88,3 +88,19 @@ This creates a [wheel binary package][wheel-binary] in a newly created `dist` di
 
 ### Publishing a NiftyNet pip installer on PyPI
 
+Making NiftyNet available to the world via a simple `pip install niftynet` requires publishing the created wheel on the [Python Package Index (PyPI)][niftynet-pypi].
+**BUT PLEASE TAKE YOUR TIME TO READ THE NOTES BELOW BEFORE PROCEEDING:**
+
+* PyPI is very tightly coupled to [package versions][wheel-version-tag].
+That means, once a wheel tagged e.g. as version `1.0.1` has been published, it is final.
+In other words, **you cannot change your source code, bundle it again using the same version and re-submit to PyPI as the "updated" version `1.0.1`**.
+* Please consider submitting the bundled wheel to the [PyPI test site][uploading-to-pypi] (see the [NiftyNet test page][niftynet-pypi-test]) to assess the visual appearance of the PyPI page before publishing on the actual PyPI.
+
+[wheel-version-tag]: https://www.python.org/dev/peps/pep-0491/#id9
+[niftynet-pypi]: https://pypi.org/project/NiftyNet/
+[niftynet-pypi-test]: https://test.pypi.org/project/NiftyNet/
+[uploading-to-pypi]: https://packaging.python.org/tutorials/distributing-packages/#uploading-your-project-to-pypi
+
+To actually publish the bundled wheel on PyPI, you will need to run the `twine upload` command e.g. `twine upload dist/NiftyNet-0.2.0-py2.py3-none-any.whl` -- this will of course work only if you have set the corresponding [PyPI account credentials][pypi-create-account].
+
+[pypi-create-account]: https://packaging.python.org/tutorials/distributing-packages/#create-an-account
