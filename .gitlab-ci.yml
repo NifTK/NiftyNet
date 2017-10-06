@@ -206,7 +206,6 @@ pip-installer:
     - dev-staging
     - tags
     - 177-merging-net_regress-to-dev
-    - 176-document-pip-installer-bundling-guidelines
   script:
     # source utils
     - source ci/utils.sh
