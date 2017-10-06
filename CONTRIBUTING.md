@@ -50,7 +50,7 @@ sh run_test.sh
 ```
 
 **If you have made changes to the pip installer, please test these.**
-For instance if you have added a new [CLI entry point (i.e. a new "command")][pip-console-entry] (also see the respective section below), make sure you include the appropriate tests in the [GitLab CI configuration][gitlab-ci-yaml].
+For instance if you have added a new [CLI entry point][pip-console-entry]  (i.e. a new "command" also see the respective section below), make sure you include the appropriate tests in the [GitLab CI configuration][gitlab-ci-yaml].
 For an example how to do this please see [lines 223 to 270 in the `.gitlab-ci.yml` file][gitlab-ci-pip-installer-test].
 
 [pip-console-entry]: http://python-packaging.readthedocs.io/en/latest/command-line-scripts.html#the-console-scripts-entry-point
@@ -73,7 +73,7 @@ Also see [how this command is tested][net-segment-test].
 ### Bundling a pip installer
 
 The NiftyNet pip installer gets bundled automatically for [Git tags][git-tag] pushed to the repository.
-To see how this is done, please go to the [`pip-camera-ready` section of `.gitlab-ci.yml`][pip-camera-ready] (and see the result in [this build log, which shows where the pip installer can be found on the build server (last line)][pip-camera-ready-output]).
+To see how this is done, please go to the [`pip-camera-ready` section of `.gitlab-ci.yml`][pip-camera-ready] (and see the result in [this build log -- esp. the last few lines lines, which show where the pip installer can be found on the build server)][pip-camera-ready-output]).
 
 In particular, bundling a pip installer boils down to running the command [`python setup.py bdist_wheel`][python-setuptools] in the top-level directory.
 This creates a [wheel binary package][wheel-binary] in a newly created `dist` directory, e.g. `dist/NiftyNet-0.2.0-py2.py3-none-any.whl`.
