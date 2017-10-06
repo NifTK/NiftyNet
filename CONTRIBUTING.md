@@ -49,3 +49,13 @@ cd NiftyNet/
 sh run_test.sh
 ```
 
+**If you have made changes to the pip installer, please test these.**
+For instance if you have added a new [CLI entry point (i.e. a new "command")][pip-console-entry], make sure you include the appropriate tests in the [GitLab CI configuration][gitlab-ci-yaml].
+For an example how to do this please see [lines 223 to 270 in the `.gitlab-ci.yml` file][gitlab-ci-pip-installer-test].
+
+[pip-console-entry]: http://python-packaging.readthedocs.io/en/latest/command-line-scripts.html#the-console-scripts-entry-point
+[gitlab-ci-yaml]: https://docs.gitlab.com/ce/ci/yaml/
+[gitlab-ci-pip-installer-test]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L223
+
+### Publishing a NiftyNet pip installer on PyPI
+
