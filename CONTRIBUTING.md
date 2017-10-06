@@ -50,12 +50,40 @@ sh run_test.sh
 ```
 
 **If you have made changes to the pip installer, please test these.**
-For instance if you have added a new [CLI entry point (i.e. a new "command")][pip-console-entry], make sure you include the appropriate tests in the [GitLab CI configuration][gitlab-ci-yaml].
+For instance if you have added a new [CLI entry point (i.e. a new "command")][pip-console-entry] (also see the respective section below), make sure you include the appropriate tests in the [GitLab CI configuration][gitlab-ci-yaml].
 For an example how to do this please see [lines 223 to 270 in the `.gitlab-ci.yml` file][gitlab-ci-pip-installer-test].
 
 [pip-console-entry]: http://python-packaging.readthedocs.io/en/latest/command-line-scripts.html#the-console-scripts-entry-point
 [gitlab-ci-yaml]: https://docs.gitlab.com/ce/ci/yaml/
 [gitlab-ci-pip-installer-test]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L223
+
+
+## Enhancing the pip installer
+
+### Adding a new command callable from a pip-installed NiftyNet
+
+This requires added a new [`console_scripts` entry point][pip-console-entry] in the `setup.py` file.
+For a practical example see [how the `net_segment` CLI command is implemented][net-segment-entry].
+Also see [how this command is tested][net-segment-test].
+
+[net-segment-entry]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/setup.py#L105
+[net-segment-test]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L252
+
+
+### Bundling a pip installer
+
+The NiftyNet pip installer gets bundled automatically for [Git tags][git-tag] pushed to the repository.
+To see how this is done, please go to the [`pip-camera-ready` section of `.gitlab-ci.yml`][pip-camera-ready] (and see the result in [this build log, which shows where the pip installer can be found on the build server (last line)][pip-camera-ready-output]).
+
+In particular, bundling a pip installer boils down to running the command [`python setup.py bdist_wheel`][python-setuptools] in the top-level directory.
+This creates a [wheel binary package][wheel-binary] in a newly created `dist` directory, e.g. `dist/NiftyNet-0.2.0-py2.py3-none-any.whl`.
+
+[git-tag]: https://git-scm.com/book/en/v2/Git-Basics-Tagging
+[pip-camera-ready]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L323
+[pip-camera-ready-output]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/-/jobs/30450
+[python-setuptools]: https://packaging.python.org/tutorials/distributing-packages/#wheels
+[wheel-binary]: https://www.python.org/dev/peps/pep-0491/
+
 
 ### Publishing a NiftyNet pip installer on PyPI
 
