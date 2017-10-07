@@ -185,8 +185,8 @@ def cross_entropy(prediction, ground_truth, weight_map=None):
     entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
         logits=prediction, labels=ground_truth)
     if weight_map is not None:
-        weight_map = tf.size(entropy) / tf.reduce_sum(weight_map) * \
-                     weight_map
+        weight_map = tf.cast(tf.size(entropy), dtype=tf.float32) / \
+                     tf.reduce_sum(weight_map) *  weight_map
         entropy = tf.multiply(entropy, weight_map)
     return tf.reduce_mean(entropy)
 
@@ -353,6 +353,7 @@ def l1_loss(prediction, ground_truth, weight_map=None):
     """
     :param prediction: the current prediction of the ground truth.
     :param ground_truth: the measurement you are approximating with regression.
+    :param weight_map: optional; weights to attribute to each observation
     :return: mean of the l1 loss across all voxels.
     """
     absolute_residuals = tf.abs(tf.subtract(prediction, ground_truth))
@@ -371,11 +372,13 @@ def l2_loss(prediction, ground_truth, weight_map=None):
     """
     :param prediction: the current prediction of the ground truth.
     :param ground_truth: the measurement you are approximating with regression.
+    :param weight_map: optional; weights to attribute to each observation
     :return: sum(differences squared) / 2 - Note, no square root
     """
     residuals = tf.subtract(prediction, ground_truth)
     if weight_map is not None:
-        residuals = tf.multiply(residuals, weight_map)
+        residuals = tf.multiply(residuals, weight_map) / tf.reduce_sum(
+            weight_map)
     return tf.nn.l2_loss(residuals)
 
 
