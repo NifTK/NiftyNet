@@ -31,7 +31,6 @@ class RandomElasticDeformationLayer(RandomisedLayer):
         images = image_dict.values()
         equal_shapes = np.all([images[0].shape == image.shape for image in images])
         if spatial_rank == 3 and equal_shapes:
-            print(images[0].shape)
             self._randomise_bspline_transformation_3d(images[0].shape)
         else:
             # currently not supported spatial rank for elastic deformation
