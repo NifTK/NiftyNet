@@ -11,6 +11,7 @@ pylintjob:
     - 148-publish-niftynet-v0-2-0-on-python-package-index-pypi
     - 170-add-niftynet-paper-on-rtd-doc
     - 167-document-cli-option-for-path-to-new-networks
+    - 176-document-pip-installer-bundling-guidelines
   script:
     - pylint --rcfile=tests/pylintrc niftynet/engine
 
@@ -164,6 +165,7 @@ quicktest:
     - 148-publish-niftynet-v0-2-0-on-python-package-index-pypi
     - 170-add-niftynet-paper-on-rtd-doc
     - 167-document-cli-option-for-path-to-new-networks
+    - 176-document-pip-installer-bundling-guidelines
   script:
     # print system info
     - which nvidia-smi
