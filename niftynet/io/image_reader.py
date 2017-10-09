@@ -157,7 +157,13 @@ class ImageReader(Layer):
                 if layer is None:
                     continue
                 if isinstance(layer, RandomisedLayer):
-                    layer.randomise()
+                    #only way to check the instance type without having to import
+                    #actual module, this is to keep the dependency set small and,
+                    #not to have to check the existence of a dependency all the time
+                    if type(layer).__name__ is "RandomElasticDeformationLayer":
+                        layer.randomise(image_data_dict)
+                    else:
+                        layer.randomise()
                     image_data_dict = layer(image_data_dict, interp_order_dict)
                 else:
                     image_data_dict, mask = layer(image_data_dict, mask)

@@ -100,7 +100,6 @@ class GANApplication(BaseApplication):
 
                 if self.action_param.elastic_deformation:
                     augmentation_layers.append(RandomElasticDeformationLayer(
-                        shapes=self.reader.shapes,
                         num_controlpoints=self.action_param.elastic_deformation[0],
                         std_deformation_sigma=self.action_param.elastic_deformation[1]))
             except ImportError:

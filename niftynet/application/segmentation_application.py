@@ -125,7 +125,6 @@ class SegmentationApplication(BaseApplication):
 
                 if self.action_param.elastic_deformation:
                     augmentation_layers.append(RandomElasticDeformationLayer(
-                        shapes=self.reader.shapes,
                         num_controlpoints=self.action_param.elastic_deformation[0],
                         std_deformation_sigma=self.action_param.elastic_deformation[1]))
             except ImportError:
@@ -247,6 +246,7 @@ class SegmentationApplication(BaseApplication):
             grads = self.optimiser.compute_gradients(loss)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
+
             # collecting output variables
             outputs_collector.add_to_collection(
                 var=data_loss, name='dice_loss',

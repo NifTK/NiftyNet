@@ -18,24 +18,23 @@ class RandomElasticDeformationLayer(RandomisedLayer):
     """
 
     def __init__(self,
-                 shapes,
                  num_controlpoints=4,
                  std_deformation_sigma=15,
                  name='random_elastic_deformation'):
         super(RandomElasticDeformationLayer, self).__init__(name=name)
 
-        self.shape_dict = shapes
         self.num_controlpoints = max(num_controlpoints, 2)
         self.std_deformation_sigma = max(std_deformation_sigma, 1)
         self.bspline_transformation = None
 
-    def randomise(self, spatial_rank=3):
-        shapes = self.shape_dict.values()
-        equal_shapes = np.all([shapes[0] == shape for shape in shapes])
+    def randomise(self, image_dict, spatial_rank=3):
+        images = image_dict.values()
+        equal_shapes = np.all([images[0].shape == image.shape for image in images])
         if spatial_rank == 3 and equal_shapes:
-            self._randomise_bspline_transformation_3d(shapes[0])
+            print(images[0].shape)
+            self._randomise_bspline_transformation_3d(images[0].shape)
         else:
-            # currently not supported spatial rank for rand rotation
+            # currently not supported spatial rank for elastic deformation
             print("randomising elastic deformation FAILED")
             pass
 

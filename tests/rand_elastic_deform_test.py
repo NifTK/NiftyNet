@@ -19,18 +19,17 @@ class RandElasticDeformationTest(tf.test.TestCase):
         return input_5d, interp_order
 
     def test_4d_shape(self):
-        x, interp_orders = self.get_4d_input()
-        self.deform(interp_orders, x)
+        img_dict, interp_orders = self.get_4d_input()
+        self.deform(interp_orders, img_dict)
 
     def test_5d_shape(self):
-        x, interp_orders = self.get_5d_input()
-        self.deform(interp_orders, x)
+        img_dict, interp_orders = self.get_5d_input()
+        self.deform(interp_orders, img_dict)
 
-    def deform(self, interp_orders, x):
-        rand_deformation_layer = RandomElasticDeformationLayer(
-            shapes={'testdata_shape': x.values()[0].shape}, num_controlpoints=4, std_deformation_sigma=15)
-        rand_deformation_layer.randomise()
-        out = rand_deformation_layer(x, interp_orders)
+    def deform(self, interp_orders, img_dict):
+        rand_deformation_layer = RandomElasticDeformationLayer(num_controlpoints=4, std_deformation_sigma=15)
+        rand_deformation_layer.randomise(img_dict)
+        out = rand_deformation_layer(img_dict, interp_orders)
 
 def run_test():
     try:
