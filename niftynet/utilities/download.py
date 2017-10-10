@@ -25,30 +25,28 @@ from niftynet.utilities.versioning import get_niftynet_version, get_niftynet_ver
 
 # Used with the min_download_api settings option to determine if the downloaded configuration file is compatible with
 # this version of NiftyNet downloader code
+from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
+
 DOWNLOAD_API_VERSION = "1.0"
 
 
-def download(example_ids, niftynet_base_folder=None, download_if_already_existing=False):
+def download(example_ids, download_if_already_existing=False):
     """
     Downloads standard NiftyNet examples such as data, samples
 
     :param example_ids: A list of identifiers for the samples to download
-    :param niftynet_base_folder: The base folder where downloads are stored
     :param download_if_already_existing: If true, data will always be downloaded
     """
 
-    if not niftynet_base_folder:
-        niftynet_base_folder = os.path.join(expanduser("~"), 'niftynet')
+    global_config = NiftyNetGlobalConfig()
 
-    remote_base_url = 'https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/raw/master/'
-
-    config_store = ConfigStore(niftynet_base_folder, remote_base_url)
+    config_store = ConfigStore(global_config)
 
     # If a single id is specified, convert to a list
     example_ids = [example_ids] if not isinstance(example_ids, (tuple, list)) else example_ids
 
     # Check if the server is running by looking for a known file
-    remote_base_url_test = remote_base_url + "README.md"
+    remote_base_url_test = gitlab_raw_file_url(global_config.get_download_server_url(), 'README.md')
     server_ok = url_exists(remote_base_url_test)
 
     any_error = False
@@ -65,7 +63,7 @@ def download(example_ids, niftynet_base_folder=None, download_if_already_existin
     if any_error and not server_ok:
         print("The NiftyNetExamples server is not running")
 
-    return any_error
+    return not any_error
 
 
 def download_file(url, download_path):
@@ -129,10 +127,11 @@ def download_and_decompress(url, download_path):
 class ConfigStore:
     """Manages a configuration file store based on a remote repository with local caching"""
 
-    def __init__(self, parent_store_folder, remote_base_url):
-        self._parent_store_folder = parent_store_folder
-        self._local = ConfigStoreCache(os.path.join(parent_store_folder, '.downloads_local_config_cache'))
-        self._remote = RemoteProxy(parent_store_folder, remote_base_url)
+    def __init__(self, global_config):
+        self._download_folder = global_config.get_niftynet_home_folder()
+        self._config_folder = global_config.get_niftynet_config_folder()
+        self._local = ConfigStoreCache(os.path.join(self._config_folder, '.downloads_local_config_cache'))
+        self._remote = RemoteProxy(self._config_folder, global_config.get_download_server_url())
 
     def exists(self, example_id):
         """Returns True if a record exists for this example_id, either locally or remotely"""
@@ -219,7 +218,7 @@ class ConfigStore:
     def _get_local_download_path(self, remote_config, example_id):
         destination = remote_config.get('destination', 'examples')
         local_id = remote_config.get('local_id', example_id)
-        return os.path.join(self._parent_store_folder, destination, local_id)
+        return os.path.join(self._download_folder, destination, local_id)
 
     def _replace_local_with_remote_config(self, example_id):
         local_filename = self._local.get_local_path(example_id)
@@ -271,8 +270,15 @@ class ConfigStoreCache:
 
         parser = SafeConfigParser()
         parser.read(config_filename)
-        config_section = dict(parser.items('config')) if 'config' in parser else {}
-        other_sections = {key: value for key, value in parser.items() if key != 'config' and key != 'DEFAULT'}
+        if parser.has_section('config'):
+            config_section = dict(parser.items('config'))
+        else:
+            config_section = {}
+
+        other_sections = {}
+        for section in parser.sections():
+            if section != 'config' and section != 'DEFAULT':
+                other_sections[section] = dict(parser.items(section))
         return config_section, other_sections
 
 
@@ -318,7 +324,13 @@ class RemoteConfigStore:
     def get_url(self, example_id):
         """Gets the URL for the record for this example_id"""
 
-        return six.moves.urllib.parse.urljoin(self._base_url, example_id + '.ini')
+        return gitlab_raw_file_url(self._base_url, example_id + '.ini')
+
+
+def gitlab_raw_file_url(base_url, file_name):
+    """Returns the url for the raw file on a GitLab server"""
+
+    return base_url + '/raw/master/' + file_name
 
 
 def url_exists(url):
@@ -335,14 +347,12 @@ def main():
     arg_parser = argparse.ArgumentParser(description="Download NiftyNet sample data")
     arg_parser.add_argument("-r", "--retry", help="Force data to be downloaded again", required=False,
                             action='store_true')
-    arg_parser.add_argument("-d", "--data_folder", help="Change data download location", required=False,
-                            default=None)
-    arg_parser.add_argument('sample_id', nargs='*', help="Identifier string for the example to download")
+    arg_parser.add_argument('sample_id', nargs='*', help="Identifier string(s) for the example(s) to download")
     version_string = get_niftynet_version_string()
     arg_parser.add_argument("-v", "--version", action='version', version=version_string)
     args = arg_parser.parse_args()
 
-    if not download(args.sample_id, args.data_folder, args.retry):
+    if not download(args.sample_id, args.retry):
         return -1
 
     return 0

@@ -227,7 +227,7 @@ def match_and_write_filenames_to_csv(list_constraints, csv_file):
     return
 
 
-def load_and_merge_csv_files(data_param):
+def load_and_merge_csv_files(data_param, default_folder=None):
     """
     Converts a list of csv_files in data_param
     in to a joint list of file names (by matching the first column)
@@ -250,7 +250,7 @@ def load_and_merge_csv_files(data_param):
                 '[%s] search file folders, writing csv file %s',
                 modality_name, csv_file)
             section_tuple = data_param[modality_name].__dict__.items()
-            matcher = KeywordsMatching.from_tuple(section_tuple)
+            matcher = KeywordsMatching.from_tuple(section_tuple, default_folder)
             match_and_write_filenames_to_csv([matcher], csv_file)
         else:
             tf.logging.info(
