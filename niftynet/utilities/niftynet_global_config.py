@@ -8,7 +8,8 @@ class NiftyNetGlobalConfig(object):
     """Global configuration settings"""
 
     def __init__(self):
-        self._download_server_url = 'https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer'
+        self._download_server_url = \
+            'https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer'
         self._config_home = os.path.join(expanduser("~"), '.niftynet')
 
         # ToDo: fetch NiftyNet home folder from a global configuration file
