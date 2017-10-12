@@ -8,3 +8,4 @@ class NiftyNetGlobalConfigTest(TestCase):
         global_config_1 = NiftyNetGlobalConfig()
         global_config_2 = NiftyNetGlobalConfig()
         self.assertEqual(global_config_1, global_config_2)
+        self.assertTrue(global_config_1 is global_config_2)
