@@ -10,12 +10,12 @@ def singleton(cls):
     cls.__new_original__ = cls.__new__
 
     @wraps(cls.__new__)
-    def singleton_new(cls_to_wrap, *args, **kw):
-        it = cls_to_wrap.__dict__.get('__it__')
+    def singleton_new(cls, *args, **kw):
+        it = cls.__dict__.get('__it__')
         if it is not None:
             return it
 
-        cls_to_wrap.__it__ = it = cls_to_wrap.__new_original__(cls, *args, **kw)
+        cls.__it__ = it = cls.__new_original__(cls, *args, **kw)
         it.__init_original__(*args, **kw)
         return it
 
