@@ -2,8 +2,10 @@
 
 import os
 from os.path import expanduser
+from niftynet.utilities.decorators import singleton
 
 
+@singleton
 class NiftyNetGlobalConfig(object):
     """Global configuration settings"""
 
