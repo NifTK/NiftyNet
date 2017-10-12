@@ -105,3 +105,21 @@ In other words, **you cannot change your source code, bundle it again using the 
 To actually publish the bundled wheel on PyPI, you will need to run the `twine upload` command e.g. `twine upload dist/NiftyNet-0.2.0-py2.py3-none-any.whl` - this will of course work only if you have set the corresponding [PyPI account credentials][pypi-create-account].
 
 [pypi-create-account]: https://packaging.python.org/tutorials/distributing-packages/#create-an-account
+
+
+## Merging GitHub pull requests
+
+The main development hub for NiftyNet is [CMICLab][cmiclab-niftynet].
+However we would also like to support the [GitHub][github-niftynet]-based workflow in a way that is minimally disruptive to the workflow on CMICLab.
+For this purpose, please follow the steps below for merging pull requests on GitHub:
+
+1. **[on GitHub]** Accept the pull request
+1. **[on CMICLab]** Create a new branch off `dev` with a name representative of the pull request. For instance `merging-github-pr-7` if the pull request on GitHub was numbered `7` (assuming `origin` is set to `git@cmiclab.cs.ucl.ac.uk:CMIC/NiftyNet.git`):
+   * `git checkout -b merging-github-pr-7 origin/dev`
+1. **[on CMICLab]** Pull GitHub's `dev` branch onto the new branch `merging-github-pr-7` you've created (assuming `origin` is set to `git@cmiclab.cs.ucl.ac.uk:CMIC/NiftyNet.git`):
+   1. `git pull git@github.com:NifTK/NiftyNet.git dev`
+   1. `git push -u origin merging-github-pr-7`
+1. **[on CMICLab]** Make sure the new branch `merging-github-pr-7` passes all the continuous integration tests
+1. **[on CMICLab]** Merge the new branch `merging-github-pr-7` onto `dev`
+1. **[on GitHub]** Check that the last step has updated the `dev` branch mirror
+
