@@ -122,7 +122,8 @@ For this purpose, please follow the steps below for merging pull requests on Git
 1. **[on CMICLab]** Pull GitHub's `dev` branch onto the new branch `merging-github-pr-7` you've created (assuming `origin` is set to `git@cmiclab.cs.ucl.ac.uk:CMIC/NiftyNet.git`) **and** push this new branch to CMICLab:
    1. `git pull git@github.com:NifTK/NiftyNet.git dev`
    1. `git push -u origin merging-github-pr-7`
-1. **[on CMICLab]** Make sure `merging-github-pr-7` passes all the continuous integration tests on CMICLab
+1. **[on CMICLab]** Make sure `merging-github-pr-7` passes all [continuous integration tests on CMICLab][cmiclab-niftynet-pipelines]
 1. **[on CMICLab]** Merge the new branch `merging-github-pr-7` onto `dev`
 1. **[on GitHub]** Check that the last step has updated the `dev` branch mirror
 
+[cmiclab-niftynet-pipelines]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/pipelines
