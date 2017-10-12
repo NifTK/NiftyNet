@@ -115,7 +115,8 @@ The main development hub for NiftyNet is [CMICLab][cmiclab-niftynet].
 However we would also like to support the [GitHub][github-niftynet]-based workflow in a way that is minimally disruptive to the workflow on CMICLab.
 For this purpose, please follow the steps below for merging pull requests on GitHub:
 
-1. **[on GitHub]** Accept the pull request
+1. **[on GitHub]** Review the pull request, and ask for changes if needed
+1. **[on GitHub]** Accept the pull request (i.e. click the "Merge pull request" button)
 1. **[on CMICLab]** Create a new branch off `dev` with a name representative of the pull request. For instance `merging-github-pr-7` if the pull request on GitHub was numbered `7` (assuming `origin` is set to `git@cmiclab.cs.ucl.ac.uk:CMIC/NiftyNet.git`):
    * `git checkout -b merging-github-pr-7 origin/dev`
 1. **[on CMICLab]** Pull GitHub's `dev` branch onto the new branch `merging-github-pr-7` you've created (assuming `origin` is set to `git@cmiclab.cs.ucl.ac.uk:CMIC/NiftyNet.git`):
