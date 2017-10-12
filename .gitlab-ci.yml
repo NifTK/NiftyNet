@@ -12,6 +12,7 @@ pylintjob:
     - 170-add-niftynet-paper-on-rtd-doc
     - 167-document-cli-option-for-path-to-new-networks
     - 176-document-pip-installer-bundling-guidelines
+    - 174-design-a-workflow-that-allows-prs-from-github-to-be-merged
   script:
     - pylint --rcfile=tests/pylintrc niftynet/engine
 
@@ -168,6 +169,7 @@ quicktest:
     - 170-add-niftynet-paper-on-rtd-doc
     - 167-document-cli-option-for-path-to-new-networks
     - 176-document-pip-installer-bundling-guidelines
+    - 174-design-a-workflow-that-allows-prs-from-github-to-be-merged
   script:
     # print system info
     - which nvidia-smi
