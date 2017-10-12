@@ -70,6 +70,8 @@ Also see [how this command is tested][net-segment-test].
 [net-segment-test]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L252
 
 
+## NiftyNet admin tasks
+
 ### Bundling a pip installer
 
 The NiftyNet pip installer gets bundled automatically for [Git tags][git-tag] starting with a `v` (for "version") pushed to [CMICLab][niftynet-cmiclab].
@@ -107,7 +109,7 @@ To actually publish the bundled wheel on PyPI, you will need to run the `twine u
 [pypi-create-account]: https://packaging.python.org/tutorials/distributing-packages/#create-an-account
 
 
-## Merging GitHub pull requests
+### Merging GitHub pull requests
 
 The main development hub for NiftyNet is [CMICLab][cmiclab-niftynet].
 However we would also like to support the [GitHub][github-niftynet]-based workflow in a way that is minimally disruptive to the workflow on CMICLab.
