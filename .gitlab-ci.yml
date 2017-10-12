@@ -153,15 +153,6 @@ testjob:
   tags:
     - gift-linux
 
-singleton:
-  stage: dev_test
-  only:
-    - 181-global-application-configuration
-  script:
-    - python -m unittest tests.niftynet_global_config_test
-  tags:
-    - gift-linux
-
 quicktest:
   stage: dev_test
   except:
