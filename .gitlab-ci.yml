@@ -160,16 +160,8 @@ singleton:
     - 181-global-application-configuration
   script:
     - PYTHONPATH=$(pwd) python tests/niftynet_global_config_test.py
-    - virtualenv -p $(which python2) singleton-ve-py2
-    - source singleton-ve-py2/bin/activate
-    - pip install tensorflow
-    - python -m unittest tests.niftynet_global_config_test
-    - deactivate
-    - virtualenv -p $(which python3) singleton-ve-py3
-    - source singleton-ve-py3/bin/activate
-    - pip install tensorflow
-    - python -m unittest tests.niftynet_global_config_test
-    - deactivate
+    - python2 -m unittest tests.niftynet_global_config_test
+    - python3 -m unittest tests.niftynet_global_config_test
   tags:
     - gift-linux
 
