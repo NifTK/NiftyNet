@@ -159,7 +159,6 @@ singleton:
   only:
     - 181-global-application-configuration
   script:
-    - PYTHONPATH=$(pwd) python tests/niftynet_global_config_test.py
     - python -m unittest tests.niftynet_global_config_test
   tags:
     - gift-linux
