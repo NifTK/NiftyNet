@@ -119,10 +119,10 @@ For this purpose, please follow the steps below for merging pull requests on Git
 1. **[on GitHub]** Accept the pull request (i.e. click the "Merge pull request" button)
 1. **[on CMICLab]** Create a new branch off `dev` with a name representative of the pull request. For instance `merging-github-pr-7` if the pull request on GitHub was numbered `7` (assuming `origin` is set to `git@cmiclab.cs.ucl.ac.uk:CMIC/NiftyNet.git`):
    * `git checkout -b merging-github-pr-7 origin/dev`
-1. **[on CMICLab]** Pull GitHub's `dev` branch onto the new branch `merging-github-pr-7` you've created (assuming `origin` is set to `git@cmiclab.cs.ucl.ac.uk:CMIC/NiftyNet.git`):
+1. **[on CMICLab]** Pull GitHub's `dev` branch onto the new branch `merging-github-pr-7` you've created (assuming `origin` is set to `git@cmiclab.cs.ucl.ac.uk:CMIC/NiftyNet.git`) **and** push this new branch to CMICLab:
    1. `git pull git@github.com:NifTK/NiftyNet.git dev`
    1. `git push -u origin merging-github-pr-7`
-1. **[on CMICLab]** Make sure the new branch `merging-github-pr-7` passes all the continuous integration tests
+1. **[on CMICLab]** Make sure `merging-github-pr-7` passes all the continuous integration tests on CMICLab
 1. **[on CMICLab]** Merge the new branch `merging-github-pr-7` onto `dev`
 1. **[on GitHub]** Check that the last step has updated the `dev` branch mirror
 
