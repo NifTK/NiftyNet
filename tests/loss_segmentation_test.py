@@ -45,12 +45,12 @@ class GeneralisedDiceTest(tf.test.TestCase):
                 [[0, 10], [10, 0], [10, 0], [10, 0]],
                 dtype=tf.float32, name='predicted')
             labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
-            weights = tf.cast(labels, tf.float32)
+            # weights = tf.cast(labels, tf.float32)
             test_loss_func = LossFunction(2, loss_type='GDSC')
             one_minus_generalised_dice_score = test_loss_func(
-                predicted, labels, weights)
-            self.assertAlmostEqual(
-                one_minus_generalised_dice_score.eval(), 0.92424583)
+                predicted, labels)
+            self.assertAllClose(
+                one_minus_generalised_dice_score.eval(), 0.0, atol=1e-4)
 
     def test_gdsc_incorrect_type_weight_error(self):
         with self.test_session():
@@ -79,8 +79,8 @@ class GeneralisedDiceTest(tf.test.TestCase):
                 loss_func_params={'type_weight': 'Uniform'})
             one_minus_generalised_dice_score = test_loss_func(
                 predicted, labels, weights)
-            self.assertAlmostEqual(one_minus_generalised_dice_score.eval(),
-                                   0.16670454)
+            self.assertAllClose(one_minus_generalised_dice_score.eval(),
+                                   0.0, atol=1e-4)
 
 
 class DiceTest(tf.test.TestCase):
@@ -94,6 +94,20 @@ class DiceTest(tf.test.TestCase):
             one_minus_dice_score = test_loss_func(predicted, labels)
             self.assertAllClose(one_minus_dice_score.eval(), 0.0, atol=1e-5)
 
+    def test_dice_score_weights(self):
+        with self.test_session():
+            weights = tf.constant([1, 1, 0, 0], dtype=tf.float32,
+                                  name='weights')
+            predicted = tf.constant(
+                [[0, 10], [10, 0], [10, 0], [10, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
+            test_loss_func = LossFunction(2,
+                                          loss_type='Dice')
+            one_minus_dice_score = test_loss_func(predicted, labels,
+                                                  weight_map=weights)
+            self.assertAllClose(one_minus_dice_score.eval(), 0.0, atol=1e-4)
+
     def test_wrong_prediction(self):
         with self.test_session():
             predicted = tf.constant(
@@ -101,6 +115,42 @@ class DiceTest(tf.test.TestCase):
                 dtype=tf.float32, name='predicted')
             labels = tf.constant([0], dtype=tf.int64, name='labels')
             test_loss_func = LossFunction(2, loss_type='Dice')
+            one_minus_dice_score = test_loss_func(predicted, labels)
+            self.assertAlmostEqual(one_minus_dice_score.eval(), 1.0)
+
+
+class DiceTest_NS(tf.test.TestCase):
+    def test_dice_score_nosquare(self):
+        with self.test_session():
+            predicted = tf.constant(
+                [[0, 10], [10, 0], [10, 0], [10, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
+            test_loss_func = LossFunction(2, loss_type='Dice_NS')
+            one_minus_dice_score = test_loss_func(predicted, labels)
+            self.assertAllClose(one_minus_dice_score.eval(), 0.0, atol=1e-4)
+
+    def test_dice_score_nosquare_weights(self):
+        with self.test_session():
+            weights = tf.constant([1, 1, 0, 0], dtype=tf.float32,
+                                  name='weights')
+            predicted = tf.constant(
+                [[0, 10], [10, 0], [10, 0], [10, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
+            test_loss_func = LossFunction(2,
+                                          loss_type='Dice_NS')
+            one_minus_dice_score = test_loss_func(predicted, labels,
+                                                  weight_map=weights)
+            self.assertAllClose(one_minus_dice_score.eval(), 0.0, atol=1e-4)
+
+    def test_wrong_prediction(self):
+        with self.test_session():
+            predicted = tf.constant(
+                [[0, 100]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([0], dtype=tf.int64, name='labels')
+            test_loss_func = LossFunction(2, loss_type='Dice_NS')
             one_minus_dice_score = test_loss_func(predicted, labels)
             self.assertAlmostEqual(one_minus_dice_score.eval(), 1.0)
 
@@ -119,6 +169,95 @@ class CrossEntropyTests(tf.test.TestCase):
                 computed_cross_entropy.eval(),
                 -.5 * (np.log(np.e / (1 + np.e)) + np.log(
                     np.e ** 2 / (1 + np.e ** 2))))
+
+    def test_cross_entropy_value_weight(self):
+        with self.test_session():
+            weights = tf.constant([1, 2], dtype=tf.float32, name='weights')
+            predicted = tf.constant(
+                [[0, 1], [2, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0], dtype=tf.int64, name='labels')
+            test_loss_func = LossFunction(2, loss_type='CrossEntropy')
+            computed_cross_entropy = test_loss_func(predicted, labels, weights)
+            self.assertAlmostEqual(
+                computed_cross_entropy.eval(),
+                -.5 * (2.0/3.0 * np.log(np.e / (1 + np.e)) + 4.0/3.0 * np.log(
+                    np.e ** 2 / (1 + np.e ** 2))))
+
+
+class L1LossTests(tf.test.TestCase):
+    def test_l1_loss_value(self):
+        with self.test_session():
+            predicted = tf.constant(
+                [1, 1],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0], dtype=tf.float32, name='labels')
+            test_loss_func = LossFunction(1, loss_type='L1Loss')
+            computed_l1_loss = test_loss_func(predicted, labels)
+            self.assertAlmostEqual(
+                computed_l1_loss.eval(), 0.5)
+
+    def test_l1_loss_value_weight(self):
+        with self.test_session():
+            weights = tf.constant([1, 2], dtype=tf.float32, name='weights')
+            predicted = tf.constant(
+                [1, 1],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0], dtype=tf.float32, name='labels')
+            test_loss_func = LossFunction(1, loss_type='L1Loss')
+            computed_l1_loss = test_loss_func(predicted, labels, weights)
+            self.assertAlmostEqual(
+                computed_l1_loss.eval(), 2.0/3.0)
+
+
+class L2LossTests(tf.test.TestCase):
+    def test_l2_loss_value(self):
+        with self.test_session():
+            predicted = tf.constant(
+                [1, 2],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0], dtype=tf.float32, name='labels')
+            test_loss_func = LossFunction(1, loss_type='L2Loss')
+            computed_l2_loss = test_loss_func(predicted, labels)
+            self.assertAlmostEqual(
+                computed_l2_loss.eval(), 4)
+
+    def test_l2_loss_value_weight(self):
+        with self.test_session():
+            weights = tf.constant([1, 2], dtype=tf.float32, name='weights')
+            predicted = tf.constant(
+                [1, 2],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0], dtype=tf.float32, name='labels')
+            test_loss_func = LossFunction(1, loss_type='L2Loss')
+            computed_l2_loss = test_loss_func(predicted, labels, weights)
+            self.assertAlmostEqual(
+                computed_l2_loss.eval(), 16.0 / 9.0)
+
+
+class HuberLossTests(tf.test.TestCase):
+    def test_huber_loss_value(self):
+        with self.test_session():
+            predicted = tf.constant(
+                [1, 2, 0.5],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0, 1], dtype=tf.float32, name='labels')
+            test_loss_func = LossFunction(1, loss_type='HuberLoss')
+            computed_huber_loss = test_loss_func(predicted, labels)
+            self.assertAlmostEqual(
+                computed_huber_loss.eval(), 1.675)
+
+    def test_huber_loss_value_weight(self):
+        with self.test_session():
+            weights = tf.constant([1, 2, 1], dtype=tf.float32, name='weights')
+            predicted = tf.constant(
+                [1, 2, 0.5],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0, 1], dtype=tf.float32, name='labels')
+            test_loss_func = LossFunction(1, loss_type='HuberLoss')
+            computed_huber_loss = test_loss_func(predicted, labels, weights)
+            self.assertAlmostEqual(
+                computed_huber_loss.eval(), 3.125 / 4)
 
 
 class LossFunctionErrorsTest(tf.test.TestCase):

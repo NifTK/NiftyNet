@@ -324,7 +324,7 @@ def print_progress_bar(iteration, total,
     print('\r%s |%s| %s%% %s' % (prefix, bars, percent, suffix), end='\r')
     # Print New Line on Complete
     if iteration == total:
-        print()
+        print('\n')
 
 
 def set_cuda_device(cuda_devices):

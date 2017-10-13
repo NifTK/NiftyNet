@@ -7,16 +7,16 @@ Summary of layers that can be used to build networks and their characteristics
 File: activation.py
 Possible activation layers to be specified as the acti_func field of ConvolutionLayer or DeconvolutionLayer among the following values:
 
-Field | Equation | Graph
-------|----------|------
-relu  |[relu_eq](./figures/relu_eq.pdf)| ![relu_img](./figures/relu_img.png)
-relu6 |[relu6_eq](./figures/relu6_eq.pdf)| tes
-elu | ![elu_eq](./figures/elu_eq.pdf)|![elu_img](./figures/elu_img.png)
-softplus |[softplus_eq](./figures/softplus_eq.pdf)|![softplus_img](./figures/softplus_img.png)
-softsign |[softsign_eq](./figures/softsign_eq.pdf) |![softsign_img](./figures/softsign_img.png)
-sigmoid |[sigmoid_eq](./figures/sigmoid_eq.pdf)|![sigmoid_img](./figures/sigmoid_img.png)
-tanh |[tanh_eq](./figures/tanh_eq.pdf) |![tanh_img](./figures/tanh_img.png)
-prelu |[prelu_eq](./figures/prelu_eq.pdf) |![prelu_img](./figures/prelu_img.png)
+Field | Equation 
+------|----------
+relu  |[relu_eq](./figures/relu_eq.pdf)
+relu6 |[relu6_eq](./figures/relu6_eq.pdf)
+elu | [elu_eq](./figures/elu_eq.pdf)
+softplus |[softplus_eq](./figures/softplus_eq.pdf)
+softsign |[softsign_eq](./figures/softsign_eq.pdf) 
+sigmoid |[sigmoid_eq](./figures/sigmoid_eq.pdf)
+tanh |[tanh_eq](./figures/tanh_eq.pdf)
+prelu |[prelu_eq](./figures/prelu_eq.pdf)
 dropout | |
 
 

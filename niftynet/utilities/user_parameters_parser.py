@@ -22,6 +22,7 @@ from niftynet.utilities.user_parameters_helper import standardise_section_name
 from niftynet.utilities.util_common import \
     _damerau_levenshtein_distance as edit_distance
 from niftynet.utilities.versioning import get_niftynet_version_string
+from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 
 try:
     import configparser
@@ -62,10 +63,24 @@ def run():
     print(version_string)
 
     # read configurations, to be parsed by sections
-    if (meta_args.conf is None) or (not os.path.isfile(meta_args.conf)):
-        raise IOError("Configuration file not found {}".format(meta_args.conf))
+    if meta_args.conf is None:
+        raise IOError("No configuration file has been provided")
+
+    # Read global config file
+    global_config = NiftyNetGlobalConfig()
+
+    config_path = meta_args.conf
+    if not os.path.isfile(config_path):
+        relative_conf_file = os.path.join(global_config.get_default_examples_folder(), config_path,
+                                          config_path + "_config.ini")
+        if os.path.isfile(relative_conf_file):
+            config_path = relative_conf_file
+            os.chdir(os.path.dirname(config_path))
+        else:
+            raise IOError("Configuration file not found {}".format(config_path))
+
     config = configparser.ConfigParser()
-    config.read([meta_args.conf])
+    config.read([config_path])
     app_module = None
     try:
         if meta_parser.prog[:-3] in SUPPORTED_APP:

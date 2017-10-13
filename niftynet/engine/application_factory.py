@@ -17,6 +17,8 @@ from niftynet.utilities.util_common import \
 
 # pylint: disable=too-few-public-methods
 SUPPORTED_APP = {
+    'net_regress':
+        'niftynet.application.regression_application.RegressionApplication',
     'net_segment':
         'niftynet.application.segmentation_application.SegmentationApplication',
     'net_autoencoder':
@@ -83,6 +85,19 @@ SUPPORTED_LOSS_SEGMENTATION = {
         'niftynet.layer.loss_segmentation.huber_loss'
 }
 
+SUPPORTED_LOSS_REGRESSION = {
+    "L1Loss":
+        'niftynet.layer.loss_regression.l1_loss',
+    "L2Loss":
+        'niftynet.layer.loss_regression.l2_loss',
+    "RMSE":
+        'niftynet.layer.loss_regression.rmse_loss',
+    "MAE":
+        'niftynet.layer.loss_regression.mae_loss',
+    "Huber":
+        'niftynet.layer.loss_regression.huber_loss'
+}
+
 SUPPORTED_LOSS_AUTOENCODER = {
     "VariationalLowerBound":
         'niftynet.layer.loss_autoencoder.variational_lower_bound',
@@ -92,6 +107,8 @@ SUPPORTED_OPTIMIZERS = {
     'adam': 'niftynet.engine.application_optimiser.Adam',
     'gradientdescent': 'niftynet.engine.application_optimiser.GradientDescent',
     'momentum': 'niftynet.engine.application_optimiser.Momentum',
+    'nesterov': 'niftynet.engine.application_optimiser.NesterovMomentum',
+
     'adagrad': 'niftynet.engine.application_optimiser.Adagrad',
 }
 
@@ -116,7 +133,7 @@ def select_module(module_name, type_str, lookup_table):
         module, class_name = module_name.rsplit('.', 1)
         the_module = getattr(importlib.import_module(module), class_name)
         return the_module
-    except (AttributeError, ValueError):
+    except (AttributeError, ValueError, ImportError):
         # Two possibilities: a typo for a lookup table entry
         #                 or a non-existing module
         dists = {k: edit_distance(k, module_name) for k in lookup_table.keys()}
@@ -188,6 +205,15 @@ class LossSegmentationFactory(ModuleFactory):
     """
     SUPPORTED = SUPPORTED_LOSS_SEGMENTATION
     type_str = 'segmentation loss'
+
+
+class LossRegressionFactory(ModuleFactory):
+    """
+    Import a regression loss function from niftynet.layer or
+    from user specified string
+    """
+    SUPPORTED = SUPPORTED_LOSS_REGRESSION
+    type_str = 'regression loss'
 
 
 class LossAutoencoderFactory(ModuleFactory):

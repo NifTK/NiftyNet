@@ -11,19 +11,25 @@ from niftynet.utilities.user_parameters_helper import str2boolean
 
 #######################################################################
 # To support a CUSTOM_SECTION in config file:
-# 1) update niftynet.utilities.user_parameters_custom.SUPPORTED_TASKS
-# with a CUSTOM_SECTION, this should be standardised string.
-# Standardised string is defined in
-# niftynet.utilities.user_parameters_helper.standardise_string
-# the section name will be filtered with:
-#   re.sub('[^0-9a-zA-Z ]+', '', input_string.strip())
-
-# 2) appending add_customised_args() with a function add_*_args()
+# (e.g., MYTASK; in parallel with SEGMENTATION, REGRESSION etc.)
+#
+# 1) update niftynet.utilities.user_parameters_custom.SUPPORTED_ARG_SECTIONS
+# with a key-value pair:
+#   where the key should be MYTASK, a standardised string --
+#   Standardised string is defined in
+#   niftynet.utilities.user_parameters_helper.standardise_string
+#   the section name will be filtered with,
+#     re.sub('[^0-9a-zA-Z ]+', '', input_string.strip())
+#
+#   the value should be __add_mytask_args()
+#
+# 2) create a function __add_mytask_args() with task specific arguments
 # this function should return an argparse obj
-# when task_name matches CUSTOM_SECTION.
+#
+# 3) in the application file, specify:
+#    `REQUIRED_CONFIG_SECTION = "MYTASK"`
+# so that the application will have access to the task specific arguments
 
-# 3) update niftynet.utilities.user_parameters_parser.CUSTOM_SECTIONS
-# creat a dictionary item with 'net_[task].py': CUSTOM_SECTION
 #########################################################################
 
 
@@ -33,6 +39,19 @@ def add_customised_args(parser, task_name):
         return SUPPORTED_ARG_SECTIONS[task_name](parser)
     else:
         raise NotImplementedError
+
+
+def __add_regression_args(parser):
+    parser.add_argument(
+        "--loss_border",
+        metavar='',
+        help="Set the border size for the loss function to ignore",
+        type=int,
+        default=0)
+
+    from niftynet.application.regression_application import SUPPORTED_INPUT
+    parser = add_input_name_args(parser, SUPPORTED_INPUT)
+    return parser
 
 
 def __add_segmentation_args(parser):
@@ -122,6 +141,7 @@ def __add_autoencoder_args(parser):
 
 
 SUPPORTED_ARG_SECTIONS = {
+    'REGRESSION': __add_regression_args,
     'SEGMENTATION': __add_segmentation_args,
     'AUTOENCODER': __add_autoencoder_args,
     'GAN': __add_gan_args
