@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+#Data augmentation using elastic deformations as used by:
+#Milletari,F., Navab, N., & Ahmadi, S. A. (2016) V-net:
+#Fully convolutional neural networks for volumetric medical
+#image segmentation
+
+
 from __future__ import absolute_import, print_function
 
 import warnings
