@@ -16,6 +16,11 @@ class NiftyNetGlobalConfigTest(TestCase):
     """
 
     @classmethod
+    def typify(cls, file_path):
+        """Append file type extension to passed file path."""
+        return '.'.join([file_path, cls.file_type])
+
+    @classmethod
     def remove_path(cls, path):
         """Remove passed item, whether it's a file or directory."""
         if isdir(path):
@@ -26,7 +31,8 @@ class NiftyNetGlobalConfigTest(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.config_home = join(expanduser('~'), '.niftynet')
-        cls.config_file = join(cls.config_home, 'config.yml')
+        cls.file_type = 'yml'
+        cls.config_file = join(cls.config_home, cls.typify('config'))
 
         cls.default_config_opts = {
             'niftynet_home': join(expanduser('~'), 'niftynet')
