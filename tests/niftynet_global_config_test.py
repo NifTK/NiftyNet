@@ -36,7 +36,7 @@ class NiftyNetGlobalConfigTest(TestCase):
         cls.config_file = join(cls.config_home, cls.typify('config'))
 
         cls.default_config_opts = {
-            'niftynet_home': join(expanduser('~'), 'niftynet')
+            'niftynet_home': join('~', 'niftynet')
         }
 
     @classmethod
