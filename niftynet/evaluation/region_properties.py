@@ -2,7 +2,9 @@ from __future__ import absolute_import, print_function, division
 
 import numpy as np
 import numpy.ma as ma
+import math
 import scipy.stats.mstats as mstats
+import scipy.ndimage as ndimage
 
 from niftynet.utilities.misc_common import MorphologyOps, CacheFunctionOutput
 
@@ -48,6 +50,7 @@ class RegionProperties(object):
             'quantile_75': (self.quantile_75,
                             ['P75_%d' % i for i in img_id]),
             'std': (self.std_, ['STD_%d' % i for i in img_id]),
+            'harilick_features': (self.harilick, [''])
         }
         self.measures = measures
         self.neigh = num_neighbors
@@ -83,6 +86,139 @@ class RegionProperties(object):
         numb_border_seg = np.sum(border_seg)
         return numb_border_seg, numb_border_seg_bin, \
                numb_border_seg * self.vol_vox, numb_border_seg_bin * self.vol_vox
+
+    def glcm(self):
+        shifts = [[0,0,0,0,0],
+                  [1,0,0,0,0],
+                  [-1,0,0,0,0],
+                  [0,1,0,0,0],
+                  [0,-1,0,0,0],
+                  [0, 0, 1, 0, 0],
+                  [0, 0, -1, 0, 0],
+                  [1, 1, 0, 0, 0],
+                  [-1, -1, 0, 0, 0],
+                  [-1, 1, 0, 0, 0],
+                  [1, -1, 0, 0, 0],
+                  [1, 1, 0, 0, 0],
+                  [0, -1, -1, 0, 0],
+                  [0, -1, 1, 0, 0],
+                  [0, 1, -1, 0, 0],
+                  [1, 0,1, 0, 0],
+                  [-1,0, -1, 0, 0],
+                  [-1,0, 1, 0, 0],
+                  [1, 0,-1, 0, 0],
+                  [1, 1, 1, 0, 0],
+                  [-1, 1, -1, 0, 0],
+                  [-1, 1, 1, 0, 0],
+                  [1, 1, -1, 0, 0],
+                  [1, -1, 1, 0, 0],
+                  [-1, -1, -1, 0, 0],
+                  [-1, -1, 1, 0, 0],
+                  [1, -1, -1, 0, 0]]
+        bins = np.arange(0, self.bin)
+        multi_mod_glcm = []
+        for m in range(0, self.img.shape[4]):
+            shifted_image = []
+            for n in range(0, self.neigh+1):
+                new_img = np.multiply(self.seg, self.img[..., m:m+1, 0:1])
+                new_img = ndimage.shift(new_img, shifts[n], order=0)
+                if np.count_nonzero(new_img) > 0:
+                    flattened_new = np.flatten(new_img)
+                    flattened_seg = np.flatten(self.seg)
+                    select = [round(flattened_new[i] * self.mul+self.trans) for i in
+                                    range(0, new_img.size) if
+                              flattened_seg[i]>0]
+
+                    select_new = np.digitize(select, bins)
+                    shifted_image.append(select_new)
+            glcm = np.zeros([self.bin, self.bin, self.neigh])
+            for n in range(0, self.neigh):
+                for i in range(0, shifted_image[0].size):
+                    glcm[shifted_image[0][i], shifted_image[n+1][i], n] += 1
+            glcm = glcm / np.sum(np.sum(glcm, axis=0), axis=1)
+            multi_mod_glcm.append(glcm)
+        return multi_mod_glcm
+
+    def harilick(self):
+        multi_mod_glcm = self.glcm()
+
+
+    def contrast(self, matrix):
+        contrast = 0
+        for i in range(0, matrix.shape[0]):
+            for j in range(0, matrix.shape[1]):
+                contrast += (j-i)**2 * matrix[i,j]
+        return contrast
+
+    def homogeneity(self, matrix):
+        homogeneity = 0
+        for i in range(0, matrix.shape[0]):
+            for j in range(0, matrix.shape[1]):
+                homogeneity += matrix[i,j]/(1-abs(i-j))
+        return homogeneity
+
+    def energy(self, matrix):
+        energy = 0
+        for i in range(0, matrix.shape[0]):
+            for j in range(0, matrix.shape[0]):
+                energy += matrix[i,j] ** 2
+        return energy
+
+    def entropy(self, matrix):
+        entropy = 0
+        for i in range(0, matrix.shape[0]):
+            for j in range(0, matrix.shape[0]):
+                if matrix[i,j] > 0:
+                    entropy += matrix[i,j] * math.log(matrix[i,j])
+        return entropy
+
+
+    def correlation(self, matrix):
+        range_values = np.arange(0, matrix.shape[0])
+        matrix_range = np.tile(range_values, [1, matrix.shape[0]])
+        mean = np.average(matrix_range, weights=matrix, axis=0)
+        sd = math.sqrt(np.average((matrix_range-np.tile(mean,[1,matrix.shape[
+            0]]))**2, weights=matrix, axis=0))
+        correlation = 0
+        for i in range(0, matrix.shape[0]):
+            for j in range(0, matrix.shape[0]):
+                correlation += (i*j*matrix[i, j]-mean[i] * mean[j]) / (sd[i] *
+                                                                   sd[j])
+        return correlation
+
+    def inverse_difference_moment(self, matrix):
+        idm = 0
+        for i in range(0, matrix.shape[0]):
+            for j in range(0, matrix.shape[0]):
+                idm += 1.0 / (1 + (i-j)**2) * matrix[i,j]
+        return idm
+
+    def sum_average(self, matrix):
+        sa = 0
+        for i in range(0, matrix.shape[0]):
+            for j in range(0, matrix.shape[0]):
+                sa += (i+j) * matrix[i,j]
+        return sa
+
+    def sum_entropy(self, matrix):
+        se = 0
+        matrix_bis = np.zeros([2*matrix.shape[0]])
+        for i in range(0, matrix.shape[0]):
+            for j in range(0, matrix.shape[0]):
+                matrix_bis[i+j] += matrix[i, j]
+        for v in matrix_bis:
+            if v > 0:
+                se += v*math.log(v)
+        return se
+
+
+
+    def sum_square_variance(self, matrix):
+        ssv = 0
+        for i in range(0, matrix.shape[0]):
+            for j in range(0, matrix.shape[0]):
+                ssv += (i-mean[i]) ** 2 * matrix[i,j]
+
 
     def sav(self):
         Sn, Snb, Sv, Svb = self.surface()
