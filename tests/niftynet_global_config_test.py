@@ -66,8 +66,17 @@ class NiftyNetGlobalConfigTest(TestCase):
                          NiftyNetGlobalConfigTest.config_home)
 
     def test_011_existing_config_file_loaded(self):
-        # TODO
-        self.fail('not implemented')
+        # create a config file with a custom NiftyNet home
+        makedirs(NiftyNetGlobalConfigTest.config_home)
+        custom_niftynet_home = '~/customniftynethome'
+        custom_niftynet_home_abs = expanduser(custom_niftynet_home)
+        config = ''.join(['home: ', custom_niftynet_home])
+        with open(NiftyNetGlobalConfigTest.config_file, 'w') as config_file:
+            config_file.write(config)
+
+        global_config = NiftyNetGlobalConfig()
+        self.assertEqual(global_config.get_niftynet_home_folder(),
+                         custom_niftynet_home_abs)
 
     def test_012_incorrect_config_file_backed_up(self):
         # create an incorrect config file at the correct location
