@@ -1,5 +1,7 @@
 from unittest import TestCase
-from os.path import (expanduser, join, isdir)
+from os.path import (expanduser, join, isdir, isfile)
+from os import remove
+from shutil import rmtree
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 
 
@@ -12,6 +14,14 @@ class NiftyNetGlobalConfigTest(TestCase):
     sorting the test function names with respect to the built-in ordering
     for strings."
     """
+
+    @classmethod
+    def remove_path(cls, path):
+        """Remove passed item, whether it's a file or directory."""
+        if isdir(path):
+            rmtree(path)
+        elif isfile(path):
+            remove(path)
 
     @classmethod
     def setUpClass(cls):
@@ -28,12 +38,13 @@ class NiftyNetGlobalConfigTest(TestCase):
         pass
 
     def setUp(self):
-        # TODO
-        pass
+        NiftyNetGlobalConfigTest.remove_path(NiftyNetGlobalConfigTest.config_home)
+        NiftyNetGlobalConfigTest.remove_path(
+            NiftyNetGlobalConfigTest.default_config_opts['niftynet_home']
+        )
 
     def tearDown(self):
-        # TODO
-        pass
+        self.setUp()
 
     def test_000_global_config_singleton(self):
         global_config_1 = NiftyNetGlobalConfig()
