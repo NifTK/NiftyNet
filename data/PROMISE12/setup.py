@@ -11,8 +11,9 @@ import zipfile
 
 zip_dir = '.'
 target_dir = '.'
-for zip_filename in {'TrainingData_Part1.zip', 'TrainingData_Part1.zip',
-                     'TrainingData_Part1.zip'}:
+for zip_filename in {'TrainingData_Part1.zip', 'TrainingData_Part2.zip',
+                     'TrainingData_Part3.zip'}:
+    print('Extracting', zip_filename , '...')
     zip_ref = zipfile.ZipFile(os.path.join(zip_dir, zip_filename), 'r')
-    zip_ref.extractall(target_dir)
+    zip_ref.extractall(os.path.basename(zip_filename.replace('.zip', '')))
     zip_ref.close()
