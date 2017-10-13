@@ -2,70 +2,78 @@ import tensorflow as tf
 import h5py
 import numpy as np
 import os
-import sys
+# import sys
 import random
 import time
-import tensorflowhelpers as tfhelpers
-import tensorflowtools as tftools
+import helpers as tfhelpers
+import utils as tftools
 
 flag_randomHyperParam = False
 
 # architecture parameter
-num_channel_initial = 32
+num_channel_initial = 16
 conv_size_initial = 5
-num_resolution_level = 4
+idx_size_ffd = 0  # this is using sizes in sizes_target_hierarchy, 0 being original size, nonzero sigma_filtering
+flag_global_share = False
+num_channel_initial_global = 8
 
 # algorithm
 learning_rate = 1e-5
-lambda_decay = 0
-lambda_bending = 1e-3
-lambda_gradient = 1e-3
-
-# data set
-dataset_name_target = 'test1-us1'
-dataset_name_moving = 'test1-mr1'
-
-# training
-initial_bias = 0.01
-totalIterations = 10001
-miniBatchSize = 8
-
-# log and data saving
-log_num_shuffle = 0
-log_start_debug = 100
-log_freq_debug = 100
-log_freq_info = 10
-
-# --- parameters to be read from file
-working_size = []
-size_ddf = []
+lambda_decay = 1e-6
+lambda_bending = [1e-5]  # [1e-3, 1e-3, 1e-3, 1e-3]  # sizes_target_hierarchy
+lambda_gradient = [0]  # [0, 0, 0, 0]  # sizes_target_hierarchy
+sigma_filtering = 0  # in voxel not in ffd grid
 
 flag_single_label = True
-flag_use_mask = True  # in with long-tailed postprocessing
+flag_use_mask = False  # in with long-tailed postprocessing
 
+# data set
+dataset_name_target = 'test3-us1'
+dataset_name_moving = 'test3-mr1'
+
+# training
+miniBatchSize = 16
+flag_use_global = True
+flag_use_local = True
+start_composite = 2000
+initial_bias = 0.0
+initial_std_local = 0
+initial_std_global = 0
+label_smoothing = 0.1
+totalIterations = 20001
+initialiser_local = tf.random_normal_initializer(0, initial_std_local)  # tf.contrib.layers.xavier_initializer()
+initialiser_global = tf.random_normal_initializer(0, initial_std_global)  # tf.contrib.layers.xavier_initializer()
 
 # k-fold cross-validation
 num_fold = 10  # k
 idx_fold = 0
 
-# --- experimental sampling --- # BEFORE seeding!
+# log and data saving
+log_num_shuffle = 0
+log_start_debug = 500
+log_freq_debug = 250
+log_freq_info = 10
+
+
+# --- experimental parameter searching --- # BEFORE seeding!
 if flag_randomHyperParam:
-    miniBatch_size = int(np.random.choice([16, 25, 36, 49, 64, 100]))
-    # devCase_size = num_case-1
-    # noise_size = int(np.random.choice([1e2, 500]))
-    # idx_ROI = int(np.random.choice([0, 1, 2, 3, 4]))
-    idx_crossV = int(np.random.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]))
-    num_channel_initial_G = int(np.random.choice([128, 256, 512, 1024]))
-    num_channel_initial_D = int(np.random.choice([8, 16, 32, 64]))
-    lambda_weight_G = np.random.choice([0, 1e-3, 1e-5])
-    lambda_weight_D = np.random.choice([0, 1e-3, 1e-5])
-    conv_kernel_size_initial = int(np.random.choice([3, 5, 7]))
-    lambda_supervised = np.random.choice([0, 1e-2, 1e-3, 1e-4, 1e-5])
-    order_supervised = np.random.choice([1, 2])
-    # md_num_features = int(np.random.choice([100, 200, 300, 400, 500]))
-    # useConditionSmoother = int(np.random.choice([True, False]))
-    learning_rate = np.random.choice([1e-4, 2e-4, 5e-4])
-# --- experimental sampling ---
+    learning_rate = random.choice([1e-4, 1e-5, 1e-6])
+    lambda_decay = random.choice([0, 1e-3, 1e-4, 1e-5, 1e-6])
+    lambda_bending = [random.choice([0, 1e-1, 1e-3, 1e-4]),
+                      random.choice([0]),
+                      random.choice([0]),
+                      random.choice([0])]
+    lambda_gradient = [random.choice([0, 1e-1, 1e-3, 1e-4]),
+                       random.choice([0]),
+                       random.choice([0]),
+                       random.choice([0])]
+    dataset_name_target = random.choice(['test-1-us1', 'test1-us1', 'test3-us1', 'test5-us1'])
+    dataset_name_moving = random.choice(['test1-mr1', 'test3-mr1', 'test5-mr1'])
+    sigma_filtering = random.choice([0, 1, 2, 3, 4, 5])
+    num_channel_initial = random.choice([8, 16, 32])
+    num_channel_initial_global = random.choice([2, 4, 8])
+    conv_size_initial = random.choice([3, 5, 7])
+# --- experimental parameter searching ---
 
 # data sets
 h5fn_image_target, h5fn_label_target, size_target, _, h5fn_mask_target = tfhelpers.dataset_switcher(dataset_name_target)
@@ -83,39 +91,42 @@ if flag_dir_overwrite:
 
 
 # information
-print('- Algorithm Summary (normalised calibration) --------', flush=True, file=fid_output_info)
+print('- Algorithm Summary (res-u-net-4) --------', flush=True, file=fid_output_info)
 
 print('current_time: %s' % time.asctime(time.gmtime()), flush=True, file=fid_output_info)
 print('flag_dir_overwrite: %s' % flag_dir_overwrite, flush=True, file=fid_output_info)
-print('idx_ROI: %s' % idx_ROI, flush=True, file=fid_output_info)
-print('idx_crossV: %s' % idx_crossV, flush=True, file=fid_output_info)
-print('data_set_name: %s' % data_set_name, flush=True, file=fid_output_info)
-print('cond_set_name: %s' % cond_set_name, flush=True, file=fid_output_info)
-print('miniBatch_size: %s' % miniBatch_size, flush=True, file=fid_output_info)
-print('noise_size: %s' % noise_size, flush=True, file=fid_output_info)
-print('conv_kernel_size_initial: %s' % conv_kernel_size_initial, flush=True, file=fid_output_info)
-print('num_channel_initial_G: %s' % num_channel_initial_G, flush=True, file=fid_output_info)
-print('num_channel_initial_D: %s' % num_channel_initial_D, flush=True, file=fid_output_info)
-print('lambda_weight_G: %s' % lambda_weight_G, flush=True, file=fid_output_info)
-print('lambda_weight_D: %s' % lambda_weight_D, flush=True, file=fid_output_info)
-print('lambda_supervised: %s' % lambda_supervised, flush=True, file=fid_output_info)
-print('order_supervised: %s' % order_supervised, flush=True, file=fid_output_info)
+print('num_channel_initial: %s' % num_channel_initial, flush=True, file=fid_output_info)
+print('conv_size_initial: %s' % conv_size_initial, flush=True, file=fid_output_info)
+print('idx_size_ffd: %s' % idx_size_ffd, flush=True, file=fid_output_info)
+print('flag_global_share: %s' % flag_global_share, flush=True, file=fid_output_info)
+print('num_channel_initial_global: %s' % num_channel_initial_global, flush=True, file=fid_output_info)
 print('learning_rate: %s' % learning_rate, flush=True, file=fid_output_info)
-print('md_num_features: %s' % md_num_features, flush=True, file=fid_output_info)
-print('md_num_kernels: %s' % md_num_kernels, flush=True, file=fid_output_info)
-print('md_kernel_dim: %s' % md_kernel_dim, flush=True, file=fid_output_info)
-print('keep_prob_rate: %s' % keep_prob_rate, flush=True, file=fid_output_info)
-print('generator_shortcuts: %s' % generator_shortcuts, flush=True, file=fid_output_info)
-print('useIdentityMapping: %s' % useIdentityMapping, flush=True, file=fid_output_info)
-print('useConditionSmoother: %s' % useConditionSmoother, flush=True, file=fid_output_info)
+print('lambda_decay: %s' % lambda_decay, flush=True, file=fid_output_info)
+print('lambda_bending: %s' % lambda_bending, flush=True, file=fid_output_info)
+print('lambda_gradient: %s' % lambda_gradient, flush=True, file=fid_output_info)
+print('sigma_filtering: %s' % sigma_filtering, flush=True, file=fid_output_info)
+print('flag_single_label: %s' % flag_single_label, flush=True, file=fid_output_info)
+print('flag_use_mask: %s' % flag_use_mask, flush=True, file=fid_output_info)
+print('dataset_name_target: %s' % dataset_name_target, flush=True, file=fid_output_info)
+print('dataset_name_moving: %s' % dataset_name_moving, flush=True, file=fid_output_info)
+print('initial_bias: %s' % initial_bias, flush=True, file=fid_output_info)
+print('initial_std_global: %s' % initial_std_global, flush=True, file=fid_output_info)
+print('initial_std_local: %s' % initial_std_local, flush=True, file=fid_output_info)
+print('label_smoothing: %s' % label_smoothing, flush=True, file=fid_output_info)
+print('totalIterations: %s' % totalIterations, flush=True, file=fid_output_info)
+print('flag_use_global: %s' % flag_use_global, flush=True, file=fid_output_info)
+print('flag_use_local: %s' % flag_use_local, flush=True, file=fid_output_info)
+print('start_composite: %s' % start_composite, flush=True, file=fid_output_info)
+print('miniBatchSize: %s' % miniBatchSize, flush=True, file=fid_output_info)
+print('num_fold: %s' % num_fold, flush=True, file=fid_output_info)
+print('idx_fold: %s' % idx_fold, flush=True, file=fid_output_info)
 
 print('- End of Algorithm Summary --------', flush=True, file=fid_output_info)
-if log_num_shuffle:
-    print('trainDataIndices: %s' % trainDataIndices, flush=True, file=fid_output_info)
 
+random.seed(1)
+tf.set_random_seed(1)
 
 # totalDataSize = 111
-random.seed(1)
 dataIndices = [i for i in range(totalDataSize)]
 random.shuffle(dataIndices)  # shuffle once
 foldSize = int(totalDataSize / num_fold)
@@ -129,19 +140,29 @@ if (remainder != 0) & (idx_fold < remainder):
 trainIndices = list(set(dataIndices) - set(testIndices))
 random.shuffle(trainIndices)
 trainSize = len(trainIndices)
+if log_num_shuffle:
+    print('trainDataIndices: %s' % trainIndices, flush=True, file=fid_output_info)
 
 # setting up minibatch gradient descent
-
 num_miniBatch = int(trainSize / miniBatchSize)
-# for inference using minibatch
-remainder = len(testIndices) % miniBatchSize
-if remainder != 0:
-    testIndices += [dataIndices[i] for i in range(miniBatchSize-remainder)]
-num_miniBatch_test = int(len(testIndices) / miniBatchSize)
 
+# for inference using minibatch
+remainder_test = len(testIndices) % miniBatchSize
+if remainder_test > 0:
+    testIndices += [dataIndices[i] for i in range(miniBatchSize-remainder_test)]
+num_miniBatch_test = int(len(testIndices) / miniBatchSize)
 
 # pre-computing for graph
 grid_reference = tftools.get_reference_grid(size_target)
+if sigma_filtering:
+    k_smooth = tf.expand_dims(tf.expand_dims(tf.to_float(
+        tfhelpers.get_smoothing_kernel(sigma_filtering/2**idx_size_ffd)), axis=3), axis=4)
+sizes_target_hierarchy = tfhelpers.get_hierarchy_sizes(size_target, max([idx_size_ffd, len(lambda_bending), len(lambda_gradient)]))
+
+transform_identity = tfhelpers.initial_transform_generator(miniBatchSize)
+transform_initial = np.reshape(tfhelpers.initial_transform_generator(1), [-1, 12])  # single
+feeder_target = tfhelpers.DataFeeder(h5fn_image_target, h5fn_label_target, h5fn_mask_target)
+feeder_moving = tfhelpers.DataFeeder(h5fn_image_moving, h5fn_label_moving)
 
 # building the computational graph
 movingImage_ph = tf.placeholder(tf.float32, [miniBatchSize]+size_moving+[1])
@@ -156,7 +177,7 @@ targetTransform_ph = tf.placeholder(tf.float32, [miniBatchSize]+[1, 12])
 movingImage0 = tftools.random_transform1(movingImage_ph, movingTransform_ph, size_moving)
 movingLabel0 = tftools.random_transform1(movingLabel_ph, movingTransform_ph, size_moving)
 targetImage0 = tftools.random_transform1(targetImage_ph, targetTransform_ph, size_target)
-targetLabel0 = tftools.random_transform1(targetLabel_ph, targetTransform_ph, size_target)
+targetLabel0 = tftools.random_transform1(targetLabel_ph, targetTransform_ph, size_target) * (1-label_smoothing) + label_smoothing/2
 
 strides_none = [1, 1, 1, 1, 1]
 strides_down = [1, 2, 2, 2, 1]
@@ -164,24 +185,74 @@ k_conv = [3, 3, 3]
 k_conv0 = [conv_size_initial, conv_size_initial, conv_size_initial]
 k_pool = [1, 2, 2, 2, 1]
 
+if not flag_global_share:
+    # down-sampling
+    nc0_g = num_channel_initial_global
+    W0c_g = tf.get_variable("W0c_g", shape=k_conv0 + [2, nc0_g], initializer=tf.contrib.layers.xavier_initializer())
+    W0r1_g = tf.get_variable("W0r1_g", shape=k_conv + [nc0_g, nc0_g], initializer=tf.contrib.layers.xavier_initializer())
+    W0r2_g = tf.get_variable("W0r2_g", shape=k_conv + [nc0_g, nc0_g], initializer=tf.contrib.layers.xavier_initializer())
+    vars_encode_g = [W0c_g, W0r1_g, W0r2_g]
+    h0c_g = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(
+        tf.concat([tftools.resize_volume(movingImage0, size_target), targetImage0], axis=4), W0c_g, strides_none,
+        "SAME")))
+    h0r1_g = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h0c_g, W0r1_g, strides_none, "SAME")))
+    h0r2_g = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h0r1_g, W0r2_g, strides_none, "SAME")) + h0c_g)
+    h0_g = tf.nn.max_pool3d(h0r2_g, k_pool, strides_down, padding="SAME")
+
+    nc1_g = nc0_g * 2
+    W1c_g = tf.get_variable("W1c_g", shape=k_conv + [nc0_g, nc1_g], initializer=tf.contrib.layers.xavier_initializer())
+    W1r1_g = tf.get_variable("W1r1_g", shape=k_conv + [nc1_g, nc1_g], initializer=tf.contrib.layers.xavier_initializer())
+    W1r2_g = tf.get_variable("W1r2_g", shape=k_conv + [nc1_g, nc1_g], initializer=tf.contrib.layers.xavier_initializer())
+    vars_encode_g += [W1c_g, W1r1_g, W1r2_g]
+    h1c_g = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h0_g, W1c_g, strides_none, "SAME")))
+    h1r1_g = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h1c_g, W1r1_g, strides_none, "SAME")))
+    h1r2_g = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h1r1_g, W1r2_g, strides_none, "SAME")) + h1c_g)
+    h1_g = tf.nn.max_pool3d(h1r2_g, k_pool, strides_down, padding="SAME")
+
+    nc2_g = nc1_g * 2
+    W2c_g = tf.get_variable("W2c_g", shape=k_conv + [nc1_g, nc2_g], initializer=tf.contrib.layers.xavier_initializer())
+    W2r1_g = tf.get_variable("W2r1_g", shape=k_conv + [nc2_g, nc2_g], initializer=tf.contrib.layers.xavier_initializer())
+    W2r2_g = tf.get_variable("W2r2_g", shape=k_conv + [nc2_g, nc2_g], initializer=tf.contrib.layers.xavier_initializer())
+    vars_encode_g += [W2c_g, W2r1_g, W2r2_g]
+    h2c_g = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h1_g, W2c_g, strides_none, "SAME")))
+    h2r1_g = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h2c_g, W2r1_g, strides_none, "SAME")))
+    h2r2_g = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h2r1_g, W2r2_g, strides_none, "SAME")) + h2c_g)
+    h2_g = tf.nn.max_pool3d(h2r2_g, k_pool, strides_down, padding="SAME")
+
+    nc3_g = nc2_g * 2
+    W3c_g = tf.get_variable("W3c_g", shape=k_conv + [nc2_g, nc3_g], initializer=tf.contrib.layers.xavier_initializer())
+    W3r1_g = tf.get_variable("W3r1_g", shape=k_conv + [nc3_g, nc3_g], initializer=tf.contrib.layers.xavier_initializer())
+    W3r2_g = tf.get_variable("W3r2_g", shape=k_conv + [nc3_g, nc3_g], initializer=tf.contrib.layers.xavier_initializer())
+    vars_encode_g += [W3c_g, W3r1_g, W3r2_g]
+    h3c_g = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h2_g, W3c_g, strides_none, "SAME")))
+    h3r1_g = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h3c_g, W3r1_g, strides_none, "SAME")))
+    h3r2_g = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h3r1_g, W3r2_g, strides_none, "SAME")) + h3c_g)
+    h3_g = tf.nn.max_pool3d(h3r2_g, k_pool, strides_down, padding="SAME")
+
+    # deep
+    ncD_g = nc3_g * 2  # deep layer
+    WD_g = tf.get_variable("WD_g", shape=k_conv + [nc3_g, ncD_g], initializer=tf.contrib.layers.xavier_initializer())
+    vars_encode_g += [WD_g]
+    hD_g = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h3_g, WD_g, strides_none, "SAME")))
+
 
 # down-sampling
 nc0 = num_channel_initial
 W0c = tf.get_variable("W0c", shape=k_conv0+[2, nc0], initializer=tf.contrib.layers.xavier_initializer())
 W0r1 = tf.get_variable("W0r1", shape=k_conv+[nc0, nc0], initializer=tf.contrib.layers.xavier_initializer())
 W0r2 = tf.get_variable("W0r2", shape=k_conv+[nc0, nc0], initializer=tf.contrib.layers.xavier_initializer())
+vars_encode = [W0c, W0r1, W0r2]
 h0c = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(
     tf.concat([tftools.resize_volume(movingImage0, size_target), targetImage0], axis=4), W0c, strides_none, "SAME")))
 h0r1 = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h0c, W0r1, strides_none, "SAME")))
 h0r2 = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h0r1, W0r2, strides_none, "SAME")) + h0c)
 h0 = tf.nn.max_pool3d(h0r2, k_pool, strides_down, padding="SAME")
-theta = [W0c, W0r1, W0r2]
 
 nc1 = nc0*2
 W1c = tf.get_variable("W1c", shape=k_conv+[nc0, nc1], initializer=tf.contrib.layers.xavier_initializer())
 W1r1 = tf.get_variable("W1r1", shape=k_conv+[nc1, nc1], initializer=tf.contrib.layers.xavier_initializer())
 W1r2 = tf.get_variable("W1r2", shape=k_conv+[nc1, nc1], initializer=tf.contrib.layers.xavier_initializer())
-theta += [W1c, W1r1, W1r2]
+vars_encode += [W1c, W1r1, W1r2]
 h1c = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h0, W1c, strides_none, "SAME")))
 h1r1 = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h1c, W1r1, strides_none, "SAME")))
 h1r2 = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h1r1, W1r2, strides_none, "SAME")) + h1c)
@@ -191,7 +262,7 @@ nc2 = nc1*2
 W2c = tf.get_variable("W2c", shape=k_conv+[nc1, nc2], initializer=tf.contrib.layers.xavier_initializer())
 W2r1 = tf.get_variable("W2r1", shape=k_conv+[nc2, nc2], initializer=tf.contrib.layers.xavier_initializer())
 W2r2 = tf.get_variable("W2r2", shape=k_conv+[nc2, nc2], initializer=tf.contrib.layers.xavier_initializer())
-theta += [W2c, W2r1, W2r2]
+vars_encode += [W2c, W2r1, W2r2]
 h2c = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h1, W2c, strides_none, "SAME")))
 h2r1 = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h2c, W2r1, strides_none, "SAME")))
 h2r2 = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h2r1, W2r2, strides_none, "SAME")) + h2c)
@@ -201,7 +272,7 @@ nc3 = nc2*2
 W3c = tf.get_variable("W3c", shape=k_conv+[nc2, nc3], initializer=tf.contrib.layers.xavier_initializer())
 W3r1 = tf.get_variable("W3r1", shape=k_conv+[nc3, nc3], initializer=tf.contrib.layers.xavier_initializer())
 W3r2 = tf.get_variable("W3r2", shape=k_conv+[nc3, nc3], initializer=tf.contrib.layers.xavier_initializer())
-theta += [W3c, W3r1, W3r2]
+vars_encode += [W3c, W3r1, W3r2]
 h3c = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h2, W3c, strides_none, "SAME")))
 h3r1 = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h3c, W3r1, strides_none, "SAME")))
 h3r2 = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h3r1, W3r2, strides_none, "SAME")) + h3c)
@@ -210,14 +281,14 @@ h3 = tf.nn.max_pool3d(h3r2, k_pool, strides_down, padding="SAME")
 # deep
 ncD = nc3*2  # deep layer
 WD = tf.get_variable("WD", shape=k_conv+[nc3, ncD], initializer=tf.contrib.layers.xavier_initializer())
-theta += [WD]
+vars_encode += [WD]
 hD = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h3, WD, strides_none, "SAME")))
 
 # up-sampling
 W3_c = tf.get_variable("W3_c", shape=k_conv+[nc3, ncD], initializer=tf.contrib.layers.xavier_initializer())
 W3_r1 = tf.get_variable("W3_r1", shape=k_conv+[nc3, nc3], initializer=tf.contrib.layers.xavier_initializer())
 W3_r2 = tf.get_variable("W3_r2", shape=k_conv+[nc3, nc3], initializer=tf.contrib.layers.xavier_initializer())
-theta += [W3_c, W3_r1, W3_r2]
+vars_decode = [W3_c, W3_r1, W3_r2]
 h3_c = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d_transpose(hD, W3_c, h3c.get_shape(), strides_down, "SAME")))
 h3_r1 = tf.add(h3_c, h3c)
 h3_r2 = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h3_r1, W3_r1, strides_none, "SAME")))
@@ -226,7 +297,7 @@ h3_ = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h3_r2, W3_r2, strides
 W2_c = tf.get_variable("W2_c", shape=k_conv+[nc2, nc3], initializer=tf.contrib.layers.xavier_initializer())
 W2_r1 = tf.get_variable("W2_r1", shape=k_conv+[nc2, nc2], initializer=tf.contrib.layers.xavier_initializer())
 W2_r2 = tf.get_variable("W2_r2", shape=k_conv+[nc2, nc2], initializer=tf.contrib.layers.xavier_initializer())
-theta += [W2_c, W2_r1, W2_r2]
+vars_decode += [W2_c, W2_r1, W2_r2]
 h2_c = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d_transpose(h3_, W2_c, h2c.get_shape(), strides_down, "SAME")))
 h2_r1 = tf.add(h2_c, h2c)
 h2_r2 = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h2_r1, W2_r1, strides_none, "SAME")))
@@ -235,7 +306,7 @@ h2_ = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h2_r2, W2_r2, strides
 W1_c = tf.get_variable("W1_c", shape=k_conv+[nc1, nc2], initializer=tf.contrib.layers.xavier_initializer())
 W1_r1 = tf.get_variable("W1_r1", shape=k_conv+[nc1, nc1], initializer=tf.contrib.layers.xavier_initializer())
 W1_r2 = tf.get_variable("W1_r2", shape=k_conv+[nc1, nc1], initializer=tf.contrib.layers.xavier_initializer())
-theta += [W1_c, W1_r1, W1_r2]
+vars_decode += [W1_c, W1_r1, W1_r2]
 h1_c = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d_transpose(h2_, W1_c, h1c.get_shape(), strides_down, "SAME")))
 h1_r1 = tf.add(h1_c, h1c)
 h1_r2 = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h1_r1, W1_r1, strides_none, "SAME")))
@@ -244,71 +315,128 @@ h1_ = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h1_r2, W1_r2, strides
 W0_c = tf.get_variable("W0_c", shape=k_conv+[nc0, nc1], initializer=tf.contrib.layers.xavier_initializer())
 W0_r1 = tf.get_variable("W0_r1", shape=k_conv+[nc0, nc0], initializer=tf.contrib.layers.xavier_initializer())
 W0_r2 = tf.get_variable("W0_r2", shape=k_conv+[nc0, nc0], initializer=tf.contrib.layers.xavier_initializer())
-theta += [W0_c, W0_r1, W0_r2]
+vars_decode += [W0_c, W0_r1, W0_r2]
 h0_c = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d_transpose(h1_, W0_c, h0c.get_shape(), strides_down, "SAME")))
 h0_r1 = tf.add(h0_c, h0c)
 h0_r2 = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h0_r1, W0_r1, strides_none, "SAME")))
 h0_ = tf.nn.relu(tf.contrib.layers.batch_norm(tf.nn.conv3d(h0_r2, W0_r2, strides_none, "SAME")) + h0_r1)
 
-# readout
-nc_o = 3
-W_o = tf.get_variable("W_o", shape=k_conv+[nc0, nc_o], initializer=tf.contrib.layers.xavier_initializer())
-b_o = tf.Variable(tf.constant(initial_bias, shape=[nc_o]), name='b_o')
-theta += [W_o]  # but bias term
-displacement = tf.nn.conv3d(h0_, W_o, strides_none, "SAME") + b_o
-grid_sample = grid_reference + displacement
+
+flag_use_composite = flag_use_global & flag_use_local
+
+if flag_use_global:
+    # global transformation
+    if flag_global_share:
+        nfD = hD.shape.dims[1].value * hD.shape.dims[2].value * hD.shape.dims[3].value * hD.shape.dims[4].value
+    else:
+        nfD = hD_g.shape.dims[1].value * hD_g.shape.dims[2].value * hD_g.shape.dims[3].value * hD_g.shape.dims[4].value
+    W_global = tf.get_variable("W_global", shape=[nfD, 12], initializer=initialiser_global)
+    b_global = tf.get_variable("b_global", shape=[1, 12], initializer=tf.constant_initializer(transform_initial+initial_bias))  # tf.Variable(tf.squeeze(tf.to_float(transform_identity+initial_bias), axis=1), name='b_global')
+    if flag_global_share:
+        vars_encode += [W_global]  # no bias term
+        theta = tf.matmul(tf.reshape(hD, [miniBatchSize, -1]), W_global) + b_global
+    else:
+        vars_encode_g += [W_global]  # no bias term
+        theta = tf.matmul(tf.reshape(hD_g, [miniBatchSize, -1]), W_global) + b_global
+    grid_sample_global = tftools.warp_grid(grid_reference, theta)
+    displacement_global = grid_sample_global - grid_reference
+
+if flag_use_local:
+    # local transformation
+    W_local = tf.get_variable("W_local", shape=k_conv+[nc0, 3], initializer=initialiser_local)
+    b_local = tf.get_variable("b_local", shape=[3], initializer=tf.constant_initializer(initial_bias))  # tf.Variable(tf.constant(initial_bias, shape=[3]), name='b_local')
+    vars_decode += [W_local]  # no bias term
+    displacement = tf.nn.conv3d(h0_, W_local, strides_none, "SAME") + b_local
+    if sigma_filtering:
+        if idx_size_ffd == 0:
+            displacement = tftools.displacement_filtering(displacement, k_smooth)
+        else:
+            displacement = tftools.resize_volume(displacement, sizes_target_hierarchy[idx_size_ffd])
+            displacement = tftools.displacement_filtering(displacement, k_smooth, size_target)
+    # grid_sample_local = grid_reference + displacement
 
 # label-smoothed cross-entropy
-movingLabel_warped = tftools.resample_linear(movingLabel0, grid_sample)
-ce = tf.nn.softmax_cross_entropy_with_logits(labels=tf.concat([targetLabel0, 1-targetLabel0], axis=4),
-                                             logits=tf.concat([movingLabel_warped, 1-movingLabel_warped], axis=4))
-tf.add_to_collection('loss', tf.reduce_mean(ce))
+if flag_use_global:    movingLabel_global = tftools.resample_linear(movingLabel0, grid_sample_global)
+if flag_use_local:     movingLabel_local = tftools.resample_linear(movingLabel0, grid_reference + displacement)
+if flag_use_composite: movingLabel_composite = tftools.resample_linear(movingLabel0, grid_sample_global + displacement)
 
-# bending energy
-if lambda_bending > 0:
-    be_batches = tftools.compute_bending_energy(displacement)
-    be = tf.reduce_mean(be_batches)
-    tf.add_to_collection('loss', be * lambda_bending)
-else:
-    be = tf.constant(-1)
+if flag_use_global:
+    tf.add_to_collection('loss_global', tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
+        labels=tf.concat([targetLabel0, 1-targetLabel0], axis=4),
+        logits=tf.concat([movingLabel_global, 1-movingLabel_global], axis=4))))
+if flag_use_local:
+    tf.add_to_collection('loss_local', tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
+        labels=tf.concat([targetLabel0, 1-targetLabel0], axis=4),
+        logits=tf.concat([movingLabel_local, 1-movingLabel_local], axis=4))))
+if flag_use_composite:
+    tf.add_to_collection('loss_composite', tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
+        labels=tf.concat([targetLabel0, 1-targetLabel0], axis=4),
+        logits=tf.concat([movingLabel_composite, 1-movingLabel_composite], axis=4))))
 
-# gradient L2
-if lambda_gradient > 0:
-    gn_batches = tftools.compute_gradient_l2norm(displacement)
-    gn = tf.reduce_mean(gn_batches)
-    tf.add_to_collection('loss', gn * lambda_gradient)
+# regularisers
+if flag_use_local:
+    be = tftools.hierarchy_regulariser(displacement, lambda_bending, sizes_target_hierarchy, tftools.compute_bending_energy)
+    gn = tftools.hierarchy_regulariser(displacement, lambda_gradient, sizes_target_hierarchy, tftools.compute_gradient_norm)
+    tf.add_to_collection('loss_local', be)
+    tf.add_to_collection('loss_local', gn)
+    if flag_use_composite:
+        tf.add_to_collection('loss_composite', be)
+        tf.add_to_collection('loss_composite', gn)
 else:
-    gn = tf.constant(-1)
+    be = tf.constant(-1.0)
+    gn = tf.constant(-1.0)
 
 # weight-decay
 if lambda_decay > 0:
-    for i in range(len(theta)):
-        tf.add_to_collection('loss', tf.nn.l2_loss(theta[i]) * lambda_decay)
+    for i in range(len(vars_encode)):
+        if flag_use_global & flag_global_share:
+            tf.add_to_collection('loss_global', tf.nn.l2_loss(vars_encode[i]) * lambda_decay)
+        if flag_use_local:     tf.add_to_collection('loss_local', tf.nn.l2_loss(vars_encode[i]) * lambda_decay)
+        if flag_use_composite: tf.add_to_collection('loss_composite', tf.nn.l2_loss(vars_encode[i]) * lambda_decay)
 
-# loss
-loss = tf.add_n(tf.get_collection('loss'))
+    for i in range(len(vars_decode)):
+        if flag_use_local:     tf.add_to_collection('loss_local', tf.nn.l2_loss(vars_decode[i]) * lambda_decay)
+        if flag_use_composite: tf.add_to_collection('loss_composite', tf.nn.l2_loss(vars_decode[i]) * lambda_decay)
 
+    if not flag_global_share:
+        for i in range(len(vars_encode_g)):
+            if flag_use_global:    tf.add_to_collection('loss_global', tf.nn.l2_loss(vars_encode_g[i]) * lambda_decay)
+            if flag_use_composite: tf.add_to_collection('loss_composite', tf.nn.l2_loss(vars_encode_g[i]) * lambda_decay)
 
-# branch nodes
+# losses
+if flag_use_global:    loss_global = tf.add_n(tf.get_collection('loss_global'))
+if flag_use_local:     loss_local = tf.add_n(tf.get_collection('loss_local'))
+if flag_use_composite: loss_composite = tf.add_n(tf.get_collection('loss_composite'))
+
+# utility nodes
 # dice, movingVol, targetVol = tftools.compute_dice(movingLabel_warped, targetLabel0)
-dice, _, _ = tftools.compute_dice(movingLabel_warped, targetLabel0)
-dist = tftools.compute_centroid_distance(movingLabel_warped, targetLabel0, grid_reference)
+if flag_use_global:
+    dice_global = tftools.compute_dice(movingLabel_global, targetLabel0)
+    dist_global = tftools.compute_centroid_distance(movingLabel_global, targetLabel0, grid_reference)
+if flag_use_local:
+    dice_local = tftools.compute_dice(movingLabel_local, targetLabel0)
+    dist_local = tftools.compute_centroid_distance(movingLabel_local, targetLabel0, grid_reference)
+if flag_use_composite:
+    dice_composite = tftools.compute_dice(movingLabel_composite, targetLabel0)
+    dist_composite = tftools.compute_centroid_distance(movingLabel_composite, targetLabel0, grid_reference)
 
 
 # setting up optimisation
-optimizer = tf.train.AdamOptimizer(learning_rate)
-global_step = tf.Variable(0, name='global_step', trainable=False)  # step counter
-train_op = optimizer.minimize(loss, global_step=global_step)
-# train_op = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
+if flag_use_global:
+    # vars_global = vars_encode+[b_global]
+    train_global = tf.train.AdamOptimizer(learning_rate).minimize(loss_global)
+if flag_use_local:
+    # vars_local = vars_encode+vars_decode+[b_local]
+    train_local = tf.train.AdamOptimizer(learning_rate).minimize(loss_local)
+if flag_use_composite:
+    # vars_composite = vars_encode+vars_decode+[b_global, b_local]
+    train_composite = tf.train.AdamOptimizer(learning_rate).minimize(loss_composite)
 
 sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 
-# pre-compute
-transform_identity = tfhelpers.initial_transform_generator(miniBatchSize)
-feeder_target = tfhelpers.DataFeeder(h5fn_image_target, h5fn_label_target, h5fn_mask_target)
-feeder_moving = tfhelpers.DataFeeder(h5fn_image_moving, h5fn_label_moving)
 
+# training
 for step in range(totalIterations):
     current_time = time.asctime(time.gmtime())
 
@@ -334,16 +462,40 @@ for step in range(totalIterations):
                  movingTransform_ph: tfhelpers.random_transform_generator(miniBatchSize),
                  targetTransform_ph: tfhelpers.random_transform_generator(miniBatchSize)}
 
+    if flag_use_composite & (step >= start_composite):
+        sess.run(train_composite, feed_dict=trainFeed)
+    elif flag_use_global:
+        sess.run(train_global, feed_dict=trainFeed)
+    elif flag_use_local:
+        sess.run(train_local, feed_dict=trainFeed)
+
     if step in range(0, totalIterations, log_freq_info):
-        _, loss_train, be_train, gn_train, dice_train, dist_train = sess.run([train_op, loss, be, gn, dice, dist], feed_dict=trainFeed)
+        if flag_use_composite & (step >= start_composite):
+            loss_train, be_train, gn_train, dice_train, dist_train = sess.run([loss_composite, be, gn, dice_composite, dist_composite], feed_dict=trainFeed)
+            print('Optimiser: training composite transformation:')
+            print('Optimiser: training composite transformation:', flush=True, file=fid_output_info)
+            # --- debug ---
+            # displacement_train = sess.run([displacement], feed_dict=trainFeed)
+            # print('%s' % displacement_train)
+        elif flag_use_global:
+            loss_train, dice_train, dist_train = sess.run([loss_global, dice_global, dist_global], feed_dict=trainFeed)
+            be_train, gn_train = -1, -1
+            print('Optimiser: training global transformation:')
+            print('Optimiser: training global transformation:', flush=True, file=fid_output_info)
+            # --- debug ---
+            # displacement_train = sess.run([displacement_global], feed_dict=trainFeed)
+            # print('%s' % displacement_train)
+        elif flag_use_local:
+            loss_train, be_train, gn_train, dice_train, dist_train = sess.run([loss_local, be, gn, dice_local, dist_local], feed_dict=trainFeed)
+            print('Optimiser: training local transformation:')
+            print('Optimiser: training local transformation:', flush=True, file=fid_output_info)
+
         print('[%s] Step %d: loss=%f, be=%f, gn=%f' % (current_time, step, loss_train, be_train, gn_train))
         print('[%s] Step %d: loss=%f, be=%f, gn=%f' % (current_time, step, loss_train, be_train, gn_train), flush=True, file=fid_output_info)
-        print('  Dice: %s' % np.reshape(dice_train, newshape=[1, -1]))
-        print('  Dice: %s' % np.reshape(dice_train, newshape=[1, -1]), flush=True, file=fid_output_info)
+        print('  Dice: %s' % dice_train)
+        print('  Dice: %s' % dice_train, flush=True, file=fid_output_info)
         print('  Distance: %s' % dist_train)
         print('  Distance: %s' % dist_train, flush=True, file=fid_output_info)
-    else:
-        sess.run(train_op, feed_dict=trainFeed)
 
     # Debug data
     if step in range(log_start_debug, totalIterations, log_freq_debug):
@@ -362,8 +514,16 @@ for step in range(totalIterations):
         movingLabel0_train, targetLabel0_train = sess.run([movingLabel0, targetLabel0], feed_dict=trainFeed)
         fid_debug_data.create_dataset('/movingLabel0_train/', movingLabel0_train.shape, dtype=movingLabel0_train.dtype, data=movingLabel0_train)
         fid_debug_data.create_dataset('/targetLabel0_train/', targetLabel0_train.shape, dtype=targetLabel0_train.dtype, data=targetLabel0_train)
-        displacement_train, movingLabel_warped_train = sess.run([displacement, movingLabel_warped], feed_dict=trainFeed)
-        fid_debug_data.create_dataset('/displacement_train/', displacement_train.shape, dtype=displacement_train.dtype, data=displacement_train)
+        if flag_use_composite & (step >= start_composite):
+            displacement_global_train, displacement_train, movingLabel_warped_train = sess.run([displacement_global, displacement, movingLabel_composite], feed_dict=trainFeed)
+            fid_debug_data.create_dataset('/displacement_train/', displacement_train.shape, dtype=displacement_train.dtype, data=displacement_train)
+            fid_debug_data.create_dataset('/displacement_global_train/', displacement_global_train.shape, dtype=displacement_global_train.dtype, data=displacement_global_train)
+        elif flag_use_global:
+            displacement_global_train, movingLabel_warped_train = sess.run([displacement_global, movingLabel_global], feed_dict=trainFeed)
+            fid_debug_data.create_dataset('/displacement_global_train/', displacement_global_train.shape, dtype=displacement_global_train.dtype, data=displacement_global_train)
+        elif flag_use_local:
+            displacement_train, movingLabel_warped_train = sess.run([displacement, movingLabel_local], feed_dict=trainFeed)
+            fid_debug_data.create_dataset('/displacement_train/', displacement_train.shape, dtype=displacement_train.dtype, data=displacement_train)
         fid_debug_data.create_dataset('/movingLabel_warped_train/', movingLabel_warped_train.shape, dtype=movingLabel_warped_train.dtype, data=movingLabel_warped_train)
         # --------------------------
 
@@ -377,15 +537,42 @@ for step in range(totalIterations):
                         targetLabel_ph: feeder_target.get_label_batch(idx_test, label_indices),
                         movingTransform_ph: transform_identity,
                         targetTransform_ph: transform_identity}
-            displacement_test, movingLabel_warped_test = sess.run([displacement, movingLabel_warped], feed_dict=testFeed)
-            fid_debug_data.create_dataset('/displacement_test_k%d/' % k, displacement_test.shape, dtype=displacement_test.dtype, data=displacement_test)
-            fid_debug_data.create_dataset('/movingLabel_warped_test_k%d/' % k, movingLabel_warped_test.shape, dtype=movingLabel_warped_test.dtype, data=movingLabel_warped_test)
 
-            dice_test, dist_test = sess.run([dice, dist], feed_dict=testFeed)
-            print('test-Dice: %s' % np.reshape(dice_test, newshape=[1, -1]))
-            print('test-Dice: %s' % np.reshape(dice_test, newshape=[1, -1]), flush=True, file=fid_output_info)
-            print('test-Distance: %s' % dist_test)
-            print('test-Distance: %s' % dist_test, flush=True, file=fid_output_info)
+            if flag_use_composite & (step >= start_composite):
+                displacement_global_test, displacement_test, movingLabel_warped_test = sess.run([displacement_global, displacement, movingLabel_composite], feed_dict=testFeed)
+                if k == (num_miniBatch_test - 1) & (remainder_test > 0):
+                    movingLabel_warped_test = movingLabel_warped_test[:remainder_test, :]
+                    displacement_global_test = displacement_global_test[:remainder_test, :]
+                    displacement_test = displacement_test[:remainder_test, :]
+                fid_debug_data.create_dataset('/movingLabel_warped_test_k%d/' % k, movingLabel_warped_test.shape, dtype=movingLabel_warped_test.dtype, data=movingLabel_warped_test)
+                fid_debug_data.create_dataset('/displacement_test_k%d/' % k, displacement_test.shape, dtype=displacement_test.dtype, data=displacement_test)
+                fid_debug_data.create_dataset('/displacement_global_test_k%d/' % k, displacement_global_test.shape, dtype=displacement_global_test.dtype, data=displacement_global_test)
+            elif flag_use_global:
+                displacement_global_test, movingLabel_warped_test = sess.run([displacement_global, movingLabel_global], feed_dict=testFeed)
+                if k == (num_miniBatch_test - 1) & (remainder_test > 0):
+                    movingLabel_warped_test = movingLabel_warped_test[:remainder_test, :]
+                    displacement_global_test = displacement_global_test[:remainder_test, :]
+                fid_debug_data.create_dataset('/movingLabel_warped_test_k%d/' % k, movingLabel_warped_test.shape, dtype=movingLabel_warped_test.dtype, data=movingLabel_warped_test)
+                fid_debug_data.create_dataset('/displacement_global_test_k%d/' % k, displacement_global_test.shape, dtype=displacement_global_test.dtype, data=displacement_global_test)
+            elif flag_use_local:
+                displacement_test, movingLabel_warped_test = sess.run([displacement, movingLabel_local], feed_dict=testFeed)
+                if k == (num_miniBatch_test - 1) & (remainder_test > 0):
+                    movingLabel_warped_test = movingLabel_warped_test[:remainder_test, :]
+                    displacement_test = displacement_test[:remainder_test, :]
+                fid_debug_data.create_dataset('/movingLabel_warped_test_k%d/' % k, movingLabel_warped_test.shape, dtype=movingLabel_warped_test.dtype, data=movingLabel_warped_test)
+                fid_debug_data.create_dataset('/displacement_test_k%d/' % k, displacement_test.shape, dtype=displacement_test.dtype, data=displacement_test)
+
+            if flag_use_composite & (step >= start_composite):
+                dice_test, dist_test = sess.run([dice_composite, dist_composite], feed_dict=testFeed)
+            elif flag_use_global:
+                dice_test, dist_test = sess.run([dice_global, dist_global], feed_dict=testFeed)
+            elif flag_use_local:
+                dice_test, dist_test = sess.run([dice_local, dist_local], feed_dict=testFeed)
+
+            print('***test*** Dice: %s' % dice_test)
+            print('***test*** Dice: %s' % dice_test, flush=True, file=fid_output_info)
+            print('***test*** Distance: %s' % dist_test)
+            print('***test*** Distance: %s' % dist_test, flush=True, file=fid_output_info)
             fid_debug_data.create_dataset('/dice_test_k%d/' % k, data=dice_test)
             fid_debug_data.create_dataset('/dist_test_k%d/' % k, data=dist_test)
         # ------------

@@ -186,8 +186,6 @@ def transformer(U, theta, out_size, interpolation_method='linear', name='Spatial
             else:
                 x_t = tf.tile(tf.expand_dims(tf.expand_dims(tf.linspace(-1.0, 1.0, width),0),1),tf.stack([depth,height,1]))
             
-            
-
             x_t_flat = tf.reshape(x_t, (1, -1))
             y_t_flat = tf.reshape(y_t, (1, -1))
             z_t_flat = tf.reshape(z_t, (1, -1))
@@ -198,8 +196,7 @@ def transformer(U, theta, out_size, interpolation_method='linear', name='Spatial
 
     def _transform(theta, input_dim, out_size, method):
         with tf.variable_scope('_transform'):
-            num_batch = input_dim.get_shape()[0]
-            #previously: num_batch = tf.shape(input_dim)[0]
+            num_batch = input_dim.get_shape()[0]  #previously: num_batch = tf.shape(input_dim)[0]
             depth = input_dim.get_shape()[1]
             height = input_dim.get_shape()[2]
             width = input_dim.get_shape()[3]
@@ -217,8 +214,7 @@ def transformer(U, theta, out_size, interpolation_method='linear', name='Spatial
             grid = _meshgrid(out_depth, out_height, out_width)
             grid = tf.expand_dims(grid, 0)
             grid = tf.reshape(grid, [-1])
-            grid = tf.tile(grid, [int(num_batch)])
-            #previously grid = tf.tile(grid, tf.stack([num_batch]))
+            grid = tf.tile(grid, [int(num_batch)])  #previously grid = tf.tile(grid, tf.stack([num_batch]))
             grid = tf.reshape(grid, [int(num_batch), 4, -1])
             
             # Transform A x (x_t, y_t, z_t, 1)^T -> (x_s, y_s, z_s)
