@@ -1,5 +1,7 @@
 from __future__ import absolute_import, print_function
 
+import warnings
+
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
@@ -8,9 +10,9 @@ from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import TF_SUMMARIES
-from niftynet.engine.windows_aggregator_identity import WindowAsImageAggregator
 from niftynet.engine.sampler_random_vector import RandomVectorSampler
 from niftynet.engine.sampler_resize import ResizeSampler
+from niftynet.engine.windows_aggregator_identity import WindowAsImageAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.histogram_normalisation import \
@@ -93,6 +95,19 @@ class GANApplication(BaseApplication):
                 augmentation_layers.append(RandomRotationLayer(
                     min_angle=self.action_param.rotation_angle[0],
                     max_angle=self.action_param.rotation_angle[1]))
+            try:
+                from niftynet.contrib.layer.rand_elastic_deform import RandomElasticDeformationLayer
+
+                if self.action_param.elastic_deformation:
+                    augmentation_layers.append(RandomElasticDeformationLayer(
+                        num_controlpoints=self.action_param.elastic_deformation[0],
+                        std_deformation_sigma=self.action_param.elastic_deformation[1]))
+            except ImportError:
+                warnings.warn(
+                    'SimpleITK adapter failed to load,'
+                    'elastic deformations are not supported.',
+                    ImportWarning)
+
 
         if self.reader:
             self.reader.add_preprocessing_layers(
