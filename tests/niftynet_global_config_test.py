@@ -1,7 +1,8 @@
 from unittest import TestCase
 from os.path import (expanduser, join, isdir, isfile)
-from os import remove
+from os import (remove, makedirs)
 from shutil import rmtree
+from glob import glob
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 
 
@@ -69,5 +70,25 @@ class NiftyNetGlobalConfigTest(TestCase):
         self.fail('not implemented')
 
     def test_012_incorrect_config_file_backed_up(self):
-        # TODO
-        self.fail('not implemented')
+        # create an incorrect config file at the correct location
+        makedirs(NiftyNetGlobalConfigTest.config_home)
+        incorrect_config = 'invalid_home_tag: ~/niftynet'
+        with open(NiftyNetGlobalConfigTest.config_file, 'w') as config_file:
+            config_file.write(incorrect_config)
+
+        # the following should back it up and replace it with default config
+        global_config = NiftyNetGlobalConfig()
+
+        self.assertTrue(isfile(NiftyNetGlobalConfigTest.config_file))
+        self.assertEqual(global_config.get_niftynet_config_folder(),
+                         NiftyNetGlobalConfigTest.config_home)
+
+        # check if incorrect file was backed up
+        found_files = glob(join(NiftyNetGlobalConfigTest.config_home,
+                                NiftyNetGlobalConfigTest.typify('config-backup-*')))
+        self.assertTrue(len(found_files) == 1)
+        with open(found_files[0], 'r') as backup_file:
+            self.assertEqual(backup_file.read(), incorrect_config)
+
+        # cleanup: remove backup file
+        NiftyNetGlobalConfigTest.remove_path(backup_file)
