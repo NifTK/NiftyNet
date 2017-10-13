@@ -45,12 +45,12 @@ class GeneralisedDiceTest(tf.test.TestCase):
                 [[0, 10], [10, 0], [10, 0], [10, 0]],
                 dtype=tf.float32, name='predicted')
             labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
-            weights = tf.cast(labels, tf.float32)
+            # weights = tf.cast(labels, tf.float32)
             test_loss_func = LossFunction(2, loss_type='GDSC')
             one_minus_generalised_dice_score = test_loss_func(
-                predicted, labels, weights)
-            self.assertAlmostEqual(
-                one_minus_generalised_dice_score.eval(), 0.92424583)
+                predicted, labels)
+            self.assertAllClose(
+                one_minus_generalised_dice_score.eval(), 0.0, atol=1e-4)
 
     def test_gdsc_incorrect_type_weight_error(self):
         with self.test_session():
@@ -79,8 +79,8 @@ class GeneralisedDiceTest(tf.test.TestCase):
                 loss_func_params={'type_weight': 'Uniform'})
             one_minus_generalised_dice_score = test_loss_func(
                 predicted, labels, weights)
-            self.assertAlmostEqual(one_minus_generalised_dice_score.eval(),
-                                   0.16670454)
+            self.assertAllClose(one_minus_generalised_dice_score.eval(),
+                                   0.0, atol=1e-4)
 
 
 class DiceTest(tf.test.TestCase):

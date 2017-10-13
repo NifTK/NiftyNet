@@ -64,7 +64,7 @@ class LossFunction(Layer):
 
 def generalised_dice_loss(prediction,
                           ground_truth,
-                          weight_map,
+                          weight_map=None,
                           type_weight='Square'):
     """
     Function to calculate the Generalised Dice Loss defined in Sudre, C. et. al.
@@ -121,7 +121,7 @@ def generalised_dice_loss(prediction,
     generalised_dice_denominator = \
         tf.reduce_sum(tf.multiply(weights, seg_vol + ref_vol))
     generalised_dice_score = \
-        generalised_dice_numerator  / generalised_dice_denominator
+        generalised_dice_numerator / generalised_dice_denominator
     return 1 - generalised_dice_score
 
 
