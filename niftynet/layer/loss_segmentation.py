@@ -64,7 +64,7 @@ class LossFunction(Layer):
 
 def generalised_dice_loss(prediction,
                           ground_truth,
-                          weight_map,
+                          weight_map=None,
                           type_weight='Square'):
     """
     Function to calculate the Generalised Dice Loss defined in Sudre, C. et. al.
@@ -92,16 +92,18 @@ def generalised_dice_loss(prediction,
         weight_map_nclasses = tf.reshape(
             tf.tile(weight_map, [n_classes]), prediction.get_shape())
         ref_vol = tf.sparse_reduce_sum(
-            weight_map_nclasses * one_hot, reduction_axes=[0]) + 0.1
+            weight_map_nclasses * one_hot, reduction_axes=[0])
+
         intersect = tf.sparse_reduce_sum(
             weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
         seg_vol = tf.reduce_sum(
-            tf.multiply(weight_map_nclasses, prediction), 0) + 0.1
+            tf.multiply(weight_map_nclasses, prediction), 0)
     else:
-        ref_vol = tf.sparse_reduce_sum(one_hot, reduction_axes=[0]) + 0.1
+        ref_vol = tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
+
         intersect = tf.sparse_reduce_sum(one_hot * prediction,
                                          reduction_axes=[0])
-        seg_vol = tf.reduce_sum(prediction, 0) + 0.1
+        seg_vol = tf.reduce_sum(prediction, 0)
     if type_weight == 'Square':
         weights = tf.reciprocal(tf.square(ref_vol))
     elif type_weight == 'Simple':
@@ -111,7 +113,9 @@ def generalised_dice_loss(prediction,
     else:
         raise ValueError("The variable type_weight \"{}\"" \
                          "is not defined.".format(type_weight))
-
+    new_weights = tf.where(tf.is_inf(weights), tf.zeros_like(weights), weights)
+    weights = tf.where(tf.is_inf(weights), tf.ones_like(weights) *
+                       tf.reduce_max(new_weights), weights)
     generalised_dice_numerator = \
         2 * tf.reduce_sum(tf.multiply(weights, intersect))
     generalised_dice_denominator = \
@@ -185,8 +189,8 @@ def cross_entropy(prediction, ground_truth, weight_map=None):
     entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
         logits=prediction, labels=ground_truth)
     if weight_map is not None:
-        weight_map = tf.size(entropy) / tf.reduce_sum(weight_map) * \
-                     weight_map
+        weight_map = tf.cast(tf.size(entropy), dtype=tf.float32) / \
+                     tf.reduce_sum(weight_map) * weight_map
         entropy = tf.multiply(entropy, weight_map)
     return tf.reduce_mean(entropy)
 
@@ -353,6 +357,7 @@ def l1_loss(prediction, ground_truth, weight_map=None):
     """
     :param prediction: the current prediction of the ground truth.
     :param ground_truth: the measurement you are approximating with regression.
+    :param weight_map: optional; weights to attribute to each observation
     :return: mean of the l1 loss across all voxels.
     """
     absolute_residuals = tf.abs(tf.subtract(prediction, ground_truth))
@@ -371,11 +376,13 @@ def l2_loss(prediction, ground_truth, weight_map=None):
     """
     :param prediction: the current prediction of the ground truth.
     :param ground_truth: the measurement you are approximating with regression.
+    :param weight_map: optional; weights to attribute to each observation
     :return: sum(differences squared) / 2 - Note, no square root
     """
     residuals = tf.subtract(prediction, ground_truth)
     if weight_map is not None:
-        residuals = tf.multiply(residuals, weight_map)
+        residuals = tf.multiply(residuals, weight_map) / tf.reduce_sum(
+            weight_map)
     return tf.nn.l2_loss(residuals)
 
 
