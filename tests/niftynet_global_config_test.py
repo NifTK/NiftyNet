@@ -1,4 +1,5 @@
 from unittest import TestCase
+from os.path import (expanduser, join, isdir)
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 
 
@@ -14,8 +15,12 @@ class NiftyNetGlobalConfigTest(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # TODO
-        pass
+        cls.config_home = join(expanduser('~'), '.niftynet')
+        cls.config_file = join(cls.config_home, 'config.yml')
+
+        cls.default_config_opts = {
+            'niftynet_home': join(expanduser('~'), 'niftynet')
+        }
 
     @classmethod
     def tearDownClass(cls):
