@@ -2,6 +2,10 @@
 
 from os.path import (expanduser, join, abspath, dirname, isdir, isfile)
 from os import makedirs
+try:
+    from configparser import (ConfigParser, Error)
+except ImportError:
+    from ConfigParser import (ConfigParser, Error)
 from niftynet.utilities.decorators import singleton
 
 
@@ -28,9 +32,40 @@ class NiftyNetGlobalConfig(object):
         :returns: a dictionary of parsed configuration options
         :rtype: `dict`
         """
+        backup = False
+        create_new = False
+        global_tag = 'global'
         config_dir = dirname(config_file)
         if not isdir(config_dir):
             makedirs(config_dir)
+        if isfile(config_file):
+            try:
+                config = ConfigParser()
+                config.read(config_file)
+                if global_tag in config:
+                    return dict(config[global_tag])
+                else:
+                    backup = True
+            except Error:
+                backup = True
+        else:
+            create_new = True
+
+        if backup:
+            # TODO
+            pass
+
+        if backup or create_new:
+            # TODO
+            pass
+
+        config = ConfigParser()
+        config[global_tag] = {
+            'home': '~/niftynet'
+        }
+        with open(config_file, 'w') as new_config_file:
+            config.write(new_config_file)
+        return dict(config['global'])
 
     def get_niftynet_home_folder(self):
         """Return the folder containing NiftyNet models and data"""
