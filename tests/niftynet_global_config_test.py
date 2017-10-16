@@ -32,7 +32,7 @@ class NiftyNetGlobalConfigTest(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.config_home = join(expanduser('~'), '.niftynet')
-        cls.file_type = 'yml'
+        cls.file_type = 'ini'
         cls.config_file = join(cls.config_home, cls.typify('config'))
 
         cls.default_config_opts = {
@@ -70,7 +70,7 @@ class NiftyNetGlobalConfigTest(TestCase):
         makedirs(NiftyNetGlobalConfigTest.config_home)
         custom_niftynet_home = '~/customniftynethome'
         custom_niftynet_home_abs = expanduser(custom_niftynet_home)
-        config = ''.join(['home: ', custom_niftynet_home])
+        config = ''.join(['home = ', custom_niftynet_home])
         with open(NiftyNetGlobalConfigTest.config_file, 'w') as config_file:
             config_file.write(config)
 
@@ -81,7 +81,7 @@ class NiftyNetGlobalConfigTest(TestCase):
     def test_012_incorrect_config_file_backed_up(self):
         # create an incorrect config file at the correct location
         makedirs(NiftyNetGlobalConfigTest.config_home)
-        incorrect_config = 'invalid_home_tag: ~/niftynet'
+        incorrect_config = 'invalid_home_tag = ~/niftynet'
         with open(NiftyNetGlobalConfigTest.config_file, 'w') as config_file:
             config_file.write(incorrect_config)
 
