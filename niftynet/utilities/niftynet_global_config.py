@@ -16,7 +16,7 @@ class NiftyNetGlobalConfig(object):
 
         self._niftynet_home = abspath(config_opts['home'])
 
-    def __load_or_create(config_file):
+    def __load_or_create(self, config_file):
         """Load passed configuration file, if it exists; create a default
         otherwise.
 
