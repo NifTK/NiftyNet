@@ -14,21 +14,20 @@ class NiftyNetGlobalConfig(object):
         self._config_home = join(expanduser('~'), '.niftynet')
         self._config_file = join(self._config_home, 'config.ini')
 
-        config_opts = self.__load_or_create(self._config_file)
         self._niftynet_home = abspath(config_opts['home'])
 
-        def __load_or_create(self, config_file):
-            """Load passed configuration file, if it exists; create a default
-            otherwise.
+    def __load_or_create(config_file):
+        """Load passed configuration file, if it exists; create a default
+        otherwise.
 
-            :param config_file: no sanity checks are performed, as this
-            method is for internal use only
-            :type config_file: `os.path`
-            :returns: a dictionary of parsed configuration options
-            :rtype: `dict`
-            """
-            # TODO
-            pass
+        :param config_file: no sanity checks are performed, as this
+        method is for internal use only
+        :type config_file: `os.path`
+        :returns: a dictionary of parsed configuration options
+        :rtype: `dict`
+        """
+        # TODO
+        pass
 
     def get_niftynet_home_folder(self):
         """Return the folder containing NiftyNet models and data"""
