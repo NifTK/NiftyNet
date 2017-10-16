@@ -60,6 +60,7 @@ class NiftyNetGlobalConfigTest(TestCase):
         self.assertTrue(global_config_1 is global_config_2)
 
     def test_010_non_existing_config_file_created(self):
+        self.assertFalse(isfile(NiftyNetGlobalConfigTest.config_file))
         global_config = NiftyNetGlobalConfig()
         self.assertTrue(isfile(NiftyNetGlobalConfigTest.config_file))
         self.assertEqual(global_config.get_niftynet_config_folder(),
