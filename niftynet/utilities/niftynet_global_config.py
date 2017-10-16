@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from os.path import (expanduser, join, abspath)
+from os.path import (expanduser, join, abspath, dirname, isdir, isfile)
+from os import makedirs
 from niftynet.utilities.decorators import singleton
 
 
@@ -27,8 +28,9 @@ class NiftyNetGlobalConfig(object):
         :returns: a dictionary of parsed configuration options
         :rtype: `dict`
         """
-        # TODO
-        pass
+        config_dir = dirname(config_file)
+        if not isdir(config_dir):
+            makedirs(config_dir)
 
     def get_niftynet_home_folder(self):
         """Return the folder containing NiftyNet models and data"""
