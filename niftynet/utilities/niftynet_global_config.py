@@ -12,6 +12,7 @@ class NiftyNetGlobalConfig(object):
         self._download_server_url = \
             'https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer'
         self._config_home = join(expanduser('~'), '.niftynet')
+        self._config_file = join(self._config_home, 'config.ini')
 
         # ToDo: fetch NiftyNet home folder from a global configuration file
         self._niftynet_home = join(expanduser('~'), 'niftynet')
