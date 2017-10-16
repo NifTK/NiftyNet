@@ -19,15 +19,15 @@ class RandRotationTest(tf.test.TestCase):
 
     def test_4d_shape(self):
         x, interp_orders = self.get_4d_input()
-        rand_rotation_layer = RandomRotationLayer(
-            min_angle=-10.0, max_angle=10.0)
+        rand_rotation_layer = RandomRotationLayer()
+        rand_rotation_layer.init_uniform_angle((-10.0, 10.0))
         rand_rotation_layer.randomise()
         out = rand_rotation_layer(x, interp_orders)
 
     def test_5d_shape(self):
         x, interp_orders = self.get_5d_input()
-        rand_rotation_layer = RandomRotationLayer(
-            min_angle=-10.0, max_angle=10.0)
+        rand_rotation_layer = RandomRotationLayer()
+        rand_rotation_layer.init_uniform_angle((-10.0, 10.0))
         rand_rotation_layer.randomise()
         out = rand_rotation_layer(x, interp_orders)
 
