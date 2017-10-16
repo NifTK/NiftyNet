@@ -36,7 +36,7 @@ class NiftyNetGlobalConfigTest(TestCase):
         cls.config_file = join(cls.config_home, cls.typify('config'))
 
         cls.default_config_opts = {
-            'niftynet_home': '~/niftynet'
+            'home': '~/niftynet'
         }
 
     @classmethod
@@ -47,7 +47,7 @@ class NiftyNetGlobalConfigTest(TestCase):
     def setUp(self):
         NiftyNetGlobalConfigTest.remove_path(NiftyNetGlobalConfigTest.config_home)
         NiftyNetGlobalConfigTest.remove_path(
-            NiftyNetGlobalConfigTest.default_config_opts['niftynet_home']
+            NiftyNetGlobalConfigTest.default_config_opts['home']
         )
 
     def tearDown(self):
