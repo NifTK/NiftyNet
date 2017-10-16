@@ -1,3 +1,13 @@
+# Global NiftyNet settings
+
+The global NiftyNet configuration is read from `~/.niftynet/config.ini`.
+When NiftyNet is run, it will attempt to load this file for the global configuration.
+* If it does not exist, NiftyNet will create a default one.
+* If it exists but cannot be read for some reason (for instance incorrect formatting or wrong entries):
+   - NiftyNet will back it up with a timestamp (for instance `~/.niftynet/config-backup-2017-10-16-10-50-58-abc.ini` - `abc` being a random string) and,
+   - Create a default one.
+* Otherwise NiftyNet will read the global configuration from this file.
+
 # Configuration file
 
 To run a NiftyNet [application](../niftynet/application) or a customised
