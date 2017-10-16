@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os
-from os.path import expanduser
+from os.path import (expanduser, join)
 from niftynet.utilities.decorators import singleton
 
 
@@ -12,10 +11,10 @@ class NiftyNetGlobalConfig(object):
     def __init__(self):
         self._download_server_url = \
             'https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer'
-        self._config_home = os.path.join(expanduser("~"), '.niftynet')
+        self._config_home = join(expanduser('~'), '.niftynet')
 
         # ToDo: fetch NiftyNet home folder from a global configuration file
-        self._niftynet_home = os.path.join(expanduser("~"), 'niftynet')
+        self._niftynet_home = join(expanduser('~'), 'niftynet')
 
     def get_niftynet_home_folder(self):
         """Return the folder containing NiftyNet models and data"""
@@ -27,7 +26,7 @@ class NiftyNetGlobalConfig(object):
 
     def get_default_examples_folder(self):
         """Return the default folder containing NiftyNet examples"""
-        return os.path.join(self._niftynet_home, 'examples')
+        return join(self._niftynet_home, 'examples')
 
     def get_download_server_url(self):
         """Return the URL to the NiftyNet examples server"""
