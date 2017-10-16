@@ -14,6 +14,7 @@ class NiftyNetGlobalConfig(object):
         self._config_home = join(expanduser('~'), '.niftynet')
         self._config_file = join(self._config_home, 'config.ini')
 
+        config_opts = self.__load_or_create(self._config_file)
         self._niftynet_home = abspath(config_opts['home'])
 
     def __load_or_create(self, config_file):
