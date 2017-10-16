@@ -113,10 +113,18 @@ class SegmentationApplication(BaseApplication):
                 augmentation_layers.append(RandomSpatialScalingLayer(
                     min_percentage=self.action_param.scaling_percentage[0],
                     max_percentage=self.action_param.scaling_percentage[1]))
-            if self.action_param.rotation_angle:
-                augmentation_layers.append(RandomRotationLayer(
-                    min_angle=self.action_param.rotation_angle[0],
-                    max_angle=self.action_param.rotation_angle[1]))
+            if self.action_param.rotation_angle or \
+                    self.action_param.rotation_angle_x or \
+                        self.action_param.rotation_angle_y or \
+                            self.action_param.rotation_angle_z:
+                rotation_layer = RandomRotationLayer()
+                if self.action_param.rotation_angle:
+                    rotation_layer.init_uniform_angle(self.action_param.rotation_angle)
+                else:
+                    rotation_layer.init_non_uniform_angle(self.action_param.rotation_angle_x,
+                                                          self.action_param.rotation_angle_y,
+                                                          self.action_param.rotation_angle_z)
+                augmentation_layers.append(rotation_layer )
 
         volume_padding_layer = []
         if self.net_param.volume_padding_size:

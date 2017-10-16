@@ -93,9 +93,8 @@ class RegressionApplication(BaseApplication):
                     min_percentage=self.action_param.scaling_percentage[0],
                     max_percentage=self.action_param.scaling_percentage[1]))
             if self.action_param.rotation_angle:
-                augmentation_layers.append(RandomRotationLayer(
-                    min_angle=self.action_param.rotation_angle[0],
-                    max_angle=self.action_param.rotation_angle[1]))
+                augmentation_layers.append(RandomRotationLayer())
+                augmentation_layers[-1].init_uniform_angle(self.action_param.rotation_angle)
 
         volume_padding_layer = []
         if self.net_param.volume_padding_size:
