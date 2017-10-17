@@ -16,6 +16,9 @@ from niftynet.utilities.decorators import singleton
 class NiftyNetGlobalConfig(object):
     """Global configuration settings"""
 
+    global_section = 'global'
+    home_key = 'home'
+
     def __init__(self):
         self._download_server_url = \
             'https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer'
@@ -23,7 +26,8 @@ class NiftyNetGlobalConfig(object):
         self._config_file = join(self._config_home, 'config.ini')
 
         config_opts = self.__load_or_create(self._config_file)
-        self._niftynet_home = expanduser(config_opts['global']['home'])
+        self._niftynet_home = expanduser(
+            config_opts[NiftyNetGlobalConfig.global_section][NiftyNetGlobalConfig.home_key])
 
     def __load_or_create(self, config_file):
         """Load passed configuration file, if it exists; create a default
@@ -37,13 +41,13 @@ class NiftyNetGlobalConfig(object):
         :returns: a dictionary of parsed configuration options
         :rtype: `dict`
         """
-        required_sections = ['global']
+        required_sections = [NiftyNetGlobalConfig.global_section]
         required_keys = {
-            required_sections[0]: ['home']
+            required_sections[0]: [NiftyNetGlobalConfig.home_key]
         }
         default_values = {
             required_sections[0]: {
-                'home': '~/niftynet'
+                NiftyNetGlobalConfig.home_key: '~/niftynet'
             }
         }
 
