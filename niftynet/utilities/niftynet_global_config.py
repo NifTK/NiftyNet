@@ -52,9 +52,6 @@ class NiftyNetGlobalConfig(object):
         }
 
         backup = False
-        config_dir, config_filename = split(config_file)
-        if not isdir(config_dir):
-            makedirs(config_dir)
         if isfile(config_file):
             try:
                 config = ConfigParser()
@@ -80,6 +77,10 @@ class NiftyNetGlobalConfig(object):
             if not backup:  # loaded file contains all required
                             # config options: so return
                 return dict(config)
+
+        config_dir, config_filename = split(config_file)
+        if not isdir(config_dir):
+            makedirs(config_dir)
 
         if backup:  # config file exists, but does not contain all required
                     # config opts: so backup not to override
