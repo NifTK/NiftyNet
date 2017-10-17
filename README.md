@@ -66,6 +66,12 @@ The API reference is available on [Read the Docs][rtd-niftynet].
 
 [rtd-niftynet]: http://niftynet.rtfd.io/
 
+#### Customising NiftyNet
+
+Please see the [NiftyNet global settings][global-settings] section for customising NiftyNet's global settings.
+
+[global-settings]: ./config/README.md#global-niftynet-settings
+
 #### Contributing
 
 Please see the [contribution guidelines](./CONTRIBUTING.md).
