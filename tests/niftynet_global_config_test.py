@@ -48,7 +48,7 @@ class NiftyNetGlobalConfigTest(TestCase):
     def setUp(self):
         NiftyNetGlobalConfigTest.remove_path(NiftyNetGlobalConfigTest.config_home)
         NiftyNetGlobalConfigTest.remove_path(
-            NiftyNetGlobalConfigTest.default_config_opts['home']
+            expanduser(NiftyNetGlobalConfigTest.default_config_opts['home'])
         )
 
     def tearDown(self):
