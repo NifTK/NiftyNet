@@ -47,6 +47,8 @@ class NiftyNetGlobalConfig(object):
                 config.read(config_file)
                 if global_tag in config:
                     if home_tag in config[global_tag]:
+                        # loaded file contains all required
+                        # config options: so return
                         return dict(config[global_tag])
                     else:
                         backup = True
@@ -55,7 +57,8 @@ class NiftyNetGlobalConfig(object):
             except Error:
                 backup = True
 
-        if backup:
+        if backup:  # config file exists, but does not contain all required
+                    # config opts: so backup not to override
             timestamp = strftime('%Y-%m-%d-%H-%M-%S')
             random_str = ''.join(choice(ascii_lowercase) for _ in range(3))
             backup_suffix = '-'.join(['backup', timestamp, random_str])
@@ -65,6 +68,7 @@ class NiftyNetGlobalConfig(object):
             backup_file = join(config_dir, backup_filename)
             rename(config_file, backup_file)
 
+        # create a new default global config file
         config = ConfigParser()
         config[global_tag] = {
             'home': '~/niftynet'
