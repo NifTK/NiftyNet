@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from os.path import (expanduser, join, abspath, dirname, isdir, isfile)
-from os import makedirs
+from os.path import (expanduser, join, split, isdir, isfile, splitext)
+from os import (makedirs, rename)
+from random import choice
+from string import ascii_lowercase
+from time import strftime
 try:
     from configparser import (ConfigParser, Error)
 except ImportError:
@@ -35,8 +38,8 @@ class NiftyNetGlobalConfig(object):
         backup = False
         create_new = False
         global_tag = 'global'
-        config_dir = dirname(config_file)
         home_tag = 'home'
+        config_dir, config_filename = split(config_file)
         if not isdir(config_dir):
             makedirs(config_dir)
         if isfile(config_file):
@@ -56,8 +59,14 @@ class NiftyNetGlobalConfig(object):
             create_new = True
 
         if backup:
-            # TODO
-            pass
+            timestamp = strftime('%Y-%m-%d-%H-%M-%S')
+            random_str = ''.join(choice(ascii_lowercase) for _ in range(3))
+            backup_suffix = '-'.join(['backup', timestamp, random_str])
+
+            filename, extension = splitext(config_filename)
+            backup_filename = ''.join([filename, '-', backup_suffix, extension])
+            backup_file = join(config_dir, backup_filename)
+            rename(config_file, backup_file)
 
         if backup or create_new:
             # TODO
