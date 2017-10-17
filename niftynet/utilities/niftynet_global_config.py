@@ -36,6 +36,7 @@ class NiftyNetGlobalConfig(object):
         create_new = False
         global_tag = 'global'
         config_dir = dirname(config_file)
+        home_tag = 'home'
         if not isdir(config_dir):
             makedirs(config_dir)
         if isfile(config_file):
@@ -43,7 +44,10 @@ class NiftyNetGlobalConfig(object):
                 config = ConfigParser()
                 config.read(config_file)
                 if global_tag in config:
-                    return dict(config[global_tag])
+                    if home_tag in config[global_tag]:
+                        return dict(config[global_tag])
+                    else:
+                        backup = True
                 else:
                     backup = True
             except Error:
