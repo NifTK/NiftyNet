@@ -112,16 +112,17 @@ SUPPORTED_OPTIMIZERS = {
     'adagrad': 'niftynet.engine.application_optimiser.Adagrad',
 }
 
-SUPPORTED_INITIALIZATIONS  = {
-    'constant' : 'niftynet.engine.application_initializations.Constant',
-    'zeros' : 'niftynet.engine.application_initializations.Zeros',
-    'ones' : 'niftynet.engine.application_initializations.Ones',
+SUPPORTED_INITIALIZATIONS = {
+    'constant': 'niftynet.engine.application_initializations.Constant',
+    'zeros': 'niftynet.engine.application_initializations.Zeros',
+    'ones': 'niftynet.engine.application_initializations.Ones',
     'uniform_scaling': 'niftynet.engine.application_initializations.UniformUnitScaling',
     'orthogonal': 'niftynet.engine.application_initializations.Orthogonal',
-    'variance_scaling' : 'niftynet.engine.application_initializations.VarianceScaling',
-    'glorot_normal' : 'niftynet.engine.application_initializations.GlorotNormal',
-    'glorot_uniform' : 'niftynet.engine.application_initializations.GlorotNormal'
+    'variance_scaling': 'niftynet.engine.application_initializations.VarianceScaling',
+    'glorot_normal': 'niftynet.engine.application_initializations.GlorotNormal',
+    'glorot_uniform': 'niftynet.engine.application_initializations.GlorotNormal'
 }
+
 
 def select_module(module_name, type_str, lookup_table):
     """
