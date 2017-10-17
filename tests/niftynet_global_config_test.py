@@ -74,8 +74,8 @@ class NiftyNetGlobalConfigTest(TestCase):
         custom_niftynet_home_abs = expanduser(custom_niftynet_home)
         config = ''.join(['home = ', custom_niftynet_home])
         with open(NiftyNetGlobalConfigTest.config_file, 'w') as config_file:
-            config_file.write(NiftyNetGlobalConfigTest.header)
-            config_file.write(config)
+            config_file.write('\n'.join(
+                [NiftyNetGlobalConfigTest.header, config]))
 
         global_config = NiftyNetGlobalConfig()
         self.assertEqual(global_config.get_niftynet_home_folder(),
@@ -86,8 +86,8 @@ class NiftyNetGlobalConfigTest(TestCase):
         makedirs(NiftyNetGlobalConfigTest.config_home)
         incorrect_config = 'invalid_home_tag = ~/niftynet'
         with open(NiftyNetGlobalConfigTest.config_file, 'w') as config_file:
-            config_file.write(NiftyNetGlobalConfigTest.header)
-            config_file.write(incorrect_config)
+            config_file.write('\n'.join(
+                [NiftyNetGlobalConfigTest.header, incorrect_config]))
 
         # the following should back it up and replace it with default config
         global_config = NiftyNetGlobalConfig()
