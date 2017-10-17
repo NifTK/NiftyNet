@@ -23,7 +23,7 @@ class NiftyNetGlobalConfig(object):
         self._config_file = join(self._config_home, 'config.ini')
 
         config_opts = self.__load_or_create(self._config_file)
-        self._niftynet_home = expanduser(config_opts['home'])
+        self._niftynet_home = expanduser(config_opts['global']['home'])
 
     def __load_or_create(self, config_file):
         """Load passed configuration file, if it exists; create a default
@@ -36,8 +36,10 @@ class NiftyNetGlobalConfig(object):
         :rtype: `dict`
         """
         backup = False
-        global_tag = 'global'
-        home_tag = 'home'
+        required_sections = ['global']
+        required_keys = {
+            required_sections[0]: ['home']
+        }
         config_dir, config_filename = split(config_file)
         if not isdir(config_dir):
             makedirs(config_dir)
@@ -45,17 +47,27 @@ class NiftyNetGlobalConfig(object):
             try:
                 config = ConfigParser()
                 config.read(config_file)
-                if global_tag in config:
-                    if home_tag in config[global_tag]:
-                        # loaded file contains all required
-                        # config options: so return
-                        return dict(config[global_tag])
-                    else:
+
+                # check all required sections and keys present
+                for required_section in required_sections:
+                    if required_section not in config:
                         backup = True
-                else:
-                    backup = True
+                        break
+
+                    for required_key in required_keys[required_section]:
+                        if required_key not in config[required_section]:
+                            backup = True
+                            break
+
+                    if backup:
+                        break
+
             except Error:
                 backup = True
+
+            if not backup:  # loaded file contains all required
+                            # config options: so return
+                return dict(config)
 
         if backup:  # config file exists, but does not contain all required
                     # config opts: so backup not to override
@@ -70,12 +82,12 @@ class NiftyNetGlobalConfig(object):
 
         # create a new default global config file
         config = ConfigParser()
-        config[global_tag] = {
+        config['global'] = {
             'home': '~/niftynet'
         }
         with open(config_file, 'w') as new_config_file:
             config.write(new_config_file)
-        return dict(config[global_tag])
+        return dict(config)
 
     def get_niftynet_home_folder(self):
         """Return the folder containing NiftyNet models and data"""
