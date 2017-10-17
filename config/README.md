@@ -8,6 +8,16 @@ When NiftyNet is run, it will attempt to load this file for the global configura
    - Create a default one.
 * Otherwise NiftyNet will read the global configuration from this file.
 
+Currently the minimal version of this file will look like the following:
+```ini
+[global]
+home = ~/niftynet
+```
+
+The `home` key specifies the root folder to be used by NiftyNet for storing and locating user data such as downloaded models, and new networks implemented by the user.
+This setting is configurable, and upon successfully loading this file NiftyNet will attempt to create the specified folder, if it does not already exist.
+
+
 # Configuration file
 
 To run a NiftyNet [application](../niftynet/application) or a customised
