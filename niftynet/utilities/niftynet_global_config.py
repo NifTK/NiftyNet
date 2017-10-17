@@ -36,7 +36,6 @@ class NiftyNetGlobalConfig(object):
         :rtype: `dict`
         """
         backup = False
-        create_new = False
         global_tag = 'global'
         home_tag = 'home'
         config_dir, config_filename = split(config_file)
@@ -55,8 +54,6 @@ class NiftyNetGlobalConfig(object):
                     backup = True
             except Error:
                 backup = True
-        else:
-            create_new = True
 
         if backup:
             timestamp = strftime('%Y-%m-%d-%H-%M-%S')
@@ -68,17 +65,13 @@ class NiftyNetGlobalConfig(object):
             backup_file = join(config_dir, backup_filename)
             rename(config_file, backup_file)
 
-        if backup or create_new:
-            # TODO
-            pass
-
         config = ConfigParser()
         config[global_tag] = {
             'home': '~/niftynet'
         }
         with open(config_file, 'w') as new_config_file:
             config.write(new_config_file)
-        return dict(config['global'])
+        return dict(config[global_tag])
 
     def get_niftynet_home_folder(self):
         """Return the folder containing NiftyNet models and data"""
