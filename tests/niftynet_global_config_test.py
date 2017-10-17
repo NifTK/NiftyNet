@@ -105,3 +105,14 @@ class NiftyNetGlobalConfigTest(TestCase):
 
         # cleanup: remove backup file
         NiftyNetGlobalConfigTest.remove_path(found_files[0])
+
+    @skipUnless('GLOBAL_CONFIG_TEST_nenhc' in environ,
+                'set GLOBAL_CONFIG_TEST_nenhc to run')
+    def test_non_existing_niftynet_home_created(self):
+        niftynet_home = expanduser(NiftyNetGlobalConfigTest.default_config_opts['home'])
+        NiftyNetGlobalConfigTest.remove_path(niftynet_home)
+        self.assertFalse(isdir(niftynet_home))
+
+        global_config = NiftyNetGlobalConfig()
+
+        self.assertTrue(isdir(niftynet_home))
