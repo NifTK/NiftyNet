@@ -197,6 +197,14 @@ quicktest:
     - QUICKTEST=True coverage run -a --source . -m unittest discover -s "tests" -p "*_test.py"
     - coverage report -m
 
+    # run global config tests
+    # These need to be run separately because NiftyNetGlobalConfig is a singleton, AND
+    # its operations pertain to a global configuration file (~/.niftynet/config.ini).
+    - GLOBAL_CONFIG_TEST_gcs=True python -m unittest tests.niftynet_global_config_test
+    - GLOBAL_CONFIG_TEST_necfc=True python -m unittest tests.niftynet_global_config_test
+    - GLOBAL_CONFIG_TEST_ecfl=True python -m unittest tests.niftynet_global_config_test
+    - GLOBAL_CONFIG_TEST_icfbu=True python -m unittest tests.niftynet_global_config_test
+
     - echo 'finished quick tests'
   tags:
     - gift-linux

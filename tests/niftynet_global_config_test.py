@@ -1,6 +1,6 @@
-from unittest import TestCase
+from unittest import (TestCase, skipUnless)
 from os.path import (expanduser, join, isdir, isfile)
-from os import (remove, makedirs)
+from os import (remove, makedirs, environ)
 from shutil import rmtree
 from glob import glob
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
@@ -46,12 +46,16 @@ class NiftyNetGlobalConfigTest(TestCase):
     def tearDown(self):
         self.setUp()
 
+    @skipUnless('GLOBAL_CONFIG_TEST_gcs' in environ,
+                'set GLOBAL_CONFIG_TEST_gcs to run')
     def test_global_config_singleton(self):
         global_config_1 = NiftyNetGlobalConfig()
         global_config_2 = NiftyNetGlobalConfig()
         self.assertEqual(global_config_1, global_config_2)
         self.assertTrue(global_config_1 is global_config_2)
 
+    @skipUnless('GLOBAL_CONFIG_TEST_necfc' in environ,
+                'set GLOBAL_CONFIG_TEST_necfc to run')
     def test_non_existing_config_file_created(self):
         self.assertFalse(isfile(NiftyNetGlobalConfigTest.config_file))
         global_config = NiftyNetGlobalConfig()
@@ -59,6 +63,8 @@ class NiftyNetGlobalConfigTest(TestCase):
         self.assertEqual(global_config.get_niftynet_config_folder(),
                          NiftyNetGlobalConfigTest.config_home)
 
+    @skipUnless('GLOBAL_CONFIG_TEST_ecfl' in environ,
+                'set GLOBAL_CONFIG_TEST_ecfl to run')
     def test_existing_config_file_loaded(self):
         # create a config file with a custom NiftyNet home
         makedirs(NiftyNetGlobalConfigTest.config_home)
@@ -73,6 +79,8 @@ class NiftyNetGlobalConfigTest(TestCase):
         self.assertEqual(global_config.get_niftynet_home_folder(),
                          custom_niftynet_home_abs)
 
+    @skipUnless('GLOBAL_CONFIG_TEST_icfbu' in environ,
+                'set GLOBAL_CONFIG_TEST_icfbu to run')
     def test_incorrect_config_file_backed_up(self):
         # create an incorrect config file at the correct location
         makedirs(NiftyNetGlobalConfigTest.config_home)
