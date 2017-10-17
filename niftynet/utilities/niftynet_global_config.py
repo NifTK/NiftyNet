@@ -26,8 +26,11 @@ class NiftyNetGlobalConfig(object):
         self._config_file = join(self._config_home, 'config.ini')
 
         config_opts = self.__load_or_create(self._config_file)
+
         self._niftynet_home = expanduser(
             config_opts[NiftyNetGlobalConfig.global_section][NiftyNetGlobalConfig.home_key])
+        if not isdir(self._niftynet_home):
+            makedirs(self._niftynet_home)
 
     def __load_or_create(self, config_file):
         """Load passed configuration file, if it exists; create a default
