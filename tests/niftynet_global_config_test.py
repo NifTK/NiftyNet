@@ -32,11 +32,6 @@ class NiftyNetGlobalConfigTest(TestCase):
             'home': '~/niftynet'
         }
 
-    @classmethod
-    def tearDownClass(cls):
-        # TODO
-        pass
-
     def setUp(self):
         NiftyNetGlobalConfigTest.remove_path(NiftyNetGlobalConfigTest.config_home)
         NiftyNetGlobalConfigTest.remove_path(
