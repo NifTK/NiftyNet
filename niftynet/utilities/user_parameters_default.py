@@ -262,6 +262,29 @@ def add_network_args(parser):
              " normalising volumes",
         type=str2boolean,
         default=False)
+    parser.add_argument(
+        "--weight_initializer",
+        help="Set the initializer for the weight parameters",
+        type=str,
+        default='glorot_normal')
+    import yaml
+    parser.add_argument(
+        "--weight_initializer_args",
+        help="Pass arguments to the initializer for the weight parameters",
+        type=yaml.load,
+        default={})
+
+    parser.add_argument(
+        "--bias_initializer",
+        help="Set the initializer for the bias parameters",
+        type=str,
+        default='zeros')
+
+    parser.add_argument(
+        "--bias_initializer_args",
+        help="Pass arguments to the initializer for the bias parameters",
+        type=yaml.load,
+        default={})
     return parser
 
 

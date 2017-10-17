@@ -2,6 +2,7 @@ import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_factory import ApplicationNetFactory
+from niftynet.engine.application_factory import InitializerFactory
 from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import NETWORK_OUTPUT
@@ -204,6 +205,10 @@ class SegmentationApplication(BaseApplication):
 
         self.net = ApplicationNetFactory.create(self.net_param.name)(
             num_classes=num_classes,
+            w_initializer=InitializerFactory.get_initializer(name=self.net_param.weight_initializer,
+                                                             args=self.net_param.weight_initializer_args),
+            b_initializer=InitializerFactory.get_initializer(name=self.net_param.bias_initializer,
+                                                             args=self.net_param.bias_initializer_args),
             w_regularizer=w_regularizer,
             b_regularizer=b_regularizer,
             acti_func=self.net_param.activation_function)

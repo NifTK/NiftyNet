@@ -112,6 +112,16 @@ SUPPORTED_OPTIMIZERS = {
     'adagrad': 'niftynet.engine.application_optimiser.Adagrad',
 }
 
+SUPPORTED_INITIALIZATIONS  = {
+    'constant'   : 'niftynet.engine.application_initializations.Constant',
+    'zeros'     : 'niftynet.engine.application_initializations.Zeros',
+    'ones'      : 'niftynet.engine.application_initializations.Ones',
+    'uniform_scaling': 'niftynet.engine.application_initializations.UniformUnitScaling',
+    'orthogonal': 'niftynet.engine.application_initializations.Orthogonal',
+    'variance_scaling' : 'niftynet.engine.application_initializations.VarianceScaling',
+    'glorot_normal' : 'niftynet.engine.application_initializations.GlorotNormal',
+    'glorot_uniform'    : 'niftynet.engine.application_initializations.GlorotNormal'
+}
 
 def select_module(module_name, type_str, lookup_table):
     """
@@ -232,3 +242,13 @@ class OptimiserFactory(ModuleFactory):
     """
     SUPPORTED = SUPPORTED_OPTIMIZERS
     type_str = 'optimizer'
+
+class InitializerFactory(ModuleFactory):
+
+    SUPPORTED = SUPPORTED_INITIALIZATIONS
+    type_str = 'initializer'
+
+    @staticmethod
+    def get_initializer(name, args):
+        init_class = InitializerFactory.create(name)
+        return init_class.get_instance(args)
