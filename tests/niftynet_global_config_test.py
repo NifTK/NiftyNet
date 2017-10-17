@@ -104,4 +104,4 @@ class NiftyNetGlobalConfigTest(TestCase):
             self.assertEqual(backup_file.read(), incorrect_config)
 
         # cleanup: remove backup file
-        NiftyNetGlobalConfigTest.remove_path(backup_file)
+        NiftyNetGlobalConfigTest.remove_path(found_files[0])
