@@ -7,14 +7,6 @@ from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 
 
 class NiftyNetGlobalConfigTest(TestCase):
-    """For reliably testing the global config file, the tests are grouped
-    and ordered by including a number.
-
-    https://docs.python.org/2/library/unittest.html says: "Note that the
-    order in which the various test cases will be run is determined by
-    sorting the test function names with respect to the built-in ordering
-    for strings."
-    """
 
     @classmethod
     def typify(cls, file_path):
