@@ -113,14 +113,14 @@ SUPPORTED_OPTIMIZERS = {
 }
 
 SUPPORTED_INITIALIZATIONS  = {
-    'constant'   : 'niftynet.engine.application_initializations.Constant',
-    'zeros'     : 'niftynet.engine.application_initializations.Zeros',
-    'ones'      : 'niftynet.engine.application_initializations.Ones',
+    'constant' : 'niftynet.engine.application_initializations.Constant',
+    'zeros' : 'niftynet.engine.application_initializations.Zeros',
+    'ones' : 'niftynet.engine.application_initializations.Ones',
     'uniform_scaling': 'niftynet.engine.application_initializations.UniformUnitScaling',
     'orthogonal': 'niftynet.engine.application_initializations.Orthogonal',
     'variance_scaling' : 'niftynet.engine.application_initializations.VarianceScaling',
     'glorot_normal' : 'niftynet.engine.application_initializations.GlorotNormal',
-    'glorot_uniform'    : 'niftynet.engine.application_initializations.GlorotNormal'
+    'glorot_uniform' : 'niftynet.engine.application_initializations.GlorotNormal'
 }
 
 def select_module(module_name, type_str, lookup_table):
@@ -243,8 +243,12 @@ class OptimiserFactory(ModuleFactory):
     SUPPORTED = SUPPORTED_OPTIMIZERS
     type_str = 'optimizer'
 
-class InitializerFactory(ModuleFactory):
 
+class InitializerFactory(ModuleFactory):
+    """
+    Import an initializer from niftynet.engine.application_initializations or
+    from user specified string
+    """
     SUPPORTED = SUPPORTED_INITIALIZATIONS
     type_str = 'initializer'
 
