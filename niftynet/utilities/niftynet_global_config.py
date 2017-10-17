@@ -27,7 +27,9 @@ class NiftyNetGlobalConfig(object):
 
     def __load_or_create(self, config_file):
         """Load passed configuration file, if it exists; create a default
-        otherwise.
+        otherwise. If this method finds an incorrect config file, it
+        backs the file up with a human-readable timestamp suffix and
+        creates a default one.
 
         :param config_file: no sanity checks are performed, as this
         method is for internal use only
