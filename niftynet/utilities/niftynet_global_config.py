@@ -35,11 +35,17 @@ class NiftyNetGlobalConfig(object):
         :returns: a dictionary of parsed configuration options
         :rtype: `dict`
         """
-        backup = False
         required_sections = ['global']
         required_keys = {
             required_sections[0]: ['home']
         }
+        default_values = {
+            required_sections[0]: {
+                'home': '~/niftynet'
+            }
+        }
+
+        backup = False
         config_dir, config_filename = split(config_file)
         if not isdir(config_dir):
             makedirs(config_dir)
@@ -81,10 +87,12 @@ class NiftyNetGlobalConfig(object):
             rename(config_file, backup_file)
 
         # create a new default global config file
-        config = ConfigParser()
-        config['global'] = {
-            'home': '~/niftynet'
-        }
+        config = ConfigParser(default_values)
+        for required_section in required_sections:
+            for required_key in required_keys[required_section]:
+                config.add_section(required_section)
+                config[required_section][required_key] = \
+                    default_values[required_section][required_key]
         with open(config_file, 'w') as new_config_file:
             config.write(new_config_file)
         return dict(config)
