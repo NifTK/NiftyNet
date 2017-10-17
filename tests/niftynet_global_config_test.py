@@ -54,20 +54,20 @@ class NiftyNetGlobalConfigTest(TestCase):
     def tearDown(self):
         self.setUp()
 
-    def test_000_global_config_singleton(self):
+    def test_global_config_singleton(self):
         global_config_1 = NiftyNetGlobalConfig()
         global_config_2 = NiftyNetGlobalConfig()
         self.assertEqual(global_config_1, global_config_2)
         self.assertTrue(global_config_1 is global_config_2)
 
-    def test_010_non_existing_config_file_created(self):
+    def test_non_existing_config_file_created(self):
         self.assertFalse(isfile(NiftyNetGlobalConfigTest.config_file))
         global_config = NiftyNetGlobalConfig()
         self.assertTrue(isfile(NiftyNetGlobalConfigTest.config_file))
         self.assertEqual(global_config.get_niftynet_config_folder(),
                          NiftyNetGlobalConfigTest.config_home)
 
-    def test_011_existing_config_file_loaded(self):
+    def test_existing_config_file_loaded(self):
         # create a config file with a custom NiftyNet home
         makedirs(NiftyNetGlobalConfigTest.config_home)
         custom_niftynet_home = '~/customniftynethome'
@@ -81,7 +81,7 @@ class NiftyNetGlobalConfigTest(TestCase):
         self.assertEqual(global_config.get_niftynet_home_folder(),
                          custom_niftynet_home_abs)
 
-    def test_012_incorrect_config_file_backed_up(self):
+    def test_incorrect_config_file_backed_up(self):
         # create an incorrect config file at the correct location
         makedirs(NiftyNetGlobalConfigTest.config_home)
         incorrect_config = '\n'.join([NiftyNetGlobalConfigTest.header,
