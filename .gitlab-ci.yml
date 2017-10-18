@@ -265,6 +265,8 @@ pip-installer:
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
     - pip install simpleitk
+    # create symlink to required datasets
+    - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
     # check user-defined networks discovered
     # 1) create configuration + NiftyNet home
     - CONFIG_HOME=~/.niftynet
@@ -295,7 +297,6 @@ pip-installer:
     - cat $package_importer
     - python $package_importer
     # test niftynet command
-    - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
     - net_segment train -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
     - net_segment inference -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
     - net_run train --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
