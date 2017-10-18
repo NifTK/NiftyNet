@@ -9,7 +9,7 @@ https://github.com/tensorflow/tensorflow/blob/r1.3/tensorflow/python/ops/init_op
 class Constant(object):
     @staticmethod
     def get_instance(args):
-        value = float(args.get('value'), 0.0)
+        value = float(args.get('value', 0.0))
         return tf.constant_initializer(value)
 
 
@@ -54,7 +54,7 @@ class UniformUnitScaling(object):
     """
     @staticmethod
     def get_instance(args):
-        factor = float(args.get('factor'),1.0)
+        factor = float(args.get('factor',1.0))
         return init_ops.uniform_unit_scaling_initializer(factor)
 
 
