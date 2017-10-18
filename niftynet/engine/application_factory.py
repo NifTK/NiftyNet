@@ -120,7 +120,9 @@ SUPPORTED_INITIALIZATIONS = {
     'orthogonal': 'niftynet.engine.application_initializations.Orthogonal',
     'variance_scaling': 'niftynet.engine.application_initializations.VarianceScaling',
     'glorot_normal': 'niftynet.engine.application_initializations.GlorotNormal',
-    'glorot_uniform': 'niftynet.engine.application_initializations.GlorotNormal'
+    'glorot_uniform': 'niftynet.engine.application_initializations.GlorotUniform',
+    'he_normal': 'niftynet.engine.application_initializations.HeNormal',
+    'he_uniform': 'niftynet.engine.application_initializations.HeUniform'
 }
 
 

@@ -266,7 +266,7 @@ def add_network_args(parser):
         "--weight_initializer",
         help="Set the initializer for the weight parameters",
         type=str,
-        default='glorot_normal')
+        default='he_normal')
 
     import yaml
     parser.add_argument(

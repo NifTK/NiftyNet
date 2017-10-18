@@ -1,10 +1,11 @@
 import tensorflow as tf
-from tensorflow.python.ops import init_ops
-"""
-all classes and docs are taken from
-https://github.com/tensorflow/tensorflow/blob/r1.3/tensorflow/python/ops/init_ops.py
-"""
 
+
+#all classes and docs are taken from
+#https://github.com/tensorflow/tensorflow/blob/r1.3/tensorflow/python/ops/init_ops.py
+
+
+seed = 42
 
 class Constant(object):
     @staticmethod
@@ -54,8 +55,8 @@ class UniformUnitScaling(object):
     """
     @staticmethod
     def get_instance(args):
-        factor = float(args.get('factor',1.0))
-        return init_ops.uniform_unit_scaling_initializer(factor)
+        factor = float(args.get('factor', 1.0))
+        return tf.uniform_unit_scaling_initializer(factor, seed=seed)
 
 
 class Orthogonal(object):
@@ -77,7 +78,7 @@ class Orthogonal(object):
     @staticmethod
     def get_instance(args):
         gain = float(args.get('gain', 1.0))
-        return init_ops.orthogonal_initializer(gain)
+        return tf.orthogonal_initializer(gain, seed=seed)
 
 
 class VarianceScaling(object):
@@ -109,7 +110,7 @@ class VarianceScaling(object):
         assert(mode in ["fan_in", "fan_out", "fan_avg"])
         distribution = args.get('distribution', "normal")
         assert(distribution in ["normal", "uniform"])
-        return init_ops.variance_scaling_initializer(scale, mode, distribution)
+        return tf.variance_scaling_initializer(scale, mode, distribution, seed=seed)
 
 
 class GlorotNormal(object):
@@ -130,7 +131,7 @@ class GlorotNormal(object):
 
     @staticmethod
     def get_instance(args):
-        return init_ops.glorot_normal_initializer()
+        return tf.glorot_normal_initializer(seed=seed)
 
 
 class GlorotUniform(object):
@@ -150,7 +151,41 @@ class GlorotUniform(object):
     """
     @staticmethod
     def get_instance(args):
-        return init_ops.glorot_uniform_initializer()
+        return tf.glorot_uniform_initializer(seed=seed)
 
 
+class HeNormal(object):
+    """He uniform variance scaling initializer.
+     It draws samples from a uniform distribution within [-limit, limit]
+     where `limit` is `sqrt(6 / fan_in)`
+     where `fan_in` is the number of input units in the weight tensor.
+     # Arguments
+         seed: A Python integer. Used to seed the random generator.
+     # Returns
+         An initializer.
+     # References
+         He et al., http://arxiv.org/abs/1502.01852
+     """
+    @staticmethod
+    def get_instance(args):
+        args = {"scale": "2.", "mode": "fan_in", "distribution": "normal"}
+        return VarianceScaling.get_instance(args)
+
+
+class HeUniform(object):
+    """He normal initializer.
+    It draws samples from a truncated normal distribution centered on 0
+    with `stddev = sqrt(2 / fan_in)`
+    where `fan_in` is the number of input units in the weight tensor.
+    # Arguments
+        seed: A Python integer. Used to seed the random generator.
+    # Returns
+        An initializer.
+    # References
+        He et al., http://arxiv.org/abs/1502.01852
+    """
+    @staticmethod
+    def get_instance(args):
+        args = {"scale": "2.", "mode": "fan_in", "distribution": "uniform"}
+        return VarianceScaling.get_instance(args)
 
