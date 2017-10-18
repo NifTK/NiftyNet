@@ -281,7 +281,7 @@ pip-installer:
     - touch $NIFTYNET_HOME/niftynetext/network/__init__.py
     # 3) replicate working ToyNet example
     - TOYNET_REPLICA=$NIFTYNET_HOME/niftynetext/network/notoynet.py
-    - cp $niftynet_dir/network/toynet.py $TOYNET_REPLICA
+    - cp $niftynet_dir/niftynet/network/toynet.py $TOYNET_REPLICA
     - sed -i 's/ToyNet/NoToyNet/g' $TOYNET_REPLICA
     # 4) run e.g. segmentation using ToyNet replica
     - net_segment train -c $niftynet_dir/config/default_segmentation.ini --name niftynetext.network.notoynet.NoToyNet --batch_size 3 --max_iter 5
