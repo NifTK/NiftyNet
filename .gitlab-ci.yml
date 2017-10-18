@@ -221,6 +221,8 @@ pip-installer:
     - 177-merging-net_regress-to-dev
     - 102-upgrade-to-tensorflow-1-3-0
   script:
+    # get the shortened version of last commit's hash
+    - LAST_COMMIT=$(git rev-parse --short HEAD)
     # source utils
     - source ci/utils.sh
     # following three lines copied over from dev script:
@@ -262,6 +264,32 @@ pip-installer:
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
     - pip install simpleitk
+    # check user-defined networks discovered
+    # 1) create configuration + NiftyNet home
+    - CONFIG_HOME=~/.niftynet
+    - mkdir $CONFIG_HOME
+    - NIFTYNET_HOME=~/niftynet-$LAST_COMMIT
+    - mkdir $NIFTYNET_HOME
+    - GLOBAL_CONFIG=$CONFIG_HOME/config.ini
+    - echo "[global]" > $GLOBAL_CONFIG
+    - echo "home = $NIFTYNET_HOME" >> $GLOBAL_CONFIG
+    - cat $GLOBAL_CONFIG
+    # 2) create extension hierarchy
+    - mkdir -p $NIFTYNET_HOME/niftynetext/network
+    - touch $NIFTYNET_HOME/niftynetext/__init__.py
+    - touch $NIFTYNET_HOME/niftynetext/network/__init__.py
+    # 3) replicate working ToyNet example
+    - TOYNET_REPLICA=$NIFTYNET_HOME/niftynetext/network/notoynet.py
+    - cp $niftynet_dir/network/toynet.py $TOYNET_REPLICA
+    - sed -i 's/ToyNet/NoToyNet/g' $TOYNET_REPLICA
+    # 4) run e.g. segmentation using ToyNet replica
+    - net_segment train -c $niftynet_dir/config/default_segmentation.ini --name niftynetext.network.notoynet.NoToyNet --batch_size 3 --max_iter 5
+    - net_segment inference -c $niftynet_dir/config/default_segmentation.ini --name niftynetext.network.notoynet.NoToyNet --spatial_window_size 80,80,80 --batch_size 8
+    # 5) clean up created config + NiftyNet home hierarchy
+    - rm -rf $CONFIG_HOME
+    - unset CONFIG_HOME
+    - rm -rf $NIFTYNET_HOME
+    - unset NIFTYNET_HOME
     # check whether all packages are importable
     - cat $package_importer
     - python $package_importer
