@@ -116,11 +116,15 @@ SUPPORTED_INITIALIZATIONS = {
     'constant': 'niftynet.engine.application_initializations.Constant',
     'zeros': 'niftynet.engine.application_initializations.Zeros',
     'ones': 'niftynet.engine.application_initializations.Ones',
-    'uniform_scaling': 'niftynet.engine.application_initializations.UniformUnitScaling',
+    'uniform_scaling':
+        'niftynet.engine.application_initializations.UniformUnitScaling',
     'orthogonal': 'niftynet.engine.application_initializations.Orthogonal',
-    'variance_scaling': 'niftynet.engine.application_initializations.VarianceScaling',
-    'glorot_normal': 'niftynet.engine.application_initializations.GlorotNormal',
-    'glorot_uniform': 'niftynet.engine.application_initializations.GlorotUniform',
+    'variance_scaling':
+        'niftynet.engine.application_initializations.VarianceScaling',
+    'glorot_normal':
+        'niftynet.engine.application_initializations.GlorotNormal',
+    'glorot_uniform':
+        'niftynet.engine.application_initializations.GlorotUniform',
     'he_normal': 'niftynet.engine.application_initializations.HeNormal',
     'he_uniform': 'niftynet.engine.application_initializations.HeUniform'
 }
@@ -257,5 +261,11 @@ class InitializerFactory(ModuleFactory):
 
     @staticmethod
     def get_initializer(name, args):
+        """
+        wrapper for getting the init
+        :param name:
+        :param args:
+        :return:
+        """
         init_class = InitializerFactory.create(name)
         return init_class.get_instance(args)

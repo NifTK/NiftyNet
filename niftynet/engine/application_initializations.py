@@ -1,28 +1,52 @@
+# -*- coding: utf-8 -*-
+"""
+Loading modules from a string representing the class name
+or a short name that matches the dictionary item defined
+in this module
+
+all classes and docs are taken from
+https://github.com/tensorflow/tensorflow/blob/r1.3/tensorflow/python/ops/init_ops.py
+"""
 import tensorflow as tf
 
-
-#all classes and docs are taken from
-#https://github.com/tensorflow/tensorflow/blob/r1.3/tensorflow/python/ops/init_ops.py
-
-
-seed = 42
+SEED = 42
 
 class Constant(object):
+    """
+    initialize with a constant value
+    """
     @staticmethod
     def get_instance(args):
+        """
+        create an instance of the initializator
+        """
         value = float(args.get('value', 0.0))
         return tf.constant_initializer(value)
 
 
 class Zeros(object):
+    """
+    initialize with zeros
+    """
     @staticmethod
     def get_instance(args):
+        # pylint: disable=unused-argument
+        """
+        create an instance of the initializator
+        """
         return tf.constant_initializer(0.0)
 
 
 class Ones(object):
+    """
+    initialize with ones
+    """
     @staticmethod
     def get_instance(args):
+        # pylint: disable=unused-argument
+        """
+        create an instance of the initializator
+        """
         return tf.constant_initializer(1.0)
 
 #todo
@@ -43,7 +67,8 @@ class UniformUnitScaling(object):
     with `dim` equal to the product of the first 3 dimensions.  When
     nonlinearities are present, we need to multiply this by a constant `factor`.
     See [Sussillo et al., 2014](https://arxiv.org/abs/1412.6558)
-    ([pdf](http://arxiv.org/pdf/1412.6558.pdf)) for deeper motivation, experiments
+    ([pdf](http://arxiv.org/pdf/1412.6558.pdf)) for deeper motivation,
+    experiments
     and the calculation of constants. In section 2.3 there, the constants were
     numerically computed: for a linear layer it's 1.0, relu: ~1.43, tanh: ~1.15.
     Args:
@@ -55,15 +80,18 @@ class UniformUnitScaling(object):
     """
     @staticmethod
     def get_instance(args):
+        """
+        create an instance of the initializator
+        """
         factor = float(args.get('factor', 1.0))
-        return tf.uniform_unit_scaling_initializer(factor, seed=seed)
+        return tf.uniform_unit_scaling_initializer(factor, seed=SEED)
 
 
 class Orthogonal(object):
     """Initializer that generates an orthogonal matrix.
-    If the shape of the tensor to initialize is two-dimensional, i is initialized
-    with an orthogonal matrix obtained from the singular value decomposition of a
-    matrix of uniform random numbers.
+    If the shape of the tensor to initialize is two-dimensional, i
+    is initialized with an orthogonal matrix obtained from the singular value
+    decomposition of a matrix of uniform random numbers.
     If the shape of the tensor to initialize is more than two-dimensional,
     a matrix of shape `(shape[0] * ... * shape[n - 2], shape[n - 1])`
     is initialized, where `n` is the length of the shape vector.
@@ -77,19 +105,24 @@ class Orthogonal(object):
       """
     @staticmethod
     def get_instance(args):
+        """
+        create an instance of the initializator
+        """
         gain = float(args.get('gain', 1.0))
-        return tf.orthogonal_initializer(gain, seed=seed)
+        return tf.orthogonal_initializer(gain, seed=SEED)
 
 
 class VarianceScaling(object):
-    """Initializer capable of adapting its scale to the shape of weights tensors.
+    """Initializer capable of adapting its scale to the shape of
+    weights tensors.
     With `distribution="normal"`, samples are drawn from a truncated normal
     distribution centered on zero, with `stddev = sqrt(scale / n)`
     where n is:
     - number of input units in the weight tensor, if mode = "fan_in"
     - number of output units, if mode = "fan_out"
     - average of the numbers of input and output units, if mode = "fan_avg"
-    With `distribution="uniform"`, samples are drawn from a uniform distribution
+    With `distribution="uniform"`, samples are drawn from a uniform
+    distribution
     within [-limit, limit], with `limit = sqrt(3 * scale / n)`.
     Arguments:
     scale: Scaling factor (positive float).
@@ -105,12 +138,18 @@ class VarianceScaling(object):
     """
     @staticmethod
     def get_instance(args):
+        """
+        create an instance of the initializator
+        """
         scale = float(args.get('scale', 1.0))
         mode = args.get('mode', "fan_in")
         assert(mode in ["fan_in", "fan_out", "fan_avg"])
         distribution = args.get('distribution', "normal")
         assert(distribution in ["normal", "uniform"])
-        return tf.variance_scaling_initializer(scale, mode, distribution, seed=seed)
+        return tf.variance_scaling_initializer(scale,
+                                               mode,
+                                               distribution,
+                                               seed=SEED)
 
 
 class GlorotNormal(object):
@@ -131,7 +170,11 @@ class GlorotNormal(object):
 
     @staticmethod
     def get_instance(args):
-        return tf.glorot_normal_initializer(seed=seed)
+        # pylint: disable=unused-argument
+        """
+        create an instance of the initializator
+        """
+        return tf.glorot_normal_initializer(seed=SEED)
 
 
 class GlorotUniform(object):
@@ -151,7 +194,11 @@ class GlorotUniform(object):
     """
     @staticmethod
     def get_instance(args):
-        return tf.glorot_uniform_initializer(seed=seed)
+        # pylint: disable=unused-argument
+        """
+        create an instance of the initializator
+        """
+        return tf.glorot_uniform_initializer(seed=SEED)
 
 
 class HeNormal(object):
@@ -168,6 +215,10 @@ class HeNormal(object):
      """
     @staticmethod
     def get_instance(args):
+        # pylint: disable=unused-argument
+        """
+        create an instance of the initializator
+        """
         args = {"scale": "2.", "mode": "fan_in", "distribution": "normal"}
         return VarianceScaling.get_instance(args)
 
@@ -186,6 +237,10 @@ class HeUniform(object):
     """
     @staticmethod
     def get_instance(args):
+        # pylint: disable=unused-argument
+        """
+        create an instance of the initializator
+        """
         args = {"scale": "2.", "mode": "fan_in", "distribution": "uniform"}
         return VarianceScaling.get_instance(args)
 
