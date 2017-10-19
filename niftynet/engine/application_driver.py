@@ -133,6 +133,7 @@ class ApplicationDriver(object):
         self.app = app_module(net_param, action_param, self.is_training)
         # initialise data input
         self.app.initialise_dataset_loader(data_param, app_param)
+        # pylint: disable=not-context-manager
         with self.graph.as_default(), tf.name_scope('Sampler'):
             self.app.initialise_sampler()
 
