@@ -285,7 +285,7 @@ def add_network_args(parser):
             type=yaml.load,
             default={})
     except ImportError:
-        print ("Yaml module not found")
+        print ("PyYAML module not found")
 
     return parser
 
@@ -311,7 +311,7 @@ def add_training_args(parser):
              "augmentation is enabled",
         type=float_array,
         default=())
-        
+
     parser.add_argument(
         "--rotation_angle_x",
         help="The min/max angles of the x rotation when rotation "

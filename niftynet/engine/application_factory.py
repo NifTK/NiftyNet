@@ -113,20 +113,20 @@ SUPPORTED_OPTIMIZERS = {
 }
 
 SUPPORTED_INITIALIZATIONS = {
-    'constant': 'niftynet.engine.application_initialization.Constant',
-    'zeros': 'niftynet.engine.application_initialization.Zeros',
-    'ones': 'niftynet.engine.application_initialization.Ones',
+    'constant': 'niftynet.engine.application_initializer.Constant',
+    'zeros': 'niftynet.engine.application_initializer.Zeros',
+    'ones': 'niftynet.engine.application_initializer.Ones',
     'uniform_scaling':
-        'niftynet.engine.application_initialization.UniformUnitScaling',
-    'orthogonal': 'niftynet.engine.application_initialization.Orthogonal',
+        'niftynet.engine.application_initializer.UniformUnitScaling',
+    'orthogonal': 'niftynet.engine.application_initializer.Orthogonal',
     'variance_scaling':
-        'niftynet.engine.application_initialization.VarianceScaling',
+        'niftynet.engine.application_initializer.VarianceScaling',
     'glorot_normal':
-        'niftynet.engine.application_initialization.GlorotNormal',
+        'niftynet.engine.application_initializer.GlorotNormal',
     'glorot_uniform':
-        'niftynet.engine.application_initialization.GlorotUniform',
-    'he_normal': 'niftynet.engine.application_initialization.HeNormal',
-    'he_uniform': 'niftynet.engine.application_initialization.HeUniform'
+        'niftynet.engine.application_initializer.GlorotUniform',
+    'he_normal': 'niftynet.engine.application_initializer.HeNormal',
+    'he_uniform': 'niftynet.engine.application_initializer.HeUniform'
 }
 
 
@@ -253,7 +253,7 @@ class OptimiserFactory(ModuleFactory):
 
 class InitializerFactory(ModuleFactory):
     """
-    Import an initializer from niftynet.engine.application_initialization or
+    Import an initializer from niftynet.engine.application_initializer or
     from user specified string
     """
     SUPPORTED = SUPPORTED_INITIALIZATIONS
@@ -264,7 +264,7 @@ class InitializerFactory(ModuleFactory):
         """
         wrapper for getting the init
         :param name:
-        :param args:
+        :param args: optional parameters for the initializer
         :return:
         """
         init_class = InitializerFactory.create(name)

@@ -11,14 +11,16 @@ import tensorflow as tf
 
 SEED = 42
 
+
 class Constant(object):
     """
     initialize with a constant value
     """
+
     @staticmethod
     def get_instance(args):
         """
-        create an instance of the initializator
+        create an instance of the initializer
         """
         value = float(args.get('value', 0.0))
         return tf.constant_initializer(value)
@@ -28,11 +30,12 @@ class Zeros(object):
     """
     initialize with zeros
     """
+
     @staticmethod
     def get_instance(args):
         # pylint: disable=unused-argument
         """
-        create an instance of the initializator
+        create an instance of the initializer
         """
         return tf.constant_initializer(0.0)
 
@@ -41,18 +44,14 @@ class Ones(object):
     """
     initialize with ones
     """
+
     @staticmethod
     def get_instance(args):
         # pylint: disable=unused-argument
         """
-        create an instance of the initializator
+        create an instance of the initializer
         """
         return tf.constant_initializer(1.0)
-
-#todo
-#random_uniform_initializer = RandomUniform
-#random_normal_initializer = RandomNormal
-#truncated_normal_initializer = TruncatedNormal
 
 
 class UniformUnitScaling(object):
@@ -78,10 +77,11 @@ class UniformUnitScaling(object):
       for behavior.
     dtype: The data type. Only floating point types are supported.
     """
+
     @staticmethod
     def get_instance(args):
         """
-        create an instance of the initializator
+        create an instance of the initializer
         """
         factor = float(args.get('factor', 1.0))
         return tf.uniform_unit_scaling_initializer(factor, seed=SEED)
@@ -103,10 +103,11 @@ class Orthogonal(object):
       @{tf.set_random_seed}
       for behavior.
       """
+
     @staticmethod
     def get_instance(args):
         """
-        create an instance of the initializator
+        create an instance of the initializer
         """
         gain = float(args.get('gain', 1.0))
         return tf.orthogonal_initializer(gain, seed=SEED)
@@ -136,16 +137,17 @@ class VarianceScaling(object):
     ValueError: In case of an invalid value for the "scale", mode" or
      "distribution" arguments.
     """
+
     @staticmethod
     def get_instance(args):
         """
-        create an instance of the initializator
+        create an instance of the initializer
         """
         scale = float(args.get('scale', 1.0))
         mode = args.get('mode', "fan_in")
-        assert(mode in ["fan_in", "fan_out", "fan_avg"])
+        assert (mode in ["fan_in", "fan_out", "fan_avg"])
         distribution = args.get('distribution', "normal")
-        assert(distribution in ["normal", "uniform"])
+        assert (distribution in ["normal", "uniform"])
         return tf.variance_scaling_initializer(scale,
                                                mode,
                                                distribution,
@@ -172,7 +174,7 @@ class GlorotNormal(object):
     def get_instance(args):
         # pylint: disable=unused-argument
         """
-        create an instance of the initializator
+        create an instance of the initializer
         """
         return tf.glorot_normal_initializer(seed=SEED)
 
@@ -192,11 +194,12 @@ class GlorotUniform(object):
     Returns:
     An initializer.
     """
+
     @staticmethod
     def get_instance(args):
         # pylint: disable=unused-argument
         """
-        create an instance of the initializator
+        create an instance of the initializer
         """
         return tf.glorot_uniform_initializer(seed=SEED)
 
@@ -213,13 +216,15 @@ class HeNormal(object):
      # References
          He et al., http://arxiv.org/abs/1502.01852
      """
+
     @staticmethod
     def get_instance(args):
         # pylint: disable=unused-argument
         """
-        create an instance of the initializator
+        create an instance of the initializer
         """
-        args = {"scale": "2.", "mode": "fan_in", "distribution": "normal"}
+        if not args:
+            args = {"scale": "2.", "mode": "fan_in", "distribution": "normal"}
         return VarianceScaling.get_instance(args)
 
 
@@ -235,12 +240,13 @@ class HeUniform(object):
     # References
         He et al., http://arxiv.org/abs/1502.01852
     """
+
     @staticmethod
     def get_instance(args):
         # pylint: disable=unused-argument
         """
-        create an instance of the initializator
+        create an instance of the initializer
         """
-        args = {"scale": "2.", "mode": "fan_in", "distribution": "uniform"}
+        if not args:
+            args = {"scale": "2.", "mode": "fan_in", "distribution": "uniform"}
         return VarianceScaling.get_instance(args)
-
