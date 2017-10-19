@@ -208,9 +208,9 @@ class SegmentationApplication(BaseApplication):
         self.net = ApplicationNetFactory.create(self.net_param.name)(
             num_classes=num_classes,
             w_initializer=InitializerFactory.get_initializer(
-                name=self.net_param.weight_initializer)
+                name=self.net_param.weight_initializer),
             b_initializer=InitializerFactory.get_initializer(
-                name=self.net_param.bias_initializer)
+                name=self.net_param.bias_initializer),
             w_regularizer=w_regularizer,
             b_regularizer=b_regularizer,
             acti_func=self.net_param.activation_function)
