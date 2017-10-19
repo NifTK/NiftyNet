@@ -260,7 +260,7 @@ class InitializerFactory(ModuleFactory):
     type_str = 'initializer'
 
     @staticmethod
-    def get_initializer(name, args):
+    def get_initializer(name, args=None):
         """
         wrapper for getting the init
         :param name:
@@ -268,4 +268,6 @@ class InitializerFactory(ModuleFactory):
         :return:
         """
         init_class = InitializerFactory.create(name)
+        if args is None:
+            args = {}
         return init_class.get_instance(args)
