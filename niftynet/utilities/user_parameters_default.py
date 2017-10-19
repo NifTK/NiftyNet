@@ -267,25 +267,26 @@ def add_network_args(parser):
         help="Set the initializer for the weight parameters",
         type=str,
         default='he_normal')
-
-    import yaml
-    parser.add_argument(
-        "--weight_initializer_args",
-        help="Pass arguments to the initializer for the weight parameters",
-        type=yaml.load,
-        default={})
-
     parser.add_argument(
         "--bias_initializer",
         help="Set the initializer for the bias parameters",
         type=str,
         default='zeros')
+    try:
+        import yaml
+        parser.add_argument(
+            "--weight_initializer_args",
+            help="Pass arguments to the initializer for the weight parameters",
+            type=yaml.load,
+            default={})
+        parser.add_argument(
+            "--bias_initializer_args",
+            help="Pass arguments to the initializer for the bias parameters",
+            type=yaml.load,
+            default={})
+    except ImportError:
+        print ("Yaml module not found")
 
-    parser.add_argument(
-        "--bias_initializer_args",
-        help="Pass arguments to the initializer for the bias parameters",
-        type=yaml.load,
-        default={})
     return parser
 
 

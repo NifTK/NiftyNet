@@ -113,20 +113,20 @@ SUPPORTED_OPTIMIZERS = {
 }
 
 SUPPORTED_INITIALIZATIONS = {
-    'constant': 'niftynet.engine.application_initializations.Constant',
-    'zeros': 'niftynet.engine.application_initializations.Zeros',
-    'ones': 'niftynet.engine.application_initializations.Ones',
+    'constant': 'niftynet.engine.application_initialization.Constant',
+    'zeros': 'niftynet.engine.application_initialization.Zeros',
+    'ones': 'niftynet.engine.application_initialization.Ones',
     'uniform_scaling':
-        'niftynet.engine.application_initializations.UniformUnitScaling',
-    'orthogonal': 'niftynet.engine.application_initializations.Orthogonal',
+        'niftynet.engine.application_initialization.UniformUnitScaling',
+    'orthogonal': 'niftynet.engine.application_initialization.Orthogonal',
     'variance_scaling':
-        'niftynet.engine.application_initializations.VarianceScaling',
+        'niftynet.engine.application_initialization.VarianceScaling',
     'glorot_normal':
-        'niftynet.engine.application_initializations.GlorotNormal',
+        'niftynet.engine.application_initialization.GlorotNormal',
     'glorot_uniform':
-        'niftynet.engine.application_initializations.GlorotUniform',
-    'he_normal': 'niftynet.engine.application_initializations.HeNormal',
-    'he_uniform': 'niftynet.engine.application_initializations.HeUniform'
+        'niftynet.engine.application_initialization.GlorotUniform',
+    'he_normal': 'niftynet.engine.application_initialization.HeNormal',
+    'he_uniform': 'niftynet.engine.application_initialization.HeUniform'
 }
 
 
@@ -253,7 +253,7 @@ class OptimiserFactory(ModuleFactory):
 
 class InitializerFactory(ModuleFactory):
     """
-    Import an initializer from niftynet.engine.application_initializations or
+    Import an initializer from niftynet.engine.application_initialization or
     from user specified string
     """
     SUPPORTED = SUPPORTED_INITIALIZATIONS
