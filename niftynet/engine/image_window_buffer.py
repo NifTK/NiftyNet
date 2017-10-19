@@ -96,7 +96,7 @@ class InputBatchQueueRunner(object):
             if not is_dynamic_window else None
 
         # create a queue
-        # disable=redefined-variable-type
+        # pylint: disable=redefined-variable-type
         if self.shuffle:
             self._queue = tf.RandomShuffleQueue(
                 capacity=self.capacity,
