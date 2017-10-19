@@ -286,6 +286,27 @@ def add_training_args(parser):
              "augmentation is enabled",
         type=float_array,
         default=())
+        
+    parser.add_argument(
+        "--rotation_angle_x",
+        help="The min/max angles of the x rotation when rotation "
+             "augmentation is enabled",
+        type=float_array,
+        default=())
+
+    parser.add_argument(
+        "--rotation_angle_y",
+        help="The min/max angles of the y rotation when rotation "
+             "augmentation is enabled",
+        type=float_array,
+        default=())
+
+    parser.add_argument(
+        "--rotation_angle_z",
+        help="The min/max angles of the z rotation when rotation "
+             "augmentation is enabled",
+        type=float_array,
+        default=())
 
     parser.add_argument(
         "--scaling_percentage",
