@@ -262,16 +262,19 @@ def add_network_args(parser):
              " normalising volumes",
         type=str2boolean,
         default=False)
+
     parser.add_argument(
         "--weight_initializer",
         help="Set the initializer for the weight parameters",
         type=str,
         default='he_normal')
+
     parser.add_argument(
         "--bias_initializer",
         help="Set the initializer for the bias parameters",
         type=str,
         default='zeros')
+
     try:
         import yaml
         parser.add_argument(
@@ -285,7 +288,8 @@ def add_network_args(parser):
             type=yaml.load,
             default={})
     except ImportError:
-        print ("PyYAML module not found")
+        # "PyYAML module not found")
+        pass
 
     return parser
 

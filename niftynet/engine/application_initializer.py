@@ -204,7 +204,7 @@ class GlorotUniform(object):
         return tf.glorot_uniform_initializer(seed=SEED)
 
 
-class HeNormal(object):
+class HeUniform(object):
     """He uniform variance scaling initializer.
      It draws samples from a uniform distribution within [-limit, limit]
      where `limit` is `sqrt(6 / fan_in)`
@@ -224,11 +224,11 @@ class HeNormal(object):
         create an instance of the initializer
         """
         if not args:
-            args = {"scale": "2.", "mode": "fan_in", "distribution": "normal"}
+            args = {"scale": "2.", "mode": "fan_in", "distribution": "uniform"}
         return VarianceScaling.get_instance(args)
 
 
-class HeUniform(object):
+class HeNormal(object):
     """He normal initializer.
     It draws samples from a truncated normal distribution centered on 0
     with `stddev = sqrt(2 / fan_in)`
@@ -248,5 +248,5 @@ class HeUniform(object):
         create an instance of the initializer
         """
         if not args:
-            args = {"scale": "2.", "mode": "fan_in", "distribution": "uniform"}
+            args = {"scale": "2.", "mode": "fan_in", "distribution": "normal"}
         return VarianceScaling.get_instance(args)
