@@ -7,6 +7,11 @@ from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 
 
 class NiftyNetGlobalConfigTest(TestCase):
+    """Tests included here all pertain to the NiftyNet global configuration
+    file and `NiftyNetGlobalConfig` is a singleton. These require each test
+    to be run separately. This is why all tests are decorated with
+    `skipUnless`.
+    """
 
     @classmethod
     def typify(cls, file_path):
