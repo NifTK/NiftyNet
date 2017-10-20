@@ -5,6 +5,7 @@ from os import (makedirs, rename)
 from random import choice
 from string import ascii_lowercase
 from time import strftime
+import sys
 try:
     from configparser import (ConfigParser, Error)
 except ImportError:
@@ -31,6 +32,7 @@ class NiftyNetGlobalConfig(object):
             config_opts[NiftyNetGlobalConfig.global_section][NiftyNetGlobalConfig.home_key])
         if not isdir(self._niftynet_home):
             makedirs(self._niftynet_home)
+        sys.path.insert(1, self._niftynet_home)
 
     def __load_or_create(self, config_file):
         """Load passed configuration file, if it exists; create a default
