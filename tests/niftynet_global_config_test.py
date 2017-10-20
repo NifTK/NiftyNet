@@ -3,6 +3,7 @@ from os.path import (expanduser, join, isdir, isfile)
 from os import (remove, makedirs, environ)
 from shutil import rmtree
 from glob import glob
+from os.path import getmtime
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 
 
@@ -127,3 +128,21 @@ class NiftyNetGlobalConfigTest(TestCase):
         self.assertTrue(isfile(join(niftynet_ext, '__init__.py')))
         for mod in NiftyNetGlobalConfigTest.default_config_opts['ext_mods']:
             self.assertTrue(isfile(join(niftynet_ext, mod, '__init__.py')))
+
+    @skipUnless('GLOBAL_CONFIG_TEST_enhnt' in environ,
+                'set GLOBAL_CONFIG_TEST_enhnt to run')
+    def test_existing_niftynet_home_not_touched(self):
+        niftynet_home = expanduser(NiftyNetGlobalConfigTest.default_config_opts['home'])
+        makedirs(niftynet_home)
+        niftynet_ext = join(
+            niftynet_home, NiftyNetGlobalConfigTest.default_config_opts['ext']
+        )
+        makedirs(niftynet_ext)
+        niftynet_ext_init = join(niftynet_ext, '__init__.py')
+        open(niftynet_ext_init, 'w').close()
+        mtime_before = getmtime(niftynet_ext_init)
+
+        global_config = NiftyNetGlobalConfig()
+
+        mtime_after = getmtime(niftynet_ext_init)
+        self.assertEqual(mtime_before, mtime_after)
