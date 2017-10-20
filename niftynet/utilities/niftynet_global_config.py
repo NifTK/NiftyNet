@@ -28,7 +28,7 @@ class NiftyNetGlobalConfig(object):
         self._config_home = join(expanduser('~'), '.niftynet')
         self._config_file = join(self._config_home, 'config.ini')
 
-        config_opts = self.__load_or_create(self._config_file)
+        config_opts = NiftyNetGlobalConfig.__load_or_create(self._config_file)
 
         self._niftynet_home = expanduser(
             config_opts[NiftyNetGlobalConfig.global_section][NiftyNetGlobalConfig.home_key])
@@ -53,7 +53,8 @@ class NiftyNetGlobalConfig(object):
         makedirs(path)
         open(join(path, '__init__.py'), 'a').close()
 
-    def __load_or_create(self, config_file):
+    @staticmethod
+    def __load_or_create(config_file):
         """Load passed configuration file, if it exists; create a default
         otherwise. If this method finds an incorrect config file, it
         backs the file up with a human-readable timestamp suffix and
