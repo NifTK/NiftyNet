@@ -20,6 +20,8 @@ class NiftyNetGlobalConfig(object):
     global_section = 'global'
     home_key = 'home'
 
+    niftynet_exts = {'niftynetext': ['network']}
+
     def __init__(self):
         self._download_server_url = \
             'https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer'
@@ -32,7 +34,24 @@ class NiftyNetGlobalConfig(object):
             config_opts[NiftyNetGlobalConfig.global_section][NiftyNetGlobalConfig.home_key])
         if not isdir(self._niftynet_home):
             makedirs(self._niftynet_home)
+
+            # create folders for user-defined extensions such as new networks
+            for ext in NiftyNetGlobalConfig.niftynet_exts:
+                NiftyNetGlobalConfig.__create_module(join(self._niftynet_home, ext))
+                for mod in NiftyNetGlobalConfig.niftynet_exts[ext]:
+                    NiftyNetGlobalConfig.__create_module(join(self._niftynet_home, ext, mod))
         sys.path.insert(1, self._niftynet_home)
+
+    @staticmethod
+    def __create_module(path):
+        """Create the passed path, i.e. folder and place an empty
+        ``__init__.py`` file inside.
+
+        :param path: assumed not to exist
+        :type path: `os.path`
+        """
+        makedirs(path)
+        open(join(path, '__init__.py'), 'a').close()
 
     def __load_or_create(self, config_file):
         """Load passed configuration file, if it exists; create a default
