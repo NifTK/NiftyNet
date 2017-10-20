@@ -150,7 +150,9 @@ def select_module(module_name, type_str, lookup_table):
         module, class_name = module_name.rsplit('.', 1)
         the_module = getattr(importlib.import_module(module), class_name)
         return the_module
-    except (AttributeError, ValueError, ImportError):
+    except (AttributeError, ValueError, ImportError) as e:
+        # print sys.path
+        tf.logging.fatal(repr(e))
         # Two possibilities: a typo for a lookup table entry
         #                 or a non-existing module
         dists = {k: edit_distance(k, module_name) for k in lookup_table.keys()}
