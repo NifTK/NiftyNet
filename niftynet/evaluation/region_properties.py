@@ -15,8 +15,8 @@ class RegionProperties(object):
 
         self.seg = seg
         self.bin = 100
-        self.mul = 100
-        self.trans = 0
+        self.mul = 10
+        self.trans = 5
         self.img = img
         self.img_channels = self.img.shape[4] if img.ndim >= 4 else 1
         img_id = range(0, self.img_channels)
@@ -161,8 +161,11 @@ class RegionProperties(object):
         for m in range(0, self.img.shape[4]):
             shifted_image = []
             for n in range(0, self.neigh+1):
+
                 new_img = self.seg * self.img[:, :, :, 0, m]
+                print(np.max(self.img), 'is max img')
                 new_img = ndimage.shift(new_img, shifts[n], order=0)
+                print(np.max(self.seg), 'is max shift')
                 if np.count_nonzero(new_img) > 0:
                     flattened_new = new_img.flatten()
                     flattened_seg = self.seg.flatten()
@@ -172,6 +175,8 @@ class RegionProperties(object):
                     #           flattened_seg[i]>0]
 
                     select_new = np.digitize(affine[flattened_seg==1], bins)
+                    select_new[select_new >= self.bin] = self.bin-1
+                    print(np.max(select_new),' is max bin',np.max(affine))
                     shifted_image.append(select_new)
             glcm = np.zeros([self.bin, self.bin, self.neigh])
             for n in range(0, self.neigh):
