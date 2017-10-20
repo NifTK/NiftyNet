@@ -29,7 +29,9 @@ class NiftyNetGlobalConfigTest(TestCase):
 
         cls.header = '[global]'
         cls.default_config_opts = {
-            'home': '~/niftynet'
+            'home': '~/niftynet',
+            'ext': 'niftynetext',
+            'ext_mods': ['network']
         }
 
     def setUp(self):
@@ -107,7 +109,16 @@ class NiftyNetGlobalConfigTest(TestCase):
         niftynet_home = expanduser(NiftyNetGlobalConfigTest.default_config_opts['home'])
         NiftyNetGlobalConfigTest.remove_path(niftynet_home)
         self.assertFalse(isdir(niftynet_home))
+        niftynet_ext = join(
+            niftynet_home, NiftyNetGlobalConfigTest.default_config_opts['ext']
+        )
+        self.assertFalse(isfile(join(niftynet_ext, '__init__.py')))
+        for mod in NiftyNetGlobalConfigTest.default_config_opts['ext_mods']:
+            self.assertFalse(isfile(join(niftynet_ext, mod, '__init__.py')))
 
         global_config = NiftyNetGlobalConfig()
 
         self.assertTrue(isdir(niftynet_home))
+        self.assertTrue(isfile(join(niftynet_ext, '__init__.py')))
+        for mod in NiftyNetGlobalConfigTest.default_config_opts['ext_mods']:
+            self.assertTrue(isfile(join(niftynet_ext, mod, '__init__.py')))
