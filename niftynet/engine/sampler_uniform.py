@@ -101,6 +101,9 @@ class UniformSampler(Layer, InputBatchQueueRunner):
                     try:
                         image_window = data[name][
                             x_start:x_end, y_start:y_end, z_start:z_end, ...]
+                        # print(image_window.shape)
+                        if name == 'label':
+                            print(np.sum(image_window), 'test label selectif')
                         image_array.append(image_window[np.newaxis, ...])
                     except ValueError:
                         tf.logging.fatal(
@@ -110,6 +113,7 @@ class UniformSampler(Layer, InputBatchQueueRunner):
                             "smaller than the image length in each dim.")
                         raise
                 if len(image_array) > 1:
+                    # print(image_array)
                     output_dict[image_data_key] = \
                         np.concatenate(image_array, axis=0)
                 else:

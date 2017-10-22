@@ -109,6 +109,15 @@ def __add_segmentation_args(parser):
     )
 
     parser.add_argument(
+        "--rand_samples",
+        help="[Training only] Number of completely random samples per image "
+             "when using selective sampler",
+        metavar='',
+        type=int,
+        default=0
+    )
+
+    parser.add_argument(
         "--num_min_labels",
         help="[Training only] Number of labels to have in the window for "
              "selective sampler",

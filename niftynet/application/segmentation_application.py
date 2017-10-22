@@ -28,6 +28,7 @@ from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
+import ast
 
 SUPPORTED_INPUT = {'image', 'label', 'weight', 'sampler'}
 
@@ -134,6 +135,7 @@ class SegmentationApplication(BaseApplication):
     def initialise_selective_sampler(self):
         print("Initialisation ", self.action_param.compulsory_labels,
               self.action_param.proba_connect)
+        print(self.action_param.num_min_labels, self.action_param.proba_connect)
         self.sampler = [SelectiveSampler(
                             reader=self.reader,
                             data_param=self.data_param,
@@ -142,9 +144,14 @@ class SegmentationApplication(BaseApplication):
                             self.action_param.sample_per_volume,
                             constraint=
                             Constraint(self.action_param.compulsory_labels,
-                                       self.action_param.min_ratio_sampling,
-                                       self.action_param.num_min_labels,
-                                       self.action_param.proba_connect),
+                                       float(
+                                           self.action_param.min_ratio_sampling),
+                                       int(
+                                           self.action_param.num_min_labels),
+                                       ast.literal_eval(
+                                           self.action_param.proba_connect)),
+                            random_windows_per_image=self.action_param
+                                .rand_samples,
                             queue_length=self.net_param.queue_length
         )]
 
