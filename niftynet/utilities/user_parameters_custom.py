@@ -125,6 +125,7 @@ def __add_segmentation_args(parser):
         type=int,
         default=1
     )
+
     parser.add_argument(
         "--proba_connect",
         help="[Training only] Number of labels to have in the window for "

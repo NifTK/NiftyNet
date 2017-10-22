@@ -236,7 +236,7 @@ def create_probability_weights(candidates, mean_counts_size):
 
         possible_mean_count = np.nan_to_num(candidates * mean_counts_size[i])
         max_count = np.ceil(np.max(possible_mean_count))
-        # print(max_count , 'is max_count')
+        print(max_count , 'is max_count')
         unique, counts = np.unique(np.round(possible_mean_count),
                                    return_counts=True)
         reciprocal_hist = np.sum(counts[1:]) * np.reciprocal(
@@ -250,11 +250,16 @@ def create_probability_weights(candidates, mean_counts_size):
         # print(e_start.shape, e_end.shape, e_start[-1], e_end[-1], len(
         #     proba_hist))
         candidates_proba = np.zeros_like(candidates)
-        for (e_s, e_e, size) in zip(e_start, e_end, proba_hist):
-            prob_selector = \
-                (possible_mean_count >= e_s) & (possible_mean_count < e_e)
-            candidates_proba[prob_selector.astype(np.bool)] = size
-        proba_weight = np.multiply(proba_weight, candidates_proba)
+        if len(unique) == 2:
+            proba_weight = np.ones_like(candidates, dtype=np.float32) * \
+                           1.0/np.sum(candidates)
+            proba_weight = np.multiply(proba_weight, candidates)
+        else:
+            for (e_s, e_e, size) in zip(e_start, e_end, proba_hist):
+                prob_selector = \
+                    (possible_mean_count >= e_s) & (possible_mean_count < e_e)
+                candidates_proba[prob_selector.astype(np.bool)] = size
+            proba_weight = np.multiply(proba_weight, candidates_proba)
         print("Finished probability calculation")
     return np.divide(proba_weight, np.sum(proba_weight))
 
