@@ -72,7 +72,9 @@ class SelectiveSampler(UniformSampler):
             :param data:
             :param img_sizes:
             :param win_sizes:
-            :param n_samples:
+            :param n_samples: total number of samples
+            :param n_samples_rand: number of totally random samples apart
+            from selected ones
             :return:
             """
             candidates, proba_cand = candidate_indices(
@@ -126,14 +128,13 @@ def candidate_indices(win_sizes, data, constraint):
     :param data: segmentation
     :param constraint: sampling constraint
     :return: candidates: binary map of potential indices, proba_fin:
-    corresponding maps of associated sampling probability
-    '''
+    corresponding maps of associated sampling probability '''
     unique = np.unique(np.round(data))
     list_labels = []
     data = np.round(data)
     if constraint.list_labels:
         list_labels = np.fromstring(constraint.list_labels,
-                                    sep=',',dtype=np.int32)
+                                    sep=',', dtype=np.int32)
         print('list labels is ', list_labels)
         for label in list_labels:
             if label not in unique:
@@ -207,20 +208,13 @@ def candidate_indices(win_sizes, data, constraint):
         #     # print(final.shape, list_counts[i].shape, np.max(final), np.max(
         #     #     list_counts[i]))
         #     final += list_counts[i]
-        final = np.sum(np.asarray(list_counts),axis=0)
+        final = np.sum(np.asarray(list_counts), axis=0)
         # print(final.shape, 'shape of final', len(list_counts))
         print('initialising candidates', num_labels_add)
-        candidates = np.zeros_like(data, dtype=np.int32)
-        # u,c = np.unique(final, return_counts=True)
-        # print(u,c)
-        candidates = np.where(final >=num_labels_add +1, np.ones_like(final),
+        candidates = np.where(final >= num_labels_add + 1, np.ones_like(final),
                               np.zeros_like(final))
         # candidates[final >= num_labels_add + 1] = 1
         print(np.sum(candidates), 'number of candidates')
-        candidates_indices = np.vstack(np.where(candidates == 1)).T
-        # print(candidates_indices)
-        # print(np.min(candidates_indices), np.max(candidates_indices))
-        # print(candidates_indices)
         proba_fin = None
         if constraint.proba_connected:
             proba_fin = create_probability_weights(candidates, mean_counts_size)
@@ -282,6 +276,7 @@ def rand_choice_coordinates(subject_id,
     smaller window sizes (the output windows are concentric).
     """
     print(n_samples)
+    n_samples_rand = np.min([n_samples_rand, n_samples-1])
     n_samples_cand = n_samples - n_samples_rand
     uniq_spatial_size = set([img_size[:N_SPATIAL]
                              for img_size in list(img_sizes.values())])
@@ -305,7 +300,8 @@ def rand_choice_coordinates(subject_id,
 
     # randomly choose n_samples from candidate locations
     candidates_indices = np.vstack(np.where(candidates == 1)).T
-    # print(np.min(candidates_indices), np.max(candidates_indices), len(candidates_indices))
+    # print(np.min(candidates_indices), np.max(candidates_indices),
+    # len(candidates_indices))
     list_indices_fin = np.arange(len(candidates_indices))
     if mean_counts_size is not None:
         # Probability weighting considered
@@ -322,7 +318,7 @@ def rand_choice_coordinates(subject_id,
         spatial_win_sizes = np.asarray(win_sizes[:N_SPATIAL], dtype=np.int32)
         max_spatial_win = spatial_win_sizes[0]
         # Create segmentation for this label
-        list_counts = []
+        # list_counts = []
         shape_ones = np.asarray(candidates.shape)
         # print(shape_ones, max_spatial_win)
         half_max_size = np.floor(max_spatial_win / 2)
@@ -335,12 +331,12 @@ def rand_choice_coordinates(subject_id,
                 padding = padding + [[0, 0], ]
         # print(shape_ones, padding)
         rand_one = np.pad(np.ones(shape_ones),
-                       np.asarray(padding, dtype=np.int32),
-                       'constant')
-        #rand_one = np.ones_like(candidates)
+                          np.asarray(padding, dtype=np.int32),
+                          'constant')
+        # rand_one = np.ones_like(candidates)
         list_possible_rand = np.vstack(np.where(rand_one == 1)).T
         list_indices_rand = np.random.choice(list_possible_rand, n_samples_rand,
-                                         replace=False)
+                                             replace=False)
         list_indices_fin = np.concatenate((list_indices_fin, list_indices_rand))
 
     max_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
@@ -354,7 +350,7 @@ def rand_choice_coordinates(subject_id,
     for mod in list(win_sizes):
         win_size = win_sizes[mod][:N_SPATIAL]
         half_win_diff = np.floor((max_spatial_win - win_size) / 2.0)
-        print(win_size, half_win_diff,'win and half_Win_diff')
+        # print(win_size, half_win_diff, 'win and half_Win_diff')
         # shift starting coords of the window
         # so that smaller windows are centred within the large windows
         spatial_coords = np.zeros((n_samples, N_SPATIAL * 2), dtype=np.int32)
