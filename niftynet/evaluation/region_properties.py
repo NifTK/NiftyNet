@@ -15,8 +15,8 @@ class RegionProperties(object):
 
         self.seg = seg
         self.bin = 100
-        self.mul = 10
-        self.trans = 5
+        self.mul = 100
+        self.trans = 0
         self.img = img
         self.img_channels = self.img.shape[4] if img.ndim >= 4 else 1
         img_id = range(0, self.img_channels)
