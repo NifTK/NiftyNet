@@ -82,6 +82,7 @@ class NiftyNetGlobalConfigTest(TestCase):
         global_config = NiftyNetGlobalConfig()
         self.assertEqual(global_config.get_niftynet_home_folder(),
                          custom_niftynet_home_abs)
+        NiftyNetGlobalConfigTest.remove_path(custom_niftynet_home_abs)
 
     @skipUnless('GLOBAL_CONFIG_TEST_icfbu' in environ,
                 'set GLOBAL_CONFIG_TEST_icfbu to run')

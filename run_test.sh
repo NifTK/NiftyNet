@@ -6,13 +6,13 @@ tar -xzvf testing_data_v0_2.tar.gz
 
 python -m unittest discover -s "tests" -p "*_test.py"
 
-# run global config tests
-# These need to be run separately because NiftyNetGlobalConfig is a singleton, AND
-# its operations pertain to a global configuration file (~/.niftynet/config.ini).
-GLOBAL_CONFIG_TEST_gcs=True python -m unittest tests.niftynet_global_config_test
-GLOBAL_CONFIG_TEST_necfc=True python -m unittest tests.niftynet_global_config_test
-GLOBAL_CONFIG_TEST_ecfl=True python -m unittest tests.niftynet_global_config_test
-GLOBAL_CONFIG_TEST_icfbu=True python -m unittest tests.niftynet_global_config_test
-GLOBAL_CONFIG_TEST_nenhc=True python -m unittest tests.niftynet_global_config_test
-GLOBAL_CONFIG_TEST_enhnt=True python -m unittest tests.niftynet_global_config_test
+## run global config tests
+## These need to be run separately because NiftyNetGlobalConfig is a singleton, AND
+## its operations pertain to a global configuration file (~/.niftynet/config.ini).
+#GLOBAL_CONFIG_TEST_gcs=True python -m unittest tests.niftynet_global_config_test
+#GLOBAL_CONFIG_TEST_necfc=True python -m unittest tests.niftynet_global_config_test
+#GLOBAL_CONFIG_TEST_ecfl=True python -m unittest tests.niftynet_global_config_test
+#GLOBAL_CONFIG_TEST_icfbu=True python -m unittest tests.niftynet_global_config_test
+#GLOBAL_CONFIG_TEST_nenhc=True python -m unittest tests.niftynet_global_config_test
+#GLOBAL_CONFIG_TEST_enhnt=True python -m unittest tests.niftynet_global_config_test
 
