@@ -22,6 +22,7 @@ class NiftyNetGlobalConfigTest(TestCase):
     @classmethod
     def remove_path(cls, path):
         """Remove passed item, whether it's a file or directory."""
+        print("removing {}".format(path))
         if isdir(path):
             rmtree(path)
         elif isfile(path):
