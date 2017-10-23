@@ -157,9 +157,10 @@ class ApplicationDriver(object):
             try:
                 samplers = self.app.get_sampler()
                 if samplers is not None:
-                    for sampler in samplers:
-                        sampler.run_threads(
-                            session, self._coord, self.num_threads)
+                    for sampler_set in samplers:
+                        for sampler in sampler_set:
+                            sampler.run_threads(
+                                session, self._coord, self.num_threads)
             except (TypeError, AttributeError, IndexError):
                 tf.logging.fatal(
                     "samplers not running, pop_batch_op operations "
@@ -321,13 +322,9 @@ class ApplicationDriver(object):
         """
         writer = tf.summary.FileWriter(self.summary_dir, sess.graph)
         # running through training_op from application
-        for iter_ops in self.app.training_ops(self.initial_iter,
+        for iter_ops in self.app.iter_ops(self.initial_iter,
                                               self.final_iter):
-            if len(iter_ops) == 3:
-                iter_i, train_op, data_dict = iter_ops
-            else:
-                iter_i, train_op = iter_ops
-                data_dict = None
+            pref, iter_i, save, save_tensorboard, iter_op, data_dict = iter_ops
 
             loop_status['current_iter'] = iter_i
             local_time = time.time()
@@ -335,21 +332,17 @@ class ApplicationDriver(object):
                 break
 
             # variables to the graph
-            vars_to_run = dict(train_op=train_op)
+            vars_to_run = dict(iter_op=iter_op)
             vars_to_run[CONSOLE], vars_to_run[NETWORK_OUTPUT] = \
                 self.outputs_collector.variables(CONSOLE), \
                 self.outputs_collector.variables(NETWORK_OUTPUT)
-            if self.tensorboard_every_n > 0 and \
-                    (iter_i % self.tensorboard_every_n == 0):
+            if save_tensorboard:
                 # adding tensorboard summary
                 vars_to_run[TF_SUMMARIES] = \
                     self.outputs_collector.variables(collection=TF_SUMMARIES)
 
             # run all variables in one go
-            if data_dict:
-                graph_output = sess.run(vars_to_run, feed_dict=data_dict)
-            else:
-                graph_output = sess.run(vars_to_run)
+            graph_output = sess.run(vars_to_run, feed_dict=data_dict)
 
             # process graph outputs
             self.app.interpret_output(graph_output[NETWORK_OUTPUT])
@@ -359,10 +352,10 @@ class ApplicationDriver(object):
                 writer.add_summary(summary, iter_i)
 
             # save current model
-            if (self.save_every_n > 0) and (iter_i % self.save_every_n == 0):
+            if save:
                 self._save_model(sess, iter_i)
-            tf.logging.info('iter %d, %s (%.3fs)',
-                            iter_i, console_str, time.time() - local_time)
+            tf.logging.info('iter %s %d, %s (%.3fs)',
+                            pref, iter_i, console_str, time.time() - local_time)
 
     def _inference_loop(self, sess, loop_status):
         """

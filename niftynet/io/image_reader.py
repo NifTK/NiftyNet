@@ -52,7 +52,7 @@ class ImageReader(Layer):
      'label': <niftynet.io.image_type.SpatialImage3D object>}
     """
 
-    def __init__(self, names):
+    def __init__(self, names, phase):
         # list of file names
         self._file_list = None
         self._input_sources = None
@@ -60,6 +60,7 @@ class ImageReader(Layer):
         self._dtypes = None
         self._names = None
         self.names = names
+        self.phase = phase
 
         self._global_config = NiftyNetGlobalConfig()
 
@@ -100,7 +101,9 @@ class ImageReader(Layer):
                     raise ValueError
 
         default_data_folder = self._global_config.get_niftynet_home_folder()
-        self._file_list = util_csv.load_and_merge_csv_files(data_to_load, default_data_folder)
+        self._file_list = util_csv.load_and_merge_csv_files(data_to_load,
+                                                            self.phase,
+                                                            default_data_folder)
         self.output_list = _filename_to_image_list(
             self._file_list, self._input_sources, data_param)
         for name in self.names:

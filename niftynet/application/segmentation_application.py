@@ -62,10 +62,12 @@ class SegmentationApplication(BaseApplication):
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.reader = ImageReader(SUPPORTED_INPUT)
+            self.readers = [ImageReader(SUPPORTED_INPUT, phase='train'),
+                            ImageReader(SUPPORTED_INPUT, phase='validation')]
         else:  # in the inference process use image input only
-            self.reader = ImageReader(['image'])
-        self.reader.initialise_reader(data_param, task_param)
+            self.readers = [ImageReader(['image'], phase='test')]
+        for reader in self.readers:
+            reader.initialise_reader(data_param, task_param)
 
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(
@@ -134,41 +136,46 @@ class SegmentationApplication(BaseApplication):
             volume_padding_layer.append(PadLayer(
                 image_name=SUPPORTED_INPUT,
                 border=self.net_param.volume_padding_size))
-        self.reader.add_preprocessing_layers(
+        for reader in self.readers:
+            reader.add_preprocessing_layers(
             volume_padding_layer + normalisation_layers + augmentation_layers)
 
     def initialise_uniform_sampler(self):
-        self.sampler = [UniformSampler(
-            reader=self.reader,
+        self.sampler = [[UniformSampler(
+            reader=reader,
             data_param=self.data_param,
             batch_size=self.net_param.batch_size,
             windows_per_image=self.action_param.sample_per_volume,
-            queue_length=self.net_param.queue_length)]
+            queue_length=self.net_param.queue_length) for reader in
+            self.readers]]
 
     def initialise_weighted_sampler(self):
-        self.sampler = [WeightedSampler(
-            reader=self.reader,
+        self.sampler = [[WeightedSampler(
+            reader=reader,
             data_param=self.data_param,
             batch_size=self.net_param.batch_size,
             windows_per_image=self.action_param.sample_per_volume,
-            queue_length=self.net_param.queue_length)]
+            queue_length=self.net_param.queue_length) for reader in
+            self.readers]]
 
     def initialise_resize_sampler(self):
-        self.sampler = [ResizeSampler(
-            reader=self.reader,
+        self.sampler = [[ResizeSampler(
+            reader=reader,
             data_param=self.data_param,
             batch_size=self.net_param.batch_size,
             shuffle_buffer=self.is_training,
-            queue_length=self.net_param.queue_length)]
+            queue_length=self.net_param.queue_length) for reader in
+            self.readers]]
 
     def initialise_grid_sampler(self):
-        self.sampler = [GridSampler(
-            reader=self.reader,
+        self.sampler = [[GridSampler(
+            reader=reader,
             data_param=self.data_param,
             batch_size=self.net_param.batch_size,
             spatial_window_size=self.action_param.spatial_window_size,
             window_border=self.action_param.border,
-            queue_length=self.net_param.queue_length)]
+            queue_length=self.net_param.queue_length) for reader in
+            self.readers]]
 
     def initialise_grid_aggregator(self):
         self.output_decoder = GridSamplesAggregator(
@@ -191,6 +198,8 @@ class SegmentationApplication(BaseApplication):
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][1]()
 
     def initialise_network(self):
+        super(SegmentationApplication, self).initialise_network()
+
         num_classes = self.segmentation_param.num_classes
         w_regularizer = None
         b_regularizer = None
@@ -218,11 +227,17 @@ class SegmentationApplication(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
-        data_dict = self.get_sampler()[0].pop_batch_op()
-        image = tf.cast(data_dict['image'], tf.float32)
-        net_out = self.net(image, self.is_training)
+        def data_net(for_training):
+            sampler = self.get_sampler()[0][0 if for_training else 1]
+            data_dict = sampler.pop_batch_op()
+            image = tf.cast(data_dict['image'], tf.float32)
+            return data_dict, self.net(image, for_training)
+
 
         if self.is_training:
+            data_dict, net_out = tf.cond(self.is_validation,
+                                         lambda: data_net(False),
+                                         lambda: data_net(True))
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
@@ -257,6 +272,7 @@ class SegmentationApplication(BaseApplication):
         else:
             # converting logits into final output for
             # classification probabilities or argmax classification labels
+            data_dict, net_out = data_net(for_training=False)
             output_prob = self.segmentation_param.output_prob
             num_classes = self.segmentation_param.num_classes
             if output_prob and num_classes > 1:

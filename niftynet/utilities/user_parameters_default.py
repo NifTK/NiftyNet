@@ -93,6 +93,20 @@ def add_inference_args(parser):
 
 def add_input_data_args(parser):
     parser.add_argument(
+        "--csv_test_file",
+        metavar='',
+        type=str,
+        help="Input list of test subjects in csv files",
+        default='')
+
+    parser.add_argument(
+        "--csv_validation_file",
+        metavar='',
+        type=str,
+        help="Input list of validation subjects in csv files",
+        default='')
+
+    parser.add_argument(
         "--csv_file",
         metavar='',
         type=str,
@@ -382,6 +396,18 @@ def add_training_args(parser):
         help="[Training only] tensorboard summary frequency",
         type=int,
         default=20)
+
+    parser.add_argument(
+        "--validate_every_n",
+        help="Validate every n iters",
+        type=int,
+        default=10)
+
+    parser.add_argument(
+        "--validation_iters",
+        help="How many validation batches to run",
+        type=int,
+        default=2)
 
     parser.add_argument(
         "--max_iter",

@@ -1,7 +1,7 @@
 from six import with_metaclass
 from niftynet.utilities import util_common
 from niftynet.layer.base_layer import TrainableLayer
-
+import tensorflow as tf
 
 class SingletonApplication(type):
     _instances = None
@@ -26,7 +26,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     is_training = True
 
     # input of the network
-    reader = None
+    readers = None
     sampler = None
 
     # the network
@@ -40,7 +40,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     output_decoder = None
 
     def check_initialisations(self):
-        if self.reader is None:
+        if self.readers is None:
             raise NotImplementedError('reader should be initialised')
         if self.sampler is None:
             raise NotImplementedError('sampler should be initialised')
@@ -73,7 +73,8 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         sets self.net
         :return: None
         """
-        raise NotImplementedError
+        self.is_validation = tf.placeholder_with_default(False, [],
+                                                         'is_validation')
 
     def connect_data_and_network(self,
                                  outputs_collector=None,
@@ -106,9 +107,29 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
                 'This app supports updating a network, or list of networks')
 
     def stop(self):
-        for sampler in self.get_sampler():
-            if sampler:
-                sampler.close_all()
+        for sampler_set in self.get_sampler():
+            for sampler in sampler_set:
+                if sampler:
+                    sampler.close_all()
+
+    def iter_ops(self, start_iter=0, end_iter=1):
+        param = self.action_param
+        training_op_generator = self.training_ops(start_iter=start_iter,
+                                                  end_iter=end_iter)
+        for iter_i, op, feed_dict in training_op_generator:
+            if iter_i % param.validate_every_n == 0:
+                feed_dict_validation = feed_dict.copy()
+                feed_dict_validation[self.is_validation]=True
+                for iter_j in range(param.validation_iters):
+                    yield 'Validate', iter_i, False, True, \
+                          self.is_validation, feed_dict_validation
+
+            feed_dict[self.is_validation]=False
+            save = param.save_every_n > 0 and \
+                   iter_i % param.save_every_n == 0
+            save_log = param.tensorboard_every_n > 0 and \
+                       iter_i % param.tensorboard_every_n == 0
+            yield 'Train', iter_i, save, save_log, self.gradient_op, feed_dict
 
     def training_ops(self, start_iter=0, end_iter=1):
         """
@@ -117,7 +138,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         """
         end_iter = max(start_iter, end_iter)
         for iter_i in range(start_iter, end_iter):
-            yield iter_i, self.gradient_op
+            yield iter_i, self.gradient_op, {}
 
     def get_sampler(self):
         return self.sampler

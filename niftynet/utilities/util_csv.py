@@ -227,7 +227,7 @@ def match_and_write_filenames_to_csv(list_constraints, csv_file):
     return
 
 
-def load_and_merge_csv_files(data_param, default_folder=None):
+def load_and_merge_csv_files(data_param, phase, default_folder=None):
     """
     Converts a list of csv_files in data_param
     in to a joint list of file names (by matching the first column)
@@ -239,8 +239,15 @@ def load_and_merge_csv_files(data_param, default_folder=None):
         raise ValueError
     _file_list = None
     for modality_name in data_param:
+        modality_param = data_param[modality_name]
         try:
-            csv_file = data_param[modality_name].csv_file
+            if phase=='test' and len(modality_param.csv_test_file):
+                csv_file = modality_param.csv_test_file
+            elif phase=='validation' and \
+                    len(modality_param.csv_validation_file):
+                csv_file = modality_param.csv_validation_file
+            else:
+                csv_file = modality_param.csv_file
         except AttributeError:
             tf.logging.fatal('unrecognised parameter format')
             raise
