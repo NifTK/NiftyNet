@@ -1,5 +1,5 @@
 # Copyright 2017 The Sonnet Authors. All Rights Reserved.
-# Modifications copyright 2017 The NiftyNet Authors. 
+# Modifications copyright 2017 The NiftyNet Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,18 +32,22 @@ from itertools import chain
 from six.moves import xrange  # pylint: disable=redefined-builtin
 from niftynet.utilities.util_common import look_up_operations
 
-SUPPORTED_INTERPOLATION={'BSPLINE','LINEAR','NEAREST'}
-SUPPORTED_BOUNDARY={'ZERO','REPLICATE','CIRCULAR','SYMMETRIC'}
+SUPPORTED_INTERPOLATION={'BSPLINE', 'LINEAR', 'NEAREST'}
+SUPPORTED_BOUNDARY={'ZERO', 'REPLICATE', 'CIRCULAR', 'SYMMETRIC'}
 
 
 class ResamplerLayer(Layer):
   """ Resampler  class
-  
+
   Takes an input tensor and
-  a sampling definition (e.g. a list of grid points) at run-time and returns 
+  a sampling definition (e.g. a list of grid points) at run-time and returns
   one or more values for each grid location
   """
-  def __init__(self, interpolation='LINEAR', boundary='REPLICATE',name='resampler'):
+  def __init__(self,
+               interpolation='LINEAR',
+               boundary='REPLICATE',
+               name='resampler'):
+
     super(ResamplerLayer, self).__init__(name=name)
     self.interpolation = look_up_operations(interpolation.upper(), SUPPORTED_INTERPOLATION)
     self.boundary = look_up_operations(boundary.upper(), SUPPORTED_BOUNDARY)
@@ -139,7 +143,7 @@ class ResamplerLayer(Layer):
                                         tf.reduce_any(scale*sample_coords<1,axis=-1,keep_dims=True)))
       output=output*mask
     return output
-    
+
   def layer_op(self, inputs, sample_coords):
     return self.resample_func_(inputs,sample_coords)
 
@@ -222,12 +226,12 @@ class GridWarperLayer(Layer):
 class BSplineFieldImageGridWarperLayer(GridWarperLayer):
   """ The fast BSpline Grid Warper defines a grid based on
       sampling coordinate values from a spatially varying displacement
-      field  (passed as a tensor input) along a regular cartesian grid 
+      field  (passed as a tensor input) along a regular cartesian grid
       pattern aligned with the field. Specifically,
   this class defines a grid based on BSpline smoothing, as described by Rueckert et al.
       To ensure that it can be done efficiently, several assumptions are made:
       1) The grid is a cartesian grid aligned with the field.
-      2) Knots occur every M,N,O grid points (in X,Y,Z) This allows the 
+      2) Knots occur every M,N,O grid points (in X,Y,Z) This allows the
          smoothing to be represented as a 4x4x4 convolutional kernel with MxNxO channels
   """
   def __init__(self,
@@ -241,7 +245,7 @@ class BSplineFieldImageGridWarperLayer(GridWarperLayer):
         signal domain.
       output_shape: Iterable of integers determining the size of the destination
         resampled signal domain.
-      knot_spacing: List of intervals (in voxels) in each dimension where 
+      knot_spacing: List of intervals (in voxels) in each dimension where
         displacements are defined in the field.
       interpolation: type_str of interpolation as used by tf.image.resize_images
       name: Name of Module."""
@@ -250,7 +254,7 @@ class BSplineFieldImageGridWarperLayer(GridWarperLayer):
     super(BSplineFieldImageGridWarperLayer, self).__init__(source_shape=source_shape,
                                            output_shape=output_shape,
                                            coeff_shape=coeff_shape,
-                                           name=name)  
+                                           name=name)
   def _create_features(self):
     """ Creates the convolutional kernel"""
     build_coefficient = lambda u,d: np.reshape(np.stack([(np.power(1-u,3))/6,
@@ -277,9 +281,9 @@ class BSplineFieldImageGridWarperLayer(GridWarperLayer):
 class RescaledFieldImageGridWarperLayer(GridWarperLayer):
   """ The rescaled field grid warper defines a grid based on
       sampling coordinate values from a spatially varying displacement
-      field  (passed as a tensor input) along a regular cartesian grid 
+      field  (passed as a tensor input) along a regular cartesian grid
       pattern aligned with the field. Specifically, this class defines
-      a grid by resampling the field (using tf.rescale_images with 
+      a grid by resampling the field (using tf.rescale_images with
       align_corners=False) to the output_shape.
   """
   def __init__(self,
@@ -304,7 +308,7 @@ class RescaledFieldImageGridWarperLayer(GridWarperLayer):
       self._interpolation=tf.image.ResizeMethod.BILINEAR
     elif self._interpolation=='CUBIC':
       self._interpolation=tf.image.ResizeMethod.BICUBIC
-    
+
     super(RescaledFieldImageGridWarperLayer, self).__init__(source_shape=source_shape,
                                            output_shape=output_shape,
                                            coeff_shape=coeff_shape,
@@ -328,9 +332,9 @@ class RescaledFieldImageGridWarperLayer(GridWarperLayer):
 class ResampledFieldGridWarperLayer(GridWarperLayer):
   """ The resampled field grid warper defines a grid based on
       sampling coordinate values from a spatially varying displacement
-      field  (passed as a tensor input) along an affine grid pattern 
-      in the field. 
-      This enables grids representing small patches of a larger transform, 
+      field  (passed as a tensor input) along an affine grid pattern
+      in the field.
+      This enables grids representing small patches of a larger transform,
       as well as the composition of multiple transforms before sampling.
   """
   def __init__(self,
@@ -349,12 +353,12 @@ class ResampledFieldGridWarperLayer(GridWarperLayer):
       coeff_shape: Shape of displacement field.
       interpolation: type_str of interpolation as used by tf.image.resize_images
       name: Name of Module.
-      field_transform: an object defining the spatial relationship between the 
-        output_grid and the field. 
+      field_transform: an object defining the spatial relationship between the
+        output_grid and the field.
         batch_size x4x4 tensor: per-image transform matrix from output coords to field coords
         None (default):         corners of output map to corners of field with an allowance for
                                   interpolation (1 for bspline, 0 for linear)
-      resampler: a ResamplerLayer used to interpolate the 
+      resampler: a ResamplerLayer used to interpolate the
         deformation field
       name: Name of module.
 
@@ -367,9 +371,9 @@ class ResampledFieldGridWarperLayer(GridWarperLayer):
     else:
       self._resampler=resampler
       self._interpolation = self._resampler.interpolation
-    
+
     self._field_transform = field_transform
-    
+
     super(ResampledFieldGridWarperLayer, self).__init__(source_shape=source_shape,
                                            output_shape=output_shape,
                                            coeff_shape=coeff_shape,
@@ -416,7 +420,7 @@ class ResampledFieldGridWarperLayer(GridWarperLayer):
     input_shape = tf.shape(field)
     input_dtype = field.dtype.as_numpy_dtype
     batch_size = int(field.get_shape()[0])
-    
+
     # transform grid into field coordinate space if necessary
     if self._field_transform==None:
       coords=self._psi
@@ -427,7 +431,7 @@ class ResampledFieldGridWarperLayer(GridWarperLayer):
     resampled_coords = self._resampler(field, coords)
     return resampled_coords
 
-    
+
 def _create_affine_features(output_shape, source_shape):
   """Generates n-dimensional homogenous coordinates for a given grid definition.
     `source_shape` and `output_shape` are used to define the size of the source

@@ -29,6 +29,7 @@ class ResamplerTest(tf.test.TestCase):
         resampler = ResamplerLayer(interpolation=interpolation,
                                    boundary=boundary)
         out = resampler(input, grid)
+        import pdb; pdb.set_trace()
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_value = sess.run(out)
