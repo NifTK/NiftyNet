@@ -157,10 +157,10 @@ class ApplicationDriver(object):
             try:
                 samplers = self.app.get_sampler()
                 if samplers is not None:
-                    for sampler_set in samplers:
-                        for sampler in sampler_set:
-                            sampler.run_threads(
-                                session, self._coord, self.num_threads)
+                    all_samplers = [s for sets in samplers for s in sets]
+                    for sampler in all_samplers:
+                        sampler.run_threads(
+                            session, self._coord, self.num_threads)
             except (TypeError, AttributeError, IndexError):
                 tf.logging.fatal(
                     "samplers not running, pop_batch_op operations "
