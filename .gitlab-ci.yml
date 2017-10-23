@@ -271,7 +271,7 @@ pip-installer:
     # check user-defined networks discovered
     # 1) create configuration + NiftyNet home
     - CONFIG_HOME=~/.niftynet
-    - mkdir $CONFIG_HOME
+    - mkdir -p $CONFIG_HOME
     - NIFTYNET_HOME=~/niftynet-$LAST_COMMIT
     - mkdir $NIFTYNET_HOME
     - GLOBAL_CONFIG=$CONFIG_HOME/config.ini
