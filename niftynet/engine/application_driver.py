@@ -322,8 +322,7 @@ class ApplicationDriver(object):
         """
         writer = tf.summary.FileWriter(self.summary_dir, sess.graph)
         # running through training_op from application
-        for iter_ops in self.app.iter_ops(self.initial_iter,
-                                              self.final_iter):
+        for iter_ops in self.app.iter_ops(self.initial_iter, self.final_iter):
             pref, iter_i, save, save_tensorboard, iter_op, data_dict = iter_ops
 
             loop_status['current_iter'] = iter_i
