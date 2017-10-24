@@ -36,6 +36,8 @@ class ResamplerLayer(Layer):
             return self._resample_nearest(inputs, sample_coords)
         if self.interpolation == 'BSPLINE':
             return self._resample_bspline(inputs, sample_coords)
+        if self.interpolation == 'IDW':
+            return self._resample_inv_dst_weighting(inputs, sample_coords)
         tf.logging.fatal('interplolation method not implmented')
         raise NotImplementedError
 
@@ -166,6 +168,69 @@ class ResamplerLayer(Layer):
             inputs, tf.concat([batch_coords, spatial_coords], -1))
         return tf.reduce_sum(all_weights * raw_samples, reduction_indices=1)
 
+    def _resample_inv_dst_weighting(self, inputs, sample_coords):
+        in_size = inputs.get_shape().as_list()
+        batch_size = in_size[0]
+        n_channels = in_size[-1]
+        in_spatial_size = in_size[1:-1]
+        in_spatial_rank = infer_spatial_rank(inputs)
+
+        out_spatial_rank = infer_spatial_rank(sample_coords)
+        out_spatial_size = sample_coords.get_shape().as_list()[1:-1]
+
+        self.power = 2
+        self.N = 2 ** in_spatial_rank
+
+        xy = tf.unstack(sample_coords, axis=-1)
+        base_coords = [tf.floor(coords) for coords in xy]
+        floor_coords = [self.boundary_func(x, in_spatial_size[idx])
+                        for (idx, x) in enumerate(base_coords)]
+        ceil_coords = [self.boundary_func(x + 1.0, in_spatial_size[idx])
+                       for (idx, x) in enumerate(base_coords)]
+
+        binary_neighbour_ids = [
+            [int(c) for c in format(i, '0%ib' % in_spatial_rank)]
+            for i in range(self.N)]
+        full_floor = self.boundary_func(tf.floor(sample_coords), in_spatial_size)
+        full_ceil = self.boundary_func(tf.floor(sample_coords) + 1.0, in_spatial_size)
+        floor_diff= tf.squared_difference(sample_coords, tf.to_float(full_floor))
+        ceil_diff = tf.squared_difference(sample_coords, tf.to_float(full_ceil))
+        diff = tf.stack([floor_diff, ceil_diff], axis=0)
+        diff = tf.transpose(diff,
+            [0, len(diff.get_shape())-1] + range(1, out_spatial_rank+2))
+        weight_id = [[[c, i] for i, c in enumerate(bc)] for bc in binary_neighbour_ids]
+        point_weights = tf.gather_nd(diff, weight_id)
+        point_weights = tf.reduce_sum(point_weights, axis=1)
+        point_weights = tf.pow(point_weights, self.power/2.0)
+        point_weights = tf.reciprocal(point_weights)
+        normaliser = tf.reduce_sum(point_weights, axis=0)
+
+
+        #all_coords = tf.stack([full_floor, full_ceil], axis=0)
+        #all_coords = tf.transpose(all_coords,
+        #    [0, len(all_coords.get_shape())-1] + range(1, out_spatial_rank+2))
+        #knots_id = tf.gather_nd(all_coords, weight_id)
+        ##samples = tf.gather_nd(inputs, knots_id) # output 8, 2, 2, n_channels
+
+        def get_batch_knot(bc):
+            coord = [sc[c][i] for i, c in enumerate(bc)]
+            coord = tf.stack([batch_ids] + coord, -1)
+            return tf.gather_nd(inputs, coord)
+
+        sc = (floor_coords, ceil_coords)
+        batch_ids = tf.reshape(
+            tf.range(batch_size), [batch_size] + [1] * out_spatial_rank)
+        batch_ids = tf.tile(batch_ids, [1] + out_spatial_size)
+        def get_knot(bc):
+            coord = [sc[c][i] for i, c in enumerate(bc)]
+            coord = tf.stack([batch_ids] + coord, -1)
+            return tf.gather_nd(inputs, coord)
+
+        samples = [get_knot(bc) for bc in binary_neighbour_ids]
+        samples = tf.stack(samples, axis=0)
+        samples = tf.reduce_sum(samples * tf.expand_dims(point_weights, axis=-1), axis=0) / normaliser
+        return samples
+
 
 def _boundary_replicate(sample_coords, input_size):
     sample_coords, input_size = _param_type_and_shape(sample_coords, input_size)
@@ -200,7 +265,7 @@ def _param_type_and_shape(sample_coords, input_size):
     return sample_coords, input_size
 
 
-SUPPORTED_INTERPOLATION = {'BSPLINE', 'LINEAR', 'NEAREST'}
+SUPPORTED_INTERPOLATION = {'BSPLINE', 'LINEAR', 'NEAREST', 'IDW'}
 
 SUPPORTED_BOUNDARY = {
     'ZERO': _boundary_replicate,
