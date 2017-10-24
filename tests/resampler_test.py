@@ -46,171 +46,171 @@ class ResamplerTest(tf.test.TestCase):
                                boundary='REPLICATE',
                                expected_value=expected)
 
-    #def test_resampler_2d_replicate_linear_correctness(self):
-    #    test_grid = tf.constant(
-    #        [[[.25, .25], [.25, .78]],
-    #         [[.62, .25], [.25, .28]]],
-    #        dtype=tf.float32)
-    #    expected = [[[2.5, 3.5, -1.75],
-    #                 [3.56, 4.56, -2.28]],
-    #                [[11.98, 12.98, -6.49],
-    #                 [10.56, 11.56, -5.78]]]
-    #    self._test_correctness(input=self.get_2d_input(),
-    #                           grid=test_grid,
-    #                           interpolation='LINEAR',
-    #                           boundary='ZERO',
-    #                           expected_value=expected)
+    def test_resampler_2d_replicate_linear_correctness(self):
+        test_grid = tf.constant(
+            [[[.25, .25], [.25, .78]],
+             [[.62, .25], [.25, .28]]],
+            dtype=tf.float32)
+        expected = [[[2.5, 3.5, -1.75],
+                     [3.56, 4.56, -2.28]],
+                    [[11.98, 12.98, -6.49],
+                     [10.56, 11.56, -5.78]]]
+        self._test_correctness(input=self.get_2d_input(),
+                               grid=test_grid,
+                               interpolation='LINEAR',
+                               boundary='ZERO',
+                               expected_value=expected)
 
-    #def test_resampler_3d_multivariate_replicate_linear_correctness(self):
-    #    test_grid = tf.constant(
-    #        [[[.25, .25, .25], [.25, .75, .25]],
-    #         [[.75, .25, .25], [.25, .25, .75]]],
-    #        dtype=tf.float32)
-    #    expected = [[[2.75, 102.75], [3.75, 103.75]],
-    #                [[12.75, 112.75], [11.25, 111.25]]]
-    #    self._test_correctness(input=self.get_3d_input2(),
-    #                           grid=test_grid,
-    #                           interpolation='LINEAR',
-    #                           boundary='REPLICATE',
-    #                           expected_value=expected)
+    def test_resampler_3d_multivariate_replicate_linear_correctness(self):
+        test_grid = tf.constant(
+            [[[.25, .25, .25], [.25, .75, .25]],
+             [[.75, .25, .25], [.25, .25, .75]]],
+            dtype=tf.float32)
+        expected = [[[2.75, 102.75], [3.75, 103.75]],
+                    [[12.75, 112.75], [11.25, 111.25]]]
+        self._test_correctness(input=self.get_3d_input2(),
+                               grid=test_grid,
+                               interpolation='LINEAR',
+                               boundary='REPLICATE',
+                               expected_value=expected)
 
-    #def test_resampler_3d_replicate_nearest_correctness(self):
-    #    test_grid = tf.constant(
-    #        [[[.25, .25, .25], [.25, .75, .25]],
-    #         [[.75, .25, .25], [.25, .25, .75]]],
-    #        dtype=tf.float32)
-    #    expected = [[[1, 101], [3, 103]],
-    #                [[13, 113], [10, 110]]]
-    #    self._test_correctness(input=self.get_3d_input2(),
-    #                           grid=test_grid,
-    #                           interpolation='NEAREST',
-    #                           boundary='REPLICATE',
-    #                           expected_value=expected)
+    def test_resampler_3d_replicate_nearest_correctness(self):
+        test_grid = tf.constant(
+            [[[.25, .25, .25], [.25, .75, .25]],
+             [[.75, .25, .25], [.25, .25, .75]]],
+            dtype=tf.float32)
+        expected = [[[1, 101], [3, 103]],
+                    [[13, 113], [10, 110]]]
+        self._test_correctness(input=self.get_3d_input2(),
+                               grid=test_grid,
+                               interpolation='NEAREST',
+                               boundary='REPLICATE',
+                               expected_value=expected)
 
-    #def test_resampler_3d_zero_nearest_correctness(self):
-    #    test_grid = tf.constant(
-    #        [[[-5.2, .25, .25], [.25, .95, .25]],
-    #         [[.75, .25, .25], [.25, .25, .75]]],
-    #        dtype=tf.float32)
-    #    expected = [[[0, 0], [3, 103]],
-    #                [[13, 113], [10, 110]]]
-    #    self._test_correctness(input=self.get_3d_input2(),
-    #                           grid=test_grid,
-    #                           interpolation='NEAREST',
-    #                           boundary='ZERO',
-    #                           expected_value=expected)
+    def test_resampler_3d_zero_nearest_correctness(self):
+        test_grid = tf.constant(
+            [[[-5.2, .25, .25], [.25, .95, .25]],
+             [[.75, .25, .25], [.25, .25, .75]]],
+            dtype=tf.float32)
+        expected = [[[0, 0], [3, 103]],
+                    [[13, 113], [10, 110]]]
+        self._test_correctness(input=self.get_3d_input2(),
+                               grid=test_grid,
+                               interpolation='NEAREST',
+                               boundary='ZERO',
+                               expected_value=expected)
 
-    #def test_resampler_3d_replicate_linear_correctness(self):
-    #    test_grid = tf.constant(
-    #        [[[.25, .25, .25], [.25, .75, .25]],
-    #         [[.75, .25, .25], [.25, .25, .75]]],
-    #        dtype=tf.float32)
-    #    expected = [[[2.75], [3.75]],
-    #                [[12.75], [11.25]]]
-    #    self._test_correctness(input=self.get_3d_input1(),
-    #                           grid=test_grid,
-    #                           interpolation='LINEAR',
-    #                           boundary='REPLICATE',
-    #                           expected_value=expected)
+    def test_resampler_3d_replicate_linear_correctness(self):
+        test_grid = tf.constant(
+            [[[.25, .25, .25], [.25, .75, .25]],
+             [[.75, .25, .25], [.25, .25, .75]]],
+            dtype=tf.float32)
+        expected = [[[2.75], [3.75]],
+                    [[12.75], [11.25]]]
+        self._test_correctness(input=self.get_3d_input1(),
+                               grid=test_grid,
+                               interpolation='LINEAR',
+                               boundary='REPLICATE',
+                               expected_value=expected)
 
-    #def test_resampler_3d_replicate_cubic_correctness(self):
-    #    test_grid = tf.constant(
-    #        [[[.25, .25, .25], [.25, .75, .25]],
-    #         [[.75, .25, .25], [.25, .25, .75]]],
-    #        dtype=tf.float32)
-    #    expected = [[[3.20869954], [3.93501790]],
-    #                [[12.63008626], [10.33280436]]]
-    #    self._test_correctness(input=self.get_3d_input1(),
-    #                           grid=test_grid,
-    #                           interpolation='BSPLINE',
-    #                           boundary='REPLICATE',
-    #                           expected_value=expected)
+    def test_resampler_3d_replicate_cubic_correctness(self):
+        test_grid = tf.constant(
+            [[[.25, .25, .25], [.25, .75, .25]],
+             [[.75, .25, .25], [.25, .25, .75]]],
+            dtype=tf.float32)
+        expected = [[[3.20869954], [3.93501790]],
+                    [[12.63008626], [10.33280436]]]
+        self._test_correctness(input=self.get_3d_input1(),
+                               grid=test_grid,
+                               interpolation='BSPLINE',
+                               boundary='REPLICATE',
+                               expected_value=expected)
 
-    #def test_resampler_3d_circular_nearest_correctness(self):
-    #    test_grid = tf.constant(
-    #        [[[.25, .25, .25], [.25, .75, .25]],
-    #         [[.75, .25, .25], [.25, .25, .75]]],
-    #        dtype=tf.float32)
-    #    expected = [[[1], [3]], [[13], [10]]]
-    #    self._test_correctness(input=self.get_3d_input1(),
-    #                           grid=test_grid,
-    #                           interpolation='NEAREST',
-    #                           boundary='CIRCULAR',
-    #                           expected_value=expected)
+    def test_resampler_3d_circular_nearest_correctness(self):
+        test_grid = tf.constant(
+            [[[.25, .25, .25], [.25, .75, .25]],
+             [[.75, .25, .25], [.25, .25, .75]]],
+            dtype=tf.float32)
+        expected = [[[1], [3]], [[13], [10]]]
+        self._test_correctness(input=self.get_3d_input1(),
+                               grid=test_grid,
+                               interpolation='NEAREST',
+                               boundary='CIRCULAR',
+                               expected_value=expected)
 
-    #def test_resampler_3d_circular_linear_correctness(self):
-    #    test_grid = tf.constant(
-    #        [[[.25, .25 + 2, .25 + 3],
-    #          [.25 - 2, .75 - 2, .25 - 3]],
-    #         [[.75 + 2, .25 - 2, .25 - 3],
-    #          [.25 + 2, .25 - 2, .75 + 3]]],
-    #        dtype=tf.float32)
-    #    expected = [[[2.75], [3.75]],
-    #                [[12.75], [11.25]]]
-    #    self._test_correctness(input=self.get_3d_input1(),
-    #                           grid=test_grid,
-    #                           interpolation='LINEAR',
-    #                           boundary='CIRCULAR',
-    #                           expected_value=expected)
+    def test_resampler_3d_circular_linear_correctness(self):
+        test_grid = tf.constant(
+            [[[.25, .25 + 2, .25 + 3],
+              [.25 - 2, .75 - 2, .25 - 3]],
+             [[.75 + 2, .25 - 2, .25 - 3],
+              [.25 + 2, .25 - 2, .75 + 3]]],
+            dtype=tf.float32)
+        expected = [[[2.75], [3.75]],
+                    [[12.75], [11.25]]]
+        self._test_correctness(input=self.get_3d_input1(),
+                               grid=test_grid,
+                               interpolation='LINEAR',
+                               boundary='CIRCULAR',
+                               expected_value=expected)
 
-    #def test_resampler_3d_symmetric_nearest_correctness(self):
-    #    test_grid = tf.constant(
-    #        [[[-.25, -.25, -.25],
-    #          [.25 + 2, .75 + 2, .25 + 4]],
-    #         [[.75, .25, -.25 + 4],
-    #          [.25, .25, .75]]],
-    #        dtype=tf.float32)
-    #    expected = [[[1], [3]], [[13], [10]]]
-    #    self._test_correctness(input=self.get_3d_input1(),
-    #                           grid=test_grid,
-    #                           interpolation='NEAREST',
-    #                           boundary='SYMMETRIC',
-    #                           expected_value=expected)
+    def test_resampler_3d_symmetric_nearest_correctness(self):
+        test_grid = tf.constant(
+            [[[-.25, -.25, -.25],
+              [.25 + 2, .75 + 2, .25 + 4]],
+             [[.75, .25, -.25 + 4],
+              [.25, .25, .75]]],
+            dtype=tf.float32)
+        expected = [[[1], [3]], [[13], [10]]]
+        self._test_correctness(input=self.get_3d_input1(),
+                               grid=test_grid,
+                               interpolation='NEAREST',
+                               boundary='SYMMETRIC',
+                               expected_value=expected)
 
-    #def test_resampler_3d_symmetric_linear_correctness(self):
-    #    test_grid = tf.constant(
-    #        [[[-.25, -.25, -.25],
-    #          [.25 + 2, .75 + 2, .25 + 4]],
-    #         [[.75, .25, -.25 + 4],
-    #          [.25, .25, .75]]],
-    #        dtype=tf.float32)
-    #    expected = [[[2.75], [3.75]],
-    #                [[12.75], [11.25]]]
-    #    self._test_correctness(input=self.get_3d_input1(),
-    #                           grid=test_grid,
-    #                           interpolation='LINEAR',
-    #                           boundary='SYMMETRIC',
-    #                           expected_value=expected)
+    def test_resampler_3d_symmetric_linear_correctness(self):
+        test_grid = tf.constant(
+            [[[-.25, -.25, -.25],
+              [.25 + 2, .75 + 2, .25 + 4]],
+             [[.75, .25, -.25 + 4],
+              [.25, .25, .75]]],
+            dtype=tf.float32)
+        expected = [[[2.75], [3.75]],
+                    [[12.75], [11.25]]]
+        self._test_correctness(input=self.get_3d_input1(),
+                               grid=test_grid,
+                               interpolation='LINEAR',
+                               boundary='SYMMETRIC',
+                               expected_value=expected)
 
-    #def test_resampler_3d_symmetric_cubic_correctness(self):
-    #    test_grid = tf.constant(
-    #        [[[-.25, -.25, -.25],
-    #          [.25 + 2, .75 + 2, .25 + 4]],
-    #         [[.75, .25, -.25 + 4],
-    #          [.25, .25, .75]]],
-    #        dtype=tf.float32)
-    #    expected = [[[3.683675], [4.140218]],
-    #                [[12.56551075], [10.69881153]]]
-    #    self._test_correctness(input=self.get_3d_input1(),
-    #                           grid=test_grid,
-    #                           interpolation='BSPLINE',
-    #                           boundary='SYMMETRIC',
-    #                           expected_value=expected)
+    def test_resampler_3d_symmetric_cubic_correctness(self):
+        test_grid = tf.constant(
+            [[[-.25, -.25, -.25],
+              [.25 + 2, .75 + 2, .25 + 4]],
+             [[.75, .25, -.25 + 4],
+              [.25, .25, .75]]],
+            dtype=tf.float32)
+        expected = [[[3.683675], [4.140218]],
+                    [[12.56551075], [10.69881153]]]
+        self._test_correctness(input=self.get_3d_input1(),
+                               grid=test_grid,
+                               interpolation='BSPLINE',
+                               boundary='SYMMETRIC',
+                               expected_value=expected)
 
-    #def test_resampler_3d_circular_cubic_correctness(self):
-    #    test_grid = tf.constant(
-    #        [[[-.25, -.25, -.25],
-    #          [.25 + 2, .75 + 2, .25 + 4]],
-    #         [[.75, .25, -.25 + 4],
-    #          [.25, .25, .75]]],
-    #        dtype=tf.float32)
-    #    expected = [[[1.66219068], [2.44295263]],
-    #                [[11.46712303], [10.65071392]]]
-    #    self._test_correctness(input=self.get_3d_input1(),
-    #                           grid=test_grid,
-    #                           interpolation='BSPLINE',
-    #                           boundary='CIRCULAR',
-    #                           expected_value=expected)
+    def test_resampler_3d_circular_cubic_correctness(self):
+        test_grid = tf.constant(
+            [[[-.25, -.25, -.25],
+              [.25 + 2, .75 + 2, .25 + 4]],
+             [[.75, .25, -.25 + 4],
+              [.25, .25, .75]]],
+            dtype=tf.float32)
+        expected = [[[1.66219068], [2.44295263]],
+                    [[11.46712303], [10.65071392]]]
+        self._test_correctness(input=self.get_3d_input1(),
+                               grid=test_grid,
+                               interpolation='BSPLINE',
+                               boundary='CIRCULAR',
+                               expected_value=expected)
 
 
 if __name__ == "__main__":

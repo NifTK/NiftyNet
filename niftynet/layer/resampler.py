@@ -171,7 +171,6 @@ class ResamplerLayer(Layer):
     def _resample_inv_dst_weighting(self, inputs, sample_coords):
         in_size = inputs.get_shape().as_list()
         batch_size = in_size[0]
-        n_channels = in_size[-1]
         in_spatial_size = in_size[1:-1]
         in_spatial_rank = infer_spatial_rank(inputs)
 
@@ -181,55 +180,50 @@ class ResamplerLayer(Layer):
         self.power = 2
         self.N = 2 ** in_spatial_rank
 
-        xy = tf.unstack(sample_coords, axis=-1)
-        base_coords = [tf.floor(coords) for coords in xy]
-        floor_coords = [self.boundary_func(x, in_spatial_size[idx])
-                        for (idx, x) in enumerate(base_coords)]
-        ceil_coords = [self.boundary_func(x + 1.0, in_spatial_size[idx])
-                       for (idx, x) in enumerate(base_coords)]
-
         binary_neighbour_ids = [
             [int(c) for c in format(i, '0%ib' % in_spatial_rank)]
             for i in range(self.N)]
-        full_floor = self.boundary_func(tf.floor(sample_coords), in_spatial_size)
-        full_ceil = self.boundary_func(tf.floor(sample_coords) + 1.0, in_spatial_size)
-        floor_diff= tf.squared_difference(sample_coords, tf.to_float(full_floor))
-        ceil_diff = tf.squared_difference(sample_coords, tf.to_float(full_ceil))
+        weight_id = [[[c, i] for i, c in enumerate(bc)] for bc in
+                     binary_neighbour_ids]
+
+        floor_coord = self.boundary_func(
+            tf.floor(sample_coords), in_spatial_size)
+        ceil_coord = self.boundary_func(
+            tf.floor(sample_coords) + 1.0, in_spatial_size)
+        all_coords = tf.stack([floor_coord, ceil_coord], axis=0)
+        coords_shape = all_coords.get_shape().as_list()
+        floor_diff = tf.squared_difference(
+            sample_coords, tf.to_float(all_coords[0]))
+        ceil_diff = tf.squared_difference(
+            sample_coords, tf.to_float(all_coords[1]))
         diff = tf.stack([floor_diff, ceil_diff], axis=0)
-        diff = tf.transpose(diff,
-            [0, len(diff.get_shape())-1] + range(1, out_spatial_rank+2))
-        weight_id = [[[c, i] for i, c in enumerate(bc)] for bc in binary_neighbour_ids]
+        diff = tf.transpose(
+            diff,
+            [0, len(coords_shape) - 1] + range(1, out_spatial_rank + 2))
+
         point_weights = tf.gather_nd(diff, weight_id)
         point_weights = tf.reduce_sum(point_weights, axis=1)
-        point_weights = tf.pow(point_weights, self.power/2.0)
+        point_weights = tf.pow(point_weights, self.power / 2.0)
         point_weights = tf.reciprocal(point_weights)
-        normaliser = tf.reduce_sum(point_weights, axis=0)
 
-
-        all_coords = tf.stack([full_floor, full_ceil], axis=0)
-        all_coords = tf.transpose(all_coords,
-            [0, len(all_coords.get_shape())-1] + range(1, out_spatial_rank+2))
+        all_coords = tf.transpose(
+            all_coords,
+            [0, len(coords_shape) - 1] + range(1, out_spatial_rank + 2))
         knots_id = tf.gather_nd(all_coords, weight_id)
-        #samples = tf.gather_nd(inputs, knots_id) # output 8, 2, 2, n_channels
+        knots_id = tf.transpose(
+            knots_id, [0] + range(2, out_spatial_rank + 3) + [1])
+        knots_shape = knots_id.get_shape().as_list()
+        b_id = tf.reshape(
+            tf.range(batch_size),
+            [1] + [batch_size] + [1] * (len(knots_shape) - 2))
+        b_id = tf.tile(
+            b_id, [knots_shape[0]] + [1] + out_spatial_size + [1])
+        b_id = tf.concat([b_id, knots_id], axis=-1)
 
-        def get_batch_knot(bc):
-            coord = [sc[c][i] for i, c in enumerate(bc)]
-            coord = tf.stack([batch_ids] + coord, -1)
-            return tf.gather_nd(inputs, coord)
-
-        sc = (floor_coords, ceil_coords)
-        batch_ids = tf.reshape(
-            tf.range(batch_size), [batch_size] + [1] * out_spatial_rank)
-        batch_ids = tf.tile(batch_ids, [1] + out_spatial_size)
-        def get_knot(bc):
-            coord = [sc[c][i] for i, c in enumerate(bc)]
-            coord = tf.stack([batch_ids] + coord, -1)
-            return tf.gather_nd(inputs, coord)
-
-        samples = [get_knot(bc) for bc in binary_neighbour_ids]
-        samples = tf.stack(samples, axis=0)
-        samples = tf.reduce_sum(samples * tf.expand_dims(point_weights, axis=-1), axis=0) / normaliser
-        import pdb; pdb.set_trace()
+        samples = tf.gather_nd(inputs, b_id)  # output 8, 2, 2, n_channels
+        samples = tf.reduce_sum(
+            samples * tf.expand_dims(point_weights, axis=-1), axis=0)
+        samples = samples / tf.reduce_sum(point_weights, axis=0)
         return samples
 
 
