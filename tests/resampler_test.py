@@ -30,10 +30,24 @@ class ResamplerTest(tf.test.TestCase):
         out = resampler(input, grid)
         with self.test_session() as sess:
             out_value = sess.run(out)
-            # print(expected_value)
-            # print(out_value)
+            #print(expected_value)
+            #print(out_value)
             self.assertAllClose(expected_value, out_value)
-    def test_resampler_3d_multivariate_replicate_linear_correctness(self):
+
+    def test_resampler_3d_multivariate_zero_weight_idw_correctness(self):
+        test_grid = tf.constant(
+            [[[0, 1, 2], [.25, .75, .25]],
+             [[.75, .25, .25], [.25, .25, .75]]],
+            dtype=tf.float32)
+        expected = [[[-2, 98], [3.873452, 103.873459]],
+                    [[12.708848, 112.70884705], [11.45575333, 111.45578003]]]
+        self._test_correctness(input=self.get_3d_input2(),
+                               grid=test_grid,
+                               interpolation='IDW',
+                               boundary='REPLICATE',
+                               expected_value=expected)
+
+    def test_resampler_3d_multivariate_replicate_idw_correctness(self):
         test_grid = tf.constant(
             [[[.25, .25, .25], [.25, .75, .25]],
              [[.75, .25, .25], [.25, .25, .75]]],

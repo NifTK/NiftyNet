@@ -38,7 +38,7 @@ class ResamplerLayer(Layer):
             return self._resample_bspline(inputs, sample_coords)
         if self.interpolation == 'IDW':
             return self._resample_inv_dst_weighting(inputs, sample_coords)
-        tf.logging.fatal('interplolation method not implmented')
+        tf.logging.fatal('interpolation method not implmented')
         raise NotImplementedError
 
     def _resample_nearest(self, inputs, sample_coords):
@@ -175,7 +175,8 @@ class ResamplerLayer(Layer):
         in_spatial_rank = infer_spatial_rank(inputs)
 
         out_spatial_rank = infer_spatial_rank(sample_coords)
-        out_spatial_size = sample_coords.get_shape().as_list()[1:-1]
+        out_size = sample_coords.get_shape().as_list()
+        out_spatial_size = out_size[1:-1]
 
         self.power = 2
         self.N = 2 ** in_spatial_rank
@@ -183,8 +184,8 @@ class ResamplerLayer(Layer):
         binary_neighbour_ids = [
             [int(c) for c in format(i, '0%ib' % in_spatial_rank)]
             for i in range(self.N)]
-        weight_id = [[[c, i] for i, c in enumerate(bc)] for bc in
-                     binary_neighbour_ids]
+        weight_id = [[[c, i] for i, c in enumerate(bc)]
+                     for bc in binary_neighbour_ids]
 
         floor_coord = self.boundary_func(
             tf.floor(sample_coords), in_spatial_size)
@@ -197,18 +198,20 @@ class ResamplerLayer(Layer):
         ceil_diff = tf.squared_difference(
             sample_coords, tf.to_float(all_coords[1]))
         diff = tf.stack([floor_diff, ceil_diff], axis=0)
+        # transpose to shape inds: [0, -1, others]
         diff = tf.transpose(
-            diff,
-            [0, len(coords_shape) - 1] + range(1, out_spatial_rank + 2))
+            diff, [0, len(out_size)] + range(1, len(out_size)))
 
         point_weights = tf.gather_nd(diff, weight_id)
         point_weights = tf.reduce_sum(point_weights, axis=1)
         point_weights = tf.pow(point_weights, self.power / 2.0)
         point_weights = tf.reciprocal(point_weights)
+        # workaround for zero weights
+        point_weights = tf.minimum(point_weights, 1e12)
 
+        # transpose to shape inds: [0, -1, others]
         all_coords = tf.transpose(
-            all_coords,
-            [0, len(coords_shape) - 1] + range(1, out_spatial_rank + 2))
+            all_coords, [0, len(out_size)] + range(1, len(out_size)))
         knots_id = tf.gather_nd(all_coords, weight_id)
         knots_id = tf.transpose(
             knots_id, [0] + range(2, out_spatial_rank + 3) + [1])
@@ -220,9 +223,9 @@ class ResamplerLayer(Layer):
             b_id, [knots_shape[0]] + [1] + out_spatial_size + [1])
         b_id = tf.concat([b_id, knots_id], axis=-1)
 
-        samples = tf.gather_nd(inputs, b_id)  # output 8, 2, 2, n_channels
-        samples = tf.reduce_sum(
-            samples * tf.expand_dims(point_weights, axis=-1), axis=0)
+        point_weights = tf.expand_dims(point_weights, axis=-1)
+        samples = tf.gather_nd(inputs, b_id)
+        samples = tf.reduce_sum(samples * point_weights, axis=0)
         samples = samples / tf.reduce_sum(point_weights, axis=0)
         return samples
 
