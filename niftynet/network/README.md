@@ -4,18 +4,27 @@ specifying command line argument.  To fully utilise this feature, a customised
 network should be prepared in the following steps:
 
 ###### Step 1.
-   Create a new network file, e.g., `my_network_collection/new_net.py` and make
-   sure `my_network_collection` folder on the system `$PYTHONPATH`, these will
-   ensure the network module (Python class) could be imported by the Python
-   interpreter.
+   Create a new network file, e.g. `new_net.py` and place this inside a folder
+   of your choice, e.g. `my_network_collection` together with a new `__init__.py`
+   file.
 
 ###### Step 2.
+   Make sure this folder can be discovered by NiftyNet by doing **either** of the
+   following:
+   * Place `my_network_collection` inside `$NIFTYNET_HOME/niftynetext/network`
+   (with `$NIFTYNET_HOME` defined by the [NiftyNet global `home` setting][glob-conf]).
+   * Append the location of this folder (i.e. **the folder where this folder is
+   located**) to your `$PYTHONPATH`.
+
+[glob-conf]: ../../config/README.md#global-niftynet-settings
+
+###### Step 3.
    Create a new class, e.g. `NewNet` in `new_net.py` by inheriting the
    `BaseNet` class from `niftynet.network.base_net`.  `niftynet.network.toynet`
    is a minimal working example of a fully convolutional network, can be a
    starting point for `NewNet`.
 
-###### Step 3.
+###### Step 4.
    In the `NewNet` class, implement `__init__()` function for network property
    initialisations, and implement `layer_op()` for network connections.
 
@@ -31,7 +40,7 @@ network should be prepared in the following steps:
    in a modular design (convenient for parameter sharing) and can handle 2D,
    2.5D and 3D cases in a unified manner whenever possible.
 
-###### Step 4.
+###### Step 5.
    Finally training the network could be done by specifying the newly
    implemented network in the command line argument `--name my_network_collection.new_net.NewNet`
 
@@ -50,7 +59,7 @@ network should be prepared in the following steps:
                                --name my_network_collection.new_net.NewNet
    ```
 
-###### Step 5.
+###### Step 6.
    Please consider submitting the design to our model zoo.
 
 

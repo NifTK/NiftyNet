@@ -5,6 +5,7 @@ from os import (makedirs, rename)
 from random import choice
 from string import ascii_lowercase
 from time import strftime
+import sys
 try:
     from configparser import (ConfigParser, Error)
 except ImportError:
@@ -19,20 +20,41 @@ class NiftyNetGlobalConfig(object):
     global_section = 'global'
     home_key = 'home'
 
+    niftynet_exts = {'niftynetext': ['network']}
+
     def __init__(self):
         self._download_server_url = \
             'https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer'
         self._config_home = join(expanduser('~'), '.niftynet')
         self._config_file = join(self._config_home, 'config.ini')
 
-        config_opts = self.__load_or_create(self._config_file)
+        config_opts = NiftyNetGlobalConfig.__load_or_create(self._config_file)
 
         self._niftynet_home = expanduser(
             config_opts[NiftyNetGlobalConfig.global_section][NiftyNetGlobalConfig.home_key])
         if not isdir(self._niftynet_home):
             makedirs(self._niftynet_home)
 
-    def __load_or_create(self, config_file):
+            # create folders for user-defined extensions such as new networks
+            for ext in NiftyNetGlobalConfig.niftynet_exts:
+                NiftyNetGlobalConfig.__create_module(join(self._niftynet_home, ext))
+                for mod in NiftyNetGlobalConfig.niftynet_exts[ext]:
+                    NiftyNetGlobalConfig.__create_module(join(self._niftynet_home, ext, mod))
+        sys.path.insert(1, self._niftynet_home)
+
+    @staticmethod
+    def __create_module(path):
+        """Create the passed path, i.e. folder and place an empty
+        ``__init__.py`` file inside.
+
+        :param path: assumed not to exist
+        :type path: `os.path`
+        """
+        makedirs(path)
+        open(join(path, '__init__.py'), 'a').close()
+
+    @staticmethod
+    def __load_or_create(config_file):
         """Load passed configuration file, if it exists; create a default
         otherwise. If this method finds an incorrect config file, it
         backs the file up with a human-readable timestamp suffix and

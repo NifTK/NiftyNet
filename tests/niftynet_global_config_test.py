@@ -3,10 +3,16 @@ from os.path import (expanduser, join, isdir, isfile)
 from os import (remove, makedirs, environ)
 from shutil import rmtree
 from glob import glob
+from os.path import getmtime
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 
 
 class NiftyNetGlobalConfigTest(TestCase):
+    """Tests included here all pertain to the NiftyNet global configuration
+    file and `NiftyNetGlobalConfig` is a singleton. These require each test
+    to be run separately. This is why all tests are decorated with
+    `skipUnless`.
+    """
 
     @classmethod
     def typify(cls, file_path):
@@ -16,6 +22,7 @@ class NiftyNetGlobalConfigTest(TestCase):
     @classmethod
     def remove_path(cls, path):
         """Remove passed item, whether it's a file or directory."""
+        print("removing {}".format(path))
         if isdir(path):
             rmtree(path)
         elif isfile(path):
@@ -29,7 +36,9 @@ class NiftyNetGlobalConfigTest(TestCase):
 
         cls.header = '[global]'
         cls.default_config_opts = {
-            'home': '~/niftynet'
+            'home': '~/niftynet',
+            'ext': 'niftynetext',
+            'ext_mods': ['network']
         }
 
     def setUp(self):
@@ -73,6 +82,7 @@ class NiftyNetGlobalConfigTest(TestCase):
         global_config = NiftyNetGlobalConfig()
         self.assertEqual(global_config.get_niftynet_home_folder(),
                          custom_niftynet_home_abs)
+        NiftyNetGlobalConfigTest.remove_path(custom_niftynet_home_abs)
 
     @skipUnless('GLOBAL_CONFIG_TEST_icfbu' in environ,
                 'set GLOBAL_CONFIG_TEST_icfbu to run')
@@ -107,7 +117,34 @@ class NiftyNetGlobalConfigTest(TestCase):
         niftynet_home = expanduser(NiftyNetGlobalConfigTest.default_config_opts['home'])
         NiftyNetGlobalConfigTest.remove_path(niftynet_home)
         self.assertFalse(isdir(niftynet_home))
+        niftynet_ext = join(
+            niftynet_home, NiftyNetGlobalConfigTest.default_config_opts['ext']
+        )
+        self.assertFalse(isfile(join(niftynet_ext, '__init__.py')))
+        for mod in NiftyNetGlobalConfigTest.default_config_opts['ext_mods']:
+            self.assertFalse(isfile(join(niftynet_ext, mod, '__init__.py')))
 
         global_config = NiftyNetGlobalConfig()
 
         self.assertTrue(isdir(niftynet_home))
+        self.assertTrue(isfile(join(niftynet_ext, '__init__.py')))
+        for mod in NiftyNetGlobalConfigTest.default_config_opts['ext_mods']:
+            self.assertTrue(isfile(join(niftynet_ext, mod, '__init__.py')))
+
+    @skipUnless('GLOBAL_CONFIG_TEST_enhnt' in environ,
+                'set GLOBAL_CONFIG_TEST_enhnt to run')
+    def test_existing_niftynet_home_not_touched(self):
+        niftynet_home = expanduser(NiftyNetGlobalConfigTest.default_config_opts['home'])
+        makedirs(niftynet_home)
+        niftynet_ext = join(
+            niftynet_home, NiftyNetGlobalConfigTest.default_config_opts['ext']
+        )
+        makedirs(niftynet_ext)
+        niftynet_ext_init = join(niftynet_ext, '__init__.py')
+        open(niftynet_ext_init, 'w').close()
+        mtime_before = getmtime(niftynet_ext_init)
+
+        global_config = NiftyNetGlobalConfig()
+
+        mtime_after = getmtime(niftynet_ext_init)
+        self.assertEqual(mtime_before, mtime_after)
