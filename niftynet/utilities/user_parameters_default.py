@@ -262,6 +262,35 @@ def add_network_args(parser):
              " normalising volumes",
         type=str2boolean,
         default=False)
+
+    parser.add_argument(
+        "--weight_initializer",
+        help="Set the initializer for the weight parameters",
+        type=str,
+        default='he_normal')
+
+    parser.add_argument(
+        "--bias_initializer",
+        help="Set the initializer for the bias parameters",
+        type=str,
+        default='zeros')
+
+    try:
+        import yaml
+        parser.add_argument(
+            "--weight_initializer_args",
+            help="Pass arguments to the initializer for the weight parameters",
+            type=yaml.load,
+            default={})
+        parser.add_argument(
+            "--bias_initializer_args",
+            help="Pass arguments to the initializer for the bias parameters",
+            type=yaml.load,
+            default={})
+    except ImportError:
+        # "PyYAML module not found")
+        pass
+
     return parser
 
 
@@ -286,7 +315,7 @@ def add_training_args(parser):
              "augmentation is enabled",
         type=float_array,
         default=())
-        
+
     parser.add_argument(
         "--rotation_angle_x",
         help="The min/max angles of the x rotation when rotation "
