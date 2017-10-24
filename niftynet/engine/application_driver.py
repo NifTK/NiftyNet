@@ -320,7 +320,12 @@ class ApplicationDriver(object):
         At every iteration it also evaluates all variables returned by
         the output_collector.
         """
-        writer = tf.summary.FileWriter(self.summary_dir, sess.graph)
+        writer_t = tf.summary.FileWriter(self.summary_dir+'/t', sess.graph)
+        writer_v = tf.summary.FileWriter(self.summary_dir+'/v', sess.graph)
+        writer_funcs = [lambda x,y: None,
+                        writer_t.add_summary,
+                        writer_v.add_summary]
+
         # running through training_op from application
         for iter_ops in self.app.iter_ops(self.initial_iter, self.final_iter):
             pref, iter_i, save, save_tensorboard, iter_op, data_dict = iter_ops
@@ -348,7 +353,7 @@ class ApplicationDriver(object):
             console_str = self._console_vars_to_str(graph_output[CONSOLE])
             summary = graph_output.get(TF_SUMMARIES, {})
             if summary:
-                writer.add_summary(summary, iter_i)
+                writer_funcs[save_tensorboard](summary, iter_i)
 
             # save current model
             if save:

@@ -121,14 +121,14 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
                 feed_dict_validation = feed_dict.copy()
                 feed_dict_validation[self.is_validation]=True
                 for iter_j in range(param.validation_iters):
-                    yield 'Validate', iter_i, False, True, \
+                    yield 'Validate', iter_i, False, 2, \
                           self.is_validation, feed_dict_validation
 
             feed_dict[self.is_validation]=False
             save = param.save_every_n > 0 and \
                    iter_i % param.save_every_n == 0
-            save_log = param.tensorboard_every_n > 0 and \
-                       iter_i % param.tensorboard_every_n == 0
+            save_log = 1 if (param.tensorboard_every_n > 0 and \
+                       iter_i % param.tensorboard_every_n == 0) else 0
             yield 'Train', iter_i, save, save_log, self.gradient_op, feed_dict
 
     def training_ops(self, start_iter=0, end_iter=1):
