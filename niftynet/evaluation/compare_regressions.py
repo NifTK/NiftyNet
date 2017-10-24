@@ -9,7 +9,7 @@ import niftynet.utilities.csv_table as csv_table
 from niftynet.evaluation.pairwise_measures import PairwiseMeasuresRegression
 
 MEASURES = (
-    'mse','rmse','mae','r2'
+    'mse', 'rmse', 'mae', 'r2'
 )
 # MEASURES_NEW = ('ref volume', 'reg volume', 'tp', 'fp', 'fn', 'outline_error',
 #             'detection_error', 'dice')
@@ -71,8 +71,7 @@ def run(param, csv_dict):
             assert (np.all(ref) >= 0)
             assert (reg.shape == ref.shape)
             PE = PairwiseMeasuresRegression(reg, ref,
-                                  measures=MEASURES)
+                                            measures=MEASURES)
             fixed_fields = "{}, {}, ".format(ref_name, reg_name)
             out_stream.write(fixed_fields + PE.to_string(
                 OUTPUT_FORMAT) + '\n')
-

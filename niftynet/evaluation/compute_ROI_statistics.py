@@ -1,7 +1,5 @@
 from __future__ import absolute_import, print_function
-
 import os.path
-
 import numpy as np
 
 import niftynet.utilities.csv_table as csv_table
@@ -14,7 +12,7 @@ MEASURES = ('centre of mass', 'volume', 'surface', 'surface volume ratio',
             'compactness', 'mean', 'weighted_mean', 'skewness',
             'kurtosis', 'min', 'max', 'std',
             'quantile_25', 'quantile_50', 'quantile_75', 'asm', 'contrast',
-                                                         'correlation',
+            'correlation',
             'sumsquare',
             'sum_average', 'idifferentmomment', 'sumentropy', 'entropy',
             'differencevariance', 'sumvariance',
@@ -67,16 +65,16 @@ def run(param, csv_dict):
         if out_name == '':
             out_name = '{}_{}_{}.csv'.format(
                 OUTPUT_FILE_PREFIX,
-                name,param.save_name
+                name, param.save_name
                 # os.path.basename(img_name).rsplit(param.ext)[0]
-                )
+            )
         out_stream = open(os.path.join(param.save_csv_dir, out_name), 'a+')
         print('write: {}'.format(out_name))
         print('to folder: {}'.format(param.save_csv_dir))
         # a trivial RegionProperties obj to produce header_str
         header_str = RegionProperties(None, img, MEASURES).header_str()
         if flag_not_unique:
-            out_stream.write('Mask, Data, Dim,Label' + header_str +'\n')
+            out_stream.write('Mask, Data, Dim,Label' + header_str + '\n')
         # print >> out_stream, 'Dim,Label' + header_str
         if param.seg_type == 'unique':
             flag_not_unique = False
@@ -98,7 +96,7 @@ def run(param, csv_dict):
                 seg_d = MorphologyOps(seg_d, 24).foreground_component()
                 threshold_steps = np.arange(1, seg_d[1])
             elif param.seg_type == 'unique':
-                type_str="Binary"
+                type_str = "Binary"
                 threshold_steps = [1]
             else:
                 pass
@@ -107,7 +105,7 @@ def run(param, csv_dict):
                 print('{} of {} thresholding steps'.format(
                     n, len(threshold_steps)))
                 if type_str == "Labels" or type_str == "Binary":
-                    seg_d_binary = np.where(seg_d==i, np.ones_like(seg_d),
+                    seg_d_binary = np.where(seg_d == i, np.ones_like(seg_d),
                                             np.zeros_like(seg_d))
                 else:
                     seg_d_binary = np.copy(seg_d[1])
@@ -119,7 +117,7 @@ def run(param, csv_dict):
                 fixed_fields = '{},{},{},{}'.format(
                     seg_name.multi_mod_filenames[0][0],
                     img_name.multi_mod_filenames[0][0],
-                                                    d, i)
+                    d, i)
                 out_stream.write(fixed_fields + roi_stats.to_string(
                     OUTPUT_FORMAT) + '\n')
                 # print >> out_stream, \

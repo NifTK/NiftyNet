@@ -56,37 +56,37 @@ class RegionProperties(object):
                             ['P75_%d' % i for i in img_id]),
             'std': (self.std_, ['STD_%d' % i for i in img_id]),
             'asm': (self.call_asm,
-                    ['asm%d' %i for i in
-                                                    img_id]),
+                    ['asm%d' % i for i in
+                     img_id]),
 
             'contrast': (self.call_contrast, ['contrast%d' % i for i in
-                                               img_id]),
-            'correlation': (self.call_correlation, ['correlation%d' % i
-                                                        for i
-                                                    in
-                                            img_id]),
-            'sumsquare': (self.call_sum_square, ['sumsquare%d' % i for i in
                                               img_id]),
+            'correlation': (self.call_correlation, ['correlation%d' % i
+                                                    for i
+                                                    in
+                                                    img_id]),
+            'sumsquare': (self.call_sum_square, ['sumsquare%d' % i for i in
+                                                 img_id]),
             'sum_average': (self.call_sum_average, ['sum_average%d' % i
-                                                        for i in
-                                            img_id]),
+                                                    for i in
+                                                    img_id]),
             'idifferentmomment': (self.call_idifferent_moment,
                                   ['idifferentmomment%d' % i for i in
-                                            img_id]),
+                                   img_id]),
             'sumentropy': (self.call_sum_entropy, ['sumentropy%d' % i for i in
-                                             img_id]),
+                                                   img_id]),
             'entropy': (self.call_entropy, ['entropy%d' % i for i in
-                                                img_id]),
-            'differencevariance': (self.call_difference_variance,
-                                  ['differencevariance%d' % i for i in
                                             img_id]),
+            'differencevariance': (self.call_difference_variance,
+                                   ['differencevariance%d' % i for i in
+                                    img_id]),
             'differenceentropy': (self.call_difference_entropy,
                                   ['differenceentropy%d'
-                                                       % i for i in
-                                            img_id]),
+                                   % i for i in
+                                   img_id]),
             'sumvariance': (self.call_sum_variance, ['sumvariance%d' % i for i
-                                                    in
-                                            img_id]),
+                                                     in
+                                                     img_id]),
             'imc1': (self.call_imc1, ['imc1%d' % i for i in img_id]),
             'imc2': (self.call_imc2, ['imc2%d' % i for i in img_id])
 
@@ -127,11 +127,11 @@ class RegionProperties(object):
                numb_border_seg * self.vol_vox, numb_border_seg_bin * self.vol_vox
 
     def glcm(self):
-        shifts = [[0,0,0],
-                  [1,0,0],
-                  [-1,0,0],
-                  [0,1,0],
-                  [0,-1,0],
+        shifts = [[0, 0, 0],
+                  [1, 0, 0],
+                  [-1, 0, 0],
+                  [0, 1, 0],
+                  [0, -1, 0],
                   [0, 0, 1],
                   [0, 0, -1],
                   [1, 1, 0],
@@ -142,10 +142,10 @@ class RegionProperties(object):
                   [0, -1, -1],
                   [0, -1, 1],
                   [0, 1, -1],
-                  [1, 0,1],
-                  [-1,0, -1],
-                  [-1,0, 1],
-                  [1, 0,-1],
+                  [1, 0, 1],
+                  [-1, 0, -1],
+                  [-1, 0, 1],
+                  [1, 0, -1],
                   [1, 1, 1],
                   [-1, 1, -1],
                   [-1, 1, 1],
@@ -160,7 +160,7 @@ class RegionProperties(object):
             return None
         for m in range(0, self.img.shape[4]):
             shifted_image = []
-            for n in range(0, self.neigh+1):
+            for n in range(0, self.neigh + 1):
 
                 new_img = self.seg * self.img[:, :, :, 0, m]
                 print(np.max(self.img), 'is max img')
@@ -169,20 +169,20 @@ class RegionProperties(object):
                 if np.count_nonzero(new_img) > 0:
                     flattened_new = new_img.flatten()
                     flattened_seg = self.seg.flatten()
-                    affine = np.round(flattened_new*self.mul+self.trans)
+                    affine = np.round(flattened_new * self.mul + self.trans)
                     # select = [round(flattened_new[i] * self.mul+self.trans) for i in
                     #                 range(0, new_img.size) if
                     #           flattened_seg[i]>0]
 
-                    select_new = np.digitize(affine[flattened_seg==1], bins)
-                    select_new[select_new >= self.bin] = self.bin-1
-                    print(np.max(select_new),' is max bin',np.max(affine))
+                    select_new = np.digitize(affine[flattened_seg == 1], bins)
+                    select_new[select_new >= self.bin] = self.bin - 1
+                    print(np.max(select_new), ' is max bin', np.max(affine))
                     shifted_image.append(select_new)
             glcm = np.zeros([self.bin, self.bin, self.neigh])
             for n in range(0, self.neigh):
                 for i in range(0, shifted_image[0].size):
-                    glcm[shifted_image[0][i], shifted_image[n+1][i], n] += 1
-                glcm[:,:,n] = glcm[:,:,n] / np.sum(glcm[:,:,n])
+                    glcm[shifted_image[0][i], shifted_image[n + 1][i], n] += 1
+                glcm[:, :, n] = glcm[:, :, n] / np.sum(glcm[:, :, n])
             multi_mod_glcm.append(glcm)
         return multi_mod_glcm
 
@@ -190,56 +190,54 @@ class RegionProperties(object):
         multi_mod_glcm = self.glcm()
         matrix_harilick = np.zeros([13, self.neigh, self.img_channels])
         if multi_mod_glcm is None:
-            return np.average(matrix_harilick,axis=1)
+            return np.average(matrix_harilick, axis=1)
 
         for i in range(0, self.img_channels):
             for j in range(0, self.neigh):
-                matrix = multi_mod_glcm[i][...,j]
+                matrix = multi_mod_glcm[i][..., j]
                 harilick_vector = self.harilick(matrix)
                 for index, elem in enumerate(harilick_vector):
-                    matrix_harilick[index,j,i] = elem
+                    matrix_harilick[index, j, i] = elem
         return np.average(matrix_harilick, axis=1)
 
     def call_asm(self):
-        return self.harilick_m[0,:]
+        return self.harilick_m[0, :]
 
     def call_contrast(self):
-        return self.harilick_m[1,:]
+        return self.harilick_m[1, :]
 
     def call_correlation(self):
-        return self.harilick_m[2,:]
+        return self.harilick_m[2, :]
 
     def call_sum_square(self):
-        return self.harilick_m[3,:]
+        return self.harilick_m[3, :]
 
     def call_sum_average(self):
-        return self.harilick_m[4,:]
+        return self.harilick_m[4, :]
 
     def call_idifferent_moment(self):
-        return self.harilick_m[5,:]
+        return self.harilick_m[5, :]
 
     def call_sum_entropy(self):
-        return self.harilick_m[6,:]
+        return self.harilick_m[6, :]
 
     def call_entropy(self):
-        return self.harilick_m[7,:]
+        return self.harilick_m[7, :]
 
     def call_difference_variance(self):
-        return self.harilick_m[8,:]
+        return self.harilick_m[8, :]
 
     def call_difference_entropy(self):
-        return self.harilick_m[9,:]
+        return self.harilick_m[9, :]
 
     def call_sum_variance(self):
-        return self.harilick_m[10,:]
+        return self.harilick_m[10, :]
 
     def call_imc1(self):
-        return self.harilick_m[11,:]
+        return self.harilick_m[11, :]
 
     def call_imc2(self):
-        return self.harilick_m[12,:]
-
-
+        return self.harilick_m[12, :]
 
     def harilick(self, matrix):
         vector_harilick = []
@@ -274,50 +272,50 @@ class RegionProperties(object):
         asm = 0
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[0]):
-                asm += matrix[i,j] **2
+                asm += matrix[i, j] ** 2
         return asm
 
     def contrast(self, matrix):
         contrast = 0
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[1]):
-                contrast += (j-i)**2 * matrix[i,j]
+                contrast += (j - i) ** 2 * matrix[i, j]
         return contrast
 
     def homogeneity(self, matrix):
         homogeneity = 0
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[1]):
-                homogeneity += matrix[i,j]/(1-abs(i-j))
+                homogeneity += matrix[i, j] / (1 - abs(i - j))
         return homogeneity
 
     def energy(self, matrix):
         energy = 0
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[0]):
-                energy += matrix[i,j] ** 2
+                energy += matrix[i, j] ** 2
         return energy
 
     def entropy(self, matrix):
         entropy = 0
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[0]):
-                if matrix[i,j] > 0:
-                    entropy += matrix[i,j] * math.log(matrix[i,j])
+                if matrix[i, j] > 0:
+                    entropy += matrix[i, j] * math.log(matrix[i, j])
         return entropy
 
     def correlation(self, matrix):
         range_values = np.arange(0, matrix.shape[0])
-        matrix_range = np.tile(range_values, [matrix.shape[0],1])
+        matrix_range = np.tile(range_values, [matrix.shape[0], 1])
         mean_matrix = np.sum(matrix_range * matrix, axis=0)
-        sd_matrix = np.sqrt(np.sum((matrix_range-np.tile(mean_matrix,
-                                                             [matrix.shape[
-            0],1]))**2 * matrix, axis=0))
+        sd_matrix = np.sqrt(np.sum((matrix_range - np.tile(mean_matrix,
+                                                           [matrix.shape[
+                                                                0], 1])) ** 2 * matrix, axis=0))
         correlation = 0
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[0]):
                 if sd_matrix[i] > 0 and sd_matrix[j] > 0:
-                    correlation += (i*j*matrix[i, j]-mean_matrix[i] * mean_matrix[
+                    correlation += (i * j * matrix[i, j] - mean_matrix[i] * mean_matrix[
                         j]) / (sd_matrix[i] * sd_matrix[j])
         return correlation
 
@@ -325,25 +323,25 @@ class RegionProperties(object):
         idm = 0
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[0]):
-                idm += 1.0 / (1 + (i-j)**2) * matrix[i,j]
+                idm += 1.0 / (1 + (i - j) ** 2) * matrix[i, j]
         return idm
 
     def sum_average(self, matrix):
         sa = 0
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[0]):
-                sa += (i+j) * matrix[i,j]
+                sa += (i + j) * matrix[i, j]
         return sa
 
     def sum_entropy(self, matrix):
         se = 0
-        matrix_bis = np.zeros([2*matrix.shape[0]])
+        matrix_bis = np.zeros([2 * matrix.shape[0]])
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[0]):
-                matrix_bis[i+j] += matrix[i, j]
+                matrix_bis[i + j] += matrix[i, j]
         for v in matrix_bis:
             if v > 0:
-                se += v*math.log(v)
+                se += v * math.log(v)
         return se
 
     def sum_variance(self, matrix):
@@ -363,7 +361,7 @@ class RegionProperties(object):
         matrix_bis = np.zeros([matrix.shape[0]])
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[0]):
-                matrix_bis[abs(i-j)] += matrix[i ,j]
+                matrix_bis[abs(i - j)] += matrix[i, j]
         for i in range(0, matrix.shape[0]):
             dv += matrix_bis[i] * i ** 2
             if matrix_bis[i] > 0:
@@ -379,17 +377,15 @@ class RegionProperties(object):
         for i in range(0, matrix.shape[0]):
             hx -= sum_row[i] * math.log(sum_row[i] + 0.001)
             for j in range(0, matrix.shape[0]):
-                hxy_1 -= matrix[i,j] * math.log(sum_row[i]*sum_row[j] + 0.001)
+                hxy_1 -= matrix[i, j] * math.log(sum_row[i] * sum_row[j] + 0.001)
                 hxy_2 -= sum_row[i] * sum_row[j] * math.log(sum_row[i] *
                                                             sum_row[j] + 0.001)
-        ic_1 = (hxy - hxy_1)/(hx)
+        ic_1 = (hxy - hxy_1) / (hx)
         if hxy == 0:
             ic_2 = 0
         else:
-            ic_2 = math.sqrt(1-math.exp(-2*(hxy_2-hxy)))
+            ic_2 = math.sqrt(1 - math.exp(-2 * (hxy_2 - hxy)))
         return ic_1, ic_2
-
-
 
     def sum_square_variance(self, matrix):
         ssv = 0
@@ -398,9 +394,8 @@ class RegionProperties(object):
         mean = np.average(matrix_range * matrix)
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[0]):
-                ssv += (i-mean) ** 2 * matrix[i,j]
+                ssv += (i - mean) ** 2 * matrix[i, j]
         return ssv
-
 
     def sav(self):
         Sn, Snb, Sv, Svb = self.surface()

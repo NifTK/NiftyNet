@@ -8,6 +8,7 @@ import numpy as np
 import niftynet.utilities.csv_table as csv_table
 from niftynet.evaluation.pairwise_measures import PairwiseMeasures
 from niftynet.utilities.misc_common import MorphologyOps
+
 MEASURES = (
     'ref volume', 'seg volume',
     'tp', 'fp', 'fn',
@@ -16,10 +17,13 @@ MEASURES = (
     'fpr', 'ppv', 'npv', 'sensitivity', 'specificity',
     'accuracy', 'jaccard', 'dice', 'ave_dist', 'haus_dist'
 )
-MEASURES_LABELS = ('ref volume','seg volume','list_labels','tp','fp','fn',
-                 'vol_diff','fpr','ppv','sensitivity','specificity',
-                 'accuracy','jaccard','dice','ave_dist','haus_dist',
-                   'com_dist','com_ref','com_seg')
+
+MEASURES_LABELS = (
+    'ref volume', 'seg volume', 'list_labels', 'tp', 'fp', 'fn',
+    'vol_diff', 'fpr', 'ppv', 'sensitivity', 'specificity',
+    'accuracy', 'jaccard', 'dice', 'ave_dist', 'haus_dist',
+    'com_dist', 'com_ref', 'com_seg'
+)
 
 # MEASURES_NEW = ('ref volume', 'seg volume', 'tp', 'fp', 'fn', 'outline_error',
 #             'detection_error', 'dice')
@@ -38,10 +42,10 @@ def run(param, csv_dict):
     while os.path.exists(os.path.join(param.save_csv_dir, out_name)):
         iteration += 1
         out_name = '{}_{}_{}_{}_{}.csv'.format(
-        OUTPUT_FILE_PREFIX,
-        os.path.split(param.ref_dir)[1],
-        os.path.split(param.seg_dir)[1],
-        param.save_name, str(iteration))
+            OUTPUT_FILE_PREFIX,
+            os.path.split(param.ref_dir)[1],
+            os.path.split(param.seg_dir)[1],
+            param.save_name, str(iteration))
 
     print("Writing {} to {}".format(out_name, param.save_csv_dir))
 
@@ -87,15 +91,16 @@ def run(param, csv_dict):
             voxel_sizes = seg_nii.header.get_zooms()[0:3]
             seg = seg_nii.get_data()
             ref = ref_nii.get_data()
-            assert (np.all(seg) >= 0)
-            assert (np.all(ref) >= 0)
-            assert (seg.shape == ref.shape)
+            assert (np.all(seg) >= 0), "All values in the segmentation must be >= 0."
+            assert (np.all(ref) >= 0), "All values in the reference image must be >= 0."
+            assert (seg.shape == ref.shape), "The shapes of segmentation and reference " \
+                                             "images must match"
             # Create and save nii files of map of differences (FP FN TP OEMap
             #  DE if flag_save_map is on and binary segmentation
 
-
             flag_createlab = False
             if (param.seg_type == 'discrete') and (np.max(seg) <= 1):
+                # the binary case
                 flag_createlab = True
                 seg = np.asarray(seg >= param.threshold)
                 ref = np.asarray(ref >= param.threshold)
@@ -107,20 +112,19 @@ def run(param, csv_dict):
                     label_ref_nii = nib.Nifti1Image(ref, ref_nii.affine)
                     label_seg_nii = nib.Nifti1Image(seg, seg_nii.affine)
                     name_ref_label = os.path.join(param.save_csv_dir,
-                                                  'LabelsRef_'+os.path.split(
+                                                  'LabelsRef_' + os.path.split(
                                                       ref_name)[1])
                     name_seg_label = os.path.join(param.save_csv_dir,
-                                                  'LabelsSeg_'+os.path.split(
+                                                  'LabelsSeg_' + os.path.split(
                                                       seg_name)[1])
                     nib.save(label_ref_nii, name_ref_label)
                     nib.save(label_seg_nii, name_seg_label)
 
-                #     and (len(np.unique(seg)) > 2):
-                # print('Non-integer class labels for discrete analysis')
-                # print('Thresholding to binary map with threshold: {}'.format(
-                #     param.threshold))
-                # seg = np.asarray(seg >= param.threshold, dtype=np.int8)
-
+                    #     and (len(np.unique(seg)) > 2):
+                    # print('Non-integer class labels for discrete analysis')
+                    # print('Thresholding to binary map with threshold: {}'.format(
+                    #     param.threshold))
+                    # seg = np.asarray(seg >= param.threshold, dtype=np.int8)
 
             ## TODO: user specifies how to convert seg -> seg_binary
             if param.seg_type == 'discrete':
@@ -138,12 +142,10 @@ def run(param, csv_dict):
                 list_labels_seg = []
                 if j >= 1:
                     if not flag_createlab:  # discrete eval with same
-                    # labels
+                        # labels
                         seg_binary = np.asarray(seg == j, dtype=np.float32)
                         ref_binary = np.asarray(ref == j, dtype=np.float32)
-
-
-                    else: # different segmentations with connected components
+                    else:  # different segmentations with connected components
                         #  (for instance lesion segmentation)
                         ref_binary = np.asarray(ref == j, dtype=np.float32)
                         seg_matched = np.multiply(ref_binary, seg)
@@ -159,7 +161,7 @@ def run(param, csv_dict):
                     seg_binary = np.asarray(seg >= j, dtype=np.float32)
                     ref_binary = np.asarray(ref >= 0.5, dtype=np.float32)
                     if param.save_maps and param.seg_type == 'binary':
-                        #Creation of the error maps per type and saving
+                        # Creation of the error maps per type and saving
                         temp_pe = PairwiseMeasures(seg_binary, ref_binary,
                                                    measures=(
                                                        'outline_error'),
@@ -204,7 +206,7 @@ def run(param, csv_dict):
                         nib.save(tp_nii, tp_name)
                         nib.save(defp_nii, defp_name)
                         nib.save(defn_nii, defn_name)
-                if np.all(seg_binary == 0): # Have to put default results.
+                if np.all(seg_binary == 0):  # Have to put default results.
                     print("Empty foreground in thresholded binary image.")
                     PE = PairwiseMeasures(seg_binary, ref_binary,
                                           measures=measures_fin,
@@ -212,8 +214,8 @@ def run(param, csv_dict):
                                           pixdim=voxel_sizes, empty=True)
                 else:
                     PE = PairwiseMeasures(seg_binary, ref_binary,
-                                      measures=measures_fin, num_neighbors=6,
-                                      pixdim=voxel_sizes,
+                                          measures=measures_fin, num_neighbors=6,
+                                          pixdim=voxel_sizes,
                                           list_labels=list_labels_seg)
                 if len(list_labels_seg) > 0 and 'list_labels' in measures_fin:
                     PE.list_labels = list_labels_seg

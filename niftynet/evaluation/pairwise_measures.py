@@ -41,8 +41,8 @@ class PairwiseMeasures(object):
             'outline_error': (self.outline_error, 'OER,OEFP,OEFN'),
             'detection_error': (self.detection_error, 'DE,DEFP,DEFN'),
             'com_dist': (self.com_dist, 'COM distance'),
-            'com_ref' : (self.com_ref, 'COM reference'),
-            'com_seg' : (self.com_seg, 'COM segmentation')
+            'com_ref': (self.com_ref, 'COM reference'),
+            'com_seg': (self.com_seg, 'COM segmentation')
         }
         self.seg = seg_img
         self.ref = ref_img
@@ -53,47 +53,47 @@ class PairwiseMeasures(object):
         self.pixdim = pixdim
 
     def __FPmap(self):
-        '''
+        """
         This function calculates the false positive map
         :return: FP map
-        '''
+        """
         return np.asarray((self.seg - self.ref) > 0.0, dtype=np.float32)
 
     def __FNmap(self):
-        '''
+        """
         This function calculates the false negative map
         :return: FN map
-        '''
+        """
         return np.asarray((self.ref - self.seg) > 0.0, dtype=np.float32)
 
     def __TPmap(self):
-        '''
+        """
         This function calculates the true positive map
         :return: TP map
-        '''
+        """
         return np.asarray((self.ref + self.seg) > 1.0, dtype=np.float32)
 
     def __TNmap(self):
-        '''
+        """
         This function calculates the true negative map
         :return: TN map
-        '''
+        """
         return np.asarray((self.ref + self.seg) < 0.5, dtype=np.float32)
 
     def __union_map(self):
-        '''
+        """
         This function calculates the union map between segmentation and
         reference image
         :return: union map
-        '''
+        """
         return np.asarray((self.ref + self.seg) > 0.5, dtype=np.float32)
 
     def __intersection_map(self):
-        '''
+        """
         This function calculates the intersection between segmentation and
         reference image
         :return: intersection map
-        '''
+        """
         return np.multiply(self.ref, self.seg)
 
     @CacheFunctionOutput
@@ -155,59 +155,59 @@ class PairwiseMeasures(object):
         return self.tp() / (self.tp() + self.fp())
 
     def negative_predictive_values(self):
-        '''
+        """
         This function calculates the negative predictive value ratio between
         the number of true negatives and the total number of negative elements
         :return:
-        '''
+        """
         return self.tn() / (self.fn() + self.tn())
 
     def dice_score(self):
-        '''
+        """
         This function returns the dice score coefficient between a reference
         and segmentation images
         :return: dice score
-        '''
+        """
         return 2 * self.tp() / np.sum(self.ref + self.seg)
 
     def intersection_over_union(self):
-        '''
+        """
         This function the intersection over union ratio - Definition of
         jaccard coefficient
         :return:
-        '''
+        """
         return self.n_intersection() / self.n_union()
 
     def jaccard(self):
-        '''
+        """
         This function returns the jaccard coefficient (defined as
         intersection over union)
         :return: jaccard coefficient
-        '''
+        """
         return self.n_intersection() / self.n_union()
 
     def informedness(self):
-        '''
+        """
         This function calculates the informedness between the segmentation
         and the reference
         :return: informedness
-        '''
+        """
         return self.sensitivity() + self.specificity() - 1
 
     def markedness(self):
-        '''
+        """
         This functions calculates the markedness
         :return:
-        '''
+        """
         return self.positive_predictive_values() + \
                self.negative_predictive_values() - 1
 
     def com_dist(self):
-        '''
+        """
         This function calculates the euclidean distance between the centres
         of mass of the reference and segmentation.
         :return:
-        '''
+        """
         if self.flag_empty:
             return -1
         else:
@@ -215,22 +215,22 @@ class PairwiseMeasures(object):
             com_seg = ndimage.center_of_mass(self.seg)
             com_dist = np.sqrt(np.dot(np.square(np.asarray(com_ref) -
                                                 np.asarray(com_seg)), np.square(
-                                                self.pixdim)))
+                self.pixdim)))
             return com_dist
 
     def com_ref(self):
-        '''
+        """
         This function calculates the centre of mass of the reference
         segmentation
         :return:
-        '''
+        """
         return ndimage.center_of_mass(self.ref)
 
     def com_seg(self):
-        '''
+        """
         This functions provides the centre of mass of the segmented element
         :return:
-        '''
+        """
         if self.flag_empty:
             return -1
         else:
@@ -242,11 +242,11 @@ class PairwiseMeasures(object):
         return tuple(np.unique(self.list_labels))
 
     def vol_diff(self):
-        '''
+        """
         This function calculates the ratio of difference in volume between
         the reference and segmentation images.
         :return: vol_diff
-        '''
+        """
         return np.abs(self.n_pos_ref() - self.n_pos_seg()) / self.n_pos_ref()
 
     # @CacheFunctionOutput
@@ -261,12 +261,12 @@ class PairwiseMeasures(object):
 
     @CacheFunctionOutput
     def border_distance(self):
-        '''
+        """
         This functions determines the map of distance from the borders of the
         segmentation and the reference and the border maps themselves
         :return: distance_border_ref, distance_border_seg, border_ref,
         border_seg
-        '''
+        """
         border_ref = MorphologyOps(self.ref, self.neigh).border_map()
         border_seg = MorphologyOps(self.seg, self.neigh).border_map()
         oppose_ref = 1 - self.ref
@@ -278,33 +278,33 @@ class PairwiseMeasures(object):
         return distance_border_ref, distance_border_seg, border_ref, border_seg
 
     def measured_distance(self):
-        '''
+        """
         This functions calculates the average symmetric distance and the
         hausdorff distance between a segmentation and a reference image
         :return: hausdorff distance and average symmetric distance
-        '''
+        """
         ref_border_dist, seg_border_dist, ref_border, \
         seg_border = self.border_distance()
         average_distance = (np.sum(ref_border_dist) + np.sum(
-            seg_border_dist)) / (np.sum(seg_border+ref_border))
+            seg_border_dist)) / (np.sum(seg_border + ref_border))
         hausdorff_distance = np.max([np.max(ref_border_dist), np.max(
             seg_border_dist)])
         return hausdorff_distance, average_distance
 
     def measured_average_distance(self):
-        '''
+        """
         This function returns only the average distance when calculating the
         distances between segmentation and reference
         :return:
-        '''
+        """
         return self.measured_distance()[1]
 
     def measured_hausdorff_distance(self):
-        '''
+        """
         This function returns only the hausdorff distance when calculated the
         distances between segmentation and reference
         :return:
-        '''
+        """
         return self.measured_distance()[0]
 
     # def average_distance(self):
@@ -320,27 +320,27 @@ class PairwiseMeasures(object):
 
     @CacheFunctionOutput
     def _connected_components(self):
-        '''
+        """
         This function creates the maps of connected component for the
         reference and the segmentation image using the neighborhood defined
         in self.neigh
         :return: blobs_ref: connected labeling for the reference image,
         blobs_seg: connected labeling for the segmentation image,
         init: intersection between segmentation and reference
-        '''
+        """
         init = np.multiply(self.seg, self.ref)
         blobs_ref = MorphologyOps(self.ref, self.neigh).foreground_component()
         blobs_seg = MorphologyOps(self.seg, self.neigh).foreground_component()
         return blobs_ref, blobs_seg, init
 
     def connected_elements(self):
-        '''
+        """
         This function returns the number of FP FN and TP in terms of
         connected components.
         :return: Number of true positive connected components, Number of
         false positives connected components, Number of false negatives
         connected components
-        '''
+        """
         blobs_ref, blobs_seg, init = self._connected_components()
         list_blobs_ref = range(1, blobs_ref[1])
         list_blobs_seg = range(1, blobs_seg[1])
@@ -355,10 +355,10 @@ class PairwiseMeasures(object):
 
     @CacheFunctionOutput
     def connected_errormaps(self):
-        '''
+        """
         This functions calculates the error maps from the connected components
         :return:
-        '''
+        """
         blobs_ref, blobs_seg, init = self._connected_components()
         list_blobs_ref = range(1, blobs_ref[1])
         list_blobs_seg = range(1, blobs_seg[1])
@@ -384,12 +384,12 @@ class PairwiseMeasures(object):
         return tpc_map, fnc_map, fpc_map
 
     def outline_error(self):
-        '''
+        """
         This function calculates the outline error as defined in Wack et al.
         :return: OER: Outline error ratio, OEFP: number of false positive
         outlier error voxels, OEFN: number of false negative outline error
         elements
-        '''
+        """
         TPcMap, _, _ = self.connected_errormaps()
         OEFMap = self.ref - np.multiply(TPcMap, self.seg)
         unique, counts = np.unique(OEFMap, return_counts=True)
@@ -402,12 +402,12 @@ class PairwiseMeasures(object):
         return OER, OEFP, OEFN
 
     def detection_error(self):
-        '''
+        """
         This function calculates the volume of detection error as defined in
         Wack et al.
         :return: DE: Total volume of detection error, DEFP: Detection error
         false positives, DEFN: Detection error false negatives
-        '''
+        """
         TPcMap, FNcMap, FPcMap = self.connected_errormaps()
         DEFN = np.sum(FNcMap)
         DEFP = np.sum(FPcMap)
@@ -420,7 +420,7 @@ class PairwiseMeasures(object):
 
     def to_string(self, fmt='{:.4f}'):
         result_str = ""
-        list_space = ['com_ref','com_seg','list_labels']
+        list_space = ['com_ref', 'com_seg', 'list_labels']
         for key in self.measures:
             result = self.m_dict[key][0]()
             if key in list_space:
@@ -435,7 +435,6 @@ class PairwiseMeasures(object):
 
 class PairwiseMeasuresRegression(object):
     def __init__(self, reg_img, ref_img, measures=None):
-
         self.reg = reg_img
         self.ref = ref_img
         self.measures = measures
@@ -454,14 +453,14 @@ class PairwiseMeasuresRegression(object):
         return np.sqrt(self.mse())
 
     def mae(self):
-        return np.mean(np.abs(self.ref-self.reg))
+        return np.mean(np.abs(self.ref - self.reg))
 
     def r2(self):
-        ref_var = np.sum(np.square(self.ref-np.mean(self.ref)))
-        reg_var = np.sum(np.square(self.reg-np.mean(self.reg)))
-        cov_refreg = np.sum((self.reg-np.mean(self.reg))*(self.ref-np.mean(
+        ref_var = np.sum(np.square(self.ref - np.mean(self.ref)))
+        reg_var = np.sum(np.square(self.reg - np.mean(self.reg)))
+        cov_refreg = np.sum((self.reg - np.mean(self.reg)) * (self.ref - np.mean(
             self.ref)))
-        return np.square(cov_refreg / np.sqrt(ref_var*reg_var+0.00001))
+        return np.square(cov_refreg / np.sqrt(ref_var * reg_var + 0.00001))
 
     def header_str(self):
         result_str = [self.m_dict[key][1] for key in self.measures]
