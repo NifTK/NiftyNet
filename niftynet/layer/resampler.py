@@ -206,11 +206,11 @@ class ResamplerLayer(Layer):
         normaliser = tf.reduce_sum(point_weights, axis=0)
 
 
-        #all_coords = tf.stack([full_floor, full_ceil], axis=0)
-        #all_coords = tf.transpose(all_coords,
-        #    [0, len(all_coords.get_shape())-1] + range(1, out_spatial_rank+2))
-        #knots_id = tf.gather_nd(all_coords, weight_id)
-        ##samples = tf.gather_nd(inputs, knots_id) # output 8, 2, 2, n_channels
+        all_coords = tf.stack([full_floor, full_ceil], axis=0)
+        all_coords = tf.transpose(all_coords,
+            [0, len(all_coords.get_shape())-1] + range(1, out_spatial_rank+2))
+        knots_id = tf.gather_nd(all_coords, weight_id)
+        #samples = tf.gather_nd(inputs, knots_id) # output 8, 2, 2, n_channels
 
         def get_batch_knot(bc):
             coord = [sc[c][i] for i, c in enumerate(bc)]
@@ -229,6 +229,7 @@ class ResamplerLayer(Layer):
         samples = [get_knot(bc) for bc in binary_neighbour_ids]
         samples = tf.stack(samples, axis=0)
         samples = tf.reduce_sum(samples * tf.expand_dims(point_weights, axis=-1), axis=0) / normaliser
+        import pdb; pdb.set_trace()
         return samples
 
 
