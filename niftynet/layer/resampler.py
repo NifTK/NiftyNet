@@ -1,3 +1,7 @@
+"""
+Resampler layer initially implemented in
+https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/v0.2.0.post1/niftynet/layer/spatial_transformer.py
+"""
 from __future__ import absolute_import, division, print_function
 
 import tensorflow as tf
@@ -7,6 +11,7 @@ from niftynet.layer.layer_util import infer_spatial_rank
 from niftynet.utilities.util_common import look_up_operations
 
 COORDINATES_TYPE = tf.int32
+LARGE_FLOAT = 1e12
 
 
 class ResamplerLayer(Layer):
@@ -17,7 +22,7 @@ class ResamplerLayer(Layer):
     def __init__(self,
                  interpolation="LINEAR",
                  boundary="ZERO",
-                 name="resampler2d"):
+                 name="resampler"):
         super(ResamplerLayer, self).__init__(name=name)
         self.boundary = boundary.upper()
         self.boundary_func = look_up_operations(
@@ -192,7 +197,8 @@ class ResamplerLayer(Layer):
         ceil_coord = self.boundary_func(
             tf.floor(sample_coords) + 1.0, in_spatial_size)
         all_coords = tf.stack([floor_coord, ceil_coord], axis=0)
-        coords_shape = all_coords.get_shape().as_list()
+
+        # find N weights associated to each output point
         floor_diff = tf.squared_difference(
             sample_coords, tf.to_float(all_coords[0]))
         ceil_diff = tf.squared_difference(
@@ -201,14 +207,14 @@ class ResamplerLayer(Layer):
         # transpose to shape inds: [0, -1, others]
         diff = tf.transpose(
             diff, [0, len(out_size)] + range(1, len(out_size)))
-
         point_weights = tf.gather_nd(diff, weight_id)
         point_weights = tf.reduce_sum(point_weights, axis=1)
         point_weights = tf.pow(point_weights, self.power / 2.0)
         point_weights = tf.reciprocal(point_weights)
         # workaround for zero weights
-        point_weights = tf.minimum(point_weights, 1e12)
+        point_weights = tf.minimum(point_weights, LARGE_FLOAT)
 
+        # find N neighbours associated to each output point
         # transpose to shape inds: [0, -1, others]
         all_coords = tf.transpose(
             all_coords, [0, len(out_size)] + range(1, len(out_size)))
@@ -223,6 +229,7 @@ class ResamplerLayer(Layer):
             b_id, [knots_shape[0]] + [1] + out_spatial_size + [1])
         b_id = tf.concat([b_id, knots_id], axis=-1)
 
+        # weighted average over N neighbours
         point_weights = tf.expand_dims(point_weights, axis=-1)
         samples = tf.gather_nd(inputs, b_id)
         samples = tf.reduce_sum(samples * point_weights, axis=0)
