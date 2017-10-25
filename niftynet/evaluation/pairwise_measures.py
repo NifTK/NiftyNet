@@ -79,7 +79,7 @@ class PairwiseMeasures(object):
         This function calculates the false negative map
         :return: FN map
         """
-        self.check_binary('False Negatives')
+        self.check_binary()
         return np.asarray((self.ref - self.seg) > 0.0, dtype=np.float32)
 
     def __TPmap(self):
@@ -89,7 +89,7 @@ class PairwiseMeasures(object):
         :return: TP map
         """
         self.check_binary()
-        return np.asarray(self.ref > 0.5, dtype=np.float32)
+        return np.logical_and(self.ref > 0.5, self.seg > 0.5).astype(float)
 
     def __TNmap(self):
         """
@@ -97,7 +97,7 @@ class PairwiseMeasures(object):
         :return: TN map
         """
         self.check_binary()
-        return np.asarray(self.ref < 0.5, dtype=np.float32)
+        return np.logical_and(self.ref < 0.5, self.seg < 0.5).astype(float)
 
     def __union_map(self):
         """
@@ -106,7 +106,7 @@ class PairwiseMeasures(object):
         :return: union map
         """
         self.check_binary()
-        return np.asarray((self.ref + self.seg) > 0.5, dtype=np.float32)
+        return np.logical_or(self.ref, self.seg).astype(float)
 
     def __intersection_map(self):
         """
@@ -123,7 +123,8 @@ class PairwiseMeasures(object):
 
     @CacheFunctionOutput
     def n_neg_ref(self):
-        return np.sum(1 - self.ref)
+        self.check_binary()
+        return np.sum(self.ref == 0)
 
     @CacheFunctionOutput
     def n_pos_seg(self):
