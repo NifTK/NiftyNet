@@ -52,11 +52,26 @@ class PairwiseMeasures(object):
         self.neigh = num_neighbors
         self.pixdim = pixdim
 
+    def check_binary(self):
+        """
+        Checks whether self.seg and self.ref are binary. This is to enable
+        measurements such as 'false positives', which only have meaning in 
+        the binary case (what is positive/negative for multiple class?)
+        """
+
+        is_seg_binary, is_ref_binary = [((x > 0.5) == x).all()
+                                        for x in [self.seg, self.ref]]
+        if (not is_ref_binary) or (not is_seg_binary):
+            raise ValueError("The input segmentation/reference images"
+                             " must be binary for this function.")
+
     def __FPmap(self):
         """
-        This function calculates the false positive map
+        This function calculates the false positive map from binary 
+        segmentation and reference maps
         :return: FP map
         """
+        self.check_binary()
         return np.asarray((self.seg - self.ref) > 0.0, dtype=np.float32)
 
     def __FNmap(self):
@@ -64,21 +79,25 @@ class PairwiseMeasures(object):
         This function calculates the false negative map
         :return: FN map
         """
+        self.check_binary('False Negatives')
         return np.asarray((self.ref - self.seg) > 0.0, dtype=np.float32)
 
     def __TPmap(self):
         """
-        This function calculates the true positive map
+        This function calculates the true positive map (i.e. how many 
+        reference voxels are positive)
         :return: TP map
         """
-        return np.asarray((self.ref + self.seg) > 1.0, dtype=np.float32)
+        self.check_binary()
+        return np.asarray(self.ref > 0.5, dtype=np.float32)
 
     def __TNmap(self):
         """
         This function calculates the true negative map
         :return: TN map
         """
-        return np.asarray((self.ref + self.seg) < 0.5, dtype=np.float32)
+        self.check_binary()
+        return np.asarray(self.ref < 0.5, dtype=np.float32)
 
     def __union_map(self):
         """
@@ -86,6 +105,7 @@ class PairwiseMeasures(object):
         reference image
         :return: union map
         """
+        self.check_binary()
         return np.asarray((self.ref + self.seg) > 0.5, dtype=np.float32)
 
     def __intersection_map(self):
@@ -94,6 +114,7 @@ class PairwiseMeasures(object):
         reference image
         :return: intersection map
         """
+        self.check_binary()
         return np.multiply(self.ref, self.seg)
 
     @CacheFunctionOutput

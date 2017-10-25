@@ -99,6 +99,7 @@ def run(param, csv_dict):
             #  DE if flag_save_map is on and binary segmentation
 
             flag_createlab = False
+            # this diagnoses that we are given probabilistic data
             if (param.seg_type == 'discrete') and (np.max(seg) <= 1):
                 # the binary case
                 flag_createlab = True
@@ -138,7 +139,8 @@ def run(param, csv_dict):
                 threshold_steps = [param.threshold]
 
             for j in threshold_steps:
-                if j == 0: continue
+                if j == 0:
+                    continue
                 list_labels_seg = []
                 if j >= 1:
                     if not flag_createlab:  # discrete eval with same

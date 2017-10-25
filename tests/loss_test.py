@@ -14,7 +14,7 @@ class SensitivitySpecificityTests(tf.test.TestCase):
     # before re-factoring the code
     def test_sens_spec_loss_by_regression(self):
         with self.test_session():
-            predicted = tf.constant([[0, 10], [10, 0], [10, 0], [10, 0]], dtype=tf.float32, name='predicted')
+            predicted = tf.constant([[1, 10], [10, 0], [10, 0], [10, 0]], dtype=tf.float32, name='predicted')
             labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
             test_loss_func = LossFunction(2, loss_type='SensSpec')
             test_loss = test_loss_func(predicted, labels)
