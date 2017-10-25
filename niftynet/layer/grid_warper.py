@@ -21,6 +21,7 @@ https://github.com/deepmind/sonnet/blob/v1.13/sonnet/python/modules/spatial_tran
 https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/v0.2.0.post1/niftynet/layer/spatial_transformer.py
 """
 from __future__ import absolute_import, division, print_function
+
 from itertools import chain
 
 import numpy as np
@@ -199,8 +200,7 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
         """
         affine_warp_constraints = constraints
         if not isinstance(affine_warp_constraints, AffineWarpConstraints):
-            affine_warp_constraints = \
-                AffineWarpConstraints(affine_warp_constraints)
+            affine_warp_constraints = AffineWarpConstraints(constraints)
         mask = affine_warp_constraints.mask
         psi = _create_affine_features(output_shape=self._output_shape,
                                       source_shape=self._source_shape)
@@ -262,6 +262,10 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
             features.append(x_i)
         features += offsets
         return features
+
+    @property
+    def constraints(self):
+        return self._constraints
 
     def layer_op(self, inputs):
         """Assembles the module network and adds it to the graph.
@@ -353,10 +357,6 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
         warped_grid = [tf.reshape(grid, (-1,) + grid_shape) for grid in
                        warped_grid]
         return tf.concat(warped_grid, len(grid_shape))
-
-    @property
-    def constraints(self):
-        return self._constraints
 
     def inverse_op(self, name=None):
         """

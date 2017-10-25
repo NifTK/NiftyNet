@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function, division
 import numpy as np
 import tensorflow as tf
 
+from niftynet.layer.grid_warper import AffineGridWarperLayer
 from niftynet.layer.grid_warper import AffineWarpConstraints
 from niftynet.layer.grid_warper import _create_affine_features
 
@@ -27,6 +28,12 @@ class AffineWarpConstraintsTest(tf.test.TestCase):
                             ((True, True, True), (True, True, True)))
         self.assertAllClose(aff_c.num_free_params, 6)
         self.assertAllClose(aff_c.num_dim, 2)
+
+        customise_constraints = ((None, None, 1, 1),
+                                 (None, None, None, 2),
+                                 (None, 1, None, 3))
+        aff_c = AffineWarpConstraints(customise_constraints)
+        self.assertEqual(aff_c.constraints, customise_constraints)
 
     def test_no_constraints(self):
         aff_c = AffineWarpConstraints.no_constraints(num_dim=2)
@@ -92,6 +99,15 @@ class AffineWarpConstraintsTest(tf.test.TestCase):
         aff_c_2 = AffineWarpConstraints.no_shear_3d()
         with self.assertRaisesRegexp(ValueError, ''):
             aff_comb = aff_c_1.combine_with(aff_c_2)
+
+
+class AffineGridWarperLayerTest(tf.test.TestCase):
+    def test_no_constraints(self):
+        grid_warper = AffineGridWarperLayer(source_shape=(3, 3),
+                                            output_shape=(2,))
+        self.assertEqual(grid_warper.constraints.constraints,
+                         ((None, None, None), (None, None, None)))
+        pass
 
 
 if __name__ == "__main__":
