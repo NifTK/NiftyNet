@@ -20,6 +20,7 @@ adapted from
 https://github.com/deepmind/sonnet/blob/v1.13/sonnet/python/modules/spatial_transformer.py
 https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/v0.2.0.post1/niftynet/layer/spatial_transformer.py
 """
+from __future__ import absolute_import, division, print_function
 from itertools import chain
 
 import numpy as np
