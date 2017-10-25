@@ -86,8 +86,8 @@ class GridWarperLayer(Layer):
         self._output_shape = tuple(output_shape)
         if len(self._output_shape) > len(self._source_shape):
             tf.logging.fatal(
-                'Output domain dimensionality ({}) must be equal or '
-                'smaller than source domain dimensionality ({})',
+                'Output domain dimensionality (%s) must be equal or '
+                'smaller than source domain dimensionality (%s)',
                 len(self._output_shape), len(self._source_shape))
             raise ValueError
 
@@ -99,7 +99,11 @@ class GridWarperLayer(Layer):
         Precomputes features
         (e.g. sampling patterns, unconstrained feature matrices).
         """
-        tf.logging.fatal('_create_features() should be implmented')
+        tf.logging.fatal('_create_features() should be implemented')
+        raise NotImplementedError
+
+    def layer_op(self, *args, **kwargs):
+        tf.logging.fatal('layer_op() should be implemented to warp self._psi')
         raise NotImplementedError
 
     @property
@@ -165,7 +169,7 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
 
         Raises:
           Error: If constraints fully define the affine transformation; or if
-            input grid shape and contraints have different dimensionality.
+            input grid shape and constraints have different dimensionality.
           TypeError: If output_shape and source_shape are not both iterable.
         """
         self._source_shape = tuple(source_shape)
@@ -179,12 +183,14 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
             self._constraints = AffineWarpConstraints(constraints=constraints)
 
         if self._constraints.num_free_params == 0:
-            raise ValueError('Transformation is fully constrained.')
+            tf.logging.fatal('Transformation is fully constrained.')
+            raise ValueError
 
         if self._constraints.num_dim != num_dim:
-            raise ValueError('Incompatible set of constraints provided: '
+            tf.logging.fatal('Incompatible set of constraints provided: '
                              'input grid shape and constraints have different '
                              'dimensionality.')
+            raise ValueError
 
         GridWarperLayer.__init__(
             self,
@@ -204,8 +210,8 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
         mask = affine_warp_constraints.mask
         psi = _create_affine_features(output_shape=self._output_shape,
                                       source_shape=self._source_shape)
-        scales = [1. for x in self._source_shape]
-        offsets = [0. for x in scales]
+        scales = [1. for _ in self._source_shape]
+        offsets = [0. for _ in self._source_shape]
         # Transforming a point x's i-th coordinate via an affine transformation
         # is performed via the following dot product:
         #
@@ -288,10 +294,10 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
         batch_size = tf.expand_dims(input_shape[0], 0)
         number_of_params = inputs.get_shape()[1]
         if number_of_params != self._constraints.num_free_params:
-            tf.logging.fatal('Input size is not consistent with constraint '
-                             'definition: {} parameters expected, {} provided.',
-                             self._constraints.num_free_params,
-                             number_of_params)
+            tf.logging.fatal(
+                'Input size is not consistent with constraint '
+                'definition: %s parameters expected, %s provided.',
+                self._constraints.num_free_params, number_of_params)
             raise ValueError
         num_output_dimensions = len(self._psi) // 3
 
@@ -300,7 +306,8 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
             Extracts a subset of columns from the input 2D Tensor.
             """
             rank = len(inputs.get_shape().as_list())
-            return tf.slice(inputs, begin=[0, start] + [0] * (rank - 2),
+            return tf.slice(inputs,
+                            begin=[0, start] + [0] * (rank - 2),
                             size=[-1, size] + [-1] * (rank - 2))
 
         warped_grid = []
@@ -354,8 +361,8 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
         # match the specified output
         # shape and concatenate into a single matrix.
         grid_shape = self._output_shape + (1,)
-        warped_grid = [tf.reshape(grid, (-1,) + grid_shape) for grid in
-                       warped_grid]
+        warped_grid = [tf.reshape(grid, (-1,) + grid_shape)
+                       for grid in warped_grid]
         return tf.concat(warped_grid, len(grid_shape))
 
     def inverse_op(self, name=None):
@@ -389,7 +396,7 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
         def _affine_grid_warper_inverse(inputs):
             """Assembles network to compute inverse affine transformation.
 
-            Each `inputs` row potentailly contains [a, b, tx, c, d, ty]
+            Each `inputs` row potentially contains [a, b, tx, c, d, ty]
             corresponding to an affine matrix:
 
               A = [a, b, tx],
@@ -460,7 +467,7 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
             return agw(inverse_gw_inputs)  # pylint: disable=not-callable
 
         if name is None:
-            name = self.module_name + '_inverse'
+            name = self.name + '_inverse'
         return LayerFromCallable(_affine_grid_warper_inverse, name=name)
 
 
@@ -491,7 +498,8 @@ class AffineWarpConstraints(object):
         try:
             self._constraints = tuple(tuple(x) for x in constraints)
         except TypeError:
-            raise TypeError('constraints must be a nested iterable.')
+            tf.logging.fatal('constraints must be a nested iterable.')
+            raise TypeError
 
         # Number of rows
         self._num_dim = len(self._constraints)
@@ -662,4 +670,4 @@ def _create_affine_features(output_shape, source_shape):
     ranges = [np.arange(dim, dtype=np.float32)
               for dim in embedded_output_shape]
     ranges.append(np.array([1.0]))
-    return [x.flatten() for x in np.meshgrid(*ranges, indexing='ij')]
+    return [x.ravel() for x in np.meshgrid(*ranges, indexing='ij')]

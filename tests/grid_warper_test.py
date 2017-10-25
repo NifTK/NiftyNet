@@ -102,12 +102,83 @@ class AffineWarpConstraintsTest(tf.test.TestCase):
 
 
 class AffineGridWarperLayerTest(tf.test.TestCase):
+    def _test_correctness(self, args, aff, expected_value):
+        grid_warper = AffineGridWarperLayer(**args)
+        computed_grid = grid_warper(aff)
+        with self.test_session() as sess:
+            output_val = sess.run(computed_grid)
+            self.assertAllClose(expected_value, output_val)
+
     def test_no_constraints(self):
         grid_warper = AffineGridWarperLayer(source_shape=(3, 3),
                                             output_shape=(2,))
         self.assertEqual(grid_warper.constraints.constraints,
                          ((None, None, None), (None, None, None)))
-        pass
+
+    def test_constraints(self):
+        grid_warper = AffineGridWarperLayer(
+            source_shape=(3, 3),
+            output_shape=(2, 4),
+            constraints=AffineWarpConstraints.no_shear_2d())
+        self.assertEqual(grid_warper.constraints.constraints,
+                         ((None, 0, None), (0, None, None)))
+
+    def test_2d(self):
+        aff = tf.constant([[1, 0, 5,
+                            0, 1, 6]], dtype=tf.float32)
+        params = {'source_shape': (3, 3), 'output_shape': (2, 2)}
+        expected = [[[[5, 6], [5, 7]], [[6, 6], [6, 7]]]]
+        self._test_correctness(params, aff, expected)
+
+    def test_3d(self):
+        aff = tf.constant([[2, 0, 0, 5,
+                            0, 2, 0, 6,
+                            0, 0, 1, 4]], dtype=tf.float32)
+        params = {'source_shape': (3, 3, 3), 'output_shape': (2, 2, 2)}
+        expected = [[[[[5, 6, 4], [5, 6, 5]], [[5, 8, 4], [5, 8, 5]]],
+                     [[[7, 6, 4], [7, 6, 5]], [[7, 8, 4], [7, 8, 5]]]]]
+        self._test_correctness(params, aff, expected)
+
+    def test_3d_2d(self):
+        aff = tf.constant([[1.5, 0, 0, 3,
+                            0, 1.5, 0, 4,
+                            0, 0, 1.0, 5]], dtype=tf.float32)
+        params = {'source_shape': (3, 3, 3), 'output_shape': (2, 2)}
+        expected = [[[[3, 4, 5], [3, 5.5, 5]], [[4.5, 4, 5], [4.5, 5.5, 5]]]]
+        self._test_correctness(params, aff, expected)
+
+    def test_2d_1d(self):
+        aff = tf.constant([[1.5, 2, 3,
+                            2, 1.5, 4]], dtype=tf.float32)
+        params = {'source_shape': (3, 3), 'output_shape': (2,)}
+        expected = [[[3, 4], [4.5, 6]]]
+        self._test_correctness(params, aff, expected)
+
+    def test_3d_1d(self):
+        aff = tf.constant([[1.5, 0, 0, 3,
+                            0, 2, 0, 4,
+                            0, 0, 1.0, 5]], dtype=tf.float32)
+        params = {'source_shape': (3, 3, 3), 'output_shape': (2,)}
+        expected = [[[3, 4, 5], [4.5, 4, 5]]]
+        self._test_correctness(params, aff, expected)
+
+    def test_3d_2d_scale(self):
+        aff = tf.constant([[0, 0, 3,
+                            0, 0, 4,
+                            0, 0, 5]], dtype=tf.float32)
+        params = {'source_shape': (3, 3, 3), 'output_shape': (2, 2),
+                  'constraints': AffineWarpConstraints.scale_3d(1, 1, 1)}
+        expected = [[[[3, 4, 5], [3, 5, 5]], [[4, 4, 5], [4, 5, 5]]]]
+        self._test_correctness(params, aff, expected)
+
+    def test_3d_3d_translation(self):
+        aff = tf.constant([[2, 0, 0,
+                            0, 1.5, 0,
+                            0, 0, 3]], dtype=tf.float32)
+        params = {'source_shape': (3, 3, 3), 'output_shape': (2, 2),
+                  'constraints': AffineWarpConstraints.translation_3d(3, 4, 5)}
+        expected = [[[[3, 4, 5], [3, 5.5, 5]], [[5, 4, 5], [5, 5.5, 5]]]]
+        self._test_correctness(params, aff, expected)
 
 
 if __name__ == "__main__":
