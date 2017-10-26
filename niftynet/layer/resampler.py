@@ -59,8 +59,9 @@ class ResamplerLayer(Layer):
         in_size = inputs.get_shape().as_list()
         in_spatial_size = in_size[1:-1]
 
-        spatial_coords = self.boundary_func(
-            tf.round(sample_coords), in_spatial_size)
+        spatial_coords = self.boundary_func(tf.round(sample_coords),
+                                            in_spatial_size)
+        spatial_coords = tf.cast(spatial_coords, COORDINATES_TYPE)
         output = tf.stack([
             tf.gather_nd(img, coords) for (img, coords) in
             zip(tf.unstack(inputs), tf.unstack(spatial_coords))])
@@ -90,10 +91,14 @@ class ResamplerLayer(Layer):
 
         xy = tf.unstack(sample_coords, axis=-1)
         base_coords = [tf.floor(coords) for coords in xy]
-        floor_coords = [self.boundary_func(x, in_spatial_size[idx])
-                        for (idx, x) in enumerate(base_coords)]
-        ceil_coords = [self.boundary_func(x + 1.0, in_spatial_size[idx])
-                       for (idx, x) in enumerate(base_coords)]
+        floor_coords = [
+            tf.cast(self.boundary_func(x, in_spatial_size[idx]),
+                    COORDINATES_TYPE)
+            for (idx, x) in enumerate(base_coords)]
+        ceil_coords = [
+            tf.cast(self.boundary_func(x + 1.0, in_spatial_size[idx]),
+                    COORDINATES_TYPE)
+            for (idx, x) in enumerate(base_coords)]
 
         if self.boundary == 'ZERO':
             weight_0 = [tf.expand_dims(x - tf.cast(i, tf.float32), -1)
@@ -141,15 +146,15 @@ class ResamplerLayer(Layer):
         floor_coords = tf.floor(sample_coords)
 
         # Compute voxels to use for interpolation
-        grid = tf.meshgrid([-1, 0, 1, 2],
-                           [-1, 0, 1, 2],
-                           [-1, 0, 1, 2],
+        grid = tf.meshgrid([-1., 0., 1., 2.],
+                           [-1., 0., 1., 2.],
+                           [-1., 0., 1., 2.],
                            indexing='ij')
         offset_shape = [1, -1] + [1] * out_spatial_rank + [in_spatial_rank]
         offsets = tf.reshape(tf.stack(grid, 3), offset_shape)
-        spatial_coords = \
-            offsets + tf.expand_dims(tf.cast(floor_coords, tf.int32), 1)
+        spatial_coords = offsets + tf.expand_dims(floor_coords, 1)
         spatial_coords = self.boundary_func(spatial_coords, in_spatial_size)
+        spatial_coords = tf.cast(spatial_coords, COORDINATES_TYPE)
         knot_size = spatial_coords.get_shape().as_list()
 
         # Compute weights for each voxel
@@ -196,9 +201,9 @@ class ResamplerLayer(Layer):
         b_size = tf.reshape(
             in_spatial_size, [len(in_spatial_size)] + [1] * (len(out_size) - 1))
         # find floor and ceil coordinates
-        all_coords_f = tf.to_float(tf.stack([
+        all_coords_f = tf.stack([
             self.boundary_func(tf.floor(sample_coords), b_size),
-            self.boundary_func(tf.ceil(sample_coords), b_size)], axis=0))
+            self.boundary_func(tf.ceil(sample_coords), b_size)], axis=0)
         # find N weights associated to each output point
         diff = tf.stack(
             [tf.squared_difference(sample_coords, all_coords_f[0]),
@@ -222,7 +227,7 @@ class ResamplerLayer(Layer):
 
         # find N neighbours associated to each output point
         knots_id = tf.transpose(
-            tf.to_int32(knots_id),
+            tf.cast(knots_id, COORDINATES_TYPE),
             [0] + range(2, out_spatial_rank + 3) + [1])
         # get values of N neighbours
         samples = [
@@ -255,9 +260,13 @@ def _boundary_symmetric(sample_coords, input_size):
 
 
 def _param_type_and_shape(sample_coords, input_size):
-    sample_coords = tf.cast(sample_coords, COORDINATES_TYPE)
+    # sample_coords = tf.cast(sample_coords, COORDINATES_TYPE)
     try:
-        input_size = tf.constant(input_size, dtype=COORDINATES_TYPE)
+        input_size = tf.constant(input_size, dtype=tf.float32)
+    except TypeError:
+        pass
+    try:
+        input_size = tf.to_float(input_size)
     except TypeError:
         pass
     # try: # broadcasting input_size to match the shape of coordinates
