@@ -57,20 +57,13 @@ class ResamplerLayer(Layer):
 
     def _resample_nearest(self, inputs, sample_coords):
         in_size = inputs.get_shape().as_list()
-        batch_size = in_size[0]
         in_spatial_size = in_size[1:-1]
-
-        out_size = sample_coords.get_shape().as_list()
-        out_spatial_size = out_size[1:-1]
-        out_spatial_rank = infer_spatial_rank(sample_coords)
 
         spatial_coords = self.boundary_func(
             tf.round(sample_coords), in_spatial_size)
-        batch_ids = tf.reshape(
-            tf.range(batch_size), [batch_size] + [1] * (out_spatial_rank + 1))
-        batch_ids = tf.tile(batch_ids, [1] + out_spatial_size + [1])
-        output = tf.gather_nd(
-            inputs, tf.concat([batch_ids, spatial_coords], -1))
+        output = tf.stack([
+            tf.gather_nd(img, coords) for (img, coords) in
+            zip(tf.unstack(inputs), tf.unstack(spatial_coords))])
 
         if self.boundary == 'ZERO':
             scale = 1. / (tf.constant(in_spatial_size, dtype=tf.float32) - 1)
