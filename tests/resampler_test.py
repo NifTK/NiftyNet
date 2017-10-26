@@ -30,8 +30,8 @@ class ResamplerTest(tf.test.TestCase):
         out = resampler(input, grid)
         with self.test_session() as sess:
             out_value = sess.run(out)
-            #print(expected_value)
-            #print(out_value)
+            # print(expected_value)
+            # print(out_value)
             self.assertAllClose(expected_value, out_value)
 
     def test_resampler_3d_multivariate_zero_weight_idw_correctness(self):
@@ -39,8 +39,8 @@ class ResamplerTest(tf.test.TestCase):
             [[[0, 1, 2], [.25, .75, .25]],
              [[.75, .25, .25], [.25, .25, .75]]],
             dtype=tf.float32)
-        expected = [[[-2, 98], [3.873452, 103.873459]],
-                    [[12.708848, 112.70884705], [11.45575333, 111.45578003]]]
+        expected = [[[-2, 98], [3.87353277, 103.873459]],
+                    [[12.70882225, 112.70884705], [11.45588875, 111.45578003]]]
         self._test_correctness(input=self.get_3d_input2(),
                                grid=test_grid,
                                interpolation='IDW',
@@ -52,8 +52,8 @@ class ResamplerTest(tf.test.TestCase):
             [[[.25, .25, .25], [.25, .75, .25]],
              [[.75, .25, .25], [.25, .25, .75]]],
             dtype=tf.float32)
-        expected = [[[3.038054, 103.038078], [3.873452, 103.873459]],
-                    [[12.708848, 112.70884705], [11.45575333, 111.45578003]]]
+        expected = [[[3.03824377, 103.03823853], [3.87353277, 103.87354279]],
+                    [[12.70882225, 112.70884705], [11.45588875, 111.45578003]]]
         self._test_correctness(input=self.get_3d_input2(),
                                grid=test_grid,
                                interpolation='IDW',

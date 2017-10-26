@@ -11,7 +11,7 @@ from niftynet.layer.layer_util import infer_spatial_rank
 from niftynet.utilities.util_common import look_up_operations
 
 COORDINATES_TYPE = tf.int32
-LARGE_FLOAT = 1e12
+SMALL_FLOAT = 5e-5
 
 
 class ResamplerLayer(Layer):
@@ -40,10 +40,10 @@ class ResamplerLayer(Layer):
 
     def layer_op(self, inputs, sample_coords):
         if inputs.dtype not in SUPPORTED_INPUT_DTYPE:
-            tf.logging.warning('input datatype should be in %s',
-                               SUPPORTED_INPUT_DTYPE)
-            inputs = tf.to_float(inputs)
+            # tf.logging.warning('input datatype should be in %s ',
+            #                    SUPPORTED_INPUT_DTYPE)
             # raise TypeError
+            inputs = tf.to_float(inputs)
         if self.interpolation == 'LINEAR':
             return self._resample_linear(inputs, sample_coords)
         if self.interpolation == 'NEAREST':
@@ -59,8 +59,8 @@ class ResamplerLayer(Layer):
         in_size = inputs.get_shape().as_list()
         in_spatial_size = in_size[1:-1]
 
-        spatial_coords = self.boundary_func(tf.round(sample_coords),
-                                            in_spatial_size)
+        spatial_coords = self.boundary_func(
+            tf.round(sample_coords), in_spatial_size)
         spatial_coords = tf.cast(spatial_coords, COORDINATES_TYPE)
         output = tf.stack([
             tf.gather_nd(img, coords) for (img, coords) in
@@ -194,7 +194,7 @@ class ResamplerLayer(Layer):
                      for bc in binary_neighbour_ids]
 
         sample_coords = tf.transpose(
-            sample_coords, [out_rank - 1, 0] + range(1, out_rank - 1))
+            sample_coords, [out_rank - 1, 0] + list(range(1, out_rank - 1)))
         # broadcasting input spatial size for boundary functions
         b_size = tf.reshape(in_spatial_size,
                             [len(in_spatial_size)] + [1] * (out_rank - 1))
@@ -218,14 +218,13 @@ class ResamplerLayer(Layer):
         # skip this as power = 2:
         # self.power = 2
         # point_weights = tf.pow(point_weights, self.power / 2.0)
-        point_weights = tf.reciprocal(point_weights)
         # workaround for zero distance
-        point_weights = tf.minimum(point_weights, LARGE_FLOAT)
+        point_weights = tf.reciprocal(point_weights + SMALL_FLOAT)
         point_weights = tf.expand_dims(point_weights, axis=-1)
 
         # find N neighbours associated to each output point
         knots_id = tf.transpose(tf.cast(knots_id, COORDINATES_TYPE),
-                                [0] + range(2, out_rank + 1) + [1])
+                                [0] + list(range(2, out_rank + 1)) + [1])
         # get values of N neighbours
         samples = [
             tf.gather_nd(img, knots) for (img, knots) in
@@ -265,14 +264,12 @@ def _param_type_and_shape(sample_coords, input_size):
         input_size = tf.to_float(input_size)
     except TypeError:
         pass
-    # try: # broadcasting input_size to match the shape of coordinates
-    #    if len(input_size) > 1:
-    #        broadcasting_shape = [1] * (infer_spatial_rank(sample_coords) + 1)
-    #        input_size = tf.reshape(input_size, broadcasting_shape + [-1])
-    # except (TypeError, AssertionError):
-    #    # do nothing
-    #    pass
     return sample_coords, input_size
+
+
+@tf.RegisterGradient('FloorMod')
+def _floormod_grad(op, grad):
+    return [None, None]
 
 
 SUPPORTED_INTERPOLATION = {'BSPLINE', 'LINEAR', 'NEAREST', 'IDW'}

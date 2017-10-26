@@ -289,6 +289,8 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
           Error: If the input tensor size is not consistent
             with the constraints passed at construction time.
         """
+        inputs = tf.to_float(inputs)
+
         input_shape = tf.shape(inputs)
         input_dtype = inputs.dtype.as_numpy_dtype
         batch_size = tf.expand_dims(input_shape[0], 0)
@@ -313,7 +315,7 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
         warped_grid = []
         var_index_offset = 0
         number_of_points = np.prod(self._output_shape)
-        for i in xrange(num_output_dimensions):
+        for i in range(num_output_dimensions):
             if self._psi[i] is not None:
                 # The i-th output dimension is not fully specified
                 # by the constraints, the graph is setup to perform
@@ -343,14 +345,14 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
                 # by the constraints, and the corresponding matrix
                 # multiplications have been precomputed.
                 warped_coord = \
-                    self._psi[num_output_dimensions + i].astype( input_dtype)
+                    self._psi[num_output_dimensions + i].astype(input_dtype)
                 tiling_params = tf.concat(
                     [batch_size, tf.constant(1, shape=(1,)),
                      tf.ones_like(warped_coord.shape)], 0)
                 warped_coord = warped_coord.reshape((1, 1) + warped_coord.shape)
                 warped_coord = tf.tile(warped_coord, tiling_params)
-
-            warped_coord += self._psi[i + 2 * num_output_dimensions]
+            warped_coord = warped_coord + \
+                           self._psi[i + 2 * num_output_dimensions]
             # Need to help TF figuring out shape inference
             # since tiling information
             # is held in Tensors which are not known until run time.
