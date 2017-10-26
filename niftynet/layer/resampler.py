@@ -34,7 +34,16 @@ class ResamplerLayer(Layer):
             tf.logging.fatal('Zero padding is not supported for BSPLINE mode')
             raise NotImplementedError
 
+        if self.boundary == 'ZERO' and self.interpolation == 'IDW':
+            tf.logging.fatal('Zero padding is not supported for IDW mode')
+            raise NotImplementedError
+
     def layer_op(self, inputs, sample_coords):
+        if inputs.dtype not in SUPPORTED_INPUT_DTYPE:
+            tf.logging.warning('input datatype should be in %s',
+                               SUPPORTED_INPUT_DTYPE)
+            inputs = tf.to_float(inputs)
+            # raise TypeError
         if self.interpolation == 'LINEAR':
             return self._resample_linear(inputs, sample_coords)
         if self.interpolation == 'NEAREST':
@@ -175,63 +184,55 @@ class ResamplerLayer(Layer):
 
     def _resample_inv_dst_weighting(self, inputs, sample_coords):
         in_size = inputs.get_shape().as_list()
-        batch_size = in_size[0]
         in_spatial_size = in_size[1:-1]
         in_spatial_rank = infer_spatial_rank(inputs)
 
-        out_spatial_rank = infer_spatial_rank(sample_coords)
         out_size = sample_coords.get_shape().as_list()
-        out_spatial_size = out_size[1:-1]
+        out_spatial_rank = infer_spatial_rank(sample_coords)
 
-        self.power = 2
         self.N = 2 ** in_spatial_rank
-
         binary_neighbour_ids = [
             [int(c) for c in format(i, '0%ib' % in_spatial_rank)]
             for i in range(self.N)]
         weight_id = [[[c, i] for i, c in enumerate(bc)]
                      for bc in binary_neighbour_ids]
 
-        floor_coord = self.boundary_func(
-            tf.floor(sample_coords), in_spatial_size)
-        ceil_coord = self.boundary_func(
-            tf.floor(sample_coords) + 1.0, in_spatial_size)
-        all_coords = tf.stack([floor_coord, ceil_coord], axis=0)
+        sample_coords = tf.transpose(
+            sample_coords, [len(out_size) - 1, 0] + range(1, len(out_size) - 1))
+        # broadcasting input spatial size for boundary functions
+        b_size = tf.reshape(
+            in_spatial_size, [len(in_spatial_size)] + [1] * (len(out_size) - 1))
+        # find floor and ceil coordinates
+        all_coords = tf.stack([
+            self.boundary_func(tf.floor(sample_coords), b_size),
+            self.boundary_func(tf.ceil(sample_coords), b_size)], axis=0)
 
         # find N weights associated to each output point
-        floor_diff = tf.squared_difference(
-            sample_coords, tf.to_float(all_coords[0]))
-        ceil_diff = tf.squared_difference(
-            sample_coords, tf.to_float(all_coords[1]))
-        diff = tf.stack([floor_diff, ceil_diff], axis=0)
-        # transpose to shape inds: [0, -1, others]
-        diff = tf.transpose(
-            diff, [0, len(out_size)] + range(1, len(out_size)))
+        all_coords_f = tf.to_float(all_coords)
+        diff = tf.stack(
+            [tf.squared_difference(sample_coords, all_coords_f[0]),
+             tf.squared_difference(sample_coords, all_coords_f[1])])
         point_weights = tf.gather_nd(diff, weight_id)
         point_weights = tf.reduce_sum(point_weights, axis=1)
-        point_weights = tf.pow(point_weights, self.power / 2.0)
+        # skip this as power = 2:
+        # self.power = 2
+        # point_weights = tf.pow(point_weights, self.power / 2.0)
         point_weights = tf.reciprocal(point_weights)
-        # workaround for zero weights
+        # workaround for zero distance
         point_weights = tf.minimum(point_weights, LARGE_FLOAT)
+        point_weights = tf.expand_dims(point_weights, axis=-1)
 
         # find N neighbours associated to each output point
-        # transpose to shape inds: [0, -1, others]
-        all_coords = tf.transpose(
-            all_coords, [0, len(out_size)] + range(1, len(out_size)))
         knots_id = tf.gather_nd(all_coords, weight_id)
         knots_id = tf.transpose(
             knots_id, [0] + range(2, out_spatial_rank + 3) + [1])
-        knots_shape = knots_id.get_shape().as_list()
-        b_id = tf.reshape(
-            tf.range(batch_size),
-            [1] + [batch_size] + [1] * (len(knots_shape) - 2))
-        b_id = tf.tile(
-            b_id, [knots_shape[0]] + [1] + out_spatial_size + [1])
-        b_id = tf.concat([b_id, knots_id], axis=-1)
+        # get values of N neighbours
+        samples = [
+            tf.gather_nd(img, knots) for (img, knots) in
+            zip(tf.unstack(inputs, axis=0), tf.unstack(knots_id, axis=1))]
+        samples = tf.stack(samples, axis=1)
 
         # weighted average over N neighbours
-        point_weights = tf.expand_dims(point_weights, axis=-1)
-        samples = tf.gather_nd(inputs, b_id)
         samples = tf.reduce_sum(samples * point_weights, axis=0)
         samples = samples / tf.reduce_sum(point_weights, axis=0)
         return samples
@@ -239,6 +240,7 @@ class ResamplerLayer(Layer):
 
 def _boundary_replicate(sample_coords, input_size):
     sample_coords, input_size = _param_type_and_shape(sample_coords, input_size)
+    # return tf.maximum(tf.minimum(sample_coords, input_size - 1), 0)
     return tf.maximum(tf.minimum(sample_coords, input_size - 1), 0)
 
 
@@ -277,3 +279,5 @@ SUPPORTED_BOUNDARY = {
     'REPLICATE': _boundary_replicate,
     'CIRCULAR': _boundary_circular,
     'SYMMETRIC': _boundary_symmetric}
+
+SUPPORTED_INPUT_DTYPE = {tf.float32}

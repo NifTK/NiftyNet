@@ -342,8 +342,8 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
                 # The i-th output dimension is fully specified
                 # by the constraints, and the corresponding matrix
                 # multiplications have been precomputed.
-                warped_coord = self._psi[num_output_dimensions + i].astype(
-                    input_dtype)
+                warped_coord = \
+                    self._psi[num_output_dimensions + i].astype( input_dtype)
                 tiling_params = tf.concat(
                     [batch_size, tf.constant(1, shape=(1,)),
                      tf.ones_like(warped_coord.shape)], 0)
