@@ -196,16 +196,21 @@ class ResamplerLayer(Layer):
         b_size = tf.reshape(
             in_spatial_size, [len(in_spatial_size)] + [1] * (len(out_size) - 1))
         # find floor and ceil coordinates
-        all_coords = tf.stack([
+        all_coords_f = tf.to_float(tf.stack([
             self.boundary_func(tf.floor(sample_coords), b_size),
-            self.boundary_func(tf.ceil(sample_coords), b_size)], axis=0)
-
+            self.boundary_func(tf.ceil(sample_coords), b_size)], axis=0))
         # find N weights associated to each output point
-        all_coords_f = tf.to_float(all_coords)
         diff = tf.stack(
             [tf.squared_difference(sample_coords, all_coords_f[0]),
              tf.squared_difference(sample_coords, all_coords_f[1])])
-        point_weights = tf.gather_nd(diff, weight_id)
+
+        # gather_nd for both matrix, the same as:
+        # point_weights = tf.gather_nd(diff, weight_id)
+        # knots_id = tf.gather_nd(all_coords_f, weight_id)
+        n_val = tf.gather_nd(tf.stack([diff, all_coords_f], axis=-1), weight_id)
+        n_val = tf.unstack(n_val, axis=-1)
+        point_weights, knots_id = n_val[0], n_val[1]
+
         point_weights = tf.reduce_sum(point_weights, axis=1)
         # skip this as power = 2:
         # self.power = 2
@@ -216,9 +221,9 @@ class ResamplerLayer(Layer):
         point_weights = tf.expand_dims(point_weights, axis=-1)
 
         # find N neighbours associated to each output point
-        knots_id = tf.gather_nd(all_coords, weight_id)
         knots_id = tf.transpose(
-            knots_id, [0] + range(2, out_spatial_rank + 3) + [1])
+            tf.to_int32(knots_id),
+            [0] + range(2, out_spatial_rank + 3) + [1])
         # get values of N neighbours
         samples = [
             tf.gather_nd(img, knots) for (img, knots) in
