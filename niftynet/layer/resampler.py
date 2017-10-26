@@ -184,9 +184,7 @@ class ResamplerLayer(Layer):
         in_size = inputs.get_shape().as_list()
         in_spatial_size = in_size[1:-1]
         in_spatial_rank = infer_spatial_rank(inputs)
-
-        out_size = sample_coords.get_shape().as_list()
-        out_spatial_rank = infer_spatial_rank(sample_coords)
+        out_rank = len(sample_coords.get_shape().as_list())
 
         self.N = 2 ** in_spatial_rank
         binary_neighbour_ids = [
@@ -196,10 +194,10 @@ class ResamplerLayer(Layer):
                      for bc in binary_neighbour_ids]
 
         sample_coords = tf.transpose(
-            sample_coords, [len(out_size) - 1, 0] + range(1, len(out_size) - 1))
+            sample_coords, [out_rank - 1, 0] + range(1, out_rank - 1))
         # broadcasting input spatial size for boundary functions
-        b_size = tf.reshape(
-            in_spatial_size, [len(in_spatial_size)] + [1] * (len(out_size) - 1))
+        b_size = tf.reshape(in_spatial_size,
+                            [len(in_spatial_size)] + [1] * (out_rank - 1))
         # find floor and ceil coordinates
         all_coords_f = tf.stack([
             self.boundary_func(tf.floor(sample_coords), b_size),
@@ -226,9 +224,8 @@ class ResamplerLayer(Layer):
         point_weights = tf.expand_dims(point_weights, axis=-1)
 
         # find N neighbours associated to each output point
-        knots_id = tf.transpose(
-            tf.cast(knots_id, COORDINATES_TYPE),
-            [0] + range(2, out_spatial_rank + 3) + [1])
+        knots_id = tf.transpose(tf.cast(knots_id, COORDINATES_TYPE),
+                                [0] + range(2, out_rank + 1) + [1])
         # get values of N neighbours
         samples = [
             tf.gather_nd(img, knots) for (img, knots) in
@@ -243,7 +240,6 @@ class ResamplerLayer(Layer):
 
 def _boundary_replicate(sample_coords, input_size):
     sample_coords, input_size = _param_type_and_shape(sample_coords, input_size)
-    # return tf.maximum(tf.minimum(sample_coords, input_size - 1), 0)
     return tf.maximum(tf.minimum(sample_coords, input_size - 1), 0)
 
 
