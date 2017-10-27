@@ -11,7 +11,7 @@ from niftynet.layer.layer_util import infer_spatial_rank
 from niftynet.utilities.util_common import look_up_operations
 
 COORDINATES_TYPE = tf.int32
-SMALL_FLOAT = 5e-5
+EPS = 1e-6
 
 
 class ResamplerLayer(Layer):
@@ -44,6 +44,8 @@ class ResamplerLayer(Layer):
             #                    SUPPORTED_INPUT_DTYPE)
             # raise TypeError
             inputs = tf.to_float(inputs)
+        if sample_coords.dtype not in SUPPORTED_INPUT_DTYPE:
+            sample_coords = tf.to_float(sample_coords)
         if self.interpolation == 'LINEAR':
             return self._resample_linear(inputs, sample_coords)
         if self.interpolation == 'NEAREST':
@@ -195,6 +197,7 @@ class ResamplerLayer(Layer):
 
         sample_coords = tf.transpose(
             sample_coords, [out_rank - 1, 0] + list(range(1, out_rank - 1)))
+        # sample_coords = sample_coords + EPS
         # broadcasting input spatial size for boundary functions
         b_size = tf.reshape(in_spatial_size,
                             [len(in_spatial_size)] + [1] * (out_rank - 1))
@@ -204,8 +207,8 @@ class ResamplerLayer(Layer):
             self.boundary_func(tf.ceil(sample_coords), b_size)], axis=0)
         # find N weights associated to each output point
         diff = tf.stack(
-            [tf.squared_difference(sample_coords, all_coords_f[0]),
-             tf.squared_difference(sample_coords, all_coords_f[1])])
+            [tf.squared_difference(sample_coords - EPS, all_coords_f[0]),
+             tf.squared_difference(sample_coords + EPS, all_coords_f[1])])
 
         # gather_nd for both matrix, the same as:
         # point_weights = tf.gather_nd(diff, weight_id)
@@ -215,11 +218,10 @@ class ResamplerLayer(Layer):
         point_weights, knots_id = n_val[0], n_val[1]
 
         point_weights = tf.reduce_sum(point_weights, axis=1)
-        # skip this as power = 2:
-        # self.power = 2
+        # skip this as power = 2.0:
+        # self.power = 1.0
         # point_weights = tf.pow(point_weights, self.power / 2.0)
-        # workaround for zero distance
-        point_weights = tf.reciprocal(point_weights + SMALL_FLOAT)
+        point_weights = tf.reciprocal(point_weights)
         point_weights = tf.expand_dims(point_weights, axis=-1)
 
         # find N neighbours associated to each output point
