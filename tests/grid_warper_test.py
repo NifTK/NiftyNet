@@ -98,7 +98,7 @@ class AffineWarpConstraintsTest(tf.test.TestCase):
         aff_c_1 = AffineWarpConstraints.translation_2d(x=test_x, y=test_y)
         aff_c_2 = AffineWarpConstraints.no_shear_3d()
         with self.assertRaisesRegexp(ValueError, ''):
-            aff_comb = aff_c_1.combine_with(aff_c_2)
+            aff_c_1.combine_with(aff_c_2)
 
 
 class AffineGridWarperLayerTest(tf.test.TestCase):
@@ -179,6 +179,27 @@ class AffineGridWarperLayerTest(tf.test.TestCase):
                   'constraints': AffineWarpConstraints.translation_3d(3, 4, 5)}
         expected = [[[[3, 4, 5], [3, 5.5, 5]], [[5, 4, 5], [5, 5.5, 5]]]]
         self._test_correctness(params, aff, expected)
+
+
+class AffineGridWarperInvLayerTest(tf.test.TestCase):
+    def test_simple_inverse(self):
+        expected_grid = np.array([[[[0.16, -0.44],
+                                    [-0.64, 0.76],
+                                    [-1.44, 1.96]],
+                                   [[1.36, -1.24],
+                                    [0.56, -0.04],
+                                    [-0.24, 1.16]],
+                                   [[2.56, -2.04],
+                                    [1.76, -0.84],
+                                    [0.96, 0.36]]]], dtype=np.float32)
+
+        inverse_grid = AffineGridWarperLayer(source_shape=(3, 3),
+                                             output_shape=(2, 2)).inverse_op()
+        aff = tf.constant([[1.5, 1.0, 0.2, 1.0, 1.5, 0.5]])
+        output = inverse_grid(aff)
+        with self.test_session() as sess:
+            out_val = sess.run(output)
+        self.assertAllClose(out_val, expected_grid)
 
 
 if __name__ == "__main__":

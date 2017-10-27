@@ -110,7 +110,6 @@ class image_2D_test(tf.test.TestCase):
         test_image, input_shape = get_multiple_2d_images()
         test_target, target_shape = get_multiple_2d_targets()
 
-
         identity_affine = [[1., 0., 0., 0., 1., 0.],
                            [1., 0., 0., 0., 1., 0.],
                            [1., 0., 0., 0., 1., 0.],

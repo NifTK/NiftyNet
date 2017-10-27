@@ -279,6 +279,8 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
         The internal computation graph is assembled according to the set of
         constraints provided at construction time.
 
+        inputs shape: batch_size x num_free_params
+
         Args:
           inputs: Tensor containing a batch of transformation parameters.
 
@@ -369,7 +371,7 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
 
     def inverse_op(self, name=None):
         """
-        Returns a `sonnet` module to compute inverse affine transforms.
+        Returns a layer to compute inverse affine transforms.
 
           The function first assembles a network that
           given the constraints of the
