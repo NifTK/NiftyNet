@@ -181,12 +181,12 @@ class image_test(tf.test.TestCase):
         if ndim == 2:
             test_image, input_shape = get_multiple_2d_images()
             test_target, target_shape = get_multiple_2d_targets()
-            identity_affine = [[1., 0., 0., 0., 1., 0.]]*4
+            identity_affine = [[1., 0., 0., 0., 1., 0.]] * 4
         else:
             test_image, input_shape = get_multiple_3d_images()
             test_target, target_shape = get_multiple_3d_targets()
             identity_affine = [[1., 0., 0., 0., 1., 0.,
-                               1., 0., 0., 0., 1., 0.]]*4
+                                1., 0., 0., 0., 1., 0.]] * 4
         affine_var = tf.get_variable('affine', initializer=identity_affine)
         grid = AffineGridWarperLayer(source_shape=input_shape[1:-1],
                                      output_shape=target_shape[1:-1],

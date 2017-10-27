@@ -197,7 +197,6 @@ class ResamplerLayer(Layer):
 
         sample_coords = tf.transpose(
             sample_coords, [out_rank - 1, 0] + list(range(1, out_rank - 1)))
-        # sample_coords = sample_coords + EPS
         # broadcasting input spatial size for boundary functions
         b_size = tf.reshape(in_spatial_size,
                             [len(in_spatial_size)] + [1] * (out_rank - 1))
