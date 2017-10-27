@@ -102,6 +102,41 @@ def get_multiple_2d_targets():
     return test_target, shape
 
 
+def get_multiple_3d_images():
+    image_1, shape = get_2d_images(test_case_2d_1)
+    image_2 = image_1[::-1, ::-1]
+    image_3 = image_1[::-1, ]
+    image_4 = image_1[:, ::-1, ]
+
+    image_2d = np.stack([image_1, image_2, image_3, image_4])
+    image_3d = np.expand_dims(image_2d, axis=1)
+    image_3d = np.concatenate([image_3d, image_3d], axis=1)
+    return image_3d, image_3d.shape
+
+
+def get_multiple_3d_targets():
+    test_image, input_shape = get_multiple_2d_images()
+    test_target = np.array(test_image)
+
+    test_target[0] = test_target[0, ::-1]
+    test_target[1] = test_target[1, :, ::-1]
+    test_target[2] = test_target[2, ::-1, ::-1]
+
+    factor = 1.5
+    shape = input_shape[:]
+    shape[1] = np.floor(input_shape[1] * factor).astype(np.int)
+    shape[2] = np.floor(input_shape[2] * factor).astype(np.int)
+
+    from scipy.ndimage import zoom
+    zoomed_target = []
+    for img in test_target:
+        zoomed_target.append(zoom(img, [factor, factor, 1]))
+    test_target = np.stack(zoomed_target, axis=0).astype(np.uint8)
+    test_target = np.expand_dims(test_target, axis=1)
+    test_target = np.concatenate([test_target, test_target], axis=1)
+    return test_target, test_target.shape
+
+
 def get_3d_input1():
     test_case = tf.constant(
         [[[[1, 2, -1], [3, 4, -2]], [[5, 6, -3], [7, 8, -4]]],
@@ -138,17 +173,20 @@ class ResamplerGridWarperTest(tf.test.TestCase):
                                expected_value=expected)
 
 
-class image_2D_test(tf.test.TestCase):
-    def _test_grads_2d_images(self,
-                              interpolation='linear',
-                              boundary='replicate'):
-        test_image, input_shape = get_multiple_2d_images()
-        test_target, target_shape = get_multiple_2d_targets()
-
-        identity_affine = [[1., 0., 0., 0., 1., 0.],
-                           [1., 0., 0., 0., 1., 0.],
-                           [1., 0., 0., 0., 1., 0.],
-                           [1., 0., 0., 0., 1., 0.]]
+class image_test(tf.test.TestCase):
+    def _test_grads_images(self,
+                           interpolation='linear',
+                           boundary='replicate',
+                           ndim=2):
+        if ndim == 2:
+            test_image, input_shape = get_multiple_2d_images()
+            test_target, target_shape = get_multiple_2d_targets()
+            identity_affine = [[1., 0., 0., 0., 1., 0.]]*4
+        else:
+            test_image, input_shape = get_multiple_3d_images()
+            test_target, target_shape = get_multiple_3d_targets()
+            identity_affine = [[1., 0., 0., 0., 1., 0.,
+                               1., 0., 0., 0., 1., 0.]]*4
         affine_var = tf.get_variable('affine', initializer=identity_affine)
         grid = AffineGridWarperLayer(source_shape=input_shape[1:-1],
                                      output_shape=target_shape[1:-1],
@@ -172,22 +210,40 @@ class image_2D_test(tf.test.TestCase):
             self.assertGreater(init_val, diff_val)
 
     def test_2d_linear_replicate(self):
-        self._test_grads_2d_images('linear', 'replicate')
+        self._test_grads_images('linear', 'replicate')
 
     def test_2d_idw_replicate(self):
-        self._test_grads_2d_images('idw', 'replicate')
+        self._test_grads_images('idw', 'replicate')
 
     def test_2d_linear_circular(self):
-        self._test_grads_2d_images('linear', 'circular')
+        self._test_grads_images('linear', 'circular')
 
     def test_2d_idw_circular(self):
-        self._test_grads_2d_images('idw', 'circular')
+        self._test_grads_images('idw', 'circular')
 
     def test_2d_linear_symmetric(self):
-        self._test_grads_2d_images('linear', 'symmetric')
+        self._test_grads_images('linear', 'symmetric')
 
     def test_2d_idw_symmetric(self):
-        self._test_grads_2d_images('idw', 'symmetric')
+        self._test_grads_images('idw', 'symmetric')
+
+    def test_3d_linear_replicate(self):
+        self._test_grads_images('linear', 'replicate', ndim=3)
+
+    def test_3d_idw_replicate(self):
+        self._test_grads_images('idw', 'replicate', ndim=3)
+
+    def test_3d_linear_circular(self):
+        self._test_grads_images('linear', 'circular', ndim=3)
+
+    def test_3d_idw_circular(self):
+        self._test_grads_images('idw', 'circular', ndim=3)
+
+    def test_3d_linear_symmetric(self):
+        self._test_grads_images('linear', 'symmetric', ndim=3)
+
+    def test_3d_idw_symmetric(self):
+        self._test_grads_images('idw', 'symmetric', ndim=3)
 
 
 class image_2D_test_converge(tf.test.TestCase):
