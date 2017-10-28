@@ -61,6 +61,7 @@ class ResamplerLayer(Layer):
         in_size = inputs.get_shape().as_list()
         in_spatial_size = in_size[1:-1]
 
+        # This is forward only as no gradient for tf.round
         spatial_coords = self.boundary_func(
             tf.round(sample_coords), in_spatial_size)
         spatial_coords = tf.cast(spatial_coords, COORDINATES_TYPE)
@@ -203,25 +204,37 @@ class ResamplerLayer(Layer):
         # find floor and ceil coordinates
         all_coords_f = tf.stack([
             self.boundary_func(tf.floor(sample_coords), b_size),
-            self.boundary_func(tf.ceil(sample_coords), b_size)], axis=0)
+            self.boundary_func(tf.ceil(sample_coords), b_size)])
         # find N weights associated to each output point
         diff = tf.stack(
             [tf.squared_difference(sample_coords - EPS, all_coords_f[0]),
              tf.squared_difference(sample_coords + EPS, all_coords_f[1])])
 
-        # gather_nd for both matrix, the same as:
+        # gather_nd for both matrices, the same as:
         # point_weights = tf.gather_nd(diff, weight_id)
         # knots_id = tf.gather_nd(all_coords_f, weight_id)
         n_val = tf.gather_nd(tf.stack([diff, all_coords_f], axis=-1), weight_id)
         n_val = tf.unstack(n_val, axis=-1)
         point_weights, knots_id = n_val[0], n_val[1]
 
+        # inverse distance weighting
+        # sum_i (w_i*p_i/(sum_j w_j)) w_i = 1/((p-p_i)^2)
+        # point_weights shape:
+        # `[N, input_rank, b, sp_dim_0, ..., sp_dim_K]`
+        # where:
+        #  `N` is 2**source data spatial rank
+        #  `b` is batch size,
+        #  `sp_dim_0` is the output spatial output 0,
+        #
+        # `point_weights` represents (p - p_i)^2
+        #      with i= 0...2**source_rank neighbours
+        # (to do: these operations could be refactored as a resampling kernel)
         point_weights = tf.reduce_sum(point_weights, axis=1)
         # skip this as power = 2.0:
         # self.power = 1.0
         # point_weights = tf.pow(point_weights, self.power / 2.0)
         point_weights = tf.reciprocal(point_weights)
-        point_weights = tf.expand_dims(point_weights, axis=-1)
+        point_weights = point_weights / tf.reduce_sum(point_weights, axis=0)
 
         # find N neighbours associated to each output point
         knots_id = tf.transpose(tf.cast(knots_id, COORDINATES_TYPE),
@@ -233,9 +246,8 @@ class ResamplerLayer(Layer):
         samples = tf.stack(samples, axis=1)
 
         # weighted average over N neighbours
-        samples = tf.reduce_sum(samples * point_weights, axis=0)
-        samples = samples / tf.reduce_sum(point_weights, axis=0)
-        return samples
+        return tf.reduce_sum(
+            samples * tf.expand_dims(point_weights, axis=-1), axis=0)
 
 
 def _boundary_replicate(sample_coords, input_size):
