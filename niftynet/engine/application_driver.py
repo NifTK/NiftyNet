@@ -137,6 +137,7 @@ class ApplicationDriver(object):
         with self.graph.as_default(), tf.name_scope('Sampler'):
             self.app.initialise_sampler()
 
+    # pylint: disable=broad-except
     def run_application(self):
         """
         Initialise a TF graph, connect data sampler and network within
@@ -189,7 +190,7 @@ class ApplicationDriver(object):
                 tf.logging.warning('User cancelled application')
             except tf.errors.OutOfRangeError:
                 pass
-            except RuntimeError:
+            except Exception:
                 import sys
                 import traceback
                 exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -197,7 +198,8 @@ class ApplicationDriver(object):
                     exc_type, exc_value, exc_traceback, file=sys.stdout)
             finally:
                 tf.logging.info('Cleaning up...')
-                if self.is_training and loop_status.get('current_iter', None):
+                if self.is_training and \
+                        loop_status.get('current_iter', None) is not None:
                     self._save_model(session, loop_status['current_iter'])
                 elif not loop_status.get('all_saved_flag', None):
                     tf.logging.warning('stopped early, incomplete loops')

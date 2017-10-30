@@ -11,11 +11,10 @@ from six import string_types
 import niftynet.utilities.util_csv as util_csv
 from niftynet.io.image_type import ImageFactory
 from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
-from niftynet.utilities.user_parameters_helper import make_input_tuple
-from niftynet.utilities.util_common import print_progress_bar
-
 # NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
+from niftynet.utilities.user_parameters_helper import make_input_tuple
+from niftynet.utilities.util_common import print_progress_bar
 
 NP_TF_DTYPES = {'i': tf.float32,
                 'u': tf.float32,
@@ -100,7 +99,8 @@ class ImageReader(Layer):
                     raise ValueError
 
         default_data_folder = self._global_config.get_niftynet_home_folder()
-        self._file_list = util_csv.load_and_merge_csv_files(data_to_load, default_data_folder)
+        self._file_list = util_csv.load_and_merge_csv_files(
+            data_to_load, default_data_folder)
         self.output_list = _filename_to_image_list(
             self._file_list, self._input_sources, data_param)
         for name in self.names:
@@ -130,6 +130,9 @@ class ImageReader(Layer):
           keys: self.output_fields
           values: image volume array
         """
+        if self.output_list is None:
+            tf.logging.fatal('please run initialise_reader() first')
+            raise RuntimeError
         if idx is None and shuffle:
             # training, with random list output
             idx = np.random.randint(len(self.output_list))
@@ -166,7 +169,7 @@ class ImageReader(Layer):
                     image_data_dict = layer(image_data_dict, interp_order_dict)
                 else:
                     image_data_dict, mask = layer(image_data_dict, mask)
-                # print('%s, %.3f sec'%(layer, -local_time + time.time()))
+                    # print('%s, %.3f sec'%(layer, -local_time + time.time()))
         return idx, image_data_dict, interp_order_dict
 
     @property

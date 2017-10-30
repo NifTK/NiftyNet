@@ -140,9 +140,24 @@ def __add_autoencoder_args(parser):
     return parser
 
 
+def __add_registration_args(parser):
+    parser.add_argument(
+        "--label_normalisation",
+        metavar='',
+        help="whether to map unique labels in the training set to "
+             "consecutive integers (the smallest label will be  mapped to 0)",
+        type=str2boolean,
+        default=False)
+
+    from niftynet.application.label_driven_registration import SUPPORTED_INPUT
+    parser = add_input_name_args(parser, SUPPORTED_INPUT)
+    return parser
+
+
 SUPPORTED_ARG_SECTIONS = {
     'REGRESSION': __add_regression_args,
     'SEGMENTATION': __add_segmentation_args,
     'AUTOENCODER': __add_autoencoder_args,
-    'GAN': __add_gan_args
+    'GAN': __add_gan_args,
+    'REGISTRATION': __add_registration_args
 }
