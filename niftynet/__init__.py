@@ -16,9 +16,25 @@ try:
 except ImportError:
     raise ImportError('NiftyNet is based on TensorFlow, which'
                       ' does not seem to be installed on your'
-                      ' system.\nPlease install TensorFlow'
+                      ' system.\n\nPlease install TensorFlow'
                       ' (https://www.tensorflow.org/) to be'
                       ' able to use NiftyNet.')
+
+try:
+    minimal_required_version = "1.3"
+    tf_version = tf.__version__
+    if tf_version < minimal_required_version:
+        tf.logging.fatal('TensorFlow %s or later is required.'
+                         '\n\nPlease upgrade TensorFlow'
+                         ' (https://www.tensorflow.org/) to be'
+                         ' able to use NiftyNet.\nCurrently using '
+                         'TensorFlow %s,\ninstalled at %s\n\n',
+                         minimal_required_version, tf_version, tf.__file__)
+        raise ImportError
+    else:
+        tf.logging.info('TensorFlow version %s', tf_version)
+except AttributeError:
+    pass
 
 import os
 

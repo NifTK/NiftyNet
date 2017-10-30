@@ -93,7 +93,7 @@ setup(
     install_requires=[
         'six>=1.10',
         'nibabel>=2.1.0',
-        'numpy>=1.11',
+        'numpy>=1.12',
         'scipy>=0.18',
         'configparser',
         'pillow',
