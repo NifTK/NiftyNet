@@ -148,7 +148,7 @@ class SegmentationApplication(BaseApplication):
                                        self.segmentation_param.min_ratio_sampling,
                                        self.segmentation_param.num_min_labels,
                                        self.segmentation_param.proba_connect),
-                            random_windows_per_image=self.action_param
+                            random_windows_per_image=self.segmentation_param
                                 .rand_samples,
                             queue_length=self.net_param.queue_length
         )]
