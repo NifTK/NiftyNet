@@ -133,9 +133,10 @@ class SegmentationApplication(BaseApplication):
             volume_padding_layer + normalisation_layers + augmentation_layers)
 
     def initialise_selective_sampler(self):
-        print("Initialisation ", self.action_param.compulsory_labels,
-              self.action_param.proba_connect)
-        print(self.action_param.num_min_labels, self.action_param.proba_connect)
+        print("Initialisation ", self.segmentation_param.compulsory_labels,
+              self.segmentation_param.proba_connect)
+        print(self.segmentation_param.num_min_labels,
+              self.segmentation_param.proba_connect)
         self.sampler = [SelectiveSampler(
                             reader=self.reader,
                             data_param=self.data_param,
@@ -143,15 +144,10 @@ class SegmentationApplication(BaseApplication):
                             windows_per_image=
                             self.action_param.sample_per_volume,
                             constraint=
-                            Constraint([int(x)
-                                        for x in
-                                        self.action_param.compulsory_labels],
-                                       float(
-                                           self.action_param.min_ratio_sampling),
-                                       int(
-                                           self.action_param.num_min_labels),
-                                       ast.literal_eval(
-                                           self.action_param.proba_connect)),
+                            Constraint(self.segmentation_param.compulsory_labels,
+                                       self.segmentation_param.min_ratio_sampling,
+                                       self.segmentation_param.num_min_labels,
+                                       self.segmentation_param.proba_connect),
                             random_windows_per_image=self.action_param
                                 .rand_samples,
                             queue_length=self.net_param.queue_length

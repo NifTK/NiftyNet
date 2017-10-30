@@ -74,7 +74,7 @@ def __add_segmentation_args(parser):
     parser.add_argument(
         "--min_numb_labels",
         help="Minimum number of different labels present in a patch",
-        type=int_array,
+        type=int,
         default=2)
 
     parser.add_argument(
@@ -105,7 +105,7 @@ def __add_segmentation_args(parser):
              "selective sampling",
         metavar='',
         type=int_array,
-        default=(0)
+        default=(0, 1)
     )
 
     parser.add_argument(
