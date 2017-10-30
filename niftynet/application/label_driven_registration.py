@@ -62,9 +62,9 @@ class RegApp(BaseApplication):
                                  outputs_collector=None,
                                  gradients_collector=None):
         if self.is_training:
-            sampler_out = self.sampler[0]()
+            image_windows = self.sampler[0]()
             outputs_collector.add_to_collection(
-                var=sampler_out,
+                var=image_windows,
                 name='test_sampler_output',
                 collection=NETWORK_OUTPUT)
 
@@ -83,6 +83,11 @@ class RegApp(BaseApplication):
 
     def interpret_output(self, batch_output):
         if self.is_training:
+            print(batch_output['test_sampler_output'].shape)
+            #windows = batch_output['test_sampler_output']
+            #import matplotlib.pyplot as plt
+            #plt.imshow(windows[1, 20, ..., 0])
+            #plt.show()
             return True
         else:
             raise NotImplementedError

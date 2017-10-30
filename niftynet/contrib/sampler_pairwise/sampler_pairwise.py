@@ -5,6 +5,8 @@ import tensorflow as tf
 
 from niftynet.engine.image_window import ImageWindow
 from niftynet.layer.base_layer import Layer
+from niftynet.layer.grid_warper import AffineGridWarperLayer
+from niftynet.layer.resampler import ResamplerLayer
 
 
 class PairwiseSampler(Layer):
@@ -20,15 +22,88 @@ class PairwiseSampler(Layer):
         # reader for the moving images
         self.reader_1 = reader_1
 
-        # to-do: detect window shape mismatches or defaulting
-        # windows to the fixed image reader properties
+        # TODO:
+        # 0) check the readers should have the same lenght file list
+        # 1) detect window shape mismatches or defaulting
+        #    windows to the fixed image reader properties
+        # 2) reshape images to (supporting multi-modal data)
+        #    [batch, x, y, channel] or [batch, x, y, z, channels]
+        # 3) infer spatial rank
+        self.spatial_rank = 3
         self.window = ImageWindow.from_data_reader_properties(
             self.reader_0.input_sources,
             self.reader_0.shapes,
             self.reader_0.tf_dtypes,
             data_param)
-        pass
+        if self.window.has_dynamic_shapes:
+            tf.logging.fatal(
+                'Dynamic shapes not supported.\nPlease specify '
+                'all spatial dims of the input data, for the '
+                'spatial_window_size parameter.')
+            raise NotImplementedError
+        # TODO: check spatial dims the same across input modalities
+        self.window_size= self.window.shapes['fixed_image']
 
+
+    def get_image(self, image_source_type, image_id):
+        # returns a random image from either the list of fixed images
+        # or the list of moving images
+        if image_source_type.startswith('fixed'):
+            _, data, _ = self.reader_0(idx=image_id, shuffle=True)
+        else: # image_source_type.startswith('moving'):
+            _, data, _ = self.reader_1(idx=image_id, shuffle=True)
+        return data[image_source_type].astype(np.float32)
+
+    def layer_op(self):
+        rand_int = np.random.randint(len(self.reader_0.output_list))
+        image_0 = tf.py_func(
+            self.get_image, ['fixed_image', rand_int], tf.float32)
+        image_1 = tf.py_func(
+            self.get_image, ['moving_image', rand_int], tf.float32)
+        label_0 = tf.py_func(
+            self.get_image, ['fixed_label', rand_int], tf.float32)
+        label_1 = tf.py_func(
+            self.get_image, ['moving_label', rand_int], tf.float32)
+
+        # TODO preprocessing layer modifying
+        #      image shapes will not be supported
+        # assuming the same shape across modalities, using the first
+        image_shape = self.reader_0.output_list[rand_int]['fixed_image'].shape
+        image_0.set_shape(image_shape)
+        image_1.set_shape(image_shape)
+        label_0.set_shape(image_shape)
+        label_1.set_shape(image_shape)
+        image_to_sample = tf.stack([image_0, image_1, label_0, label_1])
+
+        # TODO affine data augmentation here
+        if self.spatial_rank == 3:
+            # TODO if no affine augmentation:
+            img_spatial_shape = image_shape[:self.spatial_rank]
+            win_spatial_shape = self.window_size[:self.spatial_rank]
+
+            # TODO shifts dtype should be int?
+            rand_shift = [
+                tf.random_uniform((1,), maxval=img-win) for win, img in
+                zip(win_spatial_shape, img_spatial_shape)]
+            # shifting params. in batch size of 4 elements for image_to_sample
+            rand_shift = tf.stack(rand_shift, axis=-1)
+            rand_shift = tf.tile(rand_shift, (4, 1))
+            affine_constraints = ((1.0, 0.0, 0.0, None),
+                                  (0.0, 1.0, 0.0, None),
+                                  (0.0, 0.0, 1.0, None))
+            computed_grid = AffineGridWarperLayer(
+                source_shape=img_spatial_shape,
+                output_shape=win_spatial_shape,
+                constraints=affine_constraints)(rand_shift)
+            resampler = ResamplerLayer(interpolation='linear',
+                                       boundary='replicate')
+            # squeeze image_to_sample to [4, x, y, z, features]
+            image_to_sample = tf.reshape(
+                image_to_sample, [4] + list(img_spatial_shape) + [-1])
+            windows = resampler(image_to_sample, computed_grid)
+        return windows
+
+    # overriding input buffers
     def run_threads(self, *args, **argvs):
         # do nothing
         pass
@@ -37,16 +112,3 @@ class PairwiseSampler(Layer):
         # do nothing
         pass
 
-    def sample_image(self, sampling_reader):
-        if sampling_reader == 0:
-            image_id_0, data_0, _ = self.reader_0(idx=None, shuffle=True)
-            return data_0['fixed_image'].astype(np.float32)
-        image_id_1, data_1, _ = self.reader_1(idx=None, shuffle=True)
-        return data_1['moving_image'].astype(np.float32)
-
-    def layer_op(self):
-        image_0 = tf.py_func(self.sample_image, [tf.constant(0)], tf.float32)
-        image_1 = tf.py_func(self.sample_image, [tf.constant(1)], tf.float32)
-
-        affine_augmentation_layer
-        return image_1
