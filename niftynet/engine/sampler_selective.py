@@ -133,7 +133,8 @@ def candidate_indices(win_sizes, data, constraint):
     list_labels = []
     data = np.round(data)
     if constraint.list_labels:
-        #
+        list_labels = constraint.list_labels
+
         print('list labels is ', list_labels)
         for label in list_labels:
             if label not in unique:

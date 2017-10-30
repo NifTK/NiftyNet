@@ -178,26 +178,25 @@ def get_dynamic_window_reader():
 
 
 class SelectiveSamplerTest(tf.test.TestCase):
-    pass
-    #def test_3d_init(self):
-    #    constraint_built = Constraint(compulsory_labels=[1],
-    #                                  min_ratio=0.000001,
-    #                                  min_num_labels=2)
-    #    sampler = SelectiveSampler(reader=get_3d_reader(),
-    #                               data_param=MULTI_MOD_DATA,
-    #                               batch_size=2,
-    #                               constraint=constraint_built,
-    #                               windows_per_image=2,
-    #                               queue_length=10)
-    #    with self.test_session() as sess:
-    #        coordinator = tf.train.Coordinator()
-    #        sampler.run_threads(sess, coordinator, num_threads=1)
-    #        out = sess.run(sampler.pop_batch_op())
-    #        self.assertTrue(check_constraint(out['label'], constraint_built))
-    #        self.assertAllClose(out['image'].shape, (2, 7, 10, 2, 2))
-    #        self.assertAllClose(out['label'].shape, (2, 7, 10, 2, 1))
-    #        print("Test should finish here")
-    #    sampler.close_all()
+    def test_3d_init(self):
+        constraint_built = Constraint(compulsory_labels=[1],
+                                      min_ratio=0.000001,
+                                      min_num_labels=2)
+        sampler = SelectiveSampler(reader=get_3d_reader(),
+                                   data_param=MULTI_MOD_DATA,
+                                   batch_size=2,
+                                   constraint=constraint_built,
+                                   windows_per_image=2,
+                                   queue_length=10)
+        with self.test_session() as sess:
+            coordinator = tf.train.Coordinator()
+            sampler.run_threads(sess, coordinator, num_threads=1)
+            out = sess.run(sampler.pop_batch_op())
+            self.assertTrue(check_constraint(out['label'], constraint_built))
+            self.assertAllClose(out['image'].shape, (2, 7, 10, 2, 2))
+            self.assertAllClose(out['label'].shape, (2, 7, 10, 2, 1))
+            print("Test should finish here")
+        sampler.close_all()
 
     # def test_2d_init(self):
     #     sampler = UniformSampler(reader=get_2d_reader(),
