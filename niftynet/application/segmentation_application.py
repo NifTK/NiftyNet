@@ -143,7 +143,9 @@ class SegmentationApplication(BaseApplication):
                             windows_per_image=
                             self.action_param.sample_per_volume,
                             constraint=
-                            Constraint(self.action_param.compulsory_labels,
+                            Constraint([int(x)
+                                        for x in
+                                        self.action_param.compulsory_labels],
                                        float(
                                            self.action_param.min_ratio_sampling),
                                        int(
