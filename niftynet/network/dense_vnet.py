@@ -4,13 +4,12 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.layer import layer_util
-from niftynet.layer.activation import ActiLayer
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.convolution import ConvolutionalLayer
-from niftynet.layer.deconvolution import DeconvolutionalLayer
 from niftynet.layer.channel_sparse_convolution import ChannelSparseConvolutionalLayer
 from niftynet.layer.bn import BNLayer
-from niftynet.layer.spatial_transformer import ResamplerLayer,AffineGridWarperLayer
+from niftynet.layer.spatial_transformer import ResamplerLayer
+from niftynet.layer.grid_warper import AffineGridWarperLayer
 
 from niftynet.network.base_net import BaseNet
 from niftynet.utilities.util_common import look_up_operations
