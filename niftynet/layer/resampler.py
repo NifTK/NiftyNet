@@ -21,7 +21,7 @@ class ResamplerLayer(Layer):
 
     def __init__(self,
                  interpolation="LINEAR",
-                 boundary="ZERO",
+                 boundary="REPLICATE",
                  name="resampler"):
         super(ResamplerLayer, self).__init__(name=name)
         self.boundary = boundary.upper()
@@ -36,7 +36,7 @@ class ResamplerLayer(Layer):
 
         if self.boundary == 'ZERO' and self.interpolation == 'IDW':
             tf.logging.fatal('Zero padding is not supported for IDW mode')
-            raise NotImplementedError
+            # raise NotImplementedError
 
     def layer_op(self, inputs, sample_coords):
         if inputs.dtype not in SUPPORTED_INPUT_DTYPE:
@@ -95,18 +95,16 @@ class ResamplerLayer(Layer):
         xy = tf.unstack(sample_coords, axis=-1)
         base_coords = [tf.floor(coords) for coords in xy]
         floor_coords = [
-            tf.cast(self.boundary_func(x, in_spatial_size[idx]),
-                    COORDINATES_TYPE)
+            self.boundary_func(x, in_spatial_size[idx])
             for (idx, x) in enumerate(base_coords)]
         ceil_coords = [
-            tf.cast(self.boundary_func(x + 1.0, in_spatial_size[idx]),
-                    COORDINATES_TYPE)
+            self.boundary_func(x + 1.0, in_spatial_size[idx])
             for (idx, x) in enumerate(base_coords)]
 
         if self.boundary == 'ZERO':
-            weight_0 = [tf.expand_dims(x - tf.cast(i, tf.float32), -1)
+            weight_0 = [tf.expand_dims(x - i, -1)
                         for (x, i) in zip(xy, floor_coords)]
-            weight_1 = [tf.expand_dims(tf.cast(i, tf.float32) - x, -1)
+            weight_1 = [tf.expand_dims(i - x, -1)
                         for (x, i) in zip(xy, ceil_coords)]
         else:
             weight_0 = [tf.expand_dims(x - i, -1)
@@ -116,7 +114,8 @@ class ResamplerLayer(Layer):
         batch_ids = tf.reshape(
             tf.range(batch_size), [batch_size] + [1] * out_spatial_rank)
         batch_ids = tf.tile(batch_ids, [1] + out_spatial_size)
-        sc = (floor_coords, ceil_coords)
+        sc = (tf.cast(floor_coords, COORDINATES_TYPE),
+              tf.cast(ceil_coords, COORDINATES_TYPE))
 
         def get_knot(bc):
             coord = [sc[c][i] for i, c in enumerate(bc)]
@@ -130,9 +129,7 @@ class ResamplerLayer(Layer):
             f_1 = _pyramid_combination(samples[1::2], w_0[:-1], w_1[:-1])
             return f_0 * w_1[-1] + f_1 * w_0[-1]
 
-        binary_neighbour_ids = [
-            [int(c) for c in format(i, '0%ib' % in_spatial_rank)]
-            for i in range(2 ** in_spatial_rank)]
+        binary_neighbour_ids = _binary_neighbour_ids(in_spatial_rank)
         samples = [get_knot(bc) for bc in binary_neighbour_ids]
         return _pyramid_combination(samples, weight_0, weight_1)
 
@@ -189,13 +186,9 @@ class ResamplerLayer(Layer):
         in_spatial_rank = infer_spatial_rank(inputs)
         out_rank = len(sample_coords.get_shape().as_list())
 
-        self.N = 2 ** in_spatial_rank
-        binary_neighbour_ids = [
-            [int(c) for c in format(i, '0%ib' % in_spatial_rank)]
-            for i in range(self.N)]
+        binary_neighbour_ids = _binary_neighbour_ids(in_spatial_rank)
         weight_id = [[[c, i] for i, c in enumerate(bc)]
-                     for bc in binary_neighbour_ids]
-
+                      for bc in binary_neighbour_ids]
         sample_coords = tf.transpose(
             sample_coords, [out_rank - 1, 0] + list(range(1, out_rank - 1)))
         # broadcasting input spatial size for boundary functions
@@ -231,7 +224,7 @@ class ResamplerLayer(Layer):
         # (to do: these operations could be refactored as a resampling kernel)
         point_weights = tf.reduce_sum(point_weights, axis=1)
         # skip this as power = 2.0:
-        # self.power = 1.0
+        # self.power = 2.0
         # point_weights = tf.pow(point_weights, self.power / 2.0)
         point_weights = tf.reciprocal(point_weights)
         point_weights = point_weights / tf.reduce_sum(point_weights, axis=0)
@@ -270,14 +263,26 @@ def _boundary_symmetric(sample_coords, input_size):
 def _param_type_and_shape(sample_coords, input_size):
     # sample_coords = tf.cast(sample_coords, COORDINATES_TYPE)
     try:
-        input_size = tf.constant(input_size, dtype=tf.float32)
-    except TypeError:
+        input_size = tf.constant(input_size, dtype=sample_coords.dtype)
+    except (TypeError, AttributeError):
         pass
     try:
-        input_size = tf.to_float(input_size)
-    except TypeError:
+        input_size = tf.cast(input_size, dtype=sample_coords.dtype)
+    except (TypeError, AttributeError):
         pass
     return sample_coords, input_size
+
+
+def _binary_neighbour_ids(spatial_rank):
+    """
+    returns combinatorial binary indices
+    2-D: [[0, 0], [0, 1], [1, 0], [1, 1]]
+    3-D: [[0, 0, 0], [0, 0, 1], [0, 1, 0],
+          [0, 1, 1], [1, 0, 0], [1, 0, 1],
+          [1, 1, 0], [1, 1, 1]]
+    """
+    return [[int(c) for c in format(i, '0%ib' % spatial_rank)]
+            for i in range(2 ** spatial_rank)]
 
 
 @tf.RegisterGradient('FloorMod')
