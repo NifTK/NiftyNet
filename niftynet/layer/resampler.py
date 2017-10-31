@@ -80,10 +80,12 @@ class ResamplerLayer(Layer):
         return output
 
     def _resample_linear(self, inputs, sample_coords):
-        in_size = inputs.get_shape().as_list()
-        in_spatial_size = in_size[1:-1]
-        in_spatial_rank = infer_spatial_rank(inputs)
-        batch_size = in_size[0]
+        # in_size = inputs.get_shape().as_list()
+        # in_spatial_size = in_size[1:-1]
+        # in_spatial_rank = infer_spatial_rank(inputs)
+        in_spatial_rank = 3
+        # batch_size = in_size[0]
+        batch_size = 4
 
         out_spatial_rank = infer_spatial_rank(sample_coords)
         out_spatial_size = sample_coords.get_shape().as_list()[1:-1]
@@ -94,11 +96,17 @@ class ResamplerLayer(Layer):
 
         xy = tf.unstack(sample_coords, axis=-1)
         base_coords = [tf.floor(coords) for coords in xy]
+        # floor_coords = [
+        #     self.boundary_func(x, in_spatial_size[idx])
+        #     for (idx, x) in enumerate(base_coords)]
+        # ceil_coords = [
+        #     self.boundary_func(x + 1.0, in_spatial_size[idx])
+        #     for (idx, x) in enumerate(base_coords)]
         floor_coords = [
-            self.boundary_func(x, in_spatial_size[idx])
+            x
             for (idx, x) in enumerate(base_coords)]
         ceil_coords = [
-            self.boundary_func(x + 1.0, in_spatial_size[idx])
+            x + 1.0
             for (idx, x) in enumerate(base_coords)]
 
         if self.boundary == 'ZERO':
@@ -188,7 +196,7 @@ class ResamplerLayer(Layer):
 
         binary_neighbour_ids = _binary_neighbour_ids(in_spatial_rank)
         weight_id = [[[c, i] for i, c in enumerate(bc)]
-                      for bc in binary_neighbour_ids]
+                     for bc in binary_neighbour_ids]
         sample_coords = tf.transpose(
             sample_coords, [out_rank - 1, 0] + list(range(1, out_rank - 1)))
         # broadcasting input spatial size for boundary functions

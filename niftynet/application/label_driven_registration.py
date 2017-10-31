@@ -84,10 +84,10 @@ class RegApp(BaseApplication):
     def interpret_output(self, batch_output):
         if self.is_training:
             print(batch_output['test_sampler_output'].shape)
-            #windows = batch_output['test_sampler_output']
-            #import matplotlib.pyplot as plt
-            #plt.imshow(windows[1, 20, ..., 0])
-            #plt.show()
+            windows = batch_output['test_sampler_output']
+            import matplotlib.pyplot as plt
+            plt.imshow(windows[1, 20, ..., 0])
+            plt.show()
             return True
         else:
             raise NotImplementedError
