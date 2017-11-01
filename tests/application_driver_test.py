@@ -63,15 +63,16 @@ class ApplicationDriverTest(tf.test.TestCase):
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(test_driver._init_op)
             coord = tf.train.Coordinator()
-            for sampler in test_driver.app.get_sampler():
-                sampler.run_threads(sess, coord, test_driver.num_threads)
-            i, train_op = six.next(test_driver.app.training_ops(0, 5))
+            for samplers in test_driver.app.get_sampler():
+                for sampler in samplers:
+                    sampler.run_threads(sess, coord, test_driver.num_threads)
+            i, train_op, feed = six.next(test_driver.app.training_ops(0, 5))
             test_driver.app.stop()
             try:
                 while True:
                     sess.run(train_op)
             except tf.errors.OutOfRangeError:
-                for thread in test_driver.app.sampler[0]._threads:
+                for thread in test_driver.app.sampler[0][0]._threads:
                     self.assertFalse(thread.isAlive(), "threads not closed")
 
     def test_training_update(self):
@@ -80,9 +81,10 @@ class ApplicationDriverTest(tf.test.TestCase):
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(test_driver._init_op)
             coord = tf.train.Coordinator()
-            for sampler in test_driver.app.get_sampler():
-                sampler.run_threads(sess, coord, test_driver.num_threads)
-            i, train_op = six.next(test_driver.app.training_ops(0, 5))
+            for samplers in test_driver.app.get_sampler():
+                for sampler in samplers:
+                    sampler.run_threads(sess, coord, test_driver.num_threads)
+            i, train_op, feed = six.next(test_driver.app.training_ops(0, 5))
             test_tensor = test_driver.graph.get_tensor_by_name(
                 'G/conv_bn_selu/conv_/w:0')
             var_0 = sess.run(test_tensor)
@@ -99,9 +101,10 @@ class ApplicationDriverTest(tf.test.TestCase):
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(test_driver._init_op)
             coord = tf.train.Coordinator()
-            for sampler in test_driver.app.get_sampler():
-                sampler.run_threads(sess, coord, test_driver.num_threads)
-            for i, train_op in test_driver.app.training_ops(0, 2):
+            for samplers in test_driver.app.get_sampler():
+                for sampler in samplers:
+                    sampler.run_threads(sess, coord, test_driver.num_threads)
+            for i, train_op, feed in test_driver.app.training_ops(0, 2):
                 sess.run(train_op)
                 s_0, s_1, s_2, s_3 = sess.run([
                     test_driver.graph.get_tensor_by_name(
@@ -128,9 +131,10 @@ class ApplicationDriverTest(tf.test.TestCase):
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(test_driver._init_op)
             coord = tf.train.Coordinator()
-            for sampler in test_driver.app.get_sampler():
-                sampler.run_threads(sess, coord, test_driver.num_threads)
-            for i, train_op in test_driver.app.training_ops(0, 2):
+            for samplers in test_driver.app.get_sampler():
+                for sampler in samplers:
+                    sampler.run_threads(sess, coord, test_driver.num_threads)
+            for i, train_op, feed in test_driver.app.training_ops(0, 2):
                 sess.run(train_op)
                 g_0, g_1, g_2, g_3, g_ave = sess.run([
                     test_driver.graph.get_tensor_by_name(

@@ -45,11 +45,12 @@ class GANApplication(BaseApplication):
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.reader = ImageReader(['image', 'conditioning'])
+            self.readers = [ImageReader(['image', 'conditioning'], phase='train'),
+                            ImageReader(['conditioning'], phase='validation')]
         else:  # in the inference process use image input only
-            self.reader = ImageReader(['conditioning'])
-        if self.reader:
-            self.reader.initialise_reader(data_param, task_param)
+            self.readers = [ImageReader(['image'], phase='test')]
+        for reader in self.readers:
+            reader.initialise_reader(data_param, task_param)
 
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(
@@ -93,46 +94,65 @@ class GANApplication(BaseApplication):
                 augmentation_layers.append(RandomRotationLayer())
                 augmentation_layers[-1].init_uniform_angle(self.action_param.rotation_angle)
 
-        if self.reader:
-            self.reader.add_preprocessing_layers(
+        for reader in self.readers:
+            reader.add_preprocessing_layers(
                 normalisation_layers + augmentation_layers)
 
     def initialise_sampler(self):
         self.sampler = []
         if self.is_training:
-            self.sampler.append(ResizeSampler(
-                reader=self.reader,
+            self.sampler.append([ResizeSampler(
+                reader=reader,
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=1,
                 shuffle_buffer=True,
-                queue_length=self.net_param.queue_length))
+                queue_length=self.net_param.queue_length) for reader in
+                self.readers])
         else:
-            self.sampler.append(RandomVectorSampler(
+            self.sampler.append([RandomVectorSampler(
                 names=('vector',),
                 vector_size=(self.gan_param.noise_size,),
                 batch_size=self.net_param.batch_size,
                 n_interpolations=self.gan_param.n_interpolations,
                 repeat=None,
-                queue_length=self.net_param.queue_length))
+                queue_length=self.net_param.queue_length) for reader in
+                self.readers])
             # repeat each resized image n times, so that each
             # image matches one random vector,
             # (n = self.gan_param.n_interpolations)
-            self.sampler.append(ResizeSampler(
+            self.sampler.append([ResizeSampler(
                 reader=self.reader,
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=self.gan_param.n_interpolations,
                 shuffle_buffer=False,
-                queue_length=self.net_param.queue_length))
+                queue_length=self.net_param.queue_length) for reader in
+                self.readers])
 
     def initialise_network(self):
+        super(SegmentationApplication, self).initialise_network()
         self.net = ApplicationNetFactory.create(self.net_param.name)()
 
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
         if self.is_training:
+            def data_net(for_training):
+                with tf.name_scope('train' if for_training else 'validation'):
+                    sampler = self.get_sampler()[0][0 if for_training else 1]
+                    data_dict = sampler.pop_batch_op()
+                    images = tf.cast(data_dict['image'], tf.float32)
+                    noise_shape = [self.net_param.batch_size,
+                                   self.gan_param.noise_size]
+                    noise = tf.random_normal(shape=noise_shape,
+                                             mean=0.0,
+                                             stddev=1.0,
+                                             dtype=tf.float32)
+                    conditioning = data_dict['conditioning']
+                    return self.net(noise, images,
+                                    conditioning, for_training)
+
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
@@ -140,21 +160,9 @@ class GANApplication(BaseApplication):
                     learning_rate=self.action_param.lr)
 
             # a new pop_batch_op for each gpu tower
-            data_dict = self.get_sampler()[0].pop_batch_op()
-
-            images = tf.cast(data_dict['image'], tf.float32)
-            noise_shape = [self.net_param.batch_size,
-                           self.gan_param.noise_size]
-            noise = tf.Variable(tf.random_normal(shape=noise_shape,
-                                                 mean=0.0,
-                                                 stddev=1.0,
-                                                 dtype=tf.float32))
-            tf.stop_gradient(noise)
-            conditioning = data_dict['conditioning']
-            net_output = self.net(noise,
-                                  images,
-                                  conditioning,
-                                  self.is_training)
+            net_output = tf.cond(self.is_validation,
+                                 lambda: data_net(False),
+                                 lambda: data_net(True))
             loss_func = LossFunction(
                 loss_type=self.action_param.loss_type)
             real_logits = net_output[1]
@@ -201,7 +209,7 @@ class GANApplication(BaseApplication):
                 # add the grads back to application_driver's training_grads
                 gradients_collector.add_to_collection(grads)
         else:
-            data_dict = self.get_sampler()[0].pop_batch_op()
+            data_dict = self.get_sampler()[0][0].pop_batch_op()
             conditioning_dict = self.get_sampler()[1].pop_batch_op()
             conditioning = conditioning_dict['conditioning']
             image_size = conditioning.shape.as_list()[:-1]

@@ -28,17 +28,17 @@ class ToyApplication(BaseApplication):
 
     def initialise_dataset_loader(self, data_param=None, task_param=None):
         self.toy_param = task_param
-        self.reader = ()
+        self.readers = []
 
     def initialise_sampler(self):
         self.sampler = [
-            RandomVectorSampler(
+            [RandomVectorSampler(
                 names=('vectors',),
                 vector_size=(self.toy_param.vector_size,),
                 batch_size=self.net_param.batch_size,
                 repeat=None,
                 mean=self.toy_param.mean,
-                stddev=self.toy_param.stddev)]
+                stddev=self.toy_param.stddev)]]
 
     def initialise_network(self):
         self.net = ApplicationNetFactory.create(self.net_param.name)()
@@ -53,7 +53,7 @@ class ToyApplication(BaseApplication):
                 learning_rate=self.action_param.lr)
 
         # a new pop_batch_op for each gpu tower
-        data_x = self.get_sampler()[0].pop_batch_op()
+        data_x = self.get_sampler()[0][0].pop_batch_op()
         features = tf.cast(data_x['vectors'], tf.float32, name='sampler_input')
         features = tf.expand_dims(features, axis=-1, name='feature_input')
 

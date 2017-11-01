@@ -52,7 +52,7 @@ class ImageReader(Layer):
      'label': <niftynet.io.image_type.SpatialImage3D object>}
     """
 
-    def __init__(self, names, phase):
+    def __init__(self, names, phase='train'):
         # list of file names
         self._file_list = None
         self._input_sources = None

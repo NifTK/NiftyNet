@@ -47,16 +47,17 @@ class AutoencoderApplication(BaseApplication):
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.reader = ImageReader(['image'])
+            self.readers = [ImageReader(['image'], phase='train'),
+                            ImageReader(['image'], phase='validation')]
         if self._infer_type in ('encode', 'encode-decode'):
-            self.reader = ImageReader(['image'])
+            self.readers = [ImageReader(['image'], phase='test')]
         elif self._infer_type == 'sample':
-            self.reader = ()
+            self.readers = []
         elif self._infer_type == 'linear_interpolation':
-            self.reader = ImageReader(['feature'])
+            self.readers = [ImageReader(['feature'], phase='test')]
 
-        if self.reader:
-            self.reader.initialise_reader(data_param, task_param)
+        for reader in self.readers:
+            reader.initialise_reader(data_param, task_param)
         #if self.is_training or self._infer_type in ('encode', 'encode-decode'):
         #    mean_var_normaliser = MeanVarNormalisationLayer(image_name='image')
         #    self.reader.add_preprocessing_layers([mean_var_normaliser])
@@ -64,33 +65,37 @@ class AutoencoderApplication(BaseApplication):
     def initialise_sampler(self):
         self.sampler = []
         if self.is_training:
-            self.sampler.append(ResizeSampler(
-                reader=self.reader,
+            self.sampler.append([ResizeSampler(
+                reader=reader,
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=1,
                 shuffle_buffer=True,
-                queue_length=self.net_param.queue_length))
+                queue_length=self.net_param.queue_length) for reader in
+                self.readers])
             return
         if self._infer_type in ('encode', 'encode-decode'):
-            self.sampler.append(ResizeSampler(
-                reader=self.reader,
+            self.sampler.append([ResizeSampler(
+                reader=reader,
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=1,
                 shuffle_buffer=False,
-                queue_length=self.net_param.queue_length))
+                queue_length=self.net_param.queue_length) for reader in
+                self.readers])
             return
         if self._infer_type == 'linear_interpolation':
-            self.sampler.append(LinearInterpolateSampler(
-                reader=self.reader,
+            self.sampler.append([LinearInterpolateSampler(
+                reader=reader,
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 n_interpolations=self.autoencoder_param.n_interpolations,
-                queue_length=self.net_param.queue_length))
+                queue_length=self.net_param.queue_length) for reader in
+                self.readers])
             return
 
     def initialise_network(self):
+        super(SegmentationApplication, self).initialise_network()
         w_regularizer = None
         b_regularizer = None
         reg_type = self.net_param.reg_type.lower()
@@ -111,16 +116,25 @@ class AutoencoderApplication(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
+
         if self.is_training:
+            def data_net(for_training):
+                with tf.name_scope('train' if for_training else 'validation'):
+                    sampler = self.get_sampler()[0][0 if for_training else 1]
+                    data_dict = sampler.pop_batch_op()
+                    image = tf.cast(data_dict['image'], tf.float32)
+                    return data_dict, self.net(image, for_training)
+
+            data_dict, net_output = tf.cond(self.is_validation,
+                                            lambda: data_net(False),
+                                            lambda: data_net(True))
 
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
                     learning_rate=self.action_param.lr)
-            data_dict = self.get_sampler()[0].pop_batch_op()
-            image = tf.cast(data_dict['image'], dtype=tf.float32)
-            net_output = self.net(image, is_training=True)
+
             loss_func = LossFunction(loss_type=self.action_param.loss_type)
             data_loss = loss_func(net_output)
             loss = data_loss
@@ -157,7 +171,7 @@ class AutoencoderApplication(BaseApplication):
                 collection=TF_SUMMARIES)
         else:
             if self._infer_type in ('encode', 'encode-decode'):
-                data_dict = self.get_sampler()[0].pop_batch_op()
+                data_dict = self.get_sampler()[0][0].pop_batch_op()
                 image = tf.cast(data_dict['image'], dtype=tf.float32)
                 net_output = self.net(image, is_training=False)
 
@@ -207,7 +221,7 @@ class AutoencoderApplication(BaseApplication):
                              self.action_param.spatial_window_size + (1,)
                 dummy_image = tf.zeros(image_size)
                 net_output = self.net(dummy_image, is_training=False)
-                data_dict = self.get_sampler()[0].pop_batch_op()
+                data_dict = self.get_sampler()[0][0].pop_batch_op()
                 real_code = data_dict['feature']
                 real_code = tf.reshape(real_code, net_output[-1].get_shape())
                 partially_decoded_sample = self.net.shared_decoder(
