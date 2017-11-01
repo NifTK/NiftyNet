@@ -39,6 +39,12 @@ class ResamplerLayer(Layer):
             # raise NotImplementedError
 
     def layer_op(self, inputs, sample_coords):
+        """
+        when inputs batch size N is different from sample_coords batch size K,
+        the function returns N x K samples.
+        however when N == K it returns N results (instead of NxN; to be
+        consistent with the current TF 1.3 interface).
+        """
         if inputs.dtype not in SUPPORTED_INPUT_DTYPE:
             # tf.logging.warning('input datatype should be in %s ',
             #                    SUPPORTED_INPUT_DTYPE)
@@ -79,9 +85,18 @@ class ResamplerLayer(Layer):
         else:
             spatial_coords = tf.round(sample_coords)
         spatial_coords = tf.cast(spatial_coords, COORDINATES_TYPE)
-        output = tf.stack([
-            tf.gather_nd(img, coords) for (img, coords) in
-            zip(tf.unstack(inputs), tf.unstack(spatial_coords))])
+
+        batch_inputs = tf.unstack(inputs)
+        batch_coords = tf.unstack(spatial_coords)
+        if len(batch_inputs) == len(batch_coords):
+            gathered_image = [tf.gather_nd(img, coord) for (img, coord) in
+                              zip(batch_inputs, batch_coords)]
+        else:
+            gathered_image = []
+            for img in batch_inputs:
+                for coord in batch_coords:
+                    gathered_image.append(tf.gather_nd(img, coord))
+        output = tf.stack(gathered_image)
 
         if self.boundary == 'ZERO' and not partial_shape:
             scale = 1. / (tf.constant(in_spatial_size, dtype=tf.float32) - 1)
@@ -100,6 +115,7 @@ class ResamplerLayer(Layer):
         partial_shape = False if in_size.is_fully_defined() else True
         try:
             batch_size = int(in_size[0])
+            n_coords = int(sample_coords.get_shape()[0])
             in_spatial_rank = infer_spatial_rank(inputs)
             if not partial_shape:
                 in_spatial_size = in_size.as_list()[1:-1]
@@ -114,7 +130,18 @@ class ResamplerLayer(Layer):
 
         if in_spatial_rank == 2 and self.boundary == 'ZERO':
             inputs = tf.transpose(inputs, [0, 2, 1, 3])
-            return tf.contrib.resampler.resampler(inputs, sample_coords)
+            if batch_size == n_coords:
+                return tf.contrib.resampler.resampler(inputs, sample_coords)
+            batch_inputs = tf.unstack(inputs)
+            batch_coords = tf.unstack(sample_coords)
+            outputs = []
+            for img in batch_inputs:
+                for coords in batch_coords:
+                    img = tf.expand_dims(img, axis=0)
+                    coords = tf.expand_dims(coords, axis=0)
+                    outputs.append(
+                        tf.contrib.resampler.resampler(img, coords))
+            return tf.concat(outputs, axis=0)
 
         xy = tf.unstack(sample_coords, axis=-1)
         base_coords = [tf.floor(coords) for coords in xy]
@@ -137,16 +164,27 @@ class ResamplerLayer(Layer):
                         for (x, i) in zip(xy, base_coords)]
             weight_1 = [1.0 - w for w in weight_0]
 
-        batch_ids = tf.reshape(
-            tf.range(batch_size), [batch_size] + [1] * out_spatial_rank)
-        batch_ids = tf.tile(batch_ids, [1] + out_spatial_size)
         sc = (tf.cast(floor_coords, COORDINATES_TYPE),
               tf.cast(ceil_coords, COORDINATES_TYPE))
 
-        def _get_knot(bc):
-            coord = [sc[c][i] for i, c in enumerate(bc)]
-            coord = tf.stack([batch_ids] + coord, -1)
-            return tf.gather_nd(inputs, coord)
+        if n_coords == batch_size:
+            batch_ids = tf.reshape(
+                tf.range(batch_size), [batch_size] + [1] * out_spatial_rank)
+            batch_ids = tf.tile(batch_ids, [1] + out_spatial_size)
+
+            def _get_knot(bc):
+                coord = [sc[c][i] for i, c in enumerate(bc)]
+                coord = tf.stack([batch_ids] + coord, axis=-1)
+                return tf.gather_nd(inputs, coord)
+        else:
+            batch_inputs = tf.unstack(inputs)
+
+            def _get_knot(bc):
+                coord = [sc[c][i] for i, c in enumerate(bc)]
+                coord = tf.stack(coord, -1)
+                batch_samples = tf.concat(
+                    [tf.gather_nd(img, coord) for img in batch_inputs], axis=0)
+                return batch_samples
 
         def _pyramid_combination(samples, w_0, w_1):
             if len(w_0) == 1:
@@ -171,6 +209,7 @@ class ResamplerLayer(Layer):
         if in_spatial_rank == 2:
             raise NotImplementedError(
                 'bspline interpolation not implemented for 2d yet')
+        assert batch_size == int(sample_coords.get_shape()[0])
         floor_coords = tf.floor(sample_coords)
 
         # Compute voxels to use for interpolation
@@ -276,23 +315,24 @@ class ResamplerLayer(Layer):
         point_weights = point_weights / tf.reduce_sum(point_weights, axis=0)
 
         # find N neighbours associated to each output point
-        #knots_shape = tf.concat([[0], tf.range(2, out_rank + 1), [1]], 0)
+        # knots_shape = tf.concat([[0], tf.range(2, out_rank + 1), [1]], 0)
         knots_shape = [0] + list(range(2, out_rank + 1)) + [1]
         knots_id = tf.transpose(
             tf.cast(knots_id, COORDINATES_TYPE), knots_shape)
         knots_shape = knots_id.get_shape().as_list()
-        try:
-            if int(knots_shape[1]) != batch_size:
-                knots_shape[1] = batch_size
-                knots_id.set_shape(knots_shape)
-        except:
-            pass
-        # get values of N neighbours
-        samples = [
-            tf.gather_nd(img, knots) for (img, knots) in
-            zip(tf.unstack(inputs, axis=0), tf.unstack(knots_id, axis=1))]
-        samples = tf.stack(samples, axis=1)
 
+        # get values of N neighbours
+        batch_inputs = tf.unstack(inputs, axis=0)
+        batch_knots = tf.unstack(knots_id, axis=1)
+        if len(batch_inputs) == len(batch_knots):
+            samples = [tf.gather_nd(img, knot)
+                       for (img, knot) in zip(batch_inputs, batch_knots)]
+        else:
+            samples = []
+            for img in batch_inputs:
+                for knot in batch_knots:
+                    samples.append(tf.gather_nd(img, knot))
+        samples = tf.stack(samples, axis=1)
         # weighted average over N neighbours
         return tf.reduce_sum(
             samples * tf.expand_dims(point_weights, axis=-1), axis=0)

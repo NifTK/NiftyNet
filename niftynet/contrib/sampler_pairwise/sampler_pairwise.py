@@ -14,8 +14,8 @@ class PairwiseSampler(Layer):
                  reader_0,
                  reader_1,
                  data_param,
-                 batch_size,
-                 window_per_image):
+                 batch_size=1,
+                 window_per_image=2):
         Layer.__init__(self, name='pairwise_sampler')
         # reader for the fixed images
         self.reader_0 = reader_0
@@ -35,11 +35,13 @@ class PairwiseSampler(Layer):
             self.reader_0.shapes,
             self.reader_0.tf_dtypes,
             data_param)
+
+        self.batch_size = batch_size
+        self.window_per_image = window_per_image
         if self.window.has_dynamic_shapes:
-            tf.logging.fatal(
-                'Dynamic shapes not supported.\nPlease specify '
-                'all spatial dims of the input data, for the '
-                'spatial_window_size parameter.')
+            tf.logging.fatal('Dynamic shapes not supported.\nPlease specify '
+                             'all spatial dims of the input data, for the '
+                             'spatial_window_size parameter.')
             raise NotImplementedError
         # TODO: check spatial dims the same across input modalities
         self.image_shape = \
@@ -78,33 +80,40 @@ class PairwiseSampler(Layer):
         im_s.set_shape((self.spatial_rank + 1,))
         image_shape = tf.unstack(im_s)
         # Four images concatenated at the batch_size dim
-        image_to_sample = tf.stack([image_0, image_1, label_0, label_1])
-        image_to_sample.set_shape([4] + [None] * (self.spatial_rank + 1))
+        image_to_sample = tf.concat(
+            [image_0, label_0, image_1, label_1], axis=-1)
+        image_to_sample = tf.expand_dims(image_to_sample, axis=0)
+        image_to_sample.set_shape([1] + [None] * (self.spatial_rank + 1))
 
         # TODO affine data augmentation here
         if self.spatial_rank == 3:
+            window_channels = np.prod(self.window_size[self.spatial_rank:]) * 4
+            out_shape = [self.window_per_image] + \
+                        list(self.window_size[:self.spatial_rank]) + \
+                        [window_channels]
             # TODO if no affine augmentation:
             img_spatial_shape = image_shape[:self.spatial_rank]
             win_spatial_shape = [tf.constant(dim) for dim in
                                  self.window_size[:self.spatial_rank]]
 
             # TODO shifts dtype should be int?
-            rand_shift = [
-                tf.random_uniform((1,), maxval=tf.to_float(img - win - 1))
-                for win, img in zip(win_spatial_shape, img_spatial_shape)]
-            # shifting params. in batch size of 4 elements for image_to_sample
-            rand_shift = tf.stack(rand_shift, axis=-1)
-            rand_shift = tf.tile(rand_shift, (4, 1))
+            batch_shift = [tf.random_uniform(shape=(self.window_per_image, 1),
+                                             maxval=tf.to_float(img - win - 1))
+                           for win, img in
+                           zip(win_spatial_shape, img_spatial_shape)]
+            batch_shift = tf.concat(batch_shift, axis=1)
+
             affine_constraints = ((1.0, 0.0, 0.0, None),
                                   (0.0, 1.0, 0.0, None),
                                   (0.0, 0.0, 1.0, None))
             computed_grid = AffineGridWarperLayer(
                 source_shape=(None, None, None),
                 output_shape=self.window_size[:self.spatial_rank],
-                constraints=affine_constraints)(rand_shift)
+                constraints=affine_constraints)(batch_shift)
             resampler = ResamplerLayer(
-                interpolation='idw', boundary='replicate')
+                interpolation='linear', boundary='replicate')
             windows = resampler(image_to_sample, computed_grid)
+            windows.set_shape(out_shape)
         return windows
 
     # overriding input buffers
