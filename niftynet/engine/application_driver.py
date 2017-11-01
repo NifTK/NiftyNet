@@ -322,7 +322,7 @@ class ApplicationDriver(object):
         """
         writer_t = tf.summary.FileWriter(self.summary_dir+'/t', sess.graph)
         writer_v = tf.summary.FileWriter(self.summary_dir+'/v', sess.graph)
-        writer_funcs = [lambda x,y: None,
+        writer_funcs = [lambda x, y: None,
                         writer_t.add_summary,
                         writer_v.add_summary]
 
