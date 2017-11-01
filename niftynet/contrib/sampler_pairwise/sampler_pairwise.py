@@ -57,15 +57,12 @@ class PairwiseSampler(Layer):
         image = data[image_source_type].astype(np.float32)
         image_shape = list(image.shape)
         image = np.reshape(image, image_shape[:self.spatial_rank] + [-1])
-        #image = np.swapaxes(image, 0, 1)
-        self.image_shape = image.shape  # not thread-safe
         print(image_id)
         return image, np.asarray(image.shape).astype(np.int32)
 
     def layer_op(self):
         rand_int = tf.random_uniform(
             [], maxval=len(self.reader_0.output_list), dtype=tf.int32)
-        # rand_int = np.random.randint(len(self.reader_0.output_list))
         image_0, im_s = tf.py_func(
             self.get_image, ['fixed_image', rand_int], [tf.float32, tf.int32])
         image_1, _ = tf.py_func(
@@ -78,16 +75,11 @@ class PairwiseSampler(Layer):
         # TODO preprocessing layer modifying
         #      image shapes will not be supported
         # assuming the same shape across modalities, using the first
-        im_s.set_shape((4,))
+        im_s.set_shape((self.spatial_rank + 1,))
         image_shape = tf.unstack(im_s)
-        #image_shape = [dim for dim in tf.unstack(im_s)]
-        #image_shape = [tf.constant(dim) for dim in self.image_shape]
-        # image_shape = self.reader_0.output_list[rand_int]['fixed_image'].shape
-        # image_0.set_shape(self.image_shape)
-        # image_1.set_shape(self.image_shape)
-        # label_0.set_shape(self.image_shape)
-        # label_1.set_shape(self.image_shape)
+        # Four images concatenated at the batch_size dim
         image_to_sample = tf.stack([image_0, image_1, label_0, label_1])
+        image_to_sample.set_shape([4] + [None] * (self.spatial_rank + 1))
 
         # TODO affine data augmentation here
         if self.spatial_rank == 3:
@@ -111,7 +103,7 @@ class PairwiseSampler(Layer):
                 output_shape=self.window_size[:self.spatial_rank],
                 constraints=affine_constraints)(rand_shift)
             resampler = ResamplerLayer(
-                interpolation='linear', boundary='replicate')
+                interpolation='idw', boundary='replicate')
             # squeeze image_to_sample to [4, x, y, z, features]
             #image_to_sample = tf.reshape(
             #    image_to_sample, [4] + list(img_spatial_shape) + [-1])

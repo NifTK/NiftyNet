@@ -34,8 +34,8 @@ except ImportError:
 warnings.simplefilter("ignore", UserWarning)
 
 FILE_EXTENSIONS = [".nii.gz", ".tar.gz"]
-CONSOLE_LOG_FORMAT = '%(levelname)s:niftynet: %(message)s'
-FILE_LOG_FORMAT = '%(levelname)s:niftynet:%(asctime)s: %(message)s'
+CONSOLE_LOG_FORMAT = "\033[1m%(levelname)s:niftynet:\033[0m %(message)s"
+FILE_LOG_FORMAT = "%(levelname)s:niftynet:%(asctime)s: %(message)s"
 
 
 #### utilities for file headers
