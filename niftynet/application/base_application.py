@@ -117,7 +117,8 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         training_op_generator = self.training_ops(start_iter=start_iter,
                                                   end_iter=end_iter)
         for iter_i, op, feed_dict in training_op_generator:
-            if iter_i % param.validate_every_n == 0:
+            if param.validate_every_n > 0 and \
+                            iter_i % param.validate_every_n == 0:
                 feed_dict_validation = feed_dict.copy()
                 feed_dict_validation[self.is_validation]=True
                 for iter_j in range(param.validation_iters):
