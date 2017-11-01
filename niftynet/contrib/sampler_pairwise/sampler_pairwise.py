@@ -104,9 +104,6 @@ class PairwiseSampler(Layer):
                 constraints=affine_constraints)(rand_shift)
             resampler = ResamplerLayer(
                 interpolation='idw', boundary='replicate')
-            # squeeze image_to_sample to [4, x, y, z, features]
-            #image_to_sample = tf.reshape(
-            #    image_to_sample, [4] + list(img_spatial_shape) + [-1])
             windows = resampler(image_to_sample, computed_grid)
         return windows
 

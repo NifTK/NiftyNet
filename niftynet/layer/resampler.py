@@ -35,7 +35,7 @@ class ResamplerLayer(Layer):
             raise NotImplementedError
 
         if self.boundary == 'ZERO' and self.interpolation == 'IDW':
-            tf.logging.fatal('Zero padding is not supported for IDW mode')
+            tf.logging.warning('Zero padding is not supported for IDW mode')
             # raise NotImplementedError
 
     def layer_op(self, inputs, sample_coords):
@@ -160,6 +160,8 @@ class ResamplerLayer(Layer):
         return _pyramid_combination(samples, weight_0, weight_1)
 
     def _resample_bspline(self, inputs, sample_coords):
+        assert inputs.get_shape().is_fully_defined(), \
+            "input shape should be fully defined for bspline interpolation"
         in_size = inputs.get_shape().as_list()
         batch_size = in_size[0]
         in_spatial_size = in_size[1:-1]
@@ -198,6 +200,7 @@ class ResamplerLayer(Layer):
         Bw = build_coef(tf.reshape(weight[:, :, 2], coef_shape), 3)
         all_weights = tf.reshape(Bu * Bv * Bw,
                                  [batch_size] + knot_size[1:-1] + [1])
+
         # Gather voxel values and compute weighted sum
         batch_coords = tf.reshape(
             tf.range(batch_size), [batch_size] + [1] * (len(knot_size) - 1))
@@ -254,8 +257,8 @@ class ResamplerLayer(Layer):
         point_weights, knots_id = n_val[0], n_val[1]
 
         # inverse distance weighting
-        # sum_i (w_i*p_i/(sum_j w_j)) w_i = 1/((p-p_i)^2)
-        # point_weights shape:
+        # sum_i (w_i*p_i/(sum_j w_j)) where w_i = 1/((p-p_i)^2)
+        # point_weights has the shape:
         # `[N, input_rank, b, sp_dim_0, ..., sp_dim_K]`
         # where:
         #  `N` is 2**source data spatial rank
