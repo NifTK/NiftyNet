@@ -63,11 +63,19 @@ class RegApp(BaseApplication):
                                  gradients_collector=None):
         if self.is_training:
             image_windows = self.sampler[0]()
+            image_windows_list = [
+                tf.expand_dims(img, axis=-1)
+                for img in tf.unstack(image_windows, axis=-1)]
+            net_out = self.net(image_windows_list[0],
+                               image_windows_list[1],
+                               image_windows_list[2],
+                               image_windows_list[3],
+                               is_training=self.is_training)
+
             outputs_collector.add_to_collection(
-                var=image_windows,
+                var=net_out,
                 name='test_sampler_output',
                 collection=NETWORK_OUTPUT)
-
             self.dummy_op = tf.constant(1.0)
             a = tf.get_variable('a', shape=[1])
             loss = tf.constant(1.0) + a

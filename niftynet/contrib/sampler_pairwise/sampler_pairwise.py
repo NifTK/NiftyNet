@@ -67,10 +67,10 @@ class PairwiseSampler(Layer):
             [], maxval=len(self.reader_0.output_list), dtype=tf.int32)
         image_0, im_s = tf.py_func(
             self.get_image, ['fixed_image', rand_int], [tf.float32, tf.int32])
-        image_1, _ = tf.py_func(
-            self.get_image, ['moving_image', rand_int], [tf.float32, tf.int32])
         label_0, _ = tf.py_func(
             self.get_image, ['fixed_label', rand_int], [tf.float32, tf.int32])
+        image_1, _ = tf.py_func(
+            self.get_image, ['moving_image', rand_int], [tf.float32, tf.int32])
         label_1, _ = tf.py_func(
             self.get_image, ['moving_label', rand_int], [tf.float32, tf.int32])
 
@@ -80,6 +80,7 @@ class PairwiseSampler(Layer):
         im_s.set_shape((self.spatial_rank + 1,))
         image_shape = tf.unstack(im_s)
         # Four images concatenated at the batch_size dim
+        # TODO resizing moving image to the fixed target
         image_to_sample = tf.concat(
             [image_0, label_0, image_1, label_1], axis=-1)
         image_to_sample = tf.expand_dims(image_to_sample, axis=0)
