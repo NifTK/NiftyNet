@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Copyright 2017 The Sonnet Authors. All Rights Reserved.
 # Modifications copyright 2017 The NiftyNet Authors. All Rights Reserved.
 #

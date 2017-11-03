@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import SimpleITK as sitk
 import nibabel
 import numpy as np

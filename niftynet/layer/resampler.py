@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Resampler layer initially implemented in
 https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/v0.2.0.post1/niftynet/layer/spatial_transformer.py
