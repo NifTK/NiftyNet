@@ -76,6 +76,7 @@ class RegApp(BaseApplication):
                 var=net_out,
                 name='test_sampler_output',
                 collection=NETWORK_OUTPUT)
+
             self.dummy_op = tf.constant(1.0)
             a = tf.get_variable('a', shape=[1])
             loss = tf.constant(1.0) + a
