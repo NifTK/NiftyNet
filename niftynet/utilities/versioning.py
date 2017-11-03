@@ -53,7 +53,11 @@ def get_niftynet_git_version():
     version_buf = version_buf[1:]
 
     # Split the git describe output, as it may not be a tagged commit
-    tokens = version_buf.split('-')
+    try:
+        tokens = version_buf.split('-')
+    except TypeError:   # catch TypeError if string returned as bytes object (not Unicode str object)
+        tokens = version_buf.decode('utf-8').split('-')
+
     if len(tokens) > 1:  # not a tagged commit
         # Format a developmental release identifier according to PEP440, see:
         # https://www.python.org/dev/peps/pep-0440/#developmental-releases
