@@ -206,7 +206,7 @@ class PairwiseMeasures(object):
         intersection over union)
         :return: jaccard coefficient
         """
-        return self.n_intersection() / self.n_union()
+        return self.intersection_over_union()
 
     def informedness(self):
         """
@@ -233,11 +233,10 @@ class PairwiseMeasures(object):
         if self.flag_empty:
             return -1
         else:
-            com_ref = ndimage.center_of_mass(self.ref)
-            com_seg = ndimage.center_of_mass(self.seg)
-            com_dist = np.sqrt(np.dot(np.square(np.asarray(com_ref) -
-                                                np.asarray(com_seg)), np.square(
-                self.pixdim)))
+            com_ref = self.com_ref()
+            com_seg = self.com_seg()
+            com_dist = np.sqrt(np.sum(np.square(np.asarray(com_ref) -
+                                                np.asarray(com_seg))))
             return com_dist
 
     def com_ref(self):
@@ -246,7 +245,7 @@ class PairwiseMeasures(object):
         segmentation
         :return:
         """
-        return ndimage.center_of_mass(self.ref)
+        return ndimage.center_of_mass(self.ref) * np.array(self.pixdim)
 
     def com_seg(self):
         """
@@ -256,7 +255,7 @@ class PairwiseMeasures(object):
         if self.flag_empty:
             return -1
         else:
-            return ndimage.center_of_mass(self.seg)
+            return ndimage.center_of_mass(self.seg) * np.array(self.pixdim)
 
     def list_labels(self):
         if self.list_labels is None:

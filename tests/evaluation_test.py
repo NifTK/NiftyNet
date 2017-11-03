@@ -48,51 +48,96 @@ class TrueNegativeTest(np.testing.TestCase):
     def test_true_negative(self):
         pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
                                              ref_img=TEST_CASES[1]['ref_img'])
-        self.assertEqual(pairwise_measures.tn(), 2)
+        self.assertEqual(pairwise_measures.tn(), 2.)
 
 
 class NumberOfNegativeTest(np.testing.TestCase):
     def test_n_negative(self):
         pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
                                              ref_img=TEST_CASES[1]['ref_img'])
-        self.assertEqual(pairwise_measures.n_neg_ref(), 3)
-        self.assertEqual(pairwise_measures.n_neg_seg(), 2)
+        self.assertEqual(pairwise_measures.n_neg_ref(), 3.)
+        self.assertEqual(pairwise_measures.n_neg_seg(), 2.)
 
 
 class UnionTest(np.testing.TestCase):
     def test_union(self):
         pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
                                              ref_img=TEST_CASES[1]['ref_img'])
-        self.assertEqual(pairwise_measures.n_union(), 2)
+        self.assertEqual(pairwise_measures.n_union(), 2.)
 
 
 class IntersectionTest(np.testing.TestCase):
     def test_intersection(self):
         pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
                                              ref_img=TEST_CASES[1]['ref_img'])
-        self.assertEqual(pairwise_measures.n_intersection(), 1)
+        self.assertEqual(pairwise_measures.n_intersection(), 1.)
 
 
 class MetricTests(np.testing.TestCase):
     def test_sensitivity(self):
         pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
                                              ref_img=TEST_CASES[1]['ref_img'])
-        self.assertEqual(pairwise_measures.sensitivity(), 1)
+        self.assertEqual(pairwise_measures.sensitivity(), 1.)
 
     def test_specificity(self):
         pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
                                              ref_img=TEST_CASES[1]['ref_img'])
-        self.assertEqual(pairwise_measures.specificity(), 2 / 3)
+        self.assertEqual(pairwise_measures.specificity(), 2. / 3)
 
     def test_accuracy(self):
         pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
                                              ref_img=TEST_CASES[1]['ref_img'])
-        self.assertEqual(pairwise_measures.accuracy(), 3 / 4)
+        self.assertEqual(pairwise_measures.accuracy(), 3. / 4)
 
     def test_false_positive_rate(self):
         pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
                                              ref_img=TEST_CASES[1]['ref_img'])
-        self.assertEqual(pairwise_measures.false_positive_rate(), 1 / 3)
+        self.assertEqual(pairwise_measures.false_positive_rate(), 1. / 3)
+
+    def test_positive_predictive_value(self):
+        pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
+                                             ref_img=TEST_CASES[1]['ref_img'])
+        self.assertEqual(pairwise_measures.positive_predictive_values(), 1. / 2)
+
+    def test_negative_predictive_value(self):
+        pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
+                                             ref_img=TEST_CASES[1]['ref_img'])
+        self.assertEqual(pairwise_measures.negative_predictive_values(), 1.)
+
+    def test_intersection_over_union(self):
+        pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
+                                             ref_img=TEST_CASES[1]['ref_img'])
+        self.assertEqual(pairwise_measures.intersection_over_union(), 1. / 2)
+
+    def test_jaccard(self):
+        pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
+                                             ref_img=TEST_CASES[1]['ref_img'])
+        self.assertEqual(pairwise_measures.jaccard(), 1. / 2)
+
+    def test_informedness(self):
+        # true positive rate - false positive rate
+        pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
+                                             ref_img=TEST_CASES[1]['ref_img'])
+        self.assertAlmostEqual(pairwise_measures.informedness(), 2. / 3)
+
+    def test_markedness(self):
+        pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
+                                             ref_img=TEST_CASES[1]['ref_img'])
+        self.assertEqual(pairwise_measures.markedness(), 1. / 2)
+
+    def test_centre_of_mass(self):
+        pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
+                                             ref_img=TEST_CASES[1]['ref_img'],
+                                             pixdim=[2])
+        self.assertListEqual(list(pairwise_measures.com_ref()), [0.0])
+        self.assertListEqual(list(pairwise_measures.com_seg()), [2.0])
+        self.assertEqual(pairwise_measures.com_dist(), 2.)
+
+    def test_vol_diff(self):
+        pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
+                                             ref_img=TEST_CASES[1]['ref_img'],
+                                             pixdim=[2])
+        self.assertEqual(pairwise_measures.vol_diff(), 1.)
 
 
 if __name__ == '__main__':
