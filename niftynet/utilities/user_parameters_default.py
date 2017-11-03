@@ -174,7 +174,7 @@ def add_network_args(parser):
         "--decay",
         help="[Training only] Set weight decay",
         type=float,
-        default=0)
+        default=0.0)
 
     parser.add_argument(
         "--reg_type",

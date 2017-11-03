@@ -55,8 +55,8 @@ class RegApp(BaseApplication):
             raise NotImplementedError
 
     def initialise_network(self):
-        self.net = ApplicationNetFactory.create(self.net_param.name)(
-            num_classes=1)
+        decay = self.net_param.decay
+        self.net = ApplicationNetFactory.create(self.net_param.name)(decay)
 
     def connect_data_and_network(self,
                                  outputs_collector=None,
@@ -66,11 +66,9 @@ class RegApp(BaseApplication):
             image_windows_list = [
                 tf.expand_dims(img, axis=-1)
                 for img in tf.unstack(image_windows, axis=-1)]
-            net_out = self.net(image_windows_list[0],
-                               image_windows_list[1],
-                               image_windows_list[2],
-                               image_windows_list[3],
-                               is_training=self.is_training)
+            fixed_image, fixed_label, moving_image, moving_label = \
+                image_windows_list
+            net_out = self.net(fixed_image, moving_image)
 
             outputs_collector.add_to_collection(
                 var=net_out,
