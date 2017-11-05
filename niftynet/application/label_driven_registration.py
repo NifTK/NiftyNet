@@ -9,6 +9,10 @@ from niftynet.contrib.sampler_pairwise.sampler_pairwise import PairwiseSampler
 from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_factory import ApplicationNetFactory
 from niftynet.engine.application_variables import NETWORK_OUTPUT
+from niftynet.layer.resampler import ResamplerLayer
+#from niftynet.layer.loss_segmentation import LossFunction
+from niftynet.engine.application_variables import CONSOLE
+from niftynet.layer.loss_regression import LossFunction
 
 
 SUPPORTED_INPUT = {'moving_image', 'moving_label',
@@ -68,38 +72,42 @@ class RegApp(BaseApplication):
                 for img in tf.unstack(image_windows, axis=-1)]
             fixed_image, fixed_label, moving_image, moving_label = \
                 image_windows_list
-            net_out = self.net(fixed_image, moving_image)
+            dense_field = self.net(fixed_image, moving_image)
+            if isinstance(dense_field, tuple):
+                affine_field, local_field = dense_field
+                predicted_field = affine_field + local_field
+            else:
+                predicted_field = dense_field
 
+            # transform the moving labels
+            resampler = ResamplerLayer(
+                interpolation='linear',
+                boundary='replicate')
+            resampled_moving_label = resampler(moving_label, predicted_field)
+            # compute label loss
+            loss_func = LossFunction(
+                loss_type='L2Loss')
+            label_loss = loss_func(
+                prediction=resampled_moving_label,
+                ground_truth=fixed_label)
             outputs_collector.add_to_collection(
-                var=net_out,
-                name='test_sampler_output',
-                collection=NETWORK_OUTPUT)
+                var=label_loss,
+                name='label_loss',
+                collection=CONSOLE)
 
-            self.dummy_op = tf.constant(1.0)
-            a = tf.get_variable('a', shape=[1])
-            loss = tf.constant(1.0) + a
+            # compute training gradients
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
                     learning_rate=self.action_param.lr)
-            grads = self.optimiser.compute_gradients(loss)
+            grads = self.optimiser.compute_gradients(label_loss)
             gradients_collector.add_to_collection(grads)
         else:
             raise NotImplementedError
 
     def interpret_output(self, batch_output):
         if self.is_training:
-            print(batch_output['test_sampler_output'].shape)
-            #windows = batch_output['test_sampler_output']
-            #import matplotlib.pyplot as plt
-            #plt.imshow(windows[1, 20, ..., 0])
-            #plt.show()
             return True
-        else:
-            raise NotImplementedError
+        raise NotImplementedError
 
-    def training_ops(self, start_iter=0, end_iter=1):
-        end_iter = max(start_iter, end_iter)
-        for iter_i in range(start_iter, end_iter):
-            yield iter_i, self.dummy_op

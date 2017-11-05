@@ -52,15 +52,19 @@ class PairwiseSampler(Layer):
     def get_image(self, image_source_type, image_id):
         # returns a random image from either the list of fixed images
         # or the list of moving images
+        try:
+            image_source_type = image_source_type.decode()
+        except:
+            pass
         if image_source_type.startswith('fixed'):
             _, data, _ = self.reader_0(idx=image_id, shuffle=True)
         else:  # image_source_type.startswith('moving'):
             _, data, _ = self.reader_1(idx=image_id, shuffle=True)
-        image = data[image_source_type].astype(np.float32)
+        image = np.asarray(data[image_source_type]).astype(np.float32)
         image_shape = list(image.shape)
         image = np.reshape(image, image_shape[:self.spatial_rank] + [-1])
-        print(image_id)
-        return image, np.asarray(image.shape).astype(np.int32)
+        image_shape = np.asarray(image.shape).astype(np.int32)
+        return image, image_shape
 
     def layer_op(self):
         rand_int = tf.random_uniform(

@@ -12,6 +12,7 @@ from niftynet.layer.upsample_res_block import UpBlock as UpRes
 from niftynet.network.base_net import BaseNet
 from niftynet.network.interventional_affine_net import INetAffine
 from niftynet.network.interventional_dense_net import INetDense
+from niftynet.layer.resampler import ResamplerLayer as resampler
 
 class INetHybrid(BaseNet):
     def __init__(self,
@@ -37,6 +38,13 @@ class INetHybrid(BaseNet):
                                    disp_b_initializer=disp_b_initializer,
                                    acti_func=acti_func,
                                    name='inet-local')
+        self.interp = interp
+        self.boundary = boundary
 
     def layer_op(self, fixed_image, moving_image, is_training=True):
-        return fixed_image
+        affine_field = self.global_net(fixed_image, moving_image, is_training)
+        moving_image = resampler(
+            interpolation=self.interp,
+            boundary=self.boundary)(moving_image, affine_field)
+        dense_field = self.local_net(fixed_image, moving_image, is_training)
+        return affine_field, dense_field
