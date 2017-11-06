@@ -2,13 +2,12 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 import tensorflow as tf
+from tensorflow.contrib.data.python.ops.dataset_ops import Dataset
 
 from niftynet.engine.image_window import ImageWindow
 from niftynet.layer.base_layer import Layer
 from niftynet.layer.grid_warper import AffineGridWarperLayer
 from niftynet.layer.resampler import ResamplerLayer
-
-from tensorflow.contrib.data.python.ops.dataset_ops import Dataset
 
 
 class PairwiseSampler(Layer):
@@ -37,7 +36,6 @@ class PairwiseSampler(Layer):
             self.reader_0.shapes,
             self.reader_0.tf_dtypes,
             data_param)
-
         self.batch_size = batch_size
         self.window_per_image = window_per_image
         if self.window.has_dynamic_shapes:
@@ -50,7 +48,7 @@ class PairwiseSampler(Layer):
             self.reader_0.shapes['fixed_image'][:self.spatial_rank]
         self.window_size = self.window.shapes['fixed_image']
 
-
+        # initialise a dataset prefetching pairs of image and label volumes
         n_subjects = len(self.reader_0.output_list)
         rand_ints = np.random.randint(n_subjects, size=[n_subjects])
         image_dataset = Dataset.from_tensor_slices(rand_ints)
@@ -58,23 +56,23 @@ class PairwiseSampler(Layer):
             lambda image_id: tuple(tf.py_func(self.get_pairwise_inputs,
                                               [image_id],
                                               [tf.float32, tf.int32])))
-            #num_parallel_calls=4)
-        image_dataset = image_dataset.repeat() # num_epochs can be param
-        image_dataset = image_dataset.shuffle(buffer_size=batch_size*20)
+        # num_parallel_calls=4)  # supported by tf 1.4?
+        image_dataset = image_dataset.repeat()  # num_epochs can be param
+        image_dataset = image_dataset.shuffle(buffer_size=batch_size * 20)
         image_dataset = image_dataset.batch(batch_size)
         self.iterator = image_dataset.make_initializable_iterator()
 
     def get_pairwise_inputs(self, image_id):
-        fixed_image, _ = self.get_image('fixed_image', image_id)
-        fixed_label, _ = self.get_image('fixed_label', image_id)
-        moving_image, _ = self.get_image('moving_image', image_id)
-        moving_label, _ = self.get_image('moving_label', image_id)
+        fixed_image, _ = self._get_image('fixed_image', image_id)
+        fixed_label, _ = self._get_image('fixed_label', image_id)
+        moving_image, _ = self._get_image('moving_image', image_id)
+        moving_label, _ = self._get_image('moving_label', image_id)
         images = [fixed_image, fixed_label, moving_image, moving_label]
         images = np.concatenate(images, axis=-1)
         images_shape = np.asarray(images.shape).T.astype(np.int32)
         return images, images_shape
 
-    def get_image(self, image_source_type, image_id):
+    def _get_image(self, image_source_type, image_id):
         # returns a random image from either the list of fixed images
         # or the list of moving images
         try:
@@ -98,7 +96,6 @@ class PairwiseSampler(Layer):
         # assuming the same shape across modalities, using the first
         im_s.set_shape((self.batch_size, self.spatial_rank + 1))
         image_shape = tf.unstack(im_s, axis=-1)
-        # Four images concatenated at the batch_size dim
         # TODO resizing moving image to the fixed target
         image_to_sample.set_shape(
             [self.batch_size] + [None] * (self.spatial_rank + 1))
@@ -110,13 +107,12 @@ class PairwiseSampler(Layer):
             img_spatial_shape = image_shape[:self.spatial_rank]
             win_spatial_shape = [tf.constant(dim) for dim in
                                  self.window_size[:self.spatial_rank]]
-
             # TODO shifts dtype should be int?
             batch_shift = [tf.random_uniform(
-                               shape=(self.window_per_image, 1),
-                               maxval=tf.to_float(img[0] - win - 1))
-                           for win, img in
-                           zip(win_spatial_shape, img_spatial_shape)]
+                shape=(self.window_per_image, 1),
+                maxval=tf.to_float(img[0] - win - 1))
+                for win, img in
+                zip(win_spatial_shape, img_spatial_shape)]
             batch_shift = tf.concat(batch_shift, axis=1)
 
             affine_constraints = ((1.0, 0.0, 0.0, None),
@@ -141,8 +137,11 @@ class PairwiseSampler(Layer):
 
     # overriding input buffers
     def run_threads(self, session, *args, **argvs):
-        # do nothing
+        """
+        To be called at the beginning of running graph variables
+        """
         session.run(self.iterator.initializer)
+        return
 
     def close_all(self):
         # do nothing
