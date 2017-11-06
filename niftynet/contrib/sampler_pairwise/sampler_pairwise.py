@@ -51,14 +51,15 @@ class PairwiseSampler(Layer):
         self.window_size = self.window.shapes['fixed_image']
 
 
-        max_iterations = 50000
-        rand_ints = np.random.randint(
-            len(self.reader_0.output_list), size=[max_iterations])
+        n_subjects = len(self.reader_0.output_list)
+        rand_ints = np.random.randint(n_subjects, size=[n_subjects])
         image_dataset = Dataset.from_tensor_slices(rand_ints)
         image_dataset = image_dataset.map(
             lambda image_id: tuple(tf.py_func(self.get_pairwise_inputs,
                                               [image_id],
                                               [tf.float32, tf.int32])))
+            #num_parallel_calls=4)
+        image_dataset = image_dataset.repeat() # num_epochs can be param
         image_dataset = image_dataset.shuffle(buffer_size=batch_size*20)
         image_dataset = image_dataset.batch(batch_size)
         self.iterator = image_dataset.make_initializable_iterator()
