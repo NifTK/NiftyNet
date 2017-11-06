@@ -4,6 +4,7 @@ from __future__ import absolute_import, print_function, division
 import csv
 import os
 import sys
+import math, random
 from difflib import SequenceMatcher
 
 import numpy as np
@@ -190,6 +191,18 @@ def remove_duplicated_names(name_list):
                                    if name not in list_duplicated])
     return duplicates_removed
 
+def _write_csv(csv_file, list_combined):
+    # csv writer has different behaviour in python 2/3
+    if sys.version_info[0] >= 3:
+        with open(csv_file, 'w', newline='', encoding='utf8') as csvfile:
+            file_writer = csv.writer(csvfile)
+            for list_temp in list_combined:
+                file_writer.writerow(list_temp)
+    else:
+        with open(csv_file, 'wb') as csvfile:
+            file_writer = csv.writer(csvfile, delimiter=',')
+            for list_temp in list_combined:
+                file_writer.writerow(list_temp)
 
 def match_and_write_filenames_to_csv(list_constraints, csv_file):
     """
@@ -212,22 +225,51 @@ def match_and_write_filenames_to_csv(list_constraints, csv_file):
         list_tot.append(list_files)
     list_combined = join_subject_id_and_filename_list(name_tot, list_tot)
     touch_folder(os.path.dirname(csv_file))
+    _write_csv(csv_file, list_combined)
 
-    # csv writer has different behaviour in python 2/3
-    if sys.version_info[0] >= 3:
-        with open(csv_file, 'w', newline='', encoding='utf8') as csvfile:
-            file_writer = csv.writer(csvfile)
-            for list_temp in list_combined:
-                file_writer.writerow(list_temp)
-    else:
-        with open(csv_file, 'wb') as csvfile:
-            file_writer = csv.writer(csvfile, delimiter=',')
-            for list_temp in list_combined:
-                file_writer.writerow(list_temp)
-    return
+    return list_combined
 
 
-def load_and_merge_csv_files(data_param, phase, default_folder=None):
+def csv_files_from_path(data_param, default_folder=None):
+    _subject_list = None
+    for modality_name in data_param:
+        csv_file = data_param[modality_name].csv_file
+        if hasattr(data_param[modality_name], 'path_to_search') and \
+                len(data_param[modality_name].path_to_search):
+            tf.logging.info(
+                '[%s] search file folders, writing csv file %s',
+                modality_name, csv_file)
+            section_tuple = data_param[modality_name].__dict__.items()
+            matcher = KeywordsMatching.from_tuple(section_tuple, default_folder)
+            csv_list = match_and_write_filenames_to_csv([matcher], csv_file)
+            csv_list = pandas.DataFrame(csv_list, columns=['subject_id',
+                                                           'file'])
+            if _subject_list is None:
+                _subject_list = csv_list
+
+            else:
+                _subject_list = pandas.merge(_subject_list, csv_list,
+                                             on='subject_id')
+        else:
+            tf.logging.info(
+                '[%s] using existing csv file %s, skipped folder search',
+                modality_name, csv_file)
+
+
+    return _subject_list['subject_id']
+
+def split_dataset(subject_ids, validation_fraction,
+                  inference_fraction, dataset_split_file):
+    count_v=math.ceil(len(subject_ids)*validation_fraction)
+    count_i=math.ceil(len(subject_ids)*inference_fraction)
+    phases = ['train'] * (len(subject_ids)-count_v-count_i) + \
+             ['validation'] * count_v + \
+             ['inference'] * count_i
+    random.shuffle(phases)
+    _write_csv(dataset_split_file, zip(subject_ids, phases))
+
+
+def load_and_merge_csv_files(data_param, phase, dataset_split_file):
     """
     Converts a list of csv_files in data_param
     in to a joint list of file names (by matching the first column)
@@ -239,30 +281,11 @@ def load_and_merge_csv_files(data_param, phase, default_folder=None):
         raise ValueError
     _file_list = None
     for modality_name in data_param:
-        modality_param = data_param[modality_name]
         try:
-            if phase=='test' and len(modality_param.csv_test_file):
-                csv_file = modality_param.csv_test_file
-            elif phase=='validation' and \
-                    len(modality_param.csv_validation_file):
-                csv_file = modality_param.csv_validation_file
-            else:
-                csv_file = modality_param.csv_file
+            csv_file = data_param[modality_name].csv_file
         except AttributeError:
             tf.logging.fatal('unrecognised parameter format')
             raise
-        if hasattr(data_param[modality_name], 'path_to_search') and \
-                len(data_param[modality_name].path_to_search):
-            tf.logging.info(
-                '[%s] search file folders, writing csv file %s',
-                modality_name, csv_file)
-            section_tuple = data_param[modality_name].__dict__.items()
-            matcher = KeywordsMatching.from_tuple(section_tuple, default_folder)
-            match_and_write_filenames_to_csv([matcher], csv_file)
-        else:
-            tf.logging.info(
-                '[%s] using existing csv file %s, skipped folder search',
-                modality_name, csv_file)
         if not os.path.isfile(csv_file):
             tf.logging.fatal(
                 "[%s] csv file %s not found.", modality_name, csv_file)
@@ -289,4 +312,11 @@ def load_and_merge_csv_files(data_param, phase, default_folder=None):
             "matched by removing any keywords listed `filename_contains` "
             "in the config.\n\n")
         raise IOError
+
+    dataset_split = pandas.read_csv(
+        dataset_split_file, header=None, names=['subject_id', 'phase'])
+    filtered_list = dataset_split[dataset_split['phase']==phase][['subject_id']]
+    _file_list = pandas.merge(_file_list, filtered_list,
+                              on='subject_id')
+
     return _file_list

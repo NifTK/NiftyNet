@@ -56,18 +56,24 @@ class SegmentationApplication(BaseApplication):
                        self.initialise_resize_aggregator),
         }
 
-    def initialise_dataset_loader(self, data_param=None, task_param=None):
+    def initialise_dataset_loader(self, data_param=None,
+                                  task_param=None,
+                                  system_param=None):
+        super(SegmentationApplication, self).initialise_dataset_loader(
+            data_param, task_param, system_param)
+
         self.data_param = data_param
         self.segmentation_param = task_param
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.readers = [ImageReader(SUPPORTED_INPUT, phase='train'),
-                            ImageReader(SUPPORTED_INPUT, phase='validation')]
+            self.readers = [ImageReader(SUPPORTED_INPUT, 'train')]
+            if self.has_validation_data and self.action_param.validate_every_n:
+                self.readers.append(ImageReader(SUPPORTED_INPUT, 'validation'))
         else:  # in the inference process use image input only
-            self.readers = [ImageReader(['image'], phase='test')]
+            self.readers = [ImageReader(['image'], 'inference')]
         for reader in self.readers:
-            reader.initialise_reader(data_param, task_param)
+            reader.initialise_reader(data_param, task_param, system_param)
 
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(
@@ -236,9 +242,13 @@ class SegmentationApplication(BaseApplication):
 
 
         if self.is_training:
-            data_dict, net_out = tf.cond(self.is_validation,
+            if self.has_validation_data and \
+                    self.action_param.save_every_n > 0:
+                data_dict, net_out = tf.cond(self.is_validation,
                                          lambda: data_net(False),
                                          lambda: data_net(True))
+            else:
+                data_dict, net_out = data_net(True)
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)

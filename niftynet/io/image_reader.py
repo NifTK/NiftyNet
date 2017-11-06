@@ -15,7 +15,7 @@ from niftynet.utilities.user_parameters_helper import make_input_tuple
 from niftynet.utilities.util_common import print_progress_bar
 
 # NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
-from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
+
 
 NP_TF_DTYPES = {'i': tf.float32,
                 'u': tf.float32,
@@ -52,7 +52,7 @@ class ImageReader(Layer):
      'label': <niftynet.io.image_type.SpatialImage3D object>}
     """
 
-    def __init__(self, names, phase='train'):
+    def __init__(self, names, phase):
         # list of file names
         self._file_list = None
         self._input_sources = None
@@ -62,7 +62,6 @@ class ImageReader(Layer):
         self.names = names
         self.phase = phase
 
-        self._global_config = NiftyNetGlobalConfig()
 
         # list of image objects
         self.output_list = None
@@ -71,7 +70,7 @@ class ImageReader(Layer):
         self.preprocessors = []
         super(ImageReader, self).__init__(name='image_reader')
 
-    def initialise_reader(self, data_param, task_param):
+    def initialise_reader(self, data_param, task_param, system_param):
         """
         task_param specifies how to combine user input modalities
         e.g., for multimodal segmentation 'image' corresponds to multiple
@@ -100,10 +99,11 @@ class ImageReader(Layer):
                         name, source, list(data_param))
                     raise ValueError
 
-        default_data_folder = self._global_config.get_niftynet_home_folder()
-        self._file_list = util_csv.load_and_merge_csv_files(data_to_load,
-                                                            self.phase,
-                                                            default_data_folder)
+        self._file_list = \
+            util_csv.load_and_merge_csv_files(data_to_load,
+                                              self.phase,
+                                              system_param.dataset_split_file)
+        print(self._file_list)
         self.output_list = _filename_to_image_list(
             self._file_list, self._input_sources, data_param)
         for name in self.names:

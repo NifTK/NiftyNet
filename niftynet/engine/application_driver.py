@@ -30,6 +30,8 @@ from niftynet.io.misc_io import get_latest_subfolder
 from niftynet.io.misc_io import touch_folder
 from niftynet.layer.bn import BN_COLLECTION
 from niftynet.utilities.util_common import set_cuda_device
+from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
+from niftynet.utilities.util_csv import csv_files_from_path, split_dataset
 
 FILE_PREFIX = 'model.ckpt'
 
@@ -132,7 +134,21 @@ class ApplicationDriver(object):
         app_module = ApplicationDriver._create_app(app_param.name)
         self.app = app_module(net_param, action_param, self.is_training)
         # initialise data input
-        self.app.initialise_dataset_loader(data_param, app_param)
+        default_data_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
+        subject_ids = csv_files_from_path(data_param,
+                                          default_folder=default_data_folder)
+        dataset_split_file = system_param.dataset_split_file
+        if self.is_training:
+            split_dataset(subject_ids,
+                          train_param.exclude_fraction_for_validation,
+                          train_param.exclude_fraction_for_inference,
+                          dataset_split_file)
+        else:
+            if not os.path.exists(dataset_split_file):
+                split_dataset(subject_ids, 0., 0., dataset_split_file)
+
+        self.app.initialise_dataset_loader(data_param, app_param,
+                                           system_param)
         # pylint: disable=not-context-manager
         with self.graph.as_default(), tf.name_scope('Sampler'):
             self.app.initialise_sampler()

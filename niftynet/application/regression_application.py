@@ -53,18 +53,22 @@ class RegressionApplication(BaseApplication):
                        self.initialise_resize_aggregator),
         }
 
-    def initialise_dataset_loader(self, data_param=None, task_param=None):
+    def initialise_dataset_loader(self, data_param=None, task_param=None,
+                                  system_param=None):
+        super(RegressionApplication, self).initialise_dataset_loader(
+            data_param, task_param, system_param)
         self.data_param = data_param
         self.regression_param = task_param
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.readers = [ImageReader(SUPPORTED_INPUT, phase='train'),
-                            ImageReader(SUPPORTED_INPUT, phase='validation')]
+            self.readers = [ImageReader(SUPPORTED_INPUT, phase='train')]
+            if self.has_validation_data and self.action_param.validate_every_n:
+                self.readers.append(ImageReader(SUPPORTED_INPUT, 'validation'))
         else:  # in the inference process use image input only
             self.readers = [ImageReader(['image'], phase='test')]
         for reader in self.readers:
-            reader.initialise_reader(data_param, task_param)
+            reader.initialise_reader(data_param, task_param, system_param)
 
         mean_var_normaliser = MeanVarNormalisationLayer(
             image_name='image')
@@ -198,9 +202,13 @@ class RegressionApplication(BaseApplication):
 
 
         if self.is_training:
-            data_dict, net_out = tf.cond(self.is_validation,
-                                         lambda: data_net(False),
-                                         lambda: data_net(True))
+            if self.has_validation_data and \
+                    self.action_param.save_every_n > 0:
+                data_dict, net_out = tf.cond(self.is_validation,
+                                             lambda: data_net(False),
+                                             lambda: data_net(True))
+            else:
+                data_dict, net_out = data_net(True)
             crop_layer = CropLayer(border=self.regression_param.loss_border,
                                    name='crop-88')
             with tf.name_scope('Optimiser'):

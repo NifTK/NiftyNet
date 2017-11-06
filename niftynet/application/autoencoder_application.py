@@ -35,7 +35,10 @@ class AutoencoderApplication(BaseApplication):
         self.data_param = None
         self.autoencoder_param = None
 
-    def initialise_dataset_loader(self, data_param=None, task_param=None):
+    def initialise_dataset_loader(self, data_param=None, task_param=None,
+                                  system_param=None):
+        super(AutoencoderApplication, self).initialise_dataset_loader(
+            data_param, task_param, system_param)
         self.data_param = data_param
         self.autoencoder_param = task_param
 
@@ -47,8 +50,9 @@ class AutoencoderApplication(BaseApplication):
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.readers = [ImageReader(['image'], phase='train'),
-                            ImageReader(['image'], phase='validation')]
+            self.readers = [ImageReader(['image'], 'train')]
+            if self.has_validation_data and self.action_param.validate_every_n:
+                self.readers.append(ImageReader(['image'], 'validation'))
         if self._infer_type in ('encode', 'encode-decode'):
             self.readers = [ImageReader(['image'], phase='test')]
         elif self._infer_type == 'sample':
@@ -57,7 +61,7 @@ class AutoencoderApplication(BaseApplication):
             self.readers = [ImageReader(['feature'], phase='test')]
 
         for reader in self.readers:
-            reader.initialise_reader(data_param, task_param)
+            reader.initialise_reader(data_param, task_param, system_param)
         #if self.is_training or self._infer_type in ('encode', 'encode-decode'):
         #    mean_var_normaliser = MeanVarNormalisationLayer(image_name='image')
         #    self.reader.add_preprocessing_layers([mean_var_normaliser])
@@ -125,9 +129,13 @@ class AutoencoderApplication(BaseApplication):
                     image = tf.cast(data_dict['image'], tf.float32)
                     return data_dict, self.net(image, for_training)
 
-            data_dict, net_output = tf.cond(self.is_validation,
-                                            lambda: data_net(False),
-                                            lambda: data_net(True))
+            if self.has_validation_data and \
+                    self.action_param.save_every_n > 0:
+                data_dict, net_output = tf.cond(self.is_validation,
+                                                lambda: data_net(False),
+                                                lambda: data_net(True))
+            else:
+                data_dict, net_output = data_net(True)
 
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(

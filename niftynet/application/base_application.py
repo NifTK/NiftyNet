@@ -2,6 +2,7 @@ from six import with_metaclass
 from niftynet.utilities import util_common
 from niftynet.layer.base_layer import TrainableLayer
 import tensorflow as tf
+import pandas
 
 class SingletonApplication(type):
     _instances = None
@@ -56,8 +57,12 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         if self.output_decoder is None and not self.is_training:
             raise NotImplementedError('output decoder should be initialised')
 
-    def initialise_dataset_loader(self, data_param=None, task_param=None):
-        raise NotImplementedError
+    def initialise_dataset_loader(self, data_param=None, task_param=None,
+                                  system_param=None):
+        df = pandas.read_csv(
+            system_param.dataset_split_file, header=None,
+            names=['subject_id', 'phase'])
+        self.has_validation_data = len(df[df['phase'] == 'validation']) > 0
 
     def initialise_sampler(self):
         """
@@ -117,7 +122,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         training_op_generator = self.training_ops(start_iter=start_iter,
                                                   end_iter=end_iter)
         for iter_i, op, feed_dict in training_op_generator:
-            if param.validate_every_n > 0 and \
+            if self.has_validation_data and param.validate_every_n > 0 and \
                             iter_i % param.validate_every_n == 0:
                 feed_dict_validation = feed_dict.copy()
                 feed_dict_validation[self.is_validation]=True

@@ -39,18 +39,23 @@ class GANApplication(BaseApplication):
         self.data_param = None
         self.gan_param = None
 
-    def initialise_dataset_loader(self, data_param=None, task_param=None):
+    def initialise_dataset_loader(self, data_param=None, task_param=None,
+                                  system_param=None):
+        super(GANApplication, self).initialise_dataset_loader(
+            data_param, task_param, system_param)
         self.data_param = data_param
         self.gan_param = task_param
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.readers = [ImageReader(['image', 'conditioning'], phase='train'),
-                            ImageReader(['conditioning'], phase='validation')]
+            self.readers = [ImageReader(['image', 'conditioning'], 'train')]
+            if self.has_validation_data and self.action_param.validate_every_n:
+                self.readers.append(ImageReader(['image', 'conditioning'],
+                                                'validation'))
         else:  # in the inference process use image input only
             self.readers = [ImageReader(['image'], phase='test')]
         for reader in self.readers:
-            reader.initialise_reader(data_param, task_param)
+            reader.initialise_reader(data_param, task_param, system_param)
 
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(
@@ -160,9 +165,13 @@ class GANApplication(BaseApplication):
                     learning_rate=self.action_param.lr)
 
             # a new pop_batch_op for each gpu tower
-            net_output = tf.cond(self.is_validation,
-                                 lambda: data_net(False),
-                                 lambda: data_net(True))
+            if self.has_validation_data and \
+                    self.action_param.save_every_n > 0:
+                net_output = tf.cond(self.is_validation,
+                                     lambda: data_net(False),
+                                     lambda: data_net(True))
+            else:
+                net_output = data_net(True)
             loss_func = LossFunction(
                 loss_type=self.action_param.loss_type)
             real_logits = net_output[1]

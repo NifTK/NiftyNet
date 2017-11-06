@@ -13,7 +13,7 @@ from niftynet.utilities.user_parameters_helper import str2boolean
 from niftynet.utilities.user_parameters_helper import str_array
 
 DEFAULT_INFERENCE_OUTPUT = os.path.join('.', 'output')
-
+DEFAULT_DATASET_SPLIT_FILE = os.path.join('.', 'dataset_split.csv')
 DEFAULT_MODEL_DIR = None
 
 
@@ -50,6 +50,12 @@ def add_application_args(parser):
         metavar='',
         help="Directory to save/load intermediate training models and logs",
         default=DEFAULT_MODEL_DIR)
+
+    parser.add_argument(
+        "--dataset_split_file",
+        metavar='',
+        help="File assigning subjects to training/validation/inference subsets",
+        default=DEFAULT_DATASET_SPLIT_FILE)
 
     return parser
 
@@ -421,5 +427,17 @@ def add_training_args(parser):
         help="Maximum number of model checkpoints that will be saved",
         type=int,
         default=100)
+
+    parser.add_argument(
+        "--exclude_fraction_for_validation",
+        help="Fraction of dataset to use for validation",
+        type=float,
+        default=0.)
+
+    parser.add_argument(
+        "--exclude_fraction_for_inference",
+        help="Fraction of dataset to use for inference",
+        type=float,
+        default=0.)
 
     return parser
