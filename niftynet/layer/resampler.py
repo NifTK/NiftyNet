@@ -167,6 +167,7 @@ class ResamplerLayer(Layer):
         sc = (tf.cast(floor_coords, COORDINATES_TYPE),
               tf.cast(ceil_coords, COORDINATES_TYPE))
 
+        out_batch_size = batch_size
         if n_coords == batch_size:
             batch_ids = tf.reshape(
                 tf.range(batch_size), [batch_size] + [1] * out_spatial_rank)
@@ -177,13 +178,14 @@ class ResamplerLayer(Layer):
                 coord = tf.stack([batch_ids] + coord, axis=-1)
                 return tf.gather_nd(inputs, coord)
         else:
+            out_batch_size = n_coords * batch_size
             batch_inputs = tf.unstack(inputs)
 
             def _get_knot(bc):
                 coord = [sc[c][i] for i, c in enumerate(bc)]
                 coord = tf.stack(coord, -1)
-                batch_samples = tf.concat(
-                    [tf.gather_nd(img, coord) for img in batch_inputs], axis=0)
+                batch_samples = tf.concat([tf.gather_nd(img, coord)
+                                           for img in batch_inputs], axis=0)
                 return batch_samples
 
         def _pyramid_combination(samples, w_0, w_1):
@@ -193,8 +195,18 @@ class ResamplerLayer(Layer):
             f_1 = _pyramid_combination(samples[1::2], w_0[:-1], w_1[:-1])
             return f_0 * w_1[-1] + f_1 * w_0[-1]
 
+
         binary_neighbour_ids = _binary_neighbour_ids(in_spatial_rank)
         samples = [_get_knot(bc) for bc in binary_neighbour_ids]
+        # broadcase weight shape to have the same batch size as the output
+        for idx, _ in enumerate(weight_0):
+            weight_shape = weight_0[idx].get_shape().as_list()
+            weight_rank = len(weight_shape)
+            if n_coords < out_batch_size:
+                n_rep = int(out_batch_size / n_coords)
+                rep_shape = [n_rep] + [1] * (weight_rank - 1)
+                weight_0[idx] = tf.tile(weight_0, rep_shape)
+                weight_1[idx] = tf.tile(weight_1, rep_shape)
         return _pyramid_combination(samples, weight_0, weight_1)
 
     def _resample_bspline(self, inputs, sample_coords):
@@ -291,7 +303,8 @@ class ResamplerLayer(Layer):
         # gather_nd for both matrices, the same as:
         # point_weights = tf.gather_nd(diff, weight_id)
         # knots_id = tf.gather_nd(all_coords_f, weight_id)
-        n_val = tf.gather_nd(tf.stack([diff, all_coords_f], axis=-1), weight_id)
+        n_val = tf.gather_nd(
+            tf.stack([diff, all_coords_f], axis=-1), weight_id)
         n_val = tf.unstack(n_val, axis=-1)
         point_weights, knots_id = n_val[0], n_val[1]
 

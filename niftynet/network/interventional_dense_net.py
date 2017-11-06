@@ -24,8 +24,8 @@ class INetDense(BaseNet):
                  name='inet-dense'):
         BaseNet.__init__(self, name=name)
 
-        # self.fea = [32, 64, 128, 256, 512]
-        self.fea = [4, 8, 16, 32, 64]
+        self.fea = [32, 64, 128, 256, 512]
+        #self.fea = [4, 8, 16, 32, 64]
         self.k_conv = 3
         self.res_param = {
             'w_initializer': GlorotUniform.get_instance(''),

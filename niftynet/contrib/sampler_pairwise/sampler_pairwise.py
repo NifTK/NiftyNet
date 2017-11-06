@@ -59,7 +59,7 @@ class PairwiseSampler(Layer):
             lambda image_id: tuple(tf.py_func(self.get_pairwise_inputs,
                                               [image_id],
                                               [tf.float32, tf.int32])))
-        image_dataset = image_dataset.shuffle(buffer_size=batch_size*2)
+        image_dataset = image_dataset.shuffle(buffer_size=batch_size*20)
         image_dataset = image_dataset.batch(batch_size)
         self.iterator = image_dataset.make_initializable_iterator()
 
