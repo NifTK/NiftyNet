@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import numpy as np
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.engine.application_initializer import GlorotUniform
 from niftynet.layer.convolution import ConvolutionalLayer as Conv
 from niftynet.layer.downsample_res_block import DownBlock as DownRes
+from niftynet.layer.grid_warper import _create_affine_features
 from niftynet.layer.layer_util import infer_spatial_rank
 from niftynet.layer.upsample_res_block import UpBlock as UpRes
 from niftynet.network.base_net import BaseNet
@@ -15,6 +17,7 @@ from niftynet.network.base_net import BaseNet
 class INetDense(BaseNet):
     def __init__(self,
                  decay,
+                 smoothing=0,
                  disp_w_initializer=None,
                  disp_b_initializer=None,
                  acti_func='relu',
@@ -28,13 +31,25 @@ class INetDense(BaseNet):
             'w_initializer': GlorotUniform.get_instance(''),
             'w_regularizer': regularizers.l2_regularizer(decay),
             'acti_func': acti_func}
+        if disp_w_initializer is None:
+            disp_w_initializer = tf.random_normal_initializer(0, 1e-8)
+        if disp_b_initializer is None:
+            disp_b_initializer = tf.constant_initializer(0.0)
         self.disp_param = {
             'w_initializer': disp_w_initializer,
             'w_regularizer': regularizers.l2_regularizer(decay),
             'b_initializer': disp_b_initializer,
             'b_regularizer': None}
+        if smoothing > 0:
+            self.smoothing_func = _smoothing_func(smoothing)
+        else:
+            self.smoothing_func = None
 
-    def layer_op(self, fixed_image, moving_image, is_training=True):
+    def layer_op(self,
+                 fixed_image,
+                 moving_image,
+                 base_grid=None,
+                 is_training=True):
         """
         returns estimated dense displacement fields
         """
@@ -68,5 +83,48 @@ class INetDense(BaseNet):
                       with_bn=False,
                       acti_func=None,
                       **self.disp_param)(up_res_3)
+
+        if base_grid is None:
+            in_spatial_size = [None] * spatial_rank
+            out_spatial_size = conv_5.get_shape().as_list()[1:-1]
+            base_grid = _create_affine_features(output_shape=out_spatial_size,
+                                                source_shape=in_spatial_size)
+            base_grid = np.asarray(base_grid[:-1])
+            base_grid = np.reshape(
+                base_grid.T, [-1] + out_spatial_size + [spatial_rank])
+            base_grid = tf.constant(base_grid, dtype=conv_5.dtype)
+        dense_field = base_grid + conv_5
         # TODO filtering
-        return conv_5
+        if self.smoothing_func is not None:
+            dense_field = self.smoothing_func(dense_field, spatial_rank)
+        return dense_field
+
+
+def _get_smoothing_kernel(sigma, spatial_rank):
+    # sigma defined in voxel not in freeform deformation grid
+    if sigma <= 0:
+        raise NotImplementedError
+    tail = int(sigma * 2)
+    if spatial_rank == 2:
+        x, y = np.mgrid[-tail:tail + 1, -tail:tail + 1]
+        g = np.exp(-0.5 * (x * x + y * y) / sigma * sigma)
+    elif spatial_rank == 3:
+        x, y, z = np.mgrid[-tail:tail + 1, -tail:tail + 1, -tail:tail + 1]
+        g = np.exp(-0.5 * (x * x + y * y + z * z) / sigma * sigma)
+    else:
+        raise NotImplementedError
+    return g / g.sum()
+
+
+def _smoothing_func(sigma):
+    def smoothing(dense_field, spatial_rank):
+        kernel = _get_smoothing_kernel(sigma, spatial_rank)
+        kernel = tf.constant(kernel, dtype=dense_field.dtype)
+        kernel = tf.expand_dims(kernel, axis=-1)
+        kernel = tf.expand_dims(kernel, axis=-1)
+        smoothed = [
+            tf.nn.convolution(tf.expand_dims(coord, axis=-1), kernel, 'SAME')
+            for coord in tf.unstack(dense_field, axis=-1)]
+        return tf.concat(smoothed, axis=-1)
+
+    return smoothing

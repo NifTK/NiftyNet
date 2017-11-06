@@ -74,16 +74,11 @@ class RegApp(BaseApplication):
                 image_windows_list
             dense_field = self.net(fixed_image, moving_image)
             if isinstance(dense_field, tuple):
-                affine_field, local_field = dense_field
-                predicted_field = affine_field + local_field
-            else:
-                predicted_field = dense_field
-
+                dense_field, affine_field = dense_field
             # transform the moving labels
-            resampler = ResamplerLayer(
-                interpolation='linear',
-                boundary='replicate')
-            resampled_moving_label = resampler(moving_label, predicted_field)
+            resampler = ResamplerLayer(interpolation='linear',
+                                       boundary='replicate')
+            resampled_moving_label = resampler(moving_label, dense_field)
             # compute label loss
             loss_func = LossFunction(
                 loss_type='L2Loss')

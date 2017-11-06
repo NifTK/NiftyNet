@@ -46,5 +46,8 @@ class INetHybrid(BaseNet):
         moving_image = resampler(
             interpolation=self.interp,
             boundary=self.boundary)(moving_image, affine_field)
-        dense_field = self.local_net(fixed_image, moving_image, is_training)
-        return affine_field, dense_field
+        dense_field = self.local_net(fixed_image,
+                                     moving_image,
+                                     affine_field,
+                                     is_training)
+        return dense_field, affine_field

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import numpy as np
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
@@ -24,23 +25,24 @@ class INetAffine(BaseNet):
                  name='inet-affine'):
 
         BaseNet.__init__(self, name=name)
-        # TODO initializer, WCE changed
+        # TODO WCE changed
         self.fea = [4, 8, 16, 32, 64]
         self.k_conv = 3
         self.interp = interp
         self.boundary = boundary
+        self.affine_w_initializer = affine_w_initializer
+        self.affine_b_initializer = affine_b_initializer
         self.res_param = {'w_initializer': GlorotUniform.get_instance(''),
                           'w_regularizer': regularizers.l2_regularizer(decay),
                           'acti_func': acti_func}
         self.affine_param = {
-            'w_initializer': affine_w_initializer,
             'w_regularizer': regularizers.l2_regularizer(decay),
-            'b_initializer': affine_b_initializer,
             'b_regularizer': None}
+
 
     def layer_op(self, fixed_image, moving_image, is_training=True):
         """
-        returns displacement fields transformed by first estimating affine
+        returns displacement fields transformed by estimating affine
         """
         img = tf.concat([moving_image, fixed_image], axis=-1)
         res_1, _ = DownRes(self.fea[0], **self.res_param)(img, is_training)
@@ -53,18 +55,44 @@ class INetAffine(BaseNet):
                       with_bias=False, with_bn=True,
                       **self.res_param)(res_4, is_training)
 
-        # TODO: fc initialisation, and compatible 2d version?
         spatial_rank = infer_spatial_rank(moving_image)
         if spatial_rank == 2:
-            affine = FC(n_output_chns=6, with_bn=False,
-                        **self.affine_param)(conv_5)
+            affine_size = 6
         elif spatial_rank == 3:
-            affine = FC(n_output_chns=12, with_bn=False,
-                        **self.affine_param)(conv_5)
+            affine_size = 12
         else:
             tf.logging.fatal('Not supported spatial rank')
             raise NotImplementedError
+        if self.affine_w_initializer is None:
+            self.affine_w_initializer = init_affine_w()
+        if self.affine_b_initializer is None:
+            self.affine_b_initializer = init_affine_b(spatial_rank)
+        affine = FC(n_output_chns=affine_size, with_bn=False,
+                    w_initializer=self.affine_w_initializer,
+                    b_initializer=self.affine_b_initializer,
+                    **self.affine_param)(conv_5)
         spatial_shape = moving_image.get_shape().as_list()[1:-1]
         grid_global = Grid(source_shape=spatial_shape,
                            output_shape=spatial_shape)(affine)
         return grid_global
+
+
+def init_affine_w(std=1e-8):
+    return tf.random_normal_initializer(0, std)
+
+
+def init_affine_b(spatial_rank, initial_bias=0.0):
+    if spatial_rank == 2:
+        identity = np.array([[1., 0., 0.],
+                             [0., 1., 0.]]).flatten()
+    elif spatial_rank == 3:
+        identity = np.array([[1, 0, 0, 0],
+                             [0, 1, 0, 0],
+                             [0, 0, 1, 0]]).flatten()
+    else:
+        tf.logging.fatal('Not supported spatial rank')
+        raise NotImplementedError
+    identity = identity.reshape([1, -1])
+    identity = np.tile(identity, [1, 1])
+    return tf.constant_initializer(identity + initial_bias)
+
