@@ -137,7 +137,7 @@ def select_module(module_name, type_str, lookup_table):
     tries to import the module by splitting the input module_name
     as module name and class name to be imported.
 
-    :param moduel_name: string that matches the keys defined in lookup_table
+    :param module_name: string that matches the keys defined in lookup_table
         or an absolute class name: module.name.ClassName
     :type_str: type of the module (currently used for better error display)
     :lookup_table: defines a set of shorthands for absolute class name

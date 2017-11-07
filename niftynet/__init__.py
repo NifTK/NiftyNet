@@ -92,7 +92,6 @@ def main():
                 model_root=system_param['SYSTEM'].model_dir)
     except (AttributeError, KeyError):
         pass
-
     # 3. resolve dataset splitting file:
     try:
         if system_param['SYSTEM'].dataset_split_file:
@@ -101,8 +100,6 @@ def main():
                 model_root=system_param['SYSTEM'].model_dir)
     except (AttributeError, KeyError):
         pass
-
-
 
     # start application
     app_driver = ApplicationDriver()

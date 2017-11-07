@@ -27,8 +27,9 @@ class KeywordsMatching(object):
         associated value is a string. Multiple constraints are delimited by a ,
         This function creates the corresponding matching object with the list
         of constraints for each of these subtypes.
-        :param default_folder: relative paths are first tested against the current folder, and then against this
-               default folder
+        :param default_folder: relative paths are first tested against
+                               the current folder, and then against this
+                               default folder
         :param input_tuple:
         :return:
         """
@@ -43,18 +44,20 @@ class KeywordsMatching(object):
                     path_orig = os.path.abspath(path_i)
                     if os.path.exists(path_orig):
                         path.append(path_orig)
-                    else:
-                        if not default_folder:
-                            raise ValueError('data input folder {} not found, did'
-                                             ' you maybe forget to download data?'
-                                             .format(path_i))
-                        path_def = os.path.abspath(os.path.join(default_folder, path_i))
-                        if os.path.exists(path_def):
-                            path.append(path_def)
-                        else:
-                            raise ValueError('data input folder {} not found, did'
-                                             ' you maybe forget to download data?'
-                                             .format(path_i))
+                        continue
+
+                    if not default_folder:
+                        raise ValueError(
+                            'data input folder %s not found, did'
+                            ' you maybe forget to download data?', path_i)
+                    path_def = os.path.join(default_folder, path_i)
+                    path_def = os.path.abspath(path_def)
+                    if not os.path.exists(path_def):
+                        raise ValueError(
+                            'data input folder %s not found, did'
+                            ' you maybe forget to download data?', path_i)
+                    path.append(path_def)
+
             elif name == "filename_contains":
                 contain = tuple(set(value))
             elif name == "filename_not_contains":

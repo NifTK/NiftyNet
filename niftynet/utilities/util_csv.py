@@ -191,7 +191,8 @@ def remove_duplicated_names(name_list):
                                    if name not in list_duplicated])
     return duplicates_removed
 
-def _write_csv(csv_file, list_combined):
+
+def write_csv(csv_file, list_combined):
     # csv writer has different behaviour in python 2/3
     if sys.version_info[0] >= 3:
         with open(csv_file, 'w', newline='', encoding='utf8') as csvfile:
@@ -203,6 +204,7 @@ def _write_csv(csv_file, list_combined):
             file_writer = csv.writer(csvfile, delimiter=',')
             for list_temp in list_combined:
                 file_writer.writerow(list_temp)
+    return
 
 def match_and_write_filenames_to_csv(list_constraints, csv_file):
     """
@@ -225,7 +227,7 @@ def match_and_write_filenames_to_csv(list_constraints, csv_file):
         list_tot.append(list_files)
     list_combined = join_subject_id_and_filename_list(name_tot, list_tot)
     touch_folder(os.path.dirname(csv_file))
-    _write_csv(csv_file, list_combined)
+    write_csv(csv_file, list_combined)
 
     return list_combined
 
@@ -266,7 +268,7 @@ def split_dataset(subject_ids, validation_fraction,
              ['validation'] * count_v + \
              ['inference'] * count_i
     random.shuffle(phases)
-    _write_csv(dataset_split_file, zip(subject_ids, phases))
+    write_csv(dataset_split_file, zip(subject_ids, phases))
 
 
 def load_and_merge_csv_files(data_param, phase, dataset_split_file):
