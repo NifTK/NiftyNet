@@ -59,8 +59,8 @@ class SegmentationApplication(BaseApplication):
     def initialise_dataset_loader(self, data_param=None,
                                   task_param=None,
                                   system_param=None):
-        super(SegmentationApplication, self).initialise_dataset_loader(
-            data_param, task_param, system_param)
+        BaseApplication.initialise_dataset_loader(
+            self, data_param, task_param, system_param)
 
         self.data_param = data_param
         self.segmentation_param = task_param
@@ -204,7 +204,7 @@ class SegmentationApplication(BaseApplication):
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][1]()
 
     def initialise_network(self):
-        super(SegmentationApplication, self).initialise_network()
+        BaseApplication.initialise_network(self)
 
         num_classes = self.segmentation_param.num_classes
         w_regularizer = None

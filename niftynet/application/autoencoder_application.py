@@ -37,8 +37,8 @@ class AutoencoderApplication(BaseApplication):
 
     def initialise_dataset_loader(self, data_param=None, task_param=None,
                                   system_param=None):
-        super(AutoencoderApplication, self).initialise_dataset_loader(
-            data_param, task_param, system_param)
+        BaseApplication.initialise_dataset_loader(
+            self, data_param, task_param, system_param)
         self.data_param = data_param
         self.autoencoder_param = task_param
 
@@ -99,7 +99,7 @@ class AutoencoderApplication(BaseApplication):
             return
 
     def initialise_network(self):
-        super(SegmentationApplication, self).initialise_network()
+        BaseApplication.initialise_network(self)
         w_regularizer = None
         b_regularizer = None
         reg_type = self.net_param.reg_type.lower()

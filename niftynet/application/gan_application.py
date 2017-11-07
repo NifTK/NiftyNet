@@ -41,8 +41,8 @@ class GANApplication(BaseApplication):
 
     def initialise_dataset_loader(self, data_param=None, task_param=None,
                                   system_param=None):
-        super(GANApplication, self).initialise_dataset_loader(
-            data_param, task_param, system_param)
+        BaseApplication.initialise_dataset_loader(
+            self, data_param, task_param, system_param)
         self.data_param = data_param
         self.gan_param = task_param
 
@@ -136,7 +136,7 @@ class GANApplication(BaseApplication):
                 self.readers])
 
     def initialise_network(self):
-        super(SegmentationApplication, self).initialise_network()
+        BaseApplication.initialise_network(self)
         self.net = ApplicationNetFactory.create(self.net_param.name)()
 
     def connect_data_and_network(self,

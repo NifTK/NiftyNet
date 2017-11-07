@@ -55,8 +55,8 @@ class RegressionApplication(BaseApplication):
 
     def initialise_dataset_loader(self, data_param=None, task_param=None,
                                   system_param=None):
-        super(RegressionApplication, self).initialise_dataset_loader(
-            data_param, task_param, system_param)
+        BaseApplication.initialise_dataset_loader(
+            self, data_param, task_param, system_param)
         self.data_param = data_param
         self.regression_param = task_param
 
@@ -192,7 +192,7 @@ class RegressionApplication(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
-        super(RegressionApplication, self).initialise_network()
+        BaseApplication.initialise_network(self)
         def data_net(for_training):
             with tf.name_scope('train' if for_training else 'validation'):
                 sampler = self.get_sampler()[0][0 if for_training else 1]
