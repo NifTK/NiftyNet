@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # regular expressions to match tuples from user inputs
 # kindly provided by
 # Luis Carlos Garcia Peraza Herrera <luis.herrera.14@ucl.ac.uk>
