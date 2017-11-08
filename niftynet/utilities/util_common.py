@@ -210,7 +210,7 @@ def look_up_operations(type_str, supported):
                          'Available options are {2}\n'.format(
             type_str, guess_at_correct_spelling, supported))
     else:
-        raise ValueError("No supported operation \"{}\" "
+        raise ValueError("No supported option \"{}\" "
                          "is not found.\nAvailable options are {}\n".format(
             type_str, supported))
 

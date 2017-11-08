@@ -67,10 +67,24 @@ class ImageSetsPartitionerNewPartition(tf.test.TestCase):
             new_partition=True,
             ratios=(2.0, 2.0),
             data_split_file=partition_output)
-        test_partitioner.get_file_list()
-        test_partitioner.get_file_list(TRAIN)
-        test_partitioner.get_file_list(VALID)
-        test_partitioner.get_file_list(INFER)
+        self.assertEquals(
+            test_partitioner.get_file_list()[COLUMN_UNIQ_ID].count(), 4)
+        self.assertEquals(
+            test_partitioner.get_file_list(TRAIN), None)
+        self.assertEquals(
+            test_partitioner.get_file_list(VALID)[COLUMN_UNIQ_ID].count(), 4)
+        self.assertEquals(
+            test_partitioner.get_file_list(INFER), None)
+        self.assertEquals(
+            test_partitioner.get_file_list(
+                VALID, 'T1', 'Flair')[COLUMN_UNIQ_ID].count(), 4)
+        self.assertEquals(
+            test_partitioner.get_file_list(
+                VALID, 'Flair')[COLUMN_UNIQ_ID].count(), 4)
+        with self.assertRaisesRegexp(ValueError, ''):
+            test_partitioner.get_file_list(VALID, 'foo')
+        with self.assertRaisesRegexp(ValueError, ''):
+            test_partitioner.get_file_list('T1')
 
 
 class ImageSetsPartitionerIllPartition(tf.test.TestCase):

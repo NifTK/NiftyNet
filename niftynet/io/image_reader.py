@@ -52,7 +52,7 @@ class ImageReader(Layer):
      'label': <niftynet.io.image_type.SpatialImage3D object>}
     """
 
-    def __init__(self, names, phase):
+    def __init__(self, names):
         # list of file names
         self._file_list = None
         self._input_sources = None
@@ -60,7 +60,6 @@ class ImageReader(Layer):
         self._dtypes = None
         self._names = None
         self.names = names
-        self.phase = phase
 
 
         # list of image objects
@@ -70,7 +69,7 @@ class ImageReader(Layer):
         self.preprocessors = []
         super(ImageReader, self).__init__(name='image_reader')
 
-    def initialise_reader(self, data_param, task_param, system_param):
+    def initialise_reader(self, data_param, task_param, file_list):
         """
         task_param specifies how to combine user input modalities
         e.g., for multimodal segmentation 'image' corresponds to multiple
@@ -86,24 +85,20 @@ class ImageReader(Layer):
 
         self._input_sources = {name: vars(task_param).get(name)
                                for name in self.names}
-        data_to_load = {}
-        for name in self._names:
-            for source in self._input_sources[name]:
-                try:
-                    data_to_load[source] = data_param[source]
-                except KeyError:
-                    tf.logging.fatal(
-                        'reader name [%s] requires [%s], however it is not '
-                        'specified as a section in the config, '
-                        'current input section names: %s',
-                        name, source, list(data_param))
-                    raise ValueError
-
-        self._file_list = \
-            util_csv.load_and_merge_csv_files(data_to_load,
-                                              self.phase,
-                                              system_param.dataset_split_file)
-        print(self._file_list)
+        #data_to_load = {}
+        #for name in self._names:
+        #    for source in self._input_sources[name]:
+        #        try:
+        #            data_to_load[source] = data_param[source]
+        #        except KeyError:
+        #            tf.logging.fatal(
+        #                'reader name [%s] requires [%s], however it is not '
+        #                'specified as a section in the config, '
+        #                'current input section names: %s',
+        #                name, source, list(data_param))
+        #            raise ValueError
+        import pdb; pdb.set_trace()
+        self._file_list = file_list
         self.output_list = _filename_to_image_list(
             self._file_list, self._input_sources, data_param)
         for name in self.names:
