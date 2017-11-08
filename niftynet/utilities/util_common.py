@@ -205,12 +205,14 @@ def look_up_operations(type_str, supported):
     if edit_distances:
         guess_at_correct_spelling = min(edit_distances,
                                         key=edit_distances.get)
-        raise ValueError('By "{0}", did you mean "{1}"?\n '
-                         '"{0}" is not a valid option.'.format(
-            type_str, guess_at_correct_spelling))
+        raise ValueError('By "{0}", did you mean "{1}"?\n'
+                         '"{0}" is not a valid option.\n'
+                         'Available options are {2}\n'.format(
+            type_str, guess_at_correct_spelling, supported))
     else:
-        raise ValueError("no supported operation \"{}\" "
-                         "is not found.".format(type_str))
+        raise ValueError("No supported operation \"{}\" "
+                         "is not found.\nAvailable options are {}\n".format(
+            type_str, supported))
 
 
 def _damerau_levenshtein_distance(s1, s2):

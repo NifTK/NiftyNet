@@ -136,9 +136,12 @@ class ApplicationDriver(object):
         self.app = app_module(net_param, action_param, self.is_training)
         # initialise data input
         data_partitioner = ImageSetsPartitioner()
+        #print(data_partitioner)
         data_partitioner.initialise(data_param)
-        tf.logging.info(data_partitioner)
-        print(data_partitioner.get_file_list('train'))
+        data_partitioner.initialise(data_param, ratios=(0.1, 0.1), phase='validation')
+        data_partitioner.get_file_list('label')
+        #print(data_partitioner.get_file_list('train'))
+        #print(data_partitioner.get_file_list('all'))
         import pdb; pdb.set_trace()
 
         #default_data_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
@@ -152,7 +155,7 @@ class ApplicationDriver(object):
         #                  dataset_split_file)
         #else:
         #    if not os.path.exists(dataset_split_file):
-        #        split_dataset(subject_ids, 0., 0., dataset_split_file)
+        #         (subject_ids, 0., 0., dataset_split_file)
 
         self.app.initialise_dataset_loader(data_param, app_param,
                                            system_param)
