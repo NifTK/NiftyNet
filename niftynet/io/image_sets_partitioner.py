@@ -327,3 +327,20 @@ class ImageSetsPartitioner(object):
             summary_str += '-- using all subjects ' \
                            '(without data partitioning).\n'
         return summary_str
+
+    def has_phase(self, phase):
+        if self._partition_ids is None:
+            return False
+        return (self._partition_ids[COLUMN_PHASE] == phase).any()
+
+    @property
+    def has_train(self):
+        return self.has_phase(TRAIN)
+
+    @property
+    def has_inference(self):
+        return self.has_phase(INFER)
+
+    @property
+    def has_validation(self):
+        return self.has_phase(VALID)

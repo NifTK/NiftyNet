@@ -56,9 +56,9 @@ class SegmentationApplication(BaseApplication):
                        self.initialise_resize_aggregator),
         }
 
-    def initialise_dataset_loader(self, data_param=None,
-                                  task_param=None,
-                                  system_param=None):
+    def initialise_dataset_loader(
+        self, data_param=None, task_param=None, data_partitioner=None):
+
         BaseApplication.initialise_dataset_loader(
             self, data_param, task_param, system_param)
 
@@ -67,13 +67,17 @@ class SegmentationApplication(BaseApplication):
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.readers = [ImageReader(SUPPORTED_INPUT, 'train')]
+            reader_train = ImageReader(SUPPORTED_INPUT)
+            file_list = data_partitioner.get_file_list(TRAIN)
+            reader_train.initialise_reader(data_param, task_param, file_list)
+            self.readers = [reader_train]
             if self.has_validation_data and self.action_param.validate_every_n:
-                self.readers.append(ImageReader(SUPPORTED_INPUT, 'validation'))
+                reader_valid = ImageReader(SUPPORTED_INPUT)
+                file_list = data_partitioner.get_file_list(VALID)
+                reader_valid.initialise_reader(data_param, task_param, file_list)
+                self.readers.append(reader_valid)
         else:  # in the inference process use image input only
             self.readers = [ImageReader(['image'], 'inference')]
-        for reader in self.readers:
-            reader.initialise_reader(data_param, task_param, system_param)
 
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(

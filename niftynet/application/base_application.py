@@ -57,8 +57,8 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         if self.output_decoder is None and not self.is_training:
             raise NotImplementedError('output decoder should be initialised')
 
-    def initialise_dataset_loader(self, data_param=None, task_param=None,
-                                  system_param=None):
+    def initialise_dataset_loader(
+            self, data_param=None, task_param=None, data_partitioner=None):
         df = pandas.read_csv(
             system_param.dataset_split_file, header=None,
             names=['subject_id', 'phase'])

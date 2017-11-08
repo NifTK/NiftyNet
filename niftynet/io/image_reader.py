@@ -61,7 +61,6 @@ class ImageReader(Layer):
         self._names = None
         self.names = names
 
-
         # list of image objects
         self.output_list = None
         self.current_id = -1
@@ -85,6 +84,8 @@ class ImageReader(Layer):
 
         self._input_sources = {name: vars(task_param).get(name)
                                for name in self.names}
+        #self.required_sections = \
+        #    sum([list(vars(task_param).get(name)) for name in self.names], [])
         #data_to_load = {}
         #for name in self._names:
         #    for source in self._input_sources[name]:
@@ -97,7 +98,6 @@ class ImageReader(Layer):
         #                'current input section names: %s',
         #                name, source, list(data_param))
         #            raise ValueError
-        import pdb; pdb.set_trace()
         self._file_list = file_list
         self.output_list = _filename_to_image_list(
             self._file_list, self._input_sources, data_param)

@@ -139,26 +139,9 @@ class ApplicationDriver(object):
         #print(data_partitioner)
         data_partitioner.initialise(data_param)
         data_partitioner.initialise(data_param, ratios=(0.1, 0.1), phase='validation')
-        data_partitioner.get_file_list('label')
-        #print(data_partitioner.get_file_list('train'))
-        #print(data_partitioner.get_file_list('all'))
         import pdb; pdb.set_trace()
-
-        #default_data_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
-        #subject_ids = csv_files_from_path(data_param,
-        #                                  default_folder=default_data_folder)
-        #dataset_split_file = system_param.dataset_split_file
-        #if self.is_training:
-        #    split_dataset(subject_ids,
-        #                  train_param.exclude_fraction_for_validation,
-        #                  train_param.exclude_fraction_for_inference,
-        #                  dataset_split_file)
-        #else:
-        #    if not os.path.exists(dataset_split_file):
-        #         (subject_ids, 0., 0., dataset_split_file)
-
-        self.app.initialise_dataset_loader(data_param, app_param,
-                                           system_param)
+        self.app.initialise_dataset_loader(
+            data_param, app_param, data_partitioner)
         # pylint: disable=not-context-manager
         with self.graph.as_default(), tf.name_scope('Sampler'):
             self.app.initialise_sampler()
