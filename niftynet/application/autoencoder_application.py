@@ -61,7 +61,7 @@ class AutoencoderApplication(BaseApplication):
             self.readers = [ImageReader(['feature'], phase='test')]
 
         for reader in self.readers:
-            reader.initialise_reader(data_param, task_param, system_param)
+            reader.initialise(data_param, task_param, system_param)
         #if self.is_training or self._infer_type in ('encode', 'encode-decode'):
         #    mean_var_normaliser = MeanVarNormalisationLayer(image_name='image')
         #    self.reader.add_preprocessing_layers([mean_var_normaliser])

@@ -83,25 +83,25 @@ SINGLE_25D_TASK = ParserNamespace(image=('T1',))
 
 def get_3d_reader():
     reader = ImageReader(['image'])
-    reader.initialise_reader(MULTI_MOD_DATA, MULTI_MOD_TASK)
+    reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK)
     return reader
 
 
 def get_2d_reader():
     reader = ImageReader(['image'])
-    reader.initialise_reader(MOD_2D_DATA, MOD_2D_TASK)
+    reader.initialise(MOD_2D_DATA, MOD_2D_TASK)
     return reader
 
 
 def get_25d_reader():
     reader = ImageReader(['image'])
-    reader.initialise_reader(SINGLE_25D_DATA, SINGLE_25D_TASK)
+    reader.initialise(SINGLE_25D_DATA, SINGLE_25D_TASK)
     return reader
 
 
 def get_label_reader():
     reader = ImageReader(['label'])
-    reader.initialise_reader(MOD_LABEL_DATA, MOD_LABEl_TASK)
+    reader.initialise(MOD_LABEL_DATA, MOD_LABEl_TASK)
     label_normaliser = DiscreteLabelNormalisationLayer(
         image_name='label',
         modalities=vars(SINGLE_25D_TASK).get('label'),

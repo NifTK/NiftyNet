@@ -69,12 +69,12 @@ class SegmentationApplication(BaseApplication):
         if self.is_training:
             reader_train = ImageReader(SUPPORTED_INPUT)
             file_list = data_partitioner.get_file_list(TRAIN)
-            reader_train.initialise_reader(data_param, task_param, file_list)
+            reader_train.initialise(data_param, task_param, file_list)
             self.readers = [reader_train]
             if self.has_validation_data and self.action_param.validate_every_n:
                 reader_valid = ImageReader(SUPPORTED_INPUT)
                 file_list = data_partitioner.get_file_list(VALID)
-                reader_valid.initialise_reader(data_param, task_param, file_list)
+                reader_valid.initialise(data_param, task_param, file_list)
                 self.readers.append(reader_valid)
         else:  # in the inference process use image input only
             self.readers = [ImageReader(['image'], 'inference')]

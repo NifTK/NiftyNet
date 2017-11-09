@@ -55,7 +55,7 @@ class HistTest(tf.test.TestCase):
              100.0])
 
         reader = ImageReader(['image'])
-        reader.initialise_reader(DATA_PARAM, TASK_PARAM)
+        reader.initialise(DATA_PARAM, TASK_PARAM)
         self.assertAllClose(len(reader._file_list), 4)
 
         foreground_masking_layer = BinaryMaskingLayer(

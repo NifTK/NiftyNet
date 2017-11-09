@@ -50,7 +50,7 @@ class BRATSApp(BaseApplication):
             self.reader = ImageReader(SUPPORTED_INPUT)
         else:  # in the inference process use image input only
             self.reader = ImageReader(['image'])
-        self.reader.initialise_reader(data_param, task_param)
+        self.reader.initialise(data_param, task_param)
 
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(

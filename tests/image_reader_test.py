@@ -89,21 +89,21 @@ class ImageReaderTest(tf.test.TestCase):
     def test_initialisation(self):
         with self.assertRaisesRegexp(ValueError, ''):
             reader = ImageReader(['test'])
-            reader.initialise_reader(MULTI_MOD_DATA, MULTI_MOD_TASK)
+            reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK)
         with self.assertRaisesRegexp(AssertionError, ''):
             reader = ImageReader(None)
-            reader.initialise_reader(MULTI_MOD_DATA, MULTI_MOD_TASK)
+            reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK)
         reader = ImageReader(['image'])
-        reader.initialise_reader(MULTI_MOD_DATA, MULTI_MOD_TASK)
+        reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK)
         self.assertEqual(len(reader.output_list), 4)
 
         reader = ImageReader(['image'])
-        reader.initialise_reader(SINGLE_MOD_DATA, SINGLE_MOD_TASK)
+        reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK)
         self.assertEqual(len(reader.output_list), 4)
 
     def test_properties(self):
         reader = ImageReader(['image'])
-        reader.initialise_reader(SINGLE_MOD_DATA, SINGLE_MOD_TASK)
+        reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK)
         self.assertEqual(len(reader.output_list), 4)
         self.assertDictEqual(reader.shapes,
                              {'image': (256, 168, 256, 1, 1)})
@@ -115,9 +115,9 @@ class ImageReaderTest(tf.test.TestCase):
 
     def test_existing_csv(self):
         reader_for_csv = ImageReader(['image'])
-        reader_for_csv.initialise_reader(SINGLE_MOD_DATA, SINGLE_MOD_TASK)
+        reader_for_csv.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK)
         reader = ImageReader(['image'])
-        reader.initialise_reader(EXISTING_DATA, SINGLE_MOD_TASK)
+        reader.initialise(EXISTING_DATA, SINGLE_MOD_TASK)
         self.assertEqual(len(reader.output_list), 4)
         self.assertDictEqual(reader.shapes,
                              {'image': (256, 168, 256, 1, 1)})
@@ -129,7 +129,7 @@ class ImageReaderTest(tf.test.TestCase):
 
     def test_operations(self):
         reader = ImageReader(['image'])
-        reader.initialise_reader(SINGLE_MOD_DATA, SINGLE_MOD_TASK)
+        reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK)
         idx, data, interp_order = reader()
         self.assertEqual(SINGLE_MOD_DATA['lesion'].interp_order,
                          interp_order['image'][0])
@@ -137,7 +137,7 @@ class ImageReaderTest(tf.test.TestCase):
 
     def test_preprocessing(self):
         reader = ImageReader(['image'])
-        reader.initialise_reader(SINGLE_MOD_DATA, SINGLE_MOD_TASK)
+        reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK)
         idx, data, interp_order = reader()
         self.assertEqual(SINGLE_MOD_DATA['lesion'].interp_order,
                          interp_order['image'][0])
@@ -150,7 +150,7 @@ class ImageReaderTest(tf.test.TestCase):
 
     def test_preprocessing_zero_padding(self):
         reader = ImageReader(['image'])
-        reader.initialise_reader(SINGLE_MOD_DATA, SINGLE_MOD_TASK)
+        reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK)
         idx, data, interp_order = reader()
         self.assertEqual(SINGLE_MOD_DATA['lesion'].interp_order,
                          interp_order['image'][0])
@@ -172,7 +172,7 @@ class ImageReaderTest(tf.test.TestCase):
         reader = ImageReader(['label'])
         with self.assertRaisesRegexp(AssertionError, ''):
             reader.add_preprocessing_layers(label_normaliser)
-        reader.initialise_reader(LABEL_DATA, LABEL_TASK)
+        reader.initialise(LABEL_DATA, LABEL_TASK)
         reader.add_preprocessing_layers(label_normaliser)
         reader.add_preprocessing_layers(
             [PadLayer(image_name=['label'], border=(10, 5, 5))])
@@ -203,13 +203,13 @@ class ImageReaderTest(tf.test.TestCase):
     def test_errors(self):
         with self.assertRaisesRegexp(AttributeError, ''):
             reader = ImageReader(['image'])
-            reader.initialise_reader(BAD_DATA, SINGLE_MOD_TASK)
+            reader.initialise(BAD_DATA, SINGLE_MOD_TASK)
         with self.assertRaisesRegexp(ValueError, ''):
             reader = ImageReader(['image'])
-            reader.initialise_reader(SINGLE_MOD_DATA, BAD_TASK)
+            reader.initialise(SINGLE_MOD_DATA, BAD_TASK)
 
         reader = ImageReader(['image'])
-        reader.initialise_reader(SINGLE_MOD_DATA, SINGLE_MOD_TASK)
+        reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK)
         idx, data, interp_order = reader(idx=100)
         self.assertEqual(idx, -1)
         self.assertEqual(data, None)

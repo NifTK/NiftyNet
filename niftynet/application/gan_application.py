@@ -55,7 +55,7 @@ class GANApplication(BaseApplication):
         else:  # in the inference process use image input only
             self.readers = [ImageReader(['image'], phase='test')]
         for reader in self.readers:
-            reader.initialise_reader(data_param, task_param, system_param)
+            reader.initialise(data_param, task_param, system_param)
 
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(

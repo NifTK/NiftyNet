@@ -329,18 +329,30 @@ class ImageSetsPartitioner(object):
         return summary_str
 
     def has_phase(self, phase):
+        """
+        returns True if the `phase` subset of images is not empty
+        """
         if self._partition_ids is None:
             return False
         return (self._partition_ids[COLUMN_PHASE] == phase).any()
 
     @property
     def has_train(self):
+        """
+        returns True if the TRAIN subset of images is not empty
+        """
         return self.has_phase(TRAIN)
 
     @property
     def has_inference(self):
+        """
+        returns True if the INFER subset of images is not empty
+        """
         return self.has_phase(INFER)
 
     @property
     def has_validation(self):
+        """
+        returns True if the VALID subset of images is not empty
+        """
         return self.has_phase(VALID)

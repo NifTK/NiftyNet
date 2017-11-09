@@ -68,7 +68,7 @@ class RegressionApplication(BaseApplication):
         else:  # in the inference process use image input only
             self.readers = [ImageReader(['image'], phase='test')]
         for reader in self.readers:
-            reader.initialise_reader(data_param, task_param, system_param)
+            reader.initialise(data_param, task_param, system_param)
 
         mean_var_normaliser = MeanVarNormalisationLayer(
             image_name='image')

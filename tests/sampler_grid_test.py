@@ -77,19 +77,19 @@ DYNAMIC_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'))
 
 def get_3d_reader():
     reader = ImageReader(['image'])
-    reader.initialise_reader(MULTI_MOD_DATA, MULTI_MOD_TASK)
+    reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK)
     return reader
 
 
 def get_2d_reader():
     reader = ImageReader(['image'])
-    reader.initialise_reader(MOD_2D_DATA, MOD_2D_TASK)
+    reader.initialise(MOD_2D_DATA, MOD_2D_TASK)
     return reader
 
 
 def get_dynamic_window_reader():
     reader = ImageReader(['image'])
-    reader.initialise_reader(DYNAMIC_MOD_DATA, DYNAMIC_MOD_TASK)
+    reader.initialise(DYNAMIC_MOD_DATA, DYNAMIC_MOD_TASK)
     return reader
 
 

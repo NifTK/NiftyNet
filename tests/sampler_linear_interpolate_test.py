@@ -36,7 +36,7 @@ MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'))
 
 def get_3d_reader():
     reader = ImageReader(['image'])
-    reader.initialise_reader(MULTI_MOD_DATA, MULTI_MOD_TASK)
+    reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK)
     return reader
 
 

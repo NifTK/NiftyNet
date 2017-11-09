@@ -8,11 +8,11 @@ import numpy as np
 import tensorflow as tf
 from six import string_types
 
-import niftynet.utilities.util_csv as util_csv
 from niftynet.io.image_type import ImageFactory
 from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
 from niftynet.utilities.user_parameters_helper import make_input_tuple
 from niftynet.utilities.util_common import print_progress_bar
+from niftynet.io.image_sets_partitioner import COLUMN_UNIQ_ID
 
 # NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
 
@@ -24,6 +24,9 @@ NP_TF_DTYPES = {'i': tf.float32,
 
 
 def infer_tf_dtypes(image_array):
+    """
+    Choosing a suitable tf dttype based on the dtype of input numpy array.
+    """
     return NP_TF_DTYPES.get(image_array.dtype[0].kind, tf.float32)
 
 
@@ -68,7 +71,7 @@ class ImageReader(Layer):
         self.preprocessors = []
         super(ImageReader, self).__init__(name='image_reader')
 
-    def initialise_reader(self, data_param, task_param, file_list):
+    def initialise(self, data_param, task_param, file_list):
         """
         task_param specifies how to combine user input modalities
         e.g., for multimodal segmentation 'image' corresponds to multiple
@@ -84,10 +87,10 @@ class ImageReader(Layer):
 
         self._input_sources = {name: vars(task_param).get(name)
                                for name in self.names}
-        #self.required_sections = \
+        # self.required_sections = \
         #    sum([list(vars(task_param).get(name)) for name in self.names], [])
-        #data_to_load = {}
-        #for name in self._names:
+        # data_to_load = {}
+        # for name in self._names:
         #    for source in self._input_sources[name]:
         #        try:
         #            data_to_load[source] = data_param[source]
@@ -107,11 +110,19 @@ class ImageReader(Layer):
                 name, self.input_sources[name], len(self.output_list))
 
     def prepare_preprocessors(self):
+        """
+        Some preprocessors requires an initial step to initialise
+        data dependent internal parameters.
+        This function find these preprocessors and run the initialisations
+        """
         for layer in self.preprocessors:
             if isinstance(layer, DataDependentLayer):
                 layer.train(self.output_list)
 
     def add_preprocessing_layers(self, layers):
+        """
+        Adding a niftynet.layer or a list of layers as preprocessing steps.
+        """
         assert self.output_list is not None, \
             'Please initialise the reader first, ' \
             'before adding preprocessors.'
@@ -147,10 +158,10 @@ class ImageReader(Layer):
             return -1, None, None
 
         image_dict = self.output_list[idx]
-        image_data_dict = {field: image.get_data()
-                           for (field, image) in image_dict.items()}
-        interp_order_dict = {field: image.interp_order
-                             for (field, image) in image_dict.items()}
+        image_data_dict = \
+            {field: image.get_data() for (field, image) in image_dict.items()}
+        interp_order_dict = \
+            {field: image.interp_order for (field, image) in image_dict.items()}
         if self.preprocessors:
             preprocessors = [deepcopy(layer) for layer in self.preprocessors]
             # dictionary of masks is cached
@@ -164,7 +175,7 @@ class ImageReader(Layer):
                     image_data_dict = layer(image_data_dict, interp_order_dict)
                 else:
                     image_data_dict, mask = layer(image_data_dict, mask)
-                # print('%s, %.3f sec'%(layer, -local_time + time.time()))
+                    # print('%s, %.3f sec'%(layer, -local_time + time.time()))
         return idx, image_data_dict, interp_order_dict
 
     @property
@@ -188,6 +199,10 @@ class ImageReader(Layer):
 
     @property
     def tf_dtypes(self):
+        """
+        Infer input data datatypes in TF
+        (using the first image in the file list).
+        """
         if not self.output_list:
             tf.logging.fatal("please initialise the reader first")
             raise RuntimeError
@@ -199,6 +214,13 @@ class ImageReader(Layer):
 
     @property
     def input_sources(self):
+        """
+        returns mapping of input keywords and input sections
+        e.g., input_sources {'image': ('T1', 'T2'),
+                             'label': ('manual_map',)}
+        map task parameter keywords `image` and `label` to
+        section names `T1`, `T2`, and `manual_map` respectively.
+        """
         if not self._input_sources:
             tf.logging.fatal("please initialise the reader first")
             raise RuntimeError
@@ -206,23 +228,31 @@ class ImageReader(Layer):
 
     @property
     def names(self):
+        """
+        returns the keys of self.input_sources dictionary
+        """
         return self._names
 
     @names.setter
     def names(self, fields_tuple):
-        # output_fields is a sequence of output names
-        # each name might correspond to a list of multiple input sources
-        # this should be specified in CUSTOM section in the config
+        """
+        output_fields is a sequence of output names
+        each name might correspond to a list of multiple input sources
+        this should be specified in CUSTOM section in the config
+        """
         self._names = make_input_tuple(fields_tuple, string_types)
 
     def get_subject_id(self, image_index):
-        return self._file_list.iloc[image_index, 0]
+        """
+        Given an integer id returns the subject id.
+        """
+        return self._file_list.iloc[image_index, COLUMN_UNIQ_ID]
 
 
 def _filename_to_image_list(file_list, mod_dict, data_param):
     """
-    converting a list of filenames to a list of image objects
-    useful properties (e.g. interp_order) are added to each object
+    Converting a list of filenames to a list of image objects,
+    Properties (e.g. interp_order) are added to each object
     """
     volume_list = []
     for idx in range(len(file_list)):
@@ -250,12 +280,12 @@ def _create_image(file_list, idx, modalities, data_param):
     except KeyError:
         tf.logging.fatal(
             "Specified modality names %s "
-            "not found in config: input sections %s",
+            "not found in config: input sections %s.",
             modalities, list(data_param))
         raise
     except AttributeError:
         tf.logging.fatal(
-            'data params must contain: interp_order, pixdim, axcodes')
+            "Data params must contain: interp_order, pixdim, axcodes.")
         raise
 
     image_properties = {'file_path': file_path,
