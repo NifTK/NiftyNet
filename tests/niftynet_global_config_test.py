@@ -62,7 +62,7 @@ class NiftyNetGlobalConfigTest(TestCase):
                 'set GLOBAL_CONFIG_TEST_necfc to run')
     def test_non_existing_config_file_created(self):
         self.assertFalse(isfile(NiftyNetGlobalConfigTest.config_file))
-        global_config = NiftyNetGlobalConfig()
+        global_config = NiftyNetGlobalConfig().setup()
         self.assertTrue(isfile(NiftyNetGlobalConfigTest.config_file))
         self.assertEqual(global_config.get_niftynet_config_folder(),
                          NiftyNetGlobalConfigTest.config_home)
@@ -79,7 +79,7 @@ class NiftyNetGlobalConfigTest(TestCase):
             config_file.write('\n'.join(
                 [NiftyNetGlobalConfigTest.header, config]))
 
-        global_config = NiftyNetGlobalConfig()
+        global_config = NiftyNetGlobalConfig().setup()
         self.assertEqual(global_config.get_niftynet_home_folder(),
                          custom_niftynet_home_abs)
         NiftyNetGlobalConfigTest.remove_path(custom_niftynet_home_abs)
@@ -95,7 +95,7 @@ class NiftyNetGlobalConfigTest(TestCase):
             config_file.write(incorrect_config)
 
         # the following should back it up and replace it with default config
-        global_config = NiftyNetGlobalConfig()
+        global_config = NiftyNetGlobalConfig().setup()
 
         self.assertTrue(isfile(NiftyNetGlobalConfigTest.config_file))
         self.assertEqual(global_config.get_niftynet_config_folder(),
@@ -124,7 +124,7 @@ class NiftyNetGlobalConfigTest(TestCase):
         for mod in NiftyNetGlobalConfigTest.default_config_opts['ext_mods']:
             self.assertFalse(isfile(join(niftynet_ext, mod, '__init__.py')))
 
-        global_config = NiftyNetGlobalConfig()
+        global_config = NiftyNetGlobalConfig().setup()
 
         self.assertTrue(isdir(niftynet_home))
         self.assertTrue(isfile(join(niftynet_ext, '__init__.py')))

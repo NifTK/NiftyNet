@@ -23,6 +23,10 @@ class NiftyNetGlobalConfig(object):
     niftynet_exts = {'niftynetext': ['network']}
 
     def __init__(self):
+        self.setup()
+
+
+    def setup(self):
         self._download_server_url = \
             'https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer'
         self._config_home = join(expanduser('~'), '.niftynet')
@@ -41,6 +45,8 @@ class NiftyNetGlobalConfig(object):
                 for mod in NiftyNetGlobalConfig.niftynet_exts[ext]:
                     NiftyNetGlobalConfig.__create_module(join(self._niftynet_home, ext, mod))
         sys.path.insert(1, self._niftynet_home)
+        return self
+
 
     @staticmethod
     def __create_module(path):
