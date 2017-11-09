@@ -87,6 +87,7 @@ class ImageSetsPartitioner(object):
         self.new_partition = new_partition
         self.randomly_split_dataset(overwrite=new_partition)
         tf.logging.info(self)
+        return self
 
     def number_of_subjects(self, phase=ALL):
         """

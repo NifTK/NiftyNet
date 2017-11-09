@@ -26,7 +26,8 @@ class ToyApplication(BaseApplication):
         self.action_param = action_param
         self.toy_param = None
 
-    def initialise_dataset_loader(self, data_param=None, task_param=None):
+    def initialise_dataset_loader(
+            self, data_param=None, task_param=None, data_partitioner=None):
         self.toy_param = task_param
         self.readers = []
 

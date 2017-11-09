@@ -4,12 +4,9 @@ from __future__ import absolute_import, print_function, division
 import csv
 import os
 import sys
-import math, random
 from difflib import SequenceMatcher
 
 import numpy as np
-import pandas
-import tensorflow as tf
 
 from niftynet.io.misc_io import touch_folder
 from niftynet.utilities.filename_matching import KeywordsMatching
@@ -167,8 +164,8 @@ def join_subject_id_and_filename_list(name_list, list_files):
     list_combined = []
     for (i, name) in enumerate(name_max_to_use):
         list_temp = [name]
-        'To do : Taking care of the case when the list of a constraint is ' \
-        'completely empty'
+        # To do : Taking care of the case when the list of a constraint is
+        # completely empty
         for c in range(0, len(list_files)):
             output = list_files[c][ind_tot[c][i]] if ind_tot[c][i] > -1 else ''
             list_temp.append(output)
@@ -206,6 +203,7 @@ def write_csv(csv_file, list_combined):
                 file_writer.writerow(list_temp)
     return
 
+
 def match_and_write_filenames_to_csv(list_constraints, csv_file):
     """
     Combine all elements of file searching until finally writing the names
@@ -230,95 +228,3 @@ def match_and_write_filenames_to_csv(list_constraints, csv_file):
     write_csv(csv_file, list_combined)
 
     return list_combined
-
-
-def csv_files_from_path(data_param, default_folder=None):
-    _subject_list = None
-    for modality_name in data_param:
-        csv_file = data_param[modality_name].csv_file
-        if hasattr(data_param[modality_name], 'path_to_search') and \
-                len(data_param[modality_name].path_to_search):
-            tf.logging.info(
-                '[%s] search file folders, writing csv file %s',
-                modality_name, csv_file)
-            section_tuple = data_param[modality_name].__dict__.items()
-            matcher = KeywordsMatching.from_tuple(section_tuple, default_folder)
-            csv_list = match_and_write_filenames_to_csv([matcher], csv_file)
-            csv_list = pandas.DataFrame(csv_list, columns=['subject_id',
-                                                           'file'])
-            if _subject_list is None:
-                _subject_list = csv_list
-
-            else:
-                _subject_list = pandas.merge(_subject_list, csv_list,
-                                             on='subject_id')
-        else:
-            tf.logging.info(
-                '[%s] using existing csv file %s, skipped folder search',
-                modality_name, csv_file)
-
-
-    return _subject_list['subject_id']
-
-def split_dataset(subject_ids, validation_fraction,
-                  inference_fraction, dataset_split_file):
-    count_v=math.ceil(len(subject_ids)*validation_fraction)
-    count_i=math.ceil(len(subject_ids)*inference_fraction)
-    phases = ['train'] * (len(subject_ids)-count_v-count_i) + \
-             ['validation'] * count_v + \
-             ['inference'] * count_i
-    random.shuffle(phases)
-    write_csv(dataset_split_file, zip(subject_ids, phases))
-
-
-def load_and_merge_csv_files(data_param, phase, dataset_split_file):
-    """
-    Converts a list of csv_files in data_param
-    in to a joint list of file names (by matching the first column)
-    This function returns a <pandas.core.frame.DataFrame> of the
-    joint list
-    """
-    if not data_param:
-        tf.logging.fatal('nothing to load, please check reader.names')
-        raise ValueError
-    _file_list = None
-    for modality_name in data_param:
-        try:
-            csv_file = data_param[modality_name].csv_file
-        except AttributeError:
-            tf.logging.fatal('unrecognised parameter format')
-            raise
-        if not os.path.isfile(csv_file):
-            tf.logging.fatal(
-                "[%s] csv file %s not found.", modality_name, csv_file)
-            raise IOError
-        csv_list = pandas.read_csv(
-            csv_file, header=None, names=['subject_id', modality_name])
-        if _file_list is None:
-            _file_list = csv_list
-            continue
-
-        # merge _file_list based on subject_ids (first column of each csv)
-        n_rows = _file_list.shape[0]
-        _file_list = pandas.merge(_file_list, csv_list, on='subject_id')
-        if _file_list.shape[0] != n_rows:
-            tf.logging.warning("rows not matched in %s", csv_file)
-
-    if _file_list is None or _file_list.size == 0:
-        tf.logging.fatal(
-            "empty filename lists, please check the csv "
-            "files. (remove csv_file keyword if it is in the config file "
-            "to automatically search folders and generate new csv "
-            "files again)\n\n"
-            "Please note in the matched file names, each subject name are "
-            "matched by removing any keywords listed `filename_contains` "
-            "in the config.\n\n")
-        raise IOError
-
-    dataset_split = pandas.read_csv(
-        dataset_split_file, header=None, names=['subject_id', 'phase'])
-    filtered_list = dataset_split[dataset_split['phase']==phase][['subject_id']]
-    _file_list = pandas.merge(_file_list, filtered_list,
-                              on='subject_id')
-
-    return _file_list

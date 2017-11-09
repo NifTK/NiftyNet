@@ -30,8 +30,6 @@ from niftynet.io.misc_io import get_latest_subfolder
 from niftynet.io.misc_io import touch_folder
 from niftynet.layer.bn import BN_COLLECTION
 from niftynet.utilities.util_common import set_cuda_device
-from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
-from niftynet.utilities.util_csv import csv_files_from_path, split_dataset
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 
 FILE_PREFIX = 'model.ckpt'
@@ -136,10 +134,9 @@ class ApplicationDriver(object):
         self.app = app_module(net_param, action_param, self.is_training)
         # initialise data input
         data_partitioner = ImageSetsPartitioner()
-        #print(data_partitioner)
-        data_partitioner.initialise(data_param)
-        data_partitioner.initialise(data_param, ratios=(0.1, 0.1), phase='validation')
-        import pdb; pdb.set_trace()
+        if data_param:
+            # change this according to the config
+            data_partitioner.initialise(data_param, ratios=(0.1, 0.1))
         self.app.initialise_dataset_loader(
             data_param, app_param, data_partitioner)
         # pylint: disable=not-context-manager

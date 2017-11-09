@@ -8,11 +8,11 @@ import numpy as np
 import tensorflow as tf
 from six import string_types
 
+from niftynet.io.image_sets_partitioner import COLUMN_UNIQ_ID
 from niftynet.io.image_type import ImageFactory
 from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
 from niftynet.utilities.user_parameters_helper import make_input_tuple
 from niftynet.utilities.util_common import print_progress_bar
-from niftynet.io.image_sets_partitioner import COLUMN_UNIQ_ID
 
 # NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
 
@@ -78,29 +78,25 @@ class ImageReader(Layer):
         modality sections, 'label' corresponds to one modality section
         """
         if not self.names:
-            tf.logging.fatal('Please specify data names, this should '
+            tf.logging.fatal('Please specify data input keywords, this should '
                              'be a subset of SUPPORTED_INPUT provided '
-                             'in application file')
+                             'in application file.')
             raise ValueError
-        self._names = [name for name in self.names
-                       if vars(task_param).get(name, None)]
+        filtered_names = [name for name in self.names
+                          if vars(task_param).get(name, None)]
+        if not filtered_names:
+            tf.logging.fatal("Reader requires task input keywords %s, but "
+                             "not exist in the config file.\n"
+                             "Available task keywords: %s",
+                             filtered_names, list(vars(task_param)))
+            raise ValueError
 
+        self._names = filtered_names
         self._input_sources = {name: vars(task_param).get(name)
                                for name in self.names}
         # self.required_sections = \
-        #    sum([list(vars(task_param).get(name)) for name in self.names], [])
-        # data_to_load = {}
-        # for name in self._names:
-        #    for source in self._input_sources[name]:
-        #        try:
-        #            data_to_load[source] = data_param[source]
-        #        except KeyError:
-        #            tf.logging.fatal(
-        #                'reader name [%s] requires [%s], however it is not '
-        #                'specified as a section in the config, '
-        #                'current input section names: %s',
-        #                name, source, list(data_param))
-        #            raise ValueError
+        #    sum([list(vars(task_param).get(name))
+        #         for name in self.names], [])
         self._file_list = file_list
         self.output_list = _filename_to_image_list(
             self._file_list, self._input_sources, data_param)
@@ -246,7 +242,11 @@ class ImageReader(Layer):
         """
         Given an integer id returns the subject id.
         """
-        return self._file_list.iloc[image_index, COLUMN_UNIQ_ID]
+        try:
+            return self._file_list.iloc[image_index][COLUMN_UNIQ_ID]
+        except KeyError:
+            tf.logging.warning('Unknonwn subject id in reader table.')
+            raise
 
 
 def _filename_to_image_list(file_list, mod_dict, data_param):
@@ -285,7 +285,8 @@ def _create_image(file_list, idx, modalities, data_param):
         raise
     except AttributeError:
         tf.logging.fatal(
-            "Data params must contain: interp_order, pixdim, axcodes.")
+            "Data params must contain: interp_order, pixdim, axcodes.\n"
+            "Reader must be initialised with a dataframe as file_list.")
         raise
 
     image_properties = {'file_path': file_path,

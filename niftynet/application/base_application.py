@@ -2,7 +2,6 @@ from six import with_metaclass
 from niftynet.utilities import util_common
 from niftynet.layer.base_layer import TrainableLayer
 import tensorflow as tf
-import pandas
 
 class SingletonApplication(type):
     _instances = None
@@ -59,10 +58,16 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
     def initialise_dataset_loader(
             self, data_param=None, task_param=None, data_partitioner=None):
-        df = pandas.read_csv(
-            system_param.dataset_split_file, header=None,
-            names=['subject_id', 'phase'])
-        self.has_validation_data = len(df[df['phase'] == 'validation']) > 0
+        """
+        this function initialise self.readers
+
+        :param data_param: input modality specifications
+        :param task_param: contains task keywords for grouping data_param
+        :param data_partitioner:
+                           specifies train/valid/infer splitting if needed
+        :return:
+        """
+        raise NotImplementedError
 
     def initialise_sampler(self):
         """

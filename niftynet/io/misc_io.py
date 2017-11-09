@@ -476,9 +476,9 @@ def _image3_animated_gif(tag, ims):
 def image3(name,
            tensor,
            max_outputs=3,
-           collections=[tf.GraphKeys.SUMMARIES],
-           animation_axes=[1],
-           image_axes=[2, 3],
+           collections=(tf.GraphKeys.SUMMARIES,),
+           animation_axes=(1,),
+           image_axes=(2, 3),
            other_indices={}):
     """ Summary for higher dimensional images
     Parameters:
@@ -526,21 +526,21 @@ def image3(name,
 def image3_sagittal(name,
                     tensor,
                     max_outputs=3,
-                    collections=[tf.GraphKeys.SUMMARIES]):
+                    collections=(tf.GraphKeys.SUMMARIES,)):
     return image3(name, tensor, max_outputs, collections, [1], [2, 3])
 
 
 def image3_coronal(name,
                    tensor,
                    max_outputs=3,
-                   collections=[tf.GraphKeys.SUMMARIES]):
+                   collections=(tf.GraphKeys.SUMMARIES,)):
     return image3(name, tensor, max_outputs, collections, [2], [1, 3])
 
 
 def image3_axial(name,
                  tensor,
                  max_outputs=3,
-                 collections=[tf.GraphKeys.SUMMARIES]):
+                 collections=(tf.GraphKeys.SUMMARIES,)):
     return image3(name, tensor, max_outputs, collections, [3], [1, 2])
 
 
