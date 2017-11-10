@@ -19,18 +19,17 @@ import time
 import tensorflow as tf
 
 from niftynet.engine.application_factory import ApplicationFactory
-from niftynet.engine.application_variables import CONSOLE
-from niftynet.engine.application_variables import GradientsCollector
-from niftynet.engine.application_variables import NETWORK_OUTPUT
-from niftynet.engine.application_variables import OutputsCollector
-from niftynet.engine.application_variables import TF_SUMMARIES
+from niftynet.engine.application_iteration import IterationMessage
 from niftynet.engine.application_variables import \
-    global_vars_init_or_restore
-from niftynet.io.misc_io import get_latest_subfolder
-from niftynet.io.misc_io import touch_folder
+    CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
+from niftynet.engine.application_variables import \
+    GradientsCollector, OutputsCollector, global_vars_init_or_restore
+from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
+from niftynet.io.image_sets_partitioner import \
+    TRAIN, VALID
+from niftynet.io.misc_io import get_latest_subfolder, touch_folder
 from niftynet.layer.bn import BN_COLLECTION
 from niftynet.utilities.util_common import set_cuda_device
-from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 
 FILE_PREFIX = 'model.ckpt'
 
@@ -61,6 +60,9 @@ class ApplicationDriver(object):
         self.max_checkpoints = 20
         self.save_every_n = 10
         self.tensorboard_every_n = 20
+        self.validate_every_n = 1
+        self.validate_iters = 3
+
         self.initial_iter = 0
         self.final_iter = 0
 
@@ -113,7 +115,7 @@ class ApplicationDriver(object):
 
             # training iterations-related parameters
             self.initial_iter = train_param.starting_iter
-            self.final_iter = train_param.max_iter
+            self.final_iter = max(train_param.max_iter, self.initial_iter)
             self.save_every_n = train_param.save_every_n
             self.tensorboard_every_n = train_param.tensorboard_every_n
             self.max_checkpoints = train_param.max_checkpoints
@@ -132,6 +134,7 @@ class ApplicationDriver(object):
         assert app_param, 'application specific param. not specified'
         app_module = ApplicationDriver._create_app(app_param.name)
         self.app = app_module(net_param, action_param, self.is_training)
+
         # initialise data input
         data_partitioner = ImageSetsPartitioner()
         if data_param:
@@ -139,6 +142,7 @@ class ApplicationDriver(object):
             data_partitioner.initialise(data_param, ratios=(0.1, 0.1))
         self.app.initialise_dataset_loader(
             data_param, app_param, data_partitioner)
+
         # pylint: disable=not-context-manager
         with self.graph.as_default(), tf.name_scope('Sampler'):
             self.app.initialise_sampler()
@@ -228,6 +232,7 @@ class ApplicationDriver(object):
             # initialise network, these are connected in
             # the context of multiple gpus
             self.app.initialise_network()
+            self.app.add_validation_flag()
 
             # for data parallelism --
             #     defining and collecting variables from multiple devices
@@ -316,6 +321,33 @@ class ApplicationDriver(object):
                 'match the current application graph', checkpoint)
             raise
 
+    def run_vars(self, sess, message):
+        """
+        Running a TF session by retrieving variables/operations to run,
+        along with data for feed_dict.
+        This function sets message._current_iter_output with session.run
+        outputs
+        """
+
+        collected = self.outputs_collector
+
+        # building a dictionary of variables
+        vars_to_run = message.ops_to_run
+        # session will run variables collected under CONSOLE
+        vars_to_run[CONSOLE] = collected.variables(CONSOLE)
+        # session will run variables collected under NETWORK_OUTPUT
+        vars_to_run[NETWORK_OUTPUT] = collected.variables(NETWORK_OUTPUT)
+        if self.tensorboard_every_n > 0 and \
+                (message.current_iter % self.tensorboard_every_n == 0):
+            # session will run variables collected under TF_SUMMARIES
+            vars_to_run[TF_SUMMARIES] = collected.variables(TF_SUMMARIES)
+
+        # run the session
+        graph_output = sess.run(vars_to_run, feed_dict=message.data_feed_dict)
+
+        # outputs to message
+        message.current_iter_output = graph_output
+
     def _training_loop(self, sess, loop_status):
         """
         Training loop is running through the training_ops generator
@@ -326,46 +358,52 @@ class ApplicationDriver(object):
         At every iteration it also evaluates all variables returned by
         the output_collector.
         """
-        writer_t = tf.summary.FileWriter(self.summary_dir+'/t', sess.graph)
-        writer_v = tf.summary.FileWriter(self.summary_dir+'/v', sess.graph)
-        writer_funcs = [lambda x, y: None,
-                        writer_t.add_summary,
-                        writer_v.add_summary]
 
-        # running through training_op from application
-        for iter_ops in self.app.iter_ops(self.initial_iter, self.final_iter):
-            pref, iter_i, save, save_tensorboard, iter_op, data_dict = iter_ops
+        iter_msg = IterationMessage()
+        iter_msg.initial_iter = self.initial_iter
+        iter_msg.final_iter = self.final_iter
 
+        # initialise tf summary writers
+        writer_train = tf.summary.FileWriter(
+            self.summary_dir + '/train', sess.graph)
+        writer_valid = tf.summary.FileWriter(
+            self.summary_dir + '/v', sess.graph) \
+            if self.validate_every_n > 0 else None
+
+        for iter_i in range(iter_msg.initial_iter, iter_msg.final_iter):
+            # general loop information
             loop_status['current_iter'] = iter_i
-            local_time = time.time()
             if self._coord.should_stop():
                 break
+            if iter_msg.should_stop:
+                break
 
-            # variables to the graph
-            vars_to_run = dict(iter_op=iter_op)
-            vars_to_run[CONSOLE], vars_to_run[NETWORK_OUTPUT] = \
-                self.outputs_collector.variables(CONSOLE), \
-                self.outputs_collector.variables(NETWORK_OUTPUT)
-            if save_tensorboard:
-                # adding tensorboard summary
-                vars_to_run[TF_SUMMARIES] = \
-                    self.outputs_collector.variables(collection=TF_SUMMARIES)
+            if iter_i > 0 and self.validate_every_n > 0 and \
+                    (iter_i % self.validate_every_n == 0):
+                iter_msg.initial_iter = 0
+                iter_msg.final_iter = self.validate_iters
+                for iter_j in range(iter_msg.initial_iter, iter_msg.final_iter):
+                    iter_msg.current_iter, iter_msg.phase = iter_j, VALID
 
-            # run all variables in one go
-            graph_output = sess.run(vars_to_run, feed_dict=data_dict)
+                    self.app.update(iter_msg)
+                    self.run_vars(sess, iter_msg)
+                    self.app.update(iter_msg)
+                    # save iteration results
+                    iter_msg.to_tf_summary(writer_valid)
+                    tf.logging.info(iter_msg.to_console_string())
 
-            # process graph outputs
-            self.app.interpret_output(graph_output[NETWORK_OUTPUT])
-            console_str = self._console_vars_to_str(graph_output[CONSOLE])
-            summary = graph_output.get(TF_SUMMARIES, {})
-            if summary:
-                writer_funcs[save_tensorboard](summary, iter_i)
+            # update variables/operations to run, from self.app
+            iter_msg.current_iter, iter_msg.phase = iter_i, TRAIN
+            # update iteration status before the batch process
+            self.app.update(iter_msg)
+            self.run_vars(sess, iter_msg)
+            # update iteration status after the batch process
+            self.app.update(iter_msg)
 
-            # save current model
-            if save:
-                self._save_model(sess, iter_i)
-            tf.logging.info('iter %s %d, %s (%.3fs)',
-                            pref, iter_i, console_str, time.time() - local_time)
+            self.app.interpret_output(
+                iter_msg.current_iter_output[NETWORK_OUTPUT])
+            iter_msg.to_tf_summary(writer_train)
+            tf.logging.info(iter_msg.to_console_string())
 
     def _inference_loop(self, sess, loop_status):
         """

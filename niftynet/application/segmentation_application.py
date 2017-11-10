@@ -1,12 +1,10 @@
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
-from niftynet.engine.application_factory import ApplicationNetFactory
-from niftynet.engine.application_factory import InitializerFactory
-from niftynet.engine.application_factory import OptimiserFactory
-from niftynet.engine.application_variables import CONSOLE
-from niftynet.engine.application_variables import NETWORK_OUTPUT
-from niftynet.engine.application_variables import TF_SUMMARIES
+from niftynet.engine.application_factory import\
+    ApplicationNetFactory, InitializerFactory, OptimiserFactory
+from niftynet.engine.application_variables import \
+    CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
 from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.engine.sampler_uniform import UniformSampler
@@ -27,6 +25,7 @@ from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
+from niftynet.io.image_sets_partitioner import TRAIN, VALID
 
 SUPPORTED_INPUT = {'image', 'label', 'weight', 'sampler'}
 
@@ -35,7 +34,7 @@ class SegmentationApplication(BaseApplication):
     REQUIRED_CONFIG_SECTION = "SEGMENTATION"
 
     def __init__(self, net_param, action_param, is_training):
-        BaseApplication.__init__(self)
+        super(SegmentationApplication, self).__init__()
         tf.logging.info('starting segmentation application')
         self.is_training = is_training
 
@@ -59,25 +58,25 @@ class SegmentationApplication(BaseApplication):
     def initialise_dataset_loader(
         self, data_param=None, task_param=None, data_partitioner=None):
 
-        BaseApplication.initialise_dataset_loader(
-            self, data_param, task_param, system_param)
-
         self.data_param = data_param
         self.segmentation_param = task_param
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
             reader_train = ImageReader(SUPPORTED_INPUT)
-            file_list = data_partitioner.get_file_list(TRAIN)
+            file_list = data_partitioner.get_file_list()
             reader_train.initialise(data_param, task_param, file_list)
             self.readers = [reader_train]
-            if self.has_validation_data and self.action_param.validate_every_n:
+
+            if self.action_param.validate_every_n > 0:
                 reader_valid = ImageReader(SUPPORTED_INPUT)
-                file_list = data_partitioner.get_file_list(VALID)
+                file_list = data_partitioner.get_file_list()
                 reader_valid.initialise(data_param, task_param, file_list)
                 self.readers.append(reader_valid)
         else:  # in the inference process use image input only
-            self.readers = [ImageReader(['image'], 'inference')]
+            self.readers = [ImageReader(['image'])]
+            file_list = data_partitioner.get_file_list()
+            self.readers[0].initialise(data_param, task_param, file_list)
 
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(
@@ -208,8 +207,6 @@ class SegmentationApplication(BaseApplication):
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][1]()
 
     def initialise_network(self):
-        BaseApplication.initialise_network(self)
-
         num_classes = self.segmentation_param.num_classes
         w_regularizer = None
         b_regularizer = None
@@ -246,8 +243,7 @@ class SegmentationApplication(BaseApplication):
 
 
         if self.is_training:
-            if self.has_validation_data and \
-                    self.action_param.save_every_n > 0:
+            if self.action_param.save_every_n > 0:
                 data_dict, net_out = tf.cond(self.is_validation,
                                          lambda: data_net(False),
                                          lambda: data_net(True))

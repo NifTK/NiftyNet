@@ -98,8 +98,10 @@ class ImageSetsPartitioner(object):
         if self._file_list is None:
             return 0
         phase = look_up_operations(phase.lower(), SUPPORTED_PHASES)
-        if phase == ALL or self._partition_ids is None:
+        if phase == ALL:
             return self._file_list[COLUMN_UNIQ_ID].count()
+        if  self._partition_ids is None:
+            return 0
         selector = self._partition_ids[COLUMN_PHASE] == phase
         return self._partition_ids[selector].count()[COLUMN_UNIQ_ID]
 
@@ -258,6 +260,7 @@ class ImageSetsPartitioner(object):
             raise
         return csv_list
 
+    # pylint: disable=broad-except
     def randomly_split_dataset(self, overwrite=False):
         """
         Label each subject as one of the 'TRAIN', 'VALID', 'INFER',
@@ -315,7 +318,7 @@ class ImageSetsPartitioner(object):
         if self._file_list is not None:
             summary_str += 'input section names: {}\n'.format(
                 list(self._file_list))
-        if self.ratios:
+        if self._partition_ids and self.ratios:
             summary_str += \
                 'data partitioning (percentage):\n' \
                 '-- {} {} ({}),\n' \

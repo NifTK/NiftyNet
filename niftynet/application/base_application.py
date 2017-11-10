@@ -1,7 +1,15 @@
-from six import with_metaclass
-from niftynet.utilities import util_common
-from niftynet.layer.base_layer import TrainableLayer
+# -*- coding: utf-8 -*-
+"""
+Interface of NiftyNet application
+"""
+
 import tensorflow as tf
+from six import with_metaclass
+
+from niftynet.layer.base_layer import TrainableLayer
+from niftynet.utilities import util_common
+from niftynet.io.image_sets_partitioner import TRAIN, VALID
+
 
 class SingletonApplication(type):
     _instances = None
@@ -21,9 +29,15 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     Each application type_str should support to use
     the standard training and inference driver
     """
+
+    # defines name of the customised configuration file section
+    # the section collects all application specific user parameters
     REQUIRED_CONFIG_SECTION = None
 
+    # boolean flag
     is_training = True
+    # TF placeholders for switching network on the fly
+    is_validation = None
 
     # input of the network
     readers = None
@@ -83,12 +97,17 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         sets self.net
         :return: None
         """
-        self.is_validation = tf.placeholder_with_default(False, [],
-                                                         'is_validation')
+        raise NotImplementedError
 
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
+        """
+        adding sampler output tensor and network tensors to the graph.
+        :param outputs_collector:
+        :param gradients_collector:
+        :return:
+        """
         raise NotImplementedError
 
     def interpret_output(self, batch_output):
@@ -114,7 +133,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
             self.gradient_op = self.optimiser.apply_gradients(gradients)
         else:
             raise NotImplementedError(
-                'This app supports updating a network, or list of networks')
+                'This app supports updating a network, or a list of networks.')
 
     def stop(self):
         for sampler_set in self.get_sampler():
@@ -122,34 +141,55 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
                 if sampler:
                     sampler.close_all()
 
-    def iter_ops(self, start_iter=0, end_iter=1):
-        param = self.action_param
-        training_op_generator = self.training_ops(start_iter=start_iter,
-                                                  end_iter=end_iter)
-        for iter_i, op, feed_dict in training_op_generator:
-            if self.has_validation_data and param.validate_every_n > 0 and \
-                            iter_i % param.validate_every_n == 0:
-                feed_dict_validation = feed_dict.copy()
-                feed_dict_validation[self.is_validation]=True
-                for iter_j in range(param.validation_iters):
-                    yield 'Validate', iter_i, False, 2, \
-                          self.is_validation, feed_dict_validation
+    def update(self, iteration_message):
+        if iteration_message.phase == TRAIN:
+            iteration_message.data_feed_dict[self.is_validation] = False
+            iteration_message.ops_to_run = {'grad': self.gradient_op}
+        if iteration_message.phase == VALID:
+            iteration_message.data_feed_dict[self.is_validation] = True
+            iteration_message.ops_to_run = {}
 
-            feed_dict[self.is_validation]=False
-            save = param.save_every_n > 0 and \
-                   iter_i % param.save_every_n == 0
-            save_log = 1 if (param.tensorboard_every_n > 0 and \
-                       iter_i % param.tensorboard_every_n == 0) else 0
-            yield 'Train', iter_i, save, save_log, self.gradient_op, feed_dict
-
-    def training_ops(self, start_iter=0, end_iter=1):
-        """
-        Specify the network update operation at each iteration
-        app can override this updating method if necessary
-        """
-        end_iter = max(start_iter, end_iter)
-        for iter_i in range(start_iter, end_iter):
-            yield iter_i, self.gradient_op, {}
+    # def iter_ops(self, start_iter=0, end_iter=1):
+    #     param = self.action_param
+    #     training_op_generator = self.training_ops(start_iter=start_iter,
+    #                                               end_iter=end_iter)
+    #     for iter_i, op, feed_dict in training_op_generator:
+    #         if self.has_validation_data and param.validate_every_n > 0 and \
+    #                                 iter_i % param.validate_every_n == 0:
+    #             feed_dict_validation = feed_dict.copy()
+    #             feed_dict_validation[self.is_validation] = True
+    #             for iter_j in range(param.validation_iters):
+    #                 yield 'Validate', iter_i, False, 2, \
+    #                       self.is_validation, feed_dict_validation
+    #
+    #         feed_dict[self.is_validation] = False
+    #         save = param.save_every_n > 0 and \
+    #                iter_i % param.save_every_n == 0
+    #         save_log = 1 if (param.tensorboard_every_n > 0 and \
+    #                          iter_i % param.tensorboard_every_n == 0) else 0
+    #         yield 'Train', iter_i, save, save_log, self.gradient_op, feed_dict
+    #
+    # def train_ops(self, start_iter=0, end_iter=1):
+    #     """
+    #     Specify the network update operation at each iteration
+    #     app can override this updating method if necessary
+    #     """
+    #     end_iter = max(start_iter, end_iter)
+    #     for iter_i in range(start_iter, end_iter):
+    #         yield 'Train', iter_i, self.gradient_op, {self.is_validation: False}
+    #
+    # def validation_ops(self, start_iter=0, end_iter=1):
+    #     end_iter = max(start_iter, end_iter)
+    #     for iter_i in range(start_iter, end_iter):
+    #         yield 'Validation', iter_i, self.is_validation, {self.is_validation: True}
 
     def get_sampler(self):
         return self.sampler
+
+    def add_validation_flag(self):
+        """
+        add a TF placeholder for switching between train/valid graphs
+        :return:
+        """
+        self.is_validation = \
+            tf.placeholder_with_default(False, [], 'is_validation')
