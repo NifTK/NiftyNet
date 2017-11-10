@@ -7,7 +7,7 @@ import tensorflow as tf
 from niftynet.layer import layer_util
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.deconvolution import DeconvLayer
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations
 
 SUPPORTED_OP = {'REPLICATE', 'CHANNELWISE_DECONV'}
 
@@ -24,8 +24,8 @@ class UpSampleLayer(TrainableLayer):
 
     def __init__(self,
                  func,
-                 kernel_size,
-                 stride,
+                 kernel_size=3,
+                 stride=2,
                  w_initializer=None,
                  w_regularizer=None,
                  with_bias=False,

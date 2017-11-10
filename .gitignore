@@ -21,3 +21,6 @@ dist
 build
 *.egg-info
 niftynet/info.py
+*.zip
+*.mhd
+*.raw

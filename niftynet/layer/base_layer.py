@@ -1,18 +1,34 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
+from abc import ABCMeta, abstractmethod
+
 import numpy as np
 import tensorflow as tf
-from niftynet.engine.restorer import RESTORABLE
+from six import with_metaclass
+
+from niftynet.engine.application_variables import RESTORABLE
+
+
+class Invertible(with_metaclass(ABCMeta, object)):
+    """
+    interface of Invertible data
+    """
+
+    @abstractmethod
+    def inverse_op(self, *args, **kwargs):
+        raise NotImplementedError
 
 
 class Layer(object):
     def __init__(self, name='untitled_op'):
+        self.name = name
         self._op = tf.make_template(name, self.layer_op, create_scope_now_=True)
 
     def layer_op(self, *args, **kwargs):
         msg = 'method \'layer_op\' in \'{}\''.format(type(self).__name__)
-        raise NotImplementedError(msg)
+        tf.logging.fatal(msg)
+        raise NotImplementedError
 
     def __call__(self, *args, **kwargs):
         return self._op(*args, **kwargs)
@@ -50,9 +66,9 @@ class TrainableLayer(Layer):
 
     def restore_from_checkpoint(self, checkpoint_name, scope=None):
         if scope is None:
-            scope=self.layer_scope().name
-        tf.add_to_collection(RESTORABLE,(self.layer_scope().name,
-                                         checkpoint_name,scope))
+            scope = self.layer_scope().name
+        tf.add_to_collection(RESTORABLE, (self.layer_scope().name,
+                                          checkpoint_name, scope))
 
     def regularizer_loss(self):
         return tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES,
@@ -98,16 +114,49 @@ class TrainableLayer(Layer):
         self._regularizers = value
 
 
+class DataDependentLayer(Layer):
+    """
+    Some layers require a one-pass training through the training set
+    to determine their internal models, this abstract provides
+    interfaces for training these internal models and querying the
+    status.
+    """
+
+    def __init__(self, name='data_dependent_op'):
+        super(DataDependentLayer, self).__init__(name=name)
+
+    def is_ready(self):
+        raise NotImplementedError
+
+    def train(self, *args, **kwargs):
+        raise NotImplementedError
+
+
+class RandomisedLayer(Layer):
+    """
+    The layers require a randomisation process, to randomly
+    change some of the layer's states on the fly.
+    """
+
+    def __init__(self, name='randomised_op'):
+        super(RandomisedLayer, self).__init__(name=name)
+
+    def randomise(self, *args, **kwargs):
+        raise NotImplementedError
+
+
 class LayerFromCallable(Layer):
-    """Module wrapping a function provided by the user.
+    """
+    Module wrapping a function provided by the user.
     Analogous to snt.Module
     """
 
-    def __init__(self, layer_op, name='untitled_op'):
+    def __init__(self, layer_op, name='from_callable_op'):
         super(LayerFromCallable, self).__init__(name=name)
         if not callable(layer_op):
-            raise TypeError("layer_op must be callable.")
-        self._layer_op=layer_op
+            tf.logging.fatal("layer_op must be callable.")
+            raise TypeError
+        self._layer_op = layer_op
 
     def layer_op(self, *args, **kwargs):
-        return self._layer_op(*args,**kwargs)
+        return self._layer_op(*args, **kwargs)

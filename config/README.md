@@ -1,103 +1,138 @@
-# Explanation of the config file
+# Global NiftyNet settings
 
-You can amend the config files for your own purposes to run your experiments. It enables a greater flexibility in your choices of networks, losses, datasets and replace your command line arguments
+The global NiftyNet configuration is read from `~/.niftynet/config.ini`.
+When NiftyNet is run, it will attempt to load this file for the global configuration.
+* If it does not exist, NiftyNet will create a default one.
+* If it exists but cannot be read for some reason (for instance incorrect formatting or wrong entries):
+   - NiftyNet will back it up with a timestamp (for instance `~/.niftynet/config-backup-2017-10-16-10-50-58-abc.ini` - `abc` being a random string) and,
+   - Create a default one.
+* Otherwise NiftyNet will read the global configuration from this file.
 
-## Contraints on filenames
-In order to specify the files to use and the modalities to gather, you can specify them using the following conventions
+Currently the minimal version of this file will look like the following:
+```ini
+[global]
+home = ~/niftynet
+```
 
-For instance, an input can be specified as:
+The `home` key specifies the root folder (referred to as `$NIFTYNET_HOME` from this point onwards) to be used by NiftyNet for storing and locating user data such as downloaded models, and new networks implemented by the user.
+This setting is configurable, and upon successfully loading this file NiftyNet will attempt to create the specified folder, if it does not already exist.
 
-[image modality #i]  
-path_to _ search = Filepath to the directory of choice  
-filename_ contain = string that has to be in the filename  
-filename_not _contain = string that should not be present in the filename  
+On first run, NiftyNet will also attempt to create the NiftyNet extension module hierarchy (`niftynetext.*`), that allows for the discovery of user-defined networks.
+This hierarchy consists of the following:
 
-an output image is specified as:  
+* `$NIFTYNET_HOME/niftynetext/` (folder)
+* `$NIFTYNET_HOME/niftynetext/__init__.py` (file)
+* `$NIFTYNET_HOME/niftynetext/network/` (folder)
+* `$NIFTYNET_HOME/niftynetext/network/__init__.py` (file)
 
-[label modality #i]  
-path_to_search = Filepath to the directory of choice  
-filename_contain = string that has to be in the filename
-filename_not_contain = string that should not be present in the filename  
+Alternatively this hierarchy can be created by the user before running NiftyNet for the first time, e.g. for [defining new networks][new-network].
 
-optionally you may want to include additional weights images
+[new-network]: ../niftynet/network/README.md
 
-[weight modality #i]  
-path_to_search = Filepath to the directory of choice  
-filename_contain = string that has to be in the filename
-filename_not_contain = string that should not be present in the filename 
 
-The keywords are **image**, **label** and **weight**
+# Configuration file
 
-## Network settings
-[settings]
+To run a NiftyNet [application](../niftynet/application) or a customised
+application which implements [BaseApplication](../niftynet/application/base_application.py),
+a configuration file needs to be provided, for example, 
+by creating a `user_configuration.ini` file and using the file via 
+`python net_gan.py --conf user_configuration.ini`.
+
+This folder presents a few examples of configuration files for different
+applications. All files should have four sections:
+- `[SYSTEM]`
+- `[NETWORK]`
+- `[TRAINING]`
+- `[INFERENCE]` 
+
+These describes common options and hyperparameters for all applications.
+
+Additionally, an application specific section is required for each application:
+- `[GAN]` for generative adversirial networks
+- `[SEGMENTATION]` for segmentation networks
+- `[AUTOENCODER]` for autoencoder networks
+
+The [user parameter parser](../niftynet/utilities/user_parameters_parser.py)
+tries to match the section names. All other section names will be treated as
+[input data source specifications](##Input data source section).
+
+
+## Input data source section
+This section will be used by [ImageReader](../niftynet/io/image_reader.py)
+to generate a list of [input images objects](../niftynet/io/image_type.py).
+For example:
+```ini
+[T1Image]  
+path_to_search = ./example_volumes/image_folder
+filename_contain = ('T1', 'subject') 
+filename_not_contain = ('T1c', 'T2')
+spatial_window_size = (128, 128, 1)
+pixdim = (1.0, 1.0, 1.0)
+axcodes=(A, R, S)
+interp_order = 3
+```
+Specifies a set of images (currently supports NIfTI format) 
+from `./example_volumes/image_folder`, with filnames contain both `T1` and
+`subject`, but not contain `T1c` and `T2`. These images will be read into
+memory and transformed into "A, R, S" orientation 
+(using [NiBabel](http://nipy.org/nibabel/reference/nibabel.orientations.html)).
+The images will also be transformed to have voxel size `(1.0, 1.0, 1.0)`
+with an interpolation order of `3`.
+
+This input source can be used alone, as a `T1` MRI input to an application.
+It can also be used along with other modalities, a multi-modality example
+can be find at [here](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/supports-axbxc-patch/config/default_multimodal_segmentation.ini).
+
+Currently image data in nifty format (extension .nii or .nii.gz) are supported.
+
+
+The following sections describe key parameters that can be specified in the configuration file.
+
+## [SYSTEM]
+* `queue_length` an integer specifies size of image window buffer used when sampling
+image windows from image volumes. Image window samplers fill the buffer and
+networks read the buffer.
+ 
+## [NETWORK]
 ### Histogram normalisation
-The histogram normalisation is performed using the method described. The folllowing fields can be specified:  
-
-* histogram _ ref _ file: Name of the file that contains the normalisation parameter if it has been trained before or where to save it
-* norm _ type: type of landmarks used in the histogram for the matching (percentile or quartile)
-* cutoff _ min: inferior cutoff of the histograms for the matching
-* cutoff _ max: superior cutoff of the histogram for the matching
-* multimod _ mask _ type: At training time, logical strategies to apply between the masks obtained for multiple modalities: can take one of the following:
-	* or = union of the available masks
-	* and = intersection of the available masks
-	* all = a different mask is applied for each modality
-* mask _ type = strategy applied to mask an image. Choice between:
-	* otsu _ plus
-	* otsu _ minus
-	* thresh _ plus
-	* thresh _ minus  	
-
-### Volume preprocessing
-List of different operations that can be applied to the data:  
-
-* reorientation = [True/False] Indicates if the images should be reoriented to the standard R.A.S convention
-* resampling = [True/False] Indicates if the images should be made isotropic [1,1,1]
-* normalisation = [True/False] Indicates if an histogram standardisation should be applied to the data
-* whitening = [True/False] Indicates if the loaded image should be whitened I->(I-mean)/std
-* image _ interp _ order = [0/3] Interpolation order applied on the image. 0 for nearest neighbour, 3 for cubic interpolation
-* label _interp _ order = [0/3] Idem but for the labels interpolation
-* w_map _ interp_order = 3 Idem but for the additional weights
-* queue_length = 3
-* num_threads = 1
-* num_gpus = 1
-* sample_per _volume = 32
-
+The histogram normalisation is performed using the method described. The following fields can be specified:  
+* `normalisation` [True/False] Indicates if an histogram standardisation should be applied to the data
+* `whitening` [True/False] Indicates if the loaded image should be whitened I->(I-mean)/std
+* `histogram_ref_file`: Name of the file that contains the normalisation parameter if it has been trained before or where to save it
+* `norm_type`: type of landmarks used in the histogram for the matching (percentile or quartile)
+* `cutoff`: a list of two floats, inferior and superior cutoff of the histograms for the matching
+* `foreground_type`: to generate a foreground mask and the normalisation will be applied to foreground only. Choice between:
+	* `otsu_plus`
+	* `otsu_minus`
+	* `thresh_plus`
+	* `thresh_minus`  
+* `multimod_foreground_type`: strategies applied to combine foreground masks of multiple modalities, can take one of the following:
+	* `or` union of the available masks
+	* `and` intersection of the available masks
+	* `all` a different mask is applied to each modality
+	
+## [TRAINING]
 ### Augmentation at training
-* rotation = [True/False] Indicates if a random rotation operation should be applied to the volumes
-rotation = False
-* min_angle = -10.0 Minimum angle of rotation
-* max_angle = 10.0 Maximum angle of rotation
-* spatial_scaling = [True/False] Indicates if a random spatial scaling should be applied
-* max_percentage = 10.0 Maximum zooming applied
+* `rotation_angle` a tuple of two floats, indicating a random rotation operation should be applied to the volumes
+(This can be very slow depending on the input volume dimensionality)
+* `scaling_percentage` a tuple of two floats, indicating a random spatial scaling should be applied
+(This can be very slow depending on the input volume dimensionality)
+* `lr` Learning rate to be applied
+* `loss_type`. Loss function to be used
+* `reg_type` Regularisor to be used 
+* `save_every _n` Frequency of model saving
+* `max_iter` Maximum number of training steps
+* `volume_padding _size` One side length of the receptive field affected by the network
 
-### Network parameters
-* spatial_rank = [2/2.5/3]. Dimensionality of the network input. 2.5 refers to the treatment slice by slice of a 3D image
-* batch_size = 4
-* image_size = 63
-* label_size = 63. ***WARNING*** The label size and image size are network dependent. Details can be found in the network documentation
-* w_map _size = 63
-* num_classes = 5 In case of a classification task, number of possible labels 
-* cuda_devices = " "
-* model_ dir = ./path_ to_model Folder where to save/load the model parameters
-* net_name = toynet Name of the model to use (one of those defined in the corresponding folder 
-
-### Training specific parameters
-* lr = 0.01. Learning rate to be applied
-* decay = 1e-7
-* loss_type = Dice. Loss function to be used
-* reg_type = L2. Regularisor to be used 
-* starting_iter = 0. Starting iteration
-* save_every _n = 100. Frequency of model saving
-* max_iter = 100. Maximum number of training steps
-* volume_padding _size = 21 One side length of the receptive field affected by the network
-
-### Inference specific parameters
-* border = 0. Size of the non predicted border of the image
-* pred_iter = 10. Model iteration to reload for the evaluation
-* save_seg _ dir = ./path_to_save . Path to the folder where to save the output of the inference 
-* eval_data _ dir = ./path_ to_test . Path to the folder where the testing data is located
-* output_interp _order = 3
-* output_prob = False
+## [INFERENCE]
+* `inference_iter` an integer specifies the trained model to be used for inference.
+`-1` or unspecified indicating the latest trained model.
+* `spatial_window_size` a tuple of integers indicating the size of input window
+at inference time, this overrides the `spatial_window_size` parameter in the input
+source sections.
+* `border` a tuple of integers specifying a border size used to crop (along both sides of each
+dimension) the network output image window. E.g., `(3, 3, 3)` will crop a
+`(64, 64, 64)` window to size `(58, 58, 58)`.
 
 
 

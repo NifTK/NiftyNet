@@ -8,7 +8,7 @@ from niftynet.layer import layer_util
 from niftynet.layer.activation import ActiLayer
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.bn import BNLayer
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations
 
 SUPPORTED_PADDING = {'SAME', 'VALID'}
 
@@ -50,7 +50,7 @@ class ConvLayer(TrainableLayer):
         super(ConvLayer, self).__init__(name=name)
 
         self.padding = look_up_operations(padding.upper(), SUPPORTED_PADDING)
-        self.n_output_chns = n_output_chns
+        self.n_output_chns = int(n_output_chns)
         self.kernel_size = kernel_size
         self.stride = stride
         self.dilation = dilation

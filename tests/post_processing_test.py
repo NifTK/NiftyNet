@@ -48,7 +48,8 @@ class PostProcessingTest(tf.test.TestCase):
         with self.test_session() as sess:
             out = sess.run(out_post)
             x_shape = tuple(x.get_shape().as_list()[:-1])
-            self.assertAllClose(x_shape, out.shape)
+            self.assertAllClose(x_shape + (1,), out.shape)
+
 
 if __name__ == "__main__":
     tf.test.main()

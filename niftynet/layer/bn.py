@@ -6,12 +6,14 @@ from tensorflow.python.training import moving_averages
 
 from niftynet.layer.base_layer import TrainableLayer
 
+BN_COLLECTION = tf.GraphKeys.UPDATE_OPS
+
 
 class BNLayer(TrainableLayer):
     """
     Batch normalisation layer, with trainable mean value 'beta' and
     std 'gamma'.  'beta' is initialised to 0.0 and 'gamma' is initialised
-    to 1.0.  This class assumes 'beta' and 'gamma' share the same type of
+    to 1.0.  This class assumes 'beta' and 'gamma' share the same type_str of
     regulariser.
     """
 
@@ -70,8 +72,8 @@ class BNLayer(TrainableLayer):
             moving_mean, mean, self.moving_decay).op
         update_moving_variance = moving_averages.assign_moving_average(
             moving_variance, variance, self.moving_decay).op
-        tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_moving_mean)
-        tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_moving_variance)
+        tf.add_to_collection(BN_COLLECTION, update_moving_mean)
+        tf.add_to_collection(BN_COLLECTION, update_moving_variance)
 
         # call the normalisation function
         if is_training or use_local_stats:

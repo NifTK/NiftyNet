@@ -8,7 +8,7 @@ from niftynet.layer import layer_util
 from niftynet.layer.activation import ActiLayer
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.bn import BNLayer
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations
 
 SUPPORTED_OP = {'2D': tf.nn.conv2d_transpose,
                 '3D': tf.nn.conv3d_transpose}
@@ -31,13 +31,13 @@ def default_b_initializer():
 
 
 def infer_output_dims(input_dims, strides, kernel_sizes, padding):
-    '''
+    """
         infer output dims from list,
         the dim can be different in different directions.
         Note: dilation is not considerted here.
-    '''
-    assert (len(input_dims) == len(strides))
-    assert (len(input_dims) == len(kernel_sizes))
+    """
+    assert len(input_dims) == len(strides)
+    assert len(input_dims) == len(kernel_sizes)
     if padding == 'VALID':
         output_dims = [
             dim * strides[i] + max(kernel_sizes[i] - strides[i], 0)
@@ -69,7 +69,7 @@ class DeconvLayer(TrainableLayer):
         super(DeconvLayer, self).__init__(name=name)
 
         self.padding = look_up_operations(padding.upper(), SUPPORTED_PADDING)
-        self.n_output_chns = n_output_chns
+        self.n_output_chns = int(n_output_chns)
         self.kernel_size = kernel_size
         self.stride = stride
         self.with_bias = with_bias

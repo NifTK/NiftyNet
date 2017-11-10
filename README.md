@@ -2,8 +2,8 @@
 
 <img src="https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/raw/master/niftynet-logo.png" width="263" height="155">
 
-[![build status](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/build.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
-[![coverage report](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/master/coverage.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/master)
+[![build status](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/dev/build.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/dev)
+[![coverage report](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/dev/coverage.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/dev)
 
 NiftyNet is a [TensorFlow][tf]-based open-source convolutional neural networks (CNN) platform for research in medical image analysis and image-guided therapy.
 NiftyNet's modular structure is designed for sharing networks and pre-trained models.
@@ -36,8 +36,8 @@ Other features of NiftyNet include:
 ### Installation
 
 1. Please install the appropriate [TensorFlow][tf] package*:
-   * [`pip install tensorflow-gpu==1.1`][tf-pypi-gpu] for TensorFlow with GPU support
-   * [`pip install tensorflow==1.1`][tf-pypi] for CPU-only TensorFlow
+   * [`pip install tensorflow-gpu==1.3`][tf-pypi-gpu] for TensorFlow with GPU support
+   * [`pip install tensorflow==1.3`][tf-pypi] for CPU-only TensorFlow
 1. [`pip install niftynet`](https://pypi.org/project/NiftyNet/)
 
  <sup>*All other NiftyNet dependencies are installed automatically as part of the pip installation process.</sup>
@@ -48,26 +48,82 @@ Other features of NiftyNet include:
 
 ### Getting started
 
-Please follow the links for [demos](./demos) and [network (re-)implementations](./niftynet/network).
+#### Examples
 
-### Contributing
+Please see the [NiftyNet demos][demos].
 
-Feature requests and bug reports are collected on [Issues](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/issues).
+[demos]: ./demos
 
-Contributors are encouraged to take a look at [CONTRIBUTING.md](./CONTRIBUTING.md).
+#### Network (re-)implementations
+
+Please see the list of [network (re-)implementations in NiftyNet][network-impl].
+
+[network-impl]: ./niftynet/network
+
+#### API documentation
+
+The API reference is available on [Read the Docs][rtd-niftynet].
+
+[rtd-niftynet]: http://niftynet.rtfd.io/
+
+#### Customising NiftyNet
+
+Please see the [NiftyNet global settings][global-settings] section for customising NiftyNet's global settings.
+
+[global-settings]: ./config/README.md#global-niftynet-settings
+
+#### Contributing
+
+Please see the [contribution guidelines](./CONTRIBUTING.md).
+
+#### Useful links
+
+[NiftyNet website][niftynet-io]
+
+[NiftyNet source code on CmicLab][niftynet-cmiclab]
+
+[NiftyNet source code mirror on GitHub][niftynet-github]
+
+NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
+
+[niftynet-io]: http://niftynet.io/
+[niftynet-cmiclab]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
+[niftynet-github]: https://github.com/NifTK/NiftyNet
+[ml-niftynet]: mailto:nifty-net@live.ucl.ac.uk
+
 
 ### Citing NiftyNet
 
-If you use NiftyNet, please cite the following paper:
+If you use NiftyNet in your work, please cite [Gibson and Li et. al. 2017][preprint]:
+
+* E. Gibson\*, W. Li\*, C. Sudre, L. Fidon, D. I. Shakir, G. Wang, Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, M. Modat, D. C. Barratt, S. Ourselin, M. J. Cardoso\^ and T. Vercauteren\^ (2017)
+[NiftyNet: a deep-learning platform for medical imaging. arXiv: 1709.03485][preprint]
+
+
+BibTeX entry:
 
 ```
 @InProceedings{niftynet17,
-  author = {Li, Wenqi and Wang, Guotai and Fidon, Lucas and Ourselin, Sebastien and Cardoso, M. Jorge and Vercauteren, Tom},
-  title = {On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task},
-  booktitle = {International Conference on Information Processing in Medical Imaging (IPMI)},
-  year = {2017}
+  author = {Eli Gibson and Wenqi Li and Carole Sudre and Lucas Fidon and Dzhoshkun I. Shakir and Guotai Wang and Zach Eaton-Rosen and Robert Gray and Tom Doel and Yipeng Hu and Tom Whyntie and Parashkev Nachev and Marc Modat and Dean C. Barratt and Sebastien Ourselin and M. Jorge Cardoso and Tom Vercauteren},
+  title = {NiftyNet: a deep-learning platform for medical imaging},
+  year = {2017},
+  eprint = {1709.03485},
+  eprintclass = {cs.CV},
+  eprinttype = {arXiv},
 }
 ```
+The NiftyNet platform originated in software developed for [Li et. al. 2017][ipmi2017]:
+
+* Li W., Wang G., Fidon L., Ourselin S., Cardoso M.J., Vercauteren T. (2017)
+[On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.][ipmi2017]
+In: Niethammer M. et al. (eds) Information Processing in Medical Imaging. IPMI 2017.
+Lecture Notes in Computer Science, vol 10265. Springer, Cham.
+DOI: [10.1007/978-3-319-59050-9_28][ipmi2017]
+
+
+[ipmi2017]: http://doi.org/10.1007/978-3-319-59050-9_28
+[preprint]: http://arxiv.org/abs/1709.03485
+
 
 ### Licensing and Copyright
 
@@ -76,10 +132,11 @@ NiftyNet is released under the Apache License, Version 2.0. Please see the LICEN
 
 ### Acknowledgements
 
-This project is grateful for the support from the [Wellcome Trust][wt], the [Engineering and Physical Sciences Research Council (EPSRC)][epsrc], the [National Institute for Health Research (NIHR)][nihr], the [Department of Health (DoH)][doh], [University College London (UCL)][ucl], the [Science and Engineering South Consortium (SES)][ses], the [STFC Rutherford-Appleton Laboratory][ral], and [NVIDIA][nvidia].
+This project is grateful for the support from the [Wellcome Trust][wt], the [Engineering and Physical Sciences Research Council (EPSRC)][epsrc], the [National Institute for Health Research (NIHR)][nihr], the [Department of Health (DoH)][doh], [Cancer Research UK][cruk], [University College London (UCL)][ucl], the [Science and Engineering South Consortium (SES)][ses], the [STFC Rutherford-Appleton Laboratory][ral], and [NVIDIA][nvidia].
 
 [cmic]: http://cmic.cs.ucl.ac.uk
 [ucl]: http://www.ucl.ac.uk
+[cruk]: https://www.cancerresearchuk.org
 [tf]: https://www.tensorflow.org/
 [weiss]: http://www.ucl.ac.uk/weiss
 [wt]: https://wellcome.ac.uk/

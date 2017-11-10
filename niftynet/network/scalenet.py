@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, division
 
 import tensorflow as tf
-from six.moves import range
-
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.convolution import ConvolutionalLayer
 from niftynet.network.base_net import BaseNet
 from niftynet.network.highres3dnet import HighRes3DNet, HighResBlock
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations
 
 
 class ScaleNet(BaseNet):

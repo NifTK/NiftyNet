@@ -1,9 +1,10 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
 import numpy as np
 from scipy import ndimage
 
-from niftynet.utilities.misc_common import MorphologyOps, CacheFunctionOutput
+from niftynet.utilities.util_common import MorphologyOps, CacheFunctionOutput
 
 
 class PairwiseMeasures(object):
@@ -232,12 +233,12 @@ class PairwiseMeasures(object):
         """
         if self.flag_empty:
             return -1
-        else:
-            com_ref = self.com_ref()
-            com_seg = self.com_seg()
-            com_dist = np.sqrt(np.sum(np.square(np.asarray(com_ref) -
-                                                np.asarray(com_seg))))
-            return com_dist
+        com_ref = ndimage.center_of_mass(self.ref)
+        com_seg = ndimage.center_of_mass(self.seg)
+        com_dist = np.sqrt(np.dot(np.square(np.asarray(com_ref) -
+                                            np.asarray(com_seg)), np.square(
+            self.pixdim)))
+        return com_dist
 
     def com_ref(self):
         """
@@ -254,8 +255,7 @@ class PairwiseMeasures(object):
         """
         if self.flag_empty:
             return -1
-        else:
-            return ndimage.center_of_mass(self.seg) * np.array(self.pixdim)
+        return ndimage.center_of_mass(self.seg)
 
     def list_labels(self):
         if self.list_labels is None:
@@ -308,9 +308,9 @@ class PairwiseMeasures(object):
         ref_border_dist, seg_border_dist, ref_border, \
             seg_border = self.border_distance()
         average_distance = (np.sum(ref_border_dist) + np.sum(
-            seg_border_dist)) / (np.sum(seg_border + ref_border))
-        hausdorff_distance = np.max([np.max(ref_border_dist), np.max(
-            seg_border_dist)])
+            seg_border_dist)) / (np.sum(self.ref + self.seg))
+        hausdorff_distance = np.max(
+            [np.max(ref_border_dist), np.max(seg_border_dist)])
         return hausdorff_distance, average_distance
 
     def measured_average_distance(self):
@@ -480,8 +480,9 @@ class PairwiseMeasuresRegression(object):
     def r2(self):
         ref_var = np.sum(np.square(self.ref - np.mean(self.ref)))
         reg_var = np.sum(np.square(self.reg - np.mean(self.reg)))
-        cov_refreg = np.sum((self.reg - np.mean(self.reg)) * (self.ref - np.mean(
-            self.ref)))
+        cov_refreg = np.sum(
+            (self.reg - np.mean(self.reg)) * (self.ref - np.mean(
+                self.ref)))
         return np.square(cov_refreg / np.sqrt(ref_var * reg_var + 0.00001))
 
     def header_str(self):

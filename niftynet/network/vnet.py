@@ -10,7 +10,7 @@ from niftynet.layer.convolution import ConvLayer
 from niftynet.layer.deconvolution import DeconvLayer
 from niftynet.layer.elementwise import ElementwiseLayer
 from niftynet.network.base_net import BaseNet
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations
 
 
 class VNet(BaseNet):

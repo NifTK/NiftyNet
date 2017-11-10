@@ -6,7 +6,7 @@ import tensorflow as tf
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 
 
-class BinaryMaskingTEst(tf.test.TestCase):
+class BinaryMaskingTest(tf.test.TestCase):
     def get_3d_input(self):
         input_shape = (16, 16, 16)
         x = np.random.randint(-10, 10, size=input_shape)
@@ -20,41 +20,41 @@ class BinaryMaskingTEst(tf.test.TestCase):
     def test_3d_plus_shape(self):
         x = self.get_3d_input()
         mask_layer = BinaryMaskingLayer(
-            type='otsu_plus',
+            type_str='otsu_plus',
             multimod_fusion='or',
             threshold=0.0)
-        print(mask_layer)
         mask_out = mask_layer(x)
+        print(mask_layer)
         self.assertAllClose(x.shape, mask_out.shape)
 
     def test_3d_minus_shape(self):
         x = self.get_3d_input()
         mask_layer = BinaryMaskingLayer(
-            type='otsu_minus',
+            type_str='otsu_minus',
             multimod_fusion='or',
             threshold=0.0)
-        print(mask_layer)
         mask_out = mask_layer(x)
+        print(mask_layer)
         self.assertAllClose(x.shape, mask_out.shape)
 
     def test_5d_shape(self):
         x = self.get_5d_input()
         mask_layer = BinaryMaskingLayer(
-            type='threshold_minus',
+            type_str='threshold_minus',
             multimod_fusion='and',
             threshold=0.0)
-        print(mask_layer)
         mask_out = mask_layer(x)
+        print(mask_layer)
         self.assertAllClose(x.shape, mask_out.shape)
 
     def test_5d_mean_shape(self):
         x = self.get_5d_input()
         mask_layer = BinaryMaskingLayer(
-            type='mean',
+            type_str='mean_plus',
             multimod_fusion='and',
             threshold=0.0)
-        print(mask_layer)
         mask_out = mask_layer(x)
+        print(mask_layer)
         self.assertAllClose(x.shape, mask_out.shape)
 
 

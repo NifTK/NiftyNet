@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function, division
 
 import numpy as np
@@ -6,7 +7,7 @@ import math
 import scipy.stats.mstats as mstats
 import scipy.ndimage as ndimage
 
-from niftynet.utilities.misc_common import MorphologyOps, CacheFunctionOutput
+from niftynet.utilities.util_common import MorphologyOps, CacheFunctionOutput
 
 
 class RegionProperties(object):
@@ -100,7 +101,7 @@ class RegionProperties(object):
         self.vol_vox = np.prod(pixdim)
 
     def __compute_mask(self):
-        # TODO: check whether this works for probabilities type
+        # TODO: check whether this works for probabilities type_str
         foreground_selector = np.where((self.seg > 0).reshape(-1))[0]
         probs = self.seg.reshape(-1)[foreground_selector]
         regions = np.zeros((foreground_selector.shape[0], self.img_channels))

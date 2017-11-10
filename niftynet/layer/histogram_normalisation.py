@@ -1,15 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function
-
-import os
-
-import numpy as np
-
-import niftynet.utilities.histogram_standardisation as hs
-from niftynet.layer.base_layer import Layer
-from niftynet.layer.binary_masking import BinaryMaskingLayer
-
-
 """
 This class computes histogram based normalisation. A `training`
 process is first used to find an averaged histogram mapping
@@ -18,132 +7,143 @@ and the layer_op maps the intensity of new volumes to a normalised version.
 The histogram is computed from foreground if a definition is provided for
 foreground (by `binary_masking_func` or a `mask` matrix)
 """
-class HistogramNormalisationLayer(Layer):
+from __future__ import absolute_import, print_function, division
+
+import os
+
+import numpy as np
+import tensorflow as tf
+
+import niftynet.utilities.histogram_standardisation as hs
+from niftynet.layer.base_layer import DataDependentLayer
+from niftynet.layer.binary_masking import BinaryMaskingLayer
+
+
+class HistogramNormalisationLayer(DataDependentLayer):
     def __init__(self,
-                 models_filename,
+                 image_name,
+                 modalities,
+                 model_filename,
                  binary_masking_func=None,
                  norm_type='percentile',
                  cutoff=(0.05, 0.95),
                  name='hist_norm'):
+        """
+
+        :param image_name:
+        :param modalities:
+        :param model_filename:
+        :param binary_masking_func: set to None for global mapping
+        :param norm_type:
+        :param cutoff:
+        :param name:
+        """
 
         super(HistogramNormalisationLayer, self).__init__(name=name)
-        self.hist_model_file = os.path.abspath(models_filename)
+        self.model_file = os.path.abspath(model_filename)
+        assert not os.path.isdir(self.model_file), \
+            "model_filename is a directory, please change histogram_ref_file"
 
-        if binary_masking_func is not None:
+        if binary_masking_func:
             assert isinstance(binary_masking_func, BinaryMaskingLayer)
             self.binary_masking_func = binary_masking_func
+        else:
+            self.binary_masking_func = None
         self.norm_type = norm_type
         self.cutoff = cutoff
 
         # mapping is a complete cache of the model file, the total number of
-        # modalities are listed in self.modalities
-        self.mapping = hs.read_mapping_file(models_filename)
-        self.modalities = {}
+        # modalities are listed in self.modalities tuple
+        self.image_name = image_name
+        self.modalities = modalities
+        self.mapping = hs.read_mapping_file(self.model_file)
 
-    def layer_op(self, image_5d, mask=None):
-        assert image_5d.ndim == 5
-        image_5d = np.asarray(image_5d, dtype=float)
-
-        image_mask = None
-        if mask is not None:
-            image_mask = np.asarray(mask, dtype=np.bool)
+    def layer_op(self, image, mask=None):
+        assert self.is_ready(), \
+            "histogram normalisation layer needs to be trained first."
+        if isinstance(image, dict):
+            image_5d = np.asarray(image[self.image_name], dtype=np.float32)
         else:
-            if self.binary_masking_func is not None:
-                image_mask = self.binary_masking_func(image_5d)
+            image_5d = np.asarray(image, dtype=np.float32)
 
-        # no access to mask, default to all foreground
-        if image_mask is None:
+        if isinstance(mask, dict):
+            image_mask = mask.get(self.image_name, None)
+        elif mask is not None:
+            image_mask = mask
+        elif self.binary_masking_func is not None:
+            image_mask = self.binary_masking_func(image_5d)
+        else:
+            # no access to mask, default to all image
             image_mask = np.ones_like(image_5d, dtype=np.bool)
 
-        normalised = self.__normalise_5d(image_5d, image_mask)
-        return normalised, image_mask
+        normalised = self._normalise_5d(image_5d, image_mask)
 
-    def __check_modalities_to_train(self, subjects):
-        # collect all modality list from subjects
-        for subject in subjects:
-            self.modalities.update(subject.modalities_dict())
-        if self.mapping is {}:
-            return self.modalities
-        # remove if exists in currently loaded mapping dict
-        modalities_to_train = dict(self.modalities)
-        for mod in self.modalities.keys():
-            if mod in self.mapping:
-                del modalities_to_train[mod]
-        return modalities_to_train
+        if isinstance(image, dict):
+            image[self.image_name] = normalised
+            if isinstance(mask, dict):
+                mask[self.image_name] = image_mask
+            else:
+                mask = {self.image_name: image_mask}
+            return image, mask
+        else:
+            return normalised, image_mask
 
-    def is_ready(self, subjects):
-        mod_to_train = self.__check_modalities_to_train(subjects)
-        if len(mod_to_train) > 0:
-            print('histogram normalisation, looking for reference histogram...')
-            return False
-        return True
+    def __check_modalities_to_train(self):
+        modalities_to_train = [mod for mod in self.modalities
+                               if not mod in self.mapping]
+        return set(modalities_to_train)
 
-    def train_normalisation_ref(self, subjects):
+    def is_ready(self):
+        mod_to_train = self.__check_modalities_to_train()
+        return False if mod_to_train else True
+
+    def train(self, image_list):
         # check modalities to train, using the first subject in subject list
         # to find input modality list
-        mod_to_train = self.__check_modalities_to_train(subjects)
-        if len(mod_to_train) == 0:
-            print('Normalisation histogram reference models found')
+        if self.is_ready():
+            tf.logging.info(
+                "normalisation histogram reference models ready"
+                " for {}:{}".format(self.image_name, self.modalities))
             return
-        array_files = [subject.column(0) for subject in subjects]
-        print("training normalisation histogram references for {}, "
-              "using {} subjects".format(mod_to_train.keys(), len(array_files)))
+        mod_to_train = self.__check_modalities_to_train()
+        tf.logging.info(
+            "training normalisation histogram references "
+            "for {}:{}, using {} subjects".format(
+                self.image_name, mod_to_train, len(image_list)))
         trained_mapping = hs.create_mapping_from_multimod_arrayfiles(
-            array_files, mod_to_train, self.cutoff, self.binary_masking_func)
+            image_list,
+            self.image_name,
+            self.modalities,
+            mod_to_train,
+            self.cutoff,
+            self.binary_masking_func)
 
         # merging trained_mapping dict and self.mapping dict
         self.mapping.update(trained_mapping)
-        self.__write_all_mod_mapping()
+        all_maps = hs.read_mapping_file(self.model_file)
+        all_maps.update(self.mapping)
+        hs.write_all_mod_mapping(self.model_file, all_maps)
 
-    def __normalise_5d(self, data_array, mask_array):
-        assert not self.modalities == {}
+    def _normalise_5d(self, data_array, mask_array):
+        assert self.modalities
         assert data_array.ndim == 5
-        assert data_array.shape[3] <= len(self.modalities)
+        assert data_array.shape[4] <= len(self.modalities)
 
-        if self.mapping is {}:
-            raise RuntimeError("calling normaliser with empty mapping,"
-                               "probably {} is not loaded".format(
-                self.hist_model_file))
-        for mod in self.modalities:
-            for t in range(0, data_array.shape[4]):
-                mod_id = self.modalities[mod]
-                if not np.any(data_array[..., mod_id, t]):
-                    continue  # missing modality
-                data_array[..., mod_id, t] = self.__normalise_3d(
-                    data_array[..., mod_id, t],
-                    mask_array[..., mod_id, t],
-                    self.mapping[mod])
+        if not self.mapping:
+            tf.logging.fatal(
+                "calling normaliser with empty mapping,"
+                "probably {} is not loaded".format(self.model_file))
+            raise RuntimeError
+        mask_array = np.asarray(mask_array, dtype=np.bool)
+        for mod_id, mod_name in enumerate(self.modalities):
+            if not np.any(data_array[..., mod_id]):
+                continue  # missing modality
+            data_array[..., mod_id] = self.__normalise(
+                data_array[..., mod_id],
+                mask_array[..., mod_id],
+                self.mapping[mod_name])
         return data_array
 
-    def __normalise_3d(self, img_data, mask, mapping):
-        assert img_data.ndim == 3
-        assert np.all(img_data.shape[:3] == mask.shape[:3])
-
-        return hs.transform_by_mapping(img_data,
-                                       mask,
-                                       mapping,
-                                       self.cutoff,
-                                       self.norm_type)
-
-    # Function to modify the model file with the mapping if needed according
-    # to existent mapping and modalities
-    def __write_all_mod_mapping(self):
-        # backup existing file first
-        if os.path.exists(self.hist_model_file):
-            backup_name = '{}.backup'.format(self.hist_model_file)
-            from shutil import copyfile
-            try:
-                copyfile(self.hist_model_file, backup_name)
-            except OSError:
-                print('cannot backup file {}'.format(self.hist_model_file))
-                raise
-            print("moved existing histogram reference file\n"
-                  " from {} to {}".format(self.hist_model_file, backup_name))
-
-        if not os.path.exists(os.path.dirname(self.hist_model_file)):
-            try:
-                os.makedirs(os.path.dirname(self.hist_model_file))
-            except OSError:
-                print('cannot create {}'.format(self.hist_model_file))
-                raise
-        hs.force_writing_new_mapping(self.hist_model_file, self.mapping)
+    def __normalise(self, img_data, mask, mapping):
+        return hs.transform_by_mapping(
+            img_data, mask, mapping, self.cutoff, self.norm_type)

@@ -5,7 +5,7 @@ import tensorflow as tf
 
 from niftynet.layer import layer_util
 from niftynet.layer.base_layer import Layer
-from niftynet.utilities.misc_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations
 
 SUPPORTED_OP = {'AVG', 'MAX', 'CONSTANT'}
 SUPPORTED_PADDING = {'SAME', 'VALID'}
@@ -14,8 +14,8 @@ SUPPORTED_PADDING = {'SAME', 'VALID'}
 class DownSampleLayer(Layer):
     def __init__(self,
                  func,
-                 kernel_size,
-                 stride,
+                 kernel_size=3,
+                 stride=2,
                  padding='SAME',
                  name='pooling'):
         self.func = func.upper()

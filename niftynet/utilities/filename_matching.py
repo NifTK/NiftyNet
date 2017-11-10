@@ -1,96 +1,112 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-import os,re
+import os
+import re
 
-import numpy as np
-import niftynet.utilities.misc_io as util
+import niftynet.io.misc_io as util
 
 
 class KeywordsMatching(object):
-    '''
+    """
     This class is responsible for the search of the appropriate files to use
     as input based on the constraints given in the config file
-    '''
+    """
+
     def __init__(self, list_paths=(), list_contain=(), list_not_contain=()):
-        self.list_paths = list_paths
-        self.list_contain = list_contain
-        self.list_not_contain = list_not_contain
+        self.path_to_search = list_paths
+        self.filename_contains = list_contain
+        self.filename_not_contains = list_not_contain
 
     @classmethod
-    def from_tuple(cls, input_tuple):
-        '''
+    def from_tuple(cls, input_tuple, default_folder=None):
+        """
         In the config file, constraints for a given search can be of three
         types:
         path_to_search, filename_contains and filename_not_contains. Each
         associated value is a string. Multiple constraints are delimited by a ,
         This function creates the corresponding matching object with the list
         of constraints for each of these subtypes.
+        :param default_folder: relative paths are first tested against the current folder, and then against this
+               default folder
         :param input_tuple:
         :return:
-        '''
-        path, contain, not_contain = [], [], []
+        """
+        path, contain, not_contain = [], (), ()
         for (name, value) in input_tuple:
-            if len(value) <= 1 or value == '""':
+            if not value:
                 continue
             if name == "path_to_search":
                 value = value.split(',')
                 for path_i in value:
-                    path_i = os.path.abspath(path_i.strip())
-                    if os.path.exists(path_i):
-                        path.append(path_i)
+                    path_i = path_i.strip()
+                    path_orig = os.path.abspath(path_i)
+                    if os.path.exists(path_orig):
+                        path.append(path_orig)
                     else:
-                        raise ValueError('data input folder {} not found, did'
-                                         ' you maybe forget to download data?'
-                                         .format(path_i))
+                        if not default_folder:
+                            raise ValueError('data input folder {} not found, did'
+                                             ' you maybe forget to download data?'
+                                             .format(path_i))
+                        path_def = os.path.abspath(os.path.join(default_folder, path_i))
+                        if os.path.exists(path_def):
+                            path.append(path_def)
+                        else:
+                            raise ValueError('data input folder {} not found, did'
+                                             ' you maybe forget to download data?'
+                                             .format(path_i))
             elif name == "filename_contains":
-                value = value.split(',')
-                for val in value:
-                    val = val.strip()
-                    contain.append(val)
+                contain = tuple(set(value))
             elif name == "filename_not_contains":
-                value = value.split(',')
-                for val in value:
-                    val = val.strip()
-                    not_contain.append(val)
+                not_contain = tuple(set(value))
         path = tuple(set(path))
-        contain = tuple(set(contain))
-        not_contain = tuple(set(not_contain))
         new_matcher = cls(path, contain, not_contain)
         return new_matcher
 
     def matching_subjects_and_filenames(self):
-        ''''
+        """
         This function perform the search of the relevant files (stored in
         list_final) and extract
         the corresponding possible list of subject names (stored in
         name_list_final).
         :returns list_final, name_list_final
-        '''
-        path_file=[(p,filename) for p in self.list_paths for filename in os.listdir(p)]
-        func_match = lambda x:     all(c in x[1] for c in self.list_contain) and not any(c in x[1] for c in self.list_not_contain)
-        matching_path_file=list(filter(func_match,path_file))
-        list_final=[os.path.join(p,filename) for p,filename in matching_path_file]
-        name_list_final=[self.extract_subject_id_from(filename) for p,filename in matching_path_file]
+        """
+        path_file = [(p, filename)
+                     for p in self.path_to_search
+                     for filename in os.listdir(p)]
+        matching_path_file = list(filter(self.__is_a_candidate, path_file))
+        list_final = [os.path.join(p, filename)
+                      for p, filename in matching_path_file]
+        name_list_final = [self.__extract_subject_id_from(filename)
+                           for p, filename in matching_path_file]
+        if not list_final or not name_list_final:
+            raise IOError('no file matched based on this matcher: {}'.format(
+                self.__dict__))
         return list_final, name_list_final
 
-    def extract_subject_id_from(self, filename):
-        '''
+    def __is_a_candidate(self, x):
+        all_pos_match = all(c in x[1] for c in self.filename_contains)
+        all_neg_match = not any(c in x[1] for c in self.filename_not_contains)
+        return all_pos_match and all_neg_match
+
+    def __extract_subject_id_from(self, fullname):
+        """
         This function returns a list of potential subject names from a given
         filename, knowing the imposed constraints. Constraints strings are
         removed from the filename to provide the list of possible names. If
         after reduction of the filename from the constraints the name is
         empty the initial filename is returned.
-        :param filename:
+        :param fullname:
         :return name_pot: list of potential subject name given the constraint
          list and the initial filename
-        '''
-        path, name, ext = util.split_filename(filename)
+        """
+        _, name, _ = util.split_filename(fullname)
         # split name into parts that might be the subject_id
-        noncapturing_regex_delimiters=['(?:'+re.escape(c)+')' for c in self.list_contain]
-        potential_names=re.split('|'.join(noncapturing_regex_delimiters),name)
+        noncapturing_regex_delimiters = ['(?:' + re.escape(c) + ')'
+                                         for c in self.filename_contains]
+        potential_names = re.split(
+            '|'.join(noncapturing_regex_delimiters), name)
         # filter out non-alphanumeric characters and blank strings
-        potential_names=[re.sub(r'\W+', '', name) for name in potential_names]
-        potential_names=[name for name in potential_names if name is not '']
+        potential_names = [re.sub(r'\W+', '', name) for name in potential_names]
+        potential_names = [name for name in potential_names if name != '']
         return potential_names
-

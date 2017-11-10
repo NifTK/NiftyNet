@@ -3,8 +3,8 @@ from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 
-from niftynet.utilities.misc_common import look_up_operations
 from niftynet.layer.base_layer import Layer
+from niftynet.utilities.util_common import look_up_operations
 
 SUPPORTED_OPS = {"SOFTMAX", "ARGMAX", "IDENTITY"}
 
@@ -29,9 +29,10 @@ class PostProcessingLayer(Layer):
 
     def layer_op(self, inputs):
         if self.func == "SOFTMAX":
-            output_tensor = tf.nn.softmax(inputs)
+            output_tensor = tf.cast(tf.nn.softmax(inputs), tf.float32)
         elif self.func == "ARGMAX":
-            output_tensor = tf.argmax(inputs, -1)
+            output_tensor = tf.cast(tf.argmax(inputs, -1), tf.int32)
+            output_tensor = tf.expand_dims(output_tensor, axis=-1)
         elif self.func == "IDENTITY":
-            output_tensor = inputs
+            output_tensor = tf.cast(inputs, tf.float32)
         return output_tensor
