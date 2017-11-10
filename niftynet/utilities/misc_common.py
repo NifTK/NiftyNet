@@ -13,11 +13,11 @@ LABEL_STRINGS = ['Label', 'LABEL', 'label']
 
 
 def average_grads(tower_grads):
-    '''
+    """
     Performs and return the average of the gradients calculated from multiple GPUS
     :param tower_grads:
     :return ave_grads:
-    '''
+    """
     # average gradients computed from multiple GPUs
     ave_grads = []
     for grad_and_vars in zip(*tower_grads):
@@ -35,13 +35,13 @@ def average_grads(tower_grads):
 
 
 def list_files(img_dir, ext='.nii.gz'):
-    '''
+    """
 
     :param img_dir:
     :param ext:
     :return names: list of filenames in the list of img_dir
     that have the ext extension
-    '''
+    """
     names = [fn for fn in os.listdir(img_dir) if fn.lower().endswith(ext)]
     if not names:
         print('no files in {}'.format(img_dir))
@@ -50,11 +50,11 @@ def list_files(img_dir, ext='.nii.gz'):
 
 
 def has_bad_inputs(args):
-    '''
+    """
     Check if all input params have been properly set in the configuration file.
     :param args:
     :return:
-    '''
+    """
     print('Input params:')
     is_bad = False
     for arg in vars(args):
@@ -84,28 +84,40 @@ def print_save_input_parameters(args, ini_file=None):
 
 
 class MorphologyOps(object):
-    '''
+    """
     Class that performs the morphological operations needed to get notably
-    connected component. To be used in the evaluation
-    '''
+    connected component. To be used in the evaluation.
+    """
 
     def __init__(self, binary_img, neigh):
         self.binary_map = np.asarray(binary_img, dtype=np.int8)
         self.neigh = neigh
 
     def border_map(self):
-        '''
-        Creates the border for a 3D image
-        :return:
-        '''
-        west = ndimage.shift(self.binary_map, [-1, 0, 0], order=0)
-        east = ndimage.shift(self.binary_map, [1, 0, 0], order=0)
-        north = ndimage.shift(self.binary_map, [0, 1, 0], order=0)
-        south = ndimage.shift(self.binary_map, [0, -1, 0], order=0)
-        top = ndimage.shift(self.binary_map, [0, 0, 1], order=0)
-        bottom = ndimage.shift(self.binary_map, [0, 0, -1], order=0)
-        cumulative = west + east + north + south + top + bottom
-        border = ((cumulative < 6) * self.binary_map) == 1
+        """
+        Creates the border for a 2D or 3D image
+        :return: border 
+        """
+        offset_images = dict()
+        if self.binary_map.ndim == 2:
+            offset_images['west'] = ndimage.shift(self.binary_map, [-1, 0], order=0)
+            offset_images['east'] = ndimage.shift(self.binary_map, [1, 0], order=0)
+            offset_images['north'] = ndimage.shift(self.binary_map, [0, 1], order=0)
+            offset_images['south'] = ndimage.shift(self.binary_map, [0, -1], order=0)
+        elif self.binary_map.ndim == 3:
+            offset_images['west'] = ndimage.shift(self.binary_map, [-1, 0, 0], order=0)
+            offset_images['east'] = ndimage.shift(self.binary_map, [1, 0, 0], order=0)
+            offset_images['north'] = ndimage.shift(self.binary_map, [0, 1, 0], order=0)
+            offset_images['south'] = ndimage.shift(self.binary_map, [0, -1, 0], order=0)
+            offset_images['top'] = ndimage.shift(self.binary_map, [0, 0, 1], order=0)
+            offset_images['bottom'] = ndimage.shift(self.binary_map, [0, 0, -1], order=0)
+        else:
+            raise ValueError("Border map only works for 2D or 3D images.")
+
+            # 2 neighbours for each spatial dimension
+        max_neighbours = self.binary_map.ndim * 2
+        cumulative = sum([offset_images[x] for x in offset_images])
+        border = ((cumulative < max_neighbours) * self.binary_map) == 1
         return border
 
     def foreground_component(self):
@@ -202,7 +214,7 @@ def _damerau_levenshtein_distance(s1, s2):
 
 
 def otsu_threshold(img, nbins=256):
-    ''' Implementation of otsu thresholding'''
+    """ Implementation of otsu thresholding"""
     hist, bin_edges = np.histogram(img.ravel(), bins=nbins)
     hist = hist.astype(float)
     bin_size = bin_edges[1] - bin_edges[0]
@@ -223,14 +235,14 @@ def otsu_threshold(img, nbins=256):
     threshold = bin_centers[0]
     for i in range(0, hist.shape[0] - 1):
         target = weight_1[i] * weight_2[i + 1] * \
-            (mean_1[i] / weight_1[i] - mean_2[i + 1] / weight_2[i + 1]) ** 2
+                 (mean_1[i] / weight_1[i] - mean_2[i + 1] / weight_2[i + 1]) ** 2
         if target > target_max:
             target_max, threshold = target, bin_centers[i]
     return threshold
 
 
 # def otsu_threshold(img, nbins=256):
-#     ''' Implementation of otsu thresholding'''
+#     """ Implementation of otsu thresholding"""
 #     hist, bin_edges = np.histogram(img.ravel(), bins=nbins, density=True)
 #     hist = hist.astype(float) * (bin_edges[1] - bin_edges[0])
 #     centre_bins = 0.5 * (bin_edges[:-1] + bin_edges[1:])

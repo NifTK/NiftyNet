@@ -292,6 +292,7 @@ class PairwiseMeasures(object):
         border_seg = MorphologyOps(self.seg, self.neigh).border_map()
         oppose_ref = 1 - self.ref
         oppose_seg = 1 - self.seg
+        # euclidean distance transform
         distance_ref = ndimage.distance_transform_edt(oppose_ref)
         distance_seg = ndimage.distance_transform_edt(oppose_seg)
         distance_border_seg = border_ref * distance_seg
@@ -305,7 +306,7 @@ class PairwiseMeasures(object):
         :return: hausdorff distance and average symmetric distance
         """
         ref_border_dist, seg_border_dist, ref_border, \
-        seg_border = self.border_distance()
+            seg_border = self.border_distance()
         average_distance = (np.sum(ref_border_dist) + np.sum(
             seg_border_dist)) / (np.sum(seg_border + ref_border))
         hausdorff_distance = np.max([np.max(ref_border_dist), np.max(

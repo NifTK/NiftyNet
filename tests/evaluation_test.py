@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 import numpy as np
 from niftynet.evaluation.pairwise_measures import PairwiseMeasures
+from niftynet.utilities.misc_common import MorphologyOps
 
 TEST_CASES = {0: {'seg_img': np.array([1, 0, 0, 0]), 'ref_img': np.array([1, 0, 0, 0])},
               1: {'seg_img': np.array([1, 0, 1, 0]), 'ref_img': np.array([1, 0, 0, 0])},
@@ -138,6 +139,29 @@ class MetricTests(np.testing.TestCase):
                                              ref_img=TEST_CASES[1]['ref_img'],
                                              pixdim=[2])
         self.assertEqual(pairwise_measures.vol_diff(), 1.)
+
+
+class MorphologyTests(np.testing.TestCase):
+    def test_2d_offset(self):
+        test_img = np.concatenate([np.zeros([3, 3]), np.ones([3, 3])])
+        # expected border -- everywhere the test_img is 1, except the centre of it
+        expected_border = np.zeros([6, 3])
+        expected_border[3:][:] = 1
+        expected_border[4, 1] = 0
+        calculated_border = MorphologyOps(test_img, 8).border_map()
+        self.assertTrue(np.array_equal(calculated_border, expected_border))
+
+    def test_3d_offset(self):
+        test_img = np.zeros([10, 10, 10])
+        test_img[5, 5, 5] = 1
+        # border is the same as the test image -- just the one positive voxel
+        calculated_border = MorphologyOps(test_img, 8).border_map()
+        self.assertTrue(np.array_equal(test_img, calculated_border))
+
+    def test_1d_error(self):
+        test_img = np.zeros([1])
+        with self.assertRaises(ValueError):
+            MorphologyOps(test_img, 8).border_map()
 
 
 if __name__ == '__main__':
