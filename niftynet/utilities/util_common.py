@@ -131,6 +131,7 @@ class MorphologyOps(object):
     """
 
     def __init__(self, binary_img, neigh):
+        assert len(binary_img.shape) == 3, 'currently supports 3d inputs only'
         self.binary_map = np.asarray(binary_img, dtype=np.int8)
         self.neigh = neigh
 
