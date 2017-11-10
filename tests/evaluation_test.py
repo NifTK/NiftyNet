@@ -134,8 +134,7 @@ class MorphologyTests(np.testing.TestCase):
         expected_border = np.zeros([6, 3])
         expected_border[3:][:] = 1
         expected_border[4, 1] = 0
-        with self.assertRaisesRegex(AssertionError, ''):
-            MorphologyOps(test_img, 8).border_map()
+        self.assertRaises(AssertionError, MorphologyOps, test_img, 8)
         #calculated_border = MorphologyOps(test_img, 8).border_map()
         #self.assertTrue(np.array_equal(calculated_border, expected_border))
 
@@ -148,8 +147,7 @@ class MorphologyTests(np.testing.TestCase):
 
     def test_1d_error(self):
         test_img = np.zeros([1])
-        with self.assertRaisesRegex(AssertionError, ''):
-            MorphologyOps(test_img, 8).border_map
+        self.assertRaises(AssertionError, MorphologyOps, test_img, 8)
         #self.assertRaises(ValueError, MorphologyOps(test_img, 8).border_map)
 
 
