@@ -35,10 +35,8 @@ class AutoencoderApplication(BaseApplication):
         self.data_param = None
         self.autoencoder_param = None
 
-    def initialise_dataset_loader(self, data_param=None, task_param=None,
-                                  system_param=None):
-        BaseApplication.initialise_dataset_loader(
-            self, data_param, task_param, system_param)
+    def initialise_dataset_loader(
+            self, data_param=None, task_param=None, data_partitioner=None):
         self.data_param = data_param
         self.autoencoder_param = task_param
 
@@ -50,18 +48,19 @@ class AutoencoderApplication(BaseApplication):
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.readers = [ImageReader(['image'], 'train')]
-            if self.has_validation_data and self.action_param.validate_every_n:
-                self.readers.append(ImageReader(['image'], 'validation'))
+            self.readers = [ImageReader(['image'])]
+            if  self.action_param.validate_every_n:
+                self.readers.append(ImageReader(['image']))
         if self._infer_type in ('encode', 'encode-decode'):
-            self.readers = [ImageReader(['image'], phase='test')]
+            self.readers = [ImageReader(['image'])]
         elif self._infer_type == 'sample':
             self.readers = []
         elif self._infer_type == 'linear_interpolation':
-            self.readers = [ImageReader(['feature'], phase='test')]
+            self.readers = [ImageReader(['feature'])]
 
+        file_list = data_partitioner.get_file_list()
         for reader in self.readers:
-            reader.initialise(data_param, task_param, system_param)
+            reader.initialise(data_param, task_param, file_list)
         #if self.is_training or self._infer_type in ('encode', 'encode-decode'):
         #    mean_var_normaliser = MeanVarNormalisationLayer(image_name='image')
         #    self.reader.add_preprocessing_layers([mean_var_normaliser])
@@ -99,7 +98,6 @@ class AutoencoderApplication(BaseApplication):
             return
 
     def initialise_network(self):
-        BaseApplication.initialise_network(self)
         w_regularizer = None
         b_regularizer = None
         reg_type = self.net_param.reg_type.lower()
@@ -129,8 +127,7 @@ class AutoencoderApplication(BaseApplication):
                     image = tf.cast(data_dict['image'], tf.float32)
                     return data_dict, self.net(image, for_training)
 
-            if self.has_validation_data and \
-                    self.action_param.save_every_n > 0:
+            if self.action_param.save_every_n > 0:
                 data_dict, net_output = tf.cond(self.is_validation,
                                                 lambda: data_net(False),
                                                 lambda: data_net(True))
@@ -197,7 +194,7 @@ class AutoencoderApplication(BaseApplication):
                         average_over_devices=True, collection=NETWORK_OUTPUT)
 
                 self.output_decoder = WindowAsImageAggregator(
-                    image_reader=self.reader,
+                    image_reader=self.readers[0],
                     output_path=self.action_param.save_seg_dir)
                 return
             elif self._infer_type == 'sample':

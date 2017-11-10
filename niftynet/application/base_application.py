@@ -149,39 +149,6 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
             iteration_message.data_feed_dict[self.is_validation] = True
             iteration_message.ops_to_run = {}
 
-    # def iter_ops(self, start_iter=0, end_iter=1):
-    #     param = self.action_param
-    #     training_op_generator = self.training_ops(start_iter=start_iter,
-    #                                               end_iter=end_iter)
-    #     for iter_i, op, feed_dict in training_op_generator:
-    #         if self.has_validation_data and param.validate_every_n > 0 and \
-    #                                 iter_i % param.validate_every_n == 0:
-    #             feed_dict_validation = feed_dict.copy()
-    #             feed_dict_validation[self.is_validation] = True
-    #             for iter_j in range(param.validation_iters):
-    #                 yield 'Validate', iter_i, False, 2, \
-    #                       self.is_validation, feed_dict_validation
-    #
-    #         feed_dict[self.is_validation] = False
-    #         save = param.save_every_n > 0 and \
-    #                iter_i % param.save_every_n == 0
-    #         save_log = 1 if (param.tensorboard_every_n > 0 and \
-    #                          iter_i % param.tensorboard_every_n == 0) else 0
-    #         yield 'Train', iter_i, save, save_log, self.gradient_op, feed_dict
-    #
-    # def train_ops(self, start_iter=0, end_iter=1):
-    #     """
-    #     Specify the network update operation at each iteration
-    #     app can override this updating method if necessary
-    #     """
-    #     end_iter = max(start_iter, end_iter)
-    #     for iter_i in range(start_iter, end_iter):
-    #         yield 'Train', iter_i, self.gradient_op, {self.is_validation: False}
-    #
-    # def validation_ops(self, start_iter=0, end_iter=1):
-    #     end_iter = max(start_iter, end_iter)
-    #     for iter_i in range(start_iter, end_iter):
-    #         yield 'Validation', iter_i, self.is_validation, {self.is_validation: True}
 
     def get_sampler(self):
         return self.sampler

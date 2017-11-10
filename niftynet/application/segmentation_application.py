@@ -241,7 +241,6 @@ class SegmentationApplication(BaseApplication):
                 image = tf.cast(data_dict['image'], tf.float32)
                 return data_dict, self.net(image, for_training)
 
-
         if self.is_training:
             if self.action_param.save_every_n > 0:
                 data_dict, net_out = tf.cond(self.is_validation,

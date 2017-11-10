@@ -53,22 +53,21 @@ class RegressionApplication(BaseApplication):
                        self.initialise_resize_aggregator),
         }
 
-    def initialise_dataset_loader(self, data_param=None, task_param=None,
-                                  system_param=None):
-        BaseApplication.initialise_dataset_loader(
-            self, data_param, task_param, system_param)
+    def initialise_dataset_loader(
+        self, data_param=None, task_param=None, data_partitioner=None):
         self.data_param = data_param
         self.regression_param = task_param
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.readers = [ImageReader(SUPPORTED_INPUT, phase='train')]
-            if self.has_validation_data and self.action_param.validate_every_n:
-                self.readers.append(ImageReader(SUPPORTED_INPUT, 'validation'))
+            self.readers = [ImageReader(SUPPORTED_INPUT)]
+            if self.action_param.validate_every_n:
+                self.readers.append(ImageReader(SUPPORTED_INPUT))
         else:  # in the inference process use image input only
-            self.readers = [ImageReader(['image'], phase='test')]
+            self.readers = [ImageReader(['image'])]
+        file_list = data_partitioner.get_file_list()
         for reader in self.readers:
-            reader.initialise(data_param, task_param, system_param)
+            reader.initialise(data_param, task_param, file_list)
 
         mean_var_normaliser = MeanVarNormalisationLayer(
             image_name='image')
@@ -100,7 +99,8 @@ class RegressionApplication(BaseApplication):
                     max_percentage=self.action_param.scaling_percentage[1]))
             if self.action_param.rotation_angle:
                 augmentation_layers.append(RandomRotationLayer())
-                augmentation_layers[-1].init_uniform_angle(self.action_param.rotation_angle)
+                augmentation_layers[-1].init_uniform_angle(
+                    self.action_param.rotation_angle)
 
         volume_padding_layer = []
         if self.net_param.volume_padding_size:
@@ -192,7 +192,6 @@ class RegressionApplication(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
-        BaseApplication.initialise_network(self)
         def data_net(for_training):
             with tf.name_scope('train' if for_training else 'validation'):
                 sampler = self.get_sampler()[0][0 if for_training else 1]

@@ -66,7 +66,7 @@ class ApplicationDriverTest(tf.test.TestCase):
             for samplers in test_driver.app.get_sampler():
                 for sampler in samplers:
                     sampler.run_threads(sess, coord, test_driver.num_threads)
-            i, train_op, feed = six.next(test_driver.app.training_ops(0, 5))
+            train_op = test_driver.app.gradient_op
             test_driver.app.stop()
             try:
                 while True:
@@ -84,7 +84,7 @@ class ApplicationDriverTest(tf.test.TestCase):
             for samplers in test_driver.app.get_sampler():
                 for sampler in samplers:
                     sampler.run_threads(sess, coord, test_driver.num_threads)
-            i, train_op, feed = six.next(test_driver.app.training_ops(0, 5))
+            train_op = test_driver.app.gradient_op
             test_tensor = test_driver.graph.get_tensor_by_name(
                 'G/conv_bn_selu/conv_/w:0')
             var_0 = sess.run(test_tensor)
@@ -104,8 +104,8 @@ class ApplicationDriverTest(tf.test.TestCase):
             for samplers in test_driver.app.get_sampler():
                 for sampler in samplers:
                     sampler.run_threads(sess, coord, test_driver.num_threads)
-            for i, train_op, feed in test_driver.app.training_ops(0, 2):
-                sess.run(train_op)
+            for i in range(2):
+                sess.run(test_driver.app.gradient_op)
                 s_0, s_1, s_2, s_3 = sess.run([
                     test_driver.graph.get_tensor_by_name(
                         'worker_0/feature_input:0'),
@@ -134,8 +134,8 @@ class ApplicationDriverTest(tf.test.TestCase):
             for samplers in test_driver.app.get_sampler():
                 for sampler in samplers:
                     sampler.run_threads(sess, coord, test_driver.num_threads)
-            for i, train_op, feed in test_driver.app.training_ops(0, 2):
-                sess.run(train_op)
+            for i in range(2):
+                sess.run(test_driver.app.gradient_op)
                 g_0, g_1, g_2, g_3, g_ave = sess.run([
                     test_driver.graph.get_tensor_by_name(
                         'worker_0/ComputeGradients/gradients/AddN_5:0'),

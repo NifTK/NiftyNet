@@ -39,23 +39,21 @@ class GANApplication(BaseApplication):
         self.data_param = None
         self.gan_param = None
 
-    def initialise_dataset_loader(self, data_param=None, task_param=None,
-                                  system_param=None):
-        BaseApplication.initialise_dataset_loader(
-            self, data_param, task_param, system_param)
+    def initialise_dataset_loader(
+            self, data_param=None, task_param=None, data_partitioner=None):
         self.data_param = data_param
         self.gan_param = task_param
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.readers = [ImageReader(['image', 'conditioning'], 'train')]
-            if self.has_validation_data and self.action_param.validate_every_n:
-                self.readers.append(ImageReader(['image', 'conditioning'],
-                                                'validation'))
+            self.readers = [ImageReader(['image', 'conditioning'])]
+            if self.action_param.validate_every_n > 0:
+                self.readers.append(ImageReader(['image', 'conditioning']))
         else:  # in the inference process use image input only
-            self.readers = [ImageReader(['image'], phase='test')]
+            self.readers = [ImageReader(['image'])]
+        file_list = data_partitioner.get_file_list()
         for reader in self.readers:
-            reader.initialise(data_param, task_param, system_param)
+            reader.initialise(data_param, task_param, file_list)
 
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(
@@ -136,7 +134,6 @@ class GANApplication(BaseApplication):
                 self.readers])
 
     def initialise_network(self):
-        BaseApplication.initialise_network(self)
         self.net = ApplicationNetFactory.create(self.net_param.name)()
 
     def connect_data_and_network(self,
