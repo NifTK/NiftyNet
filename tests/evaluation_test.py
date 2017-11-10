@@ -24,15 +24,12 @@ class BinaryCheckTest(np.testing.TestCase):
         self.assertRaises(ValueError, pairwise_measures.check_binary)
 
 
-class DiceTest(np.testing.TestCase):
+class PairwiseTests(np.testing.TestCase):
     def test_dice_score(self):
         pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[0]['seg_img'],
                                              ref_img=TEST_CASES[0]['ref_img'])
         self.assertEqual(pairwise_measures.dice_score(), 1.0)
 
-
-class TruePositiveTest(np.testing.TestCase):
-    # should only depend on reference image
     def test_true_positive(self):
         pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
                                              ref_img=TEST_CASES[1]['ref_img'])
@@ -43,38 +40,27 @@ class TruePositiveTest(np.testing.TestCase):
                                              ref_img=TEST_CASES[3]['ref_img'])
         self.assertRaises(ValueError, pairwise_measures.tp)
 
-
-class TrueNegativeTest(np.testing.TestCase):
-    # should only depend on reference image
     def test_true_negative(self):
         pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
                                              ref_img=TEST_CASES[1]['ref_img'])
         self.assertEqual(pairwise_measures.tn(), 2.)
 
-
-class NumberOfNegativeTest(np.testing.TestCase):
     def test_n_negative(self):
         pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
                                              ref_img=TEST_CASES[1]['ref_img'])
         self.assertEqual(pairwise_measures.n_neg_ref(), 3.)
         self.assertEqual(pairwise_measures.n_neg_seg(), 2.)
 
-
-class UnionTest(np.testing.TestCase):
     def test_union(self):
         pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
                                              ref_img=TEST_CASES[1]['ref_img'])
         self.assertEqual(pairwise_measures.n_union(), 2.)
 
-
-class IntersectionTest(np.testing.TestCase):
     def test_intersection(self):
         pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
                                              ref_img=TEST_CASES[1]['ref_img'])
         self.assertEqual(pairwise_measures.n_intersection(), 1.)
 
-
-class MetricTests(np.testing.TestCase):
     def test_sensitivity(self):
         pairwise_measures = PairwiseMeasures(seg_img=TEST_CASES[1]['seg_img'],
                                              ref_img=TEST_CASES[1]['ref_img'])
@@ -160,8 +146,7 @@ class MorphologyTests(np.testing.TestCase):
 
     def test_1d_error(self):
         test_img = np.zeros([1])
-        with self.assertRaises(ValueError):
-            MorphologyOps(test_img, 8).border_map()
+        self.assertRaises(ValueError, MorphologyOps(test_img, 8).border_map)
 
 
 if __name__ == '__main__':
