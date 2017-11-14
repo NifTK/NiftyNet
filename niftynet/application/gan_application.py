@@ -46,26 +46,34 @@ class GANApplication(BaseApplication):
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.readers = [ImageReader(['image', 'conditioning'])]
-            if self.action_param.validate_every_n > 0:
-                self.readers.append(ImageReader(['image', 'conditioning']))
-        else:  # in the inference process use image input only
-            self.readers = [ImageReader(['image'])]
-        file_list = data_partitioner.get_file_list()
-        for reader in self.readers:
-            reader.initialise(data_param, task_param, file_list)
+            file_lists = []
+            if self.action_param.validation_every_n > 0:
+                file_lists.append(data_partitioner.train_files)
+                file_lists.append(data_partitioner.validation_files)
+            else:
+                file_lists.append(data_partitioner.all_files)
+            self.readers = []
+            for file_list in file_lists:
+                reader = ImageReader(['image', 'conditioning'])
+                reader.initialise(data_param, task_param, file_list)
+                self.readers.append(reader)
+        else:
+            inference_reader = ImageReader(['image'])
+            file_list = data_partitioner.inference_list
+            inference_reader.initialise(data_param, task_param, file_list)
+            self.readers = [inference_reader]
 
+        foreground_masking_layer = None
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(
                 type_str=self.net_param.foreground_type,
                 multimod_fusion=self.net_param.multimod_foreground_type,
                 threshold=0.0)
-        else:
-            foreground_masking_layer = None
 
         mean_var_normaliser = MeanVarNormalisationLayer(
             image_name='image',
             binary_masking_func=foreground_masking_layer)
+        histogram_normaliser = None
         if self.net_param.histogram_ref_file:
             histogram_normaliser = HistogramNormalisationLayer(
                 image_name='image',
@@ -75,8 +83,6 @@ class GANApplication(BaseApplication):
                 norm_type=self.net_param.norm_type,
                 cutoff=self.net_param.cutoff,
                 name='hist_norm_layer')
-        else:
-            histogram_normaliser = None
 
         normalisation_layers = []
         if self.net_param.normalisation:
@@ -95,7 +101,8 @@ class GANApplication(BaseApplication):
                     max_percentage=self.action_param.scaling_percentage[1]))
             if self.action_param.rotation_angle:
                 augmentation_layers.append(RandomRotationLayer())
-                augmentation_layers[-1].init_uniform_angle(self.action_param.rotation_angle)
+                augmentation_layers[-1].init_uniform_angle(
+                    self.action_param.rotation_angle)
 
         for reader in self.readers:
             reader.add_preprocessing_layers(
@@ -142,7 +149,7 @@ class GANApplication(BaseApplication):
         if self.is_training:
             def data_net(for_training):
                 with tf.name_scope('train' if for_training else 'validation'):
-                    sampler = self.get_sampler()[0][0 if for_training else 1]
+                    sampler = self.get_sampler()[0][0 if for_training else -1]
                     data_dict = sampler.pop_batch_op()
                     images = tf.cast(data_dict['image'], tf.float32)
                     noise_shape = [self.net_param.batch_size,
@@ -162,8 +169,7 @@ class GANApplication(BaseApplication):
                     learning_rate=self.action_param.lr)
 
             # a new pop_batch_op for each gpu tower
-            if self.has_validation_data and \
-                    self.action_param.save_every_n > 0:
+            if self.action_param.validation_every_n > 0:
                 net_output = tf.cond(self.is_validation,
                                      lambda: data_net(False),
                                      lambda: data_net(True))

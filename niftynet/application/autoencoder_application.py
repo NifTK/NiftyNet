@@ -48,19 +48,32 @@ class AutoencoderApplication(BaseApplication):
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.readers = [ImageReader(['image'])]
-            if  self.action_param.validate_every_n:
-                self.readers.append(ImageReader(['image']))
+            file_lists = []
+            if self.action_param.validation_every_n > 0:
+                file_lists.append(data_partitioner.train_files)
+                file_lists.append(data_partitioner.validation_files)
+            else:
+                file_lists.append(data_partitioner.all_files)
+
+            self.readers = []
+            for file_list in file_lists:
+                reader = ImageReader(['image'])
+                reader.initialise(data_param, task_param, file_list)
+                self.readers.append(reader)
         if self._infer_type in ('encode', 'encode-decode'):
             self.readers = [ImageReader(['image'])]
+            self.readers[0].initialise(data_param,
+                                       task_param,
+                                       data_partitioner.inference_files)
         elif self._infer_type == 'sample':
             self.readers = []
         elif self._infer_type == 'linear_interpolation':
             self.readers = [ImageReader(['feature'])]
+            self.readers[0].initialise(data_param,
+                                       task_param,
+                                       data_partitioner.inference_files)
 
-        file_list = data_partitioner.get_file_list()
-        for reader in self.readers:
-            reader.initialise(data_param, task_param, file_list)
+
         #if self.is_training or self._infer_type in ('encode', 'encode-decode'):
         #    mean_var_normaliser = MeanVarNormalisationLayer(image_name='image')
         #    self.reader.add_preprocessing_layers([mean_var_normaliser])
@@ -122,12 +135,12 @@ class AutoencoderApplication(BaseApplication):
         if self.is_training:
             def data_net(for_training):
                 with tf.name_scope('train' if for_training else 'validation'):
-                    sampler = self.get_sampler()[0][0 if for_training else 1]
+                    sampler = self.get_sampler()[0][0 if for_training else -1]
                     data_dict = sampler.pop_batch_op()
                     image = tf.cast(data_dict['image'], tf.float32)
                     return data_dict, self.net(image, for_training)
 
-            if self.action_param.save_every_n > 0:
+            if self.action_param.validation_every_n > 0:
                 data_dict, net_output = tf.cond(self.is_validation,
                                                 lambda: data_net(False),
                                                 lambda: data_net(True))

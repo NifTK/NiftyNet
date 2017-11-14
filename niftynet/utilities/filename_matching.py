@@ -48,14 +48,14 @@ class KeywordsMatching(object):
 
                     if not default_folder:
                         raise ValueError(
-                            'data input folder %s not found, did'
-                            ' you maybe forget to download data?', path_i)
+                            'data input folder {} not found, did you maybe '
+                            'forget to download data?'.format(path_i))
                     path_def = os.path.join(default_folder, path_i)
                     path_def = os.path.abspath(path_def)
                     if not os.path.exists(path_def):
                         raise ValueError(
-                            'data input folder %s not found, did'
-                            ' you maybe forget to download data?', path_i)
+                            'data input folder {} not found, did you maybe '
+                            'forget to download data?'.format(path_i))
                     path.append(path_def)
 
             elif name == "filename_contains":
