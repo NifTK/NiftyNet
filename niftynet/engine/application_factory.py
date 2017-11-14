@@ -13,7 +13,7 @@ import importlib
 import tensorflow as tf
 
 from niftynet.utilities.util_common import \
-    _damerau_levenshtein_distance as edit_distance
+    damerau_levenshtein_distance as edit_distance
 
 # pylint: disable=too-few-public-methods
 SUPPORTED_APP = {

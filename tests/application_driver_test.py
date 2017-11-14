@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-import six
 import numpy as np
 import tensorflow as tf
 
@@ -23,7 +22,8 @@ def get_initialised_driver(starting_iter=0):
             num_threads=2,
             num_gpus=4,
             cuda_devices='6',
-            model_dir='./testing_data'),
+            model_dir='./testing_data',
+            dataset_split_file='/test'),
         'NETWORK': ParserNamespace(
             batch_size=20,
             name='tests.toy_application.TinyNet'),
@@ -33,6 +33,9 @@ def get_initialised_driver(starting_iter=0):
             save_every_n=20,
             tensorboard_every_n=1,
             max_checkpoints=20,
+            validation_every_n=-1,
+            exclude_fraction_for_validation=0.0,
+            exclude_fraction_for_inference=0.0,
             optimiser='niftynet.engine.application_optimiser.Adagrad',
             lr=0.01),
         'CUSTOM': ParserNamespace(

@@ -11,6 +11,7 @@ import os
 
 from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.engine.application_factory import SUPPORTED_APP
+from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 from niftynet.utilities.user_parameters_custom import add_customised_args
 from niftynet.utilities.user_parameters_default import add_application_args
 from niftynet.utilities.user_parameters_default import add_inference_args
@@ -20,9 +21,8 @@ from niftynet.utilities.user_parameters_default import add_training_args
 from niftynet.utilities.user_parameters_helper import has_section_in_config
 from niftynet.utilities.user_parameters_helper import standardise_section_name
 from niftynet.utilities.util_common import \
-    _damerau_levenshtein_distance as edit_distance
+    damerau_levenshtein_distance as edit_distance
 from niftynet.utilities.versioning import get_niftynet_version_string
-from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 
 try:
     import configparser

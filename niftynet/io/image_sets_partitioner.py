@@ -100,7 +100,7 @@ class ImageSetsPartitioner(object):
         phase = look_up_operations(phase.lower(), SUPPORTED_PHASES)
         if phase == ALL:
             return self._file_list[COLUMN_UNIQ_ID].count()
-        if  self._partition_ids is None:
+        if self._partition_ids is None:
             return 0
         selector = self._partition_ids[COLUMN_PHASE] == phase
         return self._partition_ids[selector].count()[COLUMN_UNIQ_ID]
@@ -318,9 +318,9 @@ class ImageSetsPartitioner(object):
         if self._file_list is not None:
             summary_str += 'input section names: {}\n'.format(
                 list(self._file_list))
-        if self._partition_ids and self.ratios:
+        if self._partition_ids is not None and self.ratios:
             summary_str += \
-                'data partitioning (percentage):\n' \
+                'data partitioning -- number of cases (percentage):\n' \
                 '-- {} {} ({}),\n' \
                 '-- {} {} ({}),\n' \
                 '-- {} {}.\n'.format(
@@ -360,3 +360,35 @@ class ImageSetsPartitioner(object):
         returns True if the VALID subset of images is not empty
         """
         return self.has_phase(VALID)
+
+    @property
+    def validation_files(self):
+        """
+        returns the list of validation filenames
+        """
+        return self.get_file_list(VALID)
+
+    @property
+    def train_files(self):
+        """
+        returns the list of training filenames
+        """
+        return self.get_file_list(TRAIN)
+
+    @property
+    def inference_files(self):
+        """
+        returns the list of inference filenames
+        (defaulting to list of all filenames if no partition definition)
+        """
+        if self.has_inference:
+            return self.get_file_list(INFER)
+        return self.all_files
+
+    @property
+    def all_files(self):
+        """
+        returns list of all filenames
+        """
+        return self.get_file_list()
+

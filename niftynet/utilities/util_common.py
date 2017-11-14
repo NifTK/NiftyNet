@@ -199,8 +199,8 @@ def look_up_operations(type_str, supported):
 
     edit_distances = {}
     for supported_key in set_to_check:
-        edit_distance = _damerau_levenshtein_distance(supported_key,
-                                                      type_str)
+        edit_distance = damerau_levenshtein_distance(supported_key,
+                                                     type_str)
         if edit_distance <= 3:
             edit_distances[supported_key] = edit_distance
     if edit_distances:
@@ -216,7 +216,7 @@ def look_up_operations(type_str, supported):
             type_str, supported))
 
 
-def _damerau_levenshtein_distance(s1, s2):
+def damerau_levenshtein_distance(s1, s2):
     """
     Calculates an edit distance, for typo detection. Code based on :
     https://en.wikipedia.org/wiki/Damerau–Levenshtein_distance

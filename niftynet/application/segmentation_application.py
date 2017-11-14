@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
-from niftynet.engine.application_factory import\
+from niftynet.engine.application_factory import \
     ApplicationNetFactory, InitializerFactory, OptimiserFactory
 from niftynet.engine.application_variables import \
     CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
@@ -25,7 +25,6 @@ from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
-from niftynet.io.image_sets_partitioner import TRAIN, VALID
 
 SUPPORTED_INPUT = {'image', 'label', 'weight', 'sampler'}
 
@@ -56,38 +55,42 @@ class SegmentationApplication(BaseApplication):
         }
 
     def initialise_dataset_loader(
-        self, data_param=None, task_param=None, data_partitioner=None):
+            self, data_param=None, task_param=None, data_partitioner=None):
 
         self.data_param = data_param
         self.segmentation_param = task_param
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            reader_train = ImageReader(SUPPORTED_INPUT)
-            file_list = data_partitioner.get_file_list()
-            reader_train.initialise(data_param, task_param, file_list)
-            self.readers = [reader_train]
+            file_lists = []
+            if self.action_param.validation_every_n > 0:
+                file_lists.append(data_partitioner.train_files)
+                file_lists.append(data_partitioner.validation_files)
+            else:
+                file_lists.append(data_partitioner.all_files)
 
-            if self.action_param.validate_every_n > 0:
-                reader_valid = ImageReader(SUPPORTED_INPUT)
-                file_list = data_partitioner.get_file_list()
-                reader_valid.initialise(data_param, task_param, file_list)
-                self.readers.append(reader_valid)
+            self.readers = []
+            for file_list in file_lists:
+                reader = ImageReader(SUPPORTED_INPUT)
+                reader.initialise(data_param, task_param, file_list)
+                self.readers.append(reader)
+
         else:  # in the inference process use image input only
-            self.readers = [ImageReader(['image'])]
-            file_list = data_partitioner.get_file_list()
-            self.readers[0].initialise(data_param, task_param, file_list)
+            inference_reader = ImageReader(['image'])
+            file_list = data_partitioner.inference_files
+            inference_reader.initialise(data_param, task_param, file_list)
+            self.readers = [inference_reader]
 
+        foreground_masking_layer = None
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(
                 type_str=self.net_param.foreground_type,
                 multimod_fusion=self.net_param.multimod_foreground_type,
                 threshold=0.0)
-        else:
-            foreground_masking_layer = None
 
         mean_var_normaliser = MeanVarNormalisationLayer(
             image_name='image', binary_masking_func=foreground_masking_layer)
+        histogram_normaliser = None
         if self.net_param.histogram_ref_file:
             histogram_normaliser = HistogramNormalisationLayer(
                 image_name='image',
@@ -97,16 +100,13 @@ class SegmentationApplication(BaseApplication):
                 norm_type=self.net_param.norm_type,
                 cutoff=self.net_param.cutoff,
                 name='hist_norm_layer')
-        else:
-            histogram_normaliser = None
 
+        label_normaliser = None
         if self.net_param.histogram_ref_file:
             label_normaliser = DiscreteLabelNormalisationLayer(
                 image_name='label',
                 modalities=vars(task_param).get('label'),
                 model_filename=self.net_param.histogram_ref_file)
-        else:
-            label_normaliser = None
 
         normalisation_layers = []
         if self.net_param.normalisation:
@@ -145,9 +145,12 @@ class SegmentationApplication(BaseApplication):
             volume_padding_layer.append(PadLayer(
                 image_name=SUPPORTED_INPUT,
                 border=self.net_param.volume_padding_size))
+
         for reader in self.readers:
             reader.add_preprocessing_layers(
-            volume_padding_layer + normalisation_layers + augmentation_layers)
+                volume_padding_layer +
+                normalisation_layers +
+                augmentation_layers)
 
     def initialise_uniform_sampler(self):
         self.sampler = [[UniformSampler(
@@ -207,7 +210,6 @@ class SegmentationApplication(BaseApplication):
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][1]()
 
     def initialise_network(self):
-        num_classes = self.segmentation_param.num_classes
         w_regularizer = None
         b_regularizer = None
         reg_type = self.net_param.reg_type.lower()
@@ -222,7 +224,7 @@ class SegmentationApplication(BaseApplication):
             b_regularizer = regularizers.l1_regularizer(decay)
 
         self.net = ApplicationNetFactory.create(self.net_param.name)(
-            num_classes=num_classes,
+            num_classes=self.segmentation_param.num_classes,
             w_initializer=InitializerFactory.get_initializer(
                 name=self.net_param.weight_initializer),
             b_initializer=InitializerFactory.get_initializer(
@@ -239,13 +241,13 @@ class SegmentationApplication(BaseApplication):
                 sampler = self.get_sampler()[0][0 if for_training else -1]
                 data_dict = sampler.pop_batch_op()
                 image = tf.cast(data_dict['image'], tf.float32)
-                return data_dict, self.net(image, for_training)
+                return data_dict, self.net(image, is_training=for_training)
 
         if self.is_training:
-            if self.action_param.validate_every_n > 0:
+            if self.action_param.validation_every_n > 0:
                 data_dict, net_out = tf.cond(self.is_validation,
-                                         lambda: data_net(False),
-                                         lambda: data_net(True))
+                                             lambda: data_net(False),
+                                             lambda: data_net(True))
             else:
                 data_dict, net_out = data_net(True)
             with tf.name_scope('Optimiser'):

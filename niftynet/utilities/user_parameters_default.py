@@ -393,18 +393,6 @@ def add_training_args(parser):
         default=20)
 
     parser.add_argument(
-        "--validation_every_n",
-        help="Validate every n iterations",
-        type=int,
-        default=10)
-
-    parser.add_argument(
-        "--validation_max_iter",
-        help="Number of validation batches to run",
-        type=int,
-        default=2)
-
-    parser.add_argument(
         "--max_iter",
         metavar='',
         help="[Training only] Total number of iterations",
@@ -416,6 +404,18 @@ def add_training_args(parser):
         help="Maximum number of model checkpoints that will be saved",
         type=int,
         default=100)
+
+    parser.add_argument(
+        "--validation_every_n",
+        help="Validate every n iterations",
+        type=int,
+        default=10)
+
+    parser.add_argument(
+        "--validation_max_iter",
+        help="Number of validation batches to run",
+        type=int,
+        default=2)
 
     parser.add_argument(
         "--exclude_fraction_for_validation",

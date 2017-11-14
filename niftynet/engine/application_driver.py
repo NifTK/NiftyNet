@@ -59,8 +59,9 @@ class ApplicationDriver(object):
         self.max_checkpoints = 20
         self.save_every_n = 10
         self.tensorboard_every_n = 20
-        self.validate_every_n = 1
-        self.validate_iters = 3
+
+        self.validation_every_n = 1
+        self.validation_max_iter = 2
 
         self.initial_iter = 0
         self.final_iter = 0
@@ -112,7 +113,6 @@ class ApplicationDriver(object):
                 summary_root,
                 create_new=train_param.starting_iter == 0)
 
-            # training iterations-related parameters
             self.initial_iter = train_param.starting_iter
             self.final_iter = max(train_param.max_iter, self.initial_iter)
             self.save_every_n = train_param.save_every_n
@@ -120,6 +120,10 @@ class ApplicationDriver(object):
             self.max_checkpoints = train_param.max_checkpoints
             self.gradients_collector = GradientsCollector(
                 n_devices=max(self.num_gpus, 1))
+            self.validation_every_n = train_param.validation_every_n
+            if self.validation_every_n > 0:
+                self.validation_max_iter = \
+                    max(2, train_param.validation_max_iter)
             action_param = train_param
         else:
             assert infer_param, 'inference parameters not specified'
@@ -136,9 +140,28 @@ class ApplicationDriver(object):
 
         # initialise data input
         data_partitioner = ImageSetsPartitioner()
+        do_new_partition = self.is_training and self.initial_iter == 0 and \
+            (not os.path.isfile(system_param.dataset_split_file))
+        data_fractions = None
+        if do_new_partition:
+            data_fractions = (train_param.exclude_fraction_for_validation,
+                              train_param.exclude_fraction_for_inference)
         if data_param:
-            # change this according to the config
-            data_partitioner.initialise(data_param, ratios=(0.1, 0.1))
+            data_partitioner.initialise(
+                data_param=data_param,
+                new_partition=do_new_partition,
+                ratios=data_fractions,
+                data_split_file=system_param.dataset_split_file)
+
+        if data_param and self.is_training and self.validation_every_n > 0:
+            assert data_partitioner.has_validation, \
+                'validation_every_n is set to {}, ' \
+                'but train/validation splitting not available,\n\nplease ' \
+                'check dataset partition list {} '\
+                '(remove file to generate new dataset partition)'.format(
+                    self.validation_every_n, system_param.dataset_split_file)
+
+        # initialise readers
         self.app.initialise_dataset_loader(
             data_param, app_param, data_partitioner)
 
@@ -327,12 +350,14 @@ class ApplicationDriver(object):
         This function sets message._current_iter_output with session.run
         outputs
         """
+        # update iteration status before the batch process
+        self.app.set_iteration_update(message)
         collected = self.outputs_collector
         # building a dictionary of variables
         vars_to_run = message.ops_to_run
         if message.phase == TRAIN:
             # always apply the gradient op during training
-            vars_to_run['gradient'] = self.app.gradient_op
+            vars_to_run['gradients'] = self.app.gradient_op
         # session will run variables collected under CONSOLE
         vars_to_run[CONSOLE] = collected.variables(CONSOLE)
         # session will run variables collected under NETWORK_OUTPUT
@@ -347,6 +372,9 @@ class ApplicationDriver(object):
 
         # outputs to message
         message.current_iter_output = graph_output
+
+        # update iteration status after the batch process
+        self.app.set_iteration_update(message)
 
     def _training_loop(self, sess, loop_status):
         """
@@ -368,7 +396,7 @@ class ApplicationDriver(object):
             self.summary_dir + '/train', sess.graph)
         writer_valid = tf.summary.FileWriter(
             self.summary_dir + '/v', sess.graph) \
-            if self.validate_every_n > 0 else None
+            if self.validation_every_n > 0 else None
 
         for iter_i in range(iter_msg.initial_iter, iter_msg.final_iter):
             # general loop information
@@ -378,27 +406,20 @@ class ApplicationDriver(object):
             if iter_msg.should_stop:
                 break
 
-            if iter_i > 0 and self.validate_every_n > 0 and \
-                    (iter_i % self.validate_every_n == 0):
+            if iter_i > 0 and self.validation_every_n > 0 and \
+                    (iter_i % self.validation_every_n == 0):
                 iter_msg.initial_iter = 0
-                iter_msg.final_iter = self.validate_iters
+                iter_msg.final_iter = self.validation_max_iter
                 for iter_j in range(iter_msg.initial_iter, iter_msg.final_iter):
                     iter_msg.current_iter, iter_msg.phase = iter_j, VALID
-
-                    self.app.set_iteration_update(iter_msg)
                     self.run_vars(sess, iter_msg)
-                    self.app.set_iteration_update(iter_msg)
                     # save iteration results
                     iter_msg.to_tf_summary(writer_valid)
                     tf.logging.info(iter_msg.to_console_string())
 
             # update variables/operations to run, from self.app
             iter_msg.current_iter, iter_msg.phase = iter_i, TRAIN
-            # update iteration status before the batch process
-            self.app.set_iteration_update(iter_msg)
             self.run_vars(sess, iter_msg)
-            # update iteration status after the batch process
-            self.app.set_iteration_update(iter_msg)
 
             self.app.interpret_output(
                 iter_msg.current_iter_output[NETWORK_OUTPUT])
@@ -423,9 +444,7 @@ class ApplicationDriver(object):
             iter_msg.current_iter, iter_msg.phase = iter_i, INFER
             # run variables provided in `iter_msg` and set values of
             # variables to iter_msg.current_iter_output
-            self.app.set_iteration_update(iter_msg)
             self.run_vars(sess, iter_msg)
-            self.app.set_iteration_update(iter_msg)
             iter_i = iter_i + 1
 
             # process the graph outputs
