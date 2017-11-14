@@ -237,10 +237,18 @@ class ImageSetsPartitioner(object):
                             modality_name, csv_file)
             section_properties = self.data_param[modality_name].__dict__.items()
             # grep files by section properties and write csv
-            matcher = KeywordsMatching.from_tuple(
-                section_properties,
-                self.default_image_file_location)
-            match_and_write_filenames_to_csv([matcher], csv_file)
+            try:
+                matcher = KeywordsMatching.from_tuple(
+                    section_properties,
+                    self.default_image_file_location)
+                match_and_write_filenames_to_csv([matcher], csv_file)
+            except ValueError as reading_error:
+                tf.logging.warning('Ignoring input section: [%s], '
+                                   'due to the following error:',
+                                   modality_name)
+                tf.logging.warning(repr(reading_error))
+                return pandas.DataFrame(
+                    columns=[COLUMN_UNIQ_ID, modality_name])
         else:
             tf.logging.info(
                 '[%s] using existing csv file %s, skipped filenames search',

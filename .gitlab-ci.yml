@@ -171,6 +171,7 @@ quicktest:
     - 167-document-cli-option-for-path-to-new-networks
     - 176-document-pip-installer-bundling-guidelines
     - 174-design-a-workflow-that-allows-prs-from-github-to-be-merged
+    - merging-train-valid-monitoring
   script:
     # print system info
     - which nvidia-smi

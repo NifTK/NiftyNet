@@ -378,13 +378,13 @@ class ApplicationDriver(object):
 
     def _training_loop(self, sess, loop_status):
         """
-        Training loop is running through the training_ops generator
-        defined for each application (the application can specify
-        training ops based on the current iteration number, this allows
-        for complex optimisation schedules).
-
-        At every iteration it also evaluates all variables returned by
-        the output_collector.
+        At each iteration, an `IterationMessage` object is created
+        to send network output to/receive controlling messages from self.app.
+        The iteration message will be passed into `self.run_vars`,
+        where graph elements to run are collected and feed into `session.run()`.
+        A nested validation loop will be running
+        if self.validation_every_n > 0.  During the validation loop
+        the network parameters remain unchanged.
         """
 
         iter_msg = IterationMessage()
