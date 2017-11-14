@@ -112,8 +112,8 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertEqual(len(reader.output_list), 4)
 
         reader = ImageReader(['image'])
-        reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK, [])
-        self.assertEqual(len(reader.output_list), 0)
+        with self.assertRaisesRegexp(ValueError, ''):
+            reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK, [])
 
     def test_properties(self):
         reader = ImageReader(['image'])
@@ -241,7 +241,7 @@ class ImageReaderTest(tf.test.TestCase):
         with self.assertRaisesRegexp(AttributeError, ''):
             reader = ImageReader(['image'])
             reader.initialise(BAD_DATA, SINGLE_MOD_TASK, bad_data_list)
-        with self.assertRaisesRegexp(KeyError, ''):
+        with self.assertRaisesRegexp(ValueError, ''):
             reader = ImageReader(['image'])
             reader.initialise(SINGLE_MOD_DATA, BAD_TASK, single_mod_list)
 
