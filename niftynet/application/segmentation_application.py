@@ -236,13 +236,13 @@ class SegmentationApplication(BaseApplication):
                                  gradients_collector=None):
         def data_net(for_training):
             with tf.name_scope('train' if for_training else 'validation'):
-                sampler = self.get_sampler()[0][0 if for_training else 1]
+                sampler = self.get_sampler()[0][0 if for_training else -1]
                 data_dict = sampler.pop_batch_op()
                 image = tf.cast(data_dict['image'], tf.float32)
                 return data_dict, self.net(image, for_training)
 
         if self.is_training:
-            if self.action_param.save_every_n > 0:
+            if self.action_param.validate_every_n > 0:
                 data_dict, net_out = tf.cond(self.is_validation,
                                          lambda: data_net(False),
                                          lambda: data_net(True))

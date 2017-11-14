@@ -6,9 +6,9 @@ Interface of NiftyNet application
 import tensorflow as tf
 from six import with_metaclass
 
+from niftynet.io.image_sets_partitioner import TRAIN, VALID
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.utilities import util_common
-from niftynet.io.image_sets_partitioner import TRAIN, VALID
 
 
 class SingletonApplication(type):
@@ -120,7 +120,17 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         """
         raise NotImplementedError
 
-    def set_network_update_op(self, gradients):
+    def set_network_gradient_op(self, gradients):
+        """
+        create gradient op by optimiser.apply_gradients
+        this function sets self.gradient_op
+
+        Override this function for more complex optimisations such as
+        using different optimisers for sub-networks.
+
+        :param gradients: processed gradients from the gradient_collector
+        :return:
+        """
         grad_list_depth = util_common.list_depth_count(gradients)
         if grad_list_depth == 3:
             # nested depth 3 means: gradients list is nested in terms of:
@@ -141,14 +151,28 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
                 if sampler:
                     sampler.close_all()
 
-    def update(self, iteration_message):
+    def set_iteration_update(self, iteration_message):
+        """
+        At each iteration `application_driver` calls
+        `output = tf.session.run(variables_to_eval, feed_dict=data_dict)`
+        to evaluate TF graph elements, where
+        `variables_to_eval` and `data_dict` are retrieved from
+        `application_iteration.IterationMessage.ops_to_run` and
+        `application_iteration.IterationMessage.data_feed_dict`.
+        (in addition to the variables collected by output_collector;
+         see `application_driver.run_vars`)
+
+        This function (is called before and after `tf.session.run` by the
+        driver) provides an interface for accessing `variables_to_eval` and
+        `data_dict` at each iteration.
+
+        Override this function for more complex operations according to
+        `application_iteration.IterationMessage.current_iter`.
+        """
         if iteration_message.phase == TRAIN:
             iteration_message.data_feed_dict[self.is_validation] = False
-            iteration_message.ops_to_run = {'grad': self.gradient_op}
-        if iteration_message.phase == VALID:
+        elif iteration_message.phase == VALID:
             iteration_message.data_feed_dict[self.is_validation] = True
-            iteration_message.ops_to_run = {}
-
 
     def get_sampler(self):
         return self.sampler

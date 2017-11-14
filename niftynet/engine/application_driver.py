@@ -25,8 +25,7 @@ from niftynet.engine.application_variables import \
 from niftynet.engine.application_variables import \
     GradientsCollector, OutputsCollector, global_vars_init_or_restore
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
-from niftynet.io.image_sets_partitioner import \
-    TRAIN, VALID
+from niftynet.io.image_sets_partitioner import TRAIN, VALID, INFER
 from niftynet.io.misc_io import get_latest_subfolder, touch_folder
 from niftynet.layer.bn import BN_COLLECTION
 from niftynet.utilities.util_common import set_cuda_device
@@ -259,7 +258,7 @@ class ApplicationDriver(object):
                 # combine them with model parameter updating operation
                 with tf.name_scope('ApplyGradients'):
                     with graph.control_dependencies(updates_op):
-                        self.app.set_network_update_op(
+                        self.app.set_network_gradient_op(
                             self.gradients_collector.gradients)
 
             # initialisation operation
@@ -328,16 +327,17 @@ class ApplicationDriver(object):
         This function sets message._current_iter_output with session.run
         outputs
         """
-
         collected = self.outputs_collector
-
         # building a dictionary of variables
         vars_to_run = message.ops_to_run
+        if message.phase == TRAIN:
+            # always apply the gradient op during training
+            vars_to_run['gradient'] = self.app.gradient_op
         # session will run variables collected under CONSOLE
         vars_to_run[CONSOLE] = collected.variables(CONSOLE)
         # session will run variables collected under NETWORK_OUTPUT
         vars_to_run[NETWORK_OUTPUT] = collected.variables(NETWORK_OUTPUT)
-        if self.tensorboard_every_n > 0 and \
+        if self.is_training and self.tensorboard_every_n > 0 and \
                 (message.current_iter % self.tensorboard_every_n == 0):
             # session will run variables collected under TF_SUMMARIES
             vars_to_run[TF_SUMMARIES] = collected.variables(TF_SUMMARIES)
@@ -385,9 +385,9 @@ class ApplicationDriver(object):
                 for iter_j in range(iter_msg.initial_iter, iter_msg.final_iter):
                     iter_msg.current_iter, iter_msg.phase = iter_j, VALID
 
-                    self.app.update(iter_msg)
+                    self.app.set_iteration_update(iter_msg)
                     self.run_vars(sess, iter_msg)
-                    self.app.update(iter_msg)
+                    self.app.set_iteration_update(iter_msg)
                     # save iteration results
                     iter_msg.to_tf_summary(writer_valid)
                     tf.logging.info(iter_msg.to_console_string())
@@ -395,10 +395,10 @@ class ApplicationDriver(object):
             # update variables/operations to run, from self.app
             iter_msg.current_iter, iter_msg.phase = iter_i, TRAIN
             # update iteration status before the batch process
-            self.app.update(iter_msg)
+            self.app.set_iteration_update(iter_msg)
             self.run_vars(sess, iter_msg)
             # update iteration status after the batch process
-            self.app.update(iter_msg)
+            self.app.set_iteration_update(iter_msg)
 
             self.app.interpret_output(
                 iter_msg.current_iter_output[NETWORK_OUTPUT])
@@ -411,29 +411,30 @@ class ApplicationDriver(object):
         this loop stops when the return value of
         application.interpret_output is False.
         """
+        iter_msg = IterationMessage()
         loop_status['all_saved_flag'] = False
+        iter_i = 0
         while True:
-            local_time = time.time()
             if self._coord.should_stop():
                 break
+            if iter_msg.should_stop:
+                break
 
-            # build variables to run
-            vars_to_run = dict()
-            vars_to_run[NETWORK_OUTPUT], vars_to_run[CONSOLE] = \
-                self.outputs_collector.variables(NETWORK_OUTPUT), \
-                self.outputs_collector.variables(CONSOLE)
-
-            # evaluate the graph variables
-            graph_output = sess.run(vars_to_run)
+            iter_msg.current_iter, iter_msg.phase = iter_i, INFER
+            # run variables provided in `iter_msg` and set values of
+            # variables to iter_msg.current_iter_output
+            self.app.set_iteration_update(iter_msg)
+            self.run_vars(sess, iter_msg)
+            self.app.set_iteration_update(iter_msg)
+            iter_i = iter_i + 1
 
             # process the graph outputs
-            if not self.app.interpret_output(graph_output[NETWORK_OUTPUT]):
+            if not self.app.interpret_output(
+                    iter_msg.current_iter_output[NETWORK_OUTPUT]):
                 tf.logging.info('processed all batches.')
                 loop_status['all_saved_flag'] = True
                 break
-            console_str = self._console_vars_to_str(graph_output[CONSOLE])
-            tf.logging.info(
-                '%s (%.3fs)', console_str, time.time() - local_time)
+            tf.logging.info(iter_msg.to_console_string())
 
     def _save_model(self, session, iter_i):
         """

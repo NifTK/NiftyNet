@@ -5,10 +5,8 @@ Message stores status info of the current iteration
 
 import time
 
-from niftynet.engine.application_variables import \
-    CONSOLE, TF_SUMMARIES
-from niftynet.io.image_sets_partitioner import \
-    TRAIN
+from niftynet.engine.application_variables import CONSOLE, TF_SUMMARIES
+from niftynet.io.image_sets_partitioner import TRAIN
 from niftynet.utilities.decorators import singleton
 
 
@@ -107,8 +105,8 @@ class IterationMessage(object):
         """
         Engine check this property after each iteration
 
-        This could be modified in by applicaiton
-        `application.update()`
+        This could be modified in by application
+        `application.set_iteration_update()`
         to create training schedules such as early stopping.
         :return: boolean value
         """
