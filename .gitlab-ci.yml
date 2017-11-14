@@ -23,6 +23,7 @@ testjob:
     - dev
     - dev-staging
     - tags
+    - merging-train-valid-monitoring
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
@@ -220,7 +221,6 @@ pip-installer:
     - dev-staging
     - tags
     - 177-merging-net_regress-to-dev
-    - 102-upgrade-to-tensorflow-1-3-0
     - 117-support-for-user-defined-networks-using-pip-installed-niftynet
   script:
     # get the shortened version of last commit's hash

@@ -58,8 +58,8 @@ class GANApplication(BaseApplication):
                 reader.initialise(data_param, task_param, file_list)
                 self.readers.append(reader)
         else:
-            inference_reader = ImageReader(['image'])
-            file_list = data_partitioner.inference_list
+            inference_reader = ImageReader(['conditioning'])
+            file_list = data_partitioner.inference_files
             inference_reader.initialise(data_param, task_param, file_list)
             self.readers = [inference_reader]
 
@@ -132,7 +132,7 @@ class GANApplication(BaseApplication):
             # image matches one random vector,
             # (n = self.gan_param.n_interpolations)
             self.sampler.append([ResizeSampler(
-                reader=self.reader,
+                reader=reader,
                 data_param=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=self.gan_param.n_interpolations,
@@ -222,7 +222,7 @@ class GANApplication(BaseApplication):
                 gradients_collector.add_to_collection(grads)
         else:
             data_dict = self.get_sampler()[0][0].pop_batch_op()
-            conditioning_dict = self.get_sampler()[1].pop_batch_op()
+            conditioning_dict = self.get_sampler()[1][0].pop_batch_op()
             conditioning = conditioning_dict['conditioning']
             image_size = conditioning.shape.as_list()[:-1]
             dummy_image = tf.zeros(image_size + [1])
@@ -242,7 +242,7 @@ class GANApplication(BaseApplication):
                 collection=NETWORK_OUTPUT)
 
             self.output_decoder = WindowAsImageAggregator(
-                image_reader=self.reader,
+                image_reader=self.readers[0],
                 output_path=self.action_param.save_seg_dir)
 
     def interpret_output(self, batch_output):

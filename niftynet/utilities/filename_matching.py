@@ -105,11 +105,14 @@ class KeywordsMatching(object):
         """
         _, name, _ = util.split_filename(fullname)
         # split name into parts that might be the subject_id
-        noncapturing_regex_delimiters = ['(?:' + re.escape(c) + ')'
-                                         for c in self.filename_contains]
-        potential_names = re.split(
-            '|'.join(noncapturing_regex_delimiters), name)
+        noncapturing_regex_delimiters = \
+            ['(?:{})'.format(re.escape(c)) for c in self.filename_contains]
+        if noncapturing_regex_delimiters:
+            potential_names = re.split(
+                '|'.join(noncapturing_regex_delimiters), name)
+        else:
+            potential_names = [name]
         # filter out non-alphanumeric characters and blank strings
         potential_names = [re.sub(r'\W+', '', name) for name in potential_names]
-        potential_names = [name for name in potential_names if name != '']
+        potential_names = list(filter(bool, potential_names))
         return potential_names

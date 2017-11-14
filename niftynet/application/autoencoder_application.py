@@ -254,7 +254,7 @@ class AutoencoderApplication(BaseApplication):
                     var=data_dict['feature_location'], name='location',
                     average_over_devices=True, collection=NETWORK_OUTPUT)
                 self.output_decoder = WindowAsImageAggregator(
-                    image_reader=self.reader,
+                    image_reader=self.readers[0],
                     output_path=self.action_param.save_seg_dir)
             else:
                 raise NotImplementedError

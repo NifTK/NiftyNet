@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
 
+import pandas
 import numpy as np
 import tensorflow as tf
 from six import string_types
@@ -260,9 +261,26 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
                            prefix='reading datasets headers',
                            decimals=1, length=10, fill='*')
         # combine fieldnames and volumes as a dictionary
-        _dict = {field: _create_image(file_list, idx, modalities, data_param)
-                 for (field, modalities) in mod_dict.items()}
-        volume_list.append(_dict)
+        _dict = {}
+        for field, modalities in mod_dict.items():
+            image_instance = _create_image(
+                file_list, idx, modalities, data_param)
+            if image_instance is not None:
+                _dict[field] = image_instance
+        if _dict:
+            volume_list.append(_dict)
+    if not volume_list:
+        tf.logging.fatal(
+            "empty filename lists, please check the csv "
+            "files. (removing csv_file keyword if it is in the config file "
+            "to automatically search folders and generate new csv "
+            "files again)\n\n"
+            "Please note in the matched file names, each subject id are "
+            "created by removing all keywords listed `filename_contains` "
+            "in the config.\n\n"
+            "E.g., `filename_contains=foo, bar` will match file "
+            "foo_subject42_bar.nii.gz, and the subject id is _subject42_.")
+        raise IOError
     return volume_list
 
 
@@ -274,7 +292,16 @@ def _create_image(file_list, idx, modalities, data_param):
     """
     try:
         file_path = tuple(file_list.loc[idx, mod] for mod in modalities)
-        interp_order = tuple(data_param[mod].interp_order for mod in modalities)
+        any_missing = any([pandas.isnull(file_name) or not bool(file_name)
+                           for file_name in file_path])
+        if any_missing:
+            # todo: enable missing modalities again
+            # the file_path of a multimodal image will contain `nan`, e.g.
+            # this should be handled by `ImageFactory.create_instance`
+            # ('testT1.nii.gz', 'testT2.nii.gz', nan, 'testFlair.nii.gz')
+            return None
+        interp_order = tuple(data_param[mod].interp_order
+                             for mod in modalities)
         pixdim = tuple(data_param[mod].pixdim for mod in modalities)
         axcodes = tuple(data_param[mod].axcodes for mod in modalities)
     except KeyError:

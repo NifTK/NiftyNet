@@ -186,6 +186,7 @@ class ImageSetsPartitioner(object):
             n_rows = self._file_list[COLUMN_UNIQ_ID].count()
             self._file_list = pandas.merge(self._file_list,
                                            modality_file_list,
+                                           how='outer',
                                            on=COLUMN_UNIQ_ID)
             if self._file_list[COLUMN_UNIQ_ID].count() < n_rows:
                 tf.logging.warning('rows not matched in section [%s]',
