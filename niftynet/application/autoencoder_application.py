@@ -6,14 +6,12 @@ from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import TF_SUMMARIES
-from niftynet.engine.windows_aggregator_identity import WindowAsImageAggregator
 from niftynet.engine.sampler_linear_interpolate import LinearInterpolateSampler
 from niftynet.engine.sampler_resize import ResizeSampler
+from niftynet.engine.windows_aggregator_identity import WindowAsImageAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.loss_autoencoder import LossFunction
 from niftynet.utilities.util_common import look_up_operations
-from niftynet.layer.mean_variance_normalisation import \
-    MeanVarNormalisationLayer
 
 SUPPORTED_INPUT = {'image', 'feature'}
 SUPPORTED_INFERENCE = {
@@ -72,9 +70,7 @@ class AutoencoderApplication(BaseApplication):
             self.readers[0].initialise(data_param,
                                        task_param,
                                        data_partitioner.inference_files)
-
-
-        #if self.is_training or self._infer_type in ('encode', 'encode-decode'):
+        # if self.is_training or self._infer_type in ('encode', 'encode-decode'):
         #    mean_var_normaliser = MeanVarNormalisationLayer(image_name='image')
         #    self.reader.add_preprocessing_layers([mean_var_normaliser])
 

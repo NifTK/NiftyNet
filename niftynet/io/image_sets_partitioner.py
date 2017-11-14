@@ -392,4 +392,3 @@ class ImageSetsPartitioner(object):
         returns list of all filenames
         """
         return self.get_file_list()
-

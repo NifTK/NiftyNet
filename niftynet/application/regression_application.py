@@ -54,7 +54,7 @@ class RegressionApplication(BaseApplication):
         }
 
     def initialise_dataset_loader(
-        self, data_param=None, task_param=None, data_partitioner=None):
+            self, data_param=None, task_param=None, data_partitioner=None):
         self.data_param = data_param
         self.regression_param = task_param
 

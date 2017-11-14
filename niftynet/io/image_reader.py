@@ -4,8 +4,8 @@ from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
 
-import pandas
 import numpy as np
+import pandas
 import tensorflow as tf
 from six import string_types
 
