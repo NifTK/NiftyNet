@@ -99,20 +99,6 @@ def add_inference_args(parser):
 
 def add_input_data_args(parser):
     parser.add_argument(
-        "--csv_test_file",
-        metavar='',
-        type=str,
-        help="Input list of test subjects in csv files",
-        default='')
-
-    parser.add_argument(
-        "--csv_validation_file",
-        metavar='',
-        type=str,
-        help="Input list of validation subjects in csv files",
-        default='')
-
-    parser.add_argument(
         "--csv_file",
         metavar='',
         type=str,
@@ -171,7 +157,7 @@ def add_input_data_args(parser):
 def add_network_args(parser):
     parser.add_argument(
         "--name",
-        help="Choose a net from NiftyNet/niftynet/network/ or from"
+        help="Choose a net from NiftyNet/niftynet/network/ or from "
              "user specified module string",
         metavar='')
 
@@ -232,7 +218,7 @@ def add_network_args(parser):
         choices=list(
             niftynet.layer.binary_masking.SUPPORTED_MULTIMOD_MASK_TYPES),
         help="Way of combining the foreground masks from different "
-             "modalities. 'and is the intersection, 'or' is the union "
+             "modalities. 'and' is the intersection, 'or' is the union "
              "and 'multi' permits each modality to use its own mask.",
         default='and')
 
@@ -244,11 +230,13 @@ def add_network_args(parser):
         default='')
 
     # TODO add choices of normalisation types
+    import niftynet.utilities.histogram_standardisation as hist_std_module
     parser.add_argument(
         "--norm_type",
         help="Type of normalisation to perform",
         type=str,
-        default='percentile')
+        default='percentile',
+        choices=list(hist_std_module.SUPPORTED_CUTPOINTS))
 
     parser.add_argument(
         "--cutoff",
@@ -317,7 +305,7 @@ def add_network_args(parser):
 def add_training_args(parser):
     parser.add_argument(
         "--optimiser",
-        help="choose an optimiser for computing graph gradients and applying",
+        help="Choose an optimiser for computing graph gradients and applying",
         type=str,
         default='adam')
 
@@ -359,7 +347,7 @@ def add_training_args(parser):
 
     parser.add_argument(
         "--scaling_percentage",
-        help="the spatial scaling factor in [min_percentage, max_percentage]",
+        help="The spatial scaling factor in [min_percentage, max_percentage]",
         type=float_array,
         default=())
 
@@ -385,7 +373,8 @@ def add_training_args(parser):
 
     parser.add_argument(
         "--starting_iter",
-        metavar='', help="[Training only] Resume from iteration n",
+        metavar='',
+        help="[Training only] Resume from iteration n",
         type=int,
         default=0)
 
@@ -399,19 +388,19 @@ def add_training_args(parser):
     parser.add_argument(
         "--tensorboard_every_n",
         metavar='',
-        help="[Training only] tensorboard summary frequency",
+        help="[Training only] Tensorboard summary frequency",
         type=int,
         default=20)
 
     parser.add_argument(
-        "--validate_every_n",
-        help="Validate every n iters",
+        "--validation_every_n",
+        help="Validate every n iterations",
         type=int,
         default=10)
 
     parser.add_argument(
-        "--validation_iters",
-        help="How many validation batches to run",
+        "--validation_max_iter",
+        help="Number of validation batches to run",
         type=int,
         default=2)
 
