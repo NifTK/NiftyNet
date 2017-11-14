@@ -409,7 +409,7 @@ def add_training_args(parser):
         "--validation_every_n",
         help="Validate every n iterations",
         type=int,
-        default=10)
+        default=-1)
 
     parser.add_argument(
         "--validation_max_iter",

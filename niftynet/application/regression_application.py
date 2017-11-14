@@ -60,17 +60,27 @@ class RegressionApplication(BaseApplication):
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.readers = [ImageReader(SUPPORTED_INPUT)]
-            if self.action_param.validate_every_n:
-                self.readers.append(ImageReader(SUPPORTED_INPUT))
-        else:  # in the inference process use image input only
-            self.readers = [ImageReader(['image'])]
-        file_list = data_partitioner.get_file_list()
-        for reader in self.readers:
-            reader.initialise(data_param, task_param, file_list)
+            file_lists = []
+            if self.action_param.validation_every_n > 0:
+                file_lists.append(data_partitioner.train_files)
+                file_lists.append(data_partitioner.validation_files)
+            else:
+                file_lists.append(data_partitioner.all_files)
+
+            self.readers = []
+            for file_list in file_lists:
+                reader = ImageReader(SUPPORTED_INPUT)
+                reader.initialise(data_param, task_param, file_list)
+                self.readers.append(reader)
+        else:
+            inference_reader = ImageReader(['image'])
+            file_list = data_partitioner.inference_list
+            inference_reader.initialise(data_param, task_param, file_list)
+            self.readers = [inference_reader]
 
         mean_var_normaliser = MeanVarNormalisationLayer(
             image_name='image')
+        histogram_normaliser = None
         if self.net_param.histogram_ref_file:
             histogram_normaliser = HistogramNormalisationLayer(
                 image_name='image',
@@ -79,8 +89,6 @@ class RegressionApplication(BaseApplication):
                 norm_type=self.net_param.norm_type,
                 cutoff=self.net_param.cutoff,
                 name='hist_norm_layer')
-        else:
-            histogram_normaliser = None
 
         normalisation_layers = []
         if self.net_param.normalisation:
@@ -194,15 +202,13 @@ class RegressionApplication(BaseApplication):
                                  gradients_collector=None):
         def data_net(for_training):
             with tf.name_scope('train' if for_training else 'validation'):
-                sampler = self.get_sampler()[0][0 if for_training else 1]
+                sampler = self.get_sampler()[0][0 if for_training else -1]
                 data_dict = sampler.pop_batch_op()
                 image = tf.cast(data_dict['image'], tf.float32)
                 return data_dict, self.net(image, for_training)
 
-
         if self.is_training:
-            if self.has_validation_data and \
-                    self.action_param.save_every_n > 0:
+            if self.action_param.validation_every_n > 0:
                 data_dict, net_out = tf.cond(self.is_validation,
                                              lambda: data_net(False),
                                              lambda: data_net(True))
