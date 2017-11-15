@@ -18,11 +18,15 @@ class DecayLearningRateApplication(SegmentationApplication):
             self, net_param, action_param, is_training)
         tf.logging.info('starting decay learning segmentation application')
         self.learning_rate = None
+        self.current_lr = action_param.lr
+        if self.action_param.validation_every_n > 0:
+            raise NotImplementedError("validation process is not implemented "
+                                      "in this demo.")
 
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
-        data_dict = self.get_sampler()[0].pop_batch_op()
+        data_dict = self.get_sampler()[0][0].pop_batch_op()
         image = tf.cast(data_dict['image'], tf.float32)
         net_out = self.net(image, self.is_training)
 
@@ -69,12 +73,16 @@ class DecayLearningRateApplication(SegmentationApplication):
             SegmentationApplication.connect_data_and_network(
                 self, outputs_collector, gradients_collector)
 
-    def training_ops(self, start_iter=0, end_iter=1):
-        if start_iter > end_iter:
-            start_iter, end_iter = end_iter, start_iter
-        current_lr = self.action_param.lr
-        for iter_i in range(start_iter, end_iter):
-            if iter_i % 3 == 0 and iter_i > 0:
-                # halved every 3 iteration
-                current_lr = current_lr / 2.0
-            yield iter_i, self.gradient_op[0], {self.learning_rate: current_lr}
+    def set_iteration_update(self, iteration_message):
+        """
+        This function will be called by the application engine at each
+        iteration.
+        """
+        current_iter = iteration_message.current_iter
+        if iteration_message.is_training:
+            if current_iter > 0 and current_iter % 3 == 0:
+                self.current_lr = self.current_lr / 2.0
+            iteration_message.data_feed_dict[self.is_validation] = False
+        elif iteration_message.is_validation:
+            iteration_message.data_feed_dict[self.is_validation] = True
+        iteration_message.data_feed_dict[self.learning_rate] = self.current_lr

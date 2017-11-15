@@ -355,7 +355,7 @@ class ApplicationDriver(object):
         collected = self.outputs_collector
         # building a dictionary of variables
         vars_to_run = message.ops_to_run
-        if message.phase == TRAIN:
+        if message.is_training:
             # always apply the gradient op during training
             vars_to_run['gradients'] = self.app.gradient_op
         # session will run variables collected under CONSOLE
@@ -373,8 +373,8 @@ class ApplicationDriver(object):
         # outputs to message
         message.current_iter_output = graph_output
 
-        # update iteration status after the batch process
-        self.app.set_iteration_update(message)
+        ## update iteration status after the batch process
+        #self.app.set_iteration_update(message)
 
     def _training_loop(self, sess, loop_status):
         """

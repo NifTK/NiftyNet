@@ -99,12 +99,18 @@ class ImageReader(Layer):
             sum([list(vars(task_param).get(name))
                  for name in self.names], [])
         for required in required_sections:
-            if required not in list(file_list) or \
-                    file_list[required].isnull().all():
-                tf.logging.fatal('reader required input section name [%s], '
-                                 'but in the csv files the column is empty.',
-                                 required)
-                raise ValueError
+            try:
+                if required not in list(file_list) or \
+                        file_list[required].isnull().all():
+                    tf.logging.fatal('reader required input section '
+                                     'name [%s], but in the csv files '
+                                     'the column is empty.', required)
+                    raise ValueError
+            except (AttributeError, TypeError, ValueError):
+                tf.logging.fatal('file_list parameter should be a'
+                                 'pandas.DataFrame instance and has input '
+                                 'section name [%s] as a column name', required)
+                raise
         self._file_list = file_list
         self.output_list = _filename_to_image_list(
             self._file_list, self._input_sources, data_param)

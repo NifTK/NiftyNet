@@ -6,7 +6,7 @@ Message stores status info of the current iteration
 import time
 
 from niftynet.engine.application_variables import CONSOLE, TF_SUMMARIES
-from niftynet.io.image_sets_partitioner import TRAIN
+from niftynet.io.image_sets_partitioner import TRAIN, VALID, INFER
 from niftynet.utilities.decorators import singleton
 
 
@@ -127,6 +127,27 @@ class IterationMessage(object):
     @phase.setter
     def phase(self, value):
         self._phase = value
+
+    @property
+    def is_training(self):
+        """
+        returns a boolean value indicating if the phase is in training
+        """
+        return self.phase == TRAIN
+
+    @property
+    def is_validation(self):
+        """
+        returns a boolean value indicating if the phase is validaiton
+        """
+        return self.phase == VALID
+
+    @property
+    def is_inference(self):
+        """
+        returns a boolean value indicating if the phase is inference
+        """
+        return self.phase == INFER
 
     @property
     def iter_duration(self):

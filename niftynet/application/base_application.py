@@ -162,16 +162,16 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         (in addition to the variables collected by output_collector;
          see `application_driver.run_vars`)
 
-        This function (is called before and after `tf.session.run` by the
+        This function (is called before `tf.session.run` by the
         driver) provides an interface for accessing `variables_to_eval` and
         `data_dict` at each iteration.
 
         Override this function for more complex operations according to
         `application_iteration.IterationMessage.current_iter`.
         """
-        if iteration_message.phase == TRAIN:
+        if iteration_message.is_training:
             iteration_message.data_feed_dict[self.is_validation] = False
-        elif iteration_message.phase == VALID:
+        elif iteration_message.is_validation:
             iteration_message.data_feed_dict[self.is_validation] = True
 
     def get_sampler(self):

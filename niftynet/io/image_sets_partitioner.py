@@ -116,9 +116,9 @@ class ImageSetsPartitioner(object):
         :return: a pandas.dataframe of file names
         """
         if self._file_list is None:
-            tf.logging.fatal('Empty file list, please initialise'
-                             'ImageSetsPartitioner first.')
-            raise RuntimeError
+            tf.logging.warning('Empty file list, please initialise'
+                               'ImageSetsPartitioner first.')
+            return []
         try:
             look_up_operations(phase, SUPPORTED_PHASES)
         except ValueError:
@@ -350,7 +350,7 @@ class ImageSetsPartitioner(object):
         return (self._partition_ids[COLUMN_PHASE] == phase).any()
 
     @property
-    def has_train(self):
+    def has_training(self):
         """
         returns True if the TRAIN subset of images is not empty
         """

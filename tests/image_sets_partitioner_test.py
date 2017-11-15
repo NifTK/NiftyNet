@@ -86,7 +86,7 @@ class ImageSetsPartitionerNewPartition(tf.test.TestCase):
         with self.assertRaisesRegexp(ValueError, ''):
             test_partitioner.get_file_list('T1')
 
-        self.assertFalse(test_partitioner.has_train)
+        self.assertFalse(test_partitioner.has_training)
         self.assertFalse(test_partitioner.has_inference)
         self.assertTrue(test_partitioner.has_validation)
 
