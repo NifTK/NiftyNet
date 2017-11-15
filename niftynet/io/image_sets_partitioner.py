@@ -301,9 +301,9 @@ class ImageSetsPartitioner(object):
             write_csv(self.data_split_file,
                       zip(self._file_list[COLUMN_UNIQ_ID], phases))
         else:
-            if self.ratios:
-                tf.logging.warning('Loading from existing partitioning file,'
-                                   'ignoring partitioning ratios.')
+            tf.logging.warning(
+                'Loading from existing partitioning file %s, '
+                'ignoring partitioning ratios.', self.data_split_file)
 
         if os.path.isfile(self.data_split_file):
             try:
@@ -322,20 +322,23 @@ class ImageSetsPartitioner(object):
         """
         Print summary of the partitioner
         """
-        summary_str = '\nNumber of subjects {}, '.format(
-            self.number_of_subjects())
+        n_subjects = self.number_of_subjects()
+        summary_str = '\nNumber of subjects {}, '.format(n_subjects)
         if self._file_list is not None:
             summary_str += 'input section names: {}\n'.format(
                 list(self._file_list))
-        if self._partition_ids is not None and self.ratios:
+        if self._partition_ids is not None and n_subjects > 0:
+            n_valid = self.number_of_subjects(VALID)
+            n_train = self.number_of_subjects(INFER)
+            n_infer = self.number_of_subjects(TRAIN)
             summary_str += \
-                'data partitioning -- number of cases (percentage):\n' \
-                '-- {} {} ({}),\n' \
-                '-- {} {} ({}),\n' \
+                'data partitioning -- number of cases:\n' \
+                '-- {} {} ({:.2f}%),\n' \
+                '-- {} {} ({:.2f}%),\n' \
                 '-- {} {}.\n'.format(
-                    VALID, self.number_of_subjects(VALID), self.ratios[0],
-                    INFER, self.number_of_subjects(INFER), self.ratios[1],
-                    TRAIN, self.number_of_subjects(TRAIN))
+                    VALID, n_valid, float(n_valid) / float(n_subjects) * 100.0,
+                    INFER, n_train, float(n_train) / float(n_subjects) * 100.0,
+                    TRAIN, n_infer)
         else:
             summary_str += '-- using all subjects ' \
                            '(without data partitioning).\n'

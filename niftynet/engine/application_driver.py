@@ -393,9 +393,9 @@ class ApplicationDriver(object):
 
         # initialise tf summary writers
         writer_train = tf.summary.FileWriter(
-            self.summary_dir + '/train', sess.graph)
+            self.summary_dir + '/training', sess.graph)
         writer_valid = tf.summary.FileWriter(
-            self.summary_dir + '/v', sess.graph) \
+            self.summary_dir + '/validation', sess.graph) \
             if self.validation_every_n > 0 else None
 
         for iter_i in range(iter_msg.initial_iter, iter_msg.final_iter):

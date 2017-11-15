@@ -9,6 +9,8 @@ from niftynet.engine.application_variables import CONSOLE, TF_SUMMARIES
 from niftynet.io.image_sets_partitioner import TRAIN, VALID, INFER
 from niftynet.utilities.decorators import singleton
 
+CONSOLE_FORMAT = "{} iter {}, {} ({:3f}s)"
+
 
 # pylint: disable=too-many-instance-attributes
 @singleton
@@ -161,7 +163,7 @@ class IterationMessage(object):
         converting current_iter_output to string, for console displaying
         :return: summary string
         """
-        summary_format = "{} iter {}, {} ({:3f}s)"
+        summary_format = CONSOLE_FORMAT
         result_str = _console_vars_to_str(self.current_iter_output[CONSOLE])
         summary = summary_format.format(
             self.phase, self.current_iter, result_str, self.iter_duration)
