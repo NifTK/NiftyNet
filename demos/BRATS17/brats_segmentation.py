@@ -130,21 +130,22 @@ class BRATSApp(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
-        def data_net(for_training):
+
+        def switch_sampler(for_training):
             with tf.name_scope('train' if for_training else 'validation'):
                 sampler = self.get_sampler()[0][0 if for_training else -1]
-                data_dict = sampler.pop_batch_op()
-                image = tf.cast(data_dict['image'], tf.float32)
-                net_out = self.net(image, is_training=for_training)
-                return data_dict, net_out
+                return sampler.pop_batch_op()
 
         if self.is_training:
             if self.action_param.validation_every_n > 0:
-                data_dict, net_out = tf.cond(tf.logical_not(self.is_validation),
-                                             lambda: data_net(True),
-                                             lambda: data_net(False))
+                data_dict = tf.cond(tf.logical_not(self.is_validation),
+                                    lambda: switch_sampler(True),
+                                    lambda: switch_sampler(False))
             else:
-                data_dict, net_out = data_net(True)
+                data_dict = switch_sampler(for_training=True)
+
+            image = tf.cast(data_dict['image'], tf.float32)
+            net_out = self.net(image, is_training=self.is_training)
 
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
@@ -180,7 +181,10 @@ class BRATSApp(BaseApplication):
         else:
             # converting logits into final output for
             # classification probabilities or argmax classification labels
-            data_dict, net_out = data_net(for_training=False)
+            data_dict = switch_sampler(for_training=False)
+            image = tf.cast(data_dict['image'], tf.float32)
+            net_out = self.net(image, is_training=self.is_training)
+
             output_prob = self.segmentation_param.output_prob
             num_classes = self.segmentation_param.num_classes
             if output_prob and num_classes > 1:

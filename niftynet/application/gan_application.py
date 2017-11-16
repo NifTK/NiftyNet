@@ -147,34 +147,29 @@ class GANApplication(BaseApplication):
                                  outputs_collector=None,
                                  gradients_collector=None):
         if self.is_training:
-            def data_net(for_training):
+            def switch_sampler(for_training):
                 with tf.name_scope('train' if for_training else 'validation'):
                     sampler = self.get_sampler()[0][0 if for_training else -1]
-                    data_dict = sampler.pop_batch_op()
-                    images = tf.cast(data_dict['image'], tf.float32)
-                    noise_shape = [self.net_param.batch_size,
-                                   self.gan_param.noise_size]
-                    noise = tf.random_normal(shape=noise_shape,
-                                             mean=0.0,
-                                             stddev=1.0,
-                                             dtype=tf.float32)
-                    conditioning = data_dict['conditioning']
-                    return self.net(noise, images,
-                                    conditioning, for_training)
+                    return sampler.pop_batch_op()
 
-            with tf.name_scope('Optimiser'):
-                optimiser_class = OptimiserFactory.create(
-                    name=self.action_param.optimiser)
-                self.optimiser = optimiser_class.get_instance(
-                    learning_rate=self.action_param.lr)
-
-            # a new pop_batch_op for each gpu tower
             if self.action_param.validation_every_n > 0:
-                net_output = tf.cond(tf.logical_not(self.is_validation),
-                                     lambda: data_net(True),
-                                     lambda: data_net(False))
+                data_dict = tf.cond(tf.logical_not(self.is_validation),
+                                    lambda: switch_sampler(True),
+                                    lambda: switch_sampler(False))
             else:
-                net_output = data_net(True)
+                data_dict = switch_sampler(for_training=True)
+
+            images = tf.cast(data_dict['image'], tf.float32)
+            noise_shape = [self.net_param.batch_size,
+                           self.gan_param.noise_size]
+            noise = tf.random_normal(shape=noise_shape,
+                                     mean=0.0,
+                                     stddev=1.0,
+                                     dtype=tf.float32)
+            conditioning = data_dict['conditioning']
+            net_output = self.net(
+                noise, images, conditioning, self.is_training)
+
             loss_func = LossFunction(
                 loss_type=self.action_param.loss_type)
             real_logits = net_output[1]
@@ -203,6 +198,12 @@ class GANApplication(BaseApplication):
             outputs_collector.add_to_collection(
                 var=lossG, name='lossD', average_over_devices=True,
                 collection=TF_SUMMARIES)
+
+            with tf.name_scope('Optimiser'):
+                optimiser_class = OptimiserFactory.create(
+                    name=self.action_param.optimiser)
+                self.optimiser = optimiser_class.get_instance(
+                    learning_rate=self.action_param.lr)
 
             with tf.name_scope('ComputeGradients'):
                 # gradients of generator

@@ -127,21 +127,21 @@ class AutoencoderApplication(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
+        def switch_sampler(for_training):
+            with tf.name_scope('train' if for_training else 'validation'):
+                sampler = self.get_sampler()[0][0 if for_training else -1]
+                return sampler.pop_batch_op()
 
         if self.is_training:
-            def data_net(for_training):
-                with tf.name_scope('train' if for_training else 'validation'):
-                    sampler = self.get_sampler()[0][0 if for_training else -1]
-                    data_dict = sampler.pop_batch_op()
-                    image = tf.cast(data_dict['image'], tf.float32)
-                    return data_dict, self.net(image, for_training)
-
             if self.action_param.validation_every_n > 0:
-                data_dict, net_output = tf.cond(tf.logical_not(self.is_validation),
-                                                lambda: data_net(True),
-                                                lambda: data_net(False))
+                data_dict = tf.cond(tf.logical_not(self.is_validation),
+                                    lambda: switch_sampler(True),
+                                    lambda: switch_sampler(False))
             else:
-                data_dict, net_output = data_net(True)
+                data_dict = switch_sampler(for_training=True)
+
+            image = tf.cast(data_dict['image'], tf.float32)
+            net_output = self.net(image, is_training=self.is_training)
 
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
