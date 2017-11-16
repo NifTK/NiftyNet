@@ -137,9 +137,9 @@ class AutoencoderApplication(BaseApplication):
                     return data_dict, self.net(image, for_training)
 
             if self.action_param.validation_every_n > 0:
-                data_dict, net_output = tf.cond(self.is_validation,
-                                                lambda: data_net(False),
-                                                lambda: data_net(True))
+                data_dict, net_output = tf.cond(tf.logical_not(self.is_validation),
+                                                lambda: data_net(True),
+                                                lambda: data_net(False))
             else:
                 data_dict, net_output = data_net(True)
 

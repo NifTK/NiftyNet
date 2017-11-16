@@ -170,9 +170,9 @@ class GANApplication(BaseApplication):
 
             # a new pop_batch_op for each gpu tower
             if self.action_param.validation_every_n > 0:
-                net_output = tf.cond(self.is_validation,
-                                     lambda: data_net(False),
-                                     lambda: data_net(True))
+                net_output = tf.cond(tf.logical_not(self.is_validation),
+                                     lambda: data_net(True),
+                                     lambda: data_net(False))
             else:
                 net_output = data_net(True)
             loss_func = LossFunction(
