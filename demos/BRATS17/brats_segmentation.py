@@ -140,9 +140,9 @@ class BRATSApp(BaseApplication):
 
         if self.is_training:
             if self.action_param.validation_every_n > 0:
-                data_dict, net_out = tf.cond(self.is_validation,
-                                             lambda: data_net(False),
-                                             lambda: data_net(True))
+                data_dict, net_out = tf.cond(tf.logical_not(self.is_validation),
+                                             lambda: data_net(True),
+                                             lambda: data_net(False))
             else:
                 data_dict, net_out = data_net(True)
 
