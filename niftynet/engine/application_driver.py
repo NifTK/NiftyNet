@@ -58,9 +58,9 @@ class ApplicationDriver(object):
         self.session_prefix = None
         self.max_checkpoints = 20
         self.save_every_n = 10
-        self.tensorboard_every_n = 20
+        self.tensorboard_every_n = -1
 
-        self.validation_every_n = 1
+        self.validation_every_n = -1
         self.validation_max_iter = 2
 
         self.initial_iter = 0
@@ -68,6 +68,7 @@ class ApplicationDriver(object):
 
         self._coord = None
         self._init_op = None
+        self._data_partitioner = None
         self.outputs_collector = None
         self.gradients_collector = None
 
@@ -140,10 +141,21 @@ class ApplicationDriver(object):
 
         # initialise data input
         data_partitioner = ImageSetsPartitioner()
+        # clear the cached file lists
+        data_partitioner.reset()
         do_new_partition = self.is_training and self.initial_iter == 0 and \
-            (not os.path.isfile(system_param.dataset_split_file))
+            (not os.path.isfile(system_param.dataset_split_file)) and \
+            self.validation_every_n > 0
         data_fractions = None
         if do_new_partition:
+            assert train_param.exclude_fraction_for_validation > 0 or \
+                self.validation_every_n <= 0, \
+                'validation_every_n is set to {}, ' \
+                'but train/validation splitting not available,\nplease ' \
+                'check "exclude_fraction_for_validation" in the config ' \
+                'file (current config value: {}).'.format(
+                    self.validation_every_n,
+                    train_param.exclude_fraction_for_validation)
             data_fractions = (train_param.exclude_fraction_for_validation,
                               train_param.exclude_fraction_for_inference)
 
@@ -155,14 +167,6 @@ class ApplicationDriver(object):
                 data_split_file=system_param.dataset_split_file)
 
         if data_param and self.is_training and self.validation_every_n > 0:
-            assert train_param.exclude_fraction_for_validation > 0, \
-                'validation_every_n is set to {}, ' \
-                'but train/validation splitting not available,\nplease ' \
-                'check "exclude_fraction_for_validation" in the config ' \
-                'file (current config value: {}).'.format(
-                    self.validation_every_n,
-                    train_param.exclude_fraction_for_validation)
-
             assert data_partitioner.has_validation, \
                 'validation_every_n is set to {}, ' \
                 'but train/validation splitting not available,\nplease ' \
@@ -173,6 +177,8 @@ class ApplicationDriver(object):
         # initialise readers
         self.app.initialise_dataset_loader(
             data_param, app_param, data_partitioner)
+
+        self._data_partitioner = data_partitioner
 
         # pylint: disable=not-context-manager
         with self.graph.as_default(), tf.name_scope('Sampler'):
@@ -402,9 +408,9 @@ class ApplicationDriver(object):
 
         # initialise tf summary writers
         writer_train = tf.summary.FileWriter(
-            self.summary_dir + '/training', sess.graph)
+            os.path.join(self.summary_dir, TRAIN), sess.graph)
         writer_valid = tf.summary.FileWriter(
-            self.summary_dir + '/validation', sess.graph) \
+            os.path.join(self.summary_dir, VALID), sess.graph) \
             if self.validation_every_n > 0 else None
 
         for iter_i in range(iter_msg.initial_iter, iter_msg.final_iter):
@@ -423,7 +429,8 @@ class ApplicationDriver(object):
                     iter_msg.current_iter, iter_msg.phase = iter_j, VALID
                     self.run_vars(sess, iter_msg)
                     # save iteration results
-                    iter_msg.to_tf_summary(writer_valid)
+                    if writer_valid is not None:
+                        iter_msg.to_tf_summary(writer_valid)
                     tf.logging.info(iter_msg.to_console_string())
 
             # update variables/operations to run, from self.app
@@ -434,6 +441,8 @@ class ApplicationDriver(object):
                 iter_msg.current_iter_output[NETWORK_OUTPUT])
             iter_msg.to_tf_summary(writer_train)
             tf.logging.info(iter_msg.to_console_string())
+            if self.save_every_n > 0 and (iter_i % self.save_every_n == 0):
+                self._save_model(sess, iter_i)
 
     def _inference_loop(self, sess, loop_status):
         """

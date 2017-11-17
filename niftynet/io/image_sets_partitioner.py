@@ -25,10 +25,10 @@ from niftynet.utilities.util_csv import write_csv
 
 COLUMN_UNIQ_ID = 'subject_id'
 COLUMN_PHASE = 'phase'
-TRAIN = 'train'
-VALID = 'validation'
-INFER = 'inference'
-ALL = 'all'
+TRAIN = 'Training'
+VALID = 'Validation'
+INFER = 'Inference'
+ALL = 'All'
 SUPPORTED_PHASES = {TRAIN, VALID, INFER, ALL}
 
 
@@ -97,7 +97,7 @@ class ImageSetsPartitioner(object):
         """
         if self._file_list is None:
             return 0
-        phase = look_up_operations(phase.lower(), SUPPORTED_PHASES)
+        phase = look_up_operations(phase, SUPPORTED_PHASES)
         if phase == ALL:
             return self._file_list[COLUMN_UNIQ_ID].count()
         if self._partition_ids is None:
@@ -294,7 +294,7 @@ class ImageSetsPartitioner(object):
                     'To split dataset into training/validation, '
                     'please make sure '
                     '"exclude_fraction_for_validation" parameter is set to '
-                    'a float in between 0 and 1. Current value: %s',
+                    'a float in between 0 and 1. Current value: %s.',
                     valid_fraction)
                 #raise ValueError
 
@@ -310,7 +310,7 @@ class ImageSetsPartitioner(object):
             random.shuffle(phases)
             write_csv(self.data_split_file,
                       zip(self._file_list[COLUMN_UNIQ_ID], phases))
-        else:
+        elif os.path.isfile(self.data_split_file):
             tf.logging.warning(
                 'Loading from existing partitioning file %s, '
                 'ignoring partitioning ratios.', self.data_split_file)
@@ -324,6 +324,15 @@ class ImageSetsPartitioner(object):
                     names=[COLUMN_UNIQ_ID, COLUMN_PHASE])
             except Exception as csv_error:
                 tf.logging.warning(repr(csv_error))
+
+            is_valid_phase = \
+                self._partition_ids[COLUMN_PHASE].isin(SUPPORTED_PHASES)
+            if not is_valid_phase.all():
+                tf.logging.fatal(
+                    'Please make sure the values of the second column ' 
+                    'of data splitting file %s, in the set of phases: %s.', 
+                        self.data_split_file, SUPPORTED_PHASES)
+                raise ValueError
 
     def __str__(self):
         return self.to_string()
@@ -413,3 +422,19 @@ class ImageSetsPartitioner(object):
         returns list of all filenames
         """
         return self.get_file_list()
+
+
+    def reset(self):
+        """
+        reset all fields of this singleton class
+        """
+        self._file_list = None
+        self._partition_ids = None
+        self.data_param = None
+        self.ratios = None
+        self.new_partition = False
+
+        self.data_split_file = ""
+        self.default_image_file_location = \
+            NiftyNetGlobalConfig().get_niftynet_home_folder()
+

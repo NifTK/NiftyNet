@@ -587,7 +587,7 @@ class ImageFactory(object):
         :return: an image instance
         """
         if file_path is None:
-            tf.logging.fatal('no file_path provided, '
+            tf.logging.fatal('No file_path provided, '
                              'please check input sources in config file')
             raise ValueError
         image_type = None
@@ -607,6 +607,6 @@ class ImageFactory(object):
                 tf.logging.fatal('Could not load file: %s', file_path)
                 raise IOError
         if image_type is None:
-            tf.logging.fatal('not supported image type: %s', file_path)
+            tf.logging.fatal('Not supported image type: %s', file_path)
             raise NotImplementedError
         return image_type(file_path, **kwargs)

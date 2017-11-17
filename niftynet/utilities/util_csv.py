@@ -224,6 +224,8 @@ def match_and_write_filenames_to_csv(list_constraints, csv_file):
         name_tot.append(name_list)
         list_tot.append(list_files)
     list_combined = join_subject_id_and_filename_list(name_tot, list_tot)
+    list_combined = filter(lambda names: '' not in names, list_combined)
+    list_combined = list(list_combined)
     touch_folder(os.path.dirname(csv_file))
     write_csv(csv_file, list_combined)
 
