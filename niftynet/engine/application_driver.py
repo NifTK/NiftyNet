@@ -146,6 +146,7 @@ class ApplicationDriver(object):
         if do_new_partition:
             data_fractions = (train_param.exclude_fraction_for_validation,
                               train_param.exclude_fraction_for_inference)
+
         if data_param:
             data_partitioner.initialise(
                 data_param=data_param,
@@ -154,10 +155,18 @@ class ApplicationDriver(object):
                 data_split_file=system_param.dataset_split_file)
 
         if data_param and self.is_training and self.validation_every_n > 0:
+            assert train_param.exclude_fraction_for_validation > 0, \
+                'validation_every_n is set to {}, ' \
+                'but train/validation splitting not available,\nplease ' \
+                'check "exclude_fraction_for_validation" in the config ' \
+                'file (current config value: {}).'.format(
+                    self.validation_every_n,
+                    train_param.exclude_fraction_for_validation)
+
             assert data_partitioner.has_validation, \
                 'validation_every_n is set to {}, ' \
-                'but train/validation splitting not available,\n\nplease ' \
-                'check dataset partition list {} '\
+                'but train/validation splitting not available,\nplease ' \
+                'check dataset partition list {} ' \
                 '(remove file to generate new dataset partition)'.format(
                     self.validation_every_n, system_param.dataset_split_file)
 

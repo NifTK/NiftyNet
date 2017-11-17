@@ -288,6 +288,16 @@ class ImageSetsPartitioner(object):
                 tf.logging.fatal(
                     'Unknown format of faction values %s', self.ratios)
                 raise
+
+            if (valid_fraction + infer_fraction) <= 0:
+                tf.logging.warning(
+                    'To split dataset into training/validation, '
+                    'please make sure '
+                    '"exclude_fraction_for_validation" parameter is set to '
+                    'a float in between 0 and 1. Current value: %s',
+                    valid_fraction)
+                #raise ValueError
+
             n_total = self.number_of_subjects()
             n_valid = int(math.ceil(n_total * valid_fraction))
             n_infer = int(math.ceil(n_total * infer_fraction))
