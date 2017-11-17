@@ -34,8 +34,8 @@ except ImportError:
 warnings.simplefilter("ignore", UserWarning)
 
 FILE_EXTENSIONS = [".nii.gz", ".tar.gz"]
-CONSOLE_LOG_FORMAT = '%(levelname)s:niftynet: %(message)s'
-FILE_LOG_FORMAT = '%(levelname)s:niftynet:%(asctime)s: %(message)s'
+CONSOLE_LOG_FORMAT = "\033[1m%(levelname)s:niftynet:\033[0m %(message)s"
+FILE_LOG_FORMAT = "%(levelname)s:niftynet:%(asctime)s: %(message)s"
 
 
 #### utilities for file headers
@@ -476,9 +476,9 @@ def _image3_animated_gif(tag, ims):
 def image3(name,
            tensor,
            max_outputs=3,
-           collections=(tf.GraphKeys.SUMMARIES,),
-           animation_axes=(1,),
-           image_axes=(2, 3),
+           collections=[tf.GraphKeys.SUMMARIES],
+           animation_axes=[1],
+           image_axes=[2, 3],
            other_indices={}):
     """ Summary for higher dimensional images
     Parameters:
@@ -526,21 +526,21 @@ def image3(name,
 def image3_sagittal(name,
                     tensor,
                     max_outputs=3,
-                    collections=(tf.GraphKeys.SUMMARIES,)):
+                    collections=[tf.GraphKeys.SUMMARIES]):
     return image3(name, tensor, max_outputs, collections, [1], [2, 3])
 
 
 def image3_coronal(name,
                    tensor,
                    max_outputs=3,
-                   collections=(tf.GraphKeys.SUMMARIES,)):
+                   collections=[tf.GraphKeys.SUMMARIES]):
     return image3(name, tensor, max_outputs, collections, [2], [1, 3])
 
 
 def image3_axial(name,
                  tensor,
                  max_outputs=3,
-                 collections=(tf.GraphKeys.SUMMARIES,)):
+                 collections=[tf.GraphKeys.SUMMARIES]):
     return image3(name, tensor, max_outputs, collections, [3], [1, 2])
 
 
