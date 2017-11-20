@@ -64,7 +64,7 @@ def add_inference_args(parser):
     parser.add_argument(
         "--spatial_window_size",
         type=int_array,
-        help="specify the spatial size of the input data (ndims <= 3)",
+        help="Specify the spatial size of the input data (ndims <= 3)",
         default=())
 
     parser.add_argument(
@@ -174,7 +174,7 @@ def add_network_args(parser):
         metavar='',
         help="Set batch size of the net",
         type=int,
-        default=20)
+        default=2)
 
     parser.add_argument(
         "--decay",
@@ -210,7 +210,7 @@ def add_network_args(parser):
         help="Set size of preprocessing buffer queue",
         metavar='',
         type=int,
-        default=20)
+        default=5)
 
     import niftynet.layer.binary_masking
     parser.add_argument(

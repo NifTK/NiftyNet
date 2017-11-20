@@ -2,13 +2,14 @@
 from __future__ import absolute_import, print_function
 
 import os
-import numpy as np
+
 import tensorflow as tf
 
 from niftynet.engine.application_driver import ApplicationDriver
 from tests.test_util import ParserNamespace
 
 TARGET_FILE = os.path.join('testing_data', 'test_splitting.csv')
+
 
 def _generate_base_params():
     # initialise compulsory params that are irelevant
@@ -41,6 +42,7 @@ def _generate_base_params():
         stddev=2.0)
     return user_param
 
+
 def _generate_data_param():
     user_param = dict()
     user_param['modality'] = ParserNamespace(
@@ -52,6 +54,7 @@ def _generate_data_param():
         path_to_search='testing_data')
     return user_param
 
+
 def generate_input_params(**arg_dicts):
     user_param = _generate_base_params()
     for key in list(arg_dicts):
@@ -60,22 +63,24 @@ def generate_input_params(**arg_dicts):
         user_param[key].update(**arg_dicts[key])
     return user_param
 
+
 def clear_target():
     if not os.path.isfile(TARGET_FILE):
         return
     os.remove(TARGET_FILE)
 
+
 def write_target():
     clear_target()
     user_param = generate_input_params(
-        SYSTEM={'action':'train',
+        SYSTEM={'action': 'train',
                 'dataset_split_file': TARGET_FILE
-        },
+                },
         TRAINING={'validation_every_n': 2,
                   'validation_max_iter': 1,
                   'exclude_fraction_for_validation': 0.1,
                   'exclude_fraction_for_inference': 0.1,
-        }
+                  }
     )
     data_param = _generate_data_param()
     app_driver = ApplicationDriver()
@@ -83,18 +88,19 @@ def write_target():
     assert os.path.isfile(TARGET_FILE)
     return
 
+
 class DriverPartitionerTestExistingFile(tf.test.TestCase):
     def test_training(self):
         write_target()
         user_param = generate_input_params(
-            SYSTEM={'action':'train',
+            SYSTEM={'action': 'train',
                     'dataset_split_file': TARGET_FILE
-            },
+                    },
             TRAINING={'validation_every_n': 2,
                       'validation_max_iter': 1,
                       'exclude_fraction_for_validation': 0.1,
                       'exclude_fraction_for_inference': 0.1,
-            }
+                      }
         )
         data_param = _generate_data_param()
         app_driver = ApplicationDriver()
@@ -107,14 +113,14 @@ class DriverPartitionerTestExistingFile(tf.test.TestCase):
     def test_training_no_validation(self):
         write_target()
         user_param = generate_input_params(
-            SYSTEM={'action':'train',
+            SYSTEM={'action': 'train',
                     'dataset_split_file': TARGET_FILE
-            },
+                    },
             TRAINING={'validation_every_n': -1,
                       'validation_max_iter': 1,
                       'exclude_fraction_for_validation': 0.0,
                       'exclude_fraction_for_inference': 0.0,
-            }
+                      }
         )
         data_param = _generate_data_param()
         app_driver = ApplicationDriver()
@@ -127,14 +133,14 @@ class DriverPartitionerTestExistingFile(tf.test.TestCase):
     def test_inference_no_validation(self):
         write_target()
         user_param = generate_input_params(
-            SYSTEM={'action':'inference',
+            SYSTEM={'action': 'inference',
                     'dataset_split_file': TARGET_FILE
-            },
+                    },
             TRAINING={'validation_every_n': -1,
                       'validation_max_iter': 1,
                       'exclude_fraction_for_validation': 0.0,
                       'exclude_fraction_for_inference': 0.0,
-            }
+                      }
         )
         data_param = _generate_data_param()
         app_driver = ApplicationDriver()
@@ -147,14 +153,14 @@ class DriverPartitionerTestExistingFile(tf.test.TestCase):
     def test_inference_validation(self):
         write_target()
         user_param = generate_input_params(
-            SYSTEM={'action':'inference',
+            SYSTEM={'action': 'inference',
                     'dataset_split_file': TARGET_FILE
-            },
+                    },
             TRAINING={'validation_every_n': 10,
                       'validation_max_iter': 1,
                       'exclude_fraction_for_validation': 0.0,
                       'exclude_fraction_for_inference': 0.0,
-            }
+                      }
         )
         data_param = _generate_data_param()
         app_driver = ApplicationDriver()
@@ -164,18 +170,19 @@ class DriverPartitionerTestExistingFile(tf.test.TestCase):
         self.assertTrue(partitioner.has_inference)
         self.assertTrue(partitioner.has_validation)
 
+
 class DriverPartitionerTestNoFile(tf.test.TestCase):
     def test_training(self):
         clear_target()
         user_param = generate_input_params(
-            SYSTEM={'action':'train',
+            SYSTEM={'action': 'train',
                     'dataset_split_file': TARGET_FILE
-            },
+                    },
             TRAINING={'validation_every_n': 2,
                       'validation_max_iter': 1,
                       'exclude_fraction_for_validation': 0.1,
                       'exclude_fraction_for_inference': 0.1,
-            }
+                      }
         )
         data_param = _generate_data_param()
         app_driver = ApplicationDriver()
@@ -188,14 +195,14 @@ class DriverPartitionerTestNoFile(tf.test.TestCase):
     def test_training_novalidation(self):
         clear_target()
         user_param = generate_input_params(
-            SYSTEM={'action':'train',
+            SYSTEM={'action': 'train',
                     'dataset_split_file': TARGET_FILE
-            },
+                    },
             TRAINING={'validation_every_n': -1,
                       'validation_max_iter': 1,
                       'exclude_fraction_for_validation': 0.1,
                       'exclude_fraction_for_inference': 0.1,
-            }
+                      }
         )
         data_param = _generate_data_param()
         app_driver = ApplicationDriver()
@@ -208,14 +215,14 @@ class DriverPartitionerTestNoFile(tf.test.TestCase):
 
         clear_target()
         user_param = generate_input_params(
-            SYSTEM={'action':'train',
+            SYSTEM={'action': 'train',
                     'dataset_split_file': TARGET_FILE
-            },
+                    },
             TRAINING={'validation_every_n': -1,
                       'validation_max_iter': 1,
                       'exclude_fraction_for_validation': 0.0,
                       'exclude_fraction_for_inference': 0.0,
-            }
+                      }
         )
         data_param = _generate_data_param()
         app_driver = ApplicationDriver()
@@ -226,18 +233,17 @@ class DriverPartitionerTestNoFile(tf.test.TestCase):
         self.assertFalse(partitioner.has_validation)
         self.assertTrue(partitioner.all_files is not None)
 
-
     def test_inference(self):
         clear_target()
         user_param = generate_input_params(
-            SYSTEM={'action':'inference',
+            SYSTEM={'action': 'inference',
                     'dataset_split_file': TARGET_FILE
-            },
+                    },
             TRAINING={'validation_every_n': 1,
                       'validation_max_iter': 1,
                       'exclude_fraction_for_validation': 0.1,
                       'exclude_fraction_for_inference': 0.0,
-            }
+                      }
         )
         data_param = _generate_data_param()
         app_driver = ApplicationDriver()
@@ -251,9 +257,9 @@ class DriverPartitionerTestNoFile(tf.test.TestCase):
     def test_inference_no_validation(self):
         clear_target()
         user_param = generate_input_params(
-            SYSTEM={'action':'inference',
+            SYSTEM={'action': 'inference',
                     'dataset_split_file': TARGET_FILE
-            },
+                    },
         )
         data_param = _generate_data_param()
         app_driver = ApplicationDriver()
@@ -269,9 +275,9 @@ class DriverPartitionerTestNoData(tf.test.TestCase):
     def test_no_data_param_infer(self):
         clear_target()
         user_param = generate_input_params(
-            SYSTEM={'action':'inference',
+            SYSTEM={'action': 'inference',
                     'dataset_split_file': TARGET_FILE
-            }
+                    }
         )
         app_driver = ApplicationDriver()
         app_driver.initialise_application(user_param, {})
@@ -284,13 +290,13 @@ class DriverPartitionerTestNoData(tf.test.TestCase):
     def test_no_data_param_train(self):
         clear_target()
         user_param = generate_input_params(
-            SYSTEM={'action':'train',
+            SYSTEM={'action': 'train',
                     'dataset_split_file': TARGET_FILE
-            },
+                    },
             TRAINING={'validation_every_n': -1,
                       'exclude_fraction_for_validation': 0.1,
                       'exclude_fraction_for_inference': 0.1,
-            }
+                      }
         )
         app_driver = ApplicationDriver()
         app_driver.initialise_application(user_param, {})

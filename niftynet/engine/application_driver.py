@@ -56,7 +56,7 @@ class ApplicationDriver(object):
         self.model_dir = None
         self.summary_dir = None
         self.session_prefix = None
-        self.max_checkpoints = 20
+        self.max_checkpoints = 2
         self.save_every_n = 10
         self.tensorboard_every_n = -1
 
@@ -118,7 +118,8 @@ class ApplicationDriver(object):
             self.final_iter = max(train_param.max_iter, self.initial_iter)
             self.save_every_n = train_param.save_every_n
             self.tensorboard_every_n = train_param.tensorboard_every_n
-            self.max_checkpoints = train_param.max_checkpoints
+            self.max_checkpoints = \
+                max(train_param.max_checkpoints, self.max_checkpoints)
             self.gradients_collector = GradientsCollector(
                 n_devices=max(self.num_gpus, 1))
             self.validation_every_n = train_param.validation_every_n
@@ -389,7 +390,7 @@ class ApplicationDriver(object):
         message.current_iter_output = graph_output
 
         ## update iteration status after the batch process
-        #self.app.set_iteration_update(message)
+        # self.app.set_iteration_update(message)
 
     def _training_loop(self, sess, loop_status):
         """

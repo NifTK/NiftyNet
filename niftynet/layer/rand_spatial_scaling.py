@@ -18,8 +18,8 @@ class RandomSpatialScalingLayer(RandomisedLayer):
     """
 
     def __init__(self,
-                 min_percentage=-10,
-                 max_percentage=10,
+                 min_percentage=-10.0,
+                 max_percentage=10.0,
                  name='random_spatial_scaling'):
         super(RandomSpatialScalingLayer, self).__init__(name=name)
         assert min_percentage < max_percentage

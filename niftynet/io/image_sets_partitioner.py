@@ -296,7 +296,7 @@ class ImageSetsPartitioner(object):
                     '"exclude_fraction_for_validation" parameter is set to '
                     'a float in between 0 and 1. Current value: %s.',
                     valid_fraction)
-                #raise ValueError
+                # raise ValueError
 
             n_total = self.number_of_subjects()
             n_valid = int(math.ceil(n_total * valid_fraction))
@@ -329,9 +329,9 @@ class ImageSetsPartitioner(object):
                 self._partition_ids[COLUMN_PHASE].isin(SUPPORTED_PHASES)
             if not is_valid_phase.all():
                 tf.logging.fatal(
-                    'Please make sure the values of the second column ' 
-                    'of data splitting file %s, in the set of phases: %s.', 
-                        self.data_split_file, SUPPORTED_PHASES)
+                    'Please make sure the values of the second column '
+                    'of data splitting file %s, in the set of phases: %s.',
+                    self.data_split_file, SUPPORTED_PHASES)
                 raise ValueError
 
     def __str__(self):
@@ -423,7 +423,6 @@ class ImageSetsPartitioner(object):
         """
         return self.get_file_list()
 
-
     def reset(self):
         """
         reset all fields of this singleton class
@@ -437,4 +436,3 @@ class ImageSetsPartitioner(object):
         self.data_split_file = ""
         self.default_image_file_location = \
             NiftyNetGlobalConfig().get_niftynet_home_folder()
-

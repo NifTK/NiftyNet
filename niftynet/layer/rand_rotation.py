@@ -21,13 +21,15 @@ class RandomRotationLayer(RandomisedLayer):
         self.rotation_angle_y = None
         self.rotation_angle_z = None
 
-
     def init_uniform_angle(self, rotation_angle=(-10.0,10.0)):
         assert rotation_angle[0] < rotation_angle[1]
         self.min_angle = float(rotation_angle[0])
         self.max_angle = float(rotation_angle[1])
 
-    def init_non_uniform_angle(self,rotation_angle_x, rotation_angle_y, rotation_angle_z):
+    def init_non_uniform_angle(self,
+                               rotation_angle_x,
+                               rotation_angle_y,
+                               rotation_angle_z):
         if len(rotation_angle_x):
             assert rotation_angle_x[0] < rotation_angle_x[1]
         if len(rotation_angle_y):
@@ -37,7 +39,6 @@ class RandomRotationLayer(RandomisedLayer):
         self.rotation_angle_x = [float(e) for e in rotation_angle_x]
         self.rotation_angle_y = [float(e) for e in rotation_angle_y]
         self.rotation_angle_z = [float(e) for e in rotation_angle_z]
-
 
     def randomise(self, spatial_rank=3):
         if spatial_rank == 3:
@@ -54,15 +55,18 @@ class RandomRotationLayer(RandomisedLayer):
             angle_z = 0.0
             if len(self.rotation_angle_x) == 2:
                 angle_x = np.random.uniform(
-                    self.rotation_angle_x[0], self.rotation_angle_x[1]) * np.pi / 180.0
+                    self.rotation_angle_x[0],
+                    self.rotation_angle_x[1]) * np.pi / 180.0
 
             if len(self.rotation_angle_y) == 2:
                 angle_y = np.random.uniform(
-                    self.rotation_angle_y[0], self.rotation_angle_y[1]) * np.pi / 180.0
+                    self.rotation_angle_y[0],
+                    self.rotation_angle_y[1]) * np.pi / 180.0
 
             if len(self.rotation_angle_z) == 2:
                 angle_z = np.random.uniform(
-                    self.rotation_angle_z[0], self.rotation_angle_z[1]) * np.pi / 180.0
+                    self.rotation_angle_z[0],
+                    self.rotation_angle_z[1]) * np.pi / 180.0
 
             transform_x = np.array([[np.cos(angle_x), -np.sin(angle_x), 0.0],
                                     [np.sin(angle_x), np.cos(angle_x), 0.0],
@@ -130,7 +134,6 @@ class RandomRotationLayer(RandomisedLayer):
         else:
             raise NotImplementedError("unknown input format")
         return inputs
-
 
         # if inputs.spatial_rank == 3:
         #    if inputs.data.ndim == 4:
