@@ -415,7 +415,7 @@ def add_training_args(parser):
         "--validation_max_iter",
         help="Number of validation batches to run",
         type=int,
-        default=2)
+        default=1)
 
     parser.add_argument(
         "--exclude_fraction_for_validation",

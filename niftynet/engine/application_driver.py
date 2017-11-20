@@ -61,7 +61,7 @@ class ApplicationDriver(object):
         self.tensorboard_every_n = -1
 
         self.validation_every_n = -1
-        self.validation_max_iter = 2
+        self.validation_max_iter = 1
 
         self.initial_iter = 0
         self.final_iter = 0
@@ -124,8 +124,8 @@ class ApplicationDriver(object):
                 n_devices=max(self.num_gpus, 1))
             self.validation_every_n = train_param.validation_every_n
             if self.validation_every_n > 0:
-                self.validation_max_iter = \
-                    max(2, train_param.validation_max_iter)
+                self.validation_max_iter = max(self.validation_max_iter,
+                                               train_param.validation_max_iter)
             action_param = train_param
         else:
             assert infer_param, 'inference parameters not specified'

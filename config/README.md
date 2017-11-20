@@ -23,17 +23,17 @@ All files should have two sections:
 - [`[SYSTEM]`](#system)
 - [`[NETWORK]`](#network)
 
-If the `train` is specified, then a training paramter section is required:
+If the `train` is specified, then a training parameter section is required:
 - [`[TRAINING]`](#training)
 
-If the `inference` is specified, then an inference paramter section is required:
+If the `inference` is specified, then an inference parameter section is required:
 - [`[INFERENCE]`](#inference)
 
 The section listed above are common hyperparameters for all applications.
 
 Additionally, an application specific section is required for each application
 (Please find further comments on creating customised parser [here](../niftynet/utilities/user_parameters_custom.py)):
-- `[GAN]` for generative adversirial networks
+- `[GAN]` for generative adversarial networks
 - `[SEGMENTATION]` for segmentation networks
 - `[REGRESSION]` for regression networks
 - `[AUTOENCODER]` for autoencoder networks
@@ -43,18 +43,46 @@ tries to match the section names listed above.
 All other section names will be treated as:
 - [`input data source specifications`](#input-data-source-section).
 
-The following sections specify paramters available within each section.
+The following sections specify parameters available within each section.
 
 ## Input data source section
 |Params.| Type |Example|Default|
 |---|---|---|---|
-|[path_to_search](#path_topath_to_search)|String|`path_to_search=my_data/fold_1`|Niftynet home folder|
+|[path_to_search](#path_to_search)|String|`path_to_search=my_data/fold_1`|NiftyNet home folder|
 |[filename_contain](#filename_contain)|String or string array|`filename_contain=foo, bar`|`''`|
 |[filename_not_contain](#filename_not_contain)|String or string array|`filename_not_contain=foo`|`''`|
 |[interp_order](#interp_order)|Integer|`interp_order=0`|`3`|
 |[pixdim](#pixdim)|Float array|`pixdim=1.2, 1.2, 1.2`|`''`|
 |[axcodes](#axcodes)|String array|`axcodes=L, P, S`|`''`|
 |[spatial_window_size](#spatial_window_size)|Integer array|`spatial_window_size=64, 64, 64`|`''`|
+
+###### `path_to_search`
+Single or multiple folders to search for input images.
+
+###### `filename_contain`
+Keywords used to match filenames.
+The matched keywords will be removed, and the remaining part is used as
+subject name (for loading corresponding images across modalities).
+
+###### `filename_not_contain`
+Keywords used to exclude filenames.
+The filenames with these keywords will not be used as input.
+
+###### `interp_order`
+Interpolation order of the input data.
+
+###### `pixdim`
+If specified, the input volume will be resampled to the voxel sizes
+before fed into the network.
+
+###### `axcodes`
+If specified, the input volume will be reoriented to the axes codes
+before fed into the network.
+
+###### `spatial_window_size`
+Array of three integers specifies the input window size.
+Setting it to single slice, e.g., `spatial_window_size=64, 64, 1`, yields a 2-D slice window.
+
 This section will be used by [ImageReader](../niftynet/io/image_reader.py)
 to generate a list of [input images objects](../niftynet/io/image_type.py).
 For example:
@@ -68,8 +96,9 @@ pixdim = (1.0, 1.0, 1.0)
 axcodes=(A, R, S)
 interp_order = 3
 ```
-Specifies a set of images (currently supports NIfTI format via [NiBabel library](http://nipy.org/nibabel/nifti_images.html))
-from `./example_volumes/image_folder`, with filnames contain both `T1` and
+Specifies a set of images
+(currently supports NIfTI format via [NiBabel library](http://nipy.org/nibabel/nifti_images.html))
+from `./example_volumes/image_folder`, with filenames contain both `T1` and
 `subject`, but not contain `T1c` and `T2`. These images will be read into
 memory and transformed into "A, R, S" orientation
 (using [NiBabel](http://nipy.org/nibabel/reference/nibabel.orientations.html)).
@@ -106,12 +135,12 @@ This option is ignored if there's no GPU device.
 
 ######  `model_dir`
 Directory to save/load intermediate training models and logs.
-Niftynet tries to interpret this parameter as an absolute system path or a path relative to the current command.
+NiftyNet tries to interpret this parameter as an absolute system path or a path relative to the current command.
 It's defaulting to the directory of the current configuration file if left blank.
 
 ######  `dataset_split_file`
 File assigning subjects to training/validation/inference subsets.
-If the string is a relative path, Niftynet interpret this as relative to `model_dir`.
+If the string is a relative path, NiftyNet interpret this as relative to `model_dir`.
 
 ## NETWORK
 |Params.| Type |Example|Default|
@@ -127,10 +156,10 @@ If the string is a relative path, Niftynet interpret this as relative to `model_
 
 ######  `name`
 A network class from [niftynet/network](../niftynet/network) or from user specified module string.
-Niftynet tries to import this string as a module specification.
+NiftyNet tries to import this string as a module specification.
 E.g. Setting it to `niftynet.network.toynet.ToyNet` will import the `ToyNet` class defined in `niftynet/network/toynet.py`
 (The relevant module path must be valid Python path).
-There are also [some shortcuts](../niftynet/engine/application_factory.py) for Niftynet's default network modules.
+There are also [some shortcuts](../niftynet/engine/application_factory.py) for NiftyNet's default network modules.
 
 ######  `activation_function`
 Sets the type of activation of the network.
@@ -163,6 +192,7 @@ numpy.pad(input_volume,
 For 2-D inputs, the third dimension of `volume_padding_size` should be set to `0`,
 e.g. `volume_padding_size=M,N,0`.
 `volume_padding_size=M` is a shortcut for 3-D inputs, equivalent to `volume_padding_size=M,M,M`.
+The same amount of padding will be removed when before writing the output volume.
 
 ###### `window_sampling`
 Type of sampler used to generate image windows from each image volume:
@@ -181,28 +211,28 @@ i.e. queue_length is `max(queue_length, round(batch_size * 2.5))`.
 Intensity based volume normalisation can be configured using a combination of parameters described below:
 
 (1) Setting `normalisation=True` enables the [histogram-based normalisation](../niftynet/utilities/histogram_standardisation.py).
-The relelavant configuration parameters are:
+The relevant configuration parameters are:
 > `histogram_ref_file`, `norm_type`, `cutoff`, `foreground_type`, `multimod_foreground_type`.
 
-These parameters are ignored and histogram-based noramalisation is disabled if `normalisation=False`.
+These parameters are ignored and histogram-based normalisation is disabled if `normalisation=False`.
 
 (2) Setting `whitening=True` enables the volume level normalisation computed by `(I - mean(I))/std(I)`.
-The relelavant configuration parameters are:
+The relevant configuration parameters are:
 > `cutoff`, `foreground_type`, `multimod_foreground_type`.
 
-These parameters are ignored and histogram-based noramalisation is disabled if `whitening=False`.
+These parameters are ignored and histogram-based normalisation is disabled if `whitening=False`.
 
 More specifically:
 
 |Params.| Type |Example|Default|
 |---|---|---|---|
-|[normalisation](#volume-normalisation)|Boolean|`normalisation=True`|`False`|
-|[whitening](#volume-normalisation)|Boolean|`whitening=True`|`False`|
-|[histogram_ref_file](#volume-normalisation)|String|`histogram_ref_file=./hist_ref.txt`| `''`|
-|[norm_type](#volume-normalisation)|String|`norm_type=percentile`| `percentile`|
-|[cutoff](#volume-normalisation)|Float array (two elements)|`cutoff=0.1, 0.9`|`0.01, 0.99`|
-|[foreground_type](#volume-normalisation)|String|`foreground_type=ostu_plus`|`ostu_plus`|
-|[multimod_foreground_type](#volume-normalisation)|String|`multimod_foreground_type=and`|`and`|
+|[normalisation](#normalisation)|Boolean|`normalisation=True`|`False`|
+|[whitening](#whitening)|Boolean|`whitening=True`|`False`|
+|[histogram_ref_file](#histogram_ref_file)|String|`histogram_ref_file=./hist_ref.txt`| `''`|
+|[norm_type](#norm_type)|String|`norm_type=percentile`| `percentile`|
+|[cutoff](#cutoff)|Float array (two elements)|`cutoff=0.1, 0.9`|`0.01, 0.99`|
+|[foreground_type](#foreground_type)|String|`foreground_type=ostu_plus`|`ostu_plus`|
+|[multimod_foreground_type](#multimod_foreground_type)|String|`multimod_foreground_type=and`|`and`|
 
 
 ###### `normalisation`
@@ -236,7 +266,7 @@ Strategies applied to combine foreground masks of multiple modalities, can take 
 |Params.| Type |Example|Default|
 |---|---|---|---|
 |[optimiser](#optimiser)|String|`optimiser=momentum`|`adam`|
-|[sampler_per_volume](#sample_per_volume)|Postive integer|`sampler_per_volume=5`|`1`|
+|[sampler_per_volume](#sample_per_volume)|Positive integer|`sampler_per_volume=5`|`1`|
 |[lr](#lr)|Float|`lr=0.001`|`0.1`|
 |[loss_type](#loss_type)|String|`loss_type=CrossEntropy`|`Dice`|
 |[starting_iter](#starting_iter)|Non-negative integer|`starting_iter=0`| `0`|
@@ -244,7 +274,6 @@ Strategies applied to combine foreground masks of multiple modalities, can take 
 |[tensorboard_every_n](#tensorboard_every_n)|Integer|`tensorboard_every_n=5`|`20`|
 |[max_iter](#max_iter)|Integer|`max_iter=1000`|`10000`|
 |[max_checkpoint](#max_checkpoint)|Integer|`max_checkpoint=5`|`100`|
-
 
 ###### `optimiser`
 Type of optimiser for computing graph gradients.
@@ -259,10 +288,12 @@ The learning rate for the optimiser.
 Type of loss function.
 
 ###### `starting_iter`
-The iteration to resume training model. Setting `starting_iter=0` starts the network from random initialisations.
+The iteration to resume training model.
+Setting `starting_iter=0` starts the network from random initialisations.
 
 ###### `save_every_n`
-Frequency of saving the current training model saving. Setting to a non-positive value to disable the saving schedule.
+Frequency of saving the current training model saving.
+Setting to a non-positive value to disable the saving schedule.
 (A final model will always be saved when quitting the training loop.)
 
 ###### `tensorboard_every_n`
@@ -270,7 +301,8 @@ Frequency of evaluating graph elements and write to tensorboard.
 Setting to a non-positive value to disable the tensorboard writing schedule.
 
 ###### `max_iter`
-Maximum number of training iterations. The value is total number of iterations counting from 0.
+Maximum number of training iterations.
+The value is total number of iterations counting from 0.
 This means when training from [`starting_iter`](#starting_iter) N,
 the remaining number of iterations to run is `N - max_iter`.
 
@@ -278,21 +310,43 @@ the remaining number of iterations to run is `N - max_iter`.
 Maximum number of recent checkpoints to keep.
 
 ##### Validation during training
+Setting `validation_every_n` to a positive integer enables validation loops during training.
+When validation is enabled, images list (defined by [input specifications](#input-data-source-section))
+will be treated as the whole dataset, and partitioned into subsets of training, validation, and inference
+according to [exclude_fraction_for_validation](#exclude_fraction_for_validation) and
+[exclude_fraction_for_inference](#exclude_fraction_for_inference).
+
+A csv table randomly maps each file name to one of the stages `{'training', 'validation', 'inference'}` will be written to
+[dataset_split_file](#dataset_split_file). This file will be created when it's at the beginning of training (`starting_iter=0`) and
+the file doesn't exist. If a new random partition is required, please remove the existing [dataset_split_file](#dataset_split_file).
+
+Note that each iteration will read image from the set of validation data,
+and will not change the network parameters.  The `is_training` parameter of the network
+is set to `True` during validation, as a result layers with different behaviours in training and inference
+(such as dropout and batch normalisation) uses the training behaviour.
 
 |Params.| Type |Example|Default|
 |---|---|---|---|
-|[validation_every_n](#validation_every_n)|
-|[validation_max_iter](#validation_max_iter)|
-|[exclude_fraction_for_validation](#exclude_fraction_for_validation)|
-|[exclude_fraction_for_inference](#exclude_fraction_for_inference)
+|[validation_every_n](#validation_every_n)| Integer|`validation_every_n=10`|`-1`|
+|[validation_max_iter](#validation_max_iter)|Integer|`validation_max_iter=5`|`1`|
+|[exclude_fraction_for_validation](#exclude_fraction_for_validation)|Float|`exclude_fraction_for_validation=0.2`|`0.0`|
+|[exclude_fraction_for_inference](#exclude_fraction_for_inference)|Float|`exclude_fraction_for_inference=0.1`|`0.0`|
 
 ###### `validation_every_n`
+Run validation iterations after every N training iterations.
+Setting to non-positive values disables the validation.
 
 ###### `validation_max_iter`
+Number of validation iterations to run.
+This parameter is ignored if `validation_every_n` is not a positive integer.
 
 ###### `exclude_fraction_for_validation`
+Fraction of dataset to use for validation.
+Value should be in `[0, 1]`.
 
 ###### `exclude_fraction_for_inference`
+Fraction of dataset to use for inference.
+Value should be in `[0, 1]`.
 
 ##### Data augmentation during training
 
@@ -317,17 +371,37 @@ Note that these are 0-indexed, so choose some combination of 0, 1.
 
 
 ## INFERENCE
+Many networks are fully convolutional (without fully connected layers) and
+the resolution of the output volume can be different from the input image.
+That is, given an input of `NxNxN` voxel volume, the network generates
+a `DxDxD`-voxel output, where `0 < D < N`.
+
+This config section is design for the process of sampling `NxNxN` windows from
+given image volumes, and aggregate the network-generated `DxDxD` windows to output
+volumes.
+
+In terms of sampling by a sliding window, the sampling step size should be `D/2` in each
+spatial dimension.  However automatically inferring `D` as a function of network implementation and `N`
+is not implemented at the moment. Therefore, NiftyNet requires a [`border`](#border) to describe the
+spatial window size changes. `border` should be at least `floor((N - D) / 2)`.
+
+If the network is designed such that `N==D` is always true, `border` should be `0` (default value).
+
+Note that the above implementation generalises to
+`NxMxP`-voxel windows and `BxCxD`-voxel window outputs.
+
 |Params.| Type |Example|Default|
 |---|---|---|---|
-|[spatial_window_size](#spatial_window_size)|
-|[border](#border)|
+|[spatial_window_size](#spatial_window_size)|Integer array| `spatial_window_size=64,64,64`|`''`|
+|[border](#border)|Integer array|`border=5,5,5`|`0, 0, 0`|
 |[inference_iter](#inference_iter)|Integer|`inference_iter=1000`|`-1`|
-|[save_seg_dir](#save_seg_dir)|String|`save_seg_dir=output/test`| A new directory named `output` within [`model_dir`](#model_dir)|
+|[save_seg_dir](#save_seg_dir)|String|`save_seg_dir=output/test`| `output`|
 |[output_interp_order](#output_interp_order)|Non-negative integer|`output_interp_order=0`|`0`|
 
 ###### `spatial_window_size`
-a tuple of integers indicating the size of input window
-at inference time, this overrides the `spatial_window_size` parameter in the input
+Array of integers indicating the size of input window.
+By default, the window size at inference time is the same as the [input source specification](#input-data-source-section).
+If this parameter is specified, it overrides the `spatial_window_size` parameter in input
 source sections.
 
 ###### `border`
@@ -340,12 +414,10 @@ Integer specifies the trained model to be used for inference.
 `-1` or unspecified indicating to use the latest available trained model in `model_dir`.
 
 ###### `save_seg_dir`
-Prediction directory name
+Prediction directory name. If it's a relative path, it is set to be relative to [`model_dir`](#model_dir).
 
 ###### `output_interp_order`
-Interpolation order of the network output.
-
-
+Interpolation order of the network outputs.
 
 
 ## Global-settings
@@ -378,9 +450,3 @@ This hierarchy consists of the following:
 Alternatively this hierarchy can be created by the user before running NiftyNet for the first time, e.g. for [defining new networks][new-network].
 
 [new-network]: ../niftynet/network/README.md
-
-
-
-
-
-

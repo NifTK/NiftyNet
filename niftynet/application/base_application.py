@@ -6,7 +6,6 @@ Interface of NiftyNet application
 import tensorflow as tf
 from six import with_metaclass
 
-from niftynet.io.image_sets_partitioner import TRAIN, VALID
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.utilities import util_common
 

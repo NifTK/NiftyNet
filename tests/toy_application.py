@@ -47,6 +47,7 @@ class ToyApplication(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
+        print(vars(self.action_param))
         with tf.name_scope('Optimiser'):
             optimiser_class = OptimiserFactory.create(
                 name=self.action_param.optimiser)
