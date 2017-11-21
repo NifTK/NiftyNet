@@ -4,7 +4,7 @@
 
 *This readme file describes commands and configurations supported by NiftyNet.*
 
-#### Quick reference
+##### Quick reference
 - [Input data specifications](#input-data-source-section)
 - [SYSTEM](#system)
 - [NETWORK](#network)
@@ -32,16 +32,17 @@ or `inference`. `train` indicates updating the underlying network model using pr
 `<application>` should be specified in the form of `user.path.python.module.MyApplication`,
 NiftyNet will try to import the class named `MyApplication` implemented in `user/path/python/module.py`.
 
-A few applications are already included in NiftyNet, and can be passed as an argument of `-a`. These include:
+A few applications are already included in NiftyNet, and can be passed as an argument of `-a`.
+These include:
 
 |Argument|Workflow|File|
 |---|---|---|
-|`niftynet.application.segmentation_application.SegmentationApplication`|image segmentation |[segmentation_application.py](#../niftynet/application/segmentation_application.py)|
-|`niftynet.application.regression_application.RegressionApplication`|image regression|[regression_application.py](#../niftynet/application/regression_application.py)|
-|`niftynet.application.autoencoder_application.AutoencoderApplication`|autoencoder|[autoencoder_application.py](#../niftynet/application/autoencoder_application.py)|
-|`niftynet.application.gan_application.GANApplication`|generative adversarial network|[gan_application.py](#../niftynet/application/gan_application.py)|
+|`niftynet.application.segmentation_application.SegmentationApplication`|image segmentation |[segmentation_application.py](../niftynet/application/segmentation_application.py)|
+|`niftynet.application.regression_application.RegressionApplication`|image regression|[regression_application.py](../niftynet/application/regression_application.py)|
+|`niftynet.application.autoencoder_application.AutoencoderApplication`|autoencoder|[autoencoder_application.py](../niftynet/application/autoencoder_application.py)|
+|`niftynet.application.gan_application.GANApplication`|generative adversarial network|[gan_application.py](../niftynet/application/gan_application.py)|
 
-Shortcuts are created for these application:
+Shortcuts are created for these application (full specification can be found here: [`SUPPORTED_APP`](../niftynet/engine/application_factory.py#L19)):
 
 |Shortcut| Expanded command|
 |---|---|
@@ -50,7 +51,7 @@ Shortcuts are created for these application:
 |`net_autoencoder`|`net_run -a niftynet.application.autoencoder_application.AutoencoderApplication`|
 |`net_gan`|`net_run -a niftynet.application.gan_application.GANApplication`|
 
-#### Arguments overriding
+#### Overriding the arguments
 In the case of quickly adjusting only a few options in the configuration file, creating a separate file is sometimes tedious.
 
 To make it more accessible, `net_run` command also accepts parameters specification in the form of `--<name> <value>` or `--<name>=<value>`.
@@ -208,7 +209,7 @@ A network class from [niftynet/network](../niftynet/network) or from user specif
 NiftyNet tries to import this string as a module specification.
 E.g. Setting it to `niftynet.network.toynet.ToyNet` will import the `ToyNet` class defined in `niftynet/network/toynet.py`
 (The relevant module path must be a valid Python path).
-There are also [some shortcuts](../niftynet/engine/application_factory.py) for NiftyNet's default network modules.
+There are also some shortcuts ([`SUPPORTED_NETWORK`](../niftynet/engine/application_factory.py#L30)) for NiftyNet's default network modules.
 
 ######  `activation_function`
 Sets the type of activation of the network.
@@ -326,6 +327,7 @@ Strategies applied to combine foreground masks of multiple modalities, can take 
 
 ###### `optimiser`
 Type of optimiser for computing graph gradients.
+Current available options are defined here: [`SUPPORTED_OPTIMIZERS`](../niftynet/engine/application_factory.py#L106).
 
 ###### `sample_per_volume`
 Set number of samples to take from each image volume.
@@ -422,10 +424,10 @@ Note that these are 0-indexed, so choose some combination of 0, 1.
 ## INFERENCE
 Many networks are fully convolutional (without fully connected layers) and
 the resolution of the output volume can be different from the input image.
-That is, given an input of `NxNxN` voxel volume, the network generates
+That is, given input of an `NxNxN` voxel volume, the network generates
 a `DxDxD`-voxel output, where `0 < D < N`.
 
-This configuration section is design for the process of sampling `NxNxN` windows from
+This configuration section is design for such a process of sampling `NxNxN` windows from
 given image volumes, and aggregate the network-generated `DxDxD` windows to output
 volumes.
 
