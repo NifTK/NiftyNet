@@ -73,16 +73,16 @@ def __find_max_overlap_in_list(name, list_names):
         if test:
             match = SequenceMatcher(None, name, test).find_longest_match(
                 0, len(name), 0, len(test))
-            if match.size >= match_max and match.size / len(test) >= \
-                    match_ratio:
+            if match.size >= match_max \
+                    and match.size / len(test) >= match_ratio:
                 match_max = match.size
                 match_seq = test[match.b:(match.b + match.size)]
                 match_ratio = match.size / len(test)
                 match_orig = test
     if match_max == 0:
         return '', -1
-    other_list = [name for name in list_names if match_seq in name and
-                  match_max / len(name) == match_ratio]
+    other_list = [name for name in list_names
+                  if match_seq in name and match_max / len(name) == match_ratio]
     if len(other_list) > 1:
         return '', -1
     return match_seq, list_names.index(match_orig)
@@ -133,7 +133,7 @@ def match_second_degree(name_list1, name_list2):
                 init_match2[i], index = __find_max_overlap_in_list(n, redflat_1)
                 if index >= 0:
                     ind_match2[i] = indflat_1[index]
-    return init_match1, ind_match1, init_match2, ind_match2
+    return init_match1, ind_match1
 
 
 # From a list of list of names and a list of list of files that are
@@ -154,8 +154,7 @@ def join_subject_id_and_filename_list(name_list, list_files):
     ind_tot = []
     name_max_to_use = []
     for c in range(0, len(list_files)):
-        name_match, ind_match, _, _ = match_second_degree(name_max,
-                                                          name_list[c])
+        name_match, ind_match = match_second_degree(name_max, name_list[c])
         if c == ind_max:
             name_max_to_use = name_match
         name_tot.append(name_match)

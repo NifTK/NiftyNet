@@ -9,13 +9,13 @@ import re
 import sys
 import warnings
 
-import PIL
 import nibabel as nib
 import numpy as np
 import scipy.ndimage
 import tensorflow as tf
-from PIL.GifImagePlugin import Image as GIF
 from tensorflow.core.framework import summary_pb2
+
+from niftynet.utilities.util_import import check_module
 
 IS_PYTHON2 = False if sys.version_info[0] > 2 else True
 
@@ -23,13 +23,10 @@ IMAGE_LOADERS = [nib.load]
 try:
     import niftynet.io.simple_itk_as_nibabel
 
-    IMAGE_LOADERS.append(
-        niftynet.io.simple_itk_as_nibabel.SimpleITKAsNibabel)
-except ImportError:
-    warnings.warn(
-        'SimpleITK adapter failed to load,'
-        ' reducing the supported file formats.',
-        ImportWarning)
+    IMAGE_LOADERS.append(niftynet.io.simple_itk_as_nibabel.SimpleITKAsNibabel)
+except (ImportError, AssertionError):
+    tf.logging.warning('SimpleITK adapter failed to load, '
+                       'reducing the supported file formats.')
 
 warnings.simplefilter("ignore", UserWarning)
 
@@ -53,7 +50,8 @@ def infer_ndims_from_file(file_path):
 
     tf.logging.fatal('unsupported file header in: {}'.format(file_path))
     raise IOError('could not get ndims from file header, please '
-                  'consider convert image files to NifTI format. ')
+                  'consider convert image files to NifTI format.')
+
 
 def create_affine_pixdim(affine, pixdim):
     """
@@ -83,7 +81,7 @@ def load_image(filename):
             # if the image_loader cannot handle the type_str
             # continue to next loader
             pass
-    tf.logging.fatal('No loader could load the file {}'.format(filename))
+    tf.logging.fatal('No loader could load the file %s', filename)
     raise IOError
 
 
@@ -451,6 +449,10 @@ def get_latest_subfolder(parent_folder, create_new=False):
 
 
 def _image3_animated_gif(tag, ims):
+    check_module('PIL')
+    import PIL
+    from PIL.GifImagePlugin import Image as GIF
+
     # x=numpy.random.randint(0,256,[10,10,10],numpy.uint8)
     ims = [np.asarray((ims[i, :, :]).astype(np.uint8))
            for i in range(ims.shape[0])]
@@ -489,6 +491,7 @@ def image3(name,
     collections: list of strings collections to add the summary to
     animation_axes=[1],image_axes=[2,3]
     """
+
     if max_outputs == 1:
         suffix = '/image'
     else:

@@ -257,8 +257,8 @@ class SegmentationApplication(BaseApplication):
             #    data_dict, net_out = data_net(True)
             if self.action_param.validation_every_n > 0:
                 data_dict = tf.cond(tf.logical_not(self.is_validation),
-                                    lambda: switch_sampler(True),
-                                    lambda: switch_sampler(False))
+                                    lambda: switch_sampler(for_training=True),
+                                    lambda: switch_sampler(for_training=False))
             else:
                 data_dict = switch_sampler(for_training=True)
             image = tf.cast(data_dict['image'], tf.float32)
@@ -295,6 +295,21 @@ class SegmentationApplication(BaseApplication):
                 var=data_loss, name='dice_loss',
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
+
+            #outputs_collector.add_to_collection(
+            #    var=image*180.0, name='image',
+            #    average_over_devices=False, summary_type='image3_sagittal',
+            #    collection=TF_SUMMARIES)
+
+            #outputs_collector.add_to_collection(
+            #    var=image, name='image',
+            #    average_over_devices=False,
+            #    collection=NETWORK_OUTPUT)
+
+            #outputs_collector.add_to_collection(
+            #    var=tf.reduce_mean(image), name='mean_image',
+            #    average_over_devices=False, summary_type='scalar',
+            #    collection=CONSOLE)
         else:
             # converting logits into final output for
             # classification probabilities or argmax classification labels

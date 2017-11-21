@@ -8,7 +8,10 @@
 - [Input data specifications](#input-data-source-section)
 - [SYSTEM](#system)
 - [NETWORK](#network)
+  * [Volume-normalisation](#volume-normalisation)
 - [TRAINING](#training)
+  * [Validation during training](#validation-during-training)
+  * [Data augmentation during training](#data-augmentation-during-training)
 - [INFERENCE](#inference)
 - [Global settings](#global-settings)
 
@@ -99,7 +102,7 @@ The following sections specify parameters (`<name> = <value>` pairs) available w
 
 ###### `csv_file`
 A file path to a list of input images.
-If the file exists, input image names will be loaded from the file;
+If the file exists, input image name list will be loaded from the file;
 the filename based input image search will be disabled;
 [path_to_search](#path_to_search), [filename_contain](#filename_contain), and [filename_not_contain](#filename_not_contain)
 will be ignored.
@@ -139,11 +142,11 @@ For example:
 ```ini
 [T1Image]
 path_to_search = ./example_volumes/image_folder
-filename_contain = ('T1', 'subject')
-filename_not_contain = ('T1c', 'T2')
-spatial_window_size = (128, 128, 1)
-pixdim = (1.0, 1.0, 1.0)
-axcodes=(A, R, S)
+filename_contain = T1, subject
+filename_not_contain = T1c, T2
+spatial_window_size = 128, 128, 1
+pixdim = 1.0, 1.0, 1.0
+axcodes = A, R, S
 interp_order = 3
 ```
 Specifies a set of images
@@ -155,6 +158,12 @@ memory and transformed into "A, R, S" orientation
 The images will also be transformed to have voxel size `(1.0, 1.0, 1.0)`
 with an interpolation order of `3`.
 
+A CSV file with the matched filenames and extracted subject names will be generated
+to `T1Image.csv` in [`model_dir`](#model_dir)
+(by default; the CSV file location can be specified by setting [csv_file](#csv_file)).
+To exclude particular images, 
+the [csv_file](#dataset_split_file) can be edited manually.
+
 This input source can be used alone, as a `T1` MRI input to an application.
 It can also be used along with other modalities, a multi-modality example
 can be find at [here](../config/default_multimodal_segmentation.ini).
@@ -163,7 +172,7 @@ The following sections describe system parameters that can be specified in the c
 
 
 ## SYSTEM
-|Params.| Type |Example|Default|
+|Params.|Type|Example|Default|
 |---|---|---|---|
 |[cuda_devices](#cuda_devices)|Integers set `CUDA_VISIBLE_DEVICES` | `cuda_devices=0,1,2`|`''`|
 |[num_threads](#num_threads)|Positive integer|`num_threads=1`|`2`|
@@ -192,8 +201,9 @@ It's defaulting to the directory of the current configuration file if left blank
 File assigning subjects to training/validation/inference subsets.
 If the string is a relative path, NiftyNet interpret this as relative to `model_dir`.
 
+
 ## NETWORK
-|Params.| Type |Example|Default|
+|Params.|Type|Example|Default|
 |---|---|---|---|
 |[name](#name)|String|`name=niftynet.network.toynet.ToyNet`|`''`|
 |[activation_function](#activation_function)|String|`activation_function=prelu`|`relu`|
@@ -270,11 +280,11 @@ These parameters are ignored and histogram-based normalisation is disabled if `n
 The relevant configuration parameters are:
 > `cutoff`, `foreground_type`, `multimod_foreground_type`.
 
-These parameters are ignored and histogram-based normalisation is disabled if `whitening=False`.
+These parameters are ignored and whitening is disabled if `whitening=False`.
 
 More specifically:
 
-|Params.| Type |Example|Default|
+|Params.|Type|Example|Default|
 |---|---|---|---|
 |[normalisation](#normalisation)|Boolean|`normalisation=True`|`False`|
 |[whitening](#whitening)|Boolean|`whitening=True`|`False`|
@@ -283,7 +293,6 @@ More specifically:
 |[cutoff](#cutoff)|Float array (two elements)|`cutoff=0.1, 0.9`|`0.01, 0.99`|
 |[foreground_type](#foreground_type)|String|`foreground_type=ostu_plus`|`ostu_plus`|
 |[multimod_foreground_type](#multimod_foreground_type)|String|`multimod_foreground_type=and`|`and`|
-
 
 ###### `normalisation`
 Boolean indicates if an histogram standardisation should be applied to the data.
@@ -312,6 +321,7 @@ Strategies applied to combine foreground masks of multiple modalities, can take 
 * `and` intersection of the available masks,
 * `all` masks computed from each modality independently.
 
+
 ## TRAINING
 |Params.| Type |Example|Default|
 |---|---|---|---|
@@ -336,7 +346,12 @@ Set number of samples to take from each image volume.
 The learning rate for the optimiser.
 
 ###### `loss_type`
-Type of loss function.
+Type of loss function. Please see the relevant loss function layer for choices available:
+- [Segmentation](#../niftynet/layer/loss_segmentation.py),
+- [Regression](#../niftynet/layer/loss_regression.py),
+- [Autoencoder](#../niftynet/layer/loss_autoencoder.py),
+- [GAN](#../niftynet/layer/loss_gan.py).
+
 
 ###### `starting_iter`
 The iteration to resume training model.
@@ -367,14 +382,20 @@ will be treated as the whole dataset, and partitioned into subsets of training, 
 according to [exclude_fraction_for_validation](#exclude_fraction_for_validation) and
 [exclude_fraction_for_inference](#exclude_fraction_for_inference).
 
-A CSV table randomly maps each file name to one of the stages `{'training', 'validation', 'inference'}` will be written to
+A CSV table randomly maps each file name to one of the stages `{'Training', 'Validation', 'Inference'}` will be written to
 [dataset_split_file](#dataset_split_file). This file will be created when it's at the beginning of training (`starting_iter=0`) and
 the file doesn't exist. If a new random partition is required, please remove the existing [dataset_split_file](#dataset_split_file).
+To exclude particular subjects or adjust the randomly generated partition, 
+the [dataset_split_file](#dataset_split_file) can be edited manually.
 
 Note that each iteration will read image from the set of validation data,
 and will not change the network parameters.  The `is_training` parameter of the network
 is set to `True` during validation, as a result layers with different behaviours in training and inference
 (such as dropout and batch normalisation) uses the training behaviour.
+
+_Durning inference, if a [dataset_split_file](#dataset_split_file) is available, only image files in
+the `Inference` phase will be used,
+otherwise inference will process all image files defined by [input specifications](#input-data-source-section)._
 
 |Params.| Type |Example|Default|
 |---|---|---|---|

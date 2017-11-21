@@ -199,8 +199,8 @@ class SpatialImage2D(DataFromFile):
             except (TypeError, IndexError, AttributeError):
                 tf.logging.fatal('could not read header from %s', file_i)
                 raise ValueError
-        self._original_pixdim = tuple(self._original_pixdim)
-        self._original_affine = tuple(self._original_affine)
+                # self._original_pixdim = tuple(self._original_pixdim)
+                # self._original_affine = tuple(self._original_affine)
 
     @property
     def original_pixdim(self):
@@ -257,7 +257,7 @@ class SpatialImage2D(DataFromFile):
     def interp_order(self, interp_order):
         try:
             if len(interp_order) == len(self.file_path):
-                self._interp_order = tuple(map(int, interp_order))
+                self._interp_order = tuple(int(order) for order in interp_order)
                 return
         except (TypeError, ValueError):
             pass
@@ -292,14 +292,14 @@ class SpatialImage2D(DataFromFile):
                         self._output_pixdim.append(None)
                     else:
                         self._output_pixdim.append(
-                            tuple(map(float, output_pixdim[i])))
-                self._output_pixdim = tuple(self._output_pixdim)
+                            tuple(float(pixdim) for pixdim in output_pixdim[i]))
+                # self._output_pixdim = tuple(self._output_pixdim)
                 return
         except (TypeError, ValueError):
             pass
         try:
             if output_pixdim is not None:
-                output_pixdim = tuple(map(float, output_pixdim))
+                output_pixdim = tuple(float(pixdim) for pixdim in output_pixdim)
             self._output_pixdim = (output_pixdim,) * len(self.file_path)
         except (TypeError, ValueError):
             tf.logging.fatal(
@@ -331,7 +331,7 @@ class SpatialImage2D(DataFromFile):
                     else:
                         self._output_axcodes.append(
                             tuple(output_axcodes[i]))
-                self._output_axcodes = tuple(self._output_axcodes)
+                # self._output_axcodes = tuple(self._output_axcodes)
                 return
         except (TypeError, ValueError):
             pass
@@ -377,12 +377,14 @@ class SpatialImage3D(SpatialImage2D):
                                 output_axcodes=output_axcodes)
         self._load_header()
 
+    # pylint: disable=no-member
     @SpatialImage2D.output_pixdim.getter
     def output_pixdim(self):
         if self._output_pixdim is None:
             self.output_pixdim = None
         return self._output_pixdim
 
+    # pylint: disable=no-member
     @SpatialImage2D.output_axcodes.getter
     def output_axcodes(self):
         if self._output_axcodes is None:

@@ -67,7 +67,14 @@ def main():
     # writing all params for future reference
     txt_file = 'settings_{}.txt'.format(system_param['SYSTEM'].action)
     txt_file = os.path.join(system_param['SYSTEM'].model_dir, txt_file)
-    util.print_save_input_parameters(all_param, txt_file)
+    try:
+        util.print_save_input_parameters(all_param, txt_file)
+    except IOError:
+        tf.logging.fatal(
+            'Unable to write %s,\nplease check '
+            'model_dir parameter, current value: %s',
+            txt_file, system_param['SYSTEM'].model_dir)
+        raise
 
     # keep all commandline outputs to model_root
     log_file_name = os.path.join(

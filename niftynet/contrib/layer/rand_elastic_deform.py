@@ -6,6 +6,8 @@
 
 
 from __future__ import absolute_import, print_function
+from niftynet.utilities.util_import import check_module
+check_module('SimpleITK')
 
 import warnings
 

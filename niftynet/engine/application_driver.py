@@ -170,9 +170,10 @@ class ApplicationDriver(object):
         if data_param and self.is_training and self.validation_every_n > 0:
             assert data_partitioner.has_validation, \
                 'validation_every_n is set to {}, ' \
-                'but train/validation splitting not available,\nplease ' \
+                'but train/validation splitting not available.\nPlease ' \
                 'check dataset partition list {} ' \
-                '(remove file to generate new dataset partition)'.format(
+                '(remove file to generate a new dataset partition). ' \
+                'Or set validation_every_n to -1.'.format(
                     self.validation_every_n, system_param.dataset_split_file)
 
         # initialise readers

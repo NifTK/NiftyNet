@@ -96,27 +96,28 @@ class ImageReader(Layer):
         self._input_sources = {name: vars(task_param).get(name)
                                for name in self.names}
         required_sections = \
-            sum([list(vars(task_param).get(name))
-                 for name in self.names], [])
+            sum([list(vars(task_param).get(name)) for name in self.names], [])
         for required in required_sections:
             try:
-                if required not in list(file_list) or \
-                        file_list[required].isnull().all():
-                    tf.logging.fatal('reader required input section '
-                                     'name [%s], but in the csv files '
+                if file_list is None \
+                        or required not in list(file_list) \
+                        or file_list[required].isnull().all():
+                    tf.logging.fatal('Reader required input section '
+                                     'name [%s], but in the filename list '
                                      'the column is empty.', required)
                     raise ValueError
             except (AttributeError, TypeError, ValueError):
-                tf.logging.fatal('file_list parameter should be a'
-                                 'pandas.DataFrame instance and has input '
-                                 'section name [%s] as a column name', required)
+                tf.logging.fatal(
+                    'file_list parameter should be a '
+                    'pandas.DataFrame instance and has input '
+                    'section name [%s] as a column name.', required)
                 raise
         self._file_list = file_list
         self.output_list = _filename_to_image_list(
             self._file_list, self._input_sources, data_param)
         for name in self.names:
             tf.logging.info(
-                'image reader: loading [%s] from %s (%d)',
+                'Image reader: loading [%s] from %s (%d)',
                 name, self.input_sources[name], len(self.output_list))
 
     def prepare_preprocessors(self):
@@ -142,50 +143,46 @@ class ImageReader(Layer):
             self.preprocessors.extend(layers)
         self.prepare_preprocessors()
 
-    # pylint: disable=arguments-differ
+    # pylint: disable=arguments-differ,too-many-branches
     def layer_op(self, idx=None, shuffle=True):
         """
         this layer returns a dictionary
           keys: self.output_fields
           values: image volume array
         """
-        if idx is None and shuffle:
-            # training, with random list output
-            idx = np.random.randint(len(self.output_list))
-
-        if idx is None and not shuffle:
-            # testing, with sequential output
-            # accessing self.current_id, not suitable for multi-thread
-            idx = self.current_id + 1
-            self.current_id = idx
+        if idx is None:
+            if shuffle:
+                # training, with random list output
+                idx = np.random.randint(len(self.output_list))
+            else:
+                # testing, with sequential output
+                # accessing self.current_id, not suitable for multi-thread
+                idx = self.current_id + 1
+                self.current_id = idx
 
         try:
-            idx = int(idx)
-        except ValueError:
-            idx = -1
-
-        if idx < 0 or idx >= len(self.output_list):
+            image_dict = self.output_list[idx]
+        except (IndexError, TypeError):
             return -1, None, None
 
-        image_dict = self.output_list[idx]
         image_data_dict = \
             {field: image.get_data() for (field, image) in image_dict.items()}
         interp_order_dict = \
             {field: image.interp_order for (field, image) in image_dict.items()}
-        if self.preprocessors:
-            preprocessors = [deepcopy(layer) for layer in self.preprocessors]
-            # dictionary of masks is cached
-            mask = None
-            for layer in preprocessors:
-                # import time; local_time = time.time()
-                if layer is None:
-                    continue
-                if isinstance(layer, RandomisedLayer):
-                    layer.randomise()
-                    image_data_dict = layer(image_data_dict, interp_order_dict)
-                else:
-                    image_data_dict, mask = layer(image_data_dict, mask)
-                    # print('%s, %.3f sec'%(layer, -local_time + time.time()))
+
+        preprocessors = [deepcopy(layer) for layer in self.preprocessors]
+        # dictionary of masks is cached
+        mask = None
+        for layer in preprocessors:
+            # import time; local_time = time.time()
+            if layer is None:
+                continue
+            if isinstance(layer, RandomisedLayer):
+                layer.randomise()
+                image_data_dict = layer(image_data_dict, interp_order_dict)
+            else:
+                image_data_dict, mask = layer(image_data_dict, mask)
+                # print('%s, %.3f sec'%(layer, -local_time + time.time()))
         return idx, image_data_dict, interp_order_dict
 
     @property
@@ -199,7 +196,7 @@ class ImageReader(Layer):
         # 2) not considering effects of random augmentation layers
         # but time and modality dimensions should be correct
         if not self.output_list:
-            tf.logging.fatal("please initialise the reader first")
+            tf.logging.fatal("Please initialise the reader first.")
             raise RuntimeError
         if not self._shapes:
             first_image = self.output_list[0]
@@ -214,7 +211,7 @@ class ImageReader(Layer):
         (using the first image in the file list).
         """
         if not self.output_list:
-            tf.logging.fatal("please initialise the reader first")
+            tf.logging.fatal("Please initialise the reader first.")
             raise RuntimeError
         if not self._dtypes:
             first_image = self.output_list[0]
@@ -232,7 +229,7 @@ class ImageReader(Layer):
         section names `T1`, `T2`, and `manual_map` respectively.
         """
         if not self._input_sources:
-            tf.logging.fatal("please initialise the reader first")
+            tf.logging.fatal("Please initialise the reader first.")
             raise RuntimeError
         return self._input_sources
 
@@ -259,7 +256,7 @@ class ImageReader(Layer):
         try:
             return self._file_list.iloc[image_index][COLUMN_UNIQ_ID]
         except KeyError:
-            tf.logging.warning('Unknonwn subject id in reader table.')
+            tf.logging.warning('Unknown subject id in reader table.')
             raise
 
 
@@ -284,7 +281,7 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
             volume_list.append(_dict)
     if not volume_list:
         tf.logging.fatal(
-            "empty filename lists, please check the csv "
+            "Empty filename lists, please check the csv "
             "files. (removing csv_file keyword if it is in the config file "
             "to automatically search folders and generate new csv "
             "files again)\n\n"

@@ -69,23 +69,23 @@ class KeywordsMatching(object):
     def matching_subjects_and_filenames(self):
         """
         This function perform the search of the relevant files (stored in
-        list_final) and extract
+        filename_list) and extract
         the corresponding possible list of subject names (stored in
-        name_list_final).
-        :returns list_final, name_list_final
+        subjectname_list).
+        :returns filename_list, subjectname_list
         """
         path_file = [(p, filename)
                      for p in self.path_to_search
                      for filename in os.listdir(p)]
         matching_path_file = list(filter(self.__is_a_candidate, path_file))
-        list_final = [os.path.join(p, filename)
-                      for p, filename in matching_path_file]
-        name_list_final = [self.__extract_subject_id_from(filename)
-                           for p, filename in matching_path_file]
-        if not list_final or not name_list_final:
+        filename_list = \
+            [os.path.join(p, filename) for p, filename in matching_path_file]
+        subjectname_list = [self.__extract_subject_id_from(filename)
+                            for p, filename in matching_path_file]
+        if not filename_list or not subjectname_list:
             raise IOError('no file matched based on this matcher: {}'.format(
                 self.__dict__))
-        return list_final, name_list_final
+        return filename_list, subjectname_list
 
     def __is_a_candidate(self, x):
         all_pos_match = all(c in x[1] for c in self.filename_contains)
@@ -115,4 +115,6 @@ class KeywordsMatching(object):
         # filter out non-alphanumeric characters and blank strings
         potential_names = [re.sub(r'\W+', '', name) for name in potential_names]
         potential_names = list(filter(bool, potential_names))
+        if len(potential_names) > 1:
+            potential_names.append(''.join(potential_names))
         return potential_names
