@@ -554,7 +554,7 @@ def set_logger(file_name=None):
     std_handler.setFormatter(f)
     tf.logging._logger.addHandler(std_handler)
 
-    if file_name is not None:
+    if file_name:
         f = log.Formatter(FILE_LOG_FORMAT)
         file_handler = log.FileHandler(file_name)
         file_handler.setFormatter(f)

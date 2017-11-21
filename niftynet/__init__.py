@@ -28,7 +28,7 @@ try:
                          '\n\nPlease upgrade TensorFlow'
                          ' (https://www.tensorflow.org/) to be'
                          ' able to use NiftyNet.\nCurrently using '
-                         'TensorFlow %s,\ninstalled at %s\n\n',
+                         'TensorFlow %s:\ninstalled at %s\n\n',
                          minimal_required_version, tf_version, tf.__file__)
         raise ImportError
     else:
@@ -48,6 +48,7 @@ from niftynet.io.misc_io import to_absolute_path
 
 
 def main():
+    set_logger()
     system_param, input_data_param = user_parameters_parser.run()
     if util.has_bad_inputs(system_param):
         return -1

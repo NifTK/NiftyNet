@@ -1,5 +1,10 @@
 # Configuration file
-### Quick reference
+*[This folder](../config) presents a few examples of configuration files for NiftyNet
+[applications](#../niftynet/application/).*
+
+*This readme file describes commands and configurations supported by NiftyNet.*
+
+#### Quick reference
 - [Input data specifications](#input-data-source-section)
 - [SYSTEM](#system)
 - [NETWORK](#network)
@@ -8,41 +13,31 @@
 - [Global settings](#global-settings)
 
 ## Overview
-[This folder](../config) presents a few examples of configuration files for different
-applications. This readme file describes commands and configurations supported by NiftyNet.
-
-In general, a NiftyNet workflow can be fully specified by an application Python implementation
-and a configuration file.  The command to run the workflow is:
+In general, a NiftyNet workflow can be fully specified by a NiftyNet application and a configuration file.
+The command to run the workflow is:
 ```bash
 # command to run from git-cloned NiftyNet source code folder
-python net_run.py [train|inference] -c user_configuration.ini
-                                    -a user.defined.module.ApplicationClass
+python net_run.py [train|inference] -c <path_to/config.ini> -a <application>
 ```
 or:
 ```bash
-# command to run pip-installed NiftyNet
-net_run [train|inference] -c user_configuration.ini
--a user.defined.module.ApplicationClass
+# command to run using pip-installed NiftyNet
+net_run [train|inference] -c <path_to/config.ini> -a <application>
 ```
-To run a NiftyNet [application](../niftynet/application) or a customised
-application which implements [BaseApplication](../niftynet/application/base_application.py),
-a configuration file needs to be provided, for example,
-by creating a `user_configuration.ini` file and using the file via:
-```bash
-python net_segment.py train --conf user_configuration.ini
-```
+
+
+## Required and optional confguration sections
+The configuration file currently adopts the INI file format, and is parsed by
+[`configparser`](https://docs.python.org/3/library/configparser.html).
+The file consists of multiple sections of `name=value` elements.
 
 All files should have two sections:
 - [`[SYSTEM]`](#system)
 - [`[NETWORK]`](#network)
 
-If the `train` is specified, then a training parameter section is required:
-- [`[TRAINING]`](#training)
+If the `train` is specified, then a [`[TRAINING]`](#training) section is required.
 
-If the `inference` is specified, then an inference parameter section is required:
-- [`[INFERENCE]`](#inference)
-
-The section listed above are common hyperparameters for all applications.
+If the `inference` is specified, then an [`[INFERENCE]`](#inference) section is required.
 
 Additionally, an application specific section is required for each application
 (Please find further comments on creating customised parser [here](../niftynet/utilities/user_parameters_custom.py)):
@@ -53,10 +48,9 @@ Additionally, an application specific section is required for each application
 
 The [user parameter parser](../niftynet/utilities/user_parameters_parser.py)
 tries to match the section names listed above.
-All other section names will be treated as:
-- [`input data source specifications`](#input-data-source-section).
+All other section names will be treated as [`input data source specifications`](#input-data-source-section).
 
-The following sections specify parameters available within each section.
+The following sections specify parameters (`<name> = <value>` pairs) available within each section.
 
 ## Input data source section
 |Params.| Type |Example|Default|
