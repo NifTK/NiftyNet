@@ -9,8 +9,21 @@
 
 ## Overview
 [This folder](../config) presents a few examples of configuration files for different
-applications.
+applications. This readme file describes commands and configurations supported by NiftyNet.
 
+In general, a NiftyNet workflow can be fully specified by an application Python implementation
+and a configuration file.  The command to run the workflow is:
+```bash
+# command to run from git-cloned NiftyNet source code folder
+python net_run.py [train|inference] -c user_configuration.ini
+                                    -a user.defined.module.ApplicationClass
+```
+or:
+```bash
+# command to run pip-installed NiftyNet
+net_run [train|inference] -c user_configuration.ini
+-a user.defined.module.ApplicationClass
+```
 To run a NiftyNet [application](../niftynet/application) or a customised
 application which implements [BaseApplication](../niftynet/application/base_application.py),
 a configuration file needs to be provided, for example,
