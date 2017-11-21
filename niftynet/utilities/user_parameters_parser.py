@@ -255,11 +255,11 @@ def check_keywords(config):
             default_keywords.append(action.option_strings[0][2:])
         except (IndexError, AttributeError, ValueError):
             pass
+
     for config_key in config_keywords:
         if config_key in default_keywords:
             continue
-        dists = {k: edit_distance(k, config_key)
-                 for k in default_keywords}
+        dists = {k: edit_distance(k, config_key) for k in default_keywords}
         closest = min(dists, key=dists.get)
         if dists[closest] <= 5:
             raise ValueError(

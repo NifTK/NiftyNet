@@ -24,9 +24,41 @@ or:
 # command to run using pip-installed NiftyNet
 net_run [train|inference] -c <path_to/config.ini> -a <application>
 ```
+`net_run` is the entry point of NiftyNet, followed by an action argument of either `train`
+or `inference`. `train` indicates updating the underlying network model using provided data.
+`inference` indicates loading existing network model and generating responses according to data provided.
 
+#### The `<application>` argument
+`<application>` should be specified in the form of `user.path.python.module.MyApplication`,
+NiftyNet will try to import the class named `MyApplication` implemented in `user/path/python/module.py`.
 
-## Required and optional confguration sections
+A few applications are already included in NiftyNet, and can be passed as an argument of `-a`. These include:
+
+|Argument|Workflow|File|
+|---|---|---|
+|`niftynet.application.segmentation_application.SegmentationApplication`|image segmentation |[segmentation_application.py](#../niftynet/application/segmentation_application.py)|
+|`niftynet.application.regression_application.RegressionApplication`|image regression|[regression_application.py](#../niftynet/application/regression_application.py)|
+|`niftynet.application.autoencoder_application.AutoencoderApplication`|autoencoder|[autoencoder_application.py](#../niftynet/application/autoencoder_application.py)|
+|`niftynet.application.gan_application.GANApplication`|generative adversarial network|[gan_application.py](#../niftynet/application/gan_application.py)|
+
+Shortcuts are created for these application:
+
+|Shortcut| Expanded command|
+|---|---|
+|`net_segment`|`net_run -a niftynet.application.segmentation_application.SegmentationApplication`|
+|`net_regress`|`net_run -a niftynet.application.regression_application.RegressionApplication`|
+|`net_autoencoder`|`net_run -a niftynet.application.autoencoder_application.AutoencoderApplication`|
+|`net_gan`|`net_run -a niftynet.application.gan_application.GANApplication`|
+
+#### Arguments overriding
+In the case of quickly adjusting only a few options in the configuration file, creating a separate file is sometimes tedious.
+
+To make it more accessible, `net_run` command also accepts parameters specification in the form of `--<name> <value>` or `--<name>=<value>`.
+When these are used, `value` will override the corresponding value of `name` defined both by system default and configuration file.
+
+The following sections describes content of a configuration file `<path_to/config.ini>`.
+
+## Required and optional configuration sections
 The configuration file currently adopts the INI file format, and is parsed by
 [`configparser`](https://docs.python.org/3/library/configparser.html).
 The file consists of multiple sections of `name=value` elements.
@@ -35,9 +67,9 @@ All files should have two sections:
 - [`[SYSTEM]`](#system)
 - [`[NETWORK]`](#network)
 
-If the `train` is specified, then a [`[TRAINING]`](#training) section is required.
+If  `train` action is specified, then a [`[TRAINING]`](#training) section is required.
 
-If the `inference` is specified, then an [`[INFERENCE]`](#inference) section is required.
+If  `inference` action is specified, then an [`[INFERENCE]`](#inference) section is required.
 
 Additionally, an application specific section is required for each application
 (Please find further comments on creating customised parser [here](../niftynet/utilities/user_parameters_custom.py)):
@@ -55,6 +87,7 @@ The following sections specify parameters (`<name> = <value>` pairs) available w
 ## Input data source section
 |Params.| Type |Example|Default|
 |---|---|---|---|
+|[csv_file](#csv_file)|String|`csv_file=file_list.csv`|`''`|
 |[path_to_search](#path_to_search)|String|`path_to_search=my_data/fold_1`|NiftyNet home folder|
 |[filename_contain](#filename_contain)|String or string array|`filename_contain=foo, bar`|`''`|
 |[filename_not_contain](#filename_not_contain)|String or string array|`filename_not_contain=foo`|`''`|
@@ -62,6 +95,15 @@ The following sections specify parameters (`<name> = <value>` pairs) available w
 |[pixdim](#pixdim)|Float array|`pixdim=1.2, 1.2, 1.2`|`''`|
 |[axcodes](#axcodes)|String array|`axcodes=L, P, S`|`''`|
 |[spatial_window_size](#spatial_window_size)|Integer array|`spatial_window_size=64, 64, 64`|`''`|
+
+###### `csv_file`
+A file path to a list of input images.
+If the file exists, input image names will be loaded from the file;
+the filename based input image search will be disabled;
+[path_to_search](#path_to_search), [filename_contain](#filename_contain), and [filename_not_contain](#filename_not_contain)
+will be ignored.
+If this parameter is left blank or the file doesn't exist,
+input image search will be enabled, and the matched filenames will be written to this file path.
 
 ###### `path_to_search`
 Single or multiple folders to search for input images.
@@ -165,7 +207,7 @@ If the string is a relative path, NiftyNet interpret this as relative to `model_
 A network class from [niftynet/network](../niftynet/network) or from user specified module string.
 NiftyNet tries to import this string as a module specification.
 E.g. Setting it to `niftynet.network.toynet.ToyNet` will import the `ToyNet` class defined in `niftynet/network/toynet.py`
-(The relevant module path must be valid Python path).
+(The relevant module path must be a valid Python path).
 There are also [some shortcuts](../niftynet/engine/application_factory.py) for NiftyNet's default network modules.
 
 ######  `activation_function`
@@ -210,8 +252,8 @@ Type of sampler used to generate image windows from each image volume:
 Integer specifies window buffer size used when sampling image windows from image volumes.
 Image window samplers fill the buffer and networks read the buffer.
 Because the network reads [batch_size](#batch_size) windows at each iteration,
-this value is set to at least `batch_size * 2.5` to allow for a possible randomised buffer.
-i.e. queue_length is `max(queue_length, round(batch_size * 2.5))`.
+this value is set to at least `batch_size * 2.5` to allow for a possible randomised buffer,
+i.e. `max(queue_length, round(batch_size * 2.5))`.
 
 
 ##### Volume-normalisation
@@ -323,7 +365,7 @@ will be treated as the whole dataset, and partitioned into subsets of training, 
 according to [exclude_fraction_for_validation](#exclude_fraction_for_validation) and
 [exclude_fraction_for_inference](#exclude_fraction_for_inference).
 
-A csv table randomly maps each file name to one of the stages `{'training', 'validation', 'inference'}` will be written to
+A CSV table randomly maps each file name to one of the stages `{'training', 'validation', 'inference'}` will be written to
 [dataset_split_file](#dataset_split_file). This file will be created when it's at the beginning of training (`starting_iter=0`) and
 the file doesn't exist. If a new random partition is required, please remove the existing [dataset_split_file](#dataset_split_file).
 
@@ -383,7 +425,7 @@ the resolution of the output volume can be different from the input image.
 That is, given an input of `NxNxN` voxel volume, the network generates
 a `DxDxD`-voxel output, where `0 < D < N`.
 
-This config section is design for the process of sampling `NxNxN` windows from
+This configuration section is design for the process of sampling `NxNxN` windows from
 given image volumes, and aggregate the network-generated `DxDxD` windows to output
 volumes.
 
