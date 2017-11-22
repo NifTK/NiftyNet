@@ -140,7 +140,7 @@ class IterationMessage(object):
     @property
     def is_validation(self):
         """
-        returns a boolean value indicating if the phase is validaiton
+        returns a boolean value indicating if the phase is validation
         """
         return self.phase == VALID
 

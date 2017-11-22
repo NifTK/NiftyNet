@@ -188,9 +188,7 @@ class InputBatchQueueRunner(object):
         [batch, x, y, z, time, modality]
         by removing all dims along which length is one.
 
-        :param as_numpy_array: a boolean value indicating numpy outputs
-        :return: a tensorflow graph op if not as_numpy_array,
-                 otherwise returns a numpy array
+        :return: a tensorflow graph op
         """
         assert all([thread.isAlive() for thread in self._threads]), \
             "input sampling threads are not running"
@@ -214,7 +212,7 @@ class InputBatchQueueRunner(object):
         starts sampling threads to fill the queue.
 
         Note that the threads will be blocked if there's no
-        dequeue_op runnning, or number of samples is less
+        dequeue_op running, or number of samples is less
         than the dequeue batch size.
 
         :param session: a tensorflow session

@@ -143,7 +143,7 @@ def save_scans_BRATS17(pat_name, img_data, seg_data=None):
         mod_data_nii = nibabel.Nifti1Image(img_data[:, :, :, mod_i],
                                            OUTPUT_AFFINE)
         nibabel.save(mod_data_nii, save_path)
-    print('saved to {}'.format(save_path))
+    print('saved to {}'.format(OUTPUT_path))
     if seg_data is not None:
         save_name = '%s_%s.nii.gz' % (pat_name, save_seg_name)
         save_path = os.path.join(OUTPUT_path, save_name)
@@ -151,7 +151,7 @@ def save_scans_BRATS17(pat_name, img_data, seg_data=None):
         nibabel.save(seg_data_nii, save_path)
 
 
-def main(pat_category_list=['HGG', 'LGG'], dataset='BRATS17', crop=False):
+def main(pat_category_list=('HGG', 'LGG'), dataset='BRATS17', crop=False):
     for pat_cat in pat_category_list:
         pat_ID = 0
         for pat_folder_name in os.listdir(os.path.join(BRATS_path, pat_cat)):
@@ -189,8 +189,8 @@ def main(pat_category_list=['HGG', 'LGG'], dataset='BRATS17', crop=False):
 if __name__ == '__main__':
     if not os.path.exists(BRATS_path):
         raise ValueError(
-            'please change "BRATS_path" in this script to ' \
-            'the BRATS17 challenge dataset. ' \
+            'please change "BRATS_path" in this script to '
+            'the BRATS17 challenge dataset. '
             'Dataset not found: {}'.format(BRATS_path))
     if not os.path.exists(OUTPUT_path):
         os.makedirs(OUTPUT_path)

@@ -2,6 +2,7 @@
 from __future__ import absolute_import, print_function
 
 import argparse
+
 import tensorflow as tf
 
 from niftynet.utilities.user_parameters_default import *
@@ -17,6 +18,7 @@ class TestUserParameters(tf.test.TestCase):
 
         for opt in test_parser._actions:
             print(opt_to_string(opt))
+
 
 def opt_to_string(opt):
     summary = 'opt: [{}]\n'.format(opt.dest)

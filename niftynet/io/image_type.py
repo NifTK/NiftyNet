@@ -539,8 +539,8 @@ class SpatialImage5D(SpatialImage3D):
         if self.original_pixdim[idx] and self.output_pixdim[idx]:
             assert len(self._original_pixdim[idx]) == \
                    len(self.output_pixdim[idx]), \
-                "wrong pixdim format original {} output {}".format(
-                    self._original_pixdim[idx], self.output_pixdim[idx])
+                   "wrong pixdim format original {} output {}".format(
+                       self._original_pixdim[idx], self.output_pixdim[idx])
             # verbose: warning when interpolate_order>1 for integers
             output_image = []
             for t_pt in range(image_data.shape[3]):

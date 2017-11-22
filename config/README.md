@@ -106,7 +106,7 @@ If the file exists, input image name list will be loaded from the file;
 the filename based input image search will be disabled;
 [path_to_search](#path_to_search), [filename_contain](#filename_contain), and [filename_not_contain](#filename_not_contain)
 will be ignored.
-If this parameter is left blank or the file doesn't exist,
+If this parameter is left blank or the file does not exist,
 input image search will be enabled, and the matched filenames will be written to this file path.
 
 ###### `path_to_search`
@@ -384,7 +384,7 @@ according to [exclude_fraction_for_validation](#exclude_fraction_for_validation)
 
 A CSV table randomly maps each file name to one of the stages `{'Training', 'Validation', 'Inference'}` will be written to
 [dataset_split_file](#dataset_split_file). This file will be created when it's at the beginning of training (`starting_iter=0`) and
-the file doesn't exist. If a new random partition is required, please remove the existing [dataset_split_file](#dataset_split_file).
+the file does not exist. If a new random partition is required, please remove the existing [dataset_split_file](#dataset_split_file).
 To exclude particular subjects or adjust the randomly generated partition, 
 the [dataset_split_file](#dataset_split_file) can be edited manually.
 
@@ -393,7 +393,7 @@ and will not change the network parameters.  The `is_training` parameter of the 
 is set to `True` during validation, as a result layers with different behaviours in training and inference
 (such as dropout and batch normalisation) uses the training behaviour.
 
-_Durning inference, if a [dataset_split_file](#dataset_split_file) is available, only image files in
+_During inference, if a [dataset_split_file](#dataset_split_file) is available, only image files in
 the `Inference` phase will be used,
 otherwise inference will process all image files defined by [input specifications](#input-data-source-section)._
 

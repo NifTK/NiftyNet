@@ -4,7 +4,7 @@ https://promise12.grand-challenge.org/
 
 The outcome should be three folders named:
 TrainingData_Part1, TrainingData_Part2, TrainingData_Part3
-each folder contains mulitple '.mhd' and '.raw' files
+each folder contains multiple '.mhd' and '.raw' files
 """
 import os
 import zipfile

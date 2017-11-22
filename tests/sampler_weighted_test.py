@@ -158,7 +158,7 @@ class WeightedSamplerTest(tf.test.TestCase):
 
 
 class RandomCoordinatesTest(tf.test.TestCase):
-    def test_coodinates(self):
+    def test_coordinates(self):
         coords = weighted_spatial_coordinates(
             subject_id=1,
             data={'sampler': np.random.rand(41, 42, 42, 1, 1)},
@@ -180,7 +180,7 @@ class RandomCoordinatesTest(tf.test.TestCase):
             (coords['image'][:, 6] + coords['image'][:, 3]),
             (coords['label'][:, 6] + coords['label'][:, 3]), atol=1.0)
 
-    def test_25D_coodinates(self):
+    def test_25D_coordinates(self):
         coords = weighted_spatial_coordinates(
             subject_id=1,
             data={'sampler': np.random.rand(42, 42, 42, 1, 1)},
@@ -202,7 +202,7 @@ class RandomCoordinatesTest(tf.test.TestCase):
             (coords['image'][:, 6] + coords['image'][:, 3]),
             (coords['label'][:, 6] + coords['label'][:, 3]), atol=1.0)
 
-    def test_2D_coodinates(self):
+    def test_2D_coordinates(self):
         coords = weighted_spatial_coordinates(
             subject_id=1,
             data={'sampler': np.random.rand(42, 42, 42, 1, 1)},
@@ -224,7 +224,7 @@ class RandomCoordinatesTest(tf.test.TestCase):
             (coords['image'][:, 6] + coords['image'][:, 3]),
             (coords['label'][:, 6] + coords['label'][:, 3]), atol=1.0)
 
-    def test_ill_coodinates(self):
+    def test_ill_coordinates(self):
         with self.assertRaisesRegexp(IndexError, ""):
             coords = weighted_spatial_coordinates(
                 subject_id=1,

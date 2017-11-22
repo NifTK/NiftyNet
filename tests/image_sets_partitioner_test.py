@@ -91,9 +91,8 @@ class ImageSetsPartitionerNewPartition(tf.test.TestCase):
         self.assertTrue(test_partitioner.has_validation)
 
 
-
 class ImageSetsPartitionerIllPartition(tf.test.TestCase):
-    def test_incompatble_partition_file(self):
+    def test_incompatible_partition_file(self):
         if not os.path.isfile(partition_output):
             return
         self._reset_partition_file()

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
+
 import os
+
 import numpy as np
 import tensorflow as tf
 
@@ -23,7 +25,8 @@ def get_initialised_driver(starting_iter=0):
             num_gpus=4,
             cuda_devices='6',
             model_dir=os.path.join('.', 'testing_data'),
-            dataset_split_file=os.path.join('.', 'testing_data', 'testtoyapp.csv')),
+            dataset_split_file=os.path.join(
+                '.', 'testing_data', 'testtoyapp.csv')),
         'NETWORK': ParserNamespace(
             batch_size=20,
             name='tests.toy_application.TinyNet'),
@@ -99,7 +102,7 @@ class ApplicationDriverTest(tf.test.TestCase):
             var_1 = sess.run(test_tensor)
             square_diff = np.sum(np.abs(var_0 - var_1))
             self.assertGreater(
-                square_diff, 0.0, 'train_op doesnot change model')
+                square_diff, 0.0, 'train_op does not change model')
             test_driver.app.stop()
 
     def test_multi_device_inputs(self):
@@ -180,9 +183,9 @@ class ApplicationDriverTest(tf.test.TestCase):
             with self.assertRaisesRegexp(
                     tf.errors.FailedPreconditionError,
                     'uninitialized value'):
-                before_init = sess.run(test_tensor)
+                sess.run(test_tensor)
             test_driver._rand_init_or_restore_vars(sess)
-            after_init = sess.run(test_tensor)
+            sess.run(test_tensor)
             _ = sess.run(tf.global_variables())
 
     def test_from_latest_file_initialisation(self):

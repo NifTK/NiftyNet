@@ -1,9 +1,10 @@
-from unittest import (TestCase, skipUnless)
-from os.path import (expanduser, join, isdir, isfile)
-from os import (remove, makedirs, environ)
-from shutil import rmtree
 from glob import glob
+from os import (remove, makedirs, environ)
+from os.path import (expanduser, join, isdir, isfile)
 from os.path import getmtime
+from shutil import rmtree
+from unittest import (TestCase, skipUnless)
+
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 
 
@@ -42,7 +43,8 @@ class NiftyNetGlobalConfigTest(TestCase):
         }
 
     def setUp(self):
-        NiftyNetGlobalConfigTest.remove_path(NiftyNetGlobalConfigTest.config_home)
+        NiftyNetGlobalConfigTest.remove_path(
+            NiftyNetGlobalConfigTest.config_home)
         NiftyNetGlobalConfigTest.remove_path(
             expanduser(NiftyNetGlobalConfigTest.default_config_opts['home'])
         )
@@ -102,8 +104,9 @@ class NiftyNetGlobalConfigTest(TestCase):
                          NiftyNetGlobalConfigTest.config_home)
 
         # check if incorrect file was backed up
-        found_files = glob(join(NiftyNetGlobalConfigTest.config_home,
-                                NiftyNetGlobalConfigTest.typify('config-backup-*')))
+        found_files = glob(
+            join(NiftyNetGlobalConfigTest.config_home,
+                 NiftyNetGlobalConfigTest.typify('config-backup-*')))
         self.assertTrue(len(found_files) == 1)
         with open(found_files[0], 'r') as backup_file:
             self.assertEqual(backup_file.read(), incorrect_config)
@@ -114,7 +117,8 @@ class NiftyNetGlobalConfigTest(TestCase):
     @skipUnless('GLOBAL_CONFIG_TEST_nenhc' in environ,
                 'set GLOBAL_CONFIG_TEST_nenhc to run')
     def test_non_existing_niftynet_home_created(self):
-        niftynet_home = expanduser(NiftyNetGlobalConfigTest.default_config_opts['home'])
+        niftynet_home = expanduser(
+            NiftyNetGlobalConfigTest.default_config_opts['home'])
         NiftyNetGlobalConfigTest.remove_path(niftynet_home)
         self.assertFalse(isdir(niftynet_home))
         niftynet_ext = join(
@@ -134,7 +138,8 @@ class NiftyNetGlobalConfigTest(TestCase):
     @skipUnless('GLOBAL_CONFIG_TEST_enhnt' in environ,
                 'set GLOBAL_CONFIG_TEST_enhnt to run')
     def test_existing_niftynet_home_not_touched(self):
-        niftynet_home = expanduser(NiftyNetGlobalConfigTest.default_config_opts['home'])
+        niftynet_home = expanduser(
+            NiftyNetGlobalConfigTest.default_config_opts['home'])
         makedirs(niftynet_home)
         niftynet_ext = join(
             niftynet_home, NiftyNetGlobalConfigTest.default_config_opts['ext']

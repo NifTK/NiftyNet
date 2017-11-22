@@ -182,7 +182,7 @@ class CoordinatesTest(tf.test.TestCase):
             win_sizes={'image': (63, 63, 40),
                        'label': (42, 41, 33)},
             border_size=(2, 3, 4))
-        # first dim cooresponds to subject id
+        # first dim corresponds to subject id
         expected_image = np.array(
             [[1, 0, 0, 0, 63, 63, 40],
              [1, 0, 0, 24, 63, 63, 64],
@@ -215,7 +215,7 @@ class CoordinatesTest(tf.test.TestCase):
             win_sizes={'image': (63, 63, 1),
                        'label': (30, 32, 1)},
             border_size=(2, 3, 4))
-        # first dim cooresponds to subject id
+        # first dim corresponds to subject id
         expected_image = np.array(
             [[1, 0, 0, 0, 63, 63, 1],
              [1, 1, 0, 0, 64, 63, 1],

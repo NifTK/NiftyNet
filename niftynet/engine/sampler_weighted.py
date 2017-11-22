@@ -120,10 +120,10 @@ def weighted_spatial_coordinates(subject_id,
 
     middle_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
     for sample in range(0, n_samples):
-        # get n_sample from the comulative histogram, spaced by 1/n_samples,
+        # get n_sample from the cumulative histogram, spaced by 1/n_samples,
         # plus a random perturbation to give us a stochastic sampler
         sample_ratio = 1 - (np.random.random() + sample) / (n_samples + 1)
-        # find the index where the comulative it above the sample threshold
+        # find the index where the cumulative it above the sample threshold
         #     import pdb; pdb.set_trace()
         try:
             sample_index = np.argmax(sorted_data >= sample_ratio)
@@ -131,7 +131,7 @@ def weighted_spatial_coordinates(subject_id,
             tf.logging.fatal("unable to choose sampling window based on "
                              "the current frequency map.")
             raise
-        # inver the sample index to the pre-sorted index
+        # invert the sample index to the pre-sorted index
         inverted_sample_index = sorted_indexes[sample_index]
         # get the x,y,z coordinates on the cropped_map
         # (note: we need to re-shift it later due to the crop)

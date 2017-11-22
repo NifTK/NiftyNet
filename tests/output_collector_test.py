@@ -4,8 +4,8 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.engine.application_variables import NETWORK_OUTPUT
-from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.application_variables import OutputsCollector
+from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.network.toynet import ToyNet
 
 
@@ -38,7 +38,7 @@ class OutputCollectorTest(tf.test.TestCase):
         self.assertDictEqual(collector.output_vars,
                              {'bar': bar})
 
-    def test_add_to_mutiple_device(self):
+    def test_add_to_multiple_device(self):
         n_device = 4
         collector = OutputsCollector(n_devices=n_device)
         for idx in range(n_device):
@@ -81,7 +81,7 @@ class OutputCollectorTest(tf.test.TestCase):
         self.assertDictEqual(collector.output_vars,
                              {'image': image, 'foo': foo})
 
-    def test_netout_mutiple_device(self):
+    def test_netout_multiple_device(self):
         n_device = 4
         collector = OutputsCollector(n_devices=n_device)
         for idx in range(n_device):
@@ -109,7 +109,6 @@ class OutputCollectorTest(tf.test.TestCase):
         collector.finalise_output_op()
         self.assertIsInstance(collector.output_vars['bar'], tf.Tensor)
 
-
     def test_tf_summary_single_device(self):
         n_device = 1
         collector = OutputsCollector(n_devices=n_device)
@@ -128,7 +127,7 @@ class OutputCollectorTest(tf.test.TestCase):
         self.assertDictEqual(collector.summary_vars,
                              {'image': image, 'foo': foo})
 
-    def test_tf_summary_mutiple_device(self):
+    def test_tf_summary_multiple_device(self):
         n_device = 4
         collector = OutputsCollector(n_devices=n_device)
         for idx in range(n_device):
@@ -171,6 +170,7 @@ class OutputCollectorTest(tf.test.TestCase):
                                         average_over_devices=True)
             collector.add_to_collection(name=foo, var=bar,
                                         average_over_devices=True)
+
 
 if __name__ == "__main__":
     tf.test.main()

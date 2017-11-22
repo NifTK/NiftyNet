@@ -68,7 +68,7 @@ class ImageSetsPartitioner(object):
         data_param: corresponding to all config sections
         new_partition: bool value indicating whether to generate new
                        partition ids and overwrite csv file
-                       (this class will write parition file iff new_partition)
+                       (this class will write partition file iff new_partition)
         data_split_file: location of the partition id file
         ratios: a tuple/list with two elements:
                (fraction of the validation set,
@@ -122,7 +122,7 @@ class ImageSetsPartitioner(object):
         try:
             look_up_operations(phase, SUPPORTED_PHASES)
         except ValueError:
-            tf.logging.fatal('Unknown phase arugment.')
+            tf.logging.fatal('Unknown phase argument.')
             raise
         for name in section_names:
             try:
@@ -275,7 +275,7 @@ class ImageSetsPartitioner(object):
         Label each subject as one of the 'TRAIN', 'VALID', 'INFER',
         use self.ratios to compute the size of each set.
         the results will be written to self.data_split_file if overwrite
-        otherwise it trys to read partition labels from it.
+        otherwise it tries to read partition labels from it.
 
         This function sets self._partition_ids
         """

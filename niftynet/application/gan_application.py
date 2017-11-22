@@ -126,7 +126,7 @@ class GANApplication(BaseApplication):
                 batch_size=self.net_param.batch_size,
                 n_interpolations=self.gan_param.n_interpolations,
                 repeat=None,
-                queue_length=self.net_param.queue_length) for reader in
+                queue_length=self.net_param.queue_length) for _ in
                 self.readers])
             # repeat each resized image n times, so that each
             # image matches one random vector,

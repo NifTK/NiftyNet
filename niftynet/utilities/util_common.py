@@ -17,7 +17,7 @@ from six import string_types
 def list_depth_count(input_list):
     """
     This function count the maximum depth of a nested list (recursively)
-    This is used to check compatibility of users' input and sysmte API
+    This is used to check compatibility of users' input and system API
     only to be used for list or tuple
     """
     if not isinstance(input_list, (list, tuple)):
@@ -47,9 +47,9 @@ def average_gradients(multi_device_gradients):
         averaged_grads = __average_grads(multi_device_gradients)
     else:
         tf.logging.fatal(
-            "The list of gradients are nested in an unsusal way."
+            "The list of gradients are nested in an unusual way."
             "application's gradient is not compatible with app driver."
-            "Please check the return value of grapdients_collector "
+            "Please check the return value of gradients_collector "
             "in _connect_data_and_network() of the application")
         raise RuntimeError
     return averaged_grads
@@ -65,7 +65,7 @@ def __average_grads(tower_grads):
     ave_grads = []
     for grad_and_vars in zip(*tower_grads):
         grads = [tf.expand_dims(g, 0)
-                 for g, _ in grad_and_vars if not g is None]
+                 for g, _ in grad_and_vars if g is not None]
         if not grads:
             continue
         grad = tf.concat(grads, 0)

@@ -178,7 +178,7 @@ class RandomCoordinatesTest(tf.test.TestCase):
             (coords['image'][:, 6] + coords['image'][:, 3]),
             (coords['label'][:, 6] + coords['label'][:, 3]), atol=1.0)
 
-    def test_25D_coodinates(self):
+    def test_25D_coordinates(self):
         coords = rand_spatial_coordinates(
             subject_id=1,
             data={},
@@ -200,7 +200,7 @@ class RandomCoordinatesTest(tf.test.TestCase):
             (coords['image'][:, 6] + coords['image'][:, 3]),
             (coords['label'][:, 6] + coords['label'][:, 3]), atol=1.0)
 
-    def test_2D_coodinates(self):
+    def test_2D_coordinates(self):
         coords = rand_spatial_coordinates(
             subject_id=1,
             data={},
@@ -222,7 +222,7 @@ class RandomCoordinatesTest(tf.test.TestCase):
             (coords['image'][:, 6] + coords['image'][:, 3]),
             (coords['label'][:, 6] + coords['label'][:, 3]), atol=1.0)
 
-    def test_ill_coodinates(self):
+    def test_ill_coordinates(self):
         with self.assertRaisesRegexp(IndexError, ""):
             coords = rand_spatial_coordinates(
                 subject_id=1,

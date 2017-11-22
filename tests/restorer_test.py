@@ -1,23 +1,21 @@
 from __future__ import absolute_import, print_function
 
-import unittest
+import os
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
-import tokenize, os, itertools
 from niftynet.engine.application_variables \
     import RESTORABLE, global_vars_init_or_restore
-
 from niftynet.layer.convolution import ConvolutionalLayer
 
 
-#@unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class RestorerTest(tf.test.TestCase):
     def make_checkpoint(self, checkpoint_name, definition):
         scopes = {}
         tf.reset_default_graph()
-        [tf.Variable(definition[k], name=k, dtype=np.float32) for k in definition]
+        [tf.Variable(definition[k], name=k, dtype=np.float32)
+         for k in definition]
         with tf.Session() as sess:
             saver = tf.train.Saver()
             sess.run(tf.global_variables_initializer())
@@ -51,7 +49,10 @@ class RestorerTest(tf.test.TestCase):
         all_vars = tf.global_variables()
         with self.test_session() as sess:
             sess.run(init_op)
-            getvar = lambda x: [v for v in all_vars if v.name == x][0]
+
+            def getvar(x):
+                return [v for v in all_vars if v.name == x][0]
+
             foo_w_var = getvar(block1.layer_scope().name + '/conv_/w:0')
             bar_w_var = getvar(block2.layer_scope().name + '/conv_/w:0')
             foo2_w_var = getvar(block3.layer_scope().name + '/conv_/w:0')
@@ -72,7 +73,10 @@ class RestorerTest(tf.test.TestCase):
         all_vars = tf.global_variables()
         with self.test_session() as sess:
             sess.run(init_op)
-            getvar = lambda x: [v for v in all_vars if v.name == x][0]
+
+            def getvar(x):
+                return [v for v in all_vars if v.name == x][0]
+
             bar_w_var = getvar(block1.layer_scope().name + '/conv_/w:0')
             [bar_w] = sess.run([bar_w_var])
             self.assertAllClose(bar_w, np.ones([3, 3, 1, 4]))

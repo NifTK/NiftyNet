@@ -62,7 +62,6 @@ class ToyApplication(BaseApplication):
         noise = tf.random_uniform(tf.shape(features), 0.0, 1.0)
         real_logits, fake_logits, fake_features = self.net(features, noise)
 
-        batch_size = tf.shape(real_logits)[0]
         d_loss = tf.reduce_mean(real_logits - fake_logits)
         g_loss = tf.reduce_mean(fake_logits)
 

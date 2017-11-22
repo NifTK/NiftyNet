@@ -154,8 +154,8 @@ def do_reorientation(data_array, init_axcodes, final_axcodes):
     """
     Performs the reorientation (changing order of axes)
     :param data_array: Array to reorient
-    :param ornt_init: Initial orientation
-    :param ornt_fin: Target orientation
+    :param init_axcodes: Initial orientation
+    :param final_axcodes: Target orientation
     :return data_reoriented: New data array in its reoriented form
     """
     ornt_init = nib.orientations.axcodes2ornt(init_axcodes)
@@ -396,7 +396,7 @@ def resolve_module_dir(module_dir_str, create_new=False):
                 raise
         else:
             with os.fdopen(file_, 'w') as file_object:
-                file_object.write("# Created automatically")
+                file_object.write("# Created automatically\n")
         return folder_path
     else:
         raise ValueError(
@@ -478,10 +478,10 @@ def _image3_animated_gif(tag, ims):
 def image3(name,
            tensor,
            max_outputs=3,
-           collections=[tf.GraphKeys.SUMMARIES],
-           animation_axes=[1],
-           image_axes=[2, 3],
-           other_indices={}):
+           collections=(tf.GraphKeys.SUMMARIES,),
+           animation_axes=(1,),
+           image_axes=(2, 3),
+           other_indices=None):
     """ Summary for higher dimensional images
     Parameters:
     name: string name for the summary
@@ -496,6 +496,8 @@ def image3(name,
         suffix = '/image'
     else:
         suffix = '/image/{}'
+    if other_indices is None:
+        other_indices = {}
     axis_order = [0] + animation_axes + image_axes
     # slice tensor
     slicing = []
@@ -529,21 +531,21 @@ def image3(name,
 def image3_sagittal(name,
                     tensor,
                     max_outputs=3,
-                    collections=[tf.GraphKeys.SUMMARIES]):
+                    collections=(tf.GraphKeys.SUMMARIES,)):
     return image3(name, tensor, max_outputs, collections, [1], [2, 3])
 
 
 def image3_coronal(name,
                    tensor,
                    max_outputs=3,
-                   collections=[tf.GraphKeys.SUMMARIES]):
+                   collections=(tf.GraphKeys.SUMMARIES,)):
     return image3(name, tensor, max_outputs, collections, [2], [1, 3])
 
 
 def image3_axial(name,
                  tensor,
                  max_outputs=3,
-                 collections=[tf.GraphKeys.SUMMARIES]):
+                 collections=(tf.GraphKeys.SUMMARIES,)):
     return image3(name, tensor, max_outputs, collections, [3], [1, 2])
 
 

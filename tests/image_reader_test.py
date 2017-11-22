@@ -13,7 +13,7 @@ from niftynet.layer.discrete_label_normalisation import \
 from niftynet.layer.pad import PadLayer
 from tests.test_util import ParserNamespace
 
-# test multiple modalties
+# test multiple modalities
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
         csv_file=os.path.join('testing_data', 'T1reader.csv'),

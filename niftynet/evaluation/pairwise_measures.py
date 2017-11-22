@@ -9,7 +9,7 @@ from niftynet.utilities.util_common import MorphologyOps, CacheFunctionOutput
 
 class PairwiseMeasures(object):
     def __init__(self, seg_img, ref_img,
-                 measures=None, num_neighbors=8, pixdim=[1, 1, 1],
+                 measures=None, num_neighbors=8, pixdim=(1, 1, 1),
                  empty=False, list_labels=None):
 
         self.m_dict = {

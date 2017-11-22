@@ -137,7 +137,7 @@ def match_second_degree(name_list1, name_list2):
 
 
 # From a list of list of names and a list of list of files that are
-# associated, find the name correspondance and therefore the files associations
+# associated, find the name correspondence and therefore the files associations
 def join_subject_id_and_filename_list(name_list, list_files):
     """
     From the list of list of names and the list of list of files

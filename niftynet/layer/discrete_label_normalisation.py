@@ -89,11 +89,11 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
     def is_ready(self):
         mapping_from = self.label_map.get(self.key[0], None)
         if mapping_from is None:
-            #tf.logging.warning('could not find mapping key %s', self.key[0])
+            # tf.logging.warning('could not find mapping key %s', self.key[0])
             return False
         mapping_to = self.label_map.get(self.key[1], None)
         if mapping_to is None:
-            #tf.logging.warning('could not find mapping key %s', self.key[1])
+            # tf.logging.warning('could not find mapping key %s', self.key[1])
             return False
         assert len(mapping_from) == len(mapping_to), \
             "mapping is not one-to-one, " \
@@ -139,7 +139,7 @@ def find_set_of_labels(image_list, field, output_key):
     label_set = list(label_set)
     label_set.sort()
     try:
-        mapping_from_to = {}
+        mapping_from_to = dict()
         mapping_from_to[output_key[0]] = tuple(label_set)
         mapping_from_to[output_key[1]] = tuple(range(0, len(label_set)))
     except (IndexError, ValueError):

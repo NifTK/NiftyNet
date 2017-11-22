@@ -21,7 +21,7 @@ class RandomRotationLayer(RandomisedLayer):
         self.rotation_angle_y = None
         self.rotation_angle_z = None
 
-    def init_uniform_angle(self, rotation_angle=(-10.0,10.0)):
+    def init_uniform_angle(self, rotation_angle=(-10.0, 10.0)):
         assert rotation_angle[0] < rotation_angle[1]
         self.min_angle = float(rotation_angle[0])
         self.max_angle = float(rotation_angle[1])
@@ -145,7 +145,7 @@ class RandomRotationLayer(RandomisedLayer):
         #            for mod_i in range(inputs.data.shape[-2]):
         #                inputs.data[..., mod_i, t] = \
         #                    self._apply_transformation_3d(
-        #                        inputs.data[..., mod_i, t], inputs.interp_order)
+        #                      inputs.data[..., mod_i, t], inputs.interp_order)
         #    if inputs.interp_order > 0:
         #        inputs.data = inputs.data.astype(np.float)
         #    elif inputs.interp_order == 0:

@@ -26,7 +26,7 @@ NP_TF_DTYPES = {'i': tf.float32,
 
 def infer_tf_dtypes(image_array):
     """
-    Choosing a suitable tf dttype based on the dtype of input numpy array.
+    Choosing a suitable tf dtype based on the dtype of input numpy array.
     """
     return NP_TF_DTYPES.get(image_array.dtype[0].kind, tf.float32)
 
@@ -207,7 +207,7 @@ class ImageReader(Layer):
     @property
     def tf_dtypes(self):
         """
-        Infer input data datatypes in TF
+        Infer input data dtypes in TF
         (using the first image in the file list).
         """
         if not self.output_list:

@@ -51,7 +51,7 @@ class Layer(object):
 class TrainableLayer(Layer):
     """
     Extends the Layer object to have trainable parameters,
-    adding intiailizers and regularizers.
+    adding initializers and regularizers.
     """
 
     def __init__(self, name='trainable_op'):

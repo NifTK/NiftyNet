@@ -12,7 +12,7 @@ TARGET_FILE = os.path.join('testing_data', 'test_splitting.csv')
 
 
 def _generate_base_params():
-    # initialise compulsory params that are irelevant
+    # initialise compulsory params that are irrelevant
     # to this unit test
     user_param = dict()
     user_param['SYSTEM'] = ParserNamespace(

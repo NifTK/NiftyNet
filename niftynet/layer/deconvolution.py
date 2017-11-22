@@ -34,7 +34,7 @@ def infer_output_dims(input_dims, strides, kernel_sizes, padding):
     """
         infer output dims from list,
         the dim can be different in different directions.
-        Note: dilation is not considerted here.
+        Note: dilation is not considered here.
     """
     assert len(input_dims) == len(strides)
     assert len(input_dims) == len(kernel_sizes)

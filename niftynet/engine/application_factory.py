@@ -139,16 +139,16 @@ def select_module(module_name, type_str, lookup_table):
 
     :param module_name: string that matches the keys defined in lookup_table
         or an absolute class name: module.name.ClassName
-    :type_str: type of the module (currently used for better error display)
-    :lookup_table: defines a set of shorthands for absolute class name
+    :param type_str: type of the module (used for better error display)
+    :param lookup_table: defines a set of shorthands for absolute class name
     """
     module_name = '{}'.format(module_name)
     if module_name in lookup_table:
         module_name = lookup_table[module_name]
-    module, class_name = None, None
+    module_str, class_name = None, None
     try:
-        module, class_name = module_name.rsplit('.', 1)
-        the_module = getattr(importlib.import_module(module), class_name)
+        module_str, class_name = module_name.rsplit('.', 1)
+        the_module = getattr(importlib.import_module(module_str), class_name)
         return the_module
     except (AttributeError, ValueError, ImportError) as not_imported:
         # print sys.path
@@ -171,7 +171,7 @@ def select_module(module_name, type_str, lookup_table):
                 tf.logging.fatal(err)
                 raise ValueError(err)
             err = '{}: Could not import object' \
-                  '"{}" from "{}"'.format(type_str, class_name, module)
+                  '"{}" from "{}"'.format(type_str, class_name, module_str)
             tf.logging.fatal(err)
             raise ValueError(err)
 

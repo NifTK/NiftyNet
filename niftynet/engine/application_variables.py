@@ -69,7 +69,7 @@ class GradientsCollector(object):
     @property
     def gradients(self):
         """
-        this function returns avareged gradient over devices
+        this function returns averaged gradient over devices
         used by application driver
         :return: averaged gradients over devices
         """
@@ -143,7 +143,7 @@ class OutputsCollector(object):
                           collection=CONSOLE,
                           summary_type='scalar'):
         """
-        add tf.Tensors to be evaulated to dictionary
+        add tf.Tensors to be evaluated to dictionary
         The dictionaries will be retrieved and evaluated
         by application driver in the train/infer loops
 
@@ -170,7 +170,7 @@ class OutputsCollector(object):
 
     def variables(self, collection=CONSOLE):
         """
-        get tf.Tensors to be evaulated by tf.Session().run()
+        get tf.Tensors to be evaluated by tf.Session().run()
         :param collection: in choices of
             [CONSOLE, TF_SUMMARIES, NETWORK_OUTPUT]
         :return: a variable dictionary
@@ -200,7 +200,7 @@ class OutputsCollector(object):
 
     def _add_to_network_output(self, var, name, average_over_devices=False):
         """
-        add a variable to be decoded in application.interprete_output
+        add a variable to be decoded in application.interpret_output
         """
         self._add_to_dict(self.output_vars, var, name, average_over_devices)
 

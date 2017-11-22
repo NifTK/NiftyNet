@@ -390,7 +390,7 @@ class ApplicationDriver(object):
         # outputs to message
         message.current_iter_output = graph_output
 
-        ## update iteration status after the batch process
+        # update iteration status after the batch process
         # self.app.set_iteration_update(message)
 
     def _training_loop(self, sess, loop_status):

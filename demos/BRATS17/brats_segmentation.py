@@ -211,7 +211,6 @@ class BRATSApp(BaseApplication):
                 window_border=self.action_param.border,
                 interp_order=self.action_param.output_interp_order)
 
-
     def interpret_output(self, batch_output):
         if not self.is_training:
             return self.output_decoder.decode_batch(

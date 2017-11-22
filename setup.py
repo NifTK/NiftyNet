@@ -97,7 +97,8 @@ setup(
         'numpy>=1.12',
         'scipy>=0.18',
         'configparser',
-        'pandas'
+        'pandas',
+        'pillow'
     ],
 
     entry_points={
