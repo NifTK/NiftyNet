@@ -113,7 +113,7 @@ def rmse_loss(prediction, ground_truth, weight_map=None):
     """
     if weight_map is not None:
         residuals = tf.subtract(prediction, ground_truth)
-        residuals = tf.pow(residuals, 2)
+        residuals = tf.multiply(residuals, residuals)
         residuals = tf.multiply(residuals, weight_map)
         return tf.sqrt(tf.reduce_mean(residuals) / tf.reduce_mean(weight_map))
     else:
@@ -161,9 +161,3 @@ def huber_loss(prediction, ground_truth, delta=1.0, weight_map=None):
         sum_weights = tf.to_float(tf.size(absolute_residuals))
     sum_loss = tf.reduce_sum(voxelwise_loss)
     return tf.truediv(sum_loss, sum_weights)
-
-
-SUPPORTED_OPS = {"L1Loss": l1_loss,
-                 "L2Loss": l2_loss,
-                 "RMSE": rmse_loss,
-                 "Huber": huber_loss}

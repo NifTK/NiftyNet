@@ -192,7 +192,7 @@ class DriverPartitionerTestNoFile(tf.test.TestCase):
         self.assertTrue(partitioner.has_inference)
         self.assertTrue(partitioner.has_validation)
 
-    def test_training_novalidation(self):
+    def test_training_no_validation(self):
         clear_target()
         user_param = generate_input_params(
             SYSTEM={'action': 'train',

@@ -11,10 +11,10 @@ from niftynet.io.misc_io import set_logger
 from tests.test_util import ParserNamespace
 
 
-def _run_test_application():
-    test_driver = get_initialised_driver()
-    test_driver.run_application()
-    return
+# def _run_test_application():
+#    test_driver = get_initialised_driver()
+#    test_driver.run_application()
+#    return
 
 
 def get_initialised_driver(starting_iter=0):

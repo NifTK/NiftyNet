@@ -157,7 +157,7 @@ def sensitivity_specificity_loss(prediction,
 
     error is the sum of r(specificity part) and (1-r)(sensitivity part)
 
-    :param predition: the logits (before softmax).
+    :param prediction: the logits (before softmax).
     :param ground_truth: segmentation ground_truth.
     :param r: the 'sensitivity ratio'
         (authors suggest values from 0.01-0.10 will have similar effects)
@@ -372,11 +372,3 @@ def dice(prediction, ground_truth, weight_map=None):
     # dice_score.set_shape([n_classes])
     # minimising (1 - dice_coefficients)
     return 1.0 - tf.reduce_mean(dice_score)
-
-
-SUPPORTED_OPS = {"CrossEntropy": cross_entropy,
-                 "Dice": dice,
-                 "Dice_NS": dice_nosquare,
-                 "GDSC": generalised_dice_loss,
-                 "WGDL": generalised_wasserstein_dice_loss,
-                 "SensSpec": sensitivity_specificity_loss}

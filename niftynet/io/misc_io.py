@@ -195,7 +195,7 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     try:
         assert len(pixdim_init) <= len(pixdim_fin)
     except (TypeError, AssertionError):
-        tf.logging.fatal("unkown pixdim format original %s output %s",
+        tf.logging.fatal("unknown pixdim format original %s output %s",
                          pixdim_init, pixdim_fin)
         raise
     to_multiply = np.divide(pixdim_init, pixdim_fin[:len(pixdim_init)])

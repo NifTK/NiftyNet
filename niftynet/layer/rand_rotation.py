@@ -48,39 +48,26 @@ class RandomRotationLayer(RandomisedLayer):
             pass
 
     def _randomise_transformation_3d(self):
+        angle_x = 0.0
+        angle_y = 0.0
+        angle_z = 0.0
         if self.min_angle is None and self.max_angle is None:
             # generate transformation
-            angle_x = 0.0
-            angle_y = 0.0
-            angle_z = 0.0
-            if len(self.rotation_angle_x) == 2:
+            if len(self.rotation_angle_x) >= 2:
                 angle_x = np.random.uniform(
                     self.rotation_angle_x[0],
                     self.rotation_angle_x[1]) * np.pi / 180.0
 
-            if len(self.rotation_angle_y) == 2:
+            if len(self.rotation_angle_y) >= 2:
                 angle_y = np.random.uniform(
                     self.rotation_angle_y[0],
                     self.rotation_angle_y[1]) * np.pi / 180.0
 
-            if len(self.rotation_angle_z) == 2:
+            if len(self.rotation_angle_z) >= 2:
                 angle_z = np.random.uniform(
                     self.rotation_angle_z[0],
                     self.rotation_angle_z[1]) * np.pi / 180.0
-
-            transform_x = np.array([[np.cos(angle_x), -np.sin(angle_x), 0.0],
-                                    [np.sin(angle_x), np.cos(angle_x), 0.0],
-                                    [0.0, 0.0, 1.0]])
-            transform_y = np.array([[np.cos(angle_y), 0.0, np.sin(angle_y)],
-                                    [0.0, 1.0, 0.0],
-                                    [-np.sin(angle_y), 0.0, np.cos(angle_y)]])
-            transform_z = np.array([[1.0, 0.0, 0.0],
-                                    [0.0, np.cos(angle_z), -np.sin(angle_z)],
-                                    [0.0, np.sin(angle_z), np.cos(angle_z)]])
-            transform = np.dot(transform_z, np.dot(transform_x, transform_y))
-            self._transform = transform
         else:
-
             # generate transformation
             angle_x = np.random.uniform(
                 self.min_angle, self.max_angle) * np.pi / 180.0
@@ -88,17 +75,18 @@ class RandomRotationLayer(RandomisedLayer):
                 self.min_angle, self.max_angle) * np.pi / 180.0
             angle_z = np.random.uniform(
                 self.min_angle, self.max_angle) * np.pi / 180.0
-            transform_x = np.array([[np.cos(angle_x), -np.sin(angle_x), 0.0],
-                                    [np.sin(angle_x), np.cos(angle_x), 0.0],
-                                    [0.0, 0.0, 1.0]])
-            transform_y = np.array([[np.cos(angle_y), 0.0, np.sin(angle_y)],
-                                    [0.0, 1.0, 0.0],
-                                    [-np.sin(angle_y), 0.0, np.cos(angle_y)]])
-            transform_z = np.array([[1.0, 0.0, 0.0],
-                                    [0.0, np.cos(angle_z), -np.sin(angle_z)],
-                                    [0.0, np.sin(angle_z), np.cos(angle_z)]])
-            transform = np.dot(transform_z, np.dot(transform_x, transform_y))
-            self._transform = transform
+
+        transform_x = np.array([[np.cos(angle_x), -np.sin(angle_x), 0.0],
+                                [np.sin(angle_x), np.cos(angle_x), 0.0],
+                                [0.0, 0.0, 1.0]])
+        transform_y = np.array([[np.cos(angle_y), 0.0, np.sin(angle_y)],
+                                [0.0, 1.0, 0.0],
+                                [-np.sin(angle_y), 0.0, np.cos(angle_y)]])
+        transform_z = np.array([[1.0, 0.0, 0.0],
+                                [0.0, np.cos(angle_z), -np.sin(angle_z)],
+                                [0.0, np.sin(angle_z), np.cos(angle_z)]])
+        transform = np.dot(transform_z, np.dot(transform_x, transform_y))
+        self._transform = transform
 
     def _apply_transformation_3d(self, image_3d, interp_order=3):
         assert image_3d.ndim == 3

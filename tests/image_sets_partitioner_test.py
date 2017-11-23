@@ -93,32 +93,22 @@ class ImageSetsPartitionerNewPartition(tf.test.TestCase):
 
 class ImageSetsPartitionerIllPartition(tf.test.TestCase):
     def test_incompatible_partition_file(self):
-        if not os.path.isfile(partition_output):
-            return
         self._reset_partition_file()
         # adding invalid line
         with open(partition_output, 'a') as partition_file:
             partition_file.write('foo, bar')
         test_partitioner = ImageSetsPartitioner()
-        test_partitioner.initialise(
-            test_sections,
-            new_partition=False,
-            data_split_file=partition_output)
-        self.assertEquals(
-            test_partitioner.get_file_list()[COLUMN_UNIQ_ID].count(), 4)
-        self.assertEquals(
-            test_partitioner.get_file_list(TRAIN)[COLUMN_UNIQ_ID].count(), 2)
-        self.assertEquals(
-            test_partitioner.get_file_list(VALID)[COLUMN_UNIQ_ID].count(), 1)
-        self.assertEquals(
-            test_partitioner.get_file_list(INFER)[COLUMN_UNIQ_ID].count(), 1)
+        with self.assertRaisesRegexp(ValueError, ""):
+            test_partitioner.initialise(
+                test_sections,
+                new_partition=False,
+                data_split_file=partition_output)
 
     def test_replicated_ids(self):
-        if not os.path.isfile(partition_output):
-            return
         self._reset_partition_file()
         with open(partition_output, 'a') as partition_file:
-            partition_file.write('1065, bar')
+            partition_file.write('1065,Training\n')
+            partition_file.write('1065,Validation')
         test_partitioner = ImageSetsPartitioner()
         test_partitioner.initialise(
             test_sections,
@@ -127,15 +117,13 @@ class ImageSetsPartitionerIllPartition(tf.test.TestCase):
         self.assertEquals(
             test_partitioner.get_file_list()[COLUMN_UNIQ_ID].count(), 4)
         self.assertEquals(
-            test_partitioner.get_file_list(TRAIN)[COLUMN_UNIQ_ID].count(), 2)
+            test_partitioner.get_file_list(TRAIN)[COLUMN_UNIQ_ID].count(), 3)
         self.assertEquals(
-            test_partitioner.get_file_list(VALID)[COLUMN_UNIQ_ID].count(), 1)
+            test_partitioner.get_file_list(VALID)[COLUMN_UNIQ_ID].count(), 2)
         self.assertEquals(
             test_partitioner.get_file_list(INFER)[COLUMN_UNIQ_ID].count(), 1)
 
     def test_empty(self):
-        if not os.path.isfile(partition_output):
-            return
         self._reset_partition_file()
         with open(partition_output, 'w') as partition_file:
             partition_file.write('')

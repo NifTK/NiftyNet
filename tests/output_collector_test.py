@@ -6,12 +6,11 @@ import tensorflow as tf
 from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import OutputsCollector
 from niftynet.engine.application_variables import TF_SUMMARIES
-from niftynet.network.toynet import ToyNet
 
 
-def get_test_network():
-    net = ToyNet(num_classes=4)
-    return net
+# def get_test_network():
+#    net = ToyNet(num_classes=4)
+#    return net
 
 
 class OutputCollectorTest(tf.test.TestCase):

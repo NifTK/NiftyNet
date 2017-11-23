@@ -110,6 +110,7 @@ SUPPORTED_OPTIMIZERS = {
     'nesterov': 'niftynet.engine.application_optimiser.NesterovMomentum',
 
     'adagrad': 'niftynet.engine.application_optimiser.Adagrad',
+    'rmsprop': 'niftynet.engine.application_optimiser.RMSProp',
 }
 
 SUPPORTED_INITIALIZATIONS = {

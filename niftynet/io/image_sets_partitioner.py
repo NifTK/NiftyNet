@@ -263,7 +263,8 @@ class ImageSetsPartitioner(object):
                 csv_file,
                 header=None,
                 dtype=(str, str),
-                names=[COLUMN_UNIQ_ID, modality_name])
+                names=[COLUMN_UNIQ_ID, modality_name],
+                skipinitialspace=True)
         except Exception as csv_error:
             tf.logging.fatal(repr(csv_error))
             raise
@@ -321,7 +322,8 @@ class ImageSetsPartitioner(object):
                     self.data_split_file,
                     header=None,
                     dtype=(str, str),
-                    names=[COLUMN_UNIQ_ID, COLUMN_PHASE])
+                    names=[COLUMN_UNIQ_ID, COLUMN_PHASE],
+                    skipinitialspace=True)
             except Exception as csv_error:
                 tf.logging.warning(repr(csv_error))
 

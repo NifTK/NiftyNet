@@ -347,10 +347,10 @@ The learning rate for the optimiser.
 
 ###### `loss_type`
 Type of loss function. Please see the relevant loss function layer for choices available:
-- [Segmentation](#../niftynet/layer/loss_segmentation.py),
-- [Regression](#../niftynet/layer/loss_regression.py),
-- [Autoencoder](#../niftynet/layer/loss_autoencoder.py),
-- [GAN](#../niftynet/layer/loss_gan.py).
+- [Segmentation](../niftynet/layer/loss_segmentation.py),
+- [Regression](../niftynet/layer/loss_regression.py),
+- [Autoencoder](../niftynet/layer/loss_autoencoder.py),
+- [GAN](../niftynet/layer/loss_gan.py).
 
 
 ###### `starting_iter`
@@ -382,9 +382,9 @@ will be treated as the whole dataset, and partitioned into subsets of training, 
 according to [exclude_fraction_for_validation](#exclude_fraction_for_validation) and
 [exclude_fraction_for_inference](#exclude_fraction_for_inference).
 
-A CSV table randomly maps each file name to one of the stages `{'Training', 'Validation', 'Inference'}` will be written to
-[dataset_split_file](#dataset_split_file). This file will be created when it's at the beginning of training (`starting_iter=0`) and
-the file does not exist. If a new random partition is required, please remove the existing [dataset_split_file](#dataset_split_file).
+A CSV table randomly mapping each file name to one of the stages `{'Training', 'Validation', 'Inference'}` will be written to
+[dataset_split_file](#dataset_split_file). This file will be created at the beginning of training (`starting_iter=0`) and
+only if the file does not exist. If a new random partition is required, please remove the existing [dataset_split_file](#dataset_split_file).
 To exclude particular subjects or adjust the randomly generated partition, 
 the [dataset_split_file](#dataset_split_file) can be edited manually.
 

@@ -69,6 +69,3 @@ def variational_lower_bound(prediction):
                     - tf.exp(posterior_logvar)
     KL_divergence = -0.5 * tf.reduce_sum(KL_divergence, axis=[1])
     return tf.reduce_mean(KL_divergence - log_likelihood)
-
-
-SUPPORTED_OPS = {"VariationalLowerBound": variational_lower_bound}
