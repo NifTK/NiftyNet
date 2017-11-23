@@ -382,11 +382,24 @@ will be treated as the whole dataset, and partitioned into subsets of training, 
 according to [exclude_fraction_for_validation](#exclude_fraction_for_validation) and
 [exclude_fraction_for_inference](#exclude_fraction_for_inference).
 
-A CSV table randomly mapping each file name to one of the stages `{'Training', 'Validation', 'Inference'}` will be written to
+A CSV table randomly mapping each file name to one of the stages `{'Training', 'Validation', 'Inference'}` will be generated and written to
 [dataset_split_file](#dataset_split_file). This file will be created at the beginning of training (`starting_iter=0`) and
 only if the file does not exist. If a new random partition is required, please remove the existing [dataset_split_file](#dataset_split_file).
+
 To exclude particular subjects or adjust the randomly generated partition, 
 the [dataset_split_file](#dataset_split_file) can be edited manually.
+Please note duplicated rows are not removed. For example, if the content of [dataset_split_file](#dataset_split_file) is as follows:
+```csv
+1040,Training
+1071,Inference
+1071,Inference
+1065,Training
+1065,Training
+1065,Validation
+```
+Each row will be treated as an independent subject. This means:
+>subject `1065` will be used in both `Training` and `Validation` stages, and it'll be sampled more frequently than subject `1040` during training;
+>subject `1071` will be used in `Inference` twice, the output of the second inference will overwrite the first.
 
 Note that each iteration will read image from the set of validation data,
 and will not change the network parameters.  The `is_training` parameter of the network

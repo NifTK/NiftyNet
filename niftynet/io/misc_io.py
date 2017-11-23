@@ -287,6 +287,9 @@ def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
     # img_nii.set_data_dtype(np.dtype(np.float32))
     output_name = os.path.join(save_path, filename)
     try:
+        if os.path.isfile(output_name):
+            tf.logging.warning(
+                'File %s exists, overwriting the file.', output_name)
         nib.save(img_nii, output_name)
     except OSError:
         tf.logging.fatal("writing failed {}".format(output_name))

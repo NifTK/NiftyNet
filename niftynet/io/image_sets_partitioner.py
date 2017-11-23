@@ -361,16 +361,16 @@ class ImageSetsPartitioner(object):
                 list(self._file_list))
         if self._partition_ids is not None and n_subjects > 0:
             n_valid = self.number_of_subjects(VALID)
-            n_train = self.number_of_subjects(INFER)
-            n_infer = self.number_of_subjects(TRAIN)
+            n_train = self.number_of_subjects(TRAIN)
+            n_infer = self.number_of_subjects(INFER)
             summary_str += \
                 'data partitioning -- number of cases:\n' \
                 '-- {} {} ({:.2f}%),\n' \
                 '-- {} {} ({:.2f}%),\n' \
-                '-- {} {}.\n'.format(
+                '-- {} {} ({:.2f}%).\n'.format(
                     VALID, n_valid, float(n_valid) / float(n_subjects) * 100.0,
-                    INFER, n_train, float(n_train) / float(n_subjects) * 100.0,
-                    TRAIN, n_infer)
+                    TRAIN, n_train, float(n_train) / float(n_subjects) * 100.0,
+                    INFER, n_infer, float(n_infer) / float(n_subjects) * 100.0)
         else:
             summary_str += '-- using all subjects ' \
                            '(without data partitioning).\n'
