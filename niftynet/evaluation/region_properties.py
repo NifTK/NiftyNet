@@ -12,7 +12,7 @@ from niftynet.utilities.util_common import MorphologyOps, CacheFunctionOutput
 
 class RegionProperties(object):
     def __init__(self, seg, img, measures,
-                 num_neighbors=6, threshold=0, pixdim=[1, 1, 1]):
+                 num_neighbors=6, threshold=0, pixdim=(1, 1, 1)):
 
         self.seg = seg
         self.bin = 100

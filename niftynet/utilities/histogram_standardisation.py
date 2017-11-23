@@ -17,7 +17,8 @@ import numpy.ma as ma
 import tensorflow as tf
 
 from niftynet.io.misc_io import touch_folder
-from niftynet.utilities.util_common import look_up_operations, print_progress_bar
+from niftynet.utilities.util_common import \
+    look_up_operations, print_progress_bar
 
 DEFAULT_CUTOFF = [0.01, 0.99]
 SUPPORTED_CUTPOINTS = {'percentile', 'quartile', 'median'}
@@ -85,7 +86,7 @@ def create_mapping_from_multimod_arrayfiles(array_files,
     returned providing the landmarks to use for the linear mapping of any
     new incoming data
     :param array_files: List of image files to use
-    :param list_modalities: Name of the modalities used for the
+    :param modalities: Name of the modalities used for the
     standardisation and the corresponding order in the multimodal files
     :param cutoff: Minimum and maximum landmarks percentile values to use for
      the mapping

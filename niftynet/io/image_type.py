@@ -199,8 +199,8 @@ class SpatialImage2D(DataFromFile):
             except (TypeError, IndexError, AttributeError):
                 tf.logging.fatal('could not read header from %s', file_i)
                 raise ValueError
-        self._original_pixdim = tuple(self._original_pixdim)
-        self._original_affine = tuple(self._original_affine)
+                # self._original_pixdim = tuple(self._original_pixdim)
+                # self._original_affine = tuple(self._original_affine)
 
     @property
     def original_pixdim(self):
@@ -257,7 +257,7 @@ class SpatialImage2D(DataFromFile):
     def interp_order(self, interp_order):
         try:
             if len(interp_order) == len(self.file_path):
-                self._interp_order = tuple(map(int, interp_order))
+                self._interp_order = tuple(int(order) for order in interp_order)
                 return
         except (TypeError, ValueError):
             pass
@@ -292,14 +292,14 @@ class SpatialImage2D(DataFromFile):
                         self._output_pixdim.append(None)
                     else:
                         self._output_pixdim.append(
-                            tuple(map(float, output_pixdim[i])))
-                self._output_pixdim = tuple(self._output_pixdim)
+                            tuple(float(pixdim) for pixdim in output_pixdim[i]))
+                # self._output_pixdim = tuple(self._output_pixdim)
                 return
         except (TypeError, ValueError):
             pass
         try:
             if output_pixdim is not None:
-                output_pixdim = tuple(map(float, output_pixdim))
+                output_pixdim = tuple(float(pixdim) for pixdim in output_pixdim)
             self._output_pixdim = (output_pixdim,) * len(self.file_path)
         except (TypeError, ValueError):
             tf.logging.fatal(
@@ -331,7 +331,7 @@ class SpatialImage2D(DataFromFile):
                     else:
                         self._output_axcodes.append(
                             tuple(output_axcodes[i]))
-                self._output_axcodes = tuple(self._output_axcodes)
+                # self._output_axcodes = tuple(self._output_axcodes)
                 return
         except (TypeError, ValueError):
             pass
@@ -377,12 +377,14 @@ class SpatialImage3D(SpatialImage2D):
                                 output_axcodes=output_axcodes)
         self._load_header()
 
+    # pylint: disable=no-member
     @SpatialImage2D.output_pixdim.getter
     def output_pixdim(self):
         if self._output_pixdim is None:
             self.output_pixdim = None
         return self._output_pixdim
 
+    # pylint: disable=no-member
     @SpatialImage2D.output_axcodes.getter
     def output_axcodes(self):
         if self._output_axcodes is None:
@@ -537,8 +539,8 @@ class SpatialImage5D(SpatialImage3D):
         if self.original_pixdim[idx] and self.output_pixdim[idx]:
             assert len(self._original_pixdim[idx]) == \
                    len(self.output_pixdim[idx]), \
-                "wrong pixdim format original {} output {}".format(
-                    self._original_pixdim[idx], self.output_pixdim[idx])
+                   "wrong pixdim format original {} output {}".format(
+                       self._original_pixdim[idx], self.output_pixdim[idx])
             # verbose: warning when interpolate_order>1 for integers
             output_image = []
             for t_pt in range(image_data.shape[3]):
@@ -587,7 +589,7 @@ class ImageFactory(object):
         :return: an image instance
         """
         if file_path is None:
-            tf.logging.fatal('no file_path provided, '
+            tf.logging.fatal('No file_path provided, '
                              'please check input sources in config file')
             raise ValueError
         image_type = None
@@ -607,6 +609,6 @@ class ImageFactory(object):
                 tf.logging.fatal('Could not load file: %s', file_path)
                 raise IOError
         if image_type is None:
-            tf.logging.fatal('not supported image type: %s', file_path)
+            tf.logging.fatal('Not supported image type: %s', file_path)
             raise NotImplementedError
         return image_type(file_path, **kwargs)

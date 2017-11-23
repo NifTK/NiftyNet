@@ -4,14 +4,8 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 import numpy as np
 
-from niftynet.layer import layer_util
-from niftynet.layer.activation import ActiLayer
-from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.convolution import ConvolutionalLayer
 from niftynet.layer.deconvolution import DeconvolutionalLayer
-from niftynet.layer.elementwise import ElementwiseLayer
-from niftynet.network.base_net import BaseNet
-from niftynet.layer.base_layer import LayerFromCallable
 from niftynet.layer.gan_blocks import GANImageBlock, BaseGenerator, BaseDiscriminator
 
 

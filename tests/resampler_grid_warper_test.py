@@ -147,10 +147,10 @@ def get_3d_input1():
 
 class ResamplerGridWarperTest(tf.test.TestCase):
     def _test_correctness(
-            self, input, grid, interpolation, boundary, expected_value):
+            self, inputs, grid, interpolation, boundary, expected_value):
         resampler = ResamplerLayer(interpolation=interpolation,
                                    boundary=boundary)
-        out = resampler(input, grid)
+        out = resampler(inputs, grid)
         with self.test_session() as sess:
             out_value = sess.run(out)
             self.assertAllClose(expected_value, out_value)
@@ -166,7 +166,7 @@ class ResamplerGridWarperTest(tf.test.TestCase):
             tf.constant([[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
                          [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, .5]],
                         dtype=tf.float32))
-        self._test_correctness(input=get_3d_input1(),
+        self._test_correctness(inputs=get_3d_input1(),
                                grid=test_grid,
                                interpolation='idw',
                                boundary='replicate',

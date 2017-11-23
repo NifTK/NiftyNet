@@ -91,7 +91,7 @@ def standardise_section_name(configparser, old_name):
 def standardise_string(input_string):
     """
     to make the user's input consistent
-    replace any characters not in set [0-9a-zA-Z] with underscrore _
+    replace any characters not in set [0-9a-zA-Z] with underscore _
 
     :param input_string: to be standardised
     :return: capitalised string
@@ -107,7 +107,7 @@ def has_section_in_config(config, required_custom_section):
     if required_custom_section is not None:
         user_sections = [standardise_string(section_name)
                          for section_name in config.sections()]
-        if not required_custom_section in user_sections:
+        if required_custom_section not in user_sections:
             raise ValueError
         else:
             return True

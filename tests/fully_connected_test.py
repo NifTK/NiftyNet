@@ -79,7 +79,6 @@ class FCTest(tf.test.TestCase):
                                    param_dict=input_param,
                                    output_shape=(2, 10))
 
-
     def test_3d_fclayer_bias_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': True,
@@ -148,7 +147,7 @@ class FCTest(tf.test.TestCase):
                        'with_bias': False,
                        'with_bn': True,
                        'w_regularizer': regularizers.l2_regularizer(0.5),
-                       'acti_func': 'prelu',}
+                       'acti_func': 'prelu', }
         self._test_fc_layer_output_shape(rank=3,
                                          param_dict=input_param,
                                          output_shape=(2, 10),
@@ -183,7 +182,7 @@ class FCTest(tf.test.TestCase):
                        'with_bias': True}
         self._test_fc_layer_output_shape(rank=2,
                                          param_dict=input_param,
-                                         output_shape=(2,  10),
+                                         output_shape=(2, 10),
                                          is_training=True)
 
     def test_2d_fclayer_bias_shape(self):
@@ -245,7 +244,6 @@ class FCTest(tf.test.TestCase):
                                          param_dict=input_param,
                                          output_shape=(2, 10),
                                          is_training=True)
-
 
 
 if __name__ == "__main__":

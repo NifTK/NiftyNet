@@ -113,22 +113,22 @@ def get_ill_image_window_2():
     )
 
 
-def get_ill_image_window_3():
-    return dict(
-        source_names={
-            'image': (u'modality1', u'modality2'),
-            'label': (u'modality3',)},
-        image_shapes={
-            'image': (192, 160, 192, 1, 2),
-            'label': (192, 160, 192, 1, 1)},
-        image_dtypes={
-            'image': tf.float32},
-        data_param={
-            'modality1': ParserNamespace(spatial_window_size=(10, 10)),
-            'modality2': ParserNamespace(spatial_window_size=(10, 10)),
-            'modality3': ParserNamespace(spatial_window_size=())}
-
-    )
+# def get_ill_image_window_3():
+#    return dict(
+#        source_names={
+#            'image': (u'modality1', u'modality2'),
+#            'label': (u'modality3',)},
+#        image_shapes={
+#            'image': (192, 160, 192, 1, 2),
+#            'label': (192, 160, 192, 1, 1)},
+#        image_dtypes={
+#            'image': tf.float32},
+#        data_param={
+#            'modality1': ParserNamespace(spatial_window_size=(10, 10)),
+#            'modality2': ParserNamespace(spatial_window_size=(10, 10)),
+#            'modality3': ParserNamespace(spatial_window_size=())}
+#
+#    )
 
 
 class ImageWindowTest(tf.test.TestCase):

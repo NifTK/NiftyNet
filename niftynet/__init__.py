@@ -28,7 +28,7 @@ try:
                          '\n\nPlease upgrade TensorFlow'
                          ' (https://www.tensorflow.org/) to be'
                          ' able to use NiftyNet.\nCurrently using '
-                         'TensorFlow %s,\ninstalled at %s\n\n',
+                         'TensorFlow %s:\ninstalled at %s\n\n',
                          minimal_required_version, tf_version, tf.__file__)
         raise ImportError
     else:
@@ -48,6 +48,7 @@ from niftynet.io.misc_io import to_absolute_path
 
 
 def main():
+    set_logger()
     system_param, input_data_param = user_parameters_parser.run()
     if util.has_bad_inputs(system_param):
         return -1
@@ -66,7 +67,14 @@ def main():
     # writing all params for future reference
     txt_file = 'settings_{}.txt'.format(system_param['SYSTEM'].action)
     txt_file = os.path.join(system_param['SYSTEM'].model_dir, txt_file)
-    util.print_save_input_parameters(all_param, txt_file)
+    try:
+        util.print_save_input_parameters(all_param, txt_file)
+    except IOError:
+        tf.logging.fatal(
+            'Unable to write %s,\nplease check '
+            'model_dir parameter, current value: %s',
+            txt_file, system_param['SYSTEM'].model_dir)
+        raise
 
     # keep all commandline outputs to model_root
     log_file_name = os.path.join(
@@ -89,6 +97,14 @@ def main():
         if system_param['INFERENCE'].save_seg_dir:
             system_param['INFERENCE'].save_seg_dir = to_absolute_path(
                 input_path=system_param['INFERENCE'].save_seg_dir,
+                model_root=system_param['SYSTEM'].model_dir)
+    except (AttributeError, KeyError):
+        pass
+    # 3. resolve dataset splitting file:
+    try:
+        if system_param['SYSTEM'].dataset_split_file:
+            system_param['SYSTEM'].dataset_split_file = to_absolute_path(
+                input_path=system_param['SYSTEM'].dataset_split_file,
                 model_root=system_param['SYSTEM'].model_dir)
     except (AttributeError, KeyError):
         pass

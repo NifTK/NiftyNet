@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+Loss functions for regression
+"""
 from __future__ import absolute_import, print_function, division
 
 import tensorflow as tf
@@ -10,11 +13,14 @@ from niftynet.layer.base_layer import Layer
 class LossFunction(Layer):
     def __init__(self,
                  loss_type='L2Loss',
-                 loss_func_params={},
+                 loss_func_params=None,
                  name='loss_function'):
 
         super(LossFunction, self).__init__(name=name)
-        self._loss_func_params = loss_func_params
+        if loss_func_params is not None:
+            self._loss_func_params = loss_func_params
+        else:
+            self._loss_func_params = {}
         self._data_loss_func = None
         self.make_callable_loss_func(loss_type)
 
@@ -25,28 +31,44 @@ class LossFunction(Layer):
                  prediction,
                  ground_truth=None,
                  weight_map=None,
-                 var_scope=None, ):
+                 var_scope=None):
+        """
+        Compute loss from `prediction` and `ground truth`,
+        the computed loss map are weighted by `weight_map`.
+
+        if `prediction `is list of tensors, each element of the list
+        will be compared against `ground_truth` and the weighted by
+        `weight_map`.
+
+        :param prediction: input will be reshaped into (N,)
+        :param ground_truth: input will be reshaped into (N,)
+        :param weight_map: input will be reshaped into (N,)
+        :param var_scope:
+        :return:
+        """
 
         with tf.device('/cpu:0'):
             if ground_truth is not None:
                 ground_truth = tf.reshape(ground_truth, [-1])
-
-            if not isinstance(prediction, (list, tuple)):
-                prediction = [prediction]
-            ground_truth = tf.reshape(ground_truth, [-1])
-            prediction = tf.reshape(prediction, [-1])
             if weight_map is not None:
                 weight_map = tf.reshape(weight_map, [-1])
+            if not isinstance(prediction, (list, tuple)):
+                prediction = [prediction]
+            prediction = [tf.reshape(pred, [-1]) for pred in prediction]
 
             data_loss = []
-
-            if self._loss_func_params:
-                data_loss.append(self._data_loss_func(
-                    prediction, ground_truth, weight_map,
-                    **self._loss_func_params))
-            else:
-                data_loss.append(self._data_loss_func(
-                    prediction, ground_truth, weight_map))
+            for pred in prediction:
+                if self._loss_func_params:
+                    data_loss.append(self._data_loss_func(
+                        prediction=pred,
+                        ground_truth=ground_truth,
+                        weight_map=weight_map,
+                        **self._loss_func_params))
+                else:
+                    data_loss.append(self._data_loss_func(
+                        prediction=pred,
+                        ground_truth=ground_truth,
+                        weight_map=weight_map))
             return tf.reduce_mean(data_loss)
 
 
@@ -77,7 +99,8 @@ def l2_loss(prediction, ground_truth, weight_map=None):
 
     residuals = tf.subtract(prediction, ground_truth)
     if weight_map is not None:
-        residuals = tf.multiply(residuals, weight_map)
+        residuals = \
+            tf.multiply(residuals, weight_map) / tf.reduce_sum(weight_map)
     return tf.nn.l2_loss(residuals)
 
 
@@ -90,7 +113,7 @@ def rmse_loss(prediction, ground_truth, weight_map=None):
     """
     if weight_map is not None:
         residuals = tf.subtract(prediction, ground_truth)
-        residuals = tf.pow(residuals, 2)
+        residuals = tf.multiply(residuals, residuals)
         residuals = tf.multiply(residuals, weight_map)
         return tf.sqrt(tf.reduce_mean(residuals) / tf.reduce_mean(weight_map))
     else:
@@ -138,9 +161,3 @@ def huber_loss(prediction, ground_truth, delta=1.0, weight_map=None):
         sum_weights = tf.to_float(tf.size(absolute_residuals))
     sum_loss = tf.reduce_sum(voxelwise_loss)
     return tf.truediv(sum_loss, sum_weights)
-
-
-SUPPORTED_OPS = {"L1Loss": l1_loss,
-                 "L2Loss": l2_loss,
-                 "RMSE": rmse_loss,
-                 "Huber": huber_loss}

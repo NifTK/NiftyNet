@@ -11,6 +11,7 @@ import os
 
 from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.engine.application_factory import SUPPORTED_APP
+from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 from niftynet.utilities.user_parameters_custom import add_customised_args
 from niftynet.utilities.user_parameters_default import add_application_args
 from niftynet.utilities.user_parameters_default import add_inference_args
@@ -20,9 +21,8 @@ from niftynet.utilities.user_parameters_default import add_training_args
 from niftynet.utilities.user_parameters_helper import has_section_in_config
 from niftynet.utilities.user_parameters_helper import standardise_section_name
 from niftynet.utilities.util_common import \
-    _damerau_levenshtein_distance as edit_distance
+    damerau_levenshtein_distance as edit_distance
 from niftynet.utilities.versioning import get_niftynet_version_string
-from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 
 try:
     import configparser
@@ -30,6 +30,10 @@ except ImportError:
     import ConfigParser as configparser
 
 SYSTEM_SECTIONS = {'SYSTEM', 'NETWORK', 'TRAINING', 'INFERENCE'}
+epilog_string = \
+    '\n\n======\nFor more information please visit:\n' \
+    'https://github.com/NifTK/NiftyNet/tree/dev/config/README.md\n' \
+    '======\n\n'
 
 
 def run():
@@ -46,9 +50,7 @@ def run():
         used by niftynet.io.ImageReader
     """
     meta_parser = argparse.ArgumentParser(
-        epilog='Please visit '
-               'https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/tree/dev/demos '
-               'for more info.')
+        epilog=epilog_string)
     version_string = get_niftynet_version_string()
     meta_parser.add_argument("-v", "--version",
                              action='version',
@@ -63,25 +65,32 @@ def run():
     print(version_string)
 
     # read configurations, to be parsed by sections
-    if meta_args.conf is None:
-        raise IOError("No configuration file has been provided")
+    if not meta_args.conf:
+        print("\nNo configuration file has been provided, did you "
+              "forget '-c' command argument?{}".format(epilog_string))
+        raise IOError
 
     # Read global config file
     global_config = NiftyNetGlobalConfig()
 
     config_path = meta_args.conf
     if not os.path.isfile(config_path):
-        relative_conf_file = os.path.join(global_config.get_default_examples_folder(), config_path,
-                                          config_path + "_config.ini")
+        relative_conf_file = os.path.join(
+            global_config.get_default_examples_folder(),
+            config_path,
+            config_path + "_config.ini")
         if os.path.isfile(relative_conf_file):
             config_path = relative_conf_file
             os.chdir(os.path.dirname(config_path))
         else:
-            raise IOError("Configuration file not found {}".format(config_path))
+            print("\nConfiguration file not found: {}.{}".format(
+                config_path, epilog_string))
+            raise IOError
 
     config = configparser.ConfigParser()
     config.read([config_path])
     app_module = None
+    module_name = None
     try:
         if meta_parser.prog[:-3] in SUPPORTED_APP:
             module_name = meta_parser.prog[:-3]
@@ -91,19 +100,18 @@ def run():
             module_name = meta_args.application_name
         app_module = ApplicationFactory.create(module_name)
         assert app_module.REQUIRED_CONFIG_SECTION, \
-            "REQUIRED_CONFIG_SECTION should be static variable " \
+            "\nREQUIRED_CONFIG_SECTION should be static variable " \
             "in {}".format(app_module)
         has_section_in_config(config, app_module.REQUIRED_CONFIG_SECTION)
     except ValueError:
         if app_module:
             section_name = app_module.REQUIRED_CONFIG_SECTION
-            raise ValueError(
-                '{} requires [{}] section in the config file'.format(
-                    module_name, section_name))
-        else:
-            raise ValueError(
-                "unknown application {}, or did you forget '-a' "
-                "command argument".format(module_name))
+            print('\n{} requires [{}] section in the config file.{}'.format(
+                module_name, section_name, epilog_string))
+        if not module_name:
+            print("\nUnknown application {}, or did you forget '-a' "
+                  "command argument?{}".format(module_name, epilog_string))
+        raise
 
     # check keywords in configuration file
     check_keywords(config)
@@ -123,7 +131,7 @@ def run():
         all_args[section] = section_args
     # command line parameters should be valid
     assert not args_from_cmdline, \
-        'unknown parameter: {}'.format(args_from_cmdline)
+        '\nUnknown parameter: {}{}'.format(args_from_cmdline, epilog_string)
 
     # split parsed results in all_args
     # into dictionary of system_args and input_data_args
@@ -247,19 +255,19 @@ def check_keywords(config):
             default_keywords.append(action.option_strings[0][2:])
         except (IndexError, AttributeError, ValueError):
             pass
+
     for config_key in config_keywords:
         if config_key in default_keywords:
             continue
-        dists = {k: edit_distance(k, config_key)
-                 for k in default_keywords}
+        dists = {k: edit_distance(k, config_key) for k in default_keywords}
         closest = min(dists, key=dists.get)
         if dists[closest] <= 5:
             raise ValueError(
-                'Unknown keywords in config file: By "{0}" ' \
-                'did you mean "{1}"?\n "{0}" is ' \
-                'not a valid option. '.format(config_key, closest))
-        else:
-            raise ValueError(
-                'Unknown keywords in config file: [{}] -- all '
-                ' possible choices are {}'.format(
-                    config_key, default_keywords))
+                'Unknown keywords in config file: By "{0}" '
+                'did you mean "{1}"?\n "{0}" is '
+                'not a valid option.{2}'.format(
+                    config_key, closest, epilog_string))
+        raise ValueError(
+            'Unknown keywords in config file: [{}] -- all '
+            ' possible choices are {}.{}'.format(
+                config_key, default_keywords, epilog_string))

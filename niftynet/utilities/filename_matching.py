@@ -27,8 +27,9 @@ class KeywordsMatching(object):
         associated value is a string. Multiple constraints are delimited by a ,
         This function creates the corresponding matching object with the list
         of constraints for each of these subtypes.
-        :param default_folder: relative paths are first tested against the current folder, and then against this
-               default folder
+        :param default_folder: relative paths are first tested against
+                               the current folder, and then against this
+                               default folder
         :param input_tuple:
         :return:
         """
@@ -43,18 +44,20 @@ class KeywordsMatching(object):
                     path_orig = os.path.abspath(path_i)
                     if os.path.exists(path_orig):
                         path.append(path_orig)
-                    else:
-                        if not default_folder:
-                            raise ValueError('data input folder {} not found, did'
-                                             ' you maybe forget to download data?'
-                                             .format(path_i))
-                        path_def = os.path.abspath(os.path.join(default_folder, path_i))
-                        if os.path.exists(path_def):
-                            path.append(path_def)
-                        else:
-                            raise ValueError('data input folder {} not found, did'
-                                             ' you maybe forget to download data?'
-                                             .format(path_i))
+                        continue
+
+                    if not default_folder:
+                        raise ValueError(
+                            'data input folder {} not found, did you maybe '
+                            'forget to download data?'.format(path_i))
+                    path_def = os.path.join(default_folder, path_i)
+                    path_def = os.path.abspath(path_def)
+                    if not os.path.exists(path_def):
+                        raise ValueError(
+                            'data input folder {} not found, did you maybe '
+                            'forget to download data?'.format(path_i))
+                    path.append(path_def)
+
             elif name == "filename_contains":
                 contain = tuple(set(value))
             elif name == "filename_not_contains":
@@ -66,23 +69,23 @@ class KeywordsMatching(object):
     def matching_subjects_and_filenames(self):
         """
         This function perform the search of the relevant files (stored in
-        list_final) and extract
+        filename_list) and extract
         the corresponding possible list of subject names (stored in
-        name_list_final).
-        :returns list_final, name_list_final
+        subjectname_list).
+        :returns filename_list, subjectname_list
         """
         path_file = [(p, filename)
                      for p in self.path_to_search
                      for filename in os.listdir(p)]
         matching_path_file = list(filter(self.__is_a_candidate, path_file))
-        list_final = [os.path.join(p, filename)
-                      for p, filename in matching_path_file]
-        name_list_final = [self.__extract_subject_id_from(filename)
-                           for p, filename in matching_path_file]
-        if not list_final or not name_list_final:
+        filename_list = \
+            [os.path.join(p, filename) for p, filename in matching_path_file]
+        subjectname_list = [self.__extract_subject_id_from(filename)
+                            for p, filename in matching_path_file]
+        if not filename_list or not subjectname_list:
             raise IOError('no file matched based on this matcher: {}'.format(
                 self.__dict__))
-        return list_final, name_list_final
+        return filename_list, subjectname_list
 
     def __is_a_candidate(self, x):
         all_pos_match = all(c in x[1] for c in self.filename_contains)
@@ -102,11 +105,16 @@ class KeywordsMatching(object):
         """
         _, name, _ = util.split_filename(fullname)
         # split name into parts that might be the subject_id
-        noncapturing_regex_delimiters = ['(?:' + re.escape(c) + ')'
-                                         for c in self.filename_contains]
-        potential_names = re.split(
-            '|'.join(noncapturing_regex_delimiters), name)
+        noncapturing_regex_delimiters = \
+            ['(?:{})'.format(re.escape(c)) for c in self.filename_contains]
+        if noncapturing_regex_delimiters:
+            potential_names = re.split(
+                '|'.join(noncapturing_regex_delimiters), name)
+        else:
+            potential_names = [name]
         # filter out non-alphanumeric characters and blank strings
         potential_names = [re.sub(r'\W+', '', name) for name in potential_names]
-        potential_names = [name for name in potential_names if name != '']
+        potential_names = list(filter(bool, potential_names))
+        if len(potential_names) > 1:
+            potential_names.append(''.join(potential_names))
         return potential_names

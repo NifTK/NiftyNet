@@ -1,11 +1,10 @@
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
-from niftynet.engine.application_factory import ApplicationNetFactory
-from niftynet.engine.application_factory import OptimiserFactory
-from niftynet.engine.application_variables import CONSOLE
-from niftynet.engine.application_variables import NETWORK_OUTPUT
-from niftynet.engine.application_variables import TF_SUMMARIES
+from niftynet.engine.application_factory import \
+    ApplicationNetFactory, OptimiserFactory
+from niftynet.engine.application_variables import \
+    CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
 from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.sampler_uniform import UniformSampler
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
@@ -35,30 +34,38 @@ class BRATSApp(BaseApplication):
 
         self.data_param = None
         self.segmentation_param = None
-        self.SUPPORTED_SAMPLING = {
-            'uniform': (self.initialise_uniform_sampler,
-                        self.initialise_grid_sampler,
-                        self.initialise_grid_aggregator)
-        }
 
-    def initialise_dataset_loader(self, data_param=None, task_param=None):
+    def initialise_dataset_loader(
+            self, data_param=None, task_param=None, data_partitioner=None):
         self.data_param = data_param
         self.segmentation_param = task_param
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.reader = ImageReader(SUPPORTED_INPUT)
+            file_lists = []
+            if self.action_param.validation_every_n > 0:
+                file_lists.append(data_partitioner.train_files)
+                file_lists.append(data_partitioner.validation_files)
+            else:
+                file_lists.append(data_partitioner.all_files)
+            self.readers = []
+            for file_list in file_lists:
+                reader = ImageReader(SUPPORTED_INPUT)
+                reader.initialise(data_param, task_param, file_list)
+                self.readers.append(reader)
         else:  # in the inference process use image input only
-            self.reader = ImageReader(['image'])
-        self.reader.initialise_reader(data_param, task_param)
+            inference_reader = ImageReader(['image'])
+            file_list = data_partitioner.inference_files
+            inference_reader.initialise(data_param, task_param, file_list)
+            self.readers = [inference_reader]
 
+        foreground_masking_layer = None
         if self.net_param.normalise_foreground_only:
             foreground_masking_layer = BinaryMaskingLayer(
                 type_str=self.net_param.foreground_type,
                 multimod_fusion=self.net_param.multimod_foreground_type,
                 threshold=0.0)
-        else:
-            foreground_masking_layer = None
+
         mean_var_normaliser = MeanVarNormalisationLayer(
             image_name='image', binary_masking_func=foreground_masking_layer)
 
@@ -77,38 +84,28 @@ class BRATSApp(BaseApplication):
             volume_padding_layer.append(PadLayer(
                 image_name=SUPPORTED_INPUT,
                 border=self.net_param.volume_padding_size))
-        self.reader.add_preprocessing_layers(
-            normalisation_layers + volume_padding_layer)
-
-    def initialise_uniform_sampler(self):
-        self.sampler = [UniformSampler(
-            reader=self.reader,
-            data_param=self.data_param,
-            batch_size=self.net_param.batch_size,
-            windows_per_image=self.action_param.sample_per_volume,
-            queue_length=self.net_param.queue_length)]
-
-    def initialise_grid_sampler(self):
-        self.sampler = [GridSampler(
-            reader=self.reader,
-            data_param=self.data_param,
-            batch_size=self.net_param.batch_size,
-            spatial_window_size=self.action_param.spatial_window_size,
-            window_border=self.action_param.border,
-            queue_length=self.net_param.queue_length)]
-
-    def initialise_grid_aggregator(self):
-        self.output_decoder = GridSamplesAggregator(
-            image_reader=self.reader,
-            output_path=self.action_param.save_seg_dir,
-            window_border=self.action_param.border,
-            interp_order=self.action_param.output_interp_order)
+        for reader in self.readers:
+            reader.add_preprocessing_layers(
+                normalisation_layers + volume_padding_layer)
 
     def initialise_sampler(self):
         if self.is_training:
-            self.SUPPORTED_SAMPLING[self.net_param.window_sampling][0]()
+            self.sampler = [[UniformSampler(
+                reader=reader,
+                data_param=self.data_param,
+                batch_size=self.net_param.batch_size,
+                windows_per_image=self.action_param.sample_per_volume,
+                queue_length=self.net_param.queue_length) for reader in
+                self.readers]]
         else:
-            self.SUPPORTED_SAMPLING[self.net_param.window_sampling][1]()
+            self.sampler = [[GridSampler(
+                reader=reader,
+                data_param=self.data_param,
+                batch_size=self.net_param.batch_size,
+                spatial_window_size=self.action_param.spatial_window_size,
+                window_border=self.action_param.border,
+                queue_length=self.net_param.queue_length) for reader in
+                self.readers]]
 
     def initialise_network(self):
         w_regularizer = None
@@ -133,11 +130,23 @@ class BRATSApp(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
-        data_dict = self.get_sampler()[0].pop_batch_op()
-        image = tf.cast(data_dict['image'], tf.float32)
-        net_out = self.net(image, is_training=True)
+
+        def switch_sampler(for_training):
+            with tf.name_scope('train' if for_training else 'validation'):
+                sampler = self.get_sampler()[0][0 if for_training else -1]
+                return sampler.pop_batch_op()
 
         if self.is_training:
+            if self.action_param.validation_every_n > 0:
+                data_dict = tf.cond(tf.logical_not(self.is_validation),
+                                    lambda: switch_sampler(True),
+                                    lambda: switch_sampler(False))
+            else:
+                data_dict = switch_sampler(for_training=True)
+
+            image = tf.cast(data_dict['image'], tf.float32)
+            net_out = self.net(image, is_training=self.is_training)
+
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
@@ -150,13 +159,12 @@ class BRATSApp(BaseApplication):
                 prediction=net_out,
                 ground_truth=data_dict.get('label', None),
                 weight_map=data_dict.get('weight', None))
-            if self.net_param.decay > 0.0:
-                reg_losses = tf.get_collection(
-                    tf.GraphKeys.REGULARIZATION_LOSSES)
-                if reg_losses:
-                    reg_loss = tf.reduce_mean(
-                        [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
-                    loss = data_loss + reg_loss
+            reg_losses = tf.get_collection(
+                tf.GraphKeys.REGULARIZATION_LOSSES)
+            if self.net_param.decay > 0.0 and reg_losses:
+                reg_loss = tf.reduce_mean(
+                    [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
+                loss = data_loss + reg_loss
             else:
                 loss = data_loss
             grads = self.optimiser.compute_gradients(loss)
@@ -173,6 +181,10 @@ class BRATSApp(BaseApplication):
         else:
             # converting logits into final output for
             # classification probabilities or argmax classification labels
+            data_dict = switch_sampler(for_training=False)
+            image = tf.cast(data_dict['image'], tf.float32)
+            net_out = self.net(image, is_training=self.is_training)
+
             output_prob = self.segmentation_param.output_prob
             num_classes = self.segmentation_param.num_classes
             if output_prob and num_classes > 1:
@@ -192,9 +204,12 @@ class BRATSApp(BaseApplication):
             outputs_collector.add_to_collection(
                 var=data_dict['image_location'], name='location',
                 average_over_devices=False, collection=NETWORK_OUTPUT)
-            init_aggregator = \
-                self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]
-            init_aggregator()
+
+            self.output_decoder = GridSamplesAggregator(
+                image_reader=self.readers[0],
+                output_path=self.action_param.save_seg_dir,
+                window_border=self.action_param.border,
+                interp_order=self.action_param.output_interp_order)
 
     def interpret_output(self, batch_output):
         if not self.is_training:

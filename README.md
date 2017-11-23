@@ -86,6 +86,8 @@ Please see the [contribution guidelines](./CONTRIBUTING.md).
 
 NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
 
+[Stack Overflow](https://stackoverflow.com/questions/tagged/niftynet) for general questions
+
 [niftynet-io]: http://niftynet.io/
 [niftynet-cmiclab]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 [niftynet-github]: https://github.com/NifTK/NiftyNet

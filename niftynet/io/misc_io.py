@@ -9,13 +9,13 @@ import re
 import sys
 import warnings
 
-import PIL
 import nibabel as nib
 import numpy as np
 import scipy.ndimage
 import tensorflow as tf
-from PIL.GifImagePlugin import Image as GIF
 from tensorflow.core.framework import summary_pb2
+
+from niftynet.utilities.util_import import check_module
 
 IS_PYTHON2 = False if sys.version_info[0] > 2 else True
 
@@ -23,19 +23,16 @@ IMAGE_LOADERS = [nib.load]
 try:
     import niftynet.io.simple_itk_as_nibabel
 
-    IMAGE_LOADERS.append(
-        niftynet.io.simple_itk_as_nibabel.SimpleITKAsNibabel)
-except ImportError:
-    warnings.warn(
-        'SimpleITK adapter failed to load,'
-        ' reducing the supported file formats.',
-        ImportWarning)
+    IMAGE_LOADERS.append(niftynet.io.simple_itk_as_nibabel.SimpleITKAsNibabel)
+except (ImportError, AssertionError):
+    tf.logging.warning('SimpleITK adapter failed to load, '
+                       'reducing the supported file formats.')
 
 warnings.simplefilter("ignore", UserWarning)
 
 FILE_EXTENSIONS = [".nii.gz", ".tar.gz"]
-CONSOLE_LOG_FORMAT = '%(levelname)s:niftynet: %(message)s'
-FILE_LOG_FORMAT = '%(levelname)s:niftynet:%(asctime)s: %(message)s'
+CONSOLE_LOG_FORMAT = "\033[1m%(levelname)s:niftynet:\033[0m %(message)s"
+FILE_LOG_FORMAT = "%(levelname)s:niftynet:%(asctime)s: %(message)s"
 
 
 #### utilities for file headers
@@ -53,7 +50,8 @@ def infer_ndims_from_file(file_path):
 
     tf.logging.fatal('unsupported file header in: {}'.format(file_path))
     raise IOError('could not get ndims from file header, please '
-                  'consider convert image files to NifTI format. ')
+                  'consider convert image files to NifTI format.')
+
 
 def create_affine_pixdim(affine, pixdim):
     """
@@ -83,7 +81,7 @@ def load_image(filename):
             # if the image_loader cannot handle the type_str
             # continue to next loader
             pass
-    tf.logging.fatal('No loader could load the file {}'.format(filename))
+    tf.logging.fatal('No loader could load the file %s', filename)
     raise IOError
 
 
@@ -156,8 +154,8 @@ def do_reorientation(data_array, init_axcodes, final_axcodes):
     """
     Performs the reorientation (changing order of axes)
     :param data_array: Array to reorient
-    :param ornt_init: Initial orientation
-    :param ornt_fin: Target orientation
+    :param init_axcodes: Initial orientation
+    :param final_axcodes: Target orientation
     :return data_reoriented: New data array in its reoriented form
     """
     ornt_init = nib.orientations.axcodes2ornt(init_axcodes)
@@ -197,7 +195,7 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     try:
         assert len(pixdim_init) <= len(pixdim_fin)
     except (TypeError, AssertionError):
-        tf.logging.fatal("unkown pixdim format original %s output %s",
+        tf.logging.fatal("unknown pixdim format original %s output %s",
                          pixdim_init, pixdim_fin)
         raise
     to_multiply = np.divide(pixdim_init, pixdim_fin[:len(pixdim_init)])
@@ -289,6 +287,9 @@ def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
     # img_nii.set_data_dtype(np.dtype(np.float32))
     output_name = os.path.join(save_path, filename)
     try:
+        if os.path.isfile(output_name):
+            tf.logging.warning(
+                'File %s exists, overwriting the file.', output_name)
         nib.save(img_nii, output_name)
     except OSError:
         tf.logging.fatal("writing failed {}".format(output_name))
@@ -398,7 +399,7 @@ def resolve_module_dir(module_dir_str, create_new=False):
                 raise
         else:
             with os.fdopen(file_, 'w') as file_object:
-                file_object.write("# Created automatically")
+                file_object.write("# Created automatically\n")
         return folder_path
     else:
         raise ValueError(
@@ -451,6 +452,10 @@ def get_latest_subfolder(parent_folder, create_new=False):
 
 
 def _image3_animated_gif(tag, ims):
+    check_module('PIL')
+    import PIL
+    from PIL.GifImagePlugin import Image as GIF
+
     # x=numpy.random.randint(0,256,[10,10,10],numpy.uint8)
     ims = [np.asarray((ims[i, :, :]).astype(np.uint8))
            for i in range(ims.shape[0])]
@@ -476,10 +481,10 @@ def _image3_animated_gif(tag, ims):
 def image3(name,
            tensor,
            max_outputs=3,
-           collections=[tf.GraphKeys.SUMMARIES],
-           animation_axes=[1],
-           image_axes=[2, 3],
-           other_indices={}):
+           collections=(tf.GraphKeys.SUMMARIES,),
+           animation_axes=(1,),
+           image_axes=(2, 3),
+           other_indices=None):
     """ Summary for higher dimensional images
     Parameters:
     name: string name for the summary
@@ -489,10 +494,13 @@ def image3(name,
     collections: list of strings collections to add the summary to
     animation_axes=[1],image_axes=[2,3]
     """
+
     if max_outputs == 1:
         suffix = '/image'
     else:
         suffix = '/image/{}'
+    if other_indices is None:
+        other_indices = {}
     axis_order = [0] + animation_axes + image_axes
     # slice tensor
     slicing = []
@@ -526,21 +534,21 @@ def image3(name,
 def image3_sagittal(name,
                     tensor,
                     max_outputs=3,
-                    collections=[tf.GraphKeys.SUMMARIES]):
+                    collections=(tf.GraphKeys.SUMMARIES,)):
     return image3(name, tensor, max_outputs, collections, [1], [2, 3])
 
 
 def image3_coronal(name,
                    tensor,
                    max_outputs=3,
-                   collections=[tf.GraphKeys.SUMMARIES]):
+                   collections=(tf.GraphKeys.SUMMARIES,)):
     return image3(name, tensor, max_outputs, collections, [2], [1, 3])
 
 
 def image3_axial(name,
                  tensor,
                  max_outputs=3,
-                 collections=[tf.GraphKeys.SUMMARIES]):
+                 collections=(tf.GraphKeys.SUMMARIES,)):
     return image3(name, tensor, max_outputs, collections, [3], [1, 2])
 
 
@@ -554,7 +562,7 @@ def set_logger(file_name=None):
     std_handler.setFormatter(f)
     tf.logging._logger.addHandler(std_handler)
 
-    if file_name is not None:
+    if file_name:
         f = log.Formatter(FILE_LOG_FORMAT)
         file_handler = log.FileHandler(file_name)
         file_handler.setFormatter(f)

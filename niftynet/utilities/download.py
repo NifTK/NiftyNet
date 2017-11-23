@@ -429,7 +429,7 @@ def url_exists(url):
     try:
         connection = urlopen(url)
         return connection.getcode() < 400
-    except Exception as e:
+    except Exception:
         return False
 
 

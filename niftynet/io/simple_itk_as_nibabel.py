@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+Loading SimpleITK image as a Nibabel object.
+"""
+from niftynet.utilities.util_import import check_module
+
+check_module('SimpleITK')
+
 import SimpleITK as sitk
 import nibabel
 import numpy as np

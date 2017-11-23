@@ -55,7 +55,7 @@ class ResamplerLayer(Layer):
             return self._resample_bspline(inputs, sample_coords)
         if self.interpolation == 'IDW':
             return self._resample_inv_dst_weighting(inputs, sample_coords)
-        tf.logging.fatal('interpolation method not implmented')
+        tf.logging.fatal('interpolation method not implemented')
         raise NotImplementedError
 
     def _resample_nearest(self, inputs, sample_coords):
@@ -119,16 +119,16 @@ class ResamplerLayer(Layer):
         batch_ids = tf.tile(batch_ids, [1] + out_spatial_size)
         sc = (floor_coords, ceil_coords)
 
-        def get_knot(bc):
-            coord = [sc[c][i] for i, c in enumerate(bc)]
+        def get_knot(binary_code):
+            coord = [sc[code][ind] for ind, code in enumerate(binary_code)]
             coord = tf.stack([batch_ids] + coord, -1)
             return tf.gather_nd(inputs, coord)
 
-        def _pyramid_combination(samples, w_0, w_1):
+        def _pyramid_combination(two_samples, w_0, w_1):
             if len(w_0) == 1:
-                return samples[0] * w_1[0] + samples[1] * w_0[0]
-            f_0 = _pyramid_combination(samples[::2], w_0[:-1], w_1[:-1])
-            f_1 = _pyramid_combination(samples[1::2], w_0[:-1], w_1[:-1])
+                return two_samples[0] * w_1[0] + two_samples[1] * w_0[0]
+            f_0 = _pyramid_combination(two_samples[::2], w_0[:-1], w_1[:-1])
+            f_1 = _pyramid_combination(two_samples[1::2], w_0[:-1], w_1[:-1])
             return f_0 * w_1[-1] + f_1 * w_0[-1]
 
         binary_neighbour_ids = [

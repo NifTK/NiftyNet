@@ -17,7 +17,7 @@ from six import string_types
 def list_depth_count(input_list):
     """
     This function count the maximum depth of a nested list (recursively)
-    This is used to check compatibility of users' input and sysmte API
+    This is used to check compatibility of users' input and system API
     only to be used for list or tuple
     """
     if not isinstance(input_list, (list, tuple)):
@@ -47,9 +47,9 @@ def average_gradients(multi_device_gradients):
         averaged_grads = __average_grads(multi_device_gradients)
     else:
         tf.logging.fatal(
-            "The list of gradients are nested in an unsusal way."
+            "The list of gradients are nested in an unusual way."
             "application's gradient is not compatible with app driver."
-            "Please check the return value of grapdients_collector "
+            "Please check the return value of gradients_collector "
             "in _connect_data_and_network() of the application")
         raise RuntimeError
     return averaged_grads
@@ -65,7 +65,7 @@ def __average_grads(tower_grads):
     ave_grads = []
     for grad_and_vars in zip(*tower_grads):
         grads = [tf.expand_dims(g, 0)
-                 for g, _ in grad_and_vars if not g is None]
+                 for g, _ in grad_and_vars if g is not None]
         if not grads:
             continue
         grad = tf.concat(grads, 0)
@@ -199,22 +199,24 @@ def look_up_operations(type_str, supported):
 
     edit_distances = {}
     for supported_key in set_to_check:
-        edit_distance = _damerau_levenshtein_distance(supported_key,
-                                                      type_str)
+        edit_distance = damerau_levenshtein_distance(supported_key,
+                                                     type_str)
         if edit_distance <= 3:
             edit_distances[supported_key] = edit_distance
     if edit_distances:
         guess_at_correct_spelling = min(edit_distances,
                                         key=edit_distances.get)
-        raise ValueError('By "{0}", did you mean "{1}"?\n '
-                         '"{0}" is not a valid option.'.format(
-            type_str, guess_at_correct_spelling))
+        raise ValueError('By "{0}", did you mean "{1}"?\n'
+                         '"{0}" is not a valid option.\n'
+                         'Available options are {2}\n'.format(
+            type_str, guess_at_correct_spelling, supported))
     else:
-        raise ValueError("no supported operation \"{}\" "
-                         "is not found.".format(type_str))
+        raise ValueError("No supported option \"{}\" "
+                         "is not found.\nAvailable options are {}\n".format(
+            type_str, supported))
 
 
-def _damerau_levenshtein_distance(s1, s2):
+def damerau_levenshtein_distance(s1, s2):
     """
     Calculates an edit distance, for typo detection. Code based on :
     https://en.wikipedia.org/wiki/Damerau–Levenshtein_distance
