@@ -70,6 +70,9 @@ Also see [how this command is tested][net-segment-test].
 [net-segment-test]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L252
 
 
+## Writing unit tests
+Please see this [README](tests/README.md) for more information on how to write unit tests for NiftyNet.
+
 ## NiftyNet admin tasks
 
 ### Bundling a pip installer
