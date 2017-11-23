@@ -128,18 +128,11 @@ class ImageSetsPartitionerIllPartition(tf.test.TestCase):
         with open(partition_output, 'w') as partition_file:
             partition_file.write('')
         test_partitioner = ImageSetsPartitioner()
-        test_partitioner.initialise(
-            test_sections,
-            new_partition=False,
-            data_split_file=partition_output)
-        self.assertEquals(
-            test_partitioner.get_file_list()[COLUMN_UNIQ_ID].count(), 4)
-        self.assertEquals(
-            test_partitioner.get_file_list(TRAIN), None)
-        self.assertEquals(
-            test_partitioner.get_file_list(VALID), None)
-        self.assertEquals(
-            test_partitioner.get_file_list(INFER), None)
+        with self.assertRaisesRegexp(ValueError, ""):
+            test_partitioner.initialise(
+                test_sections,
+                new_partition=False,
+                data_split_file=partition_output)
 
     def _reset_partition_file(self):
         test_partitioner = ImageSetsPartitioner()

@@ -324,16 +324,27 @@ class ImageSetsPartitioner(object):
                     dtype=(str, str),
                     names=[COLUMN_UNIQ_ID, COLUMN_PHASE],
                     skipinitialspace=True)
+                assert not self._partition_ids.empty, \
+                    "partition file is empty."
             except Exception as csv_error:
-                tf.logging.warning(repr(csv_error))
+                tf.logging.warning(
+                    "Unable to load the existing partition file %s, %s",
+                    self.data_split_file, repr(csv_error))
+                self._partition_ids = None
 
-            is_valid_phase = \
-                self._partition_ids[COLUMN_PHASE].isin(SUPPORTED_PHASES)
-            if not is_valid_phase.all():
-                tf.logging.fatal(
+            try:
+                is_valid_phase = \
+                    self._partition_ids[COLUMN_PHASE].isin(SUPPORTED_PHASES)
+                assert is_valid_phase.all(), \
+                    "Partition file contains unknown phase id."
+            except (TypeError, AssertionError):
+                tf.logging.warning(
                     'Please make sure the values of the second column '
-                    'of data splitting file %s, in the set of phases: %s.',
-                    self.data_split_file, SUPPORTED_PHASES)
+                    'of data splitting file %s, in the set of phases: %s.\n'
+                    'Remove %s to generate random data partition file.',
+                    self.data_split_file,
+                    SUPPORTED_PHASES,
+                    self.data_split_file)
                 raise ValueError
 
     def __str__(self):
