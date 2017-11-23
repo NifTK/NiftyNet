@@ -291,7 +291,7 @@ More specifically:
 |[histogram_ref_file](#histogram_ref_file)|String|`histogram_ref_file=./hist_ref.txt`| `''`|
 |[norm_type](#norm_type)|String|`norm_type=percentile`| `percentile`|
 |[cutoff](#cutoff)|Float array (two elements)|`cutoff=0.1, 0.9`|`0.01, 0.99`|
-|[foreground_type](#foreground_type)|String|`foreground_type=ostu_plus`|`ostu_plus`|
+|[foreground_type](#foreground_type)|String|`foreground_type=otsu_plus`|`otsu_plus`|
 |[multimod_foreground_type](#multimod_foreground_type)|String|`multimod_foreground_type=and`|`and`|
 
 ###### `normalisation`
