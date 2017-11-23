@@ -47,7 +47,7 @@ These include:
 
 Shortcuts are created for these application (full specification can be found here: [`SUPPORTED_APP`](../niftynet/engine/application_factory.py#L19)):
 
-|Shortcut| Expanded command|
+|Shortcut| Equivalent partial command|
 |---|---|
 |`net_segment`|`net_run -a niftynet.application.segmentation_application.SegmentationApplication`|
 |`net_regress`|`net_run -a niftynet.application.regression_application.RegressionApplication`|
@@ -161,8 +161,8 @@ with an interpolation order of `3`.
 A CSV file with the matched filenames and extracted subject names will be generated
 to `T1Image.csv` in [`model_dir`](#model_dir)
 (by default; the CSV file location can be specified by setting [csv_file](#csv_file)).
-To exclude particular images, 
-the [csv_file](#dataset_split_file) can be edited manually.
+To exclude particular images,
+the [csv_file](#csv_file) can be edited manually.
 
 This input source can be used alone, as a `T1` MRI input to an application.
 It can also be used along with other modalities, a multi-modality example
@@ -278,7 +278,7 @@ These parameters are ignored and histogram-based normalisation is disabled if `n
 
 (2) Setting `whitening=True` enables the volume level normalisation computed by `(I - mean(I))/std(I)`.
 The relevant configuration parameters are:
-> `cutoff`, `foreground_type`, `multimod_foreground_type`.
+> `foreground_type`, `multimod_foreground_type`.
 
 These parameters are ignored and whitening is disabled if `whitening=False`.
 
@@ -326,7 +326,7 @@ Strategies applied to combine foreground masks of multiple modalities, can take 
 |Params.| Type |Example|Default|
 |---|---|---|---|
 |[optimiser](#optimiser)|String|`optimiser=momentum`|`adam`|
-|[sampler_per_volume](#sample_per_volume)|Positive integer|`sampler_per_volume=5`|`1`|
+|[sample_per_volume](#sample_per_volume)|Positive integer|`sample_per_volume=5`|`1`|
 |[lr](#lr)|Float|`lr=0.001`|`0.1`|
 |[loss_type](#loss_type)|String|`loss_type=CrossEntropy`|`Dice`|
 |[starting_iter](#starting_iter)|Non-negative integer|`starting_iter=0`| `0`|
@@ -346,11 +346,15 @@ Set number of samples to take from each image volume.
 The learning rate for the optimiser.
 
 ###### `loss_type`
-Type of loss function. Please see the relevant loss function layer for choices available:
+Type of loss function.
+Please see the relevant loss function layer for choices available:
 - [Segmentation](../niftynet/layer/loss_segmentation.py),
 - [Regression](../niftynet/layer/loss_regression.py),
 - [Autoencoder](../niftynet/layer/loss_autoencoder.py),
 - [GAN](../niftynet/layer/loss_gan.py).
+
+The corresponding loss function type names are defined in the
+[`ApplicationFactory`](../niftynet/engine/application_factory.py#L67)
 
 
 ###### `starting_iter`
@@ -376,7 +380,7 @@ the remaining number of iterations to run is `N - max_iter`.
 Maximum number of recent checkpoints to keep.
 
 ##### Validation during training
-Setting `validation_every_n` to a positive integer enables validation loops during training.
+Setting [`validation_every_n`](#validation_every_n) to a positive integer enables validation loops during training.
 When validation is enabled, images list (defined by [input specifications](#input-data-source-section))
 will be treated as the whole dataset, and partitioned into subsets of training, validation, and inference
 according to [exclude_fraction_for_validation](#exclude_fraction_for_validation) and
@@ -386,7 +390,7 @@ A CSV table randomly mapping each file name to one of the stages `{'Training', '
 [dataset_split_file](#dataset_split_file). This file will be created at the beginning of training (`starting_iter=0`) and
 only if the file does not exist. If a new random partition is required, please remove the existing [dataset_split_file](#dataset_split_file).
 
-To exclude particular subjects or adjust the randomly generated partition, 
+To exclude particular subjects or adjust the randomly generated partition,
 the [dataset_split_file](#dataset_split_file) can be edited manually.
 Please note duplicated rows are not removed. For example, if the content of [dataset_split_file](#dataset_split_file) is as follows:
 ```csv
@@ -401,14 +405,14 @@ Each row will be treated as an independent subject. This means:
 >subject `1065` will be used in both `Training` and `Validation` stages, and it'll be sampled more frequently than subject `1040` during training;
 >subject `1071` will be used in `Inference` twice, the output of the second inference will overwrite the first.
 
-Note that each iteration will read image from the set of validation data,
-and will not change the network parameters.  The `is_training` parameter of the network
+Note that at each validation iteration, input will be sampled from the set of validation data,
+and the network parameters will remain unchanged.  The `is_training` parameter of the network
 is set to `True` during validation, as a result layers with different behaviours in training and inference
 (such as dropout and batch normalisation) uses the training behaviour.
 
-_During inference, if a [dataset_split_file](#dataset_split_file) is available, only image files in
+During inference, if a [dataset_split_file](#dataset_split_file) is available, only image files in
 the `Inference` phase will be used,
-otherwise inference will process all image files defined by [input specifications](#input-data-source-section)._
+otherwise inference will process all image files defined by [input specifications](#input-data-source-section).
 
 |Params.| Type |Example|Default|
 |---|---|---|---|
@@ -461,12 +465,12 @@ the resolution of the output volume can be different from the input image.
 That is, given input of an `NxNxN` voxel volume, the network generates
 a `DxDxD`-voxel output, where `0 < D < N`.
 
-This configuration section is design for such a process of sampling `NxNxN` windows from
-given image volumes, and aggregate the network-generated `DxDxD` windows to output
+This configuration section is design for such a process of sampling `NxNxN` windows
+from image volumes, and aggregating the network-generated `DxDxD` windows to output
 volumes.
 
 In terms of sampling by a sliding window, the sampling step size should be `D/2` in each
-spatial dimension.  However automatically inferring `D` as a function of network implementation and `N`
+spatial dimension.  However automatically inferring `D` as a function of network architecture and `N`
 is not implemented at the moment. Therefore, NiftyNet requires a [`border`](#border) to describe the
 spatial window size changes. `border` should be at least `floor((N - D) / 2)`.
 
@@ -474,6 +478,7 @@ If the network is designed such that `N==D` is always true, `border` should be `
 
 Note that the above implementation generalises to
 `NxMxP`-voxel windows and `BxCxD`-voxel window outputs.
+For a 2-D slice, e.g, `Nx1xM`, the second dimension of `border` should be `0`.
 
 |Params.| Type |Example|Default|
 |---|---|---|---|
