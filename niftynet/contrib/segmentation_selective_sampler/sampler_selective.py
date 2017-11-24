@@ -109,9 +109,9 @@ def create_label_size_map(data):
     :return: count_data
     """
     labelled_data, _ = ndimage.label(data)
-    unique, count = np.unique(labelled_data, return_counts=True)
+    components, count = np.unique(labelled_data, return_counts=True)
     count_data = np.copy(labelled_data)
-    for label, size in zip(unique, count):
+    for label, size in zip(components, count):
         if label == 0:
             continue
         count_data[labelled_data == label] = size

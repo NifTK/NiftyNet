@@ -8,6 +8,8 @@ from niftynet.engine.application_variables import \
 from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.engine.sampler_uniform import UniformSampler
+from niftynet.engine.sampler_selective import SelectiveSampler
+from niftynet.engine.sampler_selective import Constraint
 from niftynet.engine.sampler_weighted import WeightedSampler
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
@@ -52,6 +54,9 @@ class SegmentationApplication(BaseApplication):
             'resize': (self.initialise_resize_sampler,
                        self.initialise_resize_sampler,
                        self.initialise_resize_aggregator),
+            'selective': (self.initialise_selective_sampler,
+                          self.initialise_grid_sampler,
+                          self.initialise_grid_aggregator)
         }
 
     def initialise_dataset_loader(
@@ -151,6 +156,27 @@ class SegmentationApplication(BaseApplication):
                 volume_padding_layer +
                 normalisation_layers +
                 augmentation_layers)
+
+    def initialise_selective_sampler(self):
+        print("Initialisation ", self.segmentation_param.compulsory_labels,
+              self.segmentation_param.proba_connect)
+        print(self.segmentation_param.num_min_labels,
+              self.segmentation_param.proba_connect)
+        self.sampler = [SelectiveSampler(
+                            reader=self.readers[0], # TODO: change this to multiple readers
+                            data_param=self.data_param,
+                            batch_size=self.net_param.batch_size,
+                            windows_per_image=
+                            self.action_param.sample_per_volume,
+                            constraint=
+                            Constraint(self.segmentation_param.compulsory_labels,
+                                       self.segmentation_param.min_ratio_sampling,
+                                       self.segmentation_param.num_min_labels,
+                                       self.segmentation_param.proba_connect),
+                            random_windows_per_image=self.segmentation_param
+                                .rand_samples,
+                            queue_length=self.net_param.queue_length
+        )]
 
     def initialise_uniform_sampler(self):
         self.sampler = [[UniformSampler(
