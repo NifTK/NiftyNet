@@ -26,19 +26,20 @@ class ToyApplication(BaseApplication):
         self.action_param = action_param
         self.toy_param = None
 
-    def initialise_dataset_loader(self, data_param=None, task_param=None):
+    def initialise_dataset_loader(
+            self, data_param=None, task_param=None, data_partitioner=None):
         self.toy_param = task_param
-        self.reader = ()
+        self.readers = []
 
     def initialise_sampler(self):
         self.sampler = [
-            RandomVectorSampler(
+            [RandomVectorSampler(
                 names=('vectors',),
                 vector_size=(self.toy_param.vector_size,),
                 batch_size=self.net_param.batch_size,
                 repeat=None,
                 mean=self.toy_param.mean,
-                stddev=self.toy_param.stddev)]
+                stddev=self.toy_param.stddev)]]
 
     def initialise_network(self):
         self.net = ApplicationNetFactory.create(self.net_param.name)()
@@ -46,6 +47,7 @@ class ToyApplication(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
+        print(vars(self.action_param))
         with tf.name_scope('Optimiser'):
             optimiser_class = OptimiserFactory.create(
                 name=self.action_param.optimiser)
@@ -53,14 +55,13 @@ class ToyApplication(BaseApplication):
                 learning_rate=self.action_param.lr)
 
         # a new pop_batch_op for each gpu tower
-        data_x = self.get_sampler()[0].pop_batch_op()
+        data_x = self.get_sampler()[0][0].pop_batch_op()
         features = tf.cast(data_x['vectors'], tf.float32, name='sampler_input')
         features = tf.expand_dims(features, axis=-1, name='feature_input')
 
         noise = tf.random_uniform(tf.shape(features), 0.0, 1.0)
         real_logits, fake_logits, fake_features = self.net(features, noise)
 
-        batch_size = tf.shape(real_logits)[0]
         d_loss = tf.reduce_mean(real_logits - fake_logits)
         g_loss = tf.reduce_mean(fake_logits)
 

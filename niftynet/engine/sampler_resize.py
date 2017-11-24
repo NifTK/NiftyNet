@@ -141,7 +141,7 @@ def dummy_coordinates(image_id, image_sizes):
     all_coordinates = {}
     for mod in list(image_sizes):
         starting_coordinates = [0, 0, 0]
-        image_sptial_shape = list(image_sizes[mod][:N_SPATIAL])
-        coords = [[image_id] + starting_coordinates + image_sptial_shape]
+        image_spatial_shape = list(image_sizes[mod][:N_SPATIAL])
+        coords = [[image_id] + starting_coordinates + image_spatial_shape]
         all_coordinates[mod] = np.asarray(coords)
     return all_coordinates

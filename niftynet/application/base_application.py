@@ -1,6 +1,13 @@
+# -*- coding: utf-8 -*-
+"""
+Interface of NiftyNet application
+"""
+
+import tensorflow as tf
 from six import with_metaclass
-from niftynet.utilities import util_common
+
 from niftynet.layer.base_layer import TrainableLayer
+from niftynet.utilities import util_common
 
 
 class SingletonApplication(type):
@@ -21,12 +28,18 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     Each application type_str should support to use
     the standard training and inference driver
     """
+
+    # defines name of the customised configuration file section
+    # the section collects all application specific user parameters
     REQUIRED_CONFIG_SECTION = None
 
+    # boolean flag
     is_training = True
+    # TF placeholders for switching network on the fly
+    is_validation = None
 
     # input of the network
-    reader = None
+    readers = None
     sampler = None
 
     # the network
@@ -40,7 +53,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     output_decoder = None
 
     def check_initialisations(self):
-        if self.reader is None:
+        if self.readers is None:
             raise NotImplementedError('reader should be initialised')
         if self.sampler is None:
             raise NotImplementedError('sampler should be initialised')
@@ -56,7 +69,17 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         if self.output_decoder is None and not self.is_training:
             raise NotImplementedError('output decoder should be initialised')
 
-    def initialise_dataset_loader(self, data_param=None, task_param=None):
+    def initialise_dataset_loader(
+            self, data_param=None, task_param=None, data_partitioner=None):
+        """
+        this function initialise self.readers
+
+        :param data_param: input modality specifications
+        :param task_param: contains task keywords for grouping data_param
+        :param data_partitioner:
+                           specifies train/valid/infer splitting if needed
+        :return:
+        """
         raise NotImplementedError
 
     def initialise_sampler(self):
@@ -78,6 +101,12 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
+        """
+        adding sampler output tensor and network tensors to the graph.
+        :param outputs_collector:
+        :param gradients_collector:
+        :return:
+        """
         raise NotImplementedError
 
     def interpret_output(self, batch_output):
@@ -90,7 +119,17 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         """
         raise NotImplementedError
 
-    def set_network_update_op(self, gradients):
+    def set_network_gradient_op(self, gradients):
+        """
+        create gradient op by optimiser.apply_gradients
+        this function sets self.gradient_op
+
+        Override this function for more complex optimisations such as
+        using different optimisers for sub-networks.
+
+        :param gradients: processed gradients from the gradient_collector
+        :return:
+        """
         grad_list_depth = util_common.list_depth_count(gradients)
         if grad_list_depth == 3:
             # nested depth 3 means: gradients list is nested in terms of:
@@ -103,21 +142,44 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
             self.gradient_op = self.optimiser.apply_gradients(gradients)
         else:
             raise NotImplementedError(
-                'This app supports updating a network, or list of networks')
+                'This app supports updating a network, or a list of networks.')
 
     def stop(self):
-        for sampler in self.get_sampler():
-            if sampler:
-                sampler.close_all()
+        for sampler_set in self.get_sampler():
+            for sampler in sampler_set:
+                if sampler:
+                    sampler.close_all()
 
-    def training_ops(self, start_iter=0, end_iter=1):
+    def set_iteration_update(self, iteration_message):
         """
-        Specify the network update operation at each iteration
-        app can override this updating method if necessary
+        At each iteration `application_driver` calls
+        `output = tf.session.run(variables_to_eval, feed_dict=data_dict)`
+        to evaluate TF graph elements, where
+        `variables_to_eval` and `data_dict` are retrieved from
+        `application_iteration.IterationMessage.ops_to_run` and
+        `application_iteration.IterationMessage.data_feed_dict`.
+        (in addition to the variables collected by output_collector;
+         see `application_driver.run_vars`)
+
+        This function (is called before `tf.session.run` by the
+        driver) provides an interface for accessing `variables_to_eval` and
+        `data_dict` at each iteration.
+
+        Override this function for more complex operations according to
+        `application_iteration.IterationMessage.current_iter`.
         """
-        end_iter = max(start_iter, end_iter)
-        for iter_i in range(start_iter, end_iter):
-            yield iter_i, self.gradient_op
+        if iteration_message.is_training:
+            iteration_message.data_feed_dict[self.is_validation] = False
+        elif iteration_message.is_validation:
+            iteration_message.data_feed_dict[self.is_validation] = True
 
     def get_sampler(self):
         return self.sampler
+
+    def add_validation_flag(self):
+        """
+        add a TF placeholder for switching between train/valid graphs
+        :return:
+        """
+        self.is_validation = \
+            tf.placeholder_with_default(False, [], 'is_validation')

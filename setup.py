@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
 from packaging import version
 import re
@@ -93,11 +94,11 @@ setup(
     install_requires=[
         'six>=1.10',
         'nibabel>=2.1.0',
-        'numpy>=1.11',
+        'numpy>=1.12',
         'scipy>=0.18',
         'configparser',
-        'pillow',
-        'pandas'
+        'pandas',
+        'pillow'
     ],
 
     entry_points={

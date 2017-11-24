@@ -83,4 +83,4 @@ def match_ndim(border, image_ndim):
     full_border = border
     while len(full_border) < image_ndim:
         full_border = full_border + ((0,),)
-    return full_border
+    return full_border[:image_ndim]

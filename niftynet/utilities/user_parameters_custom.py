@@ -8,22 +8,26 @@ from niftynet.utilities.user_parameters_helper import add_input_name_args
 from niftynet.utilities.user_parameters_helper import int_array
 from niftynet.utilities.user_parameters_helper import str2boolean
 
-
 #######################################################################
 # To support a CUSTOM_SECTION in config file:
-# 1) update niftynet.utilities.user_parameters_custom.SUPPORTED_TASKS
-# with a CUSTOM_SECTION, this should be standardised string.
+# (e.g., MYTASK; in parallel with SEGMENTATION, REGRESSION etc.)
+#
+# 1) update niftynet.utilities.user_parameters_custom.SUPPORTED_ARG_SECTIONS
+# with a key-value pair:
+# where the key should be MYTASK, a standardised string --
 # Standardised string is defined in
 # niftynet.utilities.user_parameters_helper.standardise_string
-# the section name will be filtered with:
-#   re.sub('[^0-9a-zA-Z ]+', '', input_string.strip())
-
-# 2) appending add_customised_args() with a function add_*_args()
+# the section name will be filtered with,
+# re.sub('[^0-9a-zA-Z ]+', '', input_string.strip())
+#
+# the value should be __add_mytask_args()
+#
+# 2) create a function __add_mytask_args() with task specific arguments
 # this function should return an argparse obj
-# when task_name matches CUSTOM_SECTION.
-
-# 3) update niftynet.utilities.user_parameters_parser.CUSTOM_SECTIONS
-# creat a dictionary item with 'net_[task].py': CUSTOM_SECTION
+#
+# 3) in the application file, specify:
+# `REQUIRED_CONFIG_SECTION = "MYTASK"`
+# so that the application will have access to the task specific arguments
 #########################################################################
 
 

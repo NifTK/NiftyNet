@@ -1,4 +1,6 @@
-import numpy as np
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function
+
 import tensorflow as tf
 
 from niftynet.layer.base_layer import TrainableLayer
@@ -7,9 +9,8 @@ from niftynet.layer.convolution import ConvolutionalLayer
 from niftynet.layer.dilatedcontext import DilatedTensor
 from niftynet.layer.downsample import DownSampleLayer
 from niftynet.layer.upsample import UpSampleLayer
-from niftynet.network.highres3dnet import HighResBlock
 from niftynet.network.base_net import BaseNet
-from niftynet.network.scalenet import ScaleNet
+from niftynet.network.highres3dnet import HighResBlock
 
 
 class HolisticNet(BaseNet):
@@ -19,6 +20,7 @@ class HolisticNet(BaseNet):
     Multi-class Segmentation using Holistic Convolutional Networks.
     MICCAI 2017 (BrainLes)
     """
+
     def __init__(self,
                  num_classes,
                  w_initializer=None,

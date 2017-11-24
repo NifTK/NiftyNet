@@ -36,8 +36,8 @@ Other features of NiftyNet include:
 ### Installation
 
 1. Please install the appropriate [TensorFlow][tf] package*:
-   * [`pip install tensorflow-gpu==1.2`][tf-pypi-gpu] for TensorFlow with GPU support
-   * [`pip install tensorflow==1.2`][tf-pypi] for CPU-only TensorFlow
+   * [`pip install tensorflow-gpu==1.3`][tf-pypi-gpu] for TensorFlow with GPU support
+   * [`pip install tensorflow==1.3`][tf-pypi] for CPU-only TensorFlow
 1. [`pip install niftynet`](https://pypi.org/project/NiftyNet/)
 
  <sup>*All other NiftyNet dependencies are installed automatically as part of the pip installation process.</sup>
@@ -66,6 +66,12 @@ The API reference is available on [Read the Docs][rtd-niftynet].
 
 [rtd-niftynet]: http://niftynet.rtfd.io/
 
+#### Customising NiftyNet
+
+Please see the [NiftyNet global settings][global-settings] section for customising NiftyNet's global settings.
+
+[global-settings]: ./config/README.md#global-niftynet-settings
+
 #### Contributing
 
 Please see the [contribution guidelines](./CONTRIBUTING.md).
@@ -80,6 +86,8 @@ Please see the [contribution guidelines](./CONTRIBUTING.md).
 
 NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
 
+[Stack Overflow](https://stackoverflow.com/questions/tagged/niftynet) for general questions
+
 [niftynet-io]: http://niftynet.io/
 [niftynet-cmiclab]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 [niftynet-github]: https://github.com/NifTK/NiftyNet
@@ -90,7 +98,7 @@ NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
 
 If you use NiftyNet in your work, please cite [Gibson and Li et. al. 2017][preprint]:
 
-* E. Gibson\*, W. Li\*, C. Sudre, L. Fidon, D. I. Shakir, G. Wang, Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, D. C. Barratt, S. Ourselin, M. J. Cardoso and T. Vercauteren (2017)
+* E. Gibson\*, W. Li\*, C. Sudre, L. Fidon, D. I. Shakir, G. Wang, Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, M. Modat, D. C. Barratt, S. Ourselin, M. J. Cardoso\^ and T. Vercauteren\^ (2017)
 [NiftyNet: a deep-learning platform for medical imaging. arXiv: 1709.03485][preprint]
 
 
@@ -98,7 +106,7 @@ BibTeX entry:
 
 ```
 @InProceedings{niftynet17,
-  author = {Eli Gibson and Wenqi Li and Carole Sudre and Lucas Fidon and Dzhoshkun I. Shakir and Guotai Wang and Zach Eaton-Rosen and Robert Gray and Tom Doel and Yipeng Hu and Tom Whyntie and Parashkev Nachev and Dean C. Barratt and Sebastien Ourselin and M. Jorge Cardoso and Tom Vercauteren},
+  author = {Eli Gibson and Wenqi Li and Carole Sudre and Lucas Fidon and Dzhoshkun I. Shakir and Guotai Wang and Zach Eaton-Rosen and Robert Gray and Tom Doel and Yipeng Hu and Tom Whyntie and Parashkev Nachev and Marc Modat and Dean C. Barratt and Sebastien Ourselin and M. Jorge Cardoso and Tom Vercauteren},
   title = {NiftyNet: a deep-learning platform for medical imaging},
   year = {2017},
   eprint = {1709.03485},

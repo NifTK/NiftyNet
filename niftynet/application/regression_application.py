@@ -53,19 +53,34 @@ class RegressionApplication(BaseApplication):
                        self.initialise_resize_aggregator),
         }
 
-    def initialise_dataset_loader(self, data_param=None, task_param=None):
+    def initialise_dataset_loader(
+            self, data_param=None, task_param=None, data_partitioner=None):
         self.data_param = data_param
         self.regression_param = task_param
 
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.reader = ImageReader(SUPPORTED_INPUT)
-        else:  # in the inference process use image input only
-            self.reader = ImageReader(['image'])
-        self.reader.initialise_reader(data_param, task_param)
+            file_lists = []
+            if self.action_param.validation_every_n > 0:
+                file_lists.append(data_partitioner.train_files)
+                file_lists.append(data_partitioner.validation_files)
+            else:
+                file_lists.append(data_partitioner.train_files)
+
+            self.readers = []
+            for file_list in file_lists:
+                reader = ImageReader(SUPPORTED_INPUT)
+                reader.initialise(data_param, task_param, file_list)
+                self.readers.append(reader)
+        else:
+            inference_reader = ImageReader(['image'])
+            file_list = data_partitioner.inference_files
+            inference_reader.initialise(data_param, task_param, file_list)
+            self.readers = [inference_reader]
 
         mean_var_normaliser = MeanVarNormalisationLayer(
             image_name='image')
+        histogram_normaliser = None
         if self.net_param.histogram_ref_file:
             histogram_normaliser = HistogramNormalisationLayer(
                 image_name='image',
@@ -74,8 +89,6 @@ class RegressionApplication(BaseApplication):
                 norm_type=self.net_param.norm_type,
                 cutoff=self.net_param.cutoff,
                 name='hist_norm_layer')
-        else:
-            histogram_normaliser = None
 
         normalisation_layers = []
         if self.net_param.normalisation:
@@ -93,61 +106,67 @@ class RegressionApplication(BaseApplication):
                     min_percentage=self.action_param.scaling_percentage[0],
                     max_percentage=self.action_param.scaling_percentage[1]))
             if self.action_param.rotation_angle:
-                augmentation_layers.append(RandomRotationLayer(
-                    min_angle=self.action_param.rotation_angle[0],
-                    max_angle=self.action_param.rotation_angle[1]))
+                augmentation_layers.append(RandomRotationLayer())
+                augmentation_layers[-1].init_uniform_angle(
+                    self.action_param.rotation_angle)
 
         volume_padding_layer = []
         if self.net_param.volume_padding_size:
             volume_padding_layer.append(PadLayer(
                 image_name=SUPPORTED_INPUT,
                 border=self.net_param.volume_padding_size))
-        self.reader.add_preprocessing_layers(
-            volume_padding_layer + normalisation_layers + augmentation_layers)
+        for reader in self.readers:
+            reader.add_preprocessing_layers(volume_padding_layer +
+                                            normalisation_layers +
+                                            augmentation_layers)
 
     def initialise_uniform_sampler(self):
-        self.sampler = [UniformSampler(
-            reader=self.reader,
+        self.sampler = [[UniformSampler(
+            reader=reader,
             data_param=self.data_param,
             batch_size=self.net_param.batch_size,
             windows_per_image=self.action_param.sample_per_volume,
-            queue_length=self.net_param.queue_length)]
+            queue_length=self.net_param.queue_length) for reader in
+            self.readers]]
 
     def initialise_weighted_sampler(self):
-        self.sampler = [WeightedSampler(
-            reader=self.reader,
+        self.sampler = [[WeightedSampler(
+            reader=reader,
             data_param=self.data_param,
             batch_size=self.net_param.batch_size,
             windows_per_image=self.action_param.sample_per_volume,
-            queue_length=self.net_param.queue_length)]
+            queue_length=self.net_param.queue_length) for reader in
+            self.readers]]
 
     def initialise_resize_sampler(self):
-        self.sampler = [ResizeSampler(
-            reader=self.reader,
+        self.sampler = [[ResizeSampler(
+            reader=reader,
             data_param=self.data_param,
             batch_size=self.net_param.batch_size,
             shuffle_buffer=self.is_training,
-            queue_length=self.net_param.queue_length)]
+            queue_length=self.net_param.queue_length) for reader in
+            self.readers]]
 
     def initialise_grid_sampler(self):
-        self.sampler = [GridSampler(
-            reader=self.reader,
+        self.sampler = [[GridSampler(
+            reader=reader,
             data_param=self.data_param,
             batch_size=self.net_param.batch_size,
             spatial_window_size=self.action_param.spatial_window_size,
             window_border=self.action_param.border,
-            queue_length=self.net_param.queue_length)]
+            queue_length=self.net_param.queue_length) for reader in
+            self.readers]]
 
     def initialise_grid_aggregator(self):
         self.output_decoder = GridSamplesAggregator(
-            image_reader=self.reader,
+            image_reader=self.readers[0],
             output_path=self.action_param.save_seg_dir,
             window_border=self.action_param.border,
             interp_order=self.action_param.output_interp_order)
 
     def initialise_resize_aggregator(self):
         self.output_decoder = ResizeSamplesAggregator(
-            image_reader=self.reader,
+            image_reader=self.readers[0],
             output_path=self.action_param.save_seg_dir,
             window_border=self.action_param.border,
             interp_order=self.action_param.output_interp_order)
@@ -181,13 +200,22 @@ class RegressionApplication(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
-        data_dict = self.get_sampler()[0].pop_batch_op()
-        image = tf.cast(data_dict['image'], tf.float32)
-        net_out = self.net(image, self.is_training)
+
+        def switch_sampler(for_training):
+            with tf.name_scope('train' if for_training else 'validation'):
+                sampler = self.get_sampler()[0][0 if for_training else -1]
+                return sampler.pop_batch_op()
 
         if self.is_training:
-            crop_layer = CropLayer(border=self.regression_param.loss_border,
-                                   name='crop-88')
+            if self.action_param.validation_every_n > 0:
+                data_dict = tf.cond(tf.logical_not(self.is_validation),
+                                    lambda: switch_sampler(True),
+                                    lambda: switch_sampler(False))
+            else:
+                data_dict = switch_sampler(for_training=True)
+
+            image = tf.cast(data_dict['image'], tf.float32)
+            net_out = self.net(image, is_training=self.is_training)
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
@@ -196,6 +224,8 @@ class RegressionApplication(BaseApplication):
             loss_func = LossFunction(
                 loss_type=self.action_param.loss_type)
 
+            crop_layer = CropLayer(
+                border=self.regression_param.loss_border, name='crop-88')
             prediction = crop_layer(net_out)
             ground_truth = crop_layer(data_dict.get('output', None))
             weight_map = None if data_dict.get('weight', None) is None \
@@ -224,6 +254,10 @@ class RegressionApplication(BaseApplication):
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
         else:
+            data_dict = switch_sampler(for_training=False)
+            image = tf.cast(data_dict['image'], tf.float32)
+            net_out = self.net(image, is_training=self.is_training)
+
             crop_layer = CropLayer(border=0, name='crop-88')
             post_process_layer = PostProcessingLayer('IDENTITY')
             net_out = post_process_layer(crop_layer(net_out))

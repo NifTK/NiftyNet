@@ -1,4 +1,3 @@
-
 # Layers
 
 Summary of layers that can be used to build networks and their characteristics
@@ -7,16 +6,16 @@ Summary of layers that can be used to build networks and their characteristics
 File: activation.py
 Possible activation layers to be specified as the acti_func field of ConvolutionLayer or DeconvolutionLayer among the following values:
 
-Field | Equation | Graph
-------|----------|------
-relu  |[relu_eq](./figures/relu_eq.pdf)| ![relu_img](./figures/relu_img.png)
-relu6 |[relu6_eq](./figures/relu6_eq.pdf)| tes
-elu | ![elu_eq](./figures/elu_eq.pdf)|![elu_img](./figures/elu_img.png)
-softplus |[softplus_eq](./figures/softplus_eq.pdf)|![softplus_img](./figures/softplus_img.png)
-softsign |[softsign_eq](./figures/softsign_eq.pdf) |![softsign_img](./figures/softsign_img.png)
-sigmoid |[sigmoid_eq](./figures/sigmoid_eq.pdf)|![sigmoid_img](./figures/sigmoid_img.png)
-tanh |[tanh_eq](./figures/tanh_eq.pdf) |![tanh_img](./figures/tanh_img.png)
-prelu |[prelu_eq](./figures/prelu_eq.pdf) |![prelu_img](./figures/prelu_img.png)
+Field | Equation 
+------|----------
+relu  |[relu_eq](./figures/relu_eq.pdf)
+relu6 |[relu6_eq](./figures/relu6_eq.pdf)
+elu | [elu_eq](./figures/elu_eq.pdf)
+softplus |[softplus_eq](./figures/softplus_eq.pdf)
+softsign |[softsign_eq](./figures/softsign_eq.pdf) 
+sigmoid |[sigmoid_eq](./figures/sigmoid_eq.pdf)
+tanh |[tanh_eq](./figures/tanh_eq.pdf)
+prelu |[prelu_eq](./figures/prelu_eq.pdf)
 dropout | |
 
 
@@ -130,7 +129,7 @@ Loss function| Notes | Citation | Additional Arguments
 Cross-entropy |  | 
 Dice Loss |  | "V-net: Fully convolutional neural networks for volumetric medical image segmentation", Milletari, et al, 3DV 2016.
 Dice Loss (no square) | Similar to Dice Loss, but probabilities are not squared in the denominator. |
-Generalised Dice Loss | | "Generalised Dice overlap as a deep learning loss function for highly unbalanced segmentations", Sudre, C. et. al.  DLMIA 2017.
+Generalised Dice Loss | | "Generalised Dice overlap as a deep learning loss function for highly unbalanced segmentations", Sudre, C. et. al.  DLMIA 2017.| type_weight: default 'Square'. Indicates how the volume of each label is weighted. Square - Multiplication by the inverse of square of the volume / Simple - Multiplication by 1/V / Uniform - No weighting 
 Generalised Wasserstein Dice Loss | | "Generalised Wasserstein Dice Score for Imbalanced Multi-class Segmentation using Holistic Convolutional Networks", Fidon, L. et. al. MICCAI 2017 (BrainLes).
 Sensitivity-Specificity Loss  | | "Deep Convolutional Encoder Networks for Multiple Sclerosis Lesion Segmentation", Brosch et al, MICCAI 2015. | r: default 0.05. The 'sensitivity ratio' (authors suggest values from 0.01-0.10 will have similar effects)
 

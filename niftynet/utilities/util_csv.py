@@ -7,8 +7,6 @@ import sys
 from difflib import SequenceMatcher
 
 import numpy as np
-import pandas
-import tensorflow as tf
 
 from niftynet.io.misc_io import touch_folder
 from niftynet.utilities.filename_matching import KeywordsMatching
@@ -75,16 +73,16 @@ def __find_max_overlap_in_list(name, list_names):
         if test:
             match = SequenceMatcher(None, name, test).find_longest_match(
                 0, len(name), 0, len(test))
-            if match.size >= match_max and match.size / len(test) >= \
-                    match_ratio:
+            if match.size >= match_max \
+                    and match.size / len(test) >= match_ratio:
                 match_max = match.size
                 match_seq = test[match.b:(match.b + match.size)]
                 match_ratio = match.size / len(test)
                 match_orig = test
     if match_max == 0:
         return '', -1
-    other_list = [name for name in list_names if match_seq in name and
-                  match_max / len(name) == match_ratio]
+    other_list = [name for name in list_names
+                  if match_seq in name and match_max / len(name) == match_ratio]
     if len(other_list) > 1:
         return '', -1
     return match_seq, list_names.index(match_orig)
@@ -135,11 +133,11 @@ def match_second_degree(name_list1, name_list2):
                 init_match2[i], index = __find_max_overlap_in_list(n, redflat_1)
                 if index >= 0:
                     ind_match2[i] = indflat_1[index]
-    return init_match1, ind_match1, init_match2, ind_match2
+    return init_match1, ind_match1
 
 
 # From a list of list of names and a list of list of files that are
-# associated, find the name correspondance and therefore the files associations
+# associated, find the name correspondence and therefore the files associations
 def join_subject_id_and_filename_list(name_list, list_files):
     """
     From the list of list of names and the list of list of files
@@ -156,8 +154,7 @@ def join_subject_id_and_filename_list(name_list, list_files):
     ind_tot = []
     name_max_to_use = []
     for c in range(0, len(list_files)):
-        name_match, ind_match, _, _ = match_second_degree(name_max,
-                                                          name_list[c])
+        name_match, ind_match = match_second_degree(name_max, name_list[c])
         if c == ind_max:
             name_max_to_use = name_match
         name_tot.append(name_match)
@@ -166,8 +163,8 @@ def join_subject_id_and_filename_list(name_list, list_files):
     list_combined = []
     for (i, name) in enumerate(name_max_to_use):
         list_temp = [name]
-        'To do : Taking care of the case when the list of a constraint is ' \
-        'completely empty'
+        # To do : Taking care of the case when the list of a constraint is
+        # completely empty
         for c in range(0, len(list_files)):
             output = list_files[c][ind_tot[c][i]] if ind_tot[c][i] > -1 else ''
             list_temp.append(output)
@@ -191,6 +188,21 @@ def remove_duplicated_names(name_list):
     return duplicates_removed
 
 
+def write_csv(csv_file, list_combined):
+    # csv writer has different behaviour in python 2/3
+    if sys.version_info[0] >= 3:
+        with open(csv_file, 'w', newline='', encoding='utf8') as csvfile:
+            file_writer = csv.writer(csvfile)
+            for list_temp in list_combined:
+                file_writer.writerow(list_temp)
+    else:
+        with open(csv_file, 'wb') as csvfile:
+            file_writer = csv.writer(csvfile, delimiter=',')
+            for list_temp in list_combined:
+                file_writer.writerow(list_temp)
+    return
+
+
 def match_and_write_filenames_to_csv(list_constraints, csv_file):
     """
     Combine all elements of file searching until finally writing the names
@@ -211,75 +223,9 @@ def match_and_write_filenames_to_csv(list_constraints, csv_file):
         name_tot.append(name_list)
         list_tot.append(list_files)
     list_combined = join_subject_id_and_filename_list(name_tot, list_tot)
+    list_combined = filter(lambda names: '' not in names, list_combined)
+    list_combined = list(list_combined)
     touch_folder(os.path.dirname(csv_file))
+    write_csv(csv_file, list_combined)
 
-    # csv writer has different behaviour in python 2/3
-    if sys.version_info[0] >= 3:
-        with open(csv_file, 'w', newline='', encoding='utf8') as csvfile:
-            file_writer = csv.writer(csvfile)
-            for list_temp in list_combined:
-                file_writer.writerow(list_temp)
-    else:
-        with open(csv_file, 'wb') as csvfile:
-            file_writer = csv.writer(csvfile, delimiter=',')
-            for list_temp in list_combined:
-                file_writer.writerow(list_temp)
-    return
-
-
-def load_and_merge_csv_files(data_param):
-    """
-    Converts a list of csv_files in data_param
-    in to a joint list of file names (by matching the first column)
-    This function returns a <pandas.core.frame.DataFrame> of the
-    joint list
-    """
-    if not data_param:
-        tf.logging.fatal('nothing to load, please check reader.names')
-        raise ValueError
-    _file_list = None
-    for modality_name in data_param:
-        try:
-            csv_file = data_param[modality_name].csv_file
-        except AttributeError:
-            tf.logging.fatal('unrecognised parameter format')
-            raise
-        if hasattr(data_param[modality_name], 'path_to_search') and \
-                len(data_param[modality_name].path_to_search):
-            tf.logging.info(
-                '[%s] search file folders, writing csv file %s',
-                modality_name, csv_file)
-            section_tuple = data_param[modality_name].__dict__.items()
-            matcher = KeywordsMatching.from_tuple(section_tuple)
-            match_and_write_filenames_to_csv([matcher], csv_file)
-        else:
-            tf.logging.info(
-                '[%s] using existing csv file %s, skipped folder search',
-                modality_name, csv_file)
-        if not os.path.isfile(csv_file):
-            tf.logging.fatal(
-                "[%s] csv file %s not found.", modality_name, csv_file)
-            raise IOError
-        csv_list = pandas.read_csv(
-            csv_file, header=None, names=['subject_id', modality_name])
-        if _file_list is None:
-            _file_list = csv_list
-            continue
-
-        # merge _file_list based on subject_ids (first column of each csv)
-        n_rows = _file_list.shape[0]
-        _file_list = pandas.merge(_file_list, csv_list, on='subject_id')
-        if _file_list.shape[0] != n_rows:
-            tf.logging.warning("rows not matched in %s", csv_file)
-
-    if _file_list is None or _file_list.size == 0:
-        tf.logging.fatal(
-            "empty filename lists, please check the csv "
-            "files. (remove csv_file keyword if it is in the config file "
-            "to automatically search folders and generate new csv "
-            "files again)\n\n"
-            "Please note in the matched file names, each subject name are "
-            "matched by removing any keywords listed `filename_contains` "
-            "in the config.\n\n")
-        raise IOError
-    return _file_list
+    return list_combined

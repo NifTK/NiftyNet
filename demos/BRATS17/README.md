@@ -8,7 +8,7 @@ Cascaded Anisotropic Convolutional Neural Networks, MICCAI BRATS 2017
 
 ![A slice from BRATS17](./example_outputs/original.png)
 ![Ground truth of whole Tumor](./example_outputs/label.png)
-![Segmentation probablity map using this demo](./example_outputs/ave_prob.png)
+![Segmentation probability map using this demo](./example_outputs/ave_prob.png)
 
 From left to right: A slice from BRATS17, ground truth of whole tumor,
 and segmentation probability map using this demo [1].

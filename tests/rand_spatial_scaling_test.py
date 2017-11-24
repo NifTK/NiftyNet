@@ -1,7 +1,7 @@
 from __future__ import absolute_import, print_function
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 
@@ -9,12 +9,12 @@ from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 class RandRotationTest(tf.test.TestCase):
     def get_4d_input(self):
         input_4d = {'testdata': np.ones((16, 16, 16, 8))}
-        interp_order = {'testdata': (3,)*8}
+        interp_order = {'testdata': (3,) * 8}
         return input_4d, interp_order
 
     def get_5d_input(self):
-        input_5d = {'testdata':np.ones((32, 32, 32, 8, 1))}
-        interp_order = {'testdata':(1,)}
+        input_5d = {'testdata': np.ones((32, 32, 32, 8, 1))}
+        interp_order = {'testdata': (1,)}
         return input_5d, interp_order
 
     def test_4d_shape(self):
@@ -30,6 +30,7 @@ class RandRotationTest(tf.test.TestCase):
                                                max_percentage=10.0)
         rand_layer.randomise()
         out = rand_layer(x, interp)
+
 
 if __name__ == "__main__":
     tf.test.main()

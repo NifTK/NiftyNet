@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 import sys,glob,csv
- 
+
 import tensorflow as tf
 
 def rename_checkpoint_to_partial(source,target,transform):
@@ -55,6 +56,6 @@ def main(argv):
     return 2
   rename_checkpoint_to_partial(argv[0],argv[1],argv[2])
   return 0
- 
+
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

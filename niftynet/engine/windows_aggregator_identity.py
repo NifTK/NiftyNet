@@ -22,7 +22,7 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
             location[batch_id, 0] is used as a base_name,
             location[batch_id, 0] is used as a relative_id
             output file name is "{}_{}"%(base_name, relative_id)
-        3. the length of the locaiton array is greater than 2:
+        3. the length of the location array is greater than 2:
             (indicates output image is from single input image)
             location[batch_id, 0] is used as the file_name
     """

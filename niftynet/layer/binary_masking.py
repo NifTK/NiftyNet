@@ -27,7 +27,8 @@ class BinaryMaskingLayer(Layer):
                  threshold=0.0):
 
         super(BinaryMaskingLayer, self).__init__(name='binary_masking')
-        self.type_str = look_up_operations(type_str.lower(), SUPPORTED_MASK_TYPES)
+        self.type_str = look_up_operations(
+            type_str.lower(), SUPPORTED_MASK_TYPES)
         self.multimod_fusion = look_up_operations(
             multimod_fusion.lower(), SUPPORTED_MULTIMOD_MASK_TYPES)
 
