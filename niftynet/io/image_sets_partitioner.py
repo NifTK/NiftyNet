@@ -138,7 +138,7 @@ class ImageSetsPartitioner(object):
                 section_names = [COLUMN_UNIQ_ID] + list(section_names)
                 return self._file_list[section_names]
             return self._file_list
-        if self._partition_ids is None:
+        if self._partition_ids is None or self._partition_ids.empty:
             tf.logging.fatal('No partition ids available.')
             if self.new_partition:
                 tf.logging.fatal('Unable to create new partitions,'
@@ -380,7 +380,7 @@ class ImageSetsPartitioner(object):
         """
         returns True if the `phase` subset of images is not empty
         """
-        if self._partition_ids is None:
+        if self._partition_ids is None or self._partition_ids.empty:
             return False
         return (self._partition_ids[COLUMN_PHASE] == phase).any()
 
@@ -410,14 +410,18 @@ class ImageSetsPartitioner(object):
         """
         returns the list of validation filenames
         """
-        return self.get_file_list(VALID)
+        if self.has_validation:
+            return self.get_file_list(VALID)
+        return self.all_files
 
     @property
     def train_files(self):
         """
         returns the list of training filenames
         """
-        return self.get_file_list(TRAIN)
+        if self.has_training:
+            return self.get_file_list(TRAIN)
+        return self.all_files
 
     @property
     def inference_files(self):

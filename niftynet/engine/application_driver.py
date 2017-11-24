@@ -146,7 +146,8 @@ class ApplicationDriver(object):
         data_partitioner.reset()
         do_new_partition = self.is_training and self.initial_iter == 0 and \
             (not os.path.isfile(system_param.dataset_split_file)) and \
-            self.validation_every_n > 0
+            (train_param.exclude_fraction_for_validation > 0 or
+             train_param.exclude_fraction_for_inference > 0)
         data_fractions = None
         if do_new_partition:
             assert train_param.exclude_fraction_for_validation > 0 or \
