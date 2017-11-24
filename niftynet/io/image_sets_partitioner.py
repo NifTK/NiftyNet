@@ -29,7 +29,7 @@ TRAIN = 'Training'
 VALID = 'Validation'
 INFER = 'Inference'
 ALL = 'All'
-SUPPORTED_PHASES = {TRAIN, VALID, INFER, ALL}
+SUPPORTED_PHASES = set([TRAIN, VALID, INFER, ALL])
 
 
 @singleton

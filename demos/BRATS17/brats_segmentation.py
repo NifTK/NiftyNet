@@ -18,7 +18,7 @@ from niftynet.layer.mean_variance_normalisation import \
 from niftynet.layer.pad import PadLayer
 from niftynet.layer.post_processing import PostProcessingLayer
 
-SUPPORTED_INPUT = {'image', 'label'}
+SUPPORTED_INPUT = set(['image', 'label'])
 
 
 class BRATSApp(BaseApplication):

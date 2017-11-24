@@ -9,7 +9,7 @@ from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.convolution import ConvLayer
 from niftynet.utilities.util_common import look_up_operations
 
-SUPPORTED_OP = {'SUM', 'CONCAT'}
+SUPPORTED_OP = set(['SUM', 'CONCAT'])
 
 
 class ElementwiseLayer(TrainableLayer):

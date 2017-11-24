@@ -286,7 +286,7 @@ def _floormod_grad(op, grad):
     return [None, None]
 
 
-SUPPORTED_INTERPOLATION = {'BSPLINE', 'LINEAR', 'NEAREST', 'IDW'}
+SUPPORTED_INTERPOLATION = set(['BSPLINE', 'LINEAR', 'NEAREST', 'IDW'])
 
 SUPPORTED_BOUNDARY = {
     'ZERO': _boundary_replicate,
@@ -294,4 +294,4 @@ SUPPORTED_BOUNDARY = {
     'CIRCULAR': _boundary_circular,
     'SYMMETRIC': _boundary_symmetric}
 
-SUPPORTED_INPUT_DTYPE = {tf.float32}
+SUPPORTED_INPUT_DTYPE = set([tf.float32])
