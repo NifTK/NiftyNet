@@ -100,14 +100,14 @@ class SelectiveSampler(UniformSampler):
 
 
 def create_label_size_map(data):
-    '''
+    """
     This function creates the maps of label size. For each connected
     component of a label with value :value:, the binary segmentation is
     replaced by the size of the considered element
     :param data: segmentation
     :param value: value of the label to consider
     :return: count_data
-    '''
+    """
     labelled_data, _ = ndimage.label(data)
     unique, count = np.unique(labelled_data, return_counts=True)
     count_data = np.copy(labelled_data)
@@ -119,7 +119,7 @@ def create_label_size_map(data):
 
 
 def candidate_indices(win_sizes, data, constraint):
-    '''
+    """
     This functions creates a binary map of potential candidate indices given
     the specified constraints and the recalculated probability to select each of
      these candidates so as to uniformise the sampling according to the size of
@@ -128,7 +128,8 @@ def candidate_indices(win_sizes, data, constraint):
     :param data: segmentation
     :param constraint: sampling constraint
     :return: candidates: binary map of potential indices, proba_fin:
-    corresponding maps of associated sampling probability '''
+    corresponding maps of associated sampling probability
+    """
     unique = np.unique(np.round(data))
     list_labels = []
     data = np.round(data)
@@ -222,13 +223,13 @@ def candidate_indices(win_sizes, data, constraint):
 
 
 def create_probability_weights(candidates, mean_counts_size):
-    '''
+    """
     This functions creates the probability weighting given the valid
     candidates and the size of connected components associated to this candidate
     :param candidates: binary map of the valid candidates
     :param mean_counts_size: counts attributed to each candidate
     :return: probability map for the selection of any voxel as candidate
-    '''
+    """
     proba_weight = np.ones_like(candidates)
     for i in range(0, len(mean_counts_size)):
         # print(candidates.shape, mean_counts_size[i].shape, np.max(candidates),
