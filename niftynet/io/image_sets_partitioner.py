@@ -361,21 +361,21 @@ class ImageSetsPartitioner(object):
         Print summary of the partitioner
         """
         n_subjects = self.number_of_subjects()
-        summary_str = '\nNumber of subjects {}, '.format(n_subjects)
+        summary_str = '\n\nNumber of subjects {}, '.format(n_subjects)
         if self._file_list is not None:
             summary_str += 'input section names: {}\n'.format(
                 list(self._file_list))
         if self._partition_ids is not None and n_subjects > 0:
-            n_valid = self.number_of_subjects(VALID)
             n_train = self.number_of_subjects(TRAIN)
+            n_valid = self.number_of_subjects(VALID)
             n_infer = self.number_of_subjects(INFER)
             summary_str += \
-                'data partitioning -- number of cases:\n' \
-                '-- {} {} ({:.2f}%),\n' \
-                '-- {} {} ({:.2f}%),\n' \
-                '-- {} {} ({:.2f}%).\n'.format(
-                    VALID, n_valid, float(n_valid) / float(n_subjects) * 100.0,
+                'Dataset partitioning:\n' \
+                '-- {} {} cases ({:.2f}%),\n' \
+                '-- {} {} cases ({:.2f}%),\n' \
+                '-- {} {} cases ({:.2f}%).\n'.format(
                     TRAIN, n_train, float(n_train) / float(n_subjects) * 100.0,
+                    VALID, n_valid, float(n_valid) / float(n_subjects) * 100.0,
                     INFER, n_infer, float(n_infer) / float(n_subjects) * 100.0)
         else:
             summary_str += '-- using all subjects ' \

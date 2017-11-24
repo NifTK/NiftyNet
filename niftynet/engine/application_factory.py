@@ -150,13 +150,15 @@ def select_module(module_name, type_str, lookup_table):
     try:
         module_str, class_name = module_name.rsplit('.', 1)
         the_module = getattr(importlib.import_module(module_str), class_name)
+        tf.logging.info('Importing [%s] module: %s.', class_name, the_module)
         return the_module
     except (AttributeError, ValueError, ImportError) as not_imported:
         # print sys.path
         tf.logging.fatal(repr(not_imported))
         # Two possibilities: a typo for a lookup table entry
         #                 or a non-existing module
-        dists = {k: edit_distance(k, module_name) for k in lookup_table.keys()}
+        dists = dict((k, edit_distance(k, module_name))
+                     for k in list(lookup_table))
         closest = min(dists, key=dists.get)
         if dists[closest] <= 3:
             err = 'Could not import {2}: By "{0}", ' \
