@@ -230,6 +230,7 @@ class SegmentationApplication(BaseApplication):
             interp_order=self.action_param.output_interp_order)
 
     def initialise_sampler(self):
+        import pdb; pdb.set_trace()
         if self.is_training:
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][0]()
         else:
