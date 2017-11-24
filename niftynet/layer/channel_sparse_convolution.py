@@ -70,7 +70,7 @@ class ChannelSparseDeconvLayer(niftynet.layer.deconvolution.DeconvLayer):
         raise ValueError(
             "Only 2D and 3D spatial deconvolutions are supported")
 
-    output_dim = infer_output_dim(input_shape[1],
+    output_dim = infer_output_dims(input_shape[1],
                                   self.stride,
                                   self.kernel_size,
                                   self.padding)

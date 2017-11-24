@@ -234,7 +234,7 @@ class ScoreLayer(TrainableLayer):
         return output_tensor
 
 
-SUPPORTED_OPS = {'AVERAGE', 'WEIGHTED_AVERAGE', 'MAXOUT'}
+SUPPORTED_OPS = set(['AVERAGE', 'WEIGHTED_AVERAGE', 'MAXOUT'])
 
 
 class MergeLayer(TrainableLayer):

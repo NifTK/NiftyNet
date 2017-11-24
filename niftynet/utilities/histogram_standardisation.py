@@ -21,7 +21,7 @@ from niftynet.utilities.util_common import \
     look_up_operations, print_progress_bar
 
 DEFAULT_CUTOFF = [0.01, 0.99]
-SUPPORTED_CUTPOINTS = {'percentile', 'quartile', 'median'}
+SUPPORTED_CUTPOINTS = set(['percentile', 'quartile', 'median'])
 
 
 def __compute_percentiles(img, mask, cutoff):

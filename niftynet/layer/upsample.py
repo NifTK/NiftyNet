@@ -9,7 +9,7 @@ from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.deconvolution import DeconvLayer
 from niftynet.utilities.util_common import look_up_operations
 
-SUPPORTED_OP = {'REPLICATE', 'CHANNELWISE_DECONV'}
+SUPPORTED_OP = set(['REPLICATE', 'CHANNELWISE_DECONV'])
 
 
 class UpSampleLayer(TrainableLayer):

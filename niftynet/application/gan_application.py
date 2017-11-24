@@ -22,7 +22,7 @@ from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 
-SUPPORTED_INPUT = {'image', 'conditioning'}
+SUPPORTED_INPUT = set(['image', 'conditioning'])
 
 
 class GANApplication(BaseApplication):

@@ -10,7 +10,7 @@ from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.bn import BNLayer
 from niftynet.utilities.util_common import look_up_operations
 
-SUPPORTED_PADDING = {'SAME', 'VALID'}
+SUPPORTED_PADDING = set(['SAME', 'VALID'])
 
 
 def default_w_initializer():

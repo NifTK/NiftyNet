@@ -71,8 +71,8 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
             image_id, data, interp_orders = self.reader(shuffle=self.shuffle)
             if not data:
                 break
-            image_shapes = {
-                name: data[name].shape for name in self.window.names}
+            image_shapes = \
+                dict((name, data[name].shape) for name in self.window.names)
             # window shapes can be dynamic, here they
             # are converted to static ones
             # as now we know the image shapes
@@ -86,10 +86,8 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
                 output_dict = {}
                 for name in list(data):
                     # prepare output dictionary keys
-                    coordinates_key = \
-                        self.window.coordinates_placeholder(name)
-                    image_data_key = \
-                        self.window.image_data_placeholder(name)
+                    coordinates_key = self.window.coordinates_placeholder(name)
+                    image_data_key = self.window.image_data_placeholder(name)
 
                     # prepare coordinates data
                     output_dict[coordinates_key] = all_coordinates[name]

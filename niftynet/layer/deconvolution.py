@@ -12,7 +12,7 @@ from niftynet.utilities.util_common import look_up_operations
 
 SUPPORTED_OP = {'2D': tf.nn.conv2d_transpose,
                 '3D': tf.nn.conv3d_transpose}
-SUPPORTED_PADDING = {'SAME', 'VALID'}
+SUPPORTED_PADDING = set(['SAME', 'VALID'])
 
 
 def default_w_initializer():
