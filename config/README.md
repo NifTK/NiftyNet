@@ -363,12 +363,12 @@ Setting `starting_iter=0` starts the network from random initialisations.
 
 ###### `save_every_n`
 Frequency of saving the current training model saving.
-Setting to a non-positive value to disable the saving schedule.
+Setting to a `0` to disable the saving schedule.
 (A final model will always be saved when quitting the training loop.)
 
 ###### `tensorboard_every_n`
 Frequency of evaluating graph elements and write to tensorboard.
-Setting to a non-positive value to disable the tensorboard writing schedule.
+Setting to `0` to disable the tensorboard writing schedule.
 
 ###### `max_iter`
 Maximum number of training iterations.
@@ -388,7 +388,13 @@ according to [exclude_fraction_for_validation](#exclude_fraction_for_validation)
 
 A CSV table randomly mapping each file name to one of the stages `{'Training', 'Validation', 'Inference'}` will be generated and written to
 [dataset_split_file](#dataset_split_file). This file will be created at the beginning of training (`starting_iter=0`) and
-only if the file does not exist. If a new random partition is required, please remove the existing [dataset_split_file](#dataset_split_file).
+only if the file does not exist.
+
+- If a new random partition is required, please remove the existing [dataset_split_file](#dataset_split_file).
+
+- If no partition is required, please remove any existing [dataset_split_file](#dataset_split_file),
+and make sure both [exclude_fraction_for_validation](#exclude_fraction_for_validation)
+and [exclude_fraction_for_inference](#exclude_fraction_for_inference) are `0`.
 
 To exclude particular subjects or adjust the randomly generated partition,
 the [dataset_split_file](#dataset_split_file) can be edited manually.
@@ -423,7 +429,7 @@ otherwise inference will process all image files defined by [input specification
 
 ###### `validation_every_n`
 Run validation iterations after every N training iterations.
-Setting to non-positive values disables the validation.
+Setting to `0` disables the validation.
 
 ###### `validation_max_iter`
 Number of validation iterations to run.
