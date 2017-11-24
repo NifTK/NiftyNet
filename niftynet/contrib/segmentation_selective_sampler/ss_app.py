@@ -27,11 +27,11 @@ from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 SUPPORTED_INPUT = set(['image', 'label', 'weight', 'sampler'])
 
 
-class SegmentationApplication(BaseApplication):
+class SelectiveSampling(BaseApplication):
     REQUIRED_CONFIG_SECTION = "SEGMENTATION"
 
     def __init__(self, net_param, action_param, is_training):
-        super(SegmentationApplication, self).__init__()
+        super(SelectiveSampling, self).__init__()
         tf.logging.info('starting segmentation application')
         self.is_training = is_training
 
@@ -155,7 +155,7 @@ class SegmentationApplication(BaseApplication):
             self.segmentation_param.min_ratio_sampling,
             self.segmentation_param.num_min_labels,
             self.segmentation_param.proba_connect)
-        self.sampler = [
+        self.sampler = [[
             SelectiveSampler(
                 reader=reader,
                 data_param=self.data_param,
@@ -164,7 +164,7 @@ class SegmentationApplication(BaseApplication):
                 constraint=selective_constraints,
                 random_windows_per_image=self.segmentation_param.rand_samples,
                 queue_length=self.net_param.queue_length)
-            for reader in self.readers]
+            for reader in self.readers]]
 
     def initialise_grid_sampler(self):
         self.sampler = [[GridSampler(
@@ -185,9 +185,9 @@ class SegmentationApplication(BaseApplication):
 
     def initialise_sampler(self):
         if self.is_training:
-            self.SUPPORTED_SAMPLING[self.net_param.window_sampling][0]()
+            self.SUPPORTED_SAMPLING['selective'][0]()
         else:
-            self.SUPPORTED_SAMPLING[self.net_param.window_sampling][1]()
+            self.SUPPORTED_SAMPLING['selective'][1]()
 
     def initialise_network(self):
         w_regularizer = None
