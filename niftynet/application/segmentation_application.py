@@ -27,7 +27,6 @@ from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
-import ast
 
 SUPPORTED_INPUT = {'image', 'label', 'weight', 'sampler'}
 
