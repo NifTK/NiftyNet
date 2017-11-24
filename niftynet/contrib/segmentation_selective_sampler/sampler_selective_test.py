@@ -6,9 +6,8 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from niftynet.engine.sampler_selective import SelectiveSampler
-from niftynet.engine.sampler_selective import Constraint
-from niftynet.engine.sampler_selective import rand_choice_coordinates
+from niftynet.contrib.segmentation_selective_sampler.sampler_selective import \
+    SelectiveSampler, Constraint
 from niftynet.io.image_reader import ImageReader
 from tests.test_util import ParserNamespace
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
