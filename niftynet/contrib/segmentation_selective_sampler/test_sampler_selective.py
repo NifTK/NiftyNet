@@ -156,14 +156,13 @@ DYNAMIC_MOD_DATA = {
 #         spatial_window_size=(8,2)
 #     )
 # }
+
 DYNAMIC_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'), label=('Label',))
 
 data_partitioner = ImageSetsPartitioner()
-multi_mod_list = data_partitioner.initialise(MULTI_MOD_DATA).get_file_list()
-mod_2d_list = data_partitioner.initialise(MOD_2D_DATA).get_file_list()
-dynamic_list = data_partitioner.initialise(DYNAMIC_MOD_DATA).get_file_list()
 
 def get_3d_reader():
+    multi_mod_list = data_partitioner.initialise(MULTI_MOD_DATA).get_file_list()
     print(MULTI_MOD_DATA, MULTI_MOD_TASK)
     reader = ImageReader(['image', 'label'])
     reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
@@ -171,12 +170,14 @@ def get_3d_reader():
 
 
 def get_2d_reader():
+    mod_2d_list = data_partitioner.initialise(MOD_2D_DATA).get_file_list()
     reader = ImageReader(['image'])
     reader.initialise(MOD_2D_DATA, MOD_2D_TASK, mod_2d_list)
     return reader
 
 
 def get_dynamic_window_reader():
+    dynamic_list = data_partitioner.initialise(DYNAMIC_MOD_DATA).get_file_list()
     reader = ImageReader(['image','label'])
     reader.initialise(DYNAMIC_MOD_DATA, DYNAMIC_MOD_TASK, dynamic_list)
     return reader
