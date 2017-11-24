@@ -1,18 +1,14 @@
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
+from niftynet.contrib.segmentation_selective_sampler.sampler_selective import \
+    SelectiveSampler, Constraint
 from niftynet.engine.application_factory import \
     ApplicationNetFactory, InitializerFactory, OptimiserFactory
 from niftynet.engine.application_variables import \
     CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
 from niftynet.engine.sampler_grid import GridSampler
-from niftynet.engine.sampler_resize import ResizeSampler
-from niftynet.engine.sampler_uniform import UniformSampler
-from niftynet.engine.sampler_selective import SelectiveSampler
-from niftynet.engine.sampler_selective import Constraint
-from niftynet.engine.sampler_weighted import WeightedSampler
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
-from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.discrete_label_normalisation import \
@@ -45,15 +41,6 @@ class SegmentationApplication(BaseApplication):
         self.data_param = None
         self.segmentation_param = None
         self.SUPPORTED_SAMPLING = {
-            'uniform': (self.initialise_uniform_sampler,
-                        self.initialise_grid_sampler,
-                        self.initialise_grid_aggregator),
-            'weighted': (self.initialise_weighted_sampler,
-                         self.initialise_grid_sampler,
-                         self.initialise_grid_aggregator),
-            'resize': (self.initialise_resize_sampler,
-                       self.initialise_resize_sampler,
-                       self.initialise_resize_aggregator),
             'selective': (self.initialise_selective_sampler,
                           self.initialise_grid_sampler,
                           self.initialise_grid_aggregator)
@@ -158,52 +145,26 @@ class SegmentationApplication(BaseApplication):
                 augmentation_layers)
 
     def initialise_selective_sampler(self):
-        print("Initialisation ", self.segmentation_param.compulsory_labels,
-              self.segmentation_param.proba_connect)
-        print(self.segmentation_param.num_min_labels,
-              self.segmentation_param.proba_connect)
-        self.sampler = [SelectiveSampler(
-                            reader=self.readers[0], # TODO: change this to multiple readers
-                            data_param=self.data_param,
-                            batch_size=self.net_param.batch_size,
-                            windows_per_image=
-                            self.action_param.sample_per_volume,
-                            constraint=
-                            Constraint(self.segmentation_param.compulsory_labels,
-                                       self.segmentation_param.min_ratio_sampling,
-                                       self.segmentation_param.num_min_labels,
-                                       self.segmentation_param.proba_connect),
-                            random_windows_per_image=self.segmentation_param
-                                .rand_samples,
-                            queue_length=self.net_param.queue_length
-        )]
-
-    def initialise_uniform_sampler(self):
-        self.sampler = [[UniformSampler(
-            reader=reader,
-            data_param=self.data_param,
-            batch_size=self.net_param.batch_size,
-            windows_per_image=self.action_param.sample_per_volume,
-            queue_length=self.net_param.queue_length) for reader in
-            self.readers]]
-
-    def initialise_weighted_sampler(self):
-        self.sampler = [[WeightedSampler(
-            reader=reader,
-            data_param=self.data_param,
-            batch_size=self.net_param.batch_size,
-            windows_per_image=self.action_param.sample_per_volume,
-            queue_length=self.net_param.queue_length) for reader in
-            self.readers]]
-
-    def initialise_resize_sampler(self):
-        self.sampler = [[ResizeSampler(
-            reader=reader,
-            data_param=self.data_param,
-            batch_size=self.net_param.batch_size,
-            shuffle_buffer=self.is_training,
-            queue_length=self.net_param.queue_length) for reader in
-            self.readers]]
+        # print("Initialisation ",
+        #       self.segmentation_param.compulsory_labels,
+        #       self.segmentation_param.proba_connect)
+        # print(self.segmentation_param.num_min_labels,
+        #       self.segmentation_param.proba_connect)
+        selective_constraints = Constraint(
+            self.segmentation_param.compulsory_labels,
+            self.segmentation_param.min_ratio_sampling,
+            self.segmentation_param.num_min_labels,
+            self.segmentation_param.proba_connect)
+        self.sampler = [
+            SelectiveSampler(
+                reader=reader,
+                data_param=self.data_param,
+                batch_size=self.net_param.batch_size,
+                windows_per_image=self.action_param.sample_per_volume,
+                constraint=selective_constraints,
+                random_windows_per_image=self.segmentation_param.rand_samples,
+                queue_length=self.net_param.queue_length)
+            for reader in self.readers]
 
     def initialise_grid_sampler(self):
         self.sampler = [[GridSampler(
@@ -217,13 +178,6 @@ class SegmentationApplication(BaseApplication):
 
     def initialise_grid_aggregator(self):
         self.output_decoder = GridSamplesAggregator(
-            image_reader=self.readers[0],
-            output_path=self.action_param.save_seg_dir,
-            window_border=self.action_param.border,
-            interp_order=self.action_param.output_interp_order)
-
-    def initialise_resize_aggregator(self):
-        self.output_decoder = ResizeSamplesAggregator(
             image_reader=self.readers[0],
             output_path=self.action_param.save_seg_dir,
             window_border=self.action_param.border,
@@ -262,12 +216,6 @@ class SegmentationApplication(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
-        #def data_net(for_training):
-        #    with tf.name_scope('train' if for_training else 'validation'):
-        #        sampler = self.get_sampler()[0][0 if for_training else -1]
-        #        data_dict = sampler.pop_batch_op()
-        #        image = tf.cast(data_dict['image'], tf.float32)
-        #        return data_dict, self.net(image, is_training=for_training)
 
         def switch_sampler(for_training):
             with tf.name_scope('train' if for_training else 'validation'):
@@ -275,12 +223,7 @@ class SegmentationApplication(BaseApplication):
                 return sampler.pop_batch_op()
 
         if self.is_training:
-            #if self.action_param.validation_every_n > 0:
-            #    data_dict, net_out = tf.cond(tf.logical_not(self.is_validation),
-            #                                 lambda: data_net(True),
-            #                                 lambda: data_net(False))
-            #else:
-            #    data_dict, net_out = data_net(True)
+
             if self.action_param.validation_every_n > 0:
                 data_dict = tf.cond(tf.logical_not(self.is_validation),
                                     lambda: switch_sampler(for_training=True),
@@ -322,17 +265,17 @@ class SegmentationApplication(BaseApplication):
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
 
-            #outputs_collector.add_to_collection(
+            # outputs_collector.add_to_collection(
             #    var=image*180.0, name='image',
             #    average_over_devices=False, summary_type='image3_sagittal',
             #    collection=TF_SUMMARIES)
 
-            #outputs_collector.add_to_collection(
+            # outputs_collector.add_to_collection(
             #    var=image, name='image',
             #    average_over_devices=False,
             #    collection=NETWORK_OUTPUT)
 
-            #outputs_collector.add_to_collection(
+            # outputs_collector.add_to_collection(
             #    var=tf.reduce_mean(image), name='mean_image',
             #    average_over_devices=False, summary_type='scalar',
             #    collection=CONSOLE)

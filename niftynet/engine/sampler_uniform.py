@@ -101,8 +101,6 @@ class UniformSampler(Layer, InputBatchQueueRunner):
                     try:
                         image_window = data[name][
                             x_start:x_end, y_start:y_end, z_start:z_end, ...]
-                        if name == 'label':
-                            print(np.sum(image_window), 'test label selectif')
                         image_array.append(image_window[np.newaxis, ...])
                     except ValueError:
                         tf.logging.fatal(
