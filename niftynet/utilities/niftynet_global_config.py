@@ -63,7 +63,6 @@ class NiftyNetGlobalConfig(object):
         :type path: `os.path`
         """
         makedirs(path)
-        print('creating {}', path)
         open(join(path, '__init__.py'), 'a').close()
 
     @staticmethod

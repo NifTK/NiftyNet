@@ -156,16 +156,14 @@ def run():
         input_data_args[section] = all_args[section]
         # set the output path of csv list if not exists
         csv_path = input_data_args[section].csv_file
-        if not os.path.isfile(csv_path):
-            csv_filename = os.path.join(
-                all_args['SYSTEM'].model_dir, '{}.csv'.format(section))
-            input_data_args[section].csv_file = csv_filename
-        else:
+        if os.path.isfile(csv_path):
             # don't search files if csv specified in config
             try:
                 delattr(input_data_args[section], 'path_to_search')
             except AttributeError:
                 pass
+        else:
+            input_data_args[section].csv_file = ''
 
     # update conf path
     system_args['CONFIG_FILE'] = argparse.Namespace(path=meta_args.conf)
