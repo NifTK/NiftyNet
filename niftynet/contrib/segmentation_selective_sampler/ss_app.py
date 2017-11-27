@@ -152,8 +152,8 @@ class SelectiveSampling(BaseApplication):
         #       self.segmentation_param.proba_connect)
         selective_constraints = Constraint(
             self.segmentation_param.compulsory_labels,
-            self.segmentation_param.min_ratio_sampling,
-            self.segmentation_param.num_min_labels,
+            self.segmentation_param.min_sampling_ratio,
+            self.segmentation_param.min_numb_labels,
             self.segmentation_param.proba_connect)
         self.sampler = [[
             SelectiveSampler(
