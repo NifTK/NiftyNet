@@ -40,10 +40,16 @@ class NiftyNetGlobalConfig(object):
             makedirs(self._niftynet_home)
 
             # create folders for user-defined extensions such as new networks
-            for ext in NiftyNetGlobalConfig.niftynet_exts:
-                NiftyNetGlobalConfig.__create_module(join(self._niftynet_home, ext))
+            for ext in list(NiftyNetGlobalConfig.niftynet_exts):
+                extension_subfolder = join(self._niftynet_home, ext)
+                NiftyNetGlobalConfig.__create_module(extension_subfolder)
                 for mod in NiftyNetGlobalConfig.niftynet_exts[ext]:
-                    NiftyNetGlobalConfig.__create_module(join(self._niftynet_home, ext, mod))
+                    extension_subsubfolder = join(self._niftynet_home, ext, mod)
+                    NiftyNetGlobalConfig.__create_module(extension_subsubfolder)
+
+        for ext in list(NiftyNetGlobalConfig.niftynet_exts):
+            extension_subfolder = join(self._niftynet_home, ext)
+            sys.path.insert(1, extension_subfolder)
         sys.path.insert(1, self._niftynet_home)
         return self
 
@@ -57,6 +63,7 @@ class NiftyNetGlobalConfig(object):
         :type path: `os.path`
         """
         makedirs(path)
+        print('creating {}', path)
         open(join(path, '__init__.py'), 'a').close()
 
     @staticmethod
