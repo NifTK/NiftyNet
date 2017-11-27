@@ -333,7 +333,7 @@ class ApplicationDriver(object):
         ckpt_state = tf.train.get_checkpoint_state(self.model_dir)
         if ckpt_state is None:
             tf.logging.fatal(
-                "%s/checkpoint not found, please check"
+                "%s/checkpoint not found, please check "
                 "config parameter: model_dir", self.model_dir)
         if self.initial_iter > 0:
             checkpoint = '{}-{}'.format(self.session_prefix, self.initial_iter)
@@ -347,8 +347,8 @@ class ApplicationDriver(object):
                                 'on checkpoints', self.initial_iter)
             except (ValueError, AttributeError):
                 tf.logging.fatal(
-                    'failed to get iteration number'
-                    'from checkpoint path, please set'
+                    'failed to get iteration number '
+                    'from checkpoint path, please set '
                     'inference_iter or starting_iter to a positive integer')
                 raise
         # restore session

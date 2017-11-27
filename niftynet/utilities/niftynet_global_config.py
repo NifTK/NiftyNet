@@ -20,7 +20,7 @@ class NiftyNetGlobalConfig(object):
     global_section = 'global'
     home_key = 'home'
 
-    niftynet_exts = {'niftynetext': ['network']}
+    niftynet_exts = {'extensions': ['network']}
 
     def __init__(self):
         self.setup()
