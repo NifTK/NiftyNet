@@ -87,6 +87,13 @@ def __add_segmentation_args(parser):
         type=float,
         default=0.00001)
 
+    parser.add_argument(
+        "--evaluation_units",
+        help="Compute per-component metrics for per label or per connected "
+             "component. [foreground, label, or cc]",
+        choices = ['foreground', 'label', 'cc'],
+        default='foreground')
+
     from niftynet.application.segmentation_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser

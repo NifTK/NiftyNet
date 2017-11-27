@@ -13,6 +13,7 @@ from niftynet.utilities.user_parameters_helper import str2boolean
 from niftynet.utilities.user_parameters_helper import str_array
 
 DEFAULT_INFERENCE_OUTPUT = os.path.join('.', 'output')
+DEFAULT_EVALUATION_OUTPUT = os.path.join('.', 'evaluation')
 DEFAULT_DATASET_SPLIT_FILE = os.path.join('.', 'dataset_split.csv')
 DEFAULT_MODEL_DIR = None
 
@@ -20,8 +21,8 @@ DEFAULT_MODEL_DIR = None
 def add_application_args(parser):
     parser.add_argument(
         "action",
-        help="train or inference",
-        choices=['train', 'inference'])
+        help="train, inference or evaluation",
+        choices=['train', 'inference', 'evaluation'])
 
     parser.add_argument(
         "--cuda_devices",
@@ -94,6 +95,22 @@ def add_inference_args(parser):
         help="[Inference only] Width of borders to crop for segmented patch",
         type=spatialnumarray,
         default=(0, 0, 0))
+    return parser
+
+
+def add_evaluation_args(parser):
+    parser.add_argument(
+        "--evaluations",
+        metavar='',
+        help="[Evaluation only] List of evaluations to generate",
+        default='')
+
+    parser.add_argument(
+        "--save_csv_dir",
+        metavar='',
+        help="[Evaluation only] Directory to save evaluation metrics",
+        default=DEFAULT_EVALUATION_OUTPUT)
+
     return parser
 
 

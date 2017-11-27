@@ -31,6 +31,7 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
                  output_path=os.path.join('.', 'output')):
         ImageWindowsAggregator.__init__(self, image_reader=image_reader)
         self.output_path = os.path.abspath(output_path)
+        self.inferred_csv = os.path.join(self.output_path, 'inferred.csv')
         self.output_id = {'base_name': None, 'relative_id': 0}
 
     def _decode_subject_name(self, location=None):
@@ -76,4 +77,6 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
             return
         uniq_name = "{}_{}_niftynet_generated.nii.gz".format(idx, filename)
         misc_io.save_data_array(self.output_path, uniq_name, image, None)
+        with open(self.inferred_csv, 'w+') as csv_file:
+            csv_file.write('{},{}'.format(idx, uniq_name))
         return

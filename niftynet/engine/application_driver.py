@@ -138,15 +138,17 @@ class ApplicationDriver(object):
         # create an application instance
         assert app_param, 'application specific param. not specified'
         app_module = ApplicationDriver._create_app(app_param.name)
-        self.app = app_module(net_param, action_param, self.is_training)
+        self.app = app_module(net_param, action_param, system_param.action)
 
         # initialise data input
         data_partitioner = ImageSetsPartitioner()
         # clear the cached file lists
         data_partitioner.reset()
         do_new_partition = self.is_training and self.initial_iter == 0 and \
-            (not os.path.isfile(system_param.dataset_split_file)) and \
-            self.validation_every_n > 0
+                           (not os.path.isfile(
+                               system_param.dataset_split_file)) and \
+                           (train_param.exclude_fraction_for_validation > 0 or
+                            train_param.exclude_fraction_for_inference > 0)
         data_fractions = None
         if do_new_partition:
             assert train_param.exclude_fraction_for_validation > 0 or \

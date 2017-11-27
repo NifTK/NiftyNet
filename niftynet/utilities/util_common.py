@@ -153,6 +153,26 @@ class MorphologyOps(object):
     def foreground_component(self):
         return ndimage.label(self.binary_map)
 
+cache={}
+def CachedFunction(func):
+    def decorated(*args, **kwargs):
+        key = (func, args, frozenset(kwargs.items()))
+        if key not in cache:
+            cache[key] = func(*args,**kwargs)
+        return cache[key]
+    return decorated
+
+def CachedFunctionByID(func):
+    def decorated(*args, **kwargs):
+        id_args = tuple(id(a) for a in args)
+        id_kwargs = ((k,id(kwargs[k])) for k in sorted(kwargs.keys()))
+        key = (func, id_args, id_kwargs)
+        if key not in cache:
+            cache[key] = func(*args,**kwargs)
+        return cache[key]
+    return decorated
+
+
 
 class CacheFunctionOutput(object):
     """

@@ -33,8 +33,8 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     # the section collects all application specific user parameters
     REQUIRED_CONFIG_SECTION = None
 
-    # boolean flag
-    is_training = True
+    # flag for phase 'train', 'inference', 'evaluation'
+    action = 'train'
     # TF placeholders for switching network on the fly
     is_validation = None
 
@@ -62,11 +62,11 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         if not isinstance(self.net, TrainableLayer):
             raise ValueError('self.net should be an instance'
                              ' of niftynet.layer.TrainableLayer')
-        if self.optimiser is None and self.is_training:
+        if self.optimiser is None and self.action == 'train':
             raise NotImplementedError('optimiser should be initialised')
-        if self.gradient_op is None and self.is_training:
+        if self.gradient_op is None and self.action == 'train':
             raise NotImplementedError('gradient_op should be initialised')
-        if self.output_decoder is None and not self.is_training:
+        if self.output_decoder is None and not self.action == 'train':
             raise NotImplementedError('output decoder should be initialised')
 
     def initialise_dataset_loader(

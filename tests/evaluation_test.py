@@ -1,14 +1,24 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
+
+from argparse import Namespace
 import tensorflow as tf
 import numpy as np
 from niftynet.evaluation.pairwise_measures import PairwiseMeasures
 from niftynet.utilities.util_common import MorphologyOps
+from niftynet.evaluation.segmentation_evaluator import SegmentationEvaluator
+import niftynet.evaluation.segmentation_evaluations as segmentation_evaluations
+import niftynet.evaluation.regression_evaluations as regression_evaluations
+
+from niftynet.evaluation.regression_evaluator import RegressionEvaluator
 
 TEST_CASES = {0: {'seg_img': np.array([1, 0, 0, 0]), 'ref_img': np.array([1, 0, 0, 0])},
               1: {'seg_img': np.array([1, 0, 1, 0]), 'ref_img': np.array([1, 0, 0, 0])},
               2: {'seg_img': np.array([3, 2, 0, 0]), 'ref_img': np.array([1, 2, 0, 0])},
               3: {'seg_img': np.array([1, 0, 0.5, 0]), 'ref_img': np.array([1, 0, 0, 0])},
+              4: {'seg_img': np.reshape([1, 1, 1, 0, 0, 0, 0, 0],[2,2,2,1,1]),
+                  'ref_img': np.reshape([0, 0, 0, 0, 0, 0, 1, 1],[2,2,2,1,1])},
+
               }
 
 
@@ -126,7 +136,6 @@ class PairwiseTests(np.testing.TestCase):
                                              pixdim=[2])
         self.assertEqual(pairwise_measures.vol_diff(), 1.)
 
-
 class MorphologyTests(np.testing.TestCase):
     def test_2d_offset(self):
         test_img = np.concatenate([np.zeros([3, 3]), np.ones([3, 3])])
@@ -150,6 +159,224 @@ class MorphologyTests(np.testing.TestCase):
         self.assertRaises(AssertionError, MorphologyOps, test_img, 8)
         #self.assertRaises(ValueError, MorphologyOps(test_img, 8).border_map)
 
+
+class RegressionEvaluationTests(np.testing.TestCase):
+    def build_data(self):
+        ref = np.reshape([1., .2, 2., 1., .9, .2, 3., 2.], [2, 2, 2, 1, 1])
+        out = np.reshape([1., .3, 2., 1., .9, .2, 3., 2.], [2, 2, 2, 1, 1])
+        return ref, out
+
+    def test_mse(self):
+        rd = regression_evaluations.mse(None, None, None).metric(
+            *self.build_data())
+        self.assertAlmostEqual(rd, 0.00125, 3)
+
+    def test_rmse(self):
+        rd = regression_evaluations.rmse(None, None, None).metric(
+            *self.build_data())
+        self.assertAlmostEqual(rd, 0.03535, 3)
+
+
+    def test_mae(self):
+        rd = regression_evaluations.mae(None, None, None).metric(
+            *self.build_data())
+        self.assertAlmostEqual(rd, 0.0125,  3)
+
+
+class SegmentationEvaluationTests(np.testing.TestCase):
+    def metric(self, cls, case):
+        return cls(None, None, None).metric_from_binarized(
+                                  seg=TEST_CASES[case]['seg_img'],
+                                  ref=TEST_CASES[case]['ref_img'])
+
+    def test_average_distance(self):
+        self.assertAlmostEqual(self.metric(
+            segmentation_evaluations.average_distance, 4), 1.2485,3)
+
+    def test_hausdorff_distance(self):
+        self.assertAlmostEqual(self.metric(
+            segmentation_evaluations.hausdorff_distance, 4), 1.414,3)
+
+    def test_hausdorff95_distance(self):
+        self.assertAlmostEqual(self.metric(
+            segmentation_evaluations.hausdorff95_distance, 4), 1.414,3)
+
+    def test_dice_score(self):
+        self.assertEqual(self.metric(segmentation_evaluations.dice, 0), 1.0)
+
+    def test_true_positive(self):
+        self.assertEqual(self.metric(segmentation_evaluations.tp, 1), 1.0)
+
+    def test_true_negative(self):
+        self.assertEqual(self.metric(segmentation_evaluations.tn, 1), 2.)
+
+    def test_n_negative(self):
+        self.assertEqual(self.metric(
+            segmentation_evaluations.n_neg_ref, 1), 3.0)
+        self.assertEqual(self.metric(
+            segmentation_evaluations.n_neg_seg, 1), 2.0)
+
+    def test_union(self):
+        self.assertEqual(self.metric(segmentation_evaluations.n_union, 1), 2.0)
+
+    def test_intersection(self):
+        self.assertEqual(self.metric(
+            segmentation_evaluations.n_intersection,1), 1.0)
+
+    def test_sensitivity(self):
+        self.assertEqual(self.metric(
+            segmentation_evaluations.sensitivity, 1), 1.0)
+
+    def test_specificity(self):
+        self.assertEqual(self.metric(
+            segmentation_evaluations.specificity, 1), 2. / 3)
+
+    def test_accuracy(self):
+        self.assertEqual(self.metric(
+            segmentation_evaluations.accuracy, 1), 3. / 4)
+
+    def test_false_positive_rate(self):
+        self.assertEqual(self.metric(
+            segmentation_evaluations.false_positive_rate, 1), 1. / 3)
+
+    def test_positive_predictive_value(self):
+        self.assertEqual(self.metric(
+            segmentation_evaluations.positive_predictive_values, 1), 1. / 2)
+
+    def test_negative_predictive_value(self):
+        self.assertEqual(self.metric(
+            segmentation_evaluations.negative_predictive_values, 1), 1.0)
+
+    def test_intersection_over_union(self):
+        self.assertEqual(self.metric(
+            segmentation_evaluations.intersection_over_union, 1), 1. / 2)
+
+    def test_jaccard(self):
+        self.assertEqual(self.metric(
+            segmentation_evaluations.jaccard, 1), 1. / 2)
+
+    def test_informedness(self):
+        self.assertAlmostEqual(self.metric(
+            segmentation_evaluations.informedness, 1), 2. / 3)
+
+    def test_markedness(self):
+        self.assertEqual(self.metric(
+            segmentation_evaluations.markedness,1), 1. /2)
+
+
+class SegmentationEvaluatorTests(np.testing.TestCase):
+    """
+    Tests that evaluator - evaluations integration works
+    """
+
+    class ReaderStub():
+        def __init__(self):
+            self.count = 0
+            sz=[2,2,2,1,1]
+            self.data=((0,
+                        {'label': np.reshape([1, 0, 0, 0, 1, 0, 0, 0], sz),
+                         'inferred': np.reshape([1, 0, 0, 0, 1, 0, 0, 0], sz)},
+                        None),
+                       (1,
+                        {'label': np.reshape([1, 1, 0, 0, 1, 0, 0, 0], sz),
+                         'inferred': np.reshape([1, 0, 0, 0, 1, 0, 0, 0], sz)},
+                        None),
+                       (-1, None, None))
+
+        def __call__(self, shuffle):
+            return_value = self.data[self.count]
+            self.count += 1
+            return return_value
+
+        def get_subject_id(self, image_id):
+            return ['foo','bar'][image_id]
+
+    def test_segmentation_evaluator(self):
+        app_param = Namespace(evaluation_units='label,cc',output_prob=False,
+                              num_classes=2)
+        eval_param = Namespace(evaluations='Dice,Jaccard,average_distance')
+        evalu = SegmentationEvaluator(SegmentationEvaluatorTests.ReaderStub(),
+                                      app_param, eval_param)
+        result_dict = evalu.evaluate()
+        self.assertIn(('subject_id', 'cc_id'), result_dict)
+        self.assertIn(('subject_id', 'label'), result_dict)
+
+        group_cc = result_dict[('subject_id', 'cc_id')]
+        for result in group_cc:
+            self.assertIn('subject_id', result)
+            self.assertIn('cc_id', result)
+        group_l = result_dict[('subject_id', 'label')]
+        for result in group_l:
+            self.assertIn('subject_id', result)
+            self.assertIn('label', result)
+
+        self.assertTrue(any(['jaccard' in m for m in group_l]))
+        self.assertTrue(any(['dice' in m for m in group_l]))
+        self.assertTrue(any(['average_distance' in m for m in group_l]))
+        self.assertTrue(any(['jaccard' in m for m in group_cc]))
+        self.assertTrue(any(['dice' in m for m in group_cc]))
+        self.assertTrue(any(['average_distance' in m for m in group_cc]))
+
+        self.assertTrue(any([m['subject_id']=='foo' for m in group_cc]),
+                        'subject `foo` not in any result'+ str(group_cc))
+        self.assertTrue(any([m['subject_id']=='bar' for m in group_cc]),
+                        'subject `bar` not in any result'+ str(group_cc))
+        self.assertTrue(any([m['subject_id']=='foo' for m in group_l]),
+                        'subject `foo` not in any result'+ str(group_l))
+        self.assertTrue(any([m['subject_id']=='bar' for m in group_l]),
+                        'subject `bar` not in any result'+ str(group_l))
+
+class RegressionEvaluatorTests(np.testing.TestCase):
+    """
+    Tests that evaluator - evaluations integration works
+    """
+
+    class ReaderStub():
+        def __init__(self):
+            self.count = 0
+            sz = [2, 2, 2, 1, 1]
+            self.data = ((0,
+                          {'output': np.reshape([1, 0, 0, 0, 1, 0, 0, 0],
+                                               sz),
+                           'inferred': np.reshape([1, 0, 0, 0, 1, 0, 0, 0],
+                                                  sz)},
+                          None),
+                         (1,
+                          {'output': np.reshape([1, 1, 0, 0, 1, 0, 0, 0],
+                                               sz),
+                           'inferred': np.reshape([1, 0, 0, 0, 1, 0, 0, 0],
+                                                  sz)},
+                          None),
+                         (-1, None, None))
+
+        def __call__(self, shuffle):
+            return_value = self.data[self.count]
+            self.count += 1
+            return return_value
+
+        def get_subject_id(self, image_id):
+            return ['foo', 'bar'][image_id]
+
+    def test_regression_evaluator(self):
+        app_param = Namespace()
+        eval_param = Namespace(evaluations='rmse,mse')
+        evalu = RegressionEvaluator(RegressionEvaluatorTests.ReaderStub(),
+                                    app_param, eval_param)
+        result_dict = evalu.evaluate()
+        self.assertIn(('subject_id',), result_dict)
+
+        group = result_dict[('subject_id',)]
+        for result in group:
+            self.assertIn('subject_id', result)
+
+        self.assertTrue(any(['mse' in m for m in group]),
+                        'mse not in any result:'+ str(group))
+        self.assertTrue(any(['rmse' in m for m in group]),
+                        'rmse not in any result:'+ str(group))
+        self.assertTrue(any([m['subject_id']=='foo' for m in group]),
+                        'subject `foo` not in any result'+ str(group))
+        self.assertTrue(any([m['subject_id']=='bar' for m in group]),
+                        'subject `bar` not in any result'+ str(group))
 
 if __name__ == '__main__':
     tf.test.main()

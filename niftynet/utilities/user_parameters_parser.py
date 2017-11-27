@@ -18,6 +18,7 @@ from niftynet.utilities.user_parameters_default import add_inference_args
 from niftynet.utilities.user_parameters_default import add_input_data_args
 from niftynet.utilities.user_parameters_default import add_network_args
 from niftynet.utilities.user_parameters_default import add_training_args
+from niftynet.utilities.user_parameters_default import add_evaluation_args
 from niftynet.utilities.user_parameters_helper import has_section_in_config
 from niftynet.utilities.user_parameters_helper import standardise_section_name
 from niftynet.utilities.util_common import \
@@ -29,7 +30,7 @@ try:
 except ImportError:
     import ConfigParser as configparser
 
-SYSTEM_SECTIONS = {'SYSTEM', 'NETWORK', 'TRAINING', 'INFERENCE'}
+SYSTEM_SECTIONS = {'SYSTEM', 'NETWORK', 'TRAINING', 'INFERENCE', 'EVALUATION'}
 epilog_string = \
     '\n\n======\nFor more information please visit:\n' \
     'https://github.com/NifTK/NiftyNet/tree/dev/config/README.md\n' \
@@ -207,6 +208,8 @@ def _parse_arguments_by_section(parents,
         section_parser = add_training_args(section_parser)
     elif section == 'INFERENCE':
         section_parser = add_inference_args(section_parser)
+    elif section == 'EVALUATION':
+        section_parser = add_evaluation_args(section_parser)
     elif section == required_section:
         section_parser = add_customised_args(section_parser, section.upper())
     else:
@@ -239,6 +242,7 @@ def check_keywords(config):
         validation_parser = add_network_args(validation_parser)
         validation_parser = add_training_args(validation_parser)
         validation_parser = add_inference_args(validation_parser)
+        validation_parser = add_evaluation_args(validation_parser)
         validation_parser = add_input_data_args(validation_parser)
         try:
             validation_parser = add_customised_args(

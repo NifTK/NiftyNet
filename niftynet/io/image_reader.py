@@ -259,6 +259,14 @@ class ImageReader(Layer):
             tf.logging.warning('Unknown subject id in reader table.')
             raise
 
+    def get_image_index(self, subject_id):
+        """
+        Given a subject id, return the file_list index
+        :param subject_id: a string with the subject id
+        :return: an int with the file list index
+        """
+        return np.flatnonzero(self._file_list['subject_id'] == subject_id)[0]
+
 
 def _filename_to_image_list(file_list, mod_dict, data_param):
     """

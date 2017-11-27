@@ -31,6 +31,7 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         ImageWindowsAggregator.__init__(self, image_reader=image_reader)
         self.name = name
         self.output_path = os.path.abspath(output_path)
+        self.inferred_csv = os.path.join(self.output_path, 'inferred.csv')
         self.window_border = window_border
         self.output_interp_order = interp_order
 
@@ -97,4 +98,6 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                                 image_out,
                                 source_image_obj,
                                 self.output_interp_order)
+        with open(self.inferred_csv, 'w+') as csv_file:
+            csv_file.write('{},{}'.format(subject_name, filename))
         return

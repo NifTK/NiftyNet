@@ -41,6 +41,8 @@ import os
 import niftynet.utilities.util_common as util
 import niftynet.utilities.user_parameters_parser as user_parameters_parser
 from niftynet.engine.application_driver import ApplicationDriver
+from niftynet.evaluation.evaluation_application_driver import \
+    EvaluationApplicationDriver
 from niftynet.io.misc_io import touch_folder
 from niftynet.io.misc_io import set_logger
 from niftynet.io.misc_io import resolve_module_dir
@@ -109,8 +111,20 @@ def main():
     except (AttributeError, KeyError):
         pass
 
+    # 4. resolve evaluation dir:
+    try:
+        if system_param['EVALUATION'].save_csv_dir:
+            system_param['EVALUATION'].save_csv_dir = to_absolute_path(
+                input_path=system_param['EVALUATION'].save_csv_dir,
+                model_root=system_param['SYSTEM'].model_dir)
+    except (AttributeError, KeyError):
+        pass
+
     # start application
-    app_driver = ApplicationDriver()
+    driver_table = {'train':ApplicationDriver,
+                    'inference': ApplicationDriver,
+                    'evaluation': EvaluationApplicationDriver}
+    app_driver = driver_table[system_param['SYSTEM'].action]()
     app_driver.initialise_application(system_param, input_data_param)
     app_driver.run_application()
     return 0
