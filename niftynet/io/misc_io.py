@@ -382,6 +382,17 @@ def resolve_module_dir(module_dir_str, create_new=False):
     except TypeError:
         pass
 
+    try:
+        # interpret input as a path string relative to the global home
+        from niftynet.utilities.niftynet_global_config import \
+            NiftyNetGlobalConfig
+        home_location = NiftyNetGlobalConfig().get_niftynet_home_folder()
+        possible_dir = os.path.join(home_location, module_dir_str)
+        if os.path.isdir(possible_dir):
+            return os.path.abspath(possible_dir)
+    except (TypeError, ImportError, AttributeError):
+        pass
+
     if create_new:
         # try to create the folder
         folder_path = touch_folder(module_dir_str)

@@ -248,7 +248,7 @@ class ImageSetsPartitioner(object):
                     section_properties,
                     self.default_image_file_location)
                 match_and_write_filenames_to_csv([matcher], csv_file)
-            except ValueError as reading_error:
+            except (IOError, ValueError) as reading_error:
                 tf.logging.warning('Ignoring input section: [%s], '
                                    'due to the following error:',
                                    modality_name)
