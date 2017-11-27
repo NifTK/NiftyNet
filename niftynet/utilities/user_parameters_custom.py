@@ -8,6 +8,7 @@ from niftynet.utilities.user_parameters_helper import add_input_name_args
 from niftynet.utilities.user_parameters_helper import int_array
 from niftynet.utilities.user_parameters_helper import str2boolean
 
+
 #######################################################################
 # To support a CUSTOM_SECTION in config file:
 # (e.g., MYTASK; in parallel with SEGMENTATION, REGRESSION etc.)
@@ -75,17 +76,55 @@ def __add_segmentation_args(parser):
         type=str2boolean,
         default=False)
 
-    parser.add_argument(
-        "--min_numb_labels",
-        help="Minimum number of different labels present in a patch",
-        type=int_array,
-        default=2)
-
+    # for selective sampling only
     parser.add_argument(
         "--min_sampling_ratio",
-        help="Minimum ratio to satisfy in the sampling of different labels",
+        help="[Training only] Minimum ratio of samples in a window for "
+             "selective sampler",
+        metavar='',
         type=float,
-        default=0.00001)
+        default=0
+    )
+
+    # for selective sampling only
+    parser.add_argument(
+        "--compulsory_labels",
+        help="[Training only] List of labels to have in the window for "
+             "selective sampling",
+        metavar='',
+        type=int_array,
+        default=(0, 1)
+    )
+
+    # for selective sampling only
+    parser.add_argument(
+        "--rand_samples",
+        help="[Training only] Number of completely random samples per image "
+             "when using selective sampler",
+        metavar='',
+        type=int,
+        default=0
+    )
+
+    # for selective sampling only
+    parser.add_argument(
+        "--min_numb_labels",
+        help="[Training only] Number of labels to have in the window for "
+             "selective sampler",
+        metavar='',
+        type=int,
+        default=1
+    )
+
+    # for selective sampling only
+    parser.add_argument(
+        "--proba_connect",
+        help="[Training only] Number of labels to have in the window for "
+             "selective sampler",
+        metavar='',
+        type=str2boolean,
+        default=True
+    )
 
     parser.add_argument(
         "--evaluation_units",

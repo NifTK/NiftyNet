@@ -200,8 +200,8 @@ class DriverPartitionerTestNoFile(tf.test.TestCase):
                     },
             TRAINING={'validation_every_n': -1,
                       'validation_max_iter': 1,
-                      'exclude_fraction_for_validation': 0.1,
-                      'exclude_fraction_for_inference': 0.1,
+                      'exclude_fraction_for_validation': 0.0,
+                      'exclude_fraction_for_inference': 0.0,
                       }
         )
         data_param = _generate_data_param()

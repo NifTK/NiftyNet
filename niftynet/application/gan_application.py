@@ -22,7 +22,7 @@ from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 
-SUPPORTED_INPUT = {'image', 'conditioning'}
+SUPPORTED_INPUT = set(['image', 'conditioning'])
 
 
 class GANApplication(BaseApplication):
@@ -51,7 +51,7 @@ class GANApplication(BaseApplication):
                 file_lists.append(data_partitioner.train_files)
                 file_lists.append(data_partitioner.validation_files)
             else:
-                file_lists.append(data_partitioner.all_files)
+                file_lists.append(data_partitioner.train_files)
             self.readers = []
             for file_list in file_lists:
                 reader = ImageReader(['image', 'conditioning'])

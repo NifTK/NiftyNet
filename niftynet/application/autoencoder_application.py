@@ -13,9 +13,9 @@ from niftynet.io.image_reader import ImageReader
 from niftynet.layer.loss_autoencoder import LossFunction
 from niftynet.utilities.util_common import look_up_operations
 
-SUPPORTED_INPUT = {'image', 'feature'}
-SUPPORTED_INFERENCE = {
-    'encode', 'encode-decode', 'sample', 'linear_interpolation'}
+SUPPORTED_INPUT = set(['image', 'feature'])
+SUPPORTED_INFERENCE = \
+    set(['encode', 'encode-decode', 'sample', 'linear_interpolation'])
 
 
 class AutoencoderApplication(BaseApplication):
@@ -51,7 +51,7 @@ class AutoencoderApplication(BaseApplication):
                 file_lists.append(data_partitioner.train_files)
                 file_lists.append(data_partitioner.validation_files)
             else:
-                file_lists.append(data_partitioner.all_files)
+                file_lists.append(data_partitioner.train_files)
 
             self.readers = []
             for file_list in file_lists:

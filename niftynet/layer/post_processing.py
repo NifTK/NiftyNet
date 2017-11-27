@@ -6,7 +6,7 @@ import tensorflow as tf
 from niftynet.layer.base_layer import Layer
 from niftynet.utilities.util_common import look_up_operations
 
-SUPPORTED_OPS = {"SOFTMAX", "ARGMAX", "IDENTITY"}
+SUPPORTED_OPS = set(["SOFTMAX", "ARGMAX", "IDENTITY"])
 
 
 class PostProcessingLayer(Layer):

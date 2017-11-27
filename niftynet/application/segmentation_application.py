@@ -29,7 +29,7 @@ from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 from niftynet.evaluation.segmentation_evaluator import SegmentationEvaluator
 from argparse import Namespace
 
-SUPPORTED_INPUT = {'image', 'label', 'weight', 'sampler', 'inferred'}
+SUPPORTED_INPUT = set(['image', 'label', 'weight', 'sampler', 'inferred'])
 
 
 class SegmentationApplication(BaseApplication):
@@ -70,7 +70,7 @@ class SegmentationApplication(BaseApplication):
                 file_lists.append(data_partitioner.train_files)
                 file_lists.append(data_partitioner.validation_files)
             else:
-                file_lists.append(data_partitioner.all_files)
+                file_lists.append(data_partitioner.train_files)
 
             self.readers = []
             for file_list in file_lists:

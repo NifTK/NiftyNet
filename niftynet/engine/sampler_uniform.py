@@ -17,7 +17,7 @@ from niftynet.layer.base_layer import Layer
 # pylint: disable=too-many-arguments
 class UniformSampler(Layer, InputBatchQueueRunner):
     """
-    This class generators samples by uniformly sampling each input volume
+    This class generates samples by uniformly sampling each input volume
     currently the coordinates are randomised for spatial dims only,
     i.e., the first three dims of image.
 
@@ -68,8 +68,8 @@ class UniformSampler(Layer, InputBatchQueueRunner):
             image_id, data, _ = self.reader(idx=None, shuffle=True)
             if not data:
                 break
-            image_shapes = {
-                name: data[name].shape for name in self.window.names}
+            image_shapes = dict((name, data[name].shape)
+                                for name in self.window.names)
             static_window_shapes = self.window.match_image_shapes(image_shapes)
 
             # find random coordinates based on window and image shapes
@@ -171,7 +171,6 @@ def rand_spatial_coordinates(subject_id,
         spatial_coords = np.zeros((n_samples, N_SPATIAL * 2), dtype=np.int32)
         spatial_coords[:, :N_SPATIAL] = \
             max_coords[:, :N_SPATIAL] + half_win_diff[:N_SPATIAL]
-
         spatial_coords[:, N_SPATIAL:] = \
             spatial_coords[:, :N_SPATIAL] + win_size[:N_SPATIAL]
         # include the subject id

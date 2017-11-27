@@ -7,7 +7,7 @@ from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.layer.loss_segmentation import LossFunction
 
-SUPPORTED_INPUT = {'image', 'label', 'weight'}
+SUPPORTED_INPUT = set(['image', 'label', 'weight'])
 
 
 class DecayLearningRateApplication(SegmentationApplication):

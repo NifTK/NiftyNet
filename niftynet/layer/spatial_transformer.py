@@ -26,8 +26,8 @@ import tensorflow as tf
 from niftynet.layer.grid_warper import GridWarperLayer
 from niftynet.layer.resampler import ResamplerLayer
 
-SUPPORTED_INTERPOLATION={'BSPLINE', 'LINEAR', 'NEAREST'}
-SUPPORTED_BOUNDARY={'ZERO', 'REPLICATE', 'CIRCULAR', 'SYMMETRIC'}
+SUPPORTED_INTERPOLATION = set(['BSPLINE', 'LINEAR', 'NEAREST'])
+SUPPORTED_BOUNDARY = set(['ZERO', 'REPLICATE', 'CIRCULAR', 'SYMMETRIC'])
 
 
 class BSplineFieldImageGridWarperLayer(GridWarperLayer):
