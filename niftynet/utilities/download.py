@@ -260,7 +260,7 @@ class ConfigStore:
                         config_params, example_id)
                     download_and_decompress(url=config_params['url'],
                                             download_path=local_download_path)
-                    print(example_id + ": OK.")
+                    print('{} -- {}: OK.'.format(example_id, section_name))
                     print("Downloaded data to " + local_download_path)
                 else:
                     print(example_id + ": FAIL.")
