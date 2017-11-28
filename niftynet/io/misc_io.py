@@ -436,6 +436,8 @@ def resolve_checkpoint(checkpoint_name):
     # checkpoint_name.index is in the file system
     # eventually will support checkpoint names that can be referenced
     # in a paths file
+    if os.path.isfile(checkpoint_name + '.index'):
+        return checkpoint_name
     home_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
     checkpoint_name = to_absolute_path(input_path=checkpoint_name,
                                        model_root=home_folder)
