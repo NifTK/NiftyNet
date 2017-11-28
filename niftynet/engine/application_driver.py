@@ -332,7 +332,7 @@ class ApplicationDriver(object):
         # check model's file
         ckpt_state = tf.train.get_checkpoint_state(self.model_dir)
         if ckpt_state is None:
-            tf.logging.fatal(
+            tf.logging.warning(
                 "%s/checkpoint not found, please check "
                 "config parameter: model_dir", self.model_dir)
         if self.initial_iter > 0:
