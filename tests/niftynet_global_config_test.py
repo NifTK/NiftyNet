@@ -38,7 +38,7 @@ class NiftyNetGlobalConfigTest(TestCase):
         cls.header = '[global]'
         cls.default_config_opts = {
             'home': '~/niftynet',
-            'ext': 'niftynetext',
+            'ext': 'extensions',
             'ext_mods': ['network']
         }
 
