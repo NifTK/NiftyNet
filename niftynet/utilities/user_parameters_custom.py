@@ -78,7 +78,7 @@ def __add_segmentation_args(parser):
 
     # for selective sampling only
     parser.add_argument(
-        "--min_ratio_sampling",
+        "--min_sampling_ratio",
         help="[Training only] Minimum ratio of samples in a window for "
              "selective sampler",
         metavar='',
@@ -108,7 +108,7 @@ def __add_segmentation_args(parser):
 
     # for selective sampling only
     parser.add_argument(
-        "--num_min_labels",
+        "--min_numb_labels",
         help="[Training only] Number of labels to have in the window for "
              "selective sampler",
         metavar='',
