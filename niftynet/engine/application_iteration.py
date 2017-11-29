@@ -20,12 +20,6 @@ class IterationMessage(object):
     A singleton instance is managed by the application engine and an
     application jointly.
     """
-
-    initial_iter = 0
-    final_iter = 1
-
-    prefix = ""
-
     _current_iter = 0
     _current_iter_tic = 0
     _current_iter_toc = 0
@@ -163,7 +157,8 @@ class IterationMessage(object):
         converting current_iter_output to string, for console displaying
         :return: summary string
         """
-        summary_format = CONSOLE_FORMAT
+        summary_indentation = "    " if self.is_validation else ""
+        summary_format = summary_indentation + CONSOLE_FORMAT
         result_str = _console_vars_to_str(self.current_iter_output[CONSOLE])
         summary = summary_format.format(
             self.phase, self.current_iter, result_str, self.iter_duration)
