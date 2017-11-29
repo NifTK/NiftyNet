@@ -24,10 +24,14 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
         # mapping is a complete cache of the model file, the total number of
         # modalities are listed in self.modalities
         self.image_name = image_name
-        self.modalities = modalities
-        if isinstance(modalities, tuple) and len(modalities) > 1:
-            raise NotImplementedError(
-                "Currently supports single modality discrete labels.")
+        self.modalities = None
+        if isinstance(modalities, (list, tuple)):
+            if len(modalities) > 1:
+                raise NotImplementedError(
+                    "Currently supports single modality discrete labels.")
+            self.modalities = modalities
+        else:
+            self.modalities = (modalities,)
         self.model_file = os.path.abspath(model_filename)
         assert not os.path.isdir(self.model_file), \
             "model_filename is a directory, please change histogram_ref_file"
