@@ -200,15 +200,16 @@ class ImageSetsPartitioner(object):
 
         if self._file_list is None or self._file_list.size == 0:
             tf.logging.fatal(
-                "empty filename lists, please check the csv "
-                "files. (removing csv_file keyword if it is in the config file "
+                "Empty filename lists, please check the csv "
+                "files (removing csv_file keyword if it is in the config file "
                 "to automatically search folders and generate new csv "
-                "files again)\n\n"
+                "files again).\n\n"
                 "Please note in the matched file names, each subject id are "
                 "created by removing all keywords listed `filename_contains` "
-                "in the config.\n\n"
+                "in the config.\n"
                 "E.g., `filename_contains=foo, bar` will match file "
-                "foo_subject42_bar.nii.gz, and the subject id is _subject42_.")
+                "foo_subject42_bar.nii.gz, and the subject id is "
+                "_subject42_.\n\n")
             raise IOError
 
     def grep_files_by_data_section(self, modality_name):
