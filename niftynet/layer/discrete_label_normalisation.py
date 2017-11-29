@@ -126,7 +126,10 @@ def find_set_of_labels(image_list, field, output_key):
     label_set = set()
     for idx, image in enumerate(image_list):
         assert field in image, \
-            "no {} data provided in for label mapping".format(field)
+            "label normalisation layer requires {} input, " \
+            "however it is not provided in the config file.\n" \
+            "Please consider setting " \
+            "label_normalisation to False.".format(field)
         print_progress_bar(idx, len(image_list),
                            prefix='searching unique labels from training files',
                            decimals=1, length=10, fill='*')
