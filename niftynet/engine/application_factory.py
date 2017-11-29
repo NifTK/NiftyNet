@@ -9,6 +9,7 @@ from __future__ import division
 from __future__ import print_function
 
 import importlib
+import os
 
 import tensorflow as tf
 
@@ -149,9 +150,11 @@ def select_module(module_name, type_str, lookup_table):
     module_str, class_name = None, None
     try:
         module_str, class_name = module_name.rsplit('.', 1)
-        the_module = getattr(importlib.import_module(module_str), class_name)
-        tf.logging.info('Importing [%s] module: %s.', class_name, the_module)
-        return the_module
+        the_module = importlib.import_module(module_str)
+        the_class = getattr(the_module, class_name)
+        tf.logging.info('Import [%s] from %s.',
+                        class_name, os.path.abspath(the_module.__file__))
+        return the_class
     except (AttributeError, ValueError, ImportError) as not_imported:
         # print sys.path
         tf.logging.fatal(repr(not_imported))

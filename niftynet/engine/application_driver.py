@@ -144,14 +144,15 @@ class ApplicationDriver(object):
         data_partitioner = ImageSetsPartitioner()
         # clear the cached file lists
         data_partitioner.reset()
-        do_new_partition = self.is_training and self.initial_iter == 0 and \
+        do_new_partition = \
+            self.is_training and self.initial_iter == 0 and \
             (not os.path.isfile(system_param.dataset_split_file)) and \
             (train_param.exclude_fraction_for_validation > 0 or
              train_param.exclude_fraction_for_inference > 0)
         data_fractions = None
         if do_new_partition:
             assert train_param.exclude_fraction_for_validation > 0 or \
-                self.validation_every_n <= 0, \
+                   self.validation_every_n <= 0, \
                 'validation_every_n is set to {}, ' \
                 'but train/validation splitting not available,\nplease ' \
                 'check "exclude_fraction_for_validation" in the config ' \
@@ -406,8 +407,6 @@ class ApplicationDriver(object):
         """
 
         iter_msg = IterationMessage()
-        iter_msg.initial_iter = self.initial_iter
-        iter_msg.final_iter = self.final_iter
 
         # initialise tf summary writers
         writer_train = tf.summary.FileWriter(
@@ -416,25 +415,13 @@ class ApplicationDriver(object):
             os.path.join(self.summary_dir, VALID), sess.graph) \
             if self.validation_every_n > 0 else None
 
-        for iter_i in range(iter_msg.initial_iter, iter_msg.final_iter):
+        for iter_i in range(self.initial_iter, self.final_iter):
             # general loop information
             loop_status['current_iter'] = iter_i
             if self._coord.should_stop():
                 break
             if iter_msg.should_stop:
                 break
-
-            if iter_i > 0 and self.validation_every_n > 0 and \
-                    (iter_i % self.validation_every_n == 0):
-                iter_msg.initial_iter = 0
-                iter_msg.final_iter = self.validation_max_iter
-                for iter_j in range(iter_msg.initial_iter, iter_msg.final_iter):
-                    iter_msg.current_iter, iter_msg.phase = iter_j, VALID
-                    self.run_vars(sess, iter_msg)
-                    # save iteration results
-                    if writer_valid is not None:
-                        iter_msg.to_tf_summary(writer_valid)
-                    tf.logging.info(iter_msg.to_console_string())
 
             # update variables/operations to run, from self.app
             iter_msg.current_iter, iter_msg.phase = iter_i, TRAIN
@@ -444,6 +431,18 @@ class ApplicationDriver(object):
                 iter_msg.current_iter_output[NETWORK_OUTPUT])
             iter_msg.to_tf_summary(writer_train)
             tf.logging.info(iter_msg.to_console_string())
+
+            # run validations if required
+            if iter_i > 0 and self.validation_every_n > 0 and \
+                    (iter_i % self.validation_every_n == 0):
+                for _ in range(self.validation_max_iter):
+                    iter_msg.current_iter, iter_msg.phase = iter_i, VALID
+                    self.run_vars(sess, iter_msg)
+                    # save iteration results
+                    if writer_valid is not None:
+                        iter_msg.to_tf_summary(writer_valid)
+                    tf.logging.info(iter_msg.to_console_string())
+
             if self.save_every_n > 0 and (iter_i % self.save_every_n == 0):
                 self._save_model(sess, iter_i)
 
