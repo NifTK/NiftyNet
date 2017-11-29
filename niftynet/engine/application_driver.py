@@ -426,10 +426,8 @@ class ApplicationDriver(object):
 
             if iter_i > 0 and self.validation_every_n > 0 and \
                     (iter_i % self.validation_every_n == 0):
-                iter_msg.initial_iter = 0
-                iter_msg.final_iter = self.validation_max_iter
-                for iter_j in range(iter_msg.initial_iter, iter_msg.final_iter):
-                    iter_msg.current_iter, iter_msg.phase = iter_j, VALID
+                for _ in range(self.validation_max_iter):
+                    iter_msg.current_iter, iter_msg.phase = iter_i, VALID
                     self.run_vars(sess, iter_msg)
                     # save iteration results
                     if writer_valid is not None:
