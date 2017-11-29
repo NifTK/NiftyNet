@@ -93,15 +93,15 @@ class ImageReader(Layer):
             raise ValueError
 
         self._names = filtered_names
-        self._input_sources = {name: vars(task_param).get(name)
-                               for name in self.names}
+        self._input_sources = dict((name, vars(task_param).get(name))
+                                   for name in self.names)
         required_sections = \
             sum([list(vars(task_param).get(name)) for name in self.names], [])
         for required in required_sections:
             try:
-                if file_list is None \
-                        or required not in list(file_list) \
-                        or file_list[required].isnull().all():
+                if (file_list is None) or \
+                        (required not in list(file_list)) or \
+                        (file_list[required].isnull().all()):
                     tf.logging.fatal('Reader required input section '
                                      'name [%s], but in the filename list '
                                      'the column is empty.', required)
