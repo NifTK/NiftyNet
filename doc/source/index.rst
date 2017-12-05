@@ -43,10 +43,6 @@ Please see the :ref:`modindex`.
 Useful links
 ^^^^^^^^^^^^
 
-:ref:`genindex`
-
-:ref:`search`
-
 `NiftyNet website`_
 
 `NiftyNet source code on CmicLab`_
@@ -64,7 +60,7 @@ NiftyNet mailing list: nifty-net@live.ucl.ac.uk
 Citing NiftyNet
 ---------------
 
-If you use NiftyNet in your work, please cite `Gibson and Li et. al. 2017`_:
+If you use NiftyNet in your work, please cite `Gibson and Li, et al. 2017`_:
 
   E. Gibson\*, W. Li\*, C. Sudre, L. Fidon, D. I. Shakir, G. Wang, Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, M. Modat, D. C. Barratt, S. Ourselin, M. J. Cardoso\^ and T. Vercauteren\^ (2017)
   `NiftyNet: a deep-learning platform for medical imaging. arXiv: 1709.03485`_
@@ -82,7 +78,7 @@ BibTeX entry:
     eprinttype = {arXiv},
   }
 
-The NiftyNet platform originated in software developed for `Li et. al. 2017`_:
+The NiftyNet platform originated in software developed for `Li, et al. 2017`_:
 
   Li W., Wang G., Fidon L., Ourselin S., Cardoso M.J., Vercauteren T. (2017)
   `On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.`_
@@ -90,8 +86,8 @@ The NiftyNet platform originated in software developed for `Li et. al. 2017`_:
   Lecture Notes in Computer Science, vol 10265. Springer, Cham. DOI: `10.1007/978-3-319-59050-9_28`_
 
 .. _`NiftyNet: a deep-learning platform for medical imaging. arXiv: 1709.03485`: http://arxiv.org/abs/1709.03485
-.. _`Gibson and Li et. al. 2017`: http://arxiv.org/abs/1709.03485
-.. _`Li et. al. 2017`: http://doi.org/10.1007/978-3-319-59050-9_28
+.. _`Gibson and Li, et al. 2017`: http://arxiv.org/abs/1709.03485
+.. _`Li, et al. 2017`: http://doi.org/10.1007/978-3-319-59050-9_28
 .. _`On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.`: http://doi.org/10.1007/978-3-319-59050-9_28
 .. _`10.1007/978-3-319-59050-9_28`: http://doi.org/10.1007/978-3-319-59050-9_28
 
@@ -101,7 +97,7 @@ Licensing and copyright
 
 Copyright 2017 University College London and the NiftyNet Contributors.
 NiftyNet is released under the Apache License, Version 2.0.
-Please see the LICENSE file in the `NiftyNet source code repository`_ for details.
+Please see the `LICENSE file`_ in the `NiftyNet source code repository`_ for details.
 
 
 Acknowledgements
@@ -109,6 +105,7 @@ Acknowledgements
 
 This project is grateful for the support from the `Wellcome Trust`_, the `Engineering and Physical Sciences Research Council (EPSRC)`_, the `National Institute for Health Research (NIHR)`_, the `Department of Health (DoH)`_, `University College London (UCL)`_, the `Science and Engineering South Consortium (SES)`_, the `STFC Rutherford-Appleton Laboratory`_, and `NVIDIA`_.
 
+.. _`LICENSE file`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/dev/LICENSE
 .. _`TensorFlow`: https://www.tensorflow.org/
 .. _`Wellcome EPSRC Centre for Interventional and Surgical Sciences`: http://www.ucl.ac.uk/weiss
 .. _`NiftyNet source code repository`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
