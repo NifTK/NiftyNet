@@ -30,7 +30,9 @@ Installation
 
 3. (Optional) Accessing MetaImage format (``.mha/.mhd`` files) requires SimpleITK:
 
-    ``pip install SimpleITK``
+    .. code-block:: bash
+
+      pip install SimpleITK
 
 
 .. _`TensorFlow`: https://www.tensorflow.org/
