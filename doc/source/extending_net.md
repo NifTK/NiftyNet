@@ -1,8 +1,8 @@
 # Developing new networks
 
-NiftyNet allows users create new network, and share the network via [the model zoo](./model_zoo.html).
-To fully utilise this feature, a customised network should be prepared in the
-following steps:
+NiftyNet allows users create new network, and share the network via [the model
+zoo](./model_zoo.html).  To fully utilise this feature, a customised network
+should be prepared in the following steps:
 
 ## New network and module
    Create a new network file, e.g. `new_net.py` and place this inside a python
@@ -13,11 +13,11 @@ following steps:
    Make sure the new network module can be discovered by NiftyNet
    by doing **either** of the following:
 
-   * Place `my_network_collection/` inside `$NIFTYNET_HOME/extensions/` (with
+   * Place `my_network_collection/` inside `$NIFTYNET_HOME/extensions/`, with
      `$NIFTYNET_HOME` defined by `home` in
-     [`[global]`](./model_zoo.html#global-settings) setting).
-   * Append the directory of `my_network_collection/`
-   (i.e. **the folder where this folder is located**) to your `$PYTHONPATH`.
+     [`[global]`](./model_zoo.html#global-settings) setting.
+   * Append the directory of `my_network_collection/` (i.e. **the directory
+     where this folder is located**) to your `$PYTHONPATH`.
 
 
 ## Extend `BaseNet`
