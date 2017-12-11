@@ -46,37 +46,12 @@ Other features of NiftyNet include:
 [tf-pypi]: https://pypi.org/project/tensorflow/
 
 
-### Getting started
-
-#### Examples
-
-Please see the [NiftyNet demos][demos].
-
-[demos]: ./demos
-
-#### Network (re-)implementations
-
-Please see the list of [network (re-)implementations in NiftyNet][network-impl].
-
-[network-impl]: ./niftynet/network
-
-#### API documentation
-
-The API reference is available on [Read the Docs][rtd-niftynet].
+### Documentation
+The API reference and how-to guides are available on [Read the Docs][rtd-niftynet].
 
 [rtd-niftynet]: http://niftynet.rtfd.io/
 
-#### Customising NiftyNet
-
-Please see the [NiftyNet global settings][global-settings] section for customising NiftyNet's global settings.
-
-[global-settings]: ./config/README.md#global-niftynet-settings
-
-#### Contributing
-
-Please see the [contribution guidelines](./CONTRIBUTING.md).
-
-#### Useful links
+### Useful links
 
 [NiftyNet website][niftynet-io]
 
@@ -96,7 +71,7 @@ NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
 
 ### Citing NiftyNet
 
-If you use NiftyNet in your work, please cite [Gibson and Li et. al. 2017][preprint]:
+If you use NiftyNet in your work, please cite [Gibson and Li, et al. 2017][preprint]:
 
 * E. Gibson\*, W. Li\*, C. Sudre, L. Fidon, D. I. Shakir, G. Wang, Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, M. Modat, D. C. Barratt, S. Ourselin, M. J. Cardoso\^ and T. Vercauteren\^ (2017)
 [NiftyNet: a deep-learning platform for medical imaging. arXiv: 1709.03485][preprint]
@@ -114,7 +89,7 @@ BibTeX entry:
   eprinttype = {arXiv},
 }
 ```
-The NiftyNet platform originated in software developed for [Li et. al. 2017][ipmi2017]:
+The NiftyNet platform originated in software developed for [Li, et al. 2017][ipmi2017]:
 
 * Li W., Wang G., Fidon L., Ourselin S., Cardoso M.J., Vercauteren T. (2017)
 [On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.][ipmi2017]
