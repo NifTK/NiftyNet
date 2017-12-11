@@ -15,16 +15,20 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
     This class saves each item in a batch output to images,
     the output filenames can be defined in three ways:
         1. location is None (input image from a random distribution):
-            a uuid is generated as output filename
+        a uuid is generated as output filename.
+
         2. the length of the location array is 2:
-            (indicates output image is from an
-            interpolation of two input images):
-            location[batch_id, 0] is used as a base_name,
-            location[batch_id, 0] is used as a relative_id
-            output file name is "{}_{}"%(base_name, relative_id)
+        (indicates output image is from an
+        interpolation of two input images):
+
+                - ``location[batch_id, 0]`` is used as a ``base_name``,
+                - ``location[batch_id, 0]`` is used as a ``relative_id``
+
+        output file name is ``"{}_{}"%(base_name, relative_id)``.
+
         3. the length of the location array is greater than 2:
-            (indicates output image is from single input image)
-            location[batch_id, 0] is used as the file_name
+        (indicates output image is from single input image)
+        ``location[batch_id, 0]`` is used as the file name
     """
     def __init__(self,
                  image_reader=None,

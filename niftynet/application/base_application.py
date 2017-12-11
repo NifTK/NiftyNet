@@ -25,8 +25,9 @@ class SingletonApplication(type):
 class BaseApplication(with_metaclass(SingletonApplication, object)):
     """
     BaseApplication represents an interface.
-    Each application type_str should support to use
-    the standard training and inference driver
+
+    Each application ``type_str`` should support to use
+    the standard training and inference driver.
     """
 
     # defines name of the customised configuration file section
@@ -84,16 +85,17 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
     def initialise_sampler(self):
         """
-        set samplers take self.reader as input and generates
+        Samplers take ``self.reader`` as input and generates
         sequences of ImageWindow that will be fed to the networks
-        This function sets self.sampler
+
+        This function sets self.samplers.
         """
         raise NotImplementedError
 
     def initialise_network(self):
         """
-        This function create an instance of network
-        sets self.net
+        This function create an instance of network and sets ``self.net``
+
         :return: None
         """
         raise NotImplementedError
@@ -102,7 +104,8 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
                                  outputs_collector=None,
                                  gradients_collector=None):
         """
-        adding sampler output tensor and network tensors to the graph.
+        Adding sampler output tensor and network tensors to the graph.
+
         :param outputs_collector:
         :param gradients_collector:
         :return:
@@ -111,18 +114,19 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
     def interpret_output(self, batch_output):
         """
-        implement output interpretations, e.g., save to hard drive
-        cache output windows
+        Implement output interpretations, e.g., save to hard drive
+        cache output windows.
+
         :param batch_output: outputs by running the tf graph
         :return: True indicates the driver should continue the loop
-                 False indicates the drive should stop
+            False indicates the drive should stop
         """
         raise NotImplementedError
 
     def set_network_gradient_op(self, gradients):
         """
         create gradient op by optimiser.apply_gradients
-        this function sets self.gradient_op
+        this function sets ``self.gradient_op``.
 
         Override this function for more complex optimisations such as
         using different optimisers for sub-networks.
@@ -152,21 +156,22 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
     def set_iteration_update(self, iteration_message):
         """
-        At each iteration `application_driver` calls
-        `output = tf.session.run(variables_to_eval, feed_dict=data_dict)`
-        to evaluate TF graph elements, where
-        `variables_to_eval` and `data_dict` are retrieved from
-        `application_iteration.IterationMessage.ops_to_run` and
-        `application_iteration.IterationMessage.data_feed_dict`.
-        (in addition to the variables collected by output_collector;
-         see `application_driver.run_vars`)
+        At each iteration ``application_driver`` calls:
+            ``output = tf.session.run(variables_to_eval, feed_dict=data_dict)``
 
-        This function (is called before `tf.session.run` by the
-        driver) provides an interface for accessing `variables_to_eval` and
-        `data_dict` at each iteration.
+        to evaluate TF graph elements, where
+        ``variables_to_eval`` and ``data_dict`` are retrieved from
+        ``application_iteration.IterationMessage.ops_to_run`` and
+        ``application_iteration.IterationMessage.data_feed_dict``.
+        in addition to the variables collected by output_collector;
+        implemented in ``application_driver.run_vars``)
+
+        This function (is called before ``tf.session.run`` by the
+        driver) provides an interface for accessing ``variables_to_eval`` and
+        ``data_dict`` at each iteration.
 
         Override this function for more complex operations according to
-        `application_iteration.IterationMessage.current_iter`.
+        ``application_iteration.IterationMessage.current_iter``.
         """
         if iteration_message.is_training:
             iteration_message.data_feed_dict[self.is_validation] = False
@@ -178,7 +183,10 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
     def add_validation_flag(self):
         """
-        add a TF placeholder for switching between train/valid graphs
+        add a TF placeholder for switching between train/valid graphs,
+        this function sets ``self.is_validation``. ``self.is_validation``
+        can be used by applications.
+
         :return:
         """
         self.is_validation = \
