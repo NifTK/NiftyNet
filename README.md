@@ -46,37 +46,12 @@ Other features of NiftyNet include:
 [tf-pypi]: https://pypi.org/project/tensorflow/
 
 
-### Getting started
-
-#### Examples
-
-Please see the [NiftyNet demos][demos].
-
-[demos]: ./demos
-
-#### Network (re-)implementations
-
-Please see the list of [network (re-)implementations in NiftyNet][network-impl].
-
-[network-impl]: ./niftynet/network
-
-#### API documentation
-
-The API reference is available on [Read the Docs][rtd-niftynet].
+### Documentation
+The API reference and how-to guides are available on [Read the Docs][rtd-niftynet].
 
 [rtd-niftynet]: http://niftynet.rtfd.io/
 
-#### Customising NiftyNet
-
-Please see the [NiftyNet global settings][global-settings] section for customising NiftyNet's global settings.
-
-[global-settings]: ./config/README.md#global-niftynet-settings
-
-#### Contributing
-
-Please see the [contribution guidelines](./CONTRIBUTING.md).
-
-#### Useful links
+### Useful links
 
 [NiftyNet website][niftynet-io]
 
