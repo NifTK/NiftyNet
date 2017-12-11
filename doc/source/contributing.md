@@ -49,19 +49,19 @@ sh run_test.sh
 
 *This section describes steps to create unit tests for NiftyNet.*
 
-#### 1. Find out which NiftyNet modules require unit tests
+#### 1. What module to test
 Go to [Cmiclab pipeline](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/pipelines) page,
 click on the latest successful testing pipeline and check the test coverage report at the bottom of the test log, e.g. a coverage report is available at the last part of this [log](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/-/jobs/35553).
 The coverage report lists all untested files (with line numbers of specific statements) in the project.
 
-#### 2. File an issue on the issue list
+#### 2. File an issue
 Create a new issue indicating that you'll be working on the tests of a particular module.
 
 To avoid duplicated effort, please check the [issue list](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/issues) and
 make sure nobody is implementing the unit tests for that module at the moment.
 Also make sure the issue description is concise and has specific tasks.
 
-#### 3. Create a `[name]_test.py` file
+#### 3. Create `[name]_test.py`
 Clone NiftyNet and create a dedicated branch (from `dev`) for the unit tests.
 
 For Cmiclab users:
@@ -100,7 +100,7 @@ if __name__ == "__main__":
 If the unit tests write files locally, please ensure it's writing to `NiftyNet/testing_data` folder.
 
 
-#### 4. Run the unit test locally
+#### 4. Run tests locally
 In NiftyNet source code folder, run:
 ```bash
 python -m tests.[name]_test.py
@@ -118,14 +118,14 @@ class ModuleNameTest(tf.test.TestCase):
 ...
 ```
 
-#### 5. Run all unit tests locally
+#### 5. Run all tests locally
 Normally the newly created unit test should not depend on the outcome of the other unit tests.
 [A Bash script is defined](https://github.com/NifTK/NiftyNet/blob/dev/run_test.sh) for running all quick tests to confirm this.
 
 (In `run_test.sh`, `wget` and `tar` are used to automatically download and unzip testing data. This can be done manually.)
 
 
-#### 6. Push to Cmiclab and send a merge request
+#### 6. Send a merge request
 After finishing the local tests, git-push the changes to a Cmiclab branch.
 This will trigger CI tests, which will run the unit tests on our test server with Ubuntu Linux + Python 2&3).
 

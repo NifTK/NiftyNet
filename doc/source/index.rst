@@ -71,7 +71,8 @@ The segmentation output of this example application should be located at
 
 .. topic:: Extending NiftyNet applications
 
-  To learn more about developing NiftyNet applications, see the `Extending application`_ section.
+  To learn more about developing NiftyNet applications, see the `Extending
+  application`_ and `Developing new networks`_ section.
 
 .. topic:: Contributing to NiftyNet
 
@@ -88,6 +89,7 @@ All how-to guides are listed in `the following section <#guides>`_.
 .. _`network`: niftynet.network.html
 .. _`Configuration docs`: config_spec.html
 .. _`Extending application`: extending_app.html
+.. _`Developing new networks`: extending_net.html
 .. _`Contributor guide`: contributing.html
 
 
@@ -100,6 +102,7 @@ Guides
    config_spec
    model_zoo
    extending_app
+   extending_net
    contributing
 
 

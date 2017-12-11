@@ -14,7 +14,6 @@ presents a few examples of configuration files for NiftyNet
   * [`[Validation during training]`](#validation-during-training)
   * [`[Data augmentation during training]`](#data-augmentation-during-training)
 - [`[INFERENCE]`](#inference)
-- [`[Global settings]`](#global-settings)
 
 ## Overview
 In general, a NiftyNet workflow can be fully specified by a NiftyNet application and a configuration file.
