@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""This module loads images from csv files and outputs numpy arrays"""
+"""This module loads images from csv files and outputs numpy arrays."""
 from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
@@ -33,27 +33,31 @@ def infer_tf_dtypes(image_array):
 
 class ImageReader(Layer):
     """
-    For a concrete example:
-    _input_sources define multiple modality mappings, e.g.,
-    _input_sources {'image': ('T1', 'T2'),
-                    'label': ('manual_map',)}
-    means
+    For a concrete example::
+
+        _input_sources define multiple modality mappings, e.g.,
+        _input_sources {'image': ('T1', 'T2'),
+                        'label': ('manual_map',)}
+
+    means:
+
     'image' consists of two components, formed by
     concatenating 'T1' and 'T2' input source images.
     'label' consists of one component, loading from 'manual_map'
 
-    self._names: a tuple of the output names of this reader.
-    ('image', 'labels')
+    :param self._names: a tuple of the output names of this reader.
+        ('image', 'labels')
 
-    self._shapes: the shapes after combining input sources
-    {'image': (192, 160, 192, 1, 2), 'label': (192, 160, 192, 1, 1)}
+    :param self._shapes: the shapes after combining input sources
+        ``{'image': (192, 160, 192, 1, 2), 'label': (192, 160, 192, 1, 1)}``
 
-    self._dtypes: store the dictionary of tensorflow shapes
-    {'image': tf.float32, 'label': tf.float32}
+    :param self._dtypes: store the dictionary of tensorflow shapes
+        ``{'image': tf.float32, 'label': tf.float32}``
 
-    self.output_list is a list of dictionaries, with each item:
-    {'image': <niftynet.io.image_type.SpatialImage4D object>,
-     'label': <niftynet.io.image_type.SpatialImage3D object>}
+    :param self.output_list: a list of dictionaries, with each item:
+        ``{'image': <niftynet.io.image_type.SpatialImage4D object>,
+         'label': <niftynet.io.image_type.SpatialImage3D object>}``
+
     """
 
     def __init__(self, names):
@@ -74,7 +78,7 @@ class ImageReader(Layer):
 
     def initialise(self, data_param, task_param, file_list):
         """
-        task_param specifies how to combine user input modalities
+        ``task_param`` specifies how to combine user input modalities.
         e.g., for multimodal segmentation 'image' corresponds to multiple
         modality sections, 'label' corresponds to one modality section
         """
@@ -124,7 +128,8 @@ class ImageReader(Layer):
         """
         Some preprocessors requires an initial step to initialise
         data dependent internal parameters.
-        This function find these preprocessors and run the initialisations
+
+        This function find these preprocessors and run the initialisations.
         """
         for layer in self.preprocessors:
             if isinstance(layer, DataDependentLayer):
@@ -132,7 +137,7 @@ class ImageReader(Layer):
 
     def add_preprocessing_layers(self, layers):
         """
-        Adding a niftynet.layer or a list of layers as preprocessing steps.
+        Adding a ``niftynet.layer`` or a list of layers as preprocessing steps.
         """
         assert self.output_list is not None, \
             'Please initialise the reader first, ' \
@@ -146,9 +151,11 @@ class ImageReader(Layer):
     # pylint: disable=arguments-differ,too-many-branches
     def layer_op(self, idx=None, shuffle=True):
         """
-        this layer returns a dictionary
-          keys: self.output_fields
-          values: image volume array
+        this layer returns dictionaries::
+
+            keys: self.output_fields
+            values: image volume array
+
         """
         if idx is None:
             if shuffle:
@@ -188,13 +195,19 @@ class ImageReader(Layer):
     @property
     def shapes(self):
         """
-        image shapes before any preprocessing
+        Image shapes before any preprocessing.
+
         :return: tuple of integers as image shape
+
+
+        .. caution::
+
+            To have fast access, the spatial dimensions are not accurate
+
+                1. only read from the first image in list
+                2. not considering effects of random augmentation layers
+                    but time and modality dimensions should be correct
         """
-        # to have fast access, the spatial dimensions are not accurate
-        # 1) only read from the first image in list
-        # 2) not considering effects of random augmentation layers
-        # but time and modality dimensions should be correct
         if not self.output_list:
             tf.logging.fatal("Please initialise the reader first.")
             raise RuntimeError
@@ -223,10 +236,13 @@ class ImageReader(Layer):
     def input_sources(self):
         """
         returns mapping of input keywords and input sections
-        e.g., input_sources {'image': ('T1', 'T2'),
-                             'label': ('manual_map',)}
-        map task parameter keywords `image` and `label` to
-        section names `T1`, `T2`, and `manual_map` respectively.
+        e.g., input_sources::
+
+            {'image': ('T1', 'T2'),
+             'label': ('manual_map',)}
+
+        map task parameter keywords ``image`` and ``label`` to
+        section names ``T1``, ``T2``, and ``manual_map`` respectively.
         """
         if not self._input_sources:
             tf.logging.fatal("Please initialise the reader first.")
@@ -236,7 +252,8 @@ class ImageReader(Layer):
     @property
     def names(self):
         """
-        returns the keys of self.input_sources dictionary
+
+        :return: the keys of ``self.input_sources`` dictionary
         """
         return self._names
 

@@ -3,7 +3,7 @@
 This module manages a table of subject ids and
 their associated image file names.
 A subset of the table can be retrieved by partitioning the set of images into
-subsets of `train`, `validation`, `inference`.
+subsets of ``Train``, ``Validation``, ``Inference``.
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -65,16 +65,16 @@ class ImageSetsPartitioner(object):
                    ratios=None):
         """
         Set the data partitioner parameters
-        data_param: corresponding to all config sections
-        new_partition: bool value indicating whether to generate new
-                       partition ids and overwrite csv file
-                       (this class will write partition file iff new_partition)
-        data_split_file: location of the partition id file
-        ratios: a tuple/list with two elements:
-               (fraction of the validation set,
-                fraction of the inference set)
-               initialise to None will disable data partitioning
-               and get_file_list always returns all subjects.
+
+        :param data_param: corresponding to all config sections
+        :param new_partition: bool value indicating whether to generate new
+            partition ids and overwrite csv file
+            (this class will write partition file iff new_partition)
+        :param data_split_file: location of the partition id file
+        :param ratios: a tuple/list with two elements:
+            ``(fraction of the validation set, fraction of the inference set)``
+            initialise to None will disable data partitioning
+            and get_file_list always returns all subjects.
         """
         self.data_param = data_param
         self.data_split_file = data_split_file
@@ -91,7 +91,8 @@ class ImageSetsPartitioner(object):
 
     def number_of_subjects(self, phase=ALL):
         """
-        query number of images according to phase
+        query number of images according to phase.
+
         :param phase:
         :return:
         """
@@ -174,9 +175,11 @@ class ImageSetsPartitioner(object):
     def load_data_sections_by_subject(self):
         """
         Go through all input data sections, converting each section
-        to a list of file names.  These lists are merged on COLUMN_UNIQ_ID
+        to a list of file names.
 
-        This function sets self._file_list
+        These lists are merged on ``COLUMN_UNIQ_ID``.
+
+        This function sets ``self._file_list``.
         """
         if not self.data_param:
             tf.logging.fatal(
@@ -220,8 +223,8 @@ class ImageSetsPartitioner(object):
         otherwise
             write the list to `csv_file`.
 
-        returns: a table with two columns,
-                 the column names are (COLUMN_UNIQ_ID, modality_name)
+        :return: a table with two columns,
+                 the column names are ``(COLUMN_UNIQ_ID, modality_name)``.
         """
         if modality_name not in self.data_param:
             tf.logging.fatal('unknown section name [%s], '
@@ -285,12 +288,13 @@ class ImageSetsPartitioner(object):
     # pylint: disable=broad-except
     def randomly_split_dataset(self, overwrite=False):
         """
-        Label each subject as one of the 'TRAIN', 'VALID', 'INFER',
-        use self.ratios to compute the size of each set.
-        the results will be written to self.data_split_file if overwrite
+        Label each subject as one of the ``TRAIN``, ``VALID``, ``INFER``,
+        use ``self.ratios`` to compute the size of each set.
+
+        The results will be written to ``self.data_split_file`` if overwrite
         otherwise it tries to read partition labels from it.
 
-        This function sets self._partition_ids
+        This function sets ``self._partition_ids``.
         """
         if overwrite:
             try:
@@ -364,7 +368,7 @@ class ImageSetsPartitioner(object):
 
     def to_string(self):
         """
-        Print summary of the partitioner
+        Print summary of the partitioner.
         """
         n_subjects = self.number_of_subjects()
         summary_str = '\n\nNumber of subjects {}, '.format(n_subjects)
@@ -390,7 +394,8 @@ class ImageSetsPartitioner(object):
 
     def has_phase(self, phase):
         """
-        returns True if the `phase` subset of images is not empty
+
+        :return: True if the `phase` subset of images is not empty.
         """
         if self._partition_ids is None or self._partition_ids.empty:
             return False
@@ -399,28 +404,32 @@ class ImageSetsPartitioner(object):
     @property
     def has_training(self):
         """
-        returns True if the TRAIN subset of images is not empty
+
+        :return: True if the TRAIN subset of images is not empty.
         """
         return self.has_phase(TRAIN)
 
     @property
     def has_inference(self):
         """
-        returns True if the INFER subset of images is not empty
+
+        :return: True if the INFER subset of images is not empty.
         """
         return self.has_phase(INFER)
 
     @property
     def has_validation(self):
         """
-        returns True if the VALID subset of images is not empty
+
+        :return: True if the VALID subset of images is not empty.
         """
         return self.has_phase(VALID)
 
     @property
     def validation_files(self):
         """
-        returns the list of validation filenames
+
+        :return: the list of validation filenames.
         """
         if self.has_validation:
             return self.get_file_list(VALID)
@@ -429,7 +438,8 @@ class ImageSetsPartitioner(object):
     @property
     def train_files(self):
         """
-        returns the list of training filenames
+
+        :return: the list of training filenames.
         """
         if self.has_training:
             return self.get_file_list(TRAIN)
@@ -438,8 +448,9 @@ class ImageSetsPartitioner(object):
     @property
     def inference_files(self):
         """
-        returns the list of inference filenames
-        (defaulting to list of all filenames if no partition definition)
+
+        :return: the list of inference filenames
+            (defaulting to list of all filenames if no partition definition)
         """
         if self.has_inference:
             return self.get_file_list(INFER)
@@ -448,13 +459,14 @@ class ImageSetsPartitioner(object):
     @property
     def all_files(self):
         """
-        returns list of all filenames
+
+        :return: list of all filenames
         """
         return self.get_file_list()
 
     def reset(self):
         """
-        reset all fields of this singleton class
+        reset all fields of this singleton class.
         """
         self._file_list = None
         self._partition_ids = None

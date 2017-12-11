@@ -53,9 +53,10 @@ class DataFromFile(Loadable):
     @property
     def dtype(self):
         """
-        data type property of the input images
+        data type property of the input images.
+
         :return: a tuple of input image data types
-            len(self.dtype) == len(self.file_path)
+            ``len(self.dtype) == len(self.file_path)``
         """
         if not self._dtype:
             try:
@@ -74,6 +75,7 @@ class DataFromFile(Loadable):
         a tuple, length of the tuple is one for single image,
         length of the tuple is larger than one for single image from
         multiple files.
+
         :return: a tuple of file paths
         """
         return self._file_path
@@ -104,6 +106,7 @@ class DataFromFile(Loadable):
         a tuple, length of the tuple is one for single image,
         length of the tuple is larger than one for single image from
         multiple files.
+
         :return: a tuple of image name tags
         """
         return self._name
@@ -125,7 +128,7 @@ class DataFromFile(Loadable):
 class SpatialImage2D(DataFromFile):
     """
     2D images, axcodes specifications are ignored when
-    loading. (Resampling to new pixdims is currently not supported)
+    loading. (Resampling to new pixdims is currently not supported).
     """
 
     def __init__(self,
@@ -157,6 +160,7 @@ class SpatialImage2D(DataFromFile):
         as a multi-mod representation.
         The fourth dim corresponding to different time sequences
         is ignored.
+
         :return: a tuple of integers as image shape
         """
         if self._original_shape is None:
@@ -186,6 +190,7 @@ class SpatialImage2D(DataFromFile):
     def _load_header(self):
         """
         read original header for pixdim and affine info
+
         :return:
         """
         self._original_pixdim = []
@@ -205,7 +210,8 @@ class SpatialImage2D(DataFromFile):
     @property
     def original_pixdim(self):
         """
-        pixdim info from the image header
+        pixdim info from the image header.
+
         :return: a tuple of pixdims, with each element as pixdims
         of an image file
         """
@@ -218,7 +224,8 @@ class SpatialImage2D(DataFromFile):
     @property
     def original_affine(self):
         """
-        affine info from the image header
+        affine info from the image header.
+
         :return: a tuple of affine, with each element as an affine
         matrix of an image file
         """
@@ -233,6 +240,7 @@ class SpatialImage2D(DataFromFile):
         """
         axcodes info from the image header
         more info: http://nipy.org/nibabel/image_orientation.html
+
         :return: a tuple of axcodes, with each element as axcodes
         of an image file
         """
@@ -247,7 +255,8 @@ class SpatialImage2D(DataFromFile):
     @property
     def interp_order(self):
         """
-        interpolation order specified by user
+        interpolation order specified by user.
+
         :return: a tuple of integers, with each element as an
         interpolation order of an image file
         """
@@ -275,7 +284,8 @@ class SpatialImage2D(DataFromFile):
         """
         output pixdim info specified by user
         set to None for using the original pixdim in image header
-        otherwise get_data() transforms image array according to this value
+        otherwise get_data() transforms image array according to this value.
+
         :return: a tuple of pixdims, with each element as pixdims
         of an image file
         """
@@ -313,7 +323,8 @@ class SpatialImage2D(DataFromFile):
         output axcodes info specified by user
         set to None for using the original axcodes in image header,
         otherwise get_data() change axes of the image array
-        according to this value
+        according to this value.
+
         :return: a tuple of pixdims, with each element as pixdims
         of an image file
         """
@@ -360,7 +371,7 @@ class SpatialImage2D(DataFromFile):
 class SpatialImage3D(SpatialImage2D):
     """
     3D image from a single, supports resampling and reorientation
-    (3D image from a set of 2D slices is currently not supported)
+    (3D image from a set of 2D slices is currently not supported).
     """
 
     def __init__(self,
@@ -447,7 +458,7 @@ class SpatialImage3D(SpatialImage2D):
 class SpatialImage4D(SpatialImage3D):
     """
     4D image from a set of 3D volumes,
-    supports resampling and reorientation
+    supports resampling and reorientation.
 
     The 3D volumes are concatenated in the fifth dim (modality dim)
     (4D image from a single file is currently not supported)
@@ -495,7 +506,7 @@ class SpatialImage5D(SpatialImage3D):
     """
     5D image from a single file,
     resampling and reorientation are implemented as
-    operations on each 3D slice individually
+    operations on each 3D slice individually.
 
     (5D image from a set of 4D files is currently not supported)
     """
@@ -572,7 +583,7 @@ class SpatialImage5D(SpatialImage3D):
 class ImageFactory(object):
     """
     Create image instance according to number of dimensions
-    specified in image headers
+    specified in image headers.
     """
     INSTANCE_DICT = {2: SpatialImage2D,
                      3: SpatialImage3D,
@@ -582,7 +593,8 @@ class ImageFactory(object):
     @classmethod
     def create_instance(cls, file_path, **kwargs):
         """
-        Read image headers and create image instance
+        Read image headers and create image instance.
+
         :param file_path: a file path or a sequence of file paths
         :param kwargs: output properties for transforming the image data
             array into a desired format

@@ -57,7 +57,8 @@ def infer_ndims_from_file(file_path):
 def create_affine_pixdim(affine, pixdim):
     """
     Given an existing affine transformation and the pixel dimension to apply,
-    create a new affine matrix that satisfies the new pixel dimension
+    create a new affine matrix that satisfies the new pixel dimension.
+
     :param affine: original affine matrix
     :param pixdim: pixel dimensions to apply
     :return:
@@ -105,6 +106,7 @@ def rectify_header_sform_qform(img_nii):
     """
     Look at the sform and qform of the nifti object and
     correct it if any incompatibilities with pixel dimensions
+
     :param img_nii:
     :return:
     """
@@ -154,6 +156,7 @@ def rectify_header_sform_qform(img_nii):
 def do_reorientation(data_array, init_axcodes, final_axcodes):
     """
     Performs the reorientation (changing order of axes)
+
     :param data_array: Array to reorient
     :param init_axcodes: Initial orientation
     :param final_axcodes: Target orientation
@@ -183,6 +186,7 @@ def do_reorientation(data_array, init_axcodes, final_axcodes):
 def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     """
     Performs the resampling
+
     :param data_array: Data array to resample
     :param pixdim_init: Initial pixel dimension
     :param pixdim_fin: Targeted pixel dimension
@@ -275,6 +279,7 @@ def expand_to_5d(img_data):
 def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
     """
     Save the img_data to nifti image
+
     :param img_data: 5d img to save
     :param filename: filename under which to save the img_data
     :param save_path:
@@ -316,10 +321,11 @@ def split_filename(file_name):
 
 def squeeze_spatial_temporal_dim(tf_tensor):
     """
-    Given a tensorflow tensor, ndims==6 means:
-    [batch, x, y, z, time, modality]
+    Given a tensorflow tensor, ndims==6 means::
+        [batch, x, y, z, time, modality]
     this function removes x, y, z, and time dims if
-    the length along the dims is one
+    the length along the dims is one.
+
     :return: squeezed tensor
     """
     if tf_tensor.get_shape().ndims != 6:
@@ -338,7 +344,7 @@ def squeeze_spatial_temporal_dim(tf_tensor):
 def touch_folder(model_dir):
     """
     This function returns the absolute path of `model_dir` if exists
-    otherwise try to create the folder and returns the absolute path
+    otherwise try to create the folder and returns the absolute path.
     """
     if not os.path.exists(model_dir):
         try:
@@ -435,7 +441,7 @@ def resolve_checkpoint(checkpoint_name):
     # For now only supports checkpoint_name where
     # checkpoint_name.index is in the file system
     # eventually will support checkpoint names that can be referenced
-    # in a paths file
+    # in a paths file.
     if os.path.isfile(checkpoint_name + '.index'):
         return checkpoint_name
     home_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
@@ -504,12 +510,14 @@ def image3(name,
            other_indices=None):
     """ Summary for higher dimensional images
     Parameters:
-    name: string name for the summary
-    tensor:   tensor to summarize. Should be in the range 0..255.
-              By default, assumes tensor is NDHWC, and animates (through D)
-              HxW slices of the 1st channel.
-    collections: list of strings collections to add the summary to
-    animation_axes=[1],image_axes=[2,3]
+
+        name: string name for the summary
+        tensor: tensor to summarize. Should be in the range 0..255.
+            By default, assumes tensor is NDHWC, and animates (through D)
+            HxW slices of the 1st channel.
+        collections: list of strings collections to add the summary to
+        animation_axes=[1],image_axes=[2,3]
+
     """
 
     if max_outputs == 1:
