@@ -9,7 +9,7 @@ hospital’s images), or used to initialize networks for other applications (i.e
 transfer learning).  Untrained networks or conceptual blocks can be used within
 new networks.
 
-The following sections introduces:
+The following sections introduce:
 - `net_download` used to download model and data,
 - the user's "niftynet home" folder as the output directory of `net_download`
 (also as the default folder of NiftyNet).
@@ -78,7 +78,7 @@ destination = extensions
   - `extensions` directory stores Python implementation of
 networks, loss functions, new applications, etc.
 
-_Depending on their availability, some model zoo entry does not contain
+_Depending on their availability, some model zoo entries do not contain
 data, or trained weight, or both._
 
 
