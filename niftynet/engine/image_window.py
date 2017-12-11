@@ -45,22 +45,23 @@ class ImageWindow(object):
         each property is grouped into dict, with pairs of
         image_name: data_value. Some input images is a
         concatenated data array from multiple data sources.
-        example of input:
-        source_names={
-            'image': (u'modality1', u'modality2'),
-            'label': (u'modality3',)},
-        image_shapes={
-            'image': (192, 160, 192, 1, 2),
-            'label': (192, 160, 192, 1, 1)},
-        image_dtypes={
-            'image': tf.float32,
-            'label': tf.float32},
-        data_param={
-            'modality1': ParserNamespace(spatial_window_size=(10, 10, 2)),
-            'modality2': ParserNamespace(spatial_window_size=(10, 10, 2)),
-            'modality3': ParserNamespace(spatial_window_size=(5, 5, 1))}
+        example of input::
 
-        see niftynet.io.ImageReader for more details.
+            source_names={
+                'image': (u'modality1', u'modality2'),
+                'label': (u'modality3',)},
+            image_shapes={
+                'image': (192, 160, 192, 1, 2),
+                'label': (192, 160, 192, 1, 1)},
+            image_dtypes={
+                'image': tf.float32,
+                'label': tf.float32},
+            data_param={
+                'modality1': ParserNamespace(spatial_window_size=(10, 10, 2)),
+                'modality2': ParserNamespace(spatial_window_size=(10, 10, 2)),
+                'modality3': ParserNamespace(spatial_window_size=(5, 5, 1))}
+
+        see ``niftynet.io.ImageReader`` for more details.
 
         :param source_names: input image names
         :param image_shapes: tuple of image window shapes
@@ -92,9 +93,9 @@ class ImageWindow(object):
 
     def set_spatial_shape(self, spatial_window):
         """
-        overrides all spatial window defined in input modalities sections
+        Overrides all spatial window defined in input modalities sections
         this is useful when do inference with a spatial window
-        which is different from the training specifications
+        which is different from the training specifications.
 
         :param spatial_window: tuple of integers specifying new shape
         :return:
@@ -143,10 +144,11 @@ class ImageWindow(object):
 
     def placeholders_dict(self, n_samples=1):
         """
-        This function create a dictionary with items of {name: placeholders}
+        This function create a dictionary with items of
+        ``{name: placeholders}``
         name should match the queue input names
         placeholders corresponds to the image window data
-        for each of these items an additional {location_name: placeholders}
+        for each of these items an additional ``{location_name: placeholders}``
         is created to hold the spatial location of the image window
 
         :param n_samples: specifies the number of image windows
@@ -161,7 +163,7 @@ class ImageWindow(object):
     def coordinates_placeholder(self, name):
         """
         get coordinates placeholder, location name is formed
-        using LOCATION_FORMAT
+        using ``LOCATION_FORMAT``
 
         :param name: input name string
         :return: coordinates placeholder
@@ -204,7 +206,7 @@ class ImageWindow(object):
     def match_image_shapes(self, image_shapes):
         """
         if the window has dynamic shapes, this function
-        infers the fully specified shape from the image_shapes
+        infers the fully specified shape from the image_shapes.
 
         :param image_shapes:
         :return: dict of fully specified window shapes
@@ -224,14 +226,14 @@ class ImageWindow(object):
 
 def _read_window_sizes(input_mod_list, input_data_param):
     """
-    read window_size from config dict
+    Read window_size from config dict
     group them based on output names,
     this function ensures that in the multimodality case
-    the spatial window sizes are the same across modalities
+    the spatial window sizes are the same across modalities.
 
     :param input_mod_list: list of input source names
     :param input_data_param: input source properties obtained
-        by param. parser
+        by parameters parser
     :return: spatial window size
     """
     try:
@@ -268,16 +270,16 @@ def _read_window_sizes(input_mod_list, input_data_param):
 
 def _complete_partial_window_sizes(win_size, img_size):
     """
-    window size can be partially specified in the config
+    Window size can be partially specified in the config.
     This function complete the window size by making it
     the same ndim as img_size, and set the not added dim
     to size None. None values in window will be realised
-    when each image is loaded
+    when each image is loaded.
 
     :param win_size: a tuple of (partial) window size
     :param img_size: a tuple of image size
     :return: a window size with the same ndim as image size,
-    with None components to be inferred at runtime
+        with None components to be inferred at runtime
     """
     img_ndims = len(img_size)
     # crop win_size list if it's longer than img_size

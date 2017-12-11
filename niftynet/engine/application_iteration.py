@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Message stores status info of the current iteration
+Message stores status info of the current iteration.
 """
 
 import time
@@ -36,9 +36,10 @@ class IterationMessage(object):
     @property
     def current_iter(self):
         """
-        current iteration index
+        Current iteration index
         can be used to create complex schedule for the
-        iterative training/validation/inference procedure
+        iterative training/validation/inference procedure.
+
         :return: integer of iteration
         """
         return self._current_iter
@@ -53,8 +54,9 @@ class IterationMessage(object):
     def ops_to_run(self):
         """
         operations (tf graph elements) to be fed into
-        session.run(...). This is currently mainly used
+        ``session.run(...)``. This is currently mainly used
         for passing network gradient updates ops to session.run
+
         :return: dictionary of operations
         """
         if self._ops_to_run is None:
@@ -70,8 +72,9 @@ class IterationMessage(object):
     @property
     def data_feed_dict(self):
         """
-         A dictionary that maps graph elements to values
-          to be fed into session.run(...) as feed_dict parameter
+        A dictionary that maps graph elements to values
+        to be fed into ``session.run(...)`` as feed_dict parameter
+
         :return: dictionary of operations
         """
         if self._data_feed_dict is None:
@@ -86,7 +89,8 @@ class IterationMessage(object):
     def current_iter_output(self):
         """
         This property stores graph output received
-        by running session.run().
+        by running ``session.run()``.
+
         :return:
         """
         return self._current_iter_output
@@ -102,9 +106,10 @@ class IterationMessage(object):
         Engine check this property after each iteration
 
         This could be modified in by application
-        `application.set_iteration_update()`
+        ``application.set_iteration_update()``
         to create training schedules such as early stopping.
-        :return: boolean value
+
+        :return: boolean
         """
         return self._should_stop
 
@@ -115,7 +120,8 @@ class IterationMessage(object):
     @property
     def phase(self):
         """
-        a string indicating the phase in train/validation/inference
+        A string indicating the phase in train/validation/inference
+
         :return:
         """
         return self._phase
@@ -127,27 +133,31 @@ class IterationMessage(object):
     @property
     def is_training(self):
         """
-        returns a boolean value indicating if the phase is in training
+
+        :return: boolean value indicating if the phase is in training
         """
         return self.phase == TRAIN
 
     @property
     def is_validation(self):
         """
-        returns a boolean value indicating if the phase is validation
+
+        :return: boolean value indicating if the phase is validation
         """
         return self.phase == VALID
 
     @property
     def is_inference(self):
         """
-        returns a boolean value indicating if the phase is inference
+
+        :return: boolean value indicating if the phase is inference
         """
         return self.phase == INFER
 
     @property
     def iter_duration(self):
         """
+
         :return: time duration of an iteration
         """
         return self._current_iter_toc - self._current_iter_tic
@@ -155,6 +165,7 @@ class IterationMessage(object):
     def to_console_string(self):
         """
         converting current_iter_output to string, for console displaying
+
         :return: summary string
         """
         summary_indentation = "    " if self.is_validation else ""
@@ -166,8 +177,9 @@ class IterationMessage(object):
 
     def to_tf_summary(self, writer):
         """
-        converting current_iter_output to tf summary and write to `writer`
-        :param writer:
+        converting current_iter_output to tf summary and write to ``writer``
+
+        :param writer: writer instance for summary output
         :return:
         """
         if writer is None:
@@ -180,7 +192,7 @@ class IterationMessage(object):
 
 def _console_vars_to_str(console_dict):
     """
-    Printing values of variable evaluations to command line output
+    Printing values of variable evaluations to command line output.
     """
     if not console_dict:
         return ''

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 This module defines a general procedure for running applications
-Example usage:
+Example usage::
     app_driver = ApplicationDriver()
     app_driver.initialise_application(system_param, input_data_param)
     app_driver.run_application()
 
-system_param and input_data_param should be generated using:
-niftynet.utilities.user_parameters_parser.run()
+``system_param`` and ``input_data_param`` should be generated using:
+``niftynet.utilities.user_parameters_parser.run()``
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -38,7 +38,7 @@ class ApplicationDriver(object):
     This class initialises an application by building a TF graph,
     and maintaining a session and coordinator. It controls the
     starting/stopping of an application. Applications should be
-    implemented by inheriting niftynet.application.base_application
+    implemented by inheriting ``niftynet.application.base_application``
     to be compatible with this driver.
     """
 
@@ -76,10 +76,11 @@ class ApplicationDriver(object):
         """
         This function receives all parameters from user config file,
         create an instance of application.
+
         :param workflow_param: a dictionary of user parameters,
-        keys correspond to sections in the config file
+            keys correspond to sections in the config file
         :param data_param: a dictionary of input image parameters,
-        keys correspond to data properties to be used by image_reader
+            keys correspond to data properties to be used by image_reader
         :return:
         """
         try:
@@ -193,9 +194,10 @@ class ApplicationDriver(object):
         Initialise a TF graph, connect data sampler and network within
         the graph context, run training loops or inference loops.
 
-        The training loop terminates when self.final_iter reached.
+        The training loop terminates when ``self.final_iter`` reached.
         The inference loop terminates when there is no more
         image sample to be processed from image reader.
+
         :return:
         """
         config = ApplicationDriver._tf_config()
@@ -263,7 +265,7 @@ class ApplicationDriver(object):
     # pylint: disable=not-context-manager
     def _create_graph(self, graph=tf.Graph()):
         """
-        tensorflow graph is only created within this function
+        TensorFlow graph is only created within this function.
         """
         assert isinstance(graph, tf.Graph)
         main_device = self._device_string(0, is_worker=False)
@@ -319,7 +321,7 @@ class ApplicationDriver(object):
     def _rand_init_or_restore_vars(self, sess):
         """
         Randomly initialising all trainable variables defined in session,
-        or loading checkpoint files as variable initialisations
+        or loading checkpoint files as variable initialisations.
         """
         if self.is_training and self.initial_iter == 0:
             sess.run(self._init_op)
@@ -366,8 +368,9 @@ class ApplicationDriver(object):
         """
         Running a TF session by retrieving variables/operations to run,
         along with data for feed_dict.
-        This function sets message._current_iter_output with session.run
-        outputs
+
+        This function sets ``message._current_iter_output`` with session.run
+        outputs.
         """
         # update iteration status before the batch process
         self.app.set_iteration_update(message)
@@ -397,7 +400,7 @@ class ApplicationDriver(object):
 
     def _training_loop(self, sess, loop_status):
         """
-        At each iteration, an `IterationMessage` object is created
+        At each iteration, an ``IterationMessage`` object is created
         to send network output to/receive controlling messages from self.app.
         The iteration message will be passed into `self.run_vars`,
         where graph elements to run are collected and feed into `session.run()`.
