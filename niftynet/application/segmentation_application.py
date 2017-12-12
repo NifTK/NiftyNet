@@ -290,10 +290,10 @@ class SegmentationApplication(BaseApplication):
             gradients_collector.add_to_collection([grads])
             # collecting output variables
             outputs_collector.add_to_collection(
-                var=data_loss, name='dice_loss',
+                var=data_loss, name='loss',
                 average_over_devices=False, collection=CONSOLE)
             outputs_collector.add_to_collection(
-                var=data_loss, name='dice_loss',
+                var=data_loss, name='loss',
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
 
