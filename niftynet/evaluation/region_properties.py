@@ -115,6 +115,7 @@ class RegionProperties(object):
         """
         Calculates the centre of mass of the segmentation using the threshold
         to binarise the initial map
+
         :return:
         """
         return np.mean(np.argwhere(self.seg > self.threshold), 0)
@@ -125,6 +126,7 @@ class RegionProperties(object):
         this calculates the integral of the segmentation (probability maps),
         the corresponding binary number of elements, the probabilistic volume
         and the binarised volume
+
         :return:
         """
         numb_seg = np.sum(self.seg)
@@ -137,7 +139,8 @@ class RegionProperties(object):
         """
         Similarly to the volume function, returns probabilistic sum, binary
         number, probabilistic volume and binarised volume of the segmentation
-         border
+        border
+
         :return:
         """
         border_seg = MorphologyOps(self.seg, self.neigh).border_map()
@@ -151,8 +154,9 @@ class RegionProperties(object):
         Creation of the grey level co-occurrence matrix. The neighbourhood
         distance is set to 1 in this instance. All neighborhood shifts are
         calculated for each modality
+
         :return: multi_mod_glcm list of m (number of modalities) matrices of
-        size bin x bin x neigh
+            size bin x bin x neigh
         """
         shifts = [[0, 0, 0],
                   [1, 0, 0],
@@ -217,6 +221,7 @@ class RegionProperties(object):
         """
         this function populates the matrix of harilick features for each
         image modality and neighborhood shift and average over the neighbours
+
         :return:
         """
         multi_mod_glcm = self.glcm()
@@ -236,55 +241,60 @@ class RegionProperties(object):
         """
         Extracts the angular second moment features from the harilick matrix of
         features. Length of the output is the number of modalities
+
         :return:
         """
         return self.harilick_m[0, :]
 
     def call_contrast(self):
         """
-                Extracts the contrast feature from the harilick matrix of
-                features
-                :return:
-                """
+        Extracts the contrast feature from the harilick matrix of
+        features
+
+        :return:
+        """
         return self.harilick_m[1, :]
 
     def call_correlation(self):
         """
-                Extracts the correlation feature from the harilick matrix of
-                features
-                :return:
-                """
+        Extracts the correlation feature from the harilick matrix of
+        features
+
+        :return:
+        """
         return self.harilick_m[2, :]
 
     def call_sum_square(self):
         """
-                Extracts the sum square feature from the harilick matrix of
-                features
-                :return:
-                """
+        Extracts the sum square feature from the harilick matrix of
+        features
+
+        :return:
+        """
         return self.harilick_m[3, :]
 
     def call_sum_average(self):
         """
-                Extracts the sum average feature from the harilick matrix of
-                features
-                :return:
-                """
+        Extracts the sum average feature from the harilick matrix of
+        features
+
+        :return:
+        """
         return self.harilick_m[4, :]
 
     def call_idifferent_moment(self):
         """
-                Extracts the inverse difference of moment feature from the
-                harilick
-                matrix of
-                features
-                :return:
-                """
+        Extracts the inverse difference of moment feature from the
+        harilick matrix of features
+
+        :return:
+        """
         return self.harilick_m[5, :]
 
     def call_sum_entropy(self):
         """
         Extracts the sum entropy features from the harilick matrix of features
+
         :return:
         """
         return self.harilick_m[6, :]
@@ -292,6 +302,7 @@ class RegionProperties(object):
     def call_entropy(self):
         """
         Extracts the entropy features from the harilick matrix of features
+
         :return:
         """
         return self.harilick_m[7, :]
@@ -299,6 +310,7 @@ class RegionProperties(object):
     def call_difference_variance(self):
         """
         Extracts the difference variance from the harilick matrix of features
+
         :return:
         """
         return self.harilick_m[8, :]
@@ -307,6 +319,7 @@ class RegionProperties(object):
         """
         Extracts the difference entropy features from the harilic matrix of
         features
+
         :return:
         """
         return self.harilick_m[9, :]
@@ -315,6 +328,7 @@ class RegionProperties(object):
         """
         Extracts the difference entropy features from the harilick matrix of
         features
+
         :return:
         """
         return self.harilick_m[10, :]
@@ -323,6 +337,7 @@ class RegionProperties(object):
         """
         Extracts the first information measure of correlation from the
         harilick matrix of features
+
         :return:
         """
         return self.harilick_m[11, :]
@@ -331,6 +346,7 @@ class RegionProperties(object):
         """
         Extracts the second information measure of correlation from the
         harilick matrix of features
+
         :return:
         """
         return self.harilick_m[12, :]
@@ -338,10 +354,13 @@ class RegionProperties(object):
     def harilick(self, matrix):
         """
         Creates the vector of harilick features for one glcm matrix.
-        Definition of the Harilick features can be found in "Textural
-        features for image classification" Robert Harilick K, Shanmugam and
-        Its'Hak Dinstein in IEEE Transactions on systems, man and cybernetics
-        Vol SMC-3 issue 6  pp610-621
+        Definition of the Harilick features can be found in
+
+            Textural features for image classification
+            Robert Harilick K, Shanmugam and Its'Hak Dinstein
+            in IEEE Transactions on systems, man and cybernetics
+            Vol SMC-3 issue 6 pp610-621
+
         :param matrix: glcm matrix on which to calculates the Harilick features
         :return:
         """
@@ -376,6 +395,7 @@ class RegionProperties(object):
     def angular_second_moment(self, matrix):
         """
         Calculates the angular second moment
+
         :param matrix:
         :return:
         """
@@ -388,6 +408,7 @@ class RegionProperties(object):
     def contrast(self, matrix):
         """
         Calculates the angular second moment
+
         :param matrix:
         :return:
         """
@@ -400,6 +421,7 @@ class RegionProperties(object):
     def homogeneity(self, matrix):
         """
         Calculates the homogeneity over the glcm matrix
+
         :param matrix:
         :return:
         """
@@ -412,6 +434,7 @@ class RegionProperties(object):
     def energy(self, matrix):
         """
         Calculates the energy over the glcm matrix
+
         :param matrix:
         :return:
         """
@@ -424,6 +447,7 @@ class RegionProperties(object):
     def entropy(self, matrix):
         """
         Calculates the entropy over the glcm matrix
+
         :param matrix:
         :return:
         """
@@ -437,6 +461,7 @@ class RegionProperties(object):
     def correlation(self, matrix):
         """
         Calculates the correlation over the glcm matrix
+
         :param matrix:
         :return:
         """
@@ -457,6 +482,7 @@ class RegionProperties(object):
     def inverse_difference_moment(self, matrix):
         """
         Calculates the inverse difference moment over the glcm matrix
+
         :param matrix:
         :return:
         """
@@ -469,6 +495,7 @@ class RegionProperties(object):
     def sum_average(self, matrix):
         """
         Calculates the sum average over the glcm matrix
+
         :param matrix:
         :return:
         """
@@ -481,6 +508,7 @@ class RegionProperties(object):
     def sum_entropy(self, matrix):
         """
         Calculates the sum entropy over the glcm matrix
+
         :param matrix:
         :return:
         """
@@ -497,6 +525,7 @@ class RegionProperties(object):
     def sum_variance(self, matrix):
         """
         Calculates the sum variance over the glcm matrix
+
         :param matrix:
         :return:
         """
@@ -513,6 +542,7 @@ class RegionProperties(object):
     def difference_variance_entropy(self, matrix):
         """
         Calculates the difference of variance entropy over the glcm matrix
+
         :param matrix:
         :return:
         """
@@ -532,6 +562,7 @@ class RegionProperties(object):
         """
         Calculates the two measures of information measure of correlation
         over the glcm matrix
+
         :param matrix:
         :return: ic_1, ic_2
         """
@@ -556,6 +587,7 @@ class RegionProperties(object):
     def sum_square_variance(self, matrix):
         """
         Calculates the sum of square variance over the glcm matrix
+
         :param matrix:
         :return:
         """
@@ -572,6 +604,7 @@ class RegionProperties(object):
         """
         Calculates the Surface area / Volume ratio in terms of Probabilistic
         Count, Binarised count, Probabilistic Volume, Binarised Volume
+
         :return:
         """
         Sn, Snb, Sv, Svb = self.surface()
@@ -582,6 +615,7 @@ class RegionProperties(object):
         """
         Calculates the compactness S^1.5/V in terms of probabilistic count,
         binarised count, probabilistic volume, binarised volume
+
         :return:
         """
         Sn, Snb, Sv, Svb = self.surface()
@@ -592,6 +626,7 @@ class RegionProperties(object):
     def min_(self):
         """
         Calculates the minimum of the image over the segmentation
+
         :return:
         """
         return ma.min(self.masked_img, 0)
@@ -599,6 +634,7 @@ class RegionProperties(object):
     def max_(self):
         """
         Calculates the maximum of the image over the segmentation
+
         :return:
         """
         return ma.max(self.masked_img, 0)
@@ -608,6 +644,7 @@ class RegionProperties(object):
         Calculates the weighted mean of the image given the probabilistic
         segmentation. If binary, mean and weighted mean will give the same
         result
+
         :return:
         """
         masked_seg = np.tile(self.masked_seg, [self.img_channels, 1]).T
@@ -616,6 +653,7 @@ class RegionProperties(object):
     def mean_(self):
         """
         Calculates the mean of the image over the segmentation
+
         :return:
         """
         return ma.mean(self.masked_img, 0)
@@ -623,6 +661,7 @@ class RegionProperties(object):
     def skewness_(self):
         """
         Calculates the skewness of the image over the binarised segmentation
+
         :return:
         """
         return mstats.skew(self.masked_img, 0)
@@ -631,6 +670,7 @@ class RegionProperties(object):
         """
         calculates the standard deviation of the image over the binarised
         segmentation
+
         :return:
         """
         return ma.std(self.masked_img, 0)
@@ -638,6 +678,7 @@ class RegionProperties(object):
     def kurtosis_(self):
         """
         calculates the kurtosis of the image over the binarised segmentation
+
         :return:
         """
         return mstats.kurtosis(self.masked_img, 0)
@@ -645,6 +686,7 @@ class RegionProperties(object):
     def median_(self):
         """
         calculates the median of the image over the binarised segmentation
+
         :return:
         """
         return ma.median(self.masked_img, 0)
@@ -653,6 +695,7 @@ class RegionProperties(object):
         """
         calculates the first quartile of the image over the binarised
         segmentation
+
         :return:
         """
         return mstats.mquantiles(self.masked_img, prob=0.25, axis=0).flatten()
@@ -661,6 +704,7 @@ class RegionProperties(object):
         """
         calculates the third quartile of the image over the binarised
         segmentation
+
         :return:
         """
         return mstats.mquantiles(self.masked_img, prob=0.75, axis=0).flatten()
@@ -668,6 +712,7 @@ class RegionProperties(object):
     def header_str(self):
         """
         creates the header string to be output as part of the result report
+
         :return:
         """
         result_str = [j for i in self.measures for j in self.m_dict[i][1]]
@@ -678,6 +723,7 @@ class RegionProperties(object):
         """
         transforms the result dictionary into a string according to a
         specified format to be written on the result report
+
         :param fmt: Format under which the result will be written e.g '{:4f}'
         :return:
         """
