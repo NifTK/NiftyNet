@@ -60,7 +60,7 @@ class ScaleNet(BaseNet):
         return output_tensor
 
 
-SUPPORTED_OP = {'MAX', 'AVERAGE'}
+SUPPORTED_OP = set(['MAX', 'AVERAGE'])
 
 
 class ScaleBlock(TrainableLayer):

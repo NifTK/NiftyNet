@@ -10,6 +10,7 @@ from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.sampler_grid import _enumerate_step_points
 from niftynet.engine.sampler_grid import grid_spatial_coordinates
 from niftynet.io.image_reader import ImageReader
+from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from tests.test_util import ParserNamespace
 
 MULTI_MOD_DATA = {
@@ -74,22 +75,27 @@ DYNAMIC_MOD_DATA = {
 }
 DYNAMIC_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'))
 
+data_partitioner = ImageSetsPartitioner()
+multi_mod_list = data_partitioner.initialise(MULTI_MOD_DATA).get_file_list()
+mod_2d_list = data_partitioner.initialise(MOD_2D_DATA).get_file_list()
+dynamic_list = data_partitioner.initialise(DYNAMIC_MOD_DATA).get_file_list()
+
 
 def get_3d_reader():
     reader = ImageReader(['image'])
-    reader.initialise_reader(MULTI_MOD_DATA, MULTI_MOD_TASK)
+    reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
     return reader
 
 
 def get_2d_reader():
     reader = ImageReader(['image'])
-    reader.initialise_reader(MOD_2D_DATA, MOD_2D_TASK)
+    reader.initialise(MOD_2D_DATA, MOD_2D_TASK, mod_2d_list)
     return reader
 
 
 def get_dynamic_window_reader():
     reader = ImageReader(['image'])
-    reader.initialise_reader(DYNAMIC_MOD_DATA, DYNAMIC_MOD_TASK)
+    reader.initialise(DYNAMIC_MOD_DATA, DYNAMIC_MOD_TASK, dynamic_list)
     return reader
 
 
@@ -176,7 +182,7 @@ class CoordinatesTest(tf.test.TestCase):
             win_sizes={'image': (63, 63, 40),
                        'label': (42, 41, 33)},
             border_size=(2, 3, 4))
-        # first dim cooresponds to subject id
+        # first dim corresponds to subject id
         expected_image = np.array(
             [[1, 0, 0, 0, 63, 63, 40],
              [1, 0, 0, 24, 63, 63, 64],
@@ -209,7 +215,7 @@ class CoordinatesTest(tf.test.TestCase):
             win_sizes={'image': (63, 63, 1),
                        'label': (30, 32, 1)},
             border_size=(2, 3, 4))
-        # first dim cooresponds to subject id
+        # first dim corresponds to subject id
         expected_image = np.array(
             [[1, 0, 0, 0, 63, 63, 1],
              [1, 1, 0, 0, 64, 63, 1],

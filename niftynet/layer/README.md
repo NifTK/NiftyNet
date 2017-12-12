@@ -1,4 +1,3 @@
-
 # Layers
 
 Summary of layers that can be used to build networks and their characteristics
@@ -130,7 +129,7 @@ Loss function| Notes | Citation | Additional Arguments
 Cross-entropy |  | 
 Dice Loss |  | "V-net: Fully convolutional neural networks for volumetric medical image segmentation", Milletari, et al, 3DV 2016.
 Dice Loss (no square) | Similar to Dice Loss, but probabilities are not squared in the denominator. |
-Generalised Dice Loss | | "Generalised Dice overlap as a deep learning loss function for highly unbalanced segmentations", Sudre, C. et. al.  DLMIA 2017.
+Generalised Dice Loss | | "Generalised Dice overlap as a deep learning loss function for highly unbalanced segmentations", Sudre, C. et. al.  DLMIA 2017.| type_weight: default 'Square'. Indicates how the volume of each label is weighted. Square - Multiplication by the inverse of square of the volume / Simple - Multiplication by 1/V / Uniform - No weighting 
 Generalised Wasserstein Dice Loss | | "Generalised Wasserstein Dice Score for Imbalanced Multi-class Segmentation using Holistic Convolutional Networks", Fidon, L. et. al. MICCAI 2017 (BrainLes).
 Sensitivity-Specificity Loss  | | "Deep Convolutional Encoder Networks for Multiple Sclerosis Lesion Segmentation", Brosch et al, MICCAI 2015. | r: default 0.05. The 'sensitivity ratio' (authors suggest values from 0.01-0.10 will have similar effects)
 

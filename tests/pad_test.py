@@ -94,7 +94,7 @@ class PaddingTest(tf.test.TestCase):
 
     def test_3d_dict_large_pad_shape(self):
         input_param = {'image_name': ('image',),
-                       'border': (18,2,1)}
+                       'border': (18, 2, 1)}
         self.run_test(False, input_param, (49, 18, 12, 8))
         self.run_inverse_test(False, input_param, (13, 10, 8, 8))
 

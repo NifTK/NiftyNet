@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright 2017 The Sonnet Authors. All Rights Reserved.
 # Modifications copyright 2017 The NiftyNet Authors.
 #
@@ -25,8 +26,8 @@ import tensorflow as tf
 from niftynet.layer.grid_warper import GridWarperLayer
 from niftynet.layer.resampler import ResamplerLayer
 
-SUPPORTED_INTERPOLATION={'BSPLINE', 'LINEAR', 'NEAREST'}
-SUPPORTED_BOUNDARY={'ZERO', 'REPLICATE', 'CIRCULAR', 'SYMMETRIC'}
+SUPPORTED_INTERPOLATION = set(['BSPLINE', 'LINEAR', 'NEAREST'])
+SUPPORTED_BOUNDARY = set(['ZERO', 'REPLICATE', 'CIRCULAR', 'SYMMETRIC'])
 
 
 class BSplineFieldImageGridWarperLayer(GridWarperLayer):

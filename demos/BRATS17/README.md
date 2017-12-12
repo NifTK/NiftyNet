@@ -8,13 +8,15 @@ Cascaded Anisotropic Convolutional Neural Networks, MICCAI BRATS 2017
 
 ![A slice from BRATS17](./example_outputs/original.png)
 ![Ground truth of whole Tumor](./example_outputs/label.png)
-![Segmentation probablity map using this demo](./example_outputs/ave_prob.png)
+![Segmentation probability map using this demo](./example_outputs/ave_prob.png)
 
 From left to right: A slice from BRATS17, ground truth of whole tumor,
 and segmentation probability map using this demo [1].
 
 *[1] This implementation ranked the first (in terms of averaged Dice score 0.90499) according
 to the online validation leaderboard of [BRATS challenge 2017](https://www.cbica.upenn.edu/BraTS17/lboardValidation.html).*
+
+_Please see also a trained model in [NiftyNet model zoo](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/blob/master/anisotropic_nets_brats_challenge_model_zoo.md)._
 
 ### Overview
 The demo focuses on the first stage of the cascaded CNNs, i.e., automated

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright 2017 The Sonnet Authors. All Rights Reserved.
 # Modifications copyright 2017 The NiftyNet Authors.
 #
@@ -353,8 +354,8 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
                      tf.ones_like(warped_coord.shape)], 0)
                 warped_coord = warped_coord.reshape((1, 1) + warped_coord.shape)
                 warped_coord = tf.tile(warped_coord, tiling_params)
-            warped_coord = warped_coord + \
-                           self._psi[i + 2 * num_output_dimensions]
+            warped_coord = \
+                warped_coord + self._psi[i + 2 * num_output_dimensions]
             # Need to help TF figuring out shape inference
             # since tiling information
             # is held in Tensors which are not known until run time.

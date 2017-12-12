@@ -5,7 +5,6 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.activation import ActiLayer
-from niftynet.layer.bn import BNLayer
 from niftynet.layer.convolution import ConvolutionalLayer
 from niftynet.layer.deconvolution import DeconvolutionalLayer
 from niftynet.layer.fully_connected import FullyConnectedLayer

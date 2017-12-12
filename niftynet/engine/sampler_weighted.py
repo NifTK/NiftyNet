@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Generating image window by weighted sampling map from input image
-This can also be considered as a `weighted random cropping` layer of the
-input image
+This can also be considered as a "weighted random cropping" layer of the
+input image.
 """
 from __future__ import absolute_import, division, print_function
 
@@ -23,7 +23,7 @@ class WeightedSampler(UniformSampler):
     This is implemented in a closed form using cumulative histograms
     for efficiency purposes i.e., the first three dims of image.
 
-    This layer can be considered as a `weighted random cropping` layer of the
+    This layer can be considered as a "weighted random cropping" layer of the
     input image.
     """
 
@@ -52,11 +52,12 @@ def weighted_spatial_coordinates(subject_id,
     This is the function that actually does the cumulative histogram
     and sampling.
 
-    also, note that win_sizes could be different,
-    for example in segmentation network
+    also, note that win_sizes could be different
+    (for example in segmentation network
     input image window size is 32x32x10,
-    training label window is 16x16x10, the network reduces x-y plane
-    spatial resolution.
+    training label window is 16x16x10 -- the network reduces x-y plane
+    spatial resolution).
+
     This function handles this situation by first find the largest
     window across these window definitions, and generate the coordinates.
     These coordinates are then adjusted for each of the
@@ -120,10 +121,10 @@ def weighted_spatial_coordinates(subject_id,
 
     middle_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
     for sample in range(0, n_samples):
-        # get n_sample from the comulative histogram, spaced by 1/n_samples,
+        # get n_sample from the cumulative histogram, spaced by 1/n_samples,
         # plus a random perturbation to give us a stochastic sampler
         sample_ratio = 1 - (np.random.random() + sample) / (n_samples + 1)
-        # find the index where the comulative it above the sample threshold
+        # find the index where the cumulative it above the sample threshold
         #     import pdb; pdb.set_trace()
         try:
             sample_index = np.argmax(sorted_data >= sample_ratio)
@@ -131,7 +132,7 @@ def weighted_spatial_coordinates(subject_id,
             tf.logging.fatal("unable to choose sampling window based on "
                              "the current frequency map.")
             raise
-        # inver the sample index to the pre-sorted index
+        # invert the sample index to the pre-sorted index
         inverted_sample_index = sorted_indexes[sample_index]
         # get the x,y,z coordinates on the cropped_map
         # (note: we need to re-shift it later due to the crop)

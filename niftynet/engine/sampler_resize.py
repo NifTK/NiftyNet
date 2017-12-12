@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Resize input image as output window
+Resize input image as output window.
 """
 from __future__ import absolute_import, print_function, division
 
@@ -18,7 +18,7 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
     This class generates samples by rescaling
     the whole image to the desired size
     currently 5D input is supported:
-    Height x Width x Depth x time x Modality
+    ``Height x Width x Depth x time x Modality``
     """
 
     def __init__(self,
@@ -61,18 +61,20 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
     def layer_op(self, *args, **kwargs):
         """
         This function generates sampling windows to the input buffer
-        image data are from self.reader()
-        it first completes window shapes based on image data,
+        image data are from ``self.reader()``.
+
+        It first completes window shapes based on image data,
         then resize each image as window and output
         a dictionary (required by input buffer)
-        :return: output data dictionary {placeholders: data_array}
+
+        :return: output data dictionary ``{placeholders: data_array}``
         """
         while True:
             image_id, data, interp_orders = self.reader(shuffle=self.shuffle)
             if not data:
                 break
-            image_shapes = {
-                name: data[name].shape for name in self.window.names}
+            image_shapes = \
+                dict((name, data[name].shape) for name in self.window.names)
             # window shapes can be dynamic, here they
             # are converted to static ones
             # as now we know the image shapes
@@ -86,10 +88,8 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
                 output_dict = {}
                 for name in list(data):
                     # prepare output dictionary keys
-                    coordinates_key = \
-                        self.window.coordinates_placeholder(name)
-                    image_data_key = \
-                        self.window.image_data_placeholder(name)
+                    coordinates_key = self.window.coordinates_placeholder(name)
+                    image_data_key = self.window.image_data_placeholder(name)
 
                     # prepare coordinates data
                     output_dict[coordinates_key] = all_coordinates[name]
@@ -136,12 +136,12 @@ def zoom_3d(image, ratio, interp_order):
 def dummy_coordinates(image_id, image_sizes):
     """
     This function returns a set of image window coordinates
-    which are just from 0 to image_shapes
+    which are just from 0 to image_shapes.
     """
     all_coordinates = {}
     for mod in list(image_sizes):
         starting_coordinates = [0, 0, 0]
-        image_sptial_shape = list(image_sizes[mod][:N_SPATIAL])
-        coords = [[image_id] + starting_coordinates + image_sptial_shape]
+        image_spatial_shape = list(image_sizes[mod][:N_SPATIAL])
+        coords = [[image_id] + starting_coordinates + image_spatial_shape]
         all_coordinates[mod] = np.asarray(coords)
     return all_coordinates

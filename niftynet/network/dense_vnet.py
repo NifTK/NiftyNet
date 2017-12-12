@@ -12,7 +12,6 @@ from niftynet.layer.spatial_transformer import ResamplerLayer
 from niftynet.layer.grid_warper import AffineGridWarperLayer
 
 from niftynet.network.base_net import BaseNet
-from niftynet.utilities.util_common import look_up_operations
 from niftynet.io.misc_io import image3_axial
 
 

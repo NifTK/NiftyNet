@@ -17,7 +17,8 @@ Bug reports and feature requests should be submitted by creating an issue on [CM
 
 ## Submitting merge requests
 
-All merge requests should be submitted via [CMICLab][cmiclab-niftynet-mr].
+All merge requests should be submitted via [CMICLab][cmiclab-niftynet-mr] or
+GitHub pull request.
 Please make sure you have read the following subsections before submitting a merge request.
 
 [cmiclab-niftynet-mr]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/merge_requests/new
@@ -69,6 +70,9 @@ Also see [how this command is tested][net-segment-test].
 [net-segment-entry]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/setup.py#L105
 [net-segment-test]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L252
 
+
+## Writing unit tests
+Please see this [README](tests/README.md) for more information on how to write unit tests for NiftyNet.
 
 ## NiftyNet admin tasks
 

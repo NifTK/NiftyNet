@@ -88,6 +88,26 @@ class NesterovMomentum(object):
             use_nesterov=True)
 
 
+class RMSProp(object):
+    """
+    RMSProp optimiser with default hyper parameters
+    """
+
+    @staticmethod
+    def get_instance(learning_rate):
+        """
+        create an instance of the optimiser
+        """
+        return tf.train.RMSPropOptimizer(
+            learning_rate=learning_rate,
+            decay=0.9,
+            momentum=0.0,
+            epsilon=1e-10,
+            use_locking=False,
+            centered=False,
+            name='RMSProp')
+
+
 class GradientDescent(object):
     """
     Gradient Descent optimiser with default hyper parameters

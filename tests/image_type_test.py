@@ -75,7 +75,7 @@ class ImageTypeTest(tf.test.TestCase):
             name='3d_image',
             interp_order=3,
             output_pixdim=((7, 1.2, 8),),
-            output_axcodes=(('ASL'),))
+            output_axcodes=('ASL',))
         self.assertIsInstance(image, SpatialImage3D)
         output = image.get_data()
         self.assertAllClose(np.array([23, 317, 31, 1, 1]), output.shape)

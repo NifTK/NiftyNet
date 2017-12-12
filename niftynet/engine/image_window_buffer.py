@@ -18,13 +18,14 @@ class InputBatchQueueRunner(object):
     """
     This class defines a light wrapper around queue objects
     for input windows, and the coordinates describes the original location
-    of the window
+    of the window.
 
-    After initialisation, run_threads() can be called with tf.session and
-    tf.coordinator to start generating samples with multiple threads.
+    After initialisation, ``run_threads()`` can be called with
+    ``tf.session`` and ``tf.coordinator`` to start generating samples
+    with multiple threads.
 
     The sampling threads can be stopped by:
-    close_all() called externally -- all threads quit immediately
+    ``close_all()`` called externally -- all threads quit immediately.
     """
 
     # pylint: disable=too-many-instance-attributes
@@ -55,7 +56,7 @@ class InputBatchQueueRunner(object):
     def _create_queue_and_ops(self, window, enqueue_size=1, dequeue_size=1):
         """
         Create a shuffled queue or FIFO queue, and create queue
-        operations. This should be called before tf.Graph.finalize.
+        operations. This should be called before ``tf.Graph.finalize``.
         """
         self._window = window
         try:
@@ -181,16 +182,18 @@ class InputBatchQueueRunner(object):
     def pop_batch_op(self):
         """
         This function is used when connecting a sampler output
-        to a network. e.g.,
+        to a network. e.g.::
+
             data_dict = self.get_sampler()[0].pop_batch_op(device_id)
             net_output = net_model(data_dict, is_training)
-        Note it squeezes the output tensor of 6 dims
-        [batch, x, y, z, time, modality]
-        by removing all dims along which length is one.
 
-        :param as_numpy_array: a boolean value indicating numpy outputs
-        :return: a tensorflow graph op if not as_numpy_array,
-                 otherwise returns a numpy array
+        .. caution::
+
+            Note it squeezes the output tensor of 6 dims
+            ``[batch, x, y, z, time, modality]``
+            by removing all dims along which length is one.
+
+        :return: a tensorflow graph op
         """
         assert all([thread.isAlive() for thread in self._threads]), \
             "input sampling threads are not running"
@@ -214,7 +217,7 @@ class InputBatchQueueRunner(object):
         starts sampling threads to fill the queue.
 
         Note that the threads will be blocked if there's no
-        dequeue_op runnning, or number of samples is less
+        dequeue_op running, or number of samples is less
         than the dequeue batch size.
 
         :param session: a tensorflow session

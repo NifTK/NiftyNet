@@ -9,11 +9,12 @@ from __future__ import division
 from __future__ import print_function
 
 import importlib
+import os
 
 import tensorflow as tf
 
 from niftynet.utilities.util_common import \
-    _damerau_levenshtein_distance as edit_distance
+    damerau_levenshtein_distance as edit_distance
 
 # pylint: disable=too-few-public-methods
 SUPPORTED_APP = {
@@ -110,6 +111,7 @@ SUPPORTED_OPTIMIZERS = {
     'nesterov': 'niftynet.engine.application_optimiser.NesterovMomentum',
 
     'adagrad': 'niftynet.engine.application_optimiser.Adagrad',
+    'rmsprop': 'niftynet.engine.application_optimiser.RMSProp',
 }
 
 SUPPORTED_INITIALIZATIONS = {
@@ -134,28 +136,32 @@ def select_module(module_name, type_str, lookup_table):
     """
     This function first tries to find the absolute module name
     by matching the static dictionary items, if not found, it
-    tries to import the module by splitting the input module_name
+    tries to import the module by splitting the input ``module_name``
     as module name and class name to be imported.
 
-    :param moduel_name: string that matches the keys defined in lookup_table
+    :param module_name: string that matches the keys defined in lookup_table
         or an absolute class name: module.name.ClassName
-    :type_str: type of the module (currently used for better error display)
-    :lookup_table: defines a set of shorthands for absolute class name
+    :param type_str: type of the module (used for better error display)
+    :param lookup_table: defines a set of shorthands for absolute class name
     """
     module_name = '{}'.format(module_name)
     if module_name in lookup_table:
         module_name = lookup_table[module_name]
-    module, class_name = None, None
+    module_str, class_name = None, None
     try:
-        module, class_name = module_name.rsplit('.', 1)
-        the_module = getattr(importlib.import_module(module), class_name)
-        return the_module
+        module_str, class_name = module_name.rsplit('.', 1)
+        the_module = importlib.import_module(module_str)
+        the_class = getattr(the_module, class_name)
+        tf.logging.info('Import [%s] from %s.',
+                        class_name, os.path.abspath(the_module.__file__))
+        return the_class
     except (AttributeError, ValueError, ImportError) as not_imported:
         # print sys.path
         tf.logging.fatal(repr(not_imported))
         # Two possibilities: a typo for a lookup table entry
         #                 or a non-existing module
-        dists = {k: edit_distance(k, module_name) for k in lookup_table.keys()}
+        dists = dict((k, edit_distance(k, module_name))
+                     for k in list(lookup_table))
         closest = min(dists, key=dists.get)
         if dists[closest] <= 3:
             err = 'Could not import {2}: By "{0}", ' \
@@ -171,7 +177,7 @@ def select_module(module_name, type_str, lookup_table):
                 tf.logging.fatal(err)
                 raise ValueError(err)
             err = '{}: Could not import object' \
-                  '"{}" from "{}"'.format(type_str, class_name, module)
+                  '"{}" from "{}"'.format(type_str, class_name, module_str)
             tf.logging.fatal(err)
             raise ValueError(err)
 
@@ -193,7 +199,7 @@ class ModuleFactory(object):
 
 class ApplicationNetFactory(ModuleFactory):
     """
-    Import a network from niftynet.network or from user specified string
+    Import a network from ``niftynet.network`` or from user specified string
     """
     SUPPORTED = SUPPORTED_NETWORK
     type_str = 'network'
@@ -201,7 +207,7 @@ class ApplicationNetFactory(ModuleFactory):
 
 class ApplicationFactory(ModuleFactory):
     """
-    Import an application from niftynet.application or
+    Import an application from ``niftynet.application`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_APP
@@ -210,7 +216,7 @@ class ApplicationFactory(ModuleFactory):
 
 class LossGANFactory(ModuleFactory):
     """
-    Import a GAN loss function from niftynet.layer or
+    Import a GAN loss function from ``niftynet.layer`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_LOSS_GAN
@@ -219,7 +225,7 @@ class LossGANFactory(ModuleFactory):
 
 class LossSegmentationFactory(ModuleFactory):
     """
-    Import a segmentation loss function from niftynet.layer or
+    Import a segmentation loss function from ``niftynet.layer`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_LOSS_SEGMENTATION
@@ -228,7 +234,7 @@ class LossSegmentationFactory(ModuleFactory):
 
 class LossRegressionFactory(ModuleFactory):
     """
-    Import a regression loss function from niftynet.layer or
+    Import a regression loss function from ``niftynet.layer`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_LOSS_REGRESSION
@@ -237,7 +243,7 @@ class LossRegressionFactory(ModuleFactory):
 
 class LossAutoencoderFactory(ModuleFactory):
     """
-    Import an autoencoder loss function from niftynet.layer or
+    Import an autoencoder loss function from ``niftynet.layer`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_LOSS_AUTOENCODER
@@ -246,7 +252,7 @@ class LossAutoencoderFactory(ModuleFactory):
 
 class OptimiserFactory(ModuleFactory):
     """
-    Import an optimiser from niftynet.engine.application_optimiser or
+    Import an optimiser from ``niftynet.engine.application_optimiser`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_OPTIMIZERS
@@ -255,7 +261,7 @@ class OptimiserFactory(ModuleFactory):
 
 class InitializerFactory(ModuleFactory):
     """
-    Import an initializer from niftynet.engine.application_initializer or
+    Import an initializer from ``niftynet.engine.application_initializer`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_INITIALIZATIONS
@@ -264,7 +270,8 @@ class InitializerFactory(ModuleFactory):
     @staticmethod
     def get_initializer(name, args=None):
         """
-        wrapper for getting the init
+        wrapper for getting the initializer.
+
         :param name:
         :param args: optional parameters for the initializer
         :return:

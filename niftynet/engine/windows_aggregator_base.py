@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 This module is used to cache window-based network outputs,
- form a image-level output,
- write the cached the results to hard drive
+form a image-level output,
+write the cached the results to hard drive.
 """
 from __future__ import absolute_import, print_function, division
 
@@ -27,7 +27,8 @@ class ImageWindowsAggregator(object):
         """
         Get the corresponding input image of these batch data.
         So that the batch data can be stored correctly in
-        terms of interpolation order, orientation, pixdims
+        terms of interpolation order, orientation, pixdims.
+
         :return: an image object from image reader
         """
         if self.image_id is not None and self.reader:
@@ -38,7 +39,8 @@ class ImageWindowsAggregator(object):
     def image_id(self):
         """
         Index of the image in the output image list maintained by
-        image reader
+        image reader.
+
         :return: integer of the position in image list
         """
         return self._image_id
