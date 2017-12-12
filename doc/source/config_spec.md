@@ -359,8 +359,8 @@ Strategies applied to combine foreground masks of multiple modalities, can take 
 - [starting_iter](#starting-iter) :: `non-negative integer` :: `starting_iter=0` :: `0`
 - [save_every_n](#save-every-n) :: `integer` :: `save_every_n=5` :: `500`
 - [tensorboard_every_n](#tensorboard-every-n) :: `integer` :: `tensorboard_every_n=5` :: `20`
-- [max_iter](#max_iter) :: `integer` :: `max_iter=1000` :: `10000`
-- [max_checkpoint](#max_checkpoint) :: `integer` :: `max_checkpoint=5` :: `100`
+- [max_iter](#max-iter) :: `integer` :: `max_iter=1000` :: `10000`
+- [max_checkpoint](#max-checkpoint) :: `integer` :: `max_checkpoint=5` :: `100`
 
 ###### `optimiser`
 Type of optimiser for computing graph gradients.  Current available options are
@@ -424,7 +424,7 @@ beginning of training (`starting_iter=0`) and only if the file does not exist.
 
 - If no partition is required, please remove any existing [dataset_split_file](#dataset-split-file),
 and make sure both [`exclude_fraction_for_validation`](#exclude-fraction-for-validation)
-and [`exclude_fraction_for_inference`](#exclude_fraction-for-inference) are `0`.
+and [`exclude_fraction_for_inference`](#exclude-fraction-for-inference) are `0`.
 
 To exclude particular subjects or adjust the randomly generated partition, the
 [`dataset_split_file`](#dataset-split-file) can be edited manually.  Please note
@@ -454,7 +454,7 @@ will process all image files defined by [input specifications](#input-data-sourc
 - [validation_every_n](#validation-every-n) :: `integer` :: `validation_every_n=10` :: `-1`
 - [validation_max_iter](#validation-max-iter) :: `integer` :: `validation_max_iter=5` :: `1`
 - [exclude_fraction_for_validation](#exclude-fraction-for-validation) :: `float` :: `exclude_fraction_for_validation=0.2` :: `0.0`
-- [exclude_fraction_for_inference](#exclude-fraction-for_inference) :: `float` :: `exclude_fraction_for_inference=0.1` :: `0.0`
+- [exclude_fraction_for_inference](#exclude-fraction-for-inference) :: `float` :: `exclude_fraction_for_inference=0.1` :: `0.0`
 
 ###### `validation_every_n`
 Run validation iterations after every N training iterations.
