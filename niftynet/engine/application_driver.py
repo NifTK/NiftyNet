@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-This module defines a general procedure for running applications
+This module defines a general procedure for running applications.
+
 Example usage::
     app_driver = ApplicationDriver()
     app_driver.initialise_application(system_param, input_data_param)

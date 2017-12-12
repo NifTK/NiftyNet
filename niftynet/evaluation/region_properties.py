@@ -11,6 +11,8 @@ from niftynet.utilities.util_common import MorphologyOps, CacheFunctionOutput
 
 
 class RegionProperties(object):
+    """This class enables the extraction of image features (Harilick
+    features) and basic statistics over a segmentation"""
     def __init__(self, seg, img, measures,
                  num_neighbors=6, threshold=0, pixdim=(1, 1, 1)):
 
@@ -110,10 +112,23 @@ class RegionProperties(object):
         return regions, probs
 
     def centre_of_mass(self):
+        """
+        Calculates the centre of mass of the segmentation using the threshold
+        to binarise the initial map
+
+        :return:
+        """
         return np.mean(np.argwhere(self.seg > self.threshold), 0)
 
     @CacheFunctionOutput
     def volume(self):
+        """
+        this calculates the integral of the segmentation (probability maps),
+        the corresponding binary number of elements, the probabilistic volume
+        and the binarised volume
+
+        :return:
+        """
         numb_seg = np.sum(self.seg)
         numb_seg_bin = np.sum(self.seg > 0)
         return numb_seg, numb_seg_bin, \
@@ -121,6 +136,13 @@ class RegionProperties(object):
 
     @CacheFunctionOutput
     def surface(self):
+        """
+        Similarly to the volume function, returns probabilistic sum, binary
+        number, probabilistic volume and binarised volume of the segmentation
+        border
+
+        :return:
+        """
         border_seg = MorphologyOps(self.seg, self.neigh).border_map()
         numb_border_seg_bin = np.sum(border_seg > 0)
         numb_border_seg = np.sum(border_seg)
@@ -128,6 +150,14 @@ class RegionProperties(object):
                numb_border_seg * self.vol_vox, numb_border_seg_bin * self.vol_vox
 
     def glcm(self):
+        """
+        Creation of the grey level co-occurrence matrix. The neighbourhood
+        distance is set to 1 in this instance. All neighborhood shifts are
+        calculated for each modality
+
+        :return: multi_mod_glcm list of m (number of modalities) matrices of
+            size bin x bin x neigh
+        """
         shifts = [[0, 0, 0],
                   [1, 0, 0],
                   [-1, 0, 0],
@@ -188,6 +218,12 @@ class RegionProperties(object):
         return multi_mod_glcm
 
     def harilick_matrix(self):
+        """
+        this function populates the matrix of harilick features for each
+        image modality and neighborhood shift and average over the neighbours
+
+        :return:
+        """
         multi_mod_glcm = self.glcm()
         matrix_harilick = np.zeros([13, self.neigh, self.img_channels])
         if multi_mod_glcm is None:
@@ -202,45 +238,132 @@ class RegionProperties(object):
         return np.average(matrix_harilick, axis=1)
 
     def call_asm(self):
+        """
+        Extracts the angular second moment features from the harilick matrix of
+        features. Length of the output is the number of modalities
+
+        :return:
+        """
         return self.harilick_m[0, :]
 
     def call_contrast(self):
+        """
+        Extracts the contrast feature from the harilick matrix of
+        features
+
+        :return:
+        """
         return self.harilick_m[1, :]
 
     def call_correlation(self):
+        """
+        Extracts the correlation feature from the harilick matrix of
+        features
+
+        :return:
+        """
         return self.harilick_m[2, :]
 
     def call_sum_square(self):
+        """
+        Extracts the sum square feature from the harilick matrix of
+        features
+
+        :return:
+        """
         return self.harilick_m[3, :]
 
     def call_sum_average(self):
+        """
+        Extracts the sum average feature from the harilick matrix of
+        features
+
+        :return:
+        """
         return self.harilick_m[4, :]
 
     def call_idifferent_moment(self):
+        """
+        Extracts the inverse difference of moment feature from the
+        harilick matrix of features
+
+        :return:
+        """
         return self.harilick_m[5, :]
 
     def call_sum_entropy(self):
+        """
+        Extracts the sum entropy features from the harilick matrix of features
+
+        :return:
+        """
         return self.harilick_m[6, :]
 
     def call_entropy(self):
+        """
+        Extracts the entropy features from the harilick matrix of features
+
+        :return:
+        """
         return self.harilick_m[7, :]
 
     def call_difference_variance(self):
+        """
+        Extracts the difference variance from the harilick matrix of features
+
+        :return:
+        """
         return self.harilick_m[8, :]
 
     def call_difference_entropy(self):
+        """
+        Extracts the difference entropy features from the harilic matrix of
+        features
+
+        :return:
+        """
         return self.harilick_m[9, :]
 
     def call_sum_variance(self):
+        """
+        Extracts the difference entropy features from the harilick matrix of
+        features
+
+        :return:
+        """
         return self.harilick_m[10, :]
 
     def call_imc1(self):
+        """
+        Extracts the first information measure of correlation from the
+        harilick matrix of features
+
+        :return:
+        """
         return self.harilick_m[11, :]
 
     def call_imc2(self):
+        """
+        Extracts the second information measure of correlation from the
+        harilick matrix of features
+
+        :return:
+        """
         return self.harilick_m[12, :]
 
     def harilick(self, matrix):
+        """
+        Creates the vector of harilick features for one glcm matrix.
+        Definition of the Harilick features can be found in
+
+            Textural features for image classification
+            Robert Harilick K, Shanmugam and Its'Hak Dinstein
+            in IEEE Transactions on systems, man and cybernetics
+            Vol SMC-3 issue 6 pp610-621
+
+        :param matrix: glcm matrix on which to calculates the Harilick features
+        :return:
+        """
         vector_harilick = []
         asm = self.angular_second_moment(matrix)
         contrast = self.contrast(matrix)
@@ -270,6 +393,12 @@ class RegionProperties(object):
         return vector_harilick
 
     def angular_second_moment(self, matrix):
+        """
+        Calculates the angular second moment
+
+        :param matrix:
+        :return:
+        """
         asm = 0
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[0]):
@@ -277,6 +406,12 @@ class RegionProperties(object):
         return asm
 
     def contrast(self, matrix):
+        """
+        Calculates the angular second moment
+
+        :param matrix:
+        :return:
+        """
         contrast = 0
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[1]):
@@ -284,6 +419,12 @@ class RegionProperties(object):
         return contrast
 
     def homogeneity(self, matrix):
+        """
+        Calculates the homogeneity over the glcm matrix
+
+        :param matrix:
+        :return:
+        """
         homogeneity = 0
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[1]):
@@ -291,6 +432,12 @@ class RegionProperties(object):
         return homogeneity
 
     def energy(self, matrix):
+        """
+        Calculates the energy over the glcm matrix
+
+        :param matrix:
+        :return:
+        """
         energy = 0
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[0]):
@@ -298,6 +445,12 @@ class RegionProperties(object):
         return energy
 
     def entropy(self, matrix):
+        """
+        Calculates the entropy over the glcm matrix
+
+        :param matrix:
+        :return:
+        """
         entropy = 0
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[0]):
@@ -306,6 +459,12 @@ class RegionProperties(object):
         return entropy
 
     def correlation(self, matrix):
+        """
+        Calculates the correlation over the glcm matrix
+
+        :param matrix:
+        :return:
+        """
         range_values = np.arange(0, matrix.shape[0])
         matrix_range = np.tile(range_values, [matrix.shape[0], 1])
         mean_matrix = np.sum(matrix_range * matrix, axis=0)
@@ -321,6 +480,12 @@ class RegionProperties(object):
         return correlation
 
     def inverse_difference_moment(self, matrix):
+        """
+        Calculates the inverse difference moment over the glcm matrix
+
+        :param matrix:
+        :return:
+        """
         idm = 0
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[0]):
@@ -328,6 +493,12 @@ class RegionProperties(object):
         return idm
 
     def sum_average(self, matrix):
+        """
+        Calculates the sum average over the glcm matrix
+
+        :param matrix:
+        :return:
+        """
         sa = 0
         for i in range(0, matrix.shape[0]):
             for j in range(0, matrix.shape[0]):
@@ -335,6 +506,12 @@ class RegionProperties(object):
         return sa
 
     def sum_entropy(self, matrix):
+        """
+        Calculates the sum entropy over the glcm matrix
+
+        :param matrix:
+        :return:
+        """
         se = 0
         matrix_bis = np.zeros([2 * matrix.shape[0]])
         for i in range(0, matrix.shape[0]):
@@ -346,6 +523,12 @@ class RegionProperties(object):
         return se
 
     def sum_variance(self, matrix):
+        """
+        Calculates the sum variance over the glcm matrix
+
+        :param matrix:
+        :return:
+        """
         sv = 0
         se = self.sum_entropy(matrix)
         matrix_bis = np.zeros([2 * matrix.shape[0]])
@@ -357,6 +540,12 @@ class RegionProperties(object):
         return sv
 
     def difference_variance_entropy(self, matrix):
+        """
+        Calculates the difference of variance entropy over the glcm matrix
+
+        :param matrix:
+        :return:
+        """
         dv = 0
         de = 0
         matrix_bis = np.zeros([matrix.shape[0]])
@@ -370,6 +559,13 @@ class RegionProperties(object):
         return dv, de
 
     def information_measure_correlation(self, matrix):
+        """
+        Calculates the two measures of information measure of correlation
+        over the glcm matrix
+
+        :param matrix:
+        :return: ic_1, ic_2
+        """
         hxy = self.entropy(matrix)
         sum_row = np.sum(matrix, axis=0)
         hxy_1 = 0
@@ -389,6 +585,12 @@ class RegionProperties(object):
         return ic_1, ic_2
 
     def sum_square_variance(self, matrix):
+        """
+        Calculates the sum of square variance over the glcm matrix
+
+        :param matrix:
+        :return:
+        """
         ssv = 0
         range_values = np.arange(0, matrix.shape[0])
         matrix_range = np.tile(range_values, [matrix.shape[0], 1])
@@ -399,53 +601,132 @@ class RegionProperties(object):
         return ssv
 
     def sav(self):
+        """
+        Calculates the Surface area / Volume ratio in terms of Probabilistic
+        Count, Binarised count, Probabilistic Volume, Binarised Volume
+
+        :return:
+        """
         Sn, Snb, Sv, Svb = self.surface()
         Vn, Vnb, Vv, Vvb = self.volume()
         return Sn / Vn, Snb / Vnb, Sv / Vv, Svb / Vvb
 
     def compactness(self):
+        """
+        Calculates the compactness S^1.5/V in terms of probabilistic count,
+        binarised count, probabilistic volume, binarised volume
+
+        :return:
+        """
         Sn, Snb, Sv, Svb = self.surface()
         Vn, Vnb, Vv, Vvb = self.volume()
         return np.power(Sn, 1.5) / Vn, np.power(Snb, 1.5) / Vnb, \
                np.power(Sv, 1.5) / Vv, np.power(Svb, 1.5) / Vvb
 
     def min_(self):
+        """
+        Calculates the minimum of the image over the segmentation
+
+        :return:
+        """
         return ma.min(self.masked_img, 0)
 
     def max_(self):
+        """
+        Calculates the maximum of the image over the segmentation
+
+        :return:
+        """
         return ma.max(self.masked_img, 0)
 
     def weighted_mean_(self):
+        """
+        Calculates the weighted mean of the image given the probabilistic
+        segmentation. If binary, mean and weighted mean will give the same
+        result
+
+        :return:
+        """
         masked_seg = np.tile(self.masked_seg, [self.img_channels, 1]).T
         return ma.average(self.masked_img, axis=0, weights=masked_seg).flatten()
 
     def mean_(self):
+        """
+        Calculates the mean of the image over the segmentation
+
+        :return:
+        """
         return ma.mean(self.masked_img, 0)
 
     def skewness_(self):
+        """
+        Calculates the skewness of the image over the binarised segmentation
+
+        :return:
+        """
         return mstats.skew(self.masked_img, 0)
 
     def std_(self):
+        """
+        calculates the standard deviation of the image over the binarised
+        segmentation
+
+        :return:
+        """
         return ma.std(self.masked_img, 0)
 
     def kurtosis_(self):
+        """
+        calculates the kurtosis of the image over the binarised segmentation
+
+        :return:
+        """
         return mstats.kurtosis(self.masked_img, 0)
 
     def median_(self):
+        """
+        calculates the median of the image over the binarised segmentation
+
+        :return:
+        """
         return ma.median(self.masked_img, 0)
 
     def quantile_25(self):
+        """
+        calculates the first quartile of the image over the binarised
+        segmentation
+
+        :return:
+        """
         return mstats.mquantiles(self.masked_img, prob=0.25, axis=0).flatten()
 
     def quantile_75(self):
+        """
+        calculates the third quartile of the image over the binarised
+        segmentation
+
+        :return:
+        """
         return mstats.mquantiles(self.masked_img, prob=0.75, axis=0).flatten()
 
     def header_str(self):
+        """
+        creates the header string to be output as part of the result report
+
+        :return:
+        """
         result_str = [j for i in self.measures for j in self.m_dict[i][1]]
         result_str = ',' + ','.join(result_str)
         return result_str
 
     def to_string(self, fmt='{:4f}'):
+        """
+        transforms the result dictionary into a string according to a
+        specified format to be written on the result report
+
+        :param fmt: Format under which the result will be written e.g '{:4f}'
+        :return:
+        """
         result_str = ""
         for i in self.measures:
             for j in self.m_dict[i][0]():

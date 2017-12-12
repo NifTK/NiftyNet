@@ -33,16 +33,19 @@ def variational_lower_bound(prediction):
     """
     This is the variational lower bound derived in
     Auto-Encoding Variational Bayes, Kingma & Welling, 2014
-    :param [posterior_means, posterior_logvar,
-           data_means, data_logvar, originals]
+
+    :param prediction: [posterior_means, posterior_logvar,
+        data_means, data_logvar, originals]
 
         posterior_means: predicted means for the posterior
 
         posterior_logvar: predicted log variances for the posterior
         data_means: predicted mean parameter
-                           for the voxels modelled as Gaussians
+        for the voxels modelled as Gaussians
+
         data_logvar: predicted log variance parameter
-                            for the voxels modelled as Gaussians
+        for the voxels modelled as Gaussians
+
         originals: the original inputs
     :return:
     """

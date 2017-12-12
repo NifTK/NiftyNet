@@ -32,9 +32,9 @@ def default_b_initializer():
 
 def infer_output_dims(input_dims, strides, kernel_sizes, padding):
     """
-        infer output dims from list,
-        the dim can be different in different directions.
-        Note: dilation is not considered here.
+    infer output dims from list,
+    the dim can be different in different directions.
+    Note: dilation is not considered here.
     """
     assert len(input_dims) == len(strides)
     assert len(input_dims) == len(kernel_sizes)
@@ -50,7 +50,7 @@ def infer_output_dims(input_dims, strides, kernel_sizes, padding):
 class DeconvLayer(TrainableLayer):
     """
     This class defines a simple deconvolution with an optional bias term.
-    Please consider `DeconvolutionalLayer` if batch_norm and activation
+    Please consider ``DeconvolutionalLayer`` if batch_norm and activation
     are also used.
     """
 
@@ -133,8 +133,10 @@ class DeconvLayer(TrainableLayer):
 
 class DeconvolutionalLayer(TrainableLayer):
     """
-    This class defines a composite layer with optional components:
+    This class defines a composite layer with optional components::
+
         deconvolution -> batch_norm -> activation -> dropout
+
     The b_initializer and b_regularizer are applied to the DeconvLayer
     The w_initializer and w_regularizer are applied to the DeconvLayer,
     the batch normalisation layer, and the activation layer (for 'prelu')

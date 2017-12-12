@@ -33,16 +33,16 @@ class LossFunction(Layer):
                  weight_map=None,
                  var_scope=None):
         """
-        Compute loss from `prediction` and `ground truth`,
-        the computed loss map are weighted by `weight_map`.
+        Compute loss from ``prediction`` and ``ground truth``,
+        the computed loss map are weighted by ``weight_map``.
 
-        if `prediction `is list of tensors, each element of the list
-        will be compared against `ground_truth` and the weighted by
-        `weight_map`.
+        if ``prediction`` is list of tensors, each element of the list
+        will be compared against ``ground_truth` and the weighted by
+        ``weight_map``.
 
-        :param prediction: input will be reshaped into (N,)
-        :param ground_truth: input will be reshaped into (N,)
-        :param weight_map: input will be reshaped into (N,)
+        :param prediction: input will be reshaped into ``(N,)``
+        :param ground_truth: input will be reshaped into ``(N,)``
+        :param weight_map: input will be reshaped into ``(N,)``
         :param var_scope:
         :return:
         """
@@ -139,8 +139,9 @@ def mae_loss(prediction, ground_truth, weight_map=None):
 def huber_loss(prediction, ground_truth, delta=1.0, weight_map=None):
     """
     The Huber loss is a smooth piecewise loss function
-    that is quadratic for |x| <= delta, and linear for |x|> delta
+    that is quadratic for ``|x| <= delta``, and linear for ``|x|> delta``
     See https://en.wikipedia.org/wiki/Huber_loss .
+
     :param prediction: the current prediction of the ground truth.
     :param ground_truth: the measurement you are approximating with regression.
     :param delta: the point at which quadratic->linear transition happens.
