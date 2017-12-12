@@ -14,8 +14,10 @@ from niftynet.network.highres3dnet import HighResBlock
 class HighRes3DNetSmall(BaseNet):
     """
     implementation of HighRes3DNet:
-      Li et al., "On the compactness, efficiency, and representation of 3D
-      convolutional networks: Brain parcellation as a pretext task", IPMI '17
+
+        Li et al., "On the compactness, efficiency, and representation of 3D
+        convolutional networks: Brain parcellation as a pretext task", IPMI '17
+
     (This is smaller model with an initial stride-2 convolution)
     """
 

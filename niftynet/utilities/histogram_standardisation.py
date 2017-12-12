@@ -28,6 +28,7 @@ def __compute_percentiles(img, mask, cutoff):
     """
     Creates the list of percentile values to be used as landmarks for the
     linear fitting.
+
     :param img: Image on which to determine the percentiles
     :param mask: Mask to use over the image to constraint to the relevant
     information
@@ -48,6 +49,7 @@ def __compute_percentiles(img, mask, cutoff):
 def __standardise_cutoff(cutoff, type_hist='quartile'):
     """
     Standardises the cutoff values given in the configuration
+
     :param cutoff:
     :param type_hist: Type of landmark normalisation chosen (median,
     quartile, percentile)
@@ -85,11 +87,12 @@ def create_mapping_from_multimod_arrayfiles(array_files,
     modality and stored in a database. The average of these landmarks is
     returned providing the landmarks to use for the linear mapping of any
     new incoming data
+
     :param array_files: List of image files to use
     :param modalities: Name of the modalities used for the
-    standardisation and the corresponding order in the multimodal files
+        standardisation and the corresponding order in the multimodal files
     :param cutoff: Minimum and maximum landmarks percentile values to use for
-     the mapping
+        the mapping
     :param masking_function: Describes how the mask is defined for each image.
     :return:
     """
@@ -145,14 +148,15 @@ def __averaged_mapping(perc_database, s1, s2):
 
 def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     """
-    Performs the standardisation of a given image
+    Performs the standardisation of a given image.
+
     :param img: image to standardise
     :param mask: mask over which to determine the landmarks
     :param mapping: mapping landmarks to use for the piecewise linear
-    transformations
+        transformations
     :param cutoff: cutoff points for the mapping
     :param type_hist: Type of landmarks scheme to use: choice between
-    quartile percentile and median
+        quartile percentile and median
     :return new_img: the standardised image
     """
     image_shape = img.shape
@@ -275,6 +279,7 @@ def write_all_mod_mapping(hist_model_file, mapping):
 def __force_writing_new_mapping(filename, mapping_dict):
     """
     Writes a mapping dictionary to file
+
     :param filename: name of the file in which to write the saved mapping
     :param mapping_dict: mapping dictionary to save in the file
     :return:

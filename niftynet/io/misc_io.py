@@ -322,7 +322,9 @@ def split_filename(file_name):
 def squeeze_spatial_temporal_dim(tf_tensor):
     """
     Given a tensorflow tensor, ndims==6 means::
+
         [batch, x, y, z, time, modality]
+
     this function removes x, y, z, and time dims if
     the length along the dims is one.
 
@@ -508,7 +510,9 @@ def image3(name,
            animation_axes=(1,),
            image_axes=(2, 3),
            other_indices=None):
-    """ Summary for higher dimensional images
+    """
+    Summary for higher dimensional images
+
     Parameters:
 
         name: string name for the summary

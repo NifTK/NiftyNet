@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+Matching file names by configuration options.
+"""
 from __future__ import absolute_import, print_function
 
 import os
@@ -10,7 +13,7 @@ import niftynet.io.misc_io as util
 class KeywordsMatching(object):
     """
     This class is responsible for the search of the appropriate files to use
-    as input based on the constraints given in the config file
+    as input based on the constraints given in the config file.
     """
 
     def __init__(self, list_paths=(), list_contain=(), list_not_contain=()):
@@ -23,14 +26,15 @@ class KeywordsMatching(object):
         """
         In the config file, constraints for a given search can be of three
         types:
-        path_to_search, filename_contains and filename_not_contains. Each
-        associated value is a string. Multiple constraints are delimited by a ,
+        ``path_to_search``, ``filename_contains`` and
+        ``filename_not_contains``. Each associated value is a string.
+        Multiple constraints are delimited by a ``,``.
         This function creates the corresponding matching object with the list
         of constraints for each of these subtypes.
+
         :param default_folder: relative paths are first tested against
-                               the current folder, and then against this
-                               default folder
-        :param input_tuple:
+            the current folder, and then against this default folder.
+        :param input_tuple: set of searching parameters.
         :return:
         """
         path, contain, not_contain = [], (), ()
@@ -72,7 +76,8 @@ class KeywordsMatching(object):
         filename_list) and extract
         the corresponding possible list of subject names (stored in
         subjectname_list).
-        :returns filename_list, subjectname_list
+
+        :return: filename_list, subjectname_list
         """
         path_file = [(p, filename)
                      for p in self.path_to_search
@@ -99,6 +104,7 @@ class KeywordsMatching(object):
         removed from the filename to provide the list of possible names. If
         after reduction of the filename from the constraints the name is
         empty the initial filename is returned.
+
         :param fullname:
         :return name_pot: list of potential subject name given the constraint
          list and the initial filename

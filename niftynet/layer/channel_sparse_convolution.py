@@ -20,9 +20,10 @@ from niftynet.layer.deconvolution import infer_output_dims
 SUPPORTED_OP = {'2D': tf.nn.conv2d_transpose,
                 '3D': tf.nn.conv3d_transpose}
 class ChannelSparseDeconvLayer(niftynet.layer.deconvolution.DeconvLayer):
-  """ Channel sparse convolutions perform convolulations over
-      a subset of image channels and generate a subset of output
-      channels. This enables spatial dropout without wasted computations
+  """
+  Channel sparse convolutions perform convolulations over
+  a subset of image channels and generate a subset of output
+  channels. This enables spatial dropout without wasted computations
   """
   def __init__(self,*args,**kwargs):
     super(ChannelSparseDeconvLayer,self).__init__(*args,**kwargs)
@@ -263,8 +264,10 @@ class ChannelSparseBNLayer(niftynet.layer.bn.BNLayer):
 
 class ChannelSparseConvolutionalLayer(TrainableLayer):
       """
-      This class defines a composite layer with optional components:
+      This class defines a composite layer with optional components::
+
           channel sparse convolution -> batchwise-spatial dropout -> batch_norm -> activation
+
       The b_initializer and b_regularizer are applied to the ChannelSparseConvLayer
       The w_initializer and w_regularizer are applied to the ChannelSparseConvLayer,
       the batch normalisation layer, and the activation layer (for 'prelu')

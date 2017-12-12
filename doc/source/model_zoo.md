@@ -116,4 +116,4 @@ user-defined networks.  This hierarchy consists of the following:
 * `$NIFTYNET_HOME/extensions/network/__init__.py` (file)
 
 _To completely uninstall NiftyNet, please manually remove `~/.niftynet` and
-`$NIFTYNET_HOME` folders_
+`$NIFTYNET_HOME` folders._

@@ -49,7 +49,7 @@ sh run_test.sh
 
 *This section describes steps to create unit tests for NiftyNet.*
 
-#### 1. What module to test
+#### 1. Which module to test
 Go to [Cmiclab pipeline](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/pipelines) page,
 click on the latest successful testing pipeline and check the test coverage report at the bottom of the test log, e.g. a coverage report is available at the last part of this [log](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/-/jobs/35553).
 The coverage report lists all untested files (with line numbers of specific statements) in the project.

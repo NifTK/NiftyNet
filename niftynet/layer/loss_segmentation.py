@@ -87,15 +87,16 @@ def generalised_dice_loss(prediction,
                           weight_map=None,
                           type_weight='Square'):
     """
-    Function to calculate the Generalised Dice Loss defined in Sudre, C. et. al.
-     (2017) Generalised Dice overlap as a deep learning loss function for highly
-      unbalanced segmentations. DLMIA 2017
+    Function to calculate the Generalised Dice Loss defined in
+        Sudre, C. et. al. (2017) Generalised Dice overlap as a deep learning
+        loss function for highly unbalanced segmentations. DLMIA 2017
+
     :param prediction: the logits (before softmax)
     :param ground_truth: the segmentation ground truth
     :param weight_map:
     :param type_weight: type of weighting allowed between labels (choice
-    between Square (square of inverse of volume), Simple (inverse of volume)
-    and Uniform (no weighting))
+        between Square (square of inverse of volume),
+        Simple (inverse of volume) and Uniform (no weighting))
     :return: the loss
     """
     ground_truth = tf.to_int64(ground_truth)
@@ -201,6 +202,7 @@ def l2_reg_loss(scope):
 def cross_entropy(prediction, ground_truth, weight_map=None):
     """
     Function to calculate the cross-entropy loss function
+
     :param prediction: the logits (before softmax)
     :param ground_truth: the segmentation ground truth
     :param weight_map:
@@ -250,9 +252,11 @@ def generalised_wasserstein_dice_loss(prediction,
                                       weight_map=None):
     """
     Function to calculate the Generalised Wasserstein Dice Loss defined in
-    Fidon, L. et. al. (2017) Generalised Wasserstein Dice Score for Imbalanced
-    Multi-class Segmentation using Holistic Convolutional Networks.
-    MICCAI 2017 (BrainLes)
+
+        Fidon, L. et. al. (2017) Generalised Wasserstein Dice Score
+        for Imbalanced Multi-class Segmentation using Holistic
+        Convolutional Networks.MICCAI 2017 (BrainLes)
+
     :param prediction: the logits (before softmax)
     :param ground_truth: the segmentation ground_truth
     :param weight_map:
@@ -290,6 +294,7 @@ def generalised_wasserstein_dice_loss(prediction,
 def dice_nosquare(prediction, ground_truth, weight_map=None):
     """
     Function to calculate the classical dice loss
+
     :param prediction: the logits (before softmax)
     :param ground_truth: the segmentation ground_truth
     :param weight_map:
@@ -331,10 +336,14 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
 
 def dice(prediction, ground_truth, weight_map=None):
     """
-    Function to calculate the dice loss with the definition given in Milletari,
-     F., Navab, N., & Ahmadi, S. A. (2016) V-net: Fully convolutional neural
-     networks for volumetric medical image segmentation. 3DV 2016 using a
-     square in the denominator
+    Function to calculate the dice loss with the definition given in
+
+        Milletari, F., Navab, N., & Ahmadi, S. A. (2016)
+        V-net: Fully convolutional neural
+        networks for volumetric medical image segmentation. 3DV 2016
+
+    using a square in the denominator
+
     :param prediction: the logits (before softmax)
     :param ground_truth: the segmentation ground_truth
     :param weight_map:

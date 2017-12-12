@@ -36,8 +36,7 @@ class ImageReader(Layer):
     For a concrete example::
 
         _input_sources define multiple modality mappings, e.g.,
-        _input_sources {'image': ('T1', 'T2'),
-                        'label': ('manual_map',)}
+        _input_sources {'image': ('T1', 'T2'), 'label': ('manual_map',)}
 
     means:
 
@@ -46,7 +45,7 @@ class ImageReader(Layer):
     'label' consists of one component, loading from 'manual_map'
 
     :param self._names: a tuple of the output names of this reader.
-        ('image', 'labels')
+        ``('image', 'labels')``
 
     :param self._shapes: the shapes after combining input sources
         ``{'image': (192, 160, 192, 1, 2), 'label': (192, 160, 192, 1, 1)}``
@@ -54,9 +53,10 @@ class ImageReader(Layer):
     :param self._dtypes: store the dictionary of tensorflow shapes
         ``{'image': tf.float32, 'label': tf.float32}``
 
-    :param self.output_list: a list of dictionaries, with each item:
-        ``{'image': <niftynet.io.image_type.SpatialImage4D object>,
-         'label': <niftynet.io.image_type.SpatialImage3D object>}``
+    :param self.output_list: a list of dictionaries, with each item::
+
+        {'image': <niftynet.io.image_type.SpatialImage4D object>,
+        'label': <niftynet.io.image_type.SpatialImage3D object>}
 
     """
 
