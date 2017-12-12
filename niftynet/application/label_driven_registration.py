@@ -34,27 +34,32 @@ class RegApp(BaseApplication):
         self.registration_param = None
         self.data_param = None
 
-    def initialise_dataset_loader(self, data_param=None, task_param=None):
+    def initialise_dataset_loader(
+            self, data_param=None, task_param=None, data_partitioner=None):
         self.data_param = data_param
         self.registration_param = task_param
 
+        # add validation here
         if self.is_training:
-            self.reader = (ImageReader({'fixed_image', 'fixed_label'}),
-                           ImageReader({'moving_image', 'moving_label'}))
+            file_lists = [data_partitioner.train_files]
+            self.readers = (ImageReader({'fixed_image', 'fixed_label'}),
+                            ImageReader({'moving_image', 'moving_label'}))
         else:
             raise NotImplementedError
-        for reader in self.reader:
-            reader.initialise_reader(data_param, task_param)
+
+        for file_list in file_lists:
+            for reader in self.readers:
+                reader.initialise(data_param, task_param, file_list)
 
     def initialise_sampler(self):
         if self.is_training:
-            self.sampler = [
+            self.sampler = [[
                 PairwiseSampler(
-                    reader_0=self.reader[0],
-                    reader_1=self.reader[1],
+                    reader_0=self.readers[0],
+                    reader_1=self.readers[1],
                     data_param=self.data_param,
                     batch_size=self.net_param.batch_size,
-                    window_per_image=self.action_param.sample_per_volume)]
+                    window_per_image=self.action_param.sample_per_volume)]]
         else:
             raise NotImplementedError
 
@@ -66,7 +71,7 @@ class RegApp(BaseApplication):
                                  outputs_collector=None,
                                  gradients_collector=None):
         if self.is_training:
-            image_windows = self.sampler[0]()
+            image_windows = self.sampler[0][0]()
             image_windows_list = [
                 tf.expand_dims(img, axis=-1)
                 for img in tf.unstack(image_windows, axis=-1)]
