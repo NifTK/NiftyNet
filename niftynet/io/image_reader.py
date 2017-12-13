@@ -298,11 +298,9 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
         # combine fieldnames and volumes as a dictionary
         _dict = {}
         for field, modalities in mod_dict.items():
-            image_instance = _create_image(
+            _dict[field] = _create_image(
                 file_list, idx, modalities, data_param)
-            if image_instance is not None:
-                _dict[field] = image_instance
-        if _dict:
+        if _dict and None not in list(_dict.values()):
             volume_list.append(_dict)
     if not volume_list:
         tf.logging.fatal(
