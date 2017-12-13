@@ -61,7 +61,7 @@ class ImageSetsPartitioner(object):
     def initialise(self,
                    data_param,
                    new_partition=False,
-                   data_split_file="./test.csv",
+                   data_split_file=None,
                    ratios=None):
         """
         Set the data partitioner parameters
@@ -77,7 +77,10 @@ class ImageSetsPartitioner(object):
             and get_file_list always returns all subjects.
         """
         self.data_param = data_param
-        self.data_split_file = data_split_file
+        if data_split_file is None:
+            self.data_split_file = os.path.join('.', 'dataset_split.csv')
+        else:
+            self.data_split_file = data_split_file
         self.ratios = ratios
 
         self._file_list = None

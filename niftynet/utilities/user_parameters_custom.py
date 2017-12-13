@@ -19,7 +19,7 @@ from niftynet.utilities.user_parameters_helper import str2boolean
 # Standardised string is defined in
 # niftynet.utilities.user_parameters_helper.standardise_string
 # the section name will be filtered with,
-# re.sub('[^0-9a-zA-Z ]+', '', input_string.strip())
+# re.sub('[^0-9a-zA-Z_\- ]+', '', input_string.strip())
 #
 # the value should be __add_mytask_args()
 #
