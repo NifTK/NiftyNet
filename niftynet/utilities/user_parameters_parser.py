@@ -42,7 +42,7 @@ def run():
     of the configuration file. based on the application_name
     or meta_parser.prog name, the section parsers are organised
     to find system parameters and application specific
-    parameters
+    parameters.
 
     :return: system parameters is a group of parameters including
         SYSTEM_SECTIONS and app_module.REQUIRED_CONFIG_SECTION
@@ -56,10 +56,10 @@ def run():
                              action='version',
                              version=version_string)
     meta_parser.add_argument("-c", "--conf",
-                             help="Specify configurations from a file",
+                             help="specify configurations from a file",
                              metavar="File", )
     meta_parser.add_argument("-a", "--application_name",
-                             help="Specify application name",
+                             help="specify an application name",
                              default="", )
     meta_args, args_from_cmdline = meta_parser.parse_known_args()
     print(version_string)
@@ -184,13 +184,14 @@ def _parse_arguments_by_section(parents,
 
     Commandline inputs only override system/custom parameters.
     input data related parameters needs to be defined in config file.
+
     :param parents: a list, parsers will be created as
-    subparsers of parents
+        subparsers of parents
     :param section: section name to be parsed
     :param args_from_config_file: loaded parameters from config file
     :param args_from_cmd: dictionary commandline parameters
     :return: parsed parameters of the section and unknown
-    commandline params.
+        commandline params.
     """
     section_parser = argparse.ArgumentParser(
         parents=parents,

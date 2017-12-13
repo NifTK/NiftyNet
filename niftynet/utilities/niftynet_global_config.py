@@ -73,7 +73,7 @@ class NiftyNetGlobalConfig(object):
         creates a default one.
 
         :param config_file: no sanity checks are performed, as this
-        method is for internal use only
+            method is for internal use only
         :type config_file: `os.path`
         :returns: a dictionary of parsed configuration options
         :rtype: `dict`

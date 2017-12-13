@@ -101,6 +101,7 @@ class ImageReader(Layer):
                                    for name in self.names)
         required_sections = \
             sum([list(vars(task_param).get(name)) for name in self.names], [])
+
         for required in required_sections:
             try:
                 if (file_list is None) or \
@@ -115,7 +116,14 @@ class ImageReader(Layer):
                     'file_list parameter should be a '
                     'pandas.DataFrame instance and has input '
                     'section name [%s] as a column name.', required)
+                if required_sections:
+                    tf.logging.fatal('Reader requires section(s): %s',
+                                     required_sections)
+                if file_list is not None:
+                    tf.logging.fatal('Configuration input sections are: %s',
+                                     list(file_list))
                 raise
+
         self._file_list = file_list
         self.output_list = _filename_to_image_list(
             self._file_list, self._input_sources, data_param)
