@@ -54,15 +54,15 @@ class EntryPointTest(tf.test.TestCase):
             net_run.main()
 
     def test_empty(self):
-        with self.assertRaisesRegexp(IOError, ''):
+        with self.assertRaisesRegexp(SystemExit, ''):
             net_run.main()
-        with self.assertRaisesRegexp(IOError, ''):
+        with self.assertRaisesRegexp(SystemExit, ''):
             net_gan.main()
-        with self.assertRaisesRegexp(IOError, ''):
+        with self.assertRaisesRegexp(SystemExit, ''):
             net_segment.main()
-        with self.assertRaisesRegexp(IOError, ''):
+        with self.assertRaisesRegexp(SystemExit, ''):
             net_regress.main()
-        with self.assertRaisesRegexp(IOError, ''):
+        with self.assertRaisesRegexp(SystemExit, ''):
             net_autoencoder.main()
 
 

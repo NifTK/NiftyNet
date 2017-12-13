@@ -8,6 +8,7 @@ from __future__ import print_function
 
 import argparse
 import os
+import textwrap
 
 from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.engine.application_factory import SUPPORTED_APP
@@ -50,17 +51,25 @@ def run():
         used by niftynet.io.ImageReader
     """
     meta_parser = argparse.ArgumentParser(
-        epilog=epilog_string)
+        description="Launch a NiftyNet application.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=textwrap.dedent(epilog_string))
     version_string = get_niftynet_version_string()
+    meta_parser.add_argument("action",
+                             help="train networks or run inferences",
+                             metavar='ACTION',
+                             choices=['train', 'inference'])
     meta_parser.add_argument("-v", "--version",
                              action='version',
                              version=version_string)
     meta_parser.add_argument("-c", "--conf",
                              help="specify configurations from a file",
-                             metavar="File", )
+                             metavar="CONFIG_FILE")
     meta_parser.add_argument("-a", "--application_name",
-                             help="specify an application name",
-                             default="", )
+                             help="specify an application module name",
+                             metavar='APPLICATION_NAME',
+                             default="")
+
     meta_args, args_from_cmdline = meta_parser.parse_known_args()
     print(version_string)
 
@@ -70,13 +79,11 @@ def run():
               "forget '-c' command argument?{}".format(epilog_string))
         raise IOError
 
-    # Read global config file
-    global_config = NiftyNetGlobalConfig()
-
+    # Resolve relative configuration file location
     config_path = meta_args.conf
     if not os.path.isfile(config_path):
         relative_conf_file = os.path.join(
-            global_config.get_default_examples_folder(),
+            NiftyNetGlobalConfig().get_default_examples_folder(),
             config_path,
             config_path + "_config.ini")
         if os.path.isfile(relative_conf_file):
@@ -134,9 +141,11 @@ def run():
         '\nUnknown parameter: {}{}'.format(args_from_cmdline, epilog_string)
 
     # split parsed results in all_args
-    # into dictionary of system_args and input_data_args
+    # into dictionaries of system_args and input_data_args
     system_args = {}
     input_data_args = {}
+
+    # copy system default sections to ``system_args``
     for section in all_args:
         if section in SYSTEM_SECTIONS:
             system_args[section] = all_args[section]
@@ -148,6 +157,7 @@ def run():
         all_args['SYSTEM'].model_dir = os.path.join(
             os.path.dirname(meta_args.conf), 'model')
 
+    # copy non-default sections to ``input_data_args``
     for section in all_args:
         if section in SYSTEM_SECTIONS:
             continue
@@ -165,8 +175,9 @@ def run():
         else:
             input_data_args[section].csv_file = ''
 
-    # update conf path
+    # preserve ``config_file`` and ``action parameter`` from the meta_args
     system_args['CONFIG_FILE'] = argparse.Namespace(path=meta_args.conf)
+    system_args['SYSTEM'].action = meta_args.action
     return system_args, input_data_args
 
 
