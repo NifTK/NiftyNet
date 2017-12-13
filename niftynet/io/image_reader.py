@@ -81,6 +81,9 @@ class ImageReader(Layer):
         ``task_param`` specifies how to combine user input modalities.
         e.g., for multimodal segmentation 'image' corresponds to multiple
         modality sections, 'label' corresponds to one modality section
+
+        This function converts elements of ``file_list`` into
+        dictionaries of image objects, and save them to ``self.output_list``.
         """
         if not self.names:
             tf.logging.fatal('Please specify data input keywords, this should '
@@ -292,16 +295,20 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
     """
     volume_list = []
     for idx in range(len(file_list)):
+        # create image instance for each subject
         print_progress_bar(idx, len(file_list),
                            prefix='reading datasets headers',
                            decimals=1, length=10, fill='*')
+
         # combine fieldnames and volumes as a dictionary
         _dict = {}
         for field, modalities in mod_dict.items():
-            _dict[field] = _create_image(
-                file_list, idx, modalities, data_param)
+            _dict[field] = _create_image(file_list, idx, modalities, data_param)
+
+        # skipping the subject if there're missing image components
         if _dict and None not in list(_dict.values()):
             volume_list.append(_dict)
+
     if not volume_list:
         tf.logging.fatal(
             "Empty filename lists, please check the csv "
