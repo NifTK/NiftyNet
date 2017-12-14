@@ -4,6 +4,8 @@
 
 [![build status](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/dev/build.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/dev)
 [![coverage report](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/dev/coverage.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/dev)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/dev/LICENSE)
+[![PyPI version](https://badge.fury.io/py/NiftyNet.svg)](https://badge.fury.io/py/NiftyNet)
 
 NiftyNet is a [TensorFlow][tf]-based open-source convolutional neural networks (CNN) platform for research in medical image analysis and image-guided therapy.
 NiftyNet's modular structure is designed for sharing networks and pre-trained models.
@@ -59,6 +61,8 @@ The API reference and how-to guides are available on [Read the Docs][rtd-niftyne
 
 [NiftyNet source code mirror on GitHub][niftynet-github]
 
+[Model zoo repository][niftynet-zoo]
+
 NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
 
 [Stack Overflow](https://stackoverflow.com/questions/tagged/niftynet) for general questions
@@ -66,6 +70,7 @@ NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
 [niftynet-io]: http://niftynet.io/
 [niftynet-cmiclab]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 [niftynet-github]: https://github.com/NifTK/NiftyNet
+[niftynet-zoo]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/blob/master/model_zoo.md
 [ml-niftynet]: mailto:nifty-net@live.ucl.ac.uk
 
 

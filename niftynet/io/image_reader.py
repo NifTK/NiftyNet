@@ -81,6 +81,9 @@ class ImageReader(Layer):
         ``task_param`` specifies how to combine user input modalities.
         e.g., for multimodal segmentation 'image' corresponds to multiple
         modality sections, 'label' corresponds to one modality section
+
+        This function converts elements of ``file_list`` into
+        dictionaries of image objects, and save them to ``self.output_list``.
         """
         if not self.names:
             tf.logging.fatal('Please specify data input keywords, this should '
@@ -101,6 +104,7 @@ class ImageReader(Layer):
                                    for name in self.names)
         required_sections = \
             sum([list(vars(task_param).get(name)) for name in self.names], [])
+
         for required in required_sections:
             try:
                 if (file_list is None) or \
@@ -115,7 +119,14 @@ class ImageReader(Layer):
                     'file_list parameter should be a '
                     'pandas.DataFrame instance and has input '
                     'section name [%s] as a column name.', required)
+                if required_sections:
+                    tf.logging.fatal('Reader requires section(s): %s',
+                                     required_sections)
+                if file_list is not None:
+                    tf.logging.fatal('Configuration input sections are: %s',
+                                     list(file_list))
                 raise
+
         self._file_list = file_list
         self.output_list = _filename_to_image_list(
             self._file_list, self._input_sources, data_param)
@@ -284,18 +295,20 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
     """
     volume_list = []
     for idx in range(len(file_list)):
+        # create image instance for each subject
         print_progress_bar(idx, len(file_list),
                            prefix='reading datasets headers',
                            decimals=1, length=10, fill='*')
+
         # combine fieldnames and volumes as a dictionary
         _dict = {}
         for field, modalities in mod_dict.items():
-            image_instance = _create_image(
-                file_list, idx, modalities, data_param)
-            if image_instance is not None:
-                _dict[field] = image_instance
-        if _dict:
+            _dict[field] = _create_image(file_list, idx, modalities, data_param)
+
+        # skipping the subject if there're missing image components
+        if _dict and None not in list(_dict.values()):
             volume_list.append(_dict)
+
     if not volume_list:
         tf.logging.fatal(
             "Empty filename lists, please check the csv "

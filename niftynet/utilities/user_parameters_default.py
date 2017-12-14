@@ -18,10 +18,10 @@ DEFAULT_MODEL_DIR = None
 
 
 def add_application_args(parser):
-    parser.add_argument(
-        "action",
-        help="train or inference",
-        choices=['train', 'inference'])
+    # parser.add_argument(
+    #     "action",
+    #     help="train or inference action",
+    #     choices=['train', 'inference'])
 
     parser.add_argument(
         "--cuda_devices",
