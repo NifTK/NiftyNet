@@ -1,11 +1,9 @@
-This demo presents how to use niftynet for whole tumor segmentation,
+This demo presents how to use NiftyNet for whole tumor segmentation,
 which is the first stage of the cascaded CNNs described in the following paper.
 
 ```
-Wang et al., Automatic Brain Tumor Segmentation using
-Cascaded Anisotropic Convolutional Neural Networks, MICCAI BRATS 2017
+Wang et al., Automatic Brain Tumor Segmentation using Cascaded Anisotropic Convolutional Neural Networks, MICCAI BRATS 2017. [https://arxiv.org/abs/1709.00382](https://arxiv.org/abs/1709.00382)
 ```
-[https://arxiv.org/abs/1709.00382](https://arxiv.org/abs/1709.00382)
 
 For a full implementation of the method described in this paper with three stages of the cascaded CNNs, 
 please see: https://github.com/taigw/brats17
