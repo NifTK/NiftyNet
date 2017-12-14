@@ -24,7 +24,7 @@ class PairwiseSampler(Layer):
         self.reader_1 = reader_1
 
         # TODO:
-        # 0) check the readers should have the same lenght file list
+        # 0) check the readers should have the same length file list
         # 1) detect window shape mismatches or defaulting
         #    windows to the fixed image reader properties
         # 2) reshape images to (supporting multi-modal data)
@@ -52,6 +52,7 @@ class PairwiseSampler(Layer):
         n_subjects = len(self.reader_0.output_list)
         rand_ints = np.random.randint(n_subjects, size=[n_subjects])
         image_dataset = Dataset.from_tensor_slices(rand_ints)
+        # mapping random integer id to 4 volumes moving/fixed x image/label
         image_dataset = image_dataset.map(
             lambda image_id: tuple(tf.py_func(self.get_pairwise_inputs,
                                               [image_id],
@@ -108,13 +109,11 @@ class PairwiseSampler(Layer):
             win_spatial_shape = [tf.constant(dim) for dim in
                                  self.window_size[:self.spatial_rank]]
             # TODO shifts dtype should be int?
-            batch_shift = [tf.random_uniform(
-                shape=(self.window_per_image, 1),
-                maxval=tf.to_float(img[0] - win - 1))
-                for win, img in
-                zip(win_spatial_shape, img_spatial_shape)]
+            batch_shift = [
+                tf.random_uniform(shape=(self.window_per_image, 1),
+                                  maxval=tf.to_float(img[0] - win - 1))
+                for win, img in zip(win_spatial_shape, img_spatial_shape)]
             batch_shift = tf.concat(batch_shift, axis=1)
-
             affine_constraints = ((1.0, 0.0, 0.0, None),
                                   (0.0, 1.0, 0.0, None),
                                   (0.0, 0.0, 1.0, None))
