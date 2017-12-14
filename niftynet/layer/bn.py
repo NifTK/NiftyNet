@@ -89,7 +89,6 @@ class BNLayer(TrainableLayer):
         outputs.set_shape(inputs.get_shape())
         return outputs
 
-
         # # Regularizers are not currently supported for fused batch norm.
         # return tf.contrib.layers.batch_norm(
         #     inputs,

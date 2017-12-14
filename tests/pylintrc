@@ -65,7 +65,7 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-disable=long-suffix,standarderror-builtin,indexing-exception,delslice-method,unichr-builtin,dict-view-method,parameter-unpacking,unicode-builtin,cmp-builtin,intern-builtin,round-builtin,backtick,nonzero-method,xrange-builtin,coerce-method,raw_input-builtin,old-division,filter-builtin-not-iterating,old-octal-literal,input-builtin,map-builtin-not-iterating,buffer-builtin,basestring-builtin,zip-builtin-not-iterating,using-cmp-argument,unpacking-in-except,old-raise-syntax,coerce-builtin,dict-iter-method,hex-method,range-builtin-not-iterating,useless-suppression,cmp-method,print-statement,reduce-builtin,file-builtin,long-builtin,getslice-method,execfile-builtin,no-absolute-import,metaclass-assignment,oct-method,reload-builtin,import-star-module-level,suppressed-message,apply-builtin,raising-string,next-method-called,setslice-method,old-ne-operator,arguments-differ,wildcard-import,locally-disabled
+disable=long-suffix,standarderror-builtin,indexing-exception,delslice-method,unichr-builtin,dict-view-method,parameter-unpacking,unicode-builtin,cmp-builtin,intern-builtin,round-builtin,backtick,nonzero-method,xrange-builtin,coerce-method,raw_input-builtin,old-division,filter-builtin-not-iterating,old-octal-literal,input-builtin,map-builtin-not-iterating,buffer-builtin,basestring-builtin,zip-builtin-not-iterating,using-cmp-argument,unpacking-in-except,old-raise-syntax,coerce-builtin,dict-iter-method,hex-method,range-builtin-not-iterating,useless-suppression,cmp-method,print-statement,reduce-builtin,file-builtin,long-builtin,getslice-method,execfile-builtin,no-absolute-import,metaclass-assignment,oct-method,reload-builtin,import-star-module-level,suppressed-message,apply-builtin,raising-string,next-method-called,setslice-method,old-ne-operator,arguments-differ,wildcard-import,locally-disabled,not-context-manager
 
 
 [REPORTS]
@@ -238,7 +238,7 @@ notes=FIXME,XXX,TODO
 [SIMILARITIES]
 
 # Minimum lines number of a similarity.
-min-similarity-lines=10
+min-similarity-lines=20
 
 # Ignore comments when computing similarities.
 ignore-comments=yes
@@ -292,7 +292,7 @@ generated-members=set_shape,np.float32
 # List of decorators that produce context managers, such as
 # contextlib.contextmanager. Add to this list to register other decorators that
 # produce valid context managers.
-contextmanager-decorators=contextlib.contextmanager
+contextmanager-decorators=contextlib.contextmanager,tensorflow.python.util.tf_contextlib.contextmanager,tf_contextlib.contextmanager
 
 
 [VARIABLES]
@@ -349,7 +349,7 @@ max-locals=30
 max-returns=6
 
 # Maximum number of branch for function / method body
-max-branches=12
+max-branches=18
 
 # Maximum number of statements in function / method body
 max-statements=100

@@ -12,18 +12,16 @@ from niftynet.utilities.user_parameters_helper import spatialnumarray
 from niftynet.utilities.user_parameters_helper import str2boolean
 from niftynet.utilities.user_parameters_helper import str_array
 
-DEFAULT_INFERENCE_OUTPUT = os.path.join(
-    os.path.dirname(__file__), '..', '..', 'models', 'outputs')
-
-DEFAULT_MODEL_DIR = os.path.join(
-    os.path.dirname(__file__), '..', '..', 'models', 'model_default')
+DEFAULT_INFERENCE_OUTPUT = os.path.join('.', 'output')
+DEFAULT_DATASET_SPLIT_FILE = os.path.join('.', 'dataset_split.csv')
+DEFAULT_MODEL_DIR = None
 
 
 def add_application_args(parser):
-    parser.add_argument(
-        "action",
-        help="train or inference",
-        choices=['train', 'inference'])
+    # parser.add_argument(
+    #     "action",
+    #     help="train or inference action",
+    #     choices=['train', 'inference'])
 
     parser.add_argument(
         "--cuda_devices",
@@ -53,6 +51,11 @@ def add_application_args(parser):
         help="Directory to save/load intermediate training models and logs",
         default=DEFAULT_MODEL_DIR)
 
+    parser.add_argument(
+        "--dataset_split_file",
+        metavar='',
+        help="File assigning subjects to training/validation/inference subsets",
+        default=DEFAULT_DATASET_SPLIT_FILE)
 
     return parser
 
@@ -61,7 +64,7 @@ def add_inference_args(parser):
     parser.add_argument(
         "--spatial_window_size",
         type=int_array,
-        help="specify the spatial size of the input data (ndims <= 3)",
+        help="Specify the spatial size of the input data (ndims <= 3)",
         default=())
 
     parser.add_argument(
@@ -154,7 +157,7 @@ def add_input_data_args(parser):
 def add_network_args(parser):
     parser.add_argument(
         "--name",
-        help="Choose a net from NiftyNet/niftynet/network/ or from"
+        help="Choose a net from NiftyNet/niftynet/network/ or from "
              "user specified module string",
         metavar='')
 
@@ -171,7 +174,7 @@ def add_network_args(parser):
         metavar='',
         help="Set batch size of the net",
         type=int,
-        default=20)
+        default=2)
 
     parser.add_argument(
         "--decay",
@@ -207,7 +210,7 @@ def add_network_args(parser):
         help="Set size of preprocessing buffer queue",
         metavar='',
         type=int,
-        default=20)
+        default=5)
 
     import niftynet.layer.binary_masking
     parser.add_argument(
@@ -215,7 +218,7 @@ def add_network_args(parser):
         choices=list(
             niftynet.layer.binary_masking.SUPPORTED_MULTIMOD_MASK_TYPES),
         help="Way of combining the foreground masks from different "
-             "modalities. 'and is the intersection, 'or' is the union "
+             "modalities. 'and' is the intersection, 'or' is the union "
              "and 'multi' permits each modality to use its own mask.",
         default='and')
 
@@ -227,11 +230,13 @@ def add_network_args(parser):
         default='')
 
     # TODO add choices of normalisation types
+    import niftynet.utilities.histogram_standardisation as hist_std_module
     parser.add_argument(
         "--norm_type",
         help="Type of normalisation to perform",
         type=str,
-        default='percentile')
+        default='percentile',
+        choices=list(hist_std_module.SUPPORTED_CUTPOINTS))
 
     parser.add_argument(
         "--cutoff",
@@ -265,13 +270,44 @@ def add_network_args(parser):
              " normalising volumes",
         type=str2boolean,
         default=False)
+
+    parser.add_argument(
+        "--weight_initializer",
+        help="Set the initializer for the weight parameters",
+        type=str,
+        default='he_normal')
+
+    parser.add_argument(
+        "--bias_initializer",
+        help="Set the initializer for the bias parameters",
+        type=str,
+        default='zeros')
+
+    try:
+        from niftynet.utilities.util_import import check_module
+        check_module('yaml')
+        import yaml
+        parser.add_argument(
+            "--weight_initializer_args",
+            help="Pass arguments to the initializer for the weight parameters",
+            type=yaml.load,
+            default={})
+        parser.add_argument(
+            "--bias_initializer_args",
+            help="Pass arguments to the initializer for the bias parameters",
+            type=yaml.load,
+            default={})
+    except ImportError:
+        # "PyYAML module not found")
+        pass
+
     return parser
 
 
 def add_training_args(parser):
     parser.add_argument(
         "--optimiser",
-        help="choose an optimiser for computing graph gradients and applying",
+        help="Choose an optimiser for computing graph gradients and applying",
         type=str,
         default='adam')
 
@@ -291,8 +327,29 @@ def add_training_args(parser):
         default=())
 
     parser.add_argument(
+        "--rotation_angle_x",
+        help="The min/max angles of the x rotation when rotation "
+             "augmentation is enabled",
+        type=float_array,
+        default=())
+
+    parser.add_argument(
+        "--rotation_angle_y",
+        help="The min/max angles of the y rotation when rotation "
+             "augmentation is enabled",
+        type=float_array,
+        default=())
+
+    parser.add_argument(
+        "--rotation_angle_z",
+        help="The min/max angles of the z rotation when rotation "
+             "augmentation is enabled",
+        type=float_array,
+        default=())
+
+    parser.add_argument(
         "--scaling_percentage",
-        help="the spatial scaling factor in [min_percentage, max_percentage]",
+        help="The spatial scaling factor in [min_percentage, max_percentage]",
         type=float_array,
         default=())
 
@@ -318,7 +375,8 @@ def add_training_args(parser):
 
     parser.add_argument(
         "--starting_iter",
-        metavar='', help="[Training only] Resume from iteration n",
+        metavar='',
+        help="[Training only] Resume from iteration n",
         type=int,
         default=0)
 
@@ -332,7 +390,7 @@ def add_training_args(parser):
     parser.add_argument(
         "--tensorboard_every_n",
         metavar='',
-        help="[Training only] tensorboard summary frequency",
+        help="[Training only] Tensorboard summary frequency",
         type=int,
         default=20)
 
@@ -348,5 +406,29 @@ def add_training_args(parser):
         help="Maximum number of model checkpoints that will be saved",
         type=int,
         default=100)
+
+    parser.add_argument(
+        "--validation_every_n",
+        help="Validate every n iterations",
+        type=int,
+        default=-1)
+
+    parser.add_argument(
+        "--validation_max_iter",
+        help="Number of validation batches to run",
+        type=int,
+        default=1)
+
+    parser.add_argument(
+        "--exclude_fraction_for_validation",
+        help="Fraction of dataset to use for validation",
+        type=float,
+        default=0.)
+
+    parser.add_argument(
+        "--exclude_fraction_for_inference",
+        help="Fraction of dataset to use for inference",
+        type=float,
+        default=0.)
 
     return parser

@@ -124,7 +124,7 @@ class UNet3D(TrainableLayer):
         return output_tensor
 
 
-SUPPORTED_OP = {'DOWNSAMPLE', 'UPSAMPLE', 'NONE'}
+SUPPORTED_OP = set(['DOWNSAMPLE', 'UPSAMPLE', 'NONE'])
 
 
 class UNetBlock(TrainableLayer):

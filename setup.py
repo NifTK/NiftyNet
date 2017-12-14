@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
 from packaging import version
 import re
@@ -93,11 +94,11 @@ setup(
     install_requires=[
         'six>=1.10',
         'nibabel>=2.1.0',
-        'numpy>=1.11',
+        'numpy>=1.12',
         'scipy>=0.18',
         'configparser',
-        'pillow',
-        'pandas'
+        'pandas',
+        'pillow'
     ],
 
     entry_points={
@@ -105,6 +106,7 @@ setup(
             'net_segment=niftynet:main',
             'net_download=niftynet.utilities.download:main',
             'net_run=niftynet:main',
+            'net_regress=niftynet:main',
             'net_gan=niftynet:main',
             'net_autoencoder=niftynet:main',
         ],

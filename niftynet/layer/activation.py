@@ -19,9 +19,9 @@ def selu(x, name):
     return scale * tf.where(x >= 0.0, x, alpha * tf.nn.elu(x))
 
 
-def leakyRelu(x, name):
-    alpha = 0.01
-    return tf.maximum(alpha * x, x, name)
+def leaky_relu(x, name):
+    half_alpha = 0.01
+    return (0.5 + half_alpha) * x + (0.5 - half_alpha) * abs(x)
 
 
 SUPPORTED_OP = {'relu': tf.nn.relu,
@@ -33,7 +33,7 @@ SUPPORTED_OP = {'relu': tf.nn.relu,
                 'tanh': tf.nn.tanh,
                 'prelu': prelu,
                 'selu': selu,
-                'leakyrelu': leakyRelu,
+                'leakyrelu': leaky_relu,
                 'dropout': tf.nn.dropout}
 
 

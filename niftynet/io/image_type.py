@@ -38,7 +38,7 @@ class Loadable(with_metaclass(ABCMeta, object)):
 class DataFromFile(Loadable):
     """
     Data from file should have a valid file path
-    (are files on hard drive) and a name
+    (are files on hard drive) and a name.
     """
 
     def __init__(self, file_path, name='loadable_data'):
@@ -53,9 +53,10 @@ class DataFromFile(Loadable):
     @property
     def dtype(self):
         """
-        data type property of the input images
+        data type property of the input images.
+
         :return: a tuple of input image data types
-            len(self.dtype) == len(self.file_path)
+            ``len(self.dtype) == len(self.file_path)``
         """
         if not self._dtype:
             try:
@@ -74,6 +75,7 @@ class DataFromFile(Loadable):
         a tuple, length of the tuple is one for single image,
         length of the tuple is larger than one for single image from
         multiple files.
+
         :return: a tuple of file paths
         """
         return self._file_path
@@ -104,6 +106,7 @@ class DataFromFile(Loadable):
         a tuple, length of the tuple is one for single image,
         length of the tuple is larger than one for single image from
         multiple files.
+
         :return: a tuple of image name tags
         """
         return self._name
@@ -125,7 +128,7 @@ class DataFromFile(Loadable):
 class SpatialImage2D(DataFromFile):
     """
     2D images, axcodes specifications are ignored when
-    loading. (Resampling to new pixdims is currently not supported)
+    loading. (Resampling to new pixdims is currently not supported).
     """
 
     def __init__(self,
@@ -157,6 +160,7 @@ class SpatialImage2D(DataFromFile):
         as a multi-mod representation.
         The fourth dim corresponding to different time sequences
         is ignored.
+
         :return: a tuple of integers as image shape
         """
         if self._original_shape is None:
@@ -186,6 +190,7 @@ class SpatialImage2D(DataFromFile):
     def _load_header(self):
         """
         read original header for pixdim and affine info
+
         :return:
         """
         self._original_pixdim = []
@@ -199,15 +204,16 @@ class SpatialImage2D(DataFromFile):
             except (TypeError, IndexError, AttributeError):
                 tf.logging.fatal('could not read header from %s', file_i)
                 raise ValueError
-        self._original_pixdim = tuple(self._original_pixdim)
-        self._original_affine = tuple(self._original_affine)
+                # self._original_pixdim = tuple(self._original_pixdim)
+                # self._original_affine = tuple(self._original_affine)
 
     @property
     def original_pixdim(self):
         """
-        pixdim info from the image header
+        pixdim info from the image header.
+
         :return: a tuple of pixdims, with each element as pixdims
-        of an image file
+            of an image file
         """
         try:
             assert self._original_pixdim[0] is not None
@@ -218,9 +224,10 @@ class SpatialImage2D(DataFromFile):
     @property
     def original_affine(self):
         """
-        affine info from the image header
+        affine info from the image header.
+
         :return: a tuple of affine, with each element as an affine
-        matrix of an image file
+            matrix of an image file
         """
         try:
             assert self._original_affine[0] is not None
@@ -233,8 +240,9 @@ class SpatialImage2D(DataFromFile):
         """
         axcodes info from the image header
         more info: http://nipy.org/nibabel/image_orientation.html
+
         :return: a tuple of axcodes, with each element as axcodes
-        of an image file
+            of an image file
         """
         try:
             return tuple(nib.aff2axcodes(affine)
@@ -247,9 +255,10 @@ class SpatialImage2D(DataFromFile):
     @property
     def interp_order(self):
         """
-        interpolation order specified by user
+        interpolation order specified by user.
+
         :return: a tuple of integers, with each element as an
-        interpolation order of an image file
+            interpolation order of an image file
         """
         return self._interp_order
 
@@ -257,7 +266,7 @@ class SpatialImage2D(DataFromFile):
     def interp_order(self, interp_order):
         try:
             if len(interp_order) == len(self.file_path):
-                self._interp_order = tuple(map(int, interp_order))
+                self._interp_order = tuple(int(order) for order in interp_order)
                 return
         except (TypeError, ValueError):
             pass
@@ -275,9 +284,10 @@ class SpatialImage2D(DataFromFile):
         """
         output pixdim info specified by user
         set to None for using the original pixdim in image header
-        otherwise get_data() transforms image array according to this value
+        otherwise get_data() transforms image array according to this value.
+
         :return: a tuple of pixdims, with each element as pixdims
-        of an image file
+            of an image file
         """
         tf.logging.warning("resampling 2D images not implemented")
         return (None,) * len(self.file_path)
@@ -292,14 +302,14 @@ class SpatialImage2D(DataFromFile):
                         self._output_pixdim.append(None)
                     else:
                         self._output_pixdim.append(
-                            tuple(map(float, output_pixdim[i])))
-                self._output_pixdim = tuple(self._output_pixdim)
+                            tuple(float(pixdim) for pixdim in output_pixdim[i]))
+                # self._output_pixdim = tuple(self._output_pixdim)
                 return
         except (TypeError, ValueError):
             pass
         try:
             if output_pixdim is not None:
-                output_pixdim = tuple(map(float, output_pixdim))
+                output_pixdim = tuple(float(pixdim) for pixdim in output_pixdim)
             self._output_pixdim = (output_pixdim,) * len(self.file_path)
         except (TypeError, ValueError):
             tf.logging.fatal(
@@ -313,9 +323,10 @@ class SpatialImage2D(DataFromFile):
         output axcodes info specified by user
         set to None for using the original axcodes in image header,
         otherwise get_data() change axes of the image array
-        according to this value
+        according to this value.
+
         :return: a tuple of pixdims, with each element as pixdims
-        of an image file
+            of an image file
         """
         tf.logging.warning("reorienting 2D images not implemented")
         return (None,) * len(self.file_path)
@@ -331,7 +342,7 @@ class SpatialImage2D(DataFromFile):
                     else:
                         self._output_axcodes.append(
                             tuple(output_axcodes[i]))
-                self._output_axcodes = tuple(self._output_axcodes)
+                # self._output_axcodes = tuple(self._output_axcodes)
                 return
         except (TypeError, ValueError):
             pass
@@ -360,7 +371,7 @@ class SpatialImage2D(DataFromFile):
 class SpatialImage3D(SpatialImage2D):
     """
     3D image from a single, supports resampling and reorientation
-    (3D image from a set of 2D slices is currently not supported)
+    (3D image from a set of 2D slices is currently not supported).
     """
 
     def __init__(self,
@@ -377,12 +388,14 @@ class SpatialImage3D(SpatialImage2D):
                                 output_axcodes=output_axcodes)
         self._load_header()
 
+    # pylint: disable=no-member
     @SpatialImage2D.output_pixdim.getter
     def output_pixdim(self):
         if self._output_pixdim is None:
             self.output_pixdim = None
         return self._output_pixdim
 
+    # pylint: disable=no-member
     @SpatialImage2D.output_axcodes.getter
     def output_axcodes(self):
         if self._output_axcodes is None:
@@ -445,7 +458,7 @@ class SpatialImage3D(SpatialImage2D):
 class SpatialImage4D(SpatialImage3D):
     """
     4D image from a set of 3D volumes,
-    supports resampling and reorientation
+    supports resampling and reorientation.
 
     The 3D volumes are concatenated in the fifth dim (modality dim)
     (4D image from a single file is currently not supported)
@@ -493,7 +506,7 @@ class SpatialImage5D(SpatialImage3D):
     """
     5D image from a single file,
     resampling and reorientation are implemented as
-    operations on each 3D slice individually
+    operations on each 3D slice individually.
 
     (5D image from a set of 4D files is currently not supported)
     """
@@ -537,8 +550,8 @@ class SpatialImage5D(SpatialImage3D):
         if self.original_pixdim[idx] and self.output_pixdim[idx]:
             assert len(self._original_pixdim[idx]) == \
                    len(self.output_pixdim[idx]), \
-                "wrong pixdim format original {} output {}".format(
-                    self._original_pixdim[idx], self.output_pixdim[idx])
+                   "wrong pixdim format original {} output {}".format(
+                       self._original_pixdim[idx], self.output_pixdim[idx])
             # verbose: warning when interpolate_order>1 for integers
             output_image = []
             for t_pt in range(image_data.shape[3]):
@@ -570,7 +583,7 @@ class SpatialImage5D(SpatialImage3D):
 class ImageFactory(object):
     """
     Create image instance according to number of dimensions
-    specified in image headers
+    specified in image headers.
     """
     INSTANCE_DICT = {2: SpatialImage2D,
                      3: SpatialImage3D,
@@ -580,14 +593,15 @@ class ImageFactory(object):
     @classmethod
     def create_instance(cls, file_path, **kwargs):
         """
-        Read image headers and create image instance
+        Read image headers and create image instance.
+
         :param file_path: a file path or a sequence of file paths
         :param kwargs: output properties for transforming the image data
             array into a desired format
         :return: an image instance
         """
         if file_path is None:
-            tf.logging.fatal('no file_path provided, '
+            tf.logging.fatal('No file_path provided, '
                              'please check input sources in config file')
             raise ValueError
         image_type = None
@@ -603,10 +617,10 @@ class ImageFactory(object):
                 ndims = misc.infer_ndims_from_file(file_path[0])
                 ndims = ndims + (1 if len(file_path) > 1 else 0)
                 image_type = cls.INSTANCE_DICT.get(ndims, None)
-            except (TypeError, AssertionError):
-                tf.logging.fatal('file not found: %s', file_path)
+            except AssertionError:
+                tf.logging.fatal('Could not load file: %s', file_path)
                 raise IOError
         if image_type is None:
-            tf.logging.fatal('not supported image type: %s', file_path)
+            tf.logging.fatal('Not supported image type: %s', file_path)
             raise NotImplementedError
         return image_type(file_path, **kwargs)

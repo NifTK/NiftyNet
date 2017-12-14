@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 windows aggregator decode sampling grid coordinates and image id from
-batch data, forms image level output and write to hard drive
+batch data, forms image level output and write to hard drive.
 """
 from __future__ import absolute_import, print_function, division
 
@@ -20,7 +20,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
     """
     This class keeps record of the currently cached image,
     initialised as all zeros, and the values are replaced
-    by image window data decoded from batch
+    by image window data decoded from batch.
     """
     def __init__(self,
                  image_reader,

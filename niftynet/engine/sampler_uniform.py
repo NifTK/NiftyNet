@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Generating uniformly distributed image window from input image
-This can also be considered as a `random cropping` layer of the
-input image
+This can also be considered as a "random cropping" layer of the
+input image.
 """
 from __future__ import absolute_import, division, print_function
 
@@ -13,14 +13,15 @@ from niftynet.engine.image_window import ImageWindow, N_SPATIAL
 from niftynet.engine.image_window_buffer import InputBatchQueueRunner
 from niftynet.layer.base_layer import Layer
 
+
 # pylint: disable=too-many-arguments
 class UniformSampler(Layer, InputBatchQueueRunner):
     """
-    This class generators samples by uniformly sampling each input volume
+    This class generates samples by uniformly sampling each input volume
     currently the coordinates are randomised for spatial dims only,
     i.e., the first three dims of image.
 
-    This layer can be considered as a `random cropping` layer of the
+    This layer can be considered as a "random cropping" layer of the
     input image.
     """
 
@@ -50,29 +51,36 @@ class UniformSampler(Layer, InputBatchQueueRunner):
         tf.logging.info("initialised sampler output %s "
                         " [-1 for dynamic size]", self.window.shapes)
 
+        self.spatial_coordinates_generator = rand_spatial_coordinates
+
     # pylint: disable=too-many-locals
     def layer_op(self):
         """
         This function generates sampling windows to the input buffer
-        image data are from self.reader()
-        it first completes window shapes based on image data,
+        image data are from ``self.reader()``
+
+        It first completes window shapes based on image data,
         then finds random coordinates based on the window shapes
         finally extract window with the coordinates and output
-        a dictionary (required by input buffer)
-        :return: output data dictionary {placeholders: data_array}
+        a dictionary (required by input buffer).
+
+        :return: output data dictionary ``{placeholders: data_array}``
         """
         while True:
             image_id, data, _ = self.reader(idx=None, shuffle=True)
             if not data:
                 break
-            image_shapes = {
-                name: data[name].shape for name in self.window.names}
+            image_shapes = dict((name, data[name].shape)
+                                for name in self.window.names)
             static_window_shapes = self.window.match_image_shapes(image_shapes)
 
             # find random coordinates based on window and image shapes
-            coordinates = rand_spatial_coordinates(
-                image_id, image_shapes,
-                static_window_shapes, self.window.n_samples)
+            coordinates = self.spatial_coordinates_generator(
+                image_id,
+                data,
+                image_shapes,
+                static_window_shapes,
+                self.window.n_samples)
 
             # initialise output dict, placeholders as dictionary keys
             # this dictionary will be used in
@@ -114,17 +122,24 @@ class UniformSampler(Layer, InputBatchQueueRunner):
             yield output_dict
 
 
-def rand_spatial_coordinates(subject_id, img_sizes, win_sizes, n_samples=1):
+def rand_spatial_coordinates(subject_id,
+                             data,
+                             img_sizes,
+                             win_sizes,
+                             n_samples=1):
     """
-    win_sizes could be different, for example in segmentation network
-    input image window size is 32x32x10,
-    training label window is 16x16x10, the network reduces x-y plane
-    spatial resolution.
+    ``win_sizes`` could be different (for example in segmentation network
+    input image window size is ``32x32x10``,
+    training label window is ``16x16x10`` -- the network reduces x-y plane
+    spatial resolution.)
+
     This function handles this situation by first find the largest
     window across these window definitions, and generate the coordinates.
     These coordinates are then adjusted for each of the
     smaller window sizes (the output windows are concentric).
     """
+    assert data is not None, "No input from image reader. Please check" \
+                             "the configuration file."
     n_samples = max(n_samples, 1)
     uniq_spatial_size = set([img_size[:N_SPATIAL]
                              for img_size in list(img_sizes.values())])
@@ -159,12 +174,10 @@ def rand_spatial_coordinates(subject_id, img_sizes, win_sizes, n_samples=1):
         spatial_coords = np.zeros((n_samples, N_SPATIAL * 2), dtype=np.int32)
         spatial_coords[:, :N_SPATIAL] = \
             max_coords[:, :N_SPATIAL] + half_win_diff[:N_SPATIAL]
-
         spatial_coords[:, N_SPATIAL:] = \
             spatial_coords[:, :N_SPATIAL] + win_size[:N_SPATIAL]
         # include the subject id
         subject_id = np.ones((n_samples,), dtype=np.int32) * subject_id
-        spatial_coords = np.append(
-            subject_id[:, None], spatial_coords, axis=1)
+        spatial_coords = np.append(subject_id[:, None], spatial_coords, axis=1)
         all_coordinates[mod] = spatial_coords
     return all_coordinates

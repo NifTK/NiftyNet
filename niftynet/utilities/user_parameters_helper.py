@@ -53,7 +53,7 @@ def str_array(string_input):
     except ValueError:
         raise argparse.ArgumentTypeError(
             "list of strings expected, for each list element the allowed"
-            "characters: [ a-zA-Z0-9], but received {}".format(string_input))
+            "characters: [ a-zA-Z0-9_\-], but received {}".format(string_input))
     return output_tuple
 
 
@@ -91,14 +91,14 @@ def standardise_section_name(configparser, old_name):
 def standardise_string(input_string):
     """
     to make the user's input consistent
-    replace any characters not in set [0-9a-zA-Z] with underscrore _
+    replace any characters not in set [0-9a-zA-Z] with underscore _
 
     :param input_string: to be standardised
     :return: capitalised string
     """
     if not isinstance(input_string, string_types):
         return input_string
-    new_name = re.sub('[^0-9a-zA-Z ]+', '', input_string.strip())
+    new_name = re.sub('[^0-9a-zA-Z_\- ]+', '', input_string.strip())
     return new_name
 
 
@@ -107,7 +107,7 @@ def has_section_in_config(config, required_custom_section):
     if required_custom_section is not None:
         user_sections = [standardise_string(section_name)
                          for section_name in config.sections()]
-        if not required_custom_section in user_sections:
+        if required_custom_section not in user_sections:
             raise ValueError
         else:
             return True

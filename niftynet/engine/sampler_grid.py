@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-sampling image by a sliding window
+Sampling image by a sliding window.
 """
 from __future__ import absolute_import, division, print_function
 
@@ -15,7 +15,7 @@ from niftynet.layer.base_layer import Layer
 # pylint: disable=too-many-locals
 class GridSampler(Layer, InputBatchQueueRunner):
     """
-    This class generators ND image samples with a sliding window
+    This class generators ND image samples with a sliding window.
     """
 
     def __init__(self,
@@ -116,16 +116,15 @@ class GridSampler(Layer, InputBatchQueueRunner):
 def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
     """
     This function generates all coordinates of feasible windows, with
-    step sizes specified in grid_size parameter
+    step sizes specified in grid_size parameter.
 
     The border size changes the sampling locations but not the
     corresponding window sizes of the coordinates.
 
     :param subject_id: integer value indicates the position of of this
-    image in image_reader.file_list
-
-    :param img_sizes: a dictionary of image shapes, {input_name: shape}
-    :param win_sizes: a dictionary of window shapes, {input_name: shape}
+        image in ``image_reader.file_list``
+    :param img_sizes: a dictionary of image shapes, ``{input_name: shape}``
+    :param win_sizes: a dictionary of window shapes, ``{input_name: shape}``
     :param border_size: size of padding on both sides of each dim
     :return:
     """
@@ -164,7 +163,7 @@ def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
 
 def _enumerate_step_points(starting, ending, win_size, step_size):
     """
-    generate all possible sampling size in between starting and ending
+    generate all possible sampling size in between starting and ending.
 
     :param starting: integer of starting value
     :param ending: integer of ending value

@@ -24,17 +24,24 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
         # mapping is a complete cache of the model file, the total number of
         # modalities are listed in self.modalities
         self.image_name = image_name
-        self.modalities = modalities
+        self.modalities = None
+        if isinstance(modalities, (list, tuple)):
+            if len(modalities) > 1:
+                raise NotImplementedError(
+                    "Currently supports single modality discrete labels.")
+            self.modalities = modalities
+        else:
+            self.modalities = (modalities,)
         self.model_file = os.path.abspath(model_filename)
         assert not os.path.isdir(self.model_file), \
             "model_filename is a directory, please change histogram_ref_file"
-        self.label_map = hs.read_mapping_file(model_filename)
+        self.label_map = hs.read_mapping_file(self.model_file)
 
     @property
     def key(self):
         # provide a readable key for the label mapping item
-        key_from = "{}_{}-from".format(self.image_name, self.modalities)
-        key_to = "{}_{}-to".format(self.image_name, self.modalities)
+        key_from = "{}:{}:from".format(self.image_name, self.modalities[0])
+        key_to = "{}:{}:to".format(self.image_name, self.modalities[0])
         return standardise_string(key_from), standardise_string(key_to)
 
     def layer_op(self, image, mask=None):
@@ -89,11 +96,11 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
     def is_ready(self):
         mapping_from = self.label_map.get(self.key[0], None)
         if mapping_from is None:
-            tf.logging.warning('could not find mapping key %s', self.key[0])
+            # tf.logging.warning('could not find mapping key %s', self.key[0])
             return False
         mapping_to = self.label_map.get(self.key[1], None)
         if mapping_to is None:
-            tf.logging.warning('could not find mapping key %s', self.key[1])
+            # tf.logging.warning('could not find mapping key %s', self.key[1])
             return False
         assert len(mapping_from) == len(mapping_to), \
             "mapping is not one-to-one, " \
@@ -126,7 +133,10 @@ def find_set_of_labels(image_list, field, output_key):
     label_set = set()
     for idx, image in enumerate(image_list):
         assert field in image, \
-            "no {} data provided in for label mapping".format(field)
+            "label normalisation layer requires {} input, " \
+            "however it is not provided in the config file.\n" \
+            "Please consider setting " \
+            "label_normalisation to False.".format(field)
         print_progress_bar(idx, len(image_list),
                            prefix='searching unique labels from training files',
                            decimals=1, length=10, fill='*')
@@ -139,11 +149,11 @@ def find_set_of_labels(image_list, field, output_key):
     label_set = list(label_set)
     label_set.sort()
     try:
-        mapping_from_to = {}
+        mapping_from_to = dict()
         mapping_from_to[output_key[0]] = tuple(label_set)
         mapping_from_to[output_key[1]] = tuple(range(0, len(label_set)))
     except (IndexError, ValueError):
         tf.logging.fatal("unable to create mappings keys: %s, image name %s",
-            output_key, field)
+                         output_key, field)
         raise
     return mapping_from_to

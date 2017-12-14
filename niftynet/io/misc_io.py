@@ -1,19 +1,22 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function, unicode_literals
 
+import errno
+import importlib
 import logging as log
 import os
 import re
 import sys
 import warnings
 
-import PIL
 import nibabel as nib
 import numpy as np
 import scipy.ndimage
 import tensorflow as tf
-from PIL.GifImagePlugin import Image as GIF
 from tensorflow.core.framework import summary_pb2
+
+from niftynet.utilities.util_import import check_module
+from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 
 IS_PYTHON2 = False if sys.version_info[0] > 2 else True
 
@@ -21,19 +24,16 @@ IMAGE_LOADERS = [nib.load]
 try:
     import niftynet.io.simple_itk_as_nibabel
 
-    IMAGE_LOADERS.append(
-        niftynet.io.simple_itk_as_nibabel.SimpleITKAsNibabel)
-except ImportError:
-    warnings.warn(
-        'SimpleITK adapter failed to load,'
-        ' reducing the supported file formats.',
-        ImportWarning)
+    IMAGE_LOADERS.append(niftynet.io.simple_itk_as_nibabel.SimpleITKAsNibabel)
+except (ImportError, AssertionError):
+    tf.logging.warning('SimpleITK adapter failed to load, '
+                       'reducing the supported file formats.')
 
 warnings.simplefilter("ignore", UserWarning)
 
 FILE_EXTENSIONS = [".nii.gz", ".tar.gz"]
-CONSOLE_LOG_FORMAT = '%(levelname)s:niftynet: %(message)s'
-FILE_LOG_FORMAT = '%(levelname)s:niftynet:%(asctime)s: %(message)s'
+CONSOLE_LOG_FORMAT = "\033[1m%(levelname)s:niftynet:\033[0m %(message)s"
+FILE_LOG_FORMAT = "%(levelname)s:niftynet:%(asctime)s: %(message)s"
 
 
 #### utilities for file headers
@@ -41,17 +41,24 @@ FILE_LOG_FORMAT = '%(levelname)s:niftynet:%(asctime)s: %(message)s'
 def infer_ndims_from_file(file_path):
     image_header = load_image(file_path).header
     try:
-        ndims = int(image_header['dim'][0])
-    except IndexError:
-        tf.logging.fatal('unsupported file header in: {}'.format(file_path))
-        raise
-    return ndims
+        return int(image_header['dim'][0])
+    except TypeError:
+        pass
+    try:
+        return int(len(image_header.get_data_shape()))
+    except (TypeError, AttributeError):
+        pass
+
+    tf.logging.fatal('unsupported file header in: {}'.format(file_path))
+    raise IOError('could not get ndims from file header, please '
+                  'consider convert image files to NifTI format.')
 
 
 def create_affine_pixdim(affine, pixdim):
     """
     Given an existing affine transformation and the pixel dimension to apply,
-    create a new affine matrix that satisfies the new pixel dimension
+    create a new affine matrix that satisfies the new pixel dimension.
+
     :param affine: original affine matrix
     :param pixdim: pixel dimensions to apply
     :return:
@@ -76,8 +83,8 @@ def load_image(filename):
             # if the image_loader cannot handle the type_str
             # continue to next loader
             pass
-    raise nib.filebasedimages.ImageFileError(
-        'No loader could load the file')  # Throw last error
+    tf.logging.fatal('No loader could load the file %s', filename)
+    raise IOError
 
 
 def correct_image_if_necessary(img):
@@ -99,6 +106,7 @@ def rectify_header_sform_qform(img_nii):
     """
     Look at the sform and qform of the nifti object and
     correct it if any incompatibilities with pixel dimensions
+
     :param img_nii:
     :return:
     """
@@ -148,9 +156,10 @@ def rectify_header_sform_qform(img_nii):
 def do_reorientation(data_array, init_axcodes, final_axcodes):
     """
     Performs the reorientation (changing order of axes)
+
     :param data_array: Array to reorient
-    :param ornt_init: Initial orientation
-    :param ornt_fin: Target orientation
+    :param init_axcodes: Initial orientation
+    :param final_axcodes: Target orientation
     :return data_reoriented: New data array in its reoriented form
     """
     ornt_init = nib.orientations.axcodes2ornt(init_axcodes)
@@ -177,6 +186,7 @@ def do_reorientation(data_array, init_axcodes, final_axcodes):
 def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     """
     Performs the resampling
+
     :param data_array: Data array to resample
     :param pixdim_init: Initial pixel dimension
     :param pixdim_fin: Targeted pixel dimension
@@ -190,7 +200,7 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     try:
         assert len(pixdim_init) <= len(pixdim_fin)
     except (TypeError, AssertionError):
-        tf.logging.fatal("unkown pixdim format original %s output %s",
+        tf.logging.fatal("unknown pixdim format original %s output %s",
                          pixdim_init, pixdim_fin)
         raise
     to_multiply = np.divide(pixdim_init, pixdim_fin[:len(pixdim_init)])
@@ -269,6 +279,7 @@ def expand_to_5d(img_data):
 def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
     """
     Save the img_data to nifti image
+
     :param img_data: 5d img to save
     :param filename: filename under which to save the img_data
     :param save_path:
@@ -282,6 +293,9 @@ def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
     # img_nii.set_data_dtype(np.dtype(np.float32))
     output_name = os.path.join(save_path, filename)
     try:
+        if os.path.isfile(output_name):
+            tf.logging.warning(
+                'File %s exists, overwriting the file.', output_name)
         nib.save(img_nii, output_name)
     except OSError:
         tf.logging.fatal("writing failed {}".format(output_name))
@@ -307,10 +321,13 @@ def split_filename(file_name):
 
 def squeeze_spatial_temporal_dim(tf_tensor):
     """
-    Given a tensorflow tensor, ndims==6 means:
-    [batch, x, y, z, time, modality]
+    Given a tensorflow tensor, ndims==6 means::
+
+        [batch, x, y, z, time, modality]
+
     this function removes x, y, z, and time dims if
-    the length along the dims is one
+    the length along the dims is one.
+
     :return: squeezed tensor
     """
     if tf_tensor.get_shape().ndims != 6:
@@ -328,25 +345,110 @@ def squeeze_spatial_temporal_dim(tf_tensor):
 
 def touch_folder(model_dir):
     """
-    This funciton returns the absolute path of `model_dir` if exists
-    otherwise try to create the folder and returns the absolute path
+    This function returns the absolute path of `model_dir` if exists
+    otherwise try to create the folder and returns the absolute path.
     """
     if not os.path.exists(model_dir):
         try:
             os.makedirs(model_dir)
-        except OSError:
+        except (OSError, TypeError):
             tf.logging.fatal('could not create model folder: %s', model_dir)
-            raise OSError
+            raise
     absolute_dir = os.path.abspath(model_dir)
     # tf.logging.info('accessing output folder: {}'.format(absolute_dir))
     return absolute_dir
+
+
+def resolve_module_dir(module_dir_str, create_new=False):
+    try:
+        # interpret input as a module string
+        module_from_string = importlib.import_module(module_dir_str)
+        folder_path = os.path.dirname(module_from_string.__file__)
+        return os.path.abspath(folder_path)
+    except (ImportError, AttributeError, TypeError):
+        pass
+
+    try:
+        # interpret last part of input as a module string
+        string_last_part = module_dir_str.rsplit('.', 1)
+        module_from_string = importlib.import_module(string_last_part[-1])
+        folder_path = os.path.dirname(module_from_string.__file__)
+        return os.path.abspath(folder_path)
+    except (ImportError, AttributeError, IndexError, TypeError):
+        pass
+
+    try:
+        # interpret input as a file folder path string
+        if os.path.isdir(module_dir_str):
+            return os.path.abspath(module_dir_str)
+    except TypeError:
+        pass
+
+    try:
+        # interpret input as a file path string
+        if os.path.isfile(module_dir_str):
+            return os.path.abspath(os.path.dirname(module_dir_str))
+    except TypeError:
+        pass
+
+    try:
+        # interpret input as a path string relative to the global home
+        from niftynet.utilities.niftynet_global_config import \
+            NiftyNetGlobalConfig
+        home_location = NiftyNetGlobalConfig().get_niftynet_home_folder()
+        possible_dir = os.path.join(home_location, module_dir_str)
+        if os.path.isdir(possible_dir):
+            return os.path.abspath(possible_dir)
+    except (TypeError, ImportError, AttributeError):
+        pass
+
+    if create_new:
+        # try to create the folder
+        folder_path = touch_folder(module_dir_str)
+        init_file = os.path.join(folder_path, '__init__.py')
+        try:
+            file_ = os.open(init_file, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except OSError as e:
+            if e.errno == errno.EEXIST:
+                pass
+            else:
+                tf.logging.fatal(
+                    "trying to use '{}' as NiftyNet writing path, "
+                    "however cannot write '{}'".format(
+                        folder_path, init_file))
+                raise
+        else:
+            with os.fdopen(file_, 'w') as file_object:
+                file_object.write("# Created automatically\n")
+        return folder_path
+    else:
+        raise ValueError(
+            "Could not resolve [{}].\nMake sure it is a valid folder path "
+            "or a module name.\nIf it is string representing a module, "
+            "the parent folder of [{}] should be on "
+            "the system path.\n\nCurrent system path {}.".format(
+                module_dir_str, module_dir_str, sys.path))
+
+
+def to_absolute_path(input_path, model_root):
+    try:
+        if os.path.isabs(input_path):
+            return input_path
+    except TypeError:
+        pass
+    return os.path.abspath(os.path.join(model_root, input_path))
 
 
 def resolve_checkpoint(checkpoint_name):
     # For now only supports checkpoint_name where
     # checkpoint_name.index is in the file system
     # eventually will support checkpoint names that can be referenced
-    # in a paths file
+    # in a paths file.
+    if os.path.isfile(checkpoint_name + '.index'):
+        return checkpoint_name
+    home_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
+    checkpoint_name = to_absolute_path(input_path=checkpoint_name,
+                                       model_root=home_folder)
     if os.path.isfile(checkpoint_name + '.index'):
         return checkpoint_name
     raise ValueError('Invalid checkpoint {}'.format(checkpoint_name))
@@ -375,6 +477,10 @@ def get_latest_subfolder(parent_folder, create_new=False):
 
 
 def _image3_animated_gif(tag, ims):
+    check_module('PIL')
+    import PIL
+    from PIL.GifImagePlugin import Image as GIF
+
     # x=numpy.random.randint(0,256,[10,10,10],numpy.uint8)
     ims = [np.asarray((ims[i, :, :]).astype(np.uint8))
            for i in range(ims.shape[0])]
@@ -400,23 +506,30 @@ def _image3_animated_gif(tag, ims):
 def image3(name,
            tensor,
            max_outputs=3,
-           collections=[tf.GraphKeys.SUMMARIES],
-           animation_axes=[1],
-           image_axes=[2, 3],
-           other_indices={}):
-    """ Summary for higher dimensional images
-    Parameters:
-    name: string name for the summary
-    tensor:   tensor to summarize. Should be in the range 0..255.
-              By default, assumes tensor is NDHWC, and animates (through D)
-              HxW slices of the 1st channel.
-    collections: list of strings collections to add the summary to
-    animation_axes=[1],image_axes=[2,3]
+           collections=(tf.GraphKeys.SUMMARIES,),
+           animation_axes=(1,),
+           image_axes=(2, 3),
+           other_indices=None):
     """
+    Summary for higher dimensional images
+
+    Parameters:
+
+        name: string name for the summary
+        tensor: tensor to summarize. Should be in the range 0..255.
+            By default, assumes tensor is NDHWC, and animates (through D)
+            HxW slices of the 1st channel.
+        collections: list of strings collections to add the summary to
+        animation_axes=[1],image_axes=[2,3]
+
+    """
+
     if max_outputs == 1:
         suffix = '/image'
     else:
         suffix = '/image/{}'
+    if other_indices is None:
+        other_indices = {}
     axis_order = [0] + animation_axes + image_axes
     # slice tensor
     slicing = []
@@ -450,21 +563,21 @@ def image3(name,
 def image3_sagittal(name,
                     tensor,
                     max_outputs=3,
-                    collections=[tf.GraphKeys.SUMMARIES]):
+                    collections=(tf.GraphKeys.SUMMARIES,)):
     return image3(name, tensor, max_outputs, collections, [1], [2, 3])
 
 
 def image3_coronal(name,
                    tensor,
                    max_outputs=3,
-                   collections=[tf.GraphKeys.SUMMARIES]):
+                   collections=(tf.GraphKeys.SUMMARIES,)):
     return image3(name, tensor, max_outputs, collections, [2], [1, 3])
 
 
 def image3_axial(name,
                  tensor,
                  max_outputs=3,
-                 collections=[tf.GraphKeys.SUMMARIES]):
+                 collections=(tf.GraphKeys.SUMMARIES,)):
     return image3(name, tensor, max_outputs, collections, [3], [1, 2])
 
 
@@ -478,7 +591,7 @@ def set_logger(file_name=None):
     std_handler.setFormatter(f)
     tf.logging._logger.addHandler(std_handler)
 
-    if file_name is not None:
+    if file_name:
         f = log.Formatter(FILE_LOG_FORMAT)
         file_handler = log.FileHandler(file_name)
         file_handler.setFormatter(f)

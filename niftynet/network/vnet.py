@@ -122,7 +122,7 @@ class VNet(BaseNet):
         return output_tensor
 
 
-SUPPORTED_OP = {'DOWNSAMPLE', 'UPSAMPLE', 'SAME'}
+SUPPORTED_OP = set(['DOWNSAMPLE', 'UPSAMPLE', 'SAME'])
 
 
 class VNetBlock(TrainableLayer):
@@ -163,17 +163,19 @@ class VNetBlock(TrainableLayer):
         res_flow = ElementwiseLayer('SUM')(main_flow, bypass_flow)
 
         if self.func == 'DOWNSAMPLE':
-            main_flow = ConvLayer(name='downsample',
-                                  n_output_chns=self.n_output_chns,
-                                  w_initializer=self.initializers['w'],
-                                  w_regularizer=self.regularizers['w'],
-                                  kernel_size=2, stride=2, with_bias=True)(res_flow)
+            main_flow = ConvLayer(
+                name='downsample',
+                n_output_chns=self.n_output_chns,
+                w_initializer=self.initializers['w'],
+                w_regularizer=self.regularizers['w'],
+                kernel_size=2, stride=2, with_bias=True)(res_flow)
         elif self.func == 'UPSAMPLE':
-            main_flow = DeconvLayer(name='upsample',
-                                    n_output_chns=self.n_output_chns,
-                                    w_initializer=self.initializers['w'],
-                                    w_regularizer=self.regularizers['w'],
-                                    kernel_size=2, stride=2, with_bias=True)(res_flow)
+            main_flow = DeconvLayer(
+                name='upsample',
+                n_output_chns=self.n_output_chns,
+                w_initializer=self.initializers['w'],
+                w_regularizer=self.regularizers['w'],
+                kernel_size=2, stride=2, with_bias=True)(res_flow)
         elif self.func == 'SAME':
             main_flow = ConvLayer(name='conv_1x1x1',
                                   n_output_chns=self.n_output_chns,

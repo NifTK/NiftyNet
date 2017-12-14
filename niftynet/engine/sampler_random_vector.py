@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Generating sample arrays from random distributions
+Generating sample arrays from random distributions.
 """
 from __future__ import absolute_import, print_function, division
 
@@ -17,7 +17,7 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
     This class generates two samples from the standard normal
     distribution.  These two samples are mixed with n
     mixing coefficients. The coefficients are generated
-    by np.linspace(0, 1, n_interpolations)
+    by ``np.linspace(0, 1, n_interpolations)``
     """
 
     def __init__(self,
@@ -55,8 +55,9 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
     def layer_op(self, *args, **kwargs):
         """
         This function first draws two samples, and interpolates them
-        with self.n_interpolations mixing coefficients
-        Location coordinates are set to np.ones for all the vectors
+        with self.n_interpolations mixing coefficients.
+
+        Location coordinates are set to ``np.ones`` for all the vectors.
         """
         total_iter = self.repeat if self.repeat is not None else 1
         while total_iter > 0:

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-windows aggregator resize each item
-in a batch output and save as an image
+Windows aggregator resize each item
+in a batch output and save as an image.
 """
 from __future__ import absolute_import, print_function, division
 
@@ -36,10 +36,10 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
 
     def decode_batch(self, window, location):
         """
-        resizing each output image window in the batch as an image volume
+        Resizing each output image window in the batch as an image volume
         location specifies the original input image (so that the
         interpolation order, original shape information retained in the
-        generated outputs)
+        generated outputs).
         """
         n_samples = location.shape[0]
         window, location = self.crop_batch(window, location, self.window_border)

@@ -55,7 +55,6 @@ class GradientCollectorTest(tf.test.TestCase):
             grad_collector._gradients[0][0][0][0].get_shape().as_list(),
             ave_grads[0][0][0].get_shape().as_list())
 
-
     def test_multiple_loss_gradients(self):
         n_device = 3
         grad_collector = GradientsCollector(n_devices=n_device)
@@ -122,6 +121,7 @@ class GradientCollectorTest(tf.test.TestCase):
         self.assertAllClose(
             grad_collector._gradients[0][0][0].get_shape().as_list(),
             ave_grads[0][0].get_shape().as_list())
+
 
 if __name__ == "__main__":
     tf.test.main()

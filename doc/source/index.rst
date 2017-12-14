@@ -4,16 +4,16 @@
    contain the root `toctree` directive.
 
 
-NiftyNet
-========
-
-NiftyNet is a `TensorFlow`_-based open-source convolutional neural networks (CNN) platform for research in medical image analysis and image-guided therapy.
+Welcome
+=======
+NiftyNet is a `TensorFlow`_-based open-source convolutional neural networks platform
+for research in medical image analysis and image-guided therapy.
 NiftyNet's modular structure is designed for sharing networks and pre-trained models.
-NiftyNet is a consortium of research groups (WEISS -- `Wellcome EPSRC Centre for Interventional and Surgical Sciences`_, CMIC -- `Centre for Medical Image Computing`_, HIG -- High-dimensional Imaging Group), where WEISS acts as the consortium lead.
-
-
-Getting started
----------------
+NiftyNet is a consortium of research groups
+(WEISS -- `Wellcome EPSRC Centre for Interventional and Surgical Sciences`_,
+CMIC -- `Centre for Medical Image Computing`_,
+HIG -- High-dimensional Imaging Group),
+where WEISS acts as the consortium lead.
 
 Using NiftyNet's modular structure you can:
 
@@ -21,88 +21,144 @@ Using NiftyNet's modular structure you can:
 * Adapt existing networks to your imaging data
 * Quickly build new solutions to your own image analysis problems
 
-Please see the `NiftyNet source code repository`_ for a detailed list of features and installation instructions.
+
+The code is available via `GitLab`_ and `GitHub`_,
+or you can quickly get started with the released versions in the
+`Python Package Index`_.
+
+.. _`GitLab`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
+.. _`GitHub`: https://github.com/NifTK/NiftyNet
+.. _`Python Package Index`: https://pypi.org/project/NiftyNet/
 
 
-Examples
-^^^^^^^^
+Quickstart
+==========
+This section shows you how to run a segmentation application with ``net_segment``
+command, using a model with trained weights and image data downloaded
+from `NiftyNet model zoo`_ with ``net_download``.
 
-We are working to provide examples here showing how NiftyNet can be used and adapted to different image analysis problems.
-In the mean time please see the `NiftyNet demos`_ and `network (re-)implementations`_.
+With NiftyNet `installed from PyPI`_:
 
-.. _`NiftyNet demos`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/tree/dev/demos
-.. _`network (re-)implementations`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/tree/dev/niftynet/network
+.. code-block:: bash
+
+    net_download dense_vnet_abdominal_ct_model_zoo
+    net_segment inference -c ~/niftynet/extensions/dense_vnet_abdominal_ct/config.ini
+
+With NiftyNet `source code`_ cloned at ``./NiftyNet/``:
+
+.. code-block:: bash
+
+    # go to the source code directory
+    cd NiftyNet/
+    python net_download.py dense_vnet_abdominal_ct_model_zoo
+    python net_segment.py inference -c ~/niftynet/extensions/dense_vnet_abdominal_ct/config.ini
+
+The segmentation output of this example application should be located at
+
+.. code-block:: bash
+
+    ~/niftynet/models/dense_vnet_abdominal_ct/segmentation_output/
+
+.. topic:: Applications and models
+
+  More applications and models are available at `NiftyNet model zoo`_ and the
+  `network`_ directory.
+
+.. topic:: Configuration specifications
+
+  For detailed specifications of NiftyNet commands and configurations,
+  check out our `Configuration docs`_.
+
+.. topic:: Extending NiftyNet applications
+
+  To learn more about developing NiftyNet applications, see the `Extending
+  application`_ and `Developing new networks`_ section.
+
+.. topic:: Contributing to NiftyNet
+
+  Contributors are always welcomed!  For more information please visit the
+  `Contributor guide`_ section.
+
+All how-to guides are listed in `the following section <#guides>`_.
 
 
-API reference
-^^^^^^^^^^^^^
 
-Please see the :ref:`modindex`.
+.. _`installed from PyPI`: installation.html
+.. _`source code`: installation.html
+.. _`NiftyNet model zoo`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/blob/master/model_zoo.md
+.. _`network`: niftynet.network.html
+.. _`Configuration docs`: config_spec.html
+.. _`Extending application`: extending_app.html
+.. _`Developing new networks`: extending_net.html
+.. _`Contributor guide`: contributing.html
 
 
-Useful links
-^^^^^^^^^^^^
+Guides
+======
+.. toctree::
+   :maxdepth: 1
 
-:ref:`genindex`
+   installation
+   config_spec
+   model_zoo
+   extending_app
+   extending_net
+   contributing
 
-:ref:`search`
+
+Resources
+=========
 
 `NiftyNet website`_
 
-`NiftyNet source code on CmicLab`_
+`Source code on CmicLab`_
 
-`NiftyNet source code mirror on GitHub`_
+`Source code mirror on GitHub`_
 
-NiftyNet mailing list: nifty-net@live.ucl.ac.uk
+`Model zoo repository`_
+
+Mailing list: nifty-net@live.ucl.ac.uk
+
+`Stack Overflow`_ (for general questions)
 
 
 .. _`NiftyNet website`: http://niftynet.io/
-.. _`NiftyNet source code on CmicLab`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
-.. _`NiftyNet source code mirror on GitHub`: https://github.com/NifTK/NiftyNet
+.. _`Source code on CmicLab`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
+.. _`Source code mirror on GitHub`: https://github.com/NifTK/NiftyNet
+.. _`Model zoo repository`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/blob/master/model_zoo.md
+.. _`Stack Overflow`: https://stackoverflow.com/questions/tagged/niftynet
 
 
-Citing NiftyNet
----------------
+APIs & reference
+================
 
-If you use NiftyNet in your work, please cite `Li et. al. 2017`_:
+.. toctree::
+   :maxdepth: 2
 
-  Li W., Wang G., Fidon L., Ourselin S., Cardoso M.J., Vercauteren T. (2017)
-  `On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.`_
-  In: Niethammer M. et al. (eds) Information Processing in Medical Imaging. IPMI 2017.
-  Lecture Notes in Computer Science, vol 10265. Springer, Cham. DOI: `10.1007/978-3-319-59050-9_28`_
-
-BibTeX entry:
-
-.. code-block:: bibtex
-
-  @InProceedings{niftynet17,
-    author = {Li, Wenqi and Wang, Guotai and Fidon, Lucas and Ourselin, Sebastien and Cardoso, M. Jorge and Vercauteren, Tom},
-    title = {On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task},
-    booktitle = {International Conference on Information Processing in Medical Imaging (IPMI)},
-    year = {2017}
-  }
-
-.. _`Li et. al. 2017`: http://doi.org/10.1007/978-3-319-59050-9_28
-.. _`On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.`: http://doi.org/10.1007/978-3-319-59050-9_28
-.. _`10.1007/978-3-319-59050-9_28`: http://doi.org/10.1007/978-3-319-59050-9_28
+   list_modules
 
 
 Licensing and copyright
------------------------
+=======================
 
 Copyright 2017 University College London and the NiftyNet Contributors.
 NiftyNet is released under the Apache License, Version 2.0.
-Please see the LICENSE file in the `NiftyNet source code repository`_ for details.
+Please see the `LICENSE file`_ in the `NiftyNet source code repository`_ for details.
 
 
 Acknowledgements
-----------------
+================
 
-This project is grateful for the support from the `Wellcome Trust`_, the `Engineering and Physical Sciences Research Council (EPSRC)`_, the `National Institute for Health Research (NIHR)`_, the `Department of Health (DoH)`_, `University College London (UCL)`_, the `Science and Engineering South Consortium (SES)`_, the `STFC Rutherford-Appleton Laboratory`_, and `NVIDIA`_.
+This project is grateful for the support from the `Wellcome Trust`_,
+the `Engineering and Physical Sciences Research Council (EPSRC)`_,
+the `National Institute for Health Research (NIHR)`_,
+the `Department of Health (DoH)`_, `University College London (UCL)`_,
+the `Science and Engineering South Consortium (SES)`_,
+the `STFC Rutherford-Appleton Laboratory`_, and `NVIDIA`_.
 
+.. _`LICENSE file`: https://github.com/NifTK/NiftyNet/blob/dev/LICENSE
 .. _`TensorFlow`: https://www.tensorflow.org/
 .. _`Wellcome EPSRC Centre for Interventional and Surgical Sciences`: http://www.ucl.ac.uk/weiss
-.. _`NiftyNet source code repository`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 .. _`Centre for Medical Image Computing`: http://cmic.cs.ucl.ac.uk/
 .. _`Centre for Medical Image Computing (CMIC)`: http://cmic.cs.ucl.ac.uk/
 .. _`University College London (UCL)`: http://www.ucl.ac.uk/
@@ -113,8 +169,47 @@ This project is grateful for the support from the `Wellcome Trust`_, the `Engine
 .. _`Science and Engineering South Consortium (SES)`: https://www.ses.ac.uk/
 .. _`STFC Rutherford-Appleton Laboratory`: http://www.stfc.ac.uk/about-us/where-we-work/rutherford-appleton-laboratory/
 .. _`NVIDIA`: http://www.nvidia.com
+.. _`NiftyNet source code repository`: https://github.com/NifTK/NiftyNet/blob/dev/LICENSE
 
 
-.. toctree::
-   :maxdepth: 4
-   :caption: Contents:
+If you use NiftyNet in your work, please cite `Gibson and Li, et al. 2017`_:
+
+..
+
+  E. Gibson*, W. Li*, C. Sudre, L. Fidon, D. I. Shakir, G. Wang,
+  Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, M. Modat,
+  D. C. Barratt, S. Ourselin, M. J. Cardoso^ and T. Vercauteren^ 2017.
+  `NiftyNet: a deep-learning platform for medical imaging.`_
+  arXiv preprint arXiv:1709.03485 (2017).
+
+BibTeX entry:
+
+.. code-block:: bibtex
+
+  @InProceedings{niftynet17,
+    author = {Eli Gibson and Wenqi Li and Carole Sudre and Lucas Fidon and
+              Dzhoshkun I. Shakir and Guotai Wang and Zach Eaton-Rosen and
+              Robert Gray and Tom Doel and Yipeng Hu and Tom Whyntie and
+              Parashkev Nachev and Marc Modat and Dean C. Barratt and
+              Sebastien Ourselin and M. Jorge Cardoso and Tom Vercauteren},
+    title = {NiftyNet: a deep-learning platform for medical imaging},
+    year = {2017},
+    eprint = {1709.03485},
+    eprintclass = {cs.CV},
+    eprinttype = {arXiv},
+  }
+
+The NiftyNet platform originated in software developed for `Li, et al. 2017`_:
+
+  Li W., Wang G., Fidon L., Ourselin S., Cardoso M.J., Vercauteren T. (2017)
+  `On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.`_
+  In: Niethammer M. et al. (eds) Information Processing in Medical Imaging. IPMI 2017.
+  Lecture Notes in Computer Science, vol 10265. Springer, Cham. `DOI: 10.1007/978-3-319-59050-9_28`_
+
+.. _`NiftyNet: a deep-learning platform for medical imaging.`: http://arxiv.org/abs/1709.03485
+.. _`Gibson and Li, et al. 2017`: http://arxiv.org/abs/1709.03485
+.. _`Li, et al. 2017`: http://doi.org/10.1007/978-3-319-59050-9_28
+.. _`On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.`: http://doi.org/10.1007/978-3-319-59050-9_28
+.. _`DOI: 10.1007/978-3-319-59050-9_28`: http://doi.org/10.1007/978-3-319-59050-9_28
+
+
