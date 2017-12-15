@@ -32,7 +32,7 @@ def infer_spatial_rank(input_tensor):
     #dims = input_tensor.get_shape().ndims - 2
     #assert dims > 0, "input tensor should have at least one spatial dim, " \
     #                 "in addition to batch and channel dims"
-    return input_shape.ndims - 2
+    return int(input_shape.ndims - 2)
 
 
 def trivial_kernel(kernel_shape):

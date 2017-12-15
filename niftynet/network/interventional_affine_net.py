@@ -11,6 +11,7 @@ from niftynet.layer.downsample_res_block import DownBlock as DownRes
 from niftynet.layer.fully_connected import FullyConnectedLayer as FC
 from niftynet.layer.grid_warper import AffineGridWarperLayer as Grid
 from niftynet.layer.layer_util import infer_spatial_rank
+from niftynet.layer.linear_resize import LinearResizeLayer as Resize
 from niftynet.network.base_net import BaseNet
 
 
@@ -39,11 +40,20 @@ class INetAffine(BaseNet):
             'w_regularizer': regularizers.l2_regularizer(decay),
             'b_regularizer': None}
 
-
     def layer_op(self, fixed_image, moving_image, is_training=True):
         """
-        returns displacement fields transformed by estimating affine
+
+        :param fixed_image:
+        :param moving_image:
+        :param is_training:
+        :return: displacement fields transformed by estimating affine
         """
+
+        spatial_rank = infer_spatial_rank(moving_image)
+        spatial_shape = fixed_image.get_shape().as_list()[1:-1]
+
+        # resize the moving image to match the fixed
+        moving_image = Resize(spatial_shape)(moving_image)
         img = tf.concat([moving_image, fixed_image], axis=-1)
         res_1, _ = DownRes(self.fea[0], **self.res_param)(img, is_training)
         res_2, _ = DownRes(self.fea[1], **self.res_param)(res_1, is_training)
@@ -55,7 +65,6 @@ class INetAffine(BaseNet):
                       with_bias=False, with_bn=True,
                       **self.res_param)(res_4, is_training)
 
-        spatial_rank = infer_spatial_rank(moving_image)
         if spatial_rank == 2:
             affine_size = 6
         elif spatial_rank == 3:
@@ -71,7 +80,6 @@ class INetAffine(BaseNet):
                     w_initializer=self.affine_w_initializer,
                     b_initializer=self.affine_b_initializer,
                     **self.affine_param)(conv_5)
-        spatial_shape = moving_image.get_shape().as_list()[1:-1]
         grid_global = Grid(source_shape=spatial_shape,
                            output_shape=spatial_shape)(affine)
         return grid_global
@@ -95,4 +103,3 @@ def init_affine_b(spatial_rank, initial_bias=0.0):
     identity = identity.reshape([1, -1])
     identity = np.tile(identity, [1, 1])
     return tf.constant_initializer(identity + initial_bias)
-

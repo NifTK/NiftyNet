@@ -28,9 +28,12 @@ class DownBlock(TrainableLayer):
 
     def layer_op(self, inputs, is_training=True):
         """
-        inputs--conv_0-+-conv_1--conv_2-+-down_sample--
-                       |                |
-                       o----------------o
+        Consists of::
+
+            (inputs)--conv_0-+-conv_1--conv_2-+-down_sample--
+                             |                |
+                             o----------------o
+
         conv_0 is also returned for feature forwarding purpose
         """
         conv_0 = Conv(n_output_chns=self.n_output_chns,

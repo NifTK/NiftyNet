@@ -11,6 +11,7 @@ from niftynet.layer.downsample_res_block import DownBlock as DownRes
 from niftynet.layer.grid_warper import _create_affine_features
 from niftynet.layer.layer_util import infer_spatial_rank
 from niftynet.layer.upsample_res_block import UpBlock as UpRes
+from niftynet.layer.linear_resize import LinearResizeLayer as Resize
 from niftynet.network.base_net import BaseNet
 
 
@@ -51,8 +52,19 @@ class INetDense(BaseNet):
                  base_grid=None,
                  is_training=True):
         """
-        returns estimated dense displacement fields
+
+        :param fixed_image:
+        :param moving_image:
+        :param base_grid:
+        :param is_training:
+        :return: estimated dense displacement fields
         """
+
+        spatial_rank = infer_spatial_rank(fixed_image)
+        spatial_shape = fixed_image.get_shape().as_list()[1:-1]
+
+        # resize the moving image to match the fixed
+        moving_image = Resize(spatial_shape)(moving_image)
         img = tf.concat([moving_image, fixed_image], axis=-1)
         down_res_0, conv_0_0 = \
             DownRes(self.fea[0], **self.res_param)(img, is_training)
@@ -76,7 +88,6 @@ class INetDense(BaseNet):
         up_res_3 = UpRes(self.fea[0], **self.res_param)(
             up_res_2, conv_0_0, is_training)
 
-        spatial_rank = infer_spatial_rank(moving_image)
         conv_5 = Conv(n_output_chns=spatial_rank,
                       kernel_size=self.k_conv,
                       with_bias=True,

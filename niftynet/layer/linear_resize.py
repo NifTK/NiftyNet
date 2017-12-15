@@ -49,6 +49,11 @@ class LinearResizeLayer(Layer):
             input_tensor.get_shape().as_list()
         x_size_new, y_size_new, z_size_new = self.new_size
 
+        if (x_size == x_size_new) and (y_size == y_size_new) and (
+                z_size == z_size_new):
+            # already in the target shape
+            return input_tensor
+
         # resize y-z
         squeeze_b_x = tf.reshape(
             input_tensor, [-1, y_size, z_size, c_size])
