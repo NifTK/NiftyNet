@@ -2,7 +2,6 @@
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
-import tensorflow
 
 from niftynet.layer.base_layer import Layer
 from niftynet.layer.layer_util import infer_spatial_rank

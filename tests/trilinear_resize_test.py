@@ -51,6 +51,5 @@ class TrilinearResizeTest(tf.test.TestCase):
             resize_layer(x)
 
 
-
 if __name__ == "__main__":
     tf.test.main()

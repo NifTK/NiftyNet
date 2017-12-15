@@ -41,7 +41,7 @@ def trivial_kernel(kernel_shape):
         [[[[0]], [[0]], [[0]]],
          [[[0]], [[1]], [[0]]],
          [[[0]], [[0]], [[0]]]]
-         
+
     kernel_shape[-1] and kernel_shape[-2] should be 1, so that it operates
     on the spatial dims only.  However, there is no exact spatial centre
     if np.any((kernel_shape % 2) == 0). This is fine in many cases
