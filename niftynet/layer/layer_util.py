@@ -41,7 +41,7 @@ def trivial_kernel(kernel_shape):
         [[[[0]], [[0]], [[0]]],
          [[[0]], [[1]], [[0]]],
          [[[0]], [[0]], [[0]]]]
-         
+
     kernel_shape[-1] and kernel_shape[-2] should be 1, so that it operates
     on the spatial dims only.  However, there is no exact spatial centre
     if np.any((kernel_shape % 2) == 0). This is fine in many cases
@@ -58,19 +58,20 @@ def trivial_kernel(kernel_shape):
 
 def expand_spatial_params(input_param, spatial_rank):
     """
-    expand input parameter
-    e.g., kernel_size=3 is converted to kernel_size=[3, 3, 3]
-    for 3D images
+    Expand input parameter
+    e.g., ``kernel_size=3`` is converted to ``kernel_size=[3, 3, 3]``
+    for 3D images (when ``spatial_rank == 3``).
     """
+    spatial_rank = int(spatial_rank)
     try:
         input_param = int(input_param)
         return (input_param,) * spatial_rank
     except (ValueError, TypeError):
         pass
-    input_param = np.asarray(input_param).flatten().tolist()
-    assert len(input_param) == spatial_rank, \
-        'param length should be the same as the spatial rank'
-    return tuple(input_param)
+    input_param = np.asarray(input_param).flatten().astype(np.int).tolist()
+    assert len(input_param) >= spatial_rank, \
+        'param length should be at least have the length of spatial rank'
+    return tuple(input_param[:spatial_rank])
 
 # class RequireKeywords(object):
 #    def __init__(self, *list_of_keys):
