@@ -36,7 +36,7 @@ class UpBlock(TrainableLayer):
                           acti_func=self.acti_func,
                           with_bias=False, with_bn=True,
                           **self.conv_param)(inputs, is_training)
-        conv_0 = deconv_0 if forwarding is None else deconv_0 + forwarding
+        conv_0 = deconv_0 if forwarding is None else (deconv_0 + forwarding)
         conv_1 = Conv(n_output_chns=self.n_output_chns,
                       kernel_size=self.kernel_size,
                       acti_func=self.acti_func,

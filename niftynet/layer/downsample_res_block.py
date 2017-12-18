@@ -30,11 +30,11 @@ class DownBlock(TrainableLayer):
         """
         Consists of::
 
-            (inputs)--conv_0-+-conv_1--conv_2-+-down_sample--
+            (inputs)--conv_0-+-conv_1--conv_2-+-conv_res--down_sample--
                              |                |
                              o----------------o
 
-        conv_0 is also returned for feature forwarding purpose
+        conv_0, conv_res is also returned for feature forwarding purpose
         """
         conv_0 = Conv(n_output_chns=self.n_output_chns,
                       kernel_size=self.kernel_size,
@@ -55,4 +55,4 @@ class DownBlock(TrainableLayer):
         conv_down = Down('Max',
                          kernel_size=self.downsample_kernel_size,
                          stride=self.downsample_stride)(conv_res)
-        return conv_down, conv_0
+        return conv_down, conv_0, conv_res

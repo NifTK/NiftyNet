@@ -66,13 +66,13 @@ class INetDense(BaseNet):
         # resize the moving image to match the fixed
         moving_image = Resize(spatial_shape)(moving_image)
         img = tf.concat([moving_image, fixed_image], axis=-1)
-        down_res_0, conv_0_0 = \
+        down_res_0, conv_0_0, _ = \
             DownRes(self.fea[0], **self.res_param)(img, is_training)
-        down_res_1, conv_0_1 = \
+        down_res_1, conv_0_1, _ = \
             DownRes(self.fea[1], **self.res_param)(down_res_0, is_training)
-        down_res_2, conv_0_2 = \
+        down_res_2, conv_0_2, _ = \
             DownRes(self.fea[2], **self.res_param)(down_res_1, is_training)
-        down_res_3, conv_0_3 = \
+        down_res_3, conv_0_3, _ = \
             DownRes(self.fea[3], **self.res_param)(down_res_2, is_training)
 
         conv_4 = Conv(n_output_chns=self.fea[4],

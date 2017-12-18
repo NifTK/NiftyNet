@@ -26,16 +26,17 @@ class INetAffine(BaseNet):
                  name='inet-affine'):
 
         BaseNet.__init__(self, name=name)
-        # TODO WCE changed
+
         self.fea = [4, 8, 16, 32, 64]
         self.k_conv = 3
         self.interp = interp
         self.boundary = boundary
         self.affine_w_initializer = affine_w_initializer
         self.affine_b_initializer = affine_b_initializer
-        self.res_param = {'w_initializer': GlorotUniform.get_instance(''),
-                          'w_regularizer': regularizers.l2_regularizer(decay),
-                          'acti_func': acti_func}
+        self.res_param = {
+            'w_initializer': GlorotUniform.get_instance(''),
+            'w_regularizer': regularizers.l2_regularizer(decay),
+            'acti_func': acti_func}
         self.affine_param = {
             'w_regularizer': regularizers.l2_regularizer(decay),
             'b_regularizer': None}
@@ -55,10 +56,10 @@ class INetAffine(BaseNet):
         # resize the moving image to match the fixed
         moving_image = Resize(spatial_shape)(moving_image)
         img = tf.concat([moving_image, fixed_image], axis=-1)
-        res_1, _ = DownRes(self.fea[0], **self.res_param)(img, is_training)
-        res_2, _ = DownRes(self.fea[1], **self.res_param)(res_1, is_training)
-        res_3, _ = DownRes(self.fea[2], **self.res_param)(res_2, is_training)
-        res_4, _ = DownRes(self.fea[3], **self.res_param)(res_3, is_training)
+        res_1 = DownRes(self.fea[0], **self.res_param)(img, is_training)[0]
+        res_2 = DownRes(self.fea[1], **self.res_param)(res_1, is_training)[0]
+        res_3 = DownRes(self.fea[2], **self.res_param)(res_2, is_training)[0]
+        res_4 = DownRes(self.fea[3], **self.res_param)(res_3, is_training)[0]
 
         conv_5 = Conv(n_output_chns=self.fea[4],
                       kernel_size=self.k_conv,
