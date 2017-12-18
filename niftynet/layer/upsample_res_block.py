@@ -38,7 +38,7 @@ class UpBlock(TrainableLayer):
             (forwarding)---------o o------------------o
 
         where upsampling method could be ``DeconvolutionalLayer``
-        or ``ResidualUpsampleLayer``s
+        or ``ResidualUpsampleLayer``
         """
         if self.is_residual_upsampling:
             n_input_channels = inputs.get_shape().as_list()[-1]
