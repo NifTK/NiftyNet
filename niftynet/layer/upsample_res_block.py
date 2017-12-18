@@ -31,9 +31,14 @@ class UpBlock(TrainableLayer):
 
     def layer_op(self, inputs, forwarding=None, is_training=True):
         """
-        (inputs)--upsampling-+-o--conv_1--conv_2--+--(conv_res)--
-                             | |                  |
-        (forwarding)---------o o------------------o
+        Consists of::
+
+            (inputs)--upsampling-+-o--conv_1--conv_2--+--(conv_res)--
+                                 | |                  |
+            (forwarding)---------o o------------------o
+
+        where upsampling method could be ``DeconvolutionalLayer``
+        or ``ResidualUpsampleLayer``s
         """
         if self.is_residual_upsampling:
             n_input_channels = inputs.get_shape().as_list()[-1]

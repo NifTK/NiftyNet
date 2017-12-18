@@ -73,6 +73,7 @@ class INetAffine(BaseNet):
         else:
             tf.logging.fatal('Not supported spatial rank')
             raise NotImplementedError
+
         if self.affine_w_initializer is None:
             self.affine_w_initializer = init_affine_w()
         if self.affine_b_initializer is None:

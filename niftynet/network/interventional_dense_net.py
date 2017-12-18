@@ -10,8 +10,8 @@ from niftynet.layer.convolution import ConvolutionalLayer as Conv
 from niftynet.layer.downsample_res_block import DownBlock as DownRes
 from niftynet.layer.grid_warper import _create_affine_features
 from niftynet.layer.layer_util import infer_spatial_rank
-from niftynet.layer.upsample_res_block import UpBlock as UpRes
 from niftynet.layer.linear_resize import LinearResizeLayer as Resize
+from niftynet.layer.upsample_res_block import UpBlock as UpRes
 from niftynet.network.base_net import BaseNet
 
 
@@ -22,16 +22,28 @@ class INetDense(BaseNet):
                  disp_w_initializer=None,
                  disp_b_initializer=None,
                  acti_func='relu',
+                 multi_scale_fusion=False,
                  name='inet-dense'):
         BaseNet.__init__(self, name=name)
 
         self.fea = [32, 64, 128, 256, 512]
-        #self.fea = [4, 8, 16, 32, 64]
+        # self.fea = [4, 8, 16, 32, 64]
         self.k_conv = 3
-        self.res_param = {
+        self.multi_scale_fusion = multi_scale_fusion
+
+        self.down_res_param = {
             'w_initializer': GlorotUniform.get_instance(''),
             'w_regularizer': regularizers.l2_regularizer(decay),
             'acti_func': acti_func}
+
+        self.up_res_param = {
+            'acti_func': acti_func,
+            'w_initializer': GlorotUniform.get_instance(''),
+            'w_regularizer': regularizers.l2_regularizer(decay),
+            'is_residual_upsampling': True,
+            'type_string': 'bn_acti_conv'}
+
+        # displacement initialiser & regulariser
         if disp_w_initializer is None:
             disp_w_initializer = tf.random_normal_initializer(0, 1e-8)
         if disp_b_initializer is None:
@@ -41,6 +53,7 @@ class INetDense(BaseNet):
             'w_regularizer': regularizers.l2_regularizer(decay),
             'b_initializer': disp_b_initializer,
             'b_regularizer': None}
+
         if smoothing > 0:
             self.smoothing_func = _smoothing_func(smoothing)
         else:
@@ -63,48 +76,63 @@ class INetDense(BaseNet):
         spatial_rank = infer_spatial_rank(fixed_image)
         spatial_shape = fixed_image.get_shape().as_list()[1:-1]
 
-        # resize the moving image to match the fixed
+        #  resize the moving image to match the fixed
         moving_image = Resize(spatial_shape)(moving_image)
         img = tf.concat([moving_image, fixed_image], axis=-1)
         down_res_0, conv_0_0, _ = \
-            DownRes(self.fea[0], **self.res_param)(img, is_training)
+            DownRes(self.fea[0], **self.down_res_param)(img, is_training)
         down_res_1, conv_0_1, _ = \
-            DownRes(self.fea[1], **self.res_param)(down_res_0, is_training)
+            DownRes(self.fea[1], **self.down_res_param)(down_res_0, is_training)
         down_res_2, conv_0_2, _ = \
-            DownRes(self.fea[2], **self.res_param)(down_res_1, is_training)
+            DownRes(self.fea[2], **self.down_res_param)(down_res_1, is_training)
         down_res_3, conv_0_3, _ = \
-            DownRes(self.fea[3], **self.res_param)(down_res_2, is_training)
+            DownRes(self.fea[3], **self.down_res_param)(down_res_2, is_training)
 
         conv_4 = Conv(n_output_chns=self.fea[4],
                       kernel_size=self.k_conv,
-                      **self.res_param)(down_res_3, is_training)
+                      **self.down_res_param)(down_res_3, is_training)
 
-        up_res_0 = UpRes(self.fea[3], **self.res_param)(
+        up_res_0 = UpRes(self.fea[3], **self.up_res_param)(
             conv_4, conv_0_3, is_training)
-        up_res_1 = UpRes(self.fea[2], **self.res_param)(
+        up_res_1 = UpRes(self.fea[2], **self.up_res_param)(
             up_res_0, conv_0_2, is_training)
-        up_res_2 = UpRes(self.fea[1], **self.res_param)(
+        up_res_2 = UpRes(self.fea[1], **self.up_res_param)(
             up_res_1, conv_0_1, is_training)
-        up_res_3 = UpRes(self.fea[0], **self.res_param)(
+        up_res_3 = UpRes(self.fea[0], **self.up_res_param)(
             up_res_2, conv_0_0, is_training)
 
-        conv_5 = Conv(n_output_chns=spatial_rank,
-                      kernel_size=self.k_conv,
-                      with_bias=True,
-                      with_bn=False,
-                      acti_func=None,
-                      **self.disp_param)(up_res_3)
+        if self.multi_scale_fusion:
+            output_list = [up_res_3, up_res_2, up_res_1, up_res_0, conv_4]
+        else:
+            output_list = [up_res_3]
+
+        # converting all output layers to displacement fields 
+        dense_fields = []
+        for scale_out in output_list:
+            field = Conv(n_output_chns=spatial_rank,
+                         kernel_size=self.k_conv,
+                         with_bias=True,
+                         with_bn=False,
+                         acti_func=None,
+                         **self.disp_param)(scale_out)
+            resized_field = Resize(new_size=spatial_shape)(field)
+            dense_fields.append(resized_field)
 
         if base_grid is None:
+            # adding a referece grid if it doesn't exist
             in_spatial_size = [None] * spatial_rank
-            out_spatial_size = conv_5.get_shape().as_list()[1:-1]
-            base_grid = _create_affine_features(output_shape=out_spatial_size,
+            base_grid = _create_affine_features(output_shape=spatial_shape,
                                                 source_shape=in_spatial_size)
             base_grid = np.asarray(base_grid[:-1])
             base_grid = np.reshape(
-                base_grid.T, [-1] + out_spatial_size + [spatial_rank])
-            base_grid = tf.constant(base_grid, dtype=conv_5.dtype)
-        dense_field = base_grid + conv_5
+                base_grid.T, [-1] + spatial_shape + [spatial_rank])
+            base_grid = tf.constant(base_grid, dtype=resized_field.dtype)
+
+        if self.multi_scale_fusion and len(dense_fields) > 1:
+            dense_field = tf.reduce_sum(dense_fields, axis=0) + base_grid
+        else:
+            dense_field = dense_fields[0] + base_grid
+
         # TODO filtering
         if self.smoothing_func is not None:
             dense_field = self.smoothing_func(dense_field, spatial_rank)
