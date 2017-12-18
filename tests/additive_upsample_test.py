@@ -5,23 +5,22 @@ import tensorflow as tf
 
 from niftynet.layer.additive_upsample import AdditiveUpsampleLayer
 
+def get_3d_input():
+    input_shape = (2, 16, 16, 16, 4)
+    x = tf.ones(input_shape)
+    return x
+
+def get_2d_input():
+    input_shape = (2, 16, 16, 4)
+    x = tf.ones(input_shape)
+    return x
 
 class AdditiveUpsampleTest(tf.test.TestCase):
-    def get_3d_input(self):
-        input_shape = (2, 16, 16, 16, 4)
-        x = tf.ones(input_shape)
-        return x
-
-    def get_2d_input(self):
-        input_shape = (2, 16, 16, 4)
-        x = tf.ones(input_shape)
-        return x
-
     def run_test(self, new_size, n_splits, expected_shape, is_3d=True):
         if is_3d:
-            x = self.get_3d_input()
+            x = get_3d_input()
         else:
-            x = self.get_2d_input()
+            x = get_2d_input()
 
         resize_layer = AdditiveUpsampleLayer(
             new_size=new_size, n_splits=n_splits)
@@ -125,7 +124,6 @@ class AdditiveUpsampleTest(tf.test.TestCase):
         expected_shape = (2,) + new_shape[:2] + (2,)
         with self.assertRaisesRegexp(AssertionError, ""):
             self.run_test(new_shape, n_splits, expected_shape, True)
-
 
 if __name__ == "__main__":
     tf.test.main()

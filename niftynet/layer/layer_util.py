@@ -88,3 +88,24 @@ def expand_spatial_params(input_param, spatial_rank):
 #                        args[0].layer_scope().name, self.keys))
 #            return f(*args, **kwargs)
 #        return wrapped
+
+
+def check_divisible_channels(input_tensor, n_channel_splits):
+    """
+    Check if the number of channels (last dim) of the input tensor
+    is divisible by ``n_channel_splits``. If True, returns
+    ``n_input_channels / n_channel_splits``, raises AssertionError otherwise
+
+    :param input_tensor:
+    :param n_channel_splits:
+    :return: n_input_channels / n_channel_splits
+    """
+
+    n_input_channels = int(input_tensor.get_shape().as_list()[-1])
+    n_channel_splits = int(n_channel_splits)
+    assert n_channel_splits > 0 and n_input_channels % n_channel_splits == 0, \
+        "Number of feature channels should be divisible by " \
+        "n_channel_splits {}, so that given an input with n_input_channels, " \
+        "the output tensor will have " \
+        "n_input_channels / n_channel_splits.".format(n_channel_splits)
+    return n_input_channels / n_channel_splits
