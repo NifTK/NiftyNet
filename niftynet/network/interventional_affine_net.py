@@ -21,16 +21,26 @@ class INetAffine(BaseNet):
                  affine_w_initializer=None,
                  affine_b_initializer=None,
                  acti_func='relu',
-                 interp='linear',
-                 boundary='replicate',
                  name='inet-affine'):
+        """
+        This network estimates affine transformations from
+        a pair of moving and fixed image:
+
+            Hu et al., Label-driven weakly-supervised learning for
+            multimodal deformable image registration, arXiv:1711.01666
+            https://arxiv.org/abs/1711.01666
+
+        :param decay:
+        :param affine_w_initializer:
+        :param affine_b_initializer:
+        :param acti_func:
+        :param name:
+        """
 
         BaseNet.__init__(self, name=name)
 
         self.fea = [4, 8, 16, 32, 64]
         self.k_conv = 3
-        self.interp = interp
-        self.boundary = boundary
         self.affine_w_initializer = affine_w_initializer
         self.affine_b_initializer = affine_b_initializer
         self.res_param = {

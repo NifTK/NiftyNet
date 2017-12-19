@@ -17,13 +17,30 @@ from niftynet.network.base_net import BaseNet
 
 class INetDense(BaseNet):
     def __init__(self,
-                 decay,
+                 decay=0.0,
                  smoothing=0,
                  disp_w_initializer=None,
                  disp_b_initializer=None,
                  acti_func='relu',
                  multi_scale_fusion=False,
                  name='inet-dense'):
+        """
+        The network estimates dense displacement fields from a pair
+        of moving and fixed images:
+
+            Hu et al., Label-driven weakly-supervised learning for
+            multimodal deformable image registration, arXiv:1711.01666
+            https://arxiv.org/abs/1711.01666
+
+        :param decay:
+        :param smoothing:
+        :param disp_w_initializer: initialisation of the displacement fields
+        :param disp_b_initializer: initialisation of the dis
+        :param acti_func:
+        :param multi_scale_fusion: True/False indicating whether to use
+            multiscale feature fusion.
+        :param name:
+        """
         BaseNet.__init__(self, name=name)
 
         self.fea = [32, 64, 128, 256, 512]
@@ -119,7 +136,7 @@ class INetDense(BaseNet):
             dense_fields.append(resized_field)
 
         if base_grid is None:
-            # adding a referece grid if it doesn't exist
+            # adding a reference grid if it doesn't exist
             in_spatial_size = [None] * spatial_rank
             base_grid = _create_affine_features(output_shape=spatial_shape,
                                                 source_shape=in_spatial_size)

@@ -18,13 +18,28 @@ class INetHybridPreWarp(BaseNet):
                  interp='linear',
                  boundary='replicate',
                  name='inet-hybrid-pre-warp'):
+        """
+        Re-implementation of the registration network proposed in:
+
+            Hu et al., Label-driven weakly-supervised learning for
+            multimodal deformable image registration, arXiv:1711.01666
+            https://arxiv.org/abs/1711.01666
+
+        :param decay:
+        :param affine_w_initializer:
+        :param affine_b_initializer:
+        :param disp_w_initializer:
+        :param disp_b_initializer:
+        :param acti_func:
+        :param interp:
+        :param boundary:
+        :param name:
+        """
         BaseNet.__init__(self, name=name)
         self.global_net = INetAffine(decay=decay,
                                      affine_w_initializer=affine_w_initializer,
                                      affine_b_initializer=affine_b_initializer,
                                      acti_func=acti_func,
-                                     interp=interp,
-                                     boundary=boundary,
                                      name='inet-global')
         self.local_net = INetDense(decay=decay,
                                    disp_w_initializer=disp_w_initializer,
@@ -60,8 +75,6 @@ class INetHybridTwoStream(BaseNet):
                                      affine_w_initializer=affine_w_initializer,
                                      affine_b_initializer=affine_b_initializer,
                                      acti_func=acti_func,
-                                     interp=interp,
-                                     boundary=boundary,
                                      name='inet-global')
         self.local_net = INetDense(decay=decay,
                                    disp_w_initializer=disp_w_initializer,
