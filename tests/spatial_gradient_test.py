@@ -40,7 +40,7 @@ class SpatialGradientTest(tf.test.TestCase):
             self.assertAllClose(expected_shape, out.shape)
 
     def test_cropping_shape(self):
-        for spatial_ind in [0, 1]:
+        for spatial_ind in [-1, 0, 1]:
             input_param = {'spatial_axis': spatial_ind, 'do_cropping': True}
 
             expected_shape = (2, 14, 14, 14, 8)
