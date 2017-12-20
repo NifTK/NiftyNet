@@ -9,8 +9,9 @@ from niftynet.engine.application_initializer import GlorotUniform
 from niftynet.layer.convolution import ConvolutionalLayer as Conv
 from niftynet.layer.downsample_res_block import DownBlock as DownRes
 from niftynet.layer.grid_warper import _create_affine_features
-from niftynet.layer.layer_util import infer_spatial_rank
+from niftynet.layer.layer_util import infer_spatial_rank, check_spatial_dims
 from niftynet.layer.linear_resize import LinearResizeLayer as Resize
+from niftynet.layer.spatial_gradient import SpatialGradientLayer as ImgGrad
 from niftynet.layer.upsample_res_block import UpBlock as UpRes
 from niftynet.network.base_net import BaseNet
 
@@ -92,6 +93,7 @@ class INetDense(BaseNet):
 
         spatial_rank = infer_spatial_rank(fixed_image)
         spatial_shape = fixed_image.get_shape().as_list()[1:-1]
+        check_spatial_dims(fixed_image, lambda x: x % 16 == 0)
 
         #  resize the moving image to match the fixed
         moving_image = Resize(spatial_shape)(moving_image)
@@ -153,6 +155,11 @@ class INetDense(BaseNet):
         # TODO filtering
         if self.smoothing_func is not None:
             dense_field = self.smoothing_func(dense_field, spatial_rank)
+
+        tf.add_to_collection('bending_energy',
+                             _computing_bending_energy(dense_field))
+        tf.add_to_collection('gradient_norm',
+                             _computing_gradient_norm(dense_field))
         return dense_field
 
 
@@ -184,3 +191,55 @@ def _smoothing_func(sigma):
         return tf.concat(smoothed, axis=-1)
 
     return smoothing
+
+
+def _computing_bending_energy(displacement):
+    spatial_rank = infer_spatial_rank(displacement)
+    if spatial_rank == 2:
+        return _computing_bending_energy_2d(displacement)
+    if spatial_rank == 3:
+        return _computing_bending_energy_3d(displacement)
+    raise NotImplementedError(
+        "Not implmented: bending energy for {}-d input".format(spatial_rank))
+
+
+def _computing_bending_energy_2d(displacement):
+    dTdx = ImgGrad(spatial_axis=0)(displacement)
+    dTdy = ImgGrad(spatial_axis=1)(displacement)
+
+    dTdxx = ImgGrad(spatial_axis=0)(dTdx)
+    dTdyy = ImgGrad(spatial_axis=1)(dTdy)
+    dTdxy = ImgGrad(spatial_axis=1)(dTdx)
+
+    energy = tf.reduce_mean([dTdxx * dTdxx, dTdyy * dTdyy, 2 * dTdxy * dTdxy])
+    return energy
+
+
+def _computing_bending_energy_3d(displacement):
+    dTdx = ImgGrad(spatial_axis=0)(displacement)
+    dTdy = ImgGrad(spatial_axis=1)(displacement)
+    dTdz = ImgGrad(spatial_axis=2)(displacement)
+
+    dTdxx = ImgGrad(spatial_axis=0)(dTdx)
+    dTdyy = ImgGrad(spatial_axis=1)(dTdy)
+    dTdzz = ImgGrad(spatial_axis=2)(dTdz)
+
+    dTdxy = ImgGrad(spatial_axis=1)(dTdx)
+    dTdyz = ImgGrad(spatial_axis=2)(dTdy)
+    dTdxz = ImgGrad(spatial_axis=2)(dTdx)
+
+    energy = tf.reduce_mean(
+        [dTdxx * dTdxx, dTdyy * dTdyy, dTdzz * dTdzz,
+         2 * dTdxy * dTdxy, 2 * dTdxz * dTdxz, 2 * dTdyz * dTdyz])
+    return energy
+
+
+def _computing_gradient_norm(displacement, flag_L1=False):
+    norms = []
+    for spatial_ind in range(infer_spatial_rank(displacement)):
+        dTdt = ImgGrad(spatial_axis=spatial_ind)(displacement)
+        if flag_L1:
+            norms.append(tf.abs(dTdt))
+        else:
+            norms.append(dTdt * dTdt)
+    return tf.reduce_mean(norms)

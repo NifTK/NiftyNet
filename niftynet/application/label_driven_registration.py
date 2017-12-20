@@ -85,8 +85,7 @@ class RegApp(BaseApplication):
                 interpolation='linear', boundary='replicate')
             resampled_moving_label = resampler(moving_label, dense_field)
             # compute label loss
-            loss_func = LossFunction(
-                loss_type='L2Loss')
+            loss_func = LossFunction(loss_type='L2Loss')
             label_loss = loss_func(
                 prediction=resampled_moving_label,
                 ground_truth=fixed_label)
