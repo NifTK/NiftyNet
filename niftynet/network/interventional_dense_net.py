@@ -23,7 +23,7 @@ class INetDense(BaseNet):
                  disp_w_initializer=None,
                  disp_b_initializer=None,
                  acti_func='relu',
-                 multi_scale_fusion=False,
+                 multi_scale_fusion=True,
                  name='inet-dense'):
         """
         The network estimates dense displacement fields from a pair
@@ -44,8 +44,10 @@ class INetDense(BaseNet):
         """
         BaseNet.__init__(self, name=name)
 
+        # self.fea = [40, 80, 160, 320, 640]
         self.fea = [32, 64, 128, 256, 512]
-        # self.fea = [4, 8, 16, 32, 64]
+        # self.fea = [30, 60, 120, 240, 480]
+        # self.fea = [16, 32, 64, 128, 256]
         self.k_conv = 3
         self.multi_scale_fusion = multi_scale_fusion
 

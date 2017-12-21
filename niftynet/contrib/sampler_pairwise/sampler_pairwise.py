@@ -8,6 +8,7 @@ from niftynet.engine.image_window import ImageWindow
 from niftynet.layer.base_layer import Layer
 from niftynet.layer.grid_warper import AffineGridWarperLayer
 from niftynet.layer.resampler import ResamplerLayer
+from niftynet.layer.linear_resize import LinearResizeLayer as Resize
 
 
 class PairwiseSampler(Layer):
@@ -30,6 +31,7 @@ class PairwiseSampler(Layer):
         # 2) reshape images to (supporting multi-modal data)
         #    [batch, x, y, channel] or [batch, x, y, z, channels]
         # 3) infer spatial rank
+        # 4) make ``label`` optional
         self.spatial_rank = 3
         self.window = ImageWindow.from_data_reader_properties(
             self.reader_0.input_sources,
@@ -46,6 +48,8 @@ class PairwiseSampler(Layer):
         # TODO: check spatial dims the same across input modalities
         self.image_shape = \
             self.reader_0.shapes['fixed_image'][:self.spatial_rank]
+        self.moving_image_shape = \
+            self.reader_1.shapes['moving_image'][:self.spatial_rank]
         self.window_size = self.window.shapes['fixed_image']
 
         # initialise a dataset prefetching pairs of image and label volumes
@@ -53,10 +57,11 @@ class PairwiseSampler(Layer):
         rand_ints = np.random.randint(n_subjects, size=[n_subjects])
         image_dataset = Dataset.from_tensor_slices(rand_ints)
         # mapping random integer id to 4 volumes moving/fixed x image/label
+        # tf.py_func wrapper of ``get_pairwise_inputs``
         image_dataset = image_dataset.map(
-            lambda image_id: tuple(tf.py_func(self.get_pairwise_inputs,
-                                              [image_id],
-                                              [tf.float32, tf.int32])))
+            lambda image_id: tuple(tf.py_func(
+                self.get_pairwise_inputs, [image_id],
+                [tf.float32, tf.float32, tf.int32, tf.int32])))
         # num_parallel_calls=4)  # supported by tf 1.4?
         image_dataset = image_dataset.repeat()  # num_epochs can be param
         image_dataset = image_dataset.shuffle(buffer_size=batch_size * 20)
@@ -64,14 +69,21 @@ class PairwiseSampler(Layer):
         self.iterator = image_dataset.make_initializable_iterator()
 
     def get_pairwise_inputs(self, image_id):
-        fixed_image, _ = self._get_image('fixed_image', image_id)
-        fixed_label, _ = self._get_image('fixed_label', image_id)
-        moving_image, _ = self._get_image('moving_image', image_id)
-        moving_label, _ = self._get_image('moving_label', image_id)
-        images = [fixed_image, fixed_label, moving_image, moving_label]
-        images = np.concatenate(images, axis=-1)
-        images_shape = np.asarray(images.shape).T.astype(np.int32)
-        return images, images_shape
+        # fetch fixed image
+        fixed_inputs = []
+        fixed_inputs.append(self._get_image('fixed_image', image_id)[0])
+        fixed_inputs.append(self._get_image('fixed_label', image_id)[0])
+        fixed_inputs = np.concatenate(fixed_inputs, axis=-1)
+        fixed_shape = np.asarray(fixed_inputs.shape).T.astype(np.int32)
+
+        # fetch moving image
+        moving_inputs = []
+        moving_inputs.append(self._get_image('moving_image', image_id)[0])
+        moving_inputs.append(self._get_image('moving_label', image_id)[0])
+        moving_inputs = np.concatenate(moving_inputs, axis=-1)
+        moving_shape = np.asarray(moving_inputs.shape).T.astype(np.int32)
+
+        return fixed_inputs, moving_inputs, fixed_shape, moving_shape
 
     def _get_image(self, image_source_type, image_id):
         # returns a random image from either the list of fixed images
@@ -91,28 +103,42 @@ class PairwiseSampler(Layer):
         return image, image_shape
 
     def layer_op(self):
-        image_to_sample, im_s = self.iterator.get_next()
+        fixed_inputs, moving_inputs, fixed_shape, moving_shape = \
+            self.iterator.get_next()
         # TODO preprocessing layer modifying
         #      image shapes will not be supported
         # assuming the same shape across modalities, using the first
-        im_s.set_shape((self.batch_size, self.spatial_rank + 1))
-        image_shape = tf.unstack(im_s, axis=-1)
-        # TODO resizing moving image to the fixed target
-        image_to_sample.set_shape(
-            [self.batch_size] + [None] * (self.spatial_rank + 1))
+
+        fixed_inputs.set_shape(
+            (self.batch_size,) + (None,) * self.spatial_rank + (2,))
+        # last dim is 1 image + 1 label
+        moving_inputs.set_shape(
+            (self.batch_size,) + self.moving_image_shape + (2,))
+        fixed_shape.set_shape((self.batch_size, self.spatial_rank + 1))
+        moving_shape.set_shape((self.batch_size, self.spatial_rank + 1))
+
+        # resizing the moving_inputs to match the target
+        target_spatial_shape = \
+            tf.unstack(fixed_shape[0], axis=0)[:self.spatial_rank]
+        moving_inputs = Resize(new_size=target_spatial_shape)(moving_inputs)
+        combined_volume = tf.concat([fixed_inputs, moving_inputs], axis=-1)
 
         # TODO affine data augmentation here
         if self.spatial_rank == 3:
             window_channels = np.prod(self.window_size[self.spatial_rank:]) * 4
             # TODO if no affine augmentation:
-            img_spatial_shape = image_shape[:self.spatial_rank]
+            img_spatial_shape = target_spatial_shape
             win_spatial_shape = [tf.constant(dim) for dim in
                                  self.window_size[:self.spatial_rank]]
             # TODO shifts dtype should be int?
+            # when img==win make sure shift => 0.0
+            # otherwise interpolation is out of bound
             batch_shift = [
-                tf.random_uniform(shape=(self.window_per_image, 1),
-                                  maxval=tf.to_float(img[0] - win - 1))
-                for win, img in zip(win_spatial_shape, img_spatial_shape)]
+                tf.random_uniform(
+                    shape=(self.window_per_image, 1),
+                    minval=0,
+                    maxval=tf.maximum(tf.to_float(img - win - 1), 0.01))
+                for (win, img) in zip(win_spatial_shape, img_spatial_shape)]
             batch_shift = tf.concat(batch_shift, axis=1)
             affine_constraints = ((1.0, 0.0, 0.0, None),
                                   (0.0, 1.0, 0.0, None),
@@ -123,7 +149,7 @@ class PairwiseSampler(Layer):
                 constraints=affine_constraints)(batch_shift)
             resampler = ResamplerLayer(
                 interpolation='linear', boundary='replicate')
-            windows = resampler(image_to_sample, computed_grid)
+            windows = resampler(combined_volume, computed_grid)
             if self.window_per_image == self.batch_size:
                 out_batch_size = self.window_per_image
             else:
@@ -132,7 +158,7 @@ class PairwiseSampler(Layer):
                         list(self.window_size[:self.spatial_rank]) + \
                         [window_channels]
             windows.set_shape(out_shape)
-        return windows
+        return windows, [tf.reduce_max(computed_grid), batch_shift]
 
     # overriding input buffers
     def run_threads(self, session, *args, **argvs):

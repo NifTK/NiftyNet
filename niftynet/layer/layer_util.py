@@ -11,6 +11,9 @@ def check_spatial_dims(input_tensor, criteria):
     e.g. lambda x : x > 10 checks whether each dim is greater than 10
     """
     input_shape = input_tensor.get_shape()
+    if not input_shape.is_fully_defined():
+        # skip checking if the input has dynamic shapes
+        return True
     input_shape.with_rank_at_least(3)
     spatial_dims = input_shape[1:-1].as_list()
     all_dims_satisfied = np.all([criteria(x) for x in spatial_dims])
@@ -71,7 +74,12 @@ def expand_spatial_params(input_param, spatial_rank):
         return (input_param,) * spatial_rank
     except (ValueError, TypeError):
         pass
-    input_param = np.asarray(input_param).flatten().astype(np.int).tolist()
+    try:
+        input_param = \
+            np.asarray(input_param).flatten().astype(np.int).tolist()
+    except (ValueError, TypeError):
+        # skip type casting if it's a TF tensor
+        pass
     assert len(input_param) >= spatial_rank, \
         'param length should be at least have the length of spatial rank'
     return tuple(input_param[:spatial_rank])

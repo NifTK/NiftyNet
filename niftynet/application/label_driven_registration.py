@@ -10,9 +10,10 @@ from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_factory import ApplicationNetFactory
 from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.layer.resampler import ResamplerLayer
-#from niftynet.layer.loss_segmentation import LossFunction
+from niftynet.layer.loss_segmentation import LossFunction
+from niftynet.layer.pad import PadLayer
 from niftynet.engine.application_variables import CONSOLE
-from niftynet.layer.loss_regression import LossFunction
+#from niftynet.layer.loss_regression import LossFunction
 
 
 SUPPORTED_INPUT = {'moving_image', 'moving_label',
@@ -51,6 +52,15 @@ class RegApp(BaseApplication):
             for reader in self.readers:
                 reader.initialise(data_param, task_param, file_list)
 
+        # pad the fixed target only
+        volume_padding_layer = []
+        if self.net_param.volume_padding_size:
+            volume_padding_layer.append(PadLayer(
+                image_name=('fixed_image', 'fixed_label'),
+                border=self.net_param.volume_padding_size))
+        self.readers[0].add_preprocessing_layers(volume_padding_layer)
+
+
     def initialise_sampler(self):
         if self.is_training:
             self.sampler = [[
@@ -71,12 +81,14 @@ class RegApp(BaseApplication):
                                  outputs_collector=None,
                                  gradients_collector=None):
         if self.is_training:
-            image_windows = self.sampler[0][0]()
-            image_windows_list = [
-                tf.expand_dims(img, axis=-1)
-                for img in tf.unstack(image_windows, axis=-1)]
-            fixed_image, fixed_label, moving_image, moving_label = \
-                image_windows_list
+            with tf.device('/cpu:0'):
+                image_windows, shift = self.sampler[0][0]()
+                image_windows_list = [
+                    tf.expand_dims(img, axis=-1)
+                    for img in tf.unstack(image_windows, axis=-1)]
+                fixed_image, fixed_label, moving_image, moving_label = \
+                    image_windows_list
+
             dense_field = self.net(fixed_image, moving_image)
             if isinstance(dense_field, tuple):
                 dense_field = dense_field[0]
@@ -84,15 +96,16 @@ class RegApp(BaseApplication):
             resampler = ResamplerLayer(
                 interpolation='linear', boundary='replicate')
             resampled_moving_label = resampler(moving_label, dense_field)
+            resampled_moving_label = tf.concat(
+                [resampled_moving_label, -resampled_moving_label], axis=-1)
+            #resampled_moving_label = moving_label * tf.get_variable('a', [1])
             # compute label loss
-            loss_func = LossFunction(loss_type='L2Loss')
+            loss_func = LossFunction(n_class=2, loss_type='Dice')
             label_loss = loss_func(
                 prediction=resampled_moving_label,
                 ground_truth=fixed_label)
             outputs_collector.add_to_collection(
-                var=label_loss,
-                name='label_loss',
-                collection=CONSOLE)
+                var=label_loss, name='label_loss', collection=CONSOLE)
 
             # compute training gradients
             with tf.name_scope('Optimiser'):
@@ -102,6 +115,11 @@ class RegApp(BaseApplication):
                     learning_rate=self.action_param.lr)
             grads = self.optimiser.compute_gradients(label_loss)
             gradients_collector.add_to_collection(grads)
+
+            #outputs_collector.add_to_collection(
+            #    var=shift[0], name='a', collection=CONSOLE)
+            #outputs_collector.add_to_collection(
+            #    var=shift[1], name='b', collection=CONSOLE)
         else:
             raise NotImplementedError
 

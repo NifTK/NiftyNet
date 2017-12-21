@@ -109,6 +109,7 @@ class ApplicationDriver(object):
             os.path.join(system_param.model_dir, 'models'))
         self.session_prefix = os.path.join(self.model_dir, FILE_PREFIX)
 
+        # set training params.
         if self.is_training:
             assert train_param, 'training parameters not specified'
             summary_root = os.path.join(system_param.model_dir, 'logs')
@@ -129,7 +130,7 @@ class ApplicationDriver(object):
                 self.validation_max_iter = max(self.validation_max_iter,
                                                train_param.validation_max_iter)
             action_param = train_param
-        else:
+        else: # set inference params.
             assert infer_param, 'inference parameters not specified'
             self.initial_iter = infer_param.inference_iter
             action_param = infer_param

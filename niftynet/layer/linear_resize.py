@@ -73,4 +73,5 @@ class LinearResizeLayer(Layer):
         resume_b_z = tf.reshape(
             resize_b_z, [b_size, z_size_new, y_size_new, x_size_new, c_size])
 
-        return tf.transpose(resume_b_z, [0, 3, 2, 1, 4])
+        output_tensor = tf.transpose(resume_b_z, [0, 3, 2, 1, 4])
+        return output_tensor
