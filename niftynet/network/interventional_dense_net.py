@@ -45,8 +45,8 @@ class INetDense(BaseNet):
         BaseNet.__init__(self, name=name)
 
         # self.fea = [40, 80, 160, 320, 640]
-        self.fea = [32, 64, 128, 256, 512]
-        # self.fea = [30, 60, 120, 240, 480]
+        # self.fea = [32, 64, 128, 256, 512]
+        self.fea = [30, 60, 120, 240, 480]
         # self.fea = [16, 32, 64, 128, 256]
         self.k_conv = 3
         self.multi_scale_fusion = multi_scale_fusion
@@ -65,9 +65,11 @@ class INetDense(BaseNet):
 
         # displacement initialiser & regulariser
         if disp_w_initializer is None:
-            disp_w_initializer = tf.random_normal_initializer(0, 1e-8)
+            disp_b_initializer = tf.constant_initializer(0.0)
+            #disp_w_initializer = tf.random_normal_initializer(0, 1e-4)
         if disp_b_initializer is None:
             disp_b_initializer = tf.constant_initializer(0.0)
+            #disp_w_initializer = tf.random_normal_initializer(0, 0.0)
         self.disp_param = {
             'w_initializer': disp_w_initializer,
             'w_regularizer': regularizers.l2_regularizer(decay),

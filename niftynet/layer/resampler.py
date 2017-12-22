@@ -205,8 +205,8 @@ class ResamplerLayer(Layer):
             if n_coords < out_batch_size:
                 n_rep = int(out_batch_size / n_coords)
                 rep_shape = [n_rep] + [1] * (weight_rank - 1)
-                weight_0[idx] = tf.tile(weight_0, rep_shape)
-                weight_1[idx] = tf.tile(weight_1, rep_shape)
+                weight_0[idx] = tf.tile(weight_0[idx], rep_shape)
+                weight_1[idx] = tf.tile(weight_1[idx], rep_shape)
         return _pyramid_combination(samples, weight_0, weight_1)
 
     def _resample_bspline(self, inputs, sample_coords):
@@ -330,8 +330,8 @@ class ResamplerLayer(Layer):
         # find N neighbours associated to each output point
         # knots_shape = tf.concat([[0], tf.range(2, out_rank + 1), [1]], 0)
         knots_shape = [0] + list(range(2, out_rank + 1)) + [1]
-        knots_id = tf.transpose(
-            tf.cast(knots_id, COORDINATES_TYPE), knots_shape)
+        knots_id = tf.cast(knots_id, COORDINATES_TYPE)
+        knots_id = tf.transpose(knots_id, knots_shape)
         knots_shape = knots_id.get_shape().as_list()
 
         # get values of N neighbours

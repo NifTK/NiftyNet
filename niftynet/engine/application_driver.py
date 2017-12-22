@@ -505,8 +505,8 @@ class ApplicationDriver(object):
             return '/cpu:{}'.format(device_id)
         if self.is_training:
             # in training: use gpu only for workers whenever n_local_gpus
-            device = 'gpu' if (is_worker and n_local_gpus > 0) else 'cpu'
-            if device == 'gpu' and device_id >= n_local_gpus:
+            device = 'device:GPU' if (is_worker and n_local_gpus > 0) else 'cpu'
+            if device == 'device:GPU' and device_id >= n_local_gpus:
                 tf.logging.fatal(
                     'trying to use gpu id %s, but only has %s GPU(s), '
                     'please set num_gpus to %s at most',
@@ -514,7 +514,7 @@ class ApplicationDriver(object):
                 raise ValueError
             return '/{}:{}'.format(device, device_id)
         # in inference: use gpu for everything whenever n_local_gpus
-        return '/gpu:0' if n_local_gpus > 0 else '/cpu:0'
+        return '/device:GPU:0' if n_local_gpus > 0 else '/cpu:0'
 
     @staticmethod
     def _console_vars_to_str(console_dict):
@@ -542,4 +542,5 @@ class ApplicationDriver(object):
         config = tf.ConfigProto()
         config.log_device_placement = False
         config.allow_soft_placement = True
+        config.gpu_options.allow_growth = True
         return config

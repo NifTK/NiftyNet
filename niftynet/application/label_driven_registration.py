@@ -98,12 +98,20 @@ class RegApp(BaseApplication):
             resampled_moving_label = resampler(moving_label, dense_field)
             resampled_moving_label = tf.concat(
                 [-resampled_moving_label, resampled_moving_label], axis=-1)
+            #resampled_moving_image = resampler(moving_image, dense_field)
             #resampled_moving_label = moving_label * tf.get_variable('a', [1])
             # compute label loss
             loss_func = LossFunction(n_class=2, loss_type='Dice')
             label_loss = loss_func(
                 prediction=resampled_moving_label,
                 ground_truth=fixed_label)
+
+            reg_loss = tf.get_collection('bending_energy')
+            if reg_loss:
+                lambda_bending = 0.1
+                total_loss = label_loss + lambda_bending * tf.reduce_mean(reg_loss)
+                outputs_collector.add_to_collection(
+                    var=total_loss, name='total_loss', collection=CONSOLE)
             outputs_collector.add_to_collection(
                 var=label_loss, name='label_loss', collection=CONSOLE)
 
@@ -116,6 +124,20 @@ class RegApp(BaseApplication):
             grads = self.optimiser.compute_gradients(label_loss)
             gradients_collector.add_to_collection(grads)
 
+            # for visualisation debugging
+            #outputs_collector.add_to_collection(
+            #    var=fixed_image, name='image', collection=NETWORK_OUTPUT)
+            #outputs_collector.add_to_collection(
+            #    var=fixed_label, name='label', collection=NETWORK_OUTPUT)
+            #outputs_collector.add_to_collection(
+            #    var=moving_image, name='moving_image', collection=NETWORK_OUTPUT)
+            #outputs_collector.add_to_collection(
+            #    var=moving_label, name='moving_label', collection=NETWORK_OUTPUT)
+            #outputs_collector.add_to_collection(
+            #    var=resampled_moving_label, name='resampled', collection=NETWORK_OUTPUT)
+            #outputs_collector.add_to_collection(
+            #    var=dense_field, name='ddf', collection=NETWORK_OUTPUT)
+
             #outputs_collector.add_to_collection(
             #    var=shift[0], name='a', collection=CONSOLE)
             #outputs_collector.add_to_collection(
@@ -124,6 +146,8 @@ class RegApp(BaseApplication):
             raise NotImplementedError
 
     def interpret_output(self, batch_output):
+        #import matplotlib.pyplot as plt
+        #import pdb; pdb.set_trace()
         if self.is_training:
             return True
         raise NotImplementedError
