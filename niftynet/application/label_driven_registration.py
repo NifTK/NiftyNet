@@ -97,7 +97,7 @@ class RegApp(BaseApplication):
                 interpolation='linear', boundary='replicate')
             resampled_moving_label = resampler(moving_label, dense_field)
             resampled_moving_label = tf.concat(
-                [resampled_moving_label, -resampled_moving_label], axis=-1)
+                [-resampled_moving_label, resampled_moving_label], axis=-1)
             #resampled_moving_label = moving_label * tf.get_variable('a', [1])
             # compute label loss
             loss_func = LossFunction(n_class=2, loss_type='Dice')
