@@ -152,9 +152,9 @@ class INetDense(BaseNet):
             base_grid = tf.constant(base_grid, dtype=resized_field.dtype)
 
         if self.multi_scale_fusion and len(dense_fields) > 1:
-            dense_field = tf.reduce_sum(dense_fields, axis=0) + base_grid
+            dense_field = tf.reduce_sum(dense_fields, axis=0)
         else:
-            dense_field = dense_fields[0] + base_grid
+            dense_field = dense_fields[0]
 
         # TODO filtering
         if self.smoothing_func is not None:
@@ -164,6 +164,8 @@ class INetDense(BaseNet):
                              _computing_bending_energy(dense_field))
         tf.add_to_collection('gradient_norm',
                              _computing_gradient_norm(dense_field))
+
+        dense_field = dense_field + base_grid
         return dense_field
 
 
