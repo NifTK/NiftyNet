@@ -10,10 +10,10 @@ from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_factory import ApplicationNetFactory
 from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.layer.resampler import ResamplerLayer
-from niftynet.layer.loss_segmentation import LossFunction
 from niftynet.layer.pad import PadLayer
 from niftynet.engine.application_variables import CONSOLE
 #from niftynet.layer.loss_regression import LossFunction
+#from niftynet.layer.loss_segmentation import LossFunction
 
 
 SUPPORTED_INPUT = {'moving_image', 'moving_label',
@@ -81,13 +81,12 @@ class RegApp(BaseApplication):
                                  outputs_collector=None,
                                  gradients_collector=None):
         if self.is_training:
-            with tf.device('/cpu:0'):
-                image_windows, shift = self.sampler[0][0]()
-                image_windows_list = [
-                    tf.expand_dims(img, axis=-1)
-                    for img in tf.unstack(image_windows, axis=-1)]
-                fixed_image, fixed_label, moving_image, moving_label = \
-                    image_windows_list
+            image_windows, shift = self.sampler[0][0]()
+            image_windows_list = [
+                tf.expand_dims(img, axis=-1)
+                for img in tf.unstack(image_windows, axis=-1)]
+            fixed_image, fixed_label, moving_image, moving_label = \
+                image_windows_list
 
             dense_field = self.net(fixed_image, moving_image)
             if isinstance(dense_field, tuple):
@@ -96,24 +95,27 @@ class RegApp(BaseApplication):
             resampler = ResamplerLayer(
                 interpolation='linear', boundary='replicate')
             resampled_moving_label = resampler(moving_label, dense_field)
-            resampled_moving_label = tf.concat(
-                [-resampled_moving_label, resampled_moving_label], axis=-1)
+            #resampled_moving_label = tf.concat(
+            #    [1.0 - resampled_moving_label, resampled_moving_label], axis=-1)
             #resampled_moving_image = resampler(moving_image, dense_field)
             #resampled_moving_label = moving_label * tf.get_variable('a', [1])
             # compute label loss
-            loss_func = LossFunction(n_class=2, loss_type='Dice')
+            #loss_func = LossFunction(n_class=2, loss_type='Dice')
             label_loss = loss_func(
                 prediction=resampled_moving_label,
                 ground_truth=fixed_label)
 
+            total_loss = label_loss
             reg_loss = tf.get_collection('bending_energy')
             if reg_loss:
-                lambda_bending = 0.1
-                total_loss = label_loss + lambda_bending * tf.reduce_mean(reg_loss)
-                outputs_collector.add_to_collection(
-                    var=total_loss, name='total_loss', collection=CONSOLE)
+                lambda_bending = 0.1  # todo: make it an option
+                total_loss = total_loss + \
+                    lambda_bending * tf.reduce_mean(reg_loss)
+
             outputs_collector.add_to_collection(
-                var=label_loss, name='label_loss', collection=CONSOLE)
+                var=(1.0 - label_loss), name='ave_fg_dice', collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=total_loss, name='total_loss', collection=CONSOLE)
 
             # compute training gradients
             with tf.name_scope('Optimiser'):
@@ -151,4 +153,15 @@ class RegApp(BaseApplication):
         if self.is_training:
             return True
         raise NotImplementedError
+
+def loss_func(prediction, ground_truth):
+    # compute dice of foreground only
+    # the first dim is treated as the batch
+    eps_tol = 1e-6
+    reduce_axes = range(len(prediction.get_shape()))[1:]
+    numerator = 2.0 * tf.reduce_sum(
+        prediction * ground_truth, axis=reduce_axes)
+    denominator = tf.reduce_sum(prediction, axis=reduce_axes) + \
+        tf.reduce_sum(ground_truth, axis=reduce_axes) + eps_tol
+    return 1.0 - tf.reduce_mean(numerator / denominator)
 

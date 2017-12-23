@@ -147,6 +147,9 @@ class PairwiseSampler(Layer):
                 source_shape=(None, None, None),
                 output_shape=self.window_size[:self.spatial_rank],
                 constraints=affine_constraints)(batch_shift)
+            computed_grid.set_shape((self.window_per_image,) +
+                                     self.window_size[:self.spatial_rank] +
+                                     (self.spatial_rank,))
             resampler = ResamplerLayer(
                 interpolation='linear', boundary='replicate')
             windows = resampler(combined_volume, computed_grid)
