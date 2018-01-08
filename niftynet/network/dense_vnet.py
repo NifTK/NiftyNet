@@ -22,6 +22,24 @@ class DenseVNet(BaseNet):
       on abdominal CT with dense V-networks"
     """
 
+    __hyper_params__ = dict(
+        prior_size=12,
+        p_channels_selected=0.5,
+        n_dense_channels=(4, 8, 16),
+        n_seg_channels=(12, 24, 24),
+        n_input_channels=(24, 24, 24),
+        dilation_rates=([1] * 5, [1] * 10, [1] * 10),
+        final_kernel=3,
+        augmentation_scale=0.1
+    )
+
+    __net_params__ = dict(
+        use_bdo=False,
+        use_prior=False,
+        use_dense_connections=True,
+        use_coords=False
+    )
+
     def __init__(self,
                  num_classes,
                  hyperparameters={},
@@ -42,29 +60,21 @@ class DenseVNet(BaseNet):
             acti_func=acti_func,
             name=name)
 
-        self.hyperparameters = \
-            {'prior_size': 12,
-             'p_channels_selected': .5,
-             'n_dense_channels': (4, 8, 16),
-             'n_seg_channels': (12, 24, 24),
-             'n_input_channels': (24, 24, 24),
-             'dilation_rates': ([1] * 5, [1] * 10, [1] * 10),
-             # Note dilation rates are not yet supported
-             'final_kernel': 3,
-             'augmentation_scale': .1
-             }
+        # Override default Hyperparameters
+        self.hyperparameters = dict(self.__hyper_params__)
         self.hyperparameters.update(hyperparameters)
+
+        # Check for dilation rates
         if any([d != 1 for ds in self.hyperparameters['dilation_rates']
                 for d in ds]):
             raise NotImplementedError(
                 'Dilated convolutions are not yet implemented')
-        self.architecture_parameters = \
-            {'use_bdo': False,
-             'use_prior': False,
-             'use_dense_connections': True,
-             'use_coords': False,
-             }
+
+        # Override default architectural parameters
+        self.architecture_parameters = dict(self.__net_params__)
         self.architecture_parameters.update(architecture_parameters)
+
+        # Check available modes
         if self.architecture_parameters['use_dense_connections'] is False:
             raise NotImplementedError(
                 'Non-dense connections are not yet implemented')
@@ -74,69 +84,136 @@ class DenseVNet(BaseNet):
 
     def layer_op(self, input_tensor, is_training, layer_id=-1):
         hp = self.hyperparameters
-        if is_training and hp['augmentation_scale']>0:
-            aug = Affine3DAugmentationLayer(hp['augmentation_scale'],
-                                            'LINEAR','ZERO')
-            input_tensor=aug(input_tensor)
+
+        #
+        # Parameter handling
+        #
+
+        # Shape and dimension variable shortcuts
         channel_dim = len(input_tensor.get_shape()) - 1
         input_size = input_tensor.get_shape().as_list()
-        spatial_rank = len(input_size) - 2
+        spatial_size = input_size[1:-1]
+        n_spatial_dims = len(input_size) - 2
 
+        # Quick access to hyperparams
+        num_blocks = len(hp["n_dense_channels"])
+        use_bdo = self.architecture_parameters['use_bdo']
+        pkeep = hp['p_channels_selected']
+        final_kernel_size = hp['final_kernel']
+
+        # Validate input dimension with dilation rates
         modulo = 2 ** (len(hp['dilation_rates']))
         assert layer_util.check_spatial_dims(input_tensor,
                                              lambda x: x % modulo == 0)
 
+        #
+        # Preprocessing + Initial Layers
+        #
+
+        # On the fly data augmentation
+        if is_training and hp['augmentation_scale'] > 0:
+            aug_scale = hp['augmentation_scale']
+            augment_layer = Affine3DAugmentationLayer(aug_scale, 'LINEAR', 'ZERO')
+            input_tensor = augment_layer(input_tensor)
+
+        # Variable storing all intermediate results
+        all_segmentation_features = []
+
+        # Initial downsampling params
         downsample_channels = list(hp['n_input_channels'][1:]) + [None]
-        v_params = zip(hp['n_dense_channels'],
-                       hp['n_seg_channels'],
-                       downsample_channels,
-                       hp['dilation_rates'],
-                       range(len(downsample_channels)))
+        d_size1 = (1,) + (3,) * n_spatial_dims + (1,)
+        d_size2 = (1,) + (2,) * n_spatial_dims + (1,)
 
-        downsampled_img = BNLayer()(tf.nn.avg_pool3d(input_tensor,
-                                                     [1] + [3] * spatial_rank + [1],
-                                                     [1] + [2] * spatial_rank + [1],
-                                                     'SAME'), is_training=is_training)
-        all_segmentation_features = [downsampled_img]
+        # Downsample input
+        init_bnlayer = BNLayer()
+        down_tensor = tf.nn.avg_pool3d(input_tensor, d_size1, d_size2, 'SAME')
+        downsampled_img = init_bnlayer(down_tensor, is_training=is_training)
+
+        # Add initial downsampled image as intermediate result
+        all_segmentation_features.append(downsampled_img)
+
+        # All results should match the downsampled input's shape
         output_shape = downsampled_img.get_shape().as_list()[1:-1]
-        initial_features = ConvolutionalLayer(
-            hp['n_input_channels'][0],
-            kernel_size=5, stride=2)(input_tensor, is_training=is_training)
 
+        # Initial Convolution
+        initial_conv = ConvolutionalLayer(
+            hp['n_input_channels'][0],
+            kernel_size=5, stride=2
+        )
+
+        initial_features = initial_conv(input_tensor, is_training=is_training)
+
+        #
+        # Dense VNet Main Block
+        #
+
+        # `down` will handle the input of each Dense VNet block
+        # Initialize it by stacking downsampled image and initial conv features
         down = tf.concat([downsampled_img, initial_features], channel_dim)
-        for dense_ch, seg_ch, down_ch, dil_rate, idx in v_params:
-            sd = DenseFeatureStackBlockWithSkipAndDownsample(
-                dense_ch,
-                3,
-                dil_rate,
-                seg_ch,
-                down_ch,
-                self.architecture_parameters['use_bdo'],
-                acti_func='relu')
-            skip, down = sd(down,
-                            is_training=is_training,
-                            keep_prob=hp['p_channels_selected'])
-            all_segmentation_features.append(image_resize(skip, output_shape))
-        segmentation = ConvolutionalLayer(
-            self.num_classes,
-            kernel_size=hp['final_kernel'],
-            with_bn=False,
-            with_bias=True)(tf.concat(all_segmentation_features, channel_dim),
-                            is_training=is_training)
+
+        # Process Dense VNet Blocks
+        for idx in range(num_blocks):
+            dense_ch = hp["n_dense_channels"][idx]  # Number or dense channels
+            seg_ch = hp["n_seg_channels"][idx]      # Number of segmentation ch
+            down_ch = downsample_channels[idx]      # Number of downsampling ch
+            dil_rate = hp["dilation_rates"][idx]    # Dilation rate
+
+            # Dense feature block
+            dblock = DenseFeatureStackBlockWithSkipAndDownsample(
+                dense_ch, 3, dil_rate, seg_ch, down_ch, use_bdo,
+                acti_func='relu'
+            )
+
+            # Get skip layer and activation output
+            skip, down = dblock(down, is_training=is_training, keep_prob=pkeep)
+
+            # Resize skip layer to original shape and store it
+            skip = image_resize(skip, output_shape)
+            all_segmentation_features.append(skip)
+
+        # Concatenate all intermediate skip layers
+        inter_resutls = tf.concat(all_segmentation_features, channel_dim)
+
+        # Get segmentation layer
+        segmentation_layer = ConvolutionalLayer(
+            self.num_classes, kernel_size=final_kernel_size,
+            with_bn=False, with_bias=True
+        )
+
+        # Initial segmentation output
+        seg_output = segmentation_layer(inter_resutls, is_training=is_training)
+
+        #
+        # Dense VNet End - Now postprocess outputs
+        #
+
+        # Refine segmentation with prior if any
         if self.architecture_parameters['use_prior']:
-            segmentation = segmentation + \
-                           SpatialPriorBlock([12] * spatial_rank, output_shape)
-        if is_training and hp['augmentation_scale']>0:
+            xyz_prior = SpatialPriorBlock([12] * n_spatial_dims, output_shape)
+            seg_output += xyz_prior
+
+        # Invert augmentation if any
+        if is_training and hp['augmentation_scale'] > 0:
             inverse_aug = aug.inverse()
-            segmentation = inverse_aug(segmentation)
-        segmentation = image_resize(segmentation, input_size[1:-1])
-        seg_summary = tf.to_float(tf.expand_dims(tf.argmax(segmentation,-1),-1)) * (255./self.num_classes-1)
-        m,v = tf.nn.moments(input_tensor,axes=[1,2,3],keep_dims=True)
-        img_summary = tf.minimum(255., tf.maximum(0.,
-                         (tf.to_float(input_tensor-m) / (tf.sqrt(v) * 2.) + 1.) * 127.))
-        image3_axial('imgseg', tf.concat([img_summary,seg_summary],1) ,
+            seg_output = inverse_aug(seg_output)
+
+        # Resize output to original size
+        seg_output = image_resize(seg_output, spatial_size)
+
+        # Segmentation results
+        seg_argmax = tf.to_float(tf.expand_dims(tf.argmax(seg_output, -1), -1))
+        seg_summary = seg_argmax * (255. / self.num_classes - 1)
+
+        # Image Summary
+        m, v = tf.nn.moments(input_tensor, axes=[1, 2, 3], keep_dims=True)
+        timg = (tf.to_float(input_tensor - m) / (tf.sqrt(v) * 2.) + 1.) * 127.
+        img_summary = tf.minimum(255., tf.maximum(0., timg))
+
+        # Show summaries
+        image3_axial('imgseg', tf.concat([img_summary, seg_summary], 1),
                      5, [tf.GraphKeys.SUMMARIES])
-        return segmentation
+
+        return seg_output
 
 
 def image_resize(image, output_size):
