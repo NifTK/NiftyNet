@@ -31,7 +31,7 @@ def default_b_initializer():
 class ConvLayer(TrainableLayer):
     """
     This class defines a simple convolution with an optional bias term.
-    Please consider `ConvolutionalLayer` if batch_norm and activation
+    Please consider ``ConvolutionalLayer`` if batch_norm and activation
     are also used.
     """
 
@@ -103,8 +103,10 @@ class ConvLayer(TrainableLayer):
 
 class ConvolutionalLayer(TrainableLayer):
     """
-    This class defines a composite layer with optional components:
+    This class defines a composite layer with optional components::
+
         convolution -> batch_norm -> activation -> dropout
+
     The b_initializer and b_regularizer are applied to the ConvLayer
     The w_initializer and w_regularizer are applied to the ConvLayer,
     the batch normalisation layer, and the activation layer (for 'prelu')

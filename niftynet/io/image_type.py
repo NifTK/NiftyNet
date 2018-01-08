@@ -38,7 +38,7 @@ class Loadable(with_metaclass(ABCMeta, object)):
 class DataFromFile(Loadable):
     """
     Data from file should have a valid file path
-    (are files on hard drive) and a name
+    (are files on hard drive) and a name.
     """
 
     def __init__(self, file_path, name='loadable_data'):
@@ -213,7 +213,7 @@ class SpatialImage2D(DataFromFile):
         pixdim info from the image header.
 
         :return: a tuple of pixdims, with each element as pixdims
-        of an image file
+            of an image file
         """
         try:
             assert self._original_pixdim[0] is not None
@@ -227,7 +227,7 @@ class SpatialImage2D(DataFromFile):
         affine info from the image header.
 
         :return: a tuple of affine, with each element as an affine
-        matrix of an image file
+            matrix of an image file
         """
         try:
             assert self._original_affine[0] is not None
@@ -242,7 +242,7 @@ class SpatialImage2D(DataFromFile):
         more info: http://nipy.org/nibabel/image_orientation.html
 
         :return: a tuple of axcodes, with each element as axcodes
-        of an image file
+            of an image file
         """
         try:
             return tuple(nib.aff2axcodes(affine)
@@ -258,7 +258,7 @@ class SpatialImage2D(DataFromFile):
         interpolation order specified by user.
 
         :return: a tuple of integers, with each element as an
-        interpolation order of an image file
+            interpolation order of an image file
         """
         return self._interp_order
 
@@ -287,7 +287,7 @@ class SpatialImage2D(DataFromFile):
         otherwise get_data() transforms image array according to this value.
 
         :return: a tuple of pixdims, with each element as pixdims
-        of an image file
+            of an image file
         """
         tf.logging.warning("resampling 2D images not implemented")
         return (None,) * len(self.file_path)
@@ -326,7 +326,7 @@ class SpatialImage2D(DataFromFile):
         according to this value.
 
         :return: a tuple of pixdims, with each element as pixdims
-        of an image file
+            of an image file
         """
         tf.logging.warning("reorienting 2D images not implemented")
         return (None,) * len(self.file_path)

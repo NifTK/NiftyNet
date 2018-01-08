@@ -81,10 +81,12 @@ class GradientsCollector(object):
 class OutputsCollector(object):
     """
     Collect all tf.Tensor object, to be evaluated by tf.Session.run()
-    These objects are grouped into
+    These objects are grouped into::
+
         NETWORK_OUTPUT: to be decoded by an aggregator
         CONSOLE: to be printed on command line
         TF_SUMMARIES: to be added to tensorboard visualisation
+
     """
 
     def __init__(self, n_devices=1):
@@ -147,12 +149,12 @@ class OutputsCollector(object):
         The dictionaries will be retrieved and evaluated
         by application driver in the train/infer loops
 
-        :param var tf.Tensor to be evaluated by tf.Session()
-        :param name name of the variable (for displaying purposes)
-        :param average_over_devices
+        :param var: tf.Tensor to be evaluated by tf.Session()
+        :param name: name of the variable (for displaying purposes)
+        :param average_over_devices:
         :param collection: in choices of
             [CONSOLE, TF_SUMMARIES, NETWORK_OUTPUT]
-        :param summary_type if adding to TF_SUMMARIES, there are
+        :param summary_type: if adding to TF_SUMMARIES, there are
             a few possible ways to visualise the Tensor value
             see SUPPORTED_SUMMARY
         :return:
@@ -171,6 +173,7 @@ class OutputsCollector(object):
     def variables(self, collection=CONSOLE):
         """
         get tf.Tensors to be evaluated by tf.Session().run()
+
         :param collection: in choices of
             [CONSOLE, TF_SUMMARIES, NETWORK_OUTPUT]
         :return: a variable dictionary

@@ -31,7 +31,7 @@ class FCLayer(TrainableLayer):
     """
     This class defines a simple fully connected layer with
     an optional bias term.
-    Please consider `FullyConnectedLayer` if batch_norm and activation
+    Please consider ``FullyConnectedLayer`` if batch_norm and activation
     are also used.
     """
 
@@ -85,8 +85,10 @@ class FCLayer(TrainableLayer):
 
 class FullyConnectedLayer(TrainableLayer):
     """
-    This class defines a composite layer with optional components:
+    This class defines a composite layer with optional components::
+
         fully connected layer -> batch_norm -> activation -> dropout
+
     The b_initializer and b_regularizer are applied to the FCLayer
     The w_initializer and w_regularizer are applied to the FCLayer,
     the batch normalisation layer, and the activation layer (for 'prelu')

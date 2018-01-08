@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-windows aggregator saves each item in a batch output as an image
+windows aggregator saves each item in a batch output as an image.
 """
 from __future__ import absolute_import, print_function, division
 
@@ -14,6 +14,7 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
     """
     This class saves each item in a batch output to images,
     the output filenames can be defined in three ways:
+
         1. location is None (input image from a random distribution):
         a uuid is generated as output filename.
 

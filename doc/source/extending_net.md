@@ -73,7 +73,7 @@ should be prepared in the following steps:
    sharing) and can handle 2D, 2.5D and 3D cases in a unified manner whenever
    possible.
 
-## Calling `NewNet` from application
+## Call `NewNet` from application
    Finally training the network could be done by specifying the newly
    implemented network in the command line argument
 

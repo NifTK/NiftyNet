@@ -61,7 +61,7 @@ class ImageSetsPartitioner(object):
     def initialise(self,
                    data_param,
                    new_partition=False,
-                   data_split_file="./test.csv",
+                   data_split_file=None,
                    ratios=None):
         """
         Set the data partitioner parameters
@@ -77,7 +77,10 @@ class ImageSetsPartitioner(object):
             and get_file_list always returns all subjects.
         """
         self.data_param = data_param
-        self.data_split_file = data_split_file
+        if data_split_file is None:
+            self.data_split_file = os.path.join('.', 'dataset_split.csv')
+        else:
+            self.data_split_file = data_split_file
         self.ratios = ratios
 
         self._file_list = None
@@ -217,11 +220,11 @@ class ImageSetsPartitioner(object):
 
     def grep_files_by_data_section(self, modality_name):
         """
-        list all files by a given input data section,
-        if the `csv_file` property of the section corresponds to a file,
-            read the list from the file;
-        otherwise
-            write the list to `csv_file`.
+        list all files by a given input data section::
+            if the ``csv_file`` property of the section corresponds to a file,
+                read the list from the file;
+            otherwise
+                write the list to ``csv_file``.
 
         :return: a table with two columns,
                  the column names are ``(COLUMN_UNIQ_ID, modality_name)``.
@@ -232,7 +235,7 @@ class ImageSetsPartitioner(object):
                              modality_name, list(self.data_param))
             raise ValueError
 
-        # input data section must have a `csv_file` section for loading
+        # input data section must have a ``csv_file`` section for loading
         # or writing filename lists
         try:
             csv_file = self.data_param[modality_name].csv_file

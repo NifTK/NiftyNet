@@ -40,8 +40,8 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
     @property
     def key(self):
         # provide a readable key for the label mapping item
-        key_from = "{}_{}-from".format(self.image_name, self.modalities[0])
-        key_to = "{}_{}-to".format(self.image_name, self.modalities[0])
+        key_from = "{}:{}:from".format(self.image_name, self.modalities[0])
+        key_to = "{}:{}:to".format(self.image_name, self.modalities[0])
         return standardise_string(key_from), standardise_string(key_to)
 
     def layer_op(self, image, mask=None):
