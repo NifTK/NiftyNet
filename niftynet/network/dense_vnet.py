@@ -41,7 +41,7 @@ class DenseVNet(BaseNet):
 
     Input
       |
-      --[ DFS ]-----------------------[ Conv ]------------[ Conv ]-------[+]->
+      --[ DFS ]-----------------------[ Conv ]------------[ Conv ]------[+]-->
            |                                       |  |              |
            -----[ DFS ]---------------[ Conv ]------  |              |
                    |                                  |              |
@@ -397,9 +397,9 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
 
     - Downsampling is done through strided convolution.
 
-    ---[ DenseFeatureStack ]----------[ Conv ]------- Skip layer
-                                |
-                                --------------------- Downsampled Output
+    ---[ DenseFeatureStackBlock ]----------[ Conv ]------- Skip layer
+                                      |
+                                      -------------------- Downsampled Output
 
     See DenseFeatureStackBlock for more info.
     """
