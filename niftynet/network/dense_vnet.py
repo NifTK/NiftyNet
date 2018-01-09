@@ -27,8 +27,32 @@ DenseVNetDesc = namedtuple(
 class DenseVNet(BaseNet):
     """
     implementation of Dense-V-Net:
-      Gibson et al., "Automatic multi-organ segmentation
-      on abdominal CT with dense V-networks"
+       Gibson et al.
+       Automatic multi-organ segmentation on abdominal CT with dense V-networks
+
+    ### Diagram
+
+    DFS = Dense Feature Stack Block
+
+    - Initial image is first downsampled to a given size.
+    - Each DFS+SD outputs a skip link + a downsampled output.
+    - All outputs are upscaled to the initial downsampled size.
+    - If initial prior is given add it to the output prediction.
+
+    Input
+      |
+      --[ DFS ]-----------------------[ Conv ]------------[ Conv ]-------[+]->
+           |                                       |  |              |
+           -----[ DFS ]---------------[ Conv ]------  |              |
+                   |                                  |              |
+                   -----[ DFS ]-------[ Conv ]---------              |
+                                                          [ Prior ]---
+
+    The layer DenseFeatureStackBlockWithSkipAndDownsample layer implements
+    [DFS + Conv + Downsampling] in a single module, and outputs 2 elements:
+        - Skip layer:          [ DFS + Conv]
+        - Downsampled output:  [ DFS + Down]
+
     """
 
     __hyper_params__ = dict(
@@ -133,9 +157,8 @@ class DenseVNet(BaseNet):
                              dense_vblocks=net_dense_vblocks,
                              seg_layer=net_seg_layer)
 
-    def downsample_input(self, input_tensor):
+    def downsample_input(self, input_tensor, n_spatial_dims):
         # Initial downsampling params
-        n_spatial_dims = input_tensor.get_shape().ndims - 2
         d_size1 = (1,) + (3,) * n_spatial_dims + (1,)
         d_size2 = (1,) + (2,) * n_spatial_dims + (1,)
 
@@ -156,6 +179,7 @@ class DenseVNet(BaseNet):
         channel_dim = len(input_tensor.get_shape()) - 1
         input_size = input_tensor.get_shape().as_list()
         spatial_size = input_size[1:-1]
+        n_spatial_dims = input_tensor.get_shape().ndims - 2
 
         # Quick access to hyperparams
         pkeep = hp['p_channels_selected']
@@ -179,7 +203,7 @@ class DenseVNet(BaseNet):
         all_segmentation_features = []
 
         # Downsample input to the network
-        down_tensor = self.downsample_input(input_tensor)
+        down_tensor = self.downsample_input(input_tensor, n_spatial_dims)
         downsampled_img = net.initial_bn(down_tensor, is_training=is_training)
 
         # Add initial downsampled image VLink
@@ -208,10 +232,10 @@ class DenseVNet(BaseNet):
             all_segmentation_features.append(skip)
 
         # Concatenate all intermediate skip layers
-        inter_resutls = tf.concat(all_segmentation_features, channel_dim)
+        inter_results = tf.concat(all_segmentation_features, channel_dim)
 
         # Initial segmentation output
-        seg_output = net.seg_layer(inter_resutls, is_training=is_training)
+        seg_output = net.seg_layer(inter_results, is_training=is_training)
 
         #
         # Dense VNet End - Now postprocess outputs
@@ -224,7 +248,7 @@ class DenseVNet(BaseNet):
 
         # Invert augmentation if any
         if is_training and hp['augmentation_scale'] > 0:
-            inverse_aug = aug.inverse()
+            inverse_aug = augment_layer.inverse()
             seg_output = inverse_aug(seg_output)
 
         # Resize output to original size
@@ -285,6 +309,25 @@ DenseFSBlockDesc = namedtuple('DenseFSDesc', ['conv_layers'])
 
 
 class DenseFeatureStackBlock(TrainableLayer):
+    """
+    Dense Feature Stack Block
+
+    - Stack is initialized with the input from above layers.
+    - Iteratively the output of convolution layers is added to the stack.
+    - Each sequential convolution is performed over all the previous stacked
+      channels.
+
+    Diagram example:
+
+        stack = [Input]
+        stack = [stack, conv(stack)]
+        stack = [stack, conv(stack)]
+        stack = [stack, conv(stack)]
+        ...
+        Output = [stack, conv(stack)]
+
+    """
+
     def __init__(self,
                  n_dense_channels,
                  kernel_size,
@@ -349,6 +392,17 @@ DenseSDBlockDesc = namedtuple('DenseSDBlock', ['dense_fstack', 'conv', 'down'])
 
 
 class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
+    """
+    Dense Feature Stack with Skip Layer and Downsampling
+
+    - Downsampling is done through strided convolution.
+
+    ---[ DenseFeatureStack ]----------[ Conv ]------- Skip layer
+                                |
+                                --------------------- Downsampled Output
+
+    See DenseFeatureStackBlock for more info.
+    """
 
     def __init__(self,
                  n_dense_channels,
