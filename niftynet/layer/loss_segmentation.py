@@ -74,7 +74,7 @@ class LossFunction(Layer):
 
             data_loss = []
             for i, pred in enumerate(prediction):
-                if weight_map:
+                if weight_map is not None:
                     weight = weight_map[i, :]
                 else:
                     weight = None
