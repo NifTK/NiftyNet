@@ -235,18 +235,18 @@ class LossFunctionErrorsTest(tf.test.TestCase):
     def test_value_error_for_bad_loss_function(self):
         with self.test_session():
             with self.assertRaises(ValueError):
-                LossFunction(0, loss_type='wrong answer')
+                LossFunction(1, loss_type='wrong answer')
 
     # Note: sensitive to precise wording of ValueError message.
     def test_suggestion_for_dice_typo(self):
         with self.test_session():
             with self.assertRaisesRegexp(ValueError, 'Dice'):
-                LossFunction(0, loss_type='dice')
+                LossFunction(1, loss_type='dice')
 
     def test_suggestion_for_gdsc_typo(self):
         with self.test_session():
             with self.assertRaisesRegexp(ValueError, 'GDSC'):
-                LossFunction(0, loss_type='GSDC')
+                LossFunction(1, loss_type='GSDC')
 
 
 if __name__ == '__main__':
