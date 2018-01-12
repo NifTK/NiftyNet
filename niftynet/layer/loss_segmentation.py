@@ -199,7 +199,8 @@ def sensitivity_specificity_loss(prediction,
     :return: the loss
     """
     if weight_map is not None:
-        raise NotImplementedError
+        # raise NotImplementedError
+        tf.logging.warning('Weight map specified but not used.')
 
     ground_truth = tf.to_int64(ground_truth)
     n_voxels = ground_truth.shape[0].value
@@ -259,7 +260,9 @@ def wasserstein_disagreement_map(
     :return: the pixelwise distance map (wass_dis_map)
     """
     if weight_map is not None:
-        raise NotImplementedError
+        # raise NotImplementedError
+        tf.logging.warning('Weight map specified but not used.')
+
     assert M is not None, "Distance matrix is required."
     # pixel-wise Wassertein distance (W) between flat_pred_proba and flat_labels
     # wrt the distance matrix on the label space M
@@ -296,7 +299,8 @@ def generalised_wasserstein_dice_loss(prediction,
     :return: the loss
     """
     if weight_map is not None:
-        raise NotImplementedError
+        # raise NotImplementedError
+        tf.logging.warning('Weight map specified but not used.')
 
     # apply softmax to pred scores
     ground_truth = tf.cast(ground_truth, dtype=tf.int64)
