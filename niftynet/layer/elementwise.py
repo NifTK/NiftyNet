@@ -33,8 +33,8 @@ class ElementwiseLayer(TrainableLayer):
         self.regularizers = {'w': regularizer}
 
     def layer_op(self, param_flow, bypass_flow):
-        n_param_flow = param_flow.get_shape()[-1]
-        n_bypass_flow = bypass_flow.get_shape()[-1]
+        n_param_flow = param_flow.shape[-1]
+        n_bypass_flow = bypass_flow.shape[-1]
         spatial_rank = layer_util.infer_spatial_rank(param_flow)
 
         output_tensor = param_flow

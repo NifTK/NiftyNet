@@ -45,7 +45,7 @@ class LossFunction(Layer):
         """
 
         with tf.device('/cpu:0'):
-            batch_size = ground_truth.get_shape()[0].value
+            batch_size = ground_truth.shape[0].value
             ground_truth = tf.reshape(ground_truth, [batch_size, -1])
             if weight_map is not None:
                 weight_map = tf.reshape(weight_map, [batch_size, -1])
@@ -70,7 +70,7 @@ class LossFunction(Layer):
                         'weight_map': weight_b}
                     if self._loss_func_params:
                         loss_params.update(self._loss_func_params)
-                        
+
                     loss_batch.append(self._data_loss_func(**loss_params))
                 data_loss.append(tf.reduce_mean(loss_batch))
             return tf.reduce_mean(data_loss)

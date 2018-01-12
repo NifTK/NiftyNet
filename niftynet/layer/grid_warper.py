@@ -297,7 +297,7 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
         input_shape = tf.shape(inputs)
         input_dtype = inputs.dtype.as_numpy_dtype
         batch_size = tf.expand_dims(input_shape[0], 0)
-        number_of_params = inputs.get_shape()[1]
+        number_of_params = inputs.shape[1]
         if number_of_params != self._constraints.num_free_params:
             tf.logging.fatal(
                 'Input size is not consistent with constraint '
@@ -310,7 +310,7 @@ class AffineGridWarperLayer(GridWarperLayer, Invertible):
             """
             Extracts a subset of columns from the input 2D Tensor.
             """
-            rank = len(inputs.get_shape().as_list())
+            rank = len(inputs.shape.as_list())
             return tf.slice(inputs,
                             begin=[0, start] + [0] * (rank - 2),
                             size=[-1, size] + [-1] * (rank - 2))

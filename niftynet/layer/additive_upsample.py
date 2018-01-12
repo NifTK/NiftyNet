@@ -44,7 +44,7 @@ class AdditiveUpsampleLayer(Layer):
             ``batch, X, Y,[ Z,] Channels``
         :return: linearly additively upsampled volumes
         """
-        n_channels = input_tensor.get_shape().as_list()[-1]
+        n_channels = input_tensor.shape.as_list()[-1]
         assert self.n_splits > 0 and n_channels % self.n_splits == 0, \
             "Number of feature channels should be divisible by n_splits"
 

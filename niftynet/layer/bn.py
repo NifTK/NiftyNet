@@ -34,7 +34,7 @@ class BNLayer(TrainableLayer):
         self.regularizers = {'beta': regularizer, 'gamma': regularizer}
 
     def layer_op(self, inputs, is_training, use_local_stats=False):
-        input_shape = inputs.get_shape()
+        input_shape = inputs.shape
 
         # operates on all dims except the last dim
         params_shape = input_shape[-1:]

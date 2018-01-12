@@ -46,7 +46,7 @@ class LinearResizeLayer(Layer):
             return tf.image.resize_bilinear(input_tensor, self.new_size)
 
         b_size, x_size, y_size, z_size, c_size = \
-            input_tensor.get_shape().as_list()
+            input_tensor.shape.as_list()
         x_size_new, y_size_new, z_size_new = self.new_size
 
         # resize y-z

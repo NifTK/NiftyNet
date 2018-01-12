@@ -23,7 +23,7 @@ class LinearResizeTest(tf.test.TestCase):
         else:
             x = self.get_2d_input()
 
-        x_shape = x.get_shape().as_list()
+        x_shape = x.shape.as_list()
         expected_shape = \
             [x_shape[0]] + list(expected_spatial_shape) + [x_shape[-1]]
 
