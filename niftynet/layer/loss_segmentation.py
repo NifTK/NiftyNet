@@ -21,6 +21,7 @@ class LossFunction(Layer):
     def __init__(self,
                  n_class,
                  loss_type='Dice',
+                 softmax=True,
                  loss_func_params=None,
                  name='loss_function'):
 
@@ -29,10 +30,18 @@ class LossFunction(Layer):
             "Number of classes for segmentation loss should be positive."
         self._num_classes = n_class
 
+        self._softmax = bool(softmax)
         # set loss function and function-specific additional params.
         self._data_loss_func = LossSegmentationFactory.create(loss_type)
         self._loss_func_params = \
             loss_func_params if loss_func_params is not None else dict()
+
+        if self._data_loss_func.__name__ == 'cross_entropy':
+            tf.logging.info(
+                'Cross entropy loss function calls '
+                'tf.nn.sparse_softmax_cross_entropy_with_logits '
+                'which always performs a softmax internally.')
+            self._softmax = False
 
     def layer_op(self,
                  prediction,
@@ -46,9 +55,12 @@ class LossFunction(Layer):
         will be compared against `ground_truth` and the weighted by
         `weight_map`.
 
-        :param prediction: input will be reshaped into (N, num_classes)
-        :param ground_truth: input will be reshaped into (N,)
-        :param weight_map: input will be reshaped into (N,)
+        :param prediction: input will be reshaped into
+            ``(batch_size, N_voxels, num_classes)``
+        :param ground_truth: input will be reshaped into
+            ``(batch_size, N_voxels)``
+        :param weight_map: input will be reshaped into
+            ``(batch_size, N_voxels)``
         :return:
         """
 
@@ -61,7 +73,7 @@ class LossFunction(Layer):
             # assumes same gt and weight across scales
 
             # prediction should be a list for multi-scale losses
-            # single scale `prediction` is converted to `[prediction]`
+            # single scale ``prediction`` is converted to ``[prediction]``
             if not isinstance(prediction, (list, tuple)):
                 prediction = [prediction]
 
@@ -74,6 +86,9 @@ class LossFunction(Layer):
                     # go through each image in a batch
 
                     pred_b = tf.reshape(pred_b, [-1, self._num_classes])
+                    if self._softmax:
+                        pred_b = tf.nn.softmax(
+                            tf.cast(pred_b, dtype=tf.float32))
                     ground_truth_b = ground_truth[b_ind]
                     weight_b = None if weight_map is None else weight_map[b_ind]
 
@@ -81,9 +96,10 @@ class LossFunction(Layer):
                         'prediction': pred_b,
                         'ground_truth': ground_truth_b,
                         'weight_map': weight_b}
-                    # combining loss function specific parameters
+                    # combining function-specific parameters
                     if self._loss_func_params:
                         loss_params.update(self._loss_func_params)
+
                     # loss for each batch over spatial dimensions
                     loss_batch.append(self._data_loss_func(**loss_params))
                 # loss averaged over batch
@@ -101,7 +117,7 @@ def generalised_dice_loss(prediction,
         Sudre, C. et. al. (2017) Generalised Dice overlap as a deep learning
         loss function for highly unbalanced segmentations. DLMIA 2017
 
-    :param prediction: the logits (before softmax)
+    :param prediction: the logits
     :param ground_truth: the segmentation ground truth
     :param weight_map:
     :param type_weight: type of weighting allowed between labels (choice
@@ -112,7 +128,6 @@ def generalised_dice_loss(prediction,
     ground_truth = tf.to_int64(ground_truth)
     n_voxels = ground_truth.get_shape()[0].value
     n_classes = prediction.get_shape()[1].value
-    prediction = tf.nn.softmax(prediction)
     ids = tf.constant(np.arange(n_voxels), dtype=tf.int64)
     ids = tf.stack([ids, ground_truth], axis=1)
     one_hot = tf.SparseTensor(indices=ids,
@@ -168,7 +183,7 @@ def sensitivity_specificity_loss(prediction,
 
     error is the sum of r(specificity part) and (1-r)(sensitivity part)
 
-    :param prediction: the logits (before softmax).
+    :param prediction: the logits
     :param ground_truth: segmentation ground_truth.
     :param r: the 'sensitivity ratio'
         (authors suggest values from 0.01-0.10 will have similar effects)
@@ -177,7 +192,6 @@ def sensitivity_specificity_loss(prediction,
     ground_truth = tf.to_int64(ground_truth)
     n_voxels = ground_truth.get_shape()[0].value
     n_classes = prediction.get_shape()[1].value
-    prediction = tf.nn.softmax(prediction)
     ids = tf.constant(np.arange(n_voxels), dtype=tf.int64)
     ids = tf.stack([ids, ground_truth], axis=1)
 
@@ -202,13 +216,6 @@ def sensitivity_specificity_loss(prediction,
     return tf.reduce_sum(r * specificity_part + (1 - r) * sensitivity_part)
 
 
-def l2_reg_loss(scope):
-    if not tf.get_collection('reg_var', scope):
-        return 0.0
-    return tf.add_n([tf.nn.l2_loss(reg_var) for reg_var in
-                     tf.get_collection('reg_var', scope)])
-
-
 def cross_entropy(prediction, ground_truth, weight_map=None):
     """
     Function to calculate the cross-entropy loss function
@@ -230,7 +237,7 @@ def cross_entropy(prediction, ground_truth, weight_map=None):
 def wasserstein_disagreement_map(prediction, ground_truth, M):
     """
     Function to calculate the pixel-wise Wasserstein distance between the
-    flattened pred_proba and the flattened labels (ground_truth) with respect
+    flattened prediction and the flattened labels (ground_truth) with respect
     to the distance matrix on the label space M.
 
     :param prediction: the logits after softmax
@@ -267,14 +274,13 @@ def generalised_wasserstein_dice_loss(prediction,
         for Imbalanced Multi-class Segmentation using Holistic
         Convolutional Networks.MICCAI 2017 (BrainLes)
 
-    :param prediction: the logits (before softmax)
+    :param prediction: the logits
     :param ground_truth: the segmentation ground_truth
     :param weight_map:
     :return: the loss
     """
     # apply softmax to pred scores
     ground_truth = tf.cast(ground_truth, dtype=tf.int64)
-    pred_proba = tf.nn.softmax(tf.cast(prediction, dtype=tf.float64))
     n_classes = prediction.get_shape()[1].value
     n_voxels = prediction.get_shape()[0].value
     ids = tf.constant(np.arange(n_voxels), dtype=tf.int64)
@@ -287,8 +293,7 @@ def generalised_wasserstein_dice_loss(prediction,
     # M = tf.cast(M, dtype=tf.float64)
     # compute disagreement map (delta)
     M = M_tree
-    # print("M shape is ", M.shape, pred_proba, one_hot)
-    delta = wasserstein_disagreement_map(pred_proba, one_hot, M)
+    delta = wasserstein_disagreement_map(prediction, one_hot, M)
     # compute generalisation of all error for multi-class seg
     all_error = tf.reduce_sum(delta)
     # compute generalisation of true positives for multi-class seg
@@ -305,7 +310,7 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
     """
     Function to calculate the classical dice loss
 
-    :param prediction: the logits (before softmax)
+    :param prediction: the logits
     :param ground_truth: the segmentation ground_truth
     :param weight_map:
     :return: the loss
@@ -313,7 +318,6 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
     ground_truth = tf.to_int64(ground_truth)
     n_voxels = ground_truth.get_shape()[0].value
     n_classes = prediction.get_shape()[1].value
-    prediction = tf.nn.softmax(prediction)
     # construct sparse matrix for ground_truth to save space
     ids = tf.constant(np.arange(n_voxels), dtype=tf.int64)
     ids = tf.stack([ids, ground_truth], axis=1)
@@ -354,14 +358,13 @@ def dice(prediction, ground_truth, weight_map=None):
 
     using a square in the denominator
 
-    :param prediction: the logits (before softmax)
+    :param prediction: the logits
     :param ground_truth: the segmentation ground_truth
     :param weight_map:
     :return: the loss
     """
     ground_truth = tf.to_int64(ground_truth)
     prediction = tf.cast(prediction, tf.float32)
-    prediction = tf.nn.softmax(prediction)
     ids = tf.range(tf.to_int64(tf.shape(ground_truth)[0]), dtype=tf.int64)
     ids = tf.stack([ids, ground_truth], axis=1)
     one_hot = tf.SparseTensor(
