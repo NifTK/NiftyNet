@@ -316,7 +316,7 @@ def generalised_wasserstein_dice_loss(prediction,
     # M = tf.cast(M, dtype=tf.float64)
     # compute disagreement map (delta)
     M = M_tree
-    delta = wasserstein_disagreement_map(prediction, one_hot, M)
+    delta = wasserstein_disagreement_map(prediction, one_hot, M=M)
     # compute generalisation of all error for multi-class seg
     all_error = tf.reduce_sum(delta)
     # compute generalisation of true positives for multi-class seg
@@ -435,7 +435,7 @@ def dice_dense(prediction, ground_truth, weight_map=None):
         raise NotImplementedError
     ground_truth = tf.cast(ground_truth, dtype=prediction.dtype)
     # computing Dice over the spatial dimensions
-    reduce_axes = range(len(prediction.shape) - 1)
+    reduce_axes = list(range(len(prediction.shape) - 1))
     dice_numerator = 2.0 * tf.reduce_sum(
         prediction * ground_truth, axis=reduce_axes)
     dice_denominator = \
