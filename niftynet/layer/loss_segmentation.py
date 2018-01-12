@@ -53,24 +53,18 @@ class LossFunction(Layer):
 
         if `prediction `is list of tensors, each element of the list
         will be compared against `ground_truth` and the weighted by
-        `weight_map`.
+        `weight_map`. (Assuming the same gt and weight across scales)
 
         :param prediction: input will be reshaped into
             ``(batch_size, N_voxels, num_classes)``
         :param ground_truth: input will be reshaped into
-            ``(batch_size, N_voxels)``
+            ``(batch_size, N_voxels, ...)``
         :param weight_map: input will be reshaped into
-            ``(batch_size, N_voxels)``
+            ``(batch_size, N_voxels, ...)``
         :return:
         """
 
         with tf.device('/cpu:0'):
-
-            batch_size = ground_truth.get_shape()[0].value
-            ground_truth = tf.reshape(ground_truth, [batch_size, -1])
-            if weight_map is not None:
-                weight_map = tf.reshape(weight_map, [batch_size, -1])
-            # assumes same gt and weight across scales
 
             # prediction should be a list for multi-scale losses
             # single scale ``prediction`` is converted to ``[prediction]``
@@ -86,17 +80,32 @@ class LossFunction(Layer):
                     # go through each image in a batch
 
                     pred_b = tf.reshape(pred_b, [-1, self._num_classes])
+                    # performs softmax if required
                     if self._softmax:
-                        pred_b = tf.nn.softmax(
-                            tf.cast(pred_b, dtype=tf.float32))
-                    ground_truth_b = ground_truth[b_ind]
-                    weight_b = None if weight_map is None else weight_map[b_ind]
+                        pred_b = tf.cast(pred_b, dtype=tf.float32)
+                        pred_b = tf.nn.softmax(pred_b)
 
+                    # reshape pred, ground_truth, weight_map to the same
+                    # size: (n_voxels, num_classes)
+                    # if the ground_truth has only one channel, the shape
+                    # becomes: (n_voxels,)
+                    spatial_shape = pred_b.get_shape().as_list()[:-1]
+                    ref_shape = spatial_shape + [-1]
+                    ground_truth_b = tf.reshape(ground_truth[b_ind], ref_shape)
+                    if ground_truth_b.get_shape().as_list()[-1] == 1:
+                        ground_truth_b = tf.squeeze(ground_truth_b, axis=-1)
+                    if weight_map is not None:
+                        weight_b = tf.reshape(weight_map[b_ind], ref_shape)
+                        if weight_b.get_shape().as_list()[-1] == 1:
+                            weight_b = tf.squeeze(weight_b, axis=-1)
+                    else:
+                        weight_b = None
+
+                    # preparing loss function parameters
                     loss_params = {
                         'prediction': pred_b,
                         'ground_truth': ground_truth_b,
                         'weight_map': weight_b}
-                    # combining function-specific parameters
                     if self._loss_func_params:
                         loss_params.update(self._loss_func_params)
 
@@ -189,6 +198,9 @@ def sensitivity_specificity_loss(prediction,
         (authors suggest values from 0.01-0.10 will have similar effects)
     :return: the loss
     """
+    if weight_map is not None:
+        raise NotImplementedError
+
     ground_truth = tf.to_int64(ground_truth)
     n_voxels = ground_truth.get_shape()[0].value
     n_classes = prediction.get_shape()[1].value
@@ -234,7 +246,8 @@ def cross_entropy(prediction, ground_truth, weight_map=None):
     return tf.reduce_mean(entropy)
 
 
-def wasserstein_disagreement_map(prediction, ground_truth, M):
+def wasserstein_disagreement_map(
+        prediction, ground_truth, weight_map=None, M=None):
     """
     Function to calculate the pixel-wise Wasserstein distance between the
     flattened prediction and the flattened labels (ground_truth) with respect
@@ -245,6 +258,9 @@ def wasserstein_disagreement_map(prediction, ground_truth, M):
     :param M: distance matrix on the label space
     :return: the pixelwise distance map (wass_dis_map)
     """
+    if weight_map is not None:
+        raise NotImplementedError
+    assert M is not None, "Distance matrix is required."
     # pixel-wise Wassertein distance (W) between flat_pred_proba and flat_labels
     # wrt the distance matrix on the label space M
     n_classes = prediction.get_shape()[1].value
@@ -279,6 +295,9 @@ def generalised_wasserstein_dice_loss(prediction,
     :param weight_map:
     :return: the loss
     """
+    if weight_map is not None:
+        raise NotImplementedError
+
     # apply softmax to pred scores
     ground_truth = tf.cast(ground_truth, dtype=tf.int64)
     n_classes = prediction.get_shape()[1].value
@@ -393,4 +412,32 @@ def dice(prediction, ground_truth, weight_map=None):
     dice_score = dice_numerator / (dice_denominator + epsilon_denominator)
     # dice_score.set_shape([n_classes])
     # minimising (1 - dice_coefficients)
+    return 1.0 - tf.reduce_mean(dice_score)
+
+
+def dice_dense(prediction, ground_truth, weight_map=None):
+    """
+    Computing mean-class Dice similarity.
+    This function assumes one-hot encoded ground truth
+
+    :param prediction: last dimension should have ``num_classes``
+    :param ground_truth: segmentation ground truth (encoded as a binary matrix)
+        last dimension should be ``num_classes``
+    :param weight_map:
+    :return: ``1.0 - mean(Dice similarity per class)``
+    """
+
+    if weight_map is not None:
+        raise NotImplementedError
+    ground_truth = tf.cast(ground_truth, dtype=prediction.dtype)
+    # computing Dice over the spatial dimensions
+    reduce_axes = range(len(prediction.get_shape().as_list()) - 1)
+    dice_numerator = 2.0 * tf.reduce_sum(
+        prediction * ground_truth, axis=reduce_axes)
+    dice_denominator = \
+        tf.reduce_sum(prediction, axis=reduce_axes) + \
+        tf.reduce_sum(ground_truth, axis=reduce_axes)
+    epsilon_denominator = 0.00001
+
+    dice_score = dice_numerator / (dice_denominator + epsilon_denominator)
     return 1.0 - tf.reduce_mean(dice_score)
