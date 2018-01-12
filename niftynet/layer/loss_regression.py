@@ -26,8 +26,7 @@ class LossFunction(Layer):
     def layer_op(self,
                  prediction,
                  ground_truth=None,
-                 weight_map=None,
-                 var_scope=None):
+                 weight_map=None):
         """
         Compute loss from ``prediction`` and ``ground truth``,
         the computed loss map are weighted by ``weight_map``.
@@ -36,10 +35,12 @@ class LossFunction(Layer):
         will be compared against ``ground_truth` and the weighted by
         ``weight_map``.
 
-        :param prediction: input will be reshaped into ``(N,)``
-        :param ground_truth: input will be reshaped into ``(N,)``
-        :param weight_map: input will be reshaped into ``(N,)``
-        :param var_scope:
+        :param prediction: input will be reshaped into
+            ``(batch_size, N_voxels, num_classes)``
+        :param ground_truth: input will be reshaped into
+            ``(batch_size, N_voxels)``
+        :param weight_map: input will be reshaped into
+            ``(batch_size, N_voxels)``
         :return:
         """
 
@@ -53,8 +54,12 @@ class LossFunction(Layer):
 
             data_loss = []
             for ind, pred in enumerate(prediction):
+                # go through each scale
+
                 loss_batch = []
                 for b_ind, pred_b in enumerate(tf.unstack(pred, axis=0)):
+                    # go through each image in a batch
+
                     pred_b = tf.reshape(pred_b, [-1])
                     ground_truth_b = ground_truth[b_ind]
                     weight_b = None if weight_map is None else weight_map[b_ind]
@@ -65,6 +70,7 @@ class LossFunction(Layer):
                         'weight_map': weight_b}
                     if self._loss_func_params:
                         loss_params.update(self._loss_func_params)
+                        
                     loss_batch.append(self._data_loss_func(**loss_params))
                 data_loss.append(tf.reduce_mean(loss_batch))
             return tf.reduce_mean(data_loss)
