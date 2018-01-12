@@ -207,7 +207,7 @@ class ScoreLayer(TrainableLayer):
         self.regularizers = {'w': w_regularizer}
 
     def layer_op(self, input_tensor, is_training, layer_id=-1):
-        rank = input_tensor.get_shape().ndims
+        rank = input_tensor.shape.ndims
         perm = [i for i in range(rank)]
         perm[-2], perm[-1] = perm[-1], perm[-2]
         output_tensor = input_tensor
@@ -257,7 +257,7 @@ class MergeLayer(TrainableLayer):
             return tf.reduce_mean(tf.stack(roots, axis=-1), axis=-1)
         elif self.func == 'WEIGHTED_AVERAGE':
             input_tensor = tf.stack(roots, axis=-1)
-            rank = input_tensor.get_shape().ndims
+            rank = input_tensor.shape.ndims
             perm = [i for i in range(rank)]
             perm[-2], perm[-1] = perm[-1], perm[-2]
 

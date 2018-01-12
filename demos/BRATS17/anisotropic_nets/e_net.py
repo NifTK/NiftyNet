@@ -354,7 +354,7 @@ class TensorSliceLayer(TrainableLayer):
         self.margin = margin
 
     def layer_op(self, input_tensor):
-        input_shape = input_tensor.get_shape().as_list()
+        input_shape = input_tensor.shape.as_list()
         begin = [0] * len(input_shape)
         begin[1] = self.margin
         size = input_shape

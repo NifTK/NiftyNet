@@ -134,7 +134,7 @@ class DNet(BaseNet):
         BaseNet.__init__(self, name='D')
 
     def layer_op(self, features):
-        batch_size = features.get_shape().as_list()[0]
+        batch_size = features.shape.as_list()[0]
         conv_1 = ConvolutionalLayer(
             20, 3, with_bn=False, with_bias=True, acti_func='relu')
         fc_1 = FullyConnectedLayer(
@@ -154,7 +154,7 @@ class GNet(BaseNet):
         BaseNet.__init__(self, name='G')
 
     def layer_op(self, noise):
-        n_chns = noise.get_shape()[-1]
+        n_chns = noise.shape[-1]
         conv_1 = ConvolutionalLayer(
             20, 10, with_bn=True, acti_func='selu', with_bias=True)
         conv_2 = ConvolutionalLayer(

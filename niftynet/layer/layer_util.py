@@ -10,7 +10,7 @@ def check_spatial_dims(input_tensor, criteria):
     criteria can be a lambda function
     e.g. lambda x : x > 10 checks whether each dim is greater than 10
     """
-    input_shape = input_tensor.get_shape()
+    input_shape = input_tensor.shape
     if not input_shape.is_fully_defined():
         # skip checking if the input has dynamic shapes
         return True
@@ -30,7 +30,7 @@ def infer_spatial_rank(input_tensor):
     """
     e.g. given an input tensor [Batch, X, Y, Z, Feature] the spatial rank is 3
     """
-    input_shape = input_tensor.get_shape()
+    input_shape = input_tensor.shape
     input_shape.with_rank_at_least(3)
     #dims = input_tensor.get_shape().ndims - 2
     #assert dims > 0, "input tensor should have at least one spatial dim, " \
@@ -109,7 +109,7 @@ def check_divisible_channels(input_tensor, n_channel_splits):
     :return: n_input_channels / n_channel_splits
     """
 
-    n_input_channels = int(input_tensor.get_shape().as_list()[-1])
+    n_input_channels = int(input_tensor.shape.as_list()[-1])
     n_channel_splits = int(n_channel_splits)
     assert n_channel_splits > 0 and n_input_channels % n_channel_splits == 0, \
         "Number of feature channels should be divisible by " \

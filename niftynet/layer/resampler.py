@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Resampler layer initially implemented in
 https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/v0.2.0.post1/niftynet/layer/spatial_transformer.py
@@ -67,7 +68,7 @@ class ResamplerLayer(Layer):
         # This is forward only as no gradient for tf.round
 
         # read input shape
-        in_size = inputs.get_shape()
+        in_size = inputs.shape
         try:
             batch_size = int(in_size[0])
         except (TypeError, ValueError):
@@ -126,7 +127,7 @@ class ResamplerLayer(Layer):
 
         # read output shape
         out_spatial_rank = infer_spatial_rank(sample_coords)
-        out_spatial_size = sample_coords.get_shape().as_list()[1:-1]
+        out_spatial_size = sample_coords.shape.as_list()[1:-1]
 
         if in_spatial_rank == 2 and self.boundary == 'ZERO':
             inputs = tf.transpose(inputs, [0, 2, 1, 3])
@@ -210,9 +211,9 @@ class ResamplerLayer(Layer):
         return _pyramid_combination(samples, weight_0, weight_1)
 
     def _resample_bspline(self, inputs, sample_coords):
-        assert inputs.get_shape().is_fully_defined(), \
+        assert inputs.shape.is_fully_defined(), \
             "input shape should be fully defined for bspline interpolation"
-        in_size = inputs.get_shape().as_list()
+        in_size = inputs.shape.as_list()
         batch_size = in_size[0]
         in_spatial_size = in_size[1:-1]
         in_spatial_rank = infer_spatial_rank(inputs)
@@ -234,7 +235,7 @@ class ResamplerLayer(Layer):
         spatial_coords = offsets + tf.expand_dims(floor_coords, 1)
         spatial_coords = self.boundary_func(spatial_coords, in_spatial_size)
         spatial_coords = tf.cast(spatial_coords, COORDINATES_TYPE)
-        knot_size = spatial_coords.get_shape().as_list()
+        knot_size = spatial_coords.shape.as_list()
 
         # Compute weights for each voxel
         def build_coef(u, d):
@@ -262,7 +263,7 @@ class ResamplerLayer(Layer):
 
     def _resample_inv_dst_weighting(self, inputs, sample_coords):
         # read input shape
-        in_size = inputs.get_shape()
+        in_size = inputs.shape
         in_spatial_size = None
         partial_shape = False if in_size.is_fully_defined() else True
         try:
