@@ -196,7 +196,7 @@ class CrossEntropyTests(tf.test.TestCase):
             predicted = tf.constant(
                 [[0, 1], [2, 0]],
                 dtype=tf.float32, name='predicted')
-            labels = tf.constant([[1], [0]], dtype=tf.int64, name='labels')
+            labels = tf.constant([1, 0], dtype=tf.int64, name='labels')
             predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
 
             test_loss_func = LossFunction(2, loss_type='CrossEntropy')
