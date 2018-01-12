@@ -316,7 +316,7 @@ def generalised_wasserstein_dice_loss(prediction,
     # M = tf.cast(M, dtype=tf.float64)
     # compute disagreement map (delta)
     M = M_tree
-    delta = wasserstein_disagreement_map(prediction, one_hot, M)
+    delta = wasserstein_disagreement_map(prediction, one_hot, M=M)
     # compute generalisation of all error for multi-class seg
     all_error = tf.reduce_sum(delta)
     # compute generalisation of true positives for multi-class seg
