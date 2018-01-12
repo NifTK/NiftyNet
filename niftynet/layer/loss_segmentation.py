@@ -25,22 +25,19 @@ class LossFunction(Layer):
                  name='loss_function'):
 
         super(LossFunction, self).__init__(name=name)
+        assert n_class > 0, \
+            "Number of classes for segmentation loss should be positive."
         self._num_classes = n_class
-        if loss_func_params is not None:
-            self._loss_func_params = loss_func_params
-        else:
-            self._loss_func_params = {}
-        self._data_loss_func = None
-        self.make_callable_loss_func(loss_type)
 
-    def make_callable_loss_func(self, type_str):
-        self._data_loss_func = LossSegmentationFactory.create(type_str)
+        # set loss function and function-specific additional params.
+        self._data_loss_func = LossSegmentationFactory.create(loss_type)
+        self._loss_func_params = \
+            loss_func_params if loss_func_params is not None else dict()
 
     def layer_op(self,
                  prediction,
-                 ground_truth=None,
-                 weight_map=None,
-                 var_scope=None, ):
+                 ground_truth,
+                 weight_map=None):
         """
         Compute loss from `prediction` and `ground truth`,
         the computed loss map are weighted by `weight_map`.
@@ -52,45 +49,46 @@ class LossFunction(Layer):
         :param prediction: input will be reshaped into (N, num_classes)
         :param ground_truth: input will be reshaped into (N,)
         :param weight_map: input will be reshaped into (N,)
-        :param var_scope:
         :return:
         """
 
         with tf.device('/cpu:0'):
 
-            if ground_truth is not None:
-                n_per_batch = ground_truth.get_shape()[0].value
-                ground_truth = tf.reshape(ground_truth, [n_per_batch, -1])
+            batch_size = ground_truth.get_shape()[0].value
+            ground_truth = tf.reshape(ground_truth, [batch_size, -1])
             if weight_map is not None:
-                weight_map = tf.reshape(weight_map, [n_per_batch, -1])
+                weight_map = tf.reshape(weight_map, [batch_size, -1])
+            # assumes same gt and weight across scales
 
+            # prediction should be a list for multi-scale losses
+            # single scale `prediction` is converted to `[prediction]`
             if not isinstance(prediction, (list, tuple)):
-                prediction = [prediction[i, :] for i in range(n_per_batch)]
-            # prediction should be a list for holistic networks
-            if self._num_classes > 0:
-                # reshape the prediction to [n_batch, n_voxels , num_classes]
-                prediction = [tf.reshape(pred, [-1, self._num_classes])
-                              for pred in prediction]
+                prediction = [prediction]
 
             data_loss = []
-            for i, pred in enumerate(prediction):
-                if weight_map is not None:
-                    weight = weight_map[i, :]
-                else:
-                    weight = None
+            for ind, pred in enumerate(prediction):
+                # go through each scale
 
-                if self._loss_func_params:
-                    data_loss.append(self._data_loss_func(
-                        pred,
-                        tf.reshape(ground_truth[i, :], (pred.shape[:-1])),
-                        weight,
-                        **self._loss_func_params))
-                else:
-                    data_loss.append(self._data_loss_func(
-                        pred,
-                        tf.reshape(ground_truth[i, :], pred.shape[:-1]),
-                        weight))
+                loss_batch = []
+                for b_ind, pred_b in enumerate(tf.unstack(pred, axis=0)):
+                    # go through each image in a batch
 
+                    pred_b = tf.reshape(pred_b, [-1, self._num_classes])
+                    ground_truth_b = ground_truth[b_ind]
+                    weight_b = None if weight_map is None else weight_map[b_ind]
+
+                    loss_params = {
+                        'prediction': pred_b,
+                        'ground_truth': ground_truth_b,
+                        'weight_map': weight_b}
+                    # combining loss function specific parameters
+                    if self._loss_func_params:
+                        loss_params.update(self._loss_func_params)
+                    # loss for each batch over spatial dimensions
+                    loss_batch.append(self._data_loss_func(**loss_params))
+                # loss averaged over batch
+                data_loss.append(tf.reduce_mean(loss_batch))
+            # loss averaged over multiple scales
             return tf.reduce_mean(data_loss)
 
 

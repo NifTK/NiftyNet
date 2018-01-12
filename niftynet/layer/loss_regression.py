@@ -17,15 +17,11 @@ class LossFunction(Layer):
                  name='loss_function'):
 
         super(LossFunction, self).__init__(name=name)
-        if loss_func_params is not None:
-            self._loss_func_params = loss_func_params
-        else:
-            self._loss_func_params = {}
-        self._data_loss_func = None
-        self.make_callable_loss_func(loss_type)
 
-    def make_callable_loss_func(self, type_str):
-        self._data_loss_func = LossRegressionFactory.create(type_str)
+        # set loss function and function-specific additional params.
+        self._data_loss_func = LossRegressionFactory.create(loss_type)
+        self._loss_func_params = \
+            loss_func_params if loss_func_params is not None else {}
 
     def layer_op(self,
                  prediction,
@@ -48,27 +44,29 @@ class LossFunction(Layer):
         """
 
         with tf.device('/cpu:0'):
-            if ground_truth is not None:
-                ground_truth = tf.reshape(ground_truth, [-1])
+            batch_size = ground_truth.get_shape()[0].value
+            ground_truth = tf.reshape(ground_truth, [batch_size, -1])
             if weight_map is not None:
-                weight_map = tf.reshape(weight_map, [-1])
+                weight_map = tf.reshape(weight_map, [batch_size, -1])
             if not isinstance(prediction, (list, tuple)):
                 prediction = [prediction]
-            prediction = [tf.reshape(pred, [-1]) for pred in prediction]
 
             data_loss = []
-            for pred in prediction:
-                if self._loss_func_params:
-                    data_loss.append(self._data_loss_func(
-                        prediction=pred,
-                        ground_truth=ground_truth,
-                        weight_map=weight_map,
-                        **self._loss_func_params))
-                else:
-                    data_loss.append(self._data_loss_func(
-                        prediction=pred,
-                        ground_truth=ground_truth,
-                        weight_map=weight_map))
+            for ind, pred in enumerate(prediction):
+                loss_batch = []
+                for b_ind, pred_b in enumerate(tf.unstack(pred, axis=0)):
+                    pred_b = tf.reshape(pred_b, [-1])
+                    ground_truth_b = ground_truth[b_ind]
+                    weight_b = None if weight_map is None else weight_map[b_ind]
+
+                    loss_params = {
+                        'prediction': pred_b,
+                        'ground_truth': ground_truth_b,
+                        'weight_map': weight_b}
+                    if self._loss_func_params:
+                        loss_params.update(self._loss_func_params)
+                    loss_batch.append(self._data_loss_func(**loss_params))
+                data_loss.append(tf.reduce_mean(loss_batch))
             return tf.reduce_mean(data_loss)
 
 
