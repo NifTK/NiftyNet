@@ -81,7 +81,7 @@ class DeconvLayer(TrainableLayer):
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
     def layer_op(self, input_tensor):
-        input_shape = input_tensor.get_shape().as_list()
+        input_shape = input_tensor.shape.as_list()
         n_input_chns = input_shape[-1]
         spatial_rank = layer_util.infer_spatial_rank(input_tensor)
 

@@ -58,7 +58,7 @@ class ActiLayer(TrainableLayer):
         func_ = look_up_operations(self.func, SUPPORTED_OP)
         if self.func == 'prelu':
             alphas = tf.get_variable(
-                'alpha', input_tensor.get_shape()[-1],
+                'alpha', input_tensor.shape[-1],
                 initializer=self.initializers['alpha'],
                 regularizer=self.regularizers['alpha'])
             output_tensor = func_(input_tensor, alphas)
