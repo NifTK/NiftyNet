@@ -22,7 +22,7 @@ class GANImageBlock(TrainableLayer):
                  training_image,
                  conditioning,
                  is_training):
-        shape_to_generate = training_image.get_shape().as_list()[1:]
+        shape_to_generate = training_image.shape.as_list()[1:]
         fake_image = self._generator(random_source,
                                      shape_to_generate,
                                      conditioning,

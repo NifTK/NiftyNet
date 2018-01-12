@@ -89,14 +89,14 @@ class LossFunction(Layer):
                     # size: (n_voxels, num_classes)
                     # if the ground_truth has only one channel, the shape
                     # becomes: (n_voxels,)
-                    spatial_shape = pred_b.get_shape().as_list()[:-1]
+                    spatial_shape = pred_b.shape.as_list()[:-1]
                     ref_shape = spatial_shape + [-1]
                     ground_truth_b = tf.reshape(ground_truth[b_ind], ref_shape)
-                    if ground_truth_b.get_shape().as_list()[-1] == 1:
+                    if ground_truth_b.shape.as_list()[-1] == 1:
                         ground_truth_b = tf.squeeze(ground_truth_b, axis=-1)
                     if weight_map is not None:
                         weight_b = tf.reshape(weight_map[b_ind], ref_shape)
-                        if weight_b.get_shape().as_list()[-1] == 1:
+                        if weight_b.shape.as_list()[-1] == 1:
                             weight_b = tf.squeeze(weight_b, axis=-1)
                     else:
                         weight_b = None
@@ -135,8 +135,8 @@ def generalised_dice_loss(prediction,
     :return: the loss
     """
     ground_truth = tf.to_int64(ground_truth)
-    n_voxels = ground_truth.get_shape()[0].value
-    n_classes = prediction.get_shape()[1].value
+    n_voxels = ground_truth.shape[0].value
+    n_classes = prediction.shape[1].value
     ids = tf.constant(np.arange(n_voxels), dtype=tf.int64)
     ids = tf.stack([ids, ground_truth], axis=1)
     one_hot = tf.SparseTensor(indices=ids,
@@ -202,8 +202,8 @@ def sensitivity_specificity_loss(prediction,
         raise NotImplementedError
 
     ground_truth = tf.to_int64(ground_truth)
-    n_voxels = ground_truth.get_shape()[0].value
-    n_classes = prediction.get_shape()[1].value
+    n_voxels = ground_truth.shape[0].value
+    n_classes = prediction.shape[1].value
     ids = tf.constant(np.arange(n_voxels), dtype=tf.int64)
     ids = tf.stack([ids, ground_truth], axis=1)
 
@@ -263,7 +263,7 @@ def wasserstein_disagreement_map(
     assert M is not None, "Distance matrix is required."
     # pixel-wise Wassertein distance (W) between flat_pred_proba and flat_labels
     # wrt the distance matrix on the label space M
-    n_classes = prediction.get_shape()[1].value
+    n_classes = prediction.shape[1].value
     unstack_labels = tf.unstack(ground_truth, axis=-1)
     unstack_labels = tf.cast(unstack_labels, dtype=tf.float64)
     unstack_pred = tf.unstack(prediction, axis=-1)
@@ -300,8 +300,8 @@ def generalised_wasserstein_dice_loss(prediction,
 
     # apply softmax to pred scores
     ground_truth = tf.cast(ground_truth, dtype=tf.int64)
-    n_classes = prediction.get_shape()[1].value
-    n_voxels = prediction.get_shape()[0].value
+    n_classes = prediction.shape[1].value
+    n_voxels = prediction.shape[0].value
     ids = tf.constant(np.arange(n_voxels), dtype=tf.int64)
     ids = tf.stack([ids, ground_truth], axis=1)
 
@@ -335,8 +335,8 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
     :return: the loss
     """
     ground_truth = tf.to_int64(ground_truth)
-    n_voxels = ground_truth.get_shape()[0].value
-    n_classes = prediction.get_shape()[1].value
+    n_voxels = ground_truth.shape[0].value
+    n_classes = prediction.shape[1].value
     # construct sparse matrix for ground_truth to save space
     ids = tf.constant(np.arange(n_voxels), dtype=tf.int64)
     ids = tf.stack([ids, ground_truth], axis=1)
@@ -391,7 +391,7 @@ def dice(prediction, ground_truth, weight_map=None):
         values=tf.ones_like(ground_truth, dtype=tf.float32),
         dense_shape=tf.to_int64(tf.shape(prediction)))
     if weight_map is not None:
-        n_classes = prediction.get_shape()[1].value
+        n_classes = prediction.shape[1].value
         weight_map_nclasses = tf.reshape(
             tf.tile(weight_map, [n_classes]), prediction.get_shape())
         dice_numerator = 2.0 * tf.sparse_reduce_sum(
@@ -431,7 +431,7 @@ def dice_dense(prediction, ground_truth, weight_map=None):
         raise NotImplementedError
     ground_truth = tf.cast(ground_truth, dtype=prediction.dtype)
     # computing Dice over the spatial dimensions
-    reduce_axes = range(len(prediction.get_shape().as_list()) - 1)
+    reduce_axes = range(len(prediction.shape.as_list()) - 1)
     dice_numerator = 2.0 * tf.reduce_sum(
         prediction * ground_truth, axis=reduce_axes)
     dice_denominator = \

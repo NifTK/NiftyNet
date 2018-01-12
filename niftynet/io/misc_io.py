@@ -330,9 +330,9 @@ def squeeze_spatial_temporal_dim(tf_tensor):
 
     :return: squeezed tensor
     """
-    if tf_tensor.get_shape().ndims != 6:
+    if tf_tensor.shape.ndims != 6:
         return tf_tensor
-    if tf_tensor.get_shape()[4] != 1:
+    if tf_tensor.shape[4] != 1:
         raise NotImplementedError("time sequences not currently supported")
     axis_to_squeeze = []
     for (idx, axis) in enumerate(tf_tensor.shape.as_list()):

@@ -29,7 +29,7 @@ class BNTest(tf.test.TestCase):
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_bn)
-            x_shape = tuple(x.get_shape().as_list())
+            x_shape = tuple(x.shape.as_list())
             self.assertAllClose(x_shape, out.shape)
             # self.assertAllClose(np.zeros(x_shape), out)
 
@@ -44,7 +44,7 @@ class BNTest(tf.test.TestCase):
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_bn)
-            x_shape = tuple(x.get_shape().as_list())
+            x_shape = tuple(x.shape.as_list())
             self.assertAllClose(x_shape, out.shape)
             # self.assertAllClose(np.zeros(x_shape), out)
 
@@ -62,7 +62,7 @@ class BNTest(tf.test.TestCase):
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_bn)
-            x_shape = tuple(x.get_shape().as_list())
+            x_shape = tuple(x.shape.as_list())
             self.assertAllClose(x_shape, out.shape)
             # self.assertAllClose(np.zeros(x_shape), out)
 
@@ -78,7 +78,7 @@ class BNTest(tf.test.TestCase):
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_bn)
-            x_shape = tuple(x.get_shape().as_list())
+            x_shape = tuple(x.shape.as_list())
             self.assertAllClose(x_shape, out.shape)
             # self.assertAllClose(np.zeros(x_shape), out)
 

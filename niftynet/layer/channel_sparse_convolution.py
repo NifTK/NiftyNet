@@ -37,7 +37,7 @@ class ChannelSparseDeconvLayer(niftynet.layer.deconvolution.DeconvLayer):
                  If this is None, all channels are used and the number of output 
                  channels is set at graph-creation time.
     """
-    input_shape = input_tensor.get_shape().as_list()
+    input_shape = input_tensor.shape.as_list()
     if input_mask is None:
       _input_mask=tf.ones([input_shape[-1]])>0
     else:
@@ -48,7 +48,7 @@ class ChannelSparseDeconvLayer(niftynet.layer.deconvolution.DeconvLayer):
     else:
       n_sparse_output_chns = tf.reduce_sum(tf.cast(output_mask, tf.float32))
       _output_mask=output_mask
-    n_full_input_chns = _input_mask.get_shape().as_list()[0]
+    n_full_input_chns = _input_mask.shape.as_list()[0]
     spatial_rank = layer_util.infer_spatial_rank(input_tensor)
     # initialize conv kernels/strides and then apply
     w_full_size = np.vstack((
@@ -87,7 +87,7 @@ class ChannelSparseDeconvLayer(niftynet.layer.deconvolution.DeconvLayer):
     if output_mask is None:
       # If all output channels are used, we can specify
       # the number of output channels which is useful for later layers
-      old_shape=output_tensor.get_shape().as_list()
+      old_shape=output_tensor.shape.as_list()
       old_shape[-1]=self.n_output_chns
       output_tensor.set_shape(old_shape)
     if not self.with_bias:
@@ -123,7 +123,7 @@ class ChannelSparseConvLayer(niftynet.layer.convolution.ConvLayer):
                  If this is None, all channels are used and the number of output 
                  channels is set at graph-creation time.
     """    
-    sparse_input_shape = input_tensor.get_shape().as_list()
+    sparse_input_shape = input_tensor.shape.as_list()
     if input_mask is None:
       _input_mask=tf.ones([sparse_input_shape[-1]])>0
     else:
@@ -132,7 +132,7 @@ class ChannelSparseConvLayer(niftynet.layer.convolution.ConvLayer):
       _output_mask=tf.ones([self.n_output_chns])>0
     else:
       _output_mask=output_mask
-    n_full_input_chns = _input_mask.get_shape().as_list()[0]
+    n_full_input_chns = _input_mask.shape.as_list()[0]
     spatial_rank = layer_util.infer_spatial_rank(input_tensor)
     # initialize conv kernels/strides and then apply
     w_full_size = layer_util.expand_spatial_params(
@@ -163,7 +163,7 @@ class ChannelSparseConvLayer(niftynet.layer.convolution.ConvLayer):
     if output_mask is None:
       # If all output channels are used, we can specify
       # the number of output channels which is useful for later layers
-      old_shape=output_tensor.get_shape().as_list()
+      old_shape=output_tensor.shape.as_list()
       old_shape[-1]=self.n_output_chns
       output_tensor.set_shape(old_shape)
     if not self.with_bias:
@@ -202,8 +202,8 @@ class ChannelSparseBNLayer(niftynet.layer.bn.BNLayer):
     else:
         mask=mask
 
-    input_shape = inputs.get_shape()
-    mask_shape = mask.get_shape()
+    input_shape = inputs.shape
+    mask_shape = mask.shape
     # operates on all dims except the last dim
     params_shape = mask_shape[-1:]
     assert params_shape[0]==self.n_dense_channels, \
@@ -356,6 +356,6 @@ class ChannelSparseConvolutionalLayer(TrainableLayer):
                   regularizer=self.regularizers['w'],
                   name='acti_')
               output_tensor = acti_layer(output_tensor)
-          output_tensor.set_shape(output_tensor.get_shape().as_list()[:-1]+\
+          output_tensor.set_shape(output_tensor.shape.as_list()[:-1]+\
                                   [n_output_ch])
           return output_tensor, output_mask
