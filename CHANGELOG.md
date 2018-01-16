@@ -4,6 +4,19 @@ All notable changes to NiftyNet are documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2017-12-14
+### Added
+* Support for custom network / application as external modules
+* Unified workspace directory via global configuration functionalities
+* Model zoo for network / data sharing
+* Automatic training / validation / test sets splitting
+* Validation iterations during training
+* Regression application
+* 2D / 3D resampler layer
+* Versioning functionality for better issue tracking
+* Academic paper release: ["NiftyNet: a deep-learning platform for medical imaging"](https://arxiv.org/abs/1709.03485)
+* How-to guides and a new theme for [the API and examples documentation](http://niftynet.readthedocs.io/)
+
 ## [0.2.0] - 2017-09-08
 ### Added
 * Support for unsupervised learning networks, including GANs and auto-encoders
@@ -24,4 +37,5 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## 0.1.1 - 2017-08-08
 
+[0.2.1]: https://github.com/NifTK/NiftyNet/compare/v0.2.0.post1...v0.2.1
 [0.2.0]: https://github.com/NifTK/NiftyNet/compare/v0.1.1...v0.2.0.post1
