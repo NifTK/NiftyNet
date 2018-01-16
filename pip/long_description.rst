@@ -36,6 +36,10 @@ Other features of NiftyNet include:
 
 .. [#] 2.5-D: volumetric images processed as a stack of 2D slices; 4-D: co-registered multi-modal 3D volumes
 
+NiftyNet release notes are available `release notes`_.
+
+.. _`release notes`: https://github.com/NifTK/NiftyNet/blob/dev/CHANGELOG.md
+
 
 Getting started
 ---------------
