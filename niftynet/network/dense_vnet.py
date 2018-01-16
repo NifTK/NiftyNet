@@ -176,10 +176,10 @@ class DenseVNet(BaseNet):
         #
 
         # Shape and dimension variable shortcuts
-        channel_dim = len(input_tensor.get_shape()) - 1
-        input_size = input_tensor.get_shape().as_list()
+        channel_dim = len(input_tensor.shape) - 1
+        input_size = input_tensor.shape.as_list()
         spatial_size = input_size[1:-1]
-        n_spatial_dims = input_tensor.get_shape().ndims - 2
+        n_spatial_dims = input_tensor.shape.ndims - 2
 
         # Quick access to hyperparams
         pkeep = hp['p_channels_selected']
@@ -210,7 +210,7 @@ class DenseVNet(BaseNet):
         all_segmentation_features.append(downsampled_img)
 
         # All results should match the downsampled input's shape
-        output_shape = downsampled_img.get_shape().as_list()[1:-1]
+        output_shape = downsampled_img.shape.as_list()[1:-1]
 
         init_features = net.initial_conv(input_tensor, is_training=is_training)
 
@@ -271,7 +271,7 @@ class DenseVNet(BaseNet):
 
 
 def image_resize(image, output_size):
-    input_size = image.get_shape().as_list()
+    input_size = image.shape.as_list()
     spatial_rank = len(input_size) - 2
     if all([o == i for o, i in zip(output_size, input_size[1:-1])]):
         return image
@@ -364,8 +364,8 @@ class DenseFeatureStackBlock(TrainableLayer):
         block = self.create_block()
 
         stack = [input_tensor]
-        channel_dim = len(input_tensor.get_shape()) - 1
-        input_mask = tf.ones([input_tensor.get_shape().as_list()[-1]]) > 0
+        channel_dim = len(input_tensor.shape) - 1
+        input_mask = tf.ones([input_tensor.shape.as_list()[-1]]) > 0
 
         # Stack all convolution outputs
         for idx, conv in enumerate(block.conv_layers):
@@ -450,7 +450,7 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
         stack = block.dense_fstack(input_tensor, is_training=is_training,
                                    keep_prob=keep_prob)
 
-        all_features = tf.concat(stack, len(input_tensor.get_shape()) - 1)
+        all_features = tf.concat(stack, len(input_tensor.shape) - 1)
 
         # Output Convolution
         seg = block.conv(all_features, is_training=is_training,
@@ -511,7 +511,7 @@ class Affine3DAugmentationLayer(TrainableLayer):
         return tf.matrix_inverse(self.transform_func(batch_size))
 
     def layer_op(self, input_tensor):
-        sz = input_tensor.get_shape().as_list()
+        sz = input_tensor.shape.as_list()
         grid_warper = AffineGridWarperLayer(sz[1:-1],
                                             sz[1:-1])
 

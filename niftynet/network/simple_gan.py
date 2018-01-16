@@ -14,7 +14,7 @@ class GenericGAN(TrainableLayer):
     self._discriminator=discriminator
     super(GenericGAN, self).__init__(name=name)
   def layer_op(self, random_source, population,is_training):
-    image=self._generator(random_source,population.get_shape().as_list()[1:],is_training)
+    image=self._generator(random_source,population.shape.as_list()[1:],is_training)
     fake_logits = self._discriminator(image,is_training)
     real_logits = self._discriminator(population/2,is_training)
     diff=image-population/2
@@ -38,8 +38,8 @@ class ImageGenerator(TrainableLayer):
 
   def layer_op(self, random_source, image_size,is_training):
     spatial_rank=3
-    batch_size = random_source.get_shape().as_list()[0]
-    noise_size=random_source.get_shape().as_list()[1]
+    batch_size = random_source.shape.as_list()[0]
+    noise_size=random_source.shape.as_list()[1]
     intermediate_sizes = [[]]*(self._num_layers)+[image_size]
     for it in range(self._num_layers,0,-1):
       intermediate_sizes[it-1]= [round(i/2) for i in intermediate_sizes[it][:-1]]+[self._layer_channels[it-1]]
@@ -66,9 +66,9 @@ class ImageGenerator(TrainableLayer):
         conv_t_func = tf.nn.conv3d_transpose
       else:
         def resize3(x,sz):
-          r1=tf.image.resize_images(tf.reshape(x,x.get_shape().as_list()[:3]+[-1]),sz[1:3])
-          r2=tf.image.resize_images(tf.reshape(r1,[sz[0],sz[1]*sz[2],x.get_shape().as_list()[3],-1]),[sz[1]*sz[2],sz[3]])
-          return tf.reshape(r2,sz[:4]+[x.get_shape().as_list()[-1]])
+          r1=tf.image.resize_images(tf.reshape(x,x.shape.as_list()[:3]+[-1]),sz[1:3])
+          r2=tf.image.resize_images(tf.reshape(r1,[sz[0],sz[1]*sz[2],x.shape.as_list()[3],-1]),[sz[1]*sz[2],sz[3]])
+          return tf.reshape(r2,sz[:4]+[x.shape.as_list()[-1]])
         conv_t_func=lambda x, Wt, sz, st, p: conv_func(resize3(x,sz),tf.transpose(Wt,[0,1,2,4,3]),[1]*5,p)
     conv_t_unit = lambda x,Wt,sz,norm_func: acti_func(norm_func(conv_t_func(x, Wt, [batch_size]+sz, [1]+[2]*spatial_rank+[1], "SAME")))
     conv_unit = lambda x,W,sz,norm_func: acti_func(norm_func(conv_func(x, W, [1]+[1]*spatial_rank+[1], "SAME")))
@@ -97,9 +97,9 @@ class ImageDiscriminator(TrainableLayer):
     self.initializers = {'w':tf.contrib.layers.variance_scaling_initializer(),'b':tf.constant_initializer(0)}
 
   def layer_op(self, image,is_training):
-    batch_size=image.get_shape().as_list()[0]
+    batch_size=image.shape.as_list()[0]
     spatial_rank=3
-    image_channels = image.get_shape().as_list()[-1]
+    image_channels = image.shape.as_list()[-1]
     acti_func=tf.nn.relu
     dropout_func = lambda x: tf.nn.dropout(x,.5)
     norm_func = tf.contrib.layers.batch_norm
@@ -109,17 +109,17 @@ class ImageDiscriminator(TrainableLayer):
       if downscale=='conv_stride':
         conv_s_unit = lambda x,W: acti_func(norm_func(conv_func(x, W, [1]+[2]*spatial_rank+[1], "SAME")))
       else:
-        conv_s_unit = lambda x,W: acti_func(norm_func(conv_func(tf.image.resize_images(x,[x.get_shape().as_list()[1]//2,x.get_shape().as_list()[2]//2]), W, [1]+[1]*spatial_rank+[1], "SAME")))
+        conv_s_unit = lambda x,W: acti_func(norm_func(conv_func(tf.image.resize_images(x,[x.shape.as_list()[1]//2,x.shape.as_list()[2]//2]), W, [1]+[1]*spatial_rank+[1], "SAME")))
     elif spatial_rank in [3]:
       conv_func = tf.nn.conv3d
       if downscale=='conv_stride':
         conv_s_unit = lambda x,W: acti_func(norm_func(conv_func(x, W, [1]+[2]*spatial_rank+[1], "SAME")))
       else:
         def resize3(x,sz):
-          r1=tf.image.resize_images(tf.reshape(x,x.get_shape().as_list()[:3]+[-1]),sz[1:3])
-          r2=tf.image.resize_images(tf.reshape(r1,[sz[0],sz[1]*sz[2],x.get_shape().as_list()[3],-1]),[sz[1]*sz[2],sz[3]])
-          return tf.reshape(r2,sz[:4]+[x.get_shape().as_list()[-1]])
-        conv_s_unit = lambda x,W: acti_func(norm_func(conv_func(resize3(x,[a//b for a,b in zip(x.get_shape().as_list(),[1,2,2,2,1])]), W, [1]+[1]*spatial_rank+[1], "SAME")))
+          r1=tf.image.resize_images(tf.reshape(x,x.shape.as_list()[:3]+[-1]),sz[1:3])
+          r2=tf.image.resize_images(tf.reshape(r1,[sz[0],sz[1]*sz[2],x.shape.as_list()[3],-1]),[sz[1]*sz[2],sz[3]])
+          return tf.reshape(r2,sz[:4]+[x.shape.as_list()[-1]])
+        conv_s_unit = lambda x,W: acti_func(norm_func(conv_func(resize3(x,[a//b for a,b in zip(x.shape.as_list(),[1,2,2,2,1])]), W, [1]+[1]*spatial_rank+[1], "SAME")))
     conv_unit = lambda x,W: acti_func(norm_func(conv_func(x, W, [1]+[1]*spatial_rank+[1], "SAME")))
     down_sample_unit = lambda x,Ws,W: conv_s_unit(conv_unit(x,W),Ws)
     kernel_size=[3]*spatial_rank

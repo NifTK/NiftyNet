@@ -274,7 +274,7 @@ def global_vars_init_or_restore(var_list=None):
             initializer = restore_initializer(
                 checkpoint_name, var_name, checkpoint_subscope)
             restored_vars[var] = tf.assign(
-                var, initializer(var.get_shape(), dtype=var.dtype))
+                var, initializer(var.shape, dtype=var.dtype))
     init_others = tf.variables_initializer(
         [v for v in var_list if v not in restored_vars])
     restore_op = tf.group(init_others, *list(restored_vars.values()))
