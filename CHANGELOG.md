@@ -38,6 +38,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 * Bugs (30+ issues resolved)
 
 ## 0.1.1 - 2017-08-08
+### Added
+* Source code open sourced (CMICLab, GitHub)
+* Initial PyPI package release
+* Refactored sub-packages including engine, application, layer, network
+* Command line entry points
+* NiftyNet logo
+
+### Removed
+* Bugs in data augmentation, I/O, sampler
 
 [Unreleased]: https://github.com/NifTK/NiftyNet/compare/v0.2.1...HEAD
 [0.2.1]: https://github.com/NifTK/NiftyNet/compare/v0.2.0.post1...v0.2.1
