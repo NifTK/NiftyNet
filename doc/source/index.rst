@@ -98,6 +98,7 @@ Guides
 .. toctree::
    :maxdepth: 1
 
+   introductory
    installation
    config_spec
    model_zoo
