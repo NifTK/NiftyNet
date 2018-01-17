@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 * Source code open sourced (CMICLab, GitHub)
 * Initial PyPI package release
-* Refactored sub-packages including engine, application, layer, network
+* Refactored sub-packages including `engine`, `application`, `layer`, `network`
 * Command line entry points
 * NiftyNet logo
 
