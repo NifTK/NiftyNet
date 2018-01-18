@@ -26,6 +26,8 @@ SUPPORTED_APP = {
         'niftynet.application.autoencoder_application.AutoencoderApplication',
     'net_gan':
         'niftynet.application.gan_application.GANApplication',
+    'net_classify':
+        'niftynet.application.classification_application.ClassificationApplication',
 }
 
 SUPPORTED_NETWORK = {
@@ -56,6 +58,9 @@ SUPPORTED_NETWORK = {
         'niftynet.network.scalenet.ScaleNet',
     "holisticnet":
         'niftynet.network.holistic_net.HolisticNet',
+
+    # classification
+    "resnet": 'niftynet.network.resnet.ResNet',
 
     # autoencoder
     "vae": 'niftynet.network.vae.VAE'
@@ -100,6 +105,12 @@ SUPPORTED_LOSS_REGRESSION = {
     "Huber":
         'niftynet.layer.loss_regression.huber_loss'
 }
+
+SUPPORTED_LOSS_CLASSIFICATION = {
+    "CrossEntropy":
+        'niftynet.layer.loss_classification.cross_entropy',
+}
+
 
 SUPPORTED_LOSS_AUTOENCODER = {
     "VariationalLowerBound":
@@ -241,6 +252,15 @@ class LossRegressionFactory(ModuleFactory):
     """
     SUPPORTED = SUPPORTED_LOSS_REGRESSION
     type_str = 'regression loss'
+
+
+class LossClassificationFactory(ModuleFactory):
+    """
+    Import a classification loss function from niftynet.layer or
+    from user specified string
+    """
+    SUPPORTED = SUPPORTED_LOSS_CLASSIFICATION
+    type_str = 'classification loss'
 
 
 class LossAutoencoderFactory(ModuleFactory):

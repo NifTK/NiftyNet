@@ -580,12 +580,44 @@ class SpatialImage5D(SpatialImage3D):
             # return image_data
 
 
+class ClassifierLabel(DataFromFile):
+    """
+    Data from file should have a valid file path
+    (are files on hard drive) and a name
+    """
+    def __init__(self,
+                 file_path,
+                 name,
+                 interp_order,
+                 output_pixdim,
+                 output_axcodes):
+        DataFromFile.__init__(self, file_path=file_path, name=name)
+        self.interp_order=[-1]
+    @property
+    def shape(self):
+        """
+        A labels shape is always [1].
+        :return: [1,1,1]
+        """
+        return [1,1,1]
+
+    def get_data(self):
+        if len(self._file_path) > 1:
+            # 2D image from multiple files
+            raise NotImplementedError
+        image_obj = misc.load_image(self.file_path[0])
+        image_data = image_obj.get_data()
+        #image_data = misc.expand_to_5d(image_data)
+        return image_data[:1,np.newaxis,np.newaxis]
+
+
 class ImageFactory(object):
     """
     Create image instance according to number of dimensions
     specified in image headers.
     """
-    INSTANCE_DICT = {2: SpatialImage2D,
+    INSTANCE_DICT = {1: ClassifierLabel,
+                     2: SpatialImage2D,
                      3: SpatialImage3D,
                      4: SpatialImage4D,
                      5: SpatialImage5D}
