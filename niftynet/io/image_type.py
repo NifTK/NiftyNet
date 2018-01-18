@@ -588,9 +588,7 @@ class ClassifierLabel(DataFromFile):
     def __init__(self,
                  file_path,
                  name,
-                 _interp_order,
-                 _output_pixdim,
-                 _output_axcodes):
+                 **kwargs):
         DataFromFile.__init__(self, file_path=file_path, name=name)
         self.interp_order = [-1]
     @property
