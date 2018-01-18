@@ -592,14 +592,14 @@ class ClassifierLabel(DataFromFile):
                  output_pixdim,
                  output_axcodes):
         DataFromFile.__init__(self, file_path=file_path, name=name)
-        self.interp_order=[-1]
+        self.interp_order = [-1]
     @property
     def shape(self):
         """
         A labels shape is always [1].
-        :return: [1,1,1]
+        :return: [1, 1, 1]
         """
-        return [1,1,1]
+        return [1, 1, 1]
 
     def get_data(self):
         if len(self._file_path) > 1:
@@ -607,8 +607,7 @@ class ClassifierLabel(DataFromFile):
             raise NotImplementedError
         image_obj = misc.load_image(self.file_path[0])
         image_data = image_obj.get_data()
-        #image_data = misc.expand_to_5d(image_data)
-        return image_data[:1,np.newaxis,np.newaxis]
+        return image_data[:1, np.newaxis, np.newaxis]
 
 
 class ImageFactory(object):

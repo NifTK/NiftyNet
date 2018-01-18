@@ -27,7 +27,8 @@ SUPPORTED_APP = {
     'net_gan':
         'niftynet.application.gan_application.GANApplication',
     'net_classify':
-        'niftynet.application.classification_application.ClassificationApplication',
+        'niftynet.application.classification_application.'
+        'ClassificationApplication',
 }
 
 SUPPORTED_NETWORK = {

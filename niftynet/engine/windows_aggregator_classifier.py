@@ -10,11 +10,9 @@ import os
 import numpy as np
 
 import niftynet.io.misc_io as misc_io
-from niftynet.engine.sampler_resize import zoom_3d
 from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
-from niftynet.layer.pad import PadLayer
 
 
 class ClassifierSamplesAggregator(ImageWindowsAggregator):
@@ -33,13 +31,13 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
 
     def decode_batch(self, window, location):
         """
-        window holds the classifier labels        
+        window holds the classifier labels
         location is a holdover from segmentation and may be removed
         in a later refactoring, but currently hold info about the stopping
-        signal from the sampler                
+        signal from the sampler
         """
         n_samples = window.shape[0]
-        print('......', window.shape)        
+        print('......', window.shape)
         for batch_id in range(n_samples):
             if self._is_stopping_signal(location[batch_id]):
                 return False
@@ -50,9 +48,8 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
     def _save_current_image(self, image_out):
         if self.input_image is None:
             return
-        window_shape = [1,1,1,1,1]
-        image_out = np.reshape(image_out,window_shape)
-        image_shape = image_out.shape
+        window_shape = [1, 1, 1, 1, 1]
+        image_out = np.reshape(image_out, window_shape)
         for layer in reversed(self.reader.preprocessors):
             if isinstance(layer, DiscreteLabelNormalisationLayer):
                 image_out, _ = layer.inverse_op(image_out)
