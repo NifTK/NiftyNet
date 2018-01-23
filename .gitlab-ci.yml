@@ -424,6 +424,11 @@ release-notes:
   script:
     - echo $CI_COMMIT_REF_NAME
     - echo $CI_COMMIT_TAG
+    # Fail if nothing's been added to changelog for this version
+    - echo "Checking changelog modified for current release ..."
+    - grep ${CI_COMMIT_TAG:1} CHANGELOG.md
+    - echo "... DONE"
+    # Do actually push release notes to GitHub
     - |
         if [[ "$CI_COMMIT_TAG" == v* ]]; then
           echo "Doing a chandler push for $CI_COMMIT_TAG ..."
