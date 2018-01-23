@@ -338,3 +338,21 @@ def set_cuda_device(cuda_devices):
     else:
         # using Tensorflow default choice
         pass
+
+
+class ParserNamespace(object):
+    """
+    Parser namespace for representing parsed parameters from config file
+
+    e.g.::
+
+        system_params = ParserNamespace(action='train')
+        action_str = system_params.action
+
+    """
+
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+    def update(self, **kwargs):
+        self.__dict__.update(kwargs)
