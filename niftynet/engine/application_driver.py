@@ -515,17 +515,6 @@ class ApplicationDriver(object):
         return '/gpu:0' if n_local_gpus > 0 else '/cpu:0'
 
     @staticmethod
-    def _console_vars_to_str(console_dict):
-        """
-        Printing values of variable evaluations to command line output
-        """
-        if not console_dict:
-            return ''
-        console_str = ', '.join(
-            '{}={}'.format(key, val) for (key, val) in console_dict.items())
-        return console_str
-
-    @staticmethod
     def _create_app(app_type_string):
         """
         Import the application module
