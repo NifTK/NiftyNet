@@ -425,7 +425,9 @@ release-notes:
     - echo $CI_COMMIT_REF_NAME
     - |
         if [[ "$CI_COMMIT_REF_NAME" == 206* ]]; then
-          echo "found 206 in $CI_COMMIT_REF_NAME"
+          echo "found 206 in $CI_COMMIT_REF_NAME, doing a chandler-push..."
+          chandler push --github=NifTK/NiftyNet
+          echo "...DONE"
         else
           echo "DID NOT find 206 in $CI_COMMIT_REF_NAME"
         fi
