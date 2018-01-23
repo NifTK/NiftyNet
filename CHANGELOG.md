@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## 0.1.1 - 2017-08-08
 ### Added
-* Source code open sourced (on CMICLab, and GitHub)
+* Source code open sourced (CMICLab, GitHub)
 * Initial PyPI package release
 * Refactored sub-packages including `engine`, `application`, `layer`, `network`
 * Command line entry points
