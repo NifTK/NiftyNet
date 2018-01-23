@@ -61,9 +61,10 @@ class RandFlipTest(tf.test.TestCase):
     def test_2d_flip_layer_1(self):
         a = np.array([[0, 1], [2, 3]])
         a = {'image': a}
+        i = {'image': [0]}
         flip_layer = RandomFlipLayer(flip_axes=[0], flip_probability=1)
         flip_layer.randomise(spatial_rank=2)
-        transformed_a = flip_layer(a)
+        transformed_a = flip_layer(a, i)
         with self.test_session() as sess:
             self.assertTrue(
                 np.array_equal(transformed_a['image'],

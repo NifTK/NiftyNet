@@ -98,7 +98,8 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
                     image_shape = image_shapes[name]
                     window_shape = static_window_shapes[name]
 
-                    if image_shape == window_shape:
+                    if (image_shape == window_shape or
+                            interp_orders[name][0] < 0):
                         # already in the same shape
                         image_window = data[name]
                     else:

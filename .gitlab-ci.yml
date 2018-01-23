@@ -3,6 +3,7 @@ stages:
   - dev_test
   - pip_test
   - pip_publish
+  - release_notes
 
 pylintjob:
   stage: pylint_test
@@ -13,6 +14,7 @@ pylintjob:
     - 167-document-cli-option-for-path-to-new-networks
     - 176-document-pip-installer-bundling-guidelines
     - 174-design-a-workflow-that-allows-prs-from-github-to-be-merged
+    - 206-improve-the-handling-of-release-notes
   script:
     - pylint --rcfile=tests/pylintrc niftynet/engine
     - pylint --rcfile=tests/pylintrc niftynet/io/image_*
@@ -171,6 +173,7 @@ quicktest:
     - 167-document-cli-option-for-path-to-new-networks
     - 176-document-pip-installer-bundling-guidelines
     - 174-design-a-workflow-that-allows-prs-from-github-to-be-merged
+    - 206-improve-the-handling-of-release-notes
   script:
     # print system info
     - which nvidia-smi
@@ -411,5 +414,26 @@ pip-camera-ready:
     # Instruct developer which file to publish
     - echo "Camera-ready pip installer bundle (wheel) created:"
     - echo "$(ls $camera_ready_dir/*.whl)"
+  tags:
+    - gift-adelie
+
+release-notes:
+  stage: release_notes
+  only:
+    - tags
+  script:
+    - echo $CI_COMMIT_REF_NAME
+    - echo $CI_COMMIT_TAG
+    # Fail if nothing's been added to changelog for this version
+    - echo "Checking changelog modified for current release ..."
+    - grep ${CI_COMMIT_TAG:1} CHANGELOG.md
+    - echo "... DONE"
+    # Do actually push release notes to GitHub
+    - |
+        if [[ "$CI_COMMIT_TAG" == v* ]]; then
+          echo "Doing a chandler push for $CI_COMMIT_TAG ..."
+          chandler push $CI_COMMIT_TAG --github=NifTK/NiftyNet
+          echo "... DONE"
+        fi
   tags:
     - gift-adelie
