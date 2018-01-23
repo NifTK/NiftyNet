@@ -14,6 +14,19 @@ from scipy import ndimage
 from six import string_types
 
 
+def traverse_nested(input_lists, types=(list, tuple)):
+    """
+    Flatten a nested list or tuple
+    """
+
+    if isinstance(input_lists, types):
+        for input_list in input_lists:
+            for sub_list in traverse_nested(input_list, types=types):
+                yield sub_list
+    else:
+        yield input_lists
+
+
 def list_depth_count(input_list):
     """
     This function count the maximum depth of a nested list (recursively)

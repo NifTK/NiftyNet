@@ -57,7 +57,9 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         if self.readers is None:
             raise NotImplementedError('reader should be initialised')
         if self.sampler is None:
-            raise NotImplementedError('sampler should be initialised')
+            raise NotImplementedError(
+                'Sampler should be initialised; to disable the sampler, '
+                'set self.sampler to [None].')
         if self.net is None:
             raise NotImplementedError('net should be initialised')
         if not isinstance(self.net, TrainableLayer):
