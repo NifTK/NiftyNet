@@ -420,18 +420,9 @@ pip-camera-ready:
 release-notes:
   stage: release_notes
   only:
-    - 206-improve-the-handling-of-release-notes
+    - tags
   script:
     - echo $CI_COMMIT_REF_NAME
-    - |
-        if [[ "$CI_COMMIT_REF_NAME" == 206* ]]; then
-          echo "found 206 in $CI_COMMIT_REF_NAME, doing a chandler-push..."
-          chandler push v0.1.1 --github=NifTK/NiftyNet
-          echo "...DONE"
-        else
-          echo "DID NOT find 206 in $CI_COMMIT_REF_NAME"
-        fi
-    # TODO: should run for v-tags instead of this branch
     - echo $CI_COMMIT_TAG
     - |
         if [[ "$CI_COMMIT_TAG" == v* ]]; then
