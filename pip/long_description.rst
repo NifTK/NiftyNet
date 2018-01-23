@@ -34,6 +34,10 @@ Other features of NiftyNet include:
 * Implementation of recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
 * Comprehensive evaluation metrics for medical image segmentation
 
+NiftyNet release notes are available in the `changelog`_.
+
+.. _`changelog`: https://github.com/NifTK/NiftyNet/blob/dev/CHANGELOG.md
+
 .. [#] 2.5-D: volumetric images processed as a stack of 2D slices; 4-D: co-registered multi-modal 3D volumes
 
 
