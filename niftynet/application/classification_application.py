@@ -106,29 +106,27 @@ class ClassificationApplication(BaseApplication):
 
         augmentation_layers = []
         if self.is_training:
-            pass
-            #disabled until these can be made modality specific to exclude warping the labels
-            #if self.action_param.random_flipping_axes != -1:
-            #    augmentation_layers.append(RandomFlipLayer(
-            #        flip_axes=self.action_param.random_flipping_axes))
-            #if self.action_param.scaling_percentage:
-            #    augmentation_layers.append(RandomSpatialScalingLayer(
-            #        min_percentage=self.action_param.scaling_percentage[0],
-            #        max_percentage=self.action_param.scaling_percentage[1]))
-            #if self.action_param.rotation_angle or \
-            #        self.action_param.rotation_angle_x or \
-            #        self.action_param.rotation_angle_y or \
-            #        self.action_param.rotation_angle_z:
-            #    rotation_layer = RandomRotationLayer()
-            #    if self.action_param.rotation_angle:
-            #        rotation_layer.init_uniform_angle(
-            #            self.action_param.rotation_angle)
-            #    else:
-            #        rotation_layer.init_non_uniform_angle(
-            #            self.action_param.rotation_angle_x,
-            #            self.action_param.rotation_angle_y,
-            #            self.action_param.rotation_angle_z)
-            #    augmentation_layers.append(rotation_layer)
+            if self.action_param.random_flipping_axes != -1:
+                augmentation_layers.append(RandomFlipLayer(
+                    flip_axes=self.action_param.random_flipping_axes))
+            if self.action_param.scaling_percentage:
+                augmentation_layers.append(RandomSpatialScalingLayer(
+                    min_percentage=self.action_param.scaling_percentage[0],
+                    max_percentage=self.action_param.scaling_percentage[1]))
+            if self.action_param.rotation_angle or \
+                    self.action_param.rotation_angle_x or \
+                    self.action_param.rotation_angle_y or \
+                    self.action_param.rotation_angle_z:
+                rotation_layer = RandomRotationLayer()
+                if self.action_param.rotation_angle:
+                    rotation_layer.init_uniform_angle(
+                        self.action_param.rotation_angle)
+                else:
+                    rotation_layer.init_non_uniform_angle(
+                        self.action_param.rotation_angle_x,
+                        self.action_param.rotation_angle_y,
+                        self.action_param.rotation_angle_z)
+                augmentation_layers.append(rotation_layer)
 
         for reader in self.readers:
             reader.add_preprocessing_layers(
