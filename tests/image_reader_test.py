@@ -11,7 +11,7 @@ from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
 from niftynet.layer.pad import PadLayer
-from tests.test_util import ParserNamespace
+from niftynet.utilities.util_common import ParserNamespace
 
 # test multiple modalities
 MULTI_MOD_DATA = {
