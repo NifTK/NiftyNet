@@ -263,7 +263,7 @@ class ApplicationDriver(object):
                 tf.logging.warning('User cancelled application')
             except tf.errors.OutOfRangeError:
                 pass
-            except Exception:
+            except RuntimeError:
                 import sys
                 import traceback
                 exc_type, exc_value, exc_traceback = sys.exc_info()
