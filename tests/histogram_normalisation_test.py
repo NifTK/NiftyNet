@@ -7,13 +7,13 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.io.image_reader import ImageReader
+from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
 from niftynet.layer.mean_variance_normalisation import \
     MeanVarNormalisationLayer
-from tests.test_util import ParserNamespace
-from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
+from niftynet.utilities.util_common import ParserNamespace
 
 DATA_PARAM = {
     'T1': ParserNamespace(

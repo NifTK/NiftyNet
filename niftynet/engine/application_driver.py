@@ -14,6 +14,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import copy
 import os
 import time
 
@@ -29,7 +30,7 @@ from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.io.image_sets_partitioner import TRAIN, VALID, INFER
 from niftynet.io.misc_io import get_latest_subfolder, touch_folder
 from niftynet.layer.bn import BN_COLLECTION
-from niftynet.utilities.util_common import set_cuda_device
+from niftynet.utilities.util_common import set_cuda_device, traverse_nested
 
 FILE_PREFIX = 'model.ckpt'
 
@@ -67,7 +68,7 @@ class ApplicationDriver(object):
         self.initial_iter = 0
         self.final_iter = 0
 
-        self._coord = None
+        self._coord = tf.train.Coordinator()
         self._init_op = None
         self._data_partitioner = None
         self.outputs_collector = None
@@ -191,7 +192,35 @@ class ApplicationDriver(object):
         with self.graph.as_default(), tf.name_scope('Sampler'):
             self.app.initialise_sampler()
 
-    # pylint: disable=broad-except
+    def _run_sampler_threads(self, session=None):
+        """
+        Get samplers from application and try to run sampler threads.
+
+        Note: Overriding app.get_sampler() method by returning None to bypass
+        this step.
+
+        :param session: TF session used for fill
+            tf.placeholders with sampled data
+        :return:
+        """
+        if session is None:
+            return
+        if self._coord is None:
+            return
+        if self.num_threads <= 0:
+            return
+        try:
+            samplers = self.app.get_sampler()
+            for sampler in traverse_nested(samplers):
+                if sampler is None:
+                    continue
+                sampler.run_threads(session, self._coord, self.num_threads)
+        except (NameError, TypeError, AttributeError, IndexError):
+            tf.logging.fatal(
+                "samplers not running, pop_batch_op operations "
+                "are blocked.")
+            raise
+
     def run_application(self):
         """
         Initialise a TF graph, connect data sampler and network within
@@ -207,21 +236,9 @@ class ApplicationDriver(object):
         with tf.Session(config=config, graph=self.graph) as session:
 
             tf.logging.info('Filling queues (this can take a few minutes)')
-            self._coord = tf.train.Coordinator()
 
             # start samplers' threads
-            try:
-                samplers = self.app.get_sampler()
-                if samplers is not None:
-                    all_samplers = [s for sets in samplers for s in sets]
-                    for sampler in all_samplers:
-                        sampler.run_threads(
-                            session, self._coord, self.num_threads)
-            except (TypeError, AttributeError, IndexError):
-                tf.logging.fatal(
-                    "samplers not running, pop_batch_op operations "
-                    "are blocked.")
-                raise
+            self._run_sampler_threads(session=session)
 
             self.graph = self._create_graph(self.graph)
             self.app.check_initialisations()
@@ -380,10 +397,13 @@ class ApplicationDriver(object):
         self.app.set_iteration_update(message)
         collected = self.outputs_collector
         # building a dictionary of variables
-        vars_to_run = message.ops_to_run
+        vars_to_run = copy.deepcopy(message.ops_to_run)
         if message.is_training:
             # always apply the gradient op during training
             vars_to_run['gradients'] = self.app.gradient_op
+        else:
+            assert vars_to_run.get('gradients', None) is None, \
+                'gradients on validation set should be empty'
         # session will run variables collected under CONSOLE
         vars_to_run[CONSOLE] = collected.variables(CONSOLE)
         # session will run variables collected under NETWORK_OUTPUT
@@ -517,17 +537,6 @@ class ApplicationDriver(object):
         return '/device:GPU:0' if n_local_gpus > 0 else '/cpu:0'
 
     @staticmethod
-    def _console_vars_to_str(console_dict):
-        """
-        Printing values of variable evaluations to command line output
-        """
-        if not console_dict:
-            return ''
-        console_str = ', '.join(
-            '{}={}'.format(key, val) for (key, val) in console_dict.items())
-        return console_str
-
-    @staticmethod
     def _create_app(app_type_string):
         """
         Import the application module
@@ -542,5 +551,4 @@ class ApplicationDriver(object):
         config = tf.ConfigProto()
         config.log_device_placement = False
         config.allow_soft_placement = True
-        config.gpu_options.allow_growth = True
         return config

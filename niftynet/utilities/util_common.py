@@ -14,6 +14,19 @@ from scipy import ndimage
 from six import string_types
 
 
+def traverse_nested(input_lists, types=(list, tuple)):
+    """
+    Flatten a nested list or tuple
+    """
+
+    if isinstance(input_lists, types):
+        for input_list in input_lists:
+            for sub_list in traverse_nested(input_list, types=types):
+                yield sub_list
+    else:
+        yield input_lists
+
+
 def list_depth_count(input_list):
     """
     This function count the maximum depth of a nested list (recursively)
@@ -338,3 +351,21 @@ def set_cuda_device(cuda_devices):
     else:
         # using Tensorflow default choice
         pass
+
+
+class ParserNamespace(object):
+    """
+    Parser namespace for representing parsed parameters from config file
+
+    e.g.::
+
+        system_params = ParserNamespace(action='train')
+        action_str = system_params.action
+
+    """
+
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+    def update(self, **kwargs):
+        self.__dict__.update(kwargs)

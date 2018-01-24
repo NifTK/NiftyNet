@@ -8,7 +8,7 @@ import tensorflow as tf
 
 from niftynet.engine.application_driver import ApplicationDriver
 from niftynet.io.misc_io import set_logger
-from tests.test_util import ParserNamespace
+from niftynet.utilities.util_common import ParserNamespace
 
 
 # def _run_test_application():

@@ -25,10 +25,12 @@ Using NiftyNet's modular structure you can:
 The code is available via `GitLab`_ and `GitHub`_,
 or you can quickly get started with the released versions in the
 `Python Package Index`_.
+You can also check out the `release notes`_.
 
 .. _`GitLab`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 .. _`GitHub`: https://github.com/NifTK/NiftyNet
 .. _`Python Package Index`: https://pypi.org/project/NiftyNet/
+.. _`release notes`: https://github.com/NifTK/NiftyNet/blob/dev/CHANGELOG.md
 
 
 Quickstart
@@ -98,6 +100,7 @@ Guides
 .. toctree::
    :maxdepth: 1
 
+   introductory
    installation
    config_spec
    model_zoo
