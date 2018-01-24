@@ -71,7 +71,7 @@ class RunVarsTest(tf.test.TestCase):
             app_driver.run_vars(sess, iter_msg)
             model_value_2 = sess.run(test_tensor)
             # make sure model gets updated
-            self.assertNotAlmostEquals(
+            self.assertNotAlmostEqual(
                 np.mean(np.abs(model_value_1 - model_value_2)), 0.0)
             print(iter_msg.to_console_string())
             self.assertRegexpMatches(iter_msg.to_console_string(), 'Training')
@@ -81,7 +81,7 @@ class RunVarsTest(tf.test.TestCase):
             app_driver.run_vars(sess, iter_msg)
             model_value_3 = sess.run(test_tensor)
             # make sure model not gets udpated
-            self.assertAlmostEquals(
+            self.assertAlmostEqual(
                 np.mean(np.abs(model_value_2 - model_value_3)), 0.0)
             print(iter_msg.to_console_string())
             self.assertRegexpMatches(iter_msg.to_console_string(), 'Validation')
@@ -91,9 +91,9 @@ class RunVarsTest(tf.test.TestCase):
             app_driver.run_vars(sess, iter_msg)
             model_value_4 = sess.run(test_tensor)
             # make sure model gets updated
-            self.assertNotAlmostEquals(
+            self.assertNotAlmostEqual(
                 np.mean(np.abs(model_value_2 - model_value_4)), 0.0)
-            self.assertNotAlmostEquals(
+            self.assertNotAlmostEqual(
                 np.mean(np.abs(model_value_3 - model_value_4)), 0.0)
             print(iter_msg.to_console_string())
             self.assertRegexpMatches(iter_msg.to_console_string(), 'Training')
