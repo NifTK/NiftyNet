@@ -13,7 +13,7 @@ from niftynet.layer.resampler import ResamplerLayer
 from niftynet.layer.pad import PadLayer
 from niftynet.engine.application_variables import CONSOLE
 #from niftynet.layer.loss_regression import LossFunction
-#from niftynet.layer.loss_segmentation import LossFunction
+from niftynet.layer.loss_segmentation import LossFunction
 
 
 SUPPORTED_INPUT = {'moving_image', 'moving_label',
@@ -99,8 +99,8 @@ class RegApp(BaseApplication):
             #    [1.0 - resampled_moving_label, resampled_moving_label], axis=-1)
             #resampled_moving_image = resampler(moving_image, dense_field)
             #resampled_moving_label = moving_label * tf.get_variable('a', [1])
-            # compute label loss
-            #loss_func = LossFunction(n_class=2, loss_type='Dice')
+            # compute label loss (foreground only)
+            loss_func = LossFunction(n_class=1, loss_type='Dice_Dense', softmax=False)
             label_loss = loss_func(
                 prediction=resampled_moving_label,
                 ground_truth=fixed_label)
@@ -153,15 +153,4 @@ class RegApp(BaseApplication):
         if self.is_training:
             return True
         raise NotImplementedError
-
-def loss_func(prediction, ground_truth):
-    # compute dice of foreground only
-    # the first dim is treated as the batch
-    eps_tol = 1e-6
-    reduce_axes = range(len(prediction.get_shape()))[1:]
-    numerator = 2.0 * tf.reduce_sum(
-        prediction * ground_truth, axis=reduce_axes)
-    denominator = tf.reduce_sum(prediction, axis=reduce_axes) + \
-        tf.reduce_sum(ground_truth, axis=reduce_axes) + eps_tol
-    return 1.0 - tf.reduce_mean(numerator / denominator)
 
