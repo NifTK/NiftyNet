@@ -24,7 +24,7 @@ testjob:
   only:
     - master
     - dev
-    - dev-staging
+    - 214-bug-in-validation-during-training
     - tags
   script:
     # !!kill coverage in case of hanging processes
@@ -161,8 +161,8 @@ quicktest:
   except:
     - master
     - dev
-    - dev-staging
     - tags
+    - 214-bug-in-validation-during-training
     - 177-merging-net_regress-to-dev
     - 112-publish-api-docs-online
     - 147-revise-contribution-guidelines-to-include-github
@@ -221,8 +221,8 @@ pip-installer:
   only:
     - master
     - dev
-    - dev-staging
     - tags
+    - 214-bug-in-validation-during-training
     - 177-merging-net_regress-to-dev
     - 117-support-for-user-defined-networks-using-pip-installed-niftynet
   script:
