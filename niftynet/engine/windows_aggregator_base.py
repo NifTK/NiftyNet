@@ -87,6 +87,7 @@ class ImageWindowsAggregator(object):
             "unknown border format (should be an array of" \
             "three elements corresponding to 3 spatial dims"
 
+        location = location.astype(np.int)
         window_shape = window.shape
         spatial_shape = window_shape[1:-1]
         n_spatial = len(spatial_shape)
