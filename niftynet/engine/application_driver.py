@@ -214,6 +214,7 @@ class ApplicationDriver(object):
                 if sampler is None:
                     continue
                 sampler.run_threads(session, self._coord, self.num_threads)
+            tf.logging.info('Filling queues (this can take a few minutes)')
         except (NameError, TypeError, AttributeError, IndexError):
             tf.logging.fatal(
                 "samplers not running, pop_batch_op operations "
@@ -234,17 +235,15 @@ class ApplicationDriver(object):
         config = ApplicationDriver._tf_config()
         with tf.Session(config=config, graph=self.graph) as session:
 
-            tf.logging.info('Filling queues (this can take a few minutes)')
-
             # start samplers' threads
             self._run_sampler_threads(session=session)
 
             self.graph = self._create_graph(self.graph)
+
+            # check app variables initialised and ready for starts
             self.app.check_initialisations()
 
-            # initialise network
-            # fill variables with random values or values from file
-            tf.logging.info('starting from iter %d', self.initial_iter)
+            # initialise network trainable parameters
             self._rand_init_or_restore_vars(session)
 
             start_time = time.time()
@@ -342,6 +341,7 @@ class ApplicationDriver(object):
         Randomly initialising all trainable variables defined in session,
         or loading checkpoint files as variable initialisations.
         """
+        tf.logging.info('starting from iter %d', self.initial_iter)
         if self.is_training and self.initial_iter == 0:
             sess.run(self._init_op)
             tf.logging.info('Parameters from random initialisations ...')
