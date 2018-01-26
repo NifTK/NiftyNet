@@ -24,7 +24,6 @@ testjob:
   only:
     - master
     - dev
-    - dev-staging
     - tags
   script:
     # !!kill coverage in case of hanging processes
@@ -87,6 +86,7 @@ testjob:
     #- python net_segment.py inference -c config/deepmedic_config.ini --batch_size 12 --spatial_window_size 135,135,135  --queue_length 128
 
     - python net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6
+    - python net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6  --exclude_fraction_for_validation 0.1 --validation_every_n 3
     - python net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6 --starting_iter 0 --max_iter 15
     - python net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 14
 
@@ -129,6 +129,7 @@ testjob:
       #- coverage run -a --source . net_segment.py inference -c config/deepmedic_config.ini --batch_size 12 --spatial_window_size 135,135,135  --queue_length 128
 
     - coverage run -a --source . net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6
+    - coverage run -a --source . net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6 --exclude_fraction_for_validation 0.1 --validation_every_n 3
     - coverage run -a --source . net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6 --starting_iter 0 --max_iter 15
     - coverage run -a --source . net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 14
 
@@ -161,7 +162,6 @@ quicktest:
   except:
     - master
     - dev
-    - dev-staging
     - tags
     - 177-merging-net_regress-to-dev
     - 112-publish-api-docs-online
@@ -221,9 +221,7 @@ pip-installer:
   only:
     - master
     - dev
-    - dev-staging
     - tags
-    - 177-merging-net_regress-to-dev
     - 117-support-for-user-defined-networks-using-pip-installed-niftynet
   script:
     # get the shortened version of last commit's hash

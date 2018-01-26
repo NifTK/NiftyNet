@@ -215,6 +215,7 @@ class ApplicationDriver(object):
                 if sampler is None:
                     continue
                 sampler.run_threads(session, self._coord, self.num_threads)
+            tf.logging.info('Filling queues (this can take a few minutes)')
         except (NameError, TypeError, AttributeError, IndexError):
             tf.logging.fatal(
                 "samplers not running, pop_batch_op operations "
@@ -235,17 +236,15 @@ class ApplicationDriver(object):
         config = ApplicationDriver._tf_config()
         with tf.Session(config=config, graph=self.graph) as session:
 
-            tf.logging.info('Filling queues (this can take a few minutes)')
-
             # start samplers' threads
             self._run_sampler_threads(session=session)
 
             self.graph = self._create_graph(self.graph)
+
+            # check app variables initialised and ready for starts
             self.app.check_initialisations()
 
-            # initialise network
-            # fill variables with random values or values from file
-            tf.logging.info('starting from iter %d', self.initial_iter)
+            # initialise network trainable parameters
             self._rand_init_or_restore_vars(session)
 
             start_time = time.time()
@@ -263,7 +262,7 @@ class ApplicationDriver(object):
                 tf.logging.warning('User cancelled application')
             except tf.errors.OutOfRangeError:
                 pass
-            except Exception:
+            except RuntimeError:
                 import sys
                 import traceback
                 exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -344,6 +343,7 @@ class ApplicationDriver(object):
         Randomly initialising all trainable variables defined in session,
         or loading checkpoint files as variable initialisations.
         """
+        tf.logging.info('starting from iter %d', self.initial_iter)
         if self.is_training and self.initial_iter == 0:
             sess.run(self._init_op)
             tf.logging.info('Parameters from random initialisations ...')
@@ -525,8 +525,8 @@ class ApplicationDriver(object):
             return '/cpu:{}'.format(device_id)
         if self.is_training:
             # in training: use gpu only for workers whenever n_local_gpus
-            device = 'device:GPU' if (is_worker and n_local_gpus > 0) else 'cpu'
-            if device == 'device:GPU' and device_id >= n_local_gpus:
+            device = 'gpu' if (is_worker and n_local_gpus > 0) else 'cpu'
+            if device == 'gpu' and device_id >= n_local_gpus:
                 tf.logging.fatal(
                     'trying to use gpu id %s, but only has %s GPU(s), '
                     'please set num_gpus to %s at most',
@@ -534,7 +534,7 @@ class ApplicationDriver(object):
                 raise ValueError
             return '/{}:{}'.format(device, device_id)
         # in inference: use gpu for everything whenever n_local_gpus
-        return '/device:GPU:0' if n_local_gpus > 0 else '/cpu:0'
+        return '/gpu:0' if n_local_gpus > 0 else '/cpu:0'
 
     @staticmethod
     def _create_app(app_type_string):

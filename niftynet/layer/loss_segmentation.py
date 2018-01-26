@@ -433,7 +433,9 @@ def dice_dense(prediction, ground_truth, weight_map=None):
 
     if weight_map is not None:
         raise NotImplementedError
-    ground_truth = tf.cast(ground_truth, dtype=prediction.dtype)
+    prediction = tf.cast(prediction, dtype=tf.float32)
+    ground_truth = tf.cast(ground_truth, dtype=tf.float32)
+    ground_truth = tf.reshape(ground_truth, prediction.shape)
     # computing Dice over the spatial dimensions
     reduce_axes = list(range(len(prediction.shape) - 1))
     dice_numerator = 2.0 * tf.reduce_sum(
