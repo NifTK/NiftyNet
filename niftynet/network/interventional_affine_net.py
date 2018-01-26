@@ -66,7 +66,7 @@ class INetAffine(BaseNet):
         # resize the moving image to match the fixed
         moving_image = Resize(spatial_shape)(moving_image)
         img = tf.concat([moving_image, fixed_image], axis=-1)
-        res_1 = DownRes(self.fea[0], **self.res_param)(img, is_training)[0]
+        res_1 = DownRes(self.fea[0], kernel_size=7, **self.res_param)(img, is_training)[0]
         res_2 = DownRes(self.fea[1], **self.res_param)(res_1, is_training)[0]
         res_3 = DownRes(self.fea[2], **self.res_param)(res_2, is_training)[0]
         res_4 = DownRes(self.fea[3], **self.res_param)(res_3, is_training)[0]

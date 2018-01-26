@@ -11,14 +11,14 @@ from niftynet.layer.resampler import ResamplerLayer
 from niftynet.layer.linear_resize import LinearResizeLayer as Resize
 
 
-class PairwiseSampler(Layer):
+class PairwiseUniformSampler(Layer):
     def __init__(self,
                  reader_0,
                  reader_1,
                  data_param,
                  batch_size=1,
                  window_per_image=2):
-        Layer.__init__(self, name='pairwise_sampler')
+        Layer.__init__(self, name='pairwise_sampler_uniform')
         # reader for the fixed images
         self.reader_0 = reader_0
         # reader for the moving images
@@ -64,8 +64,9 @@ class PairwiseSampler(Layer):
                 [tf.float32, tf.float32, tf.int32, tf.int32])),
             num_threads=4)  # supported by tf 1.4?
         image_dataset = image_dataset.repeat()  # num_epochs can be param
-        image_dataset = image_dataset.shuffle(buffer_size=batch_size * 20)
-        image_dataset = image_dataset.batch(batch_size)
+        image_dataset = image_dataset.shuffle(
+            buffer_size=self.batch_size * 20)
+        image_dataset = image_dataset.batch(self.batch_size)
         self.iterator = image_dataset.make_initializable_iterator()
 
     def get_pairwise_inputs(self, image_id):
@@ -109,9 +110,9 @@ class PairwiseSampler(Layer):
         #      image shapes will not be supported
         # assuming the same shape across modalities, using the first
 
+        # last dim is 1 image + 1 label
         fixed_inputs.set_shape(
             (self.batch_size,) + (None,) * self.spatial_rank + (2,))
-        # last dim is 1 image + 1 label
         moving_inputs.set_shape(
             (self.batch_size,) + self.moving_image_shape + (2,))
         fixed_shape.set_shape((self.batch_size, self.spatial_rank + 1))
@@ -130,7 +131,6 @@ class PairwiseSampler(Layer):
             img_spatial_shape = target_spatial_shape
             win_spatial_shape = [tf.constant(dim) for dim in
                                  self.window_size[:self.spatial_rank]]
-            # TODO shifts dtype should be int?
             # when img==win make sure shift => 0.0
             # otherwise interpolation is out of bound
             batch_shift = [
@@ -148,8 +148,8 @@ class PairwiseSampler(Layer):
                 output_shape=self.window_size[:self.spatial_rank],
                 constraints=affine_constraints)(batch_shift)
             computed_grid.set_shape((self.window_per_image,) +
-                                     self.window_size[:self.spatial_rank] +
-                                     (self.spatial_rank,))
+                                    self.window_size[:self.spatial_rank] +
+                                    (self.spatial_rank,))
             resampler = ResamplerLayer(
                 interpolation='linear', boundary='replicate')
             windows = resampler(combined_volume, computed_grid)
@@ -161,7 +161,8 @@ class PairwiseSampler(Layer):
                         list(self.window_size[:self.spatial_rank]) + \
                         [window_channels]
             windows.set_shape(out_shape)
-        return windows, [tf.reduce_max(computed_grid), batch_shift]
+        return windows
+        #return windows, [tf.reduce_max(computed_grid), batch_shift]
 
     # overriding input buffers
     def run_threads(self, session, *args, **argvs):

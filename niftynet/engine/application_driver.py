@@ -238,7 +238,6 @@ class ApplicationDriver(object):
 
             # start samplers' threads
             self._run_sampler_threads(session=session)
-
             self.graph = self._create_graph(self.graph)
 
             # check app variables initialised and ready for starts

@@ -3,17 +3,20 @@ from __future__ import absolute_import, division, print_function
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
-from niftynet.engine.sampler_uniform import UniformSampler
 from niftynet.io.image_reader import ImageReader
-from niftynet.contrib.sampler_pairwise.sampler_pairwise import PairwiseSampler
-from niftynet.engine.application_factory import OptimiserFactory
-from niftynet.engine.application_factory import ApplicationNetFactory
-from niftynet.engine.application_variables import NETWORK_OUTPUT
+from niftynet.contrib.sampler_pairwise.sampler_pairwise_uniform import \
+    PairwiseUniformSampler
+from niftynet.contrib.sampler_pairwise.sampler_pairwise_resize import \
+    PairwiseResizeSampler
+from niftynet.engine.application_factory import \
+    OptimiserFactory, ApplicationNetFactory
+from niftynet.engine.application_variables import \
+    NETWORK_OUTPUT, CONSOLE, TF_SUMMARIES
+from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
+
 from niftynet.layer.resampler import ResamplerLayer
 from niftynet.layer.pad import PadLayer
-from niftynet.engine.application_variables import CONSOLE
-#from niftynet.layer.loss_regression import LossFunction
-#from niftynet.layer.loss_segmentation import LossFunction
+from niftynet.layer.loss_segmentation import LossFunction
 
 
 SUPPORTED_INPUT = {'moving_image', 'moving_label',
@@ -40,38 +43,62 @@ class RegApp(BaseApplication):
         self.data_param = data_param
         self.registration_param = task_param
 
-        # add validation here
         if self.is_training:
             file_lists = [data_partitioner.train_files]
-            self.readers = (ImageReader({'fixed_image', 'fixed_label'}),
-                            ImageReader({'moving_image', 'moving_label'}))
+            if self.action_param.validation_every_n > 0:
+                file_lists.append(data_partitioner.validation_files)
         else:
-            raise NotImplementedError
+            file_lists = [data_partitioner.inference_files]
 
+        self.readers = []
         for file_list in file_lists:
-            for reader in self.readers:
-                reader.initialise(data_param, task_param, file_list)
+            fixed_reader = ImageReader({'fixed_image', 'fixed_label'})
+            fixed_reader.initialise(data_param, task_param, file_list)
+            self.readers.append(fixed_reader)
+
+            moving_reader = ImageReader({'moving_image', 'moving_label'})
+            moving_reader.initialise(data_param, task_param, file_list)
+            self.readers.append(moving_reader)
 
         # pad the fixed target only
-        volume_padding_layer = []
-        if self.net_param.volume_padding_size:
-            volume_padding_layer.append(PadLayer(
-                image_name=('fixed_image', 'fixed_label'),
-                border=self.net_param.volume_padding_size))
-        self.readers[0].add_preprocessing_layers(volume_padding_layer)
+        # moving image will be resampled to match the targets
+        #volume_padding_layer = []
+        #if self.net_param.volume_padding_size:
+        #    volume_padding_layer.append(PadLayer(
+        #        image_name=('fixed_image', 'fixed_label'),
+        #        border=self.net_param.volume_padding_size))
+
+        #for reader in self.readers:
+        #    reader.add_preprocessing_layers(volume_padding_layer)
 
 
     def initialise_sampler(self):
         if self.is_training:
-            self.sampler = [[
-                PairwiseSampler(
-                    reader_0=self.readers[0],
-                    reader_1=self.readers[1],
+            self.sampler = []
+            assert len(self.readers) >= 2, 'at least two readers are required'
+            training_sampler = PairwiseUniformSampler(
+                reader_0=self.readers[0],
+                reader_1=self.readers[1],
+                data_param=self.data_param,
+                batch_size=self.net_param.batch_size,
+                window_per_image=self.action_param.sample_per_volume)
+            self.sampler.append(training_sampler)
+            # adding validation readers if possible
+            if len(self.readers) >= 4:
+                validation_sampler = PairwiseUniformSampler(
+                    reader_0=self.readers[2],
+                    reader_1=self.readers[3],
                     data_param=self.data_param,
                     batch_size=self.net_param.batch_size,
-                    window_per_image=self.action_param.sample_per_volume)]]
+                    window_per_image=self.action_param.sample_per_volume)
+                self.sampler.append(validation_sampler)
         else:
-            raise NotImplementedError
+            self.sampler = PairwiseResizeSampler(
+                reader_0=self.readers[0],
+                reader_1=self.readers[1],
+                data_param=self.data_param,
+                batch_size=self.net_param.batch_size,
+                window_per_image=1)
 
     def initialise_network(self):
         decay = self.net_param.decay
@@ -80,8 +107,105 @@ class RegApp(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
+
+        def switch_samplers(for_training):
+            with tf.name_scope('train' if for_training else 'validation'):
+                sampler = self.get_sampler()[0 if for_training else -1]
+                return sampler()
+
         if self.is_training:
-            image_windows, shift = self.sampler[0][0]()
+            if self.action_param.validation_every_n > 0:
+                image_windows = tf.cond(tf.logical_not(self.is_validation),
+                                        lambda: switch_samplers(True),
+                                        lambda: switch_samplers(False))
+            else:
+                image_windows = switch_sampler(True)
+
+            # decode channels for moving and fixed images
+            image_windows_list = [
+                tf.expand_dims(img, axis=-1)
+                for img in tf.unstack(image_windows, axis=-1)]
+            fixed_image, fixed_label, moving_image, moving_label = \
+                image_windows_list
+
+            # estimate ddf
+            dense_field = self.net(fixed_image, moving_image)
+            if isinstance(dense_field, tuple):
+                dense_field = dense_field[0]
+
+            # transform the moving labels
+            resampler = ResamplerLayer(
+                interpolation='linear', boundary='replicate')
+            resampled_moving_label = resampler(moving_label, dense_field)
+            #resampled_moving_image = resampler(moving_image, dense_field)
+
+            # compute label loss (foreground only)
+            loss_func = LossFunction(
+                n_class=1,
+                loss_type=self.action_param.loss_type,
+                softmax=False)
+            label_loss = loss_func(prediction=resampled_moving_label,
+                                   ground_truth=fixed_label)
+
+            dice_fg = 1.0 - label_loss
+            # appending regularisation loss
+            total_loss = label_loss
+            reg_loss = tf.get_collection('bending_energy')
+            if reg_loss:
+                total_loss = total_loss + \
+                    self.net_param.decay * tf.reduce_mean(reg_loss)
+
+            # compute training gradients
+            with tf.name_scope('Optimiser'):
+                optimiser_class = OptimiserFactory.create(
+                    name=self.action_param.optimiser)
+                self.optimiser = optimiser_class.get_instance(
+                    learning_rate=self.action_param.lr)
+            grads = self.optimiser.compute_gradients(total_loss)
+            gradients_collector.add_to_collection(grads)
+
+            # command line output
+            outputs_collector.add_to_collection(
+                var=dice_fg, name='ave_fg_dice', collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=total_loss, name='total_loss', collection=CONSOLE)
+
+            # for tensorboard
+            outputs_collector.add_to_collection(
+                var=dice_fg,
+                name='averaged_foreground_Dice',
+                average_over_devices=True,
+                summary_type='scalar',
+                collection=TF_SUMMARIES)
+            outputs_collector.add_to_collection(
+                var=total_loss,
+                name='averaged_total_loss',
+                average_over_devices=True,
+                summary_type='scalar',
+                collection=TF_SUMMARIES)
+
+            # for visualisation debugging
+            #outputs_collector.add_to_collection(
+            #    var=fixed_image, name='fixed_image', collection=NETWORK_OUTPUT)
+            #outputs_collector.add_to_collection(
+            #    var=fixed_label, name='fixed_label', collection=NETWORK_OUTPUT)
+            #outputs_collector.add_to_collection(
+            #    var=moving_image, name='moving_image', collection=NETWORK_OUTPUT)
+            #outputs_collector.add_to_collection(
+            #    var=moving_label, name='moving_label', collection=NETWORK_OUTPUT)
+            #outputs_collector.add_to_collection(
+            #    var=resampled_moving_image, name='resampled_image', collection=NETWORK_OUTPUT)
+            #outputs_collector.add_to_collection(
+            #    var=resampled_moving_label, name='resampled_label', collection=NETWORK_OUTPUT)
+            #outputs_collector.add_to_collection(
+            #    var=dense_field, name='ddf', collection=NETWORK_OUTPUT)
+
+            #outputs_collector.add_to_collection(
+            #    var=shift[0], name='a', collection=CONSOLE)
+            #outputs_collector.add_to_collection(
+            #    var=shift[1], name='b', collection=CONSOLE)
+        else:
+            image_windows, locations = self.sampler()
             image_windows_list = [
                 tf.expand_dims(img, axis=-1)
                 for img in tf.unstack(image_windows, axis=-1)]
@@ -91,77 +215,51 @@ class RegApp(BaseApplication):
             dense_field = self.net(fixed_image, moving_image)
             if isinstance(dense_field, tuple):
                 dense_field = dense_field[0]
+
             # transform the moving labels
             resampler = ResamplerLayer(
                 interpolation='linear', boundary='replicate')
+            resampled_moving_image = resampler(moving_image, dense_field)
             resampled_moving_label = resampler(moving_label, dense_field)
-            #resampled_moving_label = tf.concat(
-            #    [1.0 - resampled_moving_label, resampled_moving_label], axis=-1)
-            #resampled_moving_image = resampler(moving_image, dense_field)
-            #resampled_moving_label = moving_label * tf.get_variable('a', [1])
-            # compute label loss
-            #loss_func = LossFunction(n_class=2, loss_type='Dice')
-            label_loss = loss_func(
-                prediction=resampled_moving_label,
-                ground_truth=fixed_label)
-
-            total_loss = label_loss
-            reg_loss = tf.get_collection('bending_energy')
-            if reg_loss:
-                lambda_bending = 0.1  # todo: make it an option
-                total_loss = total_loss + \
-                    lambda_bending * tf.reduce_mean(reg_loss)
 
             outputs_collector.add_to_collection(
-                var=(1.0 - label_loss), name='ave_fg_dice', collection=CONSOLE)
+                var=fixed_image, name='fixed_image',
+                collection=NETWORK_OUTPUT)
             outputs_collector.add_to_collection(
-                var=total_loss, name='total_loss', collection=CONSOLE)
+                var=moving_image, name='moving_image',
+                collection=NETWORK_OUTPUT)
+            outputs_collector.add_to_collection(
+                var=resampled_moving_image,
+                name='resampled_moving_image',
+                collection=NETWORK_OUTPUT)
+            outputs_collector.add_to_collection(
+                var=resampled_moving_label,
+                name='resampled_moving_label',
+                collection=NETWORK_OUTPUT)
 
-            # compute training gradients
-            with tf.name_scope('Optimiser'):
-                optimiser_class = OptimiserFactory.create(
-                    name=self.action_param.optimiser)
-                self.optimiser = optimiser_class.get_instance(
-                    learning_rate=self.action_param.lr)
-            grads = self.optimiser.compute_gradients(label_loss)
-            gradients_collector.add_to_collection(grads)
+            outputs_collector.add_to_collection(
+                var=fixed_label, name='fixed_label',
+                collection=NETWORK_OUTPUT)
+            outputs_collector.add_to_collection(
+                var=moving_label, name='moving_label',
+                collection=NETWORK_OUTPUT)
+            #outputs_collector.add_to_collection(
+            #    var=dense_field, name='field',
+            #    collection=NETWORK_OUTPUT)
+            outputs_collector.add_to_collection(
+                var=locations, name='location',
+                collection=NETWORK_OUTPUT)
 
-            # for visualisation debugging
-            #outputs_collector.add_to_collection(
-            #    var=fixed_image, name='image', collection=NETWORK_OUTPUT)
-            #outputs_collector.add_to_collection(
-            #    var=fixed_label, name='label', collection=NETWORK_OUTPUT)
-            #outputs_collector.add_to_collection(
-            #    var=moving_image, name='moving_image', collection=NETWORK_OUTPUT)
-            #outputs_collector.add_to_collection(
-            #    var=moving_label, name='moving_label', collection=NETWORK_OUTPUT)
-            #outputs_collector.add_to_collection(
-            #    var=resampled_moving_label, name='resampled', collection=NETWORK_OUTPUT)
-            #outputs_collector.add_to_collection(
-            #    var=dense_field, name='ddf', collection=NETWORK_OUTPUT)
-
-            #outputs_collector.add_to_collection(
-            #    var=shift[0], name='a', collection=CONSOLE)
-            #outputs_collector.add_to_collection(
-            #    var=shift[1], name='b', collection=CONSOLE)
-        else:
-            raise NotImplementedError
+            self.output_decoder = ResizeSamplesAggregator(
+                image_reader=self.readers[0], # fixed image reader
+                name='fixed_image',
+                output_path=self.action_param.save_seg_dir,
+                interp_order=self.action_param.output_interp_order)
 
     def interpret_output(self, batch_output):
-        #import matplotlib.pyplot as plt
-        #import pdb; pdb.set_trace()
         if self.is_training:
             return True
-        raise NotImplementedError
-
-def loss_func(prediction, ground_truth):
-    # compute dice of foreground only
-    # the first dim is treated as the batch
-    eps_tol = 1e-6
-    reduce_axes = range(len(prediction.get_shape()))[1:]
-    numerator = 2.0 * tf.reduce_sum(
-        prediction * ground_truth, axis=reduce_axes)
-    denominator = tf.reduce_sum(prediction, axis=reduce_axes) + \
-        tf.reduce_sum(ground_truth, axis=reduce_axes) + eps_tol
-    return 1.0 - tf.reduce_mean(numerator / denominator)
+        print(batch_output['location'])
+        return self.output_decoder.decode_batch(
+            batch_output['resampled_moving_image'], batch_output['location'])
 

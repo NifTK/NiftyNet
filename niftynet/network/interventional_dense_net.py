@@ -103,7 +103,7 @@ class INetDense(BaseNet):
         moving_image = Resize(spatial_shape)(moving_image)
         img = tf.concat([moving_image, fixed_image], axis=-1)
         down_res_0, conv_0_0, _ = \
-            DownRes(self.fea[0], **self.down_res_param)(img, is_training)
+            DownRes(self.fea[0], kernel_size=7, **self.down_res_param)(img, is_training)
         down_res_1, conv_0_1, _ = \
             DownRes(self.fea[1], **self.down_res_param)(down_res_0, is_training)
         down_res_2, conv_0_2, _ = \
