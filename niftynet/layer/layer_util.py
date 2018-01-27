@@ -62,7 +62,7 @@ def trivial_kernel(kernel_shape):
     return flattened.reshape(kernel_shape)
 
 
-def expand_spatial_params(input_param, spatial_rank):
+def expand_spatial_params(input_param, spatial_rank, param_type=int):
     """
     Expand input parameter
     e.g., ``kernel_size=3`` is converted to ``kernel_size=[3, 3, 3]``
@@ -70,13 +70,20 @@ def expand_spatial_params(input_param, spatial_rank):
     """
     spatial_rank = int(spatial_rank)
     try:
-        input_param = int(input_param)
+        if param_type == int:
+            input_param = int(input_param)
+        else:
+            input_param = float(input_param)
         return (input_param,) * spatial_rank
     except (ValueError, TypeError):
         pass
     try:
-        input_param = \
-            np.asarray(input_param).flatten().astype(np.int).tolist()
+        if param_type == int:
+            input_param = \
+                np.asarray(input_param).flatten().astype(np.int).tolist()
+        else:
+            input_param = \
+                np.asarray(input_param).flatten().astype(np.float).tolist()
     except (ValueError, TypeError):
         # skip type casting if it's a TF tensor
         pass

@@ -56,8 +56,8 @@ class SmoothingLayer(Layer):
         Layer.__init__(self, name='approximated_smoothing')
         self.kernel_func = look_up_operations(
             type_str.lower(), SUPPORTED_KERNELS)
-        self.sigma = float(sigma)
-        self.truncate = float(truncate)
+        self.sigma = sigma
+        self.truncate = truncate
 
     def layer_op(self, image):
         """
@@ -66,10 +66,15 @@ class SmoothingLayer(Layer):
         :return: spatially smoothed image
         """
         spatial_rank = infer_spatial_rank(image)
-        _sigmas = expand_spatial_params(
-            input_param=self.sigma, spatial_rank=spatial_rank)
-        _truncate = expand_spatial_params(
-            input_param=self.truncate, spatial_rank=spatial_rank)
+        _sigmas = expand_spatial_params(input_param=self.sigma,
+                                        spatial_rank=spatial_rank,
+                                        param_type=float)
+        _truncate = expand_spatial_params(input_param=self.truncate,
+                                          spatial_rank=spatial_rank,
+                                          param_type=float)
+        if not all(_sigmas):
+            # return the original image if any sigma is zero
+            return image
 
         def do_conv(input_tensor, dim):
             assert dim < spatial_rank

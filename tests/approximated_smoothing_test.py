@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.approximated_smoothing import SmoothingLayer as Smoothing
@@ -36,6 +37,7 @@ class SmoothingTest(tf.test.TestCase):
         with self.test_session() as sess:
             out = sess.run(smoothed)
             self.assertAllClose(out.shape, x.shape.as_list())
+        return out
 
     def test_shape(self):
         self.run_test(1, 2, 'cauchy')
@@ -52,6 +54,20 @@ class SmoothingTest(tf.test.TestCase):
 
         with self.assertRaisesRegexp(ValueError, ''):
             self.run_test(3, -1, 'gassian')
+
+    def test_original(self):
+        out = self.run_test(3, 0, 'gaussian')
+        self.assertTrue(np.all(out==1))
+        out = self.run_test(2, 0, 'gaussian')
+        self.assertTrue(np.all(out==1))
+        out = self.run_test(1, 0, 'gaussian')
+        self.assertTrue(np.all(out==1))
+        out = self.run_test(3, 0, 'cauchy')
+        self.assertTrue(np.all(out==1))
+        out = self.run_test(2, 0, 'cauchy')
+        self.assertTrue(np.all(out==1))
+        out = self.run_test(1, 0, 'cauchy')
+        self.assertTrue(np.all(out==1))
 
 
 if __name__ == "__main__":
