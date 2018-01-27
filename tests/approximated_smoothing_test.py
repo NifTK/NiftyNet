@@ -7,8 +7,8 @@ from niftynet.layer.approximated_smoothing import SmoothingLayer as Smoothing
 
 
 class SmoothingTest(tf.test.TestCase):
-    def get_3d_input(self):
-        input_shape = (2, 16, 16, 16, 8)
+    def get_1d_input(self):
+        input_shape = (2, 16, 8)
         x = tf.ones(input_shape)
         return x
 
@@ -17,27 +17,41 @@ class SmoothingTest(tf.test.TestCase):
         x = tf.ones(input_shape)
         return x
 
-    def run_test(self, is_3d, sigma, type_str, expected_shape):
-        if is_3d:
+    def get_3d_input(self):
+        input_shape = (2, 16, 16, 16, 8)
+        x = tf.ones(input_shape)
+        return x
+
+    def run_test(self, ndim, sigma, type_str):
+        if ndim == 3:
             x = self.get_3d_input()
-        else:
+        elif ndim == 2:
             x = self.get_2d_input()
+        else:
+            x = self.get_1d_input()
 
         smoothing_layer = Smoothing(sigma=sigma, type_str=type_str)
         smoothed = smoothing_layer(x)
         print(smoothing_layer)
         with self.test_session() as sess:
             out = sess.run(smoothed)
-            #import matplotlib.pyplot as plt
-            #if is_3d:
-            #    plt.imshow(out[0,:,:,5,0])
-            #else:
-            #    plt.imshow(out[0,:,:,0])
-            #plt.show()
-            #self.assertAllClose(out.shape, expected_shape)
+            self.assertAllClose(out.shape, x.shape.as_list())
 
-    def test_3d_inputs(self):
-        self.run_test(True, 2, 'cauchy', [])
+    def test_shape(self):
+        self.run_test(1, 2, 'cauchy')
+        self.run_test(1, 2, 'gaussian')
+        self.run_test(2, 2, 'cauchy')
+        self.run_test(2, 2, 'gaussian')
+        self.run_test(3, 2, 'cauchy')
+        self.run_test(3, 2, 'gaussian')
+
+    def test_ill_inputs(self):
+        self.run_test(3, -1, 'gaussian')
+        self.run_test(3, -1, 'cauchy')
+        self.run_test(3, 100, 'cauchy')
+
+        with self.assertRaisesRegexp(ValueError, ''):
+            self.run_test(3, -1, 'gassian')
 
 
 if __name__ == "__main__":

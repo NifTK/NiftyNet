@@ -15,21 +15,22 @@ This class approximates image smoothing using separable 1D kernels.
 
 
 def gaussian_1d(sigma, truncated=3.0):
-    if sigma == 0:
+    if sigma <= 0:
         return tf.constant(0.0)
 
-    tail = int(sigma * truncated)
-    k = [(-0.5 * x * x) / (sigma * sigma) for x in range(-tail, tail + 1)]
+    tail = int(sigma * truncated + 0.5)
+    sigma_square = sigma * sigma
+    k = [(-0.5 * x * x) / sigma_square for x in range(-tail, tail + 1)]
     k = tf.exp(k)
     k = k / tf.reduce_sum(k)
     return k
 
 
 def cauchy_1d(sigma, truncated=5.0):
-    if sigma == 0:
+    if sigma <= 0:
         return tf.constant(0.0)
 
-    tail = int(sigma * truncated)
+    tail = int(sigma * truncated + 0.5)
     k = [((float(x) / sigma) ** 2 + 1.0) for x in range(-tail, tail + 1)]
     k = tf.reciprocal(k)
     k = k / tf.reduce_sum(k)
@@ -40,7 +41,18 @@ SUPPORTED_KERNELS = {'gaussian': gaussian_1d, 'cauchy': cauchy_1d}
 
 
 class SmoothingLayer(Layer):
+    """
+    computing 1d convolution one each spatial dimension of the input
+    using one-dimensional filter.
+    """
+
     def __init__(self, sigma=1, truncate=3.0, type_str='gaussian'):
+        """
+
+        :param sigma: standard deviation
+        :param truncate: Truncate the filter at this many standard deviations
+        :param type_str: type of kernels
+        """
         Layer.__init__(self, name='approximated_smoothing')
         self.kernel_func = look_up_operations(
             type_str.lower(), SUPPORTED_KERNELS)
@@ -48,6 +60,11 @@ class SmoothingLayer(Layer):
         self.truncate = float(truncate)
 
     def layer_op(self, image):
+        """
+
+        :param image: in shape `(batch, x[, y, z], feature_channels)`
+        :return: spatially smoothed image
+        """
         spatial_rank = infer_spatial_rank(image)
         _sigmas = expand_spatial_params(
             input_param=self.sigma, spatial_rank=spatial_rank)

@@ -89,7 +89,7 @@ class PairwiseResizeSampler(Layer):
         # or the list of moving images
         try:
             image_source_type = image_source_type.decode()
-        except:
+        except AttributeError:
             pass
         if image_source_type.startswith('fixed'):
             _, data, _ = self.reader_0(idx=image_id, shuffle=True)

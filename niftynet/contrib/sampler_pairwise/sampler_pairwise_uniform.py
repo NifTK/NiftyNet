@@ -9,6 +9,7 @@ from niftynet.layer.base_layer import Layer
 from niftynet.layer.grid_warper import AffineGridWarperLayer
 from niftynet.layer.resampler import ResamplerLayer
 from niftynet.layer.linear_resize import LinearResizeLayer as Resize
+# from niftynet.layer.approximated_smoothing import SmoothingLayer as Smoothing
 
 
 class PairwiseUniformSampler(Layer):
@@ -124,6 +125,17 @@ class PairwiseUniformSampler(Layer):
         moving_inputs = Resize(new_size=target_spatial_shape)(moving_inputs)
         combined_volume = tf.concat([fixed_inputs, moving_inputs], axis=-1)
 
+        # smoothing_layer = Smoothing(
+        #     sigma=1, truncate=3.0, type_str='gaussian')
+        # combined_volume = tf.unstack(combined_volume, axis=-1)
+        # combined_volume[0] = tf.expand_dims(combined_volume[0], axis=-1)
+        # combined_volume[1] = smoothing_layer(
+        #     tf.expand_dims(combined_volume[1]), axis=-1)
+        # combined_volume[2] = tf.expand_dims(combined_volume[2], axis=-1)
+        # combined_volume[3] = smoothing_layer(
+        #     tf.expand_dims(combined_volume[3]), axis=-1)
+        # combined_volume = tf.stack(combined_volume, axis=-1)
+
         # TODO affine data augmentation here
         if self.spatial_rank == 3:
             window_channels = np.prod(self.window_size[self.spatial_rank:]) * 4
@@ -162,7 +174,7 @@ class PairwiseUniformSampler(Layer):
                         [window_channels]
             windows.set_shape(out_shape)
         return windows
-        #return windows, [tf.reduce_max(computed_grid), batch_shift]
+        # return windows, [tf.reduce_max(computed_grid), batch_shift]
 
     # overriding input buffers
     def run_threads(self, session, *args, **argvs):
