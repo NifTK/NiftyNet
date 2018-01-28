@@ -119,7 +119,6 @@ class RescaledFieldImageGridWarperLayer(GridWarperLayer):
     super(RescaledFieldImageGridWarperLayer, self).__init__(source_shape=source_shape,
                                            output_shape=output_shape,
                                            coeff_shape=coeff_shape,
-                                           field_interpretation=field_interpretation,
                                            name=name)
   def layer_op(self,field):
     input_shape = tf.shape(field)
