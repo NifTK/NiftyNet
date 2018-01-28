@@ -331,7 +331,8 @@ class ApplicationDriver(object):
             with tf.name_scope('MergedOutputs'):
                 self.outputs_collector.finalise_output_op()
             # saving operation
-            self.saver = tf.train.Saver(max_to_keep=self.max_checkpoints)
+            self.saver = tf.train.Saver(max_to_keep=self.max_checkpoints,
+                                        save_relative_paths=True)
 
         # no more operation definitions after this point
         tf.Graph.finalize(graph)
