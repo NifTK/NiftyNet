@@ -164,22 +164,35 @@ class RegApp(BaseApplication):
             grads = self.optimiser.compute_gradients(total_loss)
             gradients_collector.add_to_collection(grads)
 
+            metrics_dice = loss_func(
+                prediction=tf.to_float(resampled_moving_label >= 0.5),
+                ground_truth=tf.to_float(fixed_label >= 0.5))
+            metrics_dice = 1.0 - metrics_dice
+
             # command line output
             outputs_collector.add_to_collection(
-                var=dice_fg, name='ave_fg_dice', collection=CONSOLE)
+                var=dice_fg, name='data_loss', collection=CONSOLE)
             outputs_collector.add_to_collection(
                 var=total_loss, name='total_loss', collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=metrics_dice, name='ave_fg_dice', collection=CONSOLE)
 
             # for tensorboard
             outputs_collector.add_to_collection(
                 var=dice_fg,
-                name='averaged_foreground_Dice',
+                name='data_loss',
                 average_over_devices=True,
                 summary_type='scalar',
                 collection=TF_SUMMARIES)
             outputs_collector.add_to_collection(
                 var=total_loss,
                 name='averaged_total_loss',
+                average_over_devices=True,
+                summary_type='scalar',
+                collection=TF_SUMMARIES)
+            outputs_collector.add_to_collection(
+                var=metrics_dice,
+                name='averaged_foreground_Dice',
                 average_over_devices=True,
                 summary_type='scalar',
                 collection=TF_SUMMARIES)

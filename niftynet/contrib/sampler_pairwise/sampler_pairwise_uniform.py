@@ -9,7 +9,7 @@ from niftynet.layer.base_layer import Layer
 from niftynet.layer.grid_warper import AffineGridWarperLayer
 from niftynet.layer.resampler import ResamplerLayer
 from niftynet.layer.linear_resize import LinearResizeLayer as Resize
-# from niftynet.layer.approximated_smoothing import SmoothingLayer as Smoothing
+#from niftynet.layer.approximated_smoothing import SmoothingLayer as Smooth
 
 
 class PairwiseUniformSampler(Layer):
