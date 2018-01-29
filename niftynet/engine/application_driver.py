@@ -260,7 +260,9 @@ class ApplicationDriver(object):
             except KeyboardInterrupt:
                 tf.logging.warning('User cancelled application')
             except tf.errors.OutOfRangeError:
-                pass
+                if loop_status.get('all_saved_flag', None) is not None:
+                    # reached the end of inference Dataset
+                    loop_status['all_saved_flag'] = True
             except RuntimeError:
                 import sys
                 import traceback
