@@ -80,8 +80,7 @@ class RegApp(BaseApplication):
                 reader_0=self.readers[0],
                 reader_1=self.readers[1],
                 data_param=self.data_param,
-                batch_size=self.net_param.batch_size,
-                window_per_image=self.action_param.sample_per_volume)
+                batch_size=self.net_param.batch_size)
             self.sampler.append(training_sampler)
             # adding validation readers if possible
             if len(self.readers) >= 4:
@@ -89,16 +88,14 @@ class RegApp(BaseApplication):
                     reader_0=self.readers[2],
                     reader_1=self.readers[3],
                     data_param=self.data_param,
-                    batch_size=self.net_param.batch_size,
-                    window_per_image=self.action_param.sample_per_volume)
+                    batch_size=self.net_param.batch_size)
                 self.sampler.append(validation_sampler)
         else:
             self.sampler = PairwiseResizeSampler(
                 reader_0=self.readers[0],
                 reader_1=self.readers[1],
                 data_param=self.data_param,
-                batch_size=self.net_param.batch_size,
-                window_per_image=1)
+                batch_size=self.net_param.batch_size)
 
     def initialise_network(self):
         decay = self.net_param.decay
@@ -111,15 +108,19 @@ class RegApp(BaseApplication):
         def switch_samplers(for_training):
             with tf.name_scope('train' if for_training else 'validation'):
                 sampler = self.get_sampler()[0 if for_training else -1]
-                return sampler()[0]  # returns image only
+                return sampler()  # returns image only
 
         if self.is_training:
             if self.action_param.validation_every_n > 0:
-                image_windows = tf.cond(tf.logical_not(self.is_validation),
-                                        lambda: switch_samplers(True),
-                                        lambda: switch_samplers(False))
+                sampler_window = \
+                    tf.cond(tf.logical_not(self.is_validation),
+                            lambda: switch_samplers(True),
+                            lambda: switch_samplers(False))
             else:
-                image_windows = switch_sampler(True)
+                sampler_window = switch_sampler(True)
+
+            image_windows, _ = sampler_window
+            # image_windows, locations = sampler_window
 
             # decode channels for moving and fixed images
             image_windows_list = [
@@ -137,7 +138,6 @@ class RegApp(BaseApplication):
             resampler = ResamplerLayer(
                 interpolation='linear', boundary='replicate')
             resampled_moving_label = resampler(moving_label, dense_field)
-            #resampled_moving_image = resampler(moving_image, dense_field)
 
             # compute label loss (foreground only)
             loss_func = LossFunction(
@@ -171,7 +171,11 @@ class RegApp(BaseApplication):
 
             # command line output
             outputs_collector.add_to_collection(
-                var=dice_fg, name='data_loss', collection=CONSOLE)
+                var=dice_fg, name='one_minus_data_loss',
+                collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=tf.reduce_mean(reg_loss), name='bending_energy',
+                collection=CONSOLE)
             outputs_collector.add_to_collection(
                 var=total_loss, name='total_loss', collection=CONSOLE)
             outputs_collector.add_to_collection(
@@ -198,25 +202,34 @@ class RegApp(BaseApplication):
                 collection=TF_SUMMARIES)
 
             # for visualisation debugging
-            #outputs_collector.add_to_collection(
-            #    var=fixed_image, name='fixed_image', collection=NETWORK_OUTPUT)
-            #outputs_collector.add_to_collection(
-            #    var=fixed_label, name='fixed_label', collection=NETWORK_OUTPUT)
-            #outputs_collector.add_to_collection(
-            #    var=moving_image, name='moving_image', collection=NETWORK_OUTPUT)
-            #outputs_collector.add_to_collection(
-            #    var=moving_label, name='moving_label', collection=NETWORK_OUTPUT)
-            #outputs_collector.add_to_collection(
-            #    var=resampled_moving_image, name='resampled_image', collection=NETWORK_OUTPUT)
-            #outputs_collector.add_to_collection(
-            #    var=resampled_moving_label, name='resampled_label', collection=NETWORK_OUTPUT)
-            #outputs_collector.add_to_collection(
-            #    var=dense_field, name='ddf', collection=NETWORK_OUTPUT)
+            # resampled_moving_image = resampler(moving_image, dense_field)
+            # outputs_collector.add_to_collection(
+            #     var=fixed_image, name='fixed_image',
+            #     collection=NETWORK_OUTPUT)
+            # outputs_collector.add_to_collection(
+            #     var=fixed_label, name='fixed_label',
+            #     collection=NETWORK_OUTPUT)
+            # outputs_collector.add_to_collection(
+            #     var=moving_image, name='moving_image',
+            #     collection=NETWORK_OUTPUT)
+            # outputs_collector.add_to_collection(
+            #     var=moving_label, name='moving_label',
+            #     collection=NETWORK_OUTPUT)
+            # outputs_collector.add_to_collection(
+            #     var=resampled_moving_image, name='resampled_image',
+            #     collection=NETWORK_OUTPUT)
+            # outputs_collector.add_to_collection(
+            #     var=resampled_moving_label, name='resampled_label',
+            #     collection=NETWORK_OUTPUT)
+            # outputs_collector.add_to_collection(
+            #     var=dense_field, name='ddf', collection=NETWORK_OUTPUT)
+            # outputs_collector.add_to_collection(
+            #     var=locations, name='locations', collection=NETWORK_OUTPUT)
 
-            #outputs_collector.add_to_collection(
-            #    var=shift[0], name='a', collection=CONSOLE)
-            #outputs_collector.add_to_collection(
-            #    var=shift[1], name='b', collection=CONSOLE)
+            # outputs_collector.add_to_collection(
+            #     var=shift[0], name='a', collection=CONSOLE)
+            # outputs_collector.add_to_collection(
+            #     var=shift[1], name='b', collection=CONSOLE)
         else:
             image_windows, locations = self.sampler()
             image_windows_list = [
@@ -260,7 +273,7 @@ class RegApp(BaseApplication):
             #    var=dense_field, name='field',
             #    collection=NETWORK_OUTPUT)
             outputs_collector.add_to_collection(
-                var=locations, name='location',
+                var=locations, name='locations',
                 collection=NETWORK_OUTPUT)
 
             self.output_decoder = ResizeSamplesAggregator(
@@ -272,7 +285,7 @@ class RegApp(BaseApplication):
     def interpret_output(self, batch_output):
         if self.is_training:
             return True
-        print(batch_output['location'])
         return self.output_decoder.decode_batch(
-            batch_output['resampled_moving_image'], batch_output['location'])
+            batch_output['resampled_moving_image'],
+            batch_output['locations'])
 

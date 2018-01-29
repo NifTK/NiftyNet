@@ -16,8 +16,7 @@ class PairwiseResizeSampler(Layer):
                  reader_0,
                  reader_1,
                  data_param,
-                 batch_size=1,
-                 window_per_image=2):
+                 batch_size=1):
         Layer.__init__(self, name='pairwise_sampler_resize')
         # reader for the fixed images
         self.reader_0 = reader_0
@@ -32,14 +31,13 @@ class PairwiseResizeSampler(Layer):
         #    [batch, x, y, channel] or [batch, x, y, z, channels]
         # 3) infer spatial rank
         # 4) make ``label`` optional
+        self.batch_size = batch_size
         self.spatial_rank = 3
         self.window = ImageWindow.from_data_reader_properties(
             self.reader_0.input_sources,
             self.reader_0.shapes,
             self.reader_0.tf_dtypes,
             data_param)
-        self.batch_size = 1
-        self.window_per_image = window_per_image
         if self.window.has_dynamic_shapes:
             tf.logging.fatal('Dynamic shapes not supported.\nPlease specify '
                              'all spatial dims of the input data, for the '
@@ -92,9 +90,9 @@ class PairwiseResizeSampler(Layer):
         except AttributeError:
             pass
         if image_source_type.startswith('fixed'):
-            _, data, _ = self.reader_0(idx=image_id, shuffle=True)
+            _, data, _ = self.reader_0(idx=image_id)
         else:  # image_source_type.startswith('moving'):
-            _, data, _ = self.reader_1(idx=image_id, shuffle=True)
+            _, data, _ = self.reader_1(idx=image_id)
         image = np.asarray(data[image_source_type]).astype(np.float32)
         image_shape = list(image.shape)
         image = np.reshape(image, image_shape[:self.spatial_rank] + [-1])
@@ -107,7 +105,7 @@ class PairwiseResizeSampler(Layer):
         # TODO preprocessing layer modifying
         #      image shapes will not be supported
         # assuming the same shape across modalities, using the first
-        image_id.set_shape(())
+        image_id.set_shape((self.batch_size,))
         image_id = tf.to_float(image_id)
 
         fixed_inputs.set_shape(
@@ -119,6 +117,7 @@ class PairwiseResizeSampler(Layer):
         moving_shape.set_shape((self.batch_size, self.spatial_rank + 1))
 
         # resizing the moving_inputs to match the target
+        # assumes the same shape across the batch
         target_spatial_shape = \
             tf.unstack(fixed_shape[0], axis=0)[:self.spatial_rank]
         moving_inputs = Resize(new_size=target_spatial_shape)(moving_inputs)
@@ -145,27 +144,25 @@ class PairwiseResizeSampler(Layer):
                 source_shape=(None, None, None),
                 output_shape=self.window_size[:self.spatial_rank],
                 constraints=affine_constraints)(batch_scale)
-            computed_grid.set_shape((self.window_per_image,) +
+            computed_grid.set_shape((1,) +
                                     self.window_size[:self.spatial_rank] +
                                     (self.spatial_rank,))
             resampler = ResamplerLayer(
                 interpolation='linear', boundary='replicate')
             windows = resampler(combined_volume, computed_grid)
-            if self.window_per_image == self.batch_size:
-                out_batch_size = self.window_per_image
-            else:
-                out_batch_size = self.window_per_image * self.batch_size
-            out_shape = [out_batch_size] + \
+            out_shape = [self.batch_size] + \
                         list(self.window_size[:self.spatial_rank]) + \
                         [window_channels]
             windows.set_shape(out_shape)
 
-            image_id = tf.reshape(image_id, (1,1))
-            start_location = tf.zeros((1, self.spatial_rank))
+            image_id = tf.reshape(image_id, (self.batch_size, 1))
+            start_location = tf.zeros((self.batch_size, self.spatial_rank))
             end_location = tf.constant(self.window_size[:self.spatial_rank])
             end_location = tf.reshape(end_location, (1, self.spatial_rank))
-            end_location = tf.to_float(end_location)
-            locations = tf.concat([image_id, start_location, end_location], axis=1)
+            end_location = tf.to_float(tf.tile(
+                end_location, [self.batch_size, 1]))
+            locations = tf.concat([
+                image_id, start_location, end_location], axis=1)
         return windows, locations
         #return windows, [tf.reduce_max(computed_grid), batch_scale]
 
