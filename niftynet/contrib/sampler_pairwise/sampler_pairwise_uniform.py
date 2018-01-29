@@ -179,7 +179,7 @@ class PairwiseUniformSampler(Layer):
 
             image_id = tf.reshape(image_id, (1,1))
             start_location = tf.zeros((1, self.spatial_rank))
-            end_location = tf.stack(target_spatial_shape)
+            end_location = tf.constant(self.window_size[:self.spatial_rank])
             end_location = tf.reshape(end_location, (1, self.spatial_rank))
             end_location = tf.to_float(end_location)
             locations = tf.concat([image_id, start_location, end_location], axis=1)

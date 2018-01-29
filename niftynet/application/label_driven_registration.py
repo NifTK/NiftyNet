@@ -270,8 +270,6 @@ class RegApp(BaseApplication):
                 interp_order=self.action_param.output_interp_order)
 
     def interpret_output(self, batch_output):
-        # import matplotlib.pyplot as plt
-        # import pdb; pdb.set_trace()
         if self.is_training:
             return True
         print(batch_output['location'])
