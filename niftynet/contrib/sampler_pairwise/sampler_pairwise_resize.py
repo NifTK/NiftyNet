@@ -31,7 +31,8 @@ class PairwiseResizeSampler(Layer):
         #    [batch, x, y, channel] or [batch, x, y, z, channels]
         # 3) infer spatial rank
         # 4) make ``label`` optional
-        self.batch_size = batch_size
+        self.batch_size = int(batch_size)
+        assert self.batch_size > 0, "batch size must be greater than 0"
         self.spatial_rank = 3
         self.window = ImageWindow.from_data_reader_properties(
             self.reader_0.input_sources,
@@ -52,8 +53,12 @@ class PairwiseResizeSampler(Layer):
 
         # initialise a dataset prefetching pairs of image and label volumes
         n_subjects = len(self.reader_0.output_list)
-        rand_ints = list(range(n_subjects))
-        image_dataset = Dataset.from_tensor_slices(rand_ints)
+        int_seq = list(range(n_subjects))
+        # make the list of sequence divisible by batch size
+        while len(int_seq) > 0 and len(int_seq) % self.batch_size != 0:
+            int_seq.append(int_seq[-1])
+
+        image_dataset = Dataset.from_tensor_slices(int_seq)
         # mapping random integer id to 4 volumes moving/fixed x image/label
         # tf.py_func wrapper of ``get_pairwise_inputs``
         image_dataset = image_dataset.map(
