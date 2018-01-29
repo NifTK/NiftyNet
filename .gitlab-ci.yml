@@ -24,7 +24,6 @@ testjob:
     - dev
     - dev-staging
     - tags
-    - cherrypick-from-dev-to-v0.2.1-for-v0.2.2-release
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
@@ -163,7 +162,6 @@ quicktest:
     - master
     - dev
     - dev-staging
-    - cherrypick-from-dev-to-v0.2.1-for-v0.2.2-release
     - tags
     - 177-merging-net_regress-to-dev
     - 112-publish-api-docs-online
@@ -223,7 +221,6 @@ pip-installer:
     - master
     - dev
     - dev-staging
-    - cherrypick-from-dev-to-v0.2.1-for-v0.2.2-release
     - tags
     - 177-merging-net_regress-to-dev
     - 117-support-for-user-defined-networks-using-pip-installed-niftynet
