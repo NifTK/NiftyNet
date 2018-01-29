@@ -109,7 +109,7 @@ DOI: [10.1007/978-3-319-59050-9_28][ipmi2017]
 
 ### Licensing and Copyright
 
-Copyright 2018 University College London and the NiftyNet Contributors.
+Copyright 2017 University College London and the NiftyNet Contributors.
 NiftyNet is released under the Apache License, Version 2.0. Please see the LICENSE file for details.
 
 ### Acknowledgements

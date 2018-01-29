@@ -141,7 +141,7 @@ APIs & reference
 Licensing and copyright
 =======================
 
-Copyright 2018 University College London and the NiftyNet Contributors.
+Copyright 2017 University College London and the NiftyNet Contributors.
 NiftyNet is released under the Apache License, Version 2.0.
 Please see the `LICENSE file`_ in the `NiftyNet source code repository`_ for details.
 
