@@ -62,7 +62,7 @@ class PairwiseUniformSampler(Layer):
         image_dataset = image_dataset.map(
             lambda image_id: tuple(tf.py_func(
                 self.get_pairwise_inputs, [image_id],
-                [tf.float32, tf.float32, tf.int32, tf.int32])),
+                [tf.int64, tf.float32, tf.float32, tf.int32, tf.int32])),
             num_threads=4)  # supported by tf 1.4?
         image_dataset = image_dataset.repeat()  # num_epochs can be param
         image_dataset = image_dataset.shuffle(
@@ -85,14 +85,14 @@ class PairwiseUniformSampler(Layer):
         moving_inputs = np.concatenate(moving_inputs, axis=-1)
         moving_shape = np.asarray(moving_inputs.shape).T.astype(np.int32)
 
-        return fixed_inputs, moving_inputs, fixed_shape, moving_shape
+        return image_id, fixed_inputs, moving_inputs, fixed_shape, moving_shape
 
     def _get_image(self, image_source_type, image_id):
         # returns a random image from either the list of fixed images
         # or the list of moving images
         try:
             image_source_type = image_source_type.decode()
-        except:
+        except AttributeError:
             pass
         if image_source_type.startswith('fixed'):
             _, data, _ = self.reader_0(idx=image_id, shuffle=True)
@@ -105,15 +105,17 @@ class PairwiseUniformSampler(Layer):
         return image, image_shape
 
     def layer_op(self):
-        fixed_inputs, moving_inputs, fixed_shape, moving_shape = \
+        image_id, fixed_inputs, moving_inputs, fixed_shape, moving_shape = \
             self.iterator.get_next()
         # TODO preprocessing layer modifying
         #      image shapes will not be supported
         # assuming the same shape across modalities, using the first
+        image_id.set_shape(())
+        image_id = tf.to_float(image_id)
 
-        # last dim is 1 image + 1 label
         fixed_inputs.set_shape(
             (self.batch_size,) + (None,) * self.spatial_rank + (2,))
+        # last dim is 1 image + 1 label
         moving_inputs.set_shape(
             (self.batch_size,) + self.moving_image_shape + (2,))
         fixed_shape.set_shape((self.batch_size, self.spatial_rank + 1))
@@ -138,6 +140,7 @@ class PairwiseUniformSampler(Layer):
 
         # TODO affine data augmentation here
         if self.spatial_rank == 3:
+
             window_channels = np.prod(self.window_size[self.spatial_rank:]) * 4
             # TODO if no affine augmentation:
             img_spatial_shape = target_spatial_shape
@@ -173,7 +176,14 @@ class PairwiseUniformSampler(Layer):
                         list(self.window_size[:self.spatial_rank]) + \
                         [window_channels]
             windows.set_shape(out_shape)
-        return windows
+
+            image_id = tf.reshape(image_id, (1,1))
+            start_location = tf.zeros((1, self.spatial_rank))
+            end_location = tf.stack(target_spatial_shape)
+            end_location = tf.reshape(end_location, (1, self.spatial_rank))
+            end_location = tf.to_float(end_location)
+            locations = tf.concat([image_id, start_location, end_location], axis=1)
+        return windows, locations
         # return windows, [tf.reduce_max(computed_grid), batch_shift]
 
     # overriding input buffers

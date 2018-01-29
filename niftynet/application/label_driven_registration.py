@@ -111,7 +111,7 @@ class RegApp(BaseApplication):
         def switch_samplers(for_training):
             with tf.name_scope('train' if for_training else 'validation'):
                 sampler = self.get_sampler()[0 if for_training else -1]
-                return sampler()
+                return sampler()[0]  # returns image only
 
         if self.is_training:
             if self.action_param.validation_every_n > 0:
@@ -137,7 +137,7 @@ class RegApp(BaseApplication):
             resampler = ResamplerLayer(
                 interpolation='linear', boundary='replicate')
             resampled_moving_label = resampler(moving_label, dense_field)
-            #resampled_moving_image = resampler(moving_image, dense_field)
+            # resampled_moving_image = resampler(moving_image, dense_field)
 
             # compute label loss (foreground only)
             loss_func = LossFunction(
@@ -198,20 +198,20 @@ class RegApp(BaseApplication):
                 collection=TF_SUMMARIES)
 
             # for visualisation debugging
-            #outputs_collector.add_to_collection(
-            #    var=fixed_image, name='fixed_image', collection=NETWORK_OUTPUT)
-            #outputs_collector.add_to_collection(
-            #    var=fixed_label, name='fixed_label', collection=NETWORK_OUTPUT)
-            #outputs_collector.add_to_collection(
-            #    var=moving_image, name='moving_image', collection=NETWORK_OUTPUT)
-            #outputs_collector.add_to_collection(
-            #    var=moving_label, name='moving_label', collection=NETWORK_OUTPUT)
-            #outputs_collector.add_to_collection(
-            #    var=resampled_moving_image, name='resampled_image', collection=NETWORK_OUTPUT)
-            #outputs_collector.add_to_collection(
-            #    var=resampled_moving_label, name='resampled_label', collection=NETWORK_OUTPUT)
-            #outputs_collector.add_to_collection(
-            #    var=dense_field, name='ddf', collection=NETWORK_OUTPUT)
+            # outputs_collector.add_to_collection(
+            #     var=fixed_image, name='fixed_image', collection=NETWORK_OUTPUT)
+            # outputs_collector.add_to_collection(
+            #     var=fixed_label, name='fixed_label', collection=NETWORK_OUTPUT)
+            # outputs_collector.add_to_collection(
+            #     var=moving_image, name='moving_image', collection=NETWORK_OUTPUT)
+            # outputs_collector.add_to_collection(
+            #     var=moving_label, name='moving_label', collection=NETWORK_OUTPUT)
+            # outputs_collector.add_to_collection(
+            #     var=resampled_moving_image, name='resampled_image', collection=NETWORK_OUTPUT)
+            # outputs_collector.add_to_collection(
+            #     var=resampled_moving_label, name='resampled_label', collection=NETWORK_OUTPUT)
+            # outputs_collector.add_to_collection(
+            #     var=dense_field, name='ddf', collection=NETWORK_OUTPUT)
 
             #outputs_collector.add_to_collection(
             #    var=shift[0], name='a', collection=CONSOLE)
@@ -270,6 +270,8 @@ class RegApp(BaseApplication):
                 interp_order=self.action_param.output_interp_order)
 
     def interpret_output(self, batch_output):
+        # import matplotlib.pyplot as plt
+        # import pdb; pdb.set_trace()
         if self.is_training:
             return True
         print(batch_output['location'])
