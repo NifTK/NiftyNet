@@ -17,7 +17,7 @@ EPS = 1e-6
 
 class ResamplerLayer(Layer):
     """
-    resample inputs according to sample_coords
+    resample inputs according to ``sample_coords``
     """
 
     def __init__(self,
@@ -41,18 +41,71 @@ class ResamplerLayer(Layer):
 
     def layer_op(self, inputs, sample_coords):
         """
-        when inputs batch size N is different from sample_coords batch size K,
-        the function returns N x K samples.
-        however when N == K it returns N results (instead of NxN; to be
-        consistent with the current TF 1.3 interface).
+        This layer resamples 2D or 3D data given the coordinates.
+
+        In turns of 3D inputs,
+
+        when the shape of ``inputs`` is ``[batch, x, y, z, num_channels]``,
+        the shape of ``sample_coords`` can be
+        ``[1, d0, d1, ..., 3]`` or ``[batch, d0, d1, ..., 3]``.
+
+        The output shape would be ``[batch, d0, d1, ..., num_channels]``.
+
+        Similarly, in 2D,
+
+        when the shape of ``inputs`` is ``[batch, x, y, num_channels]``,
+        the shape of ``sample_coords`` can be
+        ``[1, d0, d1, ..., 2]`` or ``[batch, d0, d1, ..., 2]``.
+
+        The output shape would be ``[batch, d0, d1, ... num_channels]``
+
+        (if the shape of ``inputs`` is not fully specified, ``sample_coords``
+        must be checked before using this function, to make sure the
+        coordinates are pointing to locations within the inputs.)
         """
+
+        # check the input dims
+        try:
+            batch_inputs = int(inputs.shape[0])
+            batch_sample_coords = int(sample_coords.shape[0])
+        except (TypeError, ValueError):
+            tf.logging.fatal('Unknown input shape, at least batch size '
+                             'needs to be specified.')
+            raise
+
+        if batch_inputs != batch_sample_coords and batch_sample_coords > 1:
+            tf.logging.fatal(
+                '\nOnly the following two cases are currently supported:\n'
+                '    - batch size of inputs == batch size of sample_coords\n'
+                '    - batch size of sample_coords == 1\n'
+                'In the second case, sample_coords will be applied to each of '
+                'the batch component of the inputs.')
+            raise ValueError
+
+        # input_spatial_rank = infer_spatial_rank(inputs)
+        # if input_spatial_rank != 2 and input_spatial_rank != 3:
+        #     tf.logging.fatal('Only 2D or 3D inputs are supported.')
+        #     raise ValueError
+
+        try:
+            coords_n_dim = int(sample_coords.shape[-1])
+        except (TypeError, ValueError):
+            tf.logging.fatal(
+                'The last dim of the coordinates must have 2 or 3 elements.')
+            raise
+
+        if infer_spatial_rank(inputs) != coords_n_dim:
+            tf.logging.fatal(
+                'sample_coords.shape[-1] must be the same as the spatial rank '
+                'of the inputs.')
+            raise ValueError
+
+        # currently converting everything to floats
         if inputs.dtype not in SUPPORTED_INPUT_DTYPE:
-            # tf.logging.warning('input datatype should be in %s ',
-            #                    SUPPORTED_INPUT_DTYPE)
-            # raise TypeError
             inputs = tf.to_float(inputs)
         if sample_coords.dtype not in SUPPORTED_INPUT_DTYPE:
             sample_coords = tf.to_float(sample_coords)
+
         if self.interpolation == 'LINEAR':
             return self._resample_linear(inputs, sample_coords)
         if self.interpolation == 'NEAREST':
@@ -69,13 +122,7 @@ class ResamplerLayer(Layer):
 
         # read input shape
         in_size = inputs.shape
-        try:
-            batch_size = int(in_size[0])
-        except (TypeError, ValueError):
-            tf.logging.fatal('Unknown input shape, at least batch size '
-                             'needs to be specified.')
-            raise
-        partial_shape = False if in_size.is_fully_defined() else True
+        partial_shape = not in_size.is_fully_defined()
         in_spatial_size = None
 
         # quantise coordinates
@@ -110,16 +157,24 @@ class ResamplerLayer(Layer):
         return output
 
     def _resample_linear(self, inputs, sample_coords):
+        """
+        Bilinear or trilinear resampling.
+
+        :param inputs:
+        :param sample_coords:
+        :return:
+        """
+
         # read input shape
-        in_size = inputs.get_shape()
-        in_spatial_size = None
-        partial_shape = False if in_size.is_fully_defined() else True
+        in_size = inputs.shape
+        partial_shape = not in_size.is_fully_defined()
+
         try:
             batch_size = int(in_size[0])
-            n_coords = int(sample_coords.get_shape()[0])
+            n_coords = int(sample_coords.shape[0])
             in_spatial_rank = infer_spatial_rank(inputs)
-            if not partial_shape:
-                in_spatial_size = in_size.as_list()[1:-1]
+            in_spatial_size = \
+                None if partial_shape else in_size.as_list()[1:-1]
         except (TypeError, AssertionError, ValueError):
             tf.logging.fatal('Unknown input shape, at least batch size '
                              'and rank of the inputs are required.')
@@ -130,23 +185,21 @@ class ResamplerLayer(Layer):
         out_spatial_size = sample_coords.shape.as_list()[1:-1]
 
         if in_spatial_rank == 2 and self.boundary == 'ZERO':
+            # calling TF's resampler
             inputs = tf.transpose(inputs, [0, 2, 1, 3])
             if batch_size == n_coords:
                 return tf.contrib.resampler.resampler(inputs, sample_coords)
-            batch_inputs = tf.unstack(inputs)
-            batch_coords = tf.unstack(sample_coords)
-            outputs = []
-            for img in batch_inputs:
-                for coords in batch_coords:
-                    img = tf.expand_dims(img, axis=0)
-                    coords = tf.expand_dims(coords, axis=0)
-                    outputs.append(
-                        tf.contrib.resampler.resampler(img, coords))
+            outputs = [
+                tf.contrib.resampler.resampler(
+                    tf.expand_dims(img), sample_coords)
+                for img in tf.unstack(inputs)]
             return tf.concat(outputs, axis=0)
 
         xy = tf.unstack(sample_coords, axis=-1)
         base_coords = [tf.floor(coords) for coords in xy]
         if partial_shape:
+            # if input shape is not defined, unable to compute
+            # boundary elements
             floor_coords = [coord for coord in base_coords]
             ceil_coords = [coord + 1.0 for coord in base_coords]
         else:
@@ -168,46 +221,41 @@ class ResamplerLayer(Layer):
         sc = (tf.cast(floor_coords, COORDINATES_TYPE),
               tf.cast(ceil_coords, COORDINATES_TYPE))
 
-        out_batch_size = batch_size
-        if n_coords == batch_size:
+        if n_coords == 1 and batch_size > 1:
+            # fetch neighbours with the same coordinates across the input batch
+            inputs = tf.unstack(inputs)
+
+            def _get_knot(bc):
+                coord = [sc[c][i] for i, c in enumerate(bc)]
+                coord = tf.stack(coord, axis=-1)
+                batch_samples = [tf.gather_nd(img, coord) for img in inputs]
+                batch_samples = tf.concat(batch_samples, axis=0)
+                return batch_samples
+
+        elif n_coords == batch_size:
             batch_ids = tf.reshape(
                 tf.range(batch_size), [batch_size] + [1] * out_spatial_rank)
             batch_ids = tf.tile(batch_ids, [1] + out_spatial_size)
 
             def _get_knot(bc):
-                coord = [sc[c][i] for i, c in enumerate(bc)]
-                coord = tf.stack([batch_ids] + coord, axis=-1)
+                coord = [batch_ids] + [sc[c][i] for i, c in enumerate(bc)]
+                coord = tf.stack(coord, axis=-1)
                 return tf.gather_nd(inputs, coord)
         else:
-            out_batch_size = n_coords * batch_size
-            batch_inputs = tf.unstack(inputs)
-
-            def _get_knot(bc):
-                coord = [sc[c][i] for i, c in enumerate(bc)]
-                coord = tf.stack(coord, -1)
-                batch_samples = tf.concat([tf.gather_nd(img, coord)
-                                           for img in batch_inputs], axis=0)
-                return batch_samples
+            raise NotImplementedError
 
         def _pyramid_combination(samples, w_0, w_1):
+            # the case where n_coords = 1 and batch_size > 1 is handled by
+            # shape broadcasting
             if len(w_0) == 1:
                 return samples[0] * w_1[0] + samples[1] * w_0[0]
             f_0 = _pyramid_combination(samples[::2], w_0[:-1], w_1[:-1])
             f_1 = _pyramid_combination(samples[1::2], w_0[:-1], w_1[:-1])
             return f_0 * w_1[-1] + f_1 * w_0[-1]
 
-
         binary_neighbour_ids = _binary_neighbour_ids(in_spatial_rank)
         samples = [_get_knot(bc) for bc in binary_neighbour_ids]
-        # broadcase weight shape to have the same batch size as the output
-        for idx, _ in enumerate(weight_0):
-            weight_shape = weight_0[idx].get_shape().as_list()
-            weight_rank = len(weight_shape)
-            if n_coords < out_batch_size:
-                n_rep = int(out_batch_size / n_coords)
-                rep_shape = [n_rep] + [1] * (weight_rank - 1)
-                weight_0[idx] = tf.tile(weight_0[idx], rep_shape)
-                weight_1[idx] = tf.tile(weight_1[idx], rep_shape)
+
         return _pyramid_combination(samples, weight_0, weight_1)
 
     def _resample_bspline(self, inputs, sample_coords):
@@ -265,7 +313,7 @@ class ResamplerLayer(Layer):
         # read input shape
         in_size = inputs.shape
         in_spatial_size = None
-        partial_shape = False if in_size.is_fully_defined() else True
+        partial_shape = not in_size.is_fully_defined()
         try:
             batch_size = int(in_size[0])
             in_spatial_rank = infer_spatial_rank(inputs)
@@ -372,10 +420,12 @@ def _boundary_symmetric(sample_coords, input_size):
 def _param_type_and_shape(sample_coords, input_size):
     # sample_coords = tf.cast(sample_coords, COORDINATES_TYPE)
     try:
+        # if input_size is a numpy array
         input_size = tf.constant(input_size, dtype=sample_coords.dtype)
     except (TypeError, AttributeError):
         pass
     try:
+        # if input_size is a TF Tensor
         input_size = tf.cast(input_size, dtype=sample_coords.dtype)
     except (TypeError, AttributeError):
         pass
@@ -384,19 +434,22 @@ def _param_type_and_shape(sample_coords, input_size):
 
 def _binary_neighbour_ids(spatial_rank):
     """
-    returns combinatorial binary indices
-    2-D: [[0, 0], [0, 1], [1, 0], [1, 1]]
-    3-D: [[0, 0, 0], [0, 0, 1], [0, 1, 0],
-          [0, 1, 1], [1, 0, 0], [1, 0, 1],
-          [1, 1, 0], [1, 1, 1]]
+    returns combinatorial binary indices::
+
+        1-D: [[0], [1]]
+        2-D: [[0, 0], [0, 1], [1, 0], [1, 1]]
+        3-D: [[0, 0, 0], [0, 0, 1], [0, 1, 0],
+              [0, 1, 1], [1, 0, 0], [1, 0, 1],
+              [1, 1, 0], [1, 1, 1]]
+
     """
     return [[int(c) for c in format(i, '0%ib' % spatial_rank)]
             for i in range(2 ** spatial_rank)]
 
 
-@tf.RegisterGradient('FloorMod')
-def _floormod_grad(op, grad):
-    return [None, None]
+# @tf.RegisterGradient('FloorMod')
+# def _floormod_grad(op, grad):
+#     return [None, None]
 
 
 SUPPORTED_INTERPOLATION = {'BSPLINE', 'LINEAR', 'NEAREST', 'IDW'}
