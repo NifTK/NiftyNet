@@ -317,15 +317,15 @@ class ResamplerLayer(Layer):
         return tf.reduce_sum(all_weights * raw_samples, reduction_indices=1)
 
     def _resample_inv_dst_weighting(self, inputs, sample_coords):
-        # read input shape
+        # inverse distance weighting using 2^(sptial_rank) neighbours
         in_size = inputs.shape
-        in_spatial_size = None
         partial_shape = not in_size.is_fully_defined()
         try:
             batch_size = int(in_size[0])
+            n_coords = int(sample_coords.shape[0])
             in_spatial_rank = infer_spatial_rank(inputs)
-            if not partial_shape:
-                in_spatial_size = in_size.as_list()[1:-1]
+            in_spatial_size = \
+                None if partial_shape else in_size.as_list()[1:-1]
         except (TypeError, AssertionError, ValueError):
             tf.logging.fatal('Unknown input shape, at least batch size '
                              'and rank of the inputs are required.')
@@ -366,7 +366,7 @@ class ResamplerLayer(Layer):
 
         # inverse distance weighting
         # sum_i (w_i*p_i/(sum_j w_j)) where w_i = 1/((p-p_i)^2)
-        # point_weights has the shape:
+        # point_weights has the shape:100
         # `[N, input_rank, b, sp_dim_0, ..., sp_dim_K]`
         # where:
         #  `N` is 2**source data spatial rank
@@ -388,19 +388,18 @@ class ResamplerLayer(Layer):
         knots_shape = [0] + list(range(2, out_rank + 1)) + [1]
         knots_id = tf.cast(knots_id, COORDINATES_TYPE)
         knots_id = tf.transpose(knots_id, knots_shape)
-        knots_shape = knots_id.get_shape().as_list()
 
         # get values of N neighbours
         batch_inputs = tf.unstack(inputs, axis=0)
         batch_knots = tf.unstack(knots_id, axis=1)
-        if len(batch_inputs) == len(batch_knots):
+        if batch_size == n_coords:
             samples = [tf.gather_nd(img, knot)
                        for (img, knot) in zip(batch_inputs, batch_knots)]
+        elif n_coords == 1 and batch_size > 1:
+            samples = [tf.gather_nd(img, batch_knots[0])
+                       for img in batch_inputs]
         else:
-            samples = []
-            for img in batch_inputs:
-                for knot in batch_knots:
-                    samples.append(tf.gather_nd(img, knot))
+            raise NotImplementedError
         samples = tf.stack(samples, axis=1)
         # weighted average over N neighbours
         return tf.reduce_sum(
