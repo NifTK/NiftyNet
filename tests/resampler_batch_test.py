@@ -23,13 +23,9 @@ class ResamplerTest(tf.test.TestCase):
 
         test_input = tf.zeros((1, 10, 10, 3))
         test_coords = tf.zeros((1, 5, 5, 3))
-        # bad coordinates
+        # bad n coordinates
         with self.assertRaisesRegexp(ValueError, ''):
             out = ResamplerLayer()(test_input, test_coords)
-
-        test_input = tf.zeros((1, 10, 10, 10, 3))
-        test_coords = tf.zeros((1, 4, 3))
-        out = ResamplerLayer()(test_input, test_coords)
 
     def test_linear_shape(self):
         # 3D
@@ -113,6 +109,91 @@ class ResamplerTest(tf.test.TestCase):
                 np.all(np.isclose(out_value[0, ..., 0], 0.9, atol=1e-5)))
             self.assertTrue(
                 np.all(np.isclose(out_value[1, ..., 0], 0.8, atol=1e-5)))
+            self.assertEqual(out_value.shape, (2, 5, 2))
+
+
+    def test_nearest_shape(self):
+        # 3D
+        test_input = np.zeros((2, 8, 8, 8, 2))
+        test_input[0, 0, 0, 0, 0] = 1.0
+        test_input = tf.constant(test_input)
+        test_coords = tf.ones((1, 5, 5, 5, 3)) * 0.1
+        out = ResamplerLayer("NEAREST")(test_input, test_coords)
+        with self.test_session() as sess:
+            out_value = sess.run(out)
+            self.assertTrue(
+                np.all(np.isclose(out_value[0, ..., 0], 1.0, atol=1e-5)))
+            self.assertTrue(np.all(out_value[1, ...]==0))
+            self.assertEqual(out_value.shape, (2, 5, 5, 5, 2))
+
+        # 2D
+        test_input = np.zeros((2, 8, 8, 2))
+        test_input[0, 0, 0, 0] = 1.0
+        test_input = tf.constant(test_input)
+        test_coords = tf.ones((1, 5, 5, 2)) * 0.1
+        out = ResamplerLayer("NEAREST")(test_input, test_coords)
+        with self.test_session() as sess:
+            out_value = sess.run(out)
+            self.assertTrue(np.all(out_value[1, ...]==0))
+            self.assertTrue(
+                np.all(np.isclose(out_value[0, ..., 0], 1.0, atol=1e-5)))
+            self.assertEqual(out_value.shape, (2, 5, 5, 2))
+
+        # 1D
+        test_input = np.zeros((2, 8, 2))
+        test_input[0, 0, 0] = 1.0
+        test_input = tf.constant(test_input)
+        test_coords = tf.ones((1, 5, 1)) * 0.1
+        out = ResamplerLayer("NEAREST")(test_input, test_coords)
+        with self.test_session() as sess:
+            out_value = sess.run(out)
+            self.assertTrue(np.all(out_value[1, ...]==0))
+            self.assertTrue(
+                np.all(np.isclose(out_value[0, ..., 0], 1.0, atol=1e-5)))
+            self.assertEqual(out_value.shape, (2, 5, 2))
+
+    def test_nearest_no_broadcasting(self):
+        # 3D
+        test_input = np.zeros((2, 3, 3, 3, 2))
+        test_input[:, 0, 0, 0, 0] = 1.0
+        test_input = tf.constant(test_input)
+        test_coords = tf.concat([tf.ones((1, 5, 5, 5, 3)) * 0.1,
+                                 tf.ones((1, 5, 5, 5, 3)) * 1.2], axis=0)
+        out = ResamplerLayer("NEAREST")(test_input, test_coords)
+        with self.test_session() as sess:
+            out_value = sess.run(out)
+            self.assertTrue(
+                np.all(np.isclose(out_value[0, ..., 0], 1.0, atol=1e-5)))
+            self.assertTrue(
+                np.all(np.isclose(out_value[1, ..., 0], 0.0, atol=1e-5)))
+            self.assertEqual(out_value.shape, (2, 5, 5, 5, 2))
+        # 2D
+        test_input = np.zeros((2, 3, 3, 2))
+        test_input[:, 0, 0, 0] = 1.0
+        test_input = tf.constant(test_input)
+        test_coords = tf.concat([tf.ones((1, 5, 5, 2)) * 0.1,
+                                 tf.ones((1, 5, 5, 2)) * 1.2], axis=0)
+        out = ResamplerLayer("NEAREST")(test_input, test_coords)
+        with self.test_session() as sess:
+            out_value = sess.run(out)
+            self.assertTrue(
+                np.all(np.isclose(out_value[0, ..., 0], 1.0, atol=1e-5)))
+            self.assertTrue(
+                np.all(np.isclose(out_value[1, ..., 0], 0.0, atol=1e-5)))
+            self.assertEqual(out_value.shape, (2, 5, 5, 2))
+        # 1D
+        test_input = np.zeros((2, 3, 2))
+        test_input[:, 0, 0] = 1.0
+        test_input = tf.constant(test_input)
+        test_coords = tf.concat([tf.ones((1, 5, 1)) * 0.1,
+                                 tf.ones((1, 5, 1)) * 1.2], axis=0)
+        out = ResamplerLayer("NEAREST")(test_input, test_coords)
+        with self.test_session() as sess:
+            out_value = sess.run(out)
+            self.assertTrue(
+                np.all(np.isclose(out_value[0, ..., 0], 1.0, atol=1e-5)))
+            self.assertTrue(
+                np.all(np.isclose(out_value[1, ..., 0], 0.0, atol=1e-5)))
             self.assertEqual(out_value.shape, (2, 5, 2))
 
 if __name__ == "__main__":

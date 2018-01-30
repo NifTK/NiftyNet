@@ -125,29 +125,36 @@ class ResamplerLayer(Layer):
         partial_shape = not in_size.is_fully_defined()
         in_spatial_size = None
 
+        try:
+            batch_size = int(in_size[0])
+            n_coords = int(sample_coords.shape[0])
+        except (TypeError, AssertionError, ValueError):
+            tf.logging.fatal('Unknown input shape, at least batch size '
+                             'and rank of the inputs are required.')
+            raise
+
         # quantise coordinates
+        spatial_coords = tf.round(sample_coords)
         if not partial_shape:
             in_spatial_size = in_size.as_list()[1:-1]
             spatial_coords = self.boundary_func(
-                tf.round(sample_coords), in_spatial_size)
-        else:
-            spatial_coords = tf.round(sample_coords)
+                spatial_coords, in_spatial_size)
         spatial_coords = tf.cast(spatial_coords, COORDINATES_TYPE)
 
-        batch_inputs = tf.unstack(inputs)
-        batch_coords = tf.unstack(spatial_coords)
-        if len(batch_inputs) == len(batch_coords):
+        if batch_size == n_coords:
+            batch_inputs = tf.unstack(inputs)
+            batch_coords = tf.unstack(spatial_coords)
             gathered_image = [tf.gather_nd(img, coord) for (img, coord) in
                               zip(batch_inputs, batch_coords)]
+        elif n_coords == 1 and batch_size > 1:
+            gathered_image = [tf.gather_nd(img, spatial_coords[0])
+                              for img in tf.unstack(inputs)]
         else:
-            gathered_image = []
-            for img in batch_inputs:
-                for coord in batch_coords:
-                    gathered_image.append(tf.gather_nd(img, coord))
-        output = tf.stack(gathered_image)
+            raise NotImplementedError
+        output = tf.stack(gathered_image, axis=0)
 
-        if self.boundary == 'ZERO' and not partial_shape:
-            scale = 1. / (tf.constant(in_spatial_size, dtype=tf.float32) - 1)
+        if self.boundary == 'ZERO' and in_spatial_size:
+            scale = 1. / (tf.constant(in_spatial_size, dtype=tf.float32) - 1.)
             mask = tf.logical_and(
                 tf.reduce_all(sample_coords > 0,
                               axis=-1, keep_dims=True),
