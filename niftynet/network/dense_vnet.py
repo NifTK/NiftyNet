@@ -79,7 +79,7 @@ class DenseVNet(BaseNet):
                                             'LINEAR','ZERO')
             input_tensor=aug(input_tensor)
         channel_dim = len(input_tensor.get_shape()) - 1
-        input_size = input_tensor.get_shape().as_list()
+        input_size = input_tensor.shape.as_list()
         spatial_rank = len(input_size) - 2
 
         modulo = 2 ** (len(hp['dilation_rates']))
@@ -98,7 +98,7 @@ class DenseVNet(BaseNet):
                                                      [1] + [2] * spatial_rank + [1],
                                                      'SAME'), is_training=is_training)
         all_segmentation_features = [downsampled_img]
-        output_shape = downsampled_img.get_shape().as_list()[1:-1]
+        output_shape = downsampled_img.shape.as_list()[1:-1]
         initial_features = ConvolutionalLayer(
             hp['n_input_channels'][0],
             kernel_size=5, stride=2)(input_tensor, is_training=is_training)
@@ -140,7 +140,7 @@ class DenseVNet(BaseNet):
 
 
 def image_resize(image, output_size):
-    input_size = image.get_shape().as_list()
+    input_size = image.shape.as_list()
     spatial_rank = len(input_size) - 2
     if all([o == i for o, i in zip(output_size, input_size[1:-1])]):
         return image
@@ -192,7 +192,7 @@ class DenseFeatureStackBlock(TrainableLayer):
     def layer_op(self, input_tensor, is_training=None, keep_prob=None):
         channel_dim = len(input_tensor.get_shape()) - 1
         stack = [input_tensor]
-        input_mask = tf.ones([input_tensor.get_shape().as_list()[-1]]) > 0
+        input_mask = tf.ones([input_tensor.shape.as_list()[-1]]) > 0
         for idx, d in enumerate(self.dilation_rates):
             if idx == len(self.dilation_rates) - 1:
                 keep_prob = None  # no dropout on last layer of the stack
@@ -299,7 +299,7 @@ class Affine3DAugmentationLayer(TrainableLayer):
         return tf.matrix_inverse(self.transform_func(batch_size))
 
     def layer_op(self, input_tensor):
-        sz = input_tensor.get_shape().as_list()
+        sz = input_tensor.shape.as_list()
         grid_warper = AffineGridWarperLayer(sz[1:-1],
                                             sz[1:-1])
 

@@ -72,8 +72,8 @@ class BSplineFieldImageGridWarperLayer(GridWarperLayer):
     kernels = tf.constant(np.reshape(np.prod(coeffs),[4,4,4,1,-1]),dtype=tf.float32)
     return kernels
   def layer_op(self,field):
-    batch_size=int(field.get_shape().as_list()[0])
-    spatial_rank = int(field.get_shape().as_list()[-1])
+    batch_size=int(field.shape.as_list()[0])
+    spatial_rank = int(field.shape.as_list()[-1])
     resampled_list=[tf.nn.conv3d(field[:, :, :, :, d:d + 1], self._psi, strides=[1]*5, padding='VALID')
                     for d in [0, 1, 2]]
     resampled=tf.stack(resampled_list,5)
@@ -124,7 +124,7 @@ class RescaledFieldImageGridWarperLayer(GridWarperLayer):
   def layer_op(self,field):
     input_shape = tf.shape(field)
     input_dtype = field.dtype.as_numpy_dtype
-    batch_size = int(field.get_shape()[0])
+    batch_size = int(field.shape[0])
     reshaped_field=tf.reshape(field, [batch_size, self._coeff_shape[0], self._coeff_shape[1], -1])
     coords_intermediate = tf.image.resize_images(reshaped_field,self._output_shape[0:2],
                                                  self._interpolation,align_corners=False)
@@ -225,7 +225,7 @@ class ResampledFieldGridWarperLayer(GridWarperLayer):
     """
     input_shape = tf.shape(field)
     input_dtype = field.dtype.as_numpy_dtype
-    batch_size = int(field.get_shape()[0])
+    batch_size = int(field.shape[0])
 
     # transform grid into field coordinate space if necessary
     if self._field_transform==None:

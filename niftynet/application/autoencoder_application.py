@@ -211,7 +211,7 @@ class AutoencoderApplication(BaseApplication):
                              self.action_param.spatial_window_size + (1,)
                 dummy_image = tf.zeros(image_size)
                 net_output = self.net(dummy_image, is_training=False)
-                noise_shape = net_output[-1].get_shape().as_list()
+                noise_shape = net_output[-1].shape.as_list()
                 stddev = self.autoencoder_param.noise_stddev
                 noise = tf.random_normal(shape=noise_shape,
                                          mean=0.0,

@@ -144,14 +144,14 @@ class VAE(TrainableLayer):
         def infer_downsampled_shape(x, output_channels, pooling_factors):
             # Calculate the shape of the data as it emerges from
             # the convolutional part of the encoder
-            downsampled_shape = x.get_shape()[1::].as_list()
+            downsampled_shape = x.shape[1::].as_list()
             downsampled_shape[-1] = output_channels[-1]
             downsampled_shape[0:-1] = \
                 downsampled_shape[0:-1] / np.prod(pooling_factors)
             return [int(x) for x in downsampled_shape]
 
         # Derive shape information from the input
-        input_shape = images.get_shape()[1::].as_list()
+        input_shape = images.shape[1::].as_list()
         number_of_input_channels = input_shape[-1]
         downsampled_shape = infer_downsampled_shape(images,
                                                     self.conv_output_channels,
