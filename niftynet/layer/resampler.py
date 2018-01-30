@@ -456,9 +456,9 @@ def _binary_neighbour_ids(spatial_rank):
             for i in range(2 ** spatial_rank)]
 
 
-# @tf.RegisterGradient('FloorMod')
-# def _floormod_grad(op, grad):
-#     return [None, None]
+@tf.RegisterGradient('FloorMod')
+def _floormod_grad(op, grad):
+    return [None, None]
 
 
 SUPPORTED_INTERPOLATION = {'BSPLINE', 'LINEAR', 'NEAREST', 'IDW'}
