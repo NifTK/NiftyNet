@@ -62,6 +62,9 @@ class ResamplerLayer(Layer):
         (if the shape of ``inputs`` is not fully specified, ``sample_coords``
         must be checked before using this function, to make sure the
         coordinates are pointing to locations within the inputs.)
+
+        (No gradient is computed for ``NEAREST`` method, and
+         some of the padding modes.)
         """
 
         # check the input dims
