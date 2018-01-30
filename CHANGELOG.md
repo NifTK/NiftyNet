@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 * Improvements for running validation iterations during training
 
-### Removed
+### Fixed
 * Bugs when running validation iterations during training
 * Minor bugs in loss function modules, histogram standardisation, user parameter parsing
 
@@ -42,7 +42,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
    1. SimulatorGAN
    1. VariationalAutoencoder (VAE)
 
-### Removed
+### Fixed
 * Bugs (30+ issues resolved)
 
 ## 0.1.1 - 2017-08-08
@@ -53,7 +53,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 * Command line entry points
 * NiftyNet logo
 
-### Removed
+### Fixed
 * Bugs in data augmentation, I/O, sampler
 
 [Unreleased]: https://github.com/NifTK/NiftyNet/compare/v0.2.2...HEAD
