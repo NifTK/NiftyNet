@@ -16,6 +16,7 @@ pylintjob:
     - 174-design-a-workflow-that-allows-prs-from-github-to-be-merged
     - 206-improve-the-handling-of-release-notes
     - 221-add-changelog-entry-for-version-0.2.2
+    - 223-put-bug-fixes-under-fixed-header-in-changelog
   script:
     - pylint --rcfile=tests/pylintrc niftynet/engine
     - pylint --rcfile=tests/pylintrc niftynet/io/image_*
@@ -176,6 +177,7 @@ quicktest:
     - 174-design-a-workflow-that-allows-prs-from-github-to-be-merged
     - 206-improve-the-handling-of-release-notes
     - 221-add-changelog-entry-for-version-0.2.2
+    - 223-put-bug-fixes-under-fixed-header-in-changelog
   script:
     # print system info
     - which nvidia-smi
