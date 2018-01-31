@@ -118,7 +118,7 @@ class ApplicationDriver(object):
                 create_new=train_param.starting_iter == 0)
 
             self.initial_iter = train_param.starting_iter
-            self.final_iter = max(train_param.max_iter, self.initial_iter)
+            self.final_iter = max(train_param.max_iter, self.initial_iter + 1)
             self.save_every_n = train_param.save_every_n
             self.tensorboard_every_n = train_param.tensorboard_every_n
             self.max_checkpoints = \
