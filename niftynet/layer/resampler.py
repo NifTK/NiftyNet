@@ -43,7 +43,7 @@ class ResamplerLayer(Layer):
         """
         This layer resamples 2D or 3D data given the coordinates.
 
-        In turns of 3D inputs,
+        In terms of 3D inputs,
 
         when the shape of ``inputs`` is ``[batch, x, y, z, num_channels]``,
         the shape of ``sample_coords`` can be
@@ -59,9 +59,19 @@ class ResamplerLayer(Layer):
 
         The output shape would be ``[batch, d0, d1, ... num_channels]``
 
-        (if the shape of ``inputs`` is not fully specified, ``sample_coords``
+        (If the shape of ``inputs`` is not fully specified, ``sample_coords``
         must be checked before using this function, to make sure the
         coordinates are pointing to locations within the inputs.)
+
+        (Resampling 2D inputs is implemented by calling
+        ``tf.contrib.resampler.resampler``. The interpretaion of coordinates is
+        different in between this function and
+        ``tf.contrib.resampler.resampler``:
+        using ``self.layer_op(inputs, sample_coords)`` for 2D data
+        is equivalent to (apart from the batch size broadcasting feature)::
+
+            tf.contrib.resampler.resampler(
+                tf.transpose(inputs, [0, 2, 1, 3]), sample_coords)
 
         (No gradient is computed for ``NEAREST`` method, and
          some of the padding modes.)
