@@ -59,7 +59,7 @@ class ApplicationDriver(object):
         self.summary_dir = None
         self.session_prefix = None
         self.max_checkpoints = 2
-        self.save_every_n = 10
+        self.save_every_n = 0
         self.tensorboard_every_n = -1
 
         self.validation_every_n = -1
@@ -118,7 +118,7 @@ class ApplicationDriver(object):
                 create_new=train_param.starting_iter == 0)
 
             self.initial_iter = train_param.starting_iter
-            self.final_iter = max(train_param.max_iter, self.initial_iter + 1)
+            self.final_iter = max(train_param.max_iter, self.initial_iter)
             self.save_every_n = train_param.save_every_n
             self.tensorboard_every_n = train_param.tensorboard_every_n
             self.max_checkpoints = \
@@ -270,13 +270,9 @@ class ApplicationDriver(object):
             finally:
                 tf.logging.info('Cleaning up...')
                 if self.is_training:
-                    if self.final_iter == 0:
-                        # saving the random intialisation
-                        self._save_model(session, 0)
-                    iter_end = loop_status.get('current_iter', 0)
-                    if iter_end < self.final_iter:
-                        # loop not finished, saving the current model
-                        self._save_model(session, iter_end - 1)
+                    # saving model at the last iteration
+                    iter_end = loop_status.get('current_iter', -1)
+                    self._save_model(session, iter_end)
                 elif not loop_status.get('all_saved_flag', None):
                     tf.logging.warning('stopped early, incomplete loops')
 
@@ -448,8 +444,6 @@ class ApplicationDriver(object):
 
         iter_i = self.initial_iter + 1
         while iter_i <= self.final_iter:
-            # general loop information
-            loop_status['current_iter'] = iter_i
             if self._coord.should_stop():
                 break
             if iter_msg.should_stop:
@@ -463,6 +457,9 @@ class ApplicationDriver(object):
                 iter_msg.current_iter_output[NETWORK_OUTPUT])
             iter_msg.to_tf_summary(writer_train)
             tf.logging.info(iter_msg.to_console_string())
+
+            # general loop information
+            loop_status['current_iter'] = iter_i
 
             # run validations if required
             if iter_i > 0 and self.validation_every_n > 0 and \
