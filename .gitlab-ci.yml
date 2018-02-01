@@ -90,7 +90,7 @@ testjob:
     - python net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6
     - python net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6  --exclude_fraction_for_validation 0.1 --validation_every_n 3
     - python net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6 --starting_iter 0 --max_iter 15
-    - python net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 14
+    - python net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 15
 
     - python net_segment.py train -c config/default_multimodal_segmentation.ini --batch_size 3
     - python net_segment.py inference -c config/default_multimodal_segmentation.ini --spatial_window_size 64,64 --batch_size 7
@@ -133,7 +133,7 @@ testjob:
     - coverage run -a --source . net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6
     - coverage run -a --source . net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6 --exclude_fraction_for_validation 0.1 --validation_every_n 3
     - coverage run -a --source . net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6 --starting_iter 0 --max_iter 15
-    - coverage run -a --source . net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 14
+    - coverage run -a --source . net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 15
 
     - coverage run -a --source . net_segment.py train -c config/default_multimodal_segmentation.ini --batch_size 3
     - coverage run -a --source . net_segment.py inference -c config/default_multimodal_segmentation.ini --spatial_window_size 64,64 --batch_size 7
