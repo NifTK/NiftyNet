@@ -23,11 +23,13 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
     def __init__(self,
                  image_reader,
                  name='image',
-                 output_path=os.path.join('.', 'output')):
+                 output_path=os.path.join('.', 'output'),
+                 prefix='_niftynet_out'):
         ImageWindowsAggregator.__init__(self, image_reader=image_reader)
         self.name = name
         self.output_path = os.path.abspath(output_path)
         self.output_interp_order = 0
+        self.prefix = prefix
 
     def decode_batch(self, window, location):
         """
@@ -54,7 +56,7 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
             if isinstance(layer, DiscreteLabelNormalisationLayer):
                 image_out, _ = layer.inverse_op(image_out)
         subject_name = self.reader.get_subject_id(self.image_id)
-        filename = "{}_niftynet_out.nii.gz".format(subject_name)
+        filename = "{}{}.nii.gz".format(subject_name, self.prefix)
         source_image_obj = self.input_image[self.name]
         misc_io.save_data_array(self.output_path,
                                 filename,

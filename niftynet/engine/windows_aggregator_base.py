@@ -21,6 +21,7 @@ class ImageWindowsAggregator(object):
     def __init__(self, image_reader=None):
         self.reader = image_reader
         self._image_id = None
+        self.prefix = ''
 
     @property
     def input_image(self):

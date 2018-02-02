@@ -33,10 +33,12 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
     """
     def __init__(self,
                  image_reader=None,
-                 output_path=os.path.join('.', 'output')):
+                 output_path=os.path.join('.', 'output'),
+                 prefix='_niftynet_generated'):
         ImageWindowsAggregator.__init__(self, image_reader=image_reader)
         self.output_path = os.path.abspath(output_path)
         self.output_id = {'base_name': None, 'relative_id': 0}
+        self.prefix = prefix
 
     def _decode_subject_name(self, location=None):
         if self.reader:
@@ -79,6 +81,6 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
     def _save_current_image(self, idx, filename, image):
         if image is None:
             return
-        uniq_name = "{}_{}_niftynet_generated.nii.gz".format(idx, filename)
+        uniq_name = "{}_{}.nii.gz".format(idx, filename, self.prefix)
         misc_io.save_data_array(self.output_path, uniq_name, image, None)
         return
