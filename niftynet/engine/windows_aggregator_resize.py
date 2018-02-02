@@ -29,9 +29,9 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                  window_border=(),
                  interp_order=0,
                  prefix='_niftynet_out'):
-        ImageWindowsAggregator.__init__(self, image_reader=image_reader)
+        ImageWindowsAggregator.__init__(
+            self, image_reader=image_reader, output_path=output_path)
         self.name = name
-        self.output_path = os.path.abspath(output_path)
         self.window_border = window_border
         self.output_interp_order = interp_order
         self.prefix = prefix

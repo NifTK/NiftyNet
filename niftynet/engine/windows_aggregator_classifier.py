@@ -25,9 +25,9 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
                  name='image',
                  output_path=os.path.join('.', 'output'),
                  prefix='_niftynet_out'):
-        ImageWindowsAggregator.__init__(self, image_reader=image_reader)
+        ImageWindowsAggregator.__init__(
+            self, image_reader=image_reader, output_path=output_path)
         self.name = name
-        self.output_path = os.path.abspath(output_path)
         self.output_interp_order = 0
         self.prefix = prefix
 

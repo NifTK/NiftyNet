@@ -6,6 +6,7 @@ write the cached the results to hard drive.
 """
 from __future__ import absolute_import, print_function, division
 
+import os
 import numpy as np
 import tensorflow as tf
 
@@ -18,10 +19,11 @@ class ImageWindowsAggregator(object):
     information the reader is needed.
     """
 
-    def __init__(self, image_reader=None):
+    def __init__(self, image_reader=None, output_path='.'):
         self.reader = image_reader
         self._image_id = None
         self.prefix = ''
+        self.output_path = os.path.abspath(output_path)
 
     @property
     def input_image(self):

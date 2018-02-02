@@ -35,8 +35,8 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
                  image_reader=None,
                  output_path=os.path.join('.', 'output'),
                  prefix='_niftynet_generated'):
-        ImageWindowsAggregator.__init__(self, image_reader=image_reader)
-        self.output_path = os.path.abspath(output_path)
+        ImageWindowsAggregator.__init__(
+            self, image_reader=image_reader, output_path=output_path)
         self.output_id = {'base_name': None, 'relative_id': 0}
         self.prefix = prefix
 
