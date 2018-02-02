@@ -437,7 +437,24 @@ class SpatialImage3D(SpatialImage2D):
     def get_data(self):
         if len(self._file_path) > 1:
             # 3D image from multiple 2d files
-            raise NotImplementedError
+            mod_list = []
+            for mod in range(len(self.file_path)):
+                mod_2d = SpatialImage2D(
+                    file_path=(self.file_path[mod],),
+                    name=(self.name[mod],),
+                    interp_order=(self.interp_order[mod],),
+                    output_pixdim=(self.output_pixdim[mod],),
+                    output_axcodes=(self.output_axcodes[mod],))
+                mod_data_5d = mod_2d.get_data()
+                mod_list.append(mod_data_5d)
+            try:
+                image_data = np.concatenate(mod_list, axis=4)
+            except ValueError:
+                tf.logging.fatal(
+                    "multi-modal data shapes not consistent -- trying to "
+                    "concat {}.".format([mod.shape for mod in mod_list]))
+                raise
+            return image_data
         # assuming len(self._file_path) == 1
         image_obj = misc.load_image(self.file_path[0])
         image_data = image_obj.get_data()

@@ -81,6 +81,6 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
     def _save_current_image(self, idx, filename, image):
         if image is None:
             return
-        uniq_name = "{}_{}.nii.gz".format(idx, filename, self.prefix)
+        uniq_name = "{}_{}{}.nii.gz".format(idx, filename, self.prefix)
         misc_io.save_data_array(self.output_path, uniq_name, image, None)
         return

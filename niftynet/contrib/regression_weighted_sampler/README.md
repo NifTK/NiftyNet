@@ -1,55 +1,87 @@
 ### Training regression network with weighted sampling of image windows
 
+ref:
+
+Berger et al., "An Adaptive Sampling Scheme to Efficiently Train Fully Convolutional Networks for Semantic Segmentation",
+https://arxiv.org/pdf/1709.02764.pdf
+
+
 To run this application (from NiftyNet source code root folder)
 with a config file (e.g., `niftynet/contrib/regression_weighted_sampler/isampler.ini`)
-```bash
-cp -r /data/segmentation_mask/ model_dir/error_maps
-python net_run.py train -a niftynet.contrib.regression_weighted_sampler.isample_regression.ISampleRegression \
-                        -c niftynet/contrib/regression_weighted_sampler/isampler.ini
-
-python net_run.py inference -a niftynet.contrib.regression_weighted_sampler.isample_regression.ISampleRegression \
-                            -c niftynet/contrib/regression_weighted_sampler/isampler.ini
-```
 
 ```bash
-$model_dir='regression_model'
+model_dir="regression_model"
 mkdir $model_dir
 # copying the initial weight maps
 cp -r /data/segmentation_mask $model_dir/error_maps
+# in configuration set SAMPWEIGHT path to the value of $model_dir/error_maps
 python net_run.py train -a niftynet.contrib.regression_weighted_sampler.isample_regression.ISampleRegression \
                         -c niftynet/contrib/regression_weighted_sampler/isampler.ini
-                        --model_dir $model_dir
-# generating error maps on the training data
+                        --model_dir $model_dir --starting_iter 0 --max_iter 500
+
+# generating error maps on the training data using the latest model
 python net_run.py inference -a niftynet.contrib.regression_weighted_sampler.isample_regression.ISampleRegression \
                             -c niftynet/contrib/regression_weighted_sampler/isampler.ini
-                            --inference_iter -1 --error_map True
-# continue training
+                            --inference_iter -1 --error_map True --batch_size 1 --dataset_split_file nofile
+
+# continue training from the latest model
 python net_run.py train -a niftynet.contrib.regression_weighted_sampler.isample_regression.ISampleRegression \
                         -c niftynet/contrib/regression_weighted_sampler/isampler.ini
-                        --model_dir $model_dir --starting_iter -1
+                        --model_dir $model_dir --starting_iter -1 --max_iter 200
+# ...
 ```
+
+
+To do the train/inference in Bash:
+```bash
+label_data_dir="/mydata/segmentation_mask"
+model_dir="regression_isampler"
+mkdir $model_dir
+cp -r $label_data_dir $model_dir/error_maps
+python net_run.py train -a niftynet.contrib.regression_weighted_sampler.isample_regression.ISampleRegression \
+                        -c isampler_config.ini --model_dir $model_dir --starting_iter 0 --max_iter 500
+
+for iter in `seq 500 500 10000`;
+do
+  python net_run.py inference \
+    -a niftynet.contrib.regression_weighted_sampler.isample_regression.ISampleRegression \
+    -c isampler_config.ini --inference_iter -1 --error_map True --batch_size 2 --dataset_split_file nofile
+
+  python net_run.py train \
+    -a niftynet.contrib.regression_weighted_sampler.isample_regression.ISampleRegression \
+    -c isampler_config.ini --starting_iter -1 --max_iter $iter --model_dir $model_dir
+done
+```
+
+To do an "autocontext" training:
+```bash
+model_dir="autocontext_regression"
+initial_mask="/mydata/segmentation_mask"
+mkdir $model_dir;
+cp -r $initial_mask $model_dir/error_maps;
+python net_run.py train -a niftynet.contrib.regression_weighted_sampler.isample_regression.ISampleRegression \
+                        -c net_autocontext.ini --starting_iter 0 --max_iter 10
+
+for i in `seq 1000 1000 10000`;
+do
+  python net_run.py inference \
+    -a niftynet.contrib.regression_weighted_sampler.isample_regression.ISampleRegression \
+    -c net_autocontext.ini --inference_iter -1 --error_map True --batch_size 2 --dataset_split_file nofile
+
+  python net_run.py train \
+    -a niftynet.contrib.regression_weighted_sampler.isample_regression.ISampleRegression \
+    -c net_autocontext.ini --starting_iter -1 --max_iter $i
+
+done
+```
+
 
 ### Parameters for config file in the regression section
 |Params.| Type |Example|Default|
 |---|---|---|---|
-|[rand_samples](#rand_samples)|Integer|`rand_samples=5`|`'0'`|
-|[min_numb_labels](#min_numb_labels)|Integer|`min_numb_labels=3`|`'1'`|
-|[proba_connect](#proba_connect)|Boolean|`proba_connect=False`|`'False'`|
-|[min_sampling_ratio](#min_sampling_ratio)|Float|`min_sampling_ratio=0.001`|`'0.00001'`|
-|[compulsory_labels](#compulsory_labels)|Integer array|`compulsory_labels=0, 2`|`0, 1`|
+|[error_map](#error_map)|Boolean|`error_map=True`|`'False'`|
 
 
-###### `rand_samples`
-Integer - Number of samples taken without any sampling rule / using a uniform sampler
+###### `error_map`
+At inference time, setting the parameter to True to generate errormaps on the input data.
 
-###### `min_numb_labels`
-Integer - Minimum number of labels present in a sampling window
-
-###### `proba_connect`
-Boolean - Indicates the distribution of sizes of connected components should be considered in the sampling
-
-###### `min_sampling_ratio`
-Float - Minimum frequency of each label in the sampled window
-
-###### `compulsory_labels`
-List of integers - Labels that must be present in the sampled window
