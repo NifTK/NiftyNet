@@ -11,6 +11,14 @@ import nibabel
 import numpy as np
 
 
+def simpleitk2nibabel(filename):
+    """
+    Returns an instance of Nifti1Image from SimpleItk.
+    Avoids storing the data in memory.
+    """
+    return SimpleITKAsNibabel(filename)
+
+
 class SimpleITKAsNibabel(nibabel.Nifti1Image):
     """
     Minimal interface to use a SimpleITK image as if it were

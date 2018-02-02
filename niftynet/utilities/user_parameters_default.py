@@ -11,6 +11,7 @@ from niftynet.utilities.user_parameters_helper import int_array
 from niftynet.utilities.user_parameters_helper import spatialnumarray
 from niftynet.utilities.user_parameters_helper import str2boolean
 from niftynet.utilities.user_parameters_helper import str_array
+from niftynet.utilities.user_parameters_helper import spatial_atleast3d
 
 DEFAULT_INFERENCE_OUTPUT = os.path.join('.', 'output')
 DEFAULT_DATASET_SPLIT_FILE = os.path.join('.', 'dataset_split.csv')
@@ -63,7 +64,7 @@ def add_application_args(parser):
 def add_inference_args(parser):
     parser.add_argument(
         "--spatial_window_size",
-        type=int_array,
+        type=spatial_atleast3d,
         help="Specify the spatial size of the input data (ndims <= 3)",
         default=())
 
@@ -148,7 +149,7 @@ def add_input_data_args(parser):
 
     parser.add_argument(
         "--spatial_window_size",
-        type=int_array,
+        type=spatial_atleast3d,
         help="specify the spatial size of the input data (ndims <= 3)",
         default=())
     return parser

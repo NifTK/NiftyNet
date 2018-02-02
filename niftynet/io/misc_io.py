@@ -17,14 +17,16 @@ from tensorflow.core.framework import summary_pb2
 
 from niftynet.utilities.util_import import check_module
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
+from niftynet.io.image_as_nibabel import image2nibabel
 
 IS_PYTHON2 = False if sys.version_info[0] > 2 else True
 
-IMAGE_LOADERS = [nib.load]
+
+IMAGE_LOADERS = [nib.load, image2nibabel]
 try:
     import niftynet.io.simple_itk_as_nibabel
 
-    IMAGE_LOADERS.append(niftynet.io.simple_itk_as_nibabel.SimpleITKAsNibabel)
+    IMAGE_LOADERS.append(niftynet.io.simple_itk_as_nibabel.simpleitk2nibabel)
 except (ImportError, AssertionError):
     tf.logging.warning('SimpleITK adapter failed to load, '
                        'reducing the supported file formats.')
@@ -82,6 +84,9 @@ def load_image(filename):
         except nib.filebasedimages.ImageFileError:
             # if the image_loader cannot handle the type_str
             # continue to next loader
+            pass
+        except IOError:
+            # If PIL (or scikit-image) fails to load an image
             pass
     tf.logging.fatal('No loader could load the file %s', filename)
     raise IOError

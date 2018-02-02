@@ -133,3 +133,11 @@ def spatialnumarray(string_input):
         int_tuple = int_tuple + (int_tuple[-1],)
     int_tuple = int_tuple[:3]
     return int_tuple
+
+
+def spatial_atleast3d(string_input):
+    output_tuple = int_array(string_input)
+    if len(output_tuple) < 3:
+         # will pad the array with single dimensions
+         output_tuple = output_tuple + (1,) * (3 - len(output_tuple))
+    return output_tuple
