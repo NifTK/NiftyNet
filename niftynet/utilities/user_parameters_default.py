@@ -15,6 +15,7 @@ from niftynet.utilities.user_parameters_helper import spatial_atleast3d
 
 DEFAULT_INFERENCE_OUTPUT = os.path.join('.', 'output')
 DEFAULT_DATASET_SPLIT_FILE = os.path.join('.', 'dataset_split.csv')
+DEFAULT_HISTOGRAM_REF_FILE = os.path.join('.', 'histogram_ref_file.txt')
 DEFAULT_MODEL_DIR = None
 
 
@@ -228,7 +229,7 @@ def add_network_args(parser):
         metavar='',
         type=str,
         help="A reference file of histogram for intensity normalisation",
-        default='')
+        default=DEFAULT_HISTOGRAM_REF_FILE)
 
     # TODO add choices of normalisation types
     import niftynet.utilities.histogram_standardisation as hist_std_module

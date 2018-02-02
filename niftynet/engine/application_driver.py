@@ -59,7 +59,7 @@ class ApplicationDriver(object):
         self.summary_dir = None
         self.session_prefix = None
         self.max_checkpoints = 2
-        self.save_every_n = 10
+        self.save_every_n = 0
         self.tensorboard_every_n = -1
 
         self.validation_every_n = -1
@@ -269,8 +269,10 @@ class ApplicationDriver(object):
                     exc_type, exc_value, exc_traceback, file=sys.stdout)
             finally:
                 tf.logging.info('Cleaning up...')
-                if self.is_training and loop_status.get('current_iter', None):
-                    self._save_model(session, loop_status['current_iter'])
+                if self.is_training:
+                    # saving model at the last iteration
+                    iter_end = loop_status.get('current_iter', -1)
+                    self._save_model(session, iter_end)
                 elif not loop_status.get('all_saved_flag', None):
                     tf.logging.warning('stopped early, incomplete loops')
 
@@ -440,9 +442,8 @@ class ApplicationDriver(object):
             os.path.join(self.summary_dir, VALID), sess.graph) \
             if self.validation_every_n > 0 else None
 
-        for iter_i in range(self.initial_iter, self.final_iter):
-            # general loop information
-            loop_status['current_iter'] = iter_i
+        iter_i = self.initial_iter + 1
+        while iter_i <= self.final_iter:
             if self._coord.should_stop():
                 break
             if iter_msg.should_stop:
@@ -456,6 +457,9 @@ class ApplicationDriver(object):
                 iter_msg.current_iter_output[NETWORK_OUTPUT])
             iter_msg.to_tf_summary(writer_train)
             tf.logging.info(iter_msg.to_console_string())
+
+            # general loop information
+            loop_status['current_iter'] = iter_i
 
             # run validations if required
             if iter_i > 0 and self.validation_every_n > 0 and \
@@ -471,6 +475,8 @@ class ApplicationDriver(object):
             if self.save_every_n > 0 and (iter_i % self.save_every_n == 0):
                 self._save_model(sess, iter_i)
 
+            iter_i = iter_i + 1
+
     def _inference_loop(self, sess, loop_status):
         """
         Runs all variables returned by outputs_collector,
@@ -479,7 +485,7 @@ class ApplicationDriver(object):
         """
         iter_msg = IterationMessage()
         loop_status['all_saved_flag'] = False
-        iter_i = 0
+        iter_i = 1
         while True:
             if self._coord.should_stop():
                 break
@@ -504,7 +510,7 @@ class ApplicationDriver(object):
         """
         save session parameters to the hard drive
         """
-        if iter_i <= 0:
+        if iter_i < 0:
             return
         self.saver.save(sess=session,
                         save_path=self.session_prefix,
