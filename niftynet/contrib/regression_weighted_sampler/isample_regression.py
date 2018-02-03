@@ -1,17 +1,16 @@
+import os
+
 import tensorflow as tf
 
-import os
-from niftynet.application.regression_application import RegressionApplication
+from niftynet.application.regression_application import \
+    RegressionApplication, SUPPORTED_INPUT
 from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
-from niftynet.layer.loss_regression import LossFunction
 from niftynet.layer.mean_variance_normalisation import \
     MeanVarNormalisationLayer
 from niftynet.layer.pad import PadLayer
-
-SUPPORTED_INPUT = set(['image', 'output', 'weight', 'sampler'])
 
 
 class ISampleRegression(RegressionApplication):
@@ -83,7 +82,7 @@ class ISampleRegression(RegressionApplication):
 
                 # computes absolute error
                 target = tf.cast(data_dict['output'], tf.float32)
-                net_out = tf.abs(target - net_out)
+                net_out = tf.squared_difference(target, net_out)
 
             # window output and locations for aggregating volume results
             outputs_collector.add_to_collection(

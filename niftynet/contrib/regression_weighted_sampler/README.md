@@ -75,6 +75,28 @@ do
 done
 ```
 
+To do an "autocontext" inference
+```bash
+model_dir="autocontext_regression"
+initial_mask="/mydata/segmentation_mask"
+rm -r $model_dir/error_maps;
+cp -r $initial_mask $model_dir/error_maps
+
+python net_run.py inference \
+  -a niftynet.contrib.regression_weighted_sampler.isample_regression.ISampleRegression \
+  -c ~/from_felix/net_auto.ini --inference_iter 10 --batch_size 5 --error_map True --dataset_split_file nofile
+
+for i in `seq 1000 1000 9000`;
+do
+  python net_run.py inference \
+    -a niftynet.contrib.regression_weighted_sampler.isample_regression.ISampleRegression \
+    -c ~/from_felix/net_auto.ini --inference_iter $i --error_map True --batch_size 5 --dataset_split_file nofile
+done
+python net_run.py inference \
+  -a niftynet.contrib.regression_weighted_sampler.isample_regression.ISampleRegression \
+  -c ~/from_felix/net_auto.ini --inference_iter 10000 --error_map False --batch_size 5 --dataset_split_file nofile
+```
+
 
 ### Parameters for config file in the regression section
 |Params.| Type |Example|Default|
