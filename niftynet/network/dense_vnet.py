@@ -163,7 +163,7 @@ class DenseVNet(BaseNet):
         d_size2 = (1,) + (2,) * n_spatial_dims + (1,)
 
         # Downsample input
-        return tf.nn.avg_pool3d(input_tensor, d_size1, d_size2, 'SAME')
+        return tf.nn.avg_pool(input_tensor, d_size1, d_size2, 'SAME')
 
     def layer_op(self, input_tensor, is_training, layer_id=-1):
         hp = self.hyperparameters
@@ -194,6 +194,10 @@ class DenseVNet(BaseNet):
         #
 
         # On the fly data augmentation
+        if n_spatial_dims == 2:
+            # augmentation for 2d slice not implemented
+            hp['augmentation_scale'] = 0
+
         if is_training and hp['augmentation_scale'] > 0:
             augment_layer = Affine3DAugmentationLayer(hp['augmentation_scale'],
                                                       'LINEAR', 'ZERO')
