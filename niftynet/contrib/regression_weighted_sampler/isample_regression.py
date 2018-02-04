@@ -17,23 +17,23 @@ from niftynet.layer.pad import PadLayer
 
 class ISampleRegression(RegressionApplication):
 
-    def initialise_weighted_sampler(self):
-        if len(self.readers) == 2:
-            training_sampler = WeightedSampler(
-                reader=self.readers[0],
-                data_param=self.data_param,
-                batch_size=self.net_param.batch_size,
-                windows_per_image=self.action_param.sample_per_volume,
-                queue_length=self.net_param.queue_length)
-            validation_sampler = UniformSampler(
-                reader=self.readers[1],
-                data_param=self.data_param,
-                batch_size=self.net_param.batch_size,
-                windows_per_image=self.action_param.sample_per_volume,
-                queue_length=self.net_param.queue_length)
-            self.sampler = [[training_sampler, validation_sampler]]
-        else:
-            RegressionApplication.initialise_weighted_sampler()
+    #def initialise_weighted_sampler(self):
+    #    if len(self.readers) == 2:
+    #        training_sampler = WeightedSampler(
+    #            reader=self.readers[0],
+    #            data_param=self.data_param,
+    #            batch_size=self.net_param.batch_size,
+    #            windows_per_image=self.action_param.sample_per_volume,
+    #            queue_length=self.net_param.queue_length)
+    #        validation_sampler = UniformSampler(
+    #            reader=self.readers[1],
+    #            data_param=self.data_param,
+    #            batch_size=self.net_param.batch_size,
+    #            windows_per_image=self.action_param.sample_per_volume,
+    #            queue_length=self.net_param.queue_length)
+    #        self.sampler = [[training_sampler, validation_sampler]]
+    #    else:
+    #        RegressionApplication.initialise_weighted_sampler()
 
 
     def initialise_dataset_loader(
