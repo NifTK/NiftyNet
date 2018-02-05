@@ -51,7 +51,7 @@ def __add_regression_args(parser):
     parser.add_argument(
         "--error_map",
         metavar='',
-        help="Set wether to output the regression error maps (the maps "
+        help="Set whether to output the regression error maps (the maps "
              "will be stored in $model_dir/error_maps; the error maps "
              "can be used for window sampling).",
         type=str2boolean,

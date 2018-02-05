@@ -10,7 +10,7 @@ for instructions for downloading data and config file.
 
 ### Training regression network with autocontext model
 
-Please see [the model zoo entry](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/blob/master/autocontext_mr_ct.md)
+Please see [the model zoo entry](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/blob/master/autocontext_mr_ct_model_zoo.md)
 for instructions for downloading data and config file.
 
 
