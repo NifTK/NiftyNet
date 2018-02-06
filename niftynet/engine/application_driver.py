@@ -110,6 +110,7 @@ class ApplicationDriver(object):
             os.path.join(system_param.model_dir, 'models'))
         self.session_prefix = os.path.join(self.model_dir, FILE_PREFIX)
 
+        # set training params.
         if self.is_training:
             assert train_param, 'training parameters not specified'
             summary_root = os.path.join(system_param.model_dir, 'logs')
@@ -130,7 +131,7 @@ class ApplicationDriver(object):
                 self.validation_max_iter = max(self.validation_max_iter,
                                                train_param.validation_max_iter)
             action_param = train_param
-        else:
+        else: # set inference params.
             assert infer_param, 'inference parameters not specified'
             self.initial_iter = infer_param.inference_iter
             action_param = infer_param
@@ -237,7 +238,6 @@ class ApplicationDriver(object):
 
             # start samplers' threads
             self._run_sampler_threads(session=session)
-
             self.graph = self._create_graph(self.graph)
 
             # check app variables initialised and ready for starts
@@ -260,7 +260,9 @@ class ApplicationDriver(object):
             except KeyboardInterrupt:
                 tf.logging.warning('User cancelled application')
             except tf.errors.OutOfRangeError:
-                pass
+                if loop_status.get('all_saved_flag', None) is not None:
+                    # reached the end of inference Dataset
+                    loop_status['all_saved_flag'] = True
             except RuntimeError:
                 import sys
                 import traceback
@@ -332,7 +334,8 @@ class ApplicationDriver(object):
             with tf.name_scope('MergedOutputs'):
                 self.outputs_collector.finalise_output_op()
             # saving operation
-            self.saver = tf.train.Saver(max_to_keep=self.max_checkpoints)
+            self.saver = tf.train.Saver(max_to_keep=self.max_checkpoints,
+                                        save_relative_paths=True)
 
         # no more operation definitions after this point
         tf.Graph.finalize(graph)
