@@ -551,7 +551,7 @@ def iter_generator(count_generator, phase):
         yield iter_msg
 
 
-class ConsoleLogger():
+class ConsoleLogger(object):
     """ This class handles iteration events to print output to the console """
     def __init__(self, outputs_collector):
         self.outputs_collector = outputs_collector
@@ -576,7 +576,7 @@ class ConsoleLogger():
         tf.logging.info(iter_msg.to_console_string())
 
 
-class ModelSaver():
+class ModelSaver(object):
     """This class handles iteration events to save the model at regular
     intervals and at the end of training."""
     def __init__(self, sess, saver, save_every_n, session_prefix):
@@ -604,7 +604,7 @@ class ModelSaver():
         tf.logging.info('iter %d saved: %s', iter_msg.current_iter,
                         self.session_prefix)
 
-class TensorBoardLogger():
+class TensorBoardLogger(object):
     """ This class handles iteration events to log summaries to the
     TensorBoard log."""
     def __init__(self, outputs_collector, summary_dir, graph,
