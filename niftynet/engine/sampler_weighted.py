@@ -115,6 +115,7 @@ def weighted_spatial_coordinates(subject_id,
     # i.e. first sort the sampling frequencies, normalise them
     # to sum to one, and then accumulate them in order
     flatten_map = cropped_map.flatten()
+    flatten_map = flatten_map - np.min(flatten_map)
     sorted_data = np.cumsum(np.divide(np.sort(flatten_map), flatten_map.sum()))
     # get the sorting indexes to that we can invert the sorting later on.
     sorted_indexes = np.argsort(flatten_map)

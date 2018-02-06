@@ -48,6 +48,15 @@ def __add_regression_args(parser):
         type=int,
         default=0)
 
+    parser.add_argument(
+        "--error_map",
+        metavar='',
+        help="Set whether to output the regression error maps (the maps "
+             "will be stored in $model_dir/error_maps; the error maps "
+             "can be used for window sampling).",
+        type=str2boolean,
+        default=False)
+
     from niftynet.application.regression_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser
