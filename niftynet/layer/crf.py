@@ -10,8 +10,8 @@ import numpy
 Re-implementation of [1] for volumetric image processing.
 
 
-[1] Zheng, Shuai, et al. "Conditional random names as recurrent neural networks."
-CVPR 2015.
+[1] Zheng, Shuai, et al. "Conditional random fields as recurrent neural networks."
+CVPR 2015. https://arxiv.org/abs/1502.03240
 """
 
 def permutohedral_prepare(position_vectors):

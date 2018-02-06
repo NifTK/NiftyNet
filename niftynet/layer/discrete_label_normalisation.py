@@ -17,7 +17,7 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
     def __init__(self,
                  image_name,
                  modalities,
-                 model_filename,
+                 model_filename=None,
                  name='label_norm'):
 
         super(DiscreteLabelNormalisationLayer, self).__init__(name=name)
@@ -32,9 +32,12 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
             self.modalities = modalities
         else:
             self.modalities = (modalities,)
+        if model_filename is None:
+            model_filename = os.path.join('.', 'histogram_ref_file.txt')
         self.model_file = os.path.abspath(model_filename)
         assert not os.path.isdir(self.model_file), \
-            "model_filename is a directory, please change histogram_ref_file"
+            "model_filename is a directory, " \
+            "please change histogram_ref_file to a filename."
         self.label_map = hs.read_mapping_file(self.model_file)
 
     @property

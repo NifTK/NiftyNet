@@ -356,7 +356,7 @@ Strategies applied to combine foreground masks of multiple modalities, can take 
 - [sample_per_volume](#sample-per-volume) :: `positive integer` :: `sample_per_volume=5` :: `1`
 - [lr](#lr) :: `float` :: `lr=0.001` :: `0.1`
 - [loss_type](#loss-type) :: `string` :: `loss_type=CrossEntropy` :: `Dice`
-- [starting_iter](#starting-iter) :: `non-negative integer` :: `starting_iter=0` :: `0`
+- [starting_iter](#starting-iter) :: `integer` :: `starting_iter=0` :: `0`
 - [save_every_n](#save-every-n) :: `integer` :: `save_every_n=5` :: `500`
 - [tensorboard_every_n](#tensorboard-every-n) :: `integer` :: `tensorboard_every_n=5` :: `20`
 - [max_iter](#max-iter) :: `integer` :: `max_iter=1000` :: `10000`
@@ -388,6 +388,7 @@ The corresponding loss function type names are defined in the
 ###### `starting_iter`
 The iteration to resume training model.
 Setting `starting_iter=0` starts the network from random initialisations.
+Setting `starting_iter=-1` starts the network from the latest checkpoint if it exists.
 
 ###### `save_every_n`
 Frequency of saving the current training model saving.
@@ -400,9 +401,9 @@ Setting to `0` to disable the tensorboard writing schedule.
 
 ###### `max_iter`
 Maximum number of training iterations.
-The value is total number of iterations counting from 0.
-This means when training from [`starting_iter`](#starting-iter) N,
-the remaining number of iterations to run is `N - max_iter`.
+The value is total number of iterations.
+Setting both `starting_iter` and `max_iter` to `0` to
+save the random model initialisation.
 
 ###### `max_checkpoint`
 Maximum number of recent checkpoints to keep.
