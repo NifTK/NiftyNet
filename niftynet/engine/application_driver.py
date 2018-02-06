@@ -34,7 +34,6 @@ from niftynet.io.image_sets_partitioner import TRAIN, VALID, INFER
 from niftynet.io.misc_io import get_latest_subfolder, touch_folder
 from niftynet.layer.bn import BN_COLLECTION
 from niftynet.utilities.util_common import set_cuda_device, traverse_nested
-from niftynet.utilities.event import EventManager, Event
 
 FILE_PREFIX = 'model.ckpt'
 
@@ -47,7 +46,13 @@ class ApplicationDriver(object):
     implemented by inheriting ``niftynet.application.base_application``
     to be compatible with this driver.
     """
-
+    pre_train_iter = signal('pre_train_iter')
+    post_train_iter = signal('post_train_iter')
+    pre_validation_iter = signal('pre_validation_iter')
+    post_validation_iter = signal('post_validation_iter')
+    pre_infer_iter = signal('pre_infer_iter')
+    post_infer_iter = signal('post_infer_iter')
+    post_training = signal('post_training')
     # pylint: disable=too-many-instance-attributes
     def __init__(self):
         self.app = None
@@ -255,6 +260,7 @@ class ApplicationDriver(object):
             try:
                 # iteratively run the graph
                 if self.is_training:
+                    model_saver = ModelSaver(session, self.saver, self.save_every_n, self.session_prefix)
                     loop_status['current_iter'] = self.initial_iter
                     self._training_loop(session, loop_status)
                 else:
@@ -275,8 +281,9 @@ class ApplicationDriver(object):
                 tf.logging.info('Cleaning up...')
                 if self.is_training:
                     # saving model at the last iteration
-                    iter_end = loop_status.get('current_iter', -1)
-                    self._save_model(session, iter_end)
+                    iter_msg=IterationMessage()
+                    iter_msg.current_iter = loop_status.get('current_iter', -1)
+                    self.post_training.send(iter_msg)
                 elif not loop_status.get('all_saved_flag', None):
                     tf.logging.warning('stopped early, incomplete loops')
 
@@ -390,7 +397,7 @@ class ApplicationDriver(object):
             raise
 
     def interleaved_iteration_generator(self):
-    """ This generator yields a sequence of training and validation iterations """
+        """ This generator yields a sequence of training and validation iterations """
         train_iters = iter_generator(range(self.initial_iter + 1, 
                                            self.final_iter), TRAIN)
         for train_iter_msg in train_iters:
@@ -411,7 +418,6 @@ class ApplicationDriver(object):
                 break
             if iter_msg.should_stop:
                 break
-
             loop_status['current_iter'] = iter_msg.current_iter
             iter_msg.pre_iter.send(iter_msg)
             # This could be done with an observer too, but it is used
@@ -439,16 +445,15 @@ class ApplicationDriver(object):
         """
 
         # Add observers for tensorboard, and console output (move to io?)
-        tensorboard = TensorBoardHandler(self.outputs_collector, self.summary_dir, sess.graph)
-        console = ConsoleHandler(self.outputs_collector)
-        model_saver = ModelSaver(sess, self.save_every_n)
+        tensorboard = TensorBoardLogger(self.outputs_collector, self.summary_dir, sess.graph, self.tensorboard_every_n)
+        console = ConsoleLogger(self.outputs_collector)
 
         # Core training loop handling
-        @signal('pre_train_iter').connect
-        def add_gradient(self, iter_msg):
+        @self.pre_train_iter.connect
+        def add_gradient(iter_msg):
             iter_msg.ops_to_run['gradients'] = self.app.gradient_op
 
-        self.loop_(self.interleaved_iteration_generator(), sess, loop_status)
+        self._loop(self.interleaved_iteration_generator(), sess, loop_status)
 
     def _inference_loop(self, sess, loop_status):
         """
@@ -461,14 +466,14 @@ class ApplicationDriver(object):
 
         console = ConsoleHandler(self.outputs_collector)
 
-        @signal('post_infer_iter').connect
+        self.post_infer_iter.connect
         def is_complete(iter_msg):
           if not iter_msg.status:
               tf.logging.info('processed all batches.')
               loop_status['all_saved_flag'] = True
               iter_msg.should_stop = True
 
-        self.loop_(iter_generator(itertools.count(), INFER), sess, loop_status)
+        self._loop(iter_generator(itertools.count(), INFER), sess, loop_status)
 
     def _device_string(self, device_id=0, is_worker=True):
         """
@@ -512,49 +517,58 @@ class ApplicationDriver(object):
 
 
 def iter_generator(count_generator, phase):
-    signals = {TRAIN: ('pre_train_iter', 'post_train_iter'),
-               VALID: ('pre_validation_iter', 'post_validation_iter'),
-               INFER: ('pre_infer_iter', 'post_infer_iter')}
+    signals = {TRAIN: (ApplicationDriver.pre_train_iter,
+                       ApplicationDriver.post_train_iter),
+               VALID: (ApplicationDriver.pre_validation_iter,
+                       ApplicationDriver.post_validation_iter),
+               INFER: (ApplicationDriver.pre_infer_iter,
+                       ApplicationDriver.post_infer_iter)}
     for iter_i in count_generator:
       iter_msg = IterationMessage()
       iter_msg.current_iter, iter_msg.phase = iter_i, phase
-      iter_msg.pre_iter = signal(signals[phase][0])
-      iter_msg.post_iter =signal(signals[phase][1])
+      iter_msg.pre_iter = signals[phase][0]
+      iter_msg.post_iter =signals[phase][1]
       yield iter_msg
 
 
 class ConsoleLogger():
     def __init__(self, outputs_collector):
         self.outputs_collector = outputs_collector
+        ApplicationDriver.pre_train_iter.connect(self.on_pre_iter)
+        ApplicationDriver.pre_validation_iter.connect(self.on_pre_iter)
+        ApplicationDriver.post_train_iter.connect(self.on_post_iter)
+        ApplicationDriver.post_validation_iter.connect(self.on_post_iter)
+        ApplicationDriver.post_infer_iter.connect(self.on_post_iter)
 
-    @signal('pre_train_iter')
-    @signal('pre_validation_iter')
     def on_pre_iter(self, iter_msg):
         iter_msg.ops_to_run[CONSOLE] = \
             self.outputs_collector.variables(CONSOLE)
 
-    @signal('post_train_iter')
-    @signal('post_validation_iter')
     def on_post_iter(self, iter_msg):
         tf.logging.info(iter_msg.to_console_string())
 
 
 
 class ModelSaver():
-    def __init__(self, sess, save_every_n, session_prefix):
+    def __init__(self, sess, saver, save_every_n, session_prefix):
         self.sess = sess
         self.session_prefix = session_prefix
-        self.save_every_n
-        
-    @signal('post_train_iter').connect
-    def save_model(iter_msg):
+        self.save_every_n = save_every_n
+        self.saver = saver
+        ApplicationDriver.post_training.connect(self.save_model)
+        ApplicationDriver.post_train_iter.connect(self.save_model_interval)
+
+    def save_model_interval(self, iter_msg):
         if iter_msg.current_iter > 0 and \
                 self.save_every_n > 0 and \
                 (iter_msg.current_iter % self.save_every_n == 0):
+            self.save_model(iter_msg)
+
+    def save_model(self, iter_msg):
             self.saver.save(sess=self.sess,
                             save_path=self.session_prefix,
                             global_step=iter_msg.current_iter)
-        tf.logging.info('iter %d saved: %s', iter_msg.current_iter,
+            tf.logging.info('iter %d saved: %s', iter_msg.current_iter,
                         self.session_prefix)
 
 class TensorBoardLogger():
@@ -566,25 +580,24 @@ class TensorBoardLogger():
                 os.path.join(self.summary_dir, VALID), graph)
         self.outputs_collector = outputs_collector
         self.tensorboard_every_n = tensorboard_every_n
-            
+        ApplicationDriver.pre_train_iter.connect(self.on_pre_iter)
+        ApplicationDriver.pre_validation_iter.connect(self.on_pre_iter)
+        ApplicationDriver.post_train_iter.connect(self.on_post_train_iter)
+        ApplicationDriver.post_validation_iter.connect(self.on_post_validation_iter)
+
     def filter(self, iter_msg):
-        # TODO This does not work correctly
         return self.tensorboard_every_n > 0 and \
-                (message.current_iter % self.tensorboard_every_n == 0
+                (iter_msg.current_iter % self.tensorboard_every_n == 0)
                 
-    @signal('pre_train_iter')
-    @signal('pre_validation_iter')
     def on_pre_iter(self, iter_msg):
         if self.filter(iter_msg):
             iter_msg.ops_to_run[TF_SUMMARIES] = \
                 self.outputs_collector.variables(TF_SUMMARIES)
 
-    @signal('post_train_iter')
-    def on_pre_validation_iter(self, iter_msg):
+    def on_post_train_iter(self, iter_msg):
         if self.filter(iter_msg):
             iter_msg.to_tf_summary(self.writer_train)
 
-    @signal('post_validation_iter')
-    def on_pre_validation_iter(self, iter_msg):
+    def on_post_validation_iter(self, iter_msg):
         if self.filter(iter_msg):
             iter_msg.to_tf_summary(self.writer_valid)
