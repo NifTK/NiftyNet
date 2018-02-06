@@ -117,7 +117,7 @@ class RegApp(BaseApplication):
                             lambda: switch_samplers(True),
                             lambda: switch_samplers(False))
             else:
-                sampler_window = switch_sampler(True)
+                sampler_window = switch_samplers(True)
 
             image_windows, _ = sampler_window
             # image_windows, locations = sampler_window
