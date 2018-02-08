@@ -163,7 +163,14 @@ class DenseVNet(BaseNet):
         d_size2 = (1,) + (2,) * n_spatial_dims + (1,)
 
         # Downsample input
-        return tf.nn.avg_pool(input_tensor, d_size1, d_size2, 'SAME')
+        if n_spatial_dims==2:
+            return tf.nn.avg_pool(input_tensor, d_size1, d_size2, 'SAME')
+        elif n_spatial_dims==3:
+            return tf.nn.avg_pool3d(input_tensor, d_size1, d_size2, 'SAME')
+        else:
+            raise NotImplementedError(
+                'Downsampling only supports 2D and 3D images')
+        
 
     def layer_op(self, input_tensor, is_training, layer_id=-1):
         hp = self.hyperparameters
@@ -197,7 +204,7 @@ class DenseVNet(BaseNet):
         if is_training and hp['augmentation_scale'] > 0:
             if n_spatial_dims == 2:
                 augmentation_class = Affine2DAugmentationLayer
-            elif n_spatial_dims == 3
+            elif n_spatial_dims == 3:
                 augmentation_class = Affine3DAugmentationLayer
             else:
                 raise NotImplementedError(
@@ -267,13 +274,24 @@ class DenseVNet(BaseNet):
         seg_summary = seg_argmax * (255. / self.num_classes - 1)
 
         # Image Summary
-        m, v = tf.nn.moments(input_tensor, axes=[1, 2, 3], keep_dims=True)
-        timg = (tf.to_float(input_tensor - m) / (tf.sqrt(v) * 2.) + 1.) * 127.
-        img_summary = tf.minimum(255., tf.maximum(0., timg))
+        if n_spatial_dims==2:
+            m, v = tf.nn.moments(input_tensor, axes=[1, 2], keep_dims=True)
+            timg = (tf.to_float(input_tensor - m) / (tf.sqrt(v) * 2.) + 1.) * 127.
+            img_summary = tf.minimum(255., tf.maximum(0., tf.reduce_mean(timg,axis=-1,keep_dims=True)))
+            # Show summaries
+            tf.summary.image('imgseg', tf.concat([img_summary, seg_summary], 1),
+                             5, [tf.GraphKeys.SUMMARIES])
+        elif n_spatial_dims==3:
+            m, v = tf.nn.moments(input_tensor, axes=[1, 2, 3], keep_dims=True)
+            timg = (tf.to_float(input_tensor - m) / (tf.sqrt(v) * 2.) + 1.) * 127.
+            img_summary = tf.minimum(255., tf.maximum(0., tf.reduce_mean(timg,axis=-1,keep_dims=True)))
 
-        # Show summaries
-        image3_axial('imgseg', tf.concat([img_summary, seg_summary], 1),
-                     5, [tf.GraphKeys.SUMMARIES])
+            # Show summaries
+            image3_axial('imgseg', tf.concat([img_summary, seg_summary], 1),
+                         5, [tf.GraphKeys.SUMMARIES])
+        else:
+            raise NotImplementedError(
+                'Image Summary only supports 2D and 3D images')
 
         return seg_output
 
@@ -502,12 +520,12 @@ class AffineAugmentationLayer(TrainableLayer):
 
     def random_transform(self, batch_size):
         if self._transform is None:
-            corners = self.get_corners()
+            corners_ = self.get_corners()
 
-            _batch_ones = tf.ones([batch_size, len(corners[0], 1])
+            _batch_ones = tf.ones([batch_size, len(corners_[0]), 1])
 
-            corners = tf.tile(corners, [batch_size, 1, 1])
-            random_size = [batch_size, len(corners[0], len(corners[0][0]]
+            corners = tf.tile(corners_, [batch_size, 1, 1])
+            random_size = [batch_size, len(corners_[0]), len(corners_[0][0])]
             random_scale = tf.random_uniform(random_size, 0, self.scale)
             corners2 = corners * (1 - random_scale)
             corners_homog = tf.concat([corners, _batch_ones], 2)
@@ -530,13 +548,13 @@ class AffineAugmentationLayer(TrainableLayer):
                                    boundary=self.boundary)
 
         relative_transform = self.transform_func(sz[0])
-        to_relative = tf.tile(self.get_transform_to_relative, [sz[0], 1, 1])
+        to_relative = tf.tile(self.get_transform_to_relative(sz), [sz[0], 1, 1])
 
         from_relative = tf.matrix_inverse(to_relative)
         voxel_transform = tf.matmul(from_relative,
                                     tf.matmul(relative_transform, to_relative))
-        warp_parameters = tf.reshape(voxel_transform[:, 0:3, 0:4],
-                                     [sz[0], 12])
+        warp_parameters = tf.reshape(voxel_transform[:, 0:self.spatial_dims, 0:self.spatial_dims+1],
+                                     [sz[0], self.spatial_dims*(self.spatial_dims+1)])
         grid = grid_warper(warp_parameters)
         return resampler(input_tensor, grid)
 
@@ -551,8 +569,9 @@ class AffineAugmentationLayer(TrainableLayer):
                               boundary,
                               self.inverse_transform)
 
-class Affine2DAugmentationLayer(TrainableLayer):
+class Affine2DAugmentationLayer(AffineAugmentationLayer):
     """ Specialization of AffineAugmentationLayer for 2D coordinates """
+    spatial_dims=2
     def get_corners(self):
         return [
                 [[-1., -1.],
@@ -560,14 +579,16 @@ class Affine2DAugmentationLayer(TrainableLayer):
                  [1., -1.],
                  [1., 1.]]
                ]
+               
 
     def get_transform_to_relative(self, sz):
         return [[[2./(sz[1]-1), 0., -1.],
                  [0., 2. / (sz[2] - 1), -1.],
                  [0., 0., 1.]]]
 
-class Affine3DAugmentationLayer(TrainableLayer):
+class Affine3DAugmentationLayer(AffineAugmentationLayer):
     """ Specialization of AffineAugmentationLayer for 3D coordinates """
+    spatial_dims=3
     def get_corners(self):
         return [
                 [[-1., -1., -1.],
