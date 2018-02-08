@@ -30,7 +30,7 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
         self.output_interp_order = 0
         self.csv_path = os.path.join(self.output_path, 'niftynet_out.csv')
         if os.path.exists(self.csv_path):
-          os.remove(self.csv_path)
+            os.remove(self.csv_path)
 
     def decode_batch(self, window, location):
         """
@@ -63,8 +63,8 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
                                 image_out,
                                 source_image_obj,
                                 self.output_interp_order)
-        with open(self.csv_path,'a') as f:
-            f.write(subject_name+','+
-                ','.join([str(i) for i in image_out[0,0,0,0,:]])+'\n')
+        with open(self.csv_path, 'a') as csv_file:
+            data_str = ','.join([str(i) for i in image_out[0, 0, 0, 0, :]])
+            csv_file.write(subject_name+','+data_str+'\n')
 
         return
