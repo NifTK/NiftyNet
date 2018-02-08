@@ -98,7 +98,8 @@ setup(
         'scipy>=0.18',
         'configparser',
         'pandas',
-        'pillow'
+        'pillow',
+        'blinker'
     ],
 
     entry_points={
