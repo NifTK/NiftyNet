@@ -38,6 +38,9 @@ except AttributeError:
 
 import os
 
+from niftynet.io.misc_io import set_logger
+set_logger()
+
 from niftynet.utilities.util_import import check_module
 check_module('blinker', descriptor='New dependency', mandatory=True)
 
@@ -45,14 +48,12 @@ import niftynet.utilities.util_common as util
 import niftynet.utilities.user_parameters_parser as user_parameters_parser
 from niftynet.engine.application_driver import ApplicationDriver
 from niftynet.io.misc_io import touch_folder
-from niftynet.io.misc_io import set_logger
 from niftynet.io.misc_io import resolve_module_dir
 from niftynet.io.misc_io import to_absolute_path
 
 
 
 def main():
-    set_logger()
     system_param, input_data_param = user_parameters_parser.run()
     if util.has_bad_inputs(system_param):
         return -1

@@ -21,9 +21,9 @@ def check_module(name, min_version=None, descriptor='Optional', mandatory=False)
 
     name = '{}'.format(name)
     if mandatory:
-        log_level = tf.logging.info
-    else:
         log_level = tf.logging.fatal
+    else:
+        log_level = tf.logging.info
 
     try:
         the_module = importlib.import_module(name)
