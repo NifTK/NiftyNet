@@ -408,7 +408,7 @@ class ApplicationDriver(object):
         """ This generator yields a sequence of training and validation
         iterations """
         train_iters = iter_generator(range(self.initial_iter + 1,
-                                           self.final_iter), TRAIN)
+                                           self.final_iter + 1), TRAIN)
         for train_iter_msg in train_iters:
             self.app.set_iteration_update(train_iter_msg)
             yield train_iter_msg
@@ -430,8 +430,7 @@ class ApplicationDriver(object):
                 break
             loop_status['current_iter'] = iter_msg.current_iter
             iter_msg.pre_iter.send(iter_msg)
-            # This could be done with an observer too, but it is used
-            # in all phases so I've left it here
+
             iter_msg.ops_to_run[NETWORK_OUTPUT] = \
                 self.outputs_collector.variables(NETWORK_OUTPUT)
             graph_output = sess.run(iter_msg.ops_to_run,
@@ -439,6 +438,7 @@ class ApplicationDriver(object):
             iter_msg.current_iter_output = graph_output
             iter_msg.status = self.app.interpret_output(
                 iter_msg.current_iter_output[NETWORK_OUTPUT])
+
             iter_msg.post_iter.send(iter_msg)
 
             if iter_msg.should_stop:
