@@ -2,13 +2,15 @@
 from __future__ import absolute_import, print_function
 
 from collections import namedtuple
+import abc
 
 import tensorflow as tf
 
 from niftynet.layer import layer_util
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.convolution import ConvolutionalLayer
-from niftynet.layer.channel_sparse_convolution import ChannelSparseConvolutionalLayer
+from niftynet.layer.channel_sparse_convolution \
+    import ChannelSparseConvolutionalLayer
 from niftynet.layer.bn import BNLayer
 from niftynet.layer.spatial_transformer import ResamplerLayer
 from niftynet.layer.grid_warper import AffineGridWarperLayer
@@ -116,27 +118,27 @@ class DenseVNet(BaseNet):
                 'Image coordinate augmentation is not yet implemented')
 
     def create_network(self):
-        hp = self.hyperparameters
+        hyper = self.hyperparameters
 
         # Initial Convolution
         net_initial_conv = ConvolutionalLayer(
-            hp['n_input_channels'][0],
+            hyper['n_input_channels'][0],
             kernel_size=5, stride=2
         )
 
         # Dense Block Params
-        downsample_channels = list(hp['n_input_channels'][1:]) + [None]
-        num_blocks = len(hp["n_dense_channels"])
+        downsample_channels = list(hyper['n_input_channels'][1:]) + [None]
+        num_blocks = len(hyper["n_dense_channels"])
         use_bdo = self.architecture_parameters['use_bdo']
 
         # Create DenseBlocks
         net_dense_vblocks = []
 
         for idx in range(num_blocks):
-            dense_ch = hp["n_dense_channels"][idx]  # Number or dense channels
-            seg_ch = hp["n_seg_channels"][idx]      # Number of segmentation ch
-            down_ch = downsample_channels[idx]      # Number of downsampling ch
-            dil_rate = hp["dilation_rates"][idx]    # Dilation rate
+            dense_ch = hyper["n_dense_channels"][idx]  # Num dense channels
+            seg_ch = hyper["n_seg_channels"][idx]      # Num segmentation ch
+            down_ch = downsample_channels[idx]      # Num of downsampling ch
+            dil_rate = hyper["dilation_rates"][idx]    # Dilation rate
 
             # Dense feature block
             dblock = DenseFeatureStackBlockWithSkipAndDownsample(
@@ -148,7 +150,7 @@ class DenseVNet(BaseNet):
 
         # Segmentation
         net_seg_layer = ConvolutionalLayer(
-            self.num_classes, kernel_size=hp['final_kernel'],
+            self.num_classes, kernel_size=hyper['final_kernel'],
             with_bn=False, with_bias=True
         )
 
@@ -163,17 +165,16 @@ class DenseVNet(BaseNet):
         d_size2 = (1,) + (2,) * n_spatial_dims + (1,)
 
         # Downsample input
-        if n_spatial_dims==2:
+        if n_spatial_dims == 2:
             return tf.nn.avg_pool(input_tensor, d_size1, d_size2, 'SAME')
-        elif n_spatial_dims==3:
+        elif n_spatial_dims == 3:
             return tf.nn.avg_pool3d(input_tensor, d_size1, d_size2, 'SAME')
         else:
             raise NotImplementedError(
                 'Downsampling only supports 2D and 3D images')
-        
 
     def layer_op(self, input_tensor, is_training, layer_id=-1):
-        hp = self.hyperparameters
+        hyper = self.hyperparameters
 
         # Initialize DenseVNet network layers
         net = self.create_network()
@@ -189,10 +190,10 @@ class DenseVNet(BaseNet):
         n_spatial_dims = input_tensor.shape.ndims - 2
 
         # Quick access to hyperparams
-        pkeep = hp['p_channels_selected']
+        pkeep = hyper['p_channels_selected']
 
         # Validate input dimension with dilation rates
-        modulo = 2 ** (len(hp['dilation_rates']))
+        modulo = 2 ** (len(hyper['dilation_rates']))
         assert layer_util.check_spatial_dims(input_tensor,
                                              lambda x: x % modulo == 0)
 
@@ -201,7 +202,7 @@ class DenseVNet(BaseNet):
         #
 
         # On the fly data augmentation
-        if is_training and hp['augmentation_scale'] > 0:
+        if is_training and hyper['augmentation_scale'] > 0:
             if n_spatial_dims == 2:
                 augmentation_class = Affine2DAugmentationLayer
             elif n_spatial_dims == 3:
@@ -210,7 +211,7 @@ class DenseVNet(BaseNet):
                 raise NotImplementedError(
                     'Affine augmentation only supports 2D and 3D images')
 
-            augment_layer = augmentation_class(hp['augmentation_scale'],
+            augment_layer = augmentation_class(hyper['augmentation_scale'],
                                                'LINEAR', 'ZERO')
             input_tensor = augment_layer(input_tensor)
 
@@ -262,7 +263,7 @@ class DenseVNet(BaseNet):
             seg_output += xyz_prior
 
         # Invert augmentation if any
-        if is_training and hp['augmentation_scale'] > 0:
+        if is_training and hyper['augmentation_scale'] > 0:
             inverse_aug = augment_layer.inverse()
             seg_output = inverse_aug(seg_output)
 
@@ -274,18 +275,16 @@ class DenseVNet(BaseNet):
         seg_summary = seg_argmax * (255. / self.num_classes - 1)
 
         # Image Summary
-        if n_spatial_dims==2:
-            m, v = tf.nn.moments(input_tensor, axes=[1, 2], keep_dims=True)
-            timg = (tf.to_float(input_tensor - m) / (tf.sqrt(v) * 2.) + 1.) * 127.
-            img_summary = tf.minimum(255., tf.maximum(0., tf.reduce_mean(timg,axis=-1,keep_dims=True)))
-            # Show summaries
+        norm_axes = list(range(1, n_spatial_dims+1))
+        mean, var = tf.nn.moments(input_tensor, axes=norm_axes, keep_dims=True)
+        timg = tf.to_float(input_tensor - mean) / (tf.sqrt(var) * 2.)
+        timg = (timg + 1.) * 127.
+        single_channel = tf.reduce_mean(timg, axis=-1, keep_dims=True)
+        img_summary = tf.minimum(255., tf.maximum(0., single_channel))
+        if n_spatial_dims == 2:
             tf.summary.image('imgseg', tf.concat([img_summary, seg_summary], 1),
                              5, [tf.GraphKeys.SUMMARIES])
-        elif n_spatial_dims==3:
-            m, v = tf.nn.moments(input_tensor, axes=[1, 2, 3], keep_dims=True)
-            timg = (tf.to_float(input_tensor - m) / (tf.sqrt(v) * 2.) + 1.) * 127.
-            img_summary = tf.minimum(255., tf.maximum(0., tf.reduce_mean(timg,axis=-1,keep_dims=True)))
-
+        elif n_spatial_dims == 3:
             # Show summaries
             image3_axial('imgseg', tf.concat([img_summary, seg_summary], 1),
                          5, [tf.GraphKeys.SUMMARIES])
@@ -305,7 +304,8 @@ def image_resize(image, output_size):
         return tf.image.resize_images(image, output_size)
     first_reshape = tf.reshape(image, input_size[0:3] + [-1])
     first_resize = tf.image.resize_images(first_reshape, output_size[0:2])
-    second_shape = input_size[:1] + [output_size[0] * output_size[1], input_size[3], -1]
+    second_shape = input_size[:1] + [output_size[0] * output_size[1],
+                                     input_size[3], -1]
     second_reshape = tf.reshape(first_resize, second_shape)
     second_resize = tf.image.resize_images(second_reshape,
                                            [second_shape[1], output_size[2]])
@@ -491,10 +491,11 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
 
 
 class AffineAugmentationLayer(TrainableLayer):
-    """ This layer applies a small random (per-iteration) affine 
+    """ This layer applies a small random (per-iteration) affine
     transformation to an image. The distribution of transformations
     generally results in scaling the image up, with minimal sampling
-    outside the original image. """
+    outside the original image."""
+    __metaclass__ = abc.ABCMeta
 
     def __init__(self, scale, interpolation,
                  boundary, transform_func=None,
@@ -502,7 +503,7 @@ class AffineAugmentationLayer(TrainableLayer):
         """"
         scale denotes how extreme the perturbation is, with 1. meaning
             no perturbation and 0.5 giving larger perturbations.
-        interpolation denotes the image value interpolation used by 
+        interpolation denotes the image value interpolation used by
             the resampling
         boundary denotes the boundary handling used by the resampling
         transform_func should be a function returning a relative
@@ -540,21 +541,22 @@ class AffineAugmentationLayer(TrainableLayer):
         return tf.matrix_inverse(self.transform_func(batch_size))
 
     def layer_op(self, input_tensor):
-        sz = input_tensor.shape.as_list()
-        grid_warper = AffineGridWarperLayer(sz[1:-1],
-                                            sz[1:-1])
+        size = input_tensor.shape.as_list()
+        grid_warper = AffineGridWarperLayer(size[1:-1],
+                                            size[1:-1])
 
         resampler = ResamplerLayer(interpolation=self.interpolation,
                                    boundary=self.boundary)
 
-        relative_transform = self.transform_func(sz[0])
-        to_relative = tf.tile(self.get_transform_to_relative(sz), [sz[0], 1, 1])
+        relative_transform = self.transform_func(size[0])
+        to_relative = tf.tile(self.get_tfm_to_relative(size), [size[0], 1, 1])
 
         from_relative = tf.matrix_inverse(to_relative)
         voxel_transform = tf.matmul(from_relative,
                                     tf.matmul(relative_transform, to_relative))
-        warp_parameters = tf.reshape(voxel_transform[:, 0:self.spatial_dims, 0:self.spatial_dims+1],
-                                     [sz[0], self.spatial_dims*(self.spatial_dims+1)])
+        dims = self.spatial_dims
+        warp_parameters = tf.reshape(voxel_transform[:, 0:dims, 0:dims + 1],
+                                     [size[0], dims * (dims + 1)])
         grid = grid_warper(warp_parameters)
         return resampler(input_tensor, grid)
 
@@ -569,39 +571,46 @@ class AffineAugmentationLayer(TrainableLayer):
                               boundary,
                               self.inverse_transform)
 
+    @abc.abstractproperty
+    def spatial_dims(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_corners(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_tfm_to_relative(self):
+        raise NotImplementedError
+
 class Affine2DAugmentationLayer(AffineAugmentationLayer):
     """ Specialization of AffineAugmentationLayer for 2D coordinates """
-    spatial_dims=2
+    spatial_dims = 2
     def get_corners(self):
-        return [
-                [[-1., -1.],
+        return [[[-1., -1.],
                  [-1., 1.],
                  [1., -1.],
-                 [1., 1.]]
-               ]
-               
+                 [1., 1.]]]
 
-    def get_transform_to_relative(self, sz):
-        return [[[2./(sz[1]-1), 0., -1.],
-                 [0., 2. / (sz[2] - 1), -1.],
+    def get_tfm_to_relative(self, size):
+        return [[[2./(size[1]-1), 0., -1.],
+                 [0., 2. / (size[2] - 1), -1.],
                  [0., 0., 1.]]]
 
 class Affine3DAugmentationLayer(AffineAugmentationLayer):
     """ Specialization of AffineAugmentationLayer for 3D coordinates """
-    spatial_dims=3
+    spatial_dims = 3
     def get_corners(self):
-        return [
-                [[-1., -1., -1.],
+        return [[[-1., -1., -1.],
                  [-1., -1., 1.],
                  [-1., 1., -1.],
                  [-1., 1., 1.],
                  [1., -1., -1.],
                  [1., -1., 1.],
                  [1., 1., -1.],
-                 [1., 1., 1.]]
-               ]
-    def get_transform_to_relative(self, sz):
-        return [[[2./(sz[1]-1), 0., 0., -1.],
-                 [0., 2. / (sz[2] - 1), 0., -1.],
-                 [0., 0., 2. / (sz[3] - 1), -1.],
+                 [1., 1., 1.]]]
+    def get_tfm_to_relative(self, size):
+        return [[[2./(size[1]-1), 0., 0., -1.],
+                 [0., 2. / (size[2] - 1), 0., -1.],
+                 [0., 0., 2. / (size[3] - 1), -1.],
                  [0., 0., 0., 1.]]]
