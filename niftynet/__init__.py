@@ -39,7 +39,7 @@ except AttributeError:
 import os
 
 from niftynet.utilities.util_import import check_module
-check_module('blinker', descriptor='New dependency')
+check_module('blinker', descriptor='New dependency', mandatory=True)
 
 import niftynet.utilities.util_common as util
 import niftynet.utilities.user_parameters_parser as user_parameters_parser

@@ -5,7 +5,7 @@ import importlib
 import tensorflow as tf
 
 
-def check_module(name, min_version=None, descriptor='Optional'):
+def check_module(name, min_version=None, descriptor='Optional', mandatory=False):
     """
     Check if the module exists, and
     satisfies the minimum version requirement.
@@ -15,14 +15,20 @@ def check_module(name, min_version=None, descriptor='Optional'):
     :param name:
     :param min_version:
     :param descriptor:
+    :param mandatory:
     :return:
     """
 
     name = '{}'.format(name)
+    if mandatory:
+        log_level = tf.logging.info
+    else:
+        log_level = tf.logging.fatal
+
     try:
         the_module = importlib.import_module(name)
     except ImportError:
-        tf.logging.info(
+        log_level(
             descriptor + ' Python module %s not found, '
             'please install %s and retry if the application fails.',
             name, name)
@@ -34,7 +40,7 @@ def check_module(name, min_version=None, descriptor='Optional'):
     except AttributeError:
         pass
     except AssertionError:
-        tf.logging.info(
+        log_level(
             descriptor + ' Python module %s version %s not found, '
             'please install %s-%s and retry if the application fails.',
             name, min_version, name, min_version)
