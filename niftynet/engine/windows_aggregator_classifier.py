@@ -30,6 +30,9 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
         self.name = name
         self.output_interp_order = 0
         self.prefix = prefix
+        self.csv_path = os.path.join(self.output_path, self.prefix+'.csv')
+        if os.path.exists(self.csv_path):
+            os.remove(self.csv_path)
 
     def decode_batch(self, window, location):
         """
@@ -39,7 +42,6 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
         signal from the sampler
         """
         n_samples = window.shape[0]
-        print('......', window.shape)
         for batch_id in range(n_samples):
             if self._is_stopping_signal(location[batch_id]):
                 return False
@@ -50,7 +52,7 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
     def _save_current_image(self, image_out):
         if self.input_image is None:
             return
-        window_shape = [1, 1, 1, 1, 1]
+        window_shape = [1, 1, 1, 1, image_out.shape[-1]]
         image_out = np.reshape(image_out, window_shape)
         for layer in reversed(self.reader.preprocessors):
             if isinstance(layer, DiscreteLabelNormalisationLayer):
@@ -63,4 +65,8 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
                                 image_out,
                                 source_image_obj,
                                 self.output_interp_order)
+        with open(self.csv_path, 'a') as csv_file:
+            data_str = ','.join([str(i) for i in image_out[0, 0, 0, 0, :]])
+            csv_file.write(subject_name+','+data_str+'\n')
+
         return

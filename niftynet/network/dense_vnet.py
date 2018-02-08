@@ -194,13 +194,17 @@ class DenseVNet(BaseNet):
         #
 
         # On the fly data augmentation
-        if n_spatial_dims == 2:
-            # augmentation for 2d slice not implemented
-            hp['augmentation_scale'] = 0
-
         if is_training and hp['augmentation_scale'] > 0:
-            augment_layer = Affine3DAugmentationLayer(hp['augmentation_scale'],
-                                                      'LINEAR', 'ZERO')
+            if n_spatial_dims == 2:
+                augmentation_class = Affine2DAugmentationLayer
+            elif n_spatial_dims == 3
+                augmentation_class = Affine3DAugmentationLayer
+            else:
+                raise NotImplementedError(
+                    'Affine augmentation only supports 2D and 3D images')
+
+            augment_layer = augmentation_class(hp['augmentation_scale'],
+                                               'LINEAR', 'ZERO')
             input_tensor = augment_layer(input_tensor)
 
         # Variable storing all intermediate results -- VLinks
@@ -468,15 +472,25 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
         return seg, down
 
 
-class Affine3DAugmentationLayer(TrainableLayer):
+class AffineAugmentationLayer(TrainableLayer):
+    """ This layer applies a small random (per-iteration) affine 
+    transformation to an image. The distribution of transformations
+    generally results in scaling the image up, with minimal sampling
+    outside the original image. """
 
     def __init__(self, scale, interpolation,
                  boundary, transform_func=None,
                  name='AffineAugmentation'):
-        # transform_func should be a function returning
-        # a relative transform (mapping <-1..1,-1..1,-1.1>
-        # to <-1..1,-1..1,-1.1>)
-        super(Affine3DAugmentationLayer, self).__init__(name=name)
+        """"
+        scale denotes how extreme the perturbation is, with 1. meaning
+            no perturbation and 0.5 giving larger perturbations.
+        interpolation denotes the image value interpolation used by 
+            the resampling
+        boundary denotes the boundary handling used by the resampling
+        transform_func should be a function returning a relative
+        transformation (mapping <-1..1,-1..1,-1..1> to <-1..1,-1..1,-1..1>
+        or <-1..1,-1..1> to <-1..1,-1..1>)"""
+        super(AffineAugmentationLayer, self).__init__(name=name)
         self.scale = scale
         if transform_func is None:
             self.transform_func = self.random_transform
@@ -488,20 +502,13 @@ class Affine3DAugmentationLayer(TrainableLayer):
 
     def random_transform(self, batch_size):
         if self._transform is None:
-            corners = [
-                [[-1., -1., -1.],
-                 [-1., -1., 1.],
-                 [-1., 1., -1.],
-                 [-1., 1., 1.],
-                 [1., -1., -1.],
-                 [1., -1., 1.],
-                 [1., 1., -1.],
-                 [1., 1., 1.]]
-            ]
-            _batch_ones = tf.ones([batch_size, 8, 1])
+            corners = self.get_corners()
+
+            _batch_ones = tf.ones([batch_size, len(corners[0], 1])
 
             corners = tf.tile(corners, [batch_size, 1, 1])
-            random_scale = tf.random_uniform([batch_size, 8, 3], 0, self.scale)
+            random_size = [batch_size, len(corners[0], len(corners[0][0]]
+            random_scale = tf.random_uniform(random_size, 0, self.scale)
             corners2 = corners * (1 - random_scale)
             corners_homog = tf.concat([corners, _batch_ones], 2)
             corners2_homog = tf.concat([corners2, _batch_ones], 2)
@@ -523,10 +530,7 @@ class Affine3DAugmentationLayer(TrainableLayer):
                                    boundary=self.boundary)
 
         relative_transform = self.transform_func(sz[0])
-        to_relative = tf.tile([[[2./(sz[1]-1), 0., 0., -1.],
-                                [0., 2. / (sz[2] - 1), 0., -1.],
-                                [0., 0., 2. / (sz[3] - 1), -1.],
-                                [0., 0., 0., 1.]]], [sz[0], 1, 1])
+        to_relative = tf.tile(self.get_transform_to_relative, [sz[0], 1, 1])
 
         from_relative = tf.matrix_inverse(to_relative)
         voxel_transform = tf.matmul(from_relative,
@@ -542,7 +546,41 @@ class Affine3DAugmentationLayer(TrainableLayer):
         if boundary is None:
             boundary = self.boundary
 
-        return Affine3DAugmentationLayer(self.scale,
-                                         interpolation,
-                                         boundary,
-                                         self.inverse_transform)
+        return self.__class__(self.scale,
+                              interpolation,
+                              boundary,
+                              self.inverse_transform)
+
+class Affine2DAugmentationLayer(TrainableLayer):
+    """ Specialization of AffineAugmentationLayer for 2D coordinates """
+    def get_corners(self):
+        return [
+                [[-1., -1.],
+                 [-1., 1.],
+                 [1., -1.],
+                 [1., 1.]]
+               ]
+
+    def get_transform_to_relative(self, sz):
+        return [[[2./(sz[1]-1), 0., -1.],
+                 [0., 2. / (sz[2] - 1), -1.],
+                 [0., 0., 1.]]]
+
+class Affine3DAugmentationLayer(TrainableLayer):
+    """ Specialization of AffineAugmentationLayer for 3D coordinates """
+    def get_corners(self):
+        return [
+                [[-1., -1., -1.],
+                 [-1., -1., 1.],
+                 [-1., 1., -1.],
+                 [-1., 1., 1.],
+                 [1., -1., -1.],
+                 [1., -1., 1.],
+                 [1., 1., -1.],
+                 [1., 1., 1.]]
+               ]
+    def get_transform_to_relative(self, sz):
+        return [[[2./(sz[1]-1), 0., 0., -1.],
+                 [0., 2. / (sz[2] - 1), 0., -1.],
+                 [0., 0., 2. / (sz[3] - 1), -1.],
+                 [0., 0., 0., 1.]]]
