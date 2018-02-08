@@ -10,7 +10,7 @@ from niftynet.io.image_sets_partitioner import TRAIN, VALID
 from tests.application_driver_test import get_initialised_driver
 
 
-class RunVarsTest(tf.test.TestCase):
+class DriverLoopTest(tf.test.TestCase):
     def test_interfaces(self):
         msg = IterationMessage()
         msg.current_iter = 0
@@ -52,55 +52,53 @@ class RunVarsTest(tf.test.TestCase):
         test_tensor = app_driver.graph.get_tensor_by_name(
             "G/conv_bn_selu/conv_/w:0")
 
+        iter_msgs = [[]]
+        def get_iter_msgs(iter_msg):
+            """" Captures iter_msg for testing"""
+            iter_msgs[0].append(iter_msg)
+        app_driver.post_train_iter.connect(get_iter_msgs)
+        app_driver.post_validation_iter.connect(get_iter_msgs)
+
+        app_driver.initial_iter=0
+        app_driver.final_iter=3
+        app_driver.validation_every_n = 2
+        app_driver.validation_max_iter = 1
+        loop_status={}
+
         with self.test_session(graph=test_graph) as sess:
             app_driver._run_sampler_threads()
             app_driver._run_sampler_threads(sess)
             sess.run(app_driver._init_op)
 
-            iter_msg = IterationMessage()
+            test_vals = [[]]
+            def get_test_value(iter_msg):
+                test_vals[0].append(sess.run(test_tensor))
+            app_driver.post_train_iter.connect(get_test_value)
+            app_driver.post_validation_iter.connect(get_test_value)
 
-            # run 1st training iter
-            iter_msg.current_iter, iter_msg.phase = 1, TRAIN
-            app_driver.run_vars(sess, iter_msg)
-            model_value_1 = sess.run(test_tensor)
-            self.assertGreater(iter_msg.iter_duration, 0.0)
-            print(iter_msg.to_console_string())
-            self.assertRegexpMatches(iter_msg.to_console_string(), 'Training')
+            app_driver._training_loop(sess, loop_status)
 
-            # run 2nd training iter
-            iter_msg.current_iter, iter_msg.phase = 2, TRAIN
-            app_driver.run_vars(sess, iter_msg)
-            model_value_2 = sess.run(test_tensor)
-            # make sure model gets updated
+            # Check sequence of iterations
+            self.assertRegexpMatches(iter_msgs[0][0].to_console_string(), 'Training')
+            self.assertRegexpMatches(iter_msgs[0][1].to_console_string(), 'Training')
+            self.assertRegexpMatches(iter_msgs[0][2].to_console_string(), 'Validation')
+            self.assertRegexpMatches(iter_msgs[0][3].to_console_string(), 'Training')
+
+            # Check durations
+            for iter_msg in iter_msgs[0]:
+                self.assertGreater(iter_msg.iter_duration, 0.0)
+
+            # Check training changes test tensor
             self.assertNotAlmostEqual(
-                np.mean(np.abs(model_value_1 - model_value_2)), 0.0)
-            print(iter_msg.to_console_string())
-            self.assertRegexpMatches(iter_msg.to_console_string(), 'Training')
+                np.mean(np.abs(test_vals[0][0] - test_vals[0][1])), 0.0)
+            self.assertNotAlmostEqual(
+                np.mean(np.abs(test_vals[0][2] - test_vals[0][3])), 0.0)
 
-            # run validation iter
-            iter_msg.current_tier, iter_msg.phase = 3, VALID
-            app_driver.run_vars(sess, iter_msg)
-            model_value_3 = sess.run(test_tensor)
-            # make sure model not gets udpated
+            # Check validation doesn't change test tensor
             self.assertAlmostEqual(
-                np.mean(np.abs(model_value_2 - model_value_3)), 0.0)
-            print(iter_msg.to_console_string())
-            self.assertRegexpMatches(iter_msg.to_console_string(), 'Validation')
-
-            # run training iter
-            iter_msg.current_iter, iter_msg.phase = 4, TRAIN
-            app_driver.run_vars(sess, iter_msg)
-            model_value_4 = sess.run(test_tensor)
-            # make sure model gets updated
-            self.assertNotAlmostEqual(
-                np.mean(np.abs(model_value_2 - model_value_4)), 0.0)
-            self.assertNotAlmostEqual(
-                np.mean(np.abs(model_value_3 - model_value_4)), 0.0)
-            print(iter_msg.to_console_string())
-            self.assertRegexpMatches(iter_msg.to_console_string(), 'Training')
+                np.mean(np.abs(test_vals[0][1] - test_vals[0][2])), 0.0)
 
             app_driver.app.stop()
-            self.assertEqual(iter_msg.ops_to_run, {})
 
 
 if __name__ == "__main__":

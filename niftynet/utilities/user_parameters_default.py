@@ -14,6 +14,7 @@ from niftynet.utilities.user_parameters_helper import str_array
 
 DEFAULT_INFERENCE_OUTPUT = os.path.join('.', 'output')
 DEFAULT_DATASET_SPLIT_FILE = os.path.join('.', 'dataset_split.csv')
+DEFAULT_HISTOGRAM_REF_FILE = os.path.join('.', 'histogram_ref_file.txt')
 DEFAULT_MODEL_DIR = None
 
 
@@ -180,7 +181,7 @@ def add_network_args(parser):
         "--decay",
         help="[Training only] Set weight decay",
         type=float,
-        default=0)
+        default=0.0)
 
     parser.add_argument(
         "--reg_type",
@@ -227,7 +228,7 @@ def add_network_args(parser):
         metavar='',
         type=str,
         help="A reference file of histogram for intensity normalisation",
-        default='')
+        default=DEFAULT_HISTOGRAM_REF_FILE)
 
     # TODO add choices of normalisation types
     import niftynet.utilities.histogram_standardisation as hist_std_module
