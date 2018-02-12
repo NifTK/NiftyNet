@@ -640,5 +640,3 @@ class ImageFactory(object):
             tf.logging.fatal('Not supported image type: %s', file_path)
             raise NotImplementedError
         return image_type(file_path, **kwargs)
-
-
