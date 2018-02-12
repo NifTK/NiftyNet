@@ -24,6 +24,7 @@ from niftynet.utilities.user_parameters_helper import standardise_section_name
 from niftynet.utilities.util_common import \
     damerau_levenshtein_distance as edit_distance
 from niftynet.utilities.versioning import get_niftynet_version_string
+from niftynet.io.misc_io import resolve_file_name
 
 try:
     import configparser
@@ -81,6 +82,8 @@ def run():
 
     # Resolve relative configuration file location
     config_path = os.path.expanduser(meta_args.conf)
+    home_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
+    config_path = resolve_file_name(config_path,('.',home_folder))
     if not os.path.isfile(config_path):
         relative_conf_file = os.path.join(
             NiftyNetGlobalConfig().get_default_examples_folder(),
@@ -165,14 +168,16 @@ def run():
             continue
         input_data_args[section] = all_args[section]
         # set the output path of csv list if not exists
-        csv_path = input_data_args[section].csv_file
-        if os.path.isfile(csv_path):
+        try:
+            csv_path = resolve_file_name(input_data_args[section].csv_file,
+                                         ('.',home_folder))
+            input_data_args[section].csv_file = csv_path
             # don't search files if csv specified in config
             try:
                 delattr(input_data_args[section], 'path_to_search')
             except AttributeError:
                 pass
-        else:
+        except IOError:
             input_data_args[section].csv_file = ''
 
     # preserve ``config_file`` and ``action parameter`` from the meta_args

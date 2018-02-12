@@ -438,6 +438,15 @@ def to_absolute_path(input_path, model_root):
         pass
     return os.path.abspath(os.path.join(model_root, input_path))
 
+def resolve_file_name(file_name, paths):
+    if os.path.isfile(file_name):
+        return os.path.abspath(file_name)
+    for path in paths:
+        if os.path.isfile(os.path.join(path,file_name)):
+            tf.logging.info('Resolving {} as {}'.format(file_name,os.path.join(path,file_name)))
+            return os.path.abspath(os.path.join(path,file_name))
+    tf.logging.info('Could not resolve {}'.format(file_name))
+    raise IOError
 
 def resolve_checkpoint(checkpoint_name):
     # For now only supports checkpoint_name where
