@@ -110,6 +110,7 @@ setup(
             'net_regress=niftynet:main',
             'net_gan=niftynet:main',
             'net_autoencoder=niftynet:main',
+            'net_classify=niftynet:main',
         ],
     },
 )
