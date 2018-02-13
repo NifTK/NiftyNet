@@ -34,6 +34,8 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         self.name = name
         self.output_path = os.path.abspath(output_path)
         self.inferred_csv = os.path.join(self.output_path, 'inferred.csv')
+        if os.path.exists(self.inferred_csv):
+            os.remove(self.inferred_csv)
         self.window_border = window_border
         self.output_interp_order = interp_order
         self.prefix = prefix
@@ -101,6 +103,6 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                                 image_out,
                                 source_image_obj,
                                 self.output_interp_order)
-        with open(self.inferred_csv, 'w+') as csv_file:
-            csv_file.write('{},{}'.format(subject_name, filename))
+        with open(self.inferred_csv, 'a') as csv_file:
+            csv_file.write('{},{}\n'.format(subject_name, filename))
         return
