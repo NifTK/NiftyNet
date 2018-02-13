@@ -3,6 +3,8 @@
 This module defines built-in evaluation functions for classification 
 applications
 
+Many classification metrics only make sense computed over all subjects,
+so aggregation is used.
 """
 
 from __future__ import absolute_import, division, print_function
@@ -11,41 +13,29 @@ import numpy as np
 
 from niftynet.evaluation.base_evaluations import BaseEvaluation, \
     ResultsDictionary
+from niftynet.evaluation.base_evaluator import ScalarAggregator
 
-
-class BaseRegressionEvaluation(BaseEvaluation):
-    """ Interface for scalar regression metrics """
+class accuracy(BaseEvaluation):
     def layer_op(self, subject_id, data):
-        metric_name = self.__class__.__name__
-        metric_value = self.metric(data['inferred'], data['output'])
+        metric_name = 'accuracy_'
+        if self.app_param.output_prob:
+            inferred_label = np.amax(data['inferred'][0,0,0,0,:])
+            metric_value = (inferred_label, data['label'][0,0,0,0,0])
+        else:
+            metric_value = (data['inferred'][0,0,0,0,0],
+                            data['label'][0,0,0,0,0])
         results_dict = ResultsDictionary()
         results_dict[('subject_id',)] = [{'subject_id':subject_id,
                                           metric_name:metric_value}]
         return results_dict
 
-    def metric(self, reg, ref):
-        """
-        Computes a scalar value for the metric
-        :param reg: np.array with inferred regression
-        :param ref: np array with the reference output
-        :return: scalar metric value
-        """
-        raise NotImplementedError
-
-#pylint: disable=invalid-name
-class mse(BaseRegressionEvaluation):
-    """ Computes mean squared error """
-    def metric(self, reg, ref):
-        return np.mean(np.square(reg - ref))
-
-
-class rmse(BaseRegressionEvaluation):
-    """ Computes root mean squared error """
-    def metric(self, reg, ref):
-        return  np.sqrt(np.mean(np.square(reg - ref)))
-
-
-class mae(BaseRegressionEvaluation):
-    """ Computes mean absolute error """
-    def metric(self, reg, ref):
-        return np.mean(np.abs(ref - reg))
+    def get_aggregations(self):
+        def agg_func(values):
+          #print(values)
+          return sum([1 if v[0]==v[1] else 0 for v in values])/len(values)
+        aggregations = []
+        agg = ScalarAggregator('accuracy_',
+                               ('subject_id',),
+                               (), agg_func,
+                               'accuracy')
+        return [agg]

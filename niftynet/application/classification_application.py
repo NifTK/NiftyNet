@@ -5,6 +5,8 @@ that maps from images to scalar, multi-class labels.
 This class is instantiated and initalized by the application_driver.
 """
 
+import os
+
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
@@ -28,8 +30,10 @@ from niftynet.layer.mean_variance_normalisation import \
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
+from niftynet.evaluation.classification_evaluator import ClassificationEvaluator
+from argparse import Namespace
 
-SUPPORTED_INPUT = set(['image', 'label', 'sampler'])
+SUPPORTED_INPUT = set(['image', 'label', 'sampler', 'inferred'])
 
 
 class ClassificationApplication(BaseApplication):
@@ -77,18 +81,24 @@ class ClassificationApplication(BaseApplication):
 
             self.readers = []
             for file_list in file_lists:
-                reader = ImageReader(SUPPORTED_INPUT)
+                reader = ImageReader(['image', 'label', 'sampler'])
                 reader.initialise(data_param, task_param, file_list)
                 self.readers.append(reader)
 
-        elif self.is_inference:  # in the inference process use image input only
+        elif self.is_inference:  
+            # in the inference process use image input only
             inference_reader = ImageReader(['image'])
             file_list = data_partitioner.inference_files
             inference_reader.initialise(data_param, task_param, file_list)
             self.readers = [inference_reader]
         elif self.is_evaluation:
-            NotImplementedError('Evaluation is not yet '
-                                'supported in this application.')
+            file_list = data_partitioner.inference_files
+            reader = ImageReader({'image', 'label', 'inferred'})
+            reader.initialise(data_param, task_param, file_list)
+            self.readers = [reader]
+        else:
+            raise ValueError('action should be train, inference or evaluation'
+                             ' not %s' % self.action)
 
         foreground_masking_layer = None
         if self.net_param.normalise_foreground_only:
@@ -325,3 +335,20 @@ class ClassificationApplication(BaseApplication):
             return self.output_decoder.decode_batch(
                 batch_output['window'], batch_output['location'])
         return True
+
+    def initialise_evaluator(self, eval_param):
+        self.eval_param = eval_param
+        self.evaluator = ClassificationEvaluator(self.readers[0],
+                                                 self.classification_param,
+                                                 eval_param)
+
+    def add_inferred_output(self, data_param, task_param):
+        if 'inferred' not in data_param:
+            inferred_param = Namespace(**vars(data_param['label']))
+            inferred_param.csv_file = os.path.join(
+                self.action_param.save_seg_dir, 'inferred.csv')
+            print(inferred_param.csv_file)
+            data_param['inferred'] = inferred_param
+        if 'inferred' not in task_param or len(task_param.inferred)==0:
+            task_param.inferred = ('inferred',)
+        return data_param, task_param

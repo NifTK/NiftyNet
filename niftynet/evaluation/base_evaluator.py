@@ -48,12 +48,14 @@ class BaseEvaluator(object):
         while True:
             image_id, data, interp_orders = self.reader(shuffle=False)
             if image_id < 0:
-                return all_results
+                break
             subject_id = self.reader.get_subject_id(image_id)
             next_result = self.evaluate_next(subject_id, data,
                                              interp_orders)
             for group_by in next_result:
                 all_results[group_by].extend(next_result[group_by])
+        all_results = self.aggregate(all_results)
+        return all_results
 
     def evaluate_next(self, subject_id, data, interp_orders):
         """
@@ -84,6 +86,7 @@ class BaseEvaluator(object):
         aggregations = []
         for evaluation in self.evaluations:
             agg_list = evaluation.get_aggregations()
+            print(evaluation, agg_list)
             aggregations.extend(agg_list)
         for aggregation in aggregations:
             result_dict = aggregation(result_dict)
@@ -146,9 +149,6 @@ class CachedSubanalysisEvaluator(BaseEvaluator):
                 for group_by in results:
                     metrics[group_by].extend(results[group_by])
             cache.clear()
-
-        self.aggregate(metrics)
-
         return metrics
 
 

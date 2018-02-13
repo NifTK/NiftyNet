@@ -39,8 +39,6 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
             self, image_reader=image_reader, output_path=output_path)
         self.output_path = os.path.abspath(output_path)
         self.inferred_csv = os.path.join(self.output_path, 'inferred.csv')
-        if os.path.exists(self.inferred_csv):
-            os.remove(self.inferred_csv)
         self.output_id = {'base_name': None, 'relative_id': 0}
         self.prefix = prefix
 
@@ -88,5 +86,6 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
         uniq_name = "{}_{}{}.nii.gz".format(idx, filename, self.prefix)
         misc_io.save_data_array(self.output_path, uniq_name, image, None)
         with open(self.inferred_csv, 'a') as csv_file:
+            filename = os.path.join(self.output_path,filename)
             csv_file.write('{},{}\n'.format(idx, uniq_name))
         return

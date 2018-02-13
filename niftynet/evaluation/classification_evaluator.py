@@ -16,4 +16,4 @@ class ClassificationEvaluator(BaseEvaluator):
         """
         :return:  list of metric names to compute by default
         """
-        return ['accuracy', 'confusion_matrix_metrics']
+        return ['niftynet.evaluation.classification_evaluations.accuracy']

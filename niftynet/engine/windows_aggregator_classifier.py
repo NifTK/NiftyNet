@@ -32,9 +32,6 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
         self.prefix = prefix
         self.output_path = os.path.abspath(output_path)
         self.inferred_csv = os.path.join(self.output_path, 'inferred.csv')
-        if os.path.exists(self.inferred_csv):
-            os.remove(self.inferred_csv)
-
         self.csv_path = os.path.join(self.output_path, self.prefix+'.csv')
         if os.path.exists(self.csv_path):
             os.remove(self.csv_path)
@@ -74,6 +71,6 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
             data_str = ','.join([str(i) for i in image_out[0, 0, 0, 0, :]])
             csv_file.write(subject_name+','+data_str+'\n')
         with open(self.inferred_csv, 'a') as csv_file:
+            filename = os.path.join(self.output_path,filename)
             csv_file.write('{},{}\n'.format(subject_name, filename))
-        print('appending to csv')
         return
