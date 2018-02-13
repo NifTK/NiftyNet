@@ -17,7 +17,8 @@ Bug reports and feature requests should be submitted by creating an issue on [CM
 
 ## Submitting merge requests
 
-All merge requests should be submitted via [CMICLab][cmiclab-niftynet-mr].
+All merge requests should be submitted via [CMICLab][cmiclab-niftynet-mr] or
+GitHub pull request.
 Please make sure you have read the following subsections before submitting a merge request.
 
 [cmiclab-niftynet-mr]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/merge_requests/new
@@ -74,6 +75,14 @@ Also see [how this command is tested][net-segment-test].
 Please see this [README](tests/README.md) for more information on how to write unit tests for NiftyNet.
 
 ## NiftyNet admin tasks
+
+### Making a release
+
+NiftyNet versions are numbered following [Semantic Versioning (semver)](http://semver.org/spec/v2.0.0.html).
+After adding notes for the current release to the [NiftyNet changelog][changelog], the current release should be [tagged][git-tag] with a [PEP440][pep440]-compliant semver number preceded by the letter `v` (for "version").
+
+[pep440]: https://www.python.org/dev/peps/pep-0440/
+[changelog]: CHANGELOG.md
 
 ### Bundling a pip installer
 

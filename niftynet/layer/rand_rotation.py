@@ -89,8 +89,12 @@ class RandomRotationLayer(RandomisedLayer):
         self._transform = transform
 
     def _apply_transformation_3d(self, image_3d, interp_order=3):
+        if interp_order < 0:
+            return image_3d
         assert image_3d.ndim == 3
         assert self._transform is not None
+        assert all([dim > 1 for dim in image_3d.shape]), \
+            'random rotation supports 3D inputs only'
         center_ = 0.5 * np.asarray(image_3d.shape, dtype=np.int64)
         c_offset = center_ - center_.dot(self._transform)
         image_3d[...] = scipy.ndimage.affine_transform(

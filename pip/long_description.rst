@@ -11,6 +11,12 @@ Using this modular structure you can:
 
 NiftyNet is a consortium of research groups (WEISS -- `Wellcome EPSRC Centre for Interventional and Surgical Sciences`_, CMIC -- `Centre for Medical Image Computing`_, HIG -- High-dimensional Imaging Group), where WEISS acts as the consortium lead.
 
+.. image:: https://badge.fury.io/py/NiftyNet.svg
+  :target: https://badge.fury.io/py/NiftyNet
+
+.. image:: https://img.shields.io/badge/License-Apache%202.0-blue.svg
+  :target: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/dev/LICENSE
+
 .. [#] Please install the appropriate `TensorFlow`_ PyPI package (``tensorflow`` or ``tensorflow-gpu``) **before** executing ``pip install niftynet`` -- see the instructions on the `NiftyNet source code repository`_ for details.
 
 
@@ -27,6 +33,10 @@ Other features of NiftyNet include:
 * Efficient discriminative training with multiple-GPU support
 * Implementation of recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
 * Comprehensive evaluation metrics for medical image segmentation
+
+NiftyNet release notes are available in the `changelog`_.
+
+.. _`changelog`: https://github.com/NifTK/NiftyNet/blob/dev/CHANGELOG.md
 
 .. [#] 2.5-D: volumetric images processed as a stack of 2D slices; 4-D: co-registered multi-modal 3D volumes
 
@@ -115,7 +125,7 @@ BibTeX entry:
 Licensing and copyright
 -----------------------
 
-Copyright 2017 University College London and the NiftyNet Contributors.
+Copyright 2018 University College London and the NiftyNet Contributors.
 NiftyNet is released under the Apache License, Version 2.0.
 Please see the LICENSE file in the `NiftyNet source code repository`_ for details.
 

@@ -64,7 +64,7 @@ class SegmentationApplication(BaseApplication):
         self.segmentation_param = task_param
 
         # read each line of csv files into an instance of Subject
-        if self.action == 'train':
+        if self.is_training:
             file_lists = []
             if self.action_param.validation_every_n > 0:
                 file_lists.append(data_partitioner.train_files)
@@ -78,13 +78,13 @@ class SegmentationApplication(BaseApplication):
                 reader.initialise(data_param, task_param, file_list)
                 self.readers.append(reader)
 
-        elif self.action == 'inference':
+        elif self.is_inference:
             # in the inference process use image input only
             inference_reader = ImageReader({'image'})
             file_list = data_partitioner.inference_files
             inference_reader.initialise(data_param, task_param, file_list)
             self.readers = [inference_reader]
-        elif self.action == 'evaluation':
+        elif self.is_evaluation:
             file_list = data_partitioner.inference_files
             reader = ImageReader({'image', 'label', 'inferred'})
             reader.initialise(data_param, task_param, file_list)
@@ -130,11 +130,12 @@ class SegmentationApplication(BaseApplication):
             normalisation_layers.append(histogram_normaliser)
         if self.net_param.whitening:
             normalisation_layers.append(mean_var_normaliser)
-        if task_param.label_normalisation:
+        if task_param.label_normalisation and \
+                (self.is_training or not task_param.output_prob):
             normalisation_layers.extend(label_normalisers)
 
         augmentation_layers = []
-        if self.action == 'train':
+        if self.is_training:
             if self.action_param.random_flipping_axes != -1:
                 augmentation_layers.append(RandomFlipLayer(
                     flip_axes=self.action_param.random_flipping_axes))
@@ -192,7 +193,7 @@ class SegmentationApplication(BaseApplication):
             reader=reader,
             data_param=self.data_param,
             batch_size=self.net_param.batch_size,
-            shuffle_buffer=self.action == 'train',
+            shuffle_buffer=self.is_training,
             queue_length=self.net_param.queue_length) for reader in
             self.readers]]
 
@@ -221,9 +222,9 @@ class SegmentationApplication(BaseApplication):
             interp_order=self.action_param.output_interp_order)
 
     def initialise_sampler(self):
-        if self.action == 'train':
+        if self.is_training:
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][0]()
-        elif self.action == 'inference':
+        elif self.is_inference:
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][1]()
 
     def initialise_aggregator(self):
@@ -256,7 +257,7 @@ class SegmentationApplication(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
-        #def data_net(for_training):
+        # def data_net(for_training):
         #    with tf.name_scope('train' if for_training else 'validation'):
         #        sampler = self.get_sampler()[0][0 if for_training else -1]
         #        data_dict = sampler.pop_batch_op()
@@ -268,12 +269,12 @@ class SegmentationApplication(BaseApplication):
                 sampler = self.get_sampler()[0][0 if for_training else -1]
                 return sampler.pop_batch_op()
 
-        if self.action == 'train':
-            #if self.action_param.validation_every_n > 0:
+        if self.is_training:
+            # if self.action_param.validation_every_n > 0:
             #    data_dict, net_out = tf.cond(tf.logical_not(self.is_validation),
             #                                 lambda: data_net(True),
             #                                 lambda: data_net(False))
-            #else:
+            # else:
             #    data_dict, net_out = data_net(True)
             if self.action_param.validation_every_n > 0:
                 data_dict = tf.cond(tf.logical_not(self.is_validation),
@@ -282,7 +283,7 @@ class SegmentationApplication(BaseApplication):
             else:
                 data_dict = switch_sampler(for_training=True)
             image = tf.cast(data_dict['image'], tf.float32)
-            net_out = self.net(image, is_training=self.action == 'train')
+            net_out = self.net(image, is_training=self.is_training)
 
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
@@ -309,33 +310,33 @@ class SegmentationApplication(BaseApplication):
             gradients_collector.add_to_collection([grads])
             # collecting output variables
             outputs_collector.add_to_collection(
-                var=data_loss, name='dice_loss',
+                var=data_loss, name='loss',
                 average_over_devices=False, collection=CONSOLE)
             outputs_collector.add_to_collection(
-                var=data_loss, name='dice_loss',
+                var=data_loss, name='loss',
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
 
-            #outputs_collector.add_to_collection(
+            # outputs_collector.add_to_collection(
             #    var=image*180.0, name='image',
             #    average_over_devices=False, summary_type='image3_sagittal',
             #    collection=TF_SUMMARIES)
 
-            #outputs_collector.add_to_collection(
+            # outputs_collector.add_to_collection(
             #    var=image, name='image',
             #    average_over_devices=False,
             #    collection=NETWORK_OUTPUT)
 
-            #outputs_collector.add_to_collection(
+            # outputs_collector.add_to_collection(
             #    var=tf.reduce_mean(image), name='mean_image',
             #    average_over_devices=False, summary_type='scalar',
             #    collection=CONSOLE)
-        elif self.action == 'inference':
+        elif self.is_inference:
             # converting logits into final output for
             # classification probabilities or argmax classification labels
             data_dict = switch_sampler(for_training=False)
             image = tf.cast(data_dict['image'], tf.float32)
-            net_out = self.net(image, is_training=self.action=='train')
+            net_out = self.net(image, is_training=self.is_training)
 
             output_prob = self.segmentation_param.output_prob
             num_classes = self.segmentation_param.num_classes
@@ -359,7 +360,7 @@ class SegmentationApplication(BaseApplication):
             self.initialise_aggregator()
 
     def interpret_output(self, batch_output):
-        if self.action == 'inference':
+        if self.is_inference:
             return self.output_decoder.decode_batch(
                 batch_output['window'], batch_output['location'])
         return True

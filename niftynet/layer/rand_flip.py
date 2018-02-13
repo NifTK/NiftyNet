@@ -13,16 +13,20 @@ warnings.simplefilter("ignore", RuntimeWarning)
 
 class RandomFlipLayer(RandomisedLayer):
     """
-     Add a random flipping layer as pre-processing.
-     flip_axes: a list of indices over which to flip
-     flip_probability: the probability of performing the flip
-                      (default = 0.5)
+    Add a random flipping layer as pre-processing.
     """
 
     def __init__(self,
                  flip_axes,
                  flip_probability=0.5,
                  name='random_flip'):
+        """
+
+        :param flip_axes: a list of indices over which to flip
+        :param flip_probability: the probability of performing the flip
+            (default = 0.5)
+        :param name:
+        """
         super(RandomFlipLayer, self).__init__(name=name)
         self._flip_axes = flip_axes
         self._flip_probability = flip_probability
@@ -40,11 +44,16 @@ class RandomFlipLayer(RandomisedLayer):
                 image = np.flip(image, axis=axis_number)
         return image
 
-    def layer_op(self, inputs, *args, **kwargs):
+    def layer_op(self, inputs, interp_orders=None, *args, **kwargs):
         if inputs is None:
             return inputs
-        if isinstance(inputs, dict):
+        if isinstance(inputs, dict) and isinstance(interp_orders, dict):
             for (field, image_data) in inputs.items():
+                assert (all([i < 0 for i in interp_orders[field]]) or
+                    all([i >= 0 for i in interp_orders[field]])), \
+                    'Cannot combine interpolatable and non-interpolatable data'
+                if interp_orders[field][0]<0:
+                    continue
                 inputs[field] = self._apply_transformation(image_data)
         else:
             inputs = self._apply_transformation(inputs)

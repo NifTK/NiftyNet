@@ -17,18 +17,28 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
     def __init__(self,
                  image_name,
                  modalities,
-                 model_filename,
+                 model_filename=None,
                  name='label_norm'):
 
         super(DiscreteLabelNormalisationLayer, self).__init__(name=name)
         # mapping is a complete cache of the model file, the total number of
         # modalities are listed in self.modalities
         self.image_name = image_name
-        self.modalities = modalities
+        self.modalities = None
+        if isinstance(modalities, (list, tuple)):
+            if len(modalities) > 1:
+                raise NotImplementedError(
+                    "Currently supports single modality discrete labels.")
+            self.modalities = modalities
+        else:
+            self.modalities = (modalities,)
+        if model_filename is None:
+            model_filename = os.path.join('.', 'histogram_ref_file.txt')
         self.model_file = os.path.abspath(model_filename)
         self._key=None
         assert not os.path.isdir(self.model_file), \
-            "model_filename is a directory, please change histogram_ref_file"
+            "model_filename is a directory, " \
+            "please change histogram_ref_file to a filename."
         self.label_map = hs.read_mapping_file(self.model_file)
 
     @property
@@ -36,8 +46,8 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
         if self._key:
             return self._key
         # provide a readable key for the label mapping item
-        key_from = "{}_{}-from".format(self.image_name, self.modalities)
-        key_to = "{}_{}-to".format(self.image_name, self.modalities)
+        key_from = "{}:{}:from".format(self.image_name, self.modalities[0])
+        key_to = "{}:{}:to".format(self.image_name, self.modalities[0])
         return standardise_string(key_from), standardise_string(key_to)
 
     @key.setter
@@ -134,7 +144,10 @@ def find_set_of_labels(image_list, field, output_key):
     label_set = set()
     for idx, image in enumerate(image_list):
         assert field in image, \
-            "no {} data provided in for label mapping".format(field)
+            "label normalisation layer requires {} input, " \
+            "however it is not provided in the config file.\n" \
+            "Please consider setting " \
+            "label_normalisation to False.".format(field)
         print_progress_bar(idx, len(image_list),
                            prefix='searching unique labels from training files',
                            decimals=1, length=10, fill='*')

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-windows aggregator resize each item
-in a batch output and save as an image
+Windows aggregator resize each item
+in a batch output and save as an image.
 """
 from __future__ import absolute_import, print_function, division
 
@@ -27,20 +27,23 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                  name='image',
                  output_path=os.path.join('.', 'output'),
                  window_border=(),
-                 interp_order=0):
-        ImageWindowsAggregator.__init__(self, image_reader=image_reader)
+                 interp_order=0,
+                 prefix='_niftynet_out'):
+        ImageWindowsAggregator.__init__(
+            self, image_reader=image_reader, output_path=output_path)
         self.name = name
         self.output_path = os.path.abspath(output_path)
         self.inferred_csv = os.path.join(self.output_path, 'inferred.csv')
         self.window_border = window_border
         self.output_interp_order = interp_order
+        self.prefix = prefix
 
     def decode_batch(self, window, location):
         """
-        resizing each output image window in the batch as an image volume
+        Resizing each output image window in the batch as an image volume
         location specifies the original input image (so that the
         interpolation order, original shape information retained in the
-        generated outputs)
+        generated outputs).
         """
         n_samples = location.shape[0]
         window, location = self.crop_batch(window, location, self.window_border)
@@ -91,7 +94,7 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
             if isinstance(layer, DiscreteLabelNormalisationLayer):
                 image_out, _ = layer.inverse_op(image_out)
         subject_name = self.reader.get_subject_id(self.image_id)
-        filename = "{}_niftynet_out.nii.gz".format(subject_name)
+        filename = "{}{}.nii.gz".format(subject_name, self.prefix)
         source_image_obj = self.input_image[self.name]
         misc_io.save_data_array(self.output_path,
                                 filename,

@@ -21,11 +21,11 @@ SUPPORTED_INFERENCE = \
 class AutoencoderApplication(BaseApplication):
     REQUIRED_CONFIG_SECTION = "AUTOENCODER"
 
-    def __init__(self, net_param, action_param, is_training):
+    def __init__(self, net_param, action_param, action):
         BaseApplication.__init__(self)
         tf.logging.info('starting autoencoder application')
 
-        self.is_training = is_training
+        self.action = action
 
         self.net_param = net_param
         self.action_param = action_param
@@ -45,6 +45,9 @@ class AutoencoderApplication(BaseApplication):
             self._infer_type = None
 
         # read each line of csv files into an instance of Subject
+        if self.is_evaluation:
+            NotImplementedError('Evaluation is not yet '
+                                'supported in this application.')
         if self.is_training:
             file_lists = []
             if self.action_param.validation_every_n > 0:
@@ -211,7 +214,7 @@ class AutoencoderApplication(BaseApplication):
                              self.action_param.spatial_window_size + (1,)
                 dummy_image = tf.zeros(image_size)
                 net_output = self.net(dummy_image, is_training=False)
-                noise_shape = net_output[-1].get_shape().as_list()
+                noise_shape = net_output[-1].shape.as_list()
                 stddev = self.autoencoder_param.noise_stddev
                 noise = tf.random_normal(shape=noise_shape,
                                          mean=0.0,

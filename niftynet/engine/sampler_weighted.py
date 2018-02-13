@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Generating image window by weighted sampling map from input image
-This can also be considered as a `weighted random cropping` layer of the
-input image
+This can also be considered as a "weighted random cropping" layer of the
+input image.
 """
 from __future__ import absolute_import, division, print_function
 
@@ -23,7 +23,7 @@ class WeightedSampler(UniformSampler):
     This is implemented in a closed form using cumulative histograms
     for efficiency purposes i.e., the first three dims of image.
 
-    This layer can be considered as a `weighted random cropping` layer of the
+    This layer can be considered as a "weighted random cropping" layer of the
     input image.
     """
 
@@ -52,11 +52,12 @@ def weighted_spatial_coordinates(subject_id,
     This is the function that actually does the cumulative histogram
     and sampling.
 
-    also, note that win_sizes could be different,
-    for example in segmentation network
+    also, note that win_sizes could be different
+    (for example in segmentation network
     input image window size is 32x32x10,
-    training label window is 16x16x10, the network reduces x-y plane
-    spatial resolution.
+    training label window is 16x16x10 -- the network reduces x-y plane
+    spatial resolution).
+
     This function handles this situation by first find the largest
     window across these window definitions, and generate the coordinates.
     These coordinates are then adjusted for each of the
@@ -114,6 +115,7 @@ def weighted_spatial_coordinates(subject_id,
     # i.e. first sort the sampling frequencies, normalise them
     # to sum to one, and then accumulate them in order
     flatten_map = cropped_map.flatten()
+    flatten_map = flatten_map - np.min(flatten_map)
     sorted_data = np.cumsum(np.divide(np.sort(flatten_map), flatten_map.sum()))
     # get the sorting indexes to that we can invert the sorting later on.
     sorted_indexes = np.argsort(flatten_map)

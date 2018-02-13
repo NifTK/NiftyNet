@@ -31,7 +31,7 @@ class FCLayer(TrainableLayer):
     """
     This class defines a simple fully connected layer with
     an optional bias term.
-    Please consider `FullyConnectedLayer` if batch_norm and activation
+    Please consider ``FullyConnectedLayer`` if batch_norm and activation
     are also used.
     """
 
@@ -55,11 +55,11 @@ class FCLayer(TrainableLayer):
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
     def layer_op(self, input_tensor):
-        input_shape = input_tensor.get_shape().as_list()
+        input_shape = input_tensor.shape.as_list()
         if len(input_shape) > 2:
             batch_size = input_shape[0]
             input_tensor = tf.reshape(input_tensor, [batch_size, -1])
-            input_shape = input_tensor.get_shape().as_list()
+            input_shape = input_tensor.shape.as_list()
         n_input_chns = input_shape[-1]
 
         # initialize weight matrix and then apply
@@ -85,8 +85,10 @@ class FCLayer(TrainableLayer):
 
 class FullyConnectedLayer(TrainableLayer):
     """
-    This class defines a composite layer with optional components:
+    This class defines a composite layer with optional components::
+
         fully connected layer -> batch_norm -> activation -> dropout
+
     The b_initializer and b_regularizer are applied to the FCLayer
     The w_initializer and w_regularizer are applied to the FCLayer,
     the batch normalisation layer, and the activation layer (for 'prelu')

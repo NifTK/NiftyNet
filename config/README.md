@@ -272,13 +272,13 @@ Intensity based volume normalisation can be configured using a combination of pa
 
 (1) Setting `normalisation=True` enables the [histogram-based normalisation](../niftynet/utilities/histogram_standardisation.py).
 The relevant configuration parameters are:
-> `histogram_ref_file`, `norm_type`, `cutoff`, `foreground_type`, `multimod_foreground_type`.
+> `histogram_ref_file`, `norm_type`, `cutoff`, `normalise_foreground_only`, `foreground_type`, `multimod_foreground_type`.
 
 These parameters are ignored and histogram-based normalisation is disabled if `normalisation=False`.
 
 (2) Setting `whitening=True` enables the volume level normalisation computed by `(I - mean(I))/std(I)`.
 The relevant configuration parameters are:
-> `foreground_type`, `multimod_foreground_type`.
+> `normalise_foreground_only`, `foreground_type`, `multimod_foreground_type`.
 
 These parameters are ignored and whitening is disabled if `whitening=False`.
 
@@ -291,6 +291,7 @@ More specifically:
 |[histogram_ref_file](#histogram_ref_file)|String|`histogram_ref_file=./hist_ref.txt`| `''`|
 |[norm_type](#norm_type)|String|`norm_type=percentile`| `percentile`|
 |[cutoff](#cutoff)|Float array (two elements)|`cutoff=0.1, 0.9`|`0.01, 0.99`|
+|[normalise_foreground_only](#normalise_foreground_only)|Boolean|`normalise_foreground_only=True`|`False`|
 |[foreground_type](#foreground_type)|String|`foreground_type=otsu_plus`|`otsu_plus`|
 |[multimod_foreground_type](#multimod_foreground_type)|String|`multimod_foreground_type=and`|`and`|
 
@@ -309,6 +310,11 @@ Type of histogram landmarks used in histogram-based normalisation (percentile or
 
 ###### `cutoff`
 Inferior and superior cutoff in histogram-based normalisation.
+
+###### `normalise_foreground_only`
+Boolean indicates if a mask should be computed based on `foreground_type` and `multimod_foreground_type`.
+If this parameter is set to `True`, all normalisation steps will be applied to the generated foreground
+regions only.
 
 ###### `foreground_type`
 To generate a foreground mask and the normalisation will be applied to foreground only.
@@ -535,13 +541,13 @@ home = ~/niftynet
 The `home` key specifies the root folder (referred to as `$NIFTYNET_HOME` from this point onwards) to be used by NiftyNet for storing and locating user data such as downloaded models, and new networks implemented by the user.
 This setting is configurable, and upon successfully loading this file NiftyNet will attempt to create the specified folder, if it does not already exist.
 
-On first run, NiftyNet will also attempt to create the NiftyNet extension module hierarchy (`niftynetext.*`), that allows for the discovery of user-defined networks.
+On first run, NiftyNet will also attempt to create the NiftyNet extension module hierarchy (`extensions.*`), that allows for the discovery of user-defined networks.
 This hierarchy consists of the following:
 
-* `$NIFTYNET_HOME/niftynetext/` (folder)
-* `$NIFTYNET_HOME/niftynetext/__init__.py` (file)
-* `$NIFTYNET_HOME/niftynetext/network/` (folder)
-* `$NIFTYNET_HOME/niftynetext/network/__init__.py` (file)
+* `$NIFTYNET_HOME/extensions/` (folder)
+* `$NIFTYNET_HOME/extensions/__init__.py` (file)
+* `$NIFTYNET_HOME/extensions/network/` (folder)
+* `$NIFTYNET_HOME/extensions/network/__init__.py` (file)
 
 Alternatively this hierarchy can be created by the user before running NiftyNet for the first time, e.g. for [defining new networks][new-network].
 

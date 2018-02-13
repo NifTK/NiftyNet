@@ -13,7 +13,8 @@ from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 MODEL_HOME = NiftyNetGlobalConfig().get_niftynet_home_folder()
 
 TEST_CASE_1 = 'dense_vnet_abdominal_ct_model_zoo'
-TEST_CASE_1_TARGET = os.path.join(MODEL_HOME, 'models', TEST_CASE_1)
+TEST_CASE_1_TARGET = os.path.join(
+    MODEL_HOME, 'models', 'dense_vnet_abdominal_ct')
 TEST_CASE_2 = 'default'
 TEST_CASE_2_TARGET = os.path.join(MODEL_HOME, 'examples', TEST_CASE_2)
 TEST_CASE_3 = 'default_multimodal'

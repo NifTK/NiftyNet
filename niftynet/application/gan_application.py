@@ -28,10 +28,10 @@ SUPPORTED_INPUT = set(['image', 'conditioning'])
 class GANApplication(BaseApplication):
     REQUIRED_CONFIG_SECTION = "GAN"
 
-    def __init__(self, net_param, action_param, is_training):
+    def __init__(self, net_param, action_param, action):
         BaseApplication.__init__(self)
         tf.logging.info('starting GAN application')
-        self.is_training = is_training
+        self.action = action
 
         self.net_param = net_param
         self.action_param = action_param
@@ -57,11 +57,14 @@ class GANApplication(BaseApplication):
                 reader = ImageReader(['image', 'conditioning'])
                 reader.initialise(data_param, task_param, file_list)
                 self.readers.append(reader)
-        else:
+        elif self.is_inference:
             inference_reader = ImageReader(['conditioning'])
             file_list = data_partitioner.inference_files
             inference_reader.initialise(data_param, task_param, file_list)
             self.readers = [inference_reader]
+        elif self.is_evaluation:
+            NotImplementedError('Evaluation is not yet '
+                                'supported in this application.')
 
         foreground_masking_layer = None
         if self.net_param.normalise_foreground_only:

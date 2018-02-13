@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Resize input image as output window
+Resize input image as output window.
 """
 from __future__ import absolute_import, print_function, division
 
@@ -18,7 +18,7 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
     This class generates samples by rescaling
     the whole image to the desired size
     currently 5D input is supported:
-    Height x Width x Depth x time x Modality
+    ``Height x Width x Depth x time x Modality``
     """
 
     def __init__(self,
@@ -55,17 +55,18 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
         self._create_queue_and_ops(self.window,
                                    enqueue_size=1,
                                    dequeue_size=batch_size)
-        tf.logging.info("initialised sampler output %s "
-                        " [-1 for dynamic size]", self.window.shapes)
+        tf.logging.info("initialised sampler output %s ", self.window.shapes)
 
     def layer_op(self, *args, **kwargs):
         """
         This function generates sampling windows to the input buffer
-        image data are from self.reader()
-        it first completes window shapes based on image data,
+        image data are from ``self.reader()``.
+
+        It first completes window shapes based on image data,
         then resize each image as window and output
         a dictionary (required by input buffer)
-        :return: output data dictionary {placeholders: data_array}
+
+        :return: output data dictionary ``{placeholders: data_array}``
         """
         while True:
             image_id, data, interp_orders = self.reader(shuffle=self.shuffle)
@@ -96,7 +97,8 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
                     image_shape = image_shapes[name]
                     window_shape = static_window_shapes[name]
 
-                    if image_shape == window_shape:
+                    if (image_shape == window_shape or
+                            interp_orders[name][0] < 0):
                         # already in the same shape
                         image_window = data[name]
                     else:
@@ -134,7 +136,7 @@ def zoom_3d(image, ratio, interp_order):
 def dummy_coordinates(image_id, image_sizes):
     """
     This function returns a set of image window coordinates
-    which are just from 0 to image_shapes
+    which are just from 0 to image_shapes.
     """
     all_coordinates = {}
     for mod in list(image_sizes):

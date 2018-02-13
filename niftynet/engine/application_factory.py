@@ -9,6 +9,7 @@ from __future__ import division
 from __future__ import print_function
 
 import importlib
+import os
 
 import tensorflow as tf
 
@@ -25,6 +26,9 @@ SUPPORTED_APP = {
         'niftynet.application.autoencoder_application.AutoencoderApplication',
     'net_gan':
         'niftynet.application.gan_application.GANApplication',
+    'net_classify':
+        'niftynet.application.classification_application.'
+        'ClassificationApplication',
 }
 
 SUPPORTED_NETWORK = {
@@ -56,6 +60,9 @@ SUPPORTED_NETWORK = {
     "holisticnet":
         'niftynet.network.holistic_net.HolisticNet',
 
+    # classification
+    "resnet": 'niftynet.network.resnet.ResNet',
+
     # autoencoder
     "vae": 'niftynet.network.vae.VAE'
 }
@@ -71,6 +78,8 @@ SUPPORTED_LOSS_SEGMENTATION = {
         'niftynet.layer.loss_segmentation.dice',
     "Dice_NS":
         'niftynet.layer.loss_segmentation.dice_nosquare',
+    "Dice_Dense":
+        'niftynet.layer.loss_segmentation.dice_dense',
     "GDSC":
         'niftynet.layer.loss_segmentation.generalised_dice_loss',
     "WGDL":
@@ -97,6 +106,12 @@ SUPPORTED_LOSS_REGRESSION = {
     "Huber":
         'niftynet.layer.loss_regression.huber_loss'
 }
+
+SUPPORTED_LOSS_CLASSIFICATION = {
+    "CrossEntropy":
+        'niftynet.layer.loss_classification.cross_entropy',
+}
+
 
 SUPPORTED_LOSS_AUTOENCODER = {
     "VariationalLowerBound":
@@ -177,7 +192,7 @@ def select_module(module_name, type_str, lookup_table):
     """
     This function first tries to find the absolute module name
     by matching the static dictionary items, if not found, it
-    tries to import the module by splitting the input module_name
+    tries to import the module by splitting the input ``module_name``
     as module name and class name to be imported.
 
     :param module_name: string that matches the keys defined in lookup_table
@@ -191,9 +206,11 @@ def select_module(module_name, type_str, lookup_table):
     module_str, class_name = None, None
     try:
         module_str, class_name = module_name.rsplit('.', 1)
-        the_module = getattr(importlib.import_module(module_str), class_name)
-        tf.logging.info('Importing [%s] module: %s.', class_name, the_module)
-        return the_module
+        the_module = importlib.import_module(module_str)
+        the_class = getattr(the_module, class_name)
+        tf.logging.info('Import [%s] from %s.',
+                        class_name, os.path.abspath(the_module.__file__))
+        return the_class
     except (AttributeError, ValueError, ImportError) as not_imported:
         # print sys.path
         tf.logging.fatal(repr(not_imported))
@@ -238,7 +255,7 @@ class ModuleFactory(object):
 
 class ApplicationNetFactory(ModuleFactory):
     """
-    Import a network from niftynet.network or from user specified string
+    Import a network from ``niftynet.network`` or from user specified string
     """
     SUPPORTED = SUPPORTED_NETWORK
     type_str = 'network'
@@ -246,7 +263,7 @@ class ApplicationNetFactory(ModuleFactory):
 
 class ApplicationFactory(ModuleFactory):
     """
-    Import an application from niftynet.application or
+    Import an application from ``niftynet.application`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_APP
@@ -255,7 +272,7 @@ class ApplicationFactory(ModuleFactory):
 
 class LossGANFactory(ModuleFactory):
     """
-    Import a GAN loss function from niftynet.layer or
+    Import a GAN loss function from ``niftynet.layer`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_LOSS_GAN
@@ -264,7 +281,7 @@ class LossGANFactory(ModuleFactory):
 
 class LossSegmentationFactory(ModuleFactory):
     """
-    Import a segmentation loss function from niftynet.layer or
+    Import a segmentation loss function from ``niftynet.layer`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_LOSS_SEGMENTATION
@@ -273,16 +290,25 @@ class LossSegmentationFactory(ModuleFactory):
 
 class LossRegressionFactory(ModuleFactory):
     """
-    Import a regression loss function from niftynet.layer or
+    Import a regression loss function from ``niftynet.layer`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_LOSS_REGRESSION
     type_str = 'regression loss'
 
 
+class LossClassificationFactory(ModuleFactory):
+    """
+    Import a classification loss function from niftynet.layer or
+    from user specified string
+    """
+    SUPPORTED = SUPPORTED_LOSS_CLASSIFICATION
+    type_str = 'classification loss'
+
+
 class LossAutoencoderFactory(ModuleFactory):
     """
-    Import an autoencoder loss function from niftynet.layer or
+    Import an autoencoder loss function from ``niftynet.layer`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_LOSS_AUTOENCODER
@@ -291,7 +317,7 @@ class LossAutoencoderFactory(ModuleFactory):
 
 class OptimiserFactory(ModuleFactory):
     """
-    Import an optimiser from niftynet.engine.application_optimiser or
+    Import an optimiser from ``niftynet.engine.application_optimiser`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_OPTIMIZERS
@@ -300,7 +326,7 @@ class OptimiserFactory(ModuleFactory):
 
 class InitializerFactory(ModuleFactory):
     """
-    Import an initializer from niftynet.engine.application_initializer or
+    Import an initializer from ``niftynet.engine.application_initializer`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_INITIALIZATIONS
@@ -309,7 +335,8 @@ class InitializerFactory(ModuleFactory):
     @staticmethod
     def get_initializer(name, args=None):
         """
-        wrapper for getting the init
+        wrapper for getting the initializer.
+
         :param name:
         :param args: optional parameters for the initializer
         :return:

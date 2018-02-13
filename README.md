@@ -4,6 +4,8 @@
 
 [![build status](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/dev/build.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/dev)
 [![coverage report](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/dev/coverage.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/dev)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/dev/LICENSE)
+[![PyPI version](https://badge.fury.io/py/NiftyNet.svg)](https://badge.fury.io/py/NiftyNet)
 
 NiftyNet is a [TensorFlow][tf]-based open-source convolutional neural networks (CNN) platform for research in medical image analysis and image-guided therapy.
 NiftyNet's modular structure is designed for sharing networks and pre-trained models.
@@ -32,6 +34,10 @@ Other features of NiftyNet include:
  <sup>*2.5-D: volumetric images processed as a stack of 2D slices;
 4-D: co-registered multi-modal 3D volumes</sup>
 
+NiftyNet release notes are available [here][changelog].
+
+[changelog]: CHANGELOG.md
+
 
 ### Installation
 
@@ -46,43 +52,20 @@ Other features of NiftyNet include:
 [tf-pypi]: https://pypi.org/project/tensorflow/
 
 
-### Getting started
-
-#### Examples
-
-Please see the [NiftyNet demos][demos].
-
-[demos]: ./demos
-
-#### Network (re-)implementations
-
-Please see the list of [network (re-)implementations in NiftyNet][network-impl].
-
-[network-impl]: ./niftynet/network
-
-#### API documentation
-
-The API reference is available on [Read the Docs][rtd-niftynet].
+### Documentation
+The API reference and how-to guides are available on [Read the Docs][rtd-niftynet].
 
 [rtd-niftynet]: http://niftynet.rtfd.io/
 
-#### Customising NiftyNet
-
-Please see the [NiftyNet global settings][global-settings] section for customising NiftyNet's global settings.
-
-[global-settings]: ./config/README.md#global-niftynet-settings
-
-#### Contributing
-
-Please see the [contribution guidelines](./CONTRIBUTING.md).
-
-#### Useful links
+### Useful links
 
 [NiftyNet website][niftynet-io]
 
 [NiftyNet source code on CmicLab][niftynet-cmiclab]
 
 [NiftyNet source code mirror on GitHub][niftynet-github]
+
+[Model zoo repository][niftynet-zoo]
 
 NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
 
@@ -91,30 +74,37 @@ NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
 [niftynet-io]: http://niftynet.io/
 [niftynet-cmiclab]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 [niftynet-github]: https://github.com/NifTK/NiftyNet
+[niftynet-zoo]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/blob/master/model_zoo.md
 [ml-niftynet]: mailto:nifty-net@live.ucl.ac.uk
 
 
 ### Citing NiftyNet
 
-If you use NiftyNet in your work, please cite [Gibson and Li et. al. 2017][preprint]:
+If you use NiftyNet in your work, please cite [Gibson and Li, et al. 2018][cmpb2018]:
 
-* E. Gibson\*, W. Li\*, C. Sudre, L. Fidon, D. I. Shakir, G. Wang, Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, M. Modat, D. C. Barratt, S. Ourselin, M. J. Cardoso\^ and T. Vercauteren\^ (2017)
-[NiftyNet: a deep-learning platform for medical imaging. arXiv: 1709.03485][preprint]
+* E. Gibson\*, W. Li\*, C. Sudre, L. Fidon, D. I. Shakir, G. Wang, Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, M. Modat, D. C. Barratt, S. Ourselin, M. J. Cardoso\^ and T. Vercauteren\^ (2018)
+[NiftyNet: a deep-learning platform for medical imaging][cmpb2018], _Computer Methods and Programs in Biomedicine_.
+DOI: [10.1016/j.cmpb.2018.01.025][cmpb2018]
 
 
 BibTeX entry:
 
 ```
-@InProceedings{niftynet17,
-  author = {Eli Gibson and Wenqi Li and Carole Sudre and Lucas Fidon and Dzhoshkun I. Shakir and Guotai Wang and Zach Eaton-Rosen and Robert Gray and Tom Doel and Yipeng Hu and Tom Whyntie and Parashkev Nachev and Marc Modat and Dean C. Barratt and Sebastien Ourselin and M. Jorge Cardoso and Tom Vercauteren},
-  title = {NiftyNet: a deep-learning platform for medical imaging},
-  year = {2017},
-  eprint = {1709.03485},
-  eprintclass = {cs.CV},
-  eprinttype = {arXiv},
+@article{Gibson2018,
+  title = "NiftyNet: a deep-learning platform for medical imaging",
+  journal = "Computer Methods and Programs in Biomedicine",
+  year = "2018",
+  issn = "0169-2607",
+  doi = "https://doi.org/10.1016/j.cmpb.2018.01.025",
+  url = "https://www.sciencedirect.com/science/article/pii/S0169260717311823",
+  author = "Eli Gibson and Wenqi Li and Carole Sudre and Lucas Fidon and
+            Dzhoshkun I. Shakir and Guotai Wang and Zach Eaton-Rosen and
+            Robert Gray and Tom Doel and Yipeng Hu and Tom Whyntie and
+            Parashkev Nachev and Marc Modat and Dean C. Barratt and
+            Sébastien Ourselin and M. Jorge Cardoso and Tom Vercauteren",
 }
 ```
-The NiftyNet platform originated in software developed for [Li et. al. 2017][ipmi2017]:
+The NiftyNet platform originated in software developed for [Li, et al. 2017][ipmi2017]:
 
 * Li W., Wang G., Fidon L., Ourselin S., Cardoso M.J., Vercauteren T. (2017)
 [On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.][ipmi2017]
@@ -123,13 +113,13 @@ Lecture Notes in Computer Science, vol 10265. Springer, Cham.
 DOI: [10.1007/978-3-319-59050-9_28][ipmi2017]
 
 
-[ipmi2017]: http://doi.org/10.1007/978-3-319-59050-9_28
-[preprint]: http://arxiv.org/abs/1709.03485
+[ipmi2017]: https://doi.org/10.1007/978-3-319-59050-9_28
+[cmpb2018]: https://doi.org/10.1016/j.cmpb.2018.01.025
 
 
 ### Licensing and Copyright
 
-Copyright 2017 University College London and the NiftyNet Contributors.
+Copyright 2018 University College London and the NiftyNet Contributors.
 NiftyNet is released under the Apache License, Version 2.0. Please see the LICENSE file for details.
 
 ### Acknowledgements

@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 This module is used to cache window-based network outputs,
- form a image-level output,
- write the cached the results to hard drive
+form a image-level output,
+write the cached the results to hard drive.
 """
 from __future__ import absolute_import, print_function, division
 
+import os
 import numpy as np
 import tensorflow as tf
 
@@ -18,16 +19,19 @@ class ImageWindowsAggregator(object):
     information the reader is needed.
     """
 
-    def __init__(self, image_reader=None):
+    def __init__(self, image_reader=None, output_path='.'):
         self.reader = image_reader
         self._image_id = None
+        self.prefix = ''
+        self.output_path = os.path.abspath(output_path)
 
     @property
     def input_image(self):
         """
         Get the corresponding input image of these batch data.
         So that the batch data can be stored correctly in
-        terms of interpolation order, orientation, pixdims
+        terms of interpolation order, orientation, pixdims.
+
         :return: an image object from image reader
         """
         if self.image_id is not None and self.reader:
@@ -38,7 +42,8 @@ class ImageWindowsAggregator(object):
     def image_id(self):
         """
         Index of the image in the output image list maintained by
-        image reader
+        image reader.
+
         :return: integer of the position in image list
         """
         return self._image_id
@@ -85,6 +90,7 @@ class ImageWindowsAggregator(object):
             "unknown border format (should be an array of" \
             "three elements corresponding to 3 spatial dims"
 
+        location = location.astype(np.int)
         window_shape = window.shape
         spatial_shape = window_shape[1:-1]
         n_spatial = len(spatial_shape)

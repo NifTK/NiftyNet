@@ -31,7 +31,7 @@ def default_b_initializer():
 class ConvLayer(TrainableLayer):
     """
     This class defines a simple convolution with an optional bias term.
-    Please consider `ConvolutionalLayer` if batch_norm and activation
+    Please consider ``ConvolutionalLayer`` if batch_norm and activation
     are also used.
     """
 
@@ -63,7 +63,7 @@ class ConvLayer(TrainableLayer):
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
     def layer_op(self, input_tensor):
-        input_shape = input_tensor.get_shape().as_list()
+        input_shape = input_tensor.shape.as_list()
         n_input_chns = input_shape[-1]
         spatial_rank = layer_util.infer_spatial_rank(input_tensor)
 
@@ -103,8 +103,10 @@ class ConvLayer(TrainableLayer):
 
 class ConvolutionalLayer(TrainableLayer):
     """
-    This class defines a composite layer with optional components:
+    This class defines a composite layer with optional components::
+
         convolution -> batch_norm -> activation -> dropout
+
     The b_initializer and b_regularizer are applied to the ConvLayer
     The w_initializer and w_regularizer are applied to the ConvLayer,
     the batch normalisation layer, and the activation layer (for 'prelu')
@@ -119,6 +121,7 @@ class ConvolutionalLayer(TrainableLayer):
                  with_bias=False,
                  with_bn=True,
                  acti_func=None,
+                 preactivation=False,
                  w_initializer=None,
                  w_regularizer=None,
                  b_initializer=None,
@@ -129,6 +132,7 @@ class ConvolutionalLayer(TrainableLayer):
 
         self.acti_func = acti_func
         self.with_bn = with_bn
+        self.preactivation = preactivation
         self.layer_name = '{}'.format(name)
         if self.with_bn:
             self.layer_name += '_bn'
@@ -166,7 +170,6 @@ class ConvolutionalLayer(TrainableLayer):
                                b_initializer=self.initializers['b'],
                                b_regularizer=self.regularizers['b'],
                                name='conv_')
-        output_tensor = conv_layer(input_tensor)
 
         if self.with_bn:
             if is_training is None:
@@ -177,17 +180,28 @@ class ConvolutionalLayer(TrainableLayer):
                 moving_decay=self.moving_decay,
                 eps=self.eps,
                 name='bn_')
-            output_tensor = bn_layer(output_tensor, is_training)
 
         if self.acti_func is not None:
             acti_layer = ActiLayer(
                 func=self.acti_func,
                 regularizer=self.regularizers['w'],
                 name='acti_')
-            output_tensor = acti_layer(output_tensor)
 
         if keep_prob is not None:
             dropout_layer = ActiLayer(func='dropout', name='dropout_')
-            output_tensor = dropout_layer(output_tensor, keep_prob=keep_prob)
+
+        def activation(output_tensor):
+            if self.with_bn:
+                output_tensor = bn_layer(output_tensor, is_training)
+            if self.acti_func is not None:
+                output_tensor = acti_layer(output_tensor)
+            if keep_prob is not None:
+                output_tensor = dropout_layer(output_tensor, keep_prob=keep_prob)
+            return output_tensor
+
+        if self.preactivation:
+            output_tensor = conv_layer(activation(input_tensor))
+        else:
+            output_tensor = activation(conv_layer(input_tensor))
 
         return output_tensor

@@ -20,7 +20,7 @@ class NiftyNetGlobalConfig(object):
     global_section = 'global'
     home_key = 'home'
 
-    niftynet_exts = {'niftynetext': ['network']}
+    niftynet_exts = {'extensions': ['network']}
 
     def __init__(self):
         self.setup()
@@ -40,10 +40,16 @@ class NiftyNetGlobalConfig(object):
             makedirs(self._niftynet_home)
 
             # create folders for user-defined extensions such as new networks
-            for ext in NiftyNetGlobalConfig.niftynet_exts:
-                NiftyNetGlobalConfig.__create_module(join(self._niftynet_home, ext))
+            for ext in list(NiftyNetGlobalConfig.niftynet_exts):
+                extension_subfolder = join(self._niftynet_home, ext)
+                NiftyNetGlobalConfig.__create_module(extension_subfolder)
                 for mod in NiftyNetGlobalConfig.niftynet_exts[ext]:
-                    NiftyNetGlobalConfig.__create_module(join(self._niftynet_home, ext, mod))
+                    extension_subsubfolder = join(self._niftynet_home, ext, mod)
+                    NiftyNetGlobalConfig.__create_module(extension_subsubfolder)
+
+        for ext in list(NiftyNetGlobalConfig.niftynet_exts):
+            extension_subfolder = join(self._niftynet_home, ext)
+            sys.path.insert(1, extension_subfolder)
         sys.path.insert(1, self._niftynet_home)
         return self
 
@@ -67,7 +73,7 @@ class NiftyNetGlobalConfig(object):
         creates a default one.
 
         :param config_file: no sanity checks are performed, as this
-        method is for internal use only
+            method is for internal use only
         :type config_file: `os.path`
         :returns: a dictionary of parsed configuration options
         :rtype: `dict`

@@ -6,3 +6,4 @@ configparser
 tensorflow==1.3
 pandas
 pillow
+blinker

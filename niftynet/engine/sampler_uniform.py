@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Generating uniformly distributed image window from input image
-This can also be considered as a `random cropping` layer of the
-input image
+This can also be considered as a "random cropping" layer of the
+input image.
 """
 from __future__ import absolute_import, division, print_function
 
@@ -21,7 +21,7 @@ class UniformSampler(Layer, InputBatchQueueRunner):
     currently the coordinates are randomised for spatial dims only,
     i.e., the first three dims of image.
 
-    This layer can be considered as a `random cropping` layer of the
+    This layer can be considered as a "random cropping" layer of the
     input image.
     """
 
@@ -48,8 +48,7 @@ class UniformSampler(Layer, InputBatchQueueRunner):
         self._create_queue_and_ops(self.window,
                                    enqueue_size=windows_per_image,
                                    dequeue_size=batch_size)
-        tf.logging.info("initialised sampler output %s "
-                        " [-1 for dynamic size]", self.window.shapes)
+        tf.logging.info("initialised sampler output %s ", self.window.shapes)
 
         self.spatial_coordinates_generator = rand_spatial_coordinates
 
@@ -57,12 +56,14 @@ class UniformSampler(Layer, InputBatchQueueRunner):
     def layer_op(self):
         """
         This function generates sampling windows to the input buffer
-        image data are from self.reader()
-        it first completes window shapes based on image data,
+        image data are from ``self.reader()``
+
+        It first completes window shapes based on image data,
         then finds random coordinates based on the window shapes
         finally extract window with the coordinates and output
-        a dictionary (required by input buffer)
-        :return: output data dictionary {placeholders: data_array}
+        a dictionary (required by input buffer).
+
+        :return: output data dictionary ``{placeholders: data_array}``
         """
         while True:
             image_id, data, _ = self.reader(idx=None, shuffle=True)
@@ -126,10 +127,11 @@ def rand_spatial_coordinates(subject_id,
                              win_sizes,
                              n_samples=1):
     """
-    win_sizes could be different, for example in segmentation network
-    input image window size is 32x32x10,
-    training label window is 16x16x10, the network reduces x-y plane
-    spatial resolution.
+    ``win_sizes`` could be different (for example in segmentation network
+    input image window size is ``32x32x10``,
+    training label window is ``16x16x10`` -- the network reduces x-y plane
+    spatial resolution.)
+
     This function handles this situation by first find the largest
     window across these window definitions, and generate the coordinates.
     These coordinates are then adjusted for each of the

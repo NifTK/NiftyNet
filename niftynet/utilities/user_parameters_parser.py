@@ -8,6 +8,7 @@ from __future__ import print_function
 
 import argparse
 import os
+import textwrap
 
 from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.engine.application_factory import SUPPORTED_APP
@@ -24,6 +25,7 @@ from niftynet.utilities.user_parameters_helper import standardise_section_name
 from niftynet.utilities.util_common import \
     damerau_levenshtein_distance as edit_distance
 from niftynet.utilities.versioning import get_niftynet_version_string
+from niftynet.io.misc_io import resolve_file_name
 
 try:
     import configparser
@@ -43,7 +45,7 @@ def run():
     of the configuration file. based on the application_name
     or meta_parser.prog name, the section parsers are organised
     to find system parameters and application specific
-    parameters
+    parameters.
 
     :return: system parameters is a group of parameters including
         SYSTEM_SECTIONS and app_module.REQUIRED_CONFIG_SECTION
@@ -51,17 +53,26 @@ def run():
         used by niftynet.io.ImageReader
     """
     meta_parser = argparse.ArgumentParser(
-        epilog=epilog_string)
+        description="Launch a NiftyNet application.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=textwrap.dedent(epilog_string))
     version_string = get_niftynet_version_string()
+    meta_parser.add_argument("action",
+                             help="train networks, run inferences "
+                                  "or evaluate inferences",
+                             metavar='ACTION',
+                             choices=['train', 'inference', 'evaluation'])
     meta_parser.add_argument("-v", "--version",
                              action='version',
                              version=version_string)
     meta_parser.add_argument("-c", "--conf",
-                             help="Specify configurations from a file",
-                             metavar="File", )
+                             help="specify configurations from a file",
+                             metavar="CONFIG_FILE")
     meta_parser.add_argument("-a", "--application_name",
-                             help="Specify application name",
-                             default="", )
+                             help="specify an application module name",
+                             metavar='APPLICATION_NAME',
+                             default="")
+
     meta_args, args_from_cmdline = meta_parser.parse_known_args()
     print(version_string)
 
@@ -71,13 +82,13 @@ def run():
               "forget '-c' command argument?{}".format(epilog_string))
         raise IOError
 
-    # Read global config file
-    global_config = NiftyNetGlobalConfig()
-
-    config_path = meta_args.conf
+    # Resolve relative configuration file location
+    config_path = os.path.expanduser(meta_args.conf)
+    home_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
+    config_path = resolve_file_name(config_path,('.',home_folder))
     if not os.path.isfile(config_path):
         relative_conf_file = os.path.join(
-            global_config.get_default_examples_folder(),
+            NiftyNetGlobalConfig().get_default_examples_folder(),
             config_path,
             config_path + "_config.ini")
         if os.path.isfile(relative_conf_file):
@@ -135,9 +146,11 @@ def run():
         '\nUnknown parameter: {}{}'.format(args_from_cmdline, epilog_string)
 
     # split parsed results in all_args
-    # into dictionary of system_args and input_data_args
+    # into dictionaries of system_args and input_data_args
     system_args = {}
     input_data_args = {}
+
+    # copy system default sections to ``system_args``
     for section in all_args:
         if section in SYSTEM_SECTIONS:
             system_args[section] = all_args[section]
@@ -149,6 +162,7 @@ def run():
         all_args['SYSTEM'].model_dir = os.path.join(
             os.path.dirname(meta_args.conf), 'model')
 
+    # copy non-default sections to ``input_data_args``
     for section in all_args:
         if section in SYSTEM_SECTIONS:
             continue
@@ -156,20 +170,21 @@ def run():
             continue
         input_data_args[section] = all_args[section]
         # set the output path of csv list if not exists
-        csv_path = input_data_args[section].csv_file
-        if not os.path.isfile(csv_path):
-            csv_filename = os.path.join(
-                all_args['SYSTEM'].model_dir, '{}.csv'.format(section))
-            input_data_args[section].csv_file = csv_filename
-        else:
+        try:
+            csv_path = resolve_file_name(input_data_args[section].csv_file,
+                                         ('.',home_folder))
+            input_data_args[section].csv_file = csv_path
             # don't search files if csv specified in config
             try:
                 delattr(input_data_args[section], 'path_to_search')
             except AttributeError:
                 pass
+        except IOError:
+            input_data_args[section].csv_file = ''
 
-    # update conf path
+    # preserve ``config_file`` and ``action parameter`` from the meta_args
     system_args['CONFIG_FILE'] = argparse.Namespace(path=meta_args.conf)
+    system_args['SYSTEM'].action = meta_args.action
     return system_args, input_data_args
 
 
@@ -187,13 +202,14 @@ def _parse_arguments_by_section(parents,
 
     Commandline inputs only override system/custom parameters.
     input data related parameters needs to be defined in config file.
+
     :param parents: a list, parsers will be created as
-    subparsers of parents
+        subparsers of parents
     :param section: section name to be parsed
     :param args_from_config_file: loaded parameters from config file
     :param args_from_cmd: dictionary commandline parameters
     :return: parsed parameters of the section and unknown
-    commandline params.
+        commandline params.
     """
     section_parser = argparse.ArgumentParser(
         parents=parents,
