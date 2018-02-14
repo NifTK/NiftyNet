@@ -11,6 +11,7 @@ from niftynet.utilities.user_parameters_helper import int_array
 from niftynet.utilities.user_parameters_helper import spatialnumarray
 from niftynet.utilities.user_parameters_helper import str2boolean
 from niftynet.utilities.user_parameters_helper import str_array
+from niftynet.io.image_sets_partitioner import SUPPORTED_PHASES
 
 DEFAULT_INFERENCE_OUTPUT = os.path.join('.', 'output')
 DEFAULT_EVALUATION_OUTPUT = os.path.join('.', 'evaluation')
@@ -71,6 +72,13 @@ def add_inference_args(parser):
              "inference",
         type=int,
         default=-1)
+
+    parser.add_argument(
+        "--dataset_to_infer",
+        metavar='',
+        help="[Inference only] which data set to compute inference for",
+        choices = list(SUPPORTED_PHASES)+[''],
+        default='')
 
     parser.add_argument(
         "--save_seg_dir",

@@ -9,6 +9,8 @@ from six import with_metaclass
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.utilities import util_common
 from niftynet.utilities.util_common import look_up_operations
+from niftynet.io.image_sets_partitioner import SUPPORTED_PHASES
+
 TRAIN = "train"
 INFER = "inference"
 EVAL = "evaluation"
@@ -85,16 +87,19 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         :return:           list of file lists of length 2 if validation is
                            needed otherwise 1"""
         if self.is_training:
-            if self.action_param.validation_every_n > 0:
+            if self.action_param.validation_every_n > 0 and\
+                data_partitioner.has_validation:
                 return [data_partitioner.train_files,
                         data_partitioner.validation_files]
             else:
                 return [data_partitioner.train_files]
-        elif self.is_inference:
-            return [data_partitioner.inference_files]
-        elif self.is_evaluation:
-            return [data_partitioner.inference_files]
-        raise ValueError('unknown action')
+
+        dataset = self.action_param.dataset_to_infer
+        if dataset:
+            dataset = look_up_operations(dataset, SUPPORTED_PHASES)
+            return [data_partitioner.get_file_list(dataset)]
+
+        return [data_partitioner.inference_files]
 
     def initialise_dataset_loader(
             self, data_param=None, task_param=None, data_partitioner=None):
