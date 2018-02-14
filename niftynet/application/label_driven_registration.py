@@ -43,13 +43,9 @@ class RegApp(BaseApplication):
         self.data_param = data_param
         self.registration_param = task_param
 
-        if self.is_training:
-            file_lists = [data_partitioner.train_files]
-            if self.action_param.validation_every_n > 0:
-                file_lists.append(data_partitioner.validation_files)
-        elif self.is_inference:
-            file_lists = [data_partitioner.inference_files]
-        elif self.is_evaluation:
+        file_lists = self.get_file_lists(data_partitioner)
+
+        if self.is_evaluation:
             NotImplementedError('Evaluation is not yet '
                                 'supported in this application.')
 

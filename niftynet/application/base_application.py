@@ -77,6 +77,25 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         if self.output_decoder is None and not self.is_training:
             raise NotImplementedError('output decoder should be initialised')
 
+    def get_file_lists(self, data_partitioner):
+        """This function pull the correct file_lists from the data partitioner
+        depending on the phase
+        :param data_partitioner:
+                           specifies train/valid/infer splitting if needed
+        :return:           list of file lists of length 2 if validation is
+                           needed otherwise 1"""
+        if self.is_training:
+            if self.action_param.validation_every_n > 0:
+                return [data_partitioner.train_files,
+                        data_partitioner.validation_files]
+            else:
+                return [data_partitioner.train_files]
+        elif self.is_inference:
+            return [data_partitioner.inference_files]
+        elif self.is_evaluation:
+            return [data_partitioner.inference_files]
+        raise ValueError('unknown action')
+
     def initialise_dataset_loader(
             self, data_param=None, task_param=None, data_partitioner=None):
         """

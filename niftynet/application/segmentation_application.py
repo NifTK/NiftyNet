@@ -63,15 +63,9 @@ class SegmentationApplication(BaseApplication):
         self.data_param = data_param
         self.segmentation_param = task_param
 
+        file_lists = self.get_file_lists(data_partitioner)
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            file_lists = []
-            if self.action_param.validation_every_n > 0:
-                file_lists.append(data_partitioner.train_files)
-                file_lists.append(data_partitioner.validation_files)
-            else:
-                file_lists.append(data_partitioner.train_files)
-
             self.readers = []
             for file_list in file_lists:
                 reader = ImageReader({'image', 'label', 'weight', 'sampler'})
