@@ -37,6 +37,8 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         self.window_border = window_border
         self.output_interp_order = interp_order
         self.prefix = prefix
+        if os.path.exists(self.inferred_csv):
+            os.remove(self.inferred_csv)
 
     def decode_batch(self, window, location):
         """

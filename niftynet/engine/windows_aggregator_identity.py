@@ -41,6 +41,8 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
         self.inferred_csv = os.path.join(self.output_path, 'inferred.csv')
         self.output_id = {'base_name': None, 'relative_id': 0}
         self.prefix = prefix
+        if os.path.exists(self.inferred_csv):
+            os.remove(self.inferred_csv)
 
     def _decode_subject_name(self, location=None):
         if self.reader:

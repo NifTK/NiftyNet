@@ -97,7 +97,6 @@ class EvaluationApplicationDriver(object):
         # initialise data input
         self.app.initialise_dataset_loader(data_param, self.app_param,
                                            data_partitioner)
-        self.app.initialise_aggregator()
         self.app.initialise_evaluator(eval_param)
 
     def run_application(self):

@@ -33,6 +33,8 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
         self.output_path = os.path.abspath(output_path)
         self.inferred_csv = os.path.join(self.output_path, 'inferred.csv')
         self.csv_path = os.path.join(self.output_path, self.prefix+'.csv')
+        if os.path.exists(self.inferred_csv):
+            os.remove(self.inferred_csv)
         if os.path.exists(self.csv_path):
             os.remove(self.csv_path)
 
