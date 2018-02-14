@@ -23,7 +23,7 @@ class ToyApplication(BaseApplication):
         if is_training:
             self.action = TRAIN
         else:
-            TRAIN = INFER
+            self.action = INFER
 
         self.net_param = net_param
         self.action_param = action_param
