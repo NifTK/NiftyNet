@@ -44,12 +44,20 @@ class BaseEvaluator(object):
 
         :return: a ResultsDictionary object
         """
+        def generator_from_reader(reader):
+            while True:
+                image_id, data, interp_orders = reader
+                if image_id < 0:
+                    break
+                subject_id = self.reader.get_subject_id(image_id)
+                yield (subject_id, data,interp_orders)
+                
+        generator = generator_from_reader(self.reader(shuffle=False))
+        return self.evaluate_from_generator(generator)
+
+    def evaluate_from_generator(self, generator):
         all_results = ResultsDictionary()
-        while True:
-            image_id, data, interp_orders = self.reader(shuffle=False)
-            if image_id < 0:
-                break
-            subject_id = self.reader.get_subject_id(image_id)
+        for subject_id, data,interp_orders in generator:
             next_result = self.evaluate_next(subject_id, data,
                                              interp_orders)
             for group_by in next_result:
