@@ -88,6 +88,6 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
         uniq_name = "{}_{}{}.nii.gz".format(idx, filename, self.prefix)
         misc_io.save_data_array(self.output_path, uniq_name, image, None)
         with open(self.inferred_csv, 'a') as csv_file:
-            filename = os.path.join(self.output_path,filename)
+            filename = os.path.join(self.output_path, filename)
             csv_file.write('{},{}\n'.format(idx, uniq_name))
         return

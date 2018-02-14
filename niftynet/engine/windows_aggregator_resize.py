@@ -104,6 +104,6 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                                 source_image_obj,
                                 self.output_interp_order)
         with open(self.inferred_csv, 'a') as csv_file:
-            filename = os.path.join(self.output_path,filename)
+            filename = os.path.join(self.output_path, filename)
             csv_file.write('{},{}\n'.format(subject_name, filename))
         return

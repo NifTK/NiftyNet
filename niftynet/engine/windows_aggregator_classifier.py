@@ -73,6 +73,6 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
             data_str = ','.join([str(i) for i in image_out[0, 0, 0, 0, :]])
             csv_file.write(subject_name+','+data_str+'\n')
         with open(self.inferred_csv, 'a') as csv_file:
-            filename = os.path.join(self.output_path,filename)
+            filename = os.path.join(self.output_path, filename)
             csv_file.write('{},{}\n'.format(subject_name, filename))
         return
