@@ -2,6 +2,8 @@
 """
 Interface of NiftyNet application
 """
+from argparse import Namespace
+import os
 
 import tensorflow as tf
 from six import with_metaclass
@@ -153,6 +155,35 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
             False indicates the drive should stop
         """
         raise NotImplementedError
+
+    def add_inferred_output_like(self, data_param, task_param, name):
+        """ This function adds entries to parameter objects to enable
+        the evaluation action to automatically read in the output of a 
+        previous inference run if inference is not explicitly specified.
+
+        This can be used in an application if there is a data section
+        entry in the configuration file that matches the inference output.
+        In supervised learning, the reference data section would often
+        match the inference output and could be used here. Otherwise, 
+        a template data section could be used.
+
+        :param data_param:
+        :param task_param:
+        :param name:  name of input parameter to copy parameters from
+        :return: modified data_param and task_param
+        """
+        print(task_param)
+        # Add the data parameter
+        if 'inferred' not in data_param:
+            data_name = vars(task_param)[name][0]
+            inferred_param = Namespace(**vars(data_param[data_name]))
+            inferred_param.csv_file = os.path.join(
+                self.action_param.save_seg_dir, 'inferred.csv')
+            data_param['inferred'] = inferred_param
+        # Add the task parameter
+        if 'inferred' not in task_param or len(task_param.inferred)==0:
+            task_param.inferred = ('inferred',)
+        return data_param, task_param
 
     def set_network_gradient_op(self, gradients):
         """
