@@ -49,7 +49,7 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
             image_id = int(location)
             return self.reader.get_subject_id(image_id)
         import uuid
-        return uuid.uuid4()
+        return str(uuid.uuid4())
 
     def decode_batch(self, window, location=None):
         if location is not None:

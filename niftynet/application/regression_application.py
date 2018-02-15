@@ -1,4 +1,5 @@
 import tensorflow as tf
+import os
 
 from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_factory import ApplicationNetFactory
@@ -24,7 +25,8 @@ from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
-from niftynet.evaluation.segmentation_evaluator import SegmentationEvaluator
+from niftynet.evaluation.regression_evaluator import RegressionEvaluator
+from argparse import Namespace
 
 SUPPORTED_INPUT = set(['image', 'output', 'weight', 'sampler', 'inferred'])
 
@@ -291,10 +293,10 @@ class RegressionApplication(BaseApplication):
 
     def add_inferred_output(self, data_param, task_param):
         if 'inferred' not in data_param:
-            inferred_param = Namespace(**vars(data_param['label']))
+            inferred_param = Namespace(**vars(data_param['REGRESSTARGET']))
             inferred_param.csv_file = os.path.join(
                 self.action_param.save_seg_dir, 'inferred.csv')
             data_param['inferred'] = inferred_param
-        if 'inferred' not in task_param:
-            task_param['inferred'] = 'inferred'
+        if 'inferred' not in task_param or len(task_param.inferred)==0:
+            task_param.inferred = ('inferred',)
         return data_param, task_param

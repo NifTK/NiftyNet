@@ -112,12 +112,14 @@ class SegmentationApplication(BaseApplication):
             label_normalisers = [DiscreteLabelNormalisationLayer(
                 image_name='label',
                 modalities=vars(task_param).get('label'),
-                model_filename=self.net_param.histogram_ref_file),
-                                 DiscreteLabelNormalisationLayer(
-                    image_name='inferred',
-                    modalities=vars(task_param).get('inferred'),
-                    model_filename=self.net_param.histogram_ref_file)]
-            label_normalisers[1].key = label_normalisers[0].key
+                model_filename=self.net_param.histogram_ref_file)]
+            if self.is_evaluation:
+                label_normalisers.append(
+                    DiscreteLabelNormalisationLayer(
+                        image_name='inferred',
+                        modalities=vars(task_param).get('inferred'),
+                        model_filename=self.net_param.histogram_ref_file))
+                label_normalisers[-1].key = label_normalisers[0].key
 
         normalisation_layers = []
         if self.net_param.normalisation:

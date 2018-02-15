@@ -16,4 +16,4 @@ class RegressionEvaluator(BaseEvaluator):
         """
         :return:  list of metric names to compute by default
         """
-        return ['mse', 'rmse', 'mae', 'r2']
+        return ['mse', 'rmse', 'mae']

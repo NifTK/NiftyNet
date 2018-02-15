@@ -46,13 +46,13 @@ class BaseEvaluator(object):
         """
         def generator_from_reader(reader):
             while True:
-                image_id, data, interp_orders = reader
+                image_id, data, interp_orders = reader(shuffle=False)
                 if image_id < 0:
                     break
                 subject_id = self.reader.get_subject_id(image_id)
                 yield (subject_id, data,interp_orders)
                 
-        generator = generator_from_reader(self.reader(shuffle=False))
+        generator = generator_from_reader(self.reader)
         return self.evaluate_from_generator(generator)
 
     def evaluate_from_generator(self, generator):

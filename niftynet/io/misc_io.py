@@ -445,7 +445,8 @@ def resolve_file_name(file_name, paths):
         if os.path.isfile(os.path.join(path,file_name)):
             tf.logging.info('Resolving {} as {}'.format(file_name,os.path.join(path,file_name)))
             return os.path.abspath(os.path.join(path,file_name))
-    tf.logging.info('Could not resolve {}'.format(file_name))
+    if file_name:
+        tf.logging.info('Could not resolve {}'.format(file_name))
     raise IOError
 
 def resolve_checkpoint(checkpoint_name):
