@@ -17,7 +17,6 @@ TRAIN = "train"
 INFER = "inference"
 EVAL = "evaluation"
 
-ACTIONS = {TRAIN, INFER, EVAL}
 
 class SingletonApplication(type):
     _instances = None
@@ -44,7 +43,8 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     REQUIRED_CONFIG_SECTION = None
 
     # flag for action 'train', 'inference', 'evaluation'
-    action = TRAIN
+    SUPPORTED_ACTIONS = {TRAIN, INFER, EVAL}
+    _action = TRAIN
     # TF placeholders for switching network on the fly
     is_validation = None
 
@@ -275,7 +275,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
     @action.setter
     def action(self, value):
-        self._action = look_up_operations(value, ACTIONS)
+        self._action = look_up_operations(value, self.SUPPORTED_ACTIONS)
 
     @property
     def is_training(self):

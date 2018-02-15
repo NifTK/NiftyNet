@@ -17,13 +17,10 @@ from niftynet.application.base_application import TRAIN, INFER
 class ToyApplication(BaseApplication):
     REQUIRED_CONFIG_SECTION = "TOY"
 
-    def __init__(self, net_param, action_param, is_training):
+    def __init__(self, net_param, action_param, action):
         BaseApplication.__init__(self)
         tf.logging.info('starting toy application')
-        if is_training:
-            self.action = TRAIN
-        else:
-            self.action = INFER
+        self.action = action
 
         self.net_param = net_param
         self.action_param = action_param

@@ -79,8 +79,8 @@ class RegressionApplication(BaseApplication):
             reader.initialise(data_param, task_param, file_lists[0])
             self.readers = [reader]
         else:
-            raise ValueError('action should be train, inference or evaluation'
-                             ' not %s' % self.action)
+            raise ValueError('Action `{}` not supported. Expected one of {}'
+                             .format(self.action, self.SUPPORTED_ACTIONS))
 
         mean_var_normaliser = MeanVarNormalisationLayer(
             image_name='image')
