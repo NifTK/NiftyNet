@@ -16,4 +16,4 @@ class ClassificationEvaluator(BaseEvaluator):
         """
         :return:  list of metric names to compute by default
         """
-        return ['niftynet.evaluation.classification_evaluations.accuracy']
+        return ['classification_accuracy', 'roc_auc', 'roc']

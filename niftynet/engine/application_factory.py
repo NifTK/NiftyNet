@@ -188,6 +188,8 @@ SUPPORTED_EVALUATIONS = {
     'r2': 'niftynet.contrib.evaluation.regression_evaluations.r2',
     'classification_accuracy': 'niftynet.evaluation.classification_evaluations'
                                '.accuracy',
+    'roc_auc': 'niftynet.evaluation.classification_evaluations.roc_auc',
+    'roc': 'niftynet.evaluation.classification_evaluations.roc',
 }
 
 def select_module(module_name, type_str, lookup_table):

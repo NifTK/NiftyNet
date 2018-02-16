@@ -7,26 +7,40 @@ from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict
 
+import pandas as pd
+
 from niftynet.layer.base_layer import Layer
 
 class ResultsDictionary(defaultdict):
     """
     The class represents a set of calculated metrics.
-    It is a defaultdict with specified requirements for keys and values
+    It is a defaultdict of pandas DataFrames
 
-    Specifically, each key should be a tuple of strings, representing the
-    fields that uniquely define the row of the result table for the metrics
-    held in the value. Each value should be a list of dictionaries, each of
-    which much have a key:value pair for every element of the
-    ResultsDictionary key.
+    The dictionary is indexed by the dataframe objects' indices, which
+    should uniquely define the row of the result table for the metrics
+    contained within.
 
     For example:
     {('subject_id','label'):[{'subject_id':'foo','label':2,'score':2,'val':3}]}
 
     These constraints are not programmatically enforced.
     """
-    def __init__(self):
-        super(ResultsDictionary, self).__init__(lambda: [])
+    def __init__(self, data=None):
+        super(ResultsDictionary, self).__init__(lambda: pd.DataFrame())
+        if data is None:
+            return
+    
+        if isinstance(data, pd.DataFrame):
+            key = tuple(data.index.names)
+            self[key]=self[key].combine_first(data)
+        else:
+            for datum in data:
+                if isinstance(datum, pd.DataFrame):
+                    key = tuple(datum.index.names)
+                    self[key]=self[key].combine_first(datum)
+    def update_all(self, new_results):
+        for group_by in new_results:
+            self[group_by]=self[group_by].combine_first(new_results[group_by])
 
 class BaseEvaluation(Layer):
     """

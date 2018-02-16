@@ -10,6 +10,8 @@ from __future__ import absolute_import, division, print_function
 import itertools
 from itertools import groupby
 
+import pandas
+
 from niftynet.evaluation.base_evaluations import ResultsDictionary
 from niftynet.engine.application_factory import EvaluationFactory
 from niftynet.utilities.util_common import cache
@@ -58,10 +60,8 @@ class BaseEvaluator(object):
     def evaluate_from_generator(self, generator):
         all_results = ResultsDictionary()
         for subject_id, data,interp_orders in generator:
-            next_result = self.evaluate_next(subject_id, data,
-                                             interp_orders)
-            for group_by in next_result:
-                all_results[group_by].extend(next_result[group_by])
+            next_result = self.evaluate_next(subject_id, data, interp_orders)
+            all_results.update_all(next_result)
         all_results = self.aggregate(all_results)
         return all_results
 
@@ -79,8 +79,7 @@ class BaseEvaluator(object):
 
         for evaluation in self.evaluations:
             results = evaluation(subject_id, data)
-            for group_by in results:
-                metrics[group_by].extend(results[group_by])
+            metrics.update_all(results)
         return metrics
 
     def aggregate(self, result_dict):
@@ -94,7 +93,6 @@ class BaseEvaluator(object):
         aggregations = []
         for evaluation in self.evaluations:
             agg_list = evaluation.get_aggregations()
-            print(evaluation, agg_list)
             aggregations.extend(agg_list)
         for aggregation in aggregations:
             result_dict = aggregation(result_dict)
@@ -142,8 +140,7 @@ class CachedSubanalysisEvaluator(BaseEvaluator):
         metrics = ResultsDictionary()
         for evaluation in evaluations['normal']:
             results = evaluation(subject_id, data)
-            for group_by in results:
-                metrics[group_by].extend(results[group_by])
+            metrics.update_all(results)
 
         # group sub-analysis evaluations by subanalysis
         def keyfunc(sub):
@@ -154,13 +151,33 @@ class CachedSubanalysisEvaluator(BaseEvaluator):
         for _, evaluationset in tasksets:
             for evaluation, sub in evaluationset:
                 results = evaluation(subject_id, data, sub)
-                for group_by in results:
-                    metrics[group_by].extend(results[group_by])
+                metrics.update_all(results)
             cache.clear()
         return metrics
 
+class DataFrameAggregator(object):
+    """
+    This class defines a simple aggregator that operates on pandas dataframes
+    
+    `func` should accept a dataframe and return a dataframe with appropriate indices
+    """
+    def __init__(self, group_by, func):
+        """
+        :param group_by: level at which original metric was computed,
+            e.g. ('subject_id', 'label')
+        :param func: function (dataframe=>dataframe) to aggregate the collected
+                     metrics
+        """
+        self.group_by = group_by
+        self.func = func
 
-class ScalarAggregator(object):
+    def __call__(self, result_dict):
+        pdf = self.func(result_dict[self.group_by])
+        new_group_by = tuple(pdf.index.names)
+        result_dict[new_group_by]=result_dict[new_group_by].combine_first(pdf)
+        return result_dict
+
+class ScalarAggregator(DataFrameAggregator):
     """
     This class defines a simple aggregator that groups metrics and applies an
     aggregating function. Grouping is determined by the set difference
@@ -182,23 +199,14 @@ class ScalarAggregator(object):
         self.name = name
         self.group_by = group_by
         self.new_group_by = new_group_by
-        self.func = func
+        self.scalar_func = func
+        super(ScalarAggregator, self).__init__(group_by, self.scalar_wrapper_)
 
-    def __call__(self, result_dict):
-        """
-        Perform the aggregation by manipulating result_dict
-        :param result_dict: a dictionary as built by BaseEvaluator.evaluate()
-        :return: a dictionary as built by BaseEvaluator.evaluate()
-        """
-        entries = result_dict.get(self.group_by, [])
-        matched_entries = filter(lambda x: self.key in x, entries)
-        def keyfunc(entry):
-            return tuple((k, entry[k]) for k in self.new_group_by)
-        matched_entries = sorted(matched_entries, key=keyfunc)
-        for key, group in itertools.groupby(matched_entries, keyfunc):
-            values = [i[self.key] for i in group]
-            aggregated_value = self.func(values)
-            base_dict = {k: v for k, v in key}
-            base_dict[self.name] = aggregated_value
-            result_dict[self.new_group_by].append(base_dict)
-        return result_dict
+    def scalar_wrapper_(self, pdf):
+        """ For each unique value of pdf.loc[:,new_group_by], aggregate
+        the values using self.func """
+        group = pdf.groupby(by=self.new_group_by, group_keys=False)
+        def func(pdf):
+            add = self.scalar_func(list(pdf.loc[:,self.key]))
+            return pd.Series({self.name:agg})
+        return gb.apply(func)

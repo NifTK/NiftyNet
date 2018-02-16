@@ -117,23 +117,16 @@ class EvaluationApplicationDriver(object):
                 os.makedirs(self.eval_param.save_csv_dir)
             # iteratively run the graph
             all_results = self.app.evaluator.evaluate()
-            for group_by, metrics in all_results.items():
-                lines = []
-                def keyfunc(metric):
-                    return tuple((k, metric[k]) for k in group_by)
-                metrics = sorted(metrics, key=keyfunc)
-                for _, grouped_metrics in itertools.groupby(metrics, keyfunc):
-                    aggregated_metrics = {}
-                    for metric in list(grouped_metrics):
-                        aggregated_metrics.update(metric)
-                    lines.append(aggregated_metrics)
-                all_headers = set(key for d in lines for key in d)
-                all_headers = group_by + tuple(all_headers-set(group_by))
-                data_frame = pd.DataFrame(lines, columns=all_headers)
-                csv_id = '_'.join(group_by)
+            for group_by, data_frame in all_results.items():
+                print(data_frame)
+                if group_by == (None,):
+                    csv_id = ''
+                else:
+                    csv_id = '_'.join(group_by)
+
                 with open(os.path.join(self.eval_param.save_csv_dir,
                                        'eval_' + csv_id + '.csv'), 'w') as csv:
-                    csv.write(data_frame.to_csv(index=False))
+                    csv.write(data_frame.reset_index().to_csv(index=False))
         except KeyboardInterrupt:
             tf.logging.warning('User cancelled application')
         except RuntimeError:

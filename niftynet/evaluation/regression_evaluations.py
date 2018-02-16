@@ -7,6 +7,7 @@ This module defines built-in evaluation functions for regression applications
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+import pandas as pd
 
 from niftynet.evaluation.base_evaluations import BaseEvaluation, \
     ResultsDictionary
@@ -17,10 +18,10 @@ class BaseRegressionEvaluation(BaseEvaluation):
     def layer_op(self, subject_id, data):
         metric_name = self.__class__.__name__
         metric_value = self.metric(data['inferred'], data['output'])
-        results_dict = ResultsDictionary()
-        results_dict[('subject_id',)] = [{'subject_id':subject_id,
-                                          metric_name:metric_value}]
-        return results_dict
+        pdf = pd.DataFrame.from_records([{'subject_id':subject_id,
+                                          metric_name:metric_value}],
+                                        ('subject_id',))
+        return ResultsDictionary(pdf)
 
     def metric(self, reg, ref):
         """

@@ -27,6 +27,7 @@ by Evaluation classes
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+import pandas as pd
 from scipy import ndimage
 
 from niftynet.evaluation.base_evaluations import CachedSubanalysisEvaluation,\
@@ -75,9 +76,8 @@ class PerComponentEvaluation(CachedSubanalysisEvaluation):
             seg, ref = binarizer(data)
             metric_dict = {'subject_id': subject_id, 'label': task['label']}
             metric_dict.update(self.metric_dict_from_binarized(seg, ref))
-            results_dict = ResultsDictionary()
-            results_dict[('subject_id', 'label')] = [metric_dict]
-            return results_dict
+            pdf = pd.DataFrame.from_records([metric_dict], ('subject_id', 'label'))
+            return ResultsDictionary(pdf)
         elif 'cc_labels' in task:
             binarizer = cached_cc_binarizer(task['cc_labels'],
                                             self.app_param.output_prob)
@@ -87,9 +87,8 @@ class PerComponentEvaluation(CachedSubanalysisEvaluation):
             cc_id = 'r%s_s%s' % (r_str, s_str)
             metric_dict = {'subject_id': subject_id, 'cc_id': cc_id}
             metric_dict.update(self.metric_dict_from_binarized(seg, ref))
-            results_dict = ResultsDictionary()
-            results_dict[('subject_id', 'cc_id')] = [metric_dict]
-            return results_dict
+            pdf = pd.DataFrame.from_records([metric_dict], ('subject_id', 'cc_id'))
+            return ResultsDictionary(pdf)
         return {}
 
 
