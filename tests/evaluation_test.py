@@ -4,6 +4,7 @@ from __future__ import absolute_import, print_function
 from argparse import Namespace
 import tensorflow as tf
 import numpy as np
+import pandas as pd
 from niftynet.evaluation.pairwise_measures import PairwiseMeasures
 from niftynet.utilities.util_common import MorphologyOps
 from niftynet.evaluation.segmentation_evaluator import SegmentationEvaluator
