@@ -27,6 +27,7 @@ testjob:
     - master
     - dev
     - tags
+    - 195-add-evaluation-action-3
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
@@ -197,6 +198,7 @@ quicktest:
     - 206-improve-the-handling-of-release-notes
     - 221-add-changelog-entry-for-version-0.2.2
     - 223-put-bug-fixes-under-fixed-header-in-changelog
+    - 195-add-evaluation-action-3
   script:
     # print system info
     - which nvidia-smi
