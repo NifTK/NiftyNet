@@ -209,7 +209,7 @@ class ScalarAggregator(DataFrameAggregator):
     def scalar_wrapper_(self, pdf):
         """ For each unique value of pdf.loc[:,new_group_by], aggregate
         the values using self.func """
-        group = pdf.groupby(by=self.new_group_by, group_keys=False)
+        group = pdf.reset_index().groupby(by=self.new_group_by, group_keys=False)
         def func(pdf):
             agg = self.scalar_func(list(pdf.loc[:,self.key]))
             return pd.Series({self.name:agg})

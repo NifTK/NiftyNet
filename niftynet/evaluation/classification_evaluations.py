@@ -30,7 +30,6 @@ class accuracy(BaseEvaluation):
         return [pdf]
         
     def aggregate(self, df):
-        print(df)
         agg = pd.DataFrame.from_records([{'accuracy':(df.acc_i==df.acc_l).mean()}])
         return [agg]
 
@@ -45,7 +44,6 @@ class roc(BaseEvaluation):
         pdf = pd.DataFrame.from_records([{'subject_id':subject_id,
                             'roc_i':data['inferred'][0,0,0,0,1],
                             'roc_l':data['label'][0,0,0,0,0]}],('subject_id',))
-        print(pdf)
         return [pdf]
 
     @classmethod

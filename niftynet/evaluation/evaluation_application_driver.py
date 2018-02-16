@@ -118,7 +118,6 @@ class EvaluationApplicationDriver(object):
             # iteratively run the graph
             all_results = self.app.evaluator.evaluate()
             for group_by, data_frame in all_results.items():
-                print(data_frame)
                 if group_by == (None,):
                     csv_id = ''
                 else:

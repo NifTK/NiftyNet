@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function
 from argparse import Namespace
 import tensorflow as tf
 import numpy as np
-import pandas as pd
+
 from niftynet.evaluation.pairwise_measures import PairwiseMeasures
 from niftynet.utilities.util_common import MorphologyOps
 from niftynet.evaluation.segmentation_evaluator import SegmentationEvaluator
@@ -298,7 +298,6 @@ class SegmentationEvaluatorTests(np.testing.TestCase):
         eval_param = Namespace(evaluations='Dice,Jaccard,average_distance')
         evalu = SegmentationEvaluator(SegmentationEvaluatorTests.ReaderStub(),
                                       app_param, eval_param)
-        print('pandas_version',pd.__version__)
         result_dict = evalu.evaluate()
         self.assertIn(('subject_id', 'cc_id'), result_dict)
         self.assertIn(('subject_id', 'label'), result_dict)
