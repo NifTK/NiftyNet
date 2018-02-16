@@ -66,6 +66,9 @@ class roc(BaseEvaluation):
         return [df_out]
 
     def get_aggregations(self):
+        if not self.app_param.output_prob or\
+           self.app_param.num_classes>2:
+           return []
         return [DataFrameAggregator(('subject_id',), self.aggregate)]
 
 class roc_auc(BaseEvaluation):
@@ -76,16 +79,36 @@ class roc_auc(BaseEvaluation):
         pdf = pd.DataFrame.from_records([{'subject_id':subject_id,
                             'roc_auc_i':data['inferred'][0,0,0,0,1],
                             'roc_auc_l':data['label'][0,0,0,0,0]}],('subject_id',))
+        print(pdf)
         return [pdf]
 
+    @classmethod
+    def aggregate(cls, df):
+        thresholds = np.linspace(0,1,10)
+        df_out = pd.DataFrame(index=range(len(thresholds)),columns=('thresholds','tp','fp','tn','fn','acc','sens','spec'))
+        df_out.thresholds = thresholds
+        for it in range(len(thresholds)):
+            df_out.loc[it,'tp'] = (df[df.roc_auc_l==1].roc_auc_i>it).sum()
+            df_out.loc[it,'fp'] = (df[df.roc_auc_l==0].roc_auc_i>it).sum()
+            df_out.loc[it,'tn'] = (df[df.roc_auc_l==0].roc_auc_i<=it).sum()
+            df_out.loc[it,'fn'] = (df[df.roc_auc_l==1].roc_auc_i<=it).sum()
+        df_out.acc = (df_out.tp+df_out.tn)/(
+            df_out.tp+df_out.tn+df_out.fp+df_out.fn)
+        denom = df_out.tp+df_out.fn
+        df_out.loc[denom>0,'sens'] = df_out.loc[denom>0,'tp']/denom[denom>0]
+        denom = df_out.tn+df_out.fp
+        df_out.loc[denom>0,'spec'] = df_out.loc[denom>0,'tn']/denom[denom>0]
+        by_threshold=df_out.set_index('thresholds')
 
-    def aggregate(self, df):
-        by_threshold = roc.aggregate(df)[0]
         tpr = np.array(list(by_threshold.sens))
         tnr = 1 - np.array(by_threshold.spec)
         
         roc_auc = np.sum((tpr[:-1] + tpr[1:]) * (tnr[1:] - tnr[:-1]) / 2)
         return [pd.DataFrame.from_records([{'roc_auc':roc_auc}])]
 
+
     def get_aggregations(self):
+        if not self.app_param.output_prob or\
+           self.app_param.num_classes>2:
+           return []
         return [DataFrameAggregator(('subject_id',), self.aggregate)]
