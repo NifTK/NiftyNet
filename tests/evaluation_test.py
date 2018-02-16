@@ -302,29 +302,18 @@ class SegmentationEvaluatorTests(np.testing.TestCase):
         self.assertIn(('subject_id', 'label'), result_dict)
 
         group_cc = result_dict[('subject_id', 'cc_id')]
-        for result in group_cc:
-            self.assertIn('subject_id', result)
-            self.assertIn('cc_id', result)
         group_l = result_dict[('subject_id', 'label')]
-        for result in group_l:
-            self.assertIn('subject_id', result)
-            self.assertIn('label', result)
 
-        self.assertTrue(any(['jaccard' in m for m in group_l]))
-        self.assertTrue(any(['dice' in m for m in group_l]))
-        self.assertTrue(any(['average_distance' in m for m in group_l]))
-        self.assertTrue(any(['jaccard' in m for m in group_cc]))
-        self.assertTrue(any(['dice' in m for m in group_cc]))
-        self.assertTrue(any(['average_distance' in m for m in group_cc]))
+        self.assertIn('jaccard', list(group_l.columns))
+        self.assertIn('dice', list(group_l.columns))
+        self.assertIn('jaccard', list(group_cc.columns))
+        self.assertIn('dice', list(group_cc.columns))
+        self.assertIn('average_distance', list(group_cc.columns))
 
-        self.assertTrue(any([m['subject_id']=='foo' for m in group_cc]),
-                        'subject `foo` not in any result'+ str(group_cc))
-        self.assertTrue(any([m['subject_id']=='bar' for m in group_cc]),
-                        'subject `bar` not in any result'+ str(group_cc))
-        self.assertTrue(any([m['subject_id']=='foo' for m in group_l]),
-                        'subject `foo` not in any result'+ str(group_l))
-        self.assertTrue(any([m['subject_id']=='bar' for m in group_l]),
-                        'subject `bar` not in any result'+ str(group_l))
+        self.assertIn(('foo','r1_s1'), list(group_cc.index))
+        self.assertIn(('bar','r1_s1'), list(group_cc.index))
+        self.assertIn(('foo','1'), list(group_l.index))
+        self.assertIn(('bar','1'), list(group_l.index))
 
 class RegressionEvaluatorTests(np.testing.TestCase):
     """
@@ -366,17 +355,11 @@ class RegressionEvaluatorTests(np.testing.TestCase):
         self.assertIn(('subject_id',), result_dict)
 
         group = result_dict[('subject_id',)]
-        for result in group:
-            self.assertIn('subject_id', result)
-
-        self.assertTrue(any(['mse' in m for m in group]),
-                        'mse not in any result:'+ str(group))
-        self.assertTrue(any(['rmse' in m for m in group]),
-                        'rmse not in any result:'+ str(group))
-        self.assertTrue(any([m['subject_id']=='foo' for m in group]),
-                        'subject `foo` not in any result'+ str(group))
-        self.assertTrue(any([m['subject_id']=='bar' for m in group]),
-                        'subject `bar` not in any result'+ str(group))
+        self.assertEqual(('subject_id',), group.index.names)
+        self.assertIn('mse', list(group.columns))
+        self.assertIn('rmse', list(group.columns))
+        self.assertIn('foo', list(group.index))
+        self.assertIn('bar', list(group.index))
 
 if __name__ == '__main__':
     tf.test.main()

@@ -29,15 +29,15 @@ class ClassificationEvaluatorTest(tf.test.TestCase):
         e = ClassificationEvaluator(None, classification_param, eval_param)
 
         def generator():
-            yield ('test', tp,interp_orders)
-            yield ('test', tp,interp_orders)
-            yield ('test', fn,interp_orders)
-            yield ('test', fp,interp_orders)
+            yield ('test1', tp,interp_orders)
+            yield ('test2', tp,interp_orders)
+            yield ('test3', fn,interp_orders)
+            yield ('test4', fp,interp_orders)
 
         result_dict = e.evaluate_from_generator(generator())
-        self.assertIn((), result_dict)
-        self.assertEqual(result_dict[()],
-                      [{'accuracy': 0.5}])
+        self.assertIn((None,), result_dict)
+        self.assertEqual(result_dict[(None,)].to_dict('index'),
+                      {0: {'accuracy': 0.5}})
 
 
 

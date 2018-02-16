@@ -12,8 +12,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import pandas as pd
 
-from niftynet.evaluation.base_evaluations import BaseEvaluation,\
-    ResultsDictionary
+from niftynet.evaluation.base_evaluations import BaseEvaluation
 from niftynet.evaluation.base_evaluator import ScalarAggregator,\
                                                DataFrameAggregator
 
@@ -28,12 +27,12 @@ class accuracy(BaseEvaluation):
                                           'acc_i':inferred_label,
                                           'acc_l':data['label'][0,0,0,0,0]}],
                                         index=('subject_id',))
-        return ResultsDictionary(pdf)
+        return [pdf]
         
     def aggregate(self, df):
+        print(df)
         agg = pd.DataFrame.from_records([{'accuracy':(df.acc_i==df.acc_l).mean()}])
-        print(agg)
-        return agg
+        return [agg]
 
     def get_aggregations(self):
         return [DataFrameAggregator(('subject_id',), self.aggregate)]
@@ -42,11 +41,12 @@ class roc(BaseEvaluation):
     def layer_op(self, subject_id, data):
         if not self.app_param.output_prob or\
            self.app_param.num_classes>2:
-           return ResultsDictionary()
+           return []
         pdf = pd.DataFrame.from_records([{'subject_id':subject_id,
                             'roc_i':data['inferred'][0,0,0,0,1],
                             'roc_l':data['label'][0,0,0,0,0]}],('subject_id',))
-        return ResultsDictionary(pdf)
+        print(pdf)
+        return [pdf]
 
     @classmethod
     def aggregate(cls, df):
@@ -65,7 +65,7 @@ class roc(BaseEvaluation):
         denom = df_out.tn+df_out.fp
         df_out.loc[denom>0,'spec'] = df_out.loc[denom>0,'tn']/denom[denom>0]
         df_out=df_out.set_index('thresholds')
-        return df_out
+        return [df_out]
 
     def get_aggregations(self):
         return [DataFrameAggregator(('subject_id',), self.aggregate)]
@@ -74,20 +74,20 @@ class roc_auc(BaseEvaluation):
     def layer_op(self, subject_id, data):
         if not self.app_param.output_prob or\
            self.app_param.num_classes>2:
-           return ResultsDictionary()
+           return []
         pdf = pd.DataFrame.from_records([{'subject_id':subject_id,
                             'roc_auc_i':data['inferred'][0,0,0,0,1],
                             'roc_auc_l':data['label'][0,0,0,0,0]}],('subject_id',))
-        return ResultsDictionary(pdf)
+        return [pdf]
 
 
     def aggregate(self, df):
-        by_threshold = roc.aggregate(df)
+        by_threshold = roc.aggregate(df)[0]
         tpr = np.array(list(by_threshold.sens))
         tnr = 1 - np.array(by_threshold.spec)
         
         roc_auc = np.sum((tpr[:-1] + tpr[1:]) * (tnr[1:] - tnr[:-1]) / 2)
-        return pd.DataFrame.from_records([{'roc_auc':roc_auc}])
+        return [pd.DataFrame.from_records([{'roc_auc':roc_auc}])]
 
     def get_aggregations(self):
         return [DataFrameAggregator(('subject_id',), self.aggregate)]

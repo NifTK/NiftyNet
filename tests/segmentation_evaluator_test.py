@@ -30,15 +30,16 @@ class SegmentationEvaluatorTest(tf.test.TestCase):
         result_dict = e.evaluate_from_generator(generator())
         self.assertIn(('subject_id', 'label'), result_dict)
         self.assertIn(('subject_id', 'cc_id'), result_dict)
-        self.assertEqual(result_dict[('subject_id', 'label')],
-                      [{'subject_id':'test','label':1,'dice':1.}])
-        self.assertEqual(result_dict[('subject_id', 'cc_id')],
-                      [{'subject_id': 'test','cc_id': 'r1_s1',
-                        'dice': 1.},
-                       {'subject_id': 'test', 'cc_id': 'r2_s2',
-                        'dice': 1.},
-                       ])
-
+        self.assertEqual(tuple(result_dict[('subject_id', 'label')].index.names),
+                         ('subject_id', 'label'))
+        self.assertEqual(tuple(result_dict[('subject_id', 'cc_id')].index.names),
+                         ('subject_id', 'cc_id'))
+        print(result_dict[('subject_id', 'cc_id')].to_dict('index'))
+        self.assertEqual(result_dict[('subject_id', 'label')].to_dict('index'),
+                      {('test', 1): {'dice': 1.}})
+        self.assertEqual(result_dict[('subject_id', 'cc_id')].to_dict('index'),
+                      {('test', 'r1_s1'): {'dice': 1.},
+                       ('test', 'r2_s2'): {'dice': 1.}})
 
 
 if __name__ == "__main__":

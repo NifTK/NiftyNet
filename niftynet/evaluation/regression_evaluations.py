@@ -9,8 +9,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import pandas as pd
 
-from niftynet.evaluation.base_evaluations import BaseEvaluation, \
-    ResultsDictionary
+from niftynet.evaluation.base_evaluations import BaseEvaluation
 
 
 class BaseRegressionEvaluation(BaseEvaluation):
@@ -21,7 +20,7 @@ class BaseRegressionEvaluation(BaseEvaluation):
         pdf = pd.DataFrame.from_records([{'subject_id':subject_id,
                                           metric_name:metric_value}],
                                         ('subject_id',))
-        return ResultsDictionary(pdf)
+        return [pdf]
 
     def metric(self, reg, ref):
         """

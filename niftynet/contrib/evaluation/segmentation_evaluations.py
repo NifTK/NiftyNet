@@ -5,9 +5,9 @@ This module holds built-in segmentation evaluations without tests
 import os
 
 from scipy import ndimage
+import pandas as pd
 
-from niftynet.evaluation.base_evaluations import BaseEvaluation, \
-    ResultsDictionary
+from niftynet.evaluation.base_evaluations import BaseEvaluation
 from niftynet.evaluation.segmentation_evaluation import \
     PerComponentEvaluation, connected_components, cached_label_binarizer, \
     union_of_seg_for_each_ref_cc
@@ -72,6 +72,5 @@ class ErrorMapsCC(BaseEvaluation):
                             subject_id + '_' + key + '.nii',
                             maps[key],
                             self.reader.output_list[image_idx]['label'], 0)
-        results_dict = ResultsDictionary()
-        results_dict[('subject_id',)] = [out]
-        return results_dict
+        pdf = pd.DataFrame.from_records([out], ('subject_id',))
+        return [pdf]

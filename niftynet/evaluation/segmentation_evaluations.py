@@ -30,8 +30,7 @@ import numpy as np
 import pandas as pd
 from scipy import ndimage
 
-from niftynet.evaluation.base_evaluations import CachedSubanalysisEvaluation,\
-    ResultsDictionary
+from niftynet.evaluation.base_evaluations import CachedSubanalysisEvaluation
 from niftynet.utilities.util_common import MorphologyOps, \
     CachedFunction, CachedFunctionByID
 from niftynet.evaluation.base_evaluator import ScalarAggregator
@@ -77,7 +76,7 @@ class PerComponentEvaluation(CachedSubanalysisEvaluation):
             metric_dict = {'subject_id': subject_id, 'label': task['label']}
             metric_dict.update(self.metric_dict_from_binarized(seg, ref))
             pdf = pd.DataFrame.from_records([metric_dict], ('subject_id', 'label'))
-            return ResultsDictionary(pdf)
+            return [pdf]
         elif 'cc_labels' in task:
             binarizer = cached_cc_binarizer(task['cc_labels'],
                                             self.app_param.output_prob)
@@ -88,8 +87,8 @@ class PerComponentEvaluation(CachedSubanalysisEvaluation):
             metric_dict = {'subject_id': subject_id, 'cc_id': cc_id}
             metric_dict.update(self.metric_dict_from_binarized(seg, ref))
             pdf = pd.DataFrame.from_records([metric_dict], ('subject_id', 'cc_id'))
-            return ResultsDictionary(pdf)
-        return {}
+            return [pdf]
+        return []
 
 
     def metric_dict_from_binarized(self, seg, ref):

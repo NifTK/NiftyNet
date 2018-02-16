@@ -9,10 +9,10 @@ from __future__ import absolute_import, division, print_function
 
 import itertools
 from itertools import groupby
+from collections import defaultdict
 
-import pandas
+import pandas as pd
 
-from niftynet.evaluation.base_evaluations import ResultsDictionary
 from niftynet.engine.application_factory import EvaluationFactory
 from niftynet.utilities.util_common import cache
 
@@ -44,7 +44,7 @@ class BaseEvaluator(object):
         This method loops through all subjects and computes the metrics for
         each subject.
 
-        :return: a ResultsDictionary object
+        :return: a dictionary of pandas.DataFrame objects
         """
         def generator_from_reader(reader):
             while True:
@@ -58,12 +58,16 @@ class BaseEvaluator(object):
         return self.evaluate_from_generator(generator)
 
     def evaluate_from_generator(self, generator):
-        all_results = ResultsDictionary()
+        """
+        This method loops through all subjects and computes the metrics for
+        each subject.
+
+        :return: a dictionary of pandas.DataFrame objects
+        """
+        all_results = []
         for subject_id, data,interp_orders in generator:
-            next_result = self.evaluate_next(subject_id, data, interp_orders)
-            all_results.update_all(next_result)
-        all_results = self.aggregate(all_results)
-        return all_results
+            all_results += self.evaluate_next(subject_id, data, interp_orders)
+        return self.aggregate(all_results)
 
     def evaluate_next(self, subject_id, data, interp_orders):
         """
@@ -73,29 +77,33 @@ class BaseEvaluator(object):
         :param data: data dictionary passed to each evaluation
         :param interp_orders: metadata for the data dictionary
                [currently not used]
-        :return: a ResultsDictionary object
+        :return: a list of pandas.DataFrame objects
         """
-        metrics = ResultsDictionary()
-
+        metrics = []
         for evaluation in self.evaluations:
-            results = evaluation(subject_id, data)
-            metrics.update_all(results)
+            metrics += evaluation(subject_id, data)
         return metrics
 
-    def aggregate(self, result_dict):
+    def aggregate(self, dataframes):
         """
         Apply all of the iterations requested by the evaluations
 
-        :param result_dict: a dictionary as built by BaseEvaluator.evaluate()
-        :return: a dictionary as built by BaseEvaluator.evaluate() but with
-                 aggregations applied
+        :param dataframes: a list of pandas.DataFrame objects
+        :return: a dictionary of pandas.DataFrame objects after aggregation
         """
+        result_dict = defaultdict(lambda: pd.DataFrame())
+        for pdf in dataframes:
+            key = tuple(pdf.index.names)
+            result_dict[key] = pdf if key not in result_dict else result_dict[key].combine_first(pdf)
+
         aggregations = []
         for evaluation in self.evaluations:
             agg_list = evaluation.get_aggregations()
             aggregations.extend(agg_list)
         for aggregation in aggregations:
-            result_dict = aggregation(result_dict)
+            for pdf in aggregation(result_dict):
+                key = tuple(pdf.index.names)
+                result_dict[key] = pdf if key not in result_dict else result_dict[key].combine_first(pdf)
         return result_dict
 
     def default_evaluation_list(self):
@@ -125,7 +133,7 @@ class CachedSubanalysisEvaluator(BaseEvaluator):
         :param data: data dictionary passed to each evaluation
         :param interp_orders: metadata for the data dictionary
                [currently not used]
-        :return: a ResultsDictionary object
+        :return: a list of pandas.DataFrame objects
         """
         # First go through evaluations to find those with subanalyses
         evaluations = {'normal': [], 'subanalyses':[]}
@@ -137,10 +145,9 @@ class CachedSubanalysisEvaluator(BaseEvaluator):
                 evaluations['normal'].append(evl)
 
         # Run normal evaluations
-        metrics = ResultsDictionary()
+        metrics = []
         for evaluation in evaluations['normal']:
-            results = evaluation(subject_id, data)
-            metrics.update_all(results)
+            metrics += evaluation(subject_id, data)
 
         # group sub-analysis evaluations by subanalysis
         def keyfunc(sub):
@@ -150,16 +157,16 @@ class CachedSubanalysisEvaluator(BaseEvaluator):
         # run grouped evaluations
         for _, evaluationset in tasksets:
             for evaluation, sub in evaluationset:
-                results = evaluation(subject_id, data, sub)
-                metrics.update_all(results)
+                metrics += evaluation(subject_id, data, sub)
             cache.clear()
         return metrics
 
 class DataFrameAggregator(object):
     """
-    This class defines a simple aggregator that operates on pandas dataframes
+    This class defines a simple aggregator that operates on groups of entries 
+    in a pandas dataframe
     
-    `func` should accept a dataframe and return a dataframe with appropriate indices
+    `func` should accept a dataframe and return a list of dataframes with appropriate indices
     """
     def __init__(self, group_by, func):
         """
@@ -172,10 +179,7 @@ class DataFrameAggregator(object):
         self.func = func
 
     def __call__(self, result_dict):
-        pdf = self.func(result_dict[self.group_by])
-        new_group_by = tuple(pdf.index.names)
-        result_dict[new_group_by]=result_dict[new_group_by].combine_first(pdf)
-        return result_dict
+        return self.func(result_dict[self.group_by])
 
 class ScalarAggregator(DataFrameAggregator):
     """
@@ -207,6 +211,6 @@ class ScalarAggregator(DataFrameAggregator):
         the values using self.func """
         group = pdf.groupby(by=self.new_group_by, group_keys=False)
         def func(pdf):
-            add = self.scalar_func(list(pdf.loc[:,self.key]))
+            agg = self.scalar_func(list(pdf.loc[:,self.key]))
             return pd.Series({self.name:agg})
-        return gb.apply(func)
+        return [group.apply(func)]
