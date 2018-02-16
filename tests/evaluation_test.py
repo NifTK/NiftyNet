@@ -297,6 +297,7 @@ class SegmentationEvaluatorTests(np.testing.TestCase):
         eval_param = Namespace(evaluations='Dice,Jaccard,average_distance')
         evalu = SegmentationEvaluator(SegmentationEvaluatorTests.ReaderStub(),
                                       app_param, eval_param)
+        print('pandas_version',pd.__version__)
         result_dict = evalu.evaluate()
         self.assertIn(('subject_id', 'cc_id'), result_dict)
         self.assertIn(('subject_id', 'label'), result_dict)
