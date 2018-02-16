@@ -312,8 +312,8 @@ class SegmentationEvaluatorTests(np.testing.TestCase):
 
         self.assertIn(('foo','r1_s1'), list(group_cc.index))
         self.assertIn(('bar','r1_s1'), list(group_cc.index))
-        self.assertIn(('foo','1'), list(group_l.index))
-        self.assertIn(('bar','1'), list(group_l.index))
+        self.assertIn(('foo',1), list(group_l.index))
+        self.assertIn(('bar',1), list(group_l.index))
 
 class RegressionEvaluatorTests(np.testing.TestCase):
     """
