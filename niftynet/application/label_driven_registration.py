@@ -27,10 +27,10 @@ class RegApp(BaseApplication):
 
     REQUIRED_CONFIG_SECTION = "REGISTRATION"
 
-    def __init__(self, net_param, action_param, is_training):
+    def __init__(self, net_param, action_param, action):
         BaseApplication.__init__(self)
         tf.logging.info('starting label-driven registration')
-        self.is_training = is_training
+        self.action = action
 
         self.net_param = net_param
         self.action_param = action_param
@@ -43,12 +43,11 @@ class RegApp(BaseApplication):
         self.data_param = data_param
         self.registration_param = task_param
 
-        if self.is_training:
-            file_lists = [data_partitioner.train_files]
-            if self.action_param.validation_every_n > 0:
-                file_lists.append(data_partitioner.validation_files)
-        else:
-            file_lists = [data_partitioner.inference_files]
+        file_lists = self.get_file_lists(data_partitioner)
+
+        if self.is_evaluation:
+            NotImplementedError('Evaluation is not yet '
+                                'supported in this application.')
 
         self.readers = []
         for file_list in file_lists:

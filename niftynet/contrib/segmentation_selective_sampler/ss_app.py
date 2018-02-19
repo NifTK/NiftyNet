@@ -52,15 +52,9 @@ class SelectiveSampling(BaseApplication):
         self.data_param = data_param
         self.segmentation_param = task_param
 
+        file_lists = self.get_file_lists(data_partitioner)
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            file_lists = []
-            if self.action_param.validation_every_n > 0:
-                file_lists.append(data_partitioner.train_files)
-                file_lists.append(data_partitioner.validation_files)
-            else:
-                file_lists.append(data_partitioner.train_files)
-
             self.readers = []
             for file_list in file_lists:
                 reader = ImageReader(SUPPORTED_INPUT)
@@ -69,8 +63,7 @@ class SelectiveSampling(BaseApplication):
 
         else:  # in the inference process use image input only
             inference_reader = ImageReader(['image'])
-            file_list = data_partitioner.inference_files
-            inference_reader.initialise(data_param, task_param, file_list)
+            inference_reader.initialise(data_param, task_param, file_lists[0])
             self.readers = [inference_reader]
 
         foreground_masking_layer = None

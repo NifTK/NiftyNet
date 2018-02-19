@@ -1,4 +1,5 @@
 import tensorflow as tf
+import os
 
 from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_factory import ApplicationNetFactory
@@ -24,17 +25,18 @@ from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
+from niftynet.evaluation.regression_evaluator import RegressionEvaluator
 
-SUPPORTED_INPUT = set(['image', 'output', 'weight', 'sampler'])
+SUPPORTED_INPUT = set(['image', 'output', 'weight', 'sampler', 'inferred'])
 
 
 class RegressionApplication(BaseApplication):
     REQUIRED_CONFIG_SECTION = "REGRESSION"
 
-    def __init__(self, net_param, action_param, is_training):
+    def __init__(self, net_param, action_param, action):
         BaseApplication.__init__(self)
         tf.logging.info('starting regression application')
-        self.is_training = is_training
+        self.action = action
 
         self.net_param = net_param
         self.action_param = action_param
@@ -58,25 +60,27 @@ class RegressionApplication(BaseApplication):
         self.data_param = data_param
         self.regression_param = task_param
 
+        file_lists = self.get_file_lists(data_partitioner)
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            file_lists = []
-            if self.action_param.validation_every_n > 0:
-                file_lists.append(data_partitioner.train_files)
-                file_lists.append(data_partitioner.validation_files)
-            else:
-                file_lists.append(data_partitioner.train_files)
-
             self.readers = []
             for file_list in file_lists:
-                reader = ImageReader(SUPPORTED_INPUT)
+                reader = ImageReader({'image', 'output', 'weight', 'sampler'})
                 reader.initialise(data_param, task_param, file_list)
                 self.readers.append(reader)
-        else:
+        elif self.is_inference:
             inference_reader = ImageReader(['image'])
             file_list = data_partitioner.inference_files
-            inference_reader.initialise(data_param, task_param, file_list)
+            inference_reader.initialise(data_param, task_param, file_lists[0])
             self.readers = [inference_reader]
+        elif self.is_evaluation:
+            file_list = data_partitioner.inference_files
+            reader = ImageReader({'image', 'output', 'inferred'})
+            reader.initialise(data_param, task_param, file_lists[0])
+            self.readers = [reader]
+        else:
+            raise ValueError('Action `{}` not supported. Expected one of {}'
+                             .format(self.action, self.SUPPORTED_ACTIONS))
 
         mean_var_normaliser = MeanVarNormalisationLayer(
             image_name='image')
@@ -174,8 +178,11 @@ class RegressionApplication(BaseApplication):
     def initialise_sampler(self):
         if self.is_training:
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][0]()
-        else:
+        elif self.is_inference:
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][1]()
+
+    def initialise_aggregator(self):
+        self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]()
 
     def initialise_network(self):
         w_regularizer = None
@@ -253,7 +260,7 @@ class RegressionApplication(BaseApplication):
                 var=data_loss, name='Loss',
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
-        else:
+        elif self.is_inference:
             data_dict = switch_sampler(for_training=False)
             image = tf.cast(data_dict['image'], tf.float32)
             net_out = self.net(image, is_training=self.is_training)
@@ -268,13 +275,20 @@ class RegressionApplication(BaseApplication):
             outputs_collector.add_to_collection(
                 var=data_dict['image_location'], name='location',
                 average_over_devices=False, collection=NETWORK_OUTPUT)
-            init_aggregator = \
-                self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]
-            init_aggregator()
+            self.initialise_aggregator()
 
     def interpret_output(self, batch_output):
-        if not self.is_training:
+        if self.is_inference:
             return self.output_decoder.decode_batch(
                 batch_output['window'], batch_output['location'])
         else:
             return True
+
+    def initialise_evaluator(self, eval_param):
+        self.eval_param = eval_param
+        self.evaluator = RegressionEvaluator(self.readers[0],
+                                               self.regression_param,
+                                               eval_param)
+
+    def add_inferred_output(self, data_param, task_param):
+        return self.add_inferred_output_like(data_param, task_param, 'output')

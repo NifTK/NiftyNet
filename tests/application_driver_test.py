@@ -9,6 +9,7 @@ import tensorflow as tf
 from niftynet.engine.application_driver import ApplicationDriver
 from niftynet.io.misc_io import set_logger
 from niftynet.utilities.util_common import ParserNamespace
+from niftynet.application.base_application import TRAIN, INFER
 
 
 # def _run_test_application():
@@ -52,7 +53,7 @@ def get_initialised_driver(starting_iter=0):
     # set parameters without __init__
     app_driver.app.action_param = system_param['TRAINING']
     app_driver.app.net_param = system_param['NETWORK']
-    app_driver.app.is_training = True
+    app_driver.app.action = TRAIN
     return app_driver
 
 

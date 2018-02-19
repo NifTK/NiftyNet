@@ -5,6 +5,8 @@ that maps from images to scalar, multi-class labels.
 This class is instantiated and initalized by the application_driver.
 """
 
+import os
+
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
@@ -28,8 +30,9 @@ from niftynet.layer.mean_variance_normalisation import \
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
+from niftynet.evaluation.classification_evaluator import ClassificationEvaluator
 
-SUPPORTED_INPUT = set(['image', 'label', 'sampler'])
+SUPPORTED_INPUT = set(['image', 'label', 'sampler', 'inferred'])
 
 
 class ClassificationApplication(BaseApplication):
@@ -45,10 +48,10 @@ class ClassificationApplication(BaseApplication):
 
     REQUIRED_CONFIG_SECTION = "CLASSIFICATION"
 
-    def __init__(self, net_param, action_param, is_training):
+    def __init__(self, net_param, action_param, action):
         super(ClassificationApplication, self).__init__()
         tf.logging.info('starting classification application')
-        self.is_training = is_training
+        self.action = action
 
         self.net_param = net_param
         self.action_param = action_param
@@ -66,26 +69,27 @@ class ClassificationApplication(BaseApplication):
         self.data_param = data_param
         self.classification_param = task_param
 
+        file_lists = self.get_file_lists(data_partitioner)
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            file_lists = []
-            if self.action_param.validation_every_n > 0:
-                file_lists.append(data_partitioner.train_files)
-                file_lists.append(data_partitioner.validation_files)
-            else:
-                file_lists.append(data_partitioner.train_files)
-
             self.readers = []
             for file_list in file_lists:
-                reader = ImageReader(SUPPORTED_INPUT)
+                reader = ImageReader(['image', 'label', 'sampler'])
                 reader.initialise(data_param, task_param, file_list)
                 self.readers.append(reader)
 
-        else:  # in the inference process use image input only
+        elif self.is_inference:  
+            # in the inference process use image input only
             inference_reader = ImageReader(['image'])
-            file_list = data_partitioner.inference_files
-            inference_reader.initialise(data_param, task_param, file_list)
+            inference_reader.initialise(data_param, task_param, file_lists[0])
             self.readers = [inference_reader]
+        elif self.is_evaluation:
+            reader = ImageReader({'image', 'label', 'inferred'})
+            reader.initialise(data_param, task_param, file_lists[0])
+            self.readers = [reader]
+        else:
+            raise ValueError('Action `{}` not supported. Expected one of {}'
+                             .format(self.action, self.SUPPORTED_ACTIONS))
 
         foreground_masking_layer = None
         if self.net_param.normalise_foreground_only:
@@ -322,3 +326,12 @@ class ClassificationApplication(BaseApplication):
             return self.output_decoder.decode_batch(
                 batch_output['window'], batch_output['location'])
         return True
+
+    def initialise_evaluator(self, eval_param):
+        self.eval_param = eval_param
+        self.evaluator = ClassificationEvaluator(self.readers[0],
+                                                 self.classification_param,
+                                                 eval_param)
+
+    def add_inferred_output(self, data_param, task_param):
+        return self.add_inferred_output_like(data_param, task_param, 'label')

@@ -45,11 +45,14 @@ class ISampleRegression(RegressionApplication):
         if not task_param.error_map:
             return
 
+        file_lists = self.get_file_lists(data_partitioner)
         # modifying the original readers in regression application
         # as we need ground truth labels to generate error maps
-        file_list = data_partitioner.all_files
-        self.readers[0] = ImageReader(['image', 'output'])
-        self.readers[0].initialise(data_param, task_param, file_list)
+        self.readers=[]
+        for file_list in file_lists:
+            reader = ImageReader(['image', 'output'])
+            reader.initialise(data_param, task_param, file_list)
+            self.readers.append(reader)
 
         mean_var_normaliser = MeanVarNormalisationLayer(image_name='image')
         histogram_normaliser = None
