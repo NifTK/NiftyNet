@@ -20,7 +20,7 @@ class accuracy(BaseEvaluation):
     def layer_op(self, subject_id, data):
         metric_name = 'accuracy_'
         if self.app_param.output_prob:
-            inferred_label = np.amax(data['inferred'][0,0,0,0,:])
+            inferred_label = np.argmax(data['inferred'][0,0,0,0,:])
         else:
             inferred_label = data['inferred'][0,0,0,0,0]
         pdf = pd.DataFrame.from_records([{'subject_id':subject_id,
@@ -30,85 +30,9 @@ class accuracy(BaseEvaluation):
         return [pdf]
         
     def aggregate(self, df):
+        print(df)
         agg = pd.DataFrame.from_records([{'accuracy':(df.acc_i==df.acc_l).mean()}])
         return [agg]
 
     def get_aggregations(self):
-        return [DataFrameAggregator(('subject_id',), self.aggregate)]
-
-class roc(BaseEvaluation):
-    def layer_op(self, subject_id, data):
-        if not self.app_param.output_prob or\
-           self.app_param.num_classes>2:
-           return []
-        pdf = pd.DataFrame.from_records([{'subject_id':subject_id,
-                            'roc_i':data['inferred'][0,0,0,0,1],
-                            'roc_l':data['label'][0,0,0,0,0]}],('subject_id',))
-        return [pdf]
-
-    @classmethod
-    def aggregate(cls, df):
-        thresholds = np.linspace(0,1,10)
-        df_out = pd.DataFrame(index=range(len(thresholds)),columns=('thresholds','tp','fp','tn','fn','acc','sens','spec'))
-        df_out.thresholds = thresholds
-        for it in range(len(thresholds)):
-            df_out.loc[it,'tp'] = (df[df.roc_l==1].roc_i>it).sum()
-            df_out.loc[it,'fp'] = (df[df.roc_l==0].roc_i>it).sum()
-            df_out.loc[it,'tn'] = (df[df.roc_l==0].roc_i<=it).sum()
-            df_out.loc[it,'fn'] = (df[df.roc_l==1].roc_i<=it).sum()
-        df_out.acc = (df_out.tp+df_out.tn)/(
-            df_out.tp+df_out.tn+df_out.fp+df_out.fn)
-        denom = df_out.tp+df_out.fn
-        df_out.loc[denom>0,'sens'] = df_out.loc[denom>0,'tp']/denom[denom>0]
-        denom = df_out.tn+df_out.fp
-        df_out.loc[denom>0,'spec'] = df_out.loc[denom>0,'tn']/denom[denom>0]
-        df_out=df_out.set_index('thresholds')
-        return [df_out]
-
-    def get_aggregations(self):
-        if not self.app_param.output_prob or\
-           self.app_param.num_classes>2:
-           return []
-        return [DataFrameAggregator(('subject_id',), self.aggregate)]
-
-class roc_auc(BaseEvaluation):
-    def layer_op(self, subject_id, data):
-        if not self.app_param.output_prob or\
-           self.app_param.num_classes>2:
-           return []
-        pdf = pd.DataFrame.from_records([{'subject_id':subject_id,
-                            'roc_auc_i':data['inferred'][0,0,0,0,1],
-                            'roc_auc_l':data['label'][0,0,0,0,0]}],('subject_id',))
-        print(pdf)
-        return [pdf]
-
-    @classmethod
-    def aggregate(cls, df):
-        thresholds = np.linspace(0,1,10)
-        df_out = pd.DataFrame(index=range(len(thresholds)),columns=('thresholds','tp','fp','tn','fn','acc','sens','spec'))
-        df_out.thresholds = thresholds
-        for it in range(len(thresholds)):
-            df_out.loc[it,'tp'] = (df[df.roc_auc_l==1].roc_auc_i>it).sum()
-            df_out.loc[it,'fp'] = (df[df.roc_auc_l==0].roc_auc_i>it).sum()
-            df_out.loc[it,'tn'] = (df[df.roc_auc_l==0].roc_auc_i<=it).sum()
-            df_out.loc[it,'fn'] = (df[df.roc_auc_l==1].roc_auc_i<=it).sum()
-        df_out.acc = (df_out.tp+df_out.tn)/(
-            df_out.tp+df_out.tn+df_out.fp+df_out.fn)
-        denom = df_out.tp+df_out.fn
-        df_out.loc[denom>0,'sens'] = df_out.loc[denom>0,'tp']/denom[denom>0]
-        denom = df_out.tn+df_out.fp
-        df_out.loc[denom>0,'spec'] = df_out.loc[denom>0,'tn']/denom[denom>0]
-        by_threshold=df_out.set_index('thresholds')
-
-        tpr = np.array(list(by_threshold.sens))
-        tnr = 1 - np.array(by_threshold.spec)
-        
-        roc_auc = np.sum((tpr[:-1] + tpr[1:]) * (tnr[1:] - tnr[:-1]) / 2)
-        return [pd.DataFrame.from_records([{'roc_auc':roc_auc}])]
-
-
-    def get_aggregations(self):
-        if not self.app_param.output_prob or\
-           self.app_param.num_classes>2:
-           return []
         return [DataFrameAggregator(('subject_id',), self.aggregate)]

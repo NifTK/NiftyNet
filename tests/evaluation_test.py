@@ -10,6 +10,7 @@ from niftynet.utilities.util_common import MorphologyOps
 from niftynet.evaluation.segmentation_evaluator import SegmentationEvaluator
 import niftynet.evaluation.segmentation_evaluations as segmentation_evaluations
 import niftynet.evaluation.regression_evaluations as regression_evaluations
+from niftynet.evaluation.classification_evaluator import ClassificationEvaluator
 
 from niftynet.evaluation.regression_evaluator import RegressionEvaluator
 
@@ -263,6 +264,83 @@ class SegmentationEvaluationTests(np.testing.TestCase):
     def test_markedness(self):
         self.assertEqual(self.metric(
             segmentation_evaluations.markedness,1), 1. /2)
+
+class ClassificationEvaluationTests(np.testing.TestCase):
+    def data1(self):
+        raw_data = [[0,.12],[0,.24],[1,.36], [0,.45],
+                    [0,.61],[1,.28],[1,.99], [1,.89]]
+        formatted_data = [{'label':np.reshape(datum[0],[1,1,1,1,1]),
+                           'inferred':np.reshape([1-datum[1],datum[1]],[1,1,1,1,2])} for datum in raw_data]
+        return formatted_data
+    def data2(self):
+        raw_data = [[0,0],[0,0],[1,0],[0,0],
+                    [0,1],[1,0],[1,1],[1,1]]
+        formatted_data = [{'label':np.reshape(datum[0],[1,1,1,1,1]),
+                           'inferred':np.reshape([datum[1]],[1,1,1,1,1])} for datum in raw_data]
+        return formatted_data
+
+    def generator(self, data):
+        interp_orders = {'label':0,'inferred':-1}
+        for idx, datum in enumerate(data):
+            yield ('test'+str(idx), datum,interp_orders)
+
+    def evaluator(self, eval_str, output_prob=True):
+        class NS(object):
+            def __init__(self, dict):
+                self.__dict__.update(dict)
+        classification_param=NS({'num_classes':2,
+                                 'output_prob':output_prob})
+        eval_param=NS({'evaluations':eval_str})
+        return ClassificationEvaluator(None, classification_param, eval_param)
+
+    def test_accuracy_output_prob(self):
+        data = self.data1()
+        evl = self.evaluator('niftynet.evaluation.classification_evaluations.accuracy')
+        result_dict = evl.evaluate_from_generator(self.generator(data))
+        self.assertIn((None,), result_dict)
+        by_threshold = result_dict[(None,)].to_dict('index')
+        
+        self.assertEqual(by_threshold,
+                      {0: {'accuracy': 0.625}})
+
+    def test_accuracy_output_label(self):
+        data = self.data2()
+        evl = self.evaluator('niftynet.evaluation.classification_evaluations.accuracy', False)
+        result_dict = evl.evaluate_from_generator(self.generator(data))
+        self.assertIn((None,), result_dict)
+        by_threshold = result_dict[(None,)].to_dict('index')
+        
+        self.assertEqual(by_threshold,
+                      {0: {'accuracy': 0.625}})
+
+    def test_contrib_roc(self):
+        data = self.data1()
+        evl = self.evaluator('niftynet.contrib.evaluation.classification_evaluations.roc')
+        result_dict = evl.evaluate_from_generator(self.generator(data))
+        self.assertIn(('thresholds',), result_dict)
+        by_threshold = result_dict[('thresholds',)].to_dict('index')
+        get_key = lambda x: [k for k in by_threshold.keys() if np.abs(k-x)<.01][0]
+        sample = by_threshold[get_key(0.444)]
+        self.assertEqual(sample['fp'],2)
+        self.assertEqual(sample['spec'],0.5)
+        self.assertEqual(sample['sens'],0.5)
+        
+#  FPF:   0.0000  0.0000  0.3333  0.3333  1.0000
+#   TPF:   0.0000  0.6667  0.6667  1.0000  1.0000
+#
+#AREA UNDER ROC CURVE:
+#  Area under fitted curve (Az) = 0.9043
+#          Estimated std. error = 0.1260
+#  Trapezoidal (Wilcoxon) area = 0.8889
+
+    def test_contrib_roc_auc(self):
+        data = self.data1()
+        evl = self.evaluator('niftynet.contrib.evaluation.classification_evaluations.roc_auc')
+        result_dict = evl.evaluate_from_generator(self.generator(data))
+        self.assertIn((None,), result_dict)
+        print(result_dict[(None,)].to_dict('index'))
+        self.assertEqual(result_dict[(None,)].to_dict('index'),
+                      {0: {'roc_auc': 0.71875}})
 
 
 class SegmentationEvaluatorTests(np.testing.TestCase):
