@@ -27,6 +27,7 @@ testjob:
     - master
     - dev
     - tags
+    - 195-add-evaluation-action-3
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
@@ -197,6 +198,7 @@ quicktest:
     - 206-improve-the-handling-of-release-notes
     - 221-add-changelog-entry-for-version-0.2.2
     - 223-put-bug-fixes-under-fixed-header-in-changelog
+    - 195-add-evaluation-action-3
   script:
     # print system info
     - which nvidia-smi
@@ -250,6 +252,7 @@ pip-installer:
     - dev
     - tags
     - 117-support-for-user-defined-networks-using-pip-installed-niftynet
+    - 195-add-evaluation-action-3
   script:
     # get the shortened version of last commit's hash
     - LAST_COMMIT=$(git rev-parse --short HEAD)
@@ -417,7 +420,7 @@ pip-installer:
     - net_regress evaluation -c $niftynet_dir/config/default_monomodal_regression.ini
     - net_run train -a net_regress -c $niftynet_dir/config/default_monomodal_regression.ini --max_iter 10 --name toynet --batch_size=2
     - net_run inference -a net_regress -c $niftynet_dir/config/default_monomodal_regression.ini --name toynet --spatial_window_size 84,84,84 --batch_size 7
-    - net_run evaluation -c $niftynet_dir/config/default_monomodal_regression.ini
+    - net_run evaluation -a net_regress -c $niftynet_dir/config/default_monomodal_regression.ini
 
     - net_gan train -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
     - net_gan inference -c $niftynet_dir/config/GAN_demo_train_config.ini
