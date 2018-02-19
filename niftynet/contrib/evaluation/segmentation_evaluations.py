@@ -8,7 +8,7 @@ from scipy import ndimage
 import pandas as pd
 
 from niftynet.evaluation.base_evaluations import BaseEvaluation
-from niftynet.evaluation.segmentation_evaluation import \
+from niftynet.evaluation.segmentation_evaluations import \
     PerComponentEvaluation, connected_components, cached_label_binarizer, \
     union_of_seg_for_each_ref_cc
 from niftynet.io.misc_io import save_data_array
