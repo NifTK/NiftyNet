@@ -4,6 +4,7 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.layer.base_layer import TrainableLayer
+from niftynet.layer.layer_util import infer_spatial_rank
 import numpy
 
 """
@@ -148,7 +149,7 @@ def py_func(func, inp, Tout, stateful=True, name=None, grad=None):
 
     # Need to generate a unique name to avoid duplicates:
     rnd_name = 'PyFuncGrad' + str(numpy.random.randint(0, 1E+8))
-
+    print(rnd_name)
     tf.RegisterGradient(rnd_name)(grad)  # see _MySquareGrad for grad example
     g = tf.get_default_graph()
     with g.gradient_override_map({"PyFunc": rnd_name}):
@@ -181,7 +182,13 @@ def ftheta(U,H1,permutohedrals,mu,kernel_weights, aspect_ratio,name):
     # Weighting Filter Outputs
     Q2=tf.add_n([Q1*w for Q1,w in zip(Q1,kernel_weights)])
     # Compatibility Transform
-    Q3=tf.nn.conv3d(Q2,mu,strides=[1,1,1,1,1],padding='SAME')
+    spatial_dim = infer_spatial_rank(U)
+    if spatial_dim == 2:
+      Q3=tf.nn.conv2d(Q2,mu,strides=[1,1,1,1],padding='SAME')
+    elif spatial_dim == 3:
+      Q3=tf.nn.conv3d(Q2,mu,strides=[1,1,1,1,1],padding='SAME')
+    else:
+        raise NotImplementedError('CRFAsRNNLayer is only implemented for 2d and 3d images.')
     # Adding Unary Potentials
     Q4=U-Q3
     # Normalizing
@@ -196,7 +203,7 @@ class CRFAsRNNLayer(TrainableLayer):
     [1] Zheng, Shuai, et al. "Conditional random names as recurrent neural networks." CVPR 2015.
     [2] https://arxiv.org/pdf/1210.5644.pdf
     """
-    def __init__(self,alpha=5.,beta=5.,gamma=5.,T=5,aspect_ratio=(1.,1.,1.), name="crf_as_rnn"):
+    def __init__(self,alpha=5.,beta=5.,gamma=5.,T=5,aspect_ratio=None, name="crf_as_rnn"):
       """
       Parameters:
       alpha:        bandwidth for spatial coordinates in bilateral kernel.
@@ -224,18 +231,23 @@ class CRFAsRNNLayer(TrainableLayer):
            image intensity
         U: activation maps to smooth
       """
+      spatial_dim = infer_spatial_rank(U)
+      if self._aspect_ratio is None:
+          self._aspect_ratio = [1.] * spatial_dim
+          
       batch_size=int(U.shape[0])
       H1=[U]
       # Build permutohedral structures for smoothing
-      coords=tf.tile(tf.expand_dims(tf.stack(tf.meshgrid(*[numpy.array(range(int(i)),dtype=numpy.float32)*a for i,a in zip(U.shape[1:4],self._aspect_ratio)]),3),0),[batch_size,1,1,1,1])
-      bilateralCoords =tf.reshape(tf.concat([coords/self._alpha,I/self._beta],4),[batch_size,-1,int(I.shape[-1])+3])
-      spatialCoords=tf.reshape(coords/self._gamma,[batch_size,-1,3])
+      coords=tf.tile(tf.expand_dims(tf.stack(tf.meshgrid(*[numpy.array(range(int(i)),dtype=numpy.float32)*a for i,a in zip(U.shape[1:spatial_dim+1],self._aspect_ratio)],indexing='ij'),spatial_dim),0),[batch_size]+[1]*spatial_dim+[1])
+      print(coords.shape, I.shape)
+      bilateralCoords =tf.reshape(tf.concat([coords/self._alpha,I/self._beta],-1),[batch_size,-1,int(I.shape[-1])+spatial_dim])
+      spatialCoords=tf.reshape(coords/self._gamma,[batch_size,-1,spatial_dim])
       kernel_coords=[bilateralCoords,spatialCoords]
       permutohedrals = [permutohedral_prepare(coords) for coords in kernel_coords]
 
       nCh=U.shape[-1]
-      mu = tf.get_variable('Compatibility',initializer=tf.constant(numpy.reshape(numpy.eye(nCh),[1,1,1,nCh,nCh]),dtype=tf.float32))
-      kernel_weights = [tf.get_variable("FilterWeights"+str(idx), shape=[1,1,1,1,nCh], initializer=tf.zeros_initializer()) for idx,k in enumerate(permutohedrals)]
+      mu = tf.get_variable('Compatibility',initializer=tf.constant(numpy.reshape(numpy.eye(nCh),[1]*spatial_dim+[nCh,nCh]),dtype=tf.float32))
+      kernel_weights = [tf.get_variable("FilterWeights"+str(idx), shape=[1]*spatial_dim+[1,nCh], initializer=tf.zeros_initializer()) for idx,k in enumerate(permutohedrals)]
 
       for t in range(self._T):
         H1.append(ftheta(U,H1[-1],permutohedrals,mu,kernel_weights, aspect_ratio=self._aspect_ratio,name=self._name+str(t)))
