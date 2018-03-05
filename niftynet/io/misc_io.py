@@ -86,7 +86,7 @@ def load_image(filename):
             # continue to next loader
             pass
         except IOError:
-            # If PIL (or scikit-image) fails to load an image
+            # If PIL (or opencv/scikit-image) fails to load an image
             pass
     tf.logging.fatal('No loader could load the file %s', filename)
     raise IOError
