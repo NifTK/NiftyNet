@@ -15,11 +15,14 @@ SUPPORTED_OP = set(['REPLICATE', 'CHANNELWISE_DECONV'])
 class UpSampleLayer(TrainableLayer):
     """
     This class defines channel-wise upsampling operations.
-    Different from `DeconvLayer`, the elements are not mixed in the channel dim.
-    'REPLICATE' mode replicates each spatial_dim into spatial_dim*kernel_size
-    'CHANNELWISE_DECONV' model makes a projection using a kernel.
-    e.g., With 2D input (without loss of generality), given input [N, X, Y, C],
-    the output is [N, X*kernel_size, Y*kernel_size, C].
+    Different from ``DeconvLayer``,
+    the elements are not mixed in the channel dim.
+
+    ``REPLICATE`` mode replicates each spatial_dim into
+    ``spatial_dim*kernel_size``
+    `CHANNELWISE_DECONV`` mode makes a projection using a kernel.
+    e.g., With 2D input (without loss of generality), given input
+    ``[N, X, Y, C]``, the output is ``[N, X*kernel_size, Y*kernel_size, C]``.
     """
 
     def __init__(self,

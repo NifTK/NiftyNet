@@ -27,13 +27,19 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                  name='image',
                  output_path=os.path.join('.', 'output'),
                  window_border=(),
-                 interp_order=0):
-        ImageWindowsAggregator.__init__(self, image_reader=image_reader)
+                 interp_order=0,
+                 prefix='_niftynet_out'):
+        ImageWindowsAggregator.__init__(
+            self, image_reader=image_reader, output_path=output_path)
         self.name = name
         self.image_out = None
         self.output_path = os.path.abspath(output_path)
+        self.inferred_csv = os.path.join(self.output_path, 'inferred.csv')
         self.window_border = window_border
         self.output_interp_order = interp_order
+        self.prefix = prefix
+        if os.path.exists(self.inferred_csv):
+            os.remove(self.inferred_csv)
 
     def decode_batch(self, window, location):
         n_samples = location.shape[0]
@@ -78,11 +84,14 @@ class GridSamplesAggregator(ImageWindowsAggregator):
             if isinstance(layer, DiscreteLabelNormalisationLayer):
                 self.image_out, _ = layer.inverse_op(self.image_out)
         subject_name = self.reader.get_subject_id(self.image_id)
-        filename = "{}_niftynet_out.nii.gz".format(subject_name)
+        filename = "{}{}.nii.gz".format(subject_name, self.prefix)
         source_image_obj = self.input_image[self.name]
         misc_io.save_data_array(self.output_path,
                                 filename,
                                 self.image_out,
                                 source_image_obj,
                                 self.output_interp_order)
+        with open(self.inferred_csv, 'a') as csv_file:
+            filename = os.path.join(self.output_path, filename)
+            csv_file.write('{},{}\n'.format(subject_name, filename))
         return

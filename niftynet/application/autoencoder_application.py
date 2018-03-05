@@ -21,11 +21,11 @@ SUPPORTED_INFERENCE = \
 class AutoencoderApplication(BaseApplication):
     REQUIRED_CONFIG_SECTION = "AUTOENCODER"
 
-    def __init__(self, net_param, action_param, is_training):
+    def __init__(self, net_param, action_param, action):
         BaseApplication.__init__(self)
         tf.logging.info('starting autoencoder application')
 
-        self.is_training = is_training
+        self.action = action
 
         self.net_param = net_param
         self.action_param = action_param
@@ -44,15 +44,12 @@ class AutoencoderApplication(BaseApplication):
         else:
             self._infer_type = None
 
+        file_lists = self.get_file_lists(data_partitioner)
         # read each line of csv files into an instance of Subject
+        if self.is_evaluation:
+            NotImplementedError('Evaluation is not yet '
+                                'supported in this application.')
         if self.is_training:
-            file_lists = []
-            if self.action_param.validation_every_n > 0:
-                file_lists.append(data_partitioner.train_files)
-                file_lists.append(data_partitioner.validation_files)
-            else:
-                file_lists.append(data_partitioner.train_files)
-
             self.readers = []
             for file_list in file_lists:
                 reader = ImageReader(['image'])
@@ -62,14 +59,14 @@ class AutoencoderApplication(BaseApplication):
             self.readers = [ImageReader(['image'])]
             self.readers[0].initialise(data_param,
                                        task_param,
-                                       data_partitioner.inference_files)
+                                       file_lists[0])
         elif self._infer_type == 'sample':
             self.readers = []
         elif self._infer_type == 'linear_interpolation':
             self.readers = [ImageReader(['feature'])]
             self.readers[0].initialise(data_param,
                                        task_param,
-                                       data_partitioner.inference_files)
+                                       [file_lists])
         # if self.is_training or self._infer_type in ('encode', 'encode-decode'):
         #    mean_var_normaliser = MeanVarNormalisationLayer(image_name='image')
         #    self.reader.add_preprocessing_layers([mean_var_normaliser])

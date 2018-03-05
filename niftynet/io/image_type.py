@@ -13,9 +13,11 @@ from abc import ABCMeta, abstractmethod
 import nibabel as nib
 import numpy as np
 import tensorflow as tf
-from six import with_metaclass
+from six import with_metaclass, string_types
 
 import niftynet.io.misc_io as misc
+from niftynet.io.misc_io import resolve_file_name
+from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 
 
 class Loadable(with_metaclass(ABCMeta, object)):
@@ -82,18 +84,13 @@ class DataFromFile(Loadable):
 
     @file_path.setter
     def file_path(self, path_array):
+        if isinstance(path_array, string_types):
+            path_array = (path_array,)
+        home_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
         try:
-            if os.path.isfile(path_array):
-                self._file_path = (os.path.abspath(path_array),)
-                return
-        except (TypeError, AttributeError):
-            pass
-        try:
-            assert all([os.path.isfile(file_name) for file_name in path_array])
-            self._file_path = \
-                tuple(os.path.abspath(file_name) for file_name in path_array)
-            return
-        except (TypeError, AssertionError, AttributeError):
+            self._file_path = tuple(resolve_file_name(path, ('.', home_folder))
+                                    for path in path_array)
+        except (TypeError, AssertionError, AttributeError, IOError):
             tf.logging.fatal(
                 "unrecognised file path format, should be a valid filename,"
                 "or a sequence of filenames %s", path_array)
@@ -437,7 +434,24 @@ class SpatialImage3D(SpatialImage2D):
     def get_data(self):
         if len(self._file_path) > 1:
             # 3D image from multiple 2d files
-            raise NotImplementedError
+            mod_list = []
+            for mod in range(len(self.file_path)):
+                mod_2d = SpatialImage2D(
+                    file_path=(self.file_path[mod],),
+                    name=(self.name[mod],),
+                    interp_order=(self.interp_order[mod],),
+                    output_pixdim=(self.output_pixdim[mod],),
+                    output_axcodes=(self.output_axcodes[mod],))
+                mod_data_5d = mod_2d.get_data()
+                mod_list.append(mod_data_5d)
+            try:
+                image_data = np.concatenate(mod_list, axis=4)
+            except ValueError:
+                tf.logging.fatal(
+                    "multi-modal data shapes not consistent -- trying to "
+                    "concat {}.".format([mod.shape for mod in mod_list]))
+                raise
+            return image_data
         # assuming len(self._file_path) == 1
         image_obj = misc.load_image(self.file_path[0])
         image_data = image_obj.get_data()
@@ -613,7 +627,9 @@ class ImageFactory(object):
             pass
         if image_type is None:
             try:
-                assert all([os.path.isfile(path) for path in file_path])
+                home_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
+                file_path = [resolve_file_name(path, ('.', home_folder))
+                             for path in file_path]
                 ndims = misc.infer_ndims_from_file(file_path[0])
                 ndims = ndims + (1 if len(file_path) > 1 else 0)
                 image_type = cls.INSTANCE_DICT.get(ndims, None)

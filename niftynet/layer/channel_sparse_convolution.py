@@ -150,10 +150,17 @@ class ChannelSparseConvLayer(niftynet.layer.convolution.ConvLayer):
         'w', shape=w_full_size,
         initializer=self.initializers['w'],
         regularizer=self.regularizers['w'])
+    assert(spatial_rank in [2,3])
+    if spatial_rank==2:
+        transpositions = [[3,2,1,0],[1,0,2,3],[3,2,0,1]]
+    else:
+        transpositions = [[4,3,2,1,0],[1,0,2,3,4],[4,3,2,0,1]]
+    
     sparse_kernel = tf.transpose(tf.boolean_mask(
                        tf.transpose(tf.boolean_mask(
-                         tf.transpose(conv_kernel,[4,3,2,1,0]),
-                         _output_mask),[1,0,2,3,4]),_input_mask),[4,3,2,0,1])
+                         tf.transpose(conv_kernel,transpositions[0]),
+                         _output_mask),transpositions[1]),_input_mask),
+                         transpositions[2])
     output_tensor = tf.nn.convolution(input=input_tensor,
                                       filter=sparse_kernel,
                                       strides=full_stride,

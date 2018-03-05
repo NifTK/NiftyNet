@@ -48,6 +48,15 @@ def __add_regression_args(parser):
         type=int,
         default=0)
 
+    parser.add_argument(
+        "--error_map",
+        metavar='',
+        help="Set whether to output the regression error maps (the maps "
+             "will be stored in $model_dir/error_maps; the error maps "
+             "can be used for window sampling).",
+        type=str2boolean,
+        default=False)
+
     from niftynet.application.regression_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser
@@ -125,6 +134,13 @@ def __add_segmentation_args(parser):
         type=str2boolean,
         default=True
     )
+
+    parser.add_argument(
+        "--evaluation_units",
+        help="Compute per-component metrics for per label or per connected "
+             "component. [foreground, label, or cc]",
+        choices = ['foreground', 'label', 'cc'],
+        default='foreground')
 
     from niftynet.application.segmentation_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
@@ -206,10 +222,25 @@ def __add_autoencoder_args(parser):
     return parser
 
 
+def __add_registration_args(parser):
+    parser.add_argument(
+        "--label_normalisation",
+        metavar='',
+        help="whether to map unique labels in the training set to "
+             "consecutive integers (the smallest label will be  mapped to 0)",
+        type=str2boolean,
+        default=False)
+
+    from niftynet.application.label_driven_registration import SUPPORTED_INPUT
+    parser = add_input_name_args(parser, SUPPORTED_INPUT)
+    return parser
+
+
 SUPPORTED_ARG_SECTIONS = {
     'REGRESSION': __add_regression_args,
     'SEGMENTATION': __add_segmentation_args,
     'CLASSIFICATION': __add_classification_args,
     'AUTOENCODER': __add_autoencoder_args,
-    'GAN': __add_gan_args
+    'GAN': __add_gan_args,
+    'REGISTRATION': __add_registration_args
 }

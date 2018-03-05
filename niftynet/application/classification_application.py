@@ -1,3 +1,12 @@
+"""
+This module defines an image-level classification application
+that maps from images to scalar, multi-class labels.
+
+This class is instantiated and initalized by the application_driver.
+"""
+
+import os
+
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
@@ -6,7 +15,8 @@ from niftynet.engine.application_factory import \
 from niftynet.engine.application_variables import \
     CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
 from niftynet.engine.sampler_resize import ResizeSampler
-from niftynet.engine.windows_aggregator_classifier import ClassifierSamplesAggregator
+from niftynet.engine.windows_aggregator_classifier import \
+    ClassifierSamplesAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
@@ -20,17 +30,28 @@ from niftynet.layer.mean_variance_normalisation import \
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
+from niftynet.evaluation.classification_evaluator import ClassificationEvaluator
 
-SUPPORTED_INPUT = set(['image', 'label', 'sampler'])
+SUPPORTED_INPUT = set(['image', 'label', 'sampler', 'inferred'])
 
 
 class ClassificationApplication(BaseApplication):
+    """This class defines an application for image-level classification
+    problems mapping from images to scalar labels.
+
+    This is the application class to be instantiated by the driver
+    and referred to in configuration files.
+
+    Although structurally similar to segmentation, this application
+    supports different samplers/aggregators (because patch-based
+    processing is not appropriate), and monitoring metrics."""
+
     REQUIRED_CONFIG_SECTION = "CLASSIFICATION"
 
-    def __init__(self, net_param, action_param, is_training):
+    def __init__(self, net_param, action_param, action):
         super(ClassificationApplication, self).__init__()
         tf.logging.info('starting classification application')
-        self.is_training = is_training
+        self.action = action
 
         self.net_param = net_param
         self.action_param = action_param
@@ -48,26 +69,27 @@ class ClassificationApplication(BaseApplication):
         self.data_param = data_param
         self.classification_param = task_param
 
+        file_lists = self.get_file_lists(data_partitioner)
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            file_lists = []
-            if self.action_param.validation_every_n > 0:
-                file_lists.append(data_partitioner.train_files)
-                file_lists.append(data_partitioner.validation_files)
-            else:
-                file_lists.append(data_partitioner.train_files)
-
             self.readers = []
             for file_list in file_lists:
-                reader = ImageReader(SUPPORTED_INPUT)
+                reader = ImageReader(['image', 'label', 'sampler'])
                 reader.initialise(data_param, task_param, file_list)
                 self.readers.append(reader)
 
-        else:  # in the inference process use image input only
+        elif self.is_inference:  
+            # in the inference process use image input only
             inference_reader = ImageReader(['image'])
-            file_list = data_partitioner.inference_files
-            inference_reader.initialise(data_param, task_param, file_list)
+            inference_reader.initialise(data_param, task_param, file_lists[0])
             self.readers = [inference_reader]
+        elif self.is_evaluation:
+            reader = ImageReader({'image', 'label', 'inferred'})
+            reader.initialise(data_param, task_param, file_lists[0])
+            self.readers = [reader]
+        else:
+            raise ValueError('Action `{}` not supported. Expected one of {}'
+                             .format(self.action, self.SUPPORTED_ACTIONS))
 
         foreground_masking_layer = None
         if self.net_param.normalise_foreground_only:
@@ -140,7 +162,7 @@ class ClassificationApplication(BaseApplication):
             batch_size=self.net_param.batch_size,
             shuffle_buffer=self.is_training,
             queue_length=self.net_param.queue_length) for reader in
-            self.readers]]
+                         self.readers]]
 
     def initialise_aggregator(self):
         self.output_decoder = ClassifierSamplesAggregator(
@@ -176,6 +198,49 @@ class ClassificationApplication(BaseApplication):
             w_regularizer=w_regularizer,
             b_regularizer=b_regularizer,
             acti_func=self.net_param.activation_function)
+
+    def add_confusion_matrix_summaries_(self,
+                                        outputs_collector,
+                                        net_out,
+                                        data_dict):
+        """ This method defines several monitoring metrics that
+        are derived from the confusion matrix """
+        labels = tf.reshape(tf.cast(data_dict['label'], tf.int64), [-1])
+        prediction = tf.reshape(tf.argmax(net_out, -1), [-1])
+        num_classes = self.classification_param.num_classes
+        conf_mat = tf.contrib.metrics.confusion_matrix(labels,
+                                                       prediction,
+                                                       num_classes)
+        conf_mat = tf.to_float(conf_mat) / float(self.net_param.batch_size)
+        if self.classification_param.num_classes == 2:
+            outputs_collector.add_to_collection(
+                var=conf_mat[1][1], name='true_positives',
+                average_over_devices=True, summary_type='scalar',
+                collection=TF_SUMMARIES)
+            outputs_collector.add_to_collection(
+                var=conf_mat[1][0], name='false_negatives',
+                average_over_devices=True, summary_type='scalar',
+                collection=TF_SUMMARIES)
+            outputs_collector.add_to_collection(
+                var=conf_mat[0][1], name='false_positives',
+                average_over_devices=True, summary_type='scalar',
+                collection=TF_SUMMARIES)
+            outputs_collector.add_to_collection(
+                var=conf_mat[0][0], name='true_negatives',
+                average_over_devices=True, summary_type='scalar',
+                collection=TF_SUMMARIES)
+        else:
+            outputs_collector.add_to_collection(
+                var=conf_mat[tf.newaxis, :, :, tf.newaxis],
+                name='confusion_matrix',
+                average_over_devices=True, summary_type='image',
+                collection=TF_SUMMARIES)
+
+        outputs_collector.add_to_collection(
+            var=tf.trace(conf_mat), name='accuracy',
+            average_over_devices=True, summary_type='scalar',
+            collection=TF_SUMMARIES)
+
 
     def connect_data_and_network(self,
                                  outputs_collector=None,
@@ -225,6 +290,9 @@ class ClassificationApplication(BaseApplication):
                 var=data_loss, name='data_loss',
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
+            self.add_confusion_matrix_summaries_(outputs_collector,
+                                                 net_out,
+                                                 data_dict)
         else:
             # converting logits into final output for
             # classification probabilities or argmax classification labels
@@ -258,3 +326,12 @@ class ClassificationApplication(BaseApplication):
             return self.output_decoder.decode_batch(
                 batch_output['window'], batch_output['location'])
         return True
+
+    def initialise_evaluator(self, eval_param):
+        self.eval_param = eval_param
+        self.evaluator = ClassificationEvaluator(self.readers[0],
+                                                 self.classification_param,
+                                                 eval_param)
+
+    def add_inferred_output(self, data_param, task_param):
+        return self.add_inferred_output_like(data_param, task_param, 'label')

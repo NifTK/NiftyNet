@@ -11,20 +11,19 @@ from niftynet.utilities.user_parameters_helper import int_array
 from niftynet.utilities.user_parameters_helper import spatialnumarray
 from niftynet.utilities.user_parameters_helper import str2boolean
 from niftynet.utilities.user_parameters_helper import str_array
+
 from niftynet.utilities.user_parameters_helper import spatial_atleast3d
+from niftynet.io.image_sets_partitioner import SUPPORTED_PHASES
+
 
 DEFAULT_INFERENCE_OUTPUT = os.path.join('.', 'output')
+DEFAULT_EVALUATION_OUTPUT = os.path.join('.', 'evaluation')
 DEFAULT_DATASET_SPLIT_FILE = os.path.join('.', 'dataset_split.csv')
 DEFAULT_HISTOGRAM_REF_FILE = os.path.join('.', 'histogram_ref_file.txt')
 DEFAULT_MODEL_DIR = None
 
 
 def add_application_args(parser):
-    # parser.add_argument(
-    #     "action",
-    #     help="train or inference action",
-    #     choices=['train', 'inference'])
-
     parser.add_argument(
         "--cuda_devices",
         metavar='',
@@ -78,6 +77,13 @@ def add_inference_args(parser):
         default=-1)
 
     parser.add_argument(
+        "--dataset_to_infer",
+        metavar='',
+        help="[Inference only] which data set to compute inference for",
+        choices = list(SUPPORTED_PHASES)+[''],
+        default='')
+
+    parser.add_argument(
         "--save_seg_dir",
         metavar='',
         help="[Inference only] Prediction directory name",  # without '/'
@@ -96,6 +102,22 @@ def add_inference_args(parser):
         help="[Inference only] Width of borders to crop for segmented patch",
         type=spatialnumarray,
         default=(0, 0, 0))
+    return parser
+
+
+def add_evaluation_args(parser):
+    parser.add_argument(
+        "--evaluations",
+        metavar='',
+        help="[Evaluation only] List of evaluations to generate",
+        default='')
+
+    parser.add_argument(
+        "--save_csv_dir",
+        metavar='',
+        help="[Evaluation only] Directory to save evaluation metrics",
+        default=DEFAULT_EVALUATION_OUTPUT)
+
     return parser
 
 
@@ -182,7 +204,7 @@ def add_network_args(parser):
         "--decay",
         help="[Training only] Set weight decay",
         type=float,
-        default=0)
+        default=0.0)
 
     parser.add_argument(
         "--reg_type",

@@ -19,18 +19,20 @@ from niftynet.utilities.user_parameters_default import add_inference_args
 from niftynet.utilities.user_parameters_default import add_input_data_args
 from niftynet.utilities.user_parameters_default import add_network_args
 from niftynet.utilities.user_parameters_default import add_training_args
+from niftynet.utilities.user_parameters_default import add_evaluation_args
 from niftynet.utilities.user_parameters_helper import has_section_in_config
 from niftynet.utilities.user_parameters_helper import standardise_section_name
 from niftynet.utilities.util_common import \
     damerau_levenshtein_distance as edit_distance
 from niftynet.utilities.versioning import get_niftynet_version_string
+from niftynet.io.misc_io import resolve_file_name
 
 try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
 
-SYSTEM_SECTIONS = {'SYSTEM', 'NETWORK', 'TRAINING', 'INFERENCE'}
+SYSTEM_SECTIONS = {'SYSTEM', 'NETWORK', 'TRAINING', 'INFERENCE', 'EVALUATION'}
 epilog_string = \
     '\n\n======\nFor more information please visit:\n' \
     'https://github.com/NifTK/NiftyNet/tree/dev/config/README.md\n' \
@@ -56,9 +58,10 @@ def run():
         epilog=textwrap.dedent(epilog_string))
     version_string = get_niftynet_version_string()
     meta_parser.add_argument("action",
-                             help="train networks or run inferences",
+                             help="train networks, run inferences "
+                                  "or evaluate inferences",
                              metavar='ACTION',
-                             choices=['train', 'inference'])
+                             choices=['train', 'inference', 'evaluation'])
     meta_parser.add_argument("-v", "--version",
                              action='version',
                              version=version_string)
@@ -81,6 +84,8 @@ def run():
 
     # Resolve relative configuration file location
     config_path = os.path.expanduser(meta_args.conf)
+    home_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
+    config_path = resolve_file_name(config_path,('.',home_folder))
     if not os.path.isfile(config_path):
         relative_conf_file = os.path.join(
             NiftyNetGlobalConfig().get_default_examples_folder(),
@@ -165,14 +170,16 @@ def run():
             continue
         input_data_args[section] = all_args[section]
         # set the output path of csv list if not exists
-        csv_path = input_data_args[section].csv_file
-        if os.path.isfile(csv_path):
+        try:
+            csv_path = resolve_file_name(input_data_args[section].csv_file,
+                                         ('.',home_folder))
+            input_data_args[section].csv_file = csv_path
             # don't search files if csv specified in config
             try:
                 delattr(input_data_args[section], 'path_to_search')
             except AttributeError:
                 pass
-        else:
+        except IOError:
             input_data_args[section].csv_file = ''
 
     # preserve ``config_file`` and ``action parameter`` from the meta_args
@@ -217,6 +224,8 @@ def _parse_arguments_by_section(parents,
         section_parser = add_training_args(section_parser)
     elif section == 'INFERENCE':
         section_parser = add_inference_args(section_parser)
+    elif section == 'EVALUATION':
+        section_parser = add_evaluation_args(section_parser)
     elif section == required_section:
         section_parser = add_customised_args(section_parser, section.upper())
     else:
@@ -249,6 +258,7 @@ def check_keywords(config):
         validation_parser = add_network_args(validation_parser)
         validation_parser = add_training_args(validation_parser)
         validation_parser = add_inference_args(validation_parser)
+        validation_parser = add_evaluation_args(validation_parser)
         validation_parser = add_input_data_args(validation_parser)
         try:
             validation_parser = add_customised_args(
