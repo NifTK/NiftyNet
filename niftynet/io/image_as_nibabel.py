@@ -1,4 +1,5 @@
-
+# -*- coding: utf-8 -*-
+""" Imports raw 2D images (.png; .jpg; .tiff; ...) as `nib.Nifti1Image`"""
 
 import numpy as np
 import nibabel as nib
@@ -17,7 +18,7 @@ try:
     import skimage.io as skio
     USE_SKIMAGE = True
     tf.logging.info('+++ Using SKIMAGE as Image Loading backend')
-except ImportError:
+except (ImportError, AssertionError):
     tf.logging.info('+++ Using PIL as Image Loading backend')
     USE_SKIMAGE = False
 
