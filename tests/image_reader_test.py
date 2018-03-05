@@ -85,6 +85,58 @@ BAD_DATA = {
 }
 BAD_TASK = ParserNamespace(image=('test',))
 
+# Test 2D Image Loader
+from PIL import Image
+
+SEG_THRESHOLD = 100
+
+# Generate 10 fake 2d grayscale and color images of size 100x100
+img_path = os.path.join(os.path.dirname(__file__), '..', 'testing_data')
+img_path = os.path.realpath(os.path.join(img_path, 'images2d'))
+if not os.path.isdir(img_path):
+    os.makedirs(img_path)
+
+# Generate fake testing data
+for i in range(10):
+    img1 = np.random.randint(0, 255, size=(100, 100, 3)).astype(np.uint8)
+    gray = np.random.randint(0, 255, size=(100, 100)).astype(np.uint8)
+    mask = ((gray > SEG_THRESHOLD) * 255).astype(np.uint8)
+    Image.fromarray(img1).save(os.path.join(img_path, 'img%d_u.png' % i))
+    Image.fromarray(gray).save(os.path.join(img_path, 'img%d_g.png' % i))
+    Image.fromarray(mask).save(os.path.join(img_path, 'img%d_m.png' % i))
+
+
+IMAGE_2D_DATA = {
+    'color_images': ParserNamespace(
+        csv_file=os.path.join('testing_data', 'images_2d_u.csv'),
+        path_to_search=os.path.join('testing_data', 'images2d'),
+        filename_contains=('_u.png',),
+        interp_order=1,
+        pixdim=None,
+        axcodes=None
+    ),
+    'gray_images': ParserNamespace(
+        csv_file=os.path.join('testing_data', 'images_2d_g.csv'),
+        path_to_search=os.path.join('testing_data', 'images2d'),
+        filename_contains=('_g.png',),
+        interp_order=1,
+        pixdim=None,
+        axcodes=None
+    ),
+    'seg_masks': ParserNamespace(
+        csv_file=os.path.join('testing_data', 'images_2d_m.csv'),
+        path_to_search=os.path.join('testing_data', 'images2d'),
+        filename_contains=('_m.png',),
+        interp_order=0,
+        pixdim=None,
+        axcodes=None
+    )
+}
+
+IMAGE_2D_TASK_COLOR = ParserNamespace(image=('color_images',))
+IMAGE_2D_TASK_GRAY = ParserNamespace(image=('gray_images',))
+IMAGE_2D_TASK_MASK = ParserNamespace(image=('seg_masks',))
+
 # default data_partitioner
 data_partitioner = ImageSetsPartitioner()
 multi_mod_list = data_partitioner.initialise(MULTI_MOD_DATA).get_file_list()
@@ -92,6 +144,7 @@ single_mod_list = data_partitioner.initialise(SINGLE_MOD_DATA).get_file_list()
 existing_list = data_partitioner.initialise(EXISTING_DATA).get_file_list()
 label_list = data_partitioner.initialise(LABEL_DATA).get_file_list()
 bad_data_list = data_partitioner.initialise(BAD_DATA).get_file_list()
+image2d_data_list = data_partitioner.initialise(IMAGE_2D_DATA).get_file_list()
 
 
 class ImageReaderTest(tf.test.TestCase):
@@ -252,6 +305,80 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertEqual(data, None)
         idx, data, interp_order = reader(shuffle=True)
         self.assertEqual(data['image'].shape, (256, 168, 256, 1, 1))
+
+    def test_images2d(self):
+        reader = ImageReader(['image'])
+
+        # COLOR IMAGES
+        reader.initialise(IMAGE_2D_DATA, IMAGE_2D_TASK_COLOR,
+                          image2d_data_list)
+
+        idx, data, interp_order = reader()
+        image = data['image']
+        # Check index
+        self.assertGreaterEqual(idx, 0)
+        self.assertLess(idx, 10)
+        # Check data type
+        self.assertGreaterEqual(image.min(), 0)
+        self.assertLessEqual(image.max(), 255)
+        self.assertEqual(image.dtype, np.uint8)
+        # Check shape
+        self.assertEqual(image.ndim, 5)
+        self.assertAllEqual(image.shape, (100, 100, 1, 1, 3))
+        self.assertEqual(interp_order['image'], (1,))
+
+        # GRAY IMAGES
+        reader.initialise(IMAGE_2D_DATA, IMAGE_2D_TASK_GRAY,
+                          image2d_data_list)
+
+        idx, data, interp_order = reader()
+        image = data['image']
+
+        # Check index
+        self.assertGreaterEqual(idx, 0)
+        self.assertLess(idx, 10)
+        # Check data type
+        self.assertGreaterEqual(image.min(), 0)
+        self.assertLessEqual(image.max(), 255)
+        self.assertEqual(image.dtype, np.uint8)
+        # Check shape
+        self.assertEqual(image.ndim, 5)
+        self.assertAllEqual(image.shape, (100, 100, 1, 1, 1))
+        self.assertEqual(interp_order['image'], (1,))
+
+        gray_idx, gray_data, gray_order = reader(idx=5)
+
+        # SEGMENTATION MASKS
+        reader.initialise(IMAGE_2D_DATA, IMAGE_2D_TASK_MASK,
+                          image2d_data_list)
+
+        idx, data, interp_order = reader()
+        image = data['image']
+
+        # Check index
+        self.assertGreaterEqual(idx, 0)
+        self.assertLess(idx, 10)
+        # Check data type
+        self.assertGreaterEqual(image.min(), 0)
+        self.assertLessEqual(image.max(), 255)
+        self.assertEqual(image.dtype, np.uint8)
+        self.assertEqual(np.unique(image).size, 2)
+        # Check shape
+        self.assertEqual(image.ndim, 5)
+        self.assertAllEqual(image.shape, (100, 100, 1, 1, 1))
+        self.assertEqual(interp_order['image'], (0,))
+
+        # Compare segmentation masks to thresholding original image
+        mask_idx, mask_data, mask_order = reader(idx=5)
+
+        gray_data = gray_data['image']
+        mask_data = mask_data['image']
+
+        self.assertEqual(gray_idx, mask_idx)
+        self.assertEqual(gray_order['image'], (1,))
+        self.assertEqual(mask_order['image'], (0,))
+        self.assertAllEqual((gray_data > SEG_THRESHOLD) * 255, mask_data)
+
 
 
 if __name__ == "__main__":
