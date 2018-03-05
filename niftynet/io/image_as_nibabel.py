@@ -13,7 +13,7 @@ try:
     # It loads images slightly faster then PIL.
     # Only use scikit-image if installed version is 0.13.0 or newer
     from niftynet.utilities.util_import import require_module
-    skio = require_module('skimage.io', (0, 13, 0))
+    SKIO = require_module('skimage.io', (0, 13, 0))
     USE_SKIMAGE = True
     tf.logging.info('+++ Using SKIMAGE as Image Loading backend')
 except (ImportError, AssertionError):
@@ -40,7 +40,7 @@ class ImageAsNibabel(nib.Nifti1Image):
     """
     def __init__(self, filename):
         if USE_SKIMAGE:
-            img = skio.imread(filename)
+            img = SKIO.imread(filename)
         else:
             img = Image.open(filename)
             img = np.asarray(img)
