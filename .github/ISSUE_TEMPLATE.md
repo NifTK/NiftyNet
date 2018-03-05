@@ -3,12 +3,12 @@ https://stackoverflow.com/questions/tagged/niftynet
 
 Read the following to decide whether to file and issue here or ask a question on [Stack Overflow](https://stackoverflow.com/questions/tagged/niftynet):
 
-¦ Issue                                    ¦ Action ¦
-¦ ---------------------------------------- ¦ ------ ¦
-¦ How do I ...?                            ¦ [Stack Overflow](https://stackoverflow.com/questions/tagged/niftynet) ¦
-¦ I got this error, why?                   ¦ [Stack Overflow](https://stackoverflow.com/questions/tagged/niftynet) ¦
-¦ I got this error and I'm sure it's a bug ¦ Delete this template and file an issue here ¦
-¦ I have an idea/request                   ¦ Delete this template and file an issue here ¦
+| Issue                                    | Action |
+| ---------------------------------------- | ------ |
+| How do I ...?                            | [Stack Overflow](https://stackoverflow.com/questions/tagged/niftynet) |
+| I got this error, why?                   | [Stack Overflow](https://stackoverflow.com/questions/tagged/niftynet) |
+| I got this error and I'm sure it's a bug | Delete this template and file an issue here |
+| I have an idea/request                   | Delete this template and file an issue here |
 
 If you post your question on [Stack Overflow](https://stackoverflow.com/questions/tagged/niftynet), please explain:
 
