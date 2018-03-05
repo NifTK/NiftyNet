@@ -23,13 +23,6 @@ IS_PYTHON2 = False if sys.version_info[0] > 2 else True
 
 
 IMAGE_LOADERS = [nib.load, image2nibabel]
-try:
-    import niftynet.io.simple_itk_as_nibabel
-
-    IMAGE_LOADERS.append(niftynet.io.simple_itk_as_nibabel.simpleitk2nibabel)
-except (ImportError, AssertionError):
-    tf.logging.warning('SimpleITK adapter failed to load, '
-                       'reducing the supported file formats.')
 
 warnings.simplefilter("ignore", UserWarning)
 

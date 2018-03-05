@@ -11,10 +11,17 @@ import tensorflow as tf
 from niftynet.utilities.util_import import require_module
 
 
+def imread_sitk(filename):
+    """SimpleITK requires two function calls to retrieve a numpy array."""
+    sitk = require_module('SimpleITK')
+    return sitk.GetArrayFromImage(sitk.ReadImage(filename))
+
+
 EXTERNAL_LOADERS = [
     dict(name='opencv', module='cv2', method='imread', kwargs=dict(flags=-1)),
     dict(name='skimage', module='skimage.io', method='imread', version='0.13'),
-    dict(name='pillow', module='PIL.Image', method='open')
+    dict(name='pillow', module='PIL.Image', method='open'),
+    dict(name='sitk', module='SimpleITK', method='ReadImage', fn=imread_sitk),
 ]
 
 AVAILABLE_LOADER = OrderedDict()
@@ -25,11 +32,13 @@ for _loader in EXTERNAL_LOADERS:
         min_ver = _loader.get('version', None)
         args = _loader.get('args', tuple())
         kwargs = _loader.get('kwargs', dict())
-        # Retrieve external function
+        # Check the external module exists and contains the required method
         external_module = require_module(_loader['module'], min_version=min_ver)
-        external_function = getattr(external_module, _loader['method'])
+        # retrieve external method
+        external_method = getattr(external_module, _loader['method'])
+        loader_function = _loader.get('fn', external_method)
         # Save loader params
-        loader_dict = dict(fn=external_function, args=args, kwargs=kwargs)
+        loader_dict = dict(fn=loader_function, args=args, kwargs=kwargs)
     except (ImportError, AssertionError, AttributeError):
         continue
 
