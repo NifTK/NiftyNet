@@ -7,12 +7,15 @@ import tensorflow as tf
 
 from PIL import Image
 
+from niftynet.utilities.util_import import check_module
+
 try:
     # Check whether scikit-image is installed in the system and use it.
     # It loads images slightly faster then PIL.
     # Only use scikit-image if installed version is 0.13.0 or newer
-    from skimage import __version__, io as skio
-    USE_SKIMAGE = tuple(map(int, __version__.split('.'))) >= (0, 13, 0)
+    check_module('skimage', (0, 13, 0))
+    import skimage.io as skio
+    USE_SKIMAGE = True
     tf.logging.info('+++ Using SKIMAGE as Image Loading backend')
 except ImportError:
     tf.logging.info('+++ Using PIL as Image Loading backend')
@@ -21,7 +24,7 @@ except ImportError:
 
 def image2nibabel(filename):
     """
-    Loads a RGB or Grayscale Image from a file and stores it in a 5D vector,
+    Loads a RGB or Grayscale Image from a file and stores it in a 5D array,
     moving the color channels to the last axis for color images.
     """
     return ImageAsNibabel(filename)
@@ -29,6 +32,13 @@ def image2nibabel(filename):
 
 class ImageAsNibabel(nib.Nifti1Image):
 
+    """
+    Wrapper class around a Nibabel file format. Loads an image using PIL
+    (or scikit-image if available) and transforms it to a `nib.Nifti1Image`.
+
+    The resulting 2D image is already translated to a 5D array, swaping the
+    channels to the last axis in the case of a color image.
+    """
     def __init__(self, filename):
         if USE_SKIMAGE:
             img = skio.imread(filename)

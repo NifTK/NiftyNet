@@ -36,7 +36,15 @@ def check_module(name, min_version=None, descriptor='Optional', mandatory=False)
 
     try:
         if min_version is not None:
-            assert the_module.__version__ >= '{}'.format(min_version)
+            if isinstance(min_version, tuple):
+                version_number = the_module.__version__.split('.')
+                min_version = tuple(int(v) for v in min_version)
+                mod_version = tuple(int(v) for v in version_number)
+            else:
+                mod_version = the_module.__version__
+                min_version = '{}'.format(min_version)
+
+            assert mod_version >= min_version
     except AttributeError:
         pass
     except AssertionError:
