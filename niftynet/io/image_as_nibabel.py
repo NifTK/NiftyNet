@@ -12,8 +12,8 @@ try:
     # Check whether scikit-image is installed in the system and use it.
     # It loads images slightly faster then PIL.
     # Only use scikit-image if installed version is 0.13.0 or newer
-    from niftynet.utilities.util_import import check_module
-    skio = check_module('skimage.io', (0, 13, 0))
+    from niftynet.utilities.util_import import require_module
+    skio = require_module('skimage.io', (0, 13, 0))
     USE_SKIMAGE = True
     tf.logging.info('+++ Using SKIMAGE as Image Loading backend')
 except (ImportError, AssertionError):

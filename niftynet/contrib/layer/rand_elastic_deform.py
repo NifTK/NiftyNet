@@ -12,9 +12,9 @@ import warnings
 import numpy as np
 
 from niftynet.layer.base_layer import RandomisedLayer
-from niftynet.utilities.util_import import check_module
+from niftynet.utilities.util_import import require_module
 
-sitk = check_module('SimpleITK')
+sitk = require_module('SimpleITK')
 
 warnings.simplefilter("ignore", UserWarning)
 warnings.simplefilter("ignore", RuntimeWarning)

@@ -6,10 +6,10 @@ Loading SimpleITK image as a Nibabel object.
 import nibabel
 import numpy as np
 
-from niftynet.utilities.util_import import check_module
+from niftynet.utilities.util_import import require_module
 
 
-sitk = check_module('SimpleITK')
+sitk = require_module('SimpleITK')
 
 
 def simpleitk2nibabel(filename):

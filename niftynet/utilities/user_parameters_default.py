@@ -308,8 +308,8 @@ def add_network_args(parser):
         default='zeros')
 
     try:
-        from niftynet.utilities.util_import import check_module
-        yaml = check_module('yaml')
+        from niftynet.utilities.util_import import require_module
+        yaml = require_module('yaml')
 
         parser.add_argument(
             "--weight_initializer_args",

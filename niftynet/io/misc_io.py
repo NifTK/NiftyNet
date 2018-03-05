@@ -15,7 +15,7 @@ import scipy.ndimage
 import tensorflow as tf
 from tensorflow.core.framework import summary_pb2
 
-from niftynet.utilities.util_import import check_module
+from niftynet.utilities.util_import import require_module
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 from niftynet.io.image_as_nibabel import image2nibabel
 
@@ -492,7 +492,7 @@ def get_latest_subfolder(parent_folder, create_new=False):
 
 
 def _image3_animated_gif(tag, ims):
-    PIL = check_module('PIL')
+    PIL = require_module('PIL')
     from PIL.GifImagePlugin import Image as GIF
 
     # x=numpy.random.randint(0,256,[10,10,10],numpy.uint8)

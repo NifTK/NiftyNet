@@ -5,10 +5,13 @@ import importlib
 import tensorflow as tf
 
 
-def check_module(name, min_version=None, descriptor='Optional', mandatory=False):
+def require_module(name, min_version=None, descriptor='Optional',
+                   mandatory=False):
     """
     Check if the module exists, and
     satisfies the minimum version requirement.
+
+    Returns the imported module if it satisfies requirements.
 
     Raises ImportError and AssertionError.
 
