@@ -86,7 +86,9 @@ class ImageAsNibabel(nib.Nifti1Image):
 
         if img.ndim == 3:  # Color Image: move color channels to last dimensions
             img = img[:, :, None, None, :]
-        else:  # Grayscale or mask, make it 5D
+        elif img.ndim == 2:  # Grayscale or mask, make it 5D
             img = img[:, :, None, None, None]
+        else:
+            raise NotImplementedError
 
         nib.Nifti1Image.__init__(self, img, affine)
