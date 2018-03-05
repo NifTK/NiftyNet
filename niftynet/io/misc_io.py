@@ -492,8 +492,7 @@ def get_latest_subfolder(parent_folder, create_new=False):
 
 
 def _image3_animated_gif(tag, ims):
-    check_module('PIL')
-    import PIL
+    PIL = check_module('PIL')
     from PIL.GifImagePlugin import Image as GIF
 
     # x=numpy.random.randint(0,256,[10,10,10],numpy.uint8)

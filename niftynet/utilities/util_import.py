@@ -53,3 +53,5 @@ def check_module(name, min_version=None, descriptor='Optional', mandatory=False)
             'please install %s-%s and retry if the application fails.',
             name, min_version, name, min_version)
         raise
+
+    return the_module

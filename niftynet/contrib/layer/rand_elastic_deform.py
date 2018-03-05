@@ -6,15 +6,15 @@
 
 
 from __future__ import absolute_import, print_function
-from niftynet.utilities.util_import import check_module
-check_module('SimpleITK')
 
 import warnings
 
 import numpy as np
-import SimpleITK as sitk
 
 from niftynet.layer.base_layer import RandomisedLayer
+from niftynet.utilities.util_import import check_module
+
+sitk = check_module('SimpleITK')
 
 warnings.simplefilter("ignore", UserWarning)
 warnings.simplefilter("ignore", RuntimeWarning)

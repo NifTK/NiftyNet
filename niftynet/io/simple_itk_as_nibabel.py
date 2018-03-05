@@ -2,13 +2,14 @@
 """
 Loading SimpleITK image as a Nibabel object.
 """
-from niftynet.utilities.util_import import check_module
 
-check_module('SimpleITK')
-
-import SimpleITK as sitk
 import nibabel
 import numpy as np
+
+from niftynet.utilities.util_import import check_module
+
+
+sitk = check_module('SimpleITK')
 
 
 def simpleitk2nibabel(filename):
