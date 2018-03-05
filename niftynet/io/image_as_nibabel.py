@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """ Imports raw 2D images (.png; .jpg; .tiff; ...) as `nib.Nifti1Image`"""
 
+from collections import OrderedDict
+
 import numpy as np
 import nibabel as nib
 
 import tensorflow as tf
-
-from collections import OrderedDict
 
 from niftynet.utilities.util_import import require_module
 
@@ -19,25 +19,25 @@ EXTERNAL_LOADERS = [
 
 AVAILABLE_LOADER = OrderedDict()
 
-for loader in EXTERNAL_LOADERS:
+for _loader in EXTERNAL_LOADERS:
     try:
         # Default params
-        min_ver = loader.get('version', None)
-        args = loader.get('args', tuple())
-        kwargs = loader.get('kwargs', dict())
+        min_ver = _loader.get('version', None)
+        args = _loader.get('args', tuple())
+        kwargs = _loader.get('kwargs', dict())
         # Retrieve external function
-        external_module = require_module(loader['module'], min_version=min_ver)
-        external_function = getattr(external_module, loader['method'])
+        external_module = require_module(_loader['module'], min_version=min_ver)
+        external_function = getattr(external_module, _loader['method'])
         # Save loader params
         loader_dict = dict(fn=external_function, args=args, kwargs=kwargs)
     except (ImportError, AssertionError, AttributeError):
         continue
 
-    AVAILABLE_LOADER[loader['name']] = loader_dict
+    AVAILABLE_LOADER[_loader['name']] = loader_dict
 
 
 tf.logging.info('+++ Available Image Loaders {}:'
-                 .format(list(AVAILABLE_LOADER.keys())))
+                .format(list(AVAILABLE_LOADER.keys())))
 
 
 def image2nibabel(filename, loader=None):
