@@ -86,7 +86,7 @@ def load_image_from_file(filename, loader=None):
     If no loader is specified, all the loaders registered with
     `auto_discover=True` (default) will be looped in priority order.
     """
-    if loader is not None and loader in SUPPORTED_LOADERS:
+    if loader and loader in SUPPORTED_LOADERS:
         if loader not in AVAILABLE_LOADERS:
             raise ValueError('Image Loader {} supported buy library not found.'
                              ' Required libraries: {}'
@@ -94,7 +94,7 @@ def load_image_from_file(filename, loader=None):
         tf.logging.debug('Using requested loader: {}'.format(loader))
         loader_params = AVAILABLE_LOADERS[loader]
         return loader_params['func'](filename)
-    elif loader is not None:
+    elif loader:
         raise ValueError('Image Loader {} not supported. Supported loaders: {}'
                          .format(loader, list(SUPPORTED_LOADERS.keys())))
 
@@ -172,8 +172,8 @@ def imread_sitk(filename):
 def imread_numpy(filename=None):
     """Fake loader to load random data with numpy"""
     fake_img = np.random.randint(255, size=(100, 100, 3)).astype(np.uint8)
-    fake_img.name = filename
-    return image2nibabel(fake_img, np.eye(4))
+    print('test case {}', filename)
+    return image2nibabel(fake_img, affine=np.eye(4))
 
 
 tf.logging.info(
@@ -184,13 +184,11 @@ tf.logging.info(
 # Auxiliary functions
 ###############################################################################
 
-def image2nibabel(img, affine=None):
+def image2nibabel(img, affine=np.eye(4)):
     """
     Loads a RGB or Grayscale Image from a file and stores it in a 5D array,
     moving the color channels to the last axis for color images.
     """
-    if affine is None:
-        affine = make_identity_affine()
     return ImageAsNibabel(img, affine)
 
 
@@ -199,30 +197,26 @@ class ImageAsNibabel(nib.Nifti1Image):
     Wrapper class around a Nibabel file format. Loads an image using PIL
     (or scikit-image if available) and transforms it to a `nib.Nifti1Image`.
 
-    The resulting 2D image is already translated to a 5D array, swaping the
+    The resulting 2D image is already translated to a 5D array, swapping the
     channels to the last axis in the case of a color image.
     """
 
     def __init__(self, img, affine):
-        if img.ndim == 3 and img.shape[2] == 3:  # Color Image
+        if img.ndim == 3 and img.shape[2] <= 4:  # Color Image
             img = img[:, :, None, None, :]
         elif img.ndim == 3:  # 3D image
             img = img[:, :, :, None, None]
         elif img.ndim == 2:  # Grayscale or mask
             img = img[:, :, None, None, None]
-        else:
-            raise NotImplementedError
 
         nib.Nifti1Image.__init__(self, img, affine)
 
 
-def make_identity_affine():
-    """Identity affine matrix, might change in the future"""
-    return np.eye(4)
-
-
 def make_affine_from_sitk(sitk_img):
     """Get affine transform in LPS"""
+    if sitk_img.GetDepth() <= 0:
+        return np.eye(4)
+
     rot = [sitk_img.TransformContinuousIndexToPhysicalPoint(p)
            for p in ((1, 0, 0),
                      (0, 1, 0),
