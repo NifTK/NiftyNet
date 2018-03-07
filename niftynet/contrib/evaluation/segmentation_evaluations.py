@@ -4,8 +4,9 @@ This module holds built-in segmentation evaluations without tests
 
 import os
 
-from scipy import ndimage
+import numpy as np
 import pandas as pd
+from scipy import ndimage
 
 from niftynet.evaluation.base_evaluations import BaseEvaluation
 from niftynet.evaluation.segmentation_evaluations import \
@@ -18,14 +19,16 @@ class com_ref(PerComponentEvaluation):
     """
     Computes the centers of mass of each component in the reference standard
     """
+
     def metric_from_binarized(self, seg, ref):
         """
         :param seg: numpy array with binary mask from inferred segmentation
         :param ref: numpy array with binary mask from reference segmentation
         :return: dict of centers of mass in each axis
         """
-        return {d: 'com_ref_'+x
+        return {d: 'com_ref_' + x
                 for d, x in zip('XYZ', ndimage.center_of_mass(ref))}
+
 
 class ErrorMapsCC(BaseEvaluation):
     """
@@ -36,6 +39,7 @@ class ErrorMapsCC(BaseEvaluation):
     fpc_map shows all seg ccs that did not overlap any ref ccs
     Note we currently arbitrarily limit image generation to binary problems
     """
+
     def layer_op(self, subject_id, data):
         analyses = self.app_param.evaluation_units.split(',')
         if 'label' not in analyses and 'foreground' not in analyses:
