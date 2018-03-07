@@ -80,7 +80,7 @@ class ImageTypeTest(tf.test.TestCase):
             interp_order=3,
             output_pixdim=((7, 1.2, 8),),
             output_axcodes=('ASL',),
-            loader=(None,))
+            loader=None)
         self.assertIsInstance(image, SpatialImage3D)
         output = image.get_data()
         self.assertAllClose(np.array([23, 317, 31, 1, 1]), output.shape)
@@ -172,7 +172,7 @@ class ImageTypeTest(tf.test.TestCase):
             interp_order=3,
             output_pixdim=(None,),
             output_axcodes=None,
-            loader=None)
+            loader=(None,))
         self.assertIsInstance(image, SpatialImage5D)
         output = image.get_data()
         self.assertAllClose(np.array([208, 256, 256, 1, 1]), output.shape)
