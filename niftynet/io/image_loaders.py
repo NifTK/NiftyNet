@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Imports raw 2D images (.png; .jpg; .tiff; ...) as `nib.Nifti1Image`"""
+"""Imports images of multiple types (2D or 3D) as `nib.Nifti1Image`"""
 
 from collections import OrderedDict
 
@@ -19,13 +19,54 @@ AVAILABLE_LOADERS = OrderedDict()
 # Utility Image Loader Funtions
 ###############################################################################
 
-def register_image_loader(name, requires, min_version=None):
-    """Function decorator to register an image loader."""
+def register_image_loader(name, requires, min_version=None, auto_discover=True):
+    """
+    Function decorator to register an image loader.
+
+    SUPPORTED_LOADERS:
+        Ordered dictionary were each entry is a function decorated with
+        `@register_image_loader`. This is, every loader that NiftyNet supports.
+        This dictionary will be dynamically filled and will be identical for every
+        NiftyNet installation.
+
+        Used only for information or error messages and logging purposes.
+
+    AVAILABLE_LOADERS:
+        A subset of the `SUPPORTED_LOADERS` that contain only the loaders that have
+        the required library/module installed on the system. Dynamically filled
+        from every function decorated with `@register_image_loader` that passes
+        the import check. This list will be different for every installation, as
+        it is platform dependant.
+
+        Inspedted and used to load images in runtime.
+
+    Adding a new loader only requires to decorate a function with
+    `@register_image_loader` and it will populate SUPPORTED_LOADERS and
+    AVAILABLE_LOADERS accordingly in runtime. The function will receive
+    a filename as its only parameter, and will return an image and its
+    `4x4` affinity matrix. Dummy example:
+
+        @register_image_loader('fake', requires='numpy', min_version='1.13', auto_discover=False)
+        def imread_numpy(filename):
+            np = require_module('numpy')
+            return np.random.rand(100, 100, 3), np.eye(4)
+
+    It registers a loader named 'fake' that requires `numpy` version >= '1.13.3'
+    to be installed. It will first dynamically load numpy library and then
+    return a `(100, 100, 3)` fake color image and an identity `(4, 4)`
+    affinity matrix. `loader = fake` in the data section of a config file will
+    select this loader and generate fake data.
+
+    When `auto_discover=True` (default) the method will be available to be
+    automatically discovered and used if `loader` is not provided in the
+    config file. This is, if no loader is specified, all the loaders
+    registered with `auto_discover=True` will be looped in priority order.
+    """
     def _wrapper(func):
         """Wrapper that registers a function if it satisfies requirements."""
         try:
             require_module(requires, min_version=min_version)
-            AVAILABLE_LOADERS[name] = func
+            AVAILABLE_LOADERS[name] = dict(func=func, auto_discover=auto_discover)
         except (ImportError, AssertionError):
             pass
         SUPPORTED_LOADERS[name] = (requires, min_version)
@@ -34,22 +75,33 @@ def register_image_loader(name, requires, min_version=None):
 
 
 def load_image_from_file(filename, loader=None):
-    """Loads an image from a given loader or checking multiple loaders."""
+    """
+    Loads an image from a given loader or checking multiple loaders.
+
+    If `loader` is specified the selected loader will be used if it exists in
+    `AVAILABLE_LOADERS` (see above).
+
+    If no loader is specified, all the loaders registered with
+    `auto_discover=True` (default) will be looped in priority order.
+    """
     if loader is not None and loader in SUPPORTED_LOADERS:
         if loader not in AVAILABLE_LOADERS:
             raise ValueError('Image Loader {} supported buy library not found.'
                              ' Required libraries: {}'
                              .format(loader, SUPPORTED_LOADERS[loader]))
         tf.logging.debug('Using requested loader: {}'.format(loader))
-        loader = AVAILABLE_LOADERS[loader]
-        return loader(filename)
+        loader_params = AVAILABLE_LOADERS[loader]
+        return loader_params['func'](filename)
     elif loader is not None:
         raise ValueError('Image Loader {} not supported. Supported loaders: {}'
                          .format(loader, list(SUPPORTED_LOADERS.keys())))
 
-    for name, loader_fn in AVAILABLE_LOADERS.items():
+    for name, loader_params in AVAILABLE_LOADERS.items():
+        if not loader_params['auto_discover']:
+            continue
+
         try:
-            img = loader_fn(filename)
+            img = loader_params['func'](filename)
             tf.logging.debug('Using Image Loader {}.'.format(name))
             return img
         except IOError:
@@ -112,6 +164,14 @@ def imread_sitk(filename):
         raise IOError(filename)
     img = sitk.GetArrayFromImage(simg)
     return image2nibabel(img, affine=make_affine_from_sitk(simg))
+
+
+@register_image_loader('fake', requires='numpy', auto_discover=False)
+def imread_numpy(filename=None):
+    """Fake loader to load random data with numpy"""
+    fake_img = np.random.randint(255, size=(100, 100, 3)).astype(np.uint8)
+    fake_img.name = filename
+    return image2nibabel(fake_img, np.eye(4))
 
 
 tf.logging.info('+++ Available Image Loaders {}:'
