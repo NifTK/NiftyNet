@@ -4,9 +4,10 @@
 from collections import OrderedDict
 
 import numpy as np
-import nibabel as nib
 
 import tensorflow as tf
+
+import nibabel as nib
 
 from niftynet.utilities.util_import import require_module
 
@@ -20,15 +21,15 @@ AVAILABLE_LOADERS = OrderedDict()
 
 def register_image_loader(name, requires, min_version=None):
     """Function decorator to register an image loader."""
-    def _wrapper(fn):
+    def _wrapper(func):
         """Wrapper that registers a function if it satisfies requirements."""
         try:
             require_module(requires, min_version=min_version)
-            AVAILABLE_LOADERS[name] = fn
+            AVAILABLE_LOADERS[name] = func
         except (ImportError, AssertionError):
             pass
         SUPPORTED_LOADERS[name] = (requires, min_version)
-        return fn
+        return func
     return _wrapper
 
 
@@ -37,8 +38,8 @@ def load_image_from_file(filename, loader=None):
     if loader is not None and loader in SUPPORTED_LOADERS:
         if loader not in AVAILABLE_LOADERS:
             raise ValueError('Image Loader {} supported buy library not found.'
-                             ' Required: {}'
-                              .format(loader, SUPPORTED_LOADERS[loader]))
+                             ' Required libraries: {}'
+                             .format(loader, SUPPORTED_LOADERS[loader]))
         tf.logging.debug('Using requested loader: {}'.format(loader))
         loader = AVAILABLE_LOADERS[loader]
         return loader(filename)
@@ -46,10 +47,10 @@ def load_image_from_file(filename, loader=None):
         raise ValueError('Image Loader {} not supported. Supported loaders: {}'
                          .format(loader, list(SUPPORTED_LOADERS.keys())))
 
-    for name, loader in AVAILABLE_LOADERS.items():
+    for name, loader_fn in AVAILABLE_LOADERS.items():
         try:
-            img = loader(filename)
-            tf.logging.debug('Iterating all loaders. Using: {}')
+            img = loader_fn(filename)
+            tf.logging.debug('Using Image Loader {}.'.format(name))
             return img
         except IOError:
             # e.g. Nibabel cannot load standard 2D images
@@ -69,7 +70,6 @@ def load_image_from_file(filename, loader=None):
 @register_image_loader('nibabel', requires='nibabel')
 def imread_nibabel(filename):
     """Default nibabel loader for NiftyNet."""
-    nib = require_module('nibabel')
     try:
         return nib.load(filename)
     except nib.filebasedimages.ImageFileError:
@@ -82,7 +82,7 @@ def imread_opencv(filename):
     cv2 = require_module('cv2')
     img = cv2.imread(filename, flags=-1)
     if img is None:
-        raise FileNotFoundError(filename)
+        raise IOError(filename)
     return image2nibabel(img[..., ::-1])
 
 
@@ -109,7 +109,7 @@ def imread_sitk(filename):
     try:
         simg = sitk.ReadImage(filename)
     except RuntimeError:
-        raise FileNotFoundError(filename)
+        raise IOError(filename)
     img = sitk.GetArrayFromImage(simg)
     return image2nibabel(img, affine=make_affine_from_sitk(simg))
 
@@ -158,16 +158,16 @@ def make_identity_affine():
     return np.eye(4)
 
 
-def make_affine_from_sitk(simpleITKImage):
+def make_affine_from_sitk(sitk_img):
     """Get affine transform in LPS"""
-    c = [simpleITKImage.TransformContinuousIndexToPhysicalPoint(p)
-         for p in ((1, 0, 0),
-                   (0, 1, 0),
-                   (0, 0, 1),
-                   (0, 0, 0))]
-    c = np.array(c)
+    rot = [sitk_img.TransformContinuousIndexToPhysicalPoint(p)
+           for p in ((1, 0, 0),
+                     (0, 1, 0),
+                     (0, 0, 1),
+                     (0, 0, 0))]
+    rot = np.array(rot)
     affine = np.concatenate([
-        np.concatenate([c[0:3] - c[3:], c[3:]], axis=0),
+        np.concatenate([rot[0:3] - rot[3:], rot[3:]], axis=0),
         [[0.], [0.], [0.], [1.]]
     ], axis=1)
     affine = np.transpose(affine)
