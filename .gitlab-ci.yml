@@ -101,10 +101,10 @@ testjob:
     - python net_segment.py evaluation -c config/default_segmentation.ini
 
     - python net_segment.py train -c config/default_multimodal_segmentation.ini --batch_size 3
-    - python net_segment.py inference -c config/default_multimodal_segmentation.ini --spatial_window_size 64,64 --batch_size 7
+    - python net_segment.py inference -c config/default_multimodal_segmentation.ini --spatial_window_size 64,64,64 --batch_size 7
 
-    - python net_classify.py train -c testing_data/test_classification.ini 
-    - python net_classify.py inference -c testing_data/test_classification.ini 
+    - python net_classify.py train -c testing_data/test_classification.ini
+    - python net_classify.py inference -c testing_data/test_classification.ini
     - python net_classify.py evaluation -c testing_data/test_classification.ini
 
     - python net_regress.py train -c config/default_monomodal_regression.ini --batch_size=1 --name toynet --max_iter 10
@@ -151,10 +151,10 @@ testjob:
     - coverage run -a --source . net_segment.py evaluation -c config/default_segmentation.ini
 
     - coverage run -a --source . net_segment.py train -c config/default_multimodal_segmentation.ini --batch_size 3
-    - coverage run -a --source . net_segment.py inference -c config/default_multimodal_segmentation.ini --spatial_window_size 64,64 --batch_size 7
+    - coverage run -a --source . net_segment.py inference -c config/default_multimodal_segmentation.ini --spatial_window_size 64,64,64 --batch_size 7
 
-    - coverage run -a --source .  net_classify.py train -c testing_data/test_classification.ini 
-    - coverage run -a --source .  net_classify.py inference -c testing_data/test_classification.ini 
+    - coverage run -a --source .  net_classify.py train -c testing_data/test_classification.ini
+    - coverage run -a --source .  net_classify.py inference -c testing_data/test_classification.ini
     - coverage run -a --source .  net_classify.py evaluation -c testing_data/test_classification.ini
 
     - coverage run -a --source . net_regress.py train -c config/default_monomodal_regression.ini --max_iter 10 --name toynet --batch_size=2
@@ -338,13 +338,13 @@ pip-installer:
     - net_run inference --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
     - net_run evaluation --app net_segment -c $niftynet_dir/config/default_segmentation.ini
 
-    - net_classify train -c extensions/testing/test_classification.ini 
+    - net_classify train -c extensions/testing/test_classification.ini
     - net_classify inference -c extensions/testing/test_classification.ini
     - net_classify evaluation -c extensions/testing/test_classification.ini
-    - net_run --app net_classify train -c extensions/testing/test_classification.ini 
-    - net_run --app net_classify inference -c extensions/testing/test_classification.ini 
+    - net_run --app net_classify train -c extensions/testing/test_classification.ini
+    - net_run --app net_classify inference -c extensions/testing/test_classification.ini
     - net_run --app net_classify evaluation -c extensions/testing/test_classification.ini
-    
+
     - net_regress train -c $niftynet_dir/config/default_monomodal_regression.ini --max_iter 10 --name toynet --batch_size=2
     - net_regress inference -c $niftynet_dir/config/default_monomodal_regression.ini --name toynet --spatial_window_size 84,84,84 --batch_size 7
     - net_regress evaluation -c $niftynet_dir/config/default_monomodal_regression.ini
@@ -412,9 +412,9 @@ pip-installer:
     - net_classify inference -c extensions/testing/test_classification.ini
     - net_classify evaluation -c extensions/testing/test_classification.ini
     - net_run --app net_classify train -c extensions/testing/test_classification.ini
-    - net_run --app net_classify inference -c extensions/testing/test_classification.ini 
+    - net_run --app net_classify inference -c extensions/testing/test_classification.ini
     - net_run --app net_classify evaluation -c extensions/testing/test_classification.ini
-    
+
     - net_regress train -c $niftynet_dir/config/default_monomodal_regression.ini --max_iter 10 --name toynet --batch_size=2
     - net_regress inference -c $niftynet_dir/config/default_monomodal_regression.ini --name toynet --spatial_window_size 84,84,84 --batch_size 7
     - net_regress evaluation -c $niftynet_dir/config/default_monomodal_regression.ini
