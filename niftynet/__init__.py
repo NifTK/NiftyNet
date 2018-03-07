@@ -36,12 +36,18 @@ try:
 except AttributeError:
     pass
 
+from niftynet.utilities.versioning import get_niftynet_version_string
+
+__version__ = get_niftynet_version_string()
+
 import os
 
 from niftynet.io.misc_io import set_logger
+
 set_logger()
 
 from niftynet.utilities.util_import import require_module
+
 require_module('blinker', descriptor='New dependency', mandatory=True)
 
 import niftynet.utilities.util_common as util
@@ -52,7 +58,6 @@ from niftynet.evaluation.evaluation_application_driver import \
 from niftynet.io.misc_io import touch_folder
 from niftynet.io.misc_io import resolve_module_dir
 from niftynet.io.misc_io import to_absolute_path
-
 
 
 def main():
@@ -126,7 +131,7 @@ def main():
         pass
 
     # start application
-    driver_table = {'train':ApplicationDriver,
+    driver_table = {'train': ApplicationDriver,
                     'inference': ApplicationDriver,
                     'evaluation': EvaluationApplicationDriver}
     app_driver = driver_table[system_param['SYSTEM'].action]()
