@@ -17,12 +17,9 @@ from tensorflow.core.framework import summary_pb2
 
 from niftynet.utilities.util_import import require_module
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
-from niftynet.io.image_as_nibabel import image2nibabel
+from niftynet.io.image_loaders import load_image_from_file
 
 IS_PYTHON2 = False if sys.version_info[0] > 2 else True
-
-
-IMAGE_LOADERS = [nib.load, image2nibabel]
 
 warnings.simplefilter("ignore", UserWarning)
 
@@ -66,23 +63,10 @@ def create_affine_pixdim(affine, pixdim):
     return np.multiply(np.divide(affine, to_divide.T), to_multiply.T)
 
 
-def load_image(filename):
+def load_image(filename, loader=None):
     # load an image from a supported filetype and return an object
     # that matches nibabel's spatialimages interface
-    for image_loader in IMAGE_LOADERS:
-        try:
-            img = image_loader(filename)
-            img = correct_image_if_necessary(img)
-            return img
-        except nib.filebasedimages.ImageFileError:
-            # if the image_loader cannot handle the type_str
-            # continue to next loader
-            pass
-        except IOError:
-            # If PIL (or opencv/scikit-image) fails to load an image
-            pass
-    tf.logging.fatal('No loader could load the file %s', filename)
-    raise IOError
+    return load_image_from_file(filename, loader=loader)
 
 
 def correct_image_if_necessary(img):

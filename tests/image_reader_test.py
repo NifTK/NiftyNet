@@ -22,7 +22,8 @@ MULTI_MOD_DATA = {
         filename_not_contains=('Parcellation',),
         interp_order=3,
         pixdim=None,
-        axcodes=None
+        axcodes=None,
+        loader=None
     ),
     'FLAIR': ParserNamespace(
         csv_file=os.path.join('testing_data', 'FLAIRreader.csv'),
@@ -31,7 +32,8 @@ MULTI_MOD_DATA = {
         filename_not_contains=('Parcellation',),
         interp_order=3,
         pixdim=None,
-        axcodes=None
+        axcodes=None,
+        loader=None
     )
 }
 MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'))
@@ -45,7 +47,8 @@ SINGLE_MOD_DATA = {
         filename_not_contains=('Parcellation',),
         interp_order=3,
         pixdim=None,
-        axcodes=None
+        axcodes=None,
+        loader=None
     )
 }
 SINGLE_MOD_TASK = ParserNamespace(image=('lesion',))
@@ -55,7 +58,8 @@ EXISTING_DATA = {
         csv_file=os.path.join('testing_data', 'lesion.csv'),
         interp_order=3,
         pixdim=None,
-        axcodes=None
+        axcodes=None,
+        loader=None
     )
 }
 
@@ -68,7 +72,8 @@ LABEL_DATA = {
         filename_not_contains=('Lesion',),
         interp_order=0,
         pixdim=(3, 3.9, 3),
-        axcodes=None
+        axcodes=None,
+        loader=None
     )
 }
 LABEL_TASK = ParserNamespace(label=('parcellation',))
@@ -80,7 +85,8 @@ BAD_DATA = {
         filename_contains=('Lesion',),
         filename_not_contains=('Parcellation',),
         pixdim=None,
-        axcodes=None
+        axcodes=None,
+        loader=None
     )
 }
 BAD_TASK = ParserNamespace(image=('test',))
@@ -113,7 +119,8 @@ IMAGE_2D_DATA = {
         filename_contains=('_u.png',),
         interp_order=1,
         pixdim=None,
-        axcodes=None
+        axcodes=None,
+        loader=None
     ),
     'gray_images': ParserNamespace(
         csv_file=os.path.join('testing_data', 'images_2d_g.csv'),
@@ -121,7 +128,8 @@ IMAGE_2D_DATA = {
         filename_contains=('_g.png',),
         interp_order=1,
         pixdim=None,
-        axcodes=None
+        axcodes=None,
+        loader=None
     ),
     'seg_masks': ParserNamespace(
         csv_file=os.path.join('testing_data', 'images_2d_m.csv'),
@@ -129,7 +137,8 @@ IMAGE_2D_DATA = {
         filename_contains=('_m.png',),
         interp_order=0,
         pixdim=None,
-        axcodes=None
+        axcodes=None,
+        loader=None
     )
 }
 

@@ -352,6 +352,7 @@ def _create_image(file_list, idx, modalities, data_param):
                              for mod in modalities)
         pixdim = tuple(data_param[mod].pixdim for mod in modalities)
         axcodes = tuple(data_param[mod].axcodes for mod in modalities)
+        loader = tuple(data_param[mod].loader for mod in modalities)
     except KeyError:
         tf.logging.fatal(
             "Specified modality names %s "
@@ -368,5 +369,6 @@ def _create_image(file_list, idx, modalities, data_param):
                         'name': modalities,
                         'interp_order': interp_order,
                         'output_pixdim': pixdim,
-                        'output_axcodes': axcodes}
+                        'output_axcodes': axcodes,
+                        'loader': loader}
     return ImageFactory.create_instance(**image_properties)

@@ -26,7 +26,8 @@ class ImageTypeTest(tf.test.TestCase):
             name='2d_image',
             interp_order=3,
             output_pixdim=None,
-            output_axcodes=None)
+            output_axcodes=None,
+            loader=None)
         self.assertIsInstance(image, SpatialImage2D)
         output = image.get_data()
         self.assertEqual(np.dtype(np.float32), image.dtype[0])
@@ -39,7 +40,8 @@ class ImageTypeTest(tf.test.TestCase):
             name='3d_image',
             interp_order=3,
             output_pixdim=None,
-            output_axcodes=None)
+            output_axcodes=None,
+            loader=None)
         self.assertIsInstance(image, SpatialImage3D)
         output = image.get_data()
         self.assertAllClose(np.array([256, 168, 256, 1, 1]), output.shape)
@@ -51,7 +53,8 @@ class ImageTypeTest(tf.test.TestCase):
             name='3d_image',
             interp_order=3,
             output_pixdim=None,
-            output_axcodes='ALS')
+            output_axcodes='ALS',
+            loader=None)
         self.assertIsInstance(image, SpatialImage3D)
         output = image.get_data()
         self.assertAllClose(np.array([168, 256, 256, 1, 1]), output.shape)
@@ -63,7 +66,8 @@ class ImageTypeTest(tf.test.TestCase):
             name='3d_image',
             interp_order=3,
             output_pixdim=(3.5, 0.9, 8),
-            output_axcodes=(None,))
+            output_axcodes=(None,),
+            loader=None)
         self.assertIsInstance(image, SpatialImage3D)
         output = image.get_data()
         self.assertAllClose(np.array([71, 278, 31, 1, 1]), output.shape)
@@ -75,7 +79,8 @@ class ImageTypeTest(tf.test.TestCase):
             name='3d_image',
             interp_order=3,
             output_pixdim=((7, 1.2, 8),),
-            output_axcodes=('ASL',))
+            output_axcodes=('ASL',),
+            loader=(None,))
         self.assertIsInstance(image, SpatialImage3D)
         output = image.get_data()
         self.assertAllClose(np.array([23, 317, 31, 1, 1]), output.shape)
@@ -87,7 +92,8 @@ class ImageTypeTest(tf.test.TestCase):
             name=('3d_image_a', '3d_image_b'),
             interp_order=(3, 3),
             output_pixdim=None,
-            output_axcodes=(None, None))
+            output_axcodes=(None, None),
+            loader=(None, None))
         self.assertIsInstance(image, SpatialImage4D)
         output = image.get_data()
         self.assertAllClose(np.array([256, 168, 256, 1, 2]), output.shape)
@@ -100,14 +106,16 @@ class ImageTypeTest(tf.test.TestCase):
                 name=('3d_image_a', '3d_image_b'),
                 interp_order=(3, 3),
                 output_pixdim=((5, 4, 10.0), (2, 4, 1.0)),
-                output_axcodes=(None, None))
+                output_axcodes=(None, None),
+                loader=(None, None))
             _ = image.get_data()
         image = ImageFactory.create_instance(
             file_path=(CASE_3D_a, CASE_3D_b),
             name=('3d_image_a', '3d_image_b'),
             interp_order=(3, 3),
             output_pixdim=(2.6, 0.9, 5),
-            output_axcodes=(None, None))
+            output_axcodes=(None, None),
+            loader=(None, None))
         self.assertIsInstance(image, SpatialImage4D)
         output = image.get_data()
         self.assertAllClose(np.array([96, 278, 50, 1, 2]), output.shape)
@@ -120,14 +128,16 @@ class ImageTypeTest(tf.test.TestCase):
                 name=('3d_image_a', '3d_image_b'),
                 interp_order=(0, 3),
                 output_pixdim=(None, None),
-                output_axcodes=(('A', 'S', 'L'), ('L', 'S', 'A')))
+                output_axcodes=(('A', 'S', 'L'), ('L', 'S', 'A')),
+                loader=(None, None))
             _ = image.get_data()
         image = ImageFactory.create_instance(
             file_path=(CASE_3D_a, CASE_3D_b),
             name=('3d_image_a', '3d_image_b'),
             interp_order=(3, 0),
             output_pixdim=(None, None),
-            output_axcodes=(('A', 'S', 'L'), ('A', 'S', 'L')))
+            output_axcodes=(('A', 'S', 'L'), ('A', 'S', 'L')),
+            loader=(None, None))
         self.assertIsInstance(image, SpatialImage4D)
         output = image.get_data()
         self.assertAllClose(np.array([168, 256, 256, 1, 2]), output.shape)
@@ -140,14 +150,16 @@ class ImageTypeTest(tf.test.TestCase):
                 name=('3d_image_a', '3d_image_b'),
                 interp_order=(3, 0),
                 output_pixdim=((8.0, 6.0, 2.0), (7.0, 6.0, 10.0)),
-                output_axcodes=(('A', 'S', 'L'), ('L', 'S', 'A')))
+                output_axcodes=(('A', 'S', 'L'), ('L', 'S', 'A')),
+                loader=(None, None))
             _ = image.get_data()
         image = ImageFactory.create_instance(
             file_path=(CASE_3D_a, CASE_3D_b),
             name=('3d_image_a', '3d_image_b'),
             interp_order=(3, 3),
             output_pixdim=((5, 2.0, 6), (5, 2.0, 6)),
-            output_axcodes='ASL')
+            output_axcodes='ASL',
+            loader=(None, None))
         self.assertIsInstance(image, SpatialImage4D)
         output = image.get_data()
         self.assertAllClose(np.array([33, 190, 42, 1, 2]), output.shape)
@@ -159,7 +171,8 @@ class ImageTypeTest(tf.test.TestCase):
             name='5d_image',
             interp_order=3,
             output_pixdim=(None,),
-            output_axcodes=None)
+            output_axcodes=None,
+            loader=None)
         self.assertIsInstance(image, SpatialImage5D)
         output = image.get_data()
         self.assertAllClose(np.array([208, 256, 256, 1, 1]), output.shape)
@@ -171,7 +184,8 @@ class ImageTypeTest(tf.test.TestCase):
             name='5d_image',
             interp_order=1,
             output_pixdim=((4, 8, 6.0),),
-            output_axcodes=(None,))
+            output_axcodes=(None,),
+            loader=None)
         self.assertIsInstance(image, SpatialImage5D)
         output = image.get_data()
         self.assertAllClose(np.array([58, 35, 49, 1, 1]), output.shape)
@@ -183,7 +197,8 @@ class ImageTypeTest(tf.test.TestCase):
             name='5d_image',
             interp_order=3,
             output_pixdim=(None,),
-            output_axcodes=(('S', 'A', 'L'),))
+            output_axcodes=(('S', 'A', 'L'),),
+            loader=None)
         self.assertIsInstance(image, SpatialImage5D)
         output = image.get_data()
         self.assertAllClose(np.array([256, 256, 208, 1, 1]), output.shape)
@@ -195,7 +210,8 @@ class ImageTypeTest(tf.test.TestCase):
             name='5d_image',
             interp_order=3,
             output_pixdim=((8, 9, 10),),
-            output_axcodes='RSA')
+            output_axcodes='RSA',
+            loader=None)
         self.assertIsInstance(image, SpatialImage5D)
         output = image.get_data()
         self.assertAllClose(np.array([29, 31, 29, 1, 1]), output.shape)

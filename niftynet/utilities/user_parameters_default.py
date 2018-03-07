@@ -14,6 +14,7 @@ from niftynet.utilities.user_parameters_helper import str_array
 
 from niftynet.utilities.user_parameters_helper import spatial_atleast3d
 from niftynet.io.image_sets_partitioner import SUPPORTED_PHASES
+from niftynet.io.image_loaders import SUPPORTED_LOADERS
 
 
 DEFAULT_INFERENCE_OUTPUT = os.path.join('.', 'output')
@@ -155,6 +156,14 @@ def add_input_data_args(parser):
         choices=[0, 1, 2, 3],
         default=3,
         help="interpolation order of the input images")
+
+    parser.add_argument(
+        "--loader",
+        type=str,
+        choices=list(SUPPORTED_LOADERS.keys()),
+        default=None,
+        help="Image loader to use from {}. Leave blank to try all loaders."
+             .format(list(SUPPORTED_LOADERS.keys())))
 
     parser.add_argument(
         "--pixdim",
