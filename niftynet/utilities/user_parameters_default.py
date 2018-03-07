@@ -14,7 +14,7 @@ from niftynet.utilities.user_parameters_helper import str_array
 
 from niftynet.utilities.user_parameters_helper import spatial_atleast3d
 from niftynet.io.image_sets_partitioner import SUPPORTED_PHASES
-from niftynet.io.image_loaders import SUPPORTED_LOADERS
+from niftynet.io.image_loader import SUPPORTED_LOADERS
 
 
 DEFAULT_INFERENCE_OUTPUT = os.path.join('.', 'output')

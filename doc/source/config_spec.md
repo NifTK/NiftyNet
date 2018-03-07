@@ -117,12 +117,13 @@ within each section.
 
 - [csv_file](#csv-file) :: `string` :: `csv_file=file_list.csv` :: `''`
 - [path_to_search](#path-to-search) :: `string` :: `path_to_search=my_data/fold_1` :: NiftyNet home folder
-- [filename_contain](#filename-contain) :: `String` or `string array` :: `filename_contain=foo, bar` :: `''`
+- [filename_contain](#filename-contain) :: `string` or `string array` :: `filename_contain=foo, bar` :: `''`
 - [filename_not_contain](#filename-not-contain) :: `string` or `string array` :: `filename_not_contain=foo` :: `''`
 - [interp_order](#interp-order) :: `integer` :: `interp_order=0` :: `3`
 - [pixdim](#pixdim) :: `float array` :: `pixdim=1.2, 1.2, 1.2` :: `''`
 - [axcodes](#axcodes) :: `string array` :: `axcodes=L, P, S` :: `''`
 - [spatial_window_size](#spatial-window-size) :: `integer array` :: `spatial_window_size=64, 64, 64` :: `''`
+- [loader](#loader) :: `string` :: `loader=simpleitk` :: `None`
 
 ###### `csv_file`
 A file path to a list of input images.  If the file exists, input image name
@@ -159,6 +160,11 @@ before fed into the network.
 ###### `spatial_window_size`
 Array of three integers specifies the input window size.
 Setting it to single slice, e.g., `spatial_window_size=64, 64, 1`, yields a 2-D slice window.
+
+###### `loader`
+Specify the loader to be used to load the files in the input section.
+Some loaders require additional Python packages.
+Default value `None` indicates trying all available loaders.
 
 This section will be used by [ImageReader](./niftynet.io.image_reader.html)
 to generate a list of [input images objects](./niftynet.io.image_type.html).

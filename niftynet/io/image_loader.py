@@ -3,17 +3,15 @@
 
 from collections import OrderedDict
 
-import numpy as np
-
-import tensorflow as tf
-
 import nibabel as nib
+import numpy as np
+import tensorflow as tf
 
 from niftynet.utilities.util_import import require_module
 
-
 SUPPORTED_LOADERS = OrderedDict()
 AVAILABLE_LOADERS = OrderedDict()
+
 
 ###############################################################################
 # Utility Image Loader Funtions
@@ -63,6 +61,7 @@ def register_image_loader(name, requires, min_version=None, auto_discover=True):
     config file. This is, if no loader is specified, all the loaders
     registered with `auto_discover=True` will be looped in priority order.
     """
+
     def _wrapper(func):
         """Wrapper that registers a function if it satisfies requirements."""
         try:
@@ -73,6 +72,7 @@ def register_image_loader(name, requires, min_version=None, auto_discover=True):
             pass
         SUPPORTED_LOADERS[name] = (requires, min_version)
         return func
+
     return _wrapper
 
 
@@ -176,8 +176,9 @@ def imread_numpy(filename=None):
     return image2nibabel(fake_img, np.eye(4))
 
 
-tf.logging.info('+++ Available Image Loaders {}:'
-                .format(list(AVAILABLE_LOADERS.keys())))
+tf.logging.info(
+    'Available Image Loaders: {}.'.format(list(AVAILABLE_LOADERS.keys())))
+
 
 ###############################################################################
 # Auxiliary functions
@@ -194,7 +195,6 @@ def image2nibabel(img, affine=None):
 
 
 class ImageAsNibabel(nib.Nifti1Image):
-
     """
     Wrapper class around a Nibabel file format. Loads an image using PIL
     (or scikit-image if available) and transforms it to a `nib.Nifti1Image`.
@@ -202,10 +202,11 @@ class ImageAsNibabel(nib.Nifti1Image):
     The resulting 2D image is already translated to a 5D array, swaping the
     channels to the last axis in the case of a color image.
     """
+
     def __init__(self, img, affine):
         if img.ndim == 3 and img.shape[2] == 3:  # Color Image
             img = img[:, :, None, None, :]
-        elif img.ndim == 3: # 3D image
+        elif img.ndim == 3:  # 3D image
             img = img[:, :, :, None, None]
         elif img.ndim == 2:  # Grayscale or mask
             img = img[:, :, None, None, None]

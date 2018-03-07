@@ -15,9 +15,9 @@ import scipy.ndimage
 import tensorflow as tf
 from tensorflow.core.framework import summary_pb2
 
-from niftynet.utilities.util_import import require_module
+from niftynet.io.image_loader import load_image_from_file
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
-from niftynet.io.image_loaders import load_image_from_file
+from niftynet.utilities.util_import import require_module
 
 IS_PYTHON2 = False if sys.version_info[0] > 2 else True
 
@@ -31,7 +31,8 @@ FILE_LOG_FORMAT = "%(levelname)s:niftynet:%(asctime)s: %(message)s"
 #### utilities for file headers
 
 def infer_ndims_from_file(file_path):
-    image_header = load_image(file_path).header
+    # todo: loader specified by the user is not used for ndims infer.
+    image_header = load_image_from_file(file_path).header
     try:
         return int(image_header['dim'][0])
     except TypeError:
@@ -61,12 +62,6 @@ def create_affine_pixdim(affine, pixdim):
     to_multiply = np.tile(
         np.expand_dims(np.append(np.asarray(pixdim), 1), axis=1), [1, 4])
     return np.multiply(np.divide(affine, to_divide.T), to_multiply.T)
-
-
-def load_image(filename, loader=None):
-    # load an image from a supported filetype and return an object
-    # that matches nibabel's spatialimages interface
-    return load_image_from_file(filename, loader=loader)
 
 
 def correct_image_if_necessary(img):
@@ -222,7 +217,7 @@ def save_data_array(filefolder,
         dst_axcodes = image_object.original_axcodes[0]
     else:
         affine = np.eye(4)
-        image_pixdim, image_axcodes = (), ()
+        image_pixdim, image_axcodes, dst_pixdim, dst_axcodes = (), (), (), ()
 
     if reshape:
         input_ndim = array_to_save.ndim
@@ -420,16 +415,20 @@ def to_absolute_path(input_path, model_root):
         pass
     return os.path.abspath(os.path.join(model_root, input_path))
 
+
 def resolve_file_name(file_name, paths):
     if os.path.isfile(file_name):
         return os.path.abspath(file_name)
     for path in paths:
-        if os.path.isfile(os.path.join(path,file_name)):
-            tf.logging.info('Resolving {} as {}'.format(file_name,os.path.join(path,file_name)))
-            return os.path.abspath(os.path.join(path,file_name))
+        if os.path.isfile(os.path.join(path, file_name)):
+            tf.logging.info('Resolving {} as {}'.format(file_name,
+                                                        os.path.join(path,
+                                                                     file_name)))
+            return os.path.abspath(os.path.join(path, file_name))
     if file_name:
         tf.logging.info('Could not resolve {}'.format(file_name))
     raise IOError
+
 
 def resolve_checkpoint(checkpoint_name):
     # For now only supports checkpoint_name where

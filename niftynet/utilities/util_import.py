@@ -19,7 +19,7 @@ def require_module(name, min_version=None, descriptor='Optional',
     :param min_version:
     :param descriptor:
     :param mandatory:
-    :return:
+    :return: the imported module
     """
 
     name = '{}'.format(name)

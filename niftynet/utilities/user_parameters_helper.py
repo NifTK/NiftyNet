@@ -127,6 +127,8 @@ def add_input_name_args(parser, supported_input):
 def spatialnumarray(string_input):
     """
     This function parses a 3-element tuple from a string input
+    if the input has less than 3 elements,
+    the last element is repeated as padding.
     """
     int_tuple = int_array(string_input)
     while len(int_tuple) < 3:
@@ -136,6 +138,10 @@ def spatialnumarray(string_input):
 
 
 def spatial_atleast3d(string_input):
+    """
+    This function parses a 3-element tuple from a string input.
+    The input will be padded with ones, if the length is less than 3.
+    """
     output_tuple = int_array(string_input)
     if len(output_tuple) < 3:
          # will pad the array with single dimensions
