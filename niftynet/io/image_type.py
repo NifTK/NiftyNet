@@ -145,7 +145,8 @@ class SpatialImage2D(DataFromFile):
                  output_pixdim,
                  output_axcodes,
                  loader):
-        DataFromFile.__init__(self, file_path=file_path, name=name, loader=loader)
+        DataFromFile.__init__(self, file_path=file_path, name=name,
+                              loader=loader)
         self._original_affine = None
         self._original_pixdim = None
         self._original_shape = None
