@@ -26,17 +26,17 @@ def register_image_loader(name, requires, min_version=None, auto_discover=True):
     SUPPORTED_LOADERS:
         Ordered dictionary were each entry is a function decorated with
         `@register_image_loader`. This is, every loader that NiftyNet supports.
-        This dictionary will be dynamically filled and will be identical for every
-        NiftyNet installation.
+        This dictionary will be dynamically filled and will be identical for
+        every NiftyNet installation.
 
         Used only for information or error messages and logging purposes.
 
     AVAILABLE_LOADERS:
-        A subset of the `SUPPORTED_LOADERS` that contain only the loaders that have
-        the required library/module installed on the system. Dynamically filled
-        from every function decorated with `@register_image_loader` that passes
-        the import check. This list will be different for every installation, as
-        it is platform dependant.
+        A subset of the `SUPPORTED_LOADERS` that contain only the loaders that
+        have the required library/module installed on the system. Dynamically
+        filled from every function decorated with `@register_image_loader` that
+        passes the import check. This list will be different for every
+        installation, as it is platform dependant.
 
         Inspedted and used to load images in runtime.
 
@@ -46,10 +46,11 @@ def register_image_loader(name, requires, min_version=None, auto_discover=True):
     a filename as its only parameter, and will return an image and its
     `4x4` affinity matrix. Dummy example:
 
-        @register_image_loader('fake', requires='numpy', min_version='1.13', auto_discover=False)
+        @register_image_loader('fake', requires='numpy', min_version='1.13.3',
+                               auto_discover=False)
         def imread_numpy(filename):
             np = require_module('numpy')
-            return np.random.rand(100, 100, 3), np.eye(4)
+            return image2nibabel(np.random.rand(100, 100, 3), np.eye(4))
 
     It registers a loader named 'fake' that requires `numpy` version >= '1.13.3'
     to be installed. It will first dynamically load numpy library and then
@@ -65,8 +66,9 @@ def register_image_loader(name, requires, min_version=None, auto_discover=True):
     def _wrapper(func):
         """Wrapper that registers a function if it satisfies requirements."""
         try:
+            auto_d = auto_discover
             require_module(requires, min_version=min_version)
-            AVAILABLE_LOADERS[name] = dict(func=func, auto_discover=auto_discover)
+            AVAILABLE_LOADERS[name] = dict(func=func, auto_discover=auto_d)
         except (ImportError, AssertionError):
             pass
         SUPPORTED_LOADERS[name] = (requires, min_version)
