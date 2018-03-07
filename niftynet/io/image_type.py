@@ -16,6 +16,7 @@ import tensorflow as tf
 from six import with_metaclass, string_types
 
 import niftynet.io.misc_io as misc
+from niftynet.io.image_loader import load_image_from_file
 from niftynet.io.misc_io import resolve_file_name
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 
@@ -43,14 +44,16 @@ class DataFromFile(Loadable):
     (are files on hard drive) and a name.
     """
 
-    def __init__(self, file_path, name='loadable_data'):
+    def __init__(self, file_path, name='loadable_data', loader=None):
         self._name = None
         self._file_path = None
+        self._dtype = None
+        self._loader = None
 
         # assigning using property setters
         self.file_path = file_path
         self.name = name
-        self._dtype = None
+        self.loader = loader
 
     @property
     def dtype(self):
@@ -63,8 +66,8 @@ class DataFromFile(Loadable):
         if not self._dtype:
             try:
                 self._dtype = tuple(
-                    misc.load_image(_file).header.get_data_dtype()
-                    for _file in self.file_path)
+                    load_image_from_file(_file, _loader).header.get_data_dtype()
+                    for _file, _loader in zip(self.file_path, self.loader))
             except (IOError, TypeError, AttributeError):
                 tf.logging.warning('could not decide image data type')
                 self._dtype = (np.dtype(np.float32),) * len(self.file_path)
@@ -95,6 +98,18 @@ class DataFromFile(Loadable):
                 "unrecognised file path format, should be a valid filename,"
                 "or a sequence of filenames %s", path_array)
             raise IOError
+
+    @property
+    def loader(self):
+        """A tuple of valid image loaders. Always returns a tuple"""
+        return self._loader
+
+    @loader.setter
+    def loader(self, loader):
+        """Makes sure loader is always a tuple of lenght = #modalities"""
+        if isinstance(loader, string_types) or loader is None:
+            loader = (loader,)
+        self._loader = loader
 
     @property
     def name(self):
@@ -133,8 +148,10 @@ class SpatialImage2D(DataFromFile):
                  name,
                  interp_order,
                  output_pixdim,
-                 output_axcodes):
-        DataFromFile.__init__(self, file_path=file_path, name=name)
+                 output_axcodes,
+                 loader):
+        DataFromFile.__init__(
+            self, file_path=file_path, name=name, loader=loader)
         self._original_affine = None
         self._original_pixdim = None
         self._original_shape = None
@@ -163,8 +180,8 @@ class SpatialImage2D(DataFromFile):
         if self._original_shape is None:
             try:
                 self._original_shape = tuple(
-                    misc.load_image(_file).header['dim'][1:6]
-                    for _file in self.file_path)
+                    load_image_from_file(_file, _loader).header['dim'][1:6]
+                    for _file, _loader in zip(self.file_path, self.loader))
             except (IOError, KeyError, AttributeError, IndexError):
                 tf.logging.fatal(
                     'unknown image shape from header %s', self.file_path)
@@ -192,8 +209,8 @@ class SpatialImage2D(DataFromFile):
         """
         self._original_pixdim = []
         self._original_affine = []
-        for file_i in self.file_path:
-            _obj = misc.load_image(file_i)
+        for file_i, loader_i in zip(self.file_path, self.loader):
+            _obj = load_image_from_file(file_i, loader_i)
             try:
                 misc.correct_image_if_necessary(_obj)
                 self._original_pixdim.append(_obj.header.get_zooms()[:3])
@@ -359,7 +376,7 @@ class SpatialImage2D(DataFromFile):
         if len(self._file_path) > 1:
             # 2D image from multiple files
             raise NotImplementedError
-        image_obj = misc.load_image(self.file_path[0])
+        image_obj = load_image_from_file(self.file_path[0], self.loader[0])
         image_data = image_obj.get_data()
         image_data = misc.expand_to_5d(image_data)
         return image_data
@@ -376,13 +393,15 @@ class SpatialImage3D(SpatialImage2D):
                  name,
                  interp_order,
                  output_pixdim,
-                 output_axcodes):
+                 output_axcodes,
+                 loader):
         SpatialImage2D.__init__(self,
                                 file_path=file_path,
                                 name=name,
                                 interp_order=interp_order,
                                 output_pixdim=output_pixdim,
-                                output_axcodes=output_axcodes)
+                                output_axcodes=output_axcodes,
+                                loader=loader)
         self._load_header()
 
     # pylint: disable=no-member
@@ -441,7 +460,8 @@ class SpatialImage3D(SpatialImage2D):
                     name=(self.name[mod],),
                     interp_order=(self.interp_order[mod],),
                     output_pixdim=(self.output_pixdim[mod],),
-                    output_axcodes=(self.output_axcodes[mod],))
+                    output_axcodes=(self.output_axcodes[mod],),
+                    loader=(self.loader[mod],))
                 mod_data_5d = mod_2d.get_data()
                 mod_list.append(mod_data_5d)
             try:
@@ -453,7 +473,7 @@ class SpatialImage3D(SpatialImage2D):
                 raise
             return image_data
         # assuming len(self._file_path) == 1
-        image_obj = misc.load_image(self.file_path[0])
+        image_obj = load_image_from_file(self.file_path[0], self.loader[0])
         image_data = image_obj.get_data()
         image_data = misc.expand_to_5d(image_data)
         if self.original_axcodes[0] and self.output_axcodes[0]:
@@ -483,13 +503,15 @@ class SpatialImage4D(SpatialImage3D):
                  name,
                  interp_order,
                  output_pixdim,
-                 output_axcodes):
+                 output_axcodes,
+                 loader):
         SpatialImage3D.__init__(self,
                                 file_path=file_path,
                                 name=name,
                                 interp_order=interp_order,
                                 output_pixdim=output_pixdim,
-                                output_axcodes=output_axcodes)
+                                output_axcodes=output_axcodes,
+                                loader=loader)
 
     def get_data(self):
         if len(self.file_path) == 1:
@@ -503,7 +525,8 @@ class SpatialImage4D(SpatialImage3D):
                                     name=(self.name[mod],),
                                     interp_order=(self.interp_order[mod],),
                                     output_pixdim=(self.output_pixdim[mod],),
-                                    output_axcodes=(self.output_axcodes[mod],))
+                                    output_axcodes=(self.output_axcodes[mod],),
+                                    loader=(self.loader[mod],))
             mod_data_5d = mod_3d.get_data()
             mod_list.append(mod_data_5d)
         try:
@@ -530,20 +553,22 @@ class SpatialImage5D(SpatialImage3D):
                  name,
                  interp_order,
                  output_pixdim,
-                 output_axcodes):
+                 output_axcodes,
+                 loader):
         SpatialImage3D.__init__(self,
                                 file_path=file_path,
                                 name=name,
                                 interp_order=interp_order,
                                 output_pixdim=output_pixdim,
-                                output_axcodes=output_axcodes)
+                                output_axcodes=output_axcodes,
+                                loader=loader)
 
     def _load_single_5d(self, idx=0):
         if len(self._file_path) > 1:
-            # 3D image from multiple 2d files
+            # 5D image from multiple 4d files
             raise NotImplementedError
         # assuming len(self._file_path) == 1
-        image_obj = misc.load_image(self.file_path[idx])
+        image_obj = load_image_from_file(self.file_path[idx], self.loader[idx])
         image_data = image_obj.get_data()
         image_data = misc.expand_to_5d(image_data)
         assert image_data.shape[3] == 1, "time sequences not supported"
@@ -564,8 +589,8 @@ class SpatialImage5D(SpatialImage3D):
         if self.original_pixdim[idx] and self.output_pixdim[idx]:
             assert len(self._original_pixdim[idx]) == \
                    len(self.output_pixdim[idx]), \
-                   "wrong pixdim format original {} output {}".format(
-                       self._original_pixdim[idx], self.output_pixdim[idx])
+                "wrong pixdim format original {} output {}".format(
+                    self._original_pixdim[idx], self.output_pixdim[idx])
             # verbose: warning when interpolate_order>1 for integers
             output_image = []
             for t_pt in range(image_data.shape[3]):

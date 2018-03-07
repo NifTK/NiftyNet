@@ -5,10 +5,13 @@ import importlib
 import tensorflow as tf
 
 
-def check_module(name, min_version=None, descriptor='Optional', mandatory=False):
+def require_module(name, min_version=None, descriptor='Optional',
+                   mandatory=False):
     """
     Check if the module exists, and
     satisfies the minimum version requirement.
+
+    Returns the imported module if it satisfies requirements.
 
     Raises ImportError and AssertionError.
 
@@ -16,7 +19,7 @@ def check_module(name, min_version=None, descriptor='Optional', mandatory=False)
     :param min_version:
     :param descriptor:
     :param mandatory:
-    :return:
+    :return: the imported module
     """
 
     name = '{}'.format(name)
@@ -36,7 +39,15 @@ def check_module(name, min_version=None, descriptor='Optional', mandatory=False)
 
     try:
         if min_version is not None:
-            assert the_module.__version__ >= '{}'.format(min_version)
+            if isinstance(min_version, tuple):
+                version_number = the_module.__version__.split('.')
+                min_version = tuple(int(v) for v in min_version)
+                mod_version = tuple(int(v) for v in version_number)
+            else:
+                mod_version = the_module.__version__
+                min_version = '{}'.format(min_version)
+
+            assert mod_version >= min_version
     except AttributeError:
         pass
     except AssertionError:
@@ -45,3 +56,5 @@ def check_module(name, min_version=None, descriptor='Optional', mandatory=False)
             'please install %s-%s and retry if the application fails.',
             name, min_version, name, min_version)
         raise
+
+    return the_module

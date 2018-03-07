@@ -11,7 +11,11 @@ from niftynet.utilities.user_parameters_helper import int_array
 from niftynet.utilities.user_parameters_helper import spatialnumarray
 from niftynet.utilities.user_parameters_helper import str2boolean
 from niftynet.utilities.user_parameters_helper import str_array
+
+from niftynet.utilities.user_parameters_helper import spatial_atleast3d
 from niftynet.io.image_sets_partitioner import SUPPORTED_PHASES
+from niftynet.io.image_loader import SUPPORTED_LOADERS
+
 
 DEFAULT_INFERENCE_OUTPUT = os.path.join('.', 'output')
 DEFAULT_EVALUATION_OUTPUT = os.path.join('.', 'evaluation')
@@ -61,7 +65,7 @@ def add_application_args(parser):
 def add_inference_args(parser):
     parser.add_argument(
         "--spatial_window_size",
-        type=int_array,
+        type=spatial_atleast3d,
         help="Specify the spatial size of the input data (ndims <= 3)",
         default=())
 
@@ -154,6 +158,14 @@ def add_input_data_args(parser):
         help="interpolation order of the input images")
 
     parser.add_argument(
+        "--loader",
+        type=str,
+        choices=list(SUPPORTED_LOADERS.keys()),
+        default=None,
+        help="Image loader to use from {}. Leave blank to try all loaders."
+             .format(list(SUPPORTED_LOADERS.keys())))
+
+    parser.add_argument(
         "--pixdim",
         type=float_array,
         default=(),
@@ -169,7 +181,7 @@ def add_input_data_args(parser):
 
     parser.add_argument(
         "--spatial_window_size",
-        type=int_array,
+        type=spatial_atleast3d,
         help="specify the spatial size of the input data (ndims <= 3)",
         default=())
     return parser
@@ -305,9 +317,9 @@ def add_network_args(parser):
         default='zeros')
 
     try:
-        from niftynet.utilities.util_import import check_module
-        check_module('yaml')
-        import yaml
+        from niftynet.utilities.util_import import require_module
+        yaml = require_module('yaml')
+
         parser.add_argument(
             "--weight_initializer_args",
             help="Pass arguments to the initializer for the weight parameters",
