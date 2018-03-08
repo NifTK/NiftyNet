@@ -59,6 +59,8 @@ SUPPORTED_NETWORK = {
         'niftynet.network.scalenet.ScaleNet',
     "holisticnet":
         'niftynet.network.holistic_net.HolisticNet',
+    "unet_2d":
+        'niftynet.network.unet_2d.UNet2D',
 
     # classification
     "resnet": 'niftynet.network.resnet.ResNet',
