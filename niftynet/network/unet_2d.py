@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 
-from niftynet.layer.base_layer import TrainableLayer
+from niftynet.layer.base_layer import TrainableLayer, Layer
 from niftynet.layer.convolution import ConvolutionalLayer as Conv
 from niftynet.layer.crop import CropLayer as Crop
 from niftynet.layer.deconvolution import DeconvolutionalLayer as DeConv
@@ -31,7 +31,8 @@ class UNet2D(BaseNet):
         BaseNet.__init__(self,
                          num_classes=num_classes,
                          name=name)
-        
+        self.n_fea = [64, 128, 256, 512, 1024]
+
         net_params = {'padding': 'VALID',
                       'with_bias': True,
                       'with_bn': False,
@@ -50,48 +51,42 @@ class UNet2D(BaseNet):
 
     def layer_op(self, images, is_training=None):
         # contracting path
-        output_1 = TwoLayerConv(64, self.conv_params)(images)
+        output_1 = TwoLayerConv(self.n_fea[0], self.conv_params)(images)
         down_1 = Pooling(func='MAX', **self.pooling_params)(output_1)
 
-        output_2 = TwoLayerConv(128, self.conv_params)(down_1)
+        output_2 = TwoLayerConv(self.n_fea[1], self.conv_params)(down_1)
         down_2 = Pooling(func='MAX', **self.pooling_params)(output_2)
 
-        output_3 = TwoLayerConv(256, self.conv_params)(down_2)
+        output_3 = TwoLayerConv(self.n_fea[2], self.conv_params)(down_2)
         down_3 = Pooling(func='MAX', **self.pooling_params)(output_3)
 
-        output_4 = TwoLayerConv(512, self.conv_params)(down_3)
+        output_4 = TwoLayerConv(self.n_fea[3], self.conv_params)(down_3)
         down_4 = Pooling(func='MAX', **self.pooling_params)(output_4)
 
-        output_5 = TwoLayerConv(1024, self.conv_params)(down_4)
+        output_5 = TwoLayerConv(self.n_fea[4], self.conv_params)(down_4)
 
         # expansive path
-        up_4 = DeConv(n_output_chns=512, **self.deconv_params)(output_5)
-        border_4 = (output_4.shape[1] - up_4.shape[1]) // 2
-        output_4 = Resize(up_4.shape[1:-1])(Crop(border=border_4)(output_4))
-        output_4 = ElementWise('CONCAT')(output_4, up_4)
-        output_4 = TwoLayerConv(512, self.conv_params)(output_4)
+        up_4 = DeConv(self.n_fea[3], **self.deconv_params)(output_5)
+        output_4 = CropConcat()(output_4, up_4)
+        output_4 = TwoLayerConv(self.n_fea[3], self.conv_params)(output_4)
 
-        up_3 = DeConv(n_output_chns=256, **self.deconv_params)(output_4)
-        border_3 = (output_3.shape[1] - up_3.shape[1]) // 2
-        output_3 = Resize(up_3.shape[1:-1])(Crop(border=border_3)(output_3))
-        output_3 = ElementWise('CONCAT')(output_3, up_3)
-        output_3 = TwoLayerConv(256, self.conv_params)(output_3)
+        up_3 = DeConv(self.n_fea[2], **self.deconv_params)(output_4)
+        output_3 = CropConcat()(output_3, up_3)
+        output_3 = TwoLayerConv(self.n_fea[2], self.conv_params)(output_3)
 
-        up_2 = DeConv(n_output_chns=128, **self.deconv_params)(output_3)
-        border_2 = (output_2.shape[1] - up_2.shape[1]) // 2
-        output_2 = Resize(up_2.shape[1:-1])(Crop(border=border_2)(output_2))
-        output_2 = ElementWise('CONCAT')(output_2, up_2)
-        output_2 = TwoLayerConv(128, self.conv_params)(output_2)
+        up_2 = DeConv(self.n_fea[1], **self.deconv_params)(output_3)
+        output_2 = CropConcat()(output_2, up_2)
+        output_2 = TwoLayerConv(self.n_fea[1], self.conv_params)(output_2)
 
-        up_1 = DeConv(n_output_chns=64, **self.deconv_params)(output_2)
-        border_1 = (output_1.shape[1] - up_1.shape[1]) // 2
-        output_1 = Resize(up_1.shape[1:-1])(Crop(border=border_1)(output_1))
-        output_1 = ElementWise('CONCAT')(output_1, up_1)
-        output_1 = TwoLayerConv(64, self.conv_params)(output_1)
+        up_1 = DeConv(self.n_fea[0], **self.deconv_params)(output_2)
+        output_1 = CropConcat()(output_1, up_1)
+        output_1 = TwoLayerConv(self.n_fea[0], self.conv_params)(output_1)
 
         # classification layer
-        classifier = Conv(n_output_chns=self.num_classes, kernel_size=1,
-                          with_bias=True, with_bn=False)
+        classifier = Conv(n_output_chns=self.num_classes,
+                          kernel_size=1,
+                          with_bias=True,
+                          with_bn=False)
         output_tensor = classifier(output_1)
         tf.logging.info('output shape %s', output_tensor.shape)
         return output_tensor
@@ -106,7 +101,7 @@ class TwoLayerConv(TrainableLayer):
     """
 
     def __init__(self, n_chns, conv_params):
-        TrainableLayer.__init__(self)
+        TrainableLayer.__init__(self, name='TwoConv')
         self.n_chns = n_chns
         self.conv_params = conv_params
 
@@ -114,3 +109,31 @@ class TwoLayerConv(TrainableLayer):
         output_tensor = Conv(self.n_chns, **self.conv_params)(input_tensor)
         output_tensor = Conv(self.n_chns, **self.conv_params)(output_tensor)
         return output_tensor
+
+
+class CropConcat(Layer):
+    """
+    This layer concatenates two input tensors,
+    the first one is cropped and resized to match the second one.
+
+    This layer assumes the same amount of differences
+    in every spatial dimension in between the two tensors.
+    """
+
+    def __init__(self, name='crop_concat'):
+        Layer.__init__(self, name=name)
+
+    def layer_op(self, tensor_a, tensor_b):
+        """
+        match the spatial shape and concatenate the tensors
+        tensor_a will be cropped and resized to match tensor_b.
+
+        :param tensor_a:
+        :param tensor_b:
+        :return: concatenated tensor
+        """
+        crop_border = (tensor_a.shape[1] - tensor_b.shape[1]) // 2
+        tensor_a = Crop(border=crop_border)(tensor_a)
+        output_spatial_shape = tensor_b.shape[1:-1]
+        tensor_a = Resize(new_size=output_spatial_shape)(tensor_a)
+        return ElementWise('CONCAT')(tensor_a, tensor_b)
