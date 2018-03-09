@@ -8,7 +8,8 @@ from niftynet.network.unet_2d import UNet2D
 
 class UNet3DTest(tf.test.TestCase):
     def test_2d_shape(self):
-        input_shape = (2, 572, 572, 3)
+        #input_shape = (2, 572, 572, 3)
+        input_shape = (2, 180, 180, 3)
         x = tf.ones(input_shape)
 
         unet_instance = UNet2D(num_classes=2)
@@ -18,10 +19,12 @@ class UNet3DTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
-            self.assertAllClose((2, 388, 388, 2), out.shape)
+            #self.assertAllClose((2, 388, 388, 2), out.shape)
+            self.assertAllClose((2, 4, 4, 2), out.shape)
 
     def test_2d_reg_shape(self):
-        input_shape = (2, 572, 572, 5)
+        #input_shape = (2, 572, 572, 5)
+        input_shape = (2, 180, 180, 5)
         x = tf.ones(input_shape)
 
         unet_instance = UNet2D(num_classes=2,
@@ -32,7 +35,8 @@ class UNet3DTest(tf.test.TestCase):
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
-            self.assertAllClose((2, 388, 388, 2), out.shape)
+            #self.assertAllClose((2, 388, 388, 2), out.shape)
+            self.assertAllClose((2, 4, 4, 2), out.shape)
 
 
 if __name__ == "__main__":
