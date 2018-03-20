@@ -10,31 +10,34 @@ import argparse
 import os
 import textwrap
 
+try:
+    import ConfigParser as configparser
+except ImportError:
+    import configparser
+
 from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.engine.application_factory import SUPPORTED_APP
+from niftynet.io.misc_io import resolve_file_name
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
-from niftynet.utilities.user_parameters_custom import add_customised_args
 from niftynet.utilities.user_parameters_custom import SUPPORTED_ARG_SECTIONS
-from niftynet.utilities.user_parameters_default import SUPPORTED_DEFAULT_SECTIONS
+from niftynet.utilities.user_parameters_custom import add_customised_args
+from niftynet.utilities.user_parameters_default import \
+    SUPPORTED_DEFAULT_SECTIONS
 from niftynet.utilities.user_parameters_default import add_input_data_args
 from niftynet.utilities.user_parameters_helper import has_section_in_config
 from niftynet.utilities.user_parameters_helper import standardise_section_name
 from niftynet.utilities.util_common import \
     damerau_levenshtein_distance as edit_distance
 from niftynet.utilities.versioning import get_niftynet_version_string
-from niftynet.io.misc_io import resolve_file_name
-
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
 
 SYSTEM_SECTIONS = {'SYSTEM', 'NETWORK', 'TRAINING', 'INFERENCE', 'EVALUATION'}
-epilog_string = \
+EPILOG_STRING = \
     '\n\n======\nFor more information please visit:\n' \
     'http://niftynet.readthedocs.io/en/dev/config_spec.html\n' \
     '======\n\n'
 
+
+# pylint: disable=protected-access
 def available_keywords():
     """
     returns a list of all possible keywords defined in the parsers
@@ -64,12 +67,14 @@ def available_keywords():
     # remove duplicates
     default_keys = list(set(default_keys))
     # remove bad names
-    default_keys = filter(bool, default_keys)
+    default_keys = [keyword for keyword in default_keys if keyword]
     return default_keys
+
 
 KEYWORDS = available_keywords()
 
 
+# pylint: disable=too-many-branches
 def run():
     """
     meta_parser is first used to find out location
@@ -86,7 +91,7 @@ def run():
     meta_parser = argparse.ArgumentParser(
         description="Launch a NiftyNet application.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=textwrap.dedent(epilog_string))
+        epilog=textwrap.dedent(EPILOG_STRING))
     version_string = get_niftynet_version_string()
     meta_parser.add_argument("action",
                              help="train networks, run inferences "
@@ -110,51 +115,56 @@ def run():
     # read configurations, to be parsed by sections
     if not meta_args.conf:
         print("\nNo configuration file has been provided, did you "
-              "forget '-c' command argument?{}".format(epilog_string))
+              "forget '-c' command argument?{}".format(EPILOG_STRING))
         raise IOError
 
     # Resolve relative configuration file location
     config_path = os.path.expanduser(meta_args.conf)
-    home_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
-    config_path = resolve_file_name(config_path,('.',home_folder))
+    niftynet_home_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
+    config_path = resolve_file_name(config_path, ('.', niftynet_home_folder))
     if not os.path.isfile(config_path):
         relative_conf_file = os.path.join(
             NiftyNetGlobalConfig().get_default_examples_folder(),
-            config_path,
-            config_path + "_config.ini")
+            config_path, config_path + "_config.ini")
         if os.path.isfile(relative_conf_file):
             config_path = relative_conf_file
             os.chdir(os.path.dirname(config_path))
         else:
             print("\nConfiguration file not found: {}.{}".format(
-                config_path, epilog_string))
+                config_path, EPILOG_STRING))
             raise IOError
 
     config = configparser.ConfigParser()
     config.read([config_path])
-    app_module = None
-    module_name = None
+
+    # infer application name from command
+    app_name = None
     try:
-        if meta_parser.prog[:-3] in SUPPORTED_APP:
-            module_name = meta_parser.prog[:-3]
-        elif meta_parser.prog in SUPPORTED_APP:
-            module_name = meta_parser.prog
-        else:
-            module_name = meta_args.application_name
-        app_module = ApplicationFactory.create(module_name)
+        parser_prog = meta_parser.prog.replace('.py', '')
+        app_name = parser_prog if parser_prog in SUPPORTED_APP \
+            else meta_args.application_name
+        assert app_name
+    except (AttributeError, AssertionError):
+        raise ValueError(
+            "\nUnknown application {}, or did you forget '-a' "
+            "command argument?{}".format(app_name, EPILOG_STRING))
+
+    # load application by name
+    app_module = ApplicationFactory.create(app_name)
+    try:
         assert app_module.REQUIRED_CONFIG_SECTION, \
             "\nREQUIRED_CONFIG_SECTION should be static variable " \
             "in {}".format(app_module)
         has_section_in_config(config, app_module.REQUIRED_CONFIG_SECTION)
+    except AttributeError:
+        raise AttributeError(
+            "Application code doesn't have REQUIRED_CONFIG_SECTION property. "
+            "{} should be an instance of "
+            "niftynet.application.base_application".format(app_module))
     except ValueError:
-        if app_module:
-            section_name = app_module.REQUIRED_CONFIG_SECTION
-            print('\n{} requires [{}] section in the config file.{}'.format(
-                module_name, section_name, epilog_string))
-        if not module_name:
-            print("\nUnknown application {}, or did you forget '-a' "
-                  "command argument?{}".format(module_name, epilog_string))
-        raise
+        raise ValueError(
+            "\n{} requires [{}] section in the config file.{}".format(
+                app_name, app_module.REQUIRED_CONFIG_SECTION, EPILOG_STRING))
 
     # check keywords in configuration file
     check_config_file_keywords(config)
@@ -179,32 +189,27 @@ def run():
 
     # split parsed results in all_args
     # into dictionaries of system_args and input_data_args
-    system_args = {}
-    input_data_args = {}
-
-    # copy system default sections to ``system_args``
+    system_args, input_data_args = {}, {}
     for section in all_args:
+
+        # copy system default sections to ``system_args``
         if section in SYSTEM_SECTIONS:
             system_args[section] = all_args[section]
-        elif section == app_module.REQUIRED_CONFIG_SECTION:
-            system_args['CUSTOM'] = all_args[section]
-            vars(system_args['CUSTOM'])['name'] = module_name
-
-    if all_args['SYSTEM'].model_dir is None:
-        all_args['SYSTEM'].model_dir = os.path.join(
-            os.path.dirname(meta_args.conf), 'model')
-
-    # copy non-default sections to ``input_data_args``
-    for section in all_args:
-        if section in SYSTEM_SECTIONS:
             continue
+
+        # copy application specific sections to ``system_args``
         if section == app_module.REQUIRED_CONFIG_SECTION:
+            system_args['CUSTOM'] = all_args[section]
+            vars(system_args['CUSTOM'])['name'] = app_name
             continue
+
+        # copy non-default sections to ``input_data_args``
         input_data_args[section] = all_args[section]
+
         # set the output path of csv list if not exists
         try:
-            csv_path = resolve_file_name(input_data_args[section].csv_file,
-                                         ('.',home_folder))
+            csv_path = resolve_file_name(
+                input_data_args[section].csv_file, ('.', niftynet_home_folder))
             input_data_args[section].csv_file = csv_path
             # don't search files if csv specified in config
             try:
@@ -215,8 +220,11 @@ def run():
             input_data_args[section].csv_file = ''
 
     # preserve ``config_file`` and ``action parameter`` from the meta_args
-    system_args['CONFIG_FILE'] = argparse.Namespace(path=meta_args.conf)
+    system_args['CONFIG_FILE'] = argparse.Namespace(path=config_path)
     system_args['SYSTEM'].action = meta_args.action
+    if not system_args['SYSTEM'].model_dir:
+        system_args['SYSTEM'].model_dir = os.path.join(
+            os.path.dirname(config_path), 'model')
     return system_args, input_data_args
 
 
@@ -301,7 +309,7 @@ def check_cmd_remaining_keywords(args_from_cmdline):
     # assertion will be triggered when keywords matched ones in custom
     # sections that are not used in the current application.
     assert not args_from_cmdline, \
-        '\nUnknown parameter: {}{}'.format(args_from_cmdline, epilog_string)
+        '\nUnknown parameter: {}{}'.format(args_from_cmdline, EPILOG_STRING)
 
 
 def _raises_bad_keys(keys, error_info='config file'):
@@ -318,5 +326,5 @@ def _raises_bad_keys(keys, error_info='config file'):
             'Unknown keywords in {3}: By "{0}" '
             'did you mean "{1}"?\n "{0}" is '
             'not a valid option.{2}'.format(
-                key, closest, epilog_string, error_info))
+                key, closest, EPILOG_STRING, error_info))
     return

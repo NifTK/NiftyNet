@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+This module defines task specific parameters
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -33,6 +36,12 @@ from niftynet.utilities.user_parameters_helper import str2boolean
 
 
 def add_customised_args(parser, task_name):
+    """
+    loading keywords arguments to parser by task name
+    :param parser:
+    :param task_name: supported choices are listed in `SUPPORTED_ARG_SECTIONS`
+    :return: parser with updated actions
+    """
     task_name = task_name.upper()
     if task_name in SUPPORTED_ARG_SECTIONS:
         return SUPPORTED_ARG_SECTIONS[task_name](parser)
@@ -41,6 +50,12 @@ def add_customised_args(parser, task_name):
 
 
 def __add_regression_args(parser):
+    """
+    keywords defined for regression tasks
+
+    :param parser:
+    :return:
+    """
     parser.add_argument(
         "--loss_border",
         metavar='',
@@ -63,6 +78,12 @@ def __add_regression_args(parser):
 
 
 def __add_segmentation_args(parser):
+    """
+    keywords defined for segmentation tasks
+
+    :param parser:
+    :return:
+    """
     parser.add_argument(
         "--num_classes",
         metavar='',
@@ -139,7 +160,7 @@ def __add_segmentation_args(parser):
         "--evaluation_units",
         help="Compute per-component metrics for per label or per connected "
              "component. [foreground, label, or cc]",
-        choices = ['foreground', 'label', 'cc'],
+        choices=['foreground', 'label', 'cc'],
         default='foreground')
 
     from niftynet.application.segmentation_application import SUPPORTED_INPUT
@@ -148,6 +169,12 @@ def __add_segmentation_args(parser):
 
 
 def __add_gan_args(parser):
+    """
+    keywords defined for GAN
+
+    :param parser:
+    :return:
+    """
     parser.add_argument(
         "--noise_size",
         metavar='',
@@ -168,6 +195,12 @@ def __add_gan_args(parser):
 
 
 def __add_classification_args(parser):
+    """
+    keywords defined for classification
+
+    :param parser:
+    :return:
+    """
     parser.add_argument(
         "--num_classes",
         metavar='',
@@ -197,6 +230,12 @@ def __add_classification_args(parser):
 
 
 def __add_autoencoder_args(parser):
+    """
+    keywords defined for autoencoder
+
+    :param parser:
+    :return:
+    """
     from niftynet.application.autoencoder_application import SUPPORTED_INFERENCE
     parser.add_argument(
         "--inference_type",
@@ -223,6 +262,12 @@ def __add_autoencoder_args(parser):
 
 
 def __add_registration_args(parser):
+    """
+    keywords defined for image registration
+
+    :param parser:
+    :return:
+    """
     parser.add_argument(
         "--label_normalisation",
         metavar='',

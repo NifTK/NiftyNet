@@ -18,12 +18,12 @@ class EntryPointTest(tf.test.TestCase):
         sys.argv = ['', 'train',
                     '-a', 'foo',
                     '-c', os.path.join('config', 'default_segmentation.ini')]
-        with self.assertRaisesRegexp(ValueError, 'module'):
+        with self.assertRaisesRegexp(ValueError, 'application'):
             net_run.main()
 
         sys.argv = ['', 'train',
                     '-c', os.path.join('config', 'default_segmentation.ini')]
-        with self.assertRaisesRegexp(ValueError, 'module'):
+        with self.assertRaisesRegexp(ValueError, 'application'):
             net_run.main()
 
     def test_wrong_config(self):
