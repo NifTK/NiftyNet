@@ -72,6 +72,7 @@ def available_keywords():
 
 
 KEYWORDS = available_keywords()
+NIFTYNET_HOME = NiftyNetGlobalConfig().get_niftynet_home_folder()
 
 
 # pylint: disable=too-many-branches
@@ -113,29 +114,9 @@ def run():
     print(version_string)
 
     # read configurations, to be parsed by sections
-    if not meta_args.conf:
-        print("\nNo configuration file has been provided, did you "
-              "forget '-c' command argument?{}".format(EPILOG_STRING))
-        raise IOError
-
-    # Resolve relative configuration file location
-    config_path = os.path.expanduser(meta_args.conf)
-    niftynet_home_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
-    config_path = resolve_file_name(config_path, ('.', niftynet_home_folder))
-    if not os.path.isfile(config_path):
-        relative_conf_file = os.path.join(
-            NiftyNetGlobalConfig().get_default_examples_folder(),
-            config_path, config_path + "_config.ini")
-        if os.path.isfile(relative_conf_file):
-            config_path = relative_conf_file
-            os.chdir(os.path.dirname(config_path))
-        else:
-            print("\nConfiguration file not found: {}.{}".format(
-                config_path, EPILOG_STRING))
-            raise IOError
-
+    config_file_name = __resolve_config_file_path(meta_args.conf)
     config = configparser.ConfigParser()
-    config.read([config_path])
+    config.read([config_file_name])
 
     # infer application name from command
     app_name = None
@@ -167,7 +148,7 @@ def run():
                 app_name, app_module.REQUIRED_CONFIG_SECTION, EPILOG_STRING))
 
     # check keywords in configuration file
-    check_config_file_keywords(config)
+    _check_config_file_keywords(config)
 
     # using configuration as default, and parsing all command line arguments
     # command line args override the configure file options
@@ -185,7 +166,7 @@ def run():
         all_args[section] = section_args
 
     # check if any args from command line not recognised
-    check_cmd_remaining_keywords(list(args_from_cmdline))
+    _check_cmd_remaining_keywords(list(args_from_cmdline))
 
     # split parsed results in all_args
     # into dictionaries of system_args and input_data_args
@@ -209,7 +190,8 @@ def run():
         # set the output path of csv list if not exists
         try:
             csv_path = resolve_file_name(
-                input_data_args[section].csv_file, ('.', niftynet_home_folder))
+                input_data_args[section].csv_file,
+                (os.path.dirname(config_file_name), NIFTYNET_HOME))
             input_data_args[section].csv_file = csv_path
             # don't search files if csv specified in config
             try:
@@ -220,11 +202,11 @@ def run():
             input_data_args[section].csv_file = ''
 
     # preserve ``config_file`` and ``action parameter`` from the meta_args
-    system_args['CONFIG_FILE'] = argparse.Namespace(path=config_path)
+    system_args['CONFIG_FILE'] = argparse.Namespace(path=config_file_name)
     system_args['SYSTEM'].action = meta_args.action
     if not system_args['SYSTEM'].model_dir:
         system_args['SYSTEM'].model_dir = os.path.join(
-            os.path.dirname(config_path), 'model')
+            os.path.dirname(config_file_name), 'model')
     return system_args, input_data_args
 
 
@@ -280,7 +262,7 @@ def _parse_arguments_by_section(parents,
     return section_args, args_from_cmd
 
 
-def check_config_file_keywords(config):
+def _check_config_file_keywords(config):
     """
     check config files, validate keywords provided against
     parsers' argument list
@@ -294,7 +276,7 @@ def check_config_file_keywords(config):
     _raises_bad_keys(config_keywords, error_info='config file')
 
 
-def check_cmd_remaining_keywords(args_from_cmdline):
+def _check_cmd_remaining_keywords(args_from_cmdline):
     """
     check list of remaining arguments from the command line input.
     Normally `args_from_cmd` should be empty; non-empty list
@@ -328,3 +310,35 @@ def _raises_bad_keys(keys, error_info='config file'):
             'not a valid option.{2}'.format(
                 key, closest, EPILOG_STRING, error_info))
     return
+
+
+def __resolve_config_file_path(cmdline_arg):
+    """
+    Search for the absolute file name of the configuration file.
+    starting from `-c` value provided by the user.
+
+    :param cmdline_arg:
+    :return:
+    """
+    if not cmdline_arg:
+        raise IOError("\nNo configuration file has been provided, did you "
+                      "forget '-c' command argument?{}".format(EPILOG_STRING))
+    # Resolve relative configuration file location
+    config_file_path = os.path.expanduser(cmdline_arg)
+    try:
+        config_file_path = resolve_file_name(
+            config_file_path, ('.', NIFTYNET_HOME))
+        if os.path.isfile(config_file_path):
+            return config_file_path
+    except IOError:
+        pass
+
+    config_file_path = os.path.join(
+        NiftyNetGlobalConfig().get_default_examples_folder(),
+        config_file_path, config_file_path + "_config.ini")
+    if os.path.isfile(config_file_path):
+        return config_file_path
+
+    # could not proceed without a configuration file
+    raise IOError("\nConfiguration file not found: {}.{}".format(
+        os.path.expanduser(cmdline_arg), EPILOG_STRING))
