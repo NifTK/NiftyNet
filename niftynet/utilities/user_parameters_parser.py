@@ -32,7 +32,7 @@ except ImportError:
 SYSTEM_SECTIONS = {'SYSTEM', 'NETWORK', 'TRAINING', 'INFERENCE', 'EVALUATION'}
 epilog_string = \
     '\n\n======\nFor more information please visit:\n' \
-    'https://github.com/NifTK/NiftyNet/tree/dev/config/README.md\n' \
+    'http://niftynet.readthedocs.io/en/dev/config_spec.html\n' \
     '======\n\n'
 
 def available_keywords():
