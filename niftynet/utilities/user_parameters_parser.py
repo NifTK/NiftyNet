@@ -198,7 +198,7 @@ def run():
                 delattr(input_data_args[section], 'path_to_search')
             except AttributeError:
                 pass
-        except IOError:
+        except (IOError, TypeError):
             input_data_args[section].csv_file = ''
 
     # preserve ``config_file`` and ``action parameter`` from the meta_args
@@ -330,8 +330,8 @@ def __resolve_config_file_path(cmdline_arg):
             config_file_path, ('.', NIFTYNET_HOME))
         if os.path.isfile(config_file_path):
             return config_file_path
-    except IOError:
-        pass
+    except (IOError, TypeError):
+        config_file_path = os.path.expanduser(cmdline_arg)
 
     config_file_path = os.path.join(
         NiftyNetGlobalConfig().get_default_examples_folder(),

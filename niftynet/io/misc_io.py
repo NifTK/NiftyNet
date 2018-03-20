@@ -426,15 +426,18 @@ def resolve_file_name(file_name, paths):
     :param paths:
     :return:
     """
-    if os.path.isfile(file_name):
-        return os.path.abspath(file_name)
-    for path in paths:
-        path_file_name = os.path.join(path, file_name)
-        if os.path.isfile(path_file_name):
-            tf.logging.info('Resolving {} as {}'.format(
-                file_name, path_file_name))
-            return os.path.abspath(path_file_name)
-    if file_name:
+    try:
+        assert file_name
+        if os.path.isfile(file_name):
+            return os.path.abspath(file_name)
+        for path in paths:
+            path_file_name = os.path.join(path, file_name)
+            if os.path.isfile(path_file_name):
+                tf.logging.info('Resolving {} as {}'.format(
+                    file_name, path_file_name))
+                return os.path.abspath(path_file_name)
+        assert False, 'Could not resolve file name'
+    except (TypeError, AssertionError, IOError):
         raise IOError('Could not resolve {}'.format(file_name))
 
 
