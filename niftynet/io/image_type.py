@@ -643,22 +643,25 @@ class ImageFactory(object):
             tf.logging.fatal('No file_path provided, '
                              'please check input sources in config file')
             raise ValueError
+
         image_type = None
+        home_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
         try:
+            file_path = resolve_file_name(file_path, ('.', home_folder))
             if os.path.isfile(file_path):
                 ndims = misc.infer_ndims_from_file(file_path)
                 image_type = cls.INSTANCE_DICT.get(ndims, None)
-        except TypeError:
+        except (TypeError, IOError):
             pass
+
         if image_type is None:
             try:
-                home_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
                 file_path = [resolve_file_name(path, ('.', home_folder))
                              for path in file_path]
                 ndims = misc.infer_ndims_from_file(file_path[0])
                 ndims = ndims + (1 if len(file_path) > 1 else 0)
                 image_type = cls.INSTANCE_DICT.get(ndims, None)
-            except AssertionError:
+            except (AssertionError, TypeError, IOError, AttributeError):
                 tf.logging.fatal('Could not load file: %s', file_path)
                 raise IOError
         if image_type is None:
