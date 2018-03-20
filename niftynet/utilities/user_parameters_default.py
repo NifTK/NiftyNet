@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+This module defines niftynet parameters and their defaults.
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -6,16 +9,15 @@ from __future__ import unicode_literals
 
 import os
 
+from niftynet.io.image_loader import SUPPORTED_LOADERS
+from niftynet.io.image_sets_partitioner import SUPPORTED_PHASES
 from niftynet.utilities.user_parameters_helper import float_array
 from niftynet.utilities.user_parameters_helper import int_array
+from niftynet.utilities.user_parameters_helper import spatial_atleast3d
 from niftynet.utilities.user_parameters_helper import spatialnumarray
 from niftynet.utilities.user_parameters_helper import str2boolean
 from niftynet.utilities.user_parameters_helper import str_array
-
-from niftynet.utilities.user_parameters_helper import spatial_atleast3d
-from niftynet.io.image_sets_partitioner import SUPPORTED_PHASES
-from niftynet.io.image_loader import SUPPORTED_LOADERS
-
+from niftynet.utilities.util_import import require_module
 
 DEFAULT_INFERENCE_OUTPUT = os.path.join('.', 'output')
 DEFAULT_EVALUATION_OUTPUT = os.path.join('.', 'evaluation')
@@ -25,6 +27,12 @@ DEFAULT_MODEL_DIR = None
 
 
 def add_application_args(parser):
+    """
+    Common keywords  for all applications
+
+    :param parser:
+    :return:
+    """
     parser.add_argument(
         "--cuda_devices",
         metavar='',
@@ -63,6 +71,12 @@ def add_application_args(parser):
 
 
 def add_inference_args(parser):
+    """
+    keywords defined for inference action
+
+    :param parser:
+    :return:
+    """
     parser.add_argument(
         "--spatial_window_size",
         type=spatial_atleast3d,
@@ -81,7 +95,7 @@ def add_inference_args(parser):
         "--dataset_to_infer",
         metavar='',
         help="[Inference only] which data set to compute inference for",
-        choices = list(SUPPORTED_PHASES)+[''],
+        choices=list(SUPPORTED_PHASES) + [''],
         default='')
 
     parser.add_argument(
@@ -107,6 +121,12 @@ def add_inference_args(parser):
 
 
 def add_evaluation_args(parser):
+    """
+    keywords defined for evaluation action
+
+    :param parser:
+    :return:
+    """
     parser.add_argument(
         "--evaluations",
         metavar='',
@@ -123,6 +143,12 @@ def add_evaluation_args(parser):
 
 
 def add_input_data_args(parser):
+    """
+    keywords defined for input data specification section
+
+    :param parser:
+    :return:
+    """
     parser.add_argument(
         "--csv_file",
         metavar='',
@@ -160,10 +186,10 @@ def add_input_data_args(parser):
     parser.add_argument(
         "--loader",
         type=str,
-        choices=list(SUPPORTED_LOADERS.keys()),
+        choices=list(SUPPORTED_LOADERS),
         default=None,
-        help="Image loader to use from {}. Leave blank to try all loaders."
-             .format(list(SUPPORTED_LOADERS.keys())))
+        help="Image loader to use from {}. "
+             "Leave blank to try all loaders.".format(list(SUPPORTED_LOADERS)))
 
     parser.add_argument(
         "--pixdim",
@@ -188,13 +214,22 @@ def add_input_data_args(parser):
 
 
 def add_network_args(parser):
+    """
+    keywords defined for network specification
+
+    :param parser:
+    :return:
+    """
+    import niftynet.layer.binary_masking
+    import niftynet.layer.activation
+    import niftynet.utilities.histogram_standardisation as hist_std_module
+
     parser.add_argument(
         "--name",
         help="Choose a net from NiftyNet/niftynet/network/ or from "
              "user specified module string",
         metavar='')
 
-    import niftynet.layer.activation
     parser.add_argument(
         "--activation_function",
         help="Specify activation function types",
@@ -245,7 +280,6 @@ def add_network_args(parser):
         type=int,
         default=5)
 
-    import niftynet.layer.binary_masking
     parser.add_argument(
         "--multimod_foreground_type",
         choices=list(
@@ -262,8 +296,6 @@ def add_network_args(parser):
         help="A reference file of histogram for intensity normalisation",
         default=DEFAULT_HISTOGRAM_REF_FILE)
 
-    # TODO add choices of normalisation types
-    import niftynet.utilities.histogram_standardisation as hist_std_module
     parser.add_argument(
         "--norm_type",
         help="Type of normalisation to perform",
@@ -277,7 +309,6 @@ def add_network_args(parser):
         type=float_array,
         default=(0.01, 0.99))
 
-    import niftynet.layer.binary_masking
     parser.add_argument(
         "--foreground_type",
         choices=list(
@@ -317,7 +348,6 @@ def add_network_args(parser):
         default='zeros')
 
     try:
-        from niftynet.utilities.util_import import require_module
         yaml = require_module('yaml')
 
         parser.add_argument(
@@ -338,6 +368,12 @@ def add_network_args(parser):
 
 
 def add_training_args(parser):
+    """
+    keywords defined for the training action
+
+    :param parser:
+    :return:
+    """
     parser.add_argument(
         "--optimiser",
         help="Choose an optimiser for computing graph gradients and applying",
@@ -465,3 +501,12 @@ def add_training_args(parser):
         default=0.)
 
     return parser
+
+
+SUPPORTED_DEFAULT_SECTIONS = {
+    'SYSTEM': add_application_args,
+    'NETWORK': add_network_args,
+    'TRAINING': add_training_args,
+    'INFERENCE': add_inference_args,
+    'EVALUATION': add_evaluation_args,
+}

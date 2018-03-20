@@ -234,8 +234,8 @@ def select_module(module_name, type_str, lookup_table):
         else:
             if '.' not in module_name:
                 err = 'Could not import {}: ' \
-                      'Incorrect module name format {}. ' \
-                      'Expected "module.object".'.format(type_str, module_name)
+                      'Incorrect module name "{}"; ' \
+                      'expected "module.object".'.format(type_str, module_name)
                 tf.logging.fatal(err)
                 raise ValueError(err)
             err = '{}: Could not import object' \

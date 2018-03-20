@@ -417,16 +417,25 @@ def to_absolute_path(input_path, model_root):
 
 
 def resolve_file_name(file_name, paths):
+    """
+    check if `file_name` exists, if not,
+    go though the list of [path + file_name for path in paths].
+    raises IOError if all options don't exist
+
+    :param file_name:
+    :param paths:
+    :return:
+    """
     if os.path.isfile(file_name):
         return os.path.abspath(file_name)
     for path in paths:
-        if os.path.isfile(os.path.join(path, file_name)):
+        path_file_name = os.path.join(path, file_name)
+        if os.path.isfile(path_file_name):
             tf.logging.info('Resolving {} as {}'.format(
-                file_name, os.path.join(path, file_name)))
-            return os.path.abspath(os.path.join(path, file_name))
+                file_name, path_file_name))
+            return os.path.abspath(path_file_name)
     if file_name:
-        tf.logging.info('Could not resolve {}'.format(file_name))
-    raise IOError
+        raise IOError('Could not resolve {}'.format(file_name))
 
 
 def resolve_checkpoint(checkpoint_name):
