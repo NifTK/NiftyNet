@@ -465,3 +465,11 @@ def add_training_args(parser):
         default=0.)
 
     return parser
+
+SUPPORTED_DEFAULT_SECTIONS = {
+    'SYSTEM': add_application_args,
+    'NETWORK': add_network_args,
+    'TRAINING': add_training_args,
+    'INFERENCE': add_inference_args,
+    'EVALUATION': add_evaluation_args,
+}
