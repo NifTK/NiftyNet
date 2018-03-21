@@ -282,12 +282,16 @@ class DenseVNet(BaseNet):
         single_channel = tf.reduce_mean(timg, axis=-1, keep_dims=True)
         img_summary = tf.minimum(255., tf.maximum(0., single_channel))
         if n_spatial_dims == 2:
-            tf.summary.image('imgseg', tf.concat([img_summary, seg_summary], 1),
-                             5, [tf.GraphKeys.SUMMARIES])
+            tf.summary.image(
+                tf.get_default_graph().unique_name('imgseg'),
+                tf.concat([img_summary, seg_summary], 1),
+                5, [tf.GraphKeys.SUMMARIES])
         elif n_spatial_dims == 3:
             # Show summaries
-            image3_axial('imgseg', tf.concat([img_summary, seg_summary], 1),
-                         5, [tf.GraphKeys.SUMMARIES])
+            image3_axial(
+                tf.get_default_graph().unique_name('imgseg'),
+                tf.concat([img_summary, seg_summary], 1),
+                5, [tf.GraphKeys.SUMMARIES])
         else:
             raise NotImplementedError(
                 'Image Summary only supports 2D and 3D images')
