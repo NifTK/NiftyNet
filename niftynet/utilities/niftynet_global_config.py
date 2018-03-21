@@ -5,6 +5,7 @@ from os import (makedirs, rename)
 from random import choice
 from string import ascii_lowercase
 from time import strftime
+import os
 import sys
 try:
     from configparser import (ConfigParser, Error)
@@ -12,6 +13,7 @@ except ImportError:
     from ConfigParser import (ConfigParser, Error)
 from niftynet.utilities.decorators import singleton
 
+CONFIG_HOME_VAR = 'niftynet_config_home'
 
 @singleton
 class NiftyNetGlobalConfig(object):
@@ -30,6 +32,11 @@ class NiftyNetGlobalConfig(object):
         self._download_server_url = \
             'https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer'
         self._config_home = join(expanduser('~'), '.niftynet')
+        try:
+            if os.environ[CONFIG_HOME_VAR]:
+                self._config_home = os.environ[CONFIG_HOME_VAR]
+        except KeyError:
+            pass
         self._config_file = join(self._config_home, 'config.ini')
 
         config_opts = NiftyNetGlobalConfig.__load_or_create(self._config_file)
