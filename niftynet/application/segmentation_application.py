@@ -287,7 +287,8 @@ class SegmentationApplication(BaseApplication):
                     learning_rate=self.action_param.lr)
             loss_func = LossFunction(
                 n_class=self.segmentation_param.num_classes,
-                loss_type=self.action_param.loss_type)
+                loss_type=self.action_param.loss_type,
+                softmax=self.segmentation_param.softmax)
             data_loss = loss_func(
                 prediction=net_out,
                 ground_truth=data_dict.get('label', None),

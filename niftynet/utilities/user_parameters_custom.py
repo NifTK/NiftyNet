@@ -106,6 +106,14 @@ def __add_segmentation_args(parser):
         type=str2boolean,
         default=False)
 
+    parser.add_argument(
+        "--softmax",
+        metavar='',
+        help="[Training only] whether to append a softmax layer to network "
+             "output before feeding it into loss function",
+        type=str2boolean,
+        default=True)
+
     # for selective sampling only
     parser.add_argument(
         "--min_sampling_ratio",
