@@ -24,6 +24,7 @@ class ImageWindowsAggregator(object):
         self._image_id = None
         self.prefix = ''
         self.output_path = os.path.abspath(output_path)
+        self.inferred_cleared = False
 
     @property
     def input_image(self):
@@ -133,3 +134,22 @@ class ImageWindowsAggregator(object):
                 ' spatial dims are: %s', window_shape, spatial_shape)
             raise NotImplementedError
         return window, location
+
+    def log_inferred(self, subject_name, filename):
+        """
+        This function writes out a csv of inferred files
+
+        :param subject_name: subject name corresponding to output
+        :param filename: filename of output
+        :return:
+        """
+        inferred_csv = os.path.join(self.output_path, 'inferred.csv')
+        if not self.inferred_cleared:
+            if os.path.exists(inferred_csv):
+                os.remove(inferred_csv)
+            self.inferred_cleared = True
+            if not os.path.exists(self.output_path):
+                os.makedirs(self.output_path)
+        with open(inferred_csv, 'a+') as csv_file:
+            filename = os.path.join(self.output_path, filename)
+            csv_file.write('{},{}\n'.format(subject_name, filename))
