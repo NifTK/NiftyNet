@@ -41,6 +41,8 @@ def download(example_ids,
         A list of identifiers for the samples to download
     :param download_if_already_existing:
         If true, data will always be downloaded
+    :param verbose:
+        If true, download info will be printed
     """
 
     global_config = NiftyNetGlobalConfig()

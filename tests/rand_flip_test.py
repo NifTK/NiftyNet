@@ -8,8 +8,6 @@ import tensorflow as tf
 
 from niftynet.layer.rand_flip import RandomFlipLayer
 
-os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
-
 
 class RandFlipTest(tf.test.TestCase):
     def test_1d_flip(self):

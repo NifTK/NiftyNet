@@ -121,6 +121,7 @@ testjob:
     - python net_autoencoder.py inference -c config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
     - python net_autoencoder.py inference -c config/vae_config.ini --inference_type encode-decode
 
+    - python -m tests.test_model_zoo
     - python -m unittest discover -s "tests" -p "*_test.py"
 
     # deactivate virtual environment
@@ -175,6 +176,7 @@ testjob:
 
     - coverage run -a --source . net_download.py dense_vnet_abdominal_ct_model_zoo -r
 
+    - coverage run -a --source . -m tests.test_model_zoo
     - coverage run -a --source . -m unittest discover -s "tests" -p "*_test.py"
     - coverage report -m
     - echo 'finished test'

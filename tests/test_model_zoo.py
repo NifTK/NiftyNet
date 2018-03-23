@@ -4,8 +4,6 @@ from __future__ import division
 from __future__ import print_function
 
 import os, sys, unittest
-
-# for gift-adelie
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import tensorflow as tf
@@ -18,8 +16,12 @@ from niftynet.application.base_application import SingletonApplication
 MODEL_HOME = NiftyNetGlobalConfig().get_niftynet_home_folder()
 
 def net_run_with_sys_argv(argv):
+    # for gift-adelie
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
     SingletonApplication.clear()
     cache = sys.argv
+    argv.extend(['--cuda_devices', '0'])
     sys.argv = argv
     niftynet_main()
     sys.argv = cache
