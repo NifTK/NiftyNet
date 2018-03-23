@@ -38,12 +38,16 @@ def infer_output_dims(input_dims, strides, kernel_sizes, padding):
     """
     assert len(input_dims) == len(strides)
     assert len(input_dims) == len(kernel_sizes)
-    if padding == 'VALID':
-        output_dims = [
-            dim * strides[i] + max(kernel_sizes[i] - strides[i], 0)
-            for (i, dim) in enumerate(input_dims)]
-    else:
-        output_dims = [dim * strides[i] for (i, dim) in enumerate(input_dims)]
+    output_dims = []
+    for (i, dim) in enumerate(input_dims):
+        if dim is None:
+            output_dims.append(None)
+            continue
+        if padding == 'VALID':
+            output_dims.append(
+                dim * strides[i] + max(kernel_sizes[i] - strides[i], 0))
+        else:
+            output_dims.append(dim * strides[i])
     return output_dims
 
 
@@ -105,7 +109,15 @@ class DeconvLayer(TrainableLayer):
             raise ValueError(
                 "Only 2D and 3D spatial deconvolutions are supported")
 
-        output_dims = infer_output_dims(input_shape[1:-1],
+        spatial_shape = []
+        for (i, dim) in enumerate(input_shape[:-1]):
+            if i == 0:
+                continue
+            if dim is None:
+                spatial_shape.append(tf.shape(input_tensor)[i])
+            else:
+                spatial_shape.append(dim)
+        output_dims = infer_output_dims(spatial_shape,
                                         stride_all_dim,
                                         kernel_size_all_dim,
                                         self.padding)
