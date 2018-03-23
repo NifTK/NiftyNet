@@ -5,13 +5,16 @@ from __future__ import print_function
 
 import os, sys, unittest
 
+# for gift-adelie
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
 import tensorflow as tf
 
 from niftynet.utilities.download import download
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 from niftynet import main as niftynet_main
 from niftynet.application.base_application import SingletonApplication
-    
+
 MODEL_HOME = NiftyNetGlobalConfig().get_niftynet_home_folder()
 
 def net_run_with_sys_argv(argv):
@@ -33,12 +36,12 @@ class DenseVNetAbdominalCTModelZooTest(tf.test.TestCase):
     def setUp(self):
         tf.test.TestCase.setUp(self)
         download(self.id, True)
-        
+
     def test_train(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'train', '--max_iter', '2'])
         checkpoint = os.path.join(MODEL_HOME, 'models', self.location, 'models', 'model.ckpt-2.index')
         self.assertTrue(os.path.exists(checkpoint), 'Expected {} to exist.'.format(checkpoint))
-        
+
     def test_inference(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'inference'])
         output = os.path.join(MODEL_HOME, 'models', self.location, self.expected_output)
@@ -56,7 +59,7 @@ class UltrasoundSimulatorGanModelZooTest(tf.test.TestCase):
     def setUp(self):
         tf.test.TestCase.setUp(self)
         download(self.id, True)
-        
+
     def test_inference(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'inference'])
         output = os.path.join(MODEL_HOME, 'models', self.location, self.expected_output)
@@ -74,7 +77,7 @@ class Highres3dnetBrainParcellationModelZooTest(tf.test.TestCase):
     def setUp(self):
         tf.test.TestCase.setUp(self)
         download(self.id, True)
-        
+
     def test_inference(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'inference'])
         output = os.path.join(MODEL_HOME, 'models', self.location, self.expected_output)
@@ -96,7 +99,7 @@ class AnisotropicNetsBratsChallengeModelZooTest(tf.test.TestCase):
     def setUp(self):
         tf.test.TestCase.setUp(self)
         download(self.id, True)
-        
+
     def test_inference(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.configA, 'inference'])
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.configC, 'inference'])
@@ -119,12 +122,12 @@ class MRCTRegressionModelZooTest(tf.test.TestCase):
     def setUp(self):
         tf.test.TestCase.setUp(self)
         download(self.id, True)
-        
+
     def test_train(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'train', '--starting_iter','0','--max_iter', '2'])
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'inference', '--inference_iter','2','--error_map','True'])
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'train', '--starting_iter','2','--max_iter','4'])
-        
+
         checkpoint = os.path.join(MODEL_HOME, 'models', self.location, 'models', 'model.ckpt-2.index')
         self.assertTrue(os.path.exists(checkpoint), 'Expected {} to exist.'.format(checkpoint))
         checkpoint = os.path.join(MODEL_HOME, 'models', self.location, 'models', 'model.ckpt-4.index')
@@ -132,7 +135,7 @@ class MRCTRegressionModelZooTest(tf.test.TestCase):
         for eo in self.expected_output_train:
             output = os.path.join(MODEL_HOME, 'models', self.location, eo)
             self.assertTrue(os.path.exists(output), 'Expected {} to exist.'.format(output))
-            
+
 
 @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class AutoContextMRCTModelZooTest(tf.test.TestCase):
@@ -146,17 +149,17 @@ class AutoContextMRCTModelZooTest(tf.test.TestCase):
     expected_output_inference = [
         os.path.join('autocontext_output','CHA_niftynet_out.nii.gz'),
         ]
-        
+
 
     def setUp(self):
         tf.test.TestCase.setUp(self)
         download(self.id, True)
-        
+
     def test_train(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'train', '--starting_iter','0','--max_iter', '2'])
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'inference', '--inference_iter','2'])
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'train', '--starting_iter','2','--max_iter','4'])
-        
+
         checkpoint = os.path.join(MODEL_HOME, 'models', self.location, 'models', 'model.ckpt-2.index')
         self.assertTrue(os.path.exists(checkpoint))
         checkpoint = os.path.join(MODEL_HOME, 'models', self.location, 'models', 'model.ckpt-4.index')
