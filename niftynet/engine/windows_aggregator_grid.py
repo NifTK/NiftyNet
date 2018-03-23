@@ -36,7 +36,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         self.window_border = window_border
         self.output_interp_order = interp_order
         self.prefix = prefix
-        
+
     def decode_batch(self, window, location):
         n_samples = location.shape[0]
         window, location = self.crop_batch(window, location, self.window_border)
