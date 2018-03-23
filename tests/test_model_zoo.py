@@ -39,12 +39,16 @@ class DenseVNetAbdominalCTModelZooTest(tf.test.TestCase):
         tf.test.TestCase.setUp(self)
         download(self.id, download_if_already_existing=True, verbose=False)
 
-    def test_train(self):
+    def test_train_infer(self):
+        self._train()
+        self._infer()
+
+    def _train(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'train', '--max_iter', '2'])
         checkpoint = os.path.join(MODEL_HOME, 'models', self.location, 'models', 'model.ckpt-2.index')
         self.assertTrue(os.path.exists(checkpoint), 'Expected {} to exist.'.format(checkpoint))
 
-    def test_inference(self):
+    def _infer(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'inference'])
         output = os.path.join(MODEL_HOME, 'models', self.location, self.expected_output)
         self.assertTrue(os.path.exists(output), 'Expected {} to exist.'.format(output))
@@ -157,7 +161,11 @@ class AutoContextMRCTModelZooTest(tf.test.TestCase):
         tf.test.TestCase.setUp(self)
         download(self.id, download_if_already_existing=True, verbose=False)
 
-    def test_train(self):
+    def test_train_infer(self):
+        self._train()
+        self._infer()
+
+    def _train(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'train', '--starting_iter','0','--max_iter', '2'])
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'inference', '--inference_iter','2'])
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'train', '--starting_iter','2','--max_iter','4'])
@@ -170,7 +178,7 @@ class AutoContextMRCTModelZooTest(tf.test.TestCase):
             output = os.path.join(MODEL_HOME, 'models', self.location, eo)
             self.assertTrue(os.path.exists(output), 'Expected {} to exist.'.format(output))
 
-    def test_inference(self):
+    def _infer(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'inference', '--inference_iter','-1'])
         for eo in self.expected_output_inference:
             output = os.path.join(MODEL_HOME, 'models', self.location, eo)
