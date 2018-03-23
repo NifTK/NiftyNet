@@ -45,7 +45,7 @@ def download(example_ids,
 
     global_config = NiftyNetGlobalConfig()
 
-    config_store = ConfigStore(global_config)
+    config_store = ConfigStore(global_config, verbose=verbose)
 
     # If a single id is specified, convert to a list
     example_ids = [example_ids] \
@@ -111,7 +111,7 @@ def download_file(url, download_path):
     move(downloaded_file, destination_path)
 
 
-def download_and_decompress(url, download_path):
+def download_and_decompress(url, download_path, verbose=True):
     """
     Download an archive from a resource URL and
     decompresses/unarchives to the given location
@@ -132,7 +132,10 @@ def download_and_decompress(url, download_path):
     downloaded_file = os.path.join(tempfile.gettempdir(), filename)
 
     # Download the file
-    urlretrieve(url, downloaded_file, reporthook=progress_bar_wrapper)
+    if verbose:
+        urlretrieve(url, downloaded_file, reporthook=progress_bar_wrapper)
+    else:
+        urlretrieve(url, downloaded_file)
 
     # Decompress and extract all files to the specified local path
     tar = tarfile.open(downloaded_file, "r")
@@ -149,13 +152,14 @@ class ConfigStore:
     remote repository with local caching
     """
 
-    def __init__(self, global_config):
+    def __init__(self, global_config, verbose=True):
         self._download_folder = global_config.get_niftynet_home_folder()
         self._config_folder = global_config.get_niftynet_config_folder()
         self._local = ConfigStoreCache(
             os.path.join(self._config_folder, '.downloads_local_config_cache'))
         self._remote = RemoteProxy(self._config_folder,
                                    global_config.get_download_server_url())
+        self._verbose = verbose
 
     def exists(self, example_id):
         """
@@ -258,8 +262,10 @@ class ConfigStore:
                                          'configuration file')
                     local_download_path = self._get_local_download_path(
                         config_params, example_id)
-                    download_and_decompress(url=config_params['url'],
-                                            download_path=local_download_path)
+                    download_and_decompress(
+                        url=config_params['url'],
+                        download_path=local_download_path,
+                        verbose=self._verbose)
                     print('{} -- {}: OK.'.format(example_id, section_name))
                     print("Downloaded data to " + local_download_path)
                 else:

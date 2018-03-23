@@ -35,7 +35,7 @@ class DenseVNetAbdominalCTModelZooTest(tf.test.TestCase):
 
     def setUp(self):
         tf.test.TestCase.setUp(self)
-        download(self.id, True)
+        download(self.id, download_if_already_existing=True, verbose=False)
 
     def test_train(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'train', '--max_iter', '2'])
@@ -58,7 +58,7 @@ class UltrasoundSimulatorGanModelZooTest(tf.test.TestCase):
 
     def setUp(self):
         tf.test.TestCase.setUp(self)
-        download(self.id, True)
+        download(self.id, download_if_already_existing=True, verbose=False)
 
     def test_inference(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'inference'])
@@ -76,7 +76,7 @@ class Highres3dnetBrainParcellationModelZooTest(tf.test.TestCase):
 
     def setUp(self):
         tf.test.TestCase.setUp(self)
-        download(self.id, True)
+        download(self.id, download_if_already_existing=True, verbose=False)
 
     def test_inference(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'inference'])
@@ -98,7 +98,7 @@ class AnisotropicNetsBratsChallengeModelZooTest(tf.test.TestCase):
 
     def setUp(self):
         tf.test.TestCase.setUp(self)
-        download(self.id, True)
+        download(self.id, download_if_already_existing=True, verbose=False)
 
     def test_inference(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.configA, 'inference'])
@@ -121,7 +121,7 @@ class MRCTRegressionModelZooTest(tf.test.TestCase):
 
     def setUp(self):
         tf.test.TestCase.setUp(self)
-        download(self.id, True)
+        download(self.id, download_if_already_existing=True, verbose=False)
 
     def test_train(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'train', '--starting_iter','0','--max_iter', '2'])
@@ -153,7 +153,7 @@ class AutoContextMRCTModelZooTest(tf.test.TestCase):
 
     def setUp(self):
         tf.test.TestCase.setUp(self)
-        download(self.id, True)
+        download(self.id, download_if_already_existing=True, verbose=False)
 
     def test_train(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'train', '--starting_iter','0','--max_iter', '2'])
