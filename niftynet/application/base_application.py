@@ -18,16 +18,22 @@ INFER = "inference"
 EVAL = "evaluation"
 
 
-class SingletonApplication(type):
-    _instances = None
 
+application_singleton_instance = None # global so it can be reset
+class SingletonApplication(type):
     def __call__(cls, *args, **kwargs):
-        if cls._instances is None:
-            cls._instances = \
+        global application_singleton_instance
+        if application_singleton_instance is None:
+            application_singleton_instance = \
                 super(SingletonApplication, cls).__call__(*args, **kwargs)
         # else:
         #     raise RuntimeError('application instance already started.')
-        return cls._instances
+        return application_singleton_instance
+
+    @classmethod
+    def clear(cls):
+        global application_singleton_instance
+        application_singleton_instance = None
 
 
 class BaseApplication(with_metaclass(SingletonApplication, object)):
