@@ -507,11 +507,11 @@ class ApplicationDriver(object):
             # in training: use gpu only for workers whenever n_local_gpus
             device = 'gpu' if (is_worker and n_local_gpus > 0) else 'cpu'
             if device == 'gpu' and device_id >= n_local_gpus:
-                tf.logging.fatal(
+                tf.logging.warning(
                     'trying to use gpu id %s, but only has %s GPU(s), '
                     'please set num_gpus to %s at most',
                     device_id, n_local_gpus, n_local_gpus)
-                raise ValueError
+                #raise ValueError
             return '/{}:{}'.format(device, device_id)
         # in inference: use gpu for everything whenever n_local_gpus
         return '/gpu:0' if n_local_gpus > 0 else '/cpu:0'
