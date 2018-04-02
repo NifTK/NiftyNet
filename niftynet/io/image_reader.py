@@ -127,9 +127,8 @@ class ImageReader(Layer):
                                      list(file_list))
                 raise
 
-        self._file_list = file_list
-        self.output_list = _filename_to_image_list(
-            self._file_list, self._input_sources, data_param)
+        self.output_list, self._file_list = _filename_to_image_list(
+            file_list, self._input_sources, data_param)
         for name in self.names:
             tf.logging.info(
                 'Image reader: loading [%s] from %s (%d)',
@@ -302,6 +301,7 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
     Properties (e.g. interp_order) are added to each object
     """
     volume_list = []
+    valid_idx = []
     for idx in range(len(file_list)):
         # create image instance for each subject
         print_progress_bar(idx, len(file_list),
@@ -316,6 +316,7 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
         # skipping the subject if there're missing image components
         if _dict and None not in list(_dict.values()):
             volume_list.append(_dict)
+            valid_idx.append(idx)
 
     if not volume_list:
         tf.logging.fatal(
@@ -329,7 +330,7 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
             "E.g., `filename_contains=foo, bar` will match file "
             "foo_subject42_bar.nii.gz, and the subject id is _subject42_.")
         raise IOError
-    return volume_list
+    return volume_list, file_list.iloc[valid_idx]
 
 
 def _create_image(file_list, idx, modalities, data_param):
