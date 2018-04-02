@@ -28,10 +28,11 @@ class BalancedSampler(UniformSampler):
     5%. If there are 10 classes, the probability becomes 10% * 5% = 0.5%.
 
     In general, the likelihood of sampling a voxel is given by:
-        p(v) = (1)/(# of unique labels) * (1) / (# of voxels with same class as v)
+        p(v) = (1)/(# of unique labels * # of voxels with same class as v)
 
-    This is done for balanced sampling. In the case of unbalanced labels, this sampler
-    should produce a roughly equal probability of sampling each class.
+    This is done for balanced sampling. In the case of unbalanced labels,
+    this sampler should produce a roughly equal probability of sampling each
+    class.
 
     This layer can be considered as a "balanced random cropping" layer of the
     input image.
@@ -125,23 +126,29 @@ def balanced_spatial_coordinates(subject_id,
     unique_labels = np.unique(flatten_map)
 
     # Sample uniformly from the unique labels. This returns which labels
-    # were sampled (sampled_labels) and the count of sampling for each (label_counts)
+    # were sampled (sampled_labels) and the count of sampling for each
+    # (label_counts)
     samples = np.random.choice(unique_labels, n_samples, replace=True)
     sampled_labels, label_counts = np.unique(samples, return_counts=True)
 
-    # Look inside each label and sample `count`. Add the middle_coord of each sample
-    # to `middle_coords`
+    # Look inside each label and sample `count`. Add the middle_coord of
+    # each sample to `middle_coords`
     middle_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
     sample_count = 0
     for label, count in zip(sampled_labels, label_counts):
         # Get indicies where(cropped_map == label)
         valid_locations = np.where(flatten_map == label)[0]
 
-        # Sample `count` from those indicies. Need replace=True. Consider the case where all pixels are
-        # background except for one pixel which is foreground. We ask for 10 samples. We should get 5 samples
-        # from background and the foreground pixel sampled 5 times (give or take random fluctuation).
+        # Sample `count` from those indicies. Need replace=True. Consider the
+        # case where all pixels are background except for one pixel which is
+        # foreground. We ask for 10 samples. We should get 5 samples from
+        # background and the foreground pixel sampled 5 times (give or take
+        # random fluctuation).
         try:
-            samples = np.random.choice(valid_locations, size=count, replace=True)
+            samples = np.random.choice(
+                valid_locations,
+                size=count,
+                replace=True)
         except ValueError:
             tf.logging.fatal("unable to choose sampling window based on "
                              "the current frequency map.")
