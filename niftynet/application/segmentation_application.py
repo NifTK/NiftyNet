@@ -107,7 +107,7 @@ class SegmentationApplication(BaseApplication):
                 name='hist_norm_layer')
 
         label_normalisers = None
-        if self.net_param.histogram_ref_file:
+        if self.net_param.histogram_ref_file and self.net_param.normalisation:
             label_normalisers = [DiscreteLabelNormalisationLayer(
                 image_name='label',
                 modalities=vars(task_param).get('label'),
