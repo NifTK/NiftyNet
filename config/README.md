@@ -257,7 +257,10 @@ The same amount of padding will be removed when before writing the output volume
 ###### `window_sampling`
 Type of sampler used to generate image windows from each image volume:
 - uniform: fixed size uniformly distributed,
+- weighted: fixed size where the likelihood of sampling a voxel is proportional to the cumulative intensity histogram,
+- balanced: fixed size where each label has the same probability of being sampled,
 - resize: resize image to the window size.
+For _weighted_ and _balanced_, an image reader named `sampler` is required to generate windows.
 
 ###### `queue_length`
 Integer specifies window buffer size used when sampling image windows from image volumes.
