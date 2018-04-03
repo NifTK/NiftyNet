@@ -11,6 +11,7 @@ from niftynet.engine.sampler_uniform import rand_spatial_coordinates
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
+from niftynet.engine.image_window import N_SPATIAL
 
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
@@ -161,100 +162,38 @@ class UniformSamplerTest(tf.test.TestCase):
 
 
 class RandomCoordinatesTest(tf.test.TestCase):
-    def test_coodinates(self):
+    def assertCoordinatesAreValid(self, coords, cropped_map):
+        for coord in coords:
+            for i in range(len(coord.shape)):
+                self.assertTrue(coord[i] >= 0)
+                self.assertTrue(coord[i] < cropped_map.shape[i])
+
+    def test_3d_coordinates(self):
+        cropped_map=np.zeros((256, 512, 128))
         coords = rand_spatial_coordinates(
-            subject_id=1,
-            data={},
-            img_sizes={'image': (42, 42, 42, 1, 2),
-                       'label': (42, 42, 42, 1, 1)},
-            win_sizes={'image': (23, 23, 40),
-                       'label': (40, 32, 33)},
-            n_samples=10)
-        self.assertEquals(np.all(coords['image'][:0] == 1), True)
-        self.assertEquals(coords['image'].shape, (10, 7))
-        self.assertEquals(coords['label'].shape, (10, 7))
-        self.assertAllClose(
-            (coords['image'][:, 4] + coords['image'][:, 1]),
-            (coords['label'][:, 4] + coords['label'][:, 1]), atol=1.0)
-        self.assertAllClose(
-            (coords['image'][:, 5] + coords['image'][:, 2]),
-            (coords['label'][:, 5] + coords['label'][:, 2]), atol=1.0)
-        self.assertAllClose(
-            (coords['image'][:, 6] + coords['image'][:, 3]),
-            (coords['label'][:, 6] + coords['label'][:, 3]), atol=1.0)
+            cropped_map=cropped_map,
+            n_samples=32)
 
-    def test_25D_coordinates(self):
+        self.assertAllEqual(coords.shape, (32, N_SPATIAL))
+        self.assertCoordinatesAreValid(coords, cropped_map)
+
+    def test_2d_coordinates(self):
+        cropped_map=np.zeros((256, 512, 1))
         coords = rand_spatial_coordinates(
-            subject_id=1,
-            data={},
-            img_sizes={'image': (42, 42, 42, 1, 1),
-                       'label': (42, 42, 42, 1, 1)},
-            win_sizes={'image': (23, 23, 1),
-                       'label': (40, 32, 1)},
-            n_samples=10)
-        self.assertEquals(np.all(coords['image'][:0] == 1), True)
-        self.assertEquals(coords['image'].shape, (10, 7))
-        self.assertEquals(coords['label'].shape, (10, 7))
-        self.assertAllClose(
-            (coords['image'][:, 4] + coords['image'][:, 1]),
-            (coords['label'][:, 4] + coords['label'][:, 1]), atol=1.0)
-        self.assertAllClose(
-            (coords['image'][:, 5] + coords['image'][:, 2]),
-            (coords['label'][:, 5] + coords['label'][:, 2]), atol=1.0)
-        self.assertAllClose(
-            (coords['image'][:, 6] + coords['image'][:, 3]),
-            (coords['label'][:, 6] + coords['label'][:, 3]), atol=1.0)
+            cropped_map=cropped_map,
+            n_samples=64)
 
-    def test_2D_coordinates(self):
+        self.assertAllEqual(coords.shape, (64, N_SPATIAL))
+        self.assertCoordinatesAreValid(coords, cropped_map)
+
+    def test_repeated_coordinates(self):
+        cropped_map=np.zeros((1, 1, 1))
         coords = rand_spatial_coordinates(
-            subject_id=1,
-            data={},
-            img_sizes={'image': (42, 42, 1, 1, 1),
-                       'label': (42, 42, 1, 1, 1)},
-            win_sizes={'image': (23, 23, 1),
-                       'label': (40, 32, 1)},
+            cropped_map=cropped_map,
             n_samples=10)
-        self.assertEquals(np.all(coords['image'][:0] == 1), True)
-        self.assertEquals(coords['image'].shape, (10, 7))
-        self.assertEquals(coords['label'].shape, (10, 7))
-        self.assertAllClose(
-            (coords['image'][:, 4] + coords['image'][:, 1]),
-            (coords['label'][:, 4] + coords['label'][:, 1]), atol=1.0)
-        self.assertAllClose(
-            (coords['image'][:, 5] + coords['image'][:, 2]),
-            (coords['label'][:, 5] + coords['label'][:, 2]), atol=1.0)
-        self.assertAllClose(
-            (coords['image'][:, 6] + coords['image'][:, 3]),
-            (coords['label'][:, 6] + coords['label'][:, 3]), atol=1.0)
 
-    def test_ill_coordinates(self):
-        with self.assertRaisesRegexp(IndexError, ""):
-            coords = rand_spatial_coordinates(
-                subject_id=1,
-                data={},
-                img_sizes={'image': (42, 42, 1, 1, 1),
-                           'label': (42, 42, 1, 1, 1)},
-                win_sizes={'image': (23, 23),
-                           'label': (40, 32)},
-                n_samples=10)
-
-        with self.assertRaisesRegexp(TypeError, ""):
-            coords = rand_spatial_coordinates(
-                subject_id=1,
-                data={},
-                img_sizes={'image': (42, 42, 1, 1, 1),
-                           'label': (42, 42, 1, 1, 1)},
-                win_sizes={'image': (23, 23, 1),
-                           'label': (40, 32, 1)},
-                n_samples='test')
-
-        with self.assertRaisesRegexp(AssertionError, ""):
-            coords = rand_spatial_coordinates(
-                subject_id=1,
-                data={},
-                img_sizes={'label': (42, 1, 1, 1)},
-                win_sizes={'image': (23, 23, 1)},
-                n_samples=0)
+        self.assertAllEqual(coords.shape, (10, N_SPATIAL))
+        self.assertCoordinatesAreValid(coords, cropped_map)
 
 
 if __name__ == "__main__":
