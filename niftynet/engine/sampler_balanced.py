@@ -51,76 +51,17 @@ class BalancedSampler(UniformSampler):
                                 windows_per_image=windows_per_image,
                                 queue_length=queue_length)
         tf.logging.info('Initialised balanced sampler window instance')
-        self.spatial_coordinates_generator = balanced_spatial_coordinates
+        self.intensity_based_sampling = True
+        self.middle_coordinate_sampler = balanced_spatial_coordinates
 
 
-def balanced_spatial_coordinates(subject_id,
-                                 data,
-                                 img_sizes,
-                                 win_sizes,
-                                 n_samples=1):
+def balanced_spatial_coordinates(cropped_map, n_samples):
     """
-    This is the function that does the balanced sampling.
+    Perform balanced sampling.
 
-    also, note that win_sizes could be different (for example in
-    a segmentation networt, theinput image window size may be 32x32x10
-    and the training label window size 16x16x10 -- the network reduces
-    x-y plane spatial resolution).
-
-    This function handles this situation by first find the largest
-    window across these window definitions, and generate the coordinates.
-    These coordinates are then adjusted for each of the
-    smaller window sizes (the output windows are concentric).
+    Each label in the input tensor has an equal probability of
+    being sampled.
     """
-    # requiring a data['sampler'] as the frequency map.
-    # the shape should be [x, y, z, 1, 1]
-    if data is None or data.get('sampler', None) is None:
-        tf.logging.fatal("input weight map not found. please check "
-                         "the configuration file")
-        raise RuntimeError
-    n_samples = max(n_samples, 1)
-    uniq_spatial_size = set([img_size[:N_SPATIAL]
-                             for img_size in list(img_sizes.values())])
-    if len(uniq_spatial_size) > 1:
-        tf.logging.fatal("Don't know how to generate sampling "
-                         "locations: Spatial dimensions of the "
-                         "grouped input sources are not "
-                         "consistent. %s", uniq_spatial_size)
-        raise NotImplementedError
-    uniq_spatial_size = uniq_spatial_size.pop()
-
-    # find spatial window location based on the largest spatial window
-    spatial_win_sizes = [win_size[:N_SPATIAL]
-                         for win_size in win_sizes.values()]
-    spatial_win_sizes = np.asarray(spatial_win_sizes, dtype=np.int32)
-    max_spatial_win = np.max(spatial_win_sizes, axis=0)
-
-    # testing window size
-    for i in range(0, N_SPATIAL):
-        assert uniq_spatial_size[i] >= max_spatial_win[i], \
-            "window size {} is larger than image size {}".format(
-                max_spatial_win[i], uniq_spatial_size[i])
-
-    # get cropped version of the input weight map where the centre of
-    # the window might be. If the centre of the window was outside of
-    # this crop area, the patch would be outside of the field of view
-    half_win = np.floor(max_spatial_win / 2).astype(int)
-    try:
-        cropped_map = data['sampler'][
-            half_win[0]:-half_win[0] if max_spatial_win[0] > 1 else 1,
-            half_win[1]:-half_win[1] if max_spatial_win[1] > 1 else 1,
-            half_win[2]:-half_win[2] if max_spatial_win[2] > 1 else 1,
-            0, 0]
-        assert np.all(cropped_map.shape) > 0
-    except (IndexError, KeyError):
-        tf.logging.fatal("incompatible map: %s", data['sampler'].shape)
-        raise
-    except AssertionError:
-        tf.logging.fatal(
-            "incompatible window size for balanced sampler. "
-            "Please use smaller (fully-specified) spatial window sizes")
-        raise
-
     # Find the number of unique labels
     flatten_map = cropped_map.flatten()
     unique_labels = np.unique(flatten_map)
@@ -162,31 +103,4 @@ def balanced_spatial_coordinates(subject_id,
                 np.unravel_index(samples[i], cropped_map.shape)[:N_SPATIAL]
             sample_count += 1
 
-    assert sample_count == n_samples, "Internal error generating samples"
-
-    # adjust max spatial coordinates based on each mod spatial window size
-    all_coordinates = {}
-    for mod in list(win_sizes):
-        win_size = win_sizes[mod][:N_SPATIAL]
-        half_win_diff = np.floor((max_spatial_win - win_size) / 2.0)
-
-        # shift starting coordinates of the window
-        # Note that we did not shift the centre coordinates
-        # above to the corner of the window
-        # because the shift is the same as the cropping amount
-        # Also, we need to add half_win_diff/2 so that smaller windows
-        # are centred within the large windows
-        spatial_coords = np.zeros((n_samples, N_SPATIAL * 2), dtype=np.int32)
-        spatial_coords[:, :N_SPATIAL] = \
-            middle_coords[:, :N_SPATIAL] + half_win_diff[:N_SPATIAL]
-
-        # the opposite corner of the window is
-        # just adding the mod specific window size
-        spatial_coords[:, N_SPATIAL:] = \
-            spatial_coords[:, :N_SPATIAL] + win_size[:N_SPATIAL]
-        # include the subject id
-        subject_id = np.ones((n_samples,), dtype=np.int32) * subject_id
-        spatial_coords = np.append(subject_id[:, None], spatial_coords, axis=1)
-        all_coordinates[mod] = spatial_coords
-
-    return all_coordinates
+    return middle_coords
