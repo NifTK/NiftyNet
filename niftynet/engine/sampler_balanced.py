@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 Generate image windows from a balanced sampling map as if every label
-had the same probability of occurance.
+had the same probability of occurrence.
 
 Consider a mask with three classes I, J, K with prevalence 0.1, 0.1, and
-0.8, respectively. If 100 samples are drawen from the balanced sampler, the
+0.8, respectively. If 100 samples are drawn from the balanced sampler, the
 classes should be approximately 33 I, 33 J, and 33 K.
 
 This can also be considered a "balanced random cropping" layer of the
@@ -17,6 +17,7 @@ import tensorflow as tf
 
 from niftynet.engine.image_window import N_SPATIAL
 from niftynet.engine.sampler_uniform import UniformSampler
+from niftynet.engine.sampler_weighted import crop_sampling_map
 
 
 class BalancedSampler(UniformSampler):
@@ -51,36 +52,44 @@ class BalancedSampler(UniformSampler):
                                 windows_per_image=windows_per_image,
                                 queue_length=queue_length)
         tf.logging.info('Initialised balanced sampler window instance')
-        self.intensity_based_sampling = True
-        self.middle_coordinate_sampler = balanced_spatial_coordinates
+        self.window_centers_sampler = balanced_spatial_coordinates
 
 
-def balanced_spatial_coordinates(cropped_map, n_samples):
+def balanced_spatial_coordinates(
+        n_samples, img_spatial_size, win_spatial_size, sampler_map):
     """
     Perform balanced sampling.
 
     Each label in the input tensor has an equal probability of
     being sampled.
     """
+    assert np.all(img_spatial_size[:N_SPATIAL] ==
+                  sampler_map.shape[:N_SPATIAL]), \
+        'image and sampling map shapes do not match'
+
     # Find the number of unique labels
+    win_spatial_size = np.asarray(win_spatial_size, dtype=np.int32)
+    cropped_map = crop_sampling_map(sampler_map, win_spatial_size)
+
     flatten_map = cropped_map.flatten()
     unique_labels = np.unique(flatten_map)
+    if len(unique_labels) > 500:
+        tf.logging.warning(
+            "unusual discrete volume: number of unique "
+            "labels: %s", len(unique_labels))
 
-    # Sample uniformly from the unique labels. This returns which labels
-    # were sampled (sampled_labels) and the count of sampling for each
-    # (label_counts)
-    samples = np.random.choice(unique_labels, n_samples, replace=True)
-    sampled_labels, label_counts = np.unique(samples, return_counts=True)
-
+    # system parameter?
+    class_probs = [1.0 / len(unique_labels)] * len(unique_labels)
+    label_counts = np.random.multinomial(n_samples, class_probs)
     # Look inside each label and sample `count`. Add the middle_coord of
     # each sample to `middle_coords`
     middle_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
     sample_count = 0
-    for label, count in zip(sampled_labels, label_counts):
-        # Get indicies where(cropped_map == label)
+    for label, count in zip(unique_labels, label_counts):
+        # Get indices where(cropped_map == label)
         valid_locations = np.where(flatten_map == label)[0]
 
-        # Sample `count` from those indicies. Need replace=True. Consider the
+        # Sample `count` from those indices. Need replace=True. Consider the
         # case where all pixels are background except for one pixel which is
         # foreground. We ask for 10 samples. We should get 5 samples from
         # background and the foreground pixel sampled 5 times (give or take
@@ -98,9 +107,13 @@ def balanced_spatial_coordinates(cropped_map, n_samples):
         assert count == samples.size, "Unable to sample from the image"
 
         # Place into `middle_coords`
-        for i in range(0, count):
+        for sample in samples:
             middle_coords[sample_count, :N_SPATIAL] = \
-                np.unravel_index(samples[i], cropped_map.shape)[:N_SPATIAL]
+                np.unravel_index(sample, cropped_map.shape)[:N_SPATIAL]
             sample_count += 1
 
+    # re-shift coords due to the crop
+    half_win = np.floor(win_spatial_size / 2).astype(np.int32)
+    middle_coords[:, :N_SPATIAL] = \
+        middle_coords[:, :N_SPATIAL] + half_win[:N_SPATIAL]
     return middle_coords
