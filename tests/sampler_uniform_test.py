@@ -162,38 +162,37 @@ class UniformSamplerTest(tf.test.TestCase):
 
 
 class RandomCoordinatesTest(tf.test.TestCase):
-    def assertCoordinatesAreValid(self, coords, cropped_map):
+    def assertCoordinatesAreValid(self, coords, img_size, win_size):
         for coord in coords:
             for i in range(len(coord.shape)):
                 self.assertTrue(coord[i] >= 0)
-                self.assertTrue(coord[i] < cropped_map.shape[i])
+                self.assertTrue(coord[i] <= img_size[i] - int(win_size[i]/2))
 
     def test_3d_coordinates(self):
-        cropped_map=np.zeros((256, 512, 128))
+        img_size = [8, 9, 10]
+        win_size = [3, 2, 4]
         coords = rand_spatial_coordinates(
-            cropped_map=cropped_map,
-            n_samples=32)
-
+            32, img_size, win_size, None)
         self.assertAllEqual(coords.shape, (32, N_SPATIAL))
-        self.assertCoordinatesAreValid(coords, cropped_map)
+        self.assertCoordinatesAreValid(coords, img_size, win_size)
 
     def test_2d_coordinates(self):
         cropped_map=np.zeros((256, 512, 1))
+        img_size = [8, 9, 1]
+        win_size = [2, 3, 1]
         coords = rand_spatial_coordinates(
-            cropped_map=cropped_map,
-            n_samples=64)
-
+            64, img_size, win_size, None)
         self.assertAllEqual(coords.shape, (64, N_SPATIAL))
-        self.assertCoordinatesAreValid(coords, cropped_map)
+        self.assertCoordinatesAreValid(coords, img_size, win_size)
 
-    def test_repeated_coordinates(self):
+    def test_1d_coordinates(self):
         cropped_map=np.zeros((1, 1, 1))
+        img_size = [8, 1, 1]
+        win_size = [7, 1, 1]
         coords = rand_spatial_coordinates(
-            cropped_map=cropped_map,
-            n_samples=10)
-
+            10, img_size, win_size, None)
         self.assertAllEqual(coords.shape, (10, N_SPATIAL))
-        self.assertCoordinatesAreValid(coords, cropped_map)
+        self.assertCoordinatesAreValid(coords, img_size, win_size)
 
 
 if __name__ == "__main__":
