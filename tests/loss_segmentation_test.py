@@ -4,7 +4,16 @@ from __future__ import absolute_import, print_function
 import numpy as np
 import tensorflow as tf
 
-from niftynet.layer.loss_segmentation import LossFunction
+from niftynet.layer.loss_segmentation import LossFunction, labels_to_one_hot
+
+
+class OneHotTester(tf.test.TestCase):
+    def test_vs_tf_onehot(self):
+        with self.test_session():
+            labels = tf.constant([1, 2, 3, 0], dtype=tf.int64, name='labels')
+            tf_one_hot = tf.one_hot(labels, depth=4)
+            niftynet_one_hot = tf.sparse_tensor_to_dense(labels_to_one_hot(labels, tf.shape(tf_one_hot)))
+            self.assertAllEqual(tf_one_hot.eval(), niftynet_one_hot.eval())
 
 
 class SensitivitySpecificityTests(tf.test.TestCase):
