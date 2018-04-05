@@ -441,8 +441,8 @@ def dice_dense(prediction, ground_truth, weight_map=None):
     dice_numerator = 2.0 * tf.reduce_sum(
         prediction * ground_truth, axis=reduce_axes)
     dice_denominator = \
-        tf.reduce_sum(prediction, axis=reduce_axes) + \
-        tf.reduce_sum(ground_truth, axis=reduce_axes)
+        tf.reduce_sum(tf.square(prediction), axis=reduce_axes) + \
+        tf.reduce_sum(tf.square(ground_truth), axis=reduce_axes)
     epsilon_denominator = 0.00001
 
     dice_score = dice_numerator / (dice_denominator + epsilon_denominator)

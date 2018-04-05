@@ -226,17 +226,17 @@ class DiceTestNoSquare(tf.test.TestCase):
 
 
 class DiceDenseTest(tf.test.TestCase):
-    def test_dice_dense_score_nosquare(self):
+    def test_dice_dense_score(self):
         with self.test_session():
             predicted = tf.constant(
                 [[0, 10], [10, 0], [10, 0], [10, 0]],
                 dtype=tf.float32, name='predicted')
-            labels = tf.constant([[1, 0], [0, 1], [0, 1], [0, 1]],
-                                 dtype=tf.int64, name='labels')
-            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
+            one_hot = tf.constant([[1, 0], [0, 1], [0, 1], [0, 1]],
+                                  dtype=tf.int64, name='one_hot')
+            predicted, one_hot = [tf.expand_dims(x, axis=0) for x in (predicted, one_hot)]
 
             test_loss_func = LossFunction(2, loss_type='Dice_Dense')
-            one_minus_dice_score = test_loss_func(predicted, labels)
+            one_minus_dice_score = test_loss_func(predicted, one_hot)
             self.assertAllClose(one_minus_dice_score.eval(), 1.0, atol=1e-4)
 
     def test_wrong_prediction(self):
@@ -246,12 +246,14 @@ class DiceDenseTest(tf.test.TestCase):
                 dtype=tf.float32, name='predicted')
             labels = tf.constant([0], dtype=tf.int64, name='labels')
             predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
+            one_hot = tf.one_hot(labels, axis=-1, depth=2)
 
             test_loss_func = LossFunction(2, loss_type='Dice_Dense')
-            one_minus_dice_score = test_loss_func(predicted, labels)
+            one_minus_dice_score = test_loss_func(predicted, one_hot)
             self.assertAlmostEqual(one_minus_dice_score.eval(), 1.0)
 
     def test_dense_dice_vs_sparse(self):
+        # regression test vs dense version
         with self.test_session():
             predicted = tf.constant(
                 [[2, 3], [9, 8], [0, 0], [1, 0]],
