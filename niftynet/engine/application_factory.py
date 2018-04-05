@@ -82,6 +82,8 @@ SUPPORTED_LOSS_SEGMENTATION = {
         'niftynet.layer.loss_segmentation.dice_nosquare',
     "Dice_Dense":
         'niftynet.layer.loss_segmentation.dice_dense',
+    "Dice_Dense_NS":
+        'niftynet.layer.loss_segmentation.dice_dense_nosquare',
     "GDSC":
         'niftynet.layer.loss_segmentation.generalised_dice_loss',
     "WGDL":

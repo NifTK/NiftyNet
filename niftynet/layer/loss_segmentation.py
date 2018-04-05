@@ -330,43 +330,6 @@ def generalised_wasserstein_dice_loss(prediction,
     return tf.cast(WGDL, dtype=tf.float32)
 
 
-def dice_nosquare(prediction, ground_truth, weight_map=None):
-    """
-    Function to calculate the classical dice loss
-
-    :param prediction: the logits
-    :param ground_truth: the segmentation ground_truth
-    :param weight_map:
-    :return: the loss
-    """
-    prediction = tf.cast(prediction, tf.float32)
-    n_classes = prediction.shape[1].value
-    one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction))
-
-    # dice
-    if weight_map is not None:
-        weight_map_nclasses = tf.reshape(
-            tf.tile(weight_map, [n_classes]), prediction.get_shape())
-        dice_numerator = 2.0 * tf.sparse_reduce_sum(
-            weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
-        dice_denominator = \
-            tf.reduce_sum(prediction * weight_map_nclasses,
-                          reduction_indices=[0]) + \
-            tf.sparse_reduce_sum(weight_map_nclasses * one_hot,
-                                 reduction_axes=[0])
-    else:
-        dice_numerator = 2.0 * tf.sparse_reduce_sum(one_hot * prediction,
-                                                    reduction_axes=[0])
-        dice_denominator = tf.reduce_sum(prediction, reduction_indices=[0]) + \
-                           tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
-    epsilon_denominator = 0.00001
-
-    dice_score = dice_numerator / (dice_denominator + epsilon_denominator)
-    # dice_score.set_shape([n_classes])
-    # minimising (1 - dice_coefficients)
-    return 1.0 - tf.reduce_mean(dice_score)
-
-
 def dice(prediction, ground_truth, weight_map=None):
     """
     Function to calculate the dice loss with the definition given in
@@ -410,10 +373,47 @@ def dice(prediction, ground_truth, weight_map=None):
     return 1.0 - tf.reduce_mean(dice_score)
 
 
+def dice_nosquare(prediction, ground_truth, weight_map=None):
+    """
+    Function to calculate the classical dice loss
+
+    :param prediction: the logits
+    :param ground_truth: the segmentation ground_truth
+    :param weight_map:
+    :return: the loss
+    """
+    prediction = tf.cast(prediction, tf.float32)
+    n_classes = prediction.shape[1].value
+    one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction))
+
+    # dice
+    if weight_map is not None:
+        weight_map_nclasses = tf.reshape(
+            tf.tile(weight_map, [n_classes]), prediction.get_shape())
+        dice_numerator = 2.0 * tf.sparse_reduce_sum(
+            weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
+        dice_denominator = \
+            tf.reduce_sum(prediction * weight_map_nclasses,
+                          reduction_indices=[0]) + \
+            tf.sparse_reduce_sum(weight_map_nclasses * one_hot,
+                                 reduction_axes=[0])
+    else:
+        dice_numerator = 2.0 * tf.sparse_reduce_sum(one_hot * prediction,
+                                                    reduction_axes=[0])
+        dice_denominator = tf.reduce_sum(prediction, reduction_indices=[0]) + \
+                           tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
+    epsilon_denominator = 0.00001
+
+    dice_score = dice_numerator / (dice_denominator + epsilon_denominator)
+    # dice_score.set_shape([n_classes])
+    # minimising (1 - dice_coefficients)
+    return 1.0 - tf.reduce_mean(dice_score)
+
+
 def dice_dense(prediction, ground_truth, weight_map=None):
     """
     Computing mean-class Dice similarity.
-    
+
     :param prediction: last dimension should have ``num_classes``
     :param ground_truth: segmentation ground truth (encoded as a binary matrix)
         last dimension should be ``num_classes``
@@ -433,6 +433,35 @@ def dice_dense(prediction, ground_truth, weight_map=None):
     dice_denominator = \
         tf.reduce_sum(tf.square(prediction), axis=reduce_axes) + \
         tf.reduce_sum(tf.square(ground_truth), axis=reduce_axes)
+    epsilon_denominator = 0.00001
+
+    dice_score = dice_numerator / (dice_denominator + epsilon_denominator)
+    return 1.0 - tf.reduce_mean(dice_score)
+
+
+def dice_dense_nosquare(prediction, ground_truth, weight_map=None):
+    """
+    Computing mean-class Dice similarity with no square terms in the denominator
+
+    :param prediction: last dimension should have ``num_classes``
+    :param ground_truth: segmentation ground truth (encoded as a binary matrix)
+        last dimension should be ``num_classes``
+    :param weight_map:
+    :return: ``1.0 - mean(Dice similarity per class)``
+    """
+
+    if weight_map is not None:
+        raise NotImplementedError
+    prediction = tf.cast(prediction, dtype=tf.float32)
+    ground_truth = tf.cast(ground_truth, dtype=tf.float32)
+    ground_truth = tf.reshape(ground_truth, prediction.shape)
+    # computing Dice over the spatial dimensions
+    reduce_axes = list(range(len(prediction.shape) - 1))
+    dice_numerator = 2.0 * tf.reduce_sum(
+        prediction * ground_truth, axis=reduce_axes)
+    dice_denominator = \
+        tf.reduce_sum(prediction, axis=reduce_axes) + \
+        tf.reduce_sum(ground_truth, axis=reduce_axes)
     epsilon_denominator = 0.00001
 
     dice_score = dice_numerator / (dice_denominator + epsilon_denominator)

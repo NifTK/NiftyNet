@@ -281,6 +281,28 @@ class DiceDenseTest(tf.test.TestCase):
             self.assertAllEqual(sparse_dice.eval(), dense_dice.eval())
 
 
+class DiceDenseNoSquareTest(tf.test.TestCase):
+
+    def test_dense_dice_nosquare_vs_sparse(self):
+        # regression test vs dense version
+        with self.test_session():
+            predicted = tf.constant(
+                [[2, 3], [9, 8], [0, 0], [1, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
+
+            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
+
+            sparse_loss_func = LossFunction(2, loss_type='Dice_NS')
+            sparse_dice = sparse_loss_func(predicted, labels)
+
+            one_hot = tf.one_hot(labels, axis=-1, depth=2)
+            dense_loss_func = LossFunction(2, loss_type='Dice_Dense_NS')
+            dense_dice = dense_loss_func(predicted, one_hot)
+
+            self.assertAllEqual(sparse_dice.eval(), dense_dice.eval())
+
+
 class LossFunctionErrorsTest(tf.test.TestCase):
     """
     These tests check that a ValueError is called
