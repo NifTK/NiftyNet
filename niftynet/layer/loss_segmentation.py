@@ -36,17 +36,14 @@ class LossFunction(Layer):
         self._loss_func_params = \
             loss_func_params if loss_func_params is not None else dict()
 
-        if self._data_loss_func.__name__ == 'cross_entropy':
+        if self._data_loss_func.__name__.startswith('cross_entropy'):
             tf.logging.info(
                 'Cross entropy loss function calls '
                 'tf.nn.sparse_softmax_cross_entropy_with_logits '
                 'which always performs a softmax internally.')
             self._softmax = False
 
-    def layer_op(self,
-                 prediction,
-                 ground_truth,
-                 weight_map=None):
+    def layer_op(self, prediction, ground_truth, weight_map=None):
         """
         Compute loss from `prediction` and `ground truth`,
         the computed loss map are weighted by `weight_map`.
@@ -89,8 +86,12 @@ class LossFunction(Layer):
                     # size: (n_voxels, num_classes)
                     # if the ground_truth has only one channel, the shape
                     # becomes: (n_voxels,)
-                    spatial_shape = pred_b.shape.as_list()[:-1]
-                    ref_shape = spatial_shape + [-1]
+                    if not pred_b.shape.is_fully_defined():
+                        ref_shape = tf.stack(
+                            [tf.shape(pred_b)[0], tf.constant(-1)], 0)
+                    else:
+                        ref_shape = pred_b.shape.as_list()[:-1] + [-1]
+
                     ground_truth_b = tf.reshape(ground_truth[b_ind], ref_shape)
                     if ground_truth_b.shape.as_list()[-1] == 1:
                         ground_truth_b = tf.squeeze(ground_truth_b, axis=-1)
@@ -178,10 +179,12 @@ def generalised_dice_loss(prediction,
     :return: the loss
     """
     prediction = tf.cast(prediction, tf.float32)
+    if len(ground_truth.shape) == len(prediction.shape):
+        ground_truth = ground_truth[..., -1]
     one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
-    n_classes = prediction.shape[1].value
 
     if weight_map is not None:
+        n_classes = prediction.shape[1].value
         weight_map_nclasses = tf.reshape(
             tf.tile(weight_map, [n_classes]), prediction.get_shape())
         ref_vol = tf.sparse_reduce_sum(
@@ -270,12 +273,23 @@ def cross_entropy(prediction, ground_truth, weight_map=None):
     :param weight_map:
     :return: the cross-entropy loss
     """
+    if len(ground_truth.shape) == len(prediction.shape):
+        ground_truth = ground_truth[..., -1]
     entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
         logits=prediction, labels=ground_truth)
     if weight_map is not None:
         weight_map = tf.cast(tf.size(entropy), dtype=tf.float32) / \
                      tf.reduce_sum(weight_map) * weight_map
         entropy = tf.multiply(entropy, weight_map)
+    return tf.reduce_mean(entropy)
+
+
+def cross_entropy_dense(prediction, ground_truth, weight_map=None):
+    if weight_map is not None:
+        raise NotImplementedError
+
+    entropy = tf.nn.softmax_cross_entropy_with_logits(
+        logits=prediction, labels=ground_truth)
     return tf.reduce_mean(entropy)
 
 
@@ -371,6 +385,8 @@ def dice(prediction, ground_truth, weight_map=None):
     :return: the loss
     """
     prediction = tf.cast(prediction, tf.float32)
+    if len(ground_truth.shape) == len(prediction.shape):
+        ground_truth = ground_truth[..., -1]
     one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
 
     if weight_map is not None:
@@ -408,11 +424,13 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
     :return: the loss
     """
     prediction = tf.cast(prediction, tf.float32)
-    n_classes = prediction.shape[1].value
+    if len(ground_truth.shape) == len(prediction.shape):
+        ground_truth = ground_truth[..., -1]
     one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
 
     # dice
     if weight_map is not None:
+        n_classes = prediction.shape[1].value
         weight_map_nclasses = tf.reshape(
             tf.tile(weight_map, [n_classes]), prediction.get_shape())
         dice_numerator = 2.0 * tf.sparse_reduce_sum(

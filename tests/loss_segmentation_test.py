@@ -186,6 +186,14 @@ class CrossEntropyTests(tf.test.TestCase):
                 -.5 * (np.log(np.e / (1 + np.e)) + np.log(
                     np.e ** 2 / (1 + np.e ** 2))))
 
+            test_dense_loss = LossFunction(2, loss_type='CrossEntropy_Dense')
+            labels = tf.sparse_tensor_to_dense(labels_to_one_hot(labels, 2))
+            computed_cross_entropy = test_loss_func(predicted, tf.to_int32(labels))
+            self.assertAlmostEqual(
+                computed_cross_entropy.eval(),
+                -.5 * (np.log(np.e / (1 + np.e)) + np.log(
+                    np.e ** 2 / (1 + np.e ** 2))))
+
     def test_cross_entropy_value_weight(self):
         with self.test_session():
             weights = tf.constant([[1], [2]], dtype=tf.float32, name='weights')
