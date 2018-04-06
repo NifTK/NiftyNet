@@ -12,8 +12,21 @@ class OneHotTester(tf.test.TestCase):
         with self.test_session():
             labels = tf.constant([1, 2, 3, 0], dtype=tf.int64, name='labels')
             tf_one_hot = tf.one_hot(labels, depth=4)
-            niftynet_one_hot = tf.sparse_tensor_to_dense(labels_to_one_hot(labels, tf.shape(tf_one_hot)))
+            niftynet_one_hot = tf.sparse_tensor_to_dense(labels_to_one_hot(labels, 4))
             self.assertAllEqual(tf_one_hot.eval(), niftynet_one_hot.eval())
+
+    def test_one_hot(self):
+        ref = np.asarray(
+            [[[ 0.,  1.,  0.,  0.,  0.], [ 0.,  0.,  1.,  0.,  0.]],
+             [[ 0.,  0.,  0.,  1.,  0.], [ 0.,  0.,  0.,  0.,  1.]]],
+            dtype=np.float32)
+
+        with self.test_session():
+            labels = tf.constant([[1, 2], [3, 4]])
+            #import pdb; pdb.set_trace()
+            one_hot = tf.sparse_tensor_to_dense(
+                labels_to_one_hot(labels, 5)).eval()
+            self.assertAllEqual(one_hot, ref)
 
 
 class SensitivitySpecificityTests(tf.test.TestCase):
