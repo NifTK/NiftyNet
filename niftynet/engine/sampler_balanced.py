@@ -62,7 +62,16 @@ def balanced_spatial_coordinates(
 
     Each label in the input tensor has an equal probability of
     being sampled.
+
+    :param n_samples: number of random coordinates to generate
+    :param img_spatial_size: input image size
+    :param win_spatial_size: input window size
+    :param sampler_map: sampling prior map, it's spatial shape should be
+            consistent with `img_spatial_size`
+    :return: (n_samples, N_SPATIAL) coordinates representing sampling
+              window centres relative to img_spatial_size
     """
+
     assert np.all(img_spatial_size[:N_SPATIAL] ==
                   sampler_map.shape[:N_SPATIAL]), \
         'image and sampling map shapes do not match'

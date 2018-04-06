@@ -52,11 +52,13 @@ def weighted_spatial_coordinates(
 
     see also `sampler_uniform.rand_spatial_coordinates`
 
-    :param n_samples:
-    :param img_spatial_size:
-    :param win_spatial_size:
-    :param sampler_map:
-    :return:
+    :param n_samples: number of random coordinates to generate
+    :param img_spatial_size: input image size
+    :param win_spatial_size: input window size
+    :param sampler_map: sampling prior map, it's spatial shape should be
+            consistent with `img_spatial_size`
+    :return: (n_samples, N_SPATIAL) coordinates representing sampling
+              window centres relative to img_spatial_size
     """
 
     # Get the cumulative sum of the normalised sorted intensities
@@ -70,9 +72,10 @@ def weighted_spatial_coordinates(
     flatten_map = cropped_map.flatten()
     flatten_map = flatten_map - np.min(flatten_map)
     normaliser = flatten_map.sum()
-    sorted_data = np.cumsum(np.true_divide(np.sort(flatten_map), normaliser))
     # get the sorting indexes to that we can invert the sorting later on.
     sorted_indexes = np.argsort(flatten_map)
+    sorted_data = np.cumsum(
+        np.true_divide(flatten_map[sorted_indexes], normaliser))
 
     middle_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
     for sample in range(0, n_samples):

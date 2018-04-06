@@ -170,7 +170,7 @@ class RandomCoordinatesTest(tf.test.TestCase):
 
     def test_3d_coordinates(self):
         img_size = [8, 9, 10]
-        win_size = [3, 2, 4]
+        win_size = [7, 9, 4]
         coords = rand_spatial_coordinates(
             32, img_size, win_size, None)
         self.assertAllEqual(coords.shape, (32, N_SPATIAL))
@@ -179,7 +179,7 @@ class RandomCoordinatesTest(tf.test.TestCase):
     def test_2d_coordinates(self):
         cropped_map=np.zeros((256, 512, 1))
         img_size = [8, 9, 1]
-        win_size = [2, 3, 1]
+        win_size = [8, 8, 1]
         coords = rand_spatial_coordinates(
             64, img_size, win_size, None)
         self.assertAllEqual(coords.shape, (64, N_SPATIAL))
@@ -188,7 +188,7 @@ class RandomCoordinatesTest(tf.test.TestCase):
     def test_1d_coordinates(self):
         cropped_map=np.zeros((1, 1, 1))
         img_size = [8, 1, 1]
-        win_size = [7, 1, 1]
+        win_size = [2, 1, 1]
         coords = rand_spatial_coordinates(
             10, img_size, win_size, None)
         self.assertAllEqual(coords.shape, (10, N_SPATIAL))

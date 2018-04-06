@@ -14,7 +14,6 @@ from niftynet.engine.image_window_buffer import InputBatchQueueRunner
 from niftynet.layer.base_layer import Layer
 
 
-# pylint: disable=too-many-arguments
 class UniformSampler(Layer, InputBatchQueueRunner):
     """
     This class generates samples by uniformly sampling each input volume
@@ -106,7 +105,8 @@ class UniformSampler(Layer, InputBatchQueueRunner):
                             "dimensionality miss match in input volumes, "
                             "please specify spatial_window_size with a "
                             "3D tuple and make sure each element is "
-                            "smaller than the image length in each dim.")
+                            "smaller than the image length in each dim. "
+                            "Current coords %s", location_array[window_id])
                         raise
                 if len(image_array) > 1:
                     output_dict[image_data_key] = \
@@ -188,18 +188,18 @@ class UniformSampler(Layer, InputBatchQueueRunner):
 
 
 def rand_spatial_coordinates(
-        n_samples, img_spatial_size, win_spatial_size, sampling_prior):
+        n_samples, img_spatial_size, win_spatial_size, sampler_map):
     """
     Generate spatial coordinates from a discrete uniform distribution.
 
-    :param n_samples: number of random cooridnates to generate
+    :param n_samples: number of random coordinates to generate
     :param img_spatial_size: input image size
     :param win_spatial_size: input window size
-    :param sampling_prior:
+    :param sampler_map: sampling prior map (not in use)
     :return: (n_samples, N_SPATIAL) coordinates representing sampling
               window centres relative to img_spatial_size
     """
-    tf.logging.debug('uniform sampler, prior %s ignored', sampling_prior)
+    tf.logging.debug('uniform sampler, prior %s ignored', sampler_map)
 
     # Sample coordinates at random
     half_win = np.floor(np.asarray(win_spatial_size) / 2.0).astype(np.int32)
