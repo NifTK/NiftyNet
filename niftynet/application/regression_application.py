@@ -11,6 +11,7 @@ from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.engine.sampler_uniform import UniformSampler
 from niftynet.engine.sampler_weighted import WeightedSampler
+from niftynet.engine.sampler_balanced import BalancedSampler
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.io.image_reader import ImageReader
@@ -53,6 +54,9 @@ class RegressionApplication(BaseApplication):
             'resize': (self.initialise_resize_sampler,
                        self.initialise_resize_sampler,
                        self.initialise_resize_aggregator),
+            'balanced': (self.initialise_balanced_sampler,
+                         self.initialise_grid_sampler,
+                         self.initialise_grid_aggregator),
         }
 
     def initialise_dataset_loader(
@@ -158,6 +162,15 @@ class RegressionApplication(BaseApplication):
             batch_size=self.net_param.batch_size,
             spatial_window_size=self.action_param.spatial_window_size,
             window_border=self.action_param.border,
+            queue_length=self.net_param.queue_length) for reader in
+            self.readers]]
+
+    def initialise_balanced_sampler(self):
+        self.sampler = [[BalancedSampler(
+            reader=reader,
+            data_param=self.data_param,
+            batch_size=self.net_param.batch_size,
+            windows_per_image=self.action_param.sample_per_volume,
             queue_length=self.net_param.queue_length) for reader in
             self.readers]]
 
