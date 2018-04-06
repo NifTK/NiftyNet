@@ -76,12 +76,16 @@ SUPPORTED_LOSS_GAN = {
 SUPPORTED_LOSS_SEGMENTATION = {
     "CrossEntropy":
         'niftynet.layer.loss_segmentation.cross_entropy',
+    "CrossEntropy_Dense":
+        'niftynet.layer.loss_segmentation.cross_entropy_dense',
     "Dice":
         'niftynet.layer.loss_segmentation.dice',
     "Dice_NS":
         'niftynet.layer.loss_segmentation.dice_nosquare',
     "Dice_Dense":
         'niftynet.layer.loss_segmentation.dice_dense',
+    "Dice_Dense_NS":
+        'niftynet.layer.loss_segmentation.dice_dense_nosquare',
     "GDSC":
         'niftynet.layer.loss_segmentation.generalised_dice_loss',
     "WGDL":

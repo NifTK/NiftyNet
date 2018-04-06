@@ -4,7 +4,29 @@ from __future__ import absolute_import, print_function
 import numpy as np
 import tensorflow as tf
 
-from niftynet.layer.loss_segmentation import LossFunction
+from niftynet.layer.loss_segmentation import LossFunction, labels_to_one_hot
+
+
+class OneHotTester(tf.test.TestCase):
+    def test_vs_tf_onehot(self):
+        with self.test_session():
+            labels = tf.constant([1, 2, 3, 0], dtype=tf.int64, name='labels')
+            tf_one_hot = tf.one_hot(labels, depth=4)
+            niftynet_one_hot = tf.sparse_tensor_to_dense(labels_to_one_hot(labels, 4))
+            self.assertAllEqual(tf_one_hot.eval(), niftynet_one_hot.eval())
+
+    def test_one_hot(self):
+        ref = np.asarray(
+            [[[ 0.,  1.,  0.,  0.,  0.], [ 0.,  0.,  1.,  0.,  0.]],
+             [[ 0.,  0.,  0.,  1.,  0.], [ 0.,  0.,  0.,  0.,  1.]]],
+            dtype=np.float32)
+
+        with self.test_session():
+            labels = tf.constant([[1, 2], [3, 4]])
+            #import pdb; pdb.set_trace()
+            one_hot = tf.sparse_tensor_to_dense(
+                labels_to_one_hot(labels, 5)).eval()
+            self.assertAllEqual(one_hot, ref)
 
 
 class SensitivitySpecificityTests(tf.test.TestCase):
@@ -147,7 +169,51 @@ class DiceTest(tf.test.TestCase):
             self.assertAllClose(one_minus_dice_score.eval(), 1 - 0.41495, atol=1e-4)
 
 
-class DiceTest_NS(tf.test.TestCase):
+class CrossEntropyTests(tf.test.TestCase):
+    def test_cross_entropy_value(self):
+        # test value is -0.5 * [1 * log(e / (1+e)) + 1 * log(e^2 / (e^2 + 1))]
+        with self.test_session():
+            predicted = tf.constant(
+                [[0, 1], [2, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0], dtype=tf.int64, name='labels')
+            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
+
+            test_loss_func = LossFunction(2, loss_type='CrossEntropy')
+            computed_cross_entropy = test_loss_func(predicted, labels)
+            self.assertAlmostEqual(
+                computed_cross_entropy.eval(),
+                -.5 * (np.log(np.e / (1 + np.e)) + np.log(
+                    np.e ** 2 / (1 + np.e ** 2))))
+
+            test_dense_loss = LossFunction(2, loss_type='CrossEntropy_Dense')
+            labels = tf.sparse_tensor_to_dense(labels_to_one_hot(labels, 2))
+            computed_cross_entropy = test_loss_func(predicted, tf.to_int32(labels))
+            self.assertAlmostEqual(
+                computed_cross_entropy.eval(),
+                -.5 * (np.log(np.e / (1 + np.e)) + np.log(
+                    np.e ** 2 / (1 + np.e ** 2))))
+
+    def test_cross_entropy_value_weight(self):
+        with self.test_session():
+            weights = tf.constant([[1], [2]], dtype=tf.float32, name='weights')
+            predicted = tf.constant(
+                [[0, 1], [2, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([[1], [0]], dtype=tf.int64, name='labels')
+            predicted, labels, weights = \
+                [tf.expand_dims(x, axis=0) for x in (predicted, labels, weights)]
+
+            test_loss_func = LossFunction(2, loss_type='CrossEntropy')
+            computed_cross_entropy = test_loss_func(predicted, labels, weights)
+            self.assertAlmostEqual(
+                computed_cross_entropy.eval(),
+                -.5 * (
+                        2.0 / 3.0 * np.log(np.e / (1 + np.e)) + 4.0 / 3.0 * np.log(
+                    np.e ** 2 / (1 + np.e ** 2))))
+
+
+class DiceTestNoSquare(tf.test.TestCase):
     def test_dice_score_nosquare(self):
         with self.test_session():
             predicted = tf.constant(
@@ -189,55 +255,19 @@ class DiceTest_NS(tf.test.TestCase):
             self.assertAlmostEqual(one_minus_dice_score.eval(), 1.0)
 
 
-class CrossEntropyTests(tf.test.TestCase):
-    def test_cross_entropy_value(self):
-        # test value is -0.5 * [1 * log(e / (1+e)) + 1 * log(e^2 / (e^2 + 1))]
-        with self.test_session():
-            predicted = tf.constant(
-                [[0, 1], [2, 0]],
-                dtype=tf.float32, name='predicted')
-            labels = tf.constant([1, 0], dtype=tf.int64, name='labels')
-            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
-
-            test_loss_func = LossFunction(2, loss_type='CrossEntropy')
-            computed_cross_entropy = test_loss_func(predicted, labels)
-            self.assertAlmostEqual(
-                computed_cross_entropy.eval(),
-                -.5 * (np.log(np.e / (1 + np.e)) + np.log(
-                    np.e ** 2 / (1 + np.e ** 2))))
-
-    def test_cross_entropy_value_weight(self):
-        with self.test_session():
-            weights = tf.constant([[1], [2]], dtype=tf.float32, name='weights')
-            predicted = tf.constant(
-                [[0, 1], [2, 0]],
-                dtype=tf.float32, name='predicted')
-            labels = tf.constant([[1], [0]], dtype=tf.int64, name='labels')
-            predicted, labels, weights = \
-                [tf.expand_dims(x, axis=0) for x in (predicted, labels, weights)]
-
-            test_loss_func = LossFunction(2, loss_type='CrossEntropy')
-            computed_cross_entropy = test_loss_func(predicted, labels, weights)
-            self.assertAlmostEqual(
-                computed_cross_entropy.eval(),
-                -.5 * (
-                        2.0 / 3.0 * np.log(np.e / (1 + np.e)) + 4.0 / 3.0 * np.log(
-                    np.e ** 2 / (1 + np.e ** 2))))
-
-class DiceDenseTest_NS(tf.test.TestCase):
-    def test_dice_dense_score_nosquare(self):
+class DiceDenseTest(tf.test.TestCase):
+    def test_dice_dense_score(self):
         with self.test_session():
             predicted = tf.constant(
                 [[0, 10], [10, 0], [10, 0], [10, 0]],
                 dtype=tf.float32, name='predicted')
-            labels = tf.constant([[1, 0], [0, 1], [0, 1], [0, 1]],
-                                 dtype=tf.int64, name='labels')
-            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
+            one_hot = tf.constant([[1, 0], [0, 1], [0, 1], [0, 1]],
+                                  dtype=tf.int64, name='one_hot')
+            predicted, one_hot = [tf.expand_dims(x, axis=0) for x in (predicted, one_hot)]
 
             test_loss_func = LossFunction(2, loss_type='Dice_Dense')
-            one_minus_dice_score = test_loss_func(predicted, labels)
+            one_minus_dice_score = test_loss_func(predicted, one_hot)
             self.assertAllClose(one_minus_dice_score.eval(), 1.0, atol=1e-4)
-
 
     def test_wrong_prediction(self):
         with self.test_session():
@@ -246,10 +276,52 @@ class DiceDenseTest_NS(tf.test.TestCase):
                 dtype=tf.float32, name='predicted')
             labels = tf.constant([0], dtype=tf.int64, name='labels')
             predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
+            one_hot = tf.one_hot(labels, axis=-1, depth=2)
 
-            test_loss_func = LossFunction(2, loss_type='Dice_NS')
-            one_minus_dice_score = test_loss_func(predicted, labels)
+            test_loss_func = LossFunction(2, loss_type='Dice_Dense')
+            one_minus_dice_score = test_loss_func(predicted, one_hot)
             self.assertAlmostEqual(one_minus_dice_score.eval(), 1.0)
+
+    def test_dense_dice_vs_sparse(self):
+        # regression test vs dense version
+        with self.test_session():
+            predicted = tf.constant(
+                [[2, 3], [9, 8], [0, 0], [1, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
+
+            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
+
+            sparse_loss_func = LossFunction(2, loss_type='Dice')
+            sparse_dice = sparse_loss_func(predicted, labels)
+
+            one_hot = tf.one_hot(labels, axis=-1, depth=2)
+            dense_loss_func = LossFunction(2, loss_type='Dice_Dense')
+            dense_dice = dense_loss_func(predicted, one_hot)
+
+            self.assertAllEqual(sparse_dice.eval(), dense_dice.eval())
+
+
+class DiceDenseNoSquareTest(tf.test.TestCase):
+
+    def test_dense_dice_nosquare_vs_sparse(self):
+        # regression test vs dense version
+        with self.test_session():
+            predicted = tf.constant(
+                [[2, 3], [9, 8], [0, 0], [1, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
+
+            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
+
+            sparse_loss_func = LossFunction(2, loss_type='Dice_NS')
+            sparse_dice = sparse_loss_func(predicted, labels)
+
+            one_hot = tf.one_hot(labels, axis=-1, depth=2)
+            dense_loss_func = LossFunction(2, loss_type='Dice_Dense_NS')
+            dense_dice = dense_loss_func(predicted, one_hot)
+
+            self.assertAllEqual(sparse_dice.eval(), dense_dice.eval())
 
 
 class LossFunctionErrorsTest(tf.test.TestCase):
