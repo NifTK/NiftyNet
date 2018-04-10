@@ -342,7 +342,7 @@ Strategies applied to combine foreground masks of multiple modalities, can take 
 |[save_every_n](#save_every_n)|Integer|`save_every_n=5`|`500`|
 |[tensorboard_every_n](#tensorboard_every_n)|Integer|`tensorboard_every_n=5`|`20`|
 |[max_iter](#max_iter)|Integer|`max_iter=1000`|`10000`|
-|[max_checkpoint](#max_checkpoint)|Integer|`max_checkpoint=5`|`100`|
+|[max_checkpoints](#max_checkpoints)|Integer|`max_checkpoints=5`|`100`|
 
 ###### `optimiser`
 Type of optimiser for computing graph gradients.
@@ -385,7 +385,7 @@ The value is total number of iterations counting from 0.
 This means when training from [`starting_iter`](#starting_iter) N,
 the remaining number of iterations to run is `N - max_iter`.
 
-###### `max_checkpoint`
+###### `max_checkpoints`
 Maximum number of recent checkpoints to keep.
 
 ##### Validation during training
