@@ -93,8 +93,8 @@ The following sections specify parameters (`<name> = <value>` pairs) available w
 |---|---|---|---|
 |[csv_file](#csv_file)|String|`csv_file=file_list.csv`|`''`|
 |[path_to_search](#path_to_search)|String|`path_to_search=my_data/fold_1`|NiftyNet home folder|
-|[filename_contain](#filename_contain)|String or string array|`filename_contain=foo, bar`|`''`|
-|[filename_not_contain](#filename_not_contain)|String or string array|`filename_not_contain=foo`|`''`|
+|[filename_contains](#filename_contains)|String or string array|`filename_contains=foo, bar`|`''`|
+|[filename_not_contains](#filename_not_contains)|String or string array|`filename_not_contains=foo`|`''`|
 |[interp_order](#interp_order)|Integer|`interp_order=0`|`3`|
 |[pixdim](#pixdim)|Float array|`pixdim=1.2, 1.2, 1.2`|`''`|
 |[axcodes](#axcodes)|String array|`axcodes=L, P, S`|`''`|
@@ -104,7 +104,7 @@ The following sections specify parameters (`<name> = <value>` pairs) available w
 A file path to a list of input images.
 If the file exists, input image name list will be loaded from the file;
 the filename based input image search will be disabled;
-[path_to_search](#path_to_search), [filename_contain](#filename_contain), and [filename_not_contain](#filename_not_contain)
+[path_to_search](#path_to_search), [filename_contains](#filename_contains), and [filename_not_contains](#filename_not_contains)
 will be ignored.
 If this parameter is left blank or the file does not exist,
 input image search will be enabled, and the matched filenames will be written to this file path.
@@ -112,12 +112,12 @@ input image search will be enabled, and the matched filenames will be written to
 ###### `path_to_search`
 Single or multiple folders to search for input images.
 
-###### `filename_contain`
+###### `filename_contains`
 Keywords used to match filenames.
 The matched keywords will be removed, and the remaining part is used as
 subject name (for loading corresponding images across modalities).
 
-###### `filename_not_contain`
+###### `filename_not_contains`
 Keywords used to exclude filenames.
 The filenames with these keywords will not be used as input.
 
@@ -142,8 +142,8 @@ For example:
 ```ini
 [T1Image]
 path_to_search = ./example_volumes/image_folder
-filename_contain = T1, subject
-filename_not_contain = T1c, T2
+filename_contains = T1, subject
+filename_not_contains = T1c, T2
 spatial_window_size = 128, 128, 1
 pixdim = 1.0, 1.0, 1.0
 axcodes = A, R, S
@@ -502,6 +502,7 @@ For a 2-D slice, e.g, `Nx1xM`, the second dimension of `border` should be `0`.
 |[inference_iter](#inference_iter)|Integer|`inference_iter=1000`|`-1`|
 |[save_seg_dir](#save_seg_dir)|String|`save_seg_dir=output/test`| `output`|
 |[output_interp_order](#output_interp_order)|Non-negative integer|`output_interp_order=0`|`0`|
+|[dataset_to_infer](#dataset_to_infer) :: `Training` or `Validation` or `Inference` :: `dataset_to_infer=Training` :: `''``
 
 ###### `spatial_window_size`
 Array of integers indicating the size of input window.
@@ -524,6 +525,9 @@ Prediction directory name. If it's a relative path, it is set to be relative to 
 ###### `output_interp_order`
 Interpolation order of the network outputs.
 
+###### `dataset_to_infer`
+String Specifies which dataset ('Training', 'Validation', 'Inference') to compute inference for.
+By default 'Inference' dataset is used.
 
 ## Global-settings
 
