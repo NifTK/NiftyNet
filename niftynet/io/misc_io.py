@@ -30,9 +30,9 @@ FILE_LOG_FORMAT = "%(levelname)s:niftynet:%(asctime)s: %(message)s"
 
 #### utilities for file headers
 
-def infer_ndims_from_file(file_path):
+def infer_ndims_from_file(file_path, loader=None):
     # todo: loader specified by the user is not used for ndims infer.
-    image_header = load_image_from_file(file_path).header
+    image_header = load_image_from_file(file_path, loader).header
     try:
         return int(image_header['dim'][0])
     except TypeError:

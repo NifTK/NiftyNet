@@ -88,7 +88,7 @@ def load_image_from_file(filename, loader=None):
     """
     if loader and loader in SUPPORTED_LOADERS:
         if loader not in AVAILABLE_LOADERS:
-            raise ValueError('Image Loader {} supported buy library not found.'
+            raise ValueError('Image Loader {} supported but library not found.'
                              ' Required libraries: {}'
                              .format(loader, SUPPORTED_LOADERS[loader]))
         tf.logging.debug('Using requested loader: {}'.format(loader))

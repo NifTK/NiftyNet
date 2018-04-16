@@ -652,16 +652,18 @@ class ImageFactory(object):
         try:
             file_path = resolve_file_name(file_path, ('.', home_folder))
             if os.path.isfile(file_path):
-                ndims = misc.infer_ndims_from_file(file_path)
+                loader = kwargs.get('loader', None)
+                ndims = misc.infer_ndims_from_file(file_path, loader)
                 image_type = cls.INSTANCE_DICT.get(ndims, None)
-        except (TypeError, IOError):
+        except (TypeError, IOError, AttributeError):
             pass
 
         if image_type is None:
             try:
                 file_path = [resolve_file_name(path, ('.', home_folder))
                              for path in file_path]
-                ndims = misc.infer_ndims_from_file(file_path[0])
+                loader = kwargs.get('loader', (None,))
+                ndims = misc.infer_ndims_from_file(file_path[0], loader[0])
                 ndims = ndims + (1 if len(file_path) > 1 else 0)
                 image_type = cls.INSTANCE_DICT.get(ndims, None)
             except (AssertionError, TypeError, IOError, AttributeError):
