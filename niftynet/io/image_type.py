@@ -199,6 +199,9 @@ class SpatialImage2D(DataFromFile):
             n_modalities = \
                 np.sum([int(shape[4]) for shape in self._original_shape])
             self._original_shape = non_modality_shapes.pop() + (n_modalities,)
+            self._original_shape = \
+                tuple([shape_i if shape_i > 0 else 1
+                       for shape_i in self._original_shape])
         return self._original_shape
 
     def _load_header(self):
