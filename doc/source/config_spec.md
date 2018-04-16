@@ -525,7 +525,7 @@ For a 2-D slice, e.g, `Nx1xM`, the second dimension of `border` should be `0`.
 - [inference_iter](#inference-iter) :: `integer` :: `inference_iter=1000` :: `-1`
 - [save_seg_dir](#save-seg-dir) :: `string` :: `save_seg_dir=output/test` :: `output`
 - [output_interp_order](#output-interp-order) :: `non-negative integer` :: `output_interp_order=0` :: `0`
-- [dataset_to_infer](#dataset-to-infer) :: `Training|Validation|Inference` :: `dataset_to_infer=Training` :: `''``
+- [dataset_to_infer](#dataset-to-infer) :: `Training|Validation|Inference` :: `dataset_to_infer=Training` :: `''`
 
 ###### `spatial_window_size`
 Array of integers indicating the size of input window.  By default, the window
@@ -549,5 +549,5 @@ Prediction directory name. If it's a relative path, it is set to be relative to 
 Interpolation order of the network outputs.
 
 ###### `dataset_to_infer`
-String Specifies which dataset ('Training', 'Validation', 'Inference') to compute inference for.
+String specifies which dataset ('Training', 'Validation', 'Inference') to compute inference for.
 By default 'Inference' dataset is used.

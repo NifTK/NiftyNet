@@ -170,9 +170,9 @@ class ImageTypeTest(tf.test.TestCase):
             file_path=CASE_5D,
             name='5d_image',
             interp_order=3,
-            output_pixdim=(None,),
+            output_pixdim=None,
             output_axcodes=None,
-            loader=(None,))
+            loader=None)
         self.assertIsInstance(image, SpatialImage5D)
         output = image.get_data()
         self.assertAllClose(np.array([208, 256, 256, 1, 1]), output.shape)
@@ -183,8 +183,8 @@ class ImageTypeTest(tf.test.TestCase):
             file_path=CASE_5D,
             name='5d_image',
             interp_order=1,
-            output_pixdim=((4, 8, 6.0),),
-            output_axcodes=(None,),
+            output_pixdim=(4, 8, 6.0),
+            output_axcodes=None,
             loader=None)
         self.assertIsInstance(image, SpatialImage5D)
         output = image.get_data()
@@ -193,12 +193,12 @@ class ImageTypeTest(tf.test.TestCase):
 
     def test_5d_reorientation(self):
         image = ImageFactory.create_instance(
-            file_path=CASE_5D,
+            file_path=(CASE_5D,),
             name='5d_image',
             interp_order=3,
             output_pixdim=(None,),
             output_axcodes=(('S', 'A', 'L'),),
-            loader=None)
+            loader=(None,))
         self.assertIsInstance(image, SpatialImage5D)
         output = image.get_data()
         self.assertAllClose(np.array([256, 256, 208, 1, 1]), output.shape)
@@ -206,12 +206,12 @@ class ImageTypeTest(tf.test.TestCase):
 
     def test_5d_reorientation_resample(self):
         image = ImageFactory.create_instance(
-            file_path=CASE_5D,
+            file_path=(CASE_5D,),
             name='5d_image',
             interp_order=3,
             output_pixdim=((8, 9, 10),),
-            output_axcodes='RSA',
-            loader=None)
+            output_axcodes=('RSA',),
+            loader=(None,))
         self.assertIsInstance(image, SpatialImage5D)
         output = image.get_data()
         self.assertAllClose(np.array([29, 31, 29, 1, 1]), output.shape)
