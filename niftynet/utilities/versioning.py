@@ -18,17 +18,24 @@ def get_niftynet_version_string():
 
 def get_niftynet_version():
     """
-    Return a user-visible string describing the product version
+    Return a user-visible string describing the product version.
 
-    This is a safe function that will never throw an exception
+    This is a safe function that will never throw an exception.
+
+    :return: a PEP440-compliant version string on success, ``None`` otherwise
     """
+
+    # Default: to be set only if conditions in the branches below are fulfilled
+    version_string = None
 
     # Attempt to get the version string from the git repository
     try:
-        version_buf, version_git, command_git = get_niftynet_git_version()
-        version_string = version_git
+        from ._version import get_versions
+        version_info = get_versions()
+        if version_info['error'] is not None:
+            version_string = version_info['version']
     except:
-        version_string = None
+        pass  # version_string is None by default
 
     # If we cannot get a git version, attempt to get a package version
     if not version_string:
@@ -36,7 +43,7 @@ def get_niftynet_version():
             import pkg_resources
             version_string = pkg_resources.get_distribution("niftynet").version
         except:
-            version_string = None
+            pass  # version_string is None by default
 
     return version_string
 
