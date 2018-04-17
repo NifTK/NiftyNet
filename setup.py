@@ -2,10 +2,10 @@
 from setuptools import setup, find_packages
 from packaging import version
 import re
+from niftynet.utilities.versioning import get_niftynet_version
 
-from niftynet.utilities.versioning import get_niftynet_git_version
 
-version_buf, version_git, command_git = get_niftynet_git_version()
+niftynet_version = get_niftynet_version()
 
 # Regex for checking PEP 440 conformity
 # https://www.python.org/dev/peps/pep-0440/#id79
@@ -15,11 +15,9 @@ pep440_regex = re.compile(
 )
 
 # Check PEP 440 conformity
-if pep440_regex.match(version_git) is None:
-    raise ValueError('The version tag {} constructed from {} output'
-                     ' (generated using the "{}" command) does not'
-                     ' conform to PEP 440'.format(
-                         version_git, version_buf, ' '.join(command_git)))
+if pep440_regex.match(niftynet_version) is None:
+    raise ValueError('The version string {} does not conform to'
+                     ' PEP 440'.format(niftynet_version))
 
 # Get the summary
 description = 'An open-source convolutional neural networks platform' +\
@@ -34,7 +32,7 @@ with open('pip/long_description.rst') as f:
 setup(
     name='NiftyNet',
 
-    version=version_git,
+    version=niftynet_version,
 
     description=description,
     long_description=long_description,
