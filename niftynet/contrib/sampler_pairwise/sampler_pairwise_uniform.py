@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.contrib.data.python.ops.dataset_ops import Dataset
+#from tensorflow.contrib.data.python.ops.dataset_ops import Dataset
 
 from niftynet.engine.image_window import ImageWindow
 from niftynet.layer.base_layer import Layer
@@ -54,7 +54,7 @@ class PairwiseUniformSampler(Layer):
         # initialise a dataset prefetching pairs of image and label volumes
         n_subjects = len(self.reader_0.output_list)
         rand_ints = np.random.randint(n_subjects, size=[n_subjects])
-        image_dataset = Dataset.from_tensor_slices(rand_ints)
+        image_dataset = tf.data.Dataset.from_tensor_slices(rand_ints)
         # mapping random integer id to 4 volumes moving/fixed x image/label
         # tf.py_func wrapper of ``get_pairwise_inputs``
         image_dataset = image_dataset.map(
