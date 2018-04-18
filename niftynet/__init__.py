@@ -21,7 +21,7 @@ except ImportError:
                       ' able to use NiftyNet.')
 
 try:
-    minimal_required_version = "1.3"
+    minimal_required_version = "1.7"
     tf_version = tf.__version__
     if tf_version < minimal_required_version:
         tf.logging.fatal('TensorFlow %s or later is required.'
