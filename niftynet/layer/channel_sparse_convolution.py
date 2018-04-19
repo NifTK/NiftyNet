@@ -253,6 +253,8 @@ class ChannelSparseBNLayer(niftynet.layer.bn.BNLayer):
             initializer=self.initializers['gamma'],
             regularizer=self.regularizers['gamma'],
             dtype=tf.float32, trainable=True)
+        beta = tf.boolean_mask(beta, mask)
+        gamma = tf.boolean_mask(gamma, mask)
 
         collections = [tf.GraphKeys.GLOBAL_VARIABLES]
         moving_mean = tf.get_variable(
@@ -279,7 +281,6 @@ class ChannelSparseBNLayer(niftynet.layer.bn.BNLayer):
              tf.to_int32(tf.where(~mask)[:, 0])],
             [variance,
              tf.boolean_mask(moving_variance, ~mask)])
-
         update_moving_mean = moving_averages.assign_moving_average(
             moving_mean, mean_update, self.moving_decay).op
         update_moving_variance = moving_averages.assign_moving_average(
@@ -289,19 +290,15 @@ class ChannelSparseBNLayer(niftynet.layer.bn.BNLayer):
 
         # call the normalisation function
         if is_training or use_local_stats:
-            # with tf.control_dependencies(
-            #         [update_moving_mean, update_moving_variance]):
             outputs = tf.nn.batch_normalization(
                 inputs, mean, variance,
-                tf.boolean_mask(beta, mask),
-                tf.boolean_mask(gamma, mask), self.eps, name='batch_norm')
+                beta, gamma, self.eps, name='batch_norm')
         else:
             outputs = tf.nn.batch_normalization(
                 inputs,
                 tf.boolean_mask(moving_mean, mask),
                 tf.boolean_mask(moving_variance, mask),
-                tf.boolean_mask(beta, mask),
-                tf.boolean_mask(gamma, mask), self.eps, name='batch_norm')
+                beta, gamma, self.eps, name='batch_norm')
         outputs.set_shape(inputs.get_shape())
         return outputs
 
@@ -368,7 +365,10 @@ class ChannelSparseConvolutionalLayer(TrainableLayer):
 
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
-    def layer_op(self, input_tensor, input_mask=None, is_training=None,
+    def layer_op(self,
+                 input_tensor,
+                 input_mask=None,
+                 is_training=None,
                  keep_prob=None):
         conv_layer = ChannelSparseConvLayer(
             n_output_chns=self.n_output_chns,
@@ -392,6 +392,8 @@ class ChannelSparseConvolutionalLayer(TrainableLayer):
             n_output_ch = self.n_output_chns
 
         output_tensor = conv_layer(input_tensor, input_mask, output_mask)
+        output_tensor.set_shape(
+            output_tensor.shape.as_list()[:-1] + [n_output_ch])
 
         if self.with_bn:
             if is_training is None:
@@ -411,6 +413,4 @@ class ChannelSparseConvolutionalLayer(TrainableLayer):
                 regularizer=self.regularizers['w'],
                 name='acti_')
             output_tensor = acti_layer(output_tensor)
-            output_tensor.set_shape(
-                output_tensor.shape.as_list()[:-1] + [n_output_ch])
         return output_tensor, output_mask
