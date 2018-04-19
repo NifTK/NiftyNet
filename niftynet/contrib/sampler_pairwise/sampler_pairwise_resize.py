@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.contrib.data.python.ops.dataset_ops import Dataset
+#from tensorflow.contrib.data.python.ops.dataset_ops import Dataset
 
 from niftynet.engine.image_window import ImageWindow
 from niftynet.layer.base_layer import Layer
@@ -58,7 +58,7 @@ class PairwiseResizeSampler(Layer):
         while len(int_seq) > 0 and len(int_seq) % self.batch_size != 0:
             int_seq.append(int_seq[-1])
 
-        image_dataset = Dataset.from_tensor_slices(int_seq)
+        image_dataset = tf.data.Dataset.from_tensor_slices(int_seq)
         # mapping random integer id to 4 volumes moving/fixed x image/label
         # tf.py_func wrapper of ``get_pairwise_inputs``
         image_dataset = image_dataset.map(
