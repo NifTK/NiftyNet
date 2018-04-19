@@ -28,7 +28,6 @@ testjob:
     - master
     - dev
     - tags
-    - 257-upgrade-to-tf-1-7
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
@@ -203,7 +202,6 @@ quicktest:
     - 223-put-bug-fixes-under-fixed-header-in-changelog
     - 195-add-evaluation-action-3
     - 192-model_zoo_tests
-    - 257-upgrade-to-tf-1-7
   script:
     # print system info
     - which nvidia-smi
@@ -256,7 +254,6 @@ pip-installer:
     - master
     - dev
     - tags
-    - 257-upgrade-to-tf-1-7
   script:
     # get the shortened version of last commit's hash
     - LAST_COMMIT=$(git rev-parse --short HEAD)
