@@ -16,6 +16,7 @@ import random
 import pandas
 import tensorflow as tf  # to use the system level logging
 
+from niftynet.engine.signal import TRAIN, VALID, INFER, ALL
 from niftynet.utilities.decorators import singleton
 from niftynet.utilities.filename_matching import KeywordsMatching
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
@@ -25,10 +26,6 @@ from niftynet.utilities.util_csv import write_csv
 
 COLUMN_UNIQ_ID = 'subject_id'
 COLUMN_PHASE = 'phase'
-TRAIN = 'Training'
-VALID = 'Validation'
-INFER = 'Inference'
-ALL = 'All'
 SUPPORTED_PHASES = set([TRAIN, VALID, INFER, ALL])
 
 

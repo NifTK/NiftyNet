@@ -6,7 +6,7 @@ import tensorflow as tf
 
 from niftynet.engine.application_iteration import IterationMessage
 from niftynet.engine.application_variables import CONSOLE
-from niftynet.io.image_sets_partitioner import TRAIN, VALID
+from niftynet.engine.signal import TRAIN, VALID
 from tests.application_driver_test import get_initialised_driver
 
 

@@ -6,7 +6,7 @@ Message stores status info of the current iteration.
 import time
 
 from niftynet.engine.application_variables import CONSOLE, TF_SUMMARIES
-from niftynet.io.image_sets_partitioner import TRAIN, VALID, INFER
+from niftynet.engine.signal import TRAIN, VALID, INFER
 from niftynet.utilities.util_common import look_up_operations
 
 CONSOLE_FORMAT = "{} iter {}, {} ({:3f}s)"
