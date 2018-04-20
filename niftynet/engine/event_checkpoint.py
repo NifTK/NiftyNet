@@ -32,8 +32,10 @@ class ModelSaver(object):
     def save_model(self, _sender, **msg):
         """
         Saving the model at the current iteration.
+
         :param _sender:
         :param msg: an iteration message instance
+        :return:
         """
         _iter_msg = msg.get('iter_msg', None)
         if _iter_msg is not None:
@@ -42,8 +44,10 @@ class ModelSaver(object):
     def save_model_interval(self, _sender, **msg):
         """
         Saving the model according to the frequency of ``save_every_n``.
+
         :param _sender:
         :param msg: an iteration message instance
+        :return:
         """
         _iter_msg = msg.get('iter_msg', None)
         if _iter_msg is None:
@@ -55,7 +59,9 @@ class ModelSaver(object):
     def _save_at(self, iter_i):
         """
         Saving the model at iter i and print a console log.
+
         :param iter_i: integer of the current iteration
+        :return:
         """
         self.saver.save(sess=tf.get_default_session(),
                         save_path=self.file_name_prefix,

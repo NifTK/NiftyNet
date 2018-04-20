@@ -23,26 +23,20 @@ class TensorBoardLogger(object):
                  outputs_collector,
                  is_training,
                  **_unused):
-        """
-        :param meta_params: parameters from an initialised niftynet engine
-        """
+        if not is_training:
+            return
         self.tensorboard_every_n = tensorboard_every_n
         self.summary_dir = summary_dir
         # the collector provides TF summary ops
         self.outputs_collector = outputs_collector
         # initialise summary writer
-        _graph = graph
-        _is_training = is_training
-
         self.writer_train = tf.summary.FileWriter(
-            os.path.join(self.summary_dir, TRAIN), _graph)
+            os.path.join(self.summary_dir, TRAIN), graph)
         self.writer_valid = tf.summary.FileWriter(
-            os.path.join(self.summary_dir, VALID), _graph)
-
-        if _is_training:
-            ITER_STARTED.connect(self.read_tensorboard_op)
-            ITER_FINISHED.connect(self.write_tensorboard)
-            tf.logging.info('Initialised tensorboard writer.')
+            os.path.join(self.summary_dir, VALID), graph)
+        ITER_STARTED.connect(self.read_tensorboard_op)
+        ITER_FINISHED.connect(self.write_tensorboard)
+        tf.logging.info('Initialised tensorboard writer.')
 
     def read_tensorboard_op(self, _sender, **msg):
         """

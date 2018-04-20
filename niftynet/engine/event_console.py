@@ -23,8 +23,10 @@ class ConsoleLogger(object):
     def read_console_vars(self, _sender, **msg):
         """
         Event handler to add all console output ops to the iteration message
+
         :param _sender:
         :param msg: an iteration message instance
+        :return:
         """
         _iter_msg = msg.get('iter_msg', None)
         if _iter_msg is None:
@@ -35,9 +37,11 @@ class ConsoleLogger(object):
 
 def print_console_vars(_sender, **msg):
     """
-    Printing iteration message with ``tf.logging interface``.
+    Printing iteration message with ``tf.logging`` interface.
+
     :param _sender:
     :param msg: an iteration message instance
+    :return:
     """
     _iter_msg = msg.get('iter_msg', None)
     tf.logging.info(_iter_msg.to_console_string())
