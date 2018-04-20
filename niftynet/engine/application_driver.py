@@ -28,8 +28,9 @@ from niftynet.engine.application_variables import \
     GradientsCollector, OutputsCollector, global_vars_init_or_restore
 from niftynet.engine.event_tensorboard import TensorBoardLogger
 from niftynet.engine.event_console import ConsoleLogger
+from niftynet.engine.event_checkpoint import ModelSaver
 from niftynet.engine.signal import \
-    TRAIN, VALID, INFER, ITER_STARTED, ITER_FINISHED
+    TRAIN, VALID, INFER, ITER_STARTED, ITER_FINISHED, SESS_FINISHED
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.io.misc_io import get_latest_subfolder, touch_folder
 from niftynet.layer.bn import BN_COLLECTION
@@ -89,7 +90,7 @@ class ApplicationDriver(object):
 
         self.event_1 = None
         self.event_2 = None
-        self.model_saver = None
+        self.event_3 = None
 
     def initialise_application(self, workflow_param, data_param):
         """
@@ -267,12 +268,13 @@ class ApplicationDriver(object):
             loop_status = {}
             self.event_1 = TensorBoardLogger(**self.__dict__)
             self.event_2 = ConsoleLogger(**self.__dict__)
+            self.event_3 = ModelSaver(**self.__dict__)
             try:
                 # iteratively run the graph
                 if self.is_training:
-                    self.model_saver = ModelSaver(session, self.saver,
-                                                  self.save_every_n,
-                                                  self.session_prefix)
+                    #self.model_saver = ModelSaver(session, self.saver,
+                    #                              self.save_every_n,
+                    #                              self.session_prefix)
                     loop_status['current_iter'] = self.initial_iter
                     self._training_loop(session, loop_status)
                 else:
@@ -297,7 +299,7 @@ class ApplicationDriver(object):
                     # saving model at the last iteration
                     iter_msg = IterationMessage()
                     iter_msg.current_iter = loop_status.get('current_iter', -1)
-                    self.post_training.send(iter_msg)
+                    SESS_FINISHED.send('sender_string', iter_msg=iter_msg)
                 elif not loop_status.get('all_saved_flag', None):
                     tf.logging.warning('stopped early, incomplete loops')
 
@@ -447,7 +449,7 @@ class ApplicationDriver(object):
             iter_msg.status = self.app.interpret_output(
                 iter_msg.current_iter_output[NETWORK_OUTPUT])
 
-            ITER_FINISHED.send(self, iter_msg=iter_msg)
+            ITER_FINISHED.send('sender_string', iter_msg=iter_msg)
             iter_msg.post_iter.send(iter_msg)
 
             if iter_msg.should_stop:
@@ -561,104 +563,3 @@ def iter_generator(count_generator, phase):
         iter_msg.post_iter = signals[phase][1]
         yield iter_msg
 
-
-#class ConsoleLogger(object):
-#    """ This class handles iteration events to print output to the console """
-#
-#    def __init__(self, outputs_collector):
-#        self.outputs_collector = outputs_collector
-#        ApplicationDriver.pre_train_iter.connect(self.on_pre_iter)
-#        ApplicationDriver.pre_validation_iter.connect(self.on_pre_iter)
-#        ApplicationDriver.post_train_iter.connect(self.on_post_iter)
-#        ApplicationDriver.post_validation_iter.connect(self.on_post_iter)
-#        ApplicationDriver.post_infer_iter.connect(self.on_post_iter)
-#
-#    def on_pre_iter(self, iter_msg):
-#        """ Event handler to add all the console output ops to the iteration
-#        message.
-#        iter_msg is an IterationMessage object """
-#        iter_msg.ops_to_run[CONSOLE] = \
-#            self.outputs_collector.variables(CONSOLE)
-#
-#    # pylint: disable=no-self-use
-#    def on_post_iter(self, iter_msg):
-#        """ Event handler to log the console outputs from the iteration
-#        message.
-#        iter_msg is an IterationMessage object """
-#        tf.logging.info(iter_msg.to_console_string())
-
-
-class ModelSaver(object):
-    """This class handles iteration events to save the model at regular
-    intervals and at the end of training."""
-
-    def __init__(self, sess, saver, save_every_n, session_prefix):
-        self.sess = sess
-        self.session_prefix = session_prefix
-        self.save_every_n = save_every_n
-        self.saver = saver
-        ApplicationDriver.post_training.connect(self.save_model)
-        ApplicationDriver.post_train_iter.connect(self.save_model_interval)
-
-    def save_model_interval(self, iter_msg):
-        """ Save the model if the iteration at at the specified interval
-        iter_msg is an IterationMessage object """
-        if iter_msg.current_iter > 0 and \
-                self.save_every_n > 0 and \
-                iter_msg.current_iter % self.save_every_n == 0:
-            self.save_model(iter_msg)
-
-    def save_model(self, iter_msg):
-        """ Save the model regardless of iteration
-        iter_msg is an IterationMessage object """
-        self.saver.save(sess=self.sess,
-                        save_path=self.session_prefix,
-                        global_step=iter_msg.current_iter)
-        tf.logging.info('iter %d saved: %s', iter_msg.current_iter,
-                        self.session_prefix)
-
-# class TensorBoardLogger(object):
-#    """ This class handles iteration events to log summaries to the
-#    TensorBoard log."""
-#
-#    def __init__(self, outputs_collector, summary_dir, graph,
-#                 tensorboard_every_n):
-#        self.summary_dir = summary_dir
-#        self.writer_train = tf.summary.FileWriter(
-#            os.path.join(self.summary_dir, TRAIN), graph)
-#        self.writer_valid = tf.summary.FileWriter(
-#            os.path.join(self.summary_dir, VALID), graph)
-#        self.outputs_collector = outputs_collector
-#        self.tensorboard_every_n = tensorboard_every_n
-#        ApplicationDriver.pre_train_iter.connect(self.on_pre_iter)
-#        ApplicationDriver.pre_validation_iter.connect(self.on_pre_iter)
-#        ApplicationDriver.post_train_iter.connect(self.on_post_train_iter)
-#        ApplicationDriver.post_validation_iter.connect(
-#            self.on_post_validation_iter)
-#
-#    def filter(self, iter_msg):
-#        """ Decide whether to save a TensorBoard log entry for a given
-#        iteration.
-#        iter_msg is an IterationMessage object """
-#        return self.tensorboard_every_n > 0 and \
-#            iter_msg.current_iter % self.tensorboard_every_n == 0
-#
-#    def on_pre_iter(self, iter_msg):
-#        """ Event handler to add all the TensorBoard summaries to the iteration
-#        message.
-#        iter_msg is an IterationMessage object """
-#        if self.filter(iter_msg):
-#            iter_msg.ops_to_run[TF_SUMMARIES] = \
-#                self.outputs_collector.variables(TF_SUMMARIES)
-#
-#    def on_post_train_iter(self, iter_msg):
-#        """ Event handler to write the training TensorBoard log entry to disk.
-#        iter_msg is an IterationMessage object """
-#        if self.filter(iter_msg):
-#            iter_msg.to_tf_summary(self.writer_train)
-#
-#    def on_post_validation_iter(self, iter_msg):
-#        """ Event handler to write the valiation TensorBoard log entry to disk.
-#        iter_msg is an IterationMessage object """
-#        if self.filter(iter_msg):
-#            iter_msg.to_tf_summary(self.writer_valid)
