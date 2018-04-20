@@ -23,11 +23,11 @@ from blinker import signal
 
 from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.engine.application_iteration import IterationMessage
-from niftynet.engine.application_variables import \
-    CONSOLE, NETWORK_OUTPUT
+from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import \
     GradientsCollector, OutputsCollector, global_vars_init_or_restore
 from niftynet.engine.event_tensorboard import TensorBoardLogger
+from niftynet.engine.event_console import ConsoleLogger
 from niftynet.engine.signal import \
     TRAIN, VALID, INFER, ITER_STARTED, ITER_FINISHED
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
@@ -87,8 +87,8 @@ class ApplicationDriver(object):
         self.outputs_collector = None
         self.gradients_collector = None
 
-        self.console = None
         self.event_1 = None
+        self.event_2 = None
         self.model_saver = None
 
     def initialise_application(self, workflow_param, data_param):
@@ -265,6 +265,8 @@ class ApplicationDriver(object):
 
             start_time = time.time()
             loop_status = {}
+            self.event_1 = TensorBoardLogger(**self.__dict__)
+            self.event_2 = ConsoleLogger(**self.__dict__)
             try:
                 # iteratively run the graph
                 if self.is_training:
@@ -272,7 +274,6 @@ class ApplicationDriver(object):
                                                   self.save_every_n,
                                                   self.session_prefix)
                     loop_status['current_iter'] = self.initial_iter
-                    self.event_1 = TensorBoardLogger(**self.__dict__)
                     self._training_loop(session, loop_status)
                 else:
                     loop_status['all_saved_flag'] = False
@@ -466,7 +467,7 @@ class ApplicationDriver(object):
         # self.tensorboard = TensorBoardLogger(self.outputs_collector,
         #                                     self.summary_dir, sess.graph,
         #                                     self.tensorboard_every_n)
-        self.console = ConsoleLogger(self.outputs_collector)
+        #self.console = ConsoleLogger(self.outputs_collector)
 
         # Core training loop handling
         def add_gradient(iter_msg):
@@ -486,7 +487,7 @@ class ApplicationDriver(object):
 
         loop_status['all_saved_flag'] = False
 
-        self.console = ConsoleLogger(self.outputs_collector)
+        #self.console = ConsoleLogger(self.outputs_collector)
 
         def is_complete(iter_msg):
             """ Event handler to trigger the completion message.
@@ -561,30 +562,30 @@ def iter_generator(count_generator, phase):
         yield iter_msg
 
 
-class ConsoleLogger(object):
-    """ This class handles iteration events to print output to the console """
-
-    def __init__(self, outputs_collector):
-        self.outputs_collector = outputs_collector
-        ApplicationDriver.pre_train_iter.connect(self.on_pre_iter)
-        ApplicationDriver.pre_validation_iter.connect(self.on_pre_iter)
-        ApplicationDriver.post_train_iter.connect(self.on_post_iter)
-        ApplicationDriver.post_validation_iter.connect(self.on_post_iter)
-        ApplicationDriver.post_infer_iter.connect(self.on_post_iter)
-
-    def on_pre_iter(self, iter_msg):
-        """ Event handler to add all the console output ops to the iteration
-        message.
-        iter_msg is an IterationMessage object """
-        iter_msg.ops_to_run[CONSOLE] = \
-            self.outputs_collector.variables(CONSOLE)
-
-    # pylint: disable=no-self-use
-    def on_post_iter(self, iter_msg):
-        """ Event handler to log the console outputs from the iteration
-        message.
-        iter_msg is an IterationMessage object """
-        tf.logging.info(iter_msg.to_console_string())
+#class ConsoleLogger(object):
+#    """ This class handles iteration events to print output to the console """
+#
+#    def __init__(self, outputs_collector):
+#        self.outputs_collector = outputs_collector
+#        ApplicationDriver.pre_train_iter.connect(self.on_pre_iter)
+#        ApplicationDriver.pre_validation_iter.connect(self.on_pre_iter)
+#        ApplicationDriver.post_train_iter.connect(self.on_post_iter)
+#        ApplicationDriver.post_validation_iter.connect(self.on_post_iter)
+#        ApplicationDriver.post_infer_iter.connect(self.on_post_iter)
+#
+#    def on_pre_iter(self, iter_msg):
+#        """ Event handler to add all the console output ops to the iteration
+#        message.
+#        iter_msg is an IterationMessage object """
+#        iter_msg.ops_to_run[CONSOLE] = \
+#            self.outputs_collector.variables(CONSOLE)
+#
+#    # pylint: disable=no-self-use
+#    def on_post_iter(self, iter_msg):
+#        """ Event handler to log the console outputs from the iteration
+#        message.
+#        iter_msg is an IterationMessage object """
+#        tf.logging.info(iter_msg.to_console_string())
 
 
 class ModelSaver(object):
