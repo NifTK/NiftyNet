@@ -165,6 +165,8 @@ def imread_sitk(filename):
     except RuntimeError:
         raise IOError(filename)
     img = sitk.GetArrayFromImage(simg)
+    if simg.GetDimension() > 2:
+        img = img.transpose()
     return image2nibabel(img, affine=make_affine_from_sitk(simg))
 
 
@@ -197,17 +199,13 @@ class ImageAsNibabel(nib.Nifti1Image):
     Wrapper class around a Nibabel file format. Loads an image using PIL
     (or scikit-image if available) and transforms it to a `nib.Nifti1Image`.
 
-    The resulting 2D image is already translated to a 5D array, swapping the
-    channels to the last axis in the case of a color image.
+    The resulting 2D color image is already translated to a 5D array,
+    swapping the channels to the last axis.
     """
 
     def __init__(self, img, affine):
         if img.ndim == 3 and img.shape[2] <= 4:  # Color Image
             img = img[:, :, None, None, :]
-        elif img.ndim == 3:  # 3D image
-            img = img[:, :, :, None, None]
-        elif img.ndim == 2:  # Grayscale or mask
-            img = img[:, :, None, None, None]
 
         nib.Nifti1Image.__init__(self, img, affine)
 
