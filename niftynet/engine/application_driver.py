@@ -21,7 +21,6 @@ import itertools
 import tensorflow as tf
 from blinker import signal
 
-
 from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.engine.application_iteration import IterationMessage
 from niftynet.engine.application_variables import \
@@ -521,7 +520,9 @@ class ApplicationDriver(object):
         """
         Import the application module
         """
-        return ApplicationFactory.create(app_type_string)
+        app_class = ApplicationFactory.create(app_type_string)
+        app_class.clear()
+        return app_class
 
     @staticmethod
     def _tf_config():

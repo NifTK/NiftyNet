@@ -17,9 +17,9 @@ TRAIN = "train"
 INFER = "inference"
 EVAL = "evaluation"
 
-
-
 application_singleton_instance = None # global so it can be reset
+
+
 class SingletonApplication(type):
     def __call__(cls, *args, **kwargs):
         global application_singleton_instance
