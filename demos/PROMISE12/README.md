@@ -1,6 +1,7 @@
 To start this Jupyter Notebook demo:
 
 1) Install conda
+
 2) in conda terminal run the following commands:
 
 ```bash
