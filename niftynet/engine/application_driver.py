@@ -531,7 +531,9 @@ class ApplicationDriver(object):
         """
         Import the application module
         """
-        return ApplicationFactory.create(app_type_string)
+        app_class = ApplicationFactory.create(app_type_string)
+        app_class.clear()
+        return app_class
 
     @staticmethod
     def _tf_config():
