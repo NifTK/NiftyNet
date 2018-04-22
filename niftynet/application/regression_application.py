@@ -84,7 +84,7 @@ class RegressionApplication(BaseApplication):
             self.readers = [reader]
         else:
             raise ValueError('Action `{}` not supported. Expected one of {}'
-                             .format(self.action, self.SUPPORTED_ACTIONS))
+                             .format(self.action, self.SUPPORTED_PHASES))
 
         mean_var_normaliser = MeanVarNormalisationLayer(
             image_name='image')

@@ -12,6 +12,7 @@ from blinker import Namespace
 TRAIN = 'training'
 VALID = 'validation'
 INFER = 'inference'
+EVAL = 'evaluation'
 ALL = 'all'
 
 # namespace of NiftyNet's default signals.

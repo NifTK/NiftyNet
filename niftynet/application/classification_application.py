@@ -89,7 +89,7 @@ class ClassificationApplication(BaseApplication):
             self.readers = [reader]
         else:
             raise ValueError('Action `{}` not supported. Expected one of {}'
-                             .format(self.action, self.SUPPORTED_ACTIONS))
+                             .format(self.action, self.SUPPORTED_PHASES))
 
         foreground_masking_layer = None
         if self.net_param.normalise_foreground_only:

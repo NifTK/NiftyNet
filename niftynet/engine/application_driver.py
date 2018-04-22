@@ -38,7 +38,6 @@ from niftynet.utilities.util_common import set_cuda_device, traverse_nested
 
 FILE_PREFIX = 'model.ckpt'
 
-
 # pylint: disable=too-many-instance-attributes
 class ApplicationDriver(object):
     """
@@ -115,7 +114,7 @@ class ApplicationDriver(object):
 
         assert os.path.exists(system_param.model_dir), \
             'Model folder not exists {}'.format(system_param.model_dir)
-        self.is_training = (system_param.action == "train")
+        self.is_training = TRAIN.startswith(system_param.action.lower())
         # hardware-related parameters
         self.num_threads = max(system_param.num_threads, 1) \
             if self.is_training else 1
@@ -531,9 +530,7 @@ class ApplicationDriver(object):
         """
         Import the application module
         """
-        app_class = ApplicationFactory.create(app_type_string)
-        app_class.clear()
-        return app_class
+        return ApplicationFactory.create(app_type_string)
 
     @staticmethod
     def _tf_config():

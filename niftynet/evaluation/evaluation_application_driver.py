@@ -76,8 +76,7 @@ class EvaluationApplicationDriver(object):
         assert app_param, 'application specific param. not specified'
         self.app_param = app_param
         app_module = ApplicationFactory.create(app_param.name)
-        self.app = app_module(net_param, infer_param,
-                              system_param.action)
+        self.app = app_module(net_param, infer_param, system_param.action)
 
         self.eval_param = eval_param
 

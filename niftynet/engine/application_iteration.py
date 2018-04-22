@@ -10,7 +10,7 @@ from niftynet.engine.signal import TRAIN, VALID, INFER
 from niftynet.utilities.util_common import look_up_operations
 
 CONSOLE_FORMAT = "{} iter {}, {} ({:3f}s)"
-PHASES = {TRAIN, VALID, INFER}
+SUPPORTED_PHASES = {TRAIN, VALID, INFER}
 
 
 # pylint: disable=too-many-instance-attributes
@@ -132,13 +132,13 @@ class IterationMessage(object):
 
     @phase.setter
     def phase(self, value):
-        self._phase = look_up_operations(value, PHASES)
+        self._phase = look_up_operations(value, SUPPORTED_PHASES)
 
     @property
     def is_training(self):
         """
 
-        :return: boolean value indicating if the phase is in training
+        :return: boolean value indicating if the phase is training
         """
         return self.phase == TRAIN
 

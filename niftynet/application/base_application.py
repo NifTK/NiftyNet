@@ -2,38 +2,41 @@
 """
 Interface of NiftyNet application
 """
-from argparse import Namespace
 import os
+from argparse import Namespace
 
 import tensorflow as tf
 from six import with_metaclass
 
-from niftynet.layer.base_layer import TrainableLayer
+from niftynet.engine.signal import TRAIN, INFER, EVAL
 from niftynet.utilities import util_common
-from niftynet.utilities.util_common import look_up_operations
-from niftynet.io.image_sets_partitioner import SUPPORTED_PHASES
-
-TRAIN = "train"
-INFER = "inference"
-EVAL = "evaluation"
-
-application_singleton_instance = None # global so it can be reset
 
 
+APP_INSTANCE = None  # global so it can be reset
+
+
+# pylint: disable=global-statement
 class SingletonApplication(type):
+    """
+    Maintaining a global application instance.
+    """
     def __call__(cls, *args, **kwargs):
-        global application_singleton_instance
-        if application_singleton_instance is None:
-            application_singleton_instance = \
+        global APP_INSTANCE
+        if APP_INSTANCE is None:
+            APP_INSTANCE = \
                 super(SingletonApplication, cls).__call__(*args, **kwargs)
         # else:
         #     raise RuntimeError('application instance already started.')
-        return application_singleton_instance
+        return APP_INSTANCE
 
     @classmethod
-    def clear(cls):
-        global application_singleton_instance
-        application_singleton_instance = None
+    def clear(mcs):
+        """
+        Remove the instance.
+        :return:
+        """
+        global APP_INSTANCE
+        APP_INSTANCE = None
 
 
 class BaseApplication(with_metaclass(SingletonApplication, object)):
@@ -48,8 +51,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     # the section collects all application specific user parameters
     REQUIRED_CONFIG_SECTION = None
 
-    # flag for action 'train', 'inference', 'evaluation'
-    SUPPORTED_ACTIONS = {TRAIN, INFER, EVAL}
+    SUPPORTED_PHASES = {TRAIN, INFER, EVAL}
     _action = TRAIN
     # TF placeholders for switching network on the fly
     is_validation = None
@@ -69,6 +71,12 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     output_decoder = None
 
     def check_initialisations(self):
+        """
+        Check that the derived class should initialise
+        the application components properly.
+
+        :return:
+        """
         if self.readers is None:
             raise NotImplementedError('reader should be initialised')
         if self.sampler is None:
@@ -77,9 +85,10 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
                 'set self.sampler to [None].')
         if self.net is None:
             raise NotImplementedError('net should be initialised')
-        if not isinstance(self.net, TrainableLayer):
-            raise ValueError('self.net should be an instance'
-                             ' of niftynet.layer.TrainableLayer')
+        # from niftynet.layer.base_layer import TrainableLayer
+        # if not isinstance(self.net, TrainableLayer):
+        #     raise ValueError('self.net should be an instance'
+        #                      ' of niftynet.layer.TrainableLayer')
         if self.optimiser is None and self.is_training:
             raise NotImplementedError('optimiser should be initialised')
         if self.gradient_op is None and self.is_training:
@@ -88,23 +97,23 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
             raise NotImplementedError('output decoder should be initialised')
 
     def get_file_lists(self, data_partitioner):
-        """This function pull the correct file_lists from the data partitioner
-        depending on the phase
-        :param data_partitioner:
-                           specifies train/valid/infer splitting if needed
-        :return:           list of file lists of length 2 if validation is
-                           needed otherwise 1"""
+        """
+        This function pull the correct file_lists from the data partitioner
+        depending on the phase.
+
+        :param data_partitioner: specifies train/valid/infer splitting if needed
+        :return: list of file lists of length 2
+            if validation is needed otherwise 1
+        """
         if self.is_training:
-            if self.action_param.validation_every_n > 0 and\
-                data_partitioner.has_validation:
+            if self.action_param.validation_every_n > 0 and \
+                    data_partitioner.has_validation:
                 return [data_partitioner.train_files,
                         data_partitioner.validation_files]
-            else:
-                return [data_partitioner.train_files]
+            return [data_partitioner.train_files]
 
         dataset = self.action_param.dataset_to_infer
         if dataset:
-            dataset = look_up_operations(dataset, SUPPORTED_PHASES)
             return [data_partitioner.get_file_list(dataset)]
 
         return [data_partitioner.inference_files]
@@ -127,7 +136,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         Samplers take ``self.reader`` as input and generates
         sequences of ImageWindow that will be fed to the networks
 
-        This function sets self.sampler.
+        This function sets ``self.sampler``.
         """
         raise NotImplementedError
 
@@ -164,13 +173,13 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
     def add_inferred_output_like(self, data_param, task_param, name):
         """ This function adds entries to parameter objects to enable
-        the evaluation action to automatically read in the output of a 
+        the evaluation action to automatically read in the output of a
         previous inference run if inference is not explicitly specified.
 
         This can be used in an application if there is a data section
         entry in the configuration file that matches the inference output.
         In supervised learning, the reference data section would often
-        match the inference output and could be used here. Otherwise, 
+        match the inference output and could be used here. Otherwise,
         a template data section could be used.
 
         :param data_param:
@@ -187,14 +196,14 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
                 self.action_param.save_seg_dir, 'inferred.csv')
             data_param['inferred'] = inferred_param
         # Add the task parameter
-        if 'inferred' not in task_param or len(task_param.inferred)==0:
+        if 'inferred' not in task_param or not task_param.inferred:
             task_param.inferred = ('inferred',)
         return data_param, task_param
 
     def set_network_gradient_op(self, gradients):
         """
-        create gradient op by optimiser.apply_gradients
-        this function sets ``self.gradient_op``.
+        Create gradient op by ``optimiser.apply_gradients``.
+        This function sets ``self.gradient_op``.
 
         Override this function for more complex optimisations such as
         using different optimisers for sub-networks.
@@ -218,7 +227,8 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
     def stop(self):
         """
-        stop the sampling threads if there's any.
+        Stop the sampling threads and
+        remove application instance if there's any.
 
         :return:
         """
@@ -226,6 +236,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
             if sampler is None:
                 continue
             sampler.close_all()
+        SingletonApplication.clear()
 
     def set_iteration_update(self, iteration_message):
         """
@@ -235,9 +246,9 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         to evaluate TF graph elements, where
         ``variables_to_eval`` and ``data_dict`` are retrieved from
         ``application_iteration.IterationMessage.ops_to_run`` and
-        ``application_iteration.IterationMessage.data_feed_dict``.
-        in addition to the variables collected by output_collector;
-        implemented in ``application_driver.run_vars``)
+        ``application_iteration.IterationMessage.data_feed_dict``
+         (In addition to the variables collected by output_collector;
+        implemented in ``application_driver.run_vars``).
 
         This function (is called before ``tf.session.run`` by the
         driver) provides an interface for accessing ``variables_to_eval`` and
@@ -253,7 +264,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
     def get_sampler(self):
         """
-        get samplers of the application
+        Get samplers of the application
 
         :return: ``niftynet.engine.sampler_*`` instances
         """
@@ -261,7 +272,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
     def add_validation_flag(self):
         """
-        add a TF placeholder for switching between train/valid graphs,
+        Add a TF placeholder for switching between train/valid graphs,
         this function sets ``self.is_validation``. ``self.is_validation``
         can be used by applications.
 
@@ -281,15 +292,26 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
     @action.setter
     def action(self, value):
-        self._action = look_up_operations(value, self.SUPPORTED_ACTIONS)
+        """
+        The action should have at least two characters matching
+        the one of the phase string TRAIN, INFER, EVAL
+
+        :param value:
+        :return:
+        """
+        try:
+            self._action = value.lower()
+            assert len(self._action) >= 2
+        except (AttributeError, AssertionError):
+            tf.logging.fatal('Error setting application action: %s', value)
 
     @property
     def is_training(self):
         """
 
-        :return: boolean value indicating if the phase is in training
+        :return: boolean value indicating if the phase is training
         """
-        return self.action == TRAIN
+        return TRAIN.startswith(self.action)
 
     @property
     def is_inference(self):
@@ -297,7 +319,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
         :return: boolean value indicating if the phase is inference
         """
-        return self.action == INFER
+        return INFER.startswith(self.action)
 
     @property
     def is_evaluation(self):
@@ -305,5 +327,4 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
         :return: boolean value indicating if the action is evaluation
         """
-        return self.action == EVAL
-                
+        return EVAL.startswith(self.action)

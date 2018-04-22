@@ -26,7 +26,7 @@ class DriverLoopTest(tf.test.TestCase):
         msg.current_iter_output = {'test'}
         self.assertEqual(msg.current_iter_output, {'test'})
         self.assertGreater(msg.iter_duration, 0.0)
-        self.assertStartsWith(msg.to_console_string(), 'Training')
+        self.assertStartsWith(msg.to_console_string(), 'training')
         self.assertEqual(msg.to_tf_summary(0), None)
 
     def test_set_fields(self):
@@ -79,10 +79,10 @@ class DriverLoopTest(tf.test.TestCase):
             app_driver._training_loop(sess, loop_status)
 
             # Check sequence of iterations
-            self.assertRegexpMatches(iter_msgs[0][0].to_console_string(), 'Training')
-            self.assertRegexpMatches(iter_msgs[0][1].to_console_string(), 'Training')
-            self.assertRegexpMatches(iter_msgs[0][2].to_console_string(), 'Validation')
-            self.assertRegexpMatches(iter_msgs[0][3].to_console_string(), 'Training')
+            self.assertRegexpMatches(iter_msgs[0][0].to_console_string(), 'training')
+            self.assertRegexpMatches(iter_msgs[0][1].to_console_string(), 'training')
+            self.assertRegexpMatches(iter_msgs[0][2].to_console_string(), 'validation')
+            self.assertRegexpMatches(iter_msgs[0][3].to_console_string(), 'training')
 
             # Check durations
             for iter_msg in iter_msgs[0]:
