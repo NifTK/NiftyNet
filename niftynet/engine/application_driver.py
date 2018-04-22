@@ -21,14 +21,12 @@ import time
 import tensorflow as tf
 from blinker import signal
 
-from niftynet.engine.application_factory import ApplicationFactory
+from niftynet.engine.application_factory import \
+    ApplicationFactory, EventHandlerFactory
 from niftynet.engine.application_iteration import IterationMessage
-from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import \
     GradientsCollector, OutputsCollector, global_vars_init_or_restore
-from niftynet.engine.event_tensorboard import TensorBoardLogger
-from niftynet.engine.event_console import ConsoleLogger
-from niftynet.engine.event_checkpoint import ModelSaver
+from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.signal import \
     TRAIN, VALID, INFER, ITER_STARTED, ITER_FINISHED, SESS_FINISHED
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
@@ -37,6 +35,7 @@ from niftynet.layer.bn import BN_COLLECTION
 from niftynet.utilities.util_common import set_cuda_device, traverse_nested
 
 FILE_PREFIX = 'model.ckpt'
+
 
 # pylint: disable=too-many-instance-attributes
 class ApplicationDriver(object):
@@ -87,9 +86,10 @@ class ApplicationDriver(object):
         self.outputs_collector = None
         self.gradients_collector = None
 
-        self.event_1 = None
-        self.event_2 = None
-        self.event_3 = None
+        self.event_handler_names = [
+            'niftynet.engine.event_console.ConsoleLogger',
+            'niftynet.engine.event_tensorboard.TensorBoardLogger',
+            'niftynet.engine.event_checkpoint.ModelSaver']
 
     def initialise_application(self, workflow_param, data_param):
         """
@@ -173,7 +173,7 @@ class ApplicationDriver(object):
         data_fractions = None
         if do_new_partition:
             assert train_param.exclude_fraction_for_validation > 0 or \
-                   self.validation_every_n <= 0, \
+                self.validation_every_n <= 0, \
                 'validation_every_n is set to {}, ' \
                 'but train/validation splitting not available,\nplease ' \
                 'check "exclude_fraction_for_validation" in the config ' \
@@ -209,36 +209,6 @@ class ApplicationDriver(object):
         with self.graph.as_default(), tf.name_scope('Sampler'):
             self.app.initialise_sampler()
 
-    def _run_sampler_threads(self, session=None):
-        """
-        Get samplers from application and try to run sampler threads.
-
-        Note: Overriding app.get_sampler() method by returning None to bypass
-        this step.
-
-        :param session: TF session used for fill
-            tf.placeholders with sampled data
-        :return:
-        """
-        if session is None:
-            return
-        if self._coord is None:
-            return
-        if self.num_threads <= 0:
-            return
-        try:
-            samplers = self.app.get_sampler()
-            for sampler in traverse_nested(samplers):
-                if sampler is None:
-                    continue
-                sampler.run_threads(session, self._coord, self.num_threads)
-            tf.logging.info('Filling queues (this can take a few minutes)')
-        except (NameError, TypeError, AttributeError, IndexError):
-            tf.logging.fatal(
-                "samplers not running, pop_batch_op operations "
-                "are blocked.")
-            raise
-
     def run_application(self):
         """
         Initialise a TF graph, connect data sampler and network within
@@ -265,15 +235,11 @@ class ApplicationDriver(object):
 
             start_time = time.time()
             loop_status = {}
-            self.event_1 = TensorBoardLogger(**self.__dict__)
-            self.event_2 = ConsoleLogger(**self.__dict__)
-            self.event_3 = ModelSaver(**self.__dict__)
+
+            _unused = self._load_event_handlers(self.event_handler_names)
             try:
                 # iteratively run the graph
                 if self.is_training:
-                    #self.model_saver = ModelSaver(session, self.saver,
-                    #                              self.save_every_n,
-                    #                              self.session_prefix)
                     loop_status['current_iter'] = self.initial_iter
                     self._training_loop(session, loop_status)
                 else:
@@ -464,12 +430,6 @@ class ApplicationDriver(object):
         interpretation.
         """
 
-        # Add observers for tensorboard, and console output (move to io?)
-        # self.tensorboard = TensorBoardLogger(self.outputs_collector,
-        #                                     self.summary_dir, sess.graph,
-        #                                     self.tensorboard_every_n)
-        #self.console = ConsoleLogger(self.outputs_collector)
-
         # Core training loop handling
         def add_gradient(iter_msg):
             """ Event handler to add the backpropagation update.
@@ -488,8 +448,6 @@ class ApplicationDriver(object):
 
         loop_status['all_saved_flag'] = False
 
-        #self.console = ConsoleLogger(self.outputs_collector)
-
         def is_complete(iter_msg):
             """ Event handler to trigger the completion message.
             iter_msg is an IterationMessage object """
@@ -501,6 +459,44 @@ class ApplicationDriver(object):
         self.post_infer_iter.connect(is_complete)
 
         self._loop(iter_generator(itertools.count(), INFER), sess, loop_status)
+
+    def _run_sampler_threads(self, session=None):
+        """
+        Get samplers from application and try to run sampler threads.
+
+        Note: Overriding app.get_sampler() method by returning None to bypass
+        this step.
+
+        :param session: TF session used for fill
+            tf.placeholders with sampled data
+        :return:
+        """
+        if session is None:
+            return
+        if self._coord is None:
+            return
+        if self.num_threads <= 0:
+            return
+        try:
+            samplers = self.app.get_sampler()
+            for sampler in traverse_nested(samplers):
+                if sampler is None:
+                    continue
+                sampler.run_threads(session, self._coord, self.num_threads)
+            tf.logging.info('Filling queues (this can take a few minutes)')
+        except (NameError, TypeError, AttributeError, IndexError):
+            tf.logging.fatal(
+                "samplers not running, pop_batch_op operations "
+                "are blocked.")
+            raise
+
+    def _load_event_handlers(self, names):
+        handlers = []
+        for name in names:
+            the_event_class = EventHandlerFactory.create(name)
+            # initialise all registered event handler classes
+            handlers.append(the_event_class(**vars(self)))
+        return handlers
 
     def _device_string(self, device_id=0, is_worker=True):
         """
@@ -549,16 +545,16 @@ def iter_generator(count_generator, phase):
     count_generator is an iterable object yielding iteration numbers
     phase is one of TRAIN, VALID or INFER
     """
-    signals = {TRAIN: (ApplicationDriver.pre_train_iter,
-                       ApplicationDriver.post_train_iter),
-               VALID: (ApplicationDriver.pre_validation_iter,
-                       ApplicationDriver.post_validation_iter),
-               INFER: (ApplicationDriver.pre_infer_iter,
-                       ApplicationDriver.post_infer_iter)}
+    signals = {
+        TRAIN: (ApplicationDriver.pre_train_iter,
+                ApplicationDriver.post_train_iter),
+        VALID: (ApplicationDriver.pre_validation_iter,
+                ApplicationDriver.post_validation_iter),
+        INFER: (ApplicationDriver.pre_infer_iter,
+                ApplicationDriver.post_infer_iter)}
     for iter_i in count_generator:
         iter_msg = IterationMessage()
         iter_msg.current_iter, iter_msg.phase = iter_i, phase
         iter_msg.pre_iter = signals[phase][0]
         iter_msg.post_iter = signals[phase][1]
         yield iter_msg
-

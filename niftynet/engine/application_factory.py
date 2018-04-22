@@ -198,6 +198,7 @@ SUPPORTED_EVALUATIONS = {
     'roc': 'niftynet.contrib.evaluation.classification_evaluations.roc',
 }
 
+
 def select_module(module_name, type_str, lookup_table):
     """
     This function first tries to find the absolute module name
@@ -356,6 +357,7 @@ class InitializerFactory(ModuleFactory):
             args = {}
         return init_class.get_instance(args)
 
+
 class EvaluationFactory(ModuleFactory):
     """
     Import an optimiser from niftynet.engine.application_optimiser or
@@ -363,3 +365,11 @@ class EvaluationFactory(ModuleFactory):
     """
     SUPPORTED = SUPPORTED_EVALUATIONS
     type_str = 'evaluation'
+
+
+class EventHandlerFactory(ModuleFactory):
+    """
+    Import an event handler such as niftynet.engine.event_console
+    """
+    SUPPORTED = {}
+    type_str = 'event_handler'

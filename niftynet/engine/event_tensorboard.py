@@ -36,7 +36,6 @@ class TensorBoardLogger(object):
             os.path.join(self.summary_dir, VALID), graph)
         ITER_STARTED.connect(self.read_tensorboard_op)
         ITER_FINISHED.connect(self.write_tensorboard)
-        tf.logging.info('Initialised tensorboard writer.')
 
     def read_tensorboard_op(self, _sender, **msg):
         """
