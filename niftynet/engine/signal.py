@@ -9,10 +9,10 @@ from __future__ import unicode_literals
 from blinker import Namespace
 
 # possible phases of the engine, used throughout the project.
-TRAIN = 'Training'
-VALID = 'Validation'
-INFER = 'Inference'
-ALL = 'All'
+TRAIN = 'training'
+VALID = 'validation'
+INFER = 'inference'
+ALL = 'all'
 
 # namespace of NiftyNet's default signals.
 NIFTYNET = Namespace()

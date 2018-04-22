@@ -26,7 +26,7 @@ from niftynet.utilities.util_csv import write_csv
 
 COLUMN_UNIQ_ID = 'subject_id'
 COLUMN_PHASE = 'phase'
-SUPPORTED_PHASES = set([TRAIN, VALID, INFER, ALL])
+SUPPORTED_PHASES = {TRAIN, VALID, INFER, ALL}
 
 
 @singleton
@@ -98,7 +98,12 @@ class ImageSetsPartitioner(object):
         """
         if self._file_list is None:
             return 0
-        phase = look_up_operations(phase, SUPPORTED_PHASES)
+        try:
+            phase = look_up_operations(phase.lower(), SUPPORTED_PHASES)
+        except (ValueError, AttributeError):
+            tf.logging.fatal('Unknown phase argument.')
+            raise
+
         if phase == ALL:
             return self._file_list[COLUMN_UNIQ_ID].count()
         if self._partition_ids is None:
@@ -121,10 +126,11 @@ class ImageSetsPartitioner(object):
                                'ImageSetsPartitioner first.')
             return []
         try:
-            look_up_operations(phase, SUPPORTED_PHASES)
-        except ValueError:
+            phase = look_up_operations(phase.lower(), SUPPORTED_PHASES)
+        except (ValueError, AttributeError):
             tf.logging.fatal('Unknown phase argument.')
             raise
+
         for name in section_names:
             try:
                 look_up_operations(name, set(self._file_list))
@@ -169,7 +175,7 @@ class ImageSetsPartitioner(object):
                 self.data_split_file)
         if section_names:
             section_names = [COLUMN_UNIQ_ID] + list(section_names)
-            return subset[list(section_names)]
+            return subset[section_names]
         return subset
 
     def load_data_sections_by_subject(self):
@@ -250,11 +256,11 @@ class ImageSetsPartitioner(object):
                 self.data_param[modality_name].path_to_search:
             tf.logging.info('[%s] search file folders, writing csv file %s',
                             modality_name, csv_file)
-            section_properties = self.data_param[modality_name].__dict__.items()
+            section_filters = self.data_param[modality_name].__dict__.items()
             # grep files by section properties and write csv
             try:
                 matcher = KeywordsMatching.from_tuple(
-                    section_properties,
+                    section_filters,
                     self.default_image_file_location)
                 match_and_write_filenames_to_csv([matcher], csv_file)
             except (IOError, ValueError) as reading_error:
@@ -319,9 +325,7 @@ class ImageSetsPartitioner(object):
             n_valid = int(math.ceil(n_total * valid_fraction))
             n_infer = int(math.ceil(n_total * infer_fraction))
             n_train = int(n_total - n_infer - n_valid)
-            phases = [TRAIN] * n_train + \
-                     [VALID] * n_valid + \
-                     [INFER] * n_infer
+            phases = [TRAIN] * n_train + [VALID] * n_valid + [INFER] * n_infer
             if len(phases) > n_total:
                 phases = phases[:n_total]
             random.shuffle(phases)
@@ -349,10 +353,12 @@ class ImageSetsPartitioner(object):
                 self._partition_ids = None
 
             try:
-                is_valid_phase = \
-                    self._partition_ids[COLUMN_PHASE].isin(SUPPORTED_PHASES)
+                phase_strings = self._partition_ids[COLUMN_PHASE]
+                phase_strings = phase_strings.astype(str).str.lower()
+                is_valid_phase = phase_strings.isin(SUPPORTED_PHASES)
                 assert is_valid_phase.all(), \
                     "Partition file contains unknown phase id."
+                self._partition_ids[COLUMN_PHASE] = phase_strings
             except (TypeError, AssertionError):
                 tf.logging.warning(
                     'Please make sure the values of the second column '
