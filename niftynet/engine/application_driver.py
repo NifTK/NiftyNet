@@ -339,7 +339,7 @@ class ApplicationDriver(object):
                 "config parameter: model_dir", self.model_dir)
         if self.initial_iter > 0:
             checkpoint = '{}-{}'.format(self.session_prefix, self.initial_iter)
-        else:
+        else:  # initial iter smaller than zero
             try:
                 checkpoint = ckpt_state.model_checkpoint_path
                 assert checkpoint, 'checkpoint path not found ' \
@@ -414,7 +414,8 @@ class ApplicationDriver(object):
             """ Event handler to add the backpropagation update.
             iter_msg is an IterationMessage object """
             iter_msg = msg['iter_msg']
-            iter_msg.ops_to_run['gradients'] = self.app.gradient_op
+            if iter_msg.is_training:
+                iter_msg.ops_to_run['gradients'] = self.app.gradient_op
 
         ITER_STARTED.connect(add_gradient)
         self._loop(self.interleaved_iteration_generator(), sess, loop_status)

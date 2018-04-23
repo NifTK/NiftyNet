@@ -6,7 +6,7 @@ import tensorflow as tf
 
 from niftynet.engine.application_iteration import IterationMessage
 from niftynet.engine.application_variables import CONSOLE
-from niftynet.engine.signal import TRAIN, VALID
+from niftynet.engine.signal import TRAIN, VALID, ITER_FINISHED
 from tests.application_driver_test import get_initialised_driver
 
 
@@ -52,12 +52,15 @@ class DriverLoopTest(tf.test.TestCase):
         test_tensor = app_driver.graph.get_tensor_by_name(
             "G/conv_bn_selu/conv_/w:0")
 
-        iter_msgs = [[]]
-        def get_iter_msgs(iter_msg):
-            """" Captures iter_msg for testing"""
-            iter_msgs[0].append(iter_msg)
-        app_driver.post_train_iter.connect(get_iter_msgs)
-        app_driver.post_validation_iter.connect(get_iter_msgs)
+        iter_msgs = []
+        test_vals = []
+        def get_iter_msgs(_sender, **msg):
+            """" Captures iter_msg and model values for testing"""
+            iter_msg = msg['iter_msg']
+            iter_msgs.append(iter_msg)
+            test_vals.append(sess.run(test_tensor))
+            print(iter_msg.to_console_string())
+        ITER_FINISHED.connect(get_iter_msgs)
 
         app_driver.initial_iter=0
         app_driver.final_iter=3
@@ -70,33 +73,27 @@ class DriverLoopTest(tf.test.TestCase):
             app_driver._run_sampler_threads(sess)
             sess.run(app_driver._init_op)
 
-            test_vals = [[]]
-            def get_test_value(iter_msg):
-                test_vals[0].append(sess.run(test_tensor))
-            app_driver.post_train_iter.connect(get_test_value)
-            app_driver.post_validation_iter.connect(get_test_value)
-
             app_driver._training_loop(sess, loop_status)
 
             # Check sequence of iterations
-            self.assertRegexpMatches(iter_msgs[0][0].to_console_string(), 'training')
-            self.assertRegexpMatches(iter_msgs[0][1].to_console_string(), 'training')
-            self.assertRegexpMatches(iter_msgs[0][2].to_console_string(), 'validation')
-            self.assertRegexpMatches(iter_msgs[0][3].to_console_string(), 'training')
+            self.assertRegexpMatches(iter_msgs[0].to_console_string(), 'training')
+            self.assertRegexpMatches(iter_msgs[1].to_console_string(), 'training')
+            self.assertRegexpMatches(iter_msgs[2].to_console_string(), 'validation')
+            self.assertRegexpMatches(iter_msgs[3].to_console_string(), 'training')
 
             # Check durations
-            for iter_msg in iter_msgs[0]:
+            for iter_msg in iter_msgs:
                 self.assertGreater(iter_msg.iter_duration, 0.0)
 
             # Check training changes test tensor
             self.assertNotAlmostEqual(
-                np.mean(np.abs(test_vals[0][0] - test_vals[0][1])), 0.0)
+                np.mean(np.abs(test_vals[0] - test_vals[1])), 0.0)
             self.assertNotAlmostEqual(
-                np.mean(np.abs(test_vals[0][2] - test_vals[0][3])), 0.0)
+                np.mean(np.abs(test_vals[2] - test_vals[3])), 0.0)
 
             # Check validation doesn't change test tensor
             self.assertAlmostEqual(
-                np.mean(np.abs(test_vals[0][1] - test_vals[0][2])), 0.0)
+                np.mean(np.abs(test_vals[1] - test_vals[2])), 0.0)
 
             app_driver.app.stop()
 
