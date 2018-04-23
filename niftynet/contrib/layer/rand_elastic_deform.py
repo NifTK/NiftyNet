@@ -79,7 +79,6 @@ class RandomElasticDeformationLayer(RandomisedLayer):
         self.bspline_transformation.SetParameters(params)
 
     def _apply_bspline_transformation(self, image, interp_order=3):
-
         squeezed_image = np.squeeze(image)
         while squeezed_image.ndim < self.spatial_rank:
             # pad to the required number of dimensions
@@ -101,7 +100,7 @@ class RandomElasticDeformationLayer(RandomisedLayer):
         resampler.SetTransform(self.bspline_transformation)
         out_img_sitk = resampler.Execute(sitk_image)
         out_img = sitk.GetArrayFromImage(out_img_sitk)
-        return out_img
+        return out_img.reshape(image.shape)
 
     def layer_op(self, inputs, interp_orders, *args, **kwargs):
 
