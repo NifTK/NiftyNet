@@ -254,6 +254,8 @@ pip-installer:
     - master
     - dev
     - tags
+    - 117-support-for-user-defined-networks-using-pip-installed-niftynet
+    - 212-developmental-release-used-wrongly
   script:
     # get the shortened version of last commit's hash
     - LAST_COMMIT=$(git rev-parse --short HEAD)
