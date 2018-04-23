@@ -46,24 +46,28 @@ class RandomElasticDeformationLayer(RandomisedLayer):
         self.proportion_to_augment = proportion_to_augment
         self.do_augmentation = None
         self.bspline_transformation = None
+        self.spatial_rank = None
 
     def randomise(self, image_dict, spatial_rank=3):
+        # record the spatial rank here.
+        self.spatial_rank = spatial_rank
+
         self.do_augmentation = np.random.rand() < self.proportion_to_augment
         if not self.do_augmentation:
             pass
 
         images = list(image_dict.values())
         equal_shapes = np.all([images[0].shape == image.shape for image in images])
-        if spatial_rank == 3 and equal_shapes:
-            self._randomise_bspline_transformation_3d(images[0].shape)
+        if equal_shapes:
+            self._randomise_bspline_transformation(images[0].shape)
         else:
             # currently not supported spatial rank for elastic deformation
             print("randomising elastic deformation FAILED")
             pass
 
-    def _randomise_bspline_transformation_3d(self, shape):
+    def _randomise_bspline_transformation(self, shape):
         # generate transformation
-        itkimg = sitk.GetImageFromArray(np.zeros(shape[:3]))
+        itkimg = sitk.GetImageFromArray(np.zeros(shape[:self.spatial_rank]))
         trans_from_domain_mesh_size = [self.num_controlpoints] * itkimg.GetDimension()
         self.bspline_transformation = sitk.BSplineTransformInitializer(itkimg, trans_from_domain_mesh_size)
 
@@ -76,9 +80,14 @@ class RandomElasticDeformationLayer(RandomisedLayer):
         params = tuple(params_numpy)
         self.bspline_transformation.SetParameters(params)
 
-    def _apply_bspline_transformation_3d(self, image, interp_order=3):
+    def _apply_bspline_transformation(self, image, interp_order=3):
 
-        sitk_image = sitk.GetImageFromArray(image)
+        squeezed_image = np.squeeze(image)
+        while squeezed_image.ndim < self.spatial_rank:
+            # pad to the required number of dimensions
+            squeezed_image = squeezed_image[..., None]
+        sitk_image = sitk.GetImageFromArray(squeezed_image)
+
         resampler = sitk.ResampleImageFilter()
         resampler.SetReferenceImage(sitk_image)
         if interp_order == 3:
@@ -110,14 +119,14 @@ class RandomElasticDeformationLayer(RandomisedLayer):
                     "interpolation orders should be" \
                     "specified for each inputs modality"
                 for mod_i, interp_order in enumerate(interp_orders[field]):
-                    if image.ndim == 4:
+                    if image.ndim in (3, 4):  # for 2/3d images
                         inputs[field][..., mod_i] = \
-                            self._apply_bspline_transformation_3d(
+                            self._apply_bspline_transformation(
                                 image[..., mod_i], interp_order)
                     elif image.ndim == 5:
                         for t in range(image.shape[-2]):
                             inputs[field][..., t, mod_i] = \
-                                self._apply_bspline_transformation_3d(
+                                self._apply_bspline_transformation(
                                     image[..., t, mod_i], interp_order)
                     else:
                         raise NotImplementedError("unknown input format")
