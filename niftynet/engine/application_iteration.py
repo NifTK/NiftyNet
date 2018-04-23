@@ -29,7 +29,7 @@ class IterationMessage(object):
     _ops_to_run = None
     _phase = TRAIN
 
-    _should_stop = False
+    _should_stop = None
 
     @property
     def current_iter(self):
@@ -117,7 +117,7 @@ class IterationMessage(object):
 
     @should_stop.setter
     def should_stop(self, value):
-        self._should_stop = bool(value)
+        self._should_stop = value
 
     @property
     def phase(self):

@@ -25,7 +25,6 @@ from niftynet.engine.application_factory import \
 from niftynet.engine.application_iteration import IterationMessage
 from niftynet.engine.application_variables import \
     GradientsCollector, OutputsCollector, global_vars_init_or_restore
-from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.signal import \
     TRAIN, VALID, INFER, ITER_STARTED, ITER_FINISHED, SESS_FINISHED
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
@@ -79,7 +78,8 @@ class ApplicationDriver(object):
             'niftynet.engine.event_gradient.ApplyGradients',
             'niftynet.engine.event_console.ConsoleLogger',
             'niftynet.engine.event_tensorboard.TensorBoardLogger',
-            'niftynet.engine.event_checkpoint.ModelSaver']
+            'niftynet.engine.event_checkpoint.ModelSaver',
+            'niftynet.engine.event_network_output.OutputInterpreter']
         self._registered_event_handlers = []
 
     def initialise_application(self, workflow_param, data_param):
@@ -228,10 +228,16 @@ class ApplicationDriver(object):
                 # iteratively run the graph
                 if self.is_training:
                     loop_status['current_iter'] = self.initial_iter
-                    self._training_loop(session, loop_status)
+                    iterator = train_iter_generator(
+                        self.initial_iter,
+                        self.final_iter,
+                        self.validation_every_n,
+                        self.validation_max_iter)
                 else:
                     loop_status['all_saved_flag'] = False
-                    self._inference_loop(session, loop_status)
+                    iterator = infer_iter_generator()
+
+                self._loop(iterator, session, loop_status)
 
             except KeyboardInterrupt:
                 tf.logging.warning('User cancelled application')
@@ -365,74 +371,48 @@ class ApplicationDriver(object):
                 'match the current application graph', checkpoint)
             raise
 
-    def interleaved_iteration_generator(self):
-        """ This generator yields a sequence of training and validation
-        iterations """
-        train_iters = iter_generator(range(self.initial_iter + 1,
-                                           self.final_iter + 1), TRAIN)
-        for train_iter_msg in train_iters:
-            self.app.set_iteration_update(train_iter_msg)
-            yield train_iter_msg
-            if train_iter_msg.current_iter > 0 and \
-                    self.validation_every_n > 0 and \
-                    train_iter_msg.current_iter % self.validation_every_n == 0:
-                val_iters = [train_iter_msg.current_iter]
-                val_iters = val_iters * self.validation_max_iter
-                valid_iters = iter_generator(val_iters, VALID)
-                for valid_iter_msg in valid_iters:
-                    self.app.set_iteration_update(valid_iter_msg)
-                    yield valid_iter_msg
+    def _loop(self, iteration_generator, sess=None, loop_status=None):
+        """
+        This loop stops when any of the condition satisfied:
+            1. no more element from the ``iteration_generator``;
+            2. ``application.interpret_output`` returns False;
+            3. any exception raised.
 
-    def _loop(self, iteration_generator, sess, loop_status):
+        :param iteration_generator:
+            iteratively generating ``engine.IterationMessage`` instances
+        :param sess: Tensorflow session
+        :param loop_status: dictionary used to capture the loop status,
+            useful when the loop exited in an unexpected manner.
+        :return:
+        """
+        if not sess:
+            return
+
+        loop_status = loop_status or {}
         for iter_msg in iteration_generator:
             if self._coord.should_stop():
                 break
             loop_status['current_iter'] = iter_msg.current_iter
+
+            # broadcasting event of starting an iteration
             ITER_STARTED.send('sender_string', iter_msg=iter_msg)
 
-            iter_msg.ops_to_run[NETWORK_OUTPUT] = \
-                self.outputs_collector.variables(NETWORK_OUTPUT)
-            graph_output = sess.run(iter_msg.ops_to_run,
-                                    feed_dict=iter_msg.data_feed_dict)
+            # ``iter_msg.ops_to_run`` are populated with the ops to run in
+            #  each iteration, fed into ``session.run()`` and then
+            # passed to the app (and observers) for interpretation.
+            graph_output = sess.run(
+                iter_msg.ops_to_run, feed_dict=iter_msg.data_feed_dict)
             iter_msg.current_iter_output = graph_output
-            iter_msg.should_stop = not self.app.interpret_output(
-                iter_msg.current_iter_output[NETWORK_OUTPUT])
 
+            # broadcasting event of finishing an iteration
             ITER_FINISHED.send('sender_string', iter_msg=iter_msg)
+
+            # Checking stopping conditions
             if iter_msg.should_stop:
-                break
-
-    def _training_loop(self, sess, loop_status):
-        """
-        The training loop iterates through training (and validation) iterations
-        Each iteration is represented as an ``IterationMessage`` object, whose
-        ops_to_run are populated with the ops to run in each iteration (by the
-        training loop or by objects watching for iteration events), fed into
-        into `session.run()` and then passed to the app (and observers) for
-        interpretation.
-        """
-        # Core training loop handling
-        self._loop(self.interleaved_iteration_generator(), sess, loop_status)
-
-    def _inference_loop(self, sess, loop_status):
-        """
-        Runs all variables returned by outputs_collector,
-        this loop stops when the return value of
-        application.interpret_output is False.
-        """
-
-        loop_status['all_saved_flag'] = False
-
-        def is_complete(_sender, **msg):
-            """ Event handler to trigger the completion message.
-            iter_msg is an IterationMessage object """
-            iter_msg = msg['iter_msg']
-            if iter_msg.should_stop:
-                tf.logging.info('processed all batches.')
                 loop_status['all_saved_flag'] = True
-
-        ITER_FINISHED.connect(is_complete)
-        self._loop(iter_generator(itertools.count(), INFER), sess, loop_status)
+                tf.logging.info('Stopping message from event handler: %s.',
+                                iter_msg.should_stop)
+                break
 
     def _run_sampler_threads(self, session=None):
         """
@@ -521,7 +501,8 @@ class ApplicationDriver(object):
 
 
 def iter_generator(count_generator, phase):
-    """ Generate a numbered sequence of IterationMessage objects
+    """
+    Generate a numbered sequence of IterationMessage objects
     with phase-appropriate signals.
     count_generator is an iterable object yielding iteration numbers
     phase is one of TRAIN, VALID or INFER
@@ -530,3 +511,41 @@ def iter_generator(count_generator, phase):
         iter_msg = IterationMessage()
         iter_msg.current_iter, iter_msg.phase = iter_i, phase
         yield iter_msg
+
+
+def infer_iter_generator():
+    """
+    This generator yields infinite number of infer iterations.
+
+    :return: iteration message instances
+    """
+    infer_iters = iter_generator(itertools.count(), INFER)
+    for infer_iter_msg in infer_iters:
+        yield infer_iter_msg
+
+
+def train_iter_generator(initial_iter=0,
+                         max_iter=0,
+                         validation_every_n=0,
+                         validation_max_iter=0):
+    """
+    This generator yields a sequence of interleaved training and validation
+    iterations.
+
+    :param initial_iter: starting iteration of the training sequence
+    :param max_iter: ending iteration of the training sequence
+    :param validation_every_n: validation at every n training
+    :param validation_max_iter: number of validation iterations
+    :return: iteration message instances
+    """
+    train_iterations = iter_generator(
+        range(initial_iter + 1, max_iter + 1), TRAIN)
+    for train_iter_msg in train_iterations:
+        yield train_iter_msg
+        current_iter = train_iter_msg.current_iter
+        if current_iter > 0 and validation_every_n > 0 and \
+                current_iter % validation_every_n == 0:
+            valid_iterations = iter_generator(
+                [current_iter] * validation_max_iter, VALID)
+            for valid_iter_msg in valid_iterations:
+                yield valid_iter_msg

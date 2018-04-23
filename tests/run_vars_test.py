@@ -6,7 +6,8 @@ import tensorflow as tf
 
 from niftynet.engine.application_iteration import IterationMessage
 from niftynet.engine.application_variables import CONSOLE
-from niftynet.engine.signal import TRAIN, VALID, ITER_FINISHED
+from niftynet.engine.signal import TRAIN, ITER_FINISHED
+from niftynet.engine.application_driver import train_iter_generator
 from tests.application_driver_test import get_initialised_driver
 
 
@@ -18,7 +19,7 @@ class DriverLoopTest(tf.test.TestCase):
         self.assertEqual(msg.ops_to_run, {})
         self.assertEqual(msg.data_feed_dict, {})
         self.assertEqual(msg.current_iter_output, None)
-        self.assertEqual(msg.should_stop, False)
+        self.assertEqual(msg.should_stop, None)
         self.assertEqual(msg.phase, TRAIN)
         self.assertEqual(msg.is_training, True)
         self.assertEqual(msg.is_validation, False)
@@ -76,7 +77,12 @@ class DriverLoopTest(tf.test.TestCase):
             app_driver._run_sampler_threads(sess)
             sess.run(app_driver._init_op)
 
-            app_driver._training_loop(sess, loop_status)
+            iterations = train_iter_generator(
+                    app_driver.initial_iter,
+                    app_driver.final_iter,
+                    app_driver.validation_every_n,
+                    app_driver.validation_max_iter)
+            app_driver._loop(iterations, sess, loop_status)
 
             # Check sequence of iterations
             self.assertRegexpMatches(

@@ -19,7 +19,7 @@ class ApplyGradients(object):
 
     def add_gradients(self, _sender, **msg):
         """
-        Event handler to add gradients to itermsg ops_to_run.
+        Event handler to add gradients to iteration message ops_to_run.
 
         See also
         ``niftynet.application.base_application.set_network_gradient_op``

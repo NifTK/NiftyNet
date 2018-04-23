@@ -52,7 +52,7 @@ class TensorBoardLogger(object):
 
     def write_tensorboard(self, _sender, **msg):
         """
-        Write to tensorboard when received the iteration finshed signal.
+        Write to tensorboard when received the iteration finished signal.
 
         :param _sender:
         :param msg:
