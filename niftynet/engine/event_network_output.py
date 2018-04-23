@@ -36,9 +36,9 @@ class OutputInterpreter(object):
 
         self.app.set_iteration_update(_iter_msg)
         # if _iter_msg.is_training:
-        #    _iter_msg.data_feed_dict[self.is_validation] = False
+        #    _iter_msg.data_feed_dict[self.app.is_validation] = False
         # elif _iter_msg.is_validation:
-        #    _iter_msg.data_feed_dict[self.is_validation] = True
+        #    _iter_msg.data_feed_dict[self.app.is_validation] = True
 
     def interpret_output(self, _sender, **msg):
         """

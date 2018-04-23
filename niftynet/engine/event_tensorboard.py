@@ -17,23 +17,20 @@ class TensorBoardLogger(object):
     """
 
     def __init__(self,
-                 tensorboard_every_n,
                  summary_dir,
-                 graph,
                  outputs_collector,
-                 is_training,
+                 tensorboard_every_n=0,
                  **_unused):
-        if not is_training:
-            return
         self.tensorboard_every_n = tensorboard_every_n
         self.summary_dir = summary_dir
         # the collector provides TF summary ops
         self.outputs_collector = outputs_collector
         # initialise summary writer
         self.writer_train = tf.summary.FileWriter(
-            os.path.join(self.summary_dir, TRAIN), graph)
+            os.path.join(self.summary_dir, TRAIN), tf.get_default_graph())
         self.writer_valid = tf.summary.FileWriter(
-            os.path.join(self.summary_dir, VALID), graph)
+            os.path.join(self.summary_dir, VALID), tf.get_default_graph())
+
         ITER_STARTED.connect(self.read_tensorboard_op)
         ITER_FINISHED.connect(self.write_tensorboard)
 
@@ -46,7 +43,11 @@ class TensorBoardLogger(object):
         :param msg: should contain an IterationMessage instance
         """
         _iter_msg = msg.get('iter_msg', None)
-        if _iter_msg is not None and self._is_writing(_iter_msg.current_iter):
+        if _iter_msg is None:
+            return
+        if _iter_msg.is_inference:
+            return
+        if self._is_writing(_iter_msg.current_iter):
             tf_summary_ops = self.outputs_collector.variables(TF_SUMMARIES)
             _iter_msg.ops_to_run[TF_SUMMARIES] = tf_summary_ops
 
@@ -62,7 +63,7 @@ class TensorBoardLogger(object):
             return
         if _iter_msg.is_training:
             _iter_msg.to_tf_summary(self.writer_train)
-        else:
+        elif _iter_msg.is_validation:
             _iter_msg.to_tf_summary(self.writer_valid)
         return
 

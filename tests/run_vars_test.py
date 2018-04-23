@@ -4,10 +4,11 @@ from __future__ import absolute_import, print_function
 import numpy as np
 import tensorflow as tf
 
+from niftynet.engine.application_driver import train_iter_generator
 from niftynet.engine.application_iteration import IterationMessage
 from niftynet.engine.application_variables import CONSOLE
+from niftynet.engine.application_variables import global_vars_init_or_restore
 from niftynet.engine.signal import TRAIN, ITER_FINISHED
-from niftynet.engine.application_driver import train_iter_generator
 from tests.application_driver_test import get_initialised_driver
 
 
@@ -64,24 +65,25 @@ class DriverLoopTest(tf.test.TestCase):
             iter_msgs.append(iter_msg)
             test_vals.append(sess.run(test_tensor))
             print(iter_msg.to_console_string())
+
         ITER_FINISHED.connect(get_iter_msgs)
 
-        app_driver.initial_iter=0
-        app_driver.final_iter=3
+        app_driver.initial_iter = 0
+        app_driver.final_iter = 3
         app_driver.validation_every_n = 2
         app_driver.validation_max_iter = 1
-        loop_status={}
+        loop_status = {}
 
         with self.test_session(graph=test_graph) as sess:
             app_driver._run_sampler_threads()
             app_driver._run_sampler_threads(sess)
-            sess.run(app_driver._init_op)
+            sess.run(global_vars_init_or_restore())
 
             iterations = train_iter_generator(
-                    app_driver.initial_iter,
-                    app_driver.final_iter,
-                    app_driver.validation_every_n,
-                    app_driver.validation_max_iter)
+                app_driver.initial_iter,
+                app_driver.final_iter,
+                app_driver.validation_every_n,
+                app_driver.validation_max_iter)
             app_driver._loop(iterations, sess, loop_status)
 
             # Check sequence of iterations

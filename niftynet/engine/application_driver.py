@@ -24,15 +24,13 @@ from niftynet.engine.application_factory import \
     ApplicationFactory, EventHandlerFactory
 from niftynet.engine.application_iteration import IterationMessage
 from niftynet.engine.application_variables import \
-    GradientsCollector, OutputsCollector, global_vars_init_or_restore
-from niftynet.engine.signal import \
-    TRAIN, VALID, INFER, ITER_STARTED, ITER_FINISHED, SESS_FINISHED
+    GradientsCollector, OutputsCollector
+from niftynet.engine.signal import TRAIN, VALID, INFER, \
+    ITER_STARTED, ITER_FINISHED, SESS_STARTED, SESS_FINISHED
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.io.misc_io import get_latest_subfolder, touch_folder
 from niftynet.layer.bn import BN_COLLECTION
 from niftynet.utilities.util_common import set_cuda_device, traverse_nested
-
-FILE_PREFIX = 'model.ckpt'
 
 
 # pylint: disable=too-many-instance-attributes
@@ -49,27 +47,23 @@ class ApplicationDriver(object):
         self.app = None
         self.graph = tf.Graph()
 
-        self.saver = None
-
         self.is_training = True
         self.num_threads = 0
         self.num_gpus = 0
 
         self.model_dir = None
         self.summary_dir = None
-        self.session_prefix = None
         self.max_checkpoints = 2
-        self.save_every_n = 0
-        self.tensorboard_every_n = -1
-
-        self.validation_every_n = -1
-        self.validation_max_iter = 1
 
         self.initial_iter = 0
         self.final_iter = 0
 
+        self.save_every_n = 0
+        self.tensorboard_every_n = -1
+        self.validation_every_n = -1
+        self.validation_max_iter = 1
+
         self._coord = tf.train.Coordinator()
-        self._init_op = None
         self._data_partitioner = None
         self.outputs_collector = None
         self.gradients_collector = None
@@ -80,7 +74,7 @@ class ApplicationDriver(object):
             'niftynet.engine.event_tensorboard.TensorBoardLogger',
             'niftynet.engine.event_checkpoint.ModelSaver',
             'niftynet.engine.event_network_output.OutputInterpreter']
-        self._registered_event_handlers = []
+        self._event_handlers = []
 
     def initialise_application(self, workflow_param, data_param):
         """
@@ -116,7 +110,6 @@ class ApplicationDriver(object):
         # set output TF model folders
         self.model_dir = touch_folder(
             os.path.join(system_param.model_dir, 'models'))
-        self.session_prefix = os.path.join(self.model_dir, FILE_PREFIX)
 
         # set training params.
         if self.is_training:
@@ -195,6 +188,20 @@ class ApplicationDriver(object):
         with self.graph.as_default(), tf.name_scope('Sampler'):
             self.app.initialise_sampler()
 
+    def load_event_handlers(self, names):
+        """
+        Import event handler modules and create a list of handler instances.
+        The event handler instances will be stored with this engine.
+
+        :param names: strings of event handlers
+        :return:
+        """
+        self._event_handlers = []
+        for name in names:
+            the_event_class = EventHandlerFactory.create(name)
+            # initialise all registered event handler classes
+            self._event_handlers.append(the_event_class(**vars(self)))
+
     def run_application(self):
         """
         Initialise a TF graph, connect data sampler and network within
@@ -216,16 +223,16 @@ class ApplicationDriver(object):
             # check app variables initialised and ready for starts
             self.app.check_initialisations()
 
-            # initialise network trainable parameters
-            self._rand_init_or_restore_vars(session)
+            # make the list of initialised event handler instances.
+            self.load_event_handlers(self.event_handler_names)
 
             start_time = time.time()
             loop_status = {}
 
-            # make the list of initialised event handler instances.
-            self.load_event_handlers(self.event_handler_names)
             try:
-                # iteratively run the graph
+                # broadcasting event of session started
+                SESS_STARTED.send('session started', iter_msg=None)
+
                 if self.is_training:
                     loop_status['current_iter'] = self.initial_iter
                     iterator = train_iter_generator(
@@ -237,6 +244,7 @@ class ApplicationDriver(object):
                     loop_status['all_saved_flag'] = False
                     iterator = infer_iter_generator()
 
+                # iteratively run the graph
                 self._loop(iterator, session, loop_status)
 
             except KeyboardInterrupt:
@@ -252,13 +260,14 @@ class ApplicationDriver(object):
                 traceback.print_exception(
                     exc_type, exc_value, exc_traceback, file=sys.stdout)
             finally:
+                # broadcasting event of session finished
+                iter_msg = IterationMessage()
+                iter_msg.current_iter = loop_status.get('current_iter', -1)
+                SESS_FINISHED.send('sender_string', iter_msg=iter_msg)
+
                 tf.logging.info('Cleaning up...')
-                if self.is_training:
-                    # saving model at the last iteration
-                    iter_msg = IterationMessage()
-                    iter_msg.current_iter = loop_status.get('current_iter', -1)
-                    SESS_FINISHED.send('sender_string', iter_msg=iter_msg)
-                elif not loop_status.get('all_saved_flag', None):
+                if not self.is_training and \
+                        not loop_status.get('all_saved_flag', None):
                     tf.logging.warning('stopped early, incomplete loops')
 
                 tf.logging.info('stopping sampling threads')
@@ -310,66 +319,15 @@ class ApplicationDriver(object):
                         self.app.set_network_gradient_op(
                             self.gradients_collector.gradients)
 
-            # initialisation operation
-            with tf.name_scope('Initialization'):
-                self._init_op = global_vars_init_or_restore()
+            # # initialisation operation
+            # with tf.name_scope('Initialization'):
+            #     self.init_op = global_vars_init_or_restore()
 
             with tf.name_scope('MergedOutputs'):
                 self.outputs_collector.finalise_output_op()
-            # saving operation
-            self.saver = tf.train.Saver(max_to_keep=self.max_checkpoints,
-                                        save_relative_paths=True)
 
-        # no more operation definitions after this point
-        tf.Graph.finalize(graph)
+        # tf.Graph.finalize(graph)
         return graph
-
-    def _rand_init_or_restore_vars(self, sess):
-        """
-        Randomly initialising all trainable variables defined in session,
-        or loading checkpoint files as variable initialisations.
-        """
-        tf.logging.info('starting from iter %d', self.initial_iter)
-        if self.is_training and self.initial_iter == 0:
-            sess.run(self._init_op)
-            tf.logging.info('Parameters from random initialisations ...')
-            return
-        # check model's folder
-        assert os.path.exists(self.model_dir), \
-            "Model folder not found {}, please check" \
-            "config parameter: model_dir".format(self.model_dir)
-
-        # check model's file
-        ckpt_state = tf.train.get_checkpoint_state(self.model_dir)
-        if ckpt_state is None:
-            tf.logging.warning(
-                "%s/checkpoint not found, please check "
-                "config parameter: model_dir", self.model_dir)
-        if self.initial_iter > 0:
-            checkpoint = '{}-{}'.format(self.session_prefix, self.initial_iter)
-        else:  # initial iter smaller than zero
-            try:
-                checkpoint = ckpt_state.model_checkpoint_path
-                assert checkpoint, 'checkpoint path not found ' \
-                                   'in {}/checkpoints'.format(self.model_dir)
-                self.initial_iter = int(checkpoint.rsplit('-')[-1])
-                tf.logging.info('set initial_iter to %d based '
-                                'on checkpoints', self.initial_iter)
-            except (ValueError, AttributeError):
-                tf.logging.fatal(
-                    'failed to get iteration number '
-                    'from checkpoint path, please set '
-                    'inference_iter or starting_iter to a positive integer')
-                raise
-        # restore session
-        tf.logging.info('Accessing %s ...', checkpoint)
-        try:
-            self.saver.restore(sess, checkpoint)
-        except tf.errors.NotFoundError:
-            tf.logging.fatal(
-                'checkpoint %s not found or variables to restore do not '
-                'match the current application graph', checkpoint)
-            raise
 
     def _loop(self, iteration_generator, sess=None, loop_status=None):
         """
@@ -444,21 +402,6 @@ class ApplicationDriver(object):
                 "are blocked.")
             raise
 
-    def load_event_handlers(self, names):
-        """
-        Import event handler modules and create a list of handler instances.
-        The event handler instances will be stored with this engine.
-
-        :param names: strings of event handlers
-        :return:
-        """
-        self._registered_event_handlers = []
-        for name in names:
-            the_event_class = EventHandlerFactory.create(name)
-            # initialise all registered event handler classes
-            self._registered_event_handlers.append(
-                the_event_class(**vars(self)))
-
     def _device_string(self, device_id=0, is_worker=True):
         """
         assigning CPU/GPU based on user specifications
@@ -519,8 +462,8 @@ def infer_iter_generator():
 
     :return: iteration message instances
     """
-    infer_iters = iter_generator(itertools.count(), INFER)
-    for infer_iter_msg in infer_iters:
+    infer_iterations = iter_generator(itertools.count(), INFER)
+    for infer_iter_msg in infer_iterations:
         yield infer_iter_msg
 
 
