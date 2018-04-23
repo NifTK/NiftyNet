@@ -19,7 +19,6 @@ import os
 import time
 
 import tensorflow as tf
-from blinker import signal
 
 from niftynet.engine.application_factory import \
     ApplicationFactory, EventHandlerFactory
@@ -46,16 +45,6 @@ class ApplicationDriver(object):
     implemented by inheriting ``niftynet.application.base_application``
     to be compatible with this driver.
     """
-
-    # pylint: disable=too-many-instance-attributes
-
-    pre_train_iter = signal('pre_train_iter')
-    post_train_iter = signal('post_train_iter')
-    pre_validation_iter = signal('pre_validation_iter')
-    post_validation_iter = signal('post_validation_iter')
-    pre_infer_iter = signal('pre_infer_iter')
-    post_infer_iter = signal('post_infer_iter')
-    post_training = signal('post_training')
 
     def __init__(self):
         self.app = None
@@ -132,8 +121,7 @@ class ApplicationDriver(object):
             assert train_param, 'training parameters not specified'
             summary_root = os.path.join(system_param.model_dir, 'logs')
             self.summary_dir = get_latest_subfolder(
-                summary_root,
-                create_new=train_param.starting_iter == 0)
+                summary_root, create_new=train_param.starting_iter == 0)
 
             self.initial_iter = train_param.starting_iter
             self.final_iter = max(train_param.max_iter, self.initial_iter)
@@ -162,9 +150,9 @@ class ApplicationDriver(object):
         self.app = app_module(net_param, action_param, system_param.action)
 
         # initialise data input
-        data_partitioner = ImageSetsPartitioner()
+        self._data_partitioner = ImageSetsPartitioner()
         # clear the cached file lists
-        data_partitioner.reset()
+        self._data_partitioner.reset()
         do_new_partition = \
             self.is_training and self.initial_iter == 0 and \
             (not os.path.isfile(system_param.dataset_split_file)) and \
@@ -182,16 +170,14 @@ class ApplicationDriver(object):
                     train_param.exclude_fraction_for_validation)
             data_fractions = (train_param.exclude_fraction_for_validation,
                               train_param.exclude_fraction_for_inference)
-
         if data_param:
-            data_partitioner.initialise(
+            self._data_partitioner.initialise(
                 data_param=data_param,
                 new_partition=do_new_partition,
                 ratios=data_fractions,
                 data_split_file=system_param.dataset_split_file)
-
         if data_param and self.is_training and self.validation_every_n > 0:
-            assert data_partitioner.has_validation, \
+            assert self._data_partitioner.has_validation, \
                 'validation_every_n is set to {}, ' \
                 'but train/validation splitting not available.\nPlease ' \
                 'check dataset partition list {} ' \
@@ -201,9 +187,7 @@ class ApplicationDriver(object):
 
         # initialise readers
         self.app.initialise_dataset_loader(
-            data_param, app_param, data_partitioner)
-
-        self._data_partitioner = data_partitioner
+            data_param, app_param, self._data_partitioner)
 
         # pylint: disable=not-context-manager
         with self.graph.as_default(), tf.name_scope('Sampler'):
@@ -236,6 +220,7 @@ class ApplicationDriver(object):
             start_time = time.time()
             loop_status = {}
 
+            # variable used to store the list of event handler instances.
             _unused = self._load_event_handlers(self.event_handler_names)
             try:
                 # iteratively run the graph
@@ -400,10 +385,7 @@ class ApplicationDriver(object):
         for iter_msg in iteration_generator:
             if self._coord.should_stop():
                 break
-            if iter_msg.should_stop:
-                break
             loop_status['current_iter'] = iter_msg.current_iter
-            iter_msg.pre_iter.send(iter_msg)
             ITER_STARTED.send('sender_string', iter_msg=iter_msg)
 
             iter_msg.ops_to_run[NETWORK_OUTPUT] = \
@@ -411,12 +393,10 @@ class ApplicationDriver(object):
             graph_output = sess.run(iter_msg.ops_to_run,
                                     feed_dict=iter_msg.data_feed_dict)
             iter_msg.current_iter_output = graph_output
-            iter_msg.status = self.app.interpret_output(
+            iter_msg.should_stop = not self.app.interpret_output(
                 iter_msg.current_iter_output[NETWORK_OUTPUT])
 
             ITER_FINISHED.send('sender_string', iter_msg=iter_msg)
-            iter_msg.post_iter.send(iter_msg)
-
             if iter_msg.should_stop:
                 break
 
@@ -429,14 +409,14 @@ class ApplicationDriver(object):
         into `session.run()` and then passed to the app (and observers) for
         interpretation.
         """
-
         # Core training loop handling
-        def add_gradient(iter_msg):
+        def add_gradient(_sender, **msg):
             """ Event handler to add the backpropagation update.
             iter_msg is an IterationMessage object """
+            iter_msg = msg['iter_msg']
             iter_msg.ops_to_run['gradients'] = self.app.gradient_op
 
-        self.pre_train_iter.connect(add_gradient)
+        ITER_STARTED.connect(add_gradient)
         self._loop(self.interleaved_iteration_generator(), sess, loop_status)
 
     def _inference_loop(self, sess, loop_status):
@@ -448,16 +428,15 @@ class ApplicationDriver(object):
 
         loop_status['all_saved_flag'] = False
 
-        def is_complete(iter_msg):
+        def is_complete(_sender, **msg):
             """ Event handler to trigger the completion message.
             iter_msg is an IterationMessage object """
-            if not iter_msg.status:
+            iter_msg = msg['iter_msg']
+            if iter_msg.should_stop:
                 tf.logging.info('processed all batches.')
                 loop_status['all_saved_flag'] = True
-                iter_msg.should_stop = True
 
-        self.post_infer_iter.connect(is_complete)
-
+        ITER_FINISHED.connect(is_complete)
         self._loop(iter_generator(itertools.count(), INFER), sess, loop_status)
 
     def _run_sampler_threads(self, session=None):
@@ -491,6 +470,12 @@ class ApplicationDriver(object):
             raise
 
     def _load_event_handlers(self, names):
+        """
+        Import event handler modules and create a list of handler instances.
+
+        :param names: strings of event handlers
+        :return: a list of event handlers
+        """
         handlers = []
         for name in names:
             the_event_class = EventHandlerFactory.create(name)
@@ -545,16 +530,7 @@ def iter_generator(count_generator, phase):
     count_generator is an iterable object yielding iteration numbers
     phase is one of TRAIN, VALID or INFER
     """
-    signals = {
-        TRAIN: (ApplicationDriver.pre_train_iter,
-                ApplicationDriver.post_train_iter),
-        VALID: (ApplicationDriver.pre_validation_iter,
-                ApplicationDriver.post_validation_iter),
-        INFER: (ApplicationDriver.pre_infer_iter,
-                ApplicationDriver.post_infer_iter)}
     for iter_i in count_generator:
         iter_msg = IterationMessage()
         iter_msg.current_iter, iter_msg.phase = iter_i, phase
-        iter_msg.pre_iter = signals[phase][0]
-        iter_msg.post_iter = signals[phase][1]
         yield iter_msg

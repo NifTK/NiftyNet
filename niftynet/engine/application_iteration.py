@@ -31,8 +31,6 @@ class IterationMessage(object):
 
     _should_stop = False
 
-    # _callbacks = None
-
     @property
     def current_iter(self):
         """
@@ -178,7 +176,6 @@ class IterationMessage(object):
         """
         summary_indentation = "    " if self.is_validation else ""
         summary_format = summary_indentation + CONSOLE_FORMAT
-        console_content = ''
         try:
             console_content = self.current_iter_output.get(CONSOLE, '')
         except AttributeError:
