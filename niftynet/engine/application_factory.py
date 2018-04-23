@@ -199,7 +199,7 @@ SUPPORTED_EVALUATIONS = {
 }
 
 
-def select_module(module_name, type_str, lookup_table):
+def select_module(module_name, type_str, lookup_table=None):
     """
     This function first tries to find the absolute module name
     by matching the static dictionary items, if not found, it
@@ -211,6 +211,7 @@ def select_module(module_name, type_str, lookup_table):
     :param type_str: type of the module (used for better error display)
     :param lookup_table: defines a set of shorthands for absolute class name
     """
+    lookup_table = lookup_table or {}
     module_name = '{}'.format(module_name)
     if module_name in lookup_table:
         module_name = lookup_table[module_name]
@@ -223,30 +224,29 @@ def select_module(module_name, type_str, lookup_table):
                         class_name, os.path.abspath(the_module.__file__))
         return the_class
     except (AttributeError, ValueError, ImportError) as not_imported:
-        # print sys.path
         tf.logging.fatal(repr(not_imported))
-        # Two possibilities: a typo for a lookup table entry
-        #                 or a non-existing module
-        dists = dict((k, edit_distance(k, module_name))
-                     for k in list(lookup_table))
+        if '.' not in module_name:
+            err = 'Could not import {}: ' \
+                  'Incorrect module name "{}"; ' \
+                  'expected "module.object".'.format(type_str, module_name)
+        else:
+            err = '{}: Could not import object' \
+                  '"{}" from "{}"'.format(type_str, class_name, module_str)
+        tf.logging.fatal(err)
+
+        if not lookup_table:
+            # no further guess
+            raise ValueError(err)
+
+        dists = dict(
+            (k, edit_distance(k, module_name)) for k in list(lookup_table))
         closest = min(dists, key=dists.get)
         if dists[closest] <= 3:
             err = 'Could not import {2}: By "{0}", ' \
                   'did you mean "{1}"?\n "{0}" is ' \
                   'not a valid option. '.format(module_name, closest, type_str)
             tf.logging.fatal(err)
-            raise ValueError(err)
-        else:
-            if '.' not in module_name:
-                err = 'Could not import {}: ' \
-                      'Incorrect module name "{}"; ' \
-                      'expected "module.object".'.format(type_str, module_name)
-                tf.logging.fatal(err)
-                raise ValueError(err)
-            err = '{}: Could not import object' \
-                  '"{}" from "{}"'.format(type_str, class_name, module_str)
-            tf.logging.fatal(err)
-            raise ValueError(err)
+        raise ValueError(err)
 
 
 class ModuleFactory(object):
@@ -372,4 +372,4 @@ class EventHandlerFactory(ModuleFactory):
     Import an event handler such as niftynet.engine.event_console
     """
     SUPPORTED = {}
-    type_str = 'event_handler'
+    type_str = 'event handler'

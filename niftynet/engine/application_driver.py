@@ -76,9 +76,11 @@ class ApplicationDriver(object):
         self.gradients_collector = None
 
         self.event_handler_names = [
+            'niftynet.engine.event_gradient.ApplyGradients',
             'niftynet.engine.event_console.ConsoleLogger',
             'niftynet.engine.event_tensorboard.TensorBoardLogger',
             'niftynet.engine.event_checkpoint.ModelSaver']
+        self._registered_event_handlers = []
 
     def initialise_application(self, workflow_param, data_param):
         """
@@ -220,8 +222,8 @@ class ApplicationDriver(object):
             start_time = time.time()
             loop_status = {}
 
-            # variable used to store the list of event handler instances.
-            _unused = self._load_event_handlers(self.event_handler_names)
+            # make the list of initialised event handler instances.
+            self.load_event_handlers(self.event_handler_names)
             try:
                 # iteratively run the graph
                 if self.is_training:
@@ -410,14 +412,6 @@ class ApplicationDriver(object):
         interpretation.
         """
         # Core training loop handling
-        def add_gradient(_sender, **msg):
-            """ Event handler to add the backpropagation update.
-            iter_msg is an IterationMessage object """
-            iter_msg = msg['iter_msg']
-            if iter_msg.is_training:
-                iter_msg.ops_to_run['gradients'] = self.app.gradient_op
-
-        ITER_STARTED.connect(add_gradient)
         self._loop(self.interleaved_iteration_generator(), sess, loop_status)
 
     def _inference_loop(self, sess, loop_status):
@@ -470,19 +464,20 @@ class ApplicationDriver(object):
                 "are blocked.")
             raise
 
-    def _load_event_handlers(self, names):
+    def load_event_handlers(self, names):
         """
         Import event handler modules and create a list of handler instances.
+        The event handler instances will be stored with this engine.
 
         :param names: strings of event handlers
-        :return: a list of event handlers
+        :return:
         """
-        handlers = []
+        self._registered_event_handlers = []
         for name in names:
             the_event_class = EventHandlerFactory.create(name)
             # initialise all registered event handler classes
-            handlers.append(the_event_class(**vars(self)))
-        return handlers
+            self._registered_event_handlers.append(
+                the_event_class(**vars(self)))
 
     def _device_string(self, device_id=0, is_worker=True):
         """

@@ -51,9 +51,12 @@ class DriverLoopTest(tf.test.TestCase):
         test_graph = app_driver._create_graph(app_driver.graph)
         test_tensor = app_driver.graph.get_tensor_by_name(
             "G/conv_bn_selu/conv_/w:0")
+        app_driver.load_event_handlers(
+            ['niftynet.engine.event_gradient.ApplyGradients'])
 
         iter_msgs = []
         test_vals = []
+
         def get_iter_msgs(_sender, **msg):
             """" Captures iter_msg and model values for testing"""
             iter_msg = msg['iter_msg']
@@ -76,10 +79,14 @@ class DriverLoopTest(tf.test.TestCase):
             app_driver._training_loop(sess, loop_status)
 
             # Check sequence of iterations
-            self.assertRegexpMatches(iter_msgs[0].to_console_string(), 'training')
-            self.assertRegexpMatches(iter_msgs[1].to_console_string(), 'training')
-            self.assertRegexpMatches(iter_msgs[2].to_console_string(), 'validation')
-            self.assertRegexpMatches(iter_msgs[3].to_console_string(), 'training')
+            self.assertRegexpMatches(
+                iter_msgs[0].to_console_string(), 'training')
+            self.assertRegexpMatches(
+                iter_msgs[1].to_console_string(), 'training')
+            self.assertRegexpMatches(
+                iter_msgs[2].to_console_string(), 'validation')
+            self.assertRegexpMatches(
+                iter_msgs[3].to_console_string(), 'training')
 
             # Check durations
             for iter_msg in iter_msgs:
