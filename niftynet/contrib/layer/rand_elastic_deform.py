@@ -29,7 +29,8 @@ class RandomElasticDeformationLayer(RandomisedLayer):
                  num_controlpoints=4,
                  std_deformation_sigma=15,
                  name='random_elastic_deformation',
-                 proportion_to_augment=0.5):
+                 proportion_to_augment=0.5,
+                 spatial_rank=3):
         """
         This layer elastically deforms the inputs, for data-augmentation purposes.
         :param num_controlpoints:
@@ -46,12 +47,9 @@ class RandomElasticDeformationLayer(RandomisedLayer):
         self.proportion_to_augment = proportion_to_augment
         self.do_augmentation = None
         self.bspline_transformation = None
-        self.spatial_rank = None
-
-    def randomise(self, image_dict, spatial_rank=3):
-        # record the spatial rank here.
         self.spatial_rank = spatial_rank
 
+    def randomise(self, image_dict):
         self.do_augmentation = np.random.rand() < self.proportion_to_augment
         if not self.do_augmentation:
             pass
