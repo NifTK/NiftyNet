@@ -2,7 +2,7 @@
 """
 Message stores status info of the current iteration.
 """
-
+import itertools
 import time
 
 from niftynet.engine.application_variables import CONSOLE, TF_SUMMARIES
@@ -13,7 +13,6 @@ CONSOLE_FORMAT = "{} iter {}, {} ({:3f}s)"
 SUPPORTED_PHASES = {TRAIN, VALID, INFER}
 
 
-# pylint: disable=too-many-instance-attributes
 class IterationMessage(object):
     """
     This class consists of network variables and operations at each iteration.
@@ -203,6 +202,88 @@ class IterationMessage(object):
         if not summary:
             return
         writer.add_summary(summary, self.current_iter)
+
+
+class IterationMessageGenerator(object):
+    """
+    Classes provides an iteration message generator function.
+    The generator should yield IterationMessage instances.
+    """
+
+    def __init__(self,
+                 initial_iter=0,
+                 final_iter=0,
+                 validation_every_n=0,
+                 validation_max_iter=0,
+                 is_training=False,
+                 **_unused):
+        self.initial_iter = initial_iter
+        self.final_iter = final_iter
+        self.validation_every_n = validation_every_n
+        self.validation_max_iter = validation_max_iter
+        self.is_training = is_training
+
+    def __call__(self):
+        if not self.is_training:
+            return _infer_iter_generator()
+        return _train_iter_generator(
+            initial_iter=self.initial_iter,
+            final_iter=self.final_iter,
+            validation_every_n=self.validation_every_n,
+            validation_max_iter=self.validation_max_iter)
+
+
+def _infer_iter_generator():
+    """
+    This generator yields infinite number of infer iterations.
+
+    :return: iteration message instances
+    """
+    infer_iterations = _iter_msg_generator(itertools.count(), INFER)
+    for infer_iter_msg in infer_iterations:
+        yield infer_iter_msg
+
+
+def _train_iter_generator(initial_iter=0,
+                          final_iter=0,
+                          validation_every_n=0,
+                          validation_max_iter=0, **_unused):
+    """
+    This generator yields a sequence of interleaved training and validation
+    iterations.
+
+    :param initial_iter: starting iteration of the training sequence
+    :param final_iter: ending iteration of the training sequence
+    :param validation_every_n: validation at every n training
+    :param validation_max_iter: number of validation iterations
+    :return: iteration message instances
+    """
+    train_iterations = _iter_msg_generator(
+        range(initial_iter + 1, final_iter + 1), TRAIN)
+    for train_iter_msg in train_iterations:
+        yield train_iter_msg
+        current_iter = train_iter_msg.current_iter
+        if current_iter > 0 and validation_every_n > 0 and \
+                current_iter % validation_every_n == 0:
+            # generating validation iterations without changing the current
+            # iteration number.
+            valid_iterations = _iter_msg_generator(
+                [current_iter] * validation_max_iter, VALID)
+            for valid_iter_msg in valid_iterations:
+                yield valid_iter_msg
+
+
+def _iter_msg_generator(count_generator, phase):
+    """
+    Generate a numbered sequence of IterationMessage objects
+    with phase-appropriate signals.
+    count_generator is an iterable object yielding iteration numbers
+    phase is one of TRAIN, VALID or INFER
+    """
+    for iter_i in count_generator:
+        iter_msg = IterationMessage()
+        iter_msg.current_iter, iter_msg.phase = iter_i, phase
+        yield iter_msg
 
 
 def _console_vars_to_str(console_dict):

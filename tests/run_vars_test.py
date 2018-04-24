@@ -4,8 +4,8 @@ from __future__ import absolute_import, print_function
 import numpy as np
 import tensorflow as tf
 
-from niftynet.engine.application_driver import train_iter_generator
-from niftynet.engine.application_iteration import IterationMessage
+from niftynet.engine.application_iteration import IterationMessage, \
+    _train_iter_generator
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import global_vars_init_or_restore
 from niftynet.engine.signal import TRAIN, ITER_FINISHED
@@ -79,7 +79,7 @@ class DriverLoopTest(tf.test.TestCase):
             app_driver._run_sampler_threads(sess)
             sess.run(global_vars_init_or_restore())
 
-            iterations = train_iter_generator(
+            iterations = _train_iter_generator(
                 app_driver.initial_iter,
                 app_driver.final_iter,
                 app_driver.validation_every_n,

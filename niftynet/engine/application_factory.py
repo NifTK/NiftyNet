@@ -373,3 +373,11 @@ class EventHandlerFactory(ModuleFactory):
     """
     SUPPORTED = {}
     type_str = 'event handler'
+
+
+class IteratorFactory(ModuleFactory):
+    """
+    Import an iterative message generator for the main engine loop
+    """
+    SUPPORTED = {}
+    type_str = 'engine iterator'

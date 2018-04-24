@@ -26,6 +26,8 @@ class TensorBoardLogger(object):
         # the collector provides TF summary ops
         self.outputs_collector = outputs_collector
         # initialise summary writer
+        if not tf.get_default_graph() or not self.summary_dir:
+            return
         self.writer_train = tf.summary.FileWriter(
             os.path.join(self.summary_dir, TRAIN), tf.get_default_graph())
         self.writer_valid = tf.summary.FileWriter(
