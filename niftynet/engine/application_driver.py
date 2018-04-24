@@ -231,7 +231,7 @@ class ApplicationDriver(object):
 
             try:
                 # broadcasting event of session started
-                SESS_STARTED.send('session started', iter_msg=None)
+                SESS_STARTED.send(self.app, iter_msg=None)
 
                 if self.is_training:
                     loop_status['current_iter'] = self.initial_iter
@@ -263,7 +263,7 @@ class ApplicationDriver(object):
                 # broadcasting event of session finished
                 iter_msg = IterationMessage()
                 iter_msg.current_iter = loop_status.get('current_iter', -1)
-                SESS_FINISHED.send('sender_string', iter_msg=iter_msg)
+                SESS_FINISHED.send(self.app, iter_msg=iter_msg)
 
                 tf.logging.info('Cleaning up...')
                 if not self.is_training and \
@@ -353,7 +353,7 @@ class ApplicationDriver(object):
             loop_status['current_iter'] = iter_msg.current_iter
 
             # broadcasting event of starting an iteration
-            ITER_STARTED.send('sender_string', iter_msg=iter_msg)
+            ITER_STARTED.send(self.app, iter_msg=iter_msg)
 
             # ``iter_msg.ops_to_run`` are populated with the ops to run in
             #  each iteration, fed into ``session.run()`` and then
@@ -363,7 +363,7 @@ class ApplicationDriver(object):
             iter_msg.current_iter_output = graph_output
 
             # broadcasting event of finishing an iteration
-            ITER_FINISHED.send('sender_string', iter_msg=iter_msg)
+            ITER_FINISHED.send(self.app, iter_msg=iter_msg)
 
             # Checking stopping conditions
             if iter_msg.should_stop:
