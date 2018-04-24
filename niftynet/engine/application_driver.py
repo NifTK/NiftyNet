@@ -197,7 +197,7 @@ class ApplicationDriver(object):
         :return:
         """
         self._event_handlers = []
-        for name in names:
+        for name in set(names):
             the_event_class = EventHandlerFactory.create(name)
             # initialise all registered event handler classes
             self._event_handlers.append(the_event_class(**vars(self)))
