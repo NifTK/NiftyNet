@@ -29,7 +29,8 @@ from niftynet.engine.signal import TRAIN, \
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.io.misc_io import get_latest_subfolder, touch_folder
 from niftynet.layer.bn import BN_COLLECTION
-from niftynet.utilities.util_common import set_cuda_device, traverse_nested
+from niftynet.utilities.util_common import \
+    set_cuda_device, traverse_nested, tf_config, device_string
 
 
 # pylint: disable=too-many-instance-attributes
@@ -214,8 +215,7 @@ class ApplicationDriver(object):
 
         :return:
         """
-        config = ApplicationDriver._tf_config()
-        with tf.Session(config=config, graph=self.graph) as session:
+        with tf.Session(config=tf_config(), graph=self.graph) as session:
 
             # start samplers' threads
             self._run_sampler_threads(session=session)
@@ -276,7 +276,8 @@ class ApplicationDriver(object):
         TensorFlow graph is only created within this function.
         """
         assert isinstance(graph, tf.Graph)
-        main_device = self._device_string(0, is_worker=False)
+        main_device = device_string(
+            self.num_gpus, 0, is_worker=False, is_training=self.is_training)
         # start constructing the graph, handling training and inference cases
         with graph.as_default(), tf.device(main_device):
 
@@ -289,7 +290,9 @@ class ApplicationDriver(object):
             #     defining and collecting variables from multiple devices
             bn_ops = None
             for gpu_id in range(0, max(self.num_gpus, 1)):
-                worker_device = self._device_string(gpu_id, is_worker=True)
+                worker_device = device_string(
+                    self.num_gpus, gpu_id,
+                    is_worker=True, is_training=self.is_training)
                 scope_string = 'worker_{}'.format(gpu_id)
                 with tf.name_scope(scope_string) as scope:
                     with tf.device(worker_device):
@@ -396,42 +399,9 @@ class ApplicationDriver(object):
                 "are blocked.")
             raise
 
-    def _device_string(self, device_id=0, is_worker=True):
-        """
-        assigning CPU/GPU based on user specifications
-        """
-        # pylint: disable=no-name-in-module
-        from tensorflow.python.client import device_lib
-        devices = device_lib.list_local_devices()
-        n_local_gpus = sum([x.device_type == 'GPU' for x in devices])
-        if self.num_gpus <= 0:  # user specified no gpu at all
-            return '/cpu:{}'.format(device_id)
-        if self.is_training:
-            # in training: use gpu only for workers whenever n_local_gpus
-            device = 'gpu' if (is_worker and n_local_gpus > 0) else 'cpu'
-            if device == 'gpu' and device_id >= n_local_gpus:
-                tf.logging.warning(
-                    'trying to use gpu id %s, but only has %s GPU(s), '
-                    'please set num_gpus to %s at most',
-                    device_id, n_local_gpus, n_local_gpus)
-                # raise ValueError
-            return '/{}:{}'.format(device, device_id)
-        # in inference: use gpu for everything whenever n_local_gpus
-        return '/gpu:0' if n_local_gpus > 0 else '/cpu:0'
-
     @staticmethod
     def _create_app(app_type_string):
         """
         Import the application module
         """
         return ApplicationFactory.create(app_type_string)
-
-    @staticmethod
-    def _tf_config():
-        """
-        tensorflow system configurations
-        """
-        config = tf.ConfigProto()
-        config.log_device_placement = False
-        config.allow_soft_placement = True
-        return config
