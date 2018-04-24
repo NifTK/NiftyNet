@@ -78,12 +78,13 @@ class RandDeformationTests(tf.test.TestCase):
         rand_deformation_layer = RandomElasticDeformationLayer(num_controlpoints=4,
                                                                std_deformation_sigma=1,
                                                                name='random_elastic_deformation',
-                                                               proportion_to_augment=1.)
+                                                               proportion_to_augment=1.,
+                                                               spatial_rank = 2)
         for _ in range(100):
             x, interp_orders = self.get_3d_input()
             x_old = np.copy(x['testdata'])
 
-            rand_deformation_layer.randomise(x, spatial_rank=2)
+            rand_deformation_layer.randomise(x)
             out = rand_deformation_layer(x, interp_orders)
 
             with self.test_session():
