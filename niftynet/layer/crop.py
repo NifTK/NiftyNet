@@ -24,7 +24,8 @@ class CropLayer(Layer):
 
     def layer_op(self, inputs):
         spatial_rank = layer_util.infer_spatial_rank(inputs)
-        offsets = [0, *([int(self.border)] * spatial_rank), 0]
-        out_shape = [-1, *[int(d) - 2 * int(self.border) for d in list(inputs.shape)[1:-1]], -1]
+        offsets = [0] + [int(self.border)] * spatial_rank + [0]
+        # inferring the shape of the output by subtracting the border dimension
+        out_shape = [-1] + [int(d) - 2 * int(self.border) for d in list(inputs.shape)[1:-1]] + [-1]
         output_tensor = tf.slice(inputs, offsets, out_shape)
         return output_tensor
