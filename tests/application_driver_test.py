@@ -11,6 +11,7 @@ from niftynet.engine.application_variables import global_vars_init_or_restore
 from niftynet.engine.event_checkpoint import ModelSaver
 from niftynet.io.misc_io import set_logger
 from niftynet.utilities.util_common import ParserNamespace
+from niftynet.engine.signal import SESS_FINISHED
 
 
 # def _run_test_application():
@@ -77,6 +78,8 @@ class ApplicationDriverTest(tf.test.TestCase):
     def test_stop_app(self):
         test_driver = get_initialised_driver()
         test_driver.graph = test_driver._create_graph(test_driver.graph)
+        test_driver.load_event_handlers(
+            ['niftynet.engine.event_sampler.SamplerThreading'])
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(global_vars_init_or_restore())
             coord = tf.train.Coordinator()
@@ -84,6 +87,7 @@ class ApplicationDriverTest(tf.test.TestCase):
                 for sampler in samplers:
                     sampler.run_threads(sess, coord, test_driver.num_threads)
             train_op = test_driver.app.gradient_op
+            SESS_FINISHED.send(test_driver.app, itermsg=None)
             test_driver.app.stop()
             try:
                 while True:
@@ -95,6 +99,8 @@ class ApplicationDriverTest(tf.test.TestCase):
     def test_training_update(self):
         test_driver = get_initialised_driver()
         test_driver.graph = test_driver._create_graph(test_driver.graph)
+        test_driver.load_event_handlers(
+            ['niftynet.engine.event_sampler.SamplerThreading'])
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(global_vars_init_or_restore())
             coord = tf.train.Coordinator()
@@ -110,11 +116,14 @@ class ApplicationDriverTest(tf.test.TestCase):
             square_diff = np.sum(np.abs(var_0 - var_1))
             self.assertGreater(
                 square_diff, 0.0, 'train_op does not change model')
+            SESS_FINISHED.send(test_driver.app, itermsg=None)
             test_driver.app.stop()
 
     def test_multi_device_inputs(self):
         test_driver = get_initialised_driver()
         test_driver.graph = test_driver._create_graph(test_driver.graph)
+        test_driver.load_event_handlers(
+            ['niftynet.engine.event_sampler.SamplerThreading'])
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(global_vars_init_or_restore())
             coord = tf.train.Coordinator()
@@ -140,11 +149,14 @@ class ApplicationDriverTest(tf.test.TestCase):
                 self.assertGreater(np.sum(np.abs(s_1 - s_2)), 0.0, msg)
                 self.assertGreater(np.sum(np.abs(s_1 - s_3)), 0.0, msg)
                 self.assertGreater(np.sum(np.abs(s_2 - s_3)), 0.0, msg)
+        SESS_FINISHED.send(test_driver.app, itermsg=None)
         test_driver.app.stop()
 
     def test_multi_device_gradients(self):
         test_driver = get_initialised_driver()
         test_driver.graph = test_driver._create_graph(test_driver.graph)
+        test_driver.load_event_handlers(
+            ['niftynet.engine.event_sampler.SamplerThreading'])
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(global_vars_init_or_restore())
             coord = tf.train.Coordinator()
@@ -179,6 +191,7 @@ class ApplicationDriverTest(tf.test.TestCase):
                 g_ave = g_ave.reshape(-1)
                 g_np_ave = np.mean(g_array, axis=0)
                 self.assertAllClose(g_np_ave, g_ave)
+        SESS_FINISHED.send(test_driver.app, itermsg=None)
         test_driver.app.stop()
 
     def test_rand_initialisation(self):

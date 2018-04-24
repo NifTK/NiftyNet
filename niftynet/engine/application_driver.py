@@ -30,7 +30,7 @@ from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.io.misc_io import get_latest_subfolder, touch_folder
 from niftynet.layer.bn import BN_COLLECTION
 from niftynet.utilities.util_common import \
-    set_cuda_device, traverse_nested, tf_config, device_string
+    set_cuda_device, tf_config, device_string
 
 
 # pylint: disable=too-many-instance-attributes
@@ -63,12 +63,13 @@ class ApplicationDriver(object):
         self.validation_every_n = -1
         self.validation_max_iter = 1
 
-        self._coord = tf.train.Coordinator()
+        self.coordinator = tf.train.Coordinator()
         self._data_partitioner = None
         self.outputs_collector = None
         self.gradients_collector = None
 
         self.event_handler_names = [
+            'niftynet.engine.event_sampler.SamplerThreading',
             'niftynet.engine.event_gradient.ApplyGradients',
             'niftynet.engine.event_console.ConsoleLogger',
             'niftynet.engine.event_tensorboard.TensorBoardLogger',
@@ -217,8 +218,6 @@ class ApplicationDriver(object):
         """
         with tf.Session(config=tf_config(), graph=self.graph) as session:
 
-            # start samplers' threads
-            self._run_sampler_threads(session=session)
             self.graph = self._create_graph(self.graph)
 
             # check app variables initialised and ready for starts
@@ -233,13 +232,16 @@ class ApplicationDriver(object):
             try:
                 # broadcasting event of session started
                 SESS_STARTED.send(self.app, iter_msg=None)
+
                 loop_status['current_iter'] = self.initial_iter
                 loop_status['all_saved_flag'] = False
 
-                # iteratively run the graph
-                engine_iterator = \
-                    IteratorFactory.create(self.iterator_type)(**vars(self))
-                self._loop(engine_iterator(**vars(self)), session, loop_status)
+                # iteratively run the graph (the main engine loop)
+                iterator_class = ApplicationDriver._create_iters(
+                    self.iterator_type)
+                iterator_instance = iterator_class(**vars(self))
+                iter_messages = iterator_instance()
+                self._loop(iter_messages, session, loop_status)
 
             except KeyboardInterrupt:
                 tf.logging.warning('User cancelled application')
@@ -254,18 +256,16 @@ class ApplicationDriver(object):
                 traceback.print_exception(
                     exc_type, exc_value, exc_traceback, file=sys.stdout)
             finally:
+                tf.logging.info('Cleaning up...')
                 # broadcasting event of session finished
                 iter_msg = IterationMessage()
                 iter_msg.current_iter = loop_status.get('current_iter', -1)
                 SESS_FINISHED.send(self.app, iter_msg=iter_msg)
+                self.app.stop()
 
-                tf.logging.info('Cleaning up...')
                 if not self.is_training and \
                         not loop_status.get('all_saved_flag', None):
                     tf.logging.warning('stopped early, incomplete loops')
-
-                tf.logging.info('stopping sampling threads')
-                self.app.stop()
                 tf.logging.info(
                     "%s stopped (time in second %.2f).",
                     type(self.app).__name__, (time.time() - start_time))
@@ -345,7 +345,7 @@ class ApplicationDriver(object):
 
         loop_status = loop_status or {}
         for iter_msg in iteration_generator:
-            if self._coord.should_stop():
+            if self.coordinator.should_stop():
                 break
             loop_status['current_iter'] = iter_msg.current_iter
 
@@ -369,39 +369,16 @@ class ApplicationDriver(object):
                                 iter_msg.should_stop)
                 break
 
-    def _run_sampler_threads(self, session=None):
-        """
-        Get samplers from application and try to run sampler threads.
-
-        Note: Overriding app.get_sampler() method by returning None to bypass
-        this step.
-
-        :param session: TF session used for fill
-            tf.placeholders with sampled data
-        :return:
-        """
-        if session is None:
-            return
-        if self._coord is None:
-            return
-        if self.num_threads <= 0:
-            return
-        try:
-            samplers = self.app.get_sampler()
-            for sampler in traverse_nested(samplers):
-                if sampler is None:
-                    continue
-                sampler.run_threads(session, self._coord, self.num_threads)
-            tf.logging.info('Filling queues (this can take a few minutes)')
-        except (NameError, TypeError, AttributeError, IndexError):
-            tf.logging.fatal(
-                "samplers not running, pop_batch_op operations "
-                "are blocked.")
-            raise
-
     @staticmethod
     def _create_app(app_type_string):
         """
         Import the application module
         """
         return ApplicationFactory.create(app_type_string)
+
+    @staticmethod
+    def _create_iters(iterator_string):
+        """
+        Import the Iterator module (used in the main training/infer loop).
+        """
+        return IteratorFactory.create(iterator_string)

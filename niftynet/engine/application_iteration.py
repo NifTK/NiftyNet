@@ -247,7 +247,7 @@ def _infer_iter_generator():
 def _train_iter_generator(initial_iter=0,
                           final_iter=0,
                           validation_every_n=0,
-                          validation_max_iter=0, **_unused):
+                          validation_max_iter=0):
     """
     This generator yields a sequence of interleaved training and validation
     iterations.

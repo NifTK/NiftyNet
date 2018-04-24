@@ -5,10 +5,10 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.engine.application_iteration import IterationMessage, \
-    _train_iter_generator
+    IterationMessageGenerator
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import global_vars_init_or_restore
-from niftynet.engine.signal import TRAIN, ITER_FINISHED
+from niftynet.engine.signal import TRAIN, ITER_FINISHED, SESS_STARTED
 from tests.application_driver_test import get_initialised_driver
 
 
@@ -54,7 +54,8 @@ class DriverLoopTest(tf.test.TestCase):
         test_tensor = app_driver.graph.get_tensor_by_name(
             "G/conv_bn_selu/conv_/w:0")
         app_driver.load_event_handlers(
-            ['niftynet.engine.event_gradient.ApplyGradients'])
+            ['niftynet.engine.event_sampler.SamplerThreading',
+             'niftynet.engine.event_gradient.ApplyGradients'])
 
         iter_msgs = []
         test_vals = []
@@ -75,16 +76,16 @@ class DriverLoopTest(tf.test.TestCase):
         loop_status = {}
 
         with self.test_session(graph=test_graph) as sess:
-            app_driver._run_sampler_threads()
-            app_driver._run_sampler_threads(sess)
             sess.run(global_vars_init_or_restore())
 
-            iterations = _train_iter_generator(
+            iterations = IterationMessageGenerator(
                 app_driver.initial_iter,
                 app_driver.final_iter,
                 app_driver.validation_every_n,
-                app_driver.validation_max_iter)
-            app_driver._loop(iterations, sess, loop_status)
+                app_driver.validation_max_iter,
+                is_training=True)
+            SESS_STARTED.send(app_driver.app, iter_msg=None)
+            app_driver._loop(iterations(), sess, loop_status)
 
             # Check sequence of iterations
             self.assertRegexpMatches(

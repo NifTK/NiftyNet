@@ -225,18 +225,6 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
             raise NotImplementedError(
                 'This app supports updating a network, or a list of networks.')
 
-    def stop(self):
-        """
-        Stop the sampling threads and
-        remove application instance if there's any.
-
-        :return:
-        """
-        for sampler in util_common.traverse_nested(self.get_sampler()):
-            if sampler is None:
-                continue
-            sampler.close_all()
-        SingletonApplication.clear()
 
     def set_iteration_update(self, iteration_message):
         """
@@ -328,3 +316,12 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         :return: boolean value indicating if the action is evaluation
         """
         return EVAL.startswith(self.action)
+
+    @staticmethod
+    def stop():
+        """
+        remove application instance if there's any.
+
+        :return:
+        """
+        SingletonApplication.clear()
