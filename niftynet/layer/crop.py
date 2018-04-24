@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-import numpy as np
 import tensorflow as tf
 
 from niftynet.layer import layer_util
@@ -11,11 +10,8 @@ from niftynet.layer.base_layer import Layer
 class CropLayer(Layer):
     """
     This class defines a cropping operation:
-    Removing `2*border` pixels from each spatial dim of the input,
+    Removing ``2*border`` pixels from each spatial dim of the input,
     and return the spatially centred elements extracted from the input.
-
-    This function is implemented with a convolution in the `valid` mode
-    with a trivial kernel
     """
 
     def __init__(self, border, name='crop'):
