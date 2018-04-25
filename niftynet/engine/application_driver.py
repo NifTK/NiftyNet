@@ -225,14 +225,11 @@ class ApplicationDriver(object):
 
             start_time = time.time()
             loop_status = {}
-
+            loop_status['current_iter'] = self.initial_iter
+            loop_status['normal_exit'] = False
             try:
-                # broadcasting event of session started
-                SESS_STARTED.send(self.app, iter_msg=None)
 
-                loop_status['current_iter'] = self.initial_iter
-                loop_status['all_saved_flag'] = False
-
+                # create a iteration message generator and
                 # iteratively run the graph (the main engine loop)
                 iterator_class = \
                     ApplicationDriver._create_iters(self.iterator_type)
@@ -242,9 +239,9 @@ class ApplicationDriver(object):
             except KeyboardInterrupt:
                 tf.logging.warning('User cancelled application')
             except tf.errors.OutOfRangeError:
-                if loop_status.get('all_saved_flag', None) is not None:
+                if not loop_status.get('normal_exit', False):
                     # reached the end of inference Dataset
-                    loop_status['all_saved_flag'] = True
+                    loop_status['normal_exit'] = True
             except RuntimeError:
                 import sys
                 import traceback
@@ -253,15 +250,14 @@ class ApplicationDriver(object):
                     exc_type, exc_value, exc_traceback, file=sys.stdout)
             finally:
                 tf.logging.info('Cleaning up...')
-                # broadcasting event of session finished
-                iter_msg = IterationMessage()
-                iter_msg.current_iter = loop_status.get('current_iter', -1)
-                SESS_FINISHED.send(self.app, iter_msg=iter_msg)
+                if not loop_status.get('normal_exit', False):
+                    # loop didn't finish normally,
+                    # again broadcasting session finished event
+                    iter_msg = IterationMessage()
+                    iter_msg.current_iter = loop_status.get('current_iter', -1)
+                    SESS_FINISHED.send(self.app, iter_msg=iter_msg)
+                    tf.logging.warning('stopped early, incomplete iterations.')
                 self.app.stop()
-
-                if not self.is_training_action and \
-                        not loop_status.get('all_saved_flag', None):
-                    tf.logging.warning('stopped early, incomplete loops')
                 tf.logging.info(
                     "%s stopped (time in second %.2f).",
                     type(self.app).__name__, (time.time() - start_time))
@@ -340,6 +336,9 @@ class ApplicationDriver(object):
         if not sess:
             return
 
+        # broadcasting event of session started
+        SESS_STARTED.send(self.app, iter_msg=None)
+
         loop_status = loop_status or {}
         for iter_msg in iteration_generator:
             if self.coordinator.should_stop():
@@ -350,7 +349,7 @@ class ApplicationDriver(object):
             ITER_STARTED.send(self.app, iter_msg=iter_msg)
 
             # ``iter_msg.ops_to_run`` are populated with the ops to run in
-            #  each iteration, fed into ``session.run()`` and then
+            # each iteration, fed into ``session.run()`` and then
             # passed to the app (and observers) for interpretation.
             graph_output = sess.run(
                 iter_msg.ops_to_run, feed_dict=iter_msg.data_feed_dict)
@@ -361,10 +360,15 @@ class ApplicationDriver(object):
 
             # Checking stopping conditions
             if iter_msg.should_stop:
-                loop_status['all_saved_flag'] = True
                 tf.logging.info('Stopping message from event handler: %s.',
                                 iter_msg.should_stop)
                 break
+
+        loop_status['all_saved_flag'] = True
+        # broadcasting event of session finished
+        iter_msg = IterationMessage()
+        iter_msg.current_iter = loop_status.get('current_iter', -1)
+        SESS_FINISHED.send(self.app, iter_msg=iter_msg)
 
     @staticmethod
     def _create_app(app_type_string):

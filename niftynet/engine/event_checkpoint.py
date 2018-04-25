@@ -92,7 +92,8 @@ class ModelSaver(object):
         :param msg: an iteration message instance
         :return:
         """
-        self._save_at(msg['iter_msg'].current_iter)
+        if msg['iter_msg'].current_iter >= 0:
+            self._save_at(msg['iter_msg'].current_iter)
 
     def save_model_interval(self, _sender, **msg):
         """
