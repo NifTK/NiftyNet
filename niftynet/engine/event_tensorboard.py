@@ -33,8 +33,9 @@ class TensorBoardLogger(object):
         self.writer_valid = tf.summary.FileWriter(
             os.path.join(self.summary_dir, VALID), tf.get_default_graph())
 
-        ITER_STARTED.connect(self.read_tensorboard_op)
-        ITER_FINISHED.connect(self.write_tensorboard)
+        if tensorboard_every_n > 0:
+            ITER_STARTED.connect(self.read_tensorboard_op)
+            ITER_FINISHED.connect(self.write_tensorboard)
 
     def read_tensorboard_op(self, _sender, **msg):
         """
@@ -44,9 +45,7 @@ class TensorBoardLogger(object):
         :param _sender: signal
         :param msg: should contain an IterationMessage instance
         """
-        _iter_msg = msg.get('iter_msg', None)
-        if _iter_msg is None:
-            return
+        _iter_msg = msg['iter_msg']
         if _iter_msg.is_inference:
             return
         if self._is_writing(_iter_msg.current_iter):
@@ -60,8 +59,8 @@ class TensorBoardLogger(object):
         :param _sender:
         :param msg:
         """
-        _iter_msg = msg.get('iter_msg', None)
-        if _iter_msg is None or not self._is_writing(_iter_msg.current_iter):
+        _iter_msg = msg['iter_msg']
+        if not self._is_writing(_iter_msg.current_iter):
             return
         if _iter_msg.is_training:
             _iter_msg.to_tf_summary(self.writer_train)
@@ -76,5 +75,4 @@ class TensorBoardLogger(object):
         :param current_iter: Integer of the current iteration number
         :return: boolean True if is writing at the current iteration
         """
-        return self.tensorboard_every_n > 0 and \
-            current_iter % self.tensorboard_every_n == 0
+        return current_iter % self.tensorboard_every_n == 0

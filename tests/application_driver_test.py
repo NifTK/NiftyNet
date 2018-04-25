@@ -204,7 +204,7 @@ class ApplicationDriverTest(tf.test.TestCase):
                     tf.errors.FailedPreconditionError,
                     'uninitialized value'):
                 sess.run(test_tensor)
-            ModelSaver(**vars(test_driver)).rand_init_or_restore_vars(None)
+            ModelSaver.rand_init_model(None)
             sess.run(test_tensor)
             _ = sess.run(tf.global_variables())
 
@@ -224,7 +224,7 @@ class ApplicationDriverTest(tf.test.TestCase):
                     tf.errors.FailedPreconditionError,
                     'uninitialized value'):
                 _ = sess.run(test_tensor)
-            ModelSaver(**vars(test_driver)).rand_init_or_restore_vars(None)
+            ModelSaver(**vars(test_driver)).restore_model(None)
             after_init = sess.run(test_tensor)
             self.assertAllClose(after_init[0], expected_init)
             _ = sess.run(tf.global_variables())
@@ -235,7 +235,7 @@ class ApplicationDriverTest(tf.test.TestCase):
         with self.test_session(graph=test_driver.graph) as sess:
             with self.assertRaisesRegexp(
                     tf.errors.NotFoundError, 'Failed to find'):
-                ModelSaver(**vars(test_driver)).rand_init_or_restore_vars(None)
+                ModelSaver(**vars(test_driver)).restore_model(None)
 
     def test_from_file_initialisation(self):
         test_driver = get_initialised_driver(starting_iter=40)
@@ -253,7 +253,7 @@ class ApplicationDriverTest(tf.test.TestCase):
                     tf.errors.FailedPreconditionError,
                     'uninitialized value'):
                 _ = sess.run(test_tensor)
-            ModelSaver(**vars(test_driver)).rand_init_or_restore_vars(None)
+            ModelSaver(**vars(test_driver)).restore_model(None)
             after_init = sess.run(test_tensor)
             self.assertAllClose(after_init[0], expected_init)
             _ = sess.run(tf.global_variables())

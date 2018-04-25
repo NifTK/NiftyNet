@@ -18,7 +18,7 @@ class ConsoleLogger(object):
         self.outputs_collector = outputs_collector
 
         ITER_STARTED.connect(self.read_console_vars)
-        ITER_FINISHED.connect(print_console_vars)
+        ITER_FINISHED.connect(self.print_console_vars)
 
     def read_console_vars(self, _sender, **msg):
         """
@@ -28,20 +28,16 @@ class ConsoleLogger(object):
         :param msg: an iteration message instance
         :return:
         """
-        _iter_msg = msg.get('iter_msg', None)
-        if _iter_msg is None:
-            return
-        _iter_msg.ops_to_run[CONSOLE] = \
+        msg['iter_msg'].ops_to_run[CONSOLE] = \
             self.outputs_collector.variables(CONSOLE)
 
+    @staticmethod
+    def print_console_vars(_sender, **msg):
+        """
+        Printing iteration message with ``tf.logging`` interface.
 
-def print_console_vars(_sender, **msg):
-    """
-    Printing iteration message with ``tf.logging`` interface.
-
-    :param _sender:
-    :param msg: an iteration message instance
-    :return:
-    """
-    _iter_msg = msg.get('iter_msg', None)
-    tf.logging.info(_iter_msg.to_console_string())
+        :param _sender:
+        :param msg: an iteration message instance
+        :return:
+        """
+        tf.logging.info(msg['iter_msg'].to_console_string())

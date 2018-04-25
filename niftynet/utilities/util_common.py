@@ -9,11 +9,9 @@ import re
 from functools import partial
 
 import numpy as np
-import tensorflow
 import tensorflow as tf
 from scipy import ndimage
 from six import string_types
-from tensorflow.python.client import device_lib
 
 
 def traverse_nested(input_lists, types=(list, tuple)):
@@ -434,3 +432,5 @@ def tf_config():
     config.log_device_placement = False
     config.allow_soft_placement = True
     return config
+
+

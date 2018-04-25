@@ -597,3 +597,30 @@ def set_logger(file_name=None):
         file_handler = log.FileHandler(file_name)
         file_handler.setFormatter(f)
         tf.logging._logger.addHandler(file_handler)
+
+
+def infer_latest_model_file(model_dir):
+    """
+    Infer initial iteration number from model_dir/checkpoint.
+
+    :param model_dir: model folder to search
+    :return:
+    """
+    ckpt_state = tf.train.get_checkpoint_state(model_dir)
+    try:
+        assert ckpt_state, "{}/checkpoint not found, please check " \
+                           "config parameter: model_dir".format(model_dir)
+        checkpoint = ckpt_state.model_checkpoint_path
+        assert checkpoint, 'checkpoint path not found ' \
+                           'in {}/checkpoint'.format(model_dir)
+        initial_iter = int(checkpoint.rsplit('-')[-1])
+        tf.logging.info('set initial_iter to %d based '
+                        'on checkpoints', initial_iter)
+        return initial_iter
+    except (ValueError, AttributeError, AssertionError):
+        tf.logging.fatal(
+            'Failed to get iteration number '
+            'from checkpoint path (%s),\n'
+            'please check config parameter: '
+            'model_dir, and initial_iter', model_dir)
+        raise

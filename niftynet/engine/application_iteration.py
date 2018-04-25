@@ -215,16 +215,16 @@ class IterationMessageGenerator(object):
                  final_iter=0,
                  validation_every_n=0,
                  validation_max_iter=0,
-                 is_training=False,
+                 is_training_action=True,
                  **_unused):
         self.initial_iter = initial_iter
         self.final_iter = final_iter
         self.validation_every_n = validation_every_n
         self.validation_max_iter = validation_max_iter
-        self.is_training = is_training
+        self.is_training_action = is_training_action
 
     def __call__(self):
-        if not self.is_training:
+        if not self.is_training_action:
             return _infer_iter_generator()
         return _train_iter_generator(
             initial_iter=self.initial_iter,

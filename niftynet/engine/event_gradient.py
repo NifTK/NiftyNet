@@ -13,23 +13,20 @@ class ApplyGradients(object):
     each iteration).
     """
 
-    def __init__(self, app, **_unused):
-        self.app = app
+    def __init__(self, **_unused):
         ITER_STARTED.connect(self.add_gradients)
 
-    def add_gradients(self, _sender, **msg):
+    @staticmethod
+    def add_gradients(sender, **msg):
         """
         Event handler to add gradients to iteration message ops_to_run.
 
         See also
         ``niftynet.application.base_application.set_network_gradient_op``
 
-        :param _sender:
+        :param sender: a niftynet.application instance
         :param msg: an iteration message instance
         :return:
         """
-        _iter_msg = msg.get('iter_msg', None)
-        if _iter_msg is None:
-            return
-        if _iter_msg.is_training:
-            _iter_msg.ops_to_run['gradients'] = self.app.gradient_op
+        if msg['iter_msg'].is_training:
+            msg['iter_msg'].ops_to_run['gradients'] = sender.gradient_op

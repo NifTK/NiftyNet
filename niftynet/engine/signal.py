@@ -18,7 +18,9 @@ ALL = 'all'
 # namespace of NiftyNet's default signals.
 NIFTYNET = Namespace()
 
-# NiftyNet's default signals.
+# NiftyNet's default signals. By design,
+# all connected functions have access to TF session and graph
+# by tf.get_default_session() and tf.get_default_graph()
 ITER_STARTED = NIFTYNET.signal(
     'iteration_started',
     doc='emitted when every iteration starts, before ``tf.session.run(...)``.')
