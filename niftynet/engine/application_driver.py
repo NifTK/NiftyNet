@@ -215,7 +215,7 @@ class ApplicationDriver(object):
         """
         with tf.Session(config=tf_config(), graph=self.graph) as session:
 
-            self.graph = self._create_graph(self.graph)
+            self.graph = self.create_graph(self.graph)
 
             # check app variables initialised and ready for starts
             self.app.check_initialisations()
@@ -237,7 +237,7 @@ class ApplicationDriver(object):
                 iterator_class = \
                     ApplicationDriver._create_iters(self.iterator_type)
                 iter_messages = iterator_class(**vars(self))()
-                self._loop(iter_messages, session, loop_status)
+                self.loop(iter_messages, session, loop_status)
 
             except KeyboardInterrupt:
                 tf.logging.warning('User cancelled application')
@@ -267,7 +267,7 @@ class ApplicationDriver(object):
                     type(self.app).__name__, (time.time() - start_time))
 
     # pylint: disable=not-context-manager
-    def _create_graph(self, graph=tf.Graph()):
+    def create_graph(self, graph=tf.Graph()):
         """
         TensorFlow graph is only created within this function.
         """
@@ -323,7 +323,7 @@ class ApplicationDriver(object):
         # tf.Graph.finalize(graph)
         return graph
 
-    def _loop(self, iteration_generator, sess=None, loop_status=None):
+    def loop(self, iteration_generator, sess=None, loop_status=None):
         """
         This loop stops when any of the condition satisfied:
             1. no more element from the ``iteration_generator``;

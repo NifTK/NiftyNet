@@ -43,7 +43,7 @@ class OutputInterpreter(object):
         if it's an end of the engine loop.
 
         See also:
-        ``niftynet.engine.application_driver._loop``
+        ``niftynet.engine.application_driver.loop``
 
         :param sender: a niftynet.application instance
         :param msg: an iteration message instance

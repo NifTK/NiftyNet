@@ -50,7 +50,7 @@ class DriverLoopTest(tf.test.TestCase):
 
     def test_run_vars(self):
         app_driver = get_initialised_driver()
-        test_graph = app_driver._create_graph(app_driver.graph)
+        test_graph = app_driver.create_graph(app_driver.graph)
         test_tensor = app_driver.graph.get_tensor_by_name(
             "G/conv_bn_selu/conv_/w:0")
         app_driver.load_event_handlers(
@@ -83,9 +83,10 @@ class DriverLoopTest(tf.test.TestCase):
                 app_driver.final_iter,
                 app_driver.validation_every_n,
                 app_driver.validation_max_iter,
-                is_training=True)
+                is_training_action=True)
             SESS_STARTED.send(app_driver.app, iter_msg=None)
-            app_driver._loop(iterations(), sess, loop_status)
+            app_driver.loop(iterations(), sess, loop_status)
+
 
             # Check sequence of iterations
             self.assertRegexpMatches(

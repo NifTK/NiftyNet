@@ -11,7 +11,7 @@ from niftynet.engine.application_variables import global_vars_init_or_restore
 from niftynet.engine.event_checkpoint import ModelSaver
 from niftynet.io.misc_io import set_logger
 from niftynet.utilities.util_common import ParserNamespace
-from niftynet.engine.signal import SESS_FINISHED
+from niftynet.engine.signal import SESS_STARTED, SESS_FINISHED
 
 
 # def _run_test_application():
@@ -77,15 +77,12 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_stop_app(self):
         test_driver = get_initialised_driver()
-        test_driver.graph = test_driver._create_graph(test_driver.graph)
+        test_driver.graph = test_driver.create_graph(test_driver.graph)
         test_driver.load_event_handlers(
             ['niftynet.engine.event_sampler.SamplerThreading'])
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(global_vars_init_or_restore())
-            coord = tf.train.Coordinator()
-            for samplers in test_driver.app.get_sampler():
-                for sampler in samplers:
-                    sampler.run_threads(sess, coord, test_driver.num_threads)
+            SESS_STARTED.send(test_driver.app, iter_msg=None)
             train_op = test_driver.app.gradient_op
             SESS_FINISHED.send(test_driver.app, itermsg=None)
             test_driver.app.stop()
@@ -98,15 +95,12 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_training_update(self):
         test_driver = get_initialised_driver()
-        test_driver.graph = test_driver._create_graph(test_driver.graph)
+        test_driver.graph = test_driver.create_graph(test_driver.graph)
         test_driver.load_event_handlers(
             ['niftynet.engine.event_sampler.SamplerThreading'])
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(global_vars_init_or_restore())
-            coord = tf.train.Coordinator()
-            for samplers in test_driver.app.get_sampler():
-                for sampler in samplers:
-                    sampler.run_threads(sess, coord, test_driver.num_threads)
+            SESS_STARTED.send(test_driver.app, iter_msg=None)
             train_op = test_driver.app.gradient_op
             test_tensor = test_driver.graph.get_tensor_by_name(
                 'G/conv_bn_selu/conv_/w:0')
@@ -121,15 +115,12 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_multi_device_inputs(self):
         test_driver = get_initialised_driver()
-        test_driver.graph = test_driver._create_graph(test_driver.graph)
+        test_driver.graph = test_driver.create_graph(test_driver.graph)
         test_driver.load_event_handlers(
             ['niftynet.engine.event_sampler.SamplerThreading'])
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(global_vars_init_or_restore())
-            coord = tf.train.Coordinator()
-            for samplers in test_driver.app.get_sampler():
-                for sampler in samplers:
-                    sampler.run_threads(sess, coord, test_driver.num_threads)
+            SESS_STARTED.send(test_driver.app, iter_msg=None)
             for i in range(2):
                 sess.run(test_driver.app.gradient_op)
                 s_0, s_1, s_2, s_3 = sess.run([
@@ -149,20 +140,17 @@ class ApplicationDriverTest(tf.test.TestCase):
                 self.assertGreater(np.sum(np.abs(s_1 - s_2)), 0.0, msg)
                 self.assertGreater(np.sum(np.abs(s_1 - s_3)), 0.0, msg)
                 self.assertGreater(np.sum(np.abs(s_2 - s_3)), 0.0, msg)
-        SESS_FINISHED.send(test_driver.app, itermsg=None)
-        test_driver.app.stop()
+            SESS_FINISHED.send(test_driver.app, itermsg=None)
+            test_driver.app.stop()
 
     def test_multi_device_gradients(self):
         test_driver = get_initialised_driver()
-        test_driver.graph = test_driver._create_graph(test_driver.graph)
+        test_driver.graph = test_driver.create_graph(test_driver.graph)
         test_driver.load_event_handlers(
             ['niftynet.engine.event_sampler.SamplerThreading'])
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(global_vars_init_or_restore())
-            coord = tf.train.Coordinator()
-            for samplers in test_driver.app.get_sampler():
-                for sampler in samplers:
-                    sampler.run_threads(sess, coord, test_driver.num_threads)
+            SESS_STARTED.send(test_driver.app, iter_msg=None)
             for i in range(2):
                 sess.run(test_driver.app.gradient_op)
                 g_0, g_1, g_2, g_3, g_ave = sess.run([
@@ -191,12 +179,12 @@ class ApplicationDriverTest(tf.test.TestCase):
                 g_ave = g_ave.reshape(-1)
                 g_np_ave = np.mean(g_array, axis=0)
                 self.assertAllClose(g_np_ave, g_ave)
-        SESS_FINISHED.send(test_driver.app, itermsg=None)
-        test_driver.app.stop()
+            SESS_FINISHED.send(test_driver.app, itermsg=None)
+            test_driver.app.stop()
 
     def test_rand_initialisation(self):
         test_driver = get_initialised_driver(starting_iter=0)
-        test_driver.graph = test_driver._create_graph(test_driver.graph)
+        test_driver.graph = test_driver.create_graph(test_driver.graph)
         with self.test_session(graph=test_driver.graph) as sess:
             test_tensor = test_driver.graph.get_tensor_by_name(
                 "G/conv_bn_selu/conv_/w:0")
@@ -210,7 +198,7 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_from_latest_file_initialisation(self):
         test_driver = get_initialised_driver(starting_iter=-1)
-        test_driver.graph = test_driver._create_graph(test_driver.graph)
+        test_driver.graph = test_driver.create_graph(test_driver.graph)
         expected_init = np.array(
             [[-0.03544217, 0.0228963, -0.04585603, 0.16923568, -0.51635778,
                 0.60694504, 0.01968583, -0.6252712, 0.28622296, -0.29527491,
@@ -231,7 +219,7 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_not_found_file_initialisation(self):
         test_driver = get_initialised_driver(starting_iter=42)
-        test_driver.graph = test_driver._create_graph(test_driver.graph)
+        test_driver.graph = test_driver.create_graph(test_driver.graph)
         with self.test_session(graph=test_driver.graph) as sess:
             with self.assertRaisesRegexp(
                     tf.errors.NotFoundError, 'Failed to find'):
@@ -239,7 +227,7 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_from_file_initialisation(self):
         test_driver = get_initialised_driver(starting_iter=40)
-        test_driver.graph = test_driver._create_graph(test_driver.graph)
+        test_driver.graph = test_driver.create_graph(test_driver.graph)
         expected_init = np.array(
             [[-0.23192197, 0.60880029, -0.24921742, -0.00186354, -0.3345384,
                 0.16067748, -0.2210995, -0.19460233, -0.3035436, -0.42839912,
