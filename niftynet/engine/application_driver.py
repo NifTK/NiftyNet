@@ -249,7 +249,7 @@ class ApplicationDriver(object):
                 traceback.print_exception(
                     exc_type, exc_value, exc_traceback, file=sys.stdout)
             finally:
-                tf.logging.info('Cleaning up...')
+                tf.logging.info('cleaning up...')
                 if not loop_status.get('normal_exit', False):
                     # loop didn't finish normally,
                     # again broadcasting session finished event
@@ -360,11 +360,11 @@ class ApplicationDriver(object):
 
             # Checking stopping conditions
             if iter_msg.should_stop:
-                tf.logging.info('Stopping message from event handler: %s.',
+                tf.logging.info('stopping -- event handler: %s.',
                                 iter_msg.should_stop)
                 break
 
-        loop_status['all_saved_flag'] = True
+        loop_status['normal_exit'] = True
         # broadcasting event of session finished
         iter_msg = IterationMessage()
         iter_msg.current_iter = loop_status.get('current_iter', -1)

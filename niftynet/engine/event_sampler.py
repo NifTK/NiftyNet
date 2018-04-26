@@ -36,7 +36,7 @@ class SamplerThreading(object):
                 if sampler is None:
                     continue
                 sampler.run_threads(sess, self.coordinator, self.num_threads)
-            tf.logging.info('Filling queues (this can take a few minutes).')
+            tf.logging.info('filling queues (this can take a few minutes).')
         except (NameError, TypeError, AttributeError, IndexError):
             tf.logging.fatal(
                 "samplers not running, pop_batch_op operations "
