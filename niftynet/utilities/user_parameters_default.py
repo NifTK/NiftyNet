@@ -31,6 +31,8 @@ DEFAULT_EVENT_HANDLERS = (
     'niftynet.engine.event_network_output.OutputInterpreter',
     'niftynet.engine.event_console.ConsoleLogger',
     'niftynet.engine.event_tensorboard.TensorBoardLogger')
+DEFAULT_ITERATION_GENERATOR = \
+    'niftynet.engine.application_iteration.IterationMessageGenerator'
 
 
 def add_application_args(parser):
@@ -77,9 +79,16 @@ def add_application_args(parser):
     parser.add_argument(
         "--event_handler",
         metavar='',
-        help="String(s) pointing at event handler module(s)",
+        help="String(s) representing event handler module(s)",
         type=str_array,
         default=DEFAULT_EVENT_HANDLERS)
+
+    parser.add_argument(
+        "--iteration_generator",
+        metavar='',
+        help='String representing an iteration generator class',
+        type=str,
+        default=DEFAULT_ITERATION_GENERATOR)
     return parser
 
 

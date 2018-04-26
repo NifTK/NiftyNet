@@ -19,7 +19,9 @@ def _generate_base_params():
         model_dir='./testing_data',
         num_threads=2,
         num_gpus=1,
-        cuda_devices='')
+        cuda_devices='',
+        event_handler=None,
+        iteration_generator=None)
 
     user_param['NETWORK'] = ParserNamespace(
         batch_size=20,

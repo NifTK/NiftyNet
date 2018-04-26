@@ -83,7 +83,7 @@ class DriverLoopTest(tf.test.TestCase):
                 app_driver.validation_every_n,
                 app_driver.validation_max_iter,
                 is_training_action=True)
-            app_driver.loop(iterations())
+            app_driver.loop(app_driver.app, iterations())
 
             # Check sequence of iterations
             self.assertRegexpMatches(

@@ -29,7 +29,9 @@ def get_initialised_driver(starting_iter=0):
             cuda_devices='6',
             model_dir=os.path.join('.', 'testing_data'),
             dataset_split_file=os.path.join(
-                '.', 'testing_data', 'testtoyapp.csv')),
+                '.', 'testing_data', 'testtoyapp.csv'),
+            event_handler=None,
+            iteration_generator=None),
         'NETWORK': ParserNamespace(
             batch_size=20,
             name='tests.toy_application.TinyNet'),

@@ -21,7 +21,7 @@ class EventConsoleTest(tf.test.TestCase):
         with self.test_session(graph=test_graph) as sess:
             sess.run(global_vars_init_or_restore())
             msg = IterationMessage()
-            app_driver.loop([msg])
+            app_driver.loop(app_driver.app, [msg])
 
     def iteration_listener(self, sender, **msg):
         msg = msg['iter_msg']

@@ -35,7 +35,7 @@ class EventConsoleTest(tf.test.TestCase):
         with self.test_session(graph=test_graph) as sess:
             sess.run(global_vars_init_or_restore())
             iterator = IterationMessageGenerator(is_training_action=False)
-            app_driver.loop(iterator())
+            app_driver.loop(app_driver.app, iterator())
 
 
 if __name__ == "__main__":

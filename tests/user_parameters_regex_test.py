@@ -15,9 +15,9 @@ class UserParameterRegexTest(tf.test.TestCase):
             filtered_groups = list(filter(None, matched_str.groups()))
             if filtered_groups:
                 values = [v.strip() for v in filtered_groups[0].split(',')]
-                self.assertEquals(values, expected_output)
+                self.assertEqual(values, expected_output)
         else:
-            self.assertEquals(expected_output, False)
+            self.assertEqual(expected_output, False)
 
     def test_cases(self):
         self.run_match('c:\program files', [u'c:\\program files'])
@@ -38,8 +38,8 @@ class UserParameterRegexTest(tf.test.TestCase):
         self.run_match('32, 32', [u'32', u'32'])
         self.run_match('32,', False)
         self.run_match('-32', [u'-32'])
-        self.run_match('-32.0, a', False)
-        self.run_match('-a, 32.0', False)
+        self.run_match('-32.0, a', [u'-32.0', 'a'])
+        self.run_match('-a, 32.0', [u'-a', '32.0'])
         self.run_match('(-32,a)', [u'-32', u'a'])
         self.run_match('-32.0', [u'-32.0'])
         self.run_match('(-a)', [u'-a'])
