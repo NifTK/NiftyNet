@@ -8,7 +8,7 @@ from niftynet.engine.application_iteration import IterationMessage, \
     IterationMessageGenerator
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import global_vars_init_or_restore
-from niftynet.engine.signal import TRAIN, ITER_FINISHED, SESS_STARTED
+from niftynet.engine.signal import TRAIN, ITER_FINISHED
 from tests.application_driver_test import get_initialised_driver
 
 
@@ -73,7 +73,6 @@ class DriverLoopTest(tf.test.TestCase):
         app_driver.final_iter = 3
         app_driver.validation_every_n = 2
         app_driver.validation_max_iter = 1
-        loop_status = {}
 
         with self.test_session(graph=test_graph) as sess:
             sess.run(global_vars_init_or_restore())
@@ -84,7 +83,7 @@ class DriverLoopTest(tf.test.TestCase):
                 app_driver.validation_every_n,
                 app_driver.validation_max_iter,
                 is_training_action=True)
-            app_driver.loop(iterations(), sess, loop_status)
+            app_driver.loop(iterations())
 
             # Check sequence of iterations
             self.assertRegexpMatches(
