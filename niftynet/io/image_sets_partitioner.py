@@ -140,7 +140,7 @@ class ImageSetsPartitioner(object):
                     'however the section does not exist in the config.', name)
                 raise
         if phase == ALL:
-            self._file_list = self._file_list.sort_index()
+            self._file_list = self._file_list.sort_values(COLUMN_UNIQ_ID)
             if section_names:
                 section_names = [COLUMN_UNIQ_ID] + list(section_names)
                 return self._file_list[section_names]
@@ -166,7 +166,8 @@ class ImageSetsPartitioner(object):
                 'Empty subset for phase [%s], returning None as file list. '
                 'Please adjust splitting fractions.', phase)
             return None
-        subset = pandas.merge(self._file_list, selected, on=COLUMN_UNIQ_ID)
+        subset = pandas.merge(
+            self._file_list, selected, on=COLUMN_UNIQ_ID, sort=True)
         if subset.empty:
             tf.logging.warning(
                 'No subject id matched in between file names and '
@@ -405,7 +406,14 @@ class ImageSetsPartitioner(object):
         """
         if self._partition_ids is None or self._partition_ids.empty:
             return False
-        return (self._partition_ids[COLUMN_PHASE] == phase).any()
+        selector = self._partition_ids[COLUMN_PHASE] == phase
+        if not selector.any():
+            return False
+        selected = self._partition_ids[selector][[COLUMN_UNIQ_ID]]
+        subset = pandas.merge(
+            left=self._file_list, right=selected,
+            on=COLUMN_UNIQ_ID, sort=False)
+        return not subset.empty
 
     @property
     def has_training(self):
