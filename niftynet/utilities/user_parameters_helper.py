@@ -74,8 +74,8 @@ def str_array(string_input):
         output_tuple = match_array(string_input, 'str')
     except ValueError:
         raise argparse.ArgumentTypeError(
-            "list of strings expected, for each list element the allowed"
-            "characters: [ a-zA-Z0-9_-], but received {}".format(string_input))
+            "list of strings expected, for each list element the allowed "
+            "characters: [ a-zA-Z0-9_-.], but received {}".format(string_input))
     return output_tuple
 
 

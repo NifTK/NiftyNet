@@ -24,11 +24,18 @@ DEFAULT_EVALUATION_OUTPUT = os.path.join('.', 'evaluation')
 DEFAULT_DATASET_SPLIT_FILE = os.path.join('.', 'dataset_split.csv')
 DEFAULT_HISTOGRAM_REF_FILE = os.path.join('.', 'histogram_ref_file.txt')
 DEFAULT_MODEL_DIR = None
+DEFAULT_EVENT_HANDLERS = (
+    'niftynet.engine.event_sampler.SamplerThreading',
+    'niftynet.engine.event_gradient.ApplyGradients',
+    'niftynet.engine.event_checkpoint.ModelSaver',
+    'niftynet.engine.event_network_output.OutputInterpreter',
+    'niftynet.engine.event_console.ConsoleLogger',
+    'niftynet.engine.event_tensorboard.TensorBoardLogger')
 
 
 def add_application_args(parser):
     """
-    Common keywords  for all applications
+    Common keywords for all applications
 
     :param parser:
     :return:
@@ -67,6 +74,12 @@ def add_application_args(parser):
         help="File assigning subjects to training/validation/inference subsets",
         default=DEFAULT_DATASET_SPLIT_FILE)
 
+    parser.add_argument(
+        "--event_handler",
+        metavar='',
+        help="String(s) pointing at event handler module(s)",
+        type=str_array,
+        default=DEFAULT_EVENT_HANDLERS)
     return parser
 
 
@@ -117,6 +130,7 @@ def add_inference_args(parser):
         help="[Inference only] Width of borders to crop for segmented patch",
         type=spatialnumarray,
         default=(0, 0, 0))
+
     return parser
 
 

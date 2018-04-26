@@ -32,6 +32,7 @@ from niftynet.io.misc_io import \
 from niftynet.layer.bn import BN_COLLECTION
 from niftynet.utilities.util_common import \
     set_cuda_device, tf_config, device_string
+from niftynet.utilities.user_parameters_default import DEFAULT_EVENT_HANDLERS
 
 
 # pylint: disable=too-many-instance-attributes
@@ -68,13 +69,7 @@ class ApplicationDriver(object):
         self.outputs_collector = None
         self.gradients_collector = None
 
-        self.event_handler_names = [
-            'niftynet.engine.event_sampler.SamplerThreading',
-            'niftynet.engine.event_gradient.ApplyGradients',
-            'niftynet.engine.event_console.ConsoleLogger',
-            'niftynet.engine.event_tensorboard.TensorBoardLogger',
-            'niftynet.engine.event_checkpoint.ModelSaver',
-            'niftynet.engine.event_network_output.OutputInterpreter']
+        self.event_handler_names = None
         self.iterator_type = \
             'niftynet.engine.application_iteration.IterationMessageGenerator'
         self._event_handlers = []
@@ -99,6 +94,8 @@ class ApplicationDriver(object):
         except AttributeError:
             tf.logging.fatal('parameters should be dictionaries')
             raise
+        self.event_handler_names = \
+            system_param.event_handler or DEFAULT_EVENT_HANDLERS
 
         assert os.path.exists(system_param.model_dir), \
             'Model folder not exists {}'.format(system_param.model_dir)
@@ -381,7 +378,7 @@ class ApplicationDriver(object):
         # make sure this
         assert sess, 'method should be called within a TF session context.'
         iteration_message.current_iter_output = sess.run(
-            fetches=iteration_message.ops_to_run,
+            iteration_message.ops_to_run,
             feed_dict=iteration_message.data_feed_dict)
 
         # broadcasting event of finishing an iteration
