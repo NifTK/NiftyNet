@@ -16,8 +16,8 @@ class EventConsoleTest(tf.test.TestCase):
         app_driver = get_initialised_driver()
         test_graph = app_driver.create_graph(app_driver.graph)
         app_driver.load_event_handlers(
-            ['niftynet.engine.event_sampler.SamplerThreading',
-             'niftynet.engine.event_console.ConsoleLogger'])
+            ['niftynet.engine.handler_sampler.SamplerThreading',
+             'niftynet.engine.handler_console.ConsoleLogger'])
         with self.test_session(graph=test_graph) as sess:
             sess.run(global_vars_init_or_restore())
             msg = IterationMessage()

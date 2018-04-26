@@ -54,8 +54,8 @@ class DriverLoopTest(tf.test.TestCase):
         test_tensor = app_driver.graph.get_tensor_by_name(
             "G/conv_bn_selu/conv_/w:0")
         app_driver.load_event_handlers(
-            ['niftynet.engine.event_sampler.SamplerThreading',
-             'niftynet.engine.event_gradient.ApplyGradients'])
+            ['niftynet.engine.handler_sampler.SamplerThreading',
+             'niftynet.engine.handler_gradient.ApplyGradients'])
 
         iter_msgs = []
         test_vals = []

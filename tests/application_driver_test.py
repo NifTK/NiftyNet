@@ -8,7 +8,7 @@ import tensorflow as tf
 
 from niftynet.engine.application_driver import ApplicationDriver
 from niftynet.engine.application_variables import global_vars_init_or_restore
-from niftynet.engine.event_checkpoint import ModelSaver
+from niftynet.engine.handler_checkpoint import ModelSaver
 from niftynet.io.misc_io import set_logger
 from niftynet.utilities.util_common import ParserNamespace
 from niftynet.engine.signal import SESS_STARTED, SESS_FINISHED
@@ -81,7 +81,7 @@ class ApplicationDriverTest(tf.test.TestCase):
         test_driver = get_initialised_driver()
         test_driver.graph = test_driver.create_graph(test_driver.graph)
         test_driver.load_event_handlers(
-            ['niftynet.engine.event_sampler.SamplerThreading'])
+            ['niftynet.engine.handler_sampler.SamplerThreading'])
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(global_vars_init_or_restore())
             SESS_STARTED.send(test_driver.app, iter_msg=None)
@@ -99,7 +99,7 @@ class ApplicationDriverTest(tf.test.TestCase):
         test_driver = get_initialised_driver()
         test_driver.graph = test_driver.create_graph(test_driver.graph)
         test_driver.load_event_handlers(
-            ['niftynet.engine.event_sampler.SamplerThreading'])
+            ['niftynet.engine.handler_sampler.SamplerThreading'])
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(global_vars_init_or_restore())
             SESS_STARTED.send(test_driver.app, iter_msg=None)
@@ -119,7 +119,7 @@ class ApplicationDriverTest(tf.test.TestCase):
         test_driver = get_initialised_driver()
         test_driver.graph = test_driver.create_graph(test_driver.graph)
         test_driver.load_event_handlers(
-            ['niftynet.engine.event_sampler.SamplerThreading'])
+            ['niftynet.engine.handler_sampler.SamplerThreading'])
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(global_vars_init_or_restore())
             SESS_STARTED.send(test_driver.app, iter_msg=None)
@@ -149,7 +149,7 @@ class ApplicationDriverTest(tf.test.TestCase):
         test_driver = get_initialised_driver()
         test_driver.graph = test_driver.create_graph(test_driver.graph)
         test_driver.load_event_handlers(
-            ['niftynet.engine.event_sampler.SamplerThreading'])
+            ['niftynet.engine.handler_sampler.SamplerThreading'])
         with self.test_session(graph=test_driver.graph) as sess:
             sess.run(global_vars_init_or_restore())
             SESS_STARTED.send(test_driver.app, iter_msg=None)

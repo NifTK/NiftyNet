@@ -390,7 +390,6 @@ class ApplicationDriver(object):
         # each iteration, fed into ``session.run()`` and then
         # passed to the app (and observers) for interpretation.
         sess = tf.get_default_session()
-        # make sure this
         assert sess, 'method should be called within a TF session context.'
         iteration_message.current_iter_output = sess.run(
             iteration_message.ops_to_run,

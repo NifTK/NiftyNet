@@ -369,7 +369,7 @@ class EvaluationFactory(ModuleFactory):
 
 class EventHandlerFactory(ModuleFactory):
     """
-    Import an event handler such as niftynet.engine.event_console
+    Import an event handler such as niftynet.engine.handler_console
     """
     SUPPORTED = {}
     type_str = 'event handler'
