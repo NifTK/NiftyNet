@@ -110,7 +110,7 @@ class IterationMessage(object):
         ``application.set_iteration_update()``
         to create training schedules such as early stopping.
 
-        :return: boolean
+        :return: None or a handler that requested to stop the loop
         """
         return self._should_stop
 

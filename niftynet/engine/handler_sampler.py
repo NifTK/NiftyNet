@@ -31,6 +31,7 @@ class SamplerThreading(object):
         sess = tf.get_default_session()
         if not sess or not self.coordinator:
             return
+
         try:
             for sampler in traverse_nested(sender.get_sampler()):
                 if sampler is None:

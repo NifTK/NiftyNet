@@ -79,10 +79,9 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_stop_app(self):
         test_driver = get_initialised_driver()
-        test_driver.graph = test_driver.create_graph(test_driver.graph)
         test_driver.load_event_handlers(
             ['niftynet.engine.handler_sampler.SamplerThreading'])
-        with self.test_session(graph=test_driver.graph) as sess:
+        with self.test_session(graph=test_driver.create_graph()) as sess:
             sess.run(global_vars_init_or_restore())
             SESS_STARTED.send(test_driver.app, iter_msg=None)
             train_op = test_driver.app.gradient_op
@@ -97,14 +96,13 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_training_update(self):
         test_driver = get_initialised_driver()
-        test_driver.graph = test_driver.create_graph(test_driver.graph)
         test_driver.load_event_handlers(
             ['niftynet.engine.handler_sampler.SamplerThreading'])
-        with self.test_session(graph=test_driver.graph) as sess:
+        with self.test_session(graph=test_driver.create_graph()) as sess:
             sess.run(global_vars_init_or_restore())
             SESS_STARTED.send(test_driver.app, iter_msg=None)
             train_op = test_driver.app.gradient_op
-            test_tensor = test_driver.graph.get_tensor_by_name(
+            test_tensor = tf.get_default_graph().get_tensor_by_name(
                 'G/conv_bn_selu/conv_/w:0')
             var_0 = sess.run(test_tensor)
             sess.run(train_op)
@@ -117,22 +115,21 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_multi_device_inputs(self):
         test_driver = get_initialised_driver()
-        test_driver.graph = test_driver.create_graph(test_driver.graph)
         test_driver.load_event_handlers(
             ['niftynet.engine.handler_sampler.SamplerThreading'])
-        with self.test_session(graph=test_driver.graph) as sess:
+        with self.test_session(graph=test_driver.create_graph()) as sess:
             sess.run(global_vars_init_or_restore())
             SESS_STARTED.send(test_driver.app, iter_msg=None)
             for i in range(2):
                 sess.run(test_driver.app.gradient_op)
                 s_0, s_1, s_2, s_3 = sess.run([
-                    test_driver.graph.get_tensor_by_name(
+                    tf.get_default_graph().get_tensor_by_name(
                         'worker_0/feature_input:0'),
-                    test_driver.graph.get_tensor_by_name(
+                    tf.get_default_graph().get_tensor_by_name(
                         'worker_1/feature_input:0'),
-                    test_driver.graph.get_tensor_by_name(
+                    tf.get_default_graph().get_tensor_by_name(
                         'worker_2/feature_input:0'),
-                    test_driver.graph.get_tensor_by_name(
+                    tf.get_default_graph().get_tensor_by_name(
                         'worker_3/feature_input:0')
                 ])
                 msg = 'same input data for different devices'
@@ -147,24 +144,23 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_multi_device_gradients(self):
         test_driver = get_initialised_driver()
-        test_driver.graph = test_driver.create_graph(test_driver.graph)
         test_driver.load_event_handlers(
             ['niftynet.engine.handler_sampler.SamplerThreading'])
-        with self.test_session(graph=test_driver.graph) as sess:
+        with self.test_session(graph=test_driver.create_graph()) as sess:
             sess.run(global_vars_init_or_restore())
             SESS_STARTED.send(test_driver.app, iter_msg=None)
             for i in range(2):
                 sess.run(test_driver.app.gradient_op)
                 g_0, g_1, g_2, g_3, g_ave = sess.run([
-                    test_driver.graph.get_tensor_by_name(
+                    tf.get_default_graph().get_tensor_by_name(
                         'worker_0/ComputeGradients/gradients/AddN_5:0'),
-                    test_driver.graph.get_tensor_by_name(
+                    tf.get_default_graph().get_tensor_by_name(
                         'worker_1/ComputeGradients/gradients/AddN_5:0'),
-                    test_driver.graph.get_tensor_by_name(
+                    tf.get_default_graph().get_tensor_by_name(
                         'worker_2/ComputeGradients/gradients/AddN_5:0'),
-                    test_driver.graph.get_tensor_by_name(
+                    tf.get_default_graph().get_tensor_by_name(
                         'worker_3/ComputeGradients/gradients/AddN_5:0'),
-                    test_driver.graph.get_tensor_by_name(
+                    tf.get_default_graph().get_tensor_by_name(
                         'ApplyGradients/Mean:0')
                 ])
                 msg = 'same gradients for different devices'
@@ -186,9 +182,8 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_rand_initialisation(self):
         test_driver = get_initialised_driver(starting_iter=0)
-        test_driver.graph = test_driver.create_graph(test_driver.graph)
-        with self.test_session(graph=test_driver.graph) as sess:
-            test_tensor = test_driver.graph.get_tensor_by_name(
+        with self.test_session(graph=test_driver.create_graph()) as sess:
+            test_tensor = tf.get_default_graph().get_tensor_by_name(
                 "G/conv_bn_selu/conv_/w:0")
             with self.assertRaisesRegexp(
                     tf.errors.FailedPreconditionError,
@@ -200,15 +195,14 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_from_latest_file_initialisation(self):
         test_driver = get_initialised_driver(starting_iter=-1)
-        test_driver.graph = test_driver.create_graph(test_driver.graph)
         expected_init = np.array(
             [[-0.03544217, 0.0228963, -0.04585603, 0.16923568, -0.51635778,
                 0.60694504, 0.01968583, -0.6252712, 0.28622296, -0.29527491,
                 0.61191976, 0.27878678, -0.07661559, -0.41357407, 0.70488983,
                 -0.10836645, 0.06488426, 0.0746650, -0.188567, -0.64652514]],
             dtype=np.float32)
-        with self.test_session(graph=test_driver.graph) as sess:
-            test_tensor = test_driver.graph.get_tensor_by_name(
+        with self.test_session(graph=test_driver.create_graph()) as sess:
+            test_tensor = tf.get_default_graph().get_tensor_by_name(
                 "G/conv_bn_selu/conv_/w:0")
             with self.assertRaisesRegexp(
                     tf.errors.FailedPreconditionError,
@@ -221,23 +215,21 @@ class ApplicationDriverTest(tf.test.TestCase):
 
     def test_not_found_file_initialisation(self):
         test_driver = get_initialised_driver(starting_iter=42)
-        test_driver.graph = test_driver.create_graph(test_driver.graph)
-        with self.test_session(graph=test_driver.graph) as sess:
+        with self.test_session(graph=test_driver.create_graph()) as sess:
             with self.assertRaisesRegexp(
                     tf.errors.NotFoundError, 'Failed to find'):
                 ModelSaver(**vars(test_driver)).restore_model(None)
 
     def test_from_file_initialisation(self):
         test_driver = get_initialised_driver(starting_iter=40)
-        test_driver.graph = test_driver.create_graph(test_driver.graph)
         expected_init = np.array(
             [[-0.23192197, 0.60880029, -0.24921742, -0.00186354, -0.3345384,
                 0.16067748, -0.2210995, -0.19460233, -0.3035436, -0.42839912,
                 -0.0489039, -0.90753943, -0.12664583, -0.23129687, 0.01584663,
                 -0.43854219, 0.40412974, 0.0396539, -0.1590578, -0.53759819]],
             dtype=np.float32)
-        with self.test_session(graph=test_driver.graph) as sess:
-            test_tensor = test_driver.graph.get_tensor_by_name(
+        with self.test_session(graph=test_driver.create_graph()) as sess:
+            test_tensor = tf.get_default_graph().get_tensor_by_name(
                 "G/conv_bn_selu/conv_/w:0")
             with self.assertRaisesRegexp(
                     tf.errors.FailedPreconditionError,

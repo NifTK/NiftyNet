@@ -24,8 +24,7 @@ class EventConsoleTest(tf.test.TestCase):
 
     def test_init(self):
         app_driver = get_initialised_driver()
-        test_graph = app_driver.create_graph(app_driver.graph)
-
+        test_graph = app_driver.create_graph()
         app_driver.app.set_iteration_update = set_iteration_update
         app_driver.app.interpret_output = self.create_interpreter()
 

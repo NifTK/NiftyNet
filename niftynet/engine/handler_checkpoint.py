@@ -57,7 +57,9 @@ class ModelSaver(object):
         :param _unused:
         :return:
         """
-        tf.get_default_session().run(global_vars_init_or_restore())
+        with tf.name_scope('Initialisation'):
+            init_op = global_vars_init_or_restore()
+            tf.get_default_session().run(init_op)
         tf.logging.info('Parameters from random initialisations ...')
 
     def restore_model(self, _sender, **_unused):

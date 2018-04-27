@@ -50,8 +50,8 @@ class DriverLoopTest(tf.test.TestCase):
 
     def test_run_vars(self):
         app_driver = get_initialised_driver()
-        test_graph = app_driver.create_graph(app_driver.graph)
-        test_tensor = app_driver.graph.get_tensor_by_name(
+        test_graph = app_driver.create_graph()
+        test_tensor = test_graph.get_tensor_by_name(
             "G/conv_bn_selu/conv_/w:0")
         app_driver.load_event_handlers(
             ['niftynet.engine.handler_sampler.SamplerThreading',

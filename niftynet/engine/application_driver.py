@@ -48,7 +48,6 @@ class ApplicationDriver(object):
 
     def __init__(self):
         self.app = None
-        self.graph = tf.Graph()
 
         self.is_training_action = True
         self.num_threads = 0
@@ -66,7 +65,7 @@ class ApplicationDriver(object):
         self.validation_max_iter = 1
 
         self.coordinator = tf.train.Coordinator()
-        self.data_partitioner = None
+        self.data_partitioner = ImageSetsPartitioner()
         self.outputs_collector = None
         self.gradients_collector = None
 
@@ -150,11 +149,8 @@ class ApplicationDriver(object):
         app_module = ApplicationDriver._create_app(app_param.name)
         self.app = app_module(net_param, action_param, system_param.action)
 
-        # initialise data input
-        self.data_partitioner = ImageSetsPartitioner()
         # clear the cached file lists
         self.data_partitioner.reset()
-
         if data_param:
             do_new_partition = \
                 self.is_training_action and self.initial_iter == 0 and \
@@ -164,6 +160,7 @@ class ApplicationDriver(object):
             data_fractions = (train_param.exclude_fraction_for_validation,
                               train_param.exclude_fraction_for_inference) \
                 if do_new_partition else None
+
             self.data_partitioner.initialise(
                 data_param=data_param,
                 new_partition=do_new_partition,
@@ -186,41 +183,25 @@ class ApplicationDriver(object):
         self.app.initialise_dataset_loader(
             data_param, app_param, self.data_partitioner)
 
-        # pylint: disable=not-context-manager
-        with self.graph.as_default(), tf.name_scope('Sampler'):
-            self.app.initialise_sampler()
-
-    def load_event_handlers(self, names):
-        """
-        Import event handler modules and create a list of handler instances.
-        The event handler instances will be stored with this engine.
-
-        :param names: strings of event handlers
-        :return:
-        """
-        self._event_handlers = []
-        for name in set(names):
-            the_event_class = EventHandlerFactory.create(name)
-            # initialise all registered event handler classes
-            engine_config_dict = vars(self)
-            self._event_handlers.append(the_event_class(**engine_config_dict))
-
-    def run_application(self):
+    def run_application(self, graph=None):
         """
         Initialise a TF graph, connect data sampler and network within
         the graph context, run training loops or inference loops.
 
+        :param graph: default base graph to run the application
         :return:
         """
-        with tf.Session(config=tf_config(), graph=self.graph):
+        assert self.app is not None, \
+            "application_driver.app should be initialised first."
+        if graph is None:
+            graph = self.create_graph()
 
-            self.graph = self.create_graph(self.graph)
+        with tf.Session(config=tf_config(), graph=graph):
+            # check app variables initialised and ready for starts
+            # self.app.check_initialisations()
 
             # import the generator class
             generator = ApplicationDriver._create_iters(self.iterator_type)
-
-            # check app variables initialised and ready for starts
-            # self.app.check_initialisations()
 
             # make the list of initialised event handler instances.
             self.load_event_handlers(self.event_handler_names)
@@ -264,16 +245,22 @@ class ApplicationDriver(object):
                     type(self.app).__name__, (time.time() - start_time))
 
     # pylint: disable=not-context-manager
-    def create_graph(self, graph=tf.Graph()):
+    def create_graph(self):
         """
-        TensorFlow graph is only created within this function.
+        Create a TF graph based on self.app properties
+        and engine parameters.
+
+        :return:
         """
-        assert isinstance(graph, tf.Graph)
+        graph = tf.Graph()
         main_device = device_string(
             self.num_gpus, 0,
             is_worker=False, is_training=self.is_training_action)
         # start constructing the graph, handling training and inference cases
         with graph.as_default(), tf.device(main_device):
+            # initialise sampler
+            with tf.name_scope('Sampler'):
+                self.app.initialise_sampler()
 
             # initialise network, these are connected in
             # the context of multiple gpus
@@ -310,15 +297,26 @@ class ApplicationDriver(object):
                         self.app.set_network_gradient_op(
                             self.gradients_collector.gradients)
 
-            # # initialisation operation
-            # with tf.name_scope('Initialization'):
-            #     self.init_op = global_vars_init_or_restore()
-
             with tf.name_scope('MergedOutputs'):
                 self.outputs_collector.finalise_output_op()
 
         # tf.Graph.finalize(graph)
         return graph
+
+    def load_event_handlers(self, names):
+        """
+        Import event handler modules and create a list of handler instances.
+        The event handler instances will be stored with this engine.
+
+        :param names: strings of event handlers
+        :return:
+        """
+        self._event_handlers = []
+        for name in set(names):
+            the_event_class = EventHandlerFactory.create(name)
+            # initialise all registered event handler classes
+            engine_config_dict = vars(self)
+            self._event_handlers.append(the_event_class(**engine_config_dict))
 
     @staticmethod
     def loop(application,
@@ -343,7 +341,7 @@ class ApplicationDriver(object):
             will provides ``tensors`` to be fetched by ``tf.session.run()``.
         :param iteration_messages:
             a generator of ``engine.IterationMessage`` instances
-        :param loop_status: dictionary used to capture the loop status,
+        :param loop_status: optional dictionary used to capture the loop status,
             useful when the loop exited in an unexpected manner.
         :param coordinator: thread coordinator used to stop the loop.
         :return:

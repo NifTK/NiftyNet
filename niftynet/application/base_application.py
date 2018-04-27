@@ -225,7 +225,6 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
             raise NotImplementedError(
                 'This app supports updating a network, or a list of networks.')
 
-
     def set_iteration_update(self, iteration_message):
         """
         At each iteration ``application_driver`` calls:
