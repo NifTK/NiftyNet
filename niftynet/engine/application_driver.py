@@ -194,7 +194,10 @@ class ApplicationDriver(object):
         assert self.app is not None, \
             "application_driver.app should be initialised first."
         if graph is None:
-            graph = self.create_graph()
+            graph = self.create_graph(
+                application=self.app,
+                num_gpus=self.num_gpus,
+                is_training_action=self.is_training_action)
 
         with tf.Session(config=tf_config(), graph=graph):
             # check app variables initialised and ready for starts
@@ -245,7 +248,7 @@ class ApplicationDriver(object):
                     type(self.app).__name__, (time.time() - start_time))
 
     # pylint: disable=not-context-manager
-    def create_graph(self):
+    def create_graph(self, application, num_gpus=1, is_training_action=False):
         """
         Create a TF graph based on self.app properties
         and engine parameters.
@@ -254,39 +257,37 @@ class ApplicationDriver(object):
         """
         graph = tf.Graph()
         main_device = device_string(
-            self.num_gpus, 0,
-            is_worker=False, is_training=self.is_training_action)
+            num_gpus, 0, False, is_training_action)
         # start constructing the graph, handling training and inference cases
         with graph.as_default(), tf.device(main_device):
             # initialise sampler
             with tf.name_scope('Sampler'):
-                self.app.initialise_sampler()
+                application.initialise_sampler()
 
             # initialise network, these are connected in
             # the context of multiple gpus
-            self.app.initialise_network()
-            self.app.add_validation_flag()
+            application.initialise_network()
+            application.add_validation_flag()
 
             # for data parallelism --
             #     defining and collecting variables from multiple devices
             bn_ops = None
-            for gpu_id in range(0, max(self.num_gpus, 1)):
+            for gpu_id in range(0, max(num_gpus, 1)):
                 worker_device = device_string(
-                    self.num_gpus, gpu_id,
-                    is_worker=True, is_training=self.is_training_action)
+                    num_gpus, gpu_id, True, is_training_action)
                 scope_string = 'worker_{}'.format(gpu_id)
                 with tf.name_scope(scope_string) as scope:
                     with tf.device(worker_device):
                         # setup network for each of the multiple devices
-                        self.app.connect_data_and_network(
+                        application.connect_data_and_network(
                             self.outputs_collector,
                             self.gradients_collector)
-                        if self.is_training_action:
+                        if is_training_action:
                             # batch norm statistics from the last device
                             bn_ops = tf.get_collection(BN_COLLECTION, scope)
 
             # assemble all training operations
-            if self.is_training_action and self.gradients_collector:
+            if is_training_action and self.gradients_collector:
                 updates_op = []
                 # batch normalisation moving averages operation
                 if bn_ops:
@@ -294,7 +295,7 @@ class ApplicationDriver(object):
                 # combine them with model parameter updating operation
                 with tf.name_scope('ApplyGradients'):
                     with graph.control_dependencies(updates_op):
-                        self.app.set_network_gradient_op(
+                        application.set_network_gradient_op(
                             self.gradients_collector.gradients)
 
             with tf.name_scope('MergedOutputs'):
