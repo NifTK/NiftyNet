@@ -43,20 +43,20 @@ testjob:
     - echo $(python tests/get_gpu_index.py)
     - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
 
+    # removing existing testing data
+    - if [ -d models ]; then rm -r models; fi
+    - if [ -d testing_data ]; then rm -r testing_data; fi
+    - if [ -d example_volumes ]; then rm -r example_volumes; fi
+
     # download data
-    # - wget -q https://www.dropbox.com/s/y7mdh4m9ptkibax/example_volumes.tar.gz
-    # - tar -xzvf example_volumes.tar.gz
     - wget -q https://www.dropbox.com/s/lioecnpv82r5n6e/example_volumes_v0_2.tar.gz
     - tar -xzvf example_volumes_v0_2.tar.gz
-    # - wget -q https://www.dropbox.com/s/94wa4fl8f8k3aie/testing_data.tar.gz
-    # - tar -xzvf testing_data.tar.gz
-    # - wget -q https://www.dropbox.com/s/p7b3t2c3mewtree/testing_data_v0_2.tar.gz
-    # - tar -xzvf testing_data_v0_2.tar.gz
     - wget -q https://www.dropbox.com/s/2g8jr3wq8rw5xtv/testing_code_v0_3.tar.gz
     - wget -q https://www.dropbox.com/s/5p5fdgy053tgmdj/testing_data_v0_3.tar.gz
     - mkdir -p testing_data
     - tar -xzvf testing_data_v0_3.tar.gz -C testing_data
     - tar -xzvf testing_code_v0_3.tar.gz -C testing_data
+
     #### python 3 tests ###################################
     # save NiftyNet folder path just in case
     - export niftynet_dir=$(pwd)
@@ -214,15 +214,14 @@ quicktest:
     - echo $(python tests/get_gpu_index.py)
     - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
 
+    # removing existing testing data
+    - if [ -d models ]; then rm -r models; fi
+    - if [ -d testing_data ]; then rm -r testing_data; fi
+    - if [ -d example_volumes ]; then rm -r example_volumes; fi
+
     # download data
-    # - wget -q https://www.dropbox.com/s/y7mdh4m9ptkibax/example_volumes.tar.gz
-    # - tar -xzvf example_volumes.tar.gz
     - wget -q https://www.dropbox.com/s/lioecnpv82r5n6e/example_volumes_v0_2.tar.gz
     - tar -xzvf example_volumes_v0_2.tar.gz
-      #- wget -q https://www.dropbox.com/s/94wa4fl8f8k3aie/testing_data.tar.gz
-      #- tar -xzvf testing_data.tar.gz
-    # - wget -q https://www.dropbox.com/s/p7b3t2c3mewtree/testing_data_v0_2.tar.gz
-    # - tar -xzvf testing_data_v0_2.tar.gz
     - wget -q https://www.dropbox.com/s/5p5fdgy053tgmdj/testing_data_v0_3.tar.gz
     - mkdir -p testing_data
     - tar -xzvf testing_data_v0_3.tar.gz -C testing_data
