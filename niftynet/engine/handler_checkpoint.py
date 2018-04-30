@@ -3,12 +3,12 @@
 This module implements a model checkpoint writer.
 """
 import os
+
 import tensorflow as tf
 
+from niftynet.engine.application_variables import global_vars_init_or_restore
 from niftynet.engine.signal import \
     ITER_FINISHED, SESS_FINISHED, GRAPH_FINALISING
-from niftynet.engine.application_variables import global_vars_init_or_restore
-
 
 FILE_PREFIX = 'model.ckpt'
 
@@ -21,18 +21,18 @@ class ModelSaver(object):
     def __init__(self,
                  model_dir,
                  initial_iter=0,
-                 max_checkpoints=1,
                  save_every_n=0,
+                 max_checkpoints=1,
                  is_training_action=True,
                  **_unused):
 
         self.initial_iter = initial_iter
         self.save_every_n = save_every_n
+        self.max_checkpoints = max_checkpoints
         self.is_training_action = is_training_action
 
         self.file_name_prefix = os.path.join(model_dir, FILE_PREFIX)
-        self.saver = tf.train.Saver(
-            max_to_keep=max_checkpoints, save_relative_paths=True)
+        self.saver = None
 
         # randomly initialise or restoring model
         if self.is_training_action and self.initial_iter == 0:
@@ -48,8 +48,7 @@ class ModelSaver(object):
         if self.is_training_action:
             SESS_FINISHED.connect(self.save_model)
 
-    @staticmethod
-    def rand_init_model(_sender, **_unused):
+    def rand_init_model(self, _sender, **_unused):
         """
         Randomly initialising all trainable variables defined in
         the default session.
@@ -58,9 +57,12 @@ class ModelSaver(object):
         :param _unused:
         :return:
         """
+        self.saver = tf.train.Saver(
+            max_to_keep=self.max_checkpoints, save_relative_paths=True)
         with tf.name_scope('Initialisation'):
             init_op = global_vars_init_or_restore()
-            tf.get_default_session().run(init_op)
+        tf.Graph.finalize(tf.get_default_graph())
+        tf.get_default_session().run(init_op)
         tf.logging.info('Parameters from random initialisations ...')
 
     def restore_model(self, _sender, **_unused):
@@ -71,6 +73,9 @@ class ModelSaver(object):
         :param _unused:
         :return:
         """
+        self.saver = tf.train.Saver(
+            max_to_keep=self.max_checkpoints, save_relative_paths=True)
+        tf.Graph.finalize(tf.get_default_graph())
         tf.logging.info('starting from iter %d', self.initial_iter)
         checkpoint = '{}-{}'.format(self.file_name_prefix, self.initial_iter)
         tf.logging.info('Accessing %s ...', checkpoint)
@@ -95,6 +100,8 @@ class ModelSaver(object):
         :param msg: an iteration message instance
         :return:
         """
+        if not msg.get('iter_msg', None):
+            return
         if msg['iter_msg'].current_iter >= 0:
             self._save_at(msg['iter_msg'].current_iter)
 
@@ -117,6 +124,8 @@ class ModelSaver(object):
         : param iter_i: integer of the current iteration
         : return:
         """
+        if not self.saver:
+            return
         self.saver.save(sess=tf.get_default_session(),
                         save_path=self.file_name_prefix,
                         global_step=iter_i)

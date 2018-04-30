@@ -17,16 +17,13 @@ class TensorBoardLogger(object):
     """
 
     def __init__(self,
-                 summary_dir,
-                 outputs_collector,
+                 summary_dir=None,
                  tensorboard_every_n=0,
                  **_unused):
         self.tensorboard_every_n = tensorboard_every_n
         self.summary_dir = summary_dir
-        # the collector provides TF summary ops
-        self.outputs_collector = outputs_collector
         # initialise summary writer
-        if not tf.get_default_graph() or not self.summary_dir:
+        if not self.summary_dir:
             return
         self.writer_train = tf.summary.FileWriter(
             os.path.join(self.summary_dir, TRAIN), tf.get_default_graph())
@@ -37,19 +34,19 @@ class TensorBoardLogger(object):
             ITER_STARTED.connect(self.read_tensorboard_op)
             ITER_FINISHED.connect(self.write_tensorboard)
 
-    def read_tensorboard_op(self, _sender, **msg):
+    def read_tensorboard_op(self, sender, **msg):
         """
         Get TensorBoard summary_op from application at the
         beginning of each iteration.
 
-        :param _sender: signal
+        :param sender: a niftynet.application instance
         :param msg: should contain an IterationMessage instance
         """
         _iter_msg = msg['iter_msg']
         if _iter_msg.is_inference:
             return
         if self._is_writing(_iter_msg.current_iter):
-            tf_summary_ops = self.outputs_collector.variables(TF_SUMMARIES)
+            tf_summary_ops = sender.outputs_collector.variables(TF_SUMMARIES)
             _iter_msg.ops_to_run[TF_SUMMARIES] = tf_summary_ops
 
     def write_tensorboard(self, _sender, **msg):

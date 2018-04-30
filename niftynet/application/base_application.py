@@ -69,6 +69,8 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
     # interpret network output
     output_decoder = None
+    outputs_collector = None
+    gradients_collector = None
 
     def check_initialisations(self):
         """
@@ -200,31 +202,6 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
             task_param.inferred = ('inferred',)
         return data_param, task_param
 
-    def set_network_gradient_op(self, gradients):
-        """
-        Create gradient op by ``optimiser.apply_gradients``.
-        This function sets ``self.gradient_op``.
-
-        Override this function for more complex optimisations such as
-        using different optimisers for sub-networks.
-
-        :param gradients: processed gradients from the gradient_collector
-        :return:
-        """
-        grad_list_depth = util_common.list_depth_count(gradients)
-        if grad_list_depth == 3:
-            # nested depth 3 means: gradients list is nested in terms of:
-            # list of networks -> list of network variables
-            self.gradient_op = [self.optimiser.apply_gradients(grad)
-                                for grad in gradients]
-        elif grad_list_depth == 2:
-            # nested depth 2 means:
-            # gradients list is a list of variables
-            self.gradient_op = self.optimiser.apply_gradients(gradients)
-        else:
-            raise NotImplementedError(
-                'This app supports updating a network, or a list of networks.')
-
     def set_iteration_update(self, iteration_message):
         """
         At each iteration ``application_driver`` calls:
@@ -244,10 +221,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         Override this function for more complex operations according to
         ``application_iteration.IterationMessage.current_iter``.
         """
-        if iteration_message.is_training:
-            iteration_message.data_feed_dict[self.is_validation] = False
-        elif iteration_message.is_validation:
-            iteration_message.data_feed_dict[self.is_validation] = True
+        pass
 
     def get_sampler(self):
         """

@@ -27,7 +27,6 @@ DEFAULT_MODEL_DIR = None
 DEFAULT_EVENT_HANDLERS = (
     'niftynet.engine.handler_sampler.SamplerThreading',
     'niftynet.engine.handler_gradient.ApplyGradients',
-    'niftynet.engine.handler_checkpoint.ModelSaver',
     'niftynet.engine.handler_network_output.OutputInterpreter',
     'niftynet.engine.handler_console.ConsoleLogger',
     'niftynet.engine.handler_tensorboard.TensorBoardLogger')

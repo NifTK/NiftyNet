@@ -14,22 +14,21 @@ class ConsoleLogger(object):
     This class handles iteration events to print output to the console.
     """
 
-    def __init__(self, outputs_collector, **_unused):
-        self.outputs_collector = outputs_collector
-
+    def __init__(self, **_unused):
         ITER_STARTED.connect(self.read_console_vars)
         ITER_FINISHED.connect(self.print_console_vars)
 
-    def read_console_vars(self, _sender, **msg):
+    @staticmethod
+    def read_console_vars(sender, **msg):
         """
         Event handler to add all console output ops to the iteration message
 
-        :param _sender:
+        :param sender: a niftynet.application instance
         :param msg: an iteration message instance
         :return:
         """
         msg['iter_msg'].ops_to_run[CONSOLE] = \
-            self.outputs_collector.variables(CONSOLE)
+            sender.outputs_collector.variables(CONSOLE)
 
     @staticmethod
     def print_console_vars(_sender, **msg):

@@ -82,7 +82,7 @@ def __average_grads(tower_grads):
         if not grads:
             continue
         grad = tf.concat(grads, 0)
-        grad = tf.reduce_mean(grad, 0)
+        grad = tf.reduce_mean(grad, 0, name='AveOverDevices')
 
         v = grad_and_vars[0][1]
         grad_and_var = (grad, v)

@@ -29,7 +29,6 @@ from niftynet.engine.signal import TRAIN, \
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.io.misc_io import \
     get_latest_subfolder, touch_folder, infer_latest_model_file
-from niftynet.layer.bn import BN_COLLECTION
 from niftynet.utilities.util_common import \
     set_cuda_device, tf_config, device_string
 from niftynet.utilities.user_parameters_default import \
@@ -66,8 +65,6 @@ class ApplicationDriver(object):
 
         self.coordinator = tf.train.Coordinator()
         self.data_partitioner = ImageSetsPartitioner()
-        self.outputs_collector = None
-        self.gradients_collector = None
 
         self.event_handler_names = None
         self.iterator_type = None
@@ -94,7 +91,11 @@ class ApplicationDriver(object):
             tf.logging.fatal('parameters should be dictionaries')
             raise
         self.event_handler_names = \
-            system_param.event_handler or DEFAULT_EVENT_HANDLERS
+            list(system_param.event_handler or DEFAULT_EVENT_HANDLERS)
+        # extending with a model saver (for variables initialisation)
+        self.event_handler_names.append(
+            'niftynet.engine.handler_checkpoint.ModelSaver')
+
         self.iterator_type = \
             system_param.iteration_generator or DEFAULT_ITERATION_GENERATOR
 
@@ -126,8 +127,6 @@ class ApplicationDriver(object):
             self.tensorboard_every_n = train_param.tensorboard_every_n
             self.max_checkpoints = \
                 max(train_param.max_checkpoints, self.max_checkpoints)
-            self.gradients_collector = GradientsCollector(
-                n_devices=max(self.num_gpus, 1))
             self.validation_every_n = train_param.validation_every_n
             if self.validation_every_n > 0:
                 self.validation_max_iter = max(self.validation_max_iter,
@@ -141,8 +140,6 @@ class ApplicationDriver(object):
         # infer the initial iteration from model files
         if self.initial_iter < 0:
             self.initial_iter = infer_latest_model_file(self.model_dir)
-        self.outputs_collector = OutputsCollector(
-            n_devices=max(self.num_gpus, 1))
 
         # create an application instance
         assert app_param, 'application specific param. not specified'
@@ -248,7 +245,8 @@ class ApplicationDriver(object):
                     type(self.app).__name__, (time.time() - start_time))
 
     # pylint: disable=not-context-manager
-    def create_graph(self, application, num_gpus=1, is_training_action=False):
+    @staticmethod
+    def create_graph(application, num_gpus=1, is_training_action=False):
         """
         Create a TF graph based on self.app properties
         and engine parameters.
@@ -256,8 +254,9 @@ class ApplicationDriver(object):
         :return:
         """
         graph = tf.Graph()
-        main_device = device_string(
-            num_gpus, 0, False, is_training_action)
+        main_device = device_string(num_gpus, 0, False, is_training_action)
+        outputs_collector = OutputsCollector(n_devices=max(num_gpus, 1))
+        gradients_collector = GradientsCollector(n_devices=max(num_gpus, 1))
         # start constructing the graph, handling training and inference cases
         with graph.as_default(), tf.device(main_device):
             # initialise sampler
@@ -271,37 +270,18 @@ class ApplicationDriver(object):
 
             # for data parallelism --
             #     defining and collecting variables from multiple devices
-            bn_ops = None
             for gpu_id in range(0, max(num_gpus, 1)):
                 worker_device = device_string(
                     num_gpus, gpu_id, True, is_training_action)
                 scope_string = 'worker_{}'.format(gpu_id)
-                with tf.name_scope(scope_string) as scope:
-                    with tf.device(worker_device):
-                        # setup network for each of the multiple devices
-                        application.connect_data_and_network(
-                            self.outputs_collector,
-                            self.gradients_collector)
-                        if is_training_action:
-                            # batch norm statistics from the last device
-                            bn_ops = tf.get_collection(BN_COLLECTION, scope)
-
-            # assemble all training operations
-            if is_training_action and self.gradients_collector:
-                updates_op = []
-                # batch normalisation moving averages operation
-                if bn_ops:
-                    updates_op.extend(bn_ops)
-                # combine them with model parameter updating operation
-                with tf.name_scope('ApplyGradients'):
-                    with graph.control_dependencies(updates_op):
-                        application.set_network_gradient_op(
-                            self.gradients_collector.gradients)
-
-            with tf.name_scope('MergedOutputs'):
-                self.outputs_collector.finalise_output_op()
-
-        # tf.Graph.finalize(graph)
+                with tf.name_scope(scope_string), tf.device(worker_device):
+                    # setup network for each of the multiple devices
+                    application.connect_data_and_network(
+                        outputs_collector, gradients_collector)
+            with tf.name_scope('MergeOutputs'):
+                outputs_collector.finalise_output_op()
+            application.outputs_collector = outputs_collector
+            application.gradients_collector = gradients_collector
         return graph
 
     def load_event_handlers(self, names):
@@ -312,12 +292,14 @@ class ApplicationDriver(object):
         :param names: strings of event handlers
         :return:
         """
-        self._event_handlers = []
+        if not names:
+            return
+        self._event_handlers = self._event_handlers or {}
         for name in set(names):
             the_event_class = EventHandlerFactory.create(name)
             # initialise all registered event handler classes
             engine_config_dict = vars(self)
-            self._event_handlers.append(the_event_class(**engine_config_dict))
+            self._event_handlers[name] = the_event_class(**engine_config_dict)
 
     @staticmethod
     def loop(application,
@@ -348,8 +330,8 @@ class ApplicationDriver(object):
         :return:
         """
         # broadcasting event of session started
-        SESS_STARTED.send(application, iter_msg=IterationMessage())
-        GRAPH_FINALISING.send(application, iter_msg=IterationMessage())
+        SESS_STARTED.send(application, iter_msg=None)
+        GRAPH_FINALISING.send(application, iter_msg=None)
 
         loop_status = loop_status or {}
         for iter_msg in iteration_messages:

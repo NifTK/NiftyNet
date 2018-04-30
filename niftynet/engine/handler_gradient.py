@@ -3,7 +3,13 @@
 This module implements a network model updater with gradient ops.
 """
 
-from niftynet.engine.signal import ITER_STARTED
+import tensorflow as tf
+
+from niftynet.engine.signal import ITER_STARTED, SESS_STARTED
+from niftynet.layer.bn import BN_COLLECTION
+from niftynet.utilities import util_common
+
+PRIMARY_NAME_SCOPE = 'worker_0'
 
 
 class ApplyGradients(object):
@@ -13,8 +19,30 @@ class ApplyGradients(object):
     each iteration).
     """
 
-    def __init__(self, **_unused):
+    def __init__(self, is_training_action=False, **_unused):
+        if is_training_action:
+            SESS_STARTED.connect(self.make_gradients_op)
         ITER_STARTED.connect(self.add_gradients)
+
+    @staticmethod
+    def make_gradients_op(sender, **_unused):
+        """
+        Making ``optimiser.apply_gradients`` ops.
+
+        :param sender:
+        :param _unused:
+        :return:
+        """
+        with tf.name_scope('ApplyGradients'):
+            gradients = sender.gradients_collector.gradients
+            bn_ops = tf.get_collection(BN_COLLECTION, PRIMARY_NAME_SCOPE)
+            if not bn_ops:
+                sender.gradient_op = _apply_gradients(
+                    sender.optimiser, gradients)
+            else:
+                with tf.get_default_graph().control_dependencies(bn_ops):
+                    sender.gradient_op = _apply_gradients(
+                        sender.optimiser, gradients)
 
     @staticmethod
     def add_gradients(sender, **msg):
@@ -30,3 +58,27 @@ class ApplyGradients(object):
         """
         if msg['iter_msg'].is_training:
             msg['iter_msg'].ops_to_run['gradients'] = sender.gradient_op
+
+
+def _apply_gradients(optimiser, gradients):
+    """
+    Create gradient op by ``optimiser.apply_gradients``.
+    This function sets ``self.gradient_op``.
+
+    Override this function for more complex optimisations such as
+    using different optimisers for sub-networks.
+
+    :param gradients: processed gradients from the gradient_collector
+    :return:
+    """
+    grad_list_depth = util_common.list_depth_count(gradients)
+    if grad_list_depth == 3:
+        # nested depth 3 means: gradients list is nested in terms of:
+        # list of networks -> list of network variables
+        return [optimiser.apply_gradients(grad) for grad in gradients]
+    elif grad_list_depth == 2:
+        # nested depth 2 means:
+        # gradients list is a list of variables
+        return optimiser.apply_gradients(gradients)
+    raise NotImplementedError(
+        'This app supports updating a network, or a list of networks.')
