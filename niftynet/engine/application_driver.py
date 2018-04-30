@@ -25,7 +25,7 @@ from niftynet.engine.application_iteration import IterationMessage
 from niftynet.engine.application_variables import \
     GradientsCollector, OutputsCollector
 from niftynet.engine.signal import TRAIN, \
-    ITER_STARTED, ITER_FINISHED, SESS_STARTED, SESS_FINISHED
+    ITER_STARTED, ITER_FINISHED, SESS_STARTED, SESS_FINISHED, GRAPH_FINALISING
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.io.misc_io import \
     get_latest_subfolder, touch_folder, infer_latest_model_file
@@ -348,6 +348,7 @@ class ApplicationDriver(object):
         """
         # broadcasting event of session started
         SESS_STARTED.send(application, iter_msg=IterationMessage())
+        GRAPH_FINALISING.send(application, iter_msg=IterationMessage())
 
         loop_status = loop_status or {}
         for iter_msg in iteration_messages:

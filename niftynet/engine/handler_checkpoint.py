@@ -5,7 +5,8 @@ This module implements a model checkpoint writer.
 import os
 import tensorflow as tf
 
-from niftynet.engine.signal import ITER_FINISHED, SESS_STARTED, SESS_FINISHED
+from niftynet.engine.signal import \
+    ITER_FINISHED, SESS_FINISHED, GRAPH_FINALISING
 from niftynet.engine.application_variables import global_vars_init_or_restore
 
 
@@ -35,9 +36,9 @@ class ModelSaver(object):
 
         # randomly initialise or restoring model
         if self.is_training_action and self.initial_iter == 0:
-            SESS_STARTED.connect(self.rand_init_model)
+            GRAPH_FINALISING.connect(self.rand_init_model)
         else:
-            SESS_STARTED.connect(self.restore_model)
+            GRAPH_FINALISING.connect(self.restore_model)
 
         # save the training model at a positive frequency
         if self.save_every_n > 0:
