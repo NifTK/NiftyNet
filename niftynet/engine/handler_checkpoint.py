@@ -9,6 +9,7 @@ import tensorflow as tf
 from niftynet.engine.application_variables import global_vars_init_or_restore
 from niftynet.engine.signal import \
     ITER_FINISHED, SESS_FINISHED, GRAPH_FINALISING
+from niftynet.io.misc_io import infer_latest_model_file
 
 FILE_PREFIX = 'model.ckpt'
 
@@ -38,6 +39,9 @@ class ModelSaver(object):
         if self.is_training_action and self.initial_iter == 0:
             GRAPH_FINALISING.connect(self.rand_init_model)
         else:
+            # infer the initial iteration from model files
+            if self.initial_iter < 0:
+                self.initial_iter = infer_latest_model_file(model_dir)
             GRAPH_FINALISING.connect(self.restore_model)
 
         # save the training model at a positive frequency

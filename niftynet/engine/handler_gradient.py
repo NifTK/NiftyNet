@@ -29,7 +29,7 @@ class ApplyGradients(object):
         """
         Making ``optimiser.apply_gradients`` ops.
 
-        :param sender:
+        :param sender: a niftynet.application instance
         :param _unused:
         :return:
         """

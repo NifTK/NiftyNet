@@ -217,8 +217,8 @@ class IterationMessageGenerator(object):
                  validation_max_iter=0,
                  is_training_action=True,
                  **_unused):
-        self.initial_iter = initial_iter
-        self.final_iter = final_iter
+        self.initial_iter = max(initial_iter, -1)
+        self.final_iter = max(final_iter, self.initial_iter)
         self.validation_every_n = validation_every_n
         self.validation_max_iter = validation_max_iter
         self.is_training_action = is_training_action

@@ -27,8 +27,7 @@ from niftynet.engine.application_variables import \
 from niftynet.engine.signal import TRAIN, \
     ITER_STARTED, ITER_FINISHED, SESS_STARTED, SESS_FINISHED, GRAPH_FINALISING
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
-from niftynet.io.misc_io import \
-    get_latest_subfolder, touch_folder, infer_latest_model_file
+from niftynet.io.misc_io import get_latest_subfolder, touch_folder
 from niftynet.utilities.util_common import \
     set_cuda_device, tf_config, device_string
 from niftynet.utilities.user_parameters_default import \
@@ -136,10 +135,6 @@ class ApplicationDriver(object):
             assert infer_param, 'inference parameters not specified'
             self.initial_iter = infer_param.inference_iter
             action_param = infer_param
-
-        # infer the initial iteration from model files
-        if self.initial_iter < 0:
-            self.initial_iter = infer_latest_model_file(self.model_dir)
 
         # create an application instance
         assert app_param, 'application specific param. not specified'
