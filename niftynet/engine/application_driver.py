@@ -67,7 +67,7 @@ class ApplicationDriver(object):
 
         self.event_handler_names = None
         self.iterator_type = None
-        self._event_handlers = []
+        self._event_handlers = None
 
     def initialise_application(self, workflow_param, data_param):
         """

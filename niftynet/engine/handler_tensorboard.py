@@ -72,4 +72,5 @@ class TensorBoardLogger(object):
         :param current_iter: Integer of the current iteration number
         :return: boolean True if is writing at the current iteration
         """
-        return current_iter % self.tensorboard_every_n == 0
+        return self.summary_dir and \
+               current_iter % self.tensorboard_every_n == 0
