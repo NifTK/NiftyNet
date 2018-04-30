@@ -71,7 +71,7 @@ class DriverLoopTest(tf.test.TestCase):
         app_driver.validation_max_iter = 1
 
         with self.test_session(graph=test_graph) as sess:
-            sess.run(global_vars_init_or_restore())
+            #sess.run(global_vars_init_or_restore())
 
             iterations = IterationMessageGenerator(
                 app_driver.initial_iter,

@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function
 
 import os
 
+import uuid
 import numpy as np
 import tensorflow as tf
 
@@ -20,14 +21,19 @@ from niftynet.engine.signal import SESS_STARTED, SESS_FINISHED, GRAPH_FINALISING
 #    return
 
 
-def get_initialised_driver(starting_iter=0):
+def get_initialised_driver(starting_iter=0, model_dir_rand=True):
+    if model_dir_rand:
+        model_dir = os.path.join('.', 'testing_data', str(uuid.uuid4()))
+        os.mkdir(model_dir)
+    else:
+        model_dir = os.path.join('.', 'testing_data')
     system_param = {
         'SYSTEM': ParserNamespace(
             action='train',
             num_threads=2,
             num_gpus=4,
             cuda_devices='6',
-            model_dir=os.path.join('.', 'testing_data'),
+            model_dir=model_dir,
             dataset_split_file=os.path.join(
                 '.', 'testing_data', 'testtoyapp.csv'),
             event_handler=[
@@ -71,7 +77,7 @@ class ApplicationDriverTest(tf.test.TestCase):
             app_driver.initialise_application([], [])
 
     def test_create_app(self):
-        test_driver = get_initialised_driver(starting_iter=499)
+        test_driver = get_initialised_driver(499, True)
         with self.assertRaisesRegexp(ValueError, 'Could not import'):
             test_driver._create_app('test.test')
         with self.assertRaisesRegexp(ValueError, 'Could not import'):
@@ -184,7 +190,7 @@ class ApplicationDriverTest(tf.test.TestCase):
             test_driver.app.stop()
 
     def test_rand_initialisation(self):
-        test_driver = get_initialised_driver(starting_iter=0)
+        test_driver = get_initialised_driver(0, True)
         graph = test_driver.create_graph(test_driver.app, 1, True)
         with self.test_session(graph=graph) as sess:
             test_tensor = tf.get_default_graph().get_tensor_by_name(
@@ -198,7 +204,7 @@ class ApplicationDriverTest(tf.test.TestCase):
             _ = sess.run(tf.global_variables())
 
     def test_from_latest_file_initialisation(self):
-        test_driver = get_initialised_driver(starting_iter=-1)
+        test_driver = get_initialised_driver(-1, False)
         expected_init = np.array(
             [[-0.03544217, 0.0228963, -0.04585603, 0.16923568, -0.51635778,
               0.60694504, 0.01968583, -0.6252712, 0.28622296, -0.29527491,
@@ -219,7 +225,7 @@ class ApplicationDriverTest(tf.test.TestCase):
             _ = sess.run(tf.global_variables())
 
     def test_not_found_file_initialisation(self):
-        test_driver = get_initialised_driver(starting_iter=42)
+        test_driver = get_initialised_driver(42, False)
         graph = test_driver.create_graph(test_driver.app, 1, True)
         with self.test_session(graph=graph) as sess:
             with self.assertRaisesRegexp(
@@ -227,7 +233,7 @@ class ApplicationDriverTest(tf.test.TestCase):
                 ModelSaver(**vars(test_driver)).restore_model(None)
 
     def test_from_file_initialisation(self):
-        test_driver = get_initialised_driver(starting_iter=40)
+        test_driver = get_initialised_driver(40, False)
         expected_init = np.array(
             [[-0.23192197, 0.60880029, -0.24921742, -0.00186354, -0.3345384,
               0.16067748, -0.2210995, -0.19460233, -0.3035436, -0.42839912,
