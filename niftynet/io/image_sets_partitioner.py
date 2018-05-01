@@ -19,7 +19,7 @@ import tensorflow as tf  # to use the system level logging
 from niftynet.utilities.decorators import singleton
 from niftynet.utilities.filename_matching import KeywordsMatching
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
-from niftynet.utilities.util_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations, ParserNamespace
 from niftynet.utilities.util_csv import match_and_write_filenames_to_csv
 from niftynet.utilities.util_csv import write_csv
 
@@ -237,24 +237,27 @@ class ImageSetsPartitioner(object):
 
         # input data section must have a ``csv_file`` section for loading
         # or writing filename lists
+        if isinstance(self.data_param[modality_name], dict):
+            mod_spec = ParserNamespace(**self.data_param[modality_name])
+        else:
+            mod_spec = self.data_param[modality_name]
+
         try:
-            csv_file = self.data_param[modality_name].csv_file
+            csv_file = mod_spec.csv_file
             if not os.path.isfile(csv_file):
                 # writing to the same folder as data_split_file
                 csv_file = os.path.join(os.path.dirname(self.data_split_file),
                                         '{}.csv'.format(modality_name))
-
         except (AttributeError, TypeError):
             tf.logging.info('`csv_file` not specified, writing the list of '
                             'filenames to a temporary file.')
             import tempfile
             csv_file = tempfile.mkstemp(suffix='.csv')[1]
 
-        if hasattr(self.data_param[modality_name], 'path_to_search') and \
-                self.data_param[modality_name].path_to_search:
+        if hasattr(mod_spec, 'path_to_search') and mod_spec.path_to_search:
             tf.logging.info('[%s] search file folders, writing csv file %s',
                             modality_name, csv_file)
-            section_properties = self.data_param[modality_name].__dict__.items()
+            section_properties = mod_spec.__dict__.items()
             # grep files by section properties and write csv
             try:
                 matcher = KeywordsMatching.from_tuple(

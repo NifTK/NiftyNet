@@ -85,13 +85,18 @@ class ImageReader(Layer):
 
         This function converts elements of ``file_list`` into
         dictionaries of image objects, and save them to ``self.output_list``.
+
+
+        :param data_param:
+        :param task_param:
+        :param file_list:
+        :return: the initialised instance
         """
         if not task_param:
-            task_param = {mod:(mod,) for mod in list(data_param)}
-        elif isinstance(task_param, ParserNamespace):
-            task_param = vars(task_param)
+            task_param = {mod: (mod,) for mod in list(data_param)}
         try:
-            task_param = dict(task_param)
+            task_param = vars(task_param) \
+                if isinstance(task_param, ParserNamespace) else dict(task_param)
         except ValueError:
             tf.logging.fatal(
                 "To concatenate multiple input data arrays,\n"
@@ -104,16 +109,15 @@ class ImageReader(Layer):
         if not self.names:
             # defaulting to load all sections defined in the task_param
             self.names = list(task_param)
-        filtered_names = [name for name in self.names
-                          if task_param.get(name, None)]
-        if not filtered_names:
+        self._names = [name for name in self.names
+                       if task_param.get(name, None)]
+        if not self._names:
             tf.logging.fatal("Reader requires task input keywords %s, but "
                              "not exist in the config file.\n"
                              "Available task keywords: %s",
-                             filtered_names, list(task_param))
+                             self._names, list(task_param))
             raise ValueError
 
-        self._names = filtered_names
         self._input_sources = dict((name, task_param.get(name))
                                    for name in self.names)
         required_sections = \
@@ -147,6 +151,7 @@ class ImageReader(Layer):
             tf.logging.info(
                 'Image reader: loading [%s] from %s (%d)',
                 name, self.input_sources[name], len(self.output_list))
+        return self
 
     def prepare_preprocessors(self):
         """
@@ -199,7 +204,8 @@ class ImageReader(Layer):
         image_data_dict = \
             {field: image.get_data() for (field, image) in image_dict.items()}
         interp_order_dict = \
-            {field: image.interp_order for (field, image) in image_dict.items()}
+            {field: image.interp_order for (
+                field, image) in image_dict.items()}
 
         preprocessors = [deepcopy(layer) for layer in self.preprocessors]
         # dictionary of masks is cached
@@ -325,7 +331,8 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
         # combine fieldnames and volumes as a dictionary
         _dict = {}
         for field, modalities in mod_dict.items():
-            _dict[field] = _create_image(file_list, idx, modalities, data_param)
+            _dict[field] = _create_image(
+                file_list, idx, modalities, data_param)
 
         # skipping the subject if there're missing image components
         if _dict and None not in list(_dict.values()):
@@ -366,22 +373,17 @@ def _create_image(file_list, idx, modalities, data_param):
 
         interp_order, pixdim, axcodes, loader = [], [], [], []
         for mod in modalities:
-            try:
-                interp_order.append(data_param[mod].interp_order)
-            except AttributeError:
-                interp_order.append(DEFAULT_INTERP_ORDER)
-            try:
-                pixdim.append(data_param[mod].pixdim)
-            except AttributeError:
-                pixdim.append(None)
-            try:
-                axcodes.append(data_param[mod].axcodes)
-            except AttributeError:
-                axcodes.append(None)
-            try:
-                loader.append(data_param[mod].loader)
-            except AttributeError:
-                loader.append(None)
+            mod_spec = ParserNamespace(**data_param[mod]) \
+                if isinstance(data_param[mod], dict) else data_param[mod]
+            interp_order.append(
+                mod_spec.interp_order
+                if hasattr(mod_spec, 'interp_order') else DEFAULT_INTERP_ORDER)
+            pixdim.append(
+                mod_spec.pixdim if hasattr(mod_spec, 'pixdim') else None)
+            axcodes.append(
+                mod_spec.axcodes if hasattr(mod_spec, 'axcodes') else None)
+            loader.append(
+                mod_spec.loader if hasattr(mod_spec, 'loader') else None)
 
     except KeyError:
         tf.logging.fatal(
