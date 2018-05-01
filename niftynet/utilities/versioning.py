@@ -30,7 +30,7 @@ def get_niftynet_version():
 
     # Attempt to get the version string from the git repository
     try:
-        from ._version import get_versions
+        from .versioneer_version import get_versions
         version_info = get_versions()
         if version_info['error'] is None:
             version_string = version_info['version']

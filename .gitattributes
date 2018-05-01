@@ -1,1 +1,1 @@
-niftynet/_version.py export-subst
+niftynet/utilities/versioneer_version.py export-subst
