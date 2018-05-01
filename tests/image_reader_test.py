@@ -162,8 +162,7 @@ class ImageReaderTest(tf.test.TestCase):
         with self.assertRaisesRegexp(ValueError, ''):
             reader = ImageReader(['test'])
             reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
-        with self.assertRaisesRegexp(AssertionError, ''):
-            reader = ImageReader(None)
+        reader = ImageReader(None)
             # reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
 
         reader = ImageReader(['image'])

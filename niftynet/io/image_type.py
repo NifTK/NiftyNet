@@ -106,10 +106,14 @@ class DataFromFile(Loadable):
 
     @loader.setter
     def loader(self, loader):
-        """Makes sure loader is always a tuple of lenght = #modalities"""
-        if isinstance(loader, string_types) or loader is None:
-            loader = (loader,)
-        self._loader = loader
+        """Makes sure loader is always a tuple of length = #modalities"""
+        try:
+            if len(self.file_path) == len(loader):
+                self._loader = loader
+                return
+        except TypeError:
+            pass
+        self._loader = (loader,) * len(self.file_path)
 
     @property
     def name(self):
@@ -129,7 +133,7 @@ class DataFromFile(Loadable):
             if len(self.file_path) == len(name_array):
                 self._name = name_array
                 return
-        except (TypeError, AssertionError):
+        except TypeError:
             pass
         self._name = (name_array,)
 

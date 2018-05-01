@@ -13,7 +13,8 @@ from niftynet.io.image_sets_partitioner import COLUMN_UNIQ_ID
 from niftynet.io.image_type import ImageFactory
 from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
 from niftynet.utilities.user_parameters_helper import make_input_tuple
-from niftynet.utilities.util_common import print_progress_bar
+from niftynet.utilities.util_common import print_progress_bar, ParserNamespace
+from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 
 # NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
 NP_TF_DTYPES = {'i': tf.float32,
@@ -59,14 +60,15 @@ class ImageReader(Layer):
 
     """
 
-    def __init__(self, names):
+    def __init__(self, names=None):
         # list of file names
         self._file_list = None
         self._input_sources = None
         self._shapes = None
         self._dtypes = None
         self._names = None
-        self.names = names
+        if names:
+            self.names = names
 
         # list of image objects
         self.output_list = None
@@ -75,7 +77,7 @@ class ImageReader(Layer):
         self.preprocessors = []
         super(ImageReader, self).__init__(name='image_reader')
 
-    def initialise(self, data_param, task_param, file_list):
+    def initialise(self, data_param, task_param=None, file_list=None):
         """
         ``task_param`` specifies how to combine user input modalities.
         e.g., for multimodal segmentation 'image' corresponds to multiple
@@ -84,25 +86,38 @@ class ImageReader(Layer):
         This function converts elements of ``file_list`` into
         dictionaries of image objects, and save them to ``self.output_list``.
         """
+        if not task_param:
+            task_param = {mod:(mod,) for mod in list(data_param)}
+        elif isinstance(task_param, ParserNamespace):
+            task_param = vars(task_param)
+        try:
+            task_param = dict(task_param)
+        except ValueError:
+            tf.logging.fatal(
+                "To concatenate multiple input data arrays,\n"
+                "task_param should be a dictionary in the form:\n"
+                "{'new_modality_name': ['modality_1', 'modality_2',...]}.")
+            raise
+        if file_list is None:
+            # defaulting to all files detected by the input specification
+            file_list = ImageSetsPartitioner().initialise(data_param).all_files
         if not self.names:
-            tf.logging.fatal('Please specify data input keywords, this should '
-                             'be a subset of SUPPORTED_INPUT provided '
-                             'in application file.')
-            raise ValueError
+            # defaulting to load all sections defined in the task_param
+            self.names = list(task_param)
         filtered_names = [name for name in self.names
-                          if vars(task_param).get(name, None)]
+                          if task_param.get(name, None)]
         if not filtered_names:
             tf.logging.fatal("Reader requires task input keywords %s, but "
                              "not exist in the config file.\n"
                              "Available task keywords: %s",
-                             filtered_names, list(vars(task_param)))
+                             filtered_names, list(task_param))
             raise ValueError
 
         self._names = filtered_names
-        self._input_sources = dict((name, vars(task_param).get(name))
+        self._input_sources = dict((name, task_param.get(name))
                                    for name in self.names)
         required_sections = \
-            sum([list(vars(task_param).get(name)) for name in self.names], [])
+            sum([list(task_param.get(name)) for name in self.names], [])
 
         for required in required_sections:
             try:
@@ -354,19 +369,19 @@ def _create_image(file_list, idx, modalities, data_param):
             try:
                 interp_order.append(data_param[mod].interp_order)
             except AttributeError:
-                interp_order = DEFAULT_INTERP_ORDER
+                interp_order.append(DEFAULT_INTERP_ORDER)
             try:
                 pixdim.append(data_param[mod].pixdim)
             except AttributeError:
-                pixdim = None
+                pixdim.append(None)
             try:
                 axcodes.append(data_param[mod].axcodes)
             except AttributeError:
-                axcodes = None
+                axcodes.append(None)
             try:
                 loader.append(data_param[mod].loader)
             except AttributeError:
-                loader = None
+                loader.append(None)
 
     except KeyError:
         tf.logging.fatal(

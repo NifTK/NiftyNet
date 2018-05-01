@@ -245,8 +245,8 @@ class ImageSetsPartitioner(object):
                                         '{}.csv'.format(modality_name))
 
         except (AttributeError, TypeError):
-            tf.logging.warning('Missing `csv_file` field in the config file, '
-                               'unknown configuration format.')
+            tf.logging.info('`csv_file` not specified, writing the list of '
+                            'filenames to a temporary file.')
             import tempfile
             csv_file = tempfile.mkstemp(suffix='.csv')[1]
 
