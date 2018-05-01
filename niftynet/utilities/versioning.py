@@ -32,7 +32,7 @@ def get_niftynet_version():
     try:
         from ._version import get_versions
         version_info = get_versions()
-        if version_info['error'] is not None:
+        if version_info['error'] is None:
             version_string = version_info['version']
     except:
         pass  # version_string is None by default
