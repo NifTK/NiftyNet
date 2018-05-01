@@ -40,10 +40,10 @@ def get_config():
     # _version.py
     cfg = VersioneerConfig()
     cfg.VCS = "git"
-    cfg.style = ""
+    cfg.style = "pep440"
     cfg.tag_prefix = "None"
     cfg.parentdir_prefix = "None"
-    cfg.versionfile_source = "niftynet/_version.py"
+    cfg.versionfile_source = "niftynet/utilities/versioneer_version.py"
     cfg.verbose = False
     return cfg
 
