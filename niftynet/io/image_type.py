@@ -44,7 +44,7 @@ class DataFromFile(Loadable):
     (are files on hard drive) and a name.
     """
 
-    def __init__(self, file_path, name='loadable_data', loader=None):
+    def __init__(self, file_path, name=('loadable_data',), loader=None):
         self._name = None
         self._file_path = None
         self._dtype = None
@@ -283,7 +283,8 @@ class SpatialImage2D(DataFromFile):
     def interp_order(self, interp_order):
         try:
             if len(interp_order) == len(self.file_path):
-                self._interp_order = tuple(int(order) for order in interp_order)
+                self._interp_order = \
+                    tuple(int(order) for order in interp_order)
                 return
         except (TypeError, ValueError):
             pass
@@ -292,7 +293,7 @@ class SpatialImage2D(DataFromFile):
             self._interp_order = (int(interp_order),) * len(self.file_path)
         except (TypeError, ValueError):
             tf.logging.fatal(
-                "output interp_order should be an integer or"
+                "output interp_order should be an integer or "
                 "a sequence of integers that matches len(self.file_path)")
             raise ValueError
 
@@ -326,7 +327,8 @@ class SpatialImage2D(DataFromFile):
             pass
         try:
             if output_pixdim is not None:
-                output_pixdim = tuple(float(pixdim) for pixdim in output_pixdim)
+                output_pixdim = \
+                    tuple(float(pixdim) for pixdim in output_pixdim)
             self._output_pixdim = (output_pixdim,) * len(self.file_path)
         except (TypeError, ValueError):
             tf.logging.fatal(
@@ -591,7 +593,7 @@ class SpatialImage5D(SpatialImage3D):
 
         if self.original_pixdim[idx] and self.output_pixdim[idx]:
             assert len(self._original_pixdim[idx]) == \
-                   len(self.output_pixdim[idx]), \
+                len(self.output_pixdim[idx]), \
                 "wrong pixdim format original {} output {}".format(
                     self._original_pixdim[idx], self.output_pixdim[idx])
             # verbose: warning when interpolate_order>1 for integers
@@ -652,7 +654,7 @@ class ImageFactory(object):
         try:
             file_path = resolve_file_name(file_path, ('.', home_folder))
             if os.path.isfile(file_path):
-                loader = kwargs.get('loader', None)
+                loader = kwargs.get('loader', None) or None
                 ndims = misc.infer_ndims_from_file(file_path, loader)
                 image_type = cls.INSTANCE_DICT.get(ndims, None)
         except (TypeError, IOError, AttributeError):
@@ -662,7 +664,7 @@ class ImageFactory(object):
             try:
                 file_path = [resolve_file_name(path, ('.', home_folder))
                              for path in file_path]
-                loader = kwargs.get('loader', (None,))
+                loader = kwargs.get('loader', None) or (None,)
                 ndims = misc.infer_ndims_from_file(file_path[0], loader[0])
                 ndims = ndims + (1 if len(file_path) > 1 else 0)
                 image_type = cls.INSTANCE_DICT.get(ndims, None)

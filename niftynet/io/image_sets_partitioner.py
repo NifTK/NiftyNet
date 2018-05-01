@@ -245,9 +245,10 @@ class ImageSetsPartitioner(object):
                                         '{}.csv'.format(modality_name))
 
         except (AttributeError, TypeError):
-            tf.logging.fatal('Missing `csv_file` field in the config file, '
-                             'unknown configuration format.')
-            raise
+            tf.logging.warning('Missing `csv_file` field in the config file, '
+                               'unknown configuration format.')
+            import tempfile
+            csv_file = tempfile.mkstemp(suffix='.csv')[1]
 
         if hasattr(self.data_param[modality_name], 'path_to_search') and \
                 self.data_param[modality_name].path_to_search:

@@ -87,6 +87,7 @@ BAD_DATA = {
         pixdim=None,
         axcodes=None,
         loader=None
+        # missing interp_order
     )
 }
 BAD_TASK = ParserNamespace(image=('test',))
@@ -300,9 +301,8 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertAllClose(data['label'].shape, (103, 74, 93, 1, 1))
 
     def test_errors(self):
-        with self.assertRaisesRegexp(AttributeError, ''):
-            reader = ImageReader(['image'])
-            reader.initialise(BAD_DATA, SINGLE_MOD_TASK, bad_data_list)
+        reader = ImageReader(['image'])
+        reader.initialise(BAD_DATA, SINGLE_MOD_TASK, bad_data_list)
         with self.assertRaisesRegexp(ValueError, ''):
             reader = ImageReader(['image'])
             reader.initialise(SINGLE_MOD_DATA, BAD_TASK, single_mod_list)

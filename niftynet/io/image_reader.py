@@ -16,12 +16,11 @@ from niftynet.utilities.user_parameters_helper import make_input_tuple
 from niftynet.utilities.util_common import print_progress_bar
 
 # NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
-
-
 NP_TF_DTYPES = {'i': tf.float32,
                 'u': tf.float32,
                 'b': tf.float32,
                 'f': tf.float32}
+DEFAULT_INTERP_ORDER = 1
 
 
 def infer_tf_dtypes(image_array):
@@ -349,11 +348,26 @@ def _create_image(file_list, idx, modalities, data_param):
             # this should be handled by `ImageFactory.create_instance`
             # ('testT1.nii.gz', 'testT2.nii.gz', nan, 'testFlair.nii.gz')
             return None
-        interp_order = tuple(data_param[mod].interp_order
-                             for mod in modalities)
-        pixdim = tuple(data_param[mod].pixdim for mod in modalities)
-        axcodes = tuple(data_param[mod].axcodes for mod in modalities)
-        loader = tuple(data_param[mod].loader for mod in modalities)
+
+        interp_order, pixdim, axcodes, loader = [], [], [], []
+        for mod in modalities:
+            try:
+                interp_order.append(data_param[mod].interp_order)
+            except AttributeError:
+                interp_order = DEFAULT_INTERP_ORDER
+            try:
+                pixdim.append(data_param[mod].pixdim)
+            except AttributeError:
+                pixdim = None
+            try:
+                axcodes.append(data_param[mod].axcodes)
+            except AttributeError:
+                axcodes = None
+            try:
+                loader.append(data_param[mod].loader)
+            except AttributeError:
+                loader = None
+
     except KeyError:
         tf.logging.fatal(
             "Specified modality names %s "
