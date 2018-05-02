@@ -275,6 +275,10 @@ def cross_entropy(prediction, ground_truth, weight_map=None):
     """
     if len(ground_truth.shape) == len(prediction.shape):
         ground_truth = ground_truth[..., -1]
+
+    # TODO trace this back:
+    ground_truth = tf.cast(ground_truth, tf.int32)
+
     entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
         logits=prediction, labels=ground_truth)
     if weight_map is not None:

@@ -431,6 +431,34 @@ def add_training_args(parser):
         default=-1)
 
     parser.add_argument(
+        "--spatial_rank",
+        help="What dimensionality are the images.",
+        type=int,
+        default=3)
+
+    # elastic deformation
+    parser.add_argument(
+        "--do_elastic_deformation",
+        help="Enables elastic deformation",
+        type=str2boolean,
+        default=False)
+    parser.add_argument(
+        "--num_ctrl_points",
+        help="Number of control points for the elastic deformation",
+        type=int,
+        default=4)
+    parser.add_argument(
+        "--deformation_sigma",
+        help="The standard deviation for elastic deformation.",
+        type=float,
+        default=15)
+    parser.add_argument(
+        "--proportion_to_deform",
+        help="What fraction of samples to deform elastically.",
+        type=float,
+        default=0.5)
+
+    parser.add_argument(
         "--lr",
         help="[Training only] Set learning rate",
         type=float,

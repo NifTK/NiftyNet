@@ -215,7 +215,11 @@ class ImageReader(Layer):
             if layer is None:
                 continue
             if isinstance(layer, RandomisedLayer):
-                layer.randomise()
+                if "random_elastic_deformation" not in layer.name:
+                    layer.randomise()
+                else:
+                    layer.randomise(image_data_dict)
+
                 image_data_dict = layer(image_data_dict, interp_order_dict)
             else:
                 image_data_dict, mask = layer(image_data_dict, mask)
