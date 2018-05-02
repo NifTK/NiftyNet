@@ -64,6 +64,7 @@ class ImageReader(Layer):
         # list of file names
         self._file_list = None
         self._input_sources = None
+        self._spatial_ranks = None
         self._shapes = None
         self._dtypes = None
         self._names = None
@@ -225,6 +226,22 @@ class ImageReader(Layer):
                 image_data_dict, mask = layer(image_data_dict, mask)
                 # print('%s, %.3f sec'%(layer, -local_time + time.time()))
         return idx, image_data_dict, interp_order_dict
+
+    @property
+    def spatial_ranks(self):
+        """
+        Number of spatial dimensions of the images.
+
+        :return: integers of spatial rank
+        """
+        if not self.output_list:
+            tf.logging.fatal("Please initialise the reader first.")
+            raise RuntimeError
+        if not self._spatial_ranks:
+            first_image = self.output_list[0]
+            self._spatial_ranks = {field: first_image[field].spatial_rank
+                                   for field in self.names}
+        return self._spatial_ranks
 
     @property
     def shapes(self):

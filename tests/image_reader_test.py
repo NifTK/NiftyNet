@@ -181,6 +181,7 @@ class ImageReaderTest(tf.test.TestCase):
         reader = ImageReader(['image'])
         reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK, single_mod_list)
         self.assertEqual(len(reader.output_list), 4)
+        self.assertDictEqual(reader.spatial_ranks, {'image': 3})
         self.assertDictEqual(reader.shapes,
                              {'image': (256, 168, 256, 1, 1)})
         self.assertDictEqual(reader.tf_dtypes, {'image': tf.float32})
@@ -196,6 +197,7 @@ class ImageReaderTest(tf.test.TestCase):
         reader = ImageReader(['image'])
         reader.initialise(EXISTING_DATA, SINGLE_MOD_TASK, existing_list)
         self.assertEqual(len(reader.output_list), 4)
+        self.assertDictEqual(reader.spatial_ranks, {'image': 3})
         self.assertDictEqual(reader.shapes,
                              {'image': (256, 168, 256, 1, 1)})
         self.assertDictEqual(reader.tf_dtypes, {'image': tf.float32})

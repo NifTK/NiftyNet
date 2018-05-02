@@ -171,6 +171,15 @@ class SpatialImage2D(DataFromFile):
         self._load_header()
 
     @property
+    def spatial_rank(self):
+        """
+        Number of spatial dimensions
+
+        :return: an integer
+        """
+        return 2
+
+    @property
     def shape(self):
         """
         This function read image shape info from the headers
@@ -413,6 +422,23 @@ class SpatialImage3D(SpatialImage2D):
                                 loader=loader)
         self._load_header()
 
+    @property
+    def spatial_rank(self):
+        """
+        three cases are considered here:
+
+        1. multiple 2d slices will have a spatial rank 2
+        2. single 3d volume [x, y, 1] will have a spatial rank 2
+        3. single 3d volume [x, y, z] will have a spatial rank 3
+           if z > 1
+
+        (resampling/reorientation will not be done when spatial rank is 2).
+
+        """
+        if len(self.file_path) > 1:
+            return 2
+        return int(np.sum([dim > 1 for dim in self.shape[:3]]))
+
     # pylint: disable=no-member
     @SpatialImage2D.output_pixdim.getter
     def output_pixdim(self):
@@ -432,6 +458,10 @@ class SpatialImage3D(SpatialImage2D):
         image_shape = super(SpatialImage3D, self).shape
         spatial_shape = image_shape[:3]
         rest_shape = image_shape[3:]
+
+        if int(np.sum([dim > 1 for dim in spatial_shape])) < 3:
+            return image_shape
+
         if self.original_affine[0] is not None and self.output_axcodes[0]:
             src_ornt = nib.orientations.axcodes2ornt(self.original_axcodes[0])
             dst_ornt = nib.orientations.axcodes2ornt(self.output_axcodes[0])
@@ -446,6 +476,7 @@ class SpatialImage3D(SpatialImage2D):
             for i, k in enumerate(spatial_transf):
                 new_shape[k] = spatial_shape[i]
             spatial_shape = tuple(new_shape)
+
         if self.original_pixdim[0] and self.output_pixdim[0]:
             try:
                 zoom_ratio = np.divide(self.original_pixdim[0][:3],
@@ -485,6 +516,10 @@ class SpatialImage3D(SpatialImage2D):
         image_obj = load_image_from_file(self.file_path[0], self.loader[0])
         image_data = image_obj.get_data()
         image_data = misc.expand_to_5d(image_data)
+
+        if self.spatial_rank < 3:
+            return image_data
+
         if self.original_axcodes[0] and self.output_axcodes[0]:
             image_data = misc.do_reorientation(
                 image_data, self.original_axcodes[0], self.output_axcodes[0])
@@ -521,6 +556,19 @@ class SpatialImage4D(SpatialImage3D):
                                 output_pixdim=output_pixdim,
                                 output_axcodes=output_axcodes,
                                 loader=loader)
+
+    @property
+    def spatial_rank(self):
+        """
+        Inferring spatial rank from array shape.
+
+        In the case of concatenating ``M`` volumes of ``[x, y, 1]``
+        the outcome ``[x, y, 1, 1, M]`` will have a spatial rank 2
+        (resampling/reorientation will not be done in this case).
+
+        :return: an integer
+        """
+        return int(np.sum([dim > 1 for dim in self.shape[:3]]))
 
     def get_data(self):
         if len(self.file_path) == 1:
@@ -571,6 +619,17 @@ class SpatialImage5D(SpatialImage3D):
                                 output_pixdim=output_pixdim,
                                 output_axcodes=output_axcodes,
                                 loader=loader)
+    @property
+    def spatial_rank(self):
+        """
+        Inferring the spatial rank.
+
+        ``[x, y, 1, 1, m]`` will have a spatial rank 2
+        (resampling/reorientation will not be done in this case).
+
+        :return: an integer
+        """
+        return int(np.sum([dim > 1 for dim in self.shape[:3]]))
 
     def _load_single_5d(self, idx=0):
         if len(self._file_path) > 1:
@@ -580,7 +639,14 @@ class SpatialImage5D(SpatialImage3D):
         image_obj = load_image_from_file(self.file_path[idx], self.loader[idx])
         image_data = image_obj.get_data()
         image_data = misc.expand_to_5d(image_data)
-        assert image_data.shape[3] == 1, "time sequences not supported"
+        assert image_data.shape[3] == 1, \
+            "time sequences not supported, " \
+            "please concat. the multimodal channels at the 5th dimension."
+
+        if self.spatial_rank < 3:
+            # don't resample if it's not a set of spatially 3D volume
+            return image_data
+
         if self.original_axcodes[idx] and self.output_axcodes[idx]:
             output_image = []
             for t_pt in range(image_data.shape[3]):
