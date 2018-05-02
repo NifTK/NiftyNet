@@ -222,7 +222,7 @@ class ImageReader(Layer):
                     layer.randomise(image_data_dict)
 
                 image_data_dict = layer(image_data_dict, interp_order_dict)
-            else:
+            elif isinstance(layer, Layer):
                 image_data_dict, mask = layer(image_data_dict, mask)
                 # print('%s, %.3f sec'%(layer, -local_time + time.time()))
         return idx, image_data_dict, interp_order_dict

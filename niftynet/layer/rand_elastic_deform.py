@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-# Data augmentation using elastic deformations as used by:
-# Milletari,F., Navab, N., & Ahmadi, S. A. (2016) V-net:
-# Fully convolutional neural networks for volumetric medical
-# image segmentation
-
+"""
+Data augmentation using elastic deformations as used by:
+Milletari,F., Navab, N., & Ahmadi, S. A. (2016) V-net:
+Fully convolutional neural networks for volumetric medical
+image segmentation
+"""
 
 from __future__ import absolute_import, print_function
 
@@ -22,63 +23,79 @@ warnings.simplefilter("ignore", RuntimeWarning)
 
 class RandomElasticDeformationLayer(RandomisedLayer):
     """
-    generate randomised elastic deformations along each dim for data augmentation
+    generate randomised elastic deformations
+    along each dim for data augmentation
     """
 
     def __init__(self,
                  num_controlpoints=4,
                  std_deformation_sigma=15,
-                 name='random_elastic_deformation',
                  proportion_to_augment=0.5,
                  spatial_rank=3):
         """
-        This layer elastically deforms the inputs, for data-augmentation purposes.
+        This layer elastically deforms the inputs,
+        for data-augmentation purposes.
+
         :param num_controlpoints:
         :param std_deformation_sigma:
+        :param proportion_to_augment: what fraction of the images
+            to do augmentation on
         :param name: name for tensorflow graph
-        :param proportion_to_augment: what fraction of the images to do augmentation on
-        (may be computationally expensive).  
+        (may be computationally expensive).
         """
 
-        super(RandomElasticDeformationLayer, self).__init__(name=name)
+        super(RandomElasticDeformationLayer, self).__init__(
+            name='random_elastic_deformation')
 
+        self._bspline_transformation = None
         self.num_controlpoints = max(num_controlpoints, 2)
         self.std_deformation_sigma = max(std_deformation_sigma, 1)
         self.proportion_to_augment = proportion_to_augment
-        self.do_augmentation = None
-        self.bspline_transformation = None
         self.spatial_rank = spatial_rank
 
     def randomise(self, image_dict):
-        self.do_augmentation = np.random.rand() < self.proportion_to_augment
-        if not self.do_augmentation:
-            pass
-
         images = list(image_dict.values())
-        equal_shapes = np.all([images[0].shape == image.shape for image in images])
+        equal_shapes = np.all(
+            [images[0].shape == image.shape for image in images])
         if equal_shapes:
             self._randomise_bspline_transformation(images[0].shape)
         else:
             # currently not supported spatial rank for elastic deformation
+            # should support classification in the future
             print("randomising elastic deformation FAILED")
             pass
 
     def _randomise_bspline_transformation(self, shape):
         # generate transformation
-        itkimg = sitk.GetImageFromArray(np.zeros(shape[:self.spatial_rank]))
-        trans_from_domain_mesh_size = [self.num_controlpoints] * itkimg.GetDimension()
-        self.bspline_transformation = sitk.BSplineTransformInitializer(itkimg, trans_from_domain_mesh_size)
+        if len(shape) == 5:  # for niftynet reader outputs
+            squeezed_shape = [dim for dim in shape[:3] if dim > 1]
+        else:
+            squeezed_shape = shape[:self.spatial_rank]
+        itkimg = sitk.GetImageFromArray(np.zeros(squeezed_shape))
+        trans_from_domain_mesh_size = \
+            [self.num_controlpoints] * itkimg.GetDimension()
+        self._bspline_transformation = sitk.BSplineTransformInitializer(
+            itkimg, trans_from_domain_mesh_size)
 
-        params = self.bspline_transformation.GetParameters()
+        params = self._bspline_transformation.GetParameters()
         params_numpy = np.asarray(params, dtype=float)
-        params_numpy = params_numpy + np.random.randn(params_numpy.shape[0]) * self.std_deformation_sigma
+        params_numpy = params_numpy + np.random.randn(
+            params_numpy.shape[0]) * self.std_deformation_sigma
 
-        # params_numpy[0:int(len(params) / 3)] = 0  # remove z deformations! The resolution in z is too bad
+        # remove z deformations! The resolution in z is too bad
+        # params_numpy[0:int(len(params) / 3)] = 0
 
         params = tuple(params_numpy)
-        self.bspline_transformation.SetParameters(params)
+        self._bspline_transformation.SetParameters(params)
 
     def _apply_bspline_transformation(self, image, interp_order=3):
+        """
+        Apply randomised transformation to 2D or 3D image
+
+        :param image: 2D or 3D array
+        :param interp_order: order of interpolation
+        :return: the transformed image
+        """
         squeezed_image = np.squeeze(image)
         while squeezed_image.ndim < self.spatial_rank:
             # pad to the required number of dimensions
@@ -97,17 +114,17 @@ class RandomElasticDeformationLayer(RandomisedLayer):
             raise RuntimeError("not supported interpolation_order")
 
         resampler.SetDefaultPixelValue(0)
-        resampler.SetTransform(self.bspline_transformation)
+        resampler.SetTransform(self._bspline_transformation)
         out_img_sitk = resampler.Execute(sitk_image)
         out_img = sitk.GetArrayFromImage(out_img_sitk)
         return out_img.reshape(image.shape)
 
     def layer_op(self, inputs, interp_orders, *args, **kwargs):
-
         if inputs is None:
             return inputs
 
-        if not self.do_augmentation:
+        # only do augmentation with a probability `proportion_to_augment`
+        if np.random.rand() > self.proportion_to_augment:
             return inputs
 
         if isinstance(inputs, dict) and isinstance(interp_orders, dict):

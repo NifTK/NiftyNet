@@ -1,5 +1,4 @@
 import tensorflow as tf
-import os
 
 from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_factory import \
@@ -28,7 +27,7 @@ from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 from niftynet.evaluation.segmentation_evaluator import SegmentationEvaluator
-from niftynet.contrib.layer.rand_elastic_deform import RandomElasticDeformationLayer
+from niftynet.layer.rand_elastic_deform import RandomElasticDeformationLayer
 
 SUPPORTED_INPUT = set(['image', 'label', 'weight', 'sampler', 'inferred'])
 
@@ -161,8 +160,9 @@ class SegmentationApplication(BaseApplication):
 
             # add deformation layer
             if self.action_param.do_elastic_deformation:
+                spatial_rank = list(self.readers[0].spatial_ranks.values())[0]
                 augmentation_layers.append(RandomElasticDeformationLayer(
-                    spatial_rank=self.action_param.spatial_rank,
+                    spatial_rank=spatial_rank,
                     num_controlpoints=self.action_param.num_ctrl_points,
                     std_deformation_sigma=self.action_param.deformation_sigma,
                     proportion_to_augment=self.action_param.proportion_to_deform))

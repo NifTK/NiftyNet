@@ -430,12 +430,6 @@ def add_training_args(parser):
         type=int_array,
         default=-1)
 
-    parser.add_argument(
-        "--spatial_rank",
-        help="What dimensionality are the images.",
-        type=int,
-        default=3)
-
     # elastic deformation
     parser.add_argument(
         "--do_elastic_deformation",
