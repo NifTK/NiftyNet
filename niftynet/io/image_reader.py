@@ -15,6 +15,7 @@ from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
 from niftynet.utilities.user_parameters_helper import make_input_tuple
 from niftynet.utilities.util_common import print_progress_bar, ParserNamespace
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
+from niftynet.utilities.util_common import look_up_operations
 
 # NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
 NP_TF_DTYPES = {'i': tf.float32,
@@ -22,6 +23,10 @@ NP_TF_DTYPES = {'i': tf.float32,
                 'b': tf.float32,
                 'f': tf.float32}
 DEFAULT_INTERP_ORDER = 1
+SUPPORTED_DATA_SPEC = {
+    'csv_file', 'path_to_search',
+    'filename_contains', 'filename_not_contains',
+    'interp_order', 'loader', 'pixdim', 'axcodes', 'spatial_window_size'}
 
 
 def infer_tf_dtypes(image_array):
@@ -93,6 +98,8 @@ class ImageReader(Layer):
         :param file_list:
         :return: the initialised instance
         """
+        data_param = _validate_input_param(data_param)
+
         if not task_param:
             task_param = {mod: (mod,) for mod in list(data_param)}
         try:
@@ -427,3 +434,34 @@ def _create_image(file_list, idx, modalities, data_param):
                         'output_axcodes': axcodes,
                         'loader': loader}
     return ImageFactory.create_instance(**image_properties)
+
+
+def _validate_input_param(data_param):
+    """
+    Validate the user input ``data_param``
+    raise an error if it's invalid.
+
+    :param data_param:
+    :return: input data specifications as a nested dictionary
+    """
+    error_msg = 'Unknown ``data_param`` type. ' \
+                'It should be a nested dictionary: '\
+                '{"modality_name": {"input_property": value}}'\
+                'or a dictionary of: {"modality_name": '\
+                'niftynet.utilities.util_common.ParserNamespace}'\
+
+    if isinstance(data_param, ParserNamespace):
+        data_param = vars(data_param)
+    if not isinstance(data_param, dict):
+        raise ValueError(error_msg)
+    for mod in data_param:
+        mod_param = data_param[mod]
+        if isinstance(mod_param, ParserNamespace):
+            dict_param = vars(mod_param)
+        elif isinstance(mod_param, dict):
+            dict_param = mod_param
+        else:
+            raise ValueError(error_msg)
+        for data_key in dict_param:
+            look_up_operations(data_key, SUPPORTED_DATA_SPEC)
+    return data_param

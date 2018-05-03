@@ -221,8 +221,8 @@ class ImageSetsPartitioner(object):
     def grep_files_by_data_section(self, modality_name):
         """
         list all files by a given input data section::
-            if the ``csv_file`` property of the section corresponds to a file,
-                read the list from the file;
+            if the ``csv_file`` property of ``data_param[modality_name]``
+            corresponds to a file, read the list from the file;
             otherwise
                 write the list to ``csv_file``.
 

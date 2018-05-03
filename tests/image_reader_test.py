@@ -166,7 +166,7 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertDictEqual(reader.shapes,
                              {'image': (256, 168, 256, 1, 1)})
         self.assertDictEqual(reader.tf_dtypes, {'image': tf.float32})
-        self.assertEqual(reader.names, ['image'])
+        self.assertEqual(reader.names, ('image',))
         self.assertDictEqual(reader.input_sources,
                              {'image': ('lesion',)})
         self.assertEqual(reader.get_subject_id(1)[:4], 'Fin_')
@@ -182,7 +182,7 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertDictEqual(reader.shapes,
                              {'image': (256, 168, 256, 1, 1)})
         self.assertDictEqual(reader.tf_dtypes, {'image': tf.float32})
-        self.assertEqual(reader.names, ['image'])
+        self.assertEqual(reader.names, ('image',))
         self.assertDictEqual(reader.input_sources,
                              {'image': ('lesion',)})
         self.assertEqual(reader.get_subject_id(1)[:4], 'Fin_')

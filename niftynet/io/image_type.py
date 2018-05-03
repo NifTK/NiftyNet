@@ -619,6 +619,7 @@ class SpatialImage5D(SpatialImage3D):
                                 output_pixdim=output_pixdim,
                                 output_axcodes=output_axcodes,
                                 loader=loader)
+
     @property
     def spatial_rank(self):
         """
