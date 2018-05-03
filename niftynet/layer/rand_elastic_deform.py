@@ -51,13 +51,15 @@ class RandomElasticDeformationLayer(RandomisedLayer):
         self.num_controlpoints = max(num_controlpoints, 2)
         self.std_deformation_sigma = max(std_deformation_sigma, 1)
         self.proportion_to_augment = proportion_to_augment
+        if not sitk:
+            self.proportion_to_augment = -1
         self.spatial_rank = spatial_rank
 
     def randomise(self, image_dict):
         images = list(image_dict.values())
         equal_shapes = np.all(
             [images[0].shape == image.shape for image in images])
-        if equal_shapes:
+        if equal_shapes and self.proportion_to_augment >= 0:
             self._randomise_bspline_transformation(images[0].shape)
         else:
             # currently not supported spatial rank for elastic deformation
@@ -124,7 +126,7 @@ class RandomElasticDeformationLayer(RandomisedLayer):
             return inputs
 
         # only do augmentation with a probability `proportion_to_augment`
-        if np.random.rand() > self.proportion_to_augment:
+        if np.random.rand() >= self.proportion_to_augment:
             return inputs
 
         if isinstance(inputs, dict) and isinstance(interp_orders, dict):

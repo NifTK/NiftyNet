@@ -1,11 +1,13 @@
 from __future__ import absolute_import, print_function
 
+import unittest
 import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.rand_elastic_deform import RandomElasticDeformationLayer
+from niftynet.layer.rand_elastic_deform import sitk
 
-
+@unittest.skipIf(not sitk, 'SimpleITK not found')
 class RandDeformationTests(tf.test.TestCase):
     def get_3d_input(self):
         input_3d = {'testdata': np.random.randn(10, 16, 2)}
