@@ -719,6 +719,7 @@ class ImageFactory(object):
                              'please check input sources in config file')
             raise ValueError
 
+        ndims = 0
         image_type = None
         home_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
         try:
@@ -742,6 +743,7 @@ class ImageFactory(object):
                 tf.logging.fatal('Could not load file: %s', file_path)
                 raise IOError
         if image_type is None:
-            tf.logging.fatal('Not supported image type: %s', file_path)
-            raise NotImplementedError
+            tf.logging.fatal('Not supported image type from:\n%s', file_path)
+            raise NotImplementedError(
+                "unrecognised spatial rank {}".format(ndims))
         return image_type(file_path, **kwargs)

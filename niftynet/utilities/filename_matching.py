@@ -6,6 +6,7 @@ from __future__ import absolute_import, print_function
 
 import os
 import re
+import six
 
 import niftynet.io.misc_io as util
 
@@ -63,9 +64,13 @@ class KeywordsMatching(object):
                     path.append(path_def)
 
             elif name == "filename_contains":
-                contain = tuple(set(value))
+                contain = tuple(set(value)) \
+                    if not isinstance(value, six.string_types) \
+                    else tuple([value])
             elif name == "filename_not_contains":
-                not_contain = tuple(set(value))
+                not_contain = tuple(set(value)) \
+                    if not isinstance(value, six.string_types) \
+                    else tuple([value])
         path = tuple(set(path))
         new_matcher = cls(path, contain, not_contain)
         return new_matcher

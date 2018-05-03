@@ -110,14 +110,15 @@ class ImageReader(Layer):
         if not self.names:
             # defaulting to load all sections defined in the task_param
             self.names = list(task_param)
-        self._names = [name for name in self.names
+        valid_names = [name for name in self.names
                        if task_param.get(name, None)]
-        if not self._names:
+        if not valid_names:
             tf.logging.fatal("Reader requires task input keywords %s, but "
                              "not exist in the config file.\n"
                              "Available task keywords: %s",
-                             self._names, list(task_param))
+                             self.names, list(task_param))
             raise ValueError
+        self.names = valid_names
 
         self._input_sources = dict((name, task_param.get(name))
                                    for name in self.names)
@@ -150,8 +151,9 @@ class ImageReader(Layer):
             file_list, self._input_sources, data_param)
         for name in self.names:
             tf.logging.info(
-                'Image reader: loading [%s] from %s (%d)',
-                name, self.input_sources[name], len(self.output_list))
+                'Image reader: loading %d subjects '
+                'from sections %s as input [%s]',
+                len(self.output_list), self.input_sources[name], name)
         return self
 
     def prepare_preprocessors(self):
