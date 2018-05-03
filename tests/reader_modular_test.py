@@ -36,6 +36,7 @@ def generate_2d_images():
 generate_2d_images()
 
 IMAGE_PATH_2D = os.path.join('.', 'testing_data', 'images2d')
+IMAGE_PATH_2D_1 = os.path.join('.', 'example_volumes', 'gan_test_data')
 
 
 class Read2DTest(tf.test.TestCase):
@@ -128,22 +129,6 @@ class Read2DTest(tf.test.TestCase):
         self.assertDictEqual(interp, {'mr': (1,)})
         self.assertEqual(data['mr'].shape, (100, 100, 1, 1, 1))
 
-    def test_no_2d_resampling_properties(self):
-        data_param = {'mr': {'path_to_search': IMAGE_PATH_2D,
-                             'csv_file': '2d_test.csv',
-                             'output_pixdim': (2, 2, 2),
-                             'output_axcodes': 'RAS'}}
-        reader = ImageReader().initialise(data_param)
-        self.assertEqual(reader.output_list[0]['mr'].output_pixdim, (None,))
-        self.assertEqual(reader.output_list[0]['mr'].output_axcodes, (None,))
-        idx, data, interp = reader()
-
-        # test output
-        self.assertEqual(list(data), ['mr'])
-        self.assertTrue(idx in range(len(reader.output_list)))
-        self.assertDictEqual(interp, {'mr': (1,)})
-        self.assertEqual(data['mr'].shape, (100, 100, 1, 1, 1))
-
     def test_unknown_5D_multimodal_properties(self):
         data_param = {'mr': {'path_to_search': IMAGE_PATH_2D,
                              'filename_contains': '_u',
@@ -161,8 +146,8 @@ class Read2DTest(tf.test.TestCase):
         grouping_param = {'ct': ('mr', 'mr', 'mr')}
         reader = ImageReader().initialise(data_param, grouping_param)
         self.assertDictEqual(reader.spatial_ranks, {'ct': 2})
-        self.assertEqual(reader.output_list[0]['ct'].output_pixdim, [None]*3)
-        self.assertEqual(reader.output_list[0]['ct'].output_axcodes, [None]*3)
+        self.assertEqual(reader.output_list[0]['ct'].output_pixdim, (None,)*3)
+        self.assertEqual(reader.output_list[0]['ct'].output_axcodes, (None,)*3)
 
         # test output
         idx, data, interp = reader()
@@ -170,6 +155,71 @@ class Read2DTest(tf.test.TestCase):
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'ct': (1,1,1)})
         self.assertEqual(data['ct'].shape, (100, 100, 1, 1, 3))
+
+
+
+class Read2D_1DTest(tf.test.TestCase):
+    # loading 2d images of rank 3: [x, y, 1]
+    def test_no_2d_resampling_properties(self):
+        data_param = {'mr': {'path_to_search': IMAGE_PATH_2D_1,
+                             'csv_file': '2d_test.csv',
+                             'filename_contains': '_img',
+                             'output_pixdim': (2, 2, 2),
+                             'output_axcodes': 'RAS'}}
+        reader = ImageReader().initialise(data_param)
+        self.assertEqual(reader.output_list[0]['mr'].output_pixdim, (None,))
+        self.assertEqual(reader.output_list[0]['mr'].output_axcodes, (None,))
+        idx, data, interp = reader()
+
+        # test output
+        self.assertEqual(list(data), ['mr'])
+        self.assertTrue(idx in range(len(reader.output_list)))
+        self.assertDictEqual(interp, {'mr': (1,)})
+        self.assertEqual(data['mr'].shape, (120, 160, 1, 1, 1))
+
+    def test_2D_multimodal_properties(self):
+        data_param = {'mr': {'path_to_search': IMAGE_PATH_2D_1,
+                             'filename_contains': '_img',
+                             'output_pixdim': (2, 1.5, 2),
+                             'output_axcodes': 'RAS'}}
+        grouping_param = {'ct': ('mr', 'mr', 'mr')}
+        reader = ImageReader().initialise(data_param, grouping_param)
+        self.assertDictEqual(reader.spatial_ranks, {'ct': 2})
+        self.assertEqual(reader.output_list[0]['ct'].output_pixdim, (None,)*3)
+        self.assertEqual(reader.output_list[0]['ct'].output_axcodes, (None,)*3)
+
+        # test output
+        idx, data, interp = reader()
+        self.assertEqual(list(data), ['ct'])
+        self.assertTrue(idx in range(len(reader.output_list)))
+        self.assertDictEqual(interp, {'ct': (1,1,1)})
+        self.assertEqual(data['ct'].shape, (120, 160, 1, 1, 3))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## test multiple modalities
 #MULTI_MOD_DATA = {

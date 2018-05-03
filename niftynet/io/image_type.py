@@ -444,14 +444,14 @@ class SpatialImage3D(SpatialImage2D):
     def output_pixdim(self):
         if self._output_pixdim is None:
             self.output_pixdim = None
-        return self._output_pixdim
+        return tuple(self._output_pixdim)
 
     # pylint: disable=no-member
     @SpatialImage2D.output_axcodes.getter
     def output_axcodes(self):
         if self._output_axcodes is None:
             self.output_axcodes = None
-        return self._output_axcodes
+        return tuple(self._output_axcodes)
 
     @property
     def shape(self):
