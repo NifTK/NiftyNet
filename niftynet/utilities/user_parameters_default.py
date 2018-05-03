@@ -347,9 +347,8 @@ def add_network_args(parser):
         type=str,
         default='zeros')
 
-    try:
-        yaml = require_module('yaml')
-
+    yaml = require_module('yaml', mandatory=False)
+    if yaml:
         parser.add_argument(
             "--weight_initializer_args",
             help="Pass arguments to the initializer for the weight parameters",
@@ -360,9 +359,6 @@ def add_network_args(parser):
             help="Pass arguments to the initializer for the bias parameters",
             type=yaml.load,
             default={})
-    except ImportError:
-        # "PyYAML module not found")
-        pass
 
     return parser
 

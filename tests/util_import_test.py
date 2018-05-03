@@ -13,11 +13,11 @@ class OptionalPackageTest(tf.test.TestCase):
 
     def test_no_package(self):
         with self.assertRaisesRegexp(ImportError, ''):
-            require_module('foobar_wrong_case')
+            require_module('foobar_wrong_case', mandatory=True)
 
     def test_wrong_version(self):
         with self.assertRaisesRegexp(AssertionError, ''):
-            require_module('tensorflow', 100)
+            require_module('tensorflow', 100, mandatory=True)
 
     def test_self_version(self):
         require_module('importlib')
@@ -27,9 +27,9 @@ class OptionalPackageTest(tf.test.TestCase):
 
     def test_no_input(self):
         with self.assertRaisesRegexp(ImportError, ''):
-            require_module([])
+            require_module([], mandatory=True)
         with self.assertRaisesRegexp(ImportError, ''):
-            require_module(None)
+            require_module(None, mandatory=True)
 
 
 if __name__ == "__main__":

@@ -66,7 +66,7 @@ def register_image_loader(name, requires, min_version=None, auto_discover=True):
         """Wrapper that registers a function if it satisfies requirements."""
         try:
             auto_d = auto_discover
-            require_module(requires, min_version=min_version)
+            require_module(requires, min_version=min_version, mandatory=True)
             AVAILABLE_LOADERS[name] = dict(func=func, auto_discover=auto_d)
         except (ImportError, AssertionError):
             pass
