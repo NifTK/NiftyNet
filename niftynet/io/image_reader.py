@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
 
+import argparse
 import numpy as np
 import pandas
 import tensorflow as tf
@@ -103,8 +104,8 @@ class ImageReader(Layer):
         if not task_param:
             task_param = {mod: (mod,) for mod in list(data_param)}
         try:
-            task_param = vars(task_param) \
-                if isinstance(task_param, ParserNamespace) else dict(task_param)
+            if not isinstance(task_param, dict):
+                task_param = vars(task_param)
         except ValueError:
             tf.logging.fatal(
                 "To concatenate multiple input data arrays,\n"
@@ -448,15 +449,14 @@ def _validate_input_param(data_param):
                 'It should be a nested dictionary: '\
                 '{"modality_name": {"input_property": value}}'\
                 'or a dictionary of: {"modality_name": '\
-                'niftynet.utilities.util_common.ParserNamespace}'\
-
+                'niftynet.utilities.util_common.ParserNamespace}'
     if isinstance(data_param, ParserNamespace):
         data_param = vars(data_param)
     if not isinstance(data_param, dict):
         raise ValueError(error_msg)
     for mod in data_param:
         mod_param = data_param[mod]
-        if isinstance(mod_param, ParserNamespace):
+        if isinstance(mod_param, (ParserNamespace, argparse.Namespace)):
             dict_param = vars(mod_param)
         elif isinstance(mod_param, dict):
             dict_param = mod_param

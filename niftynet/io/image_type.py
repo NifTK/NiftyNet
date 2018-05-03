@@ -376,9 +376,7 @@ class SpatialImage2D(DataFromFile):
                     if output_axcodes[i] is None:
                         self._output_axcodes.append(None)
                     else:
-                        self._output_axcodes.append(
-                            tuple(output_axcodes[i]))
-                # self._output_axcodes = tuple(self._output_axcodes)
+                        self._output_axcodes.append(tuple(output_axcodes[i]))
                 return
         except (TypeError, ValueError):
             pass
