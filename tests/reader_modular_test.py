@@ -38,7 +38,9 @@ def generate_2d_images():
 
 def generate_2d_1d_images():
     img_path = os.path.join(os.path.dirname(__file__), '..', 'testing_data')
-    img_path = os.path.realpath(os.path.join(img_path, 'images2d'))
+    img_path = os.path.realpath(os.path.join(img_path, 'images_x_1_y'))
+    if not os.path.isdir(img_path):
+        os.makedirs(img_path)
     for idx in range(3):
         image_data = np.random.randint(0, 255, size=(100, 1, 100))
         image_data = image_data.astype(np.uint8)
@@ -53,6 +55,7 @@ generate_2d_1d_images()
 
 IMAGE_PATH_2D = os.path.join('.', 'testing_data', 'images2d')
 IMAGE_PATH_2D_1 = os.path.join('.', 'example_volumes', 'gan_test_data')
+IMAGE_PATH_2D_2 = os.path.join('.', 'testing_data', 'images_x_1_y')
 IMAGE_PATH_3D = os.path.join('.', 'testing_data')
 
 
@@ -146,14 +149,14 @@ class Read2DTest(tf.test.TestCase):
         self.assertDictEqual(interp, {'mr': (1,)})
         self.assertEqual(data['mr'].shape, (100, 100, 1, 1, 1))
 
-    def test_unknown_5D_multimodal_properties(self):
+    def test_2d_as_5D_multimodal_properties(self):
         data_param = {'mr': {'path_to_search': IMAGE_PATH_2D,
             'filename_contains': '_u',
             'pixdim': (2, 2, 2),
             'axcodes': 'RAS'}}
         grouping_param = {'ct': ('mr', 'mr', 'mr')}
-        with self.assertRaisesRegexp(NotImplementedError, ''):
-            reader = ImageReader().initialise(data_param, grouping_param)
+        reader = ImageReader().initialise(data_param, grouping_param)
+        self.assertEqual(reader.spatial_ranks, {'ct': 2})
 
     def test_2D_multimodal_properties(self):
         data_param = {'mr': {'path_to_search': IMAGE_PATH_2D,
@@ -220,7 +223,7 @@ class Read2D_1DTest(tf.test.TestCase):
 class Read2D_1D_x1y_Test(tf.test.TestCase):
     # loading 2d images of rank 3: [x, 1, y]
     def test_no_2d_resampling_properties(self):
-        data_param = {'mr': {'path_to_search': IMAGE_PATH_2D,
+        data_param = {'mr': {'path_to_search': IMAGE_PATH_2D_2,
             'filename_contains': 'x_1_y',
             'pixdim': (2, 2, 2),
             'axcodes': 'RAS'}}
@@ -235,10 +238,10 @@ class Read2D_1D_x1y_Test(tf.test.TestCase):
         self.assertEqual(list(data), ['mr'])
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,)})
-        self.assertEqual(data['mr'].shape, (100, 1, 100, 1, 1))
+        self.assertEqual(data['mr'].shape, (100, 100, 1, 1, 1))
 
     def test_2D_multimodal_properties(self):
-        data_param = {'mr': {'path_to_search': IMAGE_PATH_2D,
+        data_param = {'mr': {'path_to_search': IMAGE_PATH_2D_2,
             'filename_contains': 'x_1_y',
             'pixdim': (2, 1.5, 2),
             'axcodes': 'RAS'}}
@@ -255,7 +258,49 @@ class Read2D_1D_x1y_Test(tf.test.TestCase):
         self.assertEqual(list(data), ['ct'])
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'ct': (1, 1, 1)})
-        self.assertEqual(data['ct'].shape, (100, 1, 100, 1, 3))
+        self.assertEqual(data['ct'].shape, (100, 100, 1, 1, 3))
+
+class Read2D_colorTest(tf.test.TestCase):
+    # loading 2d images of rank 3: [x, y, 3] or [x, y, 4]
+    def test_no_2d_resampling_properties(self):
+        data_param = {'mr': {'path_to_search': IMAGE_PATH_2D,
+            'csv_file': '2d_test.csv',
+            'filename_contains': '_u',
+            'pixdim': (2, 2, 2),
+            'axcodes': 'RAS'}}
+        reader = ImageReader().initialise(data_param)
+        self.assertEqual(reader.output_list[0]['mr'].output_pixdim,
+                         ((2.0, 2.0, 2.0),))
+        self.assertEqual(reader.output_list[0]['mr'].output_axcodes,
+                         (('R', 'A', 'S'),))
+        idx, data, interp = reader()
+
+        # test output
+        self.assertEqual(list(data), ['mr'])
+        self.assertTrue(idx in range(len(reader.output_list)))
+        self.assertDictEqual(interp, {'mr': (1,)})
+        self.assertEqual(data['mr'].shape, (100, 100, 1, 1, 3))
+
+    def test_2D_multimodal_properties(self):
+        data_param = {'mr': {'path_to_search': IMAGE_PATH_2D,
+            'filename_contains': '_u',
+            'pixdim': (2, 1.5, 2),
+            'axcodes': 'RAS'}}
+        grouping_param = {'ct': ('mr', 'mr', 'mr')}
+        reader = ImageReader().initialise(data_param, grouping_param)
+        self.assertDictEqual(reader.spatial_ranks, {'ct': 2})
+        self.assertEqual(reader.output_list[0]['ct'].output_pixdim,
+                         ((2.0, 1.5, 2.0),) * 3)
+        self.assertEqual(reader.output_list[0]['ct'].output_axcodes,
+                         (('R', 'A', 'S'),) * 3)
+
+        # test output
+        idx, data, interp = reader()
+        self.assertEqual(list(data), ['ct'])
+        self.assertTrue(idx in range(len(reader.output_list)))
+        self.assertDictEqual(interp, {'ct': (1, 1, 1)})
+        self.assertEqual(data['ct'].shape, (100, 100, 1, 1, 9))
+
 
 class Read3DTest(tf.test.TestCase):
     # loading 3d images of rank 3: [x, y, z]

@@ -244,12 +244,22 @@ def save_data_array(filefolder,
 
 def expand_to_5d(img_data):
     """
-    Expands an array up to 5d if it is not the case yet
+    Expands an array up to 5d if it is not the case yet;
+    The first three spatial dims are rearranged so that
+    1-d is always [X, 1, 1]
+    2-d is always [X, y, 1]
     :param img_data:
     :return:
     """
     while img_data.ndim < 5:
         img_data = np.expand_dims(img_data, axis=-1)
+
+    spatial_dims = img_data.shape[:3]
+    spatial_rank = np.sum([dim > 1 for dim in spatial_dims])
+    if spatial_rank == 1:
+        return np.swapaxes(img_data, 0, np.argmax(spatial_dims))
+    if spatial_rank == 2:
+        return np.swapaxes(img_data, 2, np.argmin(spatial_dims))
     return img_data
 
 

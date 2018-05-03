@@ -633,9 +633,6 @@ class SpatialImage5D(SpatialImage3D):
         return int(np.sum([dim > 1 for dim in self.shape[:3]]))
 
     def _load_single_5d(self, idx=0):
-        if len(self._file_path) > 1:
-            # 5D image from multiple 4d files
-            raise NotImplementedError
         # assuming len(self._file_path) == 1
         image_obj = load_image_from_file(self.file_path[idx], self.loader[idx])
         image_data = image_obj.get_data()
@@ -686,13 +683,11 @@ class SpatialImage5D(SpatialImage3D):
     def get_data(self):
         if len(self._file_path) == 1:
             return self._load_single_5d()
-        else:
-            raise NotImplementedError('concatenating 5D images not supported.')
-            #     image_data = []
-            #     for idx in range(len(self._file_path)):
-            #         image_data.append(self._load_single_5d(idx))
-            #     image_data = np.concatenate(image_data, axis=4)
-            # return image_data
+        # 5D image from multiple 5d files
+        image_data = []
+        for idx in range(len(self._file_path)):
+            image_data.append(self._load_single_5d(idx))
+        return np.concatenate(image_data, axis=4)
 
 
 class ImageFactory(object):
@@ -703,7 +698,8 @@ class ImageFactory(object):
     INSTANCE_DICT = {2: SpatialImage2D,
                      3: SpatialImage3D,
                      4: SpatialImage4D,
-                     5: SpatialImage5D}
+                     5: SpatialImage5D,
+                     6: SpatialImage5D}
 
     @classmethod
     def create_instance(cls, file_path, **kwargs):
