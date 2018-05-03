@@ -66,7 +66,8 @@ class DataFromFile(Loadable):
         if not self._dtype:
             try:
                 self._dtype = tuple(
-                    load_image_from_file(_file, _loader).header.get_data_dtype()
+                    load_image_from_file(
+                        _file, _loader).header.get_data_dtype()
                     for _file, _loader in zip(self.file_path, self.loader))
             except (IOError, TypeError, AttributeError):
                 tf.logging.warning('could not decide image data type')
@@ -173,11 +174,14 @@ class SpatialImage2D(DataFromFile):
     @property
     def spatial_rank(self):
         """
-        Number of spatial dimensions
+        volume [x, y, 1, m, n] will have a spatial rank 2
+        volume [x, y, z, m, n] will have a spatial rank 3
+           if z > 1
 
-        :return: an integer
+        (resampling/reorientation will not be done when spatial rank is 2).
+
         """
-        return 2
+        return int(np.sum([dim > 1 for dim in self.shape[:3]]))
 
     @property
     def shape(self):
@@ -200,9 +204,9 @@ class SpatialImage2D(DataFromFile):
                     'unknown image shape from header %s', self.file_path)
                 raise ValueError
             try:
-                non_modality_shapes = set(
-                    [tuple(shape[:4].tolist())
-                     for shape in self._original_shape])
+                non_modality_shapes = \
+                    set([tuple(shape[:4].tolist())
+                         for shape in self._original_shape])
                 assert len(non_modality_shapes) == 1
             except (TypeError, IndexError, AssertionError):
                 tf.logging.fatal("could not combining multimodal images: "
@@ -390,14 +394,26 @@ class SpatialImage2D(DataFromFile):
                 '%s for %s', output_axcodes, self.file_path)
             raise
 
-    def get_data(self):
-        if len(self._file_path) > 1:
-            # 2D image from multiple files
-            raise NotImplementedError
-        image_obj = load_image_from_file(self.file_path[0], self.loader[0])
+    @classmethod
+    def _load_single_file(cls, file_path, loader):
+        image_obj = load_image_from_file(file_path, loader)
         image_data = image_obj.get_data()
         image_data = misc.expand_to_5d(image_data)
         return image_data
+
+    def get_data(self):
+        if len(self._file_path) > 1:
+            image_data = []
+            for file_path, loader in zip(self._file_path, self.loader):
+                image_data.append(self._load_single_file(file_path, loader))
+            try:
+                return np.concatenate(image_data, axis=4)
+            except ValueError:
+                tf.logging.fatal(
+                    "multi-modal data shapes not consistent -- trying to "
+                    "concat {}.".format([mod.shape for mod in image_data]))
+                raise
+        return self._load_single_file(self.file_path[0], self.loader[0])
 
 
 class SpatialImage3D(SpatialImage2D):
@@ -421,23 +437,6 @@ class SpatialImage3D(SpatialImage2D):
                                 output_axcodes=output_axcodes,
                                 loader=loader)
         self._load_header()
-
-    @property
-    def spatial_rank(self):
-        """
-        three cases are considered here:
-
-        1. multiple 2d slices will have a spatial rank 2
-        2. single 3d volume [x, y, 1] will have a spatial rank 2
-        3. single 3d volume [x, y, z] will have a spatial rank 3
-           if z > 1
-
-        (resampling/reorientation will not be done when spatial rank is 2).
-
-        """
-        if len(self.file_path) > 1:
-            return 2
-        return int(np.sum([dim > 1 for dim in self.shape[:3]]))
 
     # pylint: disable=no-member
     @SpatialImage2D.output_pixdim.getter
@@ -490,32 +489,8 @@ class SpatialImage3D(SpatialImage2D):
                 raise ValueError
         return spatial_shape + rest_shape
 
-    def get_data(self):
-        if len(self._file_path) > 1:
-            # 3D image from multiple 2d files
-            mod_list = []
-            for mod in range(len(self.file_path)):
-                mod_2d = SpatialImage2D(
-                    file_path=(self.file_path[mod],),
-                    name=(self.name[mod],),
-                    interp_order=(self.interp_order[mod],),
-                    output_pixdim=(self.output_pixdim[mod],),
-                    output_axcodes=(self.output_axcodes[mod],),
-                    loader=(self.loader[mod],))
-                mod_data_5d = mod_2d.get_data()
-                mod_list.append(mod_data_5d)
-            try:
-                image_data = np.concatenate(mod_list, axis=4)
-            except ValueError:
-                tf.logging.fatal(
-                    "multi-modal data shapes not consistent -- trying to "
-                    "concat {}.".format([mod.shape for mod in mod_list]))
-                raise
-            return image_data
-        # assuming len(self._file_path) == 1
-        image_obj = load_image_from_file(self.file_path[0], self.loader[0])
-        image_data = image_obj.get_data()
-        image_data = misc.expand_to_5d(image_data)
+    def _load_single_file(self, file_path, loader):
+        image_data = SpatialImage2D._load_single_file(file_path, loader)
 
         if self.spatial_rank < 3:
             return image_data
@@ -572,9 +547,9 @@ class SpatialImage4D(SpatialImage3D):
 
     def get_data(self):
         if len(self.file_path) == 1:
-            # 4D image from a single file
-            raise NotImplementedError(
-                "loading 4D image (time sequence) is not supported")
+            # 4D image from a single file ()
+            return SpatialImage3D._load_single_file(
+                self, self.file_path[0], self.loader[0])
         # assuming len(self._file_path) > 1
         mod_list = []
         for mod in range(len(self.file_path)):
@@ -596,7 +571,7 @@ class SpatialImage4D(SpatialImage3D):
         return image_data
 
 
-class SpatialImage5D(SpatialImage3D):
+class SpatialImage5D(SpatialImage4D):
     """
     5D image from a single file,
     resampling and reorientation are implemented as
@@ -612,82 +587,13 @@ class SpatialImage5D(SpatialImage3D):
                  output_pixdim,
                  output_axcodes,
                  loader):
-        SpatialImage3D.__init__(self,
+        SpatialImage4D.__init__(self,
                                 file_path=file_path,
                                 name=name,
                                 interp_order=interp_order,
                                 output_pixdim=output_pixdim,
                                 output_axcodes=output_axcodes,
                                 loader=loader)
-
-    @property
-    def spatial_rank(self):
-        """
-        Inferring the spatial rank.
-
-        ``[x, y, 1, 1, m]`` will have a spatial rank 2
-        (resampling/reorientation will not be done in this case).
-
-        :return: an integer
-        """
-        return int(np.sum([dim > 1 for dim in self.shape[:3]]))
-
-    def _load_single_5d(self, idx=0):
-        # assuming len(self._file_path) == 1
-        image_obj = load_image_from_file(self.file_path[idx], self.loader[idx])
-        image_data = image_obj.get_data()
-        image_data = misc.expand_to_5d(image_data)
-        assert image_data.shape[3] == 1, \
-            "time sequences not supported, " \
-            "please concat. the multimodal channels at the 5th dimension."
-
-        if self.spatial_rank < 3:
-            # don't resample if it's not a set of spatially 3D volume
-            return image_data
-
-        if self.original_axcodes[idx] and self.output_axcodes[idx]:
-            output_image = []
-            for t_pt in range(image_data.shape[3]):
-                mod_list = []
-                for mod in range(image_data.shape[4]):
-                    spatial_slice = image_data[..., t_pt:t_pt + 1, mod:mod + 1]
-                    spatial_slice = misc.do_reorientation(
-                        spatial_slice,
-                        self.original_axcodes[idx],
-                        self.output_axcodes[idx])
-                    mod_list.append(spatial_slice)
-                output_image.append(np.concatenate(mod_list, axis=4))
-            image_data = np.concatenate(output_image, axis=3)
-
-        if self.original_pixdim[idx] and self.output_pixdim[idx]:
-            assert len(self._original_pixdim[idx]) == \
-                len(self.output_pixdim[idx]), \
-                "wrong pixdim format original {} output {}".format(
-                    self._original_pixdim[idx], self.output_pixdim[idx])
-            # verbose: warning when interpolate_order>1 for integers
-            output_image = []
-            for t_pt in range(image_data.shape[3]):
-                mod_list = []
-                for mod in range(image_data.shape[4]):
-                    spatial_slice = image_data[..., t_pt:t_pt + 1, mod:mod + 1]
-                    spatial_slice = misc.do_resampling(
-                        spatial_slice,
-                        self.original_pixdim[idx],
-                        self.output_pixdim[idx],
-                        self.interp_order[idx])
-                    mod_list.append(spatial_slice)
-                output_image.append(np.concatenate(mod_list, axis=4))
-            image_data = np.concatenate(output_image, axis=3)
-        return image_data
-
-    def get_data(self):
-        if len(self._file_path) == 1:
-            return self._load_single_5d()
-        # 5D image from multiple 5d files
-        image_data = []
-        for idx in range(len(self._file_path)):
-            image_data.append(self._load_single_5d(idx))
-        return np.concatenate(image_data, axis=4)
 
 
 class ImageFactory(object):

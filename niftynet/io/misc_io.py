@@ -134,7 +134,7 @@ def do_reorientation(data_array, init_axcodes, final_axcodes):
     """
     Performs the reorientation (changing order of axes)
 
-    :param data_array: Array to reorient
+    :param data_array: 5D Array to reorient
     :param init_axcodes: Initial orientation
     :param final_axcodes: Target orientation
     :return data_reoriented: New data array in its reoriented form
@@ -164,7 +164,7 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     """
     Performs the resampling
 
-    :param data_array: Data array to resample
+    :param data_array: 5D Data array to resample
     :param pixdim_init: Initial pixel dimension
     :param pixdim_fin: Targeted pixel dimension
     :param interp_order: Interpolation order applied
