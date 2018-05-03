@@ -3,6 +3,8 @@ from __future__ import absolute_import, print_function
 
 import os
 
+from PIL import Image
+import nibabel as nib
 import numpy as np
 import tensorflow as tf
 
@@ -16,7 +18,6 @@ SEG_THRESHOLD = 100
 
 def generate_2d_images():
     # Test 2D Image Loader
-    from PIL import Image
 
     # Generate 10 fake 2d grayscale and color images of size 100x100
     img_path = os.path.join(os.path.dirname(__file__), '..', 'testing_data')
@@ -35,7 +36,20 @@ def generate_2d_images():
     return
 
 
+def generate_2d_1d_images():
+    img_path = os.path.join(os.path.dirname(__file__), '..', 'testing_data')
+    img_path = os.path.realpath(os.path.join(img_path, 'images2d'))
+    for idx in range(3):
+        image_data = np.random.randint(0, 255, size=(100, 1, 100))
+        image_data = image_data.astype(np.uint8)
+        nib_image = nib.Nifti1Image(image_data, np.eye(4))
+        nib.save(nib_image,
+                 os.path.join(img_path, 'x_1_y_{}.nii.gz'.format(idx)))
+    return
+
+
 generate_2d_images()
+generate_2d_1d_images()
 
 IMAGE_PATH_2D = os.path.join('.', 'testing_data', 'images2d')
 IMAGE_PATH_2D_1 = os.path.join('.', 'example_volumes', 'gan_test_data')
@@ -203,6 +217,45 @@ class Read2D_1DTest(tf.test.TestCase):
         self.assertDictEqual(interp, {'ct': (1, 1, 1)})
         self.assertEqual(data['ct'].shape, (120, 160, 1, 1, 3))
 
+class Read2D_1D_x1y_Test(tf.test.TestCase):
+    # loading 2d images of rank 3: [x, 1, y]
+    def test_no_2d_resampling_properties(self):
+        data_param = {'mr': {'path_to_search': IMAGE_PATH_2D,
+            'filename_contains': 'x_1_y',
+            'pixdim': (2, 2, 2),
+            'axcodes': 'RAS'}}
+        reader = ImageReader().initialise(data_param)
+        self.assertEqual(reader.output_list[0]['mr'].output_pixdim,
+                         ((2.0, 2.0, 2.0),))
+        self.assertEqual(reader.output_list[0]['mr'].output_axcodes,
+                         (('R', 'A', 'S'),))
+        idx, data, interp = reader()
+
+        # test output
+        self.assertEqual(list(data), ['mr'])
+        self.assertTrue(idx in range(len(reader.output_list)))
+        self.assertDictEqual(interp, {'mr': (1,)})
+        self.assertEqual(data['mr'].shape, (100, 1, 100, 1, 1))
+
+    def test_2D_multimodal_properties(self):
+        data_param = {'mr': {'path_to_search': IMAGE_PATH_2D,
+            'filename_contains': 'x_1_y',
+            'pixdim': (2, 1.5, 2),
+            'axcodes': 'RAS'}}
+        grouping_param = {'ct': ('mr', 'mr', 'mr')}
+        reader = ImageReader().initialise(data_param, grouping_param)
+        self.assertDictEqual(reader.spatial_ranks, {'ct': 2})
+        self.assertEqual(reader.output_list[0]['ct'].output_pixdim,
+                         ((2.0, 1.5, 2.0),) * 3)
+        self.assertEqual(reader.output_list[0]['ct'].output_axcodes,
+                         (('R', 'A', 'S'),) * 3)
+
+        # test output
+        idx, data, interp = reader()
+        self.assertEqual(list(data), ['ct'])
+        self.assertTrue(idx in range(len(reader.output_list)))
+        self.assertDictEqual(interp, {'ct': (1, 1, 1)})
+        self.assertEqual(data['ct'].shape, (100, 1, 100, 1, 3))
 
 class Read3DTest(tf.test.TestCase):
     # loading 3d images of rank 3: [x, y, z]
