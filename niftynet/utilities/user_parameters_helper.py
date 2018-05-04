@@ -87,7 +87,6 @@ def make_input_tuple(input_str, element_type=string_types):
     :param element_type:
     :return:
     """
-
     assert input_str, \
         "invalid input {} for type {}".format(input_str, element_type)
     if isinstance(input_str, element_type):

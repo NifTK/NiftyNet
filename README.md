@@ -46,7 +46,9 @@ NiftyNet release notes are available [here][changelog].
    * [`pip install tensorflow==1.7`][tf-pypi] for CPU-only TensorFlow
 1. [`pip install niftynet`](https://pypi.org/project/NiftyNet/)
 
- <sup>*All other NiftyNet dependencies are installed automatically as part of the pip installation process.</sup>
+ <sup>*All other NiftyNet dependencies are installed automatically as part of the pip installation process.
+ 
+*To install from the source repository, please checkout [the instructions](http://niftynet.readthedocs.io/en/dev/installation.html).</sup>
 
 [tf-pypi-gpu]: https://pypi.org/project/tensorflow-gpu/
 [tf-pypi]: https://pypi.org/project/tensorflow/

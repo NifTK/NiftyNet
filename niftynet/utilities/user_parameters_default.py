@@ -347,9 +347,8 @@ def add_network_args(parser):
         type=str,
         default='zeros')
 
-    try:
-        yaml = require_module('yaml')
-
+    yaml = require_module('yaml', mandatory=False)
+    if yaml:
         parser.add_argument(
             "--weight_initializer_args",
             help="Pass arguments to the initializer for the weight parameters",
@@ -360,9 +359,6 @@ def add_network_args(parser):
             help="Pass arguments to the initializer for the bias parameters",
             type=yaml.load,
             default={})
-    except ImportError:
-        # "PyYAML module not found")
-        pass
 
     return parser
 
@@ -429,6 +425,28 @@ def add_training_args(parser):
              "that these are 0-indexed, so choose some combination of 0, 1.",
         type=int_array,
         default=-1)
+
+    # elastic deformation
+    parser.add_argument(
+        "--do_elastic_deformation",
+        help="Enables elastic deformation",
+        type=str2boolean,
+        default=False)
+    parser.add_argument(
+        "--num_ctrl_points",
+        help="Number of control points for the elastic deformation",
+        type=int,
+        default=4)
+    parser.add_argument(
+        "--deformation_sigma",
+        help="The standard deviation for elastic deformation.",
+        type=float,
+        default=15)
+    parser.add_argument(
+        "--proportion_to_deform",
+        help="What fraction of samples to deform elastically.",
+        type=float,
+        default=0.5)
 
     parser.add_argument(
         "--lr",

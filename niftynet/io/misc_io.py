@@ -134,7 +134,7 @@ def do_reorientation(data_array, init_axcodes, final_axcodes):
     """
     Performs the reorientation (changing order of axes)
 
-    :param data_array: Array to reorient
+    :param data_array: 5D Array to reorient
     :param init_axcodes: Initial orientation
     :param final_axcodes: Target orientation
     :return data_reoriented: New data array in its reoriented form
@@ -164,7 +164,7 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     """
     Performs the resampling
 
-    :param data_array: Data array to resample
+    :param data_array: 5D Data array to resample
     :param pixdim_init: Initial pixel dimension
     :param pixdim_fin: Targeted pixel dimension
     :param interp_order: Interpolation order applied
@@ -244,12 +244,22 @@ def save_data_array(filefolder,
 
 def expand_to_5d(img_data):
     """
-    Expands an array up to 5d if it is not the case yet
+    Expands an array up to 5d if it is not the case yet;
+    The first three spatial dims are rearranged so that
+    1-d is always [X, 1, 1]
+    2-d is always [X, y, 1]
     :param img_data:
     :return:
     """
     while img_data.ndim < 5:
         img_data = np.expand_dims(img_data, axis=-1)
+
+    spatial_dims = img_data.shape[:3]
+    spatial_rank = np.sum([dim > 1 for dim in spatial_dims])
+    if spatial_rank == 1:
+        return np.swapaxes(img_data, 0, np.argmax(spatial_dims))
+    if spatial_rank == 2:
+        return np.swapaxes(img_data, 2, np.argmin(spatial_dims))
     return img_data
 
 
@@ -325,6 +335,7 @@ def touch_folder(model_dir):
     This function returns the absolute path of `model_dir` if exists
     otherwise try to create the folder and returns the absolute path.
     """
+    model_dir = os.path.expanduser(model_dir)
     if not os.path.exists(model_dir):
         try:
             os.makedirs(model_dir)
@@ -354,6 +365,7 @@ def resolve_module_dir(module_dir_str, create_new=False):
     except (ImportError, AttributeError, IndexError, TypeError):
         pass
 
+    module_dir_str = os.path.expanduser(module_dir_str)
     try:
         # interpret input as a file folder path string
         if os.path.isdir(module_dir_str):
@@ -409,6 +421,8 @@ def resolve_module_dir(module_dir_str, create_new=False):
 
 def to_absolute_path(input_path, model_root):
     try:
+        input_path = os.path.expanduser(input_path)
+        model_root = os.path.expanduser(model_root)
         if os.path.isabs(input_path):
             return input_path
     except TypeError:

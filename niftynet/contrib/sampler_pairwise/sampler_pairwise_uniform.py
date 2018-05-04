@@ -61,7 +61,7 @@ class PairwiseUniformSampler(Layer):
             lambda image_id: tuple(tf.py_func(
                 self.get_pairwise_inputs, [image_id],
                 [tf.int64, tf.float32, tf.float32, tf.int32, tf.int32])),
-            num_threads=4)  # supported by tf 1.4?
+            num_parallel_calls=4)  # supported by tf 1.4?
         image_dataset = image_dataset.repeat()  # num_epochs can be param
         image_dataset = image_dataset.shuffle(
             buffer_size=self.batch_size * 20)

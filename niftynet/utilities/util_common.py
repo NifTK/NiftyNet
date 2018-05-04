@@ -216,6 +216,18 @@ class CacheFunctionOutput(object):
 
 
 def look_up_operations(type_str, supported):
+    """
+    This function validates the ``type_str`` against the supported set.
+
+    if ``supported`` is a ``set``, returns ``type_str``
+    if ``supported`` is a ``dict``, return ``supported[type_str]``
+    else:
+        raise an error possibly with a guess of the closest match.
+
+    :param type_str:
+    :param supported:
+    :return:
+    """
     assert isinstance(type_str, string_types), 'unrecognised type string'
     if type_str in supported and isinstance(supported, dict):
         return supported[type_str]
