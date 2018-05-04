@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-import six
 import numpy as np
 import tensorflow as tf
 
 from niftynet.evaluation.segmentation_evaluator import SegmentationEvaluator
 from niftynet.io.misc_io import set_logger
-from tests.test_util import ParserNamespace
 
 class SegmentationEvaluatorTest(tf.test.TestCase):
     def test_basic(self):

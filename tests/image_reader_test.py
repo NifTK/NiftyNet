@@ -12,7 +12,9 @@ from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
 from niftynet.layer.pad import PadLayer
 from niftynet.utilities.util_common import ParserNamespace
+from tests.reader_modular_test import generate_2d_images, SEG_THRESHOLD
 
+generate_2d_images()
 # test multiple modalities
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
@@ -87,30 +89,10 @@ BAD_DATA = {
         pixdim=None,
         axcodes=None,
         loader=None
+        # missing interp_order
     )
 }
 BAD_TASK = ParserNamespace(image=('test',))
-
-# Test 2D Image Loader
-from PIL import Image
-
-SEG_THRESHOLD = 100
-
-# Generate 10 fake 2d grayscale and color images of size 100x100
-img_path = os.path.join(os.path.dirname(__file__), '..', 'testing_data')
-img_path = os.path.realpath(os.path.join(img_path, 'images2d'))
-if not os.path.isdir(img_path):
-    os.makedirs(img_path)
-
-# Generate fake testing data
-for i in range(10):
-    img1 = np.random.randint(0, 255, size=(100, 100, 3)).astype(np.uint8)
-    gray = np.random.randint(0, 255, size=(100, 100)).astype(np.uint8)
-    mask = ((gray > SEG_THRESHOLD) * 255).astype(np.uint8)
-    Image.fromarray(img1).save(os.path.join(img_path, 'img%d_u.png' % i))
-    Image.fromarray(gray).save(os.path.join(img_path, 'img%d_g.png' % i))
-    Image.fromarray(mask).save(os.path.join(img_path, 'img%d_m.png' % i))
-
 
 IMAGE_2D_DATA = {
     'color_images': ParserNamespace(
@@ -161,9 +143,8 @@ class ImageReaderTest(tf.test.TestCase):
         with self.assertRaisesRegexp(ValueError, ''):
             reader = ImageReader(['test'])
             reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
-        with self.assertRaisesRegexp(AssertionError, ''):
-            reader = ImageReader(None)
-            # reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
+        reader = ImageReader(None)
+        # reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
 
         reader = ImageReader(['image'])
         reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
@@ -181,10 +162,11 @@ class ImageReaderTest(tf.test.TestCase):
         reader = ImageReader(['image'])
         reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK, single_mod_list)
         self.assertEqual(len(reader.output_list), 4)
+        self.assertDictEqual(reader.spatial_ranks, {'image': 3})
         self.assertDictEqual(reader.shapes,
                              {'image': (256, 168, 256, 1, 1)})
         self.assertDictEqual(reader.tf_dtypes, {'image': tf.float32})
-        self.assertEqual(reader.names, ['image'])
+        self.assertEqual(reader.names, ('image',))
         self.assertDictEqual(reader.input_sources,
                              {'image': ('lesion',)})
         self.assertEqual(reader.get_subject_id(1)[:4], 'Fin_')
@@ -196,10 +178,11 @@ class ImageReaderTest(tf.test.TestCase):
         reader = ImageReader(['image'])
         reader.initialise(EXISTING_DATA, SINGLE_MOD_TASK, existing_list)
         self.assertEqual(len(reader.output_list), 4)
+        self.assertDictEqual(reader.spatial_ranks, {'image': 3})
         self.assertDictEqual(reader.shapes,
                              {'image': (256, 168, 256, 1, 1)})
         self.assertDictEqual(reader.tf_dtypes, {'image': tf.float32})
-        self.assertEqual(reader.names, ['image'])
+        self.assertEqual(reader.names, ('image',))
         self.assertDictEqual(reader.input_sources,
                              {'image': ('lesion',)})
         self.assertEqual(reader.get_subject_id(1)[:4], 'Fin_')
@@ -257,42 +240,42 @@ class ImageReaderTest(tf.test.TestCase):
         unique_data = np.unique(data['label'])
         expected_v1 = np.array(
             [0., 1., 2., 3., 4., 5., 6., 7., 8.,
-             9., 10., 11., 12., 13., 14., 15., 16., 17.,
-             18., 19., 20., 21., 22., 23., 24., 25., 26., 27.,
-             28., 29., 30., 31., 32., 33., 34., 35., 36.,
-             37., 38., 39., 40., 41., 42., 43., 44., 45.,
-             46., 47., 48., 49., 50., 51., 52., 53., 54.,
-             55., 56., 57., 58., 59., 60., 61., 62., 63.,
-             64., 65., 66., 67., 68., 69., 70., 71., 72.,
-             73., 74., 75., 76., 77., 78., 79., 80., 81.,
-             82., 83., 84., 85., 86., 87., 88., 89., 90.,
-             91., 92., 93., 94., 95., 96., 97., 98., 99.,
-             100., 101., 102., 103., 104., 105., 106., 107., 108.,
-             109., 110., 111., 112., 113., 114., 115., 116., 117.,
-             118., 119., 120., 121., 122., 123., 124., 125., 126.,
-             127., 128., 129., 130., 131., 132., 133., 134., 135.,
-             136., 137., 138., 139., 140., 141., 142., 143., 144.,
-             145., 146., 147., 148., 149., 150., 151., 152., 153.,
-             154., 155., 156., 157.], dtype=np.float32)
+                9., 10., 11., 12., 13., 14., 15., 16., 17.,
+                18., 19., 20., 21., 22., 23., 24., 25., 26., 27.,
+                28., 29., 30., 31., 32., 33., 34., 35., 36.,
+                37., 38., 39., 40., 41., 42., 43., 44., 45.,
+                46., 47., 48., 49., 50., 51., 52., 53., 54.,
+                55., 56., 57., 58., 59., 60., 61., 62., 63.,
+                64., 65., 66., 67., 68., 69., 70., 71., 72.,
+                73., 74., 75., 76., 77., 78., 79., 80., 81.,
+                82., 83., 84., 85., 86., 87., 88., 89., 90.,
+                91., 92., 93., 94., 95., 96., 97., 98., 99.,
+                100., 101., 102., 103., 104., 105., 106., 107., 108.,
+                109., 110., 111., 112., 113., 114., 115., 116., 117.,
+                118., 119., 120., 121., 122., 123., 124., 125., 126.,
+                127., 128., 129., 130., 131., 132., 133., 134., 135.,
+                136., 137., 138., 139., 140., 141., 142., 143., 144.,
+                145., 146., 147., 148., 149., 150., 151., 152., 153.,
+                154., 155., 156., 157.], dtype=np.float32)
         expected_v2 = np.array(
             [0., 1., 2., 3., 4., 5., 6., 7., 8.,
-             9., 10., 11., 12., 13., 14., 15., 16., 17.,
-             18., 20., 21., 22., 23., 24., 25., 26., 27.,
-             28., 29., 30., 31., 32., 33., 34., 35., 36.,
-             37., 38., 39., 40., 41., 42., 43., 44., 45.,
-             46., 47., 48., 49., 50., 51., 52., 53., 54.,
-             55., 56., 57., 58., 59., 60., 61., 62., 63.,
-             64., 65., 66., 67., 68., 69., 70., 71., 72.,
-             73., 74., 75., 76., 77., 78., 79., 80., 81.,
-             82., 83., 84., 85., 86., 87., 88., 89., 90.,
-             91., 92., 93., 94., 95., 96., 97., 98., 99.,
-             100., 101., 102., 103., 104., 105., 106., 107., 108.,
-             109., 110., 111., 112., 113., 114., 115., 116., 117.,
-             118., 119., 120., 121., 122., 123., 124., 125., 126.,
-             127., 128., 129., 130., 131., 132., 133., 134., 135.,
-             136., 137., 138., 139., 140., 141., 142., 143., 144.,
-             145., 146., 147., 148., 149., 150., 151., 152., 153.,
-             154., 155., 156., 157.], dtype=np.float32)
+                9., 10., 11., 12., 13., 14., 15., 16., 17.,
+                18., 20., 21., 22., 23., 24., 25., 26., 27.,
+                28., 29., 30., 31., 32., 33., 34., 35., 36.,
+                37., 38., 39., 40., 41., 42., 43., 44., 45.,
+                46., 47., 48., 49., 50., 51., 52., 53., 54.,
+                55., 56., 57., 58., 59., 60., 61., 62., 63.,
+                64., 65., 66., 67., 68., 69., 70., 71., 72.,
+                73., 74., 75., 76., 77., 78., 79., 80., 81.,
+                82., 83., 84., 85., 86., 87., 88., 89., 90.,
+                91., 92., 93., 94., 95., 96., 97., 98., 99.,
+                100., 101., 102., 103., 104., 105., 106., 107., 108.,
+                109., 110., 111., 112., 113., 114., 115., 116., 117.,
+                118., 119., 120., 121., 122., 123., 124., 125., 126.,
+                127., 128., 129., 130., 131., 132., 133., 134., 135.,
+                136., 137., 138., 139., 140., 141., 142., 143., 144.,
+                145., 146., 147., 148., 149., 150., 151., 152., 153.,
+                154., 155., 156., 157.], dtype=np.float32)
         compatible_assert = \
             np.all(unique_data == expected_v1) or \
             np.all(unique_data == expected_v2)
@@ -300,9 +283,8 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertAllClose(data['label'].shape, (103, 74, 93, 1, 1))
 
     def test_errors(self):
-        with self.assertRaisesRegexp(AttributeError, ''):
-            reader = ImageReader(['image'])
-            reader.initialise(BAD_DATA, SINGLE_MOD_TASK, bad_data_list)
+        reader = ImageReader(['image'])
+        reader.initialise(BAD_DATA, SINGLE_MOD_TASK, bad_data_list)
         with self.assertRaisesRegexp(ValueError, ''):
             reader = ImageReader(['image'])
             reader.initialise(SINGLE_MOD_DATA, BAD_TASK, single_mod_list)
@@ -387,7 +369,6 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertEqual(gray_order['image'], (1,))
         self.assertEqual(mask_order['image'], (0,))
         self.assertAllEqual((gray_data > SEG_THRESHOLD) * 255, mask_data)
-
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
 
+import argparse
 import numpy as np
 import pandas
 import tensorflow as tf
@@ -13,15 +14,20 @@ from niftynet.io.image_sets_partitioner import COLUMN_UNIQ_ID
 from niftynet.io.image_type import ImageFactory
 from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
 from niftynet.utilities.user_parameters_helper import make_input_tuple
-from niftynet.utilities.util_common import print_progress_bar
+from niftynet.utilities.util_common import print_progress_bar, ParserNamespace
+from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
+from niftynet.utilities.util_common import look_up_operations
 
 # NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
-
-
 NP_TF_DTYPES = {'i': tf.float32,
                 'u': tf.float32,
                 'b': tf.float32,
                 'f': tf.float32}
+DEFAULT_INTERP_ORDER = 1
+SUPPORTED_DATA_SPEC = {
+    'csv_file', 'path_to_search',
+    'filename_contains', 'filename_not_contains',
+    'interp_order', 'loader', 'pixdim', 'axcodes', 'spatial_window_size'}
 
 
 def infer_tf_dtypes(image_array):
@@ -60,14 +66,16 @@ class ImageReader(Layer):
 
     """
 
-    def __init__(self, names):
+    def __init__(self, names=None):
         # list of file names
         self._file_list = None
         self._input_sources = None
+        self._spatial_ranks = None
         self._shapes = None
         self._dtypes = None
         self._names = None
-        self.names = names
+        if names:
+            self.names = names
 
         # list of image objects
         self.output_list = None
@@ -76,7 +84,7 @@ class ImageReader(Layer):
         self.preprocessors = []
         super(ImageReader, self).__init__(name='image_reader')
 
-    def initialise(self, data_param, task_param, file_list):
+    def initialise(self, data_param, task_param=None, file_list=None):
         """
         ``task_param`` specifies how to combine user input modalities.
         e.g., for multimodal segmentation 'image' corresponds to multiple
@@ -84,26 +92,46 @@ class ImageReader(Layer):
 
         This function converts elements of ``file_list`` into
         dictionaries of image objects, and save them to ``self.output_list``.
+
+
+        :param data_param:
+        :param task_param:
+        :param file_list:
+        :return: the initialised instance
         """
+        data_param = _validate_input_param(data_param)
+
+        if not task_param:
+            task_param = {mod: (mod,) for mod in list(data_param)}
+        try:
+            if not isinstance(task_param, dict):
+                task_param = vars(task_param)
+        except ValueError:
+            tf.logging.fatal(
+                "To concatenate multiple input data arrays,\n"
+                "task_param should be a dictionary in the form:\n"
+                "{'new_modality_name': ['modality_1', 'modality_2',...]}.")
+            raise
+        if file_list is None:
+            # defaulting to all files detected by the input specification
+            file_list = ImageSetsPartitioner().initialise(data_param).all_files
         if not self.names:
-            tf.logging.fatal('Please specify data input keywords, this should '
-                             'be a subset of SUPPORTED_INPUT provided '
-                             'in application file.')
-            raise ValueError
-        filtered_names = [name for name in self.names
-                          if vars(task_param).get(name, None)]
-        if not filtered_names:
+            # defaulting to load all sections defined in the task_param
+            self.names = list(task_param)
+        valid_names = [name for name in self.names
+                       if task_param.get(name, None)]
+        if not valid_names:
             tf.logging.fatal("Reader requires task input keywords %s, but "
                              "not exist in the config file.\n"
                              "Available task keywords: %s",
-                             filtered_names, list(vars(task_param)))
+                             self.names, list(task_param))
             raise ValueError
+        self.names = valid_names
 
-        self._names = filtered_names
-        self._input_sources = dict((name, vars(task_param).get(name))
+        self._input_sources = dict((name, task_param.get(name))
                                    for name in self.names)
         required_sections = \
-            sum([list(vars(task_param).get(name)) for name in self.names], [])
+            sum([list(task_param.get(name)) for name in self.names], [])
 
         for required in required_sections:
             try:
@@ -131,8 +159,10 @@ class ImageReader(Layer):
             file_list, self._input_sources, data_param)
         for name in self.names:
             tf.logging.info(
-                'Image reader: loading [%s] from %s (%d)',
-                name, self.input_sources[name], len(self.output_list))
+                'Image reader: loading %d subjects '
+                'from sections %s as input [%s]',
+                len(self.output_list), self.input_sources[name], name)
+        return self
 
     def prepare_preprocessors(self):
         """
@@ -185,7 +215,8 @@ class ImageReader(Layer):
         image_data_dict = \
             {field: image.get_data() for (field, image) in image_dict.items()}
         interp_order_dict = \
-            {field: image.interp_order for (field, image) in image_dict.items()}
+            {field: image.interp_order for (
+                field, image) in image_dict.items()}
 
         preprocessors = [deepcopy(layer) for layer in self.preprocessors]
         # dictionary of masks is cached
@@ -195,12 +226,32 @@ class ImageReader(Layer):
             if layer is None:
                 continue
             if isinstance(layer, RandomisedLayer):
-                layer.randomise()
+                if "random_elastic_deformation" not in layer.name:
+                    layer.randomise()
+                else:
+                    layer.randomise(image_data_dict)
+
                 image_data_dict = layer(image_data_dict, interp_order_dict)
-            else:
+            elif isinstance(layer, Layer):
                 image_data_dict, mask = layer(image_data_dict, mask)
                 # print('%s, %.3f sec'%(layer, -local_time + time.time()))
         return idx, image_data_dict, interp_order_dict
+
+    @property
+    def spatial_ranks(self):
+        """
+        Number of spatial dimensions of the images.
+
+        :return: integers of spatial rank
+        """
+        if not self.output_list:
+            tf.logging.fatal("Please initialise the reader first.")
+            raise RuntimeError
+        if not self._spatial_ranks:
+            first_image = self.output_list[0]
+            self._spatial_ranks = {field: first_image[field].spatial_rank
+                                   for field in self.names}
+        return self._spatial_ranks
 
     @property
     def shapes(self):
@@ -311,7 +362,8 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
         # combine fieldnames and volumes as a dictionary
         _dict = {}
         for field, modalities in mod_dict.items():
-            _dict[field] = _create_image(file_list, idx, modalities, data_param)
+            _dict[field] = _create_image(
+                file_list, idx, modalities, data_param)
 
         # skipping the subject if there're missing image components
         if _dict and None not in list(_dict.values()):
@@ -349,11 +401,21 @@ def _create_image(file_list, idx, modalities, data_param):
             # this should be handled by `ImageFactory.create_instance`
             # ('testT1.nii.gz', 'testT2.nii.gz', nan, 'testFlair.nii.gz')
             return None
-        interp_order = tuple(data_param[mod].interp_order
-                             for mod in modalities)
-        pixdim = tuple(data_param[mod].pixdim for mod in modalities)
-        axcodes = tuple(data_param[mod].axcodes for mod in modalities)
-        loader = tuple(data_param[mod].loader for mod in modalities)
+
+        interp_order, pixdim, axcodes, loader = [], [], [], []
+        for mod in modalities:
+            mod_spec = ParserNamespace(**data_param[mod]) \
+                if isinstance(data_param[mod], dict) else data_param[mod]
+            interp_order.append(
+                mod_spec.interp_order
+                if hasattr(mod_spec, 'interp_order') else DEFAULT_INTERP_ORDER)
+            pixdim.append(
+                mod_spec.pixdim if hasattr(mod_spec, 'pixdim') else None)
+            axcodes.append(
+                mod_spec.axcodes if hasattr(mod_spec, 'axcodes') else None)
+            loader.append(
+                mod_spec.loader if hasattr(mod_spec, 'loader') else None)
+
     except KeyError:
         tf.logging.fatal(
             "Specified modality names %s "
@@ -373,3 +435,33 @@ def _create_image(file_list, idx, modalities, data_param):
                         'output_axcodes': axcodes,
                         'loader': loader}
     return ImageFactory.create_instance(**image_properties)
+
+
+def _validate_input_param(data_param):
+    """
+    Validate the user input ``data_param``
+    raise an error if it's invalid.
+
+    :param data_param:
+    :return: input data specifications as a nested dictionary
+    """
+    error_msg = 'Unknown ``data_param`` type. ' \
+                'It should be a nested dictionary: '\
+                '{"modality_name": {"input_property": value}}'\
+                'or a dictionary of: {"modality_name": '\
+                'niftynet.utilities.util_common.ParserNamespace}'
+    if isinstance(data_param, ParserNamespace):
+        data_param = vars(data_param)
+    if not isinstance(data_param, dict):
+        raise ValueError(error_msg)
+    for mod in data_param:
+        mod_param = data_param[mod]
+        if isinstance(mod_param, (ParserNamespace, argparse.Namespace)):
+            dict_param = vars(mod_param)
+        elif isinstance(mod_param, dict):
+            dict_param = mod_param
+        else:
+            raise ValueError(error_msg)
+        for data_key in dict_param:
+            look_up_operations(data_key, SUPPORTED_DATA_SPEC)
+    return data_param
