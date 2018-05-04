@@ -46,7 +46,7 @@ class KeywordsMatching(object):
                 value = value.split(',')
                 for path_i in value:
                     path_i = path_i.strip()
-                    path_orig = os.path.abspath(path_i)
+                    path_orig = os.path.abspath(os.path.expanduser(path_i))
                     if os.path.exists(path_orig):
                         path.append(path_orig)
                         continue

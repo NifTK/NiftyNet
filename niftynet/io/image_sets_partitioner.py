@@ -247,7 +247,7 @@ class ImageSetsPartitioner(object):
         #########################
         temp_csv_file = None
         try:
-            csv_file = mod_spec.csv_file
+            csv_file = os.path.expanduser(mod_spec.csv_file)
             if not os.path.isfile(csv_file):
                 # writing to the same folder as data_split_file
                 default_csv_file = os.path.join(
