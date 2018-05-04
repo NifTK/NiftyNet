@@ -65,7 +65,7 @@ class PairwiseResizeSampler(Layer):
             lambda image_id: tuple(tf.py_func(
                 self.get_pairwise_inputs, [image_id],
                 [tf.int32, tf.float32, tf.float32, tf.int32, tf.int32])),
-            num_threads=4)  # supported by tf 1.4?
+            num_parallel_calls=4)  # supported by tf 1.4?
         # todo: sequential and no repeatition
         image_dataset = image_dataset.batch(self.batch_size)
         self.iterator = image_dataset.make_initializable_iterator()
