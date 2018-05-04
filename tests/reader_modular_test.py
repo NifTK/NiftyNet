@@ -101,7 +101,7 @@ class Read2DTest(tf.test.TestCase):
         idx, data, interp = reader()
 
         # test output
-        self.assertEqual(list(data), ['mr'])
+        self.assertTrue('mr' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,)})
         self.assertEqual(data['mr'].shape, (100, 100, 1, 1, 1))
@@ -114,7 +114,7 @@ class Read2DTest(tf.test.TestCase):
         idx, data, interp = reader()
 
         # test output
-        self.assertEqual(list(data), ['ct'])
+        self.assertTrue('ct' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'ct': (1,)})
         self.assertEqual(data['ct'].shape, (100, 100, 1, 1, 1))
@@ -127,7 +127,7 @@ class Read2DTest(tf.test.TestCase):
         idx, data, interp = reader()
 
         # test output
-        self.assertEqual(list(data), ['ct'])
+        self.assertTrue('ct' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'ct': (1,)})
         self.assertEqual(data['ct'].shape, (100, 100, 1, 1, 1))
@@ -144,7 +144,7 @@ class Read2DTest(tf.test.TestCase):
         idx, data, interp = reader()
 
         # test output
-        self.assertEqual(list(data), ['mr'])
+        self.assertTrue('mr' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,)})
         self.assertEqual(data['mr'].shape, (100, 100, 1, 1, 1))
@@ -160,7 +160,7 @@ class Read2DTest(tf.test.TestCase):
         idx, data, interp = reader()
 
         # test output
-        self.assertEqual(list(data), ['mr'])
+        self.assertTrue('mr' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,)})
         self.assertEqual(data['mr'].shape, (100, 100, 1, 1, 1))
@@ -189,7 +189,7 @@ class Read2DTest(tf.test.TestCase):
 
         # test output
         idx, data, interp = reader()
-        self.assertEqual(list(data), ['ct'])
+        self.assertTrue('ct' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'ct': (1, 1, 1)})
         self.assertEqual(data['ct'].shape, (100, 100, 1, 1, 3))
@@ -211,7 +211,7 @@ class Read2D_1DTest(tf.test.TestCase):
         idx, data, interp = reader()
 
         # test output
-        self.assertEqual(list(data), ['mr'])
+        self.assertTrue('mr' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,)})
         self.assertEqual(data['mr'].shape, (120, 160, 1, 1, 1))
@@ -231,7 +231,7 @@ class Read2D_1DTest(tf.test.TestCase):
 
         # test output
         idx, data, interp = reader()
-        self.assertEqual(list(data), ['ct'])
+        self.assertTrue('ct' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'ct': (1, 1, 1)})
         self.assertEqual(data['ct'].shape, (120, 160, 1, 1, 3))
@@ -252,7 +252,7 @@ class Read2D_1D_x1y_Test(tf.test.TestCase):
         idx, data, interp = reader()
 
         # test output
-        self.assertEqual(list(data), ['mr'])
+        self.assertTrue('mr' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,)})
         self.assertEqual(data['mr'].shape, (100, 100, 1, 1, 1))
@@ -272,7 +272,7 @@ class Read2D_1D_x1y_Test(tf.test.TestCase):
 
         # test output
         idx, data, interp = reader()
-        self.assertEqual(list(data), ['ct'])
+        self.assertTrue('ct' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'ct': (1, 1, 1)})
         self.assertEqual(data['ct'].shape, (100, 100, 1, 1, 3))
@@ -294,7 +294,7 @@ class Read2D_colorTest(tf.test.TestCase):
         idx, data, interp = reader()
 
         # test output
-        self.assertEqual(list(data), ['mr'])
+        self.assertTrue('mr' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,)})
         self.assertEqual(data['mr'].shape, (100, 100, 1, 1, 3))
@@ -315,7 +315,7 @@ class Read2D_colorTest(tf.test.TestCase):
 
         # test output
         idx, data, interp = reader()
-        self.assertEqual(list(data), ['ct'])
+        self.assertTrue('ct' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'ct': (1, 1, 1)})
         self.assertEqual(data['ct'].shape, (100, 100, 1, 1, 9))
@@ -338,7 +338,7 @@ class Read3DTest(tf.test.TestCase):
         idx, data, interp = reader()
 
         # test output
-        self.assertEqual(list(data), ['mr'])
+        self.assertTrue('mr' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,)})
         # allows rounding error spatially
@@ -367,7 +367,8 @@ class Read3DTest(tf.test.TestCase):
         idx, data, interp = reader()
 
         # test output
-        self.assertEqual(list(data), ['mr', 'ct'])
+        self.assertTrue('mr' in data)
+        self.assertTrue('ct' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,), 'ct': (1,)})
         # allows rounding error spatially
@@ -399,7 +400,7 @@ class Read3DTest(tf.test.TestCase):
         idx, data, interp = reader()
 
         # test output
-        self.assertEqual(list(data), ['image'])
+        self.assertTrue('image' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'image': (1, 1)})
         # allows rounding error spatially
@@ -424,7 +425,7 @@ class Read3D_1_1_Test(tf.test.TestCase):
         idx, data, interp = reader()
 
         # test output
-        self.assertEqual(list(data), ['mr'])
+        self.assertTrue('mr' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,)})
         # allows rounding error spatially
@@ -453,7 +454,8 @@ class Read3D_1_1_Test(tf.test.TestCase):
         idx, data, interp = reader()
 
         # test output
-        self.assertEqual(list(data), ['mr', 'ct'])
+        self.assertTrue('mr' in data)
+        self.assertTrue('ct' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,), 'ct': (1,)})
         # allows rounding error spatially
@@ -485,7 +487,7 @@ class Read3D_1_1_Test(tf.test.TestCase):
         idx, data, interp = reader()
 
         # test output
-        self.assertEqual(list(data), ['image'])
+        self.assertTrue('image' in data)
         self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'image': (1, 1)})
         # allows rounding error spatially
