@@ -1,5 +1,4 @@
 import tensorflow as tf
-import os
 
 from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_factory import \
@@ -28,6 +27,7 @@ from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 from niftynet.evaluation.segmentation_evaluator import SegmentationEvaluator
+from niftynet.layer.rand_elastic_deform import RandomElasticDeformationLayer
 
 SUPPORTED_INPUT = set(['image', 'label', 'weight', 'sampler', 'inferred'])
 
@@ -158,17 +158,31 @@ class SegmentationApplication(BaseApplication):
                         self.action_param.rotation_angle_z)
                 augmentation_layers.append(rotation_layer)
 
+            # add deformation layer
+            if self.action_param.do_elastic_deformation:
+                spatial_rank = list(self.readers[0].spatial_ranks.values())[0]
+                augmentation_layers.append(RandomElasticDeformationLayer(
+                    spatial_rank=spatial_rank,
+                    num_controlpoints=self.action_param.num_ctrl_points,
+                    std_deformation_sigma=self.action_param.deformation_sigma,
+                    proportion_to_augment=self.action_param.proportion_to_deform))
+
         volume_padding_layer = []
         if self.net_param.volume_padding_size:
             volume_padding_layer.append(PadLayer(
                 image_name=SUPPORTED_INPUT,
                 border=self.net_param.volume_padding_size))
 
-        for reader in self.readers:
+        # only add augmentation to first reader (not validation reader)
+        self.readers[0].add_preprocessing_layers(
+            volume_padding_layer +
+            normalisation_layers +
+            augmentation_layers)
+
+        for reader in self.readers[1:]:
             reader.add_preprocessing_layers(
                 volume_padding_layer +
-                normalisation_layers +
-                augmentation_layers)
+                normalisation_layers)
 
     def initialise_uniform_sampler(self):
         self.sampler = [[UniformSampler(
@@ -291,6 +305,7 @@ class SegmentationApplication(BaseApplication):
                                     lambda: switch_sampler(for_training=False))
             else:
                 data_dict = switch_sampler(for_training=True)
+
             image = tf.cast(data_dict['image'], tf.float32)
             net_out = self.net(image, is_training=self.is_training)
 

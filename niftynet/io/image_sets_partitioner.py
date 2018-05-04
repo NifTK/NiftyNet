@@ -19,7 +19,7 @@ import tensorflow as tf  # to use the system level logging
 from niftynet.utilities.decorators import singleton
 from niftynet.utilities.filename_matching import KeywordsMatching
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
-from niftynet.utilities.util_common import look_up_operations
+from niftynet.utilities.util_common import look_up_operations, ParserNamespace
 from niftynet.utilities.util_csv import match_and_write_filenames_to_csv
 from niftynet.utilities.util_csv import write_csv
 
@@ -221,8 +221,8 @@ class ImageSetsPartitioner(object):
     def grep_files_by_data_section(self, modality_name):
         """
         list all files by a given input data section::
-            if the ``csv_file`` property of the section corresponds to a file,
-                read the list from the file;
+            if the ``csv_file`` property of ``data_param[modality_name]``
+            corresponds to a file, read the list from the file;
             otherwise
                 write the list to ``csv_file``.
 
@@ -237,23 +237,46 @@ class ImageSetsPartitioner(object):
 
         # input data section must have a ``csv_file`` section for loading
         # or writing filename lists
+        if isinstance(self.data_param[modality_name], dict):
+            mod_spec = ParserNamespace(**self.data_param[modality_name])
+        else:
+            mod_spec = self.data_param[modality_name]
+
+        #########################
+        # guess the csv_file path
+        #########################
+        temp_csv_file = None
         try:
-            csv_file = self.data_param[modality_name].csv_file
+            csv_file = mod_spec.csv_file
             if not os.path.isfile(csv_file):
                 # writing to the same folder as data_split_file
-                csv_file = os.path.join(os.path.dirname(self.data_split_file),
-                                        '{}.csv'.format(modality_name))
-
+                default_csv_file = os.path.join(
+                    os.path.dirname(self.data_split_file),
+                    '{}.csv'.format(modality_name))
+                tf.logging.info('`csv_file = %s` not found, '
+                                'writing to "%s" instead.',
+                                csv_file, default_csv_file)
+                csv_file = default_csv_file
+                if os.path.isfile(csv_file):
+                    tf.logging.info('Overwriting existing: "%s".', csv_file)
+            csv_file = os.path.abspath(csv_file)
         except (AttributeError, TypeError):
-            tf.logging.fatal('Missing `csv_file` field in the config file, '
-                             'unknown configuration format.')
-            raise
+            tf.logging.debug('`csv_file` not specified, writing the list of '
+                             'filenames to a temporary file.')
+            import tempfile
+            temp_csv_file = os.path.join(
+                tempfile.mkdtemp(), '{}.csv'.format(modality_name))
+            csv_file = temp_csv_file
 
-        if hasattr(self.data_param[modality_name], 'path_to_search') and \
-                self.data_param[modality_name].path_to_search:
-            tf.logging.info('[%s] search file folders, writing csv file %s',
-                            modality_name, csv_file)
-            section_properties = self.data_param[modality_name].__dict__.items()
+        #############################################
+        # writing csv file if path_to_search specified
+        ##############################################
+        if hasattr(mod_spec, 'path_to_search') and mod_spec.path_to_search:
+            if not temp_csv_file:
+                tf.logging.info(
+                    '[%s] search file folders, writing csv file %s',
+                    modality_name, csv_file)
+            section_properties = mod_spec.__dict__.items()
             # grep files by section properties and write csv
             try:
                 matcher = KeywordsMatching.from_tuple(
@@ -276,6 +299,9 @@ class ImageSetsPartitioner(object):
             tf.logging.fatal(
                 '[%s] csv file %s not found.', modality_name, csv_file)
             raise IOError
+        ###############################
+        # loading the file as dataframe
+        ###############################
         try:
             csv_list = pandas.read_csv(
                 csv_file,
@@ -286,6 +312,10 @@ class ImageSetsPartitioner(object):
         except Exception as csv_error:
             tf.logging.fatal(repr(csv_error))
             raise
+        finally:
+            if temp_csv_file:
+                os.remove(temp_csv_file)
+                os.rmdir(os.path.dirname(temp_csv_file))
         return csv_list
 
     # pylint: disable=broad-except

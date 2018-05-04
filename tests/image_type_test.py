@@ -31,6 +31,7 @@ class ImageTypeTest(tf.test.TestCase):
         self.assertIsInstance(image, SpatialImage2D)
         output = image.get_data()
         self.assertEqual(np.dtype(np.float32), image.dtype[0])
+        self.assertEqual(2, image.spatial_rank)
         self.assertAllClose(np.array([128, 128, 1, 1, 1]), output.shape)
         self.assertAllClose(np.array([128, 128, 1, 1, 1]), image.shape)
 
@@ -43,6 +44,7 @@ class ImageTypeTest(tf.test.TestCase):
             output_axcodes=None,
             loader=None)
         self.assertIsInstance(image, SpatialImage3D)
+        self.assertEqual(3, image.spatial_rank)
         output = image.get_data()
         self.assertAllClose(np.array([256, 168, 256, 1, 1]), output.shape)
         self.assertAllClose(np.array([256, 168, 256, 1, 1]), image.shape)
@@ -56,6 +58,7 @@ class ImageTypeTest(tf.test.TestCase):
             output_axcodes='ALS',
             loader=None)
         self.assertIsInstance(image, SpatialImage3D)
+        self.assertEqual(3, image.spatial_rank)
         output = image.get_data()
         self.assertAllClose(np.array([168, 256, 256, 1, 1]), output.shape)
         self.assertAllClose(np.array([168, 256, 256, 1, 1]), image.shape)
@@ -69,6 +72,7 @@ class ImageTypeTest(tf.test.TestCase):
             output_axcodes=(None,),
             loader=None)
         self.assertIsInstance(image, SpatialImage3D)
+        self.assertEqual(3, image.spatial_rank)
         output = image.get_data()
         self.assertAllClose(np.array([71, 278, 31, 1, 1]), output.shape)
         self.assertAllClose(np.array([71, 278, 31, 1, 1]), image.shape)
@@ -95,6 +99,7 @@ class ImageTypeTest(tf.test.TestCase):
             output_axcodes=(None, None),
             loader=(None, None))
         self.assertIsInstance(image, SpatialImage4D)
+        self.assertEqual(3, image.spatial_rank)
         output = image.get_data()
         self.assertAllClose(np.array([256, 168, 256, 1, 2]), output.shape)
         self.assertAllClose(np.array([256, 168, 256, 1, 2]), image.shape)
@@ -117,6 +122,7 @@ class ImageTypeTest(tf.test.TestCase):
             output_axcodes=(None, None),
             loader=(None, None))
         self.assertIsInstance(image, SpatialImage4D)
+        self.assertEqual(3, image.spatial_rank)
         output = image.get_data()
         self.assertAllClose(np.array([96, 278, 50, 1, 2]), output.shape)
         self.assertAllClose(np.array([96, 278, 50, 1, 2]), image.shape)
@@ -174,6 +180,7 @@ class ImageTypeTest(tf.test.TestCase):
             output_axcodes=None,
             loader=None)
         self.assertIsInstance(image, SpatialImage5D)
+        self.assertEqual(3, image.spatial_rank)
         output = image.get_data()
         self.assertAllClose(np.array([208, 256, 256, 1, 1]), output.shape)
         self.assertAllClose(np.array([208, 256, 256, 1, 1]), image.shape)

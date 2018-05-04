@@ -1,9 +1,8 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
-from os import listdir
-from os.path import isfile, join
+import os
 import tensorflow as tf
-from niftynet.layer.crop import CropLayer
 import niftynet.io.image_loader as image_loader
 
 CASE_NIBABEL_3D = 'testing_data/FLAIR_1023.nii.gz'
@@ -32,11 +31,13 @@ class ImageLoaderTest(tf.test.TestCase):
 
     def test_all_data(self):
         folder = 'testing_data'
-        all_files = [join(folder, f)
-            for f in listdir(folder) if isfile(join(folder, f))]
+        all_files = [
+            os.path.join(folder, f)
+            for f in os.listdir(folder)
+            if os.path.isfile(os.path.join(folder, f))]
 
         for f in all_files:
-            if f.endswith(('nii.gz')):
+            if f.endswith('nii.gz'):
                 loaded_shape = image_loader.load_image_from_file(f).get_data().shape
                 print(loaded_shape)
                 self.assertGreaterEqual(5, len(loaded_shape))
