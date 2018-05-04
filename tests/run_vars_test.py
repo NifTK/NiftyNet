@@ -65,19 +65,14 @@ class DriverLoopTest(tf.test.TestCase):
 
         ITER_FINISHED.connect(get_iter_msgs)
 
-        app_driver.initial_iter = 0
-        app_driver.final_iter = 3
-        app_driver.validation_every_n = 2
-        app_driver.validation_max_iter = 1
-
         with self.test_session(graph=test_graph) as sess:
             #sess.run(global_vars_init_or_restore())
 
             iterations = IterationMessageGenerator(
-                app_driver.initial_iter,
-                app_driver.final_iter,
-                app_driver.validation_every_n,
-                app_driver.validation_max_iter,
+                initial_iter=0,
+                final_iter=3,
+                validation_every_n=2,
+                validation_max_iter=1,
                 is_training_action=True)
             app_driver.loop(app_driver.app, iterations())
 
