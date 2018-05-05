@@ -334,7 +334,7 @@ class ImageReader(Layer):
         try:
             return self._file_list.iloc[image_index][COLUMN_UNIQ_ID]
         except KeyError:
-            tf.logging.warning('Unknown subject id in reader table.')
+            tf.logging.warning('Unknown subject id in reader file list.')
             raise
 
     def get_image_index(self, subject_id):
@@ -344,6 +344,17 @@ class ImageReader(Layer):
         :return: an int with the file list index
         """
         return np.flatnonzero(self._file_list['subject_id'] == subject_id)[0]
+
+    def get_subject(self, image_index):
+        """
+        Given an integer id returns the corresponding row of the file list.
+        returns: a dictionary of the row
+        """
+        try:
+            return self._file_list.iloc[image_index].to_dict()
+        except (KeyError, AttributeError):
+            tf.logging.warning('Unknown subject id in reader file list.')
+            raise
 
 
 def _filename_to_image_list(file_list, mod_dict, data_param):

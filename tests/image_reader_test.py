@@ -170,6 +170,7 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertDictEqual(reader.input_sources,
                              {'image': ('lesion',)})
         self.assertEqual(reader.get_subject_id(1)[:4], 'Fin_')
+        self.assertTrue(isinstance(reader.get_subject(1), dict))
 
     def test_existing_csv(self):
         reader_for_csv = ImageReader(['image'])
@@ -186,6 +187,7 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertDictEqual(reader.input_sources,
                              {'image': ('lesion',)})
         self.assertEqual(reader.get_subject_id(1)[:4], 'Fin_')
+        self.assertTrue(isinstance(reader.get_subject(1), dict))
 
     def test_operations(self):
         reader = ImageReader(['image'])
