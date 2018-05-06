@@ -214,7 +214,7 @@ def generalised_dice_loss(prediction,
     generalised_dice_numerator = \
         2 * tf.reduce_sum(tf.multiply(weights, intersect))
     generalised_dice_denominator = \
-        tf.reduce_sum(tf.multiply(weights, seg_vol + ref_vol))
+        tf.reduce_sum(tf.multiply(weights, seg_vol + ref_vol)) + 1e-6
     generalised_dice_score = \
         generalised_dice_numerator / generalised_dice_denominator
     return 1 - generalised_dice_score
