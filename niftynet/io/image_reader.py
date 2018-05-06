@@ -99,7 +99,7 @@ class ImageReader(Layer):
         :param file_list:
         :return: the initialised instance
         """
-        data_param = _validate_input_param(data_param)
+        data_param = param_to_dict(data_param)
 
         if not task_param:
             task_param = {mod: (mod,) for mod in list(data_param)}
@@ -415,17 +415,13 @@ def _create_image(file_list, idx, modalities, data_param):
 
         interp_order, pixdim, axcodes, loader = [], [], [], []
         for mod in modalities:
-            mod_spec = ParserNamespace(**data_param[mod]) \
-                if isinstance(data_param[mod], dict) else data_param[mod]
-            interp_order.append(
-                mod_spec.interp_order
-                if hasattr(mod_spec, 'interp_order') else DEFAULT_INTERP_ORDER)
-            pixdim.append(
-                mod_spec.pixdim if hasattr(mod_spec, 'pixdim') else None)
-            axcodes.append(
-                mod_spec.axcodes if hasattr(mod_spec, 'axcodes') else None)
-            loader.append(
-                mod_spec.loader if hasattr(mod_spec, 'loader') else None)
+            mod_spec = data_param[mod] \
+                if isinstance(data_param[mod], dict) else vars(data_param[mod])
+            interp_order.append(mod_spec.get('interp_order',
+                                             DEFAULT_INTERP_ORDER))
+            pixdim.append(mod_spec.get('pixdim', None))
+            axcodes.append(mod_spec.get('axcodes', None))
+            loader.append(mod_spec.get('loader', None))
 
     except KeyError:
         tf.logging.fatal(
@@ -448,12 +444,12 @@ def _create_image(file_list, idx, modalities, data_param):
     return ImageFactory.create_instance(**image_properties)
 
 
-def _validate_input_param(data_param):
+def param_to_dict(input_data_param):
     """
-    Validate the user input ``data_param``
+    Validate the user input ``input_data_param``
     raise an error if it's invalid.
 
-    :param data_param:
+    :param input_data_param:
     :return: input data specifications as a nested dictionary
     """
     error_msg = 'Unknown ``data_param`` type. ' \
@@ -461,6 +457,7 @@ def _validate_input_param(data_param):
                 '{"modality_name": {"input_property": value}}'\
                 'or a dictionary of: {"modality_name": '\
                 'niftynet.utilities.util_common.ParserNamespace}'
+    data_param = deepcopy(input_data_param)
     if isinstance(data_param, ParserNamespace):
         data_param = vars(data_param)
     if not isinstance(data_param, dict):
@@ -475,4 +472,5 @@ def _validate_input_param(data_param):
             raise ValueError(error_msg)
         for data_key in dict_param:
             look_up_operations(data_key, SUPPORTED_DATA_SPEC)
+        data_param[mod] = dict_param
     return data_param

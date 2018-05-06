@@ -8,6 +8,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+from niftynet.io.image_reader import param_to_dict
 
 N_SPATIAL = 3
 LOCATION_FORMAT = "{}_location"
@@ -33,6 +34,13 @@ class ImageWindow(object):
         self.n_samples = 1
         self.has_dynamic_shapes = self._check_dynamic_shapes()
         self._placeholders_dict = None
+
+    @property
+    def tf_dtypes(self):
+        """
+        returns tensorflow dtypes of the window.
+        """
+        return self.dtypes
 
     @classmethod
     def from_data_reader_properties(cls,
@@ -236,8 +244,9 @@ def _read_window_sizes(input_mod_list, input_data_param):
         by parameters parser
     :return: spatial window size
     """
+    input_data_param = param_to_dict(input_data_param)
     try:
-        window_sizes = [input_data_param[input_name].spatial_window_size
+        window_sizes = [input_data_param[input_name]['spatial_window_size']
                         for input_name in input_mod_list]
     except (AttributeError, TypeError, KeyError):
         tf.logging.fatal('unknown input_data_param format %s %s',
