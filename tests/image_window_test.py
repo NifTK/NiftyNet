@@ -203,7 +203,7 @@ class ImageWindowTest(tf.test.TestCase):
             [10, 10, 10, 2, 1, 2])
         self.assertAllEqual(
             window.image_data_placeholder('image').dtype,
-            window.dtypes['image'])
+            window.tf_dtypes['image'])
         self.assertAllEqual(
             window.coordinates_placeholder('image').shape.as_list(),
             [10, 7])
@@ -293,7 +293,7 @@ class ImageWindowTest(tf.test.TestCase):
             [10, 42, 43, 44, 1, 2])
         self.assertAllEqual(
             window.image_data_placeholder('image').dtype,
-            window.dtypes['image'])
+            window.tf_dtypes['image'])
         self.assertAllEqual(
             window.coordinates_placeholder('image').shape.as_list(),
             [10, 7])

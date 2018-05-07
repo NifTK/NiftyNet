@@ -29,18 +29,34 @@ class ImageWindow(object):
 
     def __init__(self, names, shapes, dtypes):
         self.names = names
-        self.shapes = shapes
-        self.dtypes = dtypes
+        self._shapes = shapes
+        self._dtypes = dtypes
         self.n_samples = 1
         self.has_dynamic_shapes = self._check_dynamic_shapes()
         self._placeholders_dict = None
+
+    @property
+    def shapes(self):
+        """
+
+        :return: a dictionary of image window and locatin shapes
+        """
+        shapes = {}
+        for name in list(self._shapes):
+            shapes[name] = self._shapes[name]
+            shapes[LOCATION_FORMAT.format(name)] = [1 + N_SPATIAL * 2]
+        return shapes
 
     @property
     def tf_dtypes(self):
         """
         returns tensorflow dtypes of the window.
         """
-        return self.dtypes
+        dtypes = {}
+        for name in list(self._dtypes):
+            dtypes[name] = self._dtypes[name]
+            dtypes[LOCATION_FORMAT.format(name)] = BUFFER_POSITION_DTYPE
+        return dtypes
 
     @classmethod
     def from_data_reader_properties(cls,
@@ -113,9 +129,9 @@ class ImageWindow(object):
         except ValueError:
             tf.logging.fatal("spatial window should be an array of int")
             raise
-        self.shapes = {
+        self._shapes = {
             name: _complete_partial_window_sizes(
-                spatial_window, self.shapes[name])
+                spatial_window, self._shapes[name])
             for name in self.names}
         # update based on the latest spatial shapes
         self.has_dynamic_shapes = self._check_dynamic_shapes()
@@ -131,13 +147,13 @@ class ImageWindow(object):
         try:
             placeholders = [
                 tf.placeholder(
-                    dtype=self.dtypes[name],
-                    shape=[self.n_samples] + list(self.shapes[name]),
+                    dtype=self._dtypes[name],
+                    shape=[self.n_samples] + list(self._shapes[name]),
                     name=name)
                 for name in names]
         except TypeError:
             tf.logging.fatal(
-                'shape should be defined as dict of iterable %s', self.shapes)
+                'shape should be defined as dict of iterable %s', self._shapes)
             raise
         # extending names with names of coordinates
         names.extend([LOCATION_FORMAT.format(name) for name in names])
@@ -202,7 +218,7 @@ class ImageWindow(object):
         :return: True indicates it's dynamic, False indicates
          the window size is fully specified.
         """
-        for shape in list(self.shapes.values()):
+        for shape in list(self._shapes.values()):
             try:
                 for dim_length in shape:
                     if not dim_length:
@@ -220,15 +236,15 @@ class ImageWindow(object):
         :return: dict of fully specified window shapes
         """
         if self.has_dynamic_shapes:
-            static_window_shapes = self.shapes.copy()
+            static_window_shapes = self._shapes.copy()
             # fill the None element in dynamic shapes using image_sizes
             for name in self.names:
                 static_window_shapes[name] = tuple(
                     win_size if win_size else image_shape
                     for (win_size, image_shape) in
-                    zip(list(self.shapes[name]), image_shapes[name]))
+                    zip(list(self._shapes[name]), image_shapes[name]))
         else:
-            static_window_shapes = self.shapes
+            static_window_shapes = self._shapes
         return static_window_shapes
 
 

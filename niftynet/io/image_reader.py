@@ -458,7 +458,7 @@ def param_to_dict(input_data_param):
                 'or a dictionary of: {"modality_name": '\
                 'niftynet.utilities.util_common.ParserNamespace}'
     data_param = deepcopy(input_data_param)
-    if isinstance(data_param, ParserNamespace):
+    if isinstance(data_param, (ParserNamespace, argparse.Namespace)):
         data_param = vars(data_param)
     if not isinstance(data_param, dict):
         raise ValueError(error_msg)
