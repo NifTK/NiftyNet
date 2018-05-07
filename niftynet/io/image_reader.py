@@ -10,6 +10,7 @@ import pandas
 import tensorflow as tf
 from six import string_types
 
+from niftynet.io.misc_io import dtype_casting
 from niftynet.io.image_sets_partitioner import COLUMN_UNIQ_ID
 from niftynet.io.image_type import ImageFactory
 from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
@@ -18,11 +19,6 @@ from niftynet.utilities.util_common import print_progress_bar, ParserNamespace
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import look_up_operations
 
-# NP_TF_DTYPES = {'i': tf.int32, 'u': tf.int32, 'b': tf.int32, 'f': tf.float32}
-NP_TF_DTYPES = {'i': tf.float32,
-                'u': tf.float32,
-                'b': tf.float32,
-                'f': tf.float32}
 DEFAULT_INTERP_ORDER = 1
 SUPPORTED_DATA_SPEC = {
     'csv_file', 'path_to_search',
@@ -34,7 +30,8 @@ def infer_tf_dtypes(image_array):
     """
     Choosing a suitable tf dtype based on the dtype of input numpy array.
     """
-    return NP_TF_DTYPES.get(image_array.dtype[0].kind, tf.float32)
+    return dtype_casting(
+        image_array.dtype[0], image_array.interp_order, as_tf=True)
 
 
 class ImageReader(Layer):

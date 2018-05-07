@@ -76,7 +76,7 @@ def register_image_loader(name, requires, min_version=None, auto_discover=True):
     return _wrapper
 
 
-def load_image_from_file(filename, loader=None):
+def load_image_obj(filename, loader=None):
     """
     Loads an image from a given loader or checking multiple loaders.
 

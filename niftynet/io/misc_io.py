@@ -15,7 +15,7 @@ import scipy.ndimage
 import tensorflow as tf
 from tensorflow.core.framework import summary_pb2
 
-from niftynet.io.image_loader import load_image_from_file
+from niftynet.io.image_loader import load_image_obj
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 from niftynet.utilities.util_import import require_module
 
@@ -32,7 +32,7 @@ FILE_LOG_FORMAT = "%(levelname)s:niftynet:%(asctime)s: %(message)s"
 
 def infer_ndims_from_file(file_path, loader=None):
     # todo: loader specified by the user is not used for ndims infer.
-    image_header = load_image_from_file(file_path, loader).header
+    image_header = load_image_obj(file_path, loader).header
     try:
         return int(image_header['dim'][0])
     except TypeError:
@@ -45,6 +45,30 @@ def infer_ndims_from_file(file_path, loader=None):
     tf.logging.fatal('unsupported file header in: {}'.format(file_path))
     raise IOError('could not get ndims from file header, please '
                   'consider convert image files to NifTI format.')
+
+
+def dtype_casting(original_dtype, interp_order, as_tf=False):
+    """
+    Making image dtype based on user specified interp order and
+    best compatibility with Tensorflow.
+
+    :param original_dtype: an input datatype
+    :param interp_order: an integer of interpolation order
+    :return: normalised numpy dtype
+    """
+
+    dkind = np.dtype(original_dtype).kind
+    if dkind in 'biu':  # handling integers
+        if interp_order < 1:
+            return np.int32 if not as_tf else tf.int32
+        else:
+            return np.float32 if not as_tf else tf.float32
+    if dkind == 'f':  # handling floats
+        return np.float32 if not as_tf else tf.float32
+
+    if as_tf:
+        return tf.float32  # fallback to float32 for tensorflow
+    return original_dtype  # do nothing for numpy array
 
 
 def create_affine_pixdim(affine, pixdim):

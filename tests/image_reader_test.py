@@ -314,7 +314,7 @@ class ImageReaderTest(tf.test.TestCase):
         # Check data type
         self.assertGreaterEqual(image.min(), 0)
         self.assertLessEqual(image.max(), 255)
-        self.assertEqual(image.dtype, np.uint8)
+        self.assertEqual(image.dtype, np.float32)
         # Check shape
         self.assertEqual(image.ndim, 5)
         self.assertAllEqual(image.shape, (100, 100, 1, 1, 3))
@@ -333,7 +333,7 @@ class ImageReaderTest(tf.test.TestCase):
         # Check data type
         self.assertGreaterEqual(image.min(), 0)
         self.assertLessEqual(image.max(), 255)
-        self.assertEqual(image.dtype, np.uint8)
+        self.assertEqual(image.dtype, np.float32)
         # Check shape
         self.assertEqual(image.ndim, 5)
         self.assertAllEqual(image.shape, (100, 100, 1, 1, 1))
@@ -354,7 +354,7 @@ class ImageReaderTest(tf.test.TestCase):
         # Check data type
         self.assertGreaterEqual(image.min(), 0)
         self.assertLessEqual(image.max(), 255)
-        self.assertEqual(image.dtype, np.uint8)
+        self.assertEqual(image.dtype, np.int32)
         self.assertEqual(np.unique(image).size, 2)
         # Check shape
         self.assertEqual(image.ndim, 5)

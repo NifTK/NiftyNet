@@ -10,11 +10,11 @@ CASE_LOGO_2D = 'niftynet-logo.png'
 
 class ImageLoaderTest(tf.test.TestCase):
     def test_nibabel_3d(self):
-        data = image_loader.load_image_from_file(CASE_NIBABEL_3D).get_data()
+        data = image_loader.load_image_obj(CASE_NIBABEL_3D).get_data()
         self.assertAllClose(data.shape, (256, 168, 256))
 
     def load_2d_image(self, loader=None):
-        data = image_loader.load_image_from_file(CASE_LOGO_2D, loader=loader).get_data()
+        data = image_loader.load_image_obj(CASE_LOGO_2D, loader=loader).get_data()
         self.assertAllClose(data.shape, (400, 677, 1, 1, 4))
 
     def test_2d_loaders(self):
@@ -38,12 +38,12 @@ class ImageLoaderTest(tf.test.TestCase):
 
         for f in all_files:
             if f.endswith('nii.gz'):
-                loaded_shape = image_loader.load_image_from_file(f).get_data().shape
+                loaded_shape = image_loader.load_image_obj(f).get_data().shape
                 print(loaded_shape)
                 self.assertGreaterEqual(5, len(loaded_shape))
             else:
                 with self.assertRaisesRegexp(ValueError, ''):
-                    image_loader.load_image_from_file(f)
+                    image_loader.load_image_obj(f)
 
 
 if __name__ == "__main__":

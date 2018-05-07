@@ -215,7 +215,7 @@ class ImageWindowTest(tf.test.TestCase):
             [10, 5, 5, 1, 1, 1])
         self.assertAllEqual(
             window.image_data_placeholder('label').dtype,
-            window.dtypes['label'])
+            window.tf_dtypes['label'])
         self.assertAllEqual(
             window.coordinates_placeholder('label').shape.as_list(),
             [10, 7])
@@ -231,7 +231,7 @@ class ImageWindowTest(tf.test.TestCase):
             [1, 10, 10, None, 1, 2])
         self.assertAllEqual(
             window.image_data_placeholder('image').dtype,
-            window.dtypes['image'])
+            window.tf_dtypes['image'])
         self.assertAllEqual(
             window.coordinates_placeholder('image').shape.as_list(),
             [1, 7])
@@ -243,7 +243,7 @@ class ImageWindowTest(tf.test.TestCase):
             [1, 2, None, None, 1, 1])
         self.assertAllEqual(
             window.image_data_placeholder('label').dtype,
-            window.dtypes['label'])
+            window.tf_dtypes['label'])
         self.assertAllEqual(
             window.coordinates_placeholder('label').shape.as_list(),
             [1, 7])
@@ -259,7 +259,7 @@ class ImageWindowTest(tf.test.TestCase):
             [1, None, None, None, 1, 2])
         self.assertAllEqual(
             window.image_data_placeholder('image').dtype,
-            window.dtypes['image'])
+            window.tf_dtypes['image'])
         self.assertAllEqual(
             window.coordinates_placeholder('image').shape.as_list(),
             [1, 7])
@@ -271,7 +271,7 @@ class ImageWindowTest(tf.test.TestCase):
             [1, None, None, None, 1, 1])
         self.assertAllEqual(
             window.image_data_placeholder('label').dtype,
-            window.dtypes['label'])
+            window.tf_dtypes['label'])
         self.assertAllEqual(
             window.coordinates_placeholder('label').shape.as_list(),
             [1, 7])
@@ -305,7 +305,7 @@ class ImageWindowTest(tf.test.TestCase):
             [10, 42, 43, 44, 1, 1])
         self.assertAllEqual(
             window.image_data_placeholder('label').dtype,
-            window.dtypes['label'])
+            window.tf_dtypes['label'])
         self.assertAllEqual(
             window.coordinates_placeholder('label').shape.as_list(),
             [10, 7])
