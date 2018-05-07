@@ -2,13 +2,14 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+import unittest
 
 import numpy as np
 import tensorflow as tf
 
 from niftynet.engine.image_window import N_SPATIAL
-from niftynet.engine.sampler_weighted import \
-    WeightedSampler, weighted_spatial_coordinates
+from niftynet.contrib.dataset_sampler.sampler_balanced_v2 import \
+    BalancedSampler, balanced_spatial_coordinates
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
@@ -107,9 +108,10 @@ def get_dynamic_window_reader():
     return reader
 
 
-class WeightedSamplerTest(tf.test.TestCase):
+@unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
+class BalancedSamplerTest(tf.test.TestCase):
     def test_3d_init(self):
-        sampler = WeightedSampler(reader=get_3d_reader(),
+        sampler = BalancedSampler(reader=get_3d_reader(),
                                   data_param=MULTI_MOD_DATA,
                                   batch_size=2,
                                   windows_per_image=10,
@@ -122,7 +124,7 @@ class WeightedSamplerTest(tf.test.TestCase):
         sampler.close_all()
 
     def test_2d_init(self):
-        sampler = WeightedSampler(reader=get_2d_reader(),
+        sampler = BalancedSampler(reader=get_2d_reader(),
                                   data_param=MOD_2D_DATA,
                                   batch_size=2,
                                   windows_per_image=10,
@@ -135,7 +137,7 @@ class WeightedSamplerTest(tf.test.TestCase):
         sampler.close_all()
 
     def test_dynamic_init(self):
-        sampler = WeightedSampler(reader=get_dynamic_window_reader(),
+        sampler = BalancedSampler(reader=get_dynamic_window_reader(),
                                   data_param=DYNAMIC_MOD_DATA,
                                   batch_size=2,
                                   windows_per_image=10,
@@ -143,19 +145,20 @@ class WeightedSamplerTest(tf.test.TestCase):
         with self.test_session() as sess:
             coordinator = tf.train.Coordinator()
             sampler.run_threads(sess, coordinator, num_threads=2)
+            #with self.assertRaisesRegexp(tf.errors.OutOfRangeError, ""):
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape[1:], (8, 2, 256, 2))
 
     def test_ill_init(self):
         with self.assertRaisesRegexp(KeyError, ""):
-            sampler = WeightedSampler(reader=get_3d_reader(),
+            sampler = BalancedSampler(reader=get_3d_reader(),
                                       data_param=MOD_2D_DATA,
                                       batch_size=2,
                                       windows_per_image=10,
                                       queue_length=10)
 
     def test_close_early(self):
-        sampler = WeightedSampler(reader=get_2d_reader(),
+        sampler = BalancedSampler(reader=get_2d_reader(),
                                   data_param=MOD_2D_DATA,
                                   batch_size=2,
                                   windows_per_image=10,
@@ -163,7 +166,7 @@ class WeightedSamplerTest(tf.test.TestCase):
         sampler.close_all()
 
 
-class WeightedCoordinatesTest(tf.test.TestCase):
+class BalancedCoordinatesTest(tf.test.TestCase):
     def assertCoordinatesAreValid(self, coords, sampling_map):
         for coord in coords:
             for i in range(len(coord.shape)):
@@ -171,59 +174,94 @@ class WeightedCoordinatesTest(tf.test.TestCase):
                 self.assertTrue(coord[i] < sampling_map.shape[i])
 
     def test_3d_coordinates(self):
-        img_size = (32, 16, 17, 1, 1)
-        win_size = (10, 16, 15)
+        img_size = (64, 15, 21, 1, 1)
+        win_size = (32, 13, 1, 1, 1)
         sampling_map = np.zeros(img_size)
-
-        coords = weighted_spatial_coordinates(
+        coords = balanced_spatial_coordinates(
             32, img_size, win_size, sampling_map)
+
         self.assertAllEqual(coords.shape, (32, N_SPATIAL))
         self.assertCoordinatesAreValid(coords, sampling_map)
 
-        # testing high weight location (10, 8, 7, 0, 0)
-        sampling_map[10, 8, 7, 0, 0] = 1.0
-        coords = weighted_spatial_coordinates(
-            32, img_size, win_size, sampling_map)
-        self.assertAllEqual(coords.shape, (32, N_SPATIAL))
-        self.assertTrue(np.all(coords == [10, 8, 7]))
+        sampling_map[17, 7, 0, 0, 0] = 1.0
+        coords = balanced_spatial_coordinates(
+            500, img_size, win_size, sampling_map)
+        # better test?
+        self.assertTrue(np.sum(np.all(coords == [17, 7, 0], axis=1)) >= 200)
 
     def test_2d_coordinates(self):
-        img_size = (32, 17, 1, 1, 1)
-        win_size = (31, 3, 1)
+        img_size = (23, 42, 1, 1, 1)
+        win_size = (22, 10, 1)
         sampling_map = np.zeros(img_size)
-        coords = weighted_spatial_coordinates(
+
+        coords = balanced_spatial_coordinates(
             64, img_size, win_size, sampling_map)
 
         self.assertAllEqual(coords.shape, (64, N_SPATIAL))
         self.assertCoordinatesAreValid(coords, sampling_map)
 
-        # testing high weight location (15, 1, 1, 0, 0)
-        sampling_map[15, 1, 0, 0, 0] = 1.0
-        coords = weighted_spatial_coordinates(
-            64, img_size, win_size, sampling_map)
-        self.assertAllEqual(coords.shape, (64, N_SPATIAL))
-        self.assertTrue(np.all(coords == [15, 1, 0]))
+        sampling_map[11, 8, 0, 0, 0] = 1.0
+        coords = balanced_spatial_coordinates(
+            500, img_size, win_size, sampling_map)
+        # better test?
+        self.assertTrue(np.sum(np.all(coords == [11, 8, 0], axis=1)) >= 200)
 
     def test_1d_coordinates(self):
-        img_size = (32, 1, 1, 1, 1)
+        img_size = (21, 1, 1, 1, 1)
         win_size = (15, 1, 1)
         sampling_map = np.zeros(img_size)
-        coords = weighted_spatial_coordinates(
+        coords = balanced_spatial_coordinates(
             10, img_size, win_size, sampling_map)
+
         self.assertAllEqual(coords.shape, (10, N_SPATIAL))
         self.assertCoordinatesAreValid(coords, sampling_map)
 
-        sampling_map[20, 0, 0] = 0.1
-        coords = weighted_spatial_coordinates(
-            10, img_size, win_size, sampling_map)
-        self.assertAllEqual(coords.shape, (10, N_SPATIAL))
-        self.assertTrue(np.all(coords == [20, 0, 0]))
+        sampling_map[9, 0, 0, 0, 0] = 1.0
+        coords = balanced_spatial_coordinates(
+            500, img_size, win_size, sampling_map)
+        # better test?
+        self.assertTrue(np.sum(np.all(coords == [9, 0, 0], axis=1)) >= 200)
 
-        sampling_map[9, 0, 0] = 0.1
-        coords = weighted_spatial_coordinates(
-            10, img_size, win_size, sampling_map)
-        self.assertAllEqual(coords.shape, (10, N_SPATIAL))
-        self.assertTrue(np.all((coords == [20, 0, 0]) | (coords == [9, 0, 0])))
+    @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
+    def test_classes_balances(self):
+        # Set the random state to prevent false positive
+        np.random.seed(0)
+
+        # Setting these too high inflats the run time
+        number_of_repetitions = 1000
+        samples_per_repetition = 10
+        num_classes = 3
+
+        # Create a map with almost all background, one pixel of each
+        # other label
+        img_size = (50, 25, 10, 1, 1)
+        win_size = (8, 7, 2, 1, 1)
+        sampling_map = np.zeros(img_size)
+        sampling_map[6, 5, 2:, 0, 0] = 1
+        sampling_map[11, 13:, 3, 0, 0] = 2
+
+        # Accumulate the number of times each class is sampled
+        accum = np.zeros((num_classes))
+        for _ in range(number_of_repetitions):
+            coords = balanced_spatial_coordinates(
+                samples_per_repetition, img_size, win_size, sampling_map)
+
+            # Be sure to sample the correct number
+            self.assertAllEqual(
+                coords.shape, (samples_per_repetition, N_SPATIAL))
+
+            # Convert to np.ndarry indexable
+            for coord in coords.astype(int):
+                x, y, z = coord
+                label = int(sampling_map[x, y, z])
+                accum[label] = accum[label] + 1
+
+        # Each class should be within 2 decimal places of 1.0/num_classes
+        accum = np.divide(accum, accum.sum())
+        self.assertAllClose(
+            accum,
+            np.ones((num_classes)) * 1.0 / num_classes, rtol=1e-2, atol=1e-2)
+
 
 if __name__ == "__main__":
     tf.test.main()

@@ -49,6 +49,7 @@ class UniformSampler(Layer):
 
         tf.logging.info("initialised sampler output %s ", self.window.shapes)
         self.window_centers_sampler = rand_spatial_coordinates
+        self._init_dataset()
 
     @property
     def shapes(self):
@@ -88,8 +89,6 @@ class UniformSampler(Layer):
         """
         if session is None:
             session = tf.get_default_session()
-        if self.iterator is None:
-            self._init_dataset()
         session.run(self.iterator.initializer)
 
     def close_all(self):
@@ -116,7 +115,7 @@ class UniformSampler(Layer):
         """
 
         if self.iterator is None:
-            self._init_dataset()
+            return None
 
         window_output = self.iterator.get_next()[0]
         for name in window_output:
@@ -221,8 +220,8 @@ class UniformSampler(Layer):
         # dataset: slice the n-element window into n single windows
         def _slice_from_each(*args):
             datasets = [
-                tf.data.Dataset().from_tensor_slices(tensor) for tensor in args]
-            return tf.data.Dataset().zip(tuple(datasets))
+                tf.data.Dataset.from_tensor_slices(tensor) for tensor in args]
+            return tf.data.Dataset.zip(tuple(datasets))
 
         dataset = dataset.flat_map(map_func=_slice_from_each)
         dataset = dataset.batch(batch_size=self.batch_size)

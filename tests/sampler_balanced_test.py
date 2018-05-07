@@ -8,8 +8,8 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.engine.image_window import N_SPATIAL
-from niftynet.engine.sampler_balanced import BalancedSampler
-from niftynet.engine.sampler_balanced import balanced_spatial_coordinates
+from niftynet.engine.sampler_balanced import \
+    BalancedSampler, balanced_spatial_coordinates
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
@@ -147,7 +147,7 @@ class BalancedSamplerTest(tf.test.TestCase):
             sampler.run_threads(sess, coordinator, num_threads=2)
             #with self.assertRaisesRegexp(tf.errors.OutOfRangeError, ""):
             out = sess.run(sampler.pop_batch_op())
-            self.assertAllClose(out['image'].shape, (1, 8, 2, 256, 2))
+            self.assertAllClose(out['image'].shape[1:], (8, 2, 256, 2))
 
     def test_ill_init(self):
         with self.assertRaisesRegexp(KeyError, ""):
