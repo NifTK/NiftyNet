@@ -49,7 +49,7 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
         self._create_queue_and_ops(self.window,
                                    enqueue_size=self.n_interpolations,
                                    dequeue_size=batch_size)
-        tf.logging.info("initialised sampler output %s ", self.window._shapes)
+        tf.logging.info("initialised sampler output %s ", self.window.shapes)
 
     def layer_op(self, *args, **kwargs):
         """
@@ -64,11 +64,11 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
             embedding_x = np.random.normal(
                 self.mean,
                 self.stddev,
-                *self.window._shapes[self.window.names[0]])
+                *self.window.shapes[self.window.names[0]])
             embedding_y = np.random.normal(
                 self.mean,
                 self.stddev,
-                *self.window._shapes[self.window.names[0]])
+                *self.window.shapes[self.window.names[0]])
             steps = np.linspace(0, 1, self.n_interpolations)
             output_vectors = []
             for (_, mixture) in enumerate(steps):

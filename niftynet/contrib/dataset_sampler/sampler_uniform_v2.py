@@ -8,9 +8,12 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 import tensorflow as tf
+# pylint: disable=no-name-in-module
+from tensorflow.python.data.util import nest
 
 from niftynet.engine.image_window import \
     ImageWindow, N_SPATIAL, LOCATION_FORMAT
+from niftynet.io.misc_io import squeeze_spatial_temporal_dim
 from niftynet.layer.base_layer import Layer
 
 
@@ -30,8 +33,9 @@ class UniformSampler(Layer):
                  batch_size=1,
                  windows_per_image=1,
                  queue_length=10):
-        Layer.__init__(self, name='input_buffer')
-        self._dataset = None
+        Layer.__init__(self, name='uniform_sampler_v2')
+        self.dataset = None
+        self.iterator = None
 
         self.reader = reader
         self.batch_size = batch_size
@@ -46,13 +50,29 @@ class UniformSampler(Layer):
         tf.logging.info("initialised sampler output %s ", self.window.shapes)
         self.window_centers_sampler = rand_spatial_coordinates
 
-
     @property
     def shapes(self):
         """
+        the sampler output (value of ``layer_op``) is::
+
+            [windows_per_image, x, y, z, 1, channels]
+
         returns a dictionary of sampler output shapes
         """
-        return self.window.shapes
+        output_shapes = {}
+        for mod in self.window.shapes:
+            output_shapes[mod] = \
+                [self.window.n_samples] + list(self.window.shapes[mod])
+        return output_shapes
+
+    @property
+    def tf_shapes(self):
+        """
+        returns a dictionary of sampler output tensor shapes
+        """
+        output_shapes = nest.map_structure_up_to(
+            self.tf_dtypes, tf.TensorShape, self.shapes)
+        return output_shapes
 
     @property
     def tf_dtypes(self):
@@ -61,23 +81,48 @@ class UniformSampler(Layer):
         """
         return self.window.tf_dtypes
 
-    # def pop_batch_op(self):
-    #     """
-    #     Make a dataset from the reader and layer_op
-    #     :return: an iterator over the dataset
-    #     """
+    def run_threads(self, session=None, *_unused_args, **_unused_argvs):
+        """
+        To be called at the beginning of running graph variables,
+        to initialise dataset iterator.
+        """
+        if session is None:
+            session = tf.get_default_session()
+        if self.iterator is None:
+            self._init_dataset()
+        session.run(self.iterator.initializer)
 
-    #     dataset = tf.data.Dataset.from_generator(self.__call__,
-    #                                              output_types=self.tf_dtypes,
-    #                                              output_shapes=self.shapes)
-    #     dataset = dataset.batch(batch_size=self.batch_size)
-    #     dataset = dataset.shuffle(buffer_size=self.queue_length, seed=None)
+    def close_all(self):
+        """
+        For compatibility with the queue based sampler.
+        """
+        pass
 
-    #     self._dataset = dataset
-    #     _, data_output, _ = self()
-    #     for name in data_output:
-    #         data_output[name] = squeeze_spatial_temporal_dim(data_output[name])
-    #     return None
+    def pop_batch_op(self):
+        """
+        This function is used when connecting a sampler output
+        to a network. e.g.::
+
+            data_dict = self.get_sampler()[0].pop_batch_op(device_id)
+            net_output = net_model(data_dict, is_training)
+
+        .. caution::
+
+            Note it squeezes the output tensor of 6 dims
+            ``[batch, x, y, z, time, modality]``
+            by removing all dims along which length is one.
+
+        :return: a tensorflow graph op
+        """
+
+        if self.iterator is None:
+            self._init_dataset()
+
+        window_output = self.iterator.get_next()[0]
+        for name in window_output:
+            window_output[name] = squeeze_spatial_temporal_dim(
+                window_output[name])
+        return window_output
 
     # pylint: disable=too-many-locals
     def layer_op(self, idx=None):
@@ -92,44 +137,108 @@ class UniformSampler(Layer):
 
         :return: output data dictionary ``{placeholders: data_array}``
         """
-        while True:
-            image_id, data, _ = self.reader(idx=idx, shuffle=True)
-            if not data:
-                break
-            image_shapes = dict((name, data[name].shape)
-                                for name in self.window.names)
-            static_window_shapes = self.window.match_image_shapes(image_shapes)
+        image_id, data, _ = self.reader(idx=idx, shuffle=True)
+        image_shapes = dict((name, data[name].shape)
+                            for name in self.window.names)
+        static_window_shapes = self.window.match_image_shapes(image_shapes)
 
-            # find random coordinates based on window and image shapes
-            coordinates = self._spatial_coordinates_generator(
-                subject_id=image_id,
-                data=data,
-                img_sizes=image_shapes,
-                win_sizes=static_window_shapes,
-                n_samples=self.window.n_samples)
+        # find random coordinates based on window and image shapes
+        coordinates = self._spatial_coordinates_generator(
+            subject_id=image_id,
+            data=data,
+            img_sizes=image_shapes,
+            win_sizes=static_window_shapes,
+            n_samples=self.window.n_samples)
 
+        # initialise output dict, placeholders as dictionary keys
+        # this dictionary will be used in
+        # enqueue operation in the form of: `feed_dict=output_dict`
+        output_dict = {}
+        # fill output dict with data
+        for name in list(data):
+            coordinates_key = LOCATION_FORMAT.format(name)
+            image_data_key = name
+
+            # fill the coordinates
+            location_array = coordinates[name]
+            output_dict[coordinates_key] = location_array
+
+            # fill output window array
+            image_array = []
             for window_id in range(self.window.n_samples):
-                output_dict = {}
-                for  name in list(data):
-                    image_data_key = name
-                    coordinates_key = LOCATION_FORMAT.format(name)
+                x_start, y_start, z_start, x_end, y_end, z_end = \
+                    location_array[window_id, 1:]
+                try:
+                    image_window = data[name][
+                        x_start:x_end, y_start:y_end, z_start:z_end, ...]
+                    image_array.append(image_window[np.newaxis, ...])
+                except ValueError:
+                    tf.logging.fatal(
+                        "dimensionality miss match in input volumes, "
+                        "please specify spatial_window_size with a "
+                        "3D tuple and make sure each element is "
+                        "smaller than the image length in each dim. "
+                        "Current coords %s", location_array[window_id])
+                    raise
+            if len(image_array) > 1:
+                output_dict[image_data_key] = \
+                    np.concatenate(image_array, axis=0).astype(np.float32)
+            else:
+                output_dict[image_data_key] = image_array[0].astype(np.float32)
+        # the output image shape should be
+        # [enqueue_batch_size, x, y, z, time, modality]
+        # where enqueue_batch_size = windows_per_image
+        return output_dict
 
-                    coord = coordinates[name][window_id]
-                    x_start, y_start, z_start, x_end, y_end, z_end = coord[1:]
-                    try:
-                        image_window = data[name][
-                            x_start:x_end, y_start:y_end, z_start:z_end, ...]
-                        output_dict[image_data_key] = image_window
-                        output_dict[coordinates_key] = coord
-                    except ValueError:
-                        tf.logging.fatal(
-                            "dimensionality miss match in input volumes, "
-                            "please specify spatial_window_size with a "
-                            "3D tuple and make sure each element is "
-                            "smaller than the image length in each dim. "
-                            "Current coords %s", coord)
-                        raise
-                yield output_dict
+    def _init_dataset(self):
+        """
+        Make a window samples dataset from the reader and layer_op.
+        This function sets self.dataset and self.iterator
+
+        :return:
+        """
+        if self.iterator is not None:
+            return
+
+        flattened_types = nest.flatten(self.tf_dtypes)
+        flattened_shapes = nest.flatten(self.tf_shapes)
+
+        n_subjects = len(self.reader.output_list)
+        # dataset: a list of integers
+        dataset = tf.data.Dataset.range(n_subjects)
+
+        # dataset: map each integer i to n windows sampled from subject i
+        def _tf_wrapper(idx):
+            flat_values = tf.py_func(func=self._flatten_layer_op,
+                                     inp=[idx],
+                                     Tout=flattened_types)
+            for ret_t, shape in zip(flat_values, flattened_shapes):
+                ret_t.set_shape(shape)
+            return nest.pack_sequence_as(self.tf_dtypes, flat_values)
+
+        dataset = dataset.map(_tf_wrapper, num_parallel_calls=3)
+
+        # dataset: slice the n-element window into n single windows
+        def _slice_from_each(*args):
+            datasets = [
+                tf.data.Dataset().from_tensor_slices(tensor) for tensor in args]
+            return tf.data.Dataset().zip(tuple(datasets))
+
+        dataset = dataset.flat_map(map_func=_slice_from_each)
+        dataset = dataset.batch(batch_size=self.batch_size)
+        dataset = dataset.shuffle(buffer_size=self.queue_length, seed=None)
+        iterator = dataset.make_initializable_iterator()
+
+        self.dataset = dataset
+        self.iterator = iterator
+        return
+
+    def _flatten_layer_op(self, idx=None):
+        """
+        wrapper of the ``layer_op``
+        :return: flattened output dictionary as a list
+        """
+        return nest.flatten(self(idx))
 
     def _spatial_coordinates_generator(self,
                                        subject_id,
@@ -221,7 +330,8 @@ def rand_spatial_coordinates(
             zip(img_spatial_size[:N_SPATIAL], win_spatial_size[:N_SPATIAL])):
         max_coords[:, idx] = np.random.randint(
             0, max(img - win + 1, 1), n_samples)
-    max_coords[:, :N_SPATIAL] = max_coords[:, :N_SPATIAL] + half_win[:N_SPATIAL]
+    max_coords[:, :N_SPATIAL] = \
+        max_coords[:, :N_SPATIAL] + half_win[:N_SPATIAL]
     return max_coords
 
 

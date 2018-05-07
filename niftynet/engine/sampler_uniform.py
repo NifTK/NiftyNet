@@ -31,7 +31,7 @@ class UniformSampler(Layer, InputBatchQueueRunner):
                  windows_per_image,
                  queue_length=10):
         self.reader = reader
-        Layer.__init__(self, name='input_buffer')
+        Layer.__init__(self, name='uniform_sampler')
         InputBatchQueueRunner.__init__(
             self,
             capacity=queue_length,

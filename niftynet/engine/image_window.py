@@ -44,7 +44,7 @@ class ImageWindow(object):
         shapes = {}
         for name in list(self._shapes):
             shapes[name] = self._shapes[name]
-            shapes[LOCATION_FORMAT.format(name)] = [1 + N_SPATIAL * 2]
+            shapes[LOCATION_FORMAT.format(name)] = (1 + N_SPATIAL * 2,)
         return shapes
 
     @property
@@ -81,9 +81,9 @@ class ImageWindow(object):
                 'image': tf.float32,
                 'label': tf.float32},
             data_param={
-                'modality1': ParserNamespace(spatial_window_size=(10, 10, 2)),
-                'modality2': ParserNamespace(spatial_window_size=(10, 10, 2)),
-                'modality3': ParserNamespace(spatial_window_size=(5, 5, 1))}
+                'modality1': {'spatial_window_size': (10, 10, 2)},
+                'modality2': {'spatial_window_size': (10, 10, 2)},
+                'modality3': {'spatial_window_size': (5, 5, 1)}}
 
         see ``niftynet.io.ImageReader`` for more details.
 
@@ -143,7 +143,6 @@ class ImageWindow(object):
         self.n_samples = 1 if self.has_dynamic_shapes else n_samples
 
         names = list(self.names)
-        placeholders = []
         try:
             placeholders = [
                 tf.placeholder(
