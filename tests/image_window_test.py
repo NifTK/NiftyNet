@@ -284,8 +284,8 @@ class ImageWindowTest(tf.test.TestCase):
             **get_static_window_param())
         window.placeholders_dict(10)
         window.set_spatial_shape(new_shape)
-        self.assertAllClose(window.shapes['image'], (42, 43, 44, 1, 2))
-        self.assertAllClose(window.shapes['label'], (42, 43, 44, 1, 1))
+        self.assertAllClose(window.shapes['image'], (10, 42, 43, 44, 1, 2))
+        self.assertAllClose(window.shapes['label'], (10, 42, 43, 44, 1, 1))
         window.placeholders_dict(10)
 
         self.assertAllEqual(

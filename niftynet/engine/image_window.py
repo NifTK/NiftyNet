@@ -8,6 +8,9 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+# pylint: disable=no-name-in-module
+from tensorflow.python.data.util import nest
+
 from niftynet.io.image_reader import param_to_dict
 
 N_SPATIAL = 3
@@ -39,13 +42,24 @@ class ImageWindow(object):
     def shapes(self):
         """
 
-        :return: a dictionary of image window and locatin shapes
+        :return: a dictionary of image window and location shapes
         """
         shapes = {}
         for name in list(self._shapes):
-            shapes[name] = self._shapes[name]
-            shapes[LOCATION_FORMAT.format(name)] = (1 + N_SPATIAL * 2,)
+            shapes[name] = tuple(
+                [self.n_samples] + list(self._shapes[name]))
+            shapes[LOCATION_FORMAT.format(name)] = tuple(
+                [self.n_samples] + [1 + N_SPATIAL * 2])
         return shapes
+
+    @property
+    def tf_shapes(self):
+        """
+        returns a dictionary of sampler output tensor shapes
+        """
+        output_shapes = nest.map_structure_up_to(
+            self.tf_dtypes, tf.TensorShape, self.shapes)
+        return output_shapes
 
     @property
     def tf_dtypes(self):
@@ -161,8 +175,7 @@ class ImageWindow(object):
         placeholders.extend(
             [tf.placeholder(dtype=BUFFER_POSITION_DTYPE,
                             shape=location_shape,
-                            name=name)
-             for name in self.names])
+                            name=name) for name in self.names])
         self._placeholders_dict = dict(zip(names, placeholders))
 
     def placeholders_dict(self, n_samples=1):
@@ -215,7 +228,7 @@ class ImageWindow(object):
         Check whether the shape of the window is fully specified
 
         :return: True indicates it's dynamic, False indicates
-         the window size is fully specified.
+            the window size is fully specified.
         """
         for shape in list(self._shapes.values()):
             try:
@@ -234,16 +247,16 @@ class ImageWindow(object):
         :param image_shapes:
         :return: dict of fully specified window shapes
         """
-        if self.has_dynamic_shapes:
-            static_window_shapes = self._shapes.copy()
-            # fill the None element in dynamic shapes using image_sizes
-            for name in self.names:
-                static_window_shapes[name] = tuple(
-                    win_size if win_size else image_shape
-                    for (win_size, image_shape) in
-                    zip(list(self._shapes[name]), image_shapes[name]))
-        else:
-            static_window_shapes = self._shapes
+        if not self.has_dynamic_shapes:
+            return self._shapes
+
+        static_window_shapes = self._shapes.copy()
+        # fill the None element in dynamic shapes using image_sizes
+        for name in self.names:
+            static_window_shapes[name] = tuple(
+                win_size if win_size else image_shape
+                for (win_size, image_shape) in
+                zip(list(self._shapes[name]), image_shapes[name]))
         return static_window_shapes
 
 

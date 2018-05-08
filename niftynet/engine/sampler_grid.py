@@ -24,10 +24,11 @@ class GridSampler(Layer, InputBatchQueueRunner):
                  batch_size,
                  spatial_window_size=(),
                  window_border=(),
-                 queue_length=10):
+                 queue_length=10,
+                 name='grid_sampler'):
         self.batch_size = batch_size
         self.reader = reader
-        Layer.__init__(self, name='input_buffer')
+        Layer.__init__(self, name=name)
         InputBatchQueueRunner.__init__(
             self,
             capacity=queue_length,

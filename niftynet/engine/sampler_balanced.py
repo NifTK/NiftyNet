@@ -44,13 +44,15 @@ class BalancedSampler(UniformSampler):
                  data_param,
                  batch_size,
                  windows_per_image,
-                 queue_length=10):
+                 queue_length=10,
+                 name='balanced_sampler'):
         UniformSampler.__init__(self,
                                 reader=reader,
                                 data_param=data_param,
                                 batch_size=batch_size,
                                 windows_per_image=windows_per_image,
-                                queue_length=queue_length)
+                                queue_length=queue_length,
+                                name=name)
         tf.logging.info('Initialised balanced sampler window instance')
         self.window_centers_sampler = balanced_spatial_coordinates
 

@@ -207,7 +207,8 @@ class InputBatchQueueRunner(object):
         else:
             data_output = self._dequeue_func(self._batch_size)
         for (name, shape) in self._window.shapes.items():
-            data_output[name].set_shape([self._batch_size] + list(shape))
+            # set first dim as the batch size
+            data_output[name].set_shape([self._batch_size] + list(shape[1:]))
         for name in data_output:
             data_output[name] = squeeze_spatial_temporal_dim(data_output[name])
 
