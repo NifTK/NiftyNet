@@ -36,7 +36,7 @@ class ImageWindowDataset(object):
                  from_generator=False,
                  shuffle=True):
         # TODO spatial window size overriding
-        # TODO optional shuffling
+        # TODO OutOfRange error
         self.dataset = None
         self.iterator = None
 
@@ -156,12 +156,14 @@ class ImageWindowDataset(object):
             # dataset: slice the n-element window into n single windows
             def _slice_from_each(*args):
                 datasets = [tf.data.Dataset.from_tensor_slices(tensor)
-                    for tensor in args]
+                            for tensor in args]
                 return tf.data.Dataset.zip(tuple(datasets))
 
             dataset = dataset.flat_map(map_func=_slice_from_each)
         else:
             # dataset: from a window generator
+            # assumes self.window.n_samples == 1
+            # the generator should yield one window at each iteration
             win_shapes = {}
             for name in self.tf_shapes:
                 win_shapes[name] = self.tf_shapes[name][1:]
@@ -169,6 +171,7 @@ class ImageWindowDataset(object):
                 generator=self,
                 output_types=self.tf_dtypes,
                 output_shapes=win_shapes)
+
         # dataset: batch and shuffle
         dataset = dataset.batch(batch_size=self.batch_size)
         if self.shuffle:

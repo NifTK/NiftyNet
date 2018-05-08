@@ -116,6 +116,7 @@ class GridSampler(Layer, ImageWindowDataset):
                     output_dict[image_data_key] = image_window[...]
                 yield output_dict
 
+        # TODO refactor?
         for _ in range(self.queue_length + self.batch_size):
             for name in list(output_dict):
                 output_dict[name] = np.ones_like(output_dict[name]) * -1
