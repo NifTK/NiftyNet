@@ -43,7 +43,12 @@ class KeywordsMatching(object):
             if not value:
                 continue
             if name == "path_to_search":
-                value = value.split(',')
+                try:
+                    # for a string of comma separated path.
+                    value = value.split(',')
+                except AttributeError:
+                    pass
+
                 for path_i in value:
                     path_i = path_i.strip()
                     path_orig = os.path.abspath(os.path.expanduser(path_i))

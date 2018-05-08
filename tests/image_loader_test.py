@@ -25,7 +25,7 @@ class ImageLoaderTest(tf.test.TestCase):
             print('testing {}'.format(_loader))
             if _loader == 'nibabel':
                 continue # skip nibabel for 2d image
-            if _loader == 'fake':
+            if _loader == 'dummy':
                 continue # skip the toy example
             self.load_2d_image(_loader)
 

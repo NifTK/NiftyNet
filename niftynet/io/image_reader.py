@@ -342,12 +342,14 @@ class ImageReader(Layer):
         """
         return np.flatnonzero(self._file_list['subject_id'] == subject_id)[0]
 
-    def get_subject(self, image_index):
+    def get_subject(self, image_index=None):
         """
         Given an integer id returns the corresponding row of the file list.
         returns: a dictionary of the row
         """
         try:
+            if image_index is None:
+                return self._file_list.iloc[:].to_dict()
             return self._file_list.iloc[image_index].to_dict()
         except (KeyError, AttributeError):
             tf.logging.warning('Unknown subject id in reader file list.')
