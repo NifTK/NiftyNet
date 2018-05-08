@@ -18,9 +18,6 @@ LOCATION_FORMAT = "{}_location"
 BUFFER_POSITION_DTYPE = tf.int32
 
 
-# TF_NP_DTYPES = {tf.int32: np.int32, tf.float32: np.float32}
-
-
 class ImageWindow(object):
     """
     Each window is associated with a tuple of coordinates.
@@ -125,9 +122,7 @@ class ImageWindow(object):
             tf.logging.fatal('data_param wrong format %s', data_param)
             raise
         # create ImageWindow instance
-        return cls(names=input_names,
-                   shapes=shapes,
-                   dtypes=image_dtypes)
+        return cls(names=input_names, shapes=shapes, dtypes=image_dtypes)
 
     def set_spatial_shape(self, spatial_window):
         """
@@ -153,30 +148,25 @@ class ImageWindow(object):
             self._update_placeholders_dict(n_samples=self.n_samples)
 
     def _update_placeholders_dict(self, n_samples=1):
+        """
+        Update the placeholders according to the new n_samples (batch_size)
+        :param n_samples:
+        :return:
+        """
         # batch size=1 if the shapes are dynamic
         self.n_samples = 1 if self.has_dynamic_shapes else n_samples
 
-        names = list(self.names)
         try:
-            placeholders = [
-                tf.placeholder(
-                    dtype=self._dtypes[name],
-                    shape=[self.n_samples] + list(self._shapes[name]),
+            self._placeholders_dict = {}
+            for name in list(self.tf_dtypes):
+                self._placeholders_dict[name] = tf.placeholder(
+                    dtype=self.tf_dtypes[name],
+                    shape=self.shapes[name],
                     name=name)
-                for name in names]
         except TypeError:
             tf.logging.fatal(
-                'shape should be defined as dict of iterable %s', self._shapes)
+                'shape should be defined as dict of iterable %s', self.shapes)
             raise
-        # extending names with names of coordinates
-        names.extend([LOCATION_FORMAT.format(name) for name in names])
-        # extending placeholders with names of coordinates
-        location_shape = [self.n_samples, 1 + N_SPATIAL * 2]
-        placeholders.extend(
-            [tf.placeholder(dtype=BUFFER_POSITION_DTYPE,
-                            shape=location_shape,
-                            name=name) for name in self.names])
-        self._placeholders_dict = dict(zip(names, placeholders))
 
     def placeholders_dict(self, n_samples=1):
         """
