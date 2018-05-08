@@ -32,8 +32,11 @@ class ImageWindowDataset(object):
                  n_subjects,
                  batch_size=1,
                  windows_per_image=1,
-                 queue_length=10):
+                 queue_length=10,
+                 from_generator=False,
+                 shuffle=True):
         # TODO spatial window size overriding
+        # TODO optional shuffling
         self.dataset = None
         self.iterator = None
 
@@ -43,6 +46,8 @@ class ImageWindowDataset(object):
         self.window = ImageWindow.from_data_reader_properties(
             image_names, image_shapes, image_dtypes, window_sizes)
         self.window.n_samples = windows_per_image
+        self.from_generator = from_generator
+        self.shuffle = shuffle
 
     def __call__(self):
         tf.logging.fatal(
@@ -114,7 +119,9 @@ class ImageWindowDataset(object):
         if self.iterator is None:
             self._init_dataset()
 
-        window_output = self.iterator.get_next()[0]
+        window_output = self.iterator.get_next()
+        if not self.from_generator:
+            window_output = window_output[0]
         for name in window_output:
             window_output[name] = squeeze_spatial_temporal_dim(
                 window_output[name])
@@ -129,32 +136,43 @@ class ImageWindowDataset(object):
         """
         if self.iterator is not None:
             return
+        if not self.from_generator:
+            # dataset: a list of integers
+            dataset = tf.data.Dataset.range(self.n_subjects)
 
-        # dataset: a list of integers
-        dataset = tf.data.Dataset.range(self.n_subjects)
+            # dataset: map each integer i to n windows sampled from subject i
+            def _tf_wrapper(idx):
+                flattened_types = nest.flatten(self.tf_dtypes)
+                flattened_shapes = nest.flatten(self.tf_shapes)
+                flat_values = tf.py_func(func=self._flatten_layer_op,
+                                         inp=[idx],
+                                         Tout=flattened_types)
+                for ret_t, shape in zip(flat_values, flattened_shapes):
+                    ret_t.set_shape(shape)
+                return nest.pack_sequence_as(self.tf_dtypes, flat_values)
 
-        # dataset: map each integer i to n windows sampled from subject i
-        def _tf_wrapper(idx):
-            flattened_types = nest.flatten(self.tf_dtypes)
-            flattened_shapes = nest.flatten(self.tf_shapes)
-            flat_values = tf.py_func(func=self._flatten_layer_op,
-                                     inp=[idx],
-                                     Tout=flattened_types)
-            for ret_t, shape in zip(flat_values, flattened_shapes):
-                ret_t.set_shape(shape)
-            return nest.pack_sequence_as(self.tf_dtypes, flat_values)
+            dataset = dataset.map(_tf_wrapper, num_parallel_calls=3)
 
-        dataset = dataset.map(_tf_wrapper, num_parallel_calls=3)
+            # dataset: slice the n-element window into n single windows
+            def _slice_from_each(*args):
+                datasets = [tf.data.Dataset.from_tensor_slices(tensor)
+                    for tensor in args]
+                return tf.data.Dataset.zip(tuple(datasets))
 
-        # dataset: slice the n-element window into n single windows
-        def _slice_from_each(*args):
-            datasets = [
-                tf.data.Dataset.from_tensor_slices(tensor) for tensor in args]
-            return tf.data.Dataset.zip(tuple(datasets))
-
-        dataset = dataset.flat_map(map_func=_slice_from_each)
+            dataset = dataset.flat_map(map_func=_slice_from_each)
+        else:
+            # dataset: from a window generator
+            win_shapes = {}
+            for name in self.tf_shapes:
+                win_shapes[name] = self.tf_shapes[name][1:]
+            dataset = tf.data.Dataset.from_generator(
+                generator=self,
+                output_types=self.tf_dtypes,
+                output_shapes=win_shapes)
+        # dataset: batch and shuffle
         dataset = dataset.batch(batch_size=self.batch_size)
-        dataset = dataset.shuffle(buffer_size=self.queue_length, seed=None)
+        if self.shuffle:
+            dataset = dataset.shuffle(buffer_size=self.queue_length, seed=None)
         iterator = dataset.make_initializable_iterator()
 
         self.dataset = dataset

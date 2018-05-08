@@ -31,7 +31,7 @@ def infer_tf_dtypes(image_array):
     Choosing a suitable tf dtype based on the dtype of input numpy array.
     """
     return dtype_casting(
-        image_array.dtype[0], image_array.interp_order, as_tf=True)
+        image_array.dtype[0], image_array.interp_order[0], as_tf=True)
 
 
 class ImageReader(Layer):
