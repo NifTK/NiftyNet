@@ -214,7 +214,7 @@ def generalised_dice_loss(prediction,
     generalised_dice_numerator = \
         2 * tf.reduce_sum(tf.multiply(weights, intersect))
     generalised_dice_denominator = \
-        tf.reduce_sum(tf.multiply(weights, seg_vol + ref_vol))
+        tf.reduce_sum(tf.multiply(weights, seg_vol + ref_vol)) + 1e-6
     generalised_dice_score = \
         generalised_dice_numerator / generalised_dice_denominator
     return 1 - generalised_dice_score
@@ -281,11 +281,12 @@ def cross_entropy(prediction, ground_truth, weight_map=None):
 
     entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
         logits=prediction, labels=ground_truth)
-    if weight_map is not None:
-        weight_map = tf.cast(tf.size(entropy), dtype=tf.float32) / \
-                     tf.reduce_sum(weight_map) * weight_map
-        entropy = tf.multiply(entropy, weight_map)
-    return tf.reduce_mean(entropy)
+
+    if weight_map is None:
+        return tf.reduce_mean(entropy)
+
+    weight_sum = tf.maximum(tf.reduce_sum(weight_map), 1e-6)
+    return tf.reduce_sum(entropy * weight_map / weight_sum)
 
 
 def cross_entropy_dense(prediction, ground_truth, weight_map=None):
