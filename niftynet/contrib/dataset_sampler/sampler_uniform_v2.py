@@ -49,7 +49,6 @@ class UniformSampler(Layer):
 
         tf.logging.info("initialised sampler output %s ", self.window.shapes)
         self.window_centers_sampler = rand_spatial_coordinates
-        self._init_dataset()
 
     @property
     def shapes(self):
@@ -89,6 +88,8 @@ class UniformSampler(Layer):
         """
         if session is None:
             session = tf.get_default_session()
+        if self.iterator is None:
+            self._init_dataset()
         session.run(self.iterator.initializer)
 
     def close_all(self):
@@ -115,7 +116,7 @@ class UniformSampler(Layer):
         """
 
         if self.iterator is None:
-            return None
+            self._init_dataset()
 
         window_output = self.iterator.get_next()[0]
         for name in window_output:

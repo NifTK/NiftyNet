@@ -34,7 +34,7 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
         self.windows_per_image = windows_per_image
         self.shuffle = bool(shuffle_buffer)
 
-        Layer.__init__(self, name='input_buffer')
+        Layer.__init__(self, name='resize_sampler')
         InputBatchQueueRunner.__init__(
             self,
             capacity=queue_length,
