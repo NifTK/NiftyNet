@@ -4,14 +4,15 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import tensorflow as tf
 
-from niftynet.engine.sampler_random_vector import RandomVectorSampler
+from niftynet.contrib.dataset_sampler.sampler_random_vector_v2 import RandomVectorSampler
 
 
 class RandomVectorSamplerTest(tf.test.TestCase):
     def test_random_vector(self):
         sampler = RandomVectorSampler(names=('test_vector',),
                                       vector_size=(100,),
-                                      batch_size=20)
+                                      batch_size=20,
+                                      repeat=None)
         with self.test_session() as sess:
             coordinator = tf.train.Coordinator()
             sampler.run_threads(sess, coordinator, num_threads=2)
@@ -37,13 +38,12 @@ class RandomVectorSamplerTest(tf.test.TestCase):
                                       vector_size=(100,),
                                       batch_size=batch_size,
                                       n_interpolations=n_interpolations,
-                                      repeat=repeat,
-                                      queue_length=100)
+                                      repeat=repeat)
         with self.test_session() as sess:
             coordinator = tf.train.Coordinator()
             sampler.run_threads(sess, coordinator, num_threads=1)
             n_output = 0
-            for _ in range(10):
+            for _ in range(2):
                 out_vector = sess.run(sampler.pop_batch_op())
                 if np.all(out_vector['test_vector'] == -1):
                     break

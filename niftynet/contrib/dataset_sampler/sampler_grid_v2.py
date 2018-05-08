@@ -38,7 +38,7 @@ class GridSampler(Layer, ImageWindowDataset):
             image_shapes=self.reader.shapes,
             image_dtypes=self.reader.tf_dtypes,
             window_sizes=data_param,
-            n_subjects=len(self.reader.output_list),
+            n_subjects=self.reader.num_subjects,
             batch_size=batch_size,
             windows_per_image=1,
             queue_length=queue_length,

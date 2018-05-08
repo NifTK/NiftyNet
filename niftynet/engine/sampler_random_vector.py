@@ -30,6 +30,7 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
                  repeat=1,
                  queue_length=10,
                  name='random_vector_sampler'):
+        # repeat=None for infinite loops
         Layer.__init__(self, name=name)
 
         self.n_interpolations = max(n_interpolations, 1)
@@ -61,7 +62,7 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
         Location coordinates are set to ``np.ones`` for all the vectors.
         """
         total_iter = self.repeat if self.repeat is not None else 1
-        while total_iter > 0:
+        while total_iter:
             total_iter = total_iter - 1 if self.repeat is not None else 1
             embedding_x = np.random.normal(
                 self.mean,

@@ -324,6 +324,16 @@ class ImageReader(Layer):
         """
         self._names = make_input_tuple(fields_tuple, string_types)
 
+    @property
+    def num_subjects(self):
+        """
+
+        :return: number of subjects in the reader
+        """
+        if not self.output_list:
+            return 0
+        return len(self.output_list)
+
     def get_subject_id(self, image_index):
         """
         Given an integer id returns the subject id.
