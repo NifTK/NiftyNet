@@ -44,7 +44,9 @@ class UniformSampler(Layer, ImageWindowDataset):
             n_subjects=self.reader.num_subjects,
             batch_size=batch_size,
             windows_per_image=windows_per_image,
-            queue_length=queue_length)
+            queue_length=queue_length,
+            shuffle=True,
+            epoch=-1)
 
         tf.logging.info("initialised uniform sampler %s ", self.window.shapes)
         self.window_centers_sampler = rand_spatial_coordinates

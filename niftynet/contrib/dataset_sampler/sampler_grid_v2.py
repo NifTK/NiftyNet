@@ -43,7 +43,8 @@ class GridSampler(Layer, ImageWindowDataset):
             windows_per_image=1,
             queue_length=queue_length,
             from_generator=True,
-            shuffle=False)
+            shuffle=False,
+            epoch=1)
 
         if spatial_window_size:
             # override all spatial window defined in input

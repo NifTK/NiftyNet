@@ -45,7 +45,8 @@ class LinearInterpolateSampler(Layer, ImageWindowDataset):
             batch_size=batch_size,
             queue_length=queue_length,
             from_generator=True,
-            shuffle=False)
+            shuffle=False,
+            epoch=1)
 
         # only try to use the first spatial shape available
         image_spatial_shape = list(self.reader.shapes.values())[0][:3]

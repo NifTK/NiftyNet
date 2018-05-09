@@ -32,11 +32,9 @@ class ResizeSampler(Layer, ImageWindowDataset):
                  shuffle_buffer=True,
                  queue_length=10,
                  name='resize_sampler_v2'):
+        Layer.__init__(self, name=name)
 
         self.reader = reader
-        self.shuffle = bool(shuffle_buffer)
-
-        Layer.__init__(self, name=name)
         tf.logging.info('reading size of preprocessed images')
         ImageWindowDataset.__init__(
             self,
@@ -47,7 +45,9 @@ class ResizeSampler(Layer, ImageWindowDataset):
             n_subjects=self.reader.num_subjects,
             batch_size=batch_size,
             windows_per_image=windows_per_image,
-            queue_length=queue_length)
+            queue_length=queue_length,
+            shuffle=shuffle_buffer,
+            epoch=-1 if shuffle_buffer else 1)
         if spatial_window_size:
             # override all spatial window defined in input
             # modalities sections

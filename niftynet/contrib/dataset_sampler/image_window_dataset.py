@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Generating uniformly distributed image window from input image
-This can also be considered as a "random cropping" layer of the
-input image.
+Creating ``tf.data.Dataset`` instance for image window sampler.
 """
 from __future__ import absolute_import, division, print_function
 
@@ -16,12 +14,11 @@ from niftynet.io.misc_io import squeeze_spatial_temporal_dim
 
 class ImageWindowDataset(object):
     """
-    This class generates samples by uniformly sampling each input volume
-    currently the coordinates are randomised for spatial dims only,
-    i.e., the first three dims of image.
+    This class creates a ``tf.data.Dataset`` instance from
+    a sampler's layer_op function or generator.
 
-    This layer can be considered as a "random cropping" layer of the
-    input image.
+    If ``from_generator``, ``Dataset.from_generator`` interface will be used,
+    ``Dataset.map`` interface will be used otherwise.
     """
 
     def __init__(self,
@@ -34,9 +31,11 @@ class ImageWindowDataset(object):
                  windows_per_image=1,
                  queue_length=10,
                  from_generator=False,
-                 shuffle=True):
+                 shuffle=True,
+                 epoch=-1):
         # TODO spatial window size overriding
         # TODO OutOfRange error
+        # TODO random seeds
         self.dataset = None
         self.iterator = None
 
@@ -48,6 +47,7 @@ class ImageWindowDataset(object):
         self.window.n_samples = windows_per_image
         self.from_generator = from_generator
         self.shuffle = shuffle
+        self.epoch = epoch
 
     def __call__(self):
         tf.logging.fatal(
@@ -174,8 +174,12 @@ class ImageWindowDataset(object):
 
         # dataset: batch and shuffle
         dataset = dataset.batch(batch_size=self.batch_size)
+        dataset = dataset.prefetch(
+            buffer_size=int(max(self.queue_length,
+                                round(self.batch_size * 3.0))))
         if self.shuffle:
             dataset = dataset.shuffle(buffer_size=self.queue_length, seed=None)
+        dataset = dataset.repeat(self.epoch)
         iterator = dataset.make_initializable_iterator()
 
         self.dataset = dataset
