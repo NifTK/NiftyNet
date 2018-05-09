@@ -45,8 +45,7 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
         self.names = names
         vector_shapes = {names[0]: vector_size}
         vector_dtypes = {names[0]: tf.float32}
-        self.window = ImageWindow(names=tuple(vector_shapes),
-                                  shapes=vector_shapes,
+        self.window = ImageWindow(shapes=vector_shapes,
                                   dtypes=vector_dtypes)
         tf.logging.info('initialised window instance')
         self._create_queue_and_ops(self.window,

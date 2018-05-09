@@ -42,8 +42,8 @@ class BalancedSampler(UniformSampler):
     def __init__(self,
                  reader,
                  data_param,
-                 batch_size,
-                 windows_per_image,
+                 batch_size=1,
+                 windows_per_image=1,
                  queue_length=10,
                  name='balanced_sampler'):
         UniformSampler.__init__(self,

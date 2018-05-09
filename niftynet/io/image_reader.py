@@ -463,7 +463,7 @@ def param_to_dict(input_data_param):
     """
     error_msg = 'Unknown ``data_param`` type. ' \
                 'It should be a nested dictionary: '\
-                '{"modality_name": {"input_property": value}}'\
+                '{"modality_name": {"input_property": value}} '\
                 'or a dictionary of: {"modality_name": '\
                 'niftynet.utilities.util_common.ParserNamespace}'
     data_param = deepcopy(input_data_param)

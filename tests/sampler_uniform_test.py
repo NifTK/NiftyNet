@@ -196,7 +196,7 @@ class UniformSamplerTest(tf.test.TestCase):
         sampler.close_all()
 
     def test_ill_init(self):
-        with self.assertRaisesRegexp(KeyError, ""):
+        with self.assertRaisesRegexp(ValueError, ""):
             sampler = UniformSampler(reader=get_3d_reader(),
                                      data_param=MOD_2D_DATA,
                                      batch_size=2,

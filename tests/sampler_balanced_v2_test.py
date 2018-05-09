@@ -150,7 +150,7 @@ class BalancedSamplerTest(tf.test.TestCase):
             self.assertAllClose(out['image'].shape[1:], (8, 2, 256, 2))
 
     def test_ill_init(self):
-        with self.assertRaisesRegexp(KeyError, ""):
+        with self.assertRaisesRegexp(ValueError, ""):
             sampler = BalancedSampler(reader=get_3d_reader(),
                                       data_param=MOD_2D_DATA,
                                       batch_size=2,

@@ -7,13 +7,12 @@ from __future__ import absolute_import, print_function, division
 import numpy as np
 import tensorflow as tf
 
-from niftynet.engine.image_window import N_SPATIAL, LOCATION_FORMAT
 from niftynet.contrib.dataset_sampler.image_window_dataset import \
     ImageWindowDataset
-from niftynet.layer.base_layer import Layer
+from niftynet.engine.image_window import N_SPATIAL, LOCATION_FORMAT
 
 
-class LinearInterpolateSampler(Layer, ImageWindowDataset):
+class LinearInterpolateSampler(ImageWindowDataset):
     """
     This class reads two feature vectors from files (often generated
     by running feature extractors on images in advance)
@@ -30,30 +29,22 @@ class LinearInterpolateSampler(Layer, ImageWindowDataset):
                  n_interpolations=10,
                  queue_length=10,
                  name='linear_interpolation_sampler'):
-
-        self.n_interpolations = n_interpolations
-        self.reader = reader
-        Layer.__init__(self, name=name)
-
         ImageWindowDataset.__init__(
             self,
-            image_names=self.reader.input_sources,
-            image_shapes=self.reader.shapes,
-            image_dtypes=self.reader.tf_dtypes,
+            reader,
             window_sizes=data_param,
-            n_subjects=self.reader.num_subjects,
             batch_size=batch_size,
             queue_length=queue_length,
             from_generator=True,
             shuffle=False,
-            epoch=1)
-
+            epoch=1,
+            name=name)
+        self.n_interpolations = n_interpolations
         # only try to use the first spatial shape available
         image_spatial_shape = list(self.reader.shapes.values())[0][:3]
         self.window.set_spatial_shape(image_spatial_shape)
         tf.logging.info(
             "initialised linear interpolation sampler %s ", self.window.shapes)
-
         assert not self.window.has_dynamic_shapes, \
             "dynamic shapes not supported, please specify " \
             "spatial_window_size = (1, 1, 1)"

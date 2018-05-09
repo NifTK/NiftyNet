@@ -42,7 +42,6 @@ class WeightedSampler(UniformSampler):
                                 queue_length=queue_length,
                                 name=name)
         tf.logging.info('Initialised weighted sampler window instance')
-        self.intensity_based_sampling = True
         self.window_centers_sampler = weighted_spatial_coordinates
 
 

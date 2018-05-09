@@ -7,14 +7,13 @@ from __future__ import absolute_import, print_function, division
 import numpy as np
 import tensorflow as tf
 
-from niftynet.engine.image_window import \
-    N_SPATIAL, LOCATION_FORMAT, ImageWindow
 from niftynet.contrib.dataset_sampler.image_window_dataset import \
     ImageWindowDataset
-from niftynet.layer.base_layer import Layer
+from niftynet.engine.image_window import \
+    N_SPATIAL, LOCATION_FORMAT, ImageWindow
 
 
-class RandomVectorSampler(Layer, ImageWindowDataset):
+class RandomVectorSampler(ImageWindowDataset):
     """
     This class generates two samples from the standard normal
     distribution.  These two samples are mixed with n
@@ -33,8 +32,6 @@ class RandomVectorSampler(Layer, ImageWindowDataset):
                  queue_length=10,
                  name='random_vector_sampler'):
         # repeat=None for infinite loops
-        Layer.__init__(self, name=name)
-
         self.n_interpolations = max(n_interpolations, 1)
         self.mean = mean
         self.stddev = stddev
@@ -43,20 +40,16 @@ class RandomVectorSampler(Layer, ImageWindowDataset):
 
         ImageWindowDataset.__init__(
             self,
-            image_names={names[0]:(names[0],)},
-            image_shapes={names[0]: vector_size},
-            image_dtypes={names[0]: tf.float32},
+            reader=None,
             window_sizes={names[0]: {'spatial_window_size': vector_size}},
             batch_size=batch_size,
-            n_subjects=1,
             queue_length=queue_length,
             from_generator=True,
             shuffle=False,
-            epoch=1)
-        self.window = ImageWindow(names=tuple({names[0]: vector_size}),
-                                  shapes={names[0]: vector_size},
+            epoch=1,
+            name=name)
+        self.window = ImageWindow(shapes={names[0]: vector_size},
                                   dtypes={names[0]: tf.float32})
-        self.window.n_samples = batch_size
         tf.logging.info("initialised sampler output %s ", self.window.shapes)
 
     def layer_op(self):

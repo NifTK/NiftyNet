@@ -39,7 +39,7 @@ def get_dynamic_image_window():
         data_param={
             'modality1': ParserNamespace(spatial_window_size=(10, 10)),
             'modality2': ParserNamespace(spatial_window_size=(10, 10)),
-            'modality3': ParserNamespace(spatial_window_size=2)}
+            'modality3': ParserNamespace(spatial_window_size=(2,))}
     )
 
 
@@ -57,7 +57,7 @@ def get_all_dynamic_image_window():
         data_param={
             'modality1': ParserNamespace(spatial_window_size=(-1, -1)),
             'modality2': ParserNamespace(spatial_window_size=(-1, -1)),
-            'modality3': ParserNamespace(spatial_window_size=-1)}
+            'modality3': ParserNamespace(spatial_window_size=(-1,))}
     )
 
 
@@ -161,15 +161,15 @@ class ImageWindowTest(tf.test.TestCase):
             [1, None, None, None, 1, 1])
 
     def test_ill_cases(self):
-        with self.assertRaisesRegexp(TypeError, ""):
+        with self.assertRaisesRegexp(ValueError, ""):
             ImageWindow.from_data_reader_properties(
                 **get_ill_image_window())
 
-        with self.assertRaisesRegexp(TypeError, ""):
+        with self.assertRaisesRegexp(ValueError, ""):
             ImageWindow.from_data_reader_properties(
                 **get_ill_image_window_1())
 
-        with self.assertRaisesRegexp(TypeError, ""):
+        with self.assertRaisesRegexp(ValueError, ""):
             ImageWindow.from_data_reader_properties(
                 **get_ill_image_window_2())
 

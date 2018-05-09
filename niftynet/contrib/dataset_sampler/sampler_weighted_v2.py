@@ -9,8 +9,8 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import tensorflow as tf
 
-from niftynet.engine.image_window import N_SPATIAL
 from niftynet.contrib.dataset_sampler.sampler_uniform_v2 import UniformSampler
+from niftynet.engine.image_window import N_SPATIAL
 
 
 class WeightedSampler(UniformSampler):
@@ -42,7 +42,6 @@ class WeightedSampler(UniformSampler):
                                 queue_length=queue_length,
                                 name=name)
         tf.logging.info('Initialised weighted sampler window instance')
-        self.intensity_based_sampling = True
         self.window_centers_sampler = weighted_spatial_coordinates
 
 

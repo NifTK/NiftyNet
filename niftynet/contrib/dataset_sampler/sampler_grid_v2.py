@@ -7,14 +7,13 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import tensorflow as tf
 
-from niftynet.engine.image_window import N_SPATIAL, LOCATION_FORMAT
-from niftynet.layer.base_layer import Layer
 from niftynet.contrib.dataset_sampler.image_window_dataset import \
     ImageWindowDataset
+from niftynet.engine.image_window import N_SPATIAL, LOCATION_FORMAT
 
 
 # pylint: disable=too-many-locals
-class GridSampler(Layer, ImageWindowDataset):
+class GridSampler(ImageWindowDataset):
     """
     This class generators ND image samples with a sliding window.
     """
@@ -22,29 +21,22 @@ class GridSampler(Layer, ImageWindowDataset):
     def __init__(self,
                  reader,
                  data_param,
-                 batch_size,
+                 batch_size=1,
                  spatial_window_size=None,
                  window_border=None,
                  queue_length=10,
                  name='grid_sampler'):
-        Layer.__init__(self, name=name)
-
-        self.batch_size = batch_size
-        self.reader = reader
-        tf.logging.info('reading size of preprocessed inputs')
         ImageWindowDataset.__init__(
             self,
-            image_names=self.reader.input_sources,
-            image_shapes=self.reader.shapes,
-            image_dtypes=self.reader.tf_dtypes,
+            reader=reader,
             window_sizes=data_param,
-            n_subjects=self.reader.num_subjects,
             batch_size=batch_size,
             windows_per_image=1,
             queue_length=queue_length,
             from_generator=True,
             shuffle=False,
-            epoch=1)
+            epoch=1,
+            name=name)
 
         if spatial_window_size:
             # override all spatial window defined in input
@@ -64,7 +56,7 @@ class GridSampler(Layer, ImageWindowDataset):
             if not data:
                 break
             image_shapes = {name: data[name].shape
-                            for name in self.window.names}
+                for name in self.window.names}
             static_window_shapes = self.window.match_image_shapes(image_shapes)
             coordinates = grid_spatial_coordinates(
                 image_id, image_shapes, static_window_shapes, self.border_size)
@@ -102,7 +94,7 @@ class GridSampler(Layer, ImageWindowDataset):
                         coordinates[name][idx, 1:]
                     try:
                         image_window = data[name][
-                            x_start:x_end, y_start:y_end, z_start:z_end, ...]
+                        x_start:x_end, y_start:y_end, z_start:z_end, ...]
                     except ValueError:
                         tf.logging.fatal(
                             "dimensionality miss match in input volumes, "
@@ -143,7 +135,7 @@ def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
     for name, image_shape in img_sizes.items():
         window_shape = win_sizes[name]
         grid_size = [max(win_size - 2 * border, 0)
-                     for (win_size, border) in zip(window_shape, border_size)]
+            for (win_size, border) in zip(window_shape, border_size)]
         assert len(image_shape) >= N_SPATIAL, \
             'incompatible image shapes in grid_spatial_coordinates'
         assert len(window_shape) >= N_SPATIAL, \

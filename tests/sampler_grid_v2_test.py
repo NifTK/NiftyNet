@@ -161,14 +161,14 @@ class GridSamplerTest(tf.test.TestCase):
         sampler.close_all()
 
     def test_name_mismatch(self):
-        with self.assertRaisesRegexp(KeyError, ""):
+        with self.assertRaisesRegexp(ValueError, ""):
             sampler = GridSampler(reader=get_dynamic_window_reader(),
                                   data_param=MOD_2D_DATA,
                                   batch_size=10,
                                   spatial_window_size=None,
                                   window_border=(0, 0, 0),
                                   queue_length=10)
-        with self.assertRaisesRegexp(KeyError, ""):
+        with self.assertRaisesRegexp(ValueError, ""):
             sampler = GridSampler(reader=get_3d_reader(),
                                   data_param=MOD_2D_DATA,
                                   batch_size=10,

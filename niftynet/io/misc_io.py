@@ -52,6 +52,9 @@ def dtype_casting(original_dtype, interp_order, as_tf=False):
     Making image dtype based on user specified interp order and
     best compatibility with Tensorflow.
 
+    (if interp_order > 1, all values are promoted to float32,
+     this avoids errors when the input images have different dtypes)
+
     :param original_dtype: an input datatype
     :param interp_order: an integer of interpolation order
     :return: normalised numpy dtype

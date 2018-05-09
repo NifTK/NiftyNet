@@ -7,14 +7,19 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import argparse
+import copy
+
+import numpy as np
 import tensorflow as tf
 # pylint: disable=no-name-in-module
 from tensorflow.python.data.util import nest
 
-from niftynet.io.image_reader import param_to_dict
+from niftynet.utilities.util_common import ParserNamespace
 
 N_SPATIAL = 3
 LOCATION_FORMAT = "{}_location"
+BUFFER_POSITION_NP_TYPE = np.int32
 BUFFER_POSITION_DTYPE = tf.int32
 
 
@@ -27,13 +32,21 @@ class ImageWindow(object):
     with data.
     """
 
-    def __init__(self, names, shapes, dtypes):
-        self.names = names
+    def __init__(self, shapes, dtypes):
         self._shapes = shapes
         self._dtypes = dtypes
+        self._placeholders_dict = None
+
         self.n_samples = 1
         self.has_dynamic_shapes = self._check_dynamic_shapes()
-        self._placeholders_dict = None
+
+    @property
+    def names(self):
+        """
+
+        :return: a tuple of output modality names
+        """
+        return tuple(self._shapes)
 
     @property
     def shapes(self):
@@ -52,7 +65,7 @@ class ImageWindow(object):
     @property
     def tf_shapes(self):
         """
-        returns a dictionary of sampler output tensor shapes
+        :return: a dictionary of sampler output tensor shapes
         """
         output_shapes = nest.map_structure_up_to(
             self.tf_dtypes, tf.TensorShape, self.shapes)
@@ -61,7 +74,7 @@ class ImageWindow(object):
     @property
     def tf_dtypes(self):
         """
-        returns tensorflow dtypes of the window.
+        :return: tensorflow dtypes of the window.
         """
         dtypes = {}
         for name in list(self._dtypes):
@@ -92,6 +105,12 @@ class ImageWindow(object):
                 'image': tf.float32,
                 'label': tf.float32},
             data_param={
+                'modality1': (10, 10, 2),
+                'modality2': (10, 10, 2),
+                'modality3': (5, 5, 1)}
+
+        or using a dictionary (deprecating)::
+            data_param={
                 'modality1': {'spatial_window_size': (10, 10, 2)},
                 'modality2': {'spatial_window_size': (10, 10, 2)},
                 'modality3': {'spatial_window_size': (5, 5, 1)}}
@@ -104,25 +123,36 @@ class ImageWindow(object):
         :param data_param: dict of each input source specifications
         :return: an ImageWindow instance
         """
+        win_size = copy.deepcopy(data_param)
+        if isinstance(data_param, dict):
+            for name in list(data_param):
+                window_size = data_param[name]
+                if isinstance(
+                        window_size, (ParserNamespace, argparse.Namespace)):
+                    window_size = vars(window_size)
+                if not isinstance(window_size, dict):
+                    win_size[name] = tuple(window_size)
+                elif 'spatial_window_size' in window_size:
+                    win_size[name] = tuple(
+                        window_size['spatial_window_size'])
+                else:
+                    raise ValueError('data_param should be nested dictionary')
         try:
-            input_names = tuple(source_names)
-        except TypeError:
-            tf.logging.fatal('image names should be a dictionary of strings')
-            raise
-        try:
+            image_shapes = nest.map_structure_up_to(
+                image_dtypes, tuple, image_shapes)
             # complete window shapes based on user input and input_image sizes
-            spatial_shapes = {
-                name: _read_window_sizes(modalities, data_param)
-                for (name, modalities) in source_names.items()}
+            spatial_shapes = _read_window_sizes(source_names, win_size)
+            spatial_shapes = nest.map_structure_up_to(
+                image_dtypes, tuple, spatial_shapes)
             shapes = {
                 name: _complete_partial_window_sizes(
                     spatial_shapes[name], image_shapes[name])
-                for name in input_names}
+                for name in list(image_dtypes)}
         except KeyError:
             tf.logging.fatal('data_param wrong format %s', data_param)
             raise
         # create ImageWindow instance
-        return cls(names=input_names, shapes=shapes, dtypes=image_dtypes)
+        return cls(shapes=shapes, dtypes=image_dtypes)
 
     def set_spatial_shape(self, spatial_window):
         """
@@ -141,7 +171,7 @@ class ImageWindow(object):
         self._shapes = {
             name: _complete_partial_window_sizes(
                 spatial_window, self._shapes[name])
-            for name in self.names}
+            for name in list(self._shapes)}
         # update based on the latest spatial shapes
         self.has_dynamic_shapes = self._check_dynamic_shapes()
         if self._placeholders_dict is not None:
@@ -242,7 +272,7 @@ class ImageWindow(object):
 
         static_window_shapes = self._shapes.copy()
         # fill the None element in dynamic shapes using image_sizes
-        for name in self.names:
+        for name in list(self._shapes):
             static_window_shapes[name] = tuple(
                 win_size if win_size else image_shape
                 for (win_size, image_shape) in
@@ -250,49 +280,73 @@ class ImageWindow(object):
         return static_window_shapes
 
 
-def _read_window_sizes(input_mod_list, input_data_param):
+def _read_window_sizes(input_mod_list, input_window_sizes):
     """
     Read window_size from config dict
     group them based on output names,
     this function ensures that in the multimodality case
     the spatial window sizes are the same across modalities.
+    usage::
 
-    :param input_mod_list: list of input source names
-    :param input_data_param: input source properties obtained
+    input_mod_list = {'image': ('mr', 'ct')}
+    intput_window_size = {'mr': (42, 42, 42)}
+    returns: {'image': (42, 42, 42)}
+
+    input_mod_list = ('image',)
+    intput_window_size = {'image': (42, 42, 42)}
+    returns: {'image': (42, 42, 42)}
+
+    input_mod_list = ('image',)
+    intput_window_size = (42, 42, 42)
+    returns: {'image': (42, 42, 42)}
+
+    input_mod_list = ('image','label')
+    intput_window_size = (42, 42, 42)
+    returns: {'image': (42, 42, 42), 'label': (42, 42, 42)}
+
+    :param input_mod_list: list/dictionary of input source names
+    :param input_window_sizes: input source properties obtained
         by parameters parser
-    :return: spatial window size
+    :return: {'output_name': spatial window size} dictionary
     """
-    input_data_param = param_to_dict(input_data_param)
-    try:
-        window_sizes = [input_data_param[input_name]['spatial_window_size']
-                        for input_name in input_mod_list]
-    except (AttributeError, TypeError, KeyError):
-        tf.logging.fatal('unknown input_data_param format %s %s',
-                         input_mod_list, input_data_param)
-        raise
-    if not all(window_sizes):
-        window_sizes = [win_size for win_size in window_sizes if win_size]
-    uniq_window_set = set(window_sizes)
-    if len(uniq_window_set) > 1:
-        # pylint: disable=logging-format-interpolation
-        tf.logging.fatal(
-            "trying to combine input sources "
-            "with different window sizes: %s", window_sizes)
-        raise NotImplementedError
-    window_shape = None
-    if uniq_window_set:
-        window_shape = uniq_window_set.pop()
-    try:
-        return tuple(int(win_size) for win_size in window_shape)
-    except (TypeError, ValueError):
-        pass
-    try:
-        # try to make it a tuple
-        return int(window_shape),
-    except (TypeError, ValueError):
-        tf.logging.fatal('unknown spatial_window_size param %s, %s',
-                         input_mod_list, input_data_param)
-        raise
+    window_sizes = {}
+    if isinstance(input_window_sizes, (tuple, list)):
+        try:
+            win_sizes = [int(win_size) for win_size in input_window_sizes]
+        except ValueError:
+            tf.logging.fatal("spatial window should be an array of int")
+            raise
+        # single window size for all inputs
+        for name in set(input_mod_list):
+            window_sizes[name] = win_sizes
+        return window_sizes
+
+    if isinstance(input_window_sizes, (ParserNamespace, argparse.Namespace)):
+        input_window_sizes = vars(input_window_sizes)
+
+    if not isinstance(input_window_sizes, dict):
+        raise ValueError('window sizes should be a list/tuple/dictionary')
+
+    output_names = set(input_mod_list)
+    for name in output_names:
+        window_size = None
+        if name in input_window_sizes:
+            # resolve output window size as input_window_sizes spec.
+            window_size = input_window_sizes[name]
+        for mod in input_mod_list[name]:
+            # resolve output window size as input mod window size dict item
+            if mod in input_window_sizes:
+                window_size = input_window_sizes[mod]
+        if not window_size:
+            # input size not resolved
+            raise ValueError('Unknown output window size '
+                             'for input image {}'.format(name))
+        if name in window_sizes:
+            assert window_size == window_sizes[name], \
+                "trying to use different window sizes for " \
+                "the concatenated input {}".format(name)
+        window_sizes[name] = window_size
+    return window_sizes
 
 
 def _complete_partial_window_sizes(win_size, img_size):
