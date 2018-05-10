@@ -28,6 +28,7 @@ testjob:
     - master
     - dev
     - tags
+    - image-reader-testing-docs
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
@@ -187,6 +188,7 @@ quicktest:
     - master
     - dev
     - tags
+    - image-reader-testing-docs
     - 177-merging-net_regress-to-dev
     - 112-publish-api-docs-online
     - 147-revise-contribution-guidelines-to-include-github
@@ -254,6 +256,7 @@ pip-installer:
     - master
     - dev
     - tags
+    - image-reader-testing-docs
   script:
     # get the shortened version of last commit's hash
     - LAST_COMMIT=$(git rev-parse --short HEAD)
