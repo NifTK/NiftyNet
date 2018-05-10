@@ -220,8 +220,8 @@ def _infer_spatial_size(img_sizes, win_sizes):
     :param win_sizes: dictionary of {'input_name': (win_size_x, win_size_y,...)}
     :return: (image_spatial_size, window_largest_spatial_size)
     """
-    uniq_spatial_size = set([img_size[:N_SPATIAL]
-                                for img_size in list(img_sizes.values())])
+    uniq_spatial_size = \
+        set([img_size[:N_SPATIAL] for img_size in list(img_sizes.values())])
     if len(uniq_spatial_size) != 1:
         tf.logging.fatal("Don't know how to generate sampling "
                          "locations: Spatial dimensions of the "
@@ -231,13 +231,13 @@ def _infer_spatial_size(img_sizes, win_sizes):
     img_spatial_size = np.asarray(uniq_spatial_size.pop(), dtype=np.int32)
 
     # find the largest spatial window across input sections
-    _win_spatial_sizes = [win_size[:N_SPATIAL]
-        for win_size in win_sizes.values()]
+    _win_spatial_sizes = \
+        [win_size[:N_SPATIAL] for win_size in win_sizes.values()]
     _win_spatial_sizes = np.asarray(_win_spatial_sizes, dtype=np.int32)
     win_spatial_size = np.max(_win_spatial_sizes, axis=0)
 
     assert all([img_spatial_size[i] >= win_spatial_size[i]
-                   for i in range(N_SPATIAL)]), \
+                for i in range(N_SPATIAL)]), \
         "window size {} is larger than image size {}".format(
             win_spatial_size, img_spatial_size)
 

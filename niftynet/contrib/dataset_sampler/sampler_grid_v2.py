@@ -26,10 +26,15 @@ class GridSampler(ImageWindowDataset):
                  window_border=None,
                  queue_length=10,
                  name='grid_sampler'):
+
+        # override all spatial window defined in input
+        # modalities sections
+        # this is useful when do inference with a spatial window
+        # which is different from the training specifications
         ImageWindowDataset.__init__(
             self,
             reader=reader,
-            window_sizes=data_param,
+            window_sizes=spatial_window_size or data_param,
             batch_size=batch_size,
             windows_per_image=1,
             queue_length=queue_length,
@@ -38,15 +43,7 @@ class GridSampler(ImageWindowDataset):
             epoch=1,
             name=name)
 
-        if spatial_window_size:
-            # override all spatial window defined in input
-            # modalities sections
-            # this is useful when do inference with a spatial window
-            # which is different from the training specifications
-            self.window.set_spatial_shape(spatial_window_size)
-        self.border_size = window_border
-        if not self.border_size:
-            self.border_size = (0, 0, 0)
+        self.border_size = window_border or (0, 0, 0)
         tf.logging.info('initialised window instance')
         tf.logging.info("initialised grid sampler %s", self.window.shapes)
 
@@ -56,7 +53,7 @@ class GridSampler(ImageWindowDataset):
             if not data:
                 break
             image_shapes = {name: data[name].shape
-                for name in self.window.names}
+                            for name in self.window.names}
             static_window_shapes = self.window.match_image_shapes(image_shapes)
             coordinates = grid_spatial_coordinates(
                 image_id, image_shapes, static_window_shapes, self.border_size)
@@ -94,7 +91,7 @@ class GridSampler(ImageWindowDataset):
                         coordinates[name][idx, 1:]
                     try:
                         image_window = data[name][
-                        x_start:x_end, y_start:y_end, z_start:z_end, ...]
+                            x_start:x_end, y_start:y_end, z_start:z_end, ...]
                     except ValueError:
                         tf.logging.fatal(
                             "dimensionality miss match in input volumes, "
@@ -109,7 +106,7 @@ class GridSampler(ImageWindowDataset):
                     output_dict[image_data_key] = image_window[...]
                 yield output_dict
 
-        # TODO refactor?
+        # refactor?
         for _ in range(self.queue_length + self.batch_size):
             for name in list(output_dict):
                 output_dict[name] = np.ones_like(output_dict[name]) * -1
@@ -135,7 +132,7 @@ def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
     for name, image_shape in img_sizes.items():
         window_shape = win_sizes[name]
         grid_size = [max(win_size - 2 * border, 0)
-            for (win_size, border) in zip(window_shape, border_size)]
+                     for (win_size, border) in zip(window_shape, border_size)]
         assert len(image_shape) >= N_SPATIAL, \
             'incompatible image shapes in grid_spatial_coordinates'
         assert len(window_shape) >= N_SPATIAL, \

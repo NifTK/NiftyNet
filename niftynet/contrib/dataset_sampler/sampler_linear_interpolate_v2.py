@@ -49,7 +49,7 @@ class LinearInterpolateSampler(ImageWindowDataset):
             "dynamic shapes not supported, please specify " \
             "spatial_window_size = (1, 1, 1)"
 
-    def layer_op(self, *args, **kwargs):
+    def layer_op(self, *_unused_args, **_unused_kwargs):
         """
         This function first reads two vectors, and interpolates them
         with self.n_interpolations mixing coefficients.

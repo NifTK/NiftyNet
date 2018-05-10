@@ -90,7 +90,7 @@ class ResizeSampler(ImageWindowDataset):
                     image_window = data[name]
                 else:
                     zoom_ratio = [float(p) / float(d) for p, d in
-                        zip(window_shape, image_shape)]
+                                  zip(window_shape, image_shape)]
                     image_window = self.zoom_3d(
                         image=data[name],
                         ratio=zoom_ratio,

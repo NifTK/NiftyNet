@@ -18,7 +18,7 @@ def get_static_window_param():
         image_dtypes={
             'image': tf.float32,
             'label': tf.float32},
-        data_param={
+        window_sizes={
             'modality1': ParserNamespace(spatial_window_size=(10, 10, 2)),
             'modality2': ParserNamespace(spatial_window_size=(10, 10, 2)),
             'modality3': ParserNamespace(spatial_window_size=(5, 5, 1))}
@@ -36,7 +36,7 @@ def get_dynamic_image_window():
         image_dtypes={
             'image': tf.float32,
             'label': tf.float32},
-        data_param={
+        window_sizes={
             'modality1': ParserNamespace(spatial_window_size=(10, 10)),
             'modality2': ParserNamespace(spatial_window_size=(10, 10)),
             'modality3': ParserNamespace(spatial_window_size=(2,))}
@@ -54,7 +54,7 @@ def get_all_dynamic_image_window():
         image_dtypes={
             'image': tf.float32,
             'label': tf.float32},
-        data_param={
+        window_sizes={
             'modality1': ParserNamespace(spatial_window_size=(-1, -1)),
             'modality2': ParserNamespace(spatial_window_size=(-1, -1)),
             'modality3': ParserNamespace(spatial_window_size=(-1,))}
@@ -72,7 +72,7 @@ def get_ill_image_window():
         image_dtypes={
             'image': tf.float32,
             'label': tf.float32},
-        data_param={
+        window_sizes={
             'modality1': ParserNamespace(spatial_window_size=(10, 10)),
             'modality3': ParserNamespace(spatial_window_size=())}
     )
@@ -89,7 +89,7 @@ def get_ill_image_window_1():
         image_dtypes={
             'image': tf.float32,
             'label': tf.float32},
-        data_param={
+        window_sizes={
             'modality1': ParserNamespace(spatial_window_size=(10, 10)),
             'modality2': ParserNamespace(spatial_window_size=(10, 10)),
             'modality3': ParserNamespace(spatial_window_size=())}
@@ -106,7 +106,7 @@ def get_ill_image_window_2():
             'label': (192, 160, 192, 1, 1)},
         image_dtypes={
             'image': tf.float32},
-        data_param={
+        window_sizes={
             'modality1': ParserNamespace(spatial_window_size=(10, 10)),
             'modality2': ParserNamespace(spatial_window_size=(10, 10)),
             'modality3': ParserNamespace(spatial_window_size=())}

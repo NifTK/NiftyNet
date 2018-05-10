@@ -42,7 +42,6 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
             capacity=queue_length,
             shuffle=False)
         tf.logging.info('reading size of preprocessed images')
-        self.names = names
         vector_shapes = {names[0]: vector_size}
         vector_dtypes = {names[0]: tf.float32}
         self.window = ImageWindow(shapes=vector_shapes,

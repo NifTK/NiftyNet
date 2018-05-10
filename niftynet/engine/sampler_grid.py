@@ -22,11 +22,12 @@ class GridSampler(Layer, InputBatchQueueRunner):
                  reader,
                  data_param,
                  batch_size,
-                 spatial_window_size=(),
-                 window_border=(),
+                 spatial_window_size=None,
+                 window_border=None,
                  queue_length=10,
                  name='grid_sampler'):
         self.batch_size = batch_size
+        self.border_size = window_border or (0, 0, 0)
         self.reader = reader
         Layer.__init__(self, name=name)
         InputBatchQueueRunner.__init__(
@@ -34,19 +35,17 @@ class GridSampler(Layer, InputBatchQueueRunner):
             capacity=queue_length,
             shuffle=False)
         tf.logging.info('reading size of preprocessed inputs')
+
+        # override all spatial window defined in input
+        # modalities sections
+        # this is useful when do inference with a spatial window
+        # which is different from the training specifications
         self.window = ImageWindow.from_data_reader_properties(
             self.reader.input_sources,
             self.reader.shapes,
             self.reader.tf_dtypes,
-            data_param)
+            spatial_window_size or data_param)
 
-        if spatial_window_size:
-            # override all spatial window defined in input
-            # modalities sections
-            # this is useful when do inference with a spatial window
-            # which is different from the training specifications
-            self.window.set_spatial_shape(spatial_window_size)
-        self.border_size = window_border
         tf.logging.info('initialised window instance')
         self._create_queue_and_ops(self.window,
                                    enqueue_size=1,
