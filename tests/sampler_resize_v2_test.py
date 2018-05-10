@@ -105,7 +105,7 @@ class ResizeSamplerTest(tf.test.TestCase):
     def test_3d_init(self):
         sampler = ResizeSampler(
             reader=get_3d_reader(),
-            data_param=MULTI_MOD_DATA,
+            window_sizes=MULTI_MOD_DATA,
             batch_size=1,
             shuffle_buffer=False,
             queue_length=1)
@@ -119,7 +119,7 @@ class ResizeSamplerTest(tf.test.TestCase):
     def test_dynamic_init(self):
         sampler = ResizeSampler(
             reader=get_dynamic_window_reader(),
-            data_param=DYNAMIC_MOD_DATA,
+            window_sizes=DYNAMIC_MOD_DATA,
             batch_size=1,
             shuffle_buffer=False,
             queue_length=1)
@@ -133,7 +133,7 @@ class ResizeSamplerTest(tf.test.TestCase):
     def test_2d_init(self):
         sampler = ResizeSampler(
             reader=get_2d_reader(),
-            data_param=MOD_2D_DATA,
+            window_sizes=MOD_2D_DATA,
             batch_size=1,
             shuffle_buffer=True,
             queue_length=1)

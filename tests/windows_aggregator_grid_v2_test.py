@@ -128,7 +128,7 @@ class GridSamplesAggregatorTest(tf.test.TestCase):
     def test_3d_init(self):
         reader = get_3d_reader()
         sampler = GridSampler(reader=reader,
-                              data_param=MULTI_MOD_DATA,
+                              window_sizes=MULTI_MOD_DATA,
                               batch_size=10,
                               spatial_window_size=None,
                               window_border=(3, 4, 5),
@@ -160,7 +160,7 @@ class GridSamplesAggregatorTest(tf.test.TestCase):
     def test_2d_init(self):
         reader = get_2d_reader()
         sampler = GridSampler(reader=reader,
-                              data_param=MOD_2D_DATA,
+                              window_sizes=MOD_2D_DATA,
                               batch_size=10,
                               spatial_window_size=None,
                               window_border=(3, 4, 5),
@@ -191,7 +191,7 @@ class GridSamplesAggregatorTest(tf.test.TestCase):
     def test_25d_init(self):
         reader = get_25d_reader()
         sampler = GridSampler(reader=reader,
-                              data_param=SINGLE_25D_DATA,
+                              window_sizes=SINGLE_25D_DATA,
                               batch_size=10,
                               spatial_window_size=None,
                               window_border=(3, 4, 5),
@@ -224,7 +224,7 @@ class GridSamplesAggregatorTest(tf.test.TestCase):
         reader = get_label_reader()
         data_param = MOD_LABEL_DATA
         sampler = GridSampler(reader=reader,
-                              data_param=data_param,
+                              window_sizes=data_param,
                               batch_size=10,
                               spatial_window_size=None,
                               window_border=(3, 4, 5),

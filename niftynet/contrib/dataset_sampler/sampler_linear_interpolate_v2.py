@@ -24,7 +24,7 @@ class LinearInterpolateSampler(ImageWindowDataset):
 
     def __init__(self,
                  reader,
-                 data_param,
+                 window_sizes,
                  batch_size=10,
                  n_interpolations=10,
                  queue_length=10,
@@ -32,7 +32,7 @@ class LinearInterpolateSampler(ImageWindowDataset):
         ImageWindowDataset.__init__(
             self,
             reader,
-            window_sizes=data_param,
+            window_sizes=window_sizes,
             batch_size=batch_size,
             queue_length=queue_length,
             from_generator=True,

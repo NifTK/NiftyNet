@@ -26,7 +26,7 @@ class UniformSampler(ImageWindowDataset):
 
     def __init__(self,
                  reader,
-                 data_param,
+                 window_sizes,
                  batch_size=1,
                  windows_per_image=1,
                  queue_length=10,
@@ -34,7 +34,7 @@ class UniformSampler(ImageWindowDataset):
         ImageWindowDataset.__init__(
             self,
             reader=reader,
-            window_sizes=data_param,
+            window_sizes=window_sizes,
             batch_size=batch_size,
             windows_per_image=windows_per_image,
             queue_length=queue_length,

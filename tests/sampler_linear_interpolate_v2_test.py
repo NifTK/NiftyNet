@@ -50,7 +50,7 @@ class LinearInterpolateSamplerTest(tf.test.TestCase):
     def test_init(self):
         sampler = LinearInterpolateSampler(
             reader=get_3d_reader(),
-            data_param=MULTI_MOD_DATA,
+            window_sizes=MULTI_MOD_DATA,
             batch_size=1,
             n_interpolations=8,
             queue_length=1)

@@ -110,7 +110,7 @@ def get_dynamic_window_reader():
 class WeightedSamplerTest(tf.test.TestCase):
     def test_3d_init(self):
         sampler = WeightedSampler(reader=get_3d_reader(),
-                                  data_param=MULTI_MOD_DATA,
+                                  window_sizes=MULTI_MOD_DATA,
                                   batch_size=2,
                                   windows_per_image=10,
                                   queue_length=10)
@@ -123,7 +123,7 @@ class WeightedSamplerTest(tf.test.TestCase):
 
     def test_2d_init(self):
         sampler = WeightedSampler(reader=get_2d_reader(),
-                                  data_param=MOD_2D_DATA,
+                                  window_sizes=MOD_2D_DATA,
                                   batch_size=2,
                                   windows_per_image=10,
                                   queue_length=10)
@@ -136,7 +136,7 @@ class WeightedSamplerTest(tf.test.TestCase):
 
     def test_dynamic_init(self):
         sampler = WeightedSampler(reader=get_dynamic_window_reader(),
-                                  data_param=DYNAMIC_MOD_DATA,
+                                  window_sizes=DYNAMIC_MOD_DATA,
                                   batch_size=2,
                                   windows_per_image=10,
                                   queue_length=10)
@@ -149,14 +149,14 @@ class WeightedSamplerTest(tf.test.TestCase):
     def test_ill_init(self):
         with self.assertRaisesRegexp(ValueError, ""):
             sampler = WeightedSampler(reader=get_3d_reader(),
-                                      data_param=MOD_2D_DATA,
+                                      window_sizes=MOD_2D_DATA,
                                       batch_size=2,
                                       windows_per_image=10,
                                       queue_length=10)
 
     def test_close_early(self):
         sampler = WeightedSampler(reader=get_2d_reader(),
-                                  data_param=MOD_2D_DATA,
+                                  window_sizes=MOD_2D_DATA,
                                   batch_size=2,
                                   windows_per_image=10,
                                   queue_length=10)
