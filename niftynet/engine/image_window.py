@@ -93,7 +93,8 @@ class ImageWindow(object):
                                     source_names,
                                     image_shapes,
                                     image_dtypes,
-                                    window_sizes=None):
+                                    window_sizes=None,
+                                    allow_dynamic=False):
         """
         Create a window instance with input data properties
         each property is grouped into dict, with pairs of
@@ -133,6 +134,10 @@ class ImageWindow(object):
         :param image_shapes: tuple of image window shapes
         :param image_dtypes: tuple of image window data types
         :param window_sizes: window sizes for the image image
+        :param allow_dynamic: if True, window_sizes negative or 0 indicates
+            dynamic window sizes; . Otherwise the dynamic sizes will be fixed
+            as the image shapes; this assumes the same image size across the
+            dataset.
         :return: an ImageWindow instance
         """
         try:
@@ -149,6 +154,9 @@ class ImageWindow(object):
             return window_instance
 
         window_instance.set_spatial_shape(window_sizes, source_names)
+        if not allow_dynamic:
+            full_shape = window_instance.match_image_shapes(image_shapes)
+            window_instance.set_spatial_shape(full_shape)
         return window_instance
 
     def set_spatial_shape(self, spatial_window, source_names=None):
@@ -167,8 +175,8 @@ class ImageWindow(object):
         if isinstance(spatial_window, dict):
             for name in list(spatial_window):
                 window_size = spatial_window[name]
-                if isinstance(
-                        window_size, (ParserNamespace, argparse.Namespace)):
+                if isinstance(window_size,
+                              (ParserNamespace, argparse.Namespace)):
                     window_size = vars(window_size)
                 if not isinstance(window_size, dict):
                     win_sizes[name] = tuple(window_size)
@@ -178,6 +186,9 @@ class ImageWindow(object):
                 else:
                     raise ValueError(
                         'window_sizes should be a nested dictionary')
+        elif isinstance(spatial_window, (list, tuple)):
+            # list or tuple of single window sizes
+            win_sizes = {name: spatial_window for name in list(self._dtypes)}
 
         # complete window shapes based on user input and input_image sizes
         if source_names:
@@ -187,7 +198,7 @@ class ImageWindow(object):
                 spatial_shapes = {}
                 for name in list(self._dtypes):
                     spatial_shapes[name] = \
-                        tuple(int(win_size) for win_size in win_sizes)
+                        tuple(int(win_size) for win_size in win_sizes[name])
             except ValueError:
                 tf.logging.fatal("spatial window should be an array of int")
                 raise

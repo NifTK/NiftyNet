@@ -17,7 +17,7 @@ class ResizeSampler(ImageWindowDataset):
     """
     This class generates samples by rescaling
     the whole image to the desired size
-    currently 5D input is supported:
+    Assuming the reader's output is 5d:
     ``Height x Width x Depth x time x Modality``
     """
 

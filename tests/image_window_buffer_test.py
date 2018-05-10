@@ -42,7 +42,8 @@ def get_dynamic_image_window():
         window_sizes={
             'modality1': ParserNamespace(spatial_window_size=(10, 10)),
             'modality2': ParserNamespace(spatial_window_size=(10, 10)),
-            'modality3': ParserNamespace(spatial_window_size=(5, 5, 1))}
+            'modality3': ParserNamespace(spatial_window_size=(5, 5, 1))},
+        allow_dynamic=True,
     )
     return window
 

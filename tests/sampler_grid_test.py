@@ -158,7 +158,7 @@ class GridSamplerTest(tf.test.TestCase):
             coordinator = tf.train.Coordinator()
             sampler.run_threads(sess, coordinator, num_threads=1)
             out = sess.run(sampler.pop_batch_op())
-            self.assertAllClose(out['image'].shape, (1, 8, 2, 256, 2))
+            self.assertAllClose(out['image'].shape, (10, 8, 2, 256, 2))
         sampler.close_all()
 
     def test_name_mismatch(self):
