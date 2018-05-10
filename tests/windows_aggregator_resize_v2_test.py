@@ -130,7 +130,7 @@ class ResizeSamplesAggregatorTest(tf.test.TestCase):
         sampler = ResizeSampler(reader=reader,
                                 window_sizes=MULTI_MOD_DATA,
                                 batch_size=1,
-                                shuffle_buffer=False,
+                                shuffle=False,
                                 queue_length=50)
         aggregator = ResizeSamplesAggregator(
             image_reader=reader,
@@ -163,7 +163,7 @@ class ResizeSamplesAggregatorTest(tf.test.TestCase):
         sampler = ResizeSampler(reader=reader,
                                 window_sizes=MOD_2D_DATA,
                                 batch_size=1,
-                                shuffle_buffer=False,
+                                shuffle=False,
                                 queue_length=50)
         aggregator = ResizeSamplesAggregator(
             image_reader=reader,
@@ -196,7 +196,7 @@ class ResizeSamplesAggregatorTest(tf.test.TestCase):
         sampler = ResizeSampler(reader=reader,
                                 window_sizes=SINGLE_25D_DATA,
                                 batch_size=1,
-                                shuffle_buffer=False,
+                                shuffle=False,
                                 queue_length=50)
         aggregator = ResizeSamplesAggregator(
             image_reader=reader,
@@ -230,7 +230,7 @@ class ResizeSamplesAggregatorTest(tf.test.TestCase):
         sampler = ResizeSampler(reader=reader,
                                 window_sizes=MOD_LABEL_DATA,
                                 batch_size=1,
-                                shuffle_buffer=False,
+                                shuffle=False,
                                 queue_length=50)
         aggregator = ResizeSamplesAggregator(
             image_reader=reader,

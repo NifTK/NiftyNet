@@ -27,7 +27,7 @@ class ResizeSampler(ImageWindowDataset):
                  batch_size=1,
                  spatial_window_size=None,
                  windows_per_image=1,
-                 shuffle_buffer=True,
+                 shuffle=True,
                  queue_length=10,
                  name='resize_sampler_v2'):
         tf.logging.info('reading size of preprocessed images')
@@ -38,8 +38,8 @@ class ResizeSampler(ImageWindowDataset):
             batch_size=batch_size,
             windows_per_image=windows_per_image,
             queue_length=queue_length,
-            shuffle=shuffle_buffer,
-            epoch=-1 if shuffle_buffer else 1,
+            shuffle=shuffle,
+            epoch=-1 if shuffle else 1,
             from_generator=False,
             name=name)
         if spatial_window_size:

@@ -107,7 +107,7 @@ class ResizeSamplerTest(tf.test.TestCase):
             reader=get_3d_reader(),
             window_sizes=MULTI_MOD_DATA,
             batch_size=1,
-            shuffle_buffer=False,
+            shuffle=False,
             queue_length=1)
         with self.test_session() as sess:
             coordinator = tf.train.Coordinator()
@@ -121,7 +121,7 @@ class ResizeSamplerTest(tf.test.TestCase):
             reader=get_dynamic_window_reader(),
             window_sizes=DYNAMIC_MOD_DATA,
             batch_size=1,
-            shuffle_buffer=False,
+            shuffle=False,
             queue_length=1)
         with self.test_session() as sess:
             coordinator = tf.train.Coordinator()
@@ -135,7 +135,7 @@ class ResizeSamplerTest(tf.test.TestCase):
             reader=get_2d_reader(),
             window_sizes=MOD_2D_DATA,
             batch_size=1,
-            shuffle_buffer=True,
+            shuffle=True,
             queue_length=1)
         with self.test_session() as sess:
             coordinator = tf.train.Coordinator()
