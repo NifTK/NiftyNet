@@ -40,7 +40,6 @@ class ResizeSampler(ImageWindowDataset):
             queue_length=queue_length,
             shuffle=shuffle,
             epoch=-1 if shuffle else 1,
-            from_generator=False,
             name=name)
         if spatial_window_size:
             # override all spatial window defined in input

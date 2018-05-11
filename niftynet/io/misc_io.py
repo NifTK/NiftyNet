@@ -55,14 +55,20 @@ def dtype_casting(original_dtype, interp_order, as_tf=False):
     (if interp_order > 1, all values are promoted to float32,
      this avoids errors when the input images have different dtypes)
 
+     The image preprocessing steps such as normalising intensities to [-1, 1]
+     will cast input into floats. We therefore cast
+     almost everything to float32 in the reader. Potentially more
+     complex casting rules are needed here.
+
     :param original_dtype: an input datatype
     :param interp_order: an integer of interpolation order
-    :return: normalised numpy dtype
+    :param as_tf: boolean
+    :return: normalised numpy dtype if not `as_tf` else tensorflow dtypes
     """
 
     dkind = np.dtype(original_dtype).kind
     if dkind in 'biu':  # handling integers
-        if interp_order < 1:
+        if interp_order < 0:
             return np.int32 if not as_tf else tf.int32
         else:
             return np.float32 if not as_tf else tf.float32

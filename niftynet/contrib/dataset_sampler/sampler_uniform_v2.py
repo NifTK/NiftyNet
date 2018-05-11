@@ -40,7 +40,6 @@ class UniformSampler(ImageWindowDataset):
             queue_length=queue_length,
             shuffle=True,
             epoch=-1,
-            from_generator=False,
             name=name)
 
         tf.logging.info("initialised uniform sampler %s ", self.window.shapes)

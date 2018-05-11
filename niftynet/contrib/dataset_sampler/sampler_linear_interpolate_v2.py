@@ -35,7 +35,6 @@ class LinearInterpolateSampler(ImageWindowDataset):
             window_sizes=window_sizes,
             batch_size=batch_size,
             queue_length=queue_length,
-            from_generator=True,
             shuffle=False,
             epoch=1,
             name=name)

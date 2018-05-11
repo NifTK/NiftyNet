@@ -34,7 +34,6 @@ class ImageWindowDataset(Layer):
                  queue_length=10,
                  shuffle=True,
                  epoch=-1,
-                 from_generator=None,
                  name='image_dataset'):
         Layer.__init__(self, name=name)
 
@@ -46,10 +45,7 @@ class ImageWindowDataset(Layer):
         self.queue_length = queue_length
         self.n_subjects = 1
 
-        if from_generator is None:
-            self.from_generator = inspect.isgeneratorfunction(self.layer_op)
-        else:
-            self.from_generator = from_generator
+        self.from_generator = inspect.isgeneratorfunction(self.layer_op)
         self.shuffle = shuffle
         self.epoch = epoch
 
@@ -61,7 +57,8 @@ class ImageWindowDataset(Layer):
                 reader.tf_dtypes,
                 window_sizes or (-1, -1, -1))
             self.n_subjects = reader.num_subjects
-            self.window.n_samples = 1 if from_generator else windows_per_image
+            self.window.n_samples = \
+                1 if self.from_generator else windows_per_image
         # OutOfRange error?
         # num_threads?
         # random seeds? (requires num_threads = 1)
@@ -137,7 +134,7 @@ class ImageWindowDataset(Layer):
         # assumes self.window.n_samples == 1
         # the generator should yield one window at each iteration
         assert self.window.n_samples == 1, \
-            'image_window_dataset from generator: ' \
+            'image_window_dataset.layer_op() requires: ' \
             'windows_per_image should be 1.'
         image_id, image_data, _ = self.reader(idx=idx)
         for mod in list(image_data):
@@ -183,6 +180,9 @@ class ImageWindowDataset(Layer):
         window_output = self.iterator.get_next()
         if not self.from_generator:
             window_output = window_output[0]
+        # for name in list(self.shapes):
+        #     window_output[name].set_shape(
+        #         [self.batch_size] + list(self.shapes[name][1:]))
         for name in window_output:
             window_output[name] = squeeze_spatial_temporal_dim(
                 window_output[name])
@@ -233,6 +233,7 @@ class ImageWindowDataset(Layer):
                                      inp=[idx],
                                      Tout=flattened_types)
             for ret_t, shape in zip(flat_values, flattened_shapes):
+                # the actual returned numpy array shapes are not checked
                 ret_t.set_shape(shape)
             return nest.pack_sequence_as(self.tf_dtypes, flat_values)
 

@@ -38,7 +38,6 @@ class GridSampler(ImageWindowDataset):
             batch_size=batch_size,
             windows_per_image=1,
             queue_length=queue_length,
-            from_generator=True,
             shuffle=False,
             epoch=1,
             name=name)

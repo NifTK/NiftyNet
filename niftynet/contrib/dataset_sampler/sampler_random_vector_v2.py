@@ -44,7 +44,6 @@ class RandomVectorSampler(ImageWindowDataset):
             window_sizes={names[0]: {'spatial_window_size': vector_size}},
             batch_size=batch_size,
             queue_length=queue_length,
-            from_generator=True,
             shuffle=False,
             epoch=1,
             name=name)
