@@ -7,12 +7,12 @@ from __future__ import absolute_import, print_function, division
 import numpy as np
 import tensorflow as tf
 
-from niftynet.engine.image_window import ImageWindow, N_SPATIAL
-from niftynet.engine.image_window_buffer import InputBatchQueueRunner
-from niftynet.layer.base_layer import Layer
+from niftynet.contrib.dataset_sampler.image_window_dataset import \
+    ImageWindowDataset
+from niftynet.engine.image_window import N_SPATIAL, LOCATION_FORMAT
 
 
-class LinearInterpolateSampler(Layer, InputBatchQueueRunner):
+class LinearInterpolateSampler(ImageWindowDataset):
     """
     This class reads two feature vectors from files (often generated
     by running feature extractors on images in advance)
@@ -24,39 +24,31 @@ class LinearInterpolateSampler(Layer, InputBatchQueueRunner):
 
     def __init__(self,
                  reader,
-                 data_param,
+                 window_sizes,
                  batch_size=10,
                  n_interpolations=10,
                  queue_length=10,
                  name='linear_interpolation_sampler'):
-        self.n_interpolations = n_interpolations
-        self.reader = reader
-        Layer.__init__(self, name=name)
-        InputBatchQueueRunner.__init__(
+        ImageWindowDataset.__init__(
             self,
-            capacity=queue_length,
-            shuffle=False)
-        tf.logging.info('reading size of preprocessed images')
-        self.window = ImageWindow.from_data_reader_properties(
-            self.reader.input_sources,
-            self.reader.shapes,
-            self.reader.tf_dtypes,
-            data_param)
+            reader,
+            window_sizes=window_sizes,
+            batch_size=batch_size,
+            queue_length=queue_length,
+            shuffle=False,
+            epoch=1,
+            name=name)
+        self.n_interpolations = n_interpolations
         # only try to use the first spatial shape available
         image_spatial_shape = list(self.reader.shapes.values())[0][:3]
         self.window.set_spatial_shape(image_spatial_shape)
-
-        tf.logging.info('initialised window instance')
-        self._create_queue_and_ops(self.window,
-                                   enqueue_size=self.n_interpolations,
-                                   dequeue_size=batch_size)
-        tf.logging.info("initialised sampler output %s ", self.window.shapes)
-
+        tf.logging.info(
+            "initialised linear interpolation sampler %s ", self.window.shapes)
         assert not self.window.has_dynamic_shapes, \
             "dynamic shapes not supported, please specify " \
             "spatial_window_size = (1, 1, 1)"
 
-    def layer_op(self, *args, **kwargs):
+    def layer_op(self, *_unused_args, **_unused_kwargs):
         """
         This function first reads two vectors, and interpolates them
         with self.n_interpolations mixing coefficients.
@@ -74,22 +66,15 @@ class LinearInterpolateSampler(Layer, InputBatchQueueRunner):
             embedding_y = data_y[self.window.names[0]]
 
             steps = np.linspace(0, 1, self.n_interpolations)
-            output_vectors = []
             for (_, mixture) in enumerate(steps):
                 output_vector = \
                     embedding_x * mixture + embedding_y * (1 - mixture)
-                output_vector = output_vector[np.newaxis, ...]
-                output_vectors.append(output_vector)
-            output_vectors = np.concatenate(output_vectors, axis=0)
-            coordinates = np.ones(
-                (self.n_interpolations, N_SPATIAL * 2 + 1), dtype=np.int32)
-            coordinates[:, 0] = image_id_x
-            coordinates[:, 1] = image_id_y
-
-            output_dict = {}
-            for name in self.window.names:
-                coordinates_key = self.window.coordinates_placeholder(name)
-                image_data_key = self.window.image_data_placeholder(name)
-                output_dict[coordinates_key] = coordinates
-                output_dict[image_data_key] = output_vectors
-            yield output_dict
+                coordinates = np.ones((N_SPATIAL * 2 + 1), dtype=np.int32)
+                coordinates[0:2] = [image_id_x, image_id_y]
+                output_dict = {}
+                for name in self.window.names:
+                    coordinates_key = LOCATION_FORMAT.format(name)
+                    image_data_key = name
+                    output_dict[coordinates_key] = coordinates
+                    output_dict[image_data_key] = output_vector
+                yield output_dict

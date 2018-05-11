@@ -49,7 +49,7 @@ class PairwiseUniformSampler(Layer):
             self.reader_0.shapes['fixed_image'][:self.spatial_rank]
         self.moving_image_shape = \
             self.reader_1.shapes['moving_image'][:self.spatial_rank]
-        self.window_size = self.window.shapes['fixed_image']
+        self.window_size = self.window.shapes['fixed_image'][1:]
 
         # initialise a dataset prefetching pairs of image and label volumes
         n_subjects = len(self.reader_0.output_list)

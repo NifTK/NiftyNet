@@ -170,6 +170,7 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertDictEqual(reader.input_sources,
                              {'image': ('lesion',)})
         self.assertEqual(reader.get_subject_id(1)[:4], 'Fin_')
+        self.assertTrue(isinstance(reader.get_subject(1), dict))
 
     def test_existing_csv(self):
         reader_for_csv = ImageReader(['image'])
@@ -186,6 +187,7 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertDictEqual(reader.input_sources,
                              {'image': ('lesion',)})
         self.assertEqual(reader.get_subject_id(1)[:4], 'Fin_')
+        self.assertTrue(isinstance(reader.get_subject(1), dict))
 
     def test_operations(self):
         reader = ImageReader(['image'])
@@ -312,7 +314,7 @@ class ImageReaderTest(tf.test.TestCase):
         # Check data type
         self.assertGreaterEqual(image.min(), 0)
         self.assertLessEqual(image.max(), 255)
-        self.assertEqual(image.dtype, np.uint8)
+        self.assertEqual(image.dtype, np.float32)
         # Check shape
         self.assertEqual(image.ndim, 5)
         self.assertAllEqual(image.shape, (100, 100, 1, 1, 3))
@@ -331,7 +333,7 @@ class ImageReaderTest(tf.test.TestCase):
         # Check data type
         self.assertGreaterEqual(image.min(), 0)
         self.assertLessEqual(image.max(), 255)
-        self.assertEqual(image.dtype, np.uint8)
+        self.assertEqual(image.dtype, np.float32)
         # Check shape
         self.assertEqual(image.ndim, 5)
         self.assertAllEqual(image.shape, (100, 100, 1, 1, 1))
@@ -352,7 +354,7 @@ class ImageReaderTest(tf.test.TestCase):
         # Check data type
         self.assertGreaterEqual(image.min(), 0)
         self.assertLessEqual(image.max(), 255)
-        self.assertEqual(image.dtype, np.uint8)
+        self.assertEqual(image.dtype, np.float32)
         self.assertEqual(np.unique(image).size, 2)
         # Check shape
         self.assertEqual(image.ndim, 5)

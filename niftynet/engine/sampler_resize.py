@@ -28,13 +28,14 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
                  spatial_window_size=(),
                  windows_per_image=1,
                  shuffle_buffer=True,
-                 queue_length=10):
+                 queue_length=10,
+                 name='resize_sampler'):
 
         self.reader = reader
         self.windows_per_image = windows_per_image
         self.shuffle = bool(shuffle_buffer)
 
-        Layer.__init__(self, name='input_buffer')
+        Layer.__init__(self, name=name)
         InputBatchQueueRunner.__init__(
             self,
             capacity=queue_length,

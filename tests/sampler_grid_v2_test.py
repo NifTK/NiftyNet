@@ -6,9 +6,8 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from niftynet.engine.sampler_grid import GridSampler
-from niftynet.engine.sampler_grid import _enumerate_step_points
-from niftynet.engine.sampler_grid import grid_spatial_coordinates
+from niftynet.contrib.dataset_sampler.sampler_grid_v2 import \
+        GridSampler, _enumerate_step_points, grid_spatial_coordinates
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
@@ -107,7 +106,7 @@ def get_dynamic_window_reader():
 class GridSamplerTest(tf.test.TestCase):
     def test_3d_initialising(self):
         sampler = GridSampler(reader=get_3d_reader(),
-                              data_param=MULTI_MOD_DATA,
+                              window_sizes=MULTI_MOD_DATA,
                               batch_size=10,
                               spatial_window_size=None,
                               window_border=(0, 0, 0),
@@ -121,7 +120,7 @@ class GridSamplerTest(tf.test.TestCase):
 
     def test_25d_initialising(self):
         sampler = GridSampler(reader=get_3d_reader(),
-                              data_param=MULTI_MOD_DATA,
+                              window_sizes=MULTI_MOD_DATA,
                               batch_size=10,
                               spatial_window_size=(1, 20, 15),
                               window_border=(0, 0, 0),
@@ -135,7 +134,7 @@ class GridSamplerTest(tf.test.TestCase):
 
     def test_2d_initialising(self):
         sampler = GridSampler(reader=get_2d_reader(),
-                              data_param=MOD_2D_DATA,
+                              window_sizes=MOD_2D_DATA,
                               batch_size=10,
                               spatial_window_size=None,
                               window_border=(0, 0, 0),
@@ -149,7 +148,7 @@ class GridSamplerTest(tf.test.TestCase):
 
     def test_dynamic_window_initialising(self):
         sampler = GridSampler(reader=get_dynamic_window_reader(),
-                              data_param=DYNAMIC_MOD_DATA,
+                              window_sizes=DYNAMIC_MOD_DATA,
                               batch_size=10,
                               spatial_window_size=None,
                               window_border=(0, 0, 0),
@@ -164,14 +163,14 @@ class GridSamplerTest(tf.test.TestCase):
     def test_name_mismatch(self):
         with self.assertRaisesRegexp(ValueError, ""):
             sampler = GridSampler(reader=get_dynamic_window_reader(),
-                                  data_param=MOD_2D_DATA,
+                                  window_sizes=MOD_2D_DATA,
                                   batch_size=10,
                                   spatial_window_size=None,
                                   window_border=(0, 0, 0),
                                   queue_length=10)
         with self.assertRaisesRegexp(ValueError, ""):
             sampler = GridSampler(reader=get_3d_reader(),
-                                  data_param=MOD_2D_DATA,
+                                  window_sizes=MOD_2D_DATA,
                                   batch_size=10,
                                   spatial_window_size=None,
                                   window_border=(0, 0, 0),

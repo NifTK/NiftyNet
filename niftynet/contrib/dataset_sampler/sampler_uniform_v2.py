@@ -9,12 +9,12 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import tensorflow as tf
 
-from niftynet.engine.image_window import ImageWindow, N_SPATIAL
-from niftynet.engine.image_window_buffer import InputBatchQueueRunner
-from niftynet.layer.base_layer import Layer
+from niftynet.contrib.dataset_sampler.image_window_dataset import \
+    ImageWindowDataset
+from niftynet.engine.image_window import N_SPATIAL, LOCATION_FORMAT
 
 
-class UniformSampler(Layer, InputBatchQueueRunner):
+class UniformSampler(ImageWindowDataset):
     """
     This class generates samples by uniformly sampling each input volume
     currently the coordinates are randomised for spatial dims only,
@@ -26,32 +26,27 @@ class UniformSampler(Layer, InputBatchQueueRunner):
 
     def __init__(self,
                  reader,
-                 data_param,
-                 batch_size,
-                 windows_per_image,
+                 window_sizes,
+                 batch_size=1,
+                 windows_per_image=1,
                  queue_length=10,
-                 name='uniform_sampler'):
-        self.reader = reader
-        Layer.__init__(self, name=name)
-        InputBatchQueueRunner.__init__(
+                 name='uniform_sampler_v2'):
+        ImageWindowDataset.__init__(
             self,
-            capacity=queue_length,
-            shuffle=True)
-        tf.logging.info('reading size of preprocessed images')
-        self.window = ImageWindow.from_data_reader_properties(
-            self.reader.input_sources,
-            self.reader.shapes,
-            self.reader.tf_dtypes,
-            data_param)
-        tf.logging.info('initialised window instance')
-        self._create_queue_and_ops(self.window,
-                                   enqueue_size=windows_per_image,
-                                   dequeue_size=batch_size)
-        tf.logging.info("initialised sampler output %s ", self.window.shapes)
+            reader=reader,
+            window_sizes=window_sizes,
+            batch_size=batch_size,
+            windows_per_image=windows_per_image,
+            queue_length=queue_length,
+            shuffle=True,
+            epoch=-1,
+            name=name)
+
+        tf.logging.info("initialised uniform sampler %s ", self.window.shapes)
         self.window_centers_sampler = rand_spatial_coordinates
 
     # pylint: disable=too-many-locals
-    def layer_op(self):
+    def layer_op(self, idx=None):
         """
         This function generates sampling windows to the input buffer
         image data are from ``self.reader()``
@@ -61,63 +56,61 @@ class UniformSampler(Layer, InputBatchQueueRunner):
         finally extract window with the coordinates and output
         a dictionary (required by input buffer).
 
-        :return: output data dictionary ``{placeholders: data_array}``
+        :return: output data dictionary
+            ``{image_modality: data_array, image_location: n_samples * 7}``
         """
-        while True:
-            image_id, data, _ = self.reader(idx=None, shuffle=True)
-            if not data:
-                break
-            image_shapes = dict((name, data[name].shape)
-                                for name in self.window.names)
-            static_window_shapes = self.window.match_image_shapes(image_shapes)
+        image_id, data, _ = self.reader(idx=idx, shuffle=True)
+        image_shapes = dict(
+            (name, data[name].shape) for name in self.window.names)
+        static_window_shapes = self.window.match_image_shapes(image_shapes)
 
-            # find random coordinates based on window and image shapes
-            coordinates = self._spatial_coordinates_generator(
-                image_id,
-                data,
-                image_shapes,
-                static_window_shapes,
-                self.window.n_samples)
+        # find random coordinates based on window and image shapes
+        coordinates = self._spatial_coordinates_generator(
+            subject_id=image_id,
+            data=data,
+            img_sizes=image_shapes,
+            win_sizes=static_window_shapes,
+            n_samples=self.window.n_samples)
 
-            # initialise output dict, placeholders as dictionary keys
-            # this dictionary will be used in
-            # enqueue operation in the form of: `feed_dict=output_dict`
-            output_dict = {}
-            # fill output dict with data
-            for name in list(data):
-                coordinates_key = self.window.coordinates_placeholder(name)
-                image_data_key = self.window.image_data_placeholder(name)
+        # initialise output dict, placeholders as dictionary keys
+        # this dictionary will be used in
+        # enqueue operation in the form of: `feed_dict=output_dict`
+        output_dict = {}
+        # fill output dict with data
+        for name in list(data):
+            coordinates_key = LOCATION_FORMAT.format(name)
+            image_data_key = name
 
-                # fill the coordinates
-                location_array = coordinates[name]
-                output_dict[coordinates_key] = location_array
+            # fill the coordinates
+            location_array = coordinates[name]
+            output_dict[coordinates_key] = location_array
 
-                # fill output window array
-                image_array = []
-                for window_id in range(self.window.n_samples):
-                    x_start, y_start, z_start, x_end, y_end, z_end = \
-                        location_array[window_id, 1:]
-                    try:
-                        image_window = data[name][
-                            x_start:x_end, y_start:y_end, z_start:z_end, ...]
-                        image_array.append(image_window[np.newaxis, ...])
-                    except ValueError:
-                        tf.logging.fatal(
-                            "dimensionality miss match in input volumes, "
-                            "please specify spatial_window_size with a "
-                            "3D tuple and make sure each element is "
-                            "smaller than the image length in each dim. "
-                            "Current coords %s", location_array[window_id])
-                        raise
-                if len(image_array) > 1:
-                    output_dict[image_data_key] = \
-                        np.concatenate(image_array, axis=0)
-                else:
-                    output_dict[image_data_key] = image_array[0]
-            # the output image shape should be
-            # [enqueue_batch_size, x, y, z, time, modality]
-            # where enqueue_batch_size = windows_per_image
-            yield output_dict
+            # fill output window array
+            image_array = []
+            for window_id in range(self.window.n_samples):
+                x_start, y_start, z_start, x_end, y_end, z_end = \
+                    location_array[window_id, 1:]
+                try:
+                    image_window = data[name][
+                        x_start:x_end, y_start:y_end, z_start:z_end, ...]
+                    image_array.append(image_window[np.newaxis, ...])
+                except ValueError:
+                    tf.logging.fatal(
+                        "dimensionality miss match in input volumes, "
+                        "please specify spatial_window_size with a "
+                        "3D tuple and make sure each element is "
+                        "smaller than the image length in each dim. "
+                        "Current coords %s", location_array[window_id])
+                    raise
+            if len(image_array) > 1:
+                output_dict[image_data_key] = \
+                    np.concatenate(image_array, axis=0)
+            else:
+                output_dict[image_data_key] = image_array[0]
+        # the output image shape should be
+        # [enqueue_batch_size, x, y, z, time, modality]
+        # where enqueue_batch_size = windows_per_image
+        return output_dict
 
     def _spatial_coordinates_generator(self,
                                        subject_id,
@@ -209,7 +202,8 @@ def rand_spatial_coordinates(
             zip(img_spatial_size[:N_SPATIAL], win_spatial_size[:N_SPATIAL])):
         max_coords[:, idx] = np.random.randint(
             0, max(img - win + 1, 1), n_samples)
-    max_coords[:, :N_SPATIAL] = max_coords[:, :N_SPATIAL] + half_win[:N_SPATIAL]
+    max_coords[:, :N_SPATIAL] = \
+        max_coords[:, :N_SPATIAL] + half_win[:N_SPATIAL]
     return max_coords
 
 
@@ -225,8 +219,8 @@ def _infer_spatial_size(img_sizes, win_sizes):
     :param win_sizes: dictionary of {'input_name': (win_size_x, win_size_y,...)}
     :return: (image_spatial_size, window_largest_spatial_size)
     """
-    uniq_spatial_size = set([img_size[:N_SPATIAL]
-                             for img_size in list(img_sizes.values())])
+    uniq_spatial_size = \
+        set([img_size[:N_SPATIAL] for img_size in list(img_sizes.values())])
     if len(uniq_spatial_size) != 1:
         tf.logging.fatal("Don't know how to generate sampling "
                          "locations: Spatial dimensions of the "
@@ -236,8 +230,8 @@ def _infer_spatial_size(img_sizes, win_sizes):
     img_spatial_size = np.asarray(uniq_spatial_size.pop(), dtype=np.int32)
 
     # find the largest spatial window across input sections
-    _win_spatial_sizes = [win_size[:N_SPATIAL]
-                          for win_size in win_sizes.values()]
+    _win_spatial_sizes = \
+        [win_size[:N_SPATIAL] for win_size in win_sizes.values()]
     _win_spatial_sizes = np.asarray(_win_spatial_sizes, dtype=np.int32)
     win_spatial_size = np.max(_win_spatial_sizes, axis=0)
 

@@ -23,7 +23,7 @@ class KeywordsMatching(object):
         self.filename_not_contains = list_not_contain
 
     @classmethod
-    def from_tuple(cls, input_tuple, default_folder=None):
+    def from_dict(cls, input_dict, default_folder=None):
         """
         In the config file, constraints for a given search can be of three
         types:
@@ -35,15 +35,20 @@ class KeywordsMatching(object):
 
         :param default_folder: relative paths are first tested against
             the current folder, and then against this default folder.
-        :param input_tuple: set of searching parameters.
+        :param input_dict: set of searching parameters.
         :return:
         """
         path, contain, not_contain = [], (), ()
-        for (name, value) in input_tuple:
+        for (name, value) in input_dict.items():
             if not value:
                 continue
             if name == "path_to_search":
-                value = value.split(',')
+                try:
+                    # for a string of comma separated path.
+                    value = value.split(',')
+                except AttributeError:
+                    pass
+
                 for path_i in value:
                     path_i = path_i.strip()
                     path_orig = os.path.abspath(os.path.expanduser(path_i))
