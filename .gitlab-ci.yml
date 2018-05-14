@@ -29,6 +29,7 @@ testjob:
     - dev
     - tags
     - cherrypick-from-dev-to-v0.2.1-for-v0.2.2-release
+    - 212-developmental-release-used-wrongly
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
