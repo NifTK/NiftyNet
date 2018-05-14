@@ -486,7 +486,7 @@ pip-camera-ready:
     - virtualenv $check_version_venv
     - source $check_version_venv/bin/activate
     - pip install $niftynet_wheel
-    - net_segment --version 2>&1 | grep -E 'NiftyNet.*version' | grep -v untagged
+    - net_segment --version 2>&1
     - deactivate
     - rm -rf $check_version_venv
     # Finally do copy
