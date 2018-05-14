@@ -76,6 +76,10 @@ testjob:
 
     - pip install -r requirements-gpu.txt
 
+    # check whether version command works
+    # Git-clone:
+    - python net_segment.py --version 2>&1 >/dev/null | grep -E 'NiftyNet.*version.*untagged'
+
     # tests
     - python net_download.py testing -r
 
