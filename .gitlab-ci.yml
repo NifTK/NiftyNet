@@ -85,7 +85,7 @@ testjob:
     - mkdir $check_version_zip
     - git archive --format=tar HEAD | (cd $check_version_zip && tar xf -)
     - cd $check_version_zip
-    - python net_segment.py --version 2>&1 >/dev/null | grep -E 'NiftyNet.*version.*unknown'
+    - python net_segment.py --version
     - cd ..
     - unset check_version_zip
 
