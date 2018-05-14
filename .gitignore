@@ -17,6 +17,7 @@ testing_data*
 *.csv
 *.swp
 data/brain_parcellation/OASIS
+data/u-net
 dist
 build
 *.egg-info
