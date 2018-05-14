@@ -484,7 +484,7 @@ pip-camera-ready:
     - export check_version_venv=check_version_venv
     - virtualenv $check_version_venv
     - source $check_version_venv/bin/activate
-    - pip install $niftynetwheel
+    - pip install $niftynet_wheel
     - net_segment --version 2>&1 | grep -E 'NiftyNet.*version' | grep -v untagged
     - deactivate
     - rm -rf $check_version_venv
