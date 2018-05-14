@@ -478,6 +478,14 @@ pip-camera-ready:
     - ls -lrtha $camera_ready_dir
     # Clean up the camera-ready folder if already there
     - rm -rf $camera_ready_dir/*.whl
+    # check whether version command works
+    - export check_version_venv=check_version_venv
+    - virtualenv $check_version_venv
+    - source $check_version_venv/bin/activate
+    - pip install $niftynetwheel
+    - net_segment --version 2>&1 >/dev/null | grep -E 'NiftyNet.*version' | grep -v untagged
+    - deactivate
+    - rm -rf $check_version_venv
     # Finally do copy
     - cp $niftynet_wheel $camera_ready_dir
     - ls -lrtha $camera_ready_dir
