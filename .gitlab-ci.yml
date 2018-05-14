@@ -79,6 +79,14 @@ testjob:
     # check whether version command works
     # Git-clone:
     - python net_segment.py --version 2>&1 >/dev/null | grep -E 'NiftyNet.*version.*untagged'
+    # downloaded ZIP ball:
+    - export check_version_zip=check_version_zip
+    - mkdir $check_version_zip
+    - git archive --format=tar HEAD | (cd $check_version_zip && tar xf -)
+    - cd $check_version_zip
+    - python net_segment.py --version 2>&1 >/dev/null | grep -E 'NiftyNet.*version.*unknown'
+    - cd ..
+    - unset check_version_zip
 
     # tests
     - python net_download.py testing -r
