@@ -343,6 +343,8 @@ pip-installer:
     # check whether all packages are importable
     - cat $package_importer
     - python $package_importer
+    # check whether version command works
+    - net_segment --version 2>&1 >/dev/null | grep -E 'NiftyNet.*version.*untagged'
     # test niftynet command
     - net_download testing -r
 
