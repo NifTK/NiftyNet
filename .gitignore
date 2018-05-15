@@ -29,3 +29,6 @@ doc/source/niftynet*
 doc/source/modules.rst
 .vscode/
 .ipynb_checkpoints
+demos/unet/run_U373.sh
+demos/unet/run_hela.sh
+
