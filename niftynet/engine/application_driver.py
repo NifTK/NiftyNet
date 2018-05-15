@@ -14,7 +14,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import copy
 import os
 import time
 
@@ -378,7 +377,7 @@ class ApplicationDriver(object):
         self.app.set_iteration_update(message)
         collected = self.outputs_collector
         # building a dictionary of variables
-        vars_to_run = copy.deepcopy(message.ops_to_run)
+        vars_to_run = message.ops_to_run
         if message.is_training:
             # always apply the gradient op during training
             vars_to_run['gradients'] = self.app.gradient_op
