@@ -17,7 +17,7 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
     def __init__(self,
                  image_name,
                  modalities,
-                 model_filename,
+                 model_filename=None,
                  name='label_norm'):
 
         super(DiscreteLabelNormalisationLayer, self).__init__(name=name)
@@ -32,17 +32,28 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
             self.modalities = modalities
         else:
             self.modalities = (modalities,)
+        if model_filename is None:
+            model_filename = os.path.join('.', 'histogram_ref_file.txt')
         self.model_file = os.path.abspath(model_filename)
+        self._key=None
         assert not os.path.isdir(self.model_file), \
-            "model_filename is a directory, please change histogram_ref_file"
+            "model_filename is a directory, " \
+            "please change histogram_ref_file to a filename."
         self.label_map = hs.read_mapping_file(self.model_file)
 
     @property
     def key(self):
+        if self._key:
+            return self._key
         # provide a readable key for the label mapping item
         key_from = "{}:{}:from".format(self.image_name, self.modalities[0])
         key_to = "{}:{}:to".format(self.image_name, self.modalities[0])
         return standardise_string(key_from), standardise_string(key_to)
+
+    @key.setter
+    def key(self, value):
+        # Allows the key to be overridden
+        self._key=value
 
     def layer_op(self, image, mask=None):
         assert self.is_ready(), \

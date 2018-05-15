@@ -21,6 +21,7 @@ Please change BRATS_path and OUTPUT_path accordingly to the preferred folder
 """
 import os
 
+import SimpleITK as sitk
 import nibabel
 import numpy as np
 
@@ -68,8 +69,7 @@ def load_scans_BRATS15(pat_folder, with_seg=False):
     for nii_folder in nii_folders:
         nii_path = os.path.join(pat_folder, nii_folder)
         nii_fn = [f_n for f_n in os.listdir(nii_path)
-                  if f_n.endswith(('.nii', '.nii.gz'))
-                  and f_n.startswith('VSD')]
+                  if f_n.endswith(('.mha')) and f_n.startswith('VSD')]
         assert len(nii_fn) == 1
         nii_path = os.path.join(nii_path, nii_fn[0])
         nii_paths.append(nii_path)
@@ -82,7 +82,10 @@ def load_scans_BRATS15(pat_folder, with_seg=False):
     img_data = []
     for mod_n in mod_names15:
         file_n = [f_n for f_n in nii_paths if (mod_n + '.') in f_n][0]
-        mod_data = nibabel.load(os.path.join(pat_folder, file_n)).get_data()
+        # mod_data = nibabel.load(os.path.join(pat_folder, file_n)).get_data()
+        mod_data = sitk.ReadImage(
+            os.path.join(pat_folder, file_n), sitk.sitkFloat32)
+        mod_data = sitk.GetArrayFromImage(mod_data)
         img_data.append(mod_data)
     img_data = np.stack(img_data, axis=-1)
     if not with_seg:
@@ -91,7 +94,10 @@ def load_scans_BRATS15(pat_folder, with_seg=False):
         file_n_list = [f_n for f_n in nii_paths if ('OT.') in f_n]
         if len(file_n_list) != 0:
             file_n = file_n_list[0]
-            seg_data = nibabel.load(os.path.join(pat_folder, file_n)).get_data()
+            # seg_data = nibabel.load(os.path.join(pat_folder, file_n)).get_data()
+            seg_data = sitk.ReadImage(
+                os.path.join(pat_folder, file_n), sitk.sitkFloat32)
+            seg_data = sitk.GetArrayFromImage(seg_data)
         else:
             seg_data = None
         return img_data, seg_data, VSD_id
@@ -195,4 +201,4 @@ if __name__ == '__main__':
     if not os.path.exists(OUTPUT_path):
         os.makedirs(OUTPUT_path)
     main(dataset='BRATS17', crop=True)
-    # main(['HG'], dataset='BRATS15', crop=False)
+    # main(['HGG'], dataset='BRATS15', crop=False)

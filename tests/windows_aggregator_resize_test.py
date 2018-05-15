@@ -13,7 +13,7 @@ from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
 from niftynet.layer.pad import PadLayer
-from tests.test_util import ParserNamespace
+from niftynet.utilities.util_common import ParserNamespace
 
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
@@ -24,7 +24,8 @@ MULTI_MOD_DATA = {
         interp_order=3,
         pixdim=(2.4, 5.0, 2.0),
         axcodes='LAS',
-        spatial_window_size=(23, 32, 15)
+        spatial_window_size=(23, 32, 15),
+        loader=None
     ),
     'FLAIR': ParserNamespace(
         csv_file=os.path.join('testing_data', 'FLAIRsampler.csv'),
@@ -34,7 +35,8 @@ MULTI_MOD_DATA = {
         interp_order=3,
         pixdim=(2.4, 5.0, 2.0),
         axcodes='LAS',
-        spatial_window_size=(23, 32, 15)
+        spatial_window_size=(23, 32, 15),
+        loader=None
     )
 }
 MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'))
@@ -48,7 +50,8 @@ MOD_2D_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(72, 83, 1)
+        spatial_window_size=(72, 83, 1),
+        loader=None
     ),
 }
 MOD_2D_TASK = ParserNamespace(image=('ultrasound',))
@@ -62,7 +65,8 @@ MOD_LABEL_DATA = {
         interp_order=0,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(150, 140, 100)
+        spatial_window_size=(150, 140, 100),
+        loader=None
     ),
 }
 MOD_LABEl_TASK = ParserNamespace(label=('parcellation',))
@@ -76,7 +80,8 @@ SINGLE_25D_DATA = {
         interp_order=3,
         pixdim=(3.0, 5.0, 5.0),
         axcodes='LAS',
-        spatial_window_size=(40, 30, 1)
+        spatial_window_size=(40, 30, 1),
+        loader=None
     ),
 }
 SINGLE_25D_TASK = ParserNamespace(image=('T1',))

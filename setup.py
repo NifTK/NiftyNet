@@ -98,7 +98,8 @@ setup(
         'scipy>=0.18',
         'configparser',
         'pandas',
-        'pillow'
+        'pillow',
+        'blinker'
     ],
 
     entry_points={
@@ -109,6 +110,7 @@ setup(
             'net_regress=niftynet:main',
             'net_gan=niftynet:main',
             'net_autoencoder=niftynet:main',
+            'net_classify=niftynet:main',
         ],
     },
 )

@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+This module mainly defines types and casting methods for input parameters
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -17,6 +20,7 @@ FALSE_VALUE = {'no', 'false', 'f', 'n', '0'}
 def str2boolean(string_input):
     """
     convert user input config string to boolean
+
     :param string_input: any string in TRUE_VALUE or FALSE_VALUE
     :return: True or False
     """
@@ -30,6 +34,12 @@ def str2boolean(string_input):
 
 
 def int_array(string_input):
+    """
+    convert input into a tuple of int values
+
+    :param string_input:
+    :return:
+    """
     try:
         output_tuple = match_array(string_input, 'int')
     except ValueError:
@@ -39,6 +49,12 @@ def int_array(string_input):
 
 
 def float_array(string_input):
+    """
+    convert input into a tuple of float values
+
+    :param string_input:
+    :return:
+    """
     try:
         output_tuple = match_array(string_input, 'float')
     except ValueError:
@@ -48,16 +64,29 @@ def float_array(string_input):
 
 
 def str_array(string_input):
+    """
+    convert input into a tuple of strings
+
+    :param string_input:
+    :return:
+    """
     try:
         output_tuple = match_array(string_input, 'str')
     except ValueError:
         raise argparse.ArgumentTypeError(
             "list of strings expected, for each list element the allowed"
-            "characters: [ a-zA-Z0-9_\-], but received {}".format(string_input))
+            "characters: [ a-zA-Z0-9_-], but received {}".format(string_input))
     return output_tuple
 
 
 def make_input_tuple(input_str, element_type=string_types):
+    """
+    converting input into a tuple of input
+
+    :param input_str:
+    :param element_type:
+    :return:
+    """
     assert input_str, \
         "invalid input {} for type {}".format(input_str, element_type)
     if isinstance(input_str, element_type):
@@ -98,27 +127,41 @@ def standardise_string(input_string):
     """
     if not isinstance(input_string, string_types):
         return input_string
-    new_name = re.sub('[^0-9a-zA-Z_\- ]+', '', input_string.strip())
+    new_name = re.sub(r'[^0-9a-zA-Z_\- ]+', '', input_string.strip())
     return new_name
 
 
 def has_section_in_config(config, required_custom_section):
+    """
+    check if section name exists in a config file
+    raises value error if it doesn't exist
+
+    :param config:
+    :param required_custom_section:
+    :return:
+    """
     required_custom_section = standardise_string(required_custom_section)
     if required_custom_section is not None:
         user_sections = [standardise_string(section_name)
                          for section_name in config.sections()]
         if required_custom_section not in user_sections:
             raise ValueError
-        else:
-            return True
 
 
 def add_input_name_args(parser, supported_input):
-    for input_name in supported_input:
+    """
+    adding keywords that defines grouping of the input sections
+    (mainly used for multi-modal input specifications)
+
+    :param parser:
+    :param supported_input:
+    :return:
+    """
+    for input_name in list(supported_input):
         parser.add_argument(
             "--{}".format(input_name),
             metavar='',
-            help="names of grouping the input sections".format(input_name),
+            help="names of grouping the input sections {}".format(input_name),
             type=str_array,
             default=())
     return parser
@@ -127,9 +170,23 @@ def add_input_name_args(parser, supported_input):
 def spatialnumarray(string_input):
     """
     This function parses a 3-element tuple from a string input
+    if the input has less than 3 elements,
+    the last element is repeated as padding.
     """
     int_tuple = int_array(string_input)
     while len(int_tuple) < 3:
         int_tuple = int_tuple + (int_tuple[-1],)
     int_tuple = int_tuple[:3]
     return int_tuple
+
+
+def spatial_atleast3d(string_input):
+    """
+    This function parses a 3-element tuple from a string input.
+    The input will be padded with ones, if the length is less than 3.
+    """
+    output_tuple = int_array(string_input)
+    if len(output_tuple) < 3:
+        # will pad the array with single dimensions
+        output_tuple = output_tuple + (1,) * (3 - len(output_tuple))
+    return output_tuple

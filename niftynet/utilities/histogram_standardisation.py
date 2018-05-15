@@ -182,7 +182,11 @@ def transform_by_mapping(img, mask, mapping, cutoff, type_hist='quartile'):
     range_perc = perc[range_to_use]
     diff_mapping = range_mapping[1:] - range_mapping[:-1]
     diff_perc = range_perc[1:] - range_perc[:-1]
-    diff_perc[diff_perc == 0] = 1e-5
+
+    # handling the case where two landmarks are the same
+    # for a given input image.  This usually happens when
+    # image background are not removed from the image.
+    diff_perc[diff_perc == 0] = np.inf
 
     affine_map = np.zeros([2, len(range_to_use) - 1])
     # compute slopes of the linear models
@@ -237,8 +241,11 @@ def read_mapping_file(mapping_file):
     each modality stated in the mapping file
     """
     mapping_dict = {}
+    if not mapping_file:
+        return mapping_dict
     if not os.path.isfile(mapping_file):
         return mapping_dict
+
     with open(mapping_file, "r") as f:
         for line in f:
             if len(line) <= 2:

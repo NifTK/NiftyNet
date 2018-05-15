@@ -28,13 +28,14 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
                  spatial_window_size=(),
                  windows_per_image=1,
                  shuffle_buffer=True,
-                 queue_length=10):
+                 queue_length=10,
+                 name='resize_sampler'):
 
         self.reader = reader
         self.windows_per_image = windows_per_image
         self.shuffle = bool(shuffle_buffer)
 
-        Layer.__init__(self, name='input_buffer')
+        Layer.__init__(self, name=name)
         InputBatchQueueRunner.__init__(
             self,
             capacity=queue_length,
@@ -55,8 +56,7 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
         self._create_queue_and_ops(self.window,
                                    enqueue_size=1,
                                    dequeue_size=batch_size)
-        tf.logging.info("initialised sampler output %s "
-                        " [-1 for dynamic size]", self.window.shapes)
+        tf.logging.info("initialised sampler output %s ", self.window.shapes)
 
     def layer_op(self, *args, **kwargs):
         """
@@ -98,7 +98,8 @@ class ResizeSampler(Layer, InputBatchQueueRunner):
                     image_shape = image_shapes[name]
                     window_shape = static_window_shapes[name]
 
-                    if image_shape == window_shape:
+                    if (image_shape == window_shape or
+                            interp_orders[name][0] < 0):
                         # already in the same shape
                         image_window = data[name]
                     else:

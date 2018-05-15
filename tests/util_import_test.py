@@ -1,35 +1,35 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
 
-from niftynet.utilities.util_import import check_module
+from niftynet.utilities.util_import import require_module
 
 
 class OptionalPackageTest(tf.test.TestCase):
     def test_installed(self):
-        check_module('tensorflow')
+        require_module('tensorflow')
 
     def test_installed_min_version(self):
-        check_module('tensorflow', 1.0)
+        require_module('tensorflow', 1.0)
 
     def test_no_package(self):
         with self.assertRaisesRegexp(ImportError, ''):
-            check_module('foobar_wrong_case')
+            require_module('foobar_wrong_case', mandatory=True)
 
     def test_wrong_version(self):
         with self.assertRaisesRegexp(AssertionError, ''):
-            check_module('tensorflow', 100)
+            require_module('tensorflow', 100, mandatory=True)
 
     def test_self_version(self):
-        check_module('importlib')
+        require_module('importlib')
 
     def test_no_version_info(self):
-        check_module('importlib', 0)
+        require_module('importlib', 0)
 
     def test_no_input(self):
         with self.assertRaisesRegexp(ImportError, ''):
-            check_module([])
+            require_module([], mandatory=True)
         with self.assertRaisesRegexp(ImportError, ''):
-            check_module(None)
+            require_module(None, mandatory=True)
 
 
 if __name__ == "__main__":

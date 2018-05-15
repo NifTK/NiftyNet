@@ -44,11 +44,16 @@ class RandomFlipLayer(RandomisedLayer):
                 image = np.flip(image, axis=axis_number)
         return image
 
-    def layer_op(self, inputs, *args, **kwargs):
+    def layer_op(self, inputs, interp_orders=None, *args, **kwargs):
         if inputs is None:
             return inputs
-        if isinstance(inputs, dict):
+        if isinstance(inputs, dict) and isinstance(interp_orders, dict):
             for (field, image_data) in inputs.items():
+                assert (all([i < 0 for i in interp_orders[field]]) or
+                    all([i >= 0 for i in interp_orders[field]])), \
+                    'Cannot combine interpolatable and non-interpolatable data'
+                if interp_orders[field][0]<0:
+                    continue
                 inputs[field] = self._apply_transformation(image_data)
         else:
             inputs = self._apply_transformation(inputs)

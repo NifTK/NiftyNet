@@ -12,15 +12,15 @@ from niftynet.engine.sampler_random_vector import RandomVectorSampler
 from niftynet.layer.convolution import ConvolutionalLayer
 from niftynet.layer.fully_connected import FullyConnectedLayer
 from niftynet.network.base_net import BaseNet
-
+from niftynet.application.base_application import TRAIN, INFER
 
 class ToyApplication(BaseApplication):
     REQUIRED_CONFIG_SECTION = "TOY"
 
-    def __init__(self, net_param, action_param, is_training):
+    def __init__(self, net_param, action_param, action):
         BaseApplication.__init__(self)
         tf.logging.info('starting toy application')
-        self.is_training = is_training
+        self.action = action
 
         self.net_param = net_param
         self.action_param = action_param
@@ -134,7 +134,7 @@ class DNet(BaseNet):
         BaseNet.__init__(self, name='D')
 
     def layer_op(self, features):
-        batch_size = features.get_shape().as_list()[0]
+        batch_size = features.shape.as_list()[0]
         conv_1 = ConvolutionalLayer(
             20, 3, with_bn=False, with_bias=True, acti_func='relu')
         fc_1 = FullyConnectedLayer(
@@ -154,7 +154,7 @@ class GNet(BaseNet):
         BaseNet.__init__(self, name='G')
 
     def layer_op(self, noise):
-        n_chns = noise.get_shape()[-1]
+        n_chns = noise.shape[-1]
         conv_1 = ConvolutionalLayer(
             20, 10, with_bn=True, acti_func='selu', with_bias=True)
         conv_2 = ConvolutionalLayer(

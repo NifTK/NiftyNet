@@ -8,7 +8,7 @@ import tensorflow as tf
 from niftynet.io.image_sets_partitioner import COLUMN_UNIQ_ID
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.io.image_sets_partitioner import TRAIN, VALID, INFER
-from tests.test_util import ParserNamespace
+from niftynet.utilities.util_common import ParserNamespace
 
 test_sections = {
     'T1': ParserNamespace(
@@ -18,7 +18,8 @@ test_sections = {
         filename_not_contain=('Parcellation',),
         interp_order=3,
         pixdim=None,
-        axcodes=None),
+        axcodes=None,
+        loader=None),
 
     'Flair': ParserNamespace(
         csv_file=os.path.join('testing_data', 'test_Flairreader.csv'),
@@ -27,7 +28,8 @@ test_sections = {
         filename_not_contains=('Parcellation',),
         interp_order=3,
         pixdim=None,
-        axcodes=None)}
+        axcodes=None,
+        loader=None)}
 
 partition_output = os.path.join('testing_data', 'partition.csv')
 

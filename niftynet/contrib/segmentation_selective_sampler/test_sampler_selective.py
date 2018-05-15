@@ -9,8 +9,8 @@ import tensorflow as tf
 from niftynet.contrib.segmentation_selective_sampler.sampler_selective import \
     SelectiveSampler, Constraint
 from niftynet.io.image_reader import ImageReader
-from tests.test_util import ParserNamespace
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
+from niftynet.utilities.util_common import ParserNamespace
 
 
 ### utility function for testing purposes
@@ -60,7 +60,8 @@ MULTI_MOD_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(7, 10, 2)
+        spatial_window_size=(7, 10, 2),
+        loader=None
     ),
     'FLAIR': ParserNamespace(
         csv_file=os.path.join('testing_data', 'FLAIRsampler.csv'),
@@ -70,7 +71,8 @@ MULTI_MOD_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(7, 10, 2)
+        spatial_window_size=(7, 10, 2),
+        loader=None
     ),
     'Label': ParserNamespace(
         csv_file=os.path.join('testing_data', 'lesion.csv'),
@@ -80,19 +82,21 @@ MULTI_MOD_DATA = {
         interp_order=1,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(7, 10, 2)
+        spatial_window_size=(7, 10, 2),
+        loader=None
     )
 }
 LABEL_TASK = {
     'Lesion': ParserNamespace(
-        csv_file=os.path.join('testing_data','lesion.csv'),
+        csv_file=os.path.join('testing_data', 'lesion.csv'),
         path_to_search='testing_data',
         filename_contains=('LesionFin_'),
         filename_not_contains=('Parcellation',),
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(7, 10, 2)
+        spatial_window_size=(7, 10, 2),
+        loader=None
     )
 }
 MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'), label=('Label',))
@@ -106,7 +110,8 @@ MOD_2D_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(10, 9, 1)
+        spatial_window_size=(10, 9, 1),
+        loader=None
     ),
 }
 MOD_2D_TASK = ParserNamespace(image=('ultrasound',))
@@ -120,7 +125,8 @@ DYNAMIC_MOD_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(8, 2)
+        spatial_window_size=(8, 2),
+        loader=None
     ),
     'FLAIR': ParserNamespace(
         csv_file=os.path.join('testing_data', 'FLAIRsampler.csv'),
@@ -130,17 +136,19 @@ DYNAMIC_MOD_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(8, 2)
+        spatial_window_size=(8, 2),
+        loader=None
     ),
     'Label': ParserNamespace(
         csv_file=os.path.join('testing_data', 'labels.csv'),
         path_to_search='testing_data',
-        filename_contains=('T1_','_NeuroMorph_Parcellation',),
+        filename_contains=('T1_', '_NeuroMorph_Parcellation',),
         filename_not_constains=('FLAIR_',),
         interp_order=1,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(8,2)
+        spatial_window_size=(8, 2),
+        loader=None
     )
 }
 
@@ -161,6 +169,7 @@ DYNAMIC_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'), label=('Label',))
 
 data_partitioner = ImageSetsPartitioner()
 
+
 def get_3d_reader():
     multi_mod_list = data_partitioner.initialise(MULTI_MOD_DATA).get_file_list()
     print(MULTI_MOD_DATA, MULTI_MOD_TASK)
@@ -178,7 +187,7 @@ def get_2d_reader():
 
 def get_dynamic_window_reader():
     dynamic_list = data_partitioner.initialise(DYNAMIC_MOD_DATA).get_file_list()
-    reader = ImageReader(['image','label'])
+    reader = ImageReader(['image', 'label'])
     reader.initialise(DYNAMIC_MOD_DATA, DYNAMIC_MOD_TASK, dynamic_list)
     return reader
 
@@ -239,7 +248,7 @@ class SelectiveSamplerTest(tf.test.TestCase):
     #         self.assertAllClose(out['label'].shape, (1, 8, 2, 256, 1))
     #     sampler.close_all()
 
-    #def test_ill_init(self):
+    # def test_ill_init(self):
     #    with self.assertRaisesRegexp(KeyError, ""):
     #        sampler = SelectiveSampler(reader=get_3d_reader(),
     #                                   data_param=MOD_2D_DATA,
@@ -247,7 +256,7 @@ class SelectiveSamplerTest(tf.test.TestCase):
     #                                   windows_per_image=10,
     #                                   queue_length=10)
 
-    #def test_close_early(self):
+    # def test_close_early(self):
     #    sampler = SelectiveSampler(reader=get_3d_reader(),
     #                               data_param=DYNAMIC_MOD_DATA,
     #                               batch_size=2,

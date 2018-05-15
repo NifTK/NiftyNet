@@ -25,10 +25,12 @@ Using NiftyNet's modular structure you can:
 The code is available via `GitLab`_ and `GitHub`_,
 or you can quickly get started with the released versions in the
 `Python Package Index`_.
+You can also check out the `release notes`_.
 
 .. _`GitLab`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 .. _`GitHub`: https://github.com/NifTK/NiftyNet
 .. _`Python Package Index`: https://pypi.org/project/NiftyNet/
+.. _`release notes`: https://github.com/NifTK/NiftyNet/blob/dev/CHANGELOG.md
 
 
 Quickstart
@@ -98,6 +100,7 @@ Guides
 .. toctree::
    :maxdepth: 1
 
+   introductory
    installation
    config_spec
    model_zoo
@@ -141,7 +144,7 @@ APIs & reference
 Licensing and copyright
 =======================
 
-Copyright 2017 University College London and the NiftyNet Contributors.
+Copyright 2018 University College London and the NiftyNet Contributors.
 NiftyNet is released under the Apache License, Version 2.0.
 Please see the `LICENSE file`_ in the `NiftyNet source code repository`_ for details.
 
@@ -180,23 +183,24 @@ If you use NiftyNet in your work, please cite `Gibson and Li, et al. 2017`_:
   Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, M. Modat,
   D. C. Barratt, S. Ourselin, M. J. Cardoso^ and T. Vercauteren^ 2017.
   `NiftyNet: a deep-learning platform for medical imaging.`_
-  arXiv preprint arXiv:1709.03485 (2017).
+  Computer Methods and Programs in Biomedicine (2017).
 
 BibTeX entry:
 
 .. code-block:: bibtex
 
-  @InProceedings{niftynet17,
-    author = {Eli Gibson and Wenqi Li and Carole Sudre and Lucas Fidon and
+  @InProceedings{niftynet18,
+    author = "Eli Gibson and Wenqi Li and Carole Sudre and Lucas Fidon and
               Dzhoshkun I. Shakir and Guotai Wang and Zach Eaton-Rosen and
               Robert Gray and Tom Doel and Yipeng Hu and Tom Whyntie and
               Parashkev Nachev and Marc Modat and Dean C. Barratt and
-              Sebastien Ourselin and M. Jorge Cardoso and Tom Vercauteren},
-    title = {NiftyNet: a deep-learning platform for medical imaging},
-    year = {2017},
-    eprint = {1709.03485},
-    eprintclass = {cs.CV},
-    eprinttype = {arXiv},
+              Sébastien Ourselin and M. Jorge Cardoso and Tom Vercauteren",
+    title = "NiftyNet: a deep-learning platform for medical imaging",
+    journal = "Computer Methods and Programs in Biomedicine",
+    year = "2018",
+    issn = "0169-2607",
+    doi = "https://doi.org/10.1016/j.cmpb.2018.01.025",
+    url = "https://www.sciencedirect.com/science/article/pii/S0169260717311823",
   }
 
 The NiftyNet platform originated in software developed for `Li, et al. 2017`_:
@@ -206,10 +210,10 @@ The NiftyNet platform originated in software developed for `Li, et al. 2017`_:
   In: Niethammer M. et al. (eds) Information Processing in Medical Imaging. IPMI 2017.
   Lecture Notes in Computer Science, vol 10265. Springer, Cham. `DOI: 10.1007/978-3-319-59050-9_28`_
 
-.. _`NiftyNet: a deep-learning platform for medical imaging.`: http://arxiv.org/abs/1709.03485
-.. _`Gibson and Li, et al. 2017`: http://arxiv.org/abs/1709.03485
-.. _`Li, et al. 2017`: http://doi.org/10.1007/978-3-319-59050-9_28
-.. _`On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.`: http://doi.org/10.1007/978-3-319-59050-9_28
-.. _`DOI: 10.1007/978-3-319-59050-9_28`: http://doi.org/10.1007/978-3-319-59050-9_28
+.. _`NiftyNet: a deep-learning platform for medical imaging.`: https://doi.org/10.1016/j.cmpb.2018.01.025
+.. _`Gibson and Li, et al. 2017`: https://doi.org/10.1016/j.cmpb.2018.01.025
+.. _`Li, et al. 2017`: https://doi.org/10.1007/978-3-319-59050-9_28
+.. _`On the Compactness, Efficiency, and Representation of 3D Convolutional Networks: Brain Parcellation as a Pretext Task.`: https://doi.org/10.1007/978-3-319-59050-9_28
+.. _`DOI: 10.1007/978-3-319-59050-9_28`: https://doi.org/10.1007/978-3-319-59050-9_28
 
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2017 The Sonnet Authors. All Rights Reserved.
-# Modifications copyright 2017 The NiftyNet Authors. All Rights Reserved.
+# Copyright 2018 The Sonnet Authors. All Rights Reserved.
+# Modifications copyright 2018 The NiftyNet Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

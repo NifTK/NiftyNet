@@ -27,10 +27,11 @@ class LinearInterpolateSampler(Layer, InputBatchQueueRunner):
                  data_param,
                  batch_size=10,
                  n_interpolations=10,
-                 queue_length=10):
+                 queue_length=10,
+                 name='linear_interpolation_sampler'):
         self.n_interpolations = n_interpolations
         self.reader = reader
-        Layer.__init__(self, name='input_buffer')
+        Layer.__init__(self, name=name)
         InputBatchQueueRunner.__init__(
             self,
             capacity=queue_length,
@@ -49,8 +50,7 @@ class LinearInterpolateSampler(Layer, InputBatchQueueRunner):
         self._create_queue_and_ops(self.window,
                                    enqueue_size=self.n_interpolations,
                                    dequeue_size=batch_size)
-        tf.logging.info("initialised sampler output %s "
-                        " [-1 for dynamic size]", self.window.shapes)
+        tf.logging.info("initialised sampler output %s ", self.window.shapes)
 
         assert not self.window.has_dynamic_shapes, \
             "dynamic shapes not supported, please specify " \

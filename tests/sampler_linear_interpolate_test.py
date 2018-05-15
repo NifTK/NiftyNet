@@ -7,8 +7,8 @@ import tensorflow as tf
 
 from niftynet.engine.sampler_linear_interpolate import LinearInterpolateSampler
 from niftynet.io.image_reader import ImageReader
-from tests.test_util import ParserNamespace
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
+from niftynet.utilities.util_common import ParserNamespace
 
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
@@ -19,7 +19,8 @@ MULTI_MOD_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(7, 10, 2)
+        spatial_window_size=(7, 10, 2),
+        loader=None
     ),
     'FLAIR': ParserNamespace(
         csv_file=os.path.join('testing_data', 'FLAIRsampler.csv'),
@@ -29,7 +30,8 @@ MULTI_MOD_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(7, 10, 2)
+        spatial_window_size=(7, 10, 2),
+        loader=None
     )
 }
 MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'))

@@ -8,7 +8,8 @@ import tensorflow as tf
 
 from niftynet.engine.application_driver import ApplicationDriver
 from niftynet.io.misc_io import set_logger
-from tests.test_util import ParserNamespace
+from niftynet.utilities.util_common import ParserNamespace
+from niftynet.application.base_application import TRAIN, INFER
 
 
 # def _run_test_application():
@@ -52,11 +53,16 @@ def get_initialised_driver(starting_iter=0):
     # set parameters without __init__
     app_driver.app.action_param = system_param['TRAINING']
     app_driver.app.net_param = system_param['NETWORK']
-    app_driver.app.is_training = True
+    app_driver.app.action = TRAIN
     return app_driver
 
 
 class ApplicationDriverTest(tf.test.TestCase):
+    def test_wrong_init(self):
+        app_driver = ApplicationDriver()
+        with self.assertRaisesRegexp(AttributeError, ''):
+            app_driver.initialise_application([], [])
+
     def test_create_app(self):
         test_driver = get_initialised_driver(starting_iter=499)
         with self.assertRaisesRegexp(ValueError, 'Could not import'):
@@ -195,7 +201,7 @@ class ApplicationDriverTest(tf.test.TestCase):
             [[-0.03544217, 0.0228963, -0.04585603, 0.16923568, -0.51635778,
               0.60694504, 0.01968583, -0.6252712, 0.28622296, -0.29527491,
               0.61191976, 0.27878678, -0.07661559, -0.41357407, 0.70488983,
-              -0.10836645, 0.06488426, 0.0746649, -0.188567, -0.64652514]],
+              -0.10836645, 0.06488426, 0.0746650, -0.188567, -0.64652514]],
             dtype=np.float32)
         with self.test_session(graph=test_driver.graph) as sess:
             test_tensor = test_driver.graph.get_tensor_by_name(

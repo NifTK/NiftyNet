@@ -10,11 +10,12 @@ from niftynet.utilities.user_parameters_default import *
 
 class TestUserParameters(tf.test.TestCase):
     def test_list_all(self):
-        test_parser = argparse.ArgumentParser()
+        test_parser = argparse.ArgumentParser(conflict_handler='resolve')
         test_parser = add_application_args(test_parser)
         test_parser = add_network_args(test_parser)
         test_parser = add_training_args(test_parser)
         test_parser = add_input_data_args(test_parser)
+        test_parser = add_inference_args(test_parser)
 
         for opt in test_parser._actions:
             print(opt_to_string(opt))
