@@ -28,6 +28,7 @@ testjob:
     - master
     - dev
     - tags
+    - cherrypick-from-dev-to-v0.2.1-for-v0.2.2-release
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
