@@ -59,7 +59,7 @@ class ResamplerLayer(Layer):
         raise NotImplementedError
 
     def _resample_nearest(self, inputs, sample_coords):
-        in_size = inputs.shape.as_list()
+        in_size = inputs.get_shape().as_list()
         in_spatial_size = in_size[1:-1]
 
         # This is forward only as no gradient for tf.round
@@ -81,13 +81,13 @@ class ResamplerLayer(Layer):
         return output
 
     def _resample_linear(self, inputs, sample_coords):
-        in_size = inputs.shape.as_list()
+        in_size = inputs.get_shape().as_list()
         in_spatial_size = in_size[1:-1]
         in_spatial_rank = infer_spatial_rank(inputs)
         batch_size = in_size[0]
 
         out_spatial_rank = infer_spatial_rank(sample_coords)
-        out_spatial_size = sample_coords.shape.as_list()[1:-1]
+        out_spatial_size = sample_coords.get_shape().as_list()[1:-1]
 
         if in_spatial_rank == 2 and self.boundary == 'ZERO':
             inputs = tf.transpose(inputs, [0, 2, 1, 3])
@@ -138,7 +138,7 @@ class ResamplerLayer(Layer):
         return _pyramid_combination(samples, weight_0, weight_1)
 
     def _resample_bspline(self, inputs, sample_coords):
-        in_size = inputs.shape.as_list()
+        in_size = inputs.get_shape().as_list()
         batch_size = in_size[0]
         in_spatial_size = in_size[1:-1]
         in_spatial_rank = infer_spatial_rank(inputs)
@@ -159,7 +159,7 @@ class ResamplerLayer(Layer):
         spatial_coords = offsets + tf.expand_dims(floor_coords, 1)
         spatial_coords = self.boundary_func(spatial_coords, in_spatial_size)
         spatial_coords = tf.cast(spatial_coords, COORDINATES_TYPE)
-        knot_size = spatial_coords.shape.as_list()
+        knot_size = spatial_coords.get_shape().as_list()
 
         # Compute weights for each voxel
         def build_coef(u, d):
@@ -185,10 +185,10 @@ class ResamplerLayer(Layer):
         return tf.reduce_sum(all_weights * raw_samples, reduction_indices=1)
 
     def _resample_inv_dst_weighting(self, inputs, sample_coords):
-        in_size = inputs.shape.as_list()
+        in_size = inputs.get_shape().as_list()
         in_spatial_size = in_size[1:-1]
         in_spatial_rank = infer_spatial_rank(inputs)
-        out_rank = len(sample_coords.shape.as_list())
+        out_rank = len(sample_coords.get_shape().as_list())
 
         self.N = 2 ** in_spatial_rank
         binary_neighbour_ids = [

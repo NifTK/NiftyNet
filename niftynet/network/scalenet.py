@@ -37,8 +37,8 @@ class ScaleNet(BaseNet):
         self.n_features = 16
 
     def layer_op(self, images, is_training, layer_id=-1):
-        n_modality = images.shape.as_list()[-1]
-        rank = images.shape.ndims
+        n_modality = images.get_shape().as_list()[-1]
+        rank = images.get_shape().ndims
         assert n_modality > 1
         roots = tf.split(images, n_modality, axis=rank - 1)
         for (idx, root) in enumerate(roots):
@@ -80,9 +80,9 @@ class ScaleBlock(TrainableLayer):
         self.regularizers = {'w': w_regularizer}
 
     def layer_op(self, input_tensor, is_training):
-        n_modality = input_tensor.shape.as_list()[-1]
-        n_chns = input_tensor.shape.as_list()[-2]
-        rank = input_tensor.shape.ndims
+        n_modality = input_tensor.get_shape().as_list()[-1]
+        n_chns = input_tensor.get_shape().as_list()[-2]
+        rank = input_tensor.get_shape().ndims
         perm = [i for i in range(rank)]
         perm[-2], perm[-1] = perm[-1], perm[-2]
 

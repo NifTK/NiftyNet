@@ -31,8 +31,8 @@ class GradientCollectorTest(tf.test.TestCase):
         ave_grads = grad_collector.gradients
         self.assertAllClose(len(grad_collector._gradients[0]), len(ave_grads))
         self.assertAllClose(
-            grad_collector._gradients[0][0][0][0].shape.as_list(),
-            ave_grads[0][0][0].shape.as_list())
+            grad_collector._gradients[0][0][0][0].get_shape().as_list(),
+            ave_grads[0][0][0].get_shape().as_list())
 
     def test_gradients(self):
         n_device = 3
@@ -52,8 +52,8 @@ class GradientCollectorTest(tf.test.TestCase):
         ave_grads = grad_collector.gradients
         self.assertAllClose(len(grad_collector._gradients[0]), len(ave_grads))
         self.assertAllClose(
-            grad_collector._gradients[0][0][0][0].shape.as_list(),
-            ave_grads[0][0][0].shape.as_list())
+            grad_collector._gradients[0][0][0][0].get_shape().as_list(),
+            ave_grads[0][0][0].get_shape().as_list())
 
     def test_multiple_loss_gradients(self):
         n_device = 3
@@ -75,8 +75,8 @@ class GradientCollectorTest(tf.test.TestCase):
         ave_grads = grad_collector.gradients
         self.assertAllClose(len(grad_collector._gradients[0]), len(ave_grads))
         self.assertAllClose(
-            grad_collector._gradients[0][0][0][0].shape.as_list(),
-            ave_grads[0][0][0].shape.as_list())
+            grad_collector._gradients[0][0][0][0].get_shape().as_list(),
+            ave_grads[0][0][0].get_shape().as_list())
 
     def test_single_device_gradients(self):
         n_device = 1
@@ -98,8 +98,8 @@ class GradientCollectorTest(tf.test.TestCase):
         ave_grads = grad_collector.gradients
         self.assertAllClose(len(grad_collector._gradients[0]), len(ave_grads))
         self.assertAllClose(
-            grad_collector._gradients[0][0][0][0].shape.as_list(),
-            ave_grads[0][0][0].shape.as_list())
+            grad_collector._gradients[0][0][0][0].get_shape().as_list(),
+            ave_grads[0][0][0].get_shape().as_list())
 
     def test_simple_gradients(self):
         n_device = 1
@@ -119,8 +119,8 @@ class GradientCollectorTest(tf.test.TestCase):
         ave_grads = grad_collector.gradients
         self.assertAllClose(len(grad_collector._gradients[0]), len(ave_grads))
         self.assertAllClose(
-            grad_collector._gradients[0][0][0].shape.as_list(),
-            ave_grads[0][0].shape.as_list())
+            grad_collector._gradients[0][0][0].get_shape().as_list(),
+            ave_grads[0][0].get_shape().as_list())
 
 
 if __name__ == "__main__":

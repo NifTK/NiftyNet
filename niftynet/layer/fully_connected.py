@@ -55,11 +55,11 @@ class FCLayer(TrainableLayer):
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
     def layer_op(self, input_tensor):
-        input_shape = input_tensor.shape.as_list()
+        input_shape = input_tensor.get_shape().as_list()
         if len(input_shape) > 2:
             batch_size = input_shape[0]
             input_tensor = tf.reshape(input_tensor, [batch_size, -1])
-            input_shape = input_tensor.shape.as_list()
+            input_shape = input_tensor.get_shape().as_list()
         n_input_chns = input_shape[-1]
 
         # initialize weight matrix and then apply

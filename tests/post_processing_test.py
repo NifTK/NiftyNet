@@ -25,7 +25,7 @@ class PostProcessingTest(tf.test.TestCase):
 
         with self.test_session() as sess:
             out = sess.run(out_post)
-            x_shape = tuple(x.shape.as_list())
+            x_shape = tuple(x.get_shape().as_list())
             self.assertAllClose(x_shape, out.shape)
 
     def test_2d_shape(self):
@@ -36,7 +36,7 @@ class PostProcessingTest(tf.test.TestCase):
 
         with self.test_session() as sess:
             out = sess.run(out_post)
-            x_shape = tuple(x.shape.as_list())
+            x_shape = tuple(x.get_shape().as_list())
             self.assertAllClose(x_shape, out.shape)
 
     def test_3d_argmax_shape(self):
@@ -47,7 +47,7 @@ class PostProcessingTest(tf.test.TestCase):
 
         with self.test_session() as sess:
             out = sess.run(out_post)
-            x_shape = tuple(x.shape.as_list()[:-1])
+            x_shape = tuple(x.get_shape().as_list()[:-1])
             self.assertAllClose(x_shape + (1,), out.shape)
 
 

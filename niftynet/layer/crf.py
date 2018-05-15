@@ -15,9 +15,9 @@ CVPR 2015.
 """
 
 def permutohedral_prepare(position_vectors):
-    batch_size = int(position_vectors.shape[0])
-    nCh=int(position_vectors.shape[-1])
-    nVoxels=int(position_vectors.shape.num_elements())//batch_size//nCh
+    batch_size = int(position_vectors.get_shape()[0])
+    nCh=int(position_vectors.get_shape()[-1])
+    nVoxels=int(position_vectors.get_shape().num_elements())//batch_size//nCh
     # reshaping batches and voxels into one dimension means we can use 1D gather and hashing easily
     position_vectors=tf.reshape(position_vectors,[-1,nCh])
 
@@ -97,7 +97,7 @@ def permutohedral_prepare(position_vectors):
 
 def permutohedral_compute(data_vectors,barycentric,blurNeighbours1,blurNeighbours2,indices,name,reverse):
     batch_size=tf.shape(data_vectors)[0]
-    numSimplexCorners=int(barycentric.shape[-1])
+    numSimplexCorners=int(barycentric.get_shape()[-1])
     nCh=numSimplexCorners-1
     nChData=tf.shape(data_vectors)[-1]
     data_vectors = tf.reshape(data_vectors,[-1,nChData])
@@ -170,8 +170,8 @@ def permutohedral_gen(permutohedral, data_vectors,name):
 
 
 def ftheta(U,H1,permutohedrals,mu,kernel_weights, aspect_ratio,name):
-    nCh=U.shape.as_list()[-1]
-    batch_size=int(U.shape[0])
+    nCh=U.get_shape().as_list()[-1]
+    batch_size=int(U.get_shape()[0])
     # Message Passing
     data=tf.reshape(tf.nn.softmax(H1),[batch_size,-1,nCh])
     Q1=[None]*len(permutohedrals)
@@ -224,16 +224,16 @@ class CRFAsRNNLayer(TrainableLayer):
            image intensity
         U: activation maps to smooth
       """
-      batch_size=int(U.shape[0])
+      batch_size=int(U.get_shape()[0])
       H1=[U]
       # Build permutohedral structures for smoothing
-      coords=tf.tile(tf.expand_dims(tf.stack(tf.meshgrid(*[numpy.array(range(int(i)),dtype=numpy.float32)*a for i,a in zip(U.shape[1:4],self._aspect_ratio)]),3),0),[batch_size,1,1,1,1])
-      bilateralCoords =tf.reshape(tf.concat([coords/self._alpha,I/self._beta],4),[batch_size,-1,int(I.shape[-1])+3])
+      coords=tf.tile(tf.expand_dims(tf.stack(tf.meshgrid(*[numpy.array(range(int(i)),dtype=numpy.float32)*a for i,a in zip(U.get_shape()[1:4],self._aspect_ratio)]),3),0),[batch_size,1,1,1,1])
+      bilateralCoords =tf.reshape(tf.concat([coords/self._alpha,I/self._beta],4),[batch_size,-1,int(I.get_shape()[-1])+3])
       spatialCoords=tf.reshape(coords/self._gamma,[batch_size,-1,3])
       kernel_coords=[bilateralCoords,spatialCoords]
       permutohedrals = [permutohedral_prepare(coords) for coords in kernel_coords]
 
-      nCh=U.shape[-1]
+      nCh=U.get_shape()[-1]
       mu = tf.get_variable('Compatibility',initializer=tf.constant(numpy.reshape(numpy.eye(nCh),[1,1,1,nCh,nCh]),dtype=tf.float32))
       kernel_weights = [tf.get_variable("FilterWeights"+str(idx), shape=[1,1,1,1,nCh], initializer=tf.zeros_initializer()) for idx,k in enumerate(permutohedrals)]
 

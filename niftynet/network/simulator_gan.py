@@ -41,7 +41,7 @@ class ImageGenerator(BaseGenerator):
         keep_prob_ph = 1  # not passed in as a placeholder
         add_noise = self.noise_channels_per_layer
         if conditioning is not None:
-            conditioning_channels = conditioning.shape.as_list()[-1]
+            conditioning_channels = conditioning.get_shape().as_list()[-1]
             conditioning_channels = conditioning_channels + add_noise
         else:
             conditioning_channels = add_noise
@@ -62,7 +62,7 @@ class ImageGenerator(BaseGenerator):
         spatial_rank = len(image_size) - 1
         if spatial_rank == 3:
             def resize_func(x, sz):
-                sz_x = x.shape.as_list()
+                sz_x = x.get_shape().as_list()
                 r1 = tf.image.resize_images(
                     tf.reshape(x, sz_x[:3] + [-1]), sz[0:2])
                 r2 = tf.image.resize_images(
@@ -76,13 +76,13 @@ class ImageGenerator(BaseGenerator):
         def concat_cond(x, with_conditioning):
             noise = []
             if add_noise:
-                feature_shape = x.shape.as_list()[0:-1]
+                feature_shape = x.get_shape().as_list()[0:-1]
                 noise_shape = feature_shape + [add_noise]
                 noise = [tf.random_normal(noise_shape, 0.0, 0.1)]
 
             if with_conditioning and conditioning is not None:
                 with tf.name_scope('concat_conditioning'):
-                    spatial_shape = x.shape.as_list()[1:-1]
+                    spatial_shape = x.get_shape().as_list()[1:-1]
                     resized_cond = resize_func(conditioning, spatial_shape)
                     return tf.concat([x, resized_cond] + noise, axis=-1)
             return x
@@ -114,10 +114,10 @@ class ImageGenerator(BaseGenerator):
             with tf.name_scope('up_block'):
                 u = up(ch, x)
                 cond = concat_cond(u, with_conditioning)
-                return conv(cond.shape.as_list()[-1], cond)
+                return conv(cond.get_shape().as_list()[-1], cond)
 
         def noise_to_image(sz, ch, rand_tensor, with_conditioning):
-            batch_size = rand_tensor.shape.as_list()[0]
+            batch_size = rand_tensor.get_shape().as_list()[0]
             output_shape = [batch_size] + sz + [ch]
             with tf.name_scope('noise_to_image'):
                 g_no_0 = np.prod(sz) * ch
@@ -135,7 +135,7 @@ class ImageGenerator(BaseGenerator):
         def final_image(n_chns, x):
             with tf.name_scope('final_image'):
                 if add_noise > 0:
-                    feature_shape = x.shape.as_list()[0:-1]
+                    feature_shape = x.get_shape().as_list()[0:-1]
                     noise_shape = feature_shape + [add_noise]
                     noise = tf.random_normal(noise_shape, 0, .1)
                     x = tf.concat([x, noise], axis=3)
@@ -177,7 +177,7 @@ class ImageDiscriminator(BaseDiscriminator):
 
     def layer_op(self, image, conditioning, is_training):
 
-        batch_size = image.shape.as_list()[0]
+        batch_size = image.get_shape().as_list()[0]
 
         def down(ch, x):
             with tf.name_scope('downsample'):

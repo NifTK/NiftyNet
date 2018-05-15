@@ -10,7 +10,7 @@ def check_spatial_dims(input_tensor, criteria):
     criteria can be a lambda function
     e.g. lambda x : x > 10 checks whether each dim is greater than 10
     """
-    spatial_dims = input_tensor.shape[1:-1].as_list()
+    spatial_dims = input_tensor.get_shape()[1:-1].as_list()
     all_dims_satisfied = np.all([criteria(x) for x in spatial_dims])
     if not all_dims_satisfied:
         import inspect
@@ -26,7 +26,7 @@ def infer_spatial_rank(input_tensor):
     """
     e.g. given an input tensor [Batch, X, Y, Z, Feature] the spatial rank is 3
     """
-    dims = input_tensor.shape.ndims - 2
+    dims = input_tensor.get_shape().ndims - 2
     assert dims > 0, "input tensor should have at least one spatial dim, " \
                      "in addition to batch and channel dims"
     return dims
