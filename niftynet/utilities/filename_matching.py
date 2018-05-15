@@ -81,7 +81,7 @@ class KeywordsMatching(object):
         """
         path_file = [(p, filename)
                      for p in self.path_to_search
-                     for filename in sorted(os.listdir(p))]
+                     for filename in os.listdir(p)]
         matching_path_file = list(filter(self.__is_a_candidate, path_file))
         filename_list = \
             [os.path.join(p, filename) for p, filename in matching_path_file]
