@@ -30,7 +30,7 @@ from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.io.image_sets_partitioner import TRAIN, VALID, INFER
 from niftynet.io.misc_io import get_latest_subfolder, touch_folder
 from niftynet.layer.bn import BN_COLLECTION
-from niftynet.utilities.util_common import set_cuda_device, traverse_nested
+from niftynet.utilities.util_common import set_cuda_device
 
 FILE_PREFIX = 'model.ckpt'
 
@@ -191,33 +191,6 @@ class ApplicationDriver(object):
         with self.graph.as_default(), tf.name_scope('Sampler'):
             self.app.initialise_sampler()
 
-    def _run_sampler_threads(self, session=None):
-        """
-        Get samplers from application and try to run sampler threads.
-
-        Note: Overriding app.get_sampler() method by returning None to bypass
-        this step.
-
-        :param session: TF session used for fill
-            tf.placeholders with sampled data
-        :return:
-        """
-        if session is None:
-            return
-        if self._coord is None:
-            return
-        try:
-            samplers = self.app.get_sampler()
-            for sampler in traverse_nested(samplers):
-                if sampler is None:
-                    continue
-                sampler.run_threads(session, self._coord, self.num_threads)
-        except (NameError, TypeError, AttributeError, IndexError):
-            tf.logging.fatal(
-                "samplers not running, pop_batch_op operations "
-                "are blocked.")
-            raise
-
     def run_application(self):
         """
         Initialise a TF graph, connect data sampler and network within
@@ -236,7 +209,18 @@ class ApplicationDriver(object):
             self._coord = tf.train.Coordinator()
 
             # start samplers' threads
-            self._run_sampler_threads(session=session)
+            try:
+                samplers = self.app.get_sampler()
+                if samplers is not None:
+                    all_samplers = [s for sets in samplers for s in sets]
+                    for sampler in all_samplers:
+                        sampler.run_threads(
+                            session, self._coord, self.num_threads)
+            except (TypeError, AttributeError, IndexError):
+                tf.logging.fatal(
+                    "samplers not running, pop_batch_op operations "
+                    "are blocked.")
+                raise
 
             self.graph = self._create_graph(self.graph)
             self.app.check_initialisations()
