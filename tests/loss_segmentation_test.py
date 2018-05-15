@@ -113,23 +113,6 @@ class DiceTest(tf.test.TestCase):
             one_minus_dice_score = test_loss_func(predicted, labels)
             self.assertAlmostEqual(one_minus_dice_score.eval(), 1.0)
 
-    def test_dice_batch_size_greater_than_one(self):
-        # test for Github issue #22: need to take mean per-image before
-        # averaging Dice of ~2/3 and ~0.16, should get dice ~ 0.41495
-        with self.test_session():
-            # predictions ~ [1, 0, 0]; [0, 0, 1]; [0, .5, .5]; [.333, .333, .333]
-            predictions_numpy = np.array([[[10., 0, 0], [0, 0, 10]],
-                                          [[-10, 0, 0], [0, 0, 0]]]).reshape([2, 2, 1, 1, 3])
-            labels_numpy = np.array([[[0, 2]], [[0, 1]]]).reshape([2, 2, 1, 1, 1])
-
-            predicted = tf.constant(predictions_numpy, dtype=tf.float32, name='predicted')
-            labels = tf.constant(labels_numpy, dtype=tf.int64, name='labels')
-
-            test_loss_func = LossFunction(3, loss_type='Dice')
-            one_minus_dice_score = test_loss_func(predicted, labels)
-
-            self.assertAllClose(one_minus_dice_score.eval(), 1 - 0.41495, atol=1e-4)
-
 
 class DiceTest_NS(tf.test.TestCase):
     def test_dice_score_nosquare(self):
@@ -194,8 +177,8 @@ class CrossEntropyTests(tf.test.TestCase):
             self.assertAlmostEqual(
                 computed_cross_entropy.eval(),
                 -.5 * (
-                        2.0 / 3.0 * np.log(np.e / (1 + np.e)) + 4.0 / 3.0 * np.log(
-                    np.e ** 2 / (1 + np.e ** 2))))
+                    2.0 / 3.0 * np.log(np.e / (1 + np.e)) + 4.0 / 3.0 * np.log(
+                        np.e ** 2 / (1 + np.e ** 2))))
 
 
 class LossFunctionErrorsTest(tf.test.TestCase):
