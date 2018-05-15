@@ -59,7 +59,7 @@ class LossFunction(Layer):
         with tf.device('/cpu:0'):
 
             if ground_truth is not None:
-                n_per_batch = ground_truth.get_shape()[0].value
+                n_per_batch = ground_truth.get_shape()[0]
                 ground_truth = tf.reshape(ground_truth, [n_per_batch, -1])
             if weight_map is not None:
                 weight_map = tf.reshape(weight_map, [n_per_batch, -1])
