@@ -74,7 +74,7 @@ class GeneralisedDiceTest(tf.test.TestCase):
             predicted = tf.constant([[0, 10], [10, 0], [10, 0], [10, 0]],
                                     dtype=tf.float32, name='predicted')
 
-            labels = tf.constant([[1, 0, 0, 0]], dtype=tf.int64, name='labels')
+            labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
             weights = tf.cast(labels, tf.float32)
             predicted, labels, weights = [tf.expand_dims(x, axis=0) for x in
                                           (predicted, labels, weights)]
@@ -103,12 +103,12 @@ class DiceTest(tf.test.TestCase):
 
     def test_dice_score_weights(self):
         with self.test_session():
-            weights = tf.constant([[1, 1, 0, 0]], dtype=tf.float32,
+            weights = tf.constant([1, 1, 0, 0], dtype=tf.float32,
                                   name='weights')
             predicted = tf.constant(
                 [[0, 10], [10, 0], [10, 0], [10, 0]],
                 dtype=tf.float32, name='predicted')
-            labels = tf.constant([[1, 0, 0, 0]], dtype=tf.int64, name='labels')
+            labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
             predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
 
             test_loss_func = LossFunction(2,
@@ -162,12 +162,12 @@ class DiceTest_NS(tf.test.TestCase):
 
     def test_dice_score_nosquare_weights(self):
         with self.test_session():
-            weights = tf.constant([[1, 1, 0, 0]], dtype=tf.float32,
+            weights = tf.constant([1, 1, 0, 0], dtype=tf.float32,
                                   name='weights')
             predicted = tf.constant(
                 [[0, 10], [10, 0], [10, 0], [10, 0]],
                 dtype=tf.float32, name='predicted')
-            labels = tf.constant([[1, 0, 0, 0]], dtype=tf.int64, name='labels')
+            labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
             predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
 
             test_loss_func = LossFunction(2,
@@ -196,7 +196,7 @@ class CrossEntropyTests(tf.test.TestCase):
             predicted = tf.constant(
                 [[0, 1], [2, 0]],
                 dtype=tf.float32, name='predicted')
-            labels = tf.constant([[1], [0]], dtype=tf.int64, name='labels')
+            labels = tf.constant([1, 0], dtype=tf.int64, name='labels')
             predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
 
             test_loss_func = LossFunction(2, loss_type='CrossEntropy')
@@ -208,13 +208,12 @@ class CrossEntropyTests(tf.test.TestCase):
 
     def test_cross_entropy_value_weight(self):
         with self.test_session():
-            weights = tf.constant([[1], [2]], dtype=tf.float32, name='weights')
+            weights = tf.constant([1, 2], dtype=tf.float32, name='weights')
             predicted = tf.constant(
                 [[0, 1], [2, 0]],
                 dtype=tf.float32, name='predicted')
-            labels = tf.constant([[1], [0]], dtype=tf.int64, name='labels')
-            predicted, labels, weights = \
-                [tf.expand_dims(x, axis=0) for x in (predicted, labels, weights)]
+            labels = tf.constant([1, 0], dtype=tf.int64, name='labels')
+            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
 
             test_loss_func = LossFunction(2, loss_type='CrossEntropy')
             computed_cross_entropy = test_loss_func(predicted, labels, weights)
@@ -223,33 +222,6 @@ class CrossEntropyTests(tf.test.TestCase):
                 -.5 * (
                         2.0 / 3.0 * np.log(np.e / (1 + np.e)) + 4.0 / 3.0 * np.log(
                     np.e ** 2 / (1 + np.e ** 2))))
-
-class DiceDenseTest_NS(tf.test.TestCase):
-    def test_dice_dense_score_nosquare(self):
-        with self.test_session():
-            predicted = tf.constant(
-                [[0, 10], [10, 0], [10, 0], [10, 0]],
-                dtype=tf.float32, name='predicted')
-            labels = tf.constant([[1, 0], [0, 1], [0, 1], [0, 1]],
-                                 dtype=tf.int64, name='labels')
-            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
-
-            test_loss_func = LossFunction(2, loss_type='Dice_Dense')
-            one_minus_dice_score = test_loss_func(predicted, labels)
-            self.assertAllClose(one_minus_dice_score.eval(), 1.0, atol=1e-4)
-
-
-    def test_wrong_prediction(self):
-        with self.test_session():
-            predicted = tf.constant(
-                [[0, 100]],
-                dtype=tf.float32, name='predicted')
-            labels = tf.constant([0], dtype=tf.int64, name='labels')
-            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
-
-            test_loss_func = LossFunction(2, loss_type='Dice_NS')
-            one_minus_dice_score = test_loss_func(predicted, labels)
-            self.assertAlmostEqual(one_minus_dice_score.eval(), 1.0)
 
 
 class LossFunctionErrorsTest(tf.test.TestCase):
