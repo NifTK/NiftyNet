@@ -90,7 +90,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         Samplers take ``self.reader`` as input and generates
         sequences of ImageWindow that will be fed to the networks
 
-        This function sets self.sampler.
+        This function sets self.samplers.
         """
         raise NotImplementedError
 
@@ -151,15 +151,10 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
                 'This app supports updating a network, or a list of networks.')
 
     def stop(self):
-        """
-        stop the sampling threads if there's any.
-
-        :return:
-        """
-        for sampler in util_common.traverse_nested(self.get_sampler()):
-            if sampler is None:
-                continue
-            sampler.close_all()
+        for sampler_set in self.get_sampler():
+            for sampler in sampler_set:
+                if sampler:
+                    sampler.close_all()
 
     def set_iteration_update(self, iteration_message):
         """
@@ -186,11 +181,6 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
             iteration_message.data_feed_dict[self.is_validation] = True
 
     def get_sampler(self):
-        """
-        get samplers of the application
-
-        :return: ``niftynet.engine.sampler_*`` instances
-        """
         return self.sampler
 
     def add_validation_flag(self):

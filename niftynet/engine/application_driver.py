@@ -68,7 +68,7 @@ class ApplicationDriver(object):
         self.initial_iter = 0
         self.final_iter = 0
 
-        self._coord = tf.train.Coordinator()
+        self._coord = None
         self._init_op = None
         self._data_partitioner = None
         self.outputs_collector = None
@@ -206,8 +206,6 @@ class ApplicationDriver(object):
             return
         if self._coord is None:
             return
-        if self.num_threads <= 0:
-            return
         try:
             samplers = self.app.get_sampler()
             for sampler in traverse_nested(samplers):
@@ -235,6 +233,7 @@ class ApplicationDriver(object):
         with tf.Session(config=config, graph=self.graph) as session:
 
             tf.logging.info('Filling queues (this can take a few minutes)')
+            self._coord = tf.train.Coordinator()
 
             # start samplers' threads
             self._run_sampler_threads(session=session)
@@ -399,9 +398,6 @@ class ApplicationDriver(object):
         if message.is_training:
             # always apply the gradient op during training
             vars_to_run['gradients'] = self.app.gradient_op
-        else:
-            assert vars_to_run.get('gradients', None) is None, \
-                'gradients on validation set should be empty'
         # session will run variables collected under CONSOLE
         vars_to_run[CONSOLE] = collected.variables(CONSOLE)
         # session will run variables collected under NETWORK_OUTPUT

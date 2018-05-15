@@ -8,10 +8,8 @@ import time
 from niftynet.engine.application_variables import CONSOLE, TF_SUMMARIES
 from niftynet.io.image_sets_partitioner import TRAIN, VALID, INFER
 from niftynet.utilities.decorators import singleton
-from niftynet.utilities.util_common import look_up_operations
 
 CONSOLE_FORMAT = "{} iter {}, {} ({:3f}s)"
-PHASES = {TRAIN, VALID, INFER}
 
 
 # pylint: disable=too-many-instance-attributes
@@ -57,11 +55,9 @@ class IterationMessage(object):
         """
         operations (tf graph elements) to be fed into
         ``session.run(...)``. This is currently mainly used
-        for passing network gradient updates ops to ``session.run``.
+        for passing network gradient updates ops to session.run
 
-        To modify the operations, assigns ``self.ops_to_run``
-
-        :return: a copy of the operation dictionary
+        :return: dictionary of operations
         """
         if self._ops_to_run is None:
             self._ops_to_run = {}
@@ -87,8 +83,6 @@ class IterationMessage(object):
 
     @data_feed_dict.setter
     def data_feed_dict(self, value):
-        assert isinstance(value, dict), \
-            'data_feed_dict should a dictionary of placeholders:values'
         self._data_feed_dict = value
 
     @property
@@ -134,7 +128,7 @@ class IterationMessage(object):
 
     @phase.setter
     def phase(self, value):
-        self._phase = look_up_operations(value, PHASES)
+        self._phase = value
 
     @property
     def is_training(self):
@@ -163,14 +157,10 @@ class IterationMessage(object):
     @property
     def iter_duration(self):
         """
-        measuring time used
-        from setting self.current_iter to setting self.current_iter_output
 
         :return: time duration of an iteration
         """
-
-        current_toc = max(self._current_iter_toc, self._current_iter_tic)
-        return current_toc - self._current_iter_tic
+        return self._current_iter_toc - self._current_iter_tic
 
     def to_console_string(self):
         """
@@ -180,18 +170,12 @@ class IterationMessage(object):
         """
         summary_indentation = "    " if self.is_validation else ""
         summary_format = summary_indentation + CONSOLE_FORMAT
-        console_content = ''
-        try:
-            console_content = self.current_iter_output.get(CONSOLE, '')
-        except AttributeError:
-            console_content = "print to console -- set current_iter_output " \
-                              "to a dictionary of {CONSOLE: 'content'}."
-        result_str = _console_vars_to_str(console_content)
+        result_str = _console_vars_to_str(self.current_iter_output[CONSOLE])
         summary = summary_format.format(
             self.phase, self.current_iter, result_str, self.iter_duration)
         return summary
 
-    def to_tf_summary(self, writer=None):
+    def to_tf_summary(self, writer):
         """
         converting current_iter_output to tf summary and write to ``writer``
 
@@ -200,11 +184,7 @@ class IterationMessage(object):
         """
         if writer is None:
             return
-        try:
-            summary = self.current_iter_output.get(TF_SUMMARIES, {})
-        except AttributeError:
-            summary = None
-
+        summary = self.current_iter_output.get(TF_SUMMARIES, {})
         if not summary:
             return
         writer.add_summary(summary, self.current_iter)
@@ -216,9 +196,6 @@ def _console_vars_to_str(console_dict):
     """
     if not console_dict:
         return ''
-    if isinstance(console_dict, dict):
-        console_str = ', '.join('{}={}'.format(key, val)
-                                for (key, val) in console_dict.items())
-    else:
-        console_str = '{}'.format(console_dict)
+    console_str = ', '.join('{}={}'.format(key, val)
+                            for (key, val) in console_dict.items())
     return console_str

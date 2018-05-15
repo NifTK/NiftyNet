@@ -55,7 +55,7 @@ class OutputCollectorTest(tf.test.TestCase):
                                             var=bar,
                                             average_over_devices=True)
         self.assertEqual(
-            set(collector.variables()),
+            set(collector.variables(collection=CONSOLE),
             {'image_1', 'image_3', 'image_2',
              'image', 'foo_1', 'foo_2', 'foo_3', 'foo', 'bar'})
         self.assertEqual(len(collector.variables()['bar']), n_device)
@@ -78,7 +78,7 @@ class OutputCollectorTest(tf.test.TestCase):
                                             collection=NETWORK_OUTPUT,
                                             average_over_devices=False)
             self.assertDictEqual(collector.variables(collection=NETWORK_OUTPUT),
-                                 {'image': image, 'foo': foo})
+                             {'image': image, 'foo': foo})
 
     def test_netout_multiple_device(self):
         n_device = 4
@@ -104,11 +104,9 @@ class OutputCollectorTest(tf.test.TestCase):
             set(collector.variables(NETWORK_OUTPUT)),
             {'image_1', 'image_3', 'image_2',
              'image', 'foo_1', 'foo_2', 'foo_3', 'foo', 'bar'})
-        self.assertEqual(len(collector.variables(NETWORK_OUTPUT)['bar']),
-                         n_device)
+        self.assertEqual(len(collector.variables(NETWORK_OUTPUT)['bar']), n_device)
         collector.finalise_output_op()
-        self.assertIsInstance(collector.variables(NETWORK_OUTPUT)['bar'],
-                              tf.Tensor)
+        self.assertIsInstance(collector.variables(NETWORK_OUTPUT)['bar'], tf.Tensor)
 
     def test_tf_summary_single_device(self):
         n_device = 1
