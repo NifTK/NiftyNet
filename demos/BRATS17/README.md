@@ -1,14 +1,10 @@
-This demo presents how to use niftynet for whole tumor segmentation,
-which is the first stage of the cascaded CNNs described in the following paper.
+This demo presents the brain tumor segmentation method described in
 
 ```
 Wang et al., Automatic Brain Tumor Segmentation using
 Cascaded Anisotropic Convolutional Neural Networks, MICCAI BRATS 2017
 ```
 [https://arxiv.org/abs/1709.00382](https://arxiv.org/abs/1709.00382)
-
-For a full implementation of the method described in this paper with three stages of the cascaded CNNs, 
-please see: https://github.com/taigw/brats17
 
 ![A slice from BRATS17](./example_outputs/original.png)
 ![Ground truth of whole Tumor](./example_outputs/label.png)
@@ -23,6 +19,9 @@ to the online validation leaderboard of [BRATS challenge 2017](https://www.cbica
 _Please see also a trained model in [NiftyNet model zoo](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/blob/master/anisotropic_nets_brats_challenge_model_zoo.md)._
 
 ### Overview
+The demo currently demonstrates how to use niftynet for the first stage of the cascaded CNNs, i.e., automate segmentation of whole tumor using the [WNet](anisotropic_nets/wt_net.py). 
+For a full implementation of the method described in [1] with three stages of the cascaded CNNs, please see: https://github.com/taigw/brats17
+
 This folder (also zipped and downloadable from
 [here](https://www.dropbox.com/s/macplyp53v0tm1j/BRATS17.tar.gz)) contains
 details for replicating the results, including:
