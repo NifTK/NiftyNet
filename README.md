@@ -61,8 +61,6 @@ The API reference and how-to guides are available on [Read the Docs][rtd-niftyne
 
 [NiftyNet source code mirror on GitHub][niftynet-github]
 
-[Model zoo repository][niftynet-zoo]
-
 NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
 
 [Stack Overflow](https://stackoverflow.com/questions/tagged/niftynet) for general questions
@@ -70,7 +68,6 @@ NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
 [niftynet-io]: http://niftynet.io/
 [niftynet-cmiclab]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 [niftynet-github]: https://github.com/NifTK/NiftyNet
-[niftynet-zoo]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/blob/master/model_zoo.md
 [ml-niftynet]: mailto:nifty-net@live.ucl.ac.uk
 
 
