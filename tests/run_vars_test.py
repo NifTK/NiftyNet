@@ -53,7 +53,6 @@ class RunVarsTest(tf.test.TestCase):
             "G/conv_bn_selu/conv_/w:0")
 
         with self.test_session(graph=test_graph) as sess:
-            app_driver._run_sampler_threads()
             app_driver._run_sampler_threads(sess)
             sess.run(app_driver._init_op)
 
