@@ -80,7 +80,7 @@ def run():
         raise IOError
 
     # Resolve relative configuration file location
-    config_path = os.path.expanduser(meta_args.conf)
+    config_path = meta_args.conf
     if not os.path.isfile(config_path):
         relative_conf_file = os.path.join(
             NiftyNetGlobalConfig().get_default_examples_folder(),
