@@ -57,40 +57,28 @@ class LossFunction(Layer):
         """
 
         with tf.device('/cpu:0'):
-
             if ground_truth is not None:
-                n_per_batch = ground_truth.get_shape()[0]
-                ground_truth = tf.reshape(ground_truth, [n_per_batch, -1])
+                ground_truth = tf.reshape(ground_truth, [-1])
             if weight_map is not None:
-                weight_map = tf.reshape(weight_map, [n_per_batch, -1])
+                weight_map = tf.reshape(weight_map, [-1])
 
             if not isinstance(prediction, (list, tuple)):
-                prediction = [prediction[i, :] for i in range(n_per_batch)]
+                prediction = [prediction]
             # prediction should be a list for holistic networks
             if self._num_classes > 0:
-                # reshape the prediction to [n_batch, n_voxels , num_classes]
+                # reshape the prediction to [n_voxels , num_classes]
                 prediction = [tf.reshape(pred, [-1, self._num_classes])
                               for pred in prediction]
 
             data_loss = []
-            for i, pred in enumerate(prediction):
-                if weight_map:
-                    weight = weight_map[i, :]
-                else:
-                    weight = None
-
+            for pred in prediction:
                 if self._loss_func_params:
                     data_loss.append(self._data_loss_func(
-                        pred,
-                        tf.reshape(ground_truth[i, :], (pred.shape[:-1])),
-                        weight,
+                        pred, ground_truth, weight_map,
                         **self._loss_func_params))
                 else:
                     data_loss.append(self._data_loss_func(
-                        pred,
-                        tf.reshape(ground_truth[i, :], pred.shape[:-1]),
-                        weight))
-
+                        pred, ground_truth, weight_map))
             return tf.reduce_mean(data_loss)
 
 
