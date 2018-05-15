@@ -8,7 +8,7 @@ import tensorflow as tf
 from niftynet.io.image_sets_partitioner import COLUMN_UNIQ_ID
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.io.image_sets_partitioner import TRAIN, VALID, INFER
-from niftynet.utilities.util_common import ParserNamespace
+from tests.test_util import ParserNamespace
 
 test_sections = {
     'T1': ParserNamespace(

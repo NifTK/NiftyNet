@@ -6,7 +6,7 @@ import tensorflow as tf
 
 from niftynet.engine.image_window import ImageWindow
 from niftynet.engine.image_window_buffer import InputBatchQueueRunner
-from niftynet.utilities.util_common import ParserNamespace
+from tests.test_util import ParserNamespace
 
 
 def get_static_image_window():

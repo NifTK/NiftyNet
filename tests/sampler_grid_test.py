@@ -11,7 +11,7 @@ from niftynet.engine.sampler_grid import _enumerate_step_points
 from niftynet.engine.sampler_grid import grid_spatial_coordinates
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
-from niftynet.utilities.util_common import ParserNamespace
+from tests.test_util import ParserNamespace
 
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(

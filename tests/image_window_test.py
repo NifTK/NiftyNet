@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.engine.image_window import ImageWindow
-from niftynet.utilities.util_common import ParserNamespace
+from tests.test_util import ParserNamespace
 
 
 def get_static_window_param():

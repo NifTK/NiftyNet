@@ -13,7 +13,7 @@ from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
 from niftynet.layer.pad import PadLayer
-from niftynet.utilities.util_common import ParserNamespace
+from tests.test_util import ParserNamespace
 
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
