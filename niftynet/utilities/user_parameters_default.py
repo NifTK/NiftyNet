@@ -265,6 +265,15 @@ def add_network_args(parser):
         default=(0, 0, 0))
 
     parser.add_argument(
+        "--volume_padding_mode",
+        metavar='',
+        help="Set which type of numpy padding to do, see "
+             "https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.pad.html "
+             "for details",
+        type=str,
+        default='minimum')
+
+    parser.add_argument(
         "--window_sampling",
         metavar='TYPE_STR',
         help="How to sample patches from each loaded image:"
