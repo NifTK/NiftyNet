@@ -28,22 +28,23 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
                  mean=0.0,
                  stddev=1.0,
                  repeat=1,
-                 queue_length=10):
+                 queue_length=10,
+                 name='random_vector_sampler'):
+        # repeat=None for infinite loops
+        Layer.__init__(self, name=name)
+
         self.n_interpolations = max(n_interpolations, 1)
         self.mean = mean
         self.stddev = stddev
         self.repeat = repeat
-        Layer.__init__(self, name='input_buffer')
         InputBatchQueueRunner.__init__(
             self,
             capacity=queue_length,
             shuffle=False)
         tf.logging.info('reading size of preprocessed images')
-        self.names = names
         vector_shapes = {names[0]: vector_size}
         vector_dtypes = {names[0]: tf.float32}
-        self.window = ImageWindow(names=tuple(vector_shapes),
-                                  shapes=vector_shapes,
+        self.window = ImageWindow(shapes=vector_shapes,
                                   dtypes=vector_dtypes)
         tf.logging.info('initialised window instance')
         self._create_queue_and_ops(self.window,
@@ -59,16 +60,16 @@ class RandomVectorSampler(Layer, InputBatchQueueRunner):
         Location coordinates are set to ``np.ones`` for all the vectors.
         """
         total_iter = self.repeat if self.repeat is not None else 1
-        while total_iter > 0:
+        while total_iter:
             total_iter = total_iter - 1 if self.repeat is not None else 1
             embedding_x = np.random.normal(
                 self.mean,
                 self.stddev,
-                *self.window.shapes[self.window.names[0]])
+                *self.window.shapes[self.window.names[0]][1:])
             embedding_y = np.random.normal(
                 self.mean,
                 self.stddev,
-                *self.window.shapes[self.window.names[0]])
+                *self.window.shapes[self.window.names[0]][1:])
             steps = np.linspace(0, 1, self.n_interpolations)
             output_vectors = []
             for (_, mixture) in enumerate(steps):

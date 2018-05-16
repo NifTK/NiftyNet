@@ -241,8 +241,11 @@ def read_mapping_file(mapping_file):
     each modality stated in the mapping file
     """
     mapping_dict = {}
+    if not mapping_file:
+        return mapping_dict
     if not os.path.isfile(mapping_file):
         return mapping_dict
+
     with open(mapping_file, "r") as f:
         for line in f:
             if len(line) <= 2:

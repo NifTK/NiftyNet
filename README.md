@@ -34,15 +34,21 @@ Other features of NiftyNet include:
  <sup>*2.5-D: volumetric images processed as a stack of 2D slices;
 4-D: co-registered multi-modal 3D volumes</sup>
 
+NiftyNet release notes are available [here][changelog].
+
+[changelog]: CHANGELOG.md
+
 
 ### Installation
 
 1. Please install the appropriate [TensorFlow][tf] package*:
-   * [`pip install tensorflow-gpu==1.3`][tf-pypi-gpu] for TensorFlow with GPU support
-   * [`pip install tensorflow==1.3`][tf-pypi] for CPU-only TensorFlow
+   * [`pip install tensorflow-gpu==1.7`][tf-pypi-gpu] for TensorFlow with GPU support
+   * [`pip install tensorflow==1.7`][tf-pypi] for CPU-only TensorFlow
 1. [`pip install niftynet`](https://pypi.org/project/NiftyNet/)
 
- <sup>*All other NiftyNet dependencies are installed automatically as part of the pip installation process.</sup>
+ <sup>*All other NiftyNet dependencies are installed automatically as part of the pip installation process.
+ 
+*To install from the source repository, please checkout [the instructions](http://niftynet.readthedocs.io/en/dev/installation.html).</sup>
 
 [tf-pypi-gpu]: https://pypi.org/project/tensorflow-gpu/
 [tf-pypi]: https://pypi.org/project/tensorflow/
@@ -76,22 +82,28 @@ NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
 
 ### Citing NiftyNet
 
-If you use NiftyNet in your work, please cite [Gibson and Li, et al. 2017][preprint]:
+If you use NiftyNet in your work, please cite [Gibson and Li, et al. 2018][cmpb2018]:
 
-* E. Gibson\*, W. Li\*, C. Sudre, L. Fidon, D. I. Shakir, G. Wang, Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, M. Modat, D. C. Barratt, S. Ourselin, M. J. Cardoso\^ and T. Vercauteren\^ (2017)
-[NiftyNet: a deep-learning platform for medical imaging. arXiv: 1709.03485][preprint]
+* E. Gibson\*, W. Li\*, C. Sudre, L. Fidon, D. I. Shakir, G. Wang, Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, M. Modat, D. C. Barratt, S. Ourselin, M. J. Cardoso\^ and T. Vercauteren\^ (2018)
+[NiftyNet: a deep-learning platform for medical imaging][cmpb2018], _Computer Methods and Programs in Biomedicine_.
+DOI: [10.1016/j.cmpb.2018.01.025][cmpb2018]
 
 
 BibTeX entry:
 
 ```
-@InProceedings{niftynet17,
-  author = {Eli Gibson and Wenqi Li and Carole Sudre and Lucas Fidon and Dzhoshkun I. Shakir and Guotai Wang and Zach Eaton-Rosen and Robert Gray and Tom Doel and Yipeng Hu and Tom Whyntie and Parashkev Nachev and Marc Modat and Dean C. Barratt and Sebastien Ourselin and M. Jorge Cardoso and Tom Vercauteren},
-  title = {NiftyNet: a deep-learning platform for medical imaging},
-  year = {2017},
-  eprint = {1709.03485},
-  eprintclass = {cs.CV},
-  eprinttype = {arXiv},
+@article{Gibson2018,
+  title = "NiftyNet: a deep-learning platform for medical imaging",
+  journal = "Computer Methods and Programs in Biomedicine",
+  year = "2018",
+  issn = "0169-2607",
+  doi = "https://doi.org/10.1016/j.cmpb.2018.01.025",
+  url = "https://www.sciencedirect.com/science/article/pii/S0169260717311823",
+  author = "Eli Gibson and Wenqi Li and Carole Sudre and Lucas Fidon and
+            Dzhoshkun I. Shakir and Guotai Wang and Zach Eaton-Rosen and
+            Robert Gray and Tom Doel and Yipeng Hu and Tom Whyntie and
+            Parashkev Nachev and Marc Modat and Dean C. Barratt and
+            Sébastien Ourselin and M. Jorge Cardoso and Tom Vercauteren",
 }
 ```
 The NiftyNet platform originated in software developed for [Li, et al. 2017][ipmi2017]:
@@ -103,13 +115,13 @@ Lecture Notes in Computer Science, vol 10265. Springer, Cham.
 DOI: [10.1007/978-3-319-59050-9_28][ipmi2017]
 
 
-[ipmi2017]: http://doi.org/10.1007/978-3-319-59050-9_28
-[preprint]: http://arxiv.org/abs/1709.03485
+[ipmi2017]: https://doi.org/10.1007/978-3-319-59050-9_28
+[cmpb2018]: https://doi.org/10.1016/j.cmpb.2018.01.025
 
 
 ### Licensing and Copyright
 
-Copyright 2017 University College London and the NiftyNet Contributors.
+Copyright 2018 University College London and the NiftyNet Contributors.
 NiftyNet is released under the Apache License, Version 2.0. Please see the LICENSE file for details.
 
 ### Acknowledgements

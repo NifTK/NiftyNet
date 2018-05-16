@@ -73,7 +73,12 @@ class InputBatchQueueRunner(object):
             tf.logging.warning(
                 "using dynamic window size, network batch size is set to 1")
         _enqueue_size = 1 if is_dynamic_window else enqueue_size
+
+        # batch_size is 1 if is_dynamic_window because
+        # RandomShuffleQueue's DequeueMany and DequeueUpTo require
+        # the components to have specified shapes
         self._batch_size = 1 if is_dynamic_window else dequeue_size
+
         self.capacity = int(max(
             self.capacity, round(self._batch_size * 2.5)))
         assert self._batch_size <= self.capacity, \
@@ -202,7 +207,8 @@ class InputBatchQueueRunner(object):
         else:
             data_output = self._dequeue_func(self._batch_size)
         for (name, shape) in self._window.shapes.items():
-            data_output[name].set_shape([self._batch_size] + list(shape))
+            # set first dim as the batch size
+            data_output[name].set_shape([self._batch_size] + list(shape[1:]))
         for name in data_output:
             data_output[name] = squeeze_spatial_temporal_dim(data_output[name])
 

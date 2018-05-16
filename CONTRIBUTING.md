@@ -76,6 +76,14 @@ Please see this [README](tests/README.md) for more information on how to write u
 
 ## NiftyNet admin tasks
 
+### Making a release
+
+NiftyNet versions are numbered following [Semantic Versioning (semver)](http://semver.org/spec/v2.0.0.html).
+After adding notes for the current release to the [NiftyNet changelog][changelog], the current release should be [tagged][git-tag] with a [PEP440][pep440]-compliant semver number preceded by the letter `v` (for "version").
+
+[pep440]: https://www.python.org/dev/peps/pep-0440/
+[changelog]: CHANGELOG.md
+
 ### Bundling a pip installer
 
 The NiftyNet pip installer gets bundled automatically for [Git tags][git-tag] starting with a `v` (for "version") pushed to [CMICLab][niftynet-cmiclab].

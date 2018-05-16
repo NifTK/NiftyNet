@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+This module defines niftynet parameters and their defaults.
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -6,23 +9,30 @@ from __future__ import unicode_literals
 
 import os
 
+from niftynet.io.image_loader import SUPPORTED_LOADERS
+from niftynet.io.image_sets_partitioner import SUPPORTED_PHASES
 from niftynet.utilities.user_parameters_helper import float_array
 from niftynet.utilities.user_parameters_helper import int_array
+from niftynet.utilities.user_parameters_helper import spatial_atleast3d
 from niftynet.utilities.user_parameters_helper import spatialnumarray
 from niftynet.utilities.user_parameters_helper import str2boolean
 from niftynet.utilities.user_parameters_helper import str_array
+from niftynet.utilities.util_import import require_module
 
 DEFAULT_INFERENCE_OUTPUT = os.path.join('.', 'output')
+DEFAULT_EVALUATION_OUTPUT = os.path.join('.', 'evaluation')
 DEFAULT_DATASET_SPLIT_FILE = os.path.join('.', 'dataset_split.csv')
+DEFAULT_HISTOGRAM_REF_FILE = os.path.join('.', 'histogram_ref_file.txt')
 DEFAULT_MODEL_DIR = None
 
 
 def add_application_args(parser):
-    # parser.add_argument(
-    #     "action",
-    #     help="train or inference action",
-    #     choices=['train', 'inference'])
+    """
+    Common keywords  for all applications
 
+    :param parser:
+    :return:
+    """
     parser.add_argument(
         "--cuda_devices",
         metavar='',
@@ -61,9 +71,15 @@ def add_application_args(parser):
 
 
 def add_inference_args(parser):
+    """
+    keywords defined for inference action
+
+    :param parser:
+    :return:
+    """
     parser.add_argument(
         "--spatial_window_size",
-        type=int_array,
+        type=spatial_atleast3d,
         help="Specify the spatial size of the input data (ndims <= 3)",
         default=())
 
@@ -74,6 +90,13 @@ def add_inference_args(parser):
              "inference",
         type=int,
         default=-1)
+
+    parser.add_argument(
+        "--dataset_to_infer",
+        metavar='',
+        help="[Inference only] which data set to compute inference for",
+        choices=list(SUPPORTED_PHASES) + [''],
+        default='')
 
     parser.add_argument(
         "--save_seg_dir",
@@ -97,7 +120,35 @@ def add_inference_args(parser):
     return parser
 
 
+def add_evaluation_args(parser):
+    """
+    keywords defined for evaluation action
+
+    :param parser:
+    :return:
+    """
+    parser.add_argument(
+        "--evaluations",
+        metavar='',
+        help="[Evaluation only] List of evaluations to generate",
+        default='')
+
+    parser.add_argument(
+        "--save_csv_dir",
+        metavar='',
+        help="[Evaluation only] Directory to save evaluation metrics",
+        default=DEFAULT_EVALUATION_OUTPUT)
+
+    return parser
+
+
 def add_input_data_args(parser):
+    """
+    keywords defined for input data specification section
+
+    :param parser:
+    :return:
+    """
     parser.add_argument(
         "--csv_file",
         metavar='',
@@ -129,8 +180,16 @@ def add_input_data_args(parser):
         "--interp_order",
         type=int,
         choices=[0, 1, 2, 3],
-        default=3,
+        default=1,
         help="interpolation order of the input images")
+
+    parser.add_argument(
+        "--loader",
+        type=str,
+        choices=list(SUPPORTED_LOADERS),
+        default=None,
+        help="Image loader to use from {}. "
+             "Leave blank to try all loaders.".format(list(SUPPORTED_LOADERS)))
 
     parser.add_argument(
         "--pixdim",
@@ -148,20 +207,29 @@ def add_input_data_args(parser):
 
     parser.add_argument(
         "--spatial_window_size",
-        type=int_array,
+        type=spatial_atleast3d,
         help="specify the spatial size of the input data (ndims <= 3)",
         default=())
     return parser
 
 
 def add_network_args(parser):
+    """
+    keywords defined for network specification
+
+    :param parser:
+    :return:
+    """
+    import niftynet.layer.binary_masking
+    import niftynet.layer.activation
+    import niftynet.utilities.histogram_standardisation as hist_std_module
+
     parser.add_argument(
         "--name",
         help="Choose a net from NiftyNet/niftynet/network/ or from "
              "user specified module string",
         metavar='')
 
-    import niftynet.layer.activation
     parser.add_argument(
         "--activation_function",
         help="Specify activation function types",
@@ -180,7 +248,7 @@ def add_network_args(parser):
         "--decay",
         help="[Training only] Set weight decay",
         type=float,
-        default=0)
+        default=0.0)
 
     parser.add_argument(
         "--reg_type",
@@ -202,7 +270,7 @@ def add_network_args(parser):
         help="How to sample patches from each loaded image:"
              " 'uniform': fixed size uniformly distributed,"
              " 'resize': resize image to the patch size.",
-        choices=['uniform', 'resize'],
+        choices=['uniform', 'resize', 'balanced', 'weighted'],
         default='uniform')
 
     parser.add_argument(
@@ -212,7 +280,6 @@ def add_network_args(parser):
         type=int,
         default=5)
 
-    import niftynet.layer.binary_masking
     parser.add_argument(
         "--multimod_foreground_type",
         choices=list(
@@ -227,10 +294,8 @@ def add_network_args(parser):
         metavar='',
         type=str,
         help="A reference file of histogram for intensity normalisation",
-        default='')
+        default=DEFAULT_HISTOGRAM_REF_FILE)
 
-    # TODO add choices of normalisation types
-    import niftynet.utilities.histogram_standardisation as hist_std_module
     parser.add_argument(
         "--norm_type",
         help="Type of normalisation to perform",
@@ -244,7 +309,6 @@ def add_network_args(parser):
         type=float_array,
         default=(0.01, 0.99))
 
-    import niftynet.layer.binary_masking
     parser.add_argument(
         "--foreground_type",
         choices=list(
@@ -283,10 +347,8 @@ def add_network_args(parser):
         type=str,
         default='zeros')
 
-    try:
-        from niftynet.utilities.util_import import check_module
-        check_module('yaml')
-        import yaml
+    yaml = require_module('yaml', mandatory=False)
+    if yaml:
         parser.add_argument(
             "--weight_initializer_args",
             help="Pass arguments to the initializer for the weight parameters",
@@ -297,14 +359,17 @@ def add_network_args(parser):
             help="Pass arguments to the initializer for the bias parameters",
             type=yaml.load,
             default={})
-    except ImportError:
-        # "PyYAML module not found")
-        pass
 
     return parser
 
 
 def add_training_args(parser):
+    """
+    keywords defined for the training action
+
+    :param parser:
+    :return:
+    """
     parser.add_argument(
         "--optimiser",
         help="Choose an optimiser for computing graph gradients and applying",
@@ -360,6 +425,28 @@ def add_training_args(parser):
              "that these are 0-indexed, so choose some combination of 0, 1.",
         type=int_array,
         default=-1)
+
+    # elastic deformation
+    parser.add_argument(
+        "--do_elastic_deformation",
+        help="Enables elastic deformation",
+        type=str2boolean,
+        default=False)
+    parser.add_argument(
+        "--num_ctrl_points",
+        help="Number of control points for the elastic deformation",
+        type=int,
+        default=4)
+    parser.add_argument(
+        "--deformation_sigma",
+        help="The standard deviation for elastic deformation.",
+        type=float,
+        default=15)
+    parser.add_argument(
+        "--proportion_to_deform",
+        help="What fraction of samples to deform elastically.",
+        type=float,
+        default=0.5)
 
     parser.add_argument(
         "--lr",
@@ -432,3 +519,12 @@ def add_training_args(parser):
         default=0.)
 
     return parser
+
+
+SUPPORTED_DEFAULT_SECTIONS = {
+    'SYSTEM': add_application_args,
+    'NETWORK': add_network_args,
+    'TRAINING': add_training_args,
+    'INFERENCE': add_inference_args,
+    'EVALUATION': add_evaluation_args,
+}

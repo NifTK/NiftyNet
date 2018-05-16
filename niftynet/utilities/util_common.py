@@ -166,6 +166,26 @@ class MorphologyOps(object):
     def foreground_component(self):
         return ndimage.label(self.binary_map)
 
+cache={}
+def CachedFunction(func):
+    def decorated(*args, **kwargs):
+        key = (func, args, frozenset(kwargs.items()))
+        if key not in cache:
+            cache[key] = func(*args,**kwargs)
+        return cache[key]
+    return decorated
+
+def CachedFunctionByID(func):
+    def decorated(*args, **kwargs):
+        id_args = tuple(id(a) for a in args)
+        id_kwargs = ((k,id(kwargs[k])) for k in sorted(kwargs.keys()))
+        key = (func, id_args, id_kwargs)
+        if key not in cache:
+            cache[key] = func(*args,**kwargs)
+        return cache[key]
+    return decorated
+
+
 
 class CacheFunctionOutput(object):
     """
@@ -196,6 +216,18 @@ class CacheFunctionOutput(object):
 
 
 def look_up_operations(type_str, supported):
+    """
+    This function validates the ``type_str`` against the supported set.
+
+    if ``supported`` is a ``set``, returns ``type_str``
+    if ``supported`` is a ``dict``, return ``supported[type_str]``
+    else:
+        raise an error possibly with a guess of the closest match.
+
+    :param type_str:
+    :param supported:
+    :return:
+    """
     assert isinstance(type_str, string_types), 'unrecognised type string'
     if type_str in supported and isinstance(supported, dict):
         return supported[type_str]

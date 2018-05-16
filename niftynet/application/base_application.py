@@ -2,24 +2,38 @@
 """
 Interface of NiftyNet application
 """
+from argparse import Namespace
+import os
 
 import tensorflow as tf
 from six import with_metaclass
 
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.utilities import util_common
+from niftynet.utilities.util_common import look_up_operations
+from niftynet.io.image_sets_partitioner import SUPPORTED_PHASES
+
+TRAIN = "train"
+INFER = "inference"
+EVAL = "evaluation"
+
+application_singleton_instance = None # global so it can be reset
 
 
 class SingletonApplication(type):
-    _instances = None
-
     def __call__(cls, *args, **kwargs):
-        if cls._instances is None:
-            cls._instances = \
+        global application_singleton_instance
+        if application_singleton_instance is None:
+            application_singleton_instance = \
                 super(SingletonApplication, cls).__call__(*args, **kwargs)
         # else:
         #     raise RuntimeError('application instance already started.')
-        return cls._instances
+        return application_singleton_instance
+
+    @classmethod
+    def clear(cls):
+        global application_singleton_instance
+        application_singleton_instance = None
 
 
 class BaseApplication(with_metaclass(SingletonApplication, object)):
@@ -34,8 +48,9 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     # the section collects all application specific user parameters
     REQUIRED_CONFIG_SECTION = None
 
-    # boolean flag
-    is_training = True
+    # flag for action 'train', 'inference', 'evaluation'
+    SUPPORTED_ACTIONS = {TRAIN, INFER, EVAL}
+    _action = TRAIN
     # TF placeholders for switching network on the fly
     is_validation = None
 
@@ -71,6 +86,28 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
             raise NotImplementedError('gradient_op should be initialised')
         if self.output_decoder is None and not self.is_training:
             raise NotImplementedError('output decoder should be initialised')
+
+    def get_file_lists(self, data_partitioner):
+        """This function pull the correct file_lists from the data partitioner
+        depending on the phase
+        :param data_partitioner:
+                           specifies train/valid/infer splitting if needed
+        :return:           list of file lists of length 2 if validation is
+                           needed otherwise 1"""
+        if self.is_training:
+            if self.action_param.validation_every_n > 0 and\
+                data_partitioner.has_validation:
+                return [data_partitioner.train_files,
+                        data_partitioner.validation_files]
+            else:
+                return [data_partitioner.train_files]
+
+        dataset = self.action_param.dataset_to_infer
+        if dataset:
+            dataset = look_up_operations(dataset, SUPPORTED_PHASES)
+            return [data_partitioner.get_file_list(dataset)]
+
+        return [data_partitioner.inference_files]
 
     def initialise_dataset_loader(
             self, data_param=None, task_param=None, data_partitioner=None):
@@ -124,6 +161,35 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
             False indicates the drive should stop
         """
         raise NotImplementedError
+
+    def add_inferred_output_like(self, data_param, task_param, name):
+        """ This function adds entries to parameter objects to enable
+        the evaluation action to automatically read in the output of a 
+        previous inference run if inference is not explicitly specified.
+
+        This can be used in an application if there is a data section
+        entry in the configuration file that matches the inference output.
+        In supervised learning, the reference data section would often
+        match the inference output and could be used here. Otherwise, 
+        a template data section could be used.
+
+        :param data_param:
+        :param task_param:
+        :param name:  name of input parameter to copy parameters from
+        :return: modified data_param and task_param
+        """
+        print(task_param)
+        # Add the data parameter
+        if 'inferred' not in data_param:
+            data_name = vars(task_param)[name][0]
+            inferred_param = Namespace(**vars(data_param[data_name]))
+            inferred_param.csv_file = os.path.join(
+                self.action_param.save_seg_dir, 'inferred.csv')
+            data_param['inferred'] = inferred_param
+        # Add the task parameter
+        if 'inferred' not in task_param or len(task_param.inferred)==0:
+            task_param.inferred = ('inferred',)
+        return data_param, task_param
 
     def set_network_gradient_op(self, gradients):
         """
@@ -203,3 +269,41 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         """
         self.is_validation = \
             tf.placeholder_with_default(False, [], 'is_validation')
+
+    @property
+    def action(self):
+        """
+        A string indicating the action in train/inference/evaluation
+
+        :return:
+        """
+        return self._action
+
+    @action.setter
+    def action(self, value):
+        self._action = look_up_operations(value, self.SUPPORTED_ACTIONS)
+
+    @property
+    def is_training(self):
+        """
+
+        :return: boolean value indicating if the phase is in training
+        """
+        return self.action == TRAIN
+
+    @property
+    def is_inference(self):
+        """
+
+        :return: boolean value indicating if the phase is inference
+        """
+        return self.action == INFER
+
+    @property
+    def is_evaluation(self):
+        """
+
+        :return: boolean value indicating if the action is evaluation
+        """
+        return self.action == EVAL
+                

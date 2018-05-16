@@ -34,6 +34,10 @@ Other features of NiftyNet include:
 * Implementation of recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
 * Comprehensive evaluation metrics for medical image segmentation
 
+NiftyNet release notes are available in the `changelog`_.
+
+.. _`changelog`: https://github.com/NifTK/NiftyNet/blob/dev/CHANGELOG.md
+
 .. [#] 2.5-D: volumetric images processed as a stack of 2D slices; 4-D: co-registered multi-modal 3D volumes
 
 
@@ -121,7 +125,7 @@ BibTeX entry:
 Licensing and copyright
 -----------------------
 
-Copyright 2017 University College London and the NiftyNet Contributors.
+Copyright 2018 University College London and the NiftyNet Contributors.
 NiftyNet is released under the Apache License, Version 2.0.
 Please see the LICENSE file in the `NiftyNet source code repository`_ for details.
 

@@ -15,19 +15,11 @@ import scipy.ndimage
 import tensorflow as tf
 from tensorflow.core.framework import summary_pb2
 
-from niftynet.utilities.util_import import check_module
+from niftynet.io.image_loader import load_image_obj
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
+from niftynet.utilities.util_import import require_module
 
 IS_PYTHON2 = False if sys.version_info[0] > 2 else True
-
-IMAGE_LOADERS = [nib.load]
-try:
-    import niftynet.io.simple_itk_as_nibabel
-
-    IMAGE_LOADERS.append(niftynet.io.simple_itk_as_nibabel.SimpleITKAsNibabel)
-except (ImportError, AssertionError):
-    tf.logging.warning('SimpleITK adapter failed to load, '
-                       'reducing the supported file formats.')
 
 warnings.simplefilter("ignore", UserWarning)
 
@@ -38,8 +30,9 @@ FILE_LOG_FORMAT = "%(levelname)s:niftynet:%(asctime)s: %(message)s"
 
 #### utilities for file headers
 
-def infer_ndims_from_file(file_path):
-    image_header = load_image(file_path).header
+def infer_ndims_from_file(file_path, loader=None):
+    # todo: loader specified by the user is not used for ndims infer.
+    image_header = load_image_obj(file_path, loader).header
     try:
         return int(image_header['dim'][0])
     except TypeError:
@@ -52,6 +45,39 @@ def infer_ndims_from_file(file_path):
     tf.logging.fatal('unsupported file header in: {}'.format(file_path))
     raise IOError('could not get ndims from file header, please '
                   'consider convert image files to NifTI format.')
+
+
+def dtype_casting(original_dtype, interp_order, as_tf=False):
+    """
+    Making image dtype based on user specified interp order and
+    best compatibility with Tensorflow.
+
+    (if interp_order > 1, all values are promoted to float32,
+     this avoids errors when the input images have different dtypes)
+
+     The image preprocessing steps such as normalising intensities to [-1, 1]
+     will cast input into floats. We therefore cast
+     almost everything to float32 in the reader. Potentially more
+     complex casting rules are needed here.
+
+    :param original_dtype: an input datatype
+    :param interp_order: an integer of interpolation order
+    :param as_tf: boolean
+    :return: normalised numpy dtype if not `as_tf` else tensorflow dtypes
+    """
+
+    dkind = np.dtype(original_dtype).kind
+    if dkind in 'biu':  # handling integers
+        if interp_order < 0:
+            return np.int32 if not as_tf else tf.int32
+        else:
+            return np.float32 if not as_tf else tf.float32
+    if dkind == 'f':  # handling floats
+        return np.float32 if not as_tf else tf.float32
+
+    if as_tf:
+        return tf.float32  # fallback to float32 for tensorflow
+    return original_dtype  # do nothing for numpy array
 
 
 def create_affine_pixdim(affine, pixdim):
@@ -69,22 +95,6 @@ def create_affine_pixdim(affine, pixdim):
     to_multiply = np.tile(
         np.expand_dims(np.append(np.asarray(pixdim), 1), axis=1), [1, 4])
     return np.multiply(np.divide(affine, to_divide.T), to_multiply.T)
-
-
-def load_image(filename):
-    # load an image from a supported filetype and return an object
-    # that matches nibabel's spatialimages interface
-    for image_loader in IMAGE_LOADERS:
-        try:
-            img = image_loader(filename)
-            img = correct_image_if_necessary(img)
-            return img
-        except nib.filebasedimages.ImageFileError:
-            # if the image_loader cannot handle the type_str
-            # continue to next loader
-            pass
-    tf.logging.fatal('No loader could load the file %s', filename)
-    raise IOError
 
 
 def correct_image_if_necessary(img):
@@ -157,7 +167,7 @@ def do_reorientation(data_array, init_axcodes, final_axcodes):
     """
     Performs the reorientation (changing order of axes)
 
-    :param data_array: Array to reorient
+    :param data_array: 5D Array to reorient
     :param init_axcodes: Initial orientation
     :param final_axcodes: Target orientation
     :return data_reoriented: New data array in its reoriented form
@@ -187,7 +197,7 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     """
     Performs the resampling
 
-    :param data_array: Data array to resample
+    :param data_array: 5D Data array to resample
     :param pixdim_init: Initial pixel dimension
     :param pixdim_fin: Targeted pixel dimension
     :param interp_order: Interpolation order applied
@@ -240,7 +250,7 @@ def save_data_array(filefolder,
         dst_axcodes = image_object.original_axcodes[0]
     else:
         affine = np.eye(4)
-        image_pixdim, image_axcodes = (), ()
+        image_pixdim, image_axcodes, dst_pixdim, dst_axcodes = (), (), (), ()
 
     if reshape:
         input_ndim = array_to_save.ndim
@@ -267,12 +277,22 @@ def save_data_array(filefolder,
 
 def expand_to_5d(img_data):
     """
-    Expands an array up to 5d if it is not the case yet
+    Expands an array up to 5d if it is not the case yet;
+    The first three spatial dims are rearranged so that
+    1-d is always [X, 1, 1]
+    2-d is always [X, y, 1]
     :param img_data:
     :return:
     """
     while img_data.ndim < 5:
         img_data = np.expand_dims(img_data, axis=-1)
+
+    spatial_dims = img_data.shape[:3]
+    spatial_rank = np.sum([dim > 1 for dim in spatial_dims])
+    if spatial_rank == 1:
+        return np.swapaxes(img_data, 0, np.argmax(spatial_dims))
+    if spatial_rank == 2:
+        return np.swapaxes(img_data, 2, np.argmin(spatial_dims))
     return img_data
 
 
@@ -348,6 +368,7 @@ def touch_folder(model_dir):
     This function returns the absolute path of `model_dir` if exists
     otherwise try to create the folder and returns the absolute path.
     """
+    model_dir = os.path.expanduser(model_dir)
     if not os.path.exists(model_dir):
         try:
             os.makedirs(model_dir)
@@ -377,6 +398,7 @@ def resolve_module_dir(module_dir_str, create_new=False):
     except (ImportError, AttributeError, IndexError, TypeError):
         pass
 
+    module_dir_str = os.path.expanduser(module_dir_str)
     try:
         # interpret input as a file folder path string
         if os.path.isdir(module_dir_str):
@@ -432,11 +454,38 @@ def resolve_module_dir(module_dir_str, create_new=False):
 
 def to_absolute_path(input_path, model_root):
     try:
+        input_path = os.path.expanduser(input_path)
+        model_root = os.path.expanduser(model_root)
         if os.path.isabs(input_path):
             return input_path
     except TypeError:
         pass
     return os.path.abspath(os.path.join(model_root, input_path))
+
+
+def resolve_file_name(file_name, paths):
+    """
+    check if `file_name` exists, if not,
+    go though the list of [path + file_name for path in paths].
+    raises IOError if all options don't exist
+
+    :param file_name:
+    :param paths:
+    :return:
+    """
+    try:
+        assert file_name
+        if os.path.isfile(file_name):
+            return os.path.abspath(file_name)
+        for path in paths:
+            path_file_name = os.path.join(path, file_name)
+            if os.path.isfile(path_file_name):
+                tf.logging.info('Resolving {} as {}'.format(
+                    file_name, path_file_name))
+                return os.path.abspath(path_file_name)
+        assert False, 'Could not resolve file name'
+    except (TypeError, AssertionError, IOError):
+        raise IOError('Could not resolve {}'.format(file_name))
 
 
 def resolve_checkpoint(checkpoint_name):
@@ -477,8 +526,7 @@ def get_latest_subfolder(parent_folder, create_new=False):
 
 
 def _image3_animated_gif(tag, ims):
-    check_module('PIL')
-    import PIL
+    PIL = require_module('PIL')
     from PIL.GifImagePlugin import Image as GIF
 
     # x=numpy.random.randint(0,256,[10,10,10],numpy.uint8)

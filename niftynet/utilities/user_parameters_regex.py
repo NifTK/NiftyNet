@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-
-# regular expressions to match tuples from user inputs
-# kindly provided by
-# Luis Carlos Garcia Peraza Herrera <luis.herrera.14@ucl.ac.uk>
-
+"""
+regular expressions to match tuples from user inputs
+kindly provided by
+Luis Carlos Garcia Peraza Herrera <luis.herrera.14@ucl.ac.uk>
+"""
 from __future__ import unicode_literals
 
 import re
@@ -47,10 +47,18 @@ STATEMENT = \
 
 
 def match_array(string_input, type_str):
+    """
+    matching input string to a tuple of elements in `type_str` type
+
+    :param string_input:
+    :param type_str:
+    :return:
+    """
     regex = re.compile(STATEMENT)
     matched_str = regex.match(string_input)
     if matched_str:
-        filtered_groups = list(filter(None, matched_str.groups()))
+        filtered_groups = [matched for matched in matched_str.groups()
+                           if matched is not None]
         if not filtered_groups:
             return ()
         try:
@@ -59,9 +67,9 @@ def match_array(string_input, type_str):
             raise ValueError(
                 "unrecognised input string {}".format(string_input))
         if type_str == 'int':
-            return tuple(map(int, values))
+            return tuple(int(val) for val in values)
         if type_str == 'float':
-            return tuple(map(float, values))
+            return tuple(float(val) for val in values)
         if type_str == 'str':
             return tuple(values)
         else:

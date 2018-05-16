@@ -28,10 +28,10 @@ SUPPORTED_INPUT = set(['image', 'conditioning'])
 class GANApplication(BaseApplication):
     REQUIRED_CONFIG_SECTION = "GAN"
 
-    def __init__(self, net_param, action_param, is_training):
+    def __init__(self, net_param, action_param, action):
         BaseApplication.__init__(self)
         tf.logging.info('starting GAN application')
-        self.is_training = is_training
+        self.action = action
 
         self.net_param = net_param
         self.action_param = action_param
@@ -44,24 +44,21 @@ class GANApplication(BaseApplication):
         self.data_param = data_param
         self.gan_param = task_param
 
+        file_lists = self.get_file_lists(data_partitioner)
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            file_lists = []
-            if self.action_param.validation_every_n > 0:
-                file_lists.append(data_partitioner.train_files)
-                file_lists.append(data_partitioner.validation_files)
-            else:
-                file_lists.append(data_partitioner.train_files)
             self.readers = []
             for file_list in file_lists:
                 reader = ImageReader(['image', 'conditioning'])
                 reader.initialise(data_param, task_param, file_list)
                 self.readers.append(reader)
-        else:
+        elif self.is_inference:
             inference_reader = ImageReader(['conditioning'])
-            file_list = data_partitioner.inference_files
-            inference_reader.initialise(data_param, task_param, file_list)
+            inference_reader.initialise(data_param, task_param, file_lists[0])
             self.readers = [inference_reader]
+        elif self.is_evaluation:
+            NotImplementedError('Evaluation is not yet '
+                                'supported in this application.')
 
         foreground_masking_layer = None
         if self.net_param.normalise_foreground_only:

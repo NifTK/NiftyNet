@@ -117,31 +117,32 @@ within each section.
 
 - [csv_file](#csv-file) :: `string` :: `csv_file=file_list.csv` :: `''`
 - [path_to_search](#path-to-search) :: `string` :: `path_to_search=my_data/fold_1` :: NiftyNet home folder
-- [filename_contain](#filename-contain) :: `String` or `string array` :: `filename_contain=foo, bar` :: `''`
-- [filename_not_contain](#filename-not-contain) :: `string` or `string array` :: `filename_not_contain=foo` :: `''`
+- [filename_contains](#filename-contains) :: `string` or `string array` :: `filename_contains=foo, bar` :: `''`
+- [filename_not_contains](#filename-not-contains) :: `string` or `string array` :: `filename_not_contains=foo` :: `''`
 - [interp_order](#interp-order) :: `integer` :: `interp_order=0` :: `3`
 - [pixdim](#pixdim) :: `float array` :: `pixdim=1.2, 1.2, 1.2` :: `''`
 - [axcodes](#axcodes) :: `string array` :: `axcodes=L, P, S` :: `''`
 - [spatial_window_size](#spatial-window-size) :: `integer array` :: `spatial_window_size=64, 64, 64` :: `''`
+- [loader](#loader) :: `string` :: `loader=simpleitk` :: `None`
 
 ###### `csv_file`
 A file path to a list of input images.  If the file exists, input image name
 list will be loaded from the file; the filename based input image search will
 be disabled; [path_to_search](#path-to-search),
-[filename_contain](#filename-contain), and
-[filename_not_contain](#filename-not-contain) will be ignored.  If this
+[filename_contains](#filename-contains), and
+[filename_not_contains](#filename-not-contains) will be ignored.  If this
 parameter is left blank or the file does not exist, input image search will be
 enabled, and the matched filenames will be written to this file path.
 
 ###### `path_to_search`
 Single or multiple folders to search for input images.
 
-###### `filename_contain`
+###### `filename_contains`
 Keywords used to match filenames.
 The matched keywords will be removed, and the remaining part is used as
 subject name (for loading corresponding images across modalities).
 
-###### `filename_not_contain`
+###### `filename_not_contains`
 Keywords used to exclude filenames.
 The filenames with these keywords will not be used as input.
 
@@ -160,14 +161,19 @@ before fed into the network.
 Array of three integers specifies the input window size.
 Setting it to single slice, e.g., `spatial_window_size=64, 64, 1`, yields a 2-D slice window.
 
+###### `loader`
+Specify the loader to be used to load the files in the input section.
+Some loaders require additional Python packages.
+Default value `None` indicates trying all available loaders.
+
 This section will be used by [ImageReader](./niftynet.io.image_reader.html)
 to generate a list of [input images objects](./niftynet.io.image_type.html).
 For example:
 ```ini
 [T1Image]
 path_to_search = ./example_volumes/image_folder
-filename_contain = T1, subject
-filename_not_contain = T1c, T2
+filename_contains = T1, subject
+filename_not_contains = T1c, T2
 spatial_window_size = 128, 128, 1
 pixdim = 1.0, 1.0, 1.0
 axcodes = A, R, S
@@ -356,11 +362,11 @@ Strategies applied to combine foreground masks of multiple modalities, can take 
 - [sample_per_volume](#sample-per-volume) :: `positive integer` :: `sample_per_volume=5` :: `1`
 - [lr](#lr) :: `float` :: `lr=0.001` :: `0.1`
 - [loss_type](#loss-type) :: `string` :: `loss_type=CrossEntropy` :: `Dice`
-- [starting_iter](#starting-iter) :: `non-negative integer` :: `starting_iter=0` :: `0`
+- [starting_iter](#starting-iter) :: `integer` :: `starting_iter=0` :: `0`
 - [save_every_n](#save-every-n) :: `integer` :: `save_every_n=5` :: `500`
 - [tensorboard_every_n](#tensorboard-every-n) :: `integer` :: `tensorboard_every_n=5` :: `20`
 - [max_iter](#max-iter) :: `integer` :: `max_iter=1000` :: `10000`
-- [max_checkpoint](#max-checkpoint) :: `integer` :: `max_checkpoint=5` :: `100`
+- [max_checkpoints](#max-checkpoints) :: `integer` :: `max_checkpoints=5` :: `100`
 
 ###### `optimiser`
 Type of optimiser for computing graph gradients.  Current available options are
@@ -388,6 +394,7 @@ The corresponding loss function type names are defined in the
 ###### `starting_iter`
 The iteration to resume training model.
 Setting `starting_iter=0` starts the network from random initialisations.
+Setting `starting_iter=-1` starts the network from the latest checkpoint if it exists.
 
 ###### `save_every_n`
 Frequency of saving the current training model saving.
@@ -400,11 +407,11 @@ Setting to `0` to disable the tensorboard writing schedule.
 
 ###### `max_iter`
 Maximum number of training iterations.
-The value is total number of iterations counting from 0.
-This means when training from [`starting_iter`](#starting-iter) N,
-the remaining number of iterations to run is `N - max_iter`.
+The value is total number of iterations.
+Setting both `starting_iter` and `max_iter` to `0` to
+save the random model initialisation.
 
-###### `max_checkpoint`
+###### `max_checkpoints`
 Maximum number of recent checkpoints to keep.
 
 ##### Validation during training
@@ -518,6 +525,7 @@ For a 2-D slice, e.g, `Nx1xM`, the second dimension of `border` should be `0`.
 - [inference_iter](#inference-iter) :: `integer` :: `inference_iter=1000` :: `-1`
 - [save_seg_dir](#save-seg-dir) :: `string` :: `save_seg_dir=output/test` :: `output`
 - [output_interp_order](#output-interp-order) :: `non-negative integer` :: `output_interp_order=0` :: `0`
+- [dataset_to_infer](#dataset-to-infer) :: `Training|Validation|Inference` :: `dataset_to_infer=Training` :: `''`
 
 ###### `spatial_window_size`
 Array of integers indicating the size of input window.  By default, the window
@@ -526,7 +534,7 @@ If this parameter is specified, it
 overrides the `spatial_window_size` parameter in input source sections.
 
 ###### `border`
-a tuple of integers specifying a border size used to crop (along both sides of each
+Tuple of integers specifying a border size used to crop (along both sides of each
 dimension) the network output image window. E.g., `3, 3, 3` will crop a
 `64x64x64` window to size `58x58x58`.
 
@@ -539,3 +547,7 @@ Prediction directory name. If it's a relative path, it is set to be relative to 
 
 ###### `output_interp_order`
 Interpolation order of the network outputs.
+
+###### `dataset_to_infer`
+String specifies which dataset ('Training', 'Validation', 'Inference') to compute inference for.
+By default 'Inference' dataset is used.

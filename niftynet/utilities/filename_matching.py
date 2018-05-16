@@ -6,6 +6,7 @@ from __future__ import absolute_import, print_function
 
 import os
 import re
+import six
 
 import niftynet.io.misc_io as util
 
@@ -22,7 +23,7 @@ class KeywordsMatching(object):
         self.filename_not_contains = list_not_contain
 
     @classmethod
-    def from_tuple(cls, input_tuple, default_folder=None):
+    def from_dict(cls, input_dict, default_folder=None):
         """
         In the config file, constraints for a given search can be of three
         types:
@@ -34,18 +35,23 @@ class KeywordsMatching(object):
 
         :param default_folder: relative paths are first tested against
             the current folder, and then against this default folder.
-        :param input_tuple: set of searching parameters.
+        :param input_dict: set of searching parameters.
         :return:
         """
         path, contain, not_contain = [], (), ()
-        for (name, value) in input_tuple:
+        for (name, value) in input_dict.items():
             if not value:
                 continue
             if name == "path_to_search":
-                value = value.split(',')
+                try:
+                    # for a string of comma separated path.
+                    value = value.split(',')
+                except AttributeError:
+                    pass
+
                 for path_i in value:
                     path_i = path_i.strip()
-                    path_orig = os.path.abspath(path_i)
+                    path_orig = os.path.abspath(os.path.expanduser(path_i))
                     if os.path.exists(path_orig):
                         path.append(path_orig)
                         continue
@@ -63,9 +69,13 @@ class KeywordsMatching(object):
                     path.append(path_def)
 
             elif name == "filename_contains":
-                contain = tuple(set(value))
+                contain = tuple(set(value)) \
+                    if not isinstance(value, six.string_types) \
+                    else tuple([value])
             elif name == "filename_not_contains":
-                not_contain = tuple(set(value))
+                not_contain = tuple(set(value)) \
+                    if not isinstance(value, six.string_types) \
+                    else tuple([value])
         path = tuple(set(path))
         new_matcher = cls(path, contain, not_contain)
         return new_matcher

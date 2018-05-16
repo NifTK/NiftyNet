@@ -27,12 +27,14 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                  name='image',
                  output_path=os.path.join('.', 'output'),
                  window_border=(),
-                 interp_order=0):
-        ImageWindowsAggregator.__init__(self, image_reader=image_reader)
+                 interp_order=0,
+                 prefix='_niftynet_out'):
+        ImageWindowsAggregator.__init__(
+            self, image_reader=image_reader, output_path=output_path)
         self.name = name
-        self.output_path = os.path.abspath(output_path)
         self.window_border = window_border
         self.output_interp_order = interp_order
+        self.prefix = prefix
 
     def decode_batch(self, window, location):
         """
@@ -90,11 +92,12 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
             if isinstance(layer, DiscreteLabelNormalisationLayer):
                 image_out, _ = layer.inverse_op(image_out)
         subject_name = self.reader.get_subject_id(self.image_id)
-        filename = "{}_niftynet_out.nii.gz".format(subject_name)
+        filename = "{}{}.nii.gz".format(subject_name, self.prefix)
         source_image_obj = self.input_image[self.name]
         misc_io.save_data_array(self.output_path,
                                 filename,
                                 image_out,
                                 source_image_obj,
                                 self.output_interp_order)
+        self.log_inferred(subject_name, filename)
         return

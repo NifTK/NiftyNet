@@ -6,8 +6,9 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from niftynet.engine.sampler_weighted import WeightedSampler
-from niftynet.engine.sampler_weighted import weighted_spatial_coordinates
+from niftynet.engine.image_window import N_SPATIAL
+from niftynet.engine.sampler_weighted import \
+    WeightedSampler, weighted_spatial_coordinates
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
@@ -21,7 +22,8 @@ MULTI_MOD_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(7, 10, 2)
+        spatial_window_size=(7, 10, 2),
+        loader=None
     ),
     'FLAIR': ParserNamespace(
         csv_file=os.path.join('testing_data', 'FLAIRsampler.csv'),
@@ -31,7 +33,8 @@ MULTI_MOD_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(7, 10, 2)
+        spatial_window_size=(7, 10, 2),
+        loader=None
     )
 }
 MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'),
@@ -46,7 +49,8 @@ MOD_2D_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(10, 9, 1)
+        spatial_window_size=(10, 9, 1),
+        loader=None
     ),
 }
 MOD_2D_TASK = ParserNamespace(image=('ultrasound',),
@@ -61,7 +65,8 @@ DYNAMIC_MOD_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(8, 2)
+        spatial_window_size=(8, 2),
+        loader=None
     ),
     'FLAIR': ParserNamespace(
         csv_file=os.path.join('testing_data', 'FLAIRsampler.csv'),
@@ -71,7 +76,8 @@ DYNAMIC_MOD_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(8, 2)
+        spatial_window_size=(8, 2),
+        loader=None
     )
 }
 DYNAMIC_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'),
@@ -137,11 +143,11 @@ class WeightedSamplerTest(tf.test.TestCase):
         with self.test_session() as sess:
             coordinator = tf.train.Coordinator()
             sampler.run_threads(sess, coordinator, num_threads=2)
-            with self.assertRaisesRegexp(tf.errors.OutOfRangeError, ""):
-                out = sess.run(sampler.pop_batch_op())
+            out = sess.run(sampler.pop_batch_op())
+            self.assertAllClose(out['image'].shape[1:], (8, 2, 256, 2))
 
     def test_ill_init(self):
-        with self.assertRaisesRegexp(KeyError, ""):
+        with self.assertRaisesRegexp(ValueError, ""):
             sampler = WeightedSampler(reader=get_3d_reader(),
                                       data_param=MOD_2D_DATA,
                                       batch_size=2,
@@ -157,112 +163,67 @@ class WeightedSamplerTest(tf.test.TestCase):
         sampler.close_all()
 
 
-class RandomCoordinatesTest(tf.test.TestCase):
-    def test_coordinates(self):
+class WeightedCoordinatesTest(tf.test.TestCase):
+    def assertCoordinatesAreValid(self, coords, sampling_map):
+        for coord in coords:
+            for i in range(len(coord.shape)):
+                self.assertTrue(coord[i] >= 0)
+                self.assertTrue(coord[i] < sampling_map.shape[i])
+
+    def test_3d_coordinates(self):
+        img_size = (32, 16, 17, 1, 1)
+        win_size = (10, 16, 15)
+        sampling_map = np.zeros(img_size)
+
         coords = weighted_spatial_coordinates(
-            subject_id=1,
-            data={'sampler': np.random.rand(41, 42, 42, 1, 1)},
-            img_sizes={'image': (42, 42, 42, 1, 2),
-                       'label': (42, 42, 42, 1, 1)},
-            win_sizes={'image': (23, 23, 40),
-                       'label': (40, 32, 33)},
-            n_samples=10)
-        self.assertEquals(np.all(coords['image'][:0] == 1), True)
-        self.assertEquals(coords['image'].shape, (10, 7))
-        self.assertEquals(coords['label'].shape, (10, 7))
-        self.assertAllClose(
-            (coords['image'][:, 4] + coords['image'][:, 1]),
-            (coords['label'][:, 4] + coords['label'][:, 1]), atol=1.0)
-        self.assertAllClose(
-            (coords['image'][:, 5] + coords['image'][:, 2]),
-            (coords['label'][:, 5] + coords['label'][:, 2]), atol=1.0)
-        self.assertAllClose(
-            (coords['image'][:, 6] + coords['image'][:, 3]),
-            (coords['label'][:, 6] + coords['label'][:, 3]), atol=1.0)
+            32, img_size, win_size, sampling_map)
+        self.assertAllEqual(coords.shape, (32, N_SPATIAL))
+        self.assertCoordinatesAreValid(coords, sampling_map)
 
-    def test_25D_coordinates(self):
+        # testing high weight location (10, 8, 7, 0, 0)
+        sampling_map[10, 8, 7, 0, 0] = 1.0
         coords = weighted_spatial_coordinates(
-            subject_id=1,
-            data={'sampler': np.random.rand(42, 42, 42, 1, 1)},
-            img_sizes={'image': (42, 42, 42, 1, 1),
-                       'label': (42, 42, 42, 1, 1)},
-            win_sizes={'image': (23, 23, 1),
-                       'label': (40, 32, 1)},
-            n_samples=10)
-        self.assertEquals(np.all(coords['image'][:0] == 1), True)
-        self.assertEquals(coords['image'].shape, (10, 7))
-        self.assertEquals(coords['label'].shape, (10, 7))
-        self.assertAllClose(
-            (coords['image'][:, 4] + coords['image'][:, 1]),
-            (coords['label'][:, 4] + coords['label'][:, 1]), atol=1.0)
-        self.assertAllClose(
-            (coords['image'][:, 5] + coords['image'][:, 2]),
-            (coords['label'][:, 5] + coords['label'][:, 2]), atol=1.0)
-        self.assertAllClose(
-            (coords['image'][:, 6] + coords['image'][:, 3]),
-            (coords['label'][:, 6] + coords['label'][:, 3]), atol=1.0)
+            32, img_size, win_size, sampling_map)
+        self.assertAllEqual(coords.shape, (32, N_SPATIAL))
+        self.assertTrue(np.all(coords == [10, 8, 7]))
 
-    def test_2D_coordinates(self):
+    def test_2d_coordinates(self):
+        img_size = (32, 17, 1, 1, 1)
+        win_size = (31, 3, 1)
+        sampling_map = np.zeros(img_size)
         coords = weighted_spatial_coordinates(
-            subject_id=1,
-            data={'sampler': np.random.rand(42, 42, 42, 1, 1)},
-            img_sizes={'image': (42, 42, 1, 1, 1),
-                       'label': (42, 42, 1, 1, 1)},
-            win_sizes={'image': (23, 23, 1),
-                       'label': (40, 32, 1)},
-            n_samples=10)
-        self.assertEquals(np.all(coords['image'][:0] == 1), True)
-        self.assertEquals(coords['image'].shape, (10, 7))
-        self.assertEquals(coords['label'].shape, (10, 7))
-        self.assertAllClose(
-            (coords['image'][:, 4] + coords['image'][:, 1]),
-            (coords['label'][:, 4] + coords['label'][:, 1]), atol=1.0)
-        self.assertAllClose(
-            (coords['image'][:, 5] + coords['image'][:, 2]),
-            (coords['label'][:, 5] + coords['label'][:, 2]), atol=1.0)
-        self.assertAllClose(
-            (coords['image'][:, 6] + coords['image'][:, 3]),
-            (coords['label'][:, 6] + coords['label'][:, 3]), atol=1.0)
+            64, img_size, win_size, sampling_map)
 
-    def test_ill_coordinates(self):
-        with self.assertRaisesRegexp(IndexError, ""):
-            coords = weighted_spatial_coordinates(
-                subject_id=1,
-                data={'sampler': np.random.rand(42, 42, 42)},
-                img_sizes={'image': (42, 42, 1, 1, 1),
-                           'label': (42, 42, 1, 1, 1)},
-                win_sizes={'image': (23, 23),
-                           'label': (40, 32)},
-                n_samples=10)
+        self.assertAllEqual(coords.shape, (64, N_SPATIAL))
+        self.assertCoordinatesAreValid(coords, sampling_map)
 
-        with self.assertRaisesRegexp(TypeError, ""):
-            coords = weighted_spatial_coordinates(
-                subject_id=1,
-                data={'sampler': np.random.rand(42, 42, 42, 1, 1)},
-                img_sizes={'image': (42, 42, 1, 1, 1),
-                           'label': (42, 42, 1, 1, 1)},
-                win_sizes={'image': (23, 23, 1),
-                           'label': (40, 32, 1)},
-                n_samples='test')
+        # testing high weight location (15, 1, 1, 0, 0)
+        sampling_map[15, 1, 0, 0, 0] = 1.0
+        coords = weighted_spatial_coordinates(
+            64, img_size, win_size, sampling_map)
+        self.assertAllEqual(coords.shape, (64, N_SPATIAL))
+        self.assertTrue(np.all(coords == [15, 1, 0]))
 
-        with self.assertRaisesRegexp(AssertionError, ""):
-            coords = weighted_spatial_coordinates(
-                subject_id=1,
-                data={'sampler': np.random.rand(42, 42, 42, 1, 1)},
-                img_sizes={'label': (42, 1, 1, 1)},
-                win_sizes={'image': (23, 23, 1)},
-                n_samples=0)
+    def test_1d_coordinates(self):
+        img_size = (32, 1, 1, 1, 1)
+        win_size = (15, 1, 1)
+        sampling_map = np.zeros(img_size)
+        coords = weighted_spatial_coordinates(
+            10, img_size, win_size, sampling_map)
+        self.assertAllEqual(coords.shape, (10, N_SPATIAL))
+        self.assertCoordinatesAreValid(coords, sampling_map)
 
-        with self.assertRaisesRegexp(RuntimeError, ""):
-            coords = weighted_spatial_coordinates(
-                subject_id=1,
-                data={},
-                img_sizes={'image': (42, 42, 1, 1, 1),
-                           'label': (42, 42, 1, 1, 1)},
-                win_sizes={'image': (23, 23, 1),
-                           'label': (40, 32, 1)},
-                n_samples=10)
+        sampling_map[20, 0, 0] = 0.1
+        coords = weighted_spatial_coordinates(
+            10, img_size, win_size, sampling_map)
+        self.assertAllEqual(coords.shape, (10, N_SPATIAL))
+        self.assertTrue(np.all(coords == [20, 0, 0]))
 
+        sampling_map[9, 0, 0] = 0.1
+        coords = weighted_spatial_coordinates(
+            10, img_size, win_size, sampling_map)
+        self.assertAllEqual(coords.shape, (10, N_SPATIAL))
+        self.assertTrue(np.all((coords == [20, 0, 0]) | (coords == [9, 0, 0])))
 
 if __name__ == "__main__":
     tf.test.main()

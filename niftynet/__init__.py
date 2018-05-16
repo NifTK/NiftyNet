@@ -21,7 +21,7 @@ except ImportError:
                       ' able to use NiftyNet.')
 
 try:
-    minimal_required_version = "1.3"
+    minimal_required_version = "1.5"
     tf_version = tf.__version__
     if tf_version < minimal_required_version:
         tf.logging.fatal('TensorFlow %s or later is required.'
@@ -36,19 +36,31 @@ try:
 except AttributeError:
     pass
 
+from niftynet.utilities.versioning import get_niftynet_version_string
+
+__version__ = get_niftynet_version_string()
+
 import os
+
+from niftynet.io.misc_io import set_logger
+
+set_logger()
+
+from niftynet.utilities.util_import import require_module
+
+require_module('blinker', descriptor='New dependency', mandatory=True)
 
 import niftynet.utilities.util_common as util
 import niftynet.utilities.user_parameters_parser as user_parameters_parser
 from niftynet.engine.application_driver import ApplicationDriver
+from niftynet.evaluation.evaluation_application_driver import \
+    EvaluationApplicationDriver
 from niftynet.io.misc_io import touch_folder
-from niftynet.io.misc_io import set_logger
 from niftynet.io.misc_io import resolve_module_dir
 from niftynet.io.misc_io import to_absolute_path
 
 
 def main():
-    set_logger()
     system_param, input_data_param = user_parameters_parser.run()
     if util.has_bad_inputs(system_param):
         return -1
@@ -109,8 +121,20 @@ def main():
     except (AttributeError, KeyError):
         pass
 
+    # 4. resolve evaluation dir:
+    try:
+        if system_param['EVALUATION'].save_csv_dir:
+            system_param['EVALUATION'].save_csv_dir = to_absolute_path(
+                input_path=system_param['EVALUATION'].save_csv_dir,
+                model_root=system_param['SYSTEM'].model_dir)
+    except (AttributeError, KeyError):
+        pass
+
     # start application
-    app_driver = ApplicationDriver()
+    driver_table = {'train': ApplicationDriver,
+                    'inference': ApplicationDriver,
+                    'evaluation': EvaluationApplicationDriver}
+    app_driver = driver_table[system_param['SYSTEM'].action]()
     app_driver.initialise_application(system_param, input_data_param)
     app_driver.run_application()
     return 0

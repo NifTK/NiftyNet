@@ -37,12 +37,12 @@ class ImageGenerator(TrainableLayer):
     self.initializers = {'w':tf.contrib.layers.variance_scaling_initializer(),'b':tf.constant_initializer(0)}
 
   def layer_op(self, random_source, image_size,is_training):
-    spatial_rank=3
+    spatial_rank = len(image_size)-1
     batch_size = random_source.shape.as_list()[0]
     noise_size=random_source.shape.as_list()[1]
     intermediate_sizes = [[]]*(self._num_layers)+[image_size]
     for it in range(self._num_layers,0,-1):
-      intermediate_sizes[it-1]= [round(i/2) for i in intermediate_sizes[it][:-1]]+[self._layer_channels[it-1]]
+      intermediate_sizes[it-1]= [int(round(i/2)) for i in intermediate_sizes[it][:-1]]+[self._layer_channels[it-1]]
 
     # Define first kernel noise->image
     noise_to_image_kernel = tf.get_variable("G_fcW1", shape=[1,np.prod(intermediate_sizes[0]),noise_size], initializer=self.initializers['w'])
@@ -98,7 +98,7 @@ class ImageDiscriminator(TrainableLayer):
 
   def layer_op(self, image,is_training):
     batch_size=image.shape.as_list()[0]
-    spatial_rank=3
+    spatial_rank=len(image.shape)-2
     image_channels = image.shape.as_list()[-1]
     acti_func=tf.nn.relu
     dropout_func = lambda x: tf.nn.dropout(x,.5)

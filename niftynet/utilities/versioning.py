@@ -46,13 +46,14 @@ def get_niftynet_git_version():
     Return a version string based on the git repository,
     conforming to PEP440
     """
-
+    
+    import os
     from subprocess import check_output
 
     # Describe the version relative to last tag
     command_git = ['git', 'describe', '--match', 'v[0-9]*']
     version_buf = check_output(command_git,
-                               stderr=open('/dev/null', 'w')).rstrip()
+                               stderr=open(os.devnull, 'w')).rstrip()
 
     # Exclude the 'v' for PEP440 conformity, see
     # https://www.python.org/dev/peps/pep-0440/#public-version-identifiers
