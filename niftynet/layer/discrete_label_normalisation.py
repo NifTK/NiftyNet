@@ -17,24 +17,43 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
     def __init__(self,
                  image_name,
                  modalities,
-                 model_filename,
+                 model_filename=None,
                  name='label_norm'):
 
         super(DiscreteLabelNormalisationLayer, self).__init__(name=name)
         # mapping is a complete cache of the model file, the total number of
         # modalities are listed in self.modalities
         self.image_name = image_name
-        self.modalities = modalities
+        self.modalities = None
+        if isinstance(modalities, (list, tuple)):
+            if len(modalities) > 1:
+                raise NotImplementedError(
+                    "Currently supports single modality discrete labels.")
+            self.modalities = modalities
+        else:
+            self.modalities = (modalities,)
+        if model_filename is None:
+            model_filename = os.path.join('.', 'histogram_ref_file.txt')
         self.model_file = os.path.abspath(model_filename)
+        self._key=None
         assert not os.path.isdir(self.model_file), \
-            "model_filename is a directory, please change histogram_ref_file"
-        self.label_map = hs.read_mapping_file(model_filename)
+            "model_filename is a directory, " \
+            "please change histogram_ref_file to a filename."
+        self.label_map = hs.read_mapping_file(self.model_file)
 
     @property
     def key(self):
+        if self._key:
+            return self._key
         # provide a readable key for the label mapping item
-        key_str = "{}_{}".format(self.image_name, self.modalities)
-        return standardise_string(key_str)
+        key_from = "{}:{}:from".format(self.image_name, self.modalities[0])
+        key_to = "{}:{}:to".format(self.image_name, self.modalities[0])
+        return standardise_string(key_from), standardise_string(key_to)
+
+    @key.setter
+    def key(self, value):
+        # Allows the key to be overridden
+        self._key=value
 
     def layer_op(self, image, mask=None):
         assert self.is_ready(), \
@@ -47,20 +66,13 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
         else:
             label_data = np.asarray(image)
 
-        mapping = self.label_map[self.key]
-        assert len(np.unique(label_data)) <= len(mapping), \
-            "couldn't find a unique mapping for discrete label maps, " \
-            " please check the line starting with {} in {}, " \
-            " remove the line to find the model again, or " \
-            " check the input label image".format(self.key, self.model_file)
-        # map_dict = {}
-        # for new_id, original in enumerate(mapping):
-        #    map_dict[original] = new_id
-        # mapped_data = np.vectorize(map_dict.get)(label_data)
+        mapping_from = self.label_map[self.key[0]]
+        mapping_to = self.label_map[self.key[1]]
+
         image_shape = label_data.shape
         label_data = label_data.reshape(-1)
         mapped_data = np.zeros_like(label_data)
-        for (new_id, original) in enumerate(mapping):
+        for (original, new_id) in zip(mapping_from, mapping_to):
             mapped_data[label_data == original] = new_id
         label_data = mapped_data.reshape(image_shape)
 
@@ -78,16 +90,14 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
         else:
             label_data = np.asarray(image)
 
-        mapping = self.label_map[self.key]
-        assert len(np.unique(label_data)) <= len(mapping), \
-            "couldn't find a unique mapping for discrete label maps, " \
-            " please check the line starting with {} in {}".format(
-                self.key, self.model_file)
+        mapping_from = self.label_map[self.key[0]]
+        mapping_to = self.label_map[self.key[1]]
+
         image_shape = label_data.shape
         label_data = label_data.reshape(-1)
         mapped_data = np.zeros_like(label_data)
-        for (new_id, original) in enumerate(mapping):
-            mapped_data[label_data == new_id] = original
+        for (new_id, original) in zip(mapping_from, mapping_to):
+            mapped_data[label_data == original] = new_id
         label_data = mapped_data.reshape(image_shape)
         if isinstance(image, dict):
             image[self.image_name] = label_data
@@ -95,8 +105,18 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
         return label_data, mask
 
     def is_ready(self):
-        mapping = self.label_map.get(self.key, None)
-        return True if mapping is not None else False
+        mapping_from = self.label_map.get(self.key[0], None)
+        if mapping_from is None:
+            # tf.logging.warning('could not find mapping key %s', self.key[0])
+            return False
+        mapping_to = self.label_map.get(self.key[1], None)
+        if mapping_to is None:
+            # tf.logging.warning('could not find mapping key %s', self.key[1])
+            return False
+        assert len(mapping_from) == len(mapping_to), \
+            "mapping is not one-to-one, " \
+            "corrupted mapping file? {}".format(self.model_file)
+        return True
 
     def train(self, image_list):
         # check modalities to train, using the first subject in subject list
@@ -107,7 +127,7 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
                 "label mapping ready for {}:{}, {} classes".format(
                     self.image_name,
                     self.modalities,
-                    len(self.label_map[self.key])))
+                    len(self.label_map[self.key[0]])))
             return
         tf.logging.info(
             "Looking for the set of unique discrete labels from input {}"
@@ -124,16 +144,27 @@ def find_set_of_labels(image_list, field, output_key):
     label_set = set()
     for idx, image in enumerate(image_list):
         assert field in image, \
-            "no {} data provided in for label mapping".format(field)
+            "label normalisation layer requires {} input, " \
+            "however it is not provided in the config file.\n" \
+            "Please consider setting " \
+            "label_normalisation to False.".format(field)
         print_progress_bar(idx, len(image_list),
                            prefix='searching unique labels from training files',
                            decimals=1, length=10, fill='*')
         unique_label = np.unique(image[field].get_data())
         if len(unique_label) > 500 or len(unique_label) <= 1:
             tf.logging.warning(
-                'unusual values: number unique '
+                'unusual discrete values: number of unique '
                 'labels to normalise %s', len(unique_label))
         label_set.update(set(unique_label))
     label_set = list(label_set)
     label_set.sort()
-    return {output_key: tuple(label_set)}
+    try:
+        mapping_from_to = dict()
+        mapping_from_to[output_key[0]] = tuple(label_set)
+        mapping_from_to[output_key[1]] = tuple(range(0, len(label_set)))
+    except (IndexError, ValueError):
+        tf.logging.fatal("unable to create mappings keys: %s, image name %s",
+                         output_key, field)
+        raise
+    return mapping_from_to

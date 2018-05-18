@@ -6,7 +6,7 @@ import tensorflow as tf
 
 from niftynet.engine.image_window import ImageWindow
 from niftynet.engine.image_window_buffer import InputBatchQueueRunner
-from tests.test_util import ParserNamespace
+from niftynet.utilities.util_common import ParserNamespace
 
 
 def get_static_image_window():
@@ -20,7 +20,7 @@ def get_static_image_window():
         image_dtypes={
             'image': tf.float32,
             'label': tf.float32},
-        data_param={
+        window_sizes={
             'modality1': ParserNamespace(spatial_window_size=(10, 10, 2)),
             'modality2': ParserNamespace(spatial_window_size=(10, 10, 2)),
             'modality3': ParserNamespace(spatial_window_size=(5, 5, 1))}
@@ -39,10 +39,11 @@ def get_dynamic_image_window():
         image_dtypes={
             'image': tf.float32,
             'label': tf.float32},
-        data_param={
+        window_sizes={
             'modality1': ParserNamespace(spatial_window_size=(10, 10)),
             'modality2': ParserNamespace(spatial_window_size=(10, 10)),
-            'modality3': ParserNamespace(spatial_window_size=(5, 5, 1))}
+            'modality3': ParserNamespace(spatial_window_size=(5, 5, 1))},
+        allow_dynamic=True,
     )
     return window
 
@@ -110,13 +111,13 @@ class ImageWindowBufferTest(tf.test.TestCase):
 
         enqueue_dict = {}
         placeholder = window.image_data_placeholder('image')
-        enqueue_dict[placeholder] = np.zeros(placeholder.get_shape().as_list())
+        enqueue_dict[placeholder] = np.zeros(placeholder.shape.as_list())
         placeholder = window.coordinates_placeholder('image')
-        enqueue_dict[placeholder] = np.zeros(placeholder.get_shape().as_list())
+        enqueue_dict[placeholder] = np.zeros(placeholder.shape.as_list())
         placeholder = window.image_data_placeholder('label')
-        enqueue_dict[placeholder] = np.zeros(placeholder.get_shape().as_list())
+        enqueue_dict[placeholder] = np.zeros(placeholder.shape.as_list())
         placeholder = window.coordinates_placeholder('label')
-        enqueue_dict[placeholder] = np.zeros(placeholder.get_shape().as_list())
+        enqueue_dict[placeholder] = np.zeros(placeholder.shape.as_list())
 
         with self.test_session() as sess:
             # queue size before enqueue
@@ -153,11 +154,11 @@ class ImageWindowBufferTest(tf.test.TestCase):
         placeholder = window.image_data_placeholder('image')
         enqueue_dict[placeholder] = np.zeros((1,) + window_shape['image'])
         placeholder = window.coordinates_placeholder('image')
-        enqueue_dict[placeholder] = np.zeros(placeholder.get_shape().as_list())
+        enqueue_dict[placeholder] = np.zeros(placeholder.shape.as_list())
         placeholder = window.image_data_placeholder('label')
         enqueue_dict[placeholder] = np.zeros((1,) + window_shape['label'])
         placeholder = window.coordinates_placeholder('label')
-        enqueue_dict[placeholder] = np.zeros(placeholder.get_shape().as_list())
+        enqueue_dict[placeholder] = np.zeros(placeholder.shape.as_list())
 
         with self.test_session() as sess:
             # queue size before enqueue

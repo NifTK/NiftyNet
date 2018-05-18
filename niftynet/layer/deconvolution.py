@@ -12,7 +12,7 @@ from niftynet.utilities.util_common import look_up_operations
 
 SUPPORTED_OP = {'2D': tf.nn.conv2d_transpose,
                 '3D': tf.nn.conv3d_transpose}
-SUPPORTED_PADDING = {'SAME', 'VALID'}
+SUPPORTED_PADDING = set(['SAME', 'VALID'])
 
 
 def default_w_initializer():
@@ -32,25 +32,29 @@ def default_b_initializer():
 
 def infer_output_dims(input_dims, strides, kernel_sizes, padding):
     """
-        infer output dims from list,
-        the dim can be different in different directions.
-        Note: dilation is not considerted here.
+    infer output dims from list,
+    the dim can be different in different directions.
+    Note: dilation is not considered here.
     """
     assert len(input_dims) == len(strides)
     assert len(input_dims) == len(kernel_sizes)
-    if padding == 'VALID':
-        output_dims = [
-            dim * strides[i] + max(kernel_sizes[i] - strides[i], 0)
-            for (i, dim) in enumerate(input_dims)]
-    else:
-        output_dims = [dim * strides[i] for (i, dim) in enumerate(input_dims)]
+    output_dims = []
+    for (i, dim) in enumerate(input_dims):
+        if dim is None:
+            output_dims.append(None)
+            continue
+        if padding == 'VALID':
+            output_dims.append(
+                dim * strides[i] + max(kernel_sizes[i] - strides[i], 0))
+        else:
+            output_dims.append(dim * strides[i])
     return output_dims
 
 
 class DeconvLayer(TrainableLayer):
     """
     This class defines a simple deconvolution with an optional bias term.
-    Please consider `DeconvolutionalLayer` if batch_norm and activation
+    Please consider ``DeconvolutionalLayer`` if batch_norm and activation
     are also used.
     """
 
@@ -81,7 +85,7 @@ class DeconvLayer(TrainableLayer):
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
     def layer_op(self, input_tensor):
-        input_shape = input_tensor.get_shape().as_list()
+        input_shape = input_tensor.shape.as_list()
         n_input_chns = input_shape[-1]
         spatial_rank = layer_util.infer_spatial_rank(input_tensor)
 
@@ -105,7 +109,15 @@ class DeconvLayer(TrainableLayer):
             raise ValueError(
                 "Only 2D and 3D spatial deconvolutions are supported")
 
-        output_dims = infer_output_dims(input_shape[1:-1],
+        spatial_shape = []
+        for (i, dim) in enumerate(input_shape[:-1]):
+            if i == 0:
+                continue
+            if dim is None:
+                spatial_shape.append(tf.shape(input_tensor)[i])
+            else:
+                spatial_shape.append(dim)
+        output_dims = infer_output_dims(spatial_shape,
                                         stride_all_dim,
                                         kernel_size_all_dim,
                                         self.padding)
@@ -133,8 +145,10 @@ class DeconvLayer(TrainableLayer):
 
 class DeconvolutionalLayer(TrainableLayer):
     """
-    This class defines a composite layer with optional components:
+    This class defines a composite layer with optional components::
+
         deconvolution -> batch_norm -> activation -> dropout
+
     The b_initializer and b_regularizer are applied to the DeconvLayer
     The w_initializer and w_regularizer are applied to the DeconvLayer,
     the batch normalisation layer, and the activation layer (for 'prelu')

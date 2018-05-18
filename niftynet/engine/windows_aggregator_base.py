@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 This module is used to cache window-based network outputs,
- form a image-level output,
- write the cached the results to hard drive
+form a image-level output,
+write the cached the results to hard drive.
 """
 from __future__ import absolute_import, print_function, division
 
+import os
 import numpy as np
 import tensorflow as tf
 
@@ -18,16 +19,20 @@ class ImageWindowsAggregator(object):
     information the reader is needed.
     """
 
-    def __init__(self, image_reader=None):
+    def __init__(self, image_reader=None, output_path='.'):
         self.reader = image_reader
         self._image_id = None
+        self.prefix = ''
+        self.output_path = os.path.abspath(output_path)
+        self.inferred_cleared = False
 
     @property
     def input_image(self):
         """
         Get the corresponding input image of these batch data.
         So that the batch data can be stored correctly in
-        terms of interpolation order, orientation, pixdims
+        terms of interpolation order, orientation, pixdims.
+
         :return: an image object from image reader
         """
         if self.image_id is not None and self.reader:
@@ -38,7 +43,8 @@ class ImageWindowsAggregator(object):
     def image_id(self):
         """
         Index of the image in the output image list maintained by
-        image reader
+        image reader.
+
         :return: integer of the position in image list
         """
         return self._image_id
@@ -47,8 +53,8 @@ class ImageWindowsAggregator(object):
     def image_id(self, current_id):
         try:
             self._image_id = int(current_id)
-        except ValueError:
-            tf.logging.fatal("unknown image id format (should be an integer")
+        except (ValueError, TypeError):
+            tf.logging.fatal("unknown image id format (should be an integer)")
 
     def decode_batch(self, *args, **kwargs):
         """
@@ -85,6 +91,7 @@ class ImageWindowsAggregator(object):
             "unknown border format (should be an array of" \
             "three elements corresponding to 3 spatial dims"
 
+        location = location.astype(np.int)
         window_shape = window.shape
         spatial_shape = window_shape[1:-1]
         n_spatial = len(spatial_shape)
@@ -127,3 +134,22 @@ class ImageWindowsAggregator(object):
                 ' spatial dims are: %s', window_shape, spatial_shape)
             raise NotImplementedError
         return window, location
+
+    def log_inferred(self, subject_name, filename):
+        """
+        This function writes out a csv of inferred files
+
+        :param subject_name: subject name corresponding to output
+        :param filename: filename of output
+        :return:
+        """
+        inferred_csv = os.path.join(self.output_path, 'inferred.csv')
+        if not self.inferred_cleared:
+            if os.path.exists(inferred_csv):
+                os.remove(inferred_csv)
+            self.inferred_cleared = True
+            if not os.path.exists(self.output_path):
+                os.makedirs(self.output_path)
+        with open(inferred_csv, 'a+') as csv_file:
+            filename = os.path.join(self.output_path, filename)
+            csv_file.write('{},{}\n'.format(subject_name, filename))

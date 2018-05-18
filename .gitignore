@@ -21,3 +21,10 @@ dist
 build
 *.egg-info
 niftynet/info.py
+*.zip
+*.mhd
+*.raw
+doc/source/niftynet*
+doc/source/modules.rst
+.vscode/
+.ipynb_checkpoints

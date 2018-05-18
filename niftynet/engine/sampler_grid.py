@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-sampling image by a sliding window
+Sampling image by a sliding window.
 """
 from __future__ import absolute_import, division, print_function
 
@@ -15,37 +15,37 @@ from niftynet.layer.base_layer import Layer
 # pylint: disable=too-many-locals
 class GridSampler(Layer, InputBatchQueueRunner):
     """
-    This class generators ND image samples with a sliding window
+    This class generators ND image samples with a sliding window.
     """
 
     def __init__(self,
                  reader,
                  data_param,
                  batch_size,
-                 spatial_window_size=(),
-                 window_border=(),
-                 queue_length=10):
+                 spatial_window_size=None,
+                 window_border=None,
+                 queue_length=10,
+                 name='grid_sampler'):
         self.batch_size = batch_size
+        self.border_size = window_border or (0, 0, 0)
         self.reader = reader
-        Layer.__init__(self, name='input_buffer')
+        Layer.__init__(self, name=name)
         InputBatchQueueRunner.__init__(
             self,
             capacity=queue_length,
             shuffle=False)
         tf.logging.info('reading size of preprocessed inputs')
+
+        # override all spatial window defined in input
+        # modalities sections
+        # this is useful when do inference with a spatial window
+        # which is different from the training specifications
         self.window = ImageWindow.from_data_reader_properties(
             self.reader.input_sources,
             self.reader.shapes,
             self.reader.tf_dtypes,
-            data_param)
+            spatial_window_size or data_param)
 
-        if spatial_window_size:
-            # override all spatial window defined in input
-            # modalities sections
-            # this is useful when do inference with a spatial window
-            # which is different from the training specifications
-            self.window.set_spatial_shape(spatial_window_size)
-        self.border_size = window_border
         tf.logging.info('initialised window instance')
         self._create_queue_and_ops(self.window,
                                    enqueue_size=1,
@@ -116,16 +116,15 @@ class GridSampler(Layer, InputBatchQueueRunner):
 def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
     """
     This function generates all coordinates of feasible windows, with
-    step sizes specified in grid_size parameter
+    step sizes specified in grid_size parameter.
 
     The border size changes the sampling locations but not the
     corresponding window sizes of the coordinates.
 
     :param subject_id: integer value indicates the position of of this
-    image in image_reader.file_list
-
-    :param img_sizes: a dictionary of image shapes, {input_name: shape}
-    :param win_sizes: a dictionary of window shapes, {input_name: shape}
+        image in ``image_reader.file_list``
+    :param img_sizes: a dictionary of image shapes, ``{input_name: shape}``
+    :param win_sizes: a dictionary of window shapes, ``{input_name: shape}``
     :param border_size: size of padding on both sides of each dim
     :return:
     """
@@ -164,7 +163,7 @@ def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
 
 def _enumerate_step_points(starting, ending, win_size, step_size):
     """
-    generate all possible sampling size in between starting and ending
+    generate all possible sampling size in between starting and ending.
 
     :param starting: integer of starting value
     :param ending: integer of ending value
@@ -188,5 +187,14 @@ def _enumerate_step_points(starting, ending, win_size, step_size):
     while (starting + win_size) <= ending:
         sampling_point_set.append(starting)
         starting = starting + step_size
-    sampling_point_set.append(np.max((ending - win_size, 0)))
-    return np.unique(sampling_point_set).flatten()
+    additional_last_point = ending - win_size
+    sampling_point_set.append(max(additional_last_point, 0))
+    sampling_point_set = np.unique(sampling_point_set).flatten()
+    if len(sampling_point_set) == 2:
+        # in case of too few samples, adding
+        # an additional sampling point to
+        # the middle between starting and ending
+        sampling_point_set = np.append(
+            sampling_point_set, np.round(np.mean(sampling_point_set)))
+    _, uniq_idx = np.unique(sampling_point_set, return_index=True)
+    return sampling_point_set[np.sort(uniq_idx)]

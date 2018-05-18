@@ -7,12 +7,13 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.io.image_reader import ImageReader
+from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
 from niftynet.layer.mean_variance_normalisation import \
     MeanVarNormalisationLayer
-from tests.test_util import ParserNamespace
+from niftynet.utilities.util_common import ParserNamespace
 
 DATA_PARAM = {
     'T1': ParserNamespace(
@@ -22,7 +23,8 @@ DATA_PARAM = {
         filename_not_contains=('Parcellation',),
         interp_order=3,
         pixdim=None,
-        axcodes=None
+        axcodes=None,
+        loader=None
     ),
     'FLAIR': ParserNamespace(
         csv_file=os.path.join('testing_data', 'FLAIR.csv'),
@@ -31,11 +33,14 @@ DATA_PARAM = {
         filename_not_contains=('Parcellation',),
         interp_order=3,
         pixdim=None,
-        axcodes=None
+        axcodes=None,
+        loader=None
     )
 }
 TASK_PARAM = ParserNamespace(image=('T1', 'FLAIR'))
 MODEL_FILE = os.path.join('testing_data', 'std_models.txt')
+data_partitioner = ImageSetsPartitioner()
+file_list = data_partitioner.initialise(DATA_PARAM).get_file_list()
 
 
 # @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
@@ -55,7 +60,7 @@ class HistTest(tf.test.TestCase):
              100.0])
 
         reader = ImageReader(['image'])
-        reader.initialise_reader(DATA_PARAM, TASK_PARAM)
+        reader.initialise(DATA_PARAM, TASK_PARAM, file_list)
         self.assertAllClose(len(reader._file_list), 4)
 
         foreground_masking_layer = BinaryMaskingLayer(

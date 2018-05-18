@@ -47,10 +47,10 @@ class VAE(TrainableLayer):
         # the amount of pooling in the ith layer
         # (along all spatial dimensions).
         # CONSTRAINTS: All four lists must be the same length.
-        self.conv_output_channels = [15, 25, 35]
+        self.conv_output_channels = [32, 64, 96]
         self.conv_kernel_sizes = [3, 3, 3]
         self.conv_pooling_factors = [2, 2, 2]
-        self.acti_func_conv = ['relu', 'relu', 'relu']
+        self.acti_func_conv = ['selu', 'selu', 'selu']
 
         # 3) The fully-connected layers
         # NOTES: If 'layer_sizes_decoder_shared' is empty then
@@ -71,13 +71,13 @@ class VAE(TrainableLayer):
         #  that of the input to the fully-connected layers).
 
         self.layer_sizes_encoder = [256, 128]
-        self.acti_func_encoder = ['relu', 'relu']
+        self.acti_func_encoder = ['selu', 'selu']
         self.number_of_latent_variables = 64
         self.number_of_samples_from_posterior = 100
         self.layer_sizes_decoder_shared = [128]
-        self.acti_func_decoder_shared = ['relu']
+        self.acti_func_decoder_shared = ['selu']
         self.layer_sizes_decoder = self.layer_sizes_encoder[::-1]
-        self.acti_func_decoder = self.acti_func_encoder[::-1] + ['relu']
+        self.acti_func_decoder = self.acti_func_encoder[::-1] + ['selu']
 
         # 4) The transpose convolutional layers (for predicting means)
         # NOTES: 'upsampling_mode' determines how the feature maps
@@ -103,8 +103,8 @@ class VAE(TrainableLayer):
         self.trans_conv_kernel_sizes_means = self.conv_kernel_sizes[::-1]
         self.trans_conv_unpooling_factors_means = \
             self.conv_pooling_factors[::-1]
-        self.acti_func_trans_conv_means = self.acti_func_conv[-2::-1] + [
-            'sigmoid']
+        self.acti_func_trans_conv_means = \
+            self.acti_func_conv[-2::-1] + ['sigmoid']
         self.upsampling_mode_means = 'DECONV'
 
         # 5) The transpose convolutional layers
@@ -144,14 +144,14 @@ class VAE(TrainableLayer):
         def infer_downsampled_shape(x, output_channels, pooling_factors):
             # Calculate the shape of the data as it emerges from
             # the convolutional part of the encoder
-            downsampled_shape = x.get_shape()[1::].as_list()
+            downsampled_shape = x.shape[1::].as_list()
             downsampled_shape[-1] = output_channels[-1]
             downsampled_shape[0:-1] = \
                 downsampled_shape[0:-1] / np.prod(pooling_factors)
             return [int(x) for x in downsampled_shape]
 
         # Derive shape information from the input
-        input_shape = images.get_shape()[1::].as_list()
+        input_shape = images.shape[1::].as_list()
         number_of_input_channels = input_shape[-1]
         downsampled_shape = infer_downsampled_shape(images,
                                                     self.conv_output_channels,
@@ -320,10 +320,10 @@ class ConvEncoder(TrainableLayer):
                 stride=self.conv_pooling_factors[i],
                 padding='SAME',
                 with_bias=False,
-                with_bn=False,
+                with_bn=True,
                 w_initializer=self.initializers['w'],
                 w_regularizer=None,
-                acti_func=None,
+                acti_func=self.acti_func_conv[i],
                 name='encoder_downsampler_{}_{}'.format(
                     self.conv_pooling_factors[i],
                     self.conv_pooling_factors[i])))
@@ -337,7 +337,7 @@ class ConvEncoder(TrainableLayer):
         encoders_fc = []
         for i in range(0, len(self.layer_sizes_encoder)):
             encoders_fc.append(FullyConnectedLayer(
-                n_output_nodes=self.layer_sizes_encoder[i],
+                n_output_chns=self.layer_sizes_encoder[i],
                 with_bias=True,
                 with_bn=True,
                 acti_func=self.acti_func_encoder[i],
@@ -405,7 +405,7 @@ class GaussianSampler(TrainableLayer):
             return output
 
         encoder_means = FullyConnectedLayer(
-            n_output_nodes=self.number_of_latent_variables,
+            n_output_chns=self.number_of_latent_variables,
             with_bn=False,
             acti_func=None,
             w_initializer=self.initializers['w'],
@@ -414,7 +414,7 @@ class GaussianSampler(TrainableLayer):
         print(encoder_means)
 
         encoder_logvars = FullyConnectedLayer(
-            n_output_nodes=self.number_of_latent_variables,
+            n_output_chns=self.number_of_latent_variables,
             with_bn=False,
             acti_func=None,
             w_initializer=self.initializers['w'],
@@ -487,7 +487,7 @@ class ConvDecoder(TrainableLayer):
         decoders_fc = []
         for i in range(0, len(self.layer_sizes_decoder)):
             decoders_fc.append(FullyConnectedLayer(
-                n_output_nodes=self.layer_sizes_decoder[i],
+                n_output_chns=self.layer_sizes_decoder[i],
                 with_bias=True,
                 with_bn=True,
                 acti_func=self.acti_func_decoder[i],
@@ -525,7 +525,8 @@ class ConvDecoder(TrainableLayer):
                 stride=1,
                 padding='SAME',
                 with_bias=True,
-                with_bn=not (i == len(self.trans_conv_output_channels) - 1),
+                with_bn=True,
+                #with_bn=not (i == len(self.trans_conv_output_channels) - 1),
                 # No BN on output
                 w_initializer=self.initializers['w'],
                 w_regularizer=None,
@@ -590,7 +591,7 @@ class FCDecoder(TrainableLayer):
         decoders_fc = []
         for i in range(0, len(self.layer_sizes_decoder)):
             decoders_fc.append(FullyConnectedLayer(
-                n_output_nodes=self.layer_sizes_decoder[i],
+                n_output_chns=self.layer_sizes_decoder[i],
                 with_bias=True,
                 with_bn=True,
                 acti_func=self.acti_func_decoder[i],

@@ -22,11 +22,13 @@ class Invertible(with_metaclass(ABCMeta, object)):
 
 class Layer(object):
     def __init__(self, name='untitled_op'):
+        self.name = name
         self._op = tf.make_template(name, self.layer_op, create_scope_now_=True)
 
     def layer_op(self, *args, **kwargs):
         msg = 'method \'layer_op\' in \'{}\''.format(type(self).__name__)
-        raise NotImplementedError(msg)
+        tf.logging.fatal(msg)
+        raise NotImplementedError
 
     def __call__(self, *args, **kwargs):
         return self._op(*args, **kwargs)
@@ -49,7 +51,7 @@ class Layer(object):
 class TrainableLayer(Layer):
     """
     Extends the Layer object to have trainable parameters,
-    adding intiailizers and regularizers.
+    adding initializers and regularizers.
     """
 
     def __init__(self, name='trainable_op'):
@@ -144,14 +146,16 @@ class RandomisedLayer(Layer):
 
 
 class LayerFromCallable(Layer):
-    """Module wrapping a function provided by the user.
+    """
+    Module wrapping a function provided by the user.
     Analogous to snt.Module
     """
 
-    def __init__(self, layer_op, name='untitled_op'):
+    def __init__(self, layer_op, name='from_callable_op'):
         super(LayerFromCallable, self).__init__(name=name)
         if not callable(layer_op):
-            raise TypeError("layer_op must be callable.")
+            tf.logging.fatal("layer_op must be callable.")
+            raise TypeError
         self._layer_op = layer_op
 
     def layer_op(self, *args, **kwargs):

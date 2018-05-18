@@ -9,20 +9,26 @@ from __future__ import division
 from __future__ import print_function
 
 import importlib
+import os
 
 import tensorflow as tf
 
 from niftynet.utilities.util_common import \
-    _damerau_levenshtein_distance as edit_distance
+    damerau_levenshtein_distance as edit_distance
 
 # pylint: disable=too-few-public-methods
 SUPPORTED_APP = {
+    'net_regress':
+        'niftynet.application.regression_application.RegressionApplication',
     'net_segment':
         'niftynet.application.segmentation_application.SegmentationApplication',
     'net_autoencoder':
         'niftynet.application.autoencoder_application.AutoencoderApplication',
     'net_gan':
         'niftynet.application.gan_application.GANApplication',
+    'net_classify':
+        'niftynet.application.classification_application.'
+        'ClassificationApplication',
 }
 
 SUPPORTED_NETWORK = {
@@ -53,6 +59,11 @@ SUPPORTED_NETWORK = {
         'niftynet.network.scalenet.ScaleNet',
     "holisticnet":
         'niftynet.network.holistic_net.HolisticNet',
+    "unet_2d":
+        'niftynet.network.unet_2d.UNet2D',
+
+    # classification
+    "resnet": 'niftynet.network.resnet.ResNet',
 
     # autoencoder
     "vae": 'niftynet.network.vae.VAE'
@@ -65,10 +76,16 @@ SUPPORTED_LOSS_GAN = {
 SUPPORTED_LOSS_SEGMENTATION = {
     "CrossEntropy":
         'niftynet.layer.loss_segmentation.cross_entropy',
+    "CrossEntropy_Dense":
+        'niftynet.layer.loss_segmentation.cross_entropy_dense',
     "Dice":
         'niftynet.layer.loss_segmentation.dice',
     "Dice_NS":
         'niftynet.layer.loss_segmentation.dice_nosquare',
+    "Dice_Dense":
+        'niftynet.layer.loss_segmentation.dice_dense',
+    "Dice_Dense_NS":
+        'niftynet.layer.loss_segmentation.dice_dense_nosquare',
     "GDSC":
         'niftynet.layer.loss_segmentation.generalised_dice_loss',
     "WGDL":
@@ -83,6 +100,25 @@ SUPPORTED_LOSS_SEGMENTATION = {
         'niftynet.layer.loss_segmentation.huber_loss'
 }
 
+SUPPORTED_LOSS_REGRESSION = {
+    "L1Loss":
+        'niftynet.layer.loss_regression.l1_loss',
+    "L2Loss":
+        'niftynet.layer.loss_regression.l2_loss',
+    "RMSE":
+        'niftynet.layer.loss_regression.rmse_loss',
+    "MAE":
+        'niftynet.layer.loss_regression.mae_loss',
+    "Huber":
+        'niftynet.layer.loss_regression.huber_loss'
+}
+
+SUPPORTED_LOSS_CLASSIFICATION = {
+    "CrossEntropy":
+        'niftynet.layer.loss_classification.cross_entropy',
+}
+
+
 SUPPORTED_LOSS_AUTOENCODER = {
     "VariationalLowerBound":
         'niftynet.layer.loss_autoencoder.variational_lower_bound',
@@ -92,34 +128,106 @@ SUPPORTED_OPTIMIZERS = {
     'adam': 'niftynet.engine.application_optimiser.Adam',
     'gradientdescent': 'niftynet.engine.application_optimiser.GradientDescent',
     'momentum': 'niftynet.engine.application_optimiser.Momentum',
+    'nesterov': 'niftynet.engine.application_optimiser.NesterovMomentum',
+
     'adagrad': 'niftynet.engine.application_optimiser.Adagrad',
+    'rmsprop': 'niftynet.engine.application_optimiser.RMSProp',
 }
 
+SUPPORTED_INITIALIZATIONS = {
+    'constant': 'niftynet.engine.application_initializer.Constant',
+    'zeros': 'niftynet.engine.application_initializer.Zeros',
+    'ones': 'niftynet.engine.application_initializer.Ones',
+    'uniform_scaling':
+        'niftynet.engine.application_initializer.UniformUnitScaling',
+    'orthogonal': 'niftynet.engine.application_initializer.Orthogonal',
+    'variance_scaling':
+        'niftynet.engine.application_initializer.VarianceScaling',
+    'glorot_normal':
+        'niftynet.engine.application_initializer.GlorotNormal',
+    'glorot_uniform':
+        'niftynet.engine.application_initializer.GlorotUniform',
+    'he_normal': 'niftynet.engine.application_initializer.HeNormal',
+    'he_uniform': 'niftynet.engine.application_initializer.HeUniform'
+}
+
+SUPPORTED_EVALUATIONS = {
+    'dice': 'niftynet.evaluation.segmentation_evaluations.dice',
+    'jaccard': 'niftynet.evaluation.segmentation_evaluations.jaccard',
+    'Dice': 'niftynet.evaluation.segmentation_evaluations.dice',
+    'Jaccard': 'niftynet.evaluation.segmentation_evaluations.jaccard',
+    'n_pos_ref': 'niftynet.evaluation.segmentation_evaluations.n_pos_ref',
+    'n_neg_ref': 'niftynet.evaluation.segmentation_evaluations.n_neg_ref',
+    'n_pos_seg': 'niftynet.evaluation.segmentation_evaluations.n_pos_seg',
+    'n_neg_seg': 'niftynet.evaluation.segmentation_evaluations.n_neg_seg',
+    'fp': 'niftynet.evaluation.segmentation_evaluations.fp',
+    'fn': 'niftynet.evaluation.segmentation_evaluations.fn',
+    'tp': 'niftynet.evaluation.segmentation_evaluations.tp',
+    'tn': 'niftynet.evaluation.segmentation_evaluations.tn',
+    'n_intersection': 'niftynet.evaluation.segmentation_evaluations'
+                      '.n_intersection',
+    'n_union': 'niftynet.evaluation.segmentation_evaluations.n_union',
+    'specificity': 'niftynet.evaluation.segmentation_evaluations.specificity',
+    'sensitivity': 'niftynet.evaluation.segmentation_evaluations.sensitivity',
+    'accuracy': 'niftynet.evaluation.segmentation_evaluations.accuracy',
+    'false_positive_rate': 'niftynet.evaluation.segmentation_evaluations'
+                           '.false_positive_rate',
+    'positive_predictive_values': 'niftynet.evaluation.segmentation_evaluations'
+                                  '.positive_predictive_values',
+    'negative_predictive_values': 'niftynet.evaluation.segmentation_evaluations'
+                                  '.negative_predictive_values',
+    'intersection_over_union': 'niftynet.evaluation.segmentation_evaluations'
+                               '.intersection_over_union',
+    'informedness': 'niftynet.evaluation.segmentation_evaluations.informedness',
+    'markedness': 'niftynet.evaluation.segmentation_evaluations.markedness',
+    'vol_diff': 'niftynet.evaluation.segmentation_evaluations.vol_diff',
+    'average_distance': 'niftynet.evaluation.segmentation_evaluations'
+                        '.average_distance',
+    'hausdorff_distance': 'niftynet.evaluation.segmentation_evaluations'
+                          '.hausdorff_distance',
+    'hausdorff95_distance': 'niftynet.evaluation.segmentation_evaluations'
+                            '.hausdorff95_distance',
+    'com_ref': 'niftynet.contrib.evaluation.segmentation_evaluations.com_ref',
+    'mse': 'niftynet.evaluation.regression_evaluations.mse',
+    'rmse': 'niftynet.evaluation.regression_evaluations.rmse',
+    'mae': 'niftynet.evaluation.regression_evaluations.mae',
+    'r2': 'niftynet.contrib.evaluation.regression_evaluations.r2',
+    'classification_accuracy': 'niftynet.evaluation.classification_evaluations'
+                               '.accuracy',
+    'roc_auc': 'niftynet.contrib.evaluation.classification_evaluations.roc_auc',
+    'roc': 'niftynet.contrib.evaluation.classification_evaluations.roc',
+}
 
 def select_module(module_name, type_str, lookup_table):
     """
     This function first tries to find the absolute module name
     by matching the static dictionary items, if not found, it
-    tries to import the module by splitting the input module_name
+    tries to import the module by splitting the input ``module_name``
     as module name and class name to be imported.
 
-    :param moduel_name: string that matches the keys defined in lookup_table
+    :param module_name: string that matches the keys defined in lookup_table
         or an absolute class name: module.name.ClassName
-    :type_str: type of the module (currently used for better error display)
-    :lookup_table: defines a set of shorthands for absolute class name
+    :param type_str: type of the module (used for better error display)
+    :param lookup_table: defines a set of shorthands for absolute class name
     """
     module_name = '{}'.format(module_name)
     if module_name in lookup_table:
         module_name = lookup_table[module_name]
-    module, class_name = None, None
+    module_str, class_name = None, None
     try:
-        module, class_name = module_name.rsplit('.', 1)
-        the_module = getattr(importlib.import_module(module), class_name)
-        return the_module
-    except (AttributeError, ValueError):
+        module_str, class_name = module_name.rsplit('.', 1)
+        the_module = importlib.import_module(module_str)
+        the_class = getattr(the_module, class_name)
+        tf.logging.info('Import [%s] from %s.',
+                        class_name, os.path.abspath(the_module.__file__))
+        return the_class
+    except (AttributeError, ValueError, ImportError) as not_imported:
+        # print sys.path
+        tf.logging.fatal(repr(not_imported))
         # Two possibilities: a typo for a lookup table entry
         #                 or a non-existing module
-        dists = {k: edit_distance(k, module_name) for k in lookup_table.keys()}
+        dists = dict((k, edit_distance(k, module_name))
+                     for k in list(lookup_table))
         closest = min(dists, key=dists.get)
         if dists[closest] <= 3:
             err = 'Could not import {2}: By "{0}", ' \
@@ -130,12 +238,12 @@ def select_module(module_name, type_str, lookup_table):
         else:
             if '.' not in module_name:
                 err = 'Could not import {}: ' \
-                      'Incorrect module name format {}. ' \
-                      'Expected "module.object".'.format(type_str, module_name)
+                      'Incorrect module name "{}"; ' \
+                      'expected "module.object".'.format(type_str, module_name)
                 tf.logging.fatal(err)
                 raise ValueError(err)
             err = '{}: Could not import object' \
-                  '"{}" from "{}"'.format(type_str, class_name, module)
+                  '"{}" from "{}"'.format(type_str, class_name, module_str)
             tf.logging.fatal(err)
             raise ValueError(err)
 
@@ -157,7 +265,7 @@ class ModuleFactory(object):
 
 class ApplicationNetFactory(ModuleFactory):
     """
-    Import a network from niftynet.network or from user specified string
+    Import a network from ``niftynet.network`` or from user specified string
     """
     SUPPORTED = SUPPORTED_NETWORK
     type_str = 'network'
@@ -165,7 +273,7 @@ class ApplicationNetFactory(ModuleFactory):
 
 class ApplicationFactory(ModuleFactory):
     """
-    Import an application from niftynet.application or
+    Import an application from ``niftynet.application`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_APP
@@ -174,7 +282,7 @@ class ApplicationFactory(ModuleFactory):
 
 class LossGANFactory(ModuleFactory):
     """
-    Import a GAN loss function from niftynet.layer or
+    Import a GAN loss function from ``niftynet.layer`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_LOSS_GAN
@@ -183,16 +291,34 @@ class LossGANFactory(ModuleFactory):
 
 class LossSegmentationFactory(ModuleFactory):
     """
-    Import a segmentation loss function from niftynet.layer or
+    Import a segmentation loss function from ``niftynet.layer`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_LOSS_SEGMENTATION
     type_str = 'segmentation loss'
 
 
+class LossRegressionFactory(ModuleFactory):
+    """
+    Import a regression loss function from ``niftynet.layer`` or
+    from user specified string
+    """
+    SUPPORTED = SUPPORTED_LOSS_REGRESSION
+    type_str = 'regression loss'
+
+
+class LossClassificationFactory(ModuleFactory):
+    """
+    Import a classification loss function from niftynet.layer or
+    from user specified string
+    """
+    SUPPORTED = SUPPORTED_LOSS_CLASSIFICATION
+    type_str = 'classification loss'
+
+
 class LossAutoencoderFactory(ModuleFactory):
     """
-    Import an autoencoder loss function from niftynet.layer or
+    Import an autoencoder loss function from ``niftynet.layer`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_LOSS_AUTOENCODER
@@ -201,8 +327,39 @@ class LossAutoencoderFactory(ModuleFactory):
 
 class OptimiserFactory(ModuleFactory):
     """
-    Import an optimiser from niftynet.engine.application_optimiser or
+    Import an optimiser from ``niftynet.engine.application_optimiser`` or
     from user specified string
     """
     SUPPORTED = SUPPORTED_OPTIMIZERS
     type_str = 'optimizer'
+
+
+class InitializerFactory(ModuleFactory):
+    """
+    Import an initializer from ``niftynet.engine.application_initializer`` or
+    from user specified string
+    """
+    SUPPORTED = SUPPORTED_INITIALIZATIONS
+    type_str = 'initializer'
+
+    @staticmethod
+    def get_initializer(name, args=None):
+        """
+        wrapper for getting the initializer.
+
+        :param name:
+        :param args: optional parameters for the initializer
+        :return:
+        """
+        init_class = InitializerFactory.create(name)
+        if args is None:
+            args = {}
+        return init_class.get_instance(args)
+
+class EvaluationFactory(ModuleFactory):
+    """
+    Import an optimiser from niftynet.engine.application_optimiser or
+    from user specified string
+    """
+    SUPPORTED = SUPPORTED_EVALUATIONS
+    type_str = 'evaluation'

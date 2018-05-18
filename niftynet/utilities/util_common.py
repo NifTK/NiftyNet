@@ -14,10 +14,23 @@ from scipy import ndimage
 from six import string_types
 
 
+def traverse_nested(input_lists, types=(list, tuple)):
+    """
+    Flatten a nested list or tuple
+    """
+
+    if isinstance(input_lists, types):
+        for input_list in input_lists:
+            for sub_list in traverse_nested(input_list, types=types):
+                yield sub_list
+    else:
+        yield input_lists
+
+
 def list_depth_count(input_list):
     """
     This function count the maximum depth of a nested list (recursively)
-    This is used to check compatibility of users' input and sysmte API
+    This is used to check compatibility of users' input and system API
     only to be used for list or tuple
     """
     if not isinstance(input_list, (list, tuple)):
@@ -47,9 +60,9 @@ def average_gradients(multi_device_gradients):
         averaged_grads = __average_grads(multi_device_gradients)
     else:
         tf.logging.fatal(
-            "The list of gradients are nested in an unsusal way."
+            "The list of gradients are nested in an unusual way."
             "application's gradient is not compatible with app driver."
-            "Please check the return value of grapdients_collector "
+            "Please check the return value of gradients_collector "
             "in _connect_data_and_network() of the application")
         raise RuntimeError
     return averaged_grads
@@ -65,7 +78,7 @@ def __average_grads(tower_grads):
     ave_grads = []
     for grad_and_vars in zip(*tower_grads):
         grads = [tf.expand_dims(g, 0)
-                 for g, _ in grad_and_vars if not g is None]
+                 for g, _ in grad_and_vars if g is not None]
         if not grads:
             continue
         grad = tf.concat(grads, 0)
@@ -131,6 +144,7 @@ class MorphologyOps(object):
     """
 
     def __init__(self, binary_img, neigh):
+        assert len(binary_img.shape) == 3, 'currently supports 3d inputs only'
         self.binary_map = np.asarray(binary_img, dtype=np.int8)
         self.neigh = neigh
 
@@ -151,6 +165,26 @@ class MorphologyOps(object):
 
     def foreground_component(self):
         return ndimage.label(self.binary_map)
+
+cache={}
+def CachedFunction(func):
+    def decorated(*args, **kwargs):
+        key = (func, args, frozenset(kwargs.items()))
+        if key not in cache:
+            cache[key] = func(*args,**kwargs)
+        return cache[key]
+    return decorated
+
+def CachedFunctionByID(func):
+    def decorated(*args, **kwargs):
+        id_args = tuple(id(a) for a in args)
+        id_kwargs = ((k,id(kwargs[k])) for k in sorted(kwargs.keys()))
+        key = (func, id_args, id_kwargs)
+        if key not in cache:
+            cache[key] = func(*args,**kwargs)
+        return cache[key]
+    return decorated
+
 
 
 class CacheFunctionOutput(object):
@@ -182,6 +216,18 @@ class CacheFunctionOutput(object):
 
 
 def look_up_operations(type_str, supported):
+    """
+    This function validates the ``type_str`` against the supported set.
+
+    if ``supported`` is a ``set``, returns ``type_str``
+    if ``supported`` is a ``dict``, return ``supported[type_str]``
+    else:
+        raise an error possibly with a guess of the closest match.
+
+    :param type_str:
+    :param supported:
+    :return:
+    """
     assert isinstance(type_str, string_types), 'unrecognised type string'
     if type_str in supported and isinstance(supported, dict):
         return supported[type_str]
@@ -198,22 +244,24 @@ def look_up_operations(type_str, supported):
 
     edit_distances = {}
     for supported_key in set_to_check:
-        edit_distance = _damerau_levenshtein_distance(supported_key,
-                                                      type_str)
+        edit_distance = damerau_levenshtein_distance(supported_key,
+                                                     type_str)
         if edit_distance <= 3:
             edit_distances[supported_key] = edit_distance
     if edit_distances:
         guess_at_correct_spelling = min(edit_distances,
                                         key=edit_distances.get)
-        raise ValueError('By "{0}", did you mean "{1}"?\n '
-                         '"{0}" is not a valid option.'.format(
-            type_str, guess_at_correct_spelling))
+        raise ValueError('By "{0}", did you mean "{1}"?\n'
+                         '"{0}" is not a valid option.\n'
+                         'Available options are {2}\n'.format(
+            type_str, guess_at_correct_spelling, supported))
     else:
-        raise ValueError("no supported operation \"{}\" "
-                         "is not found.".format(type_str))
+        raise ValueError("No supported option \"{}\" "
+                         "is not found.\nAvailable options are {}\n".format(
+            type_str, supported))
 
 
-def _damerau_levenshtein_distance(s1, s2):
+def damerau_levenshtein_distance(s1, s2):
     """
     Calculates an edit distance, for typo detection. Code based on :
     https://en.wikipedia.org/wiki/Damerau–Levenshtein_distance
@@ -308,14 +356,14 @@ def print_progress_bar(iteration, total,
                        prefix='', suffix='', decimals=1, length=10, fill='='):
     """
     Call in a loop to create terminal progress bar
-    @params:
-        iteration   - Required  : current iteration (Int)
-        total       - Required  : total iterations (Int)
-        prefix      - Optional  : prefix string (Str)
-        suffix      - Optional  : suffix string (Str)
-        decimals    - Optional  : number of decimals in percent complete (Int)
-        length      - Optional  : character length of bar (Int)
-        fill        - Optional  : bar fill character (Str)
+
+    :param iteration: current iteration (Int)
+    :param total: total iterations (Int)
+    :param prefix: prefix string (Str)
+    :param suffix: suffix string (Str)
+    :param decimals: number of decimals in percent complete (Int)
+    :param length: character length of bar (Int)
+    :param fill: bar fill character (Str)
     """
     percent = ("{0:." + str(decimals) + "f}").format(
         100 * (iteration / float(total)))
@@ -324,7 +372,7 @@ def print_progress_bar(iteration, total,
     print('\r%s |%s| %s%% %s' % (prefix, bars, percent, suffix), end='\r')
     # Print New Line on Complete
     if iteration == total:
-        print()
+        print('\n')
 
 
 def set_cuda_device(cuda_devices):
@@ -335,3 +383,21 @@ def set_cuda_device(cuda_devices):
     else:
         # using Tensorflow default choice
         pass
+
+
+class ParserNamespace(object):
+    """
+    Parser namespace for representing parsed parameters from config file
+
+    e.g.::
+
+        system_params = ParserNamespace(action='train')
+        action_str = system_params.action
+
+    """
+
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+    def update(self, **kwargs):
+        self.__dict__.update(kwargs)

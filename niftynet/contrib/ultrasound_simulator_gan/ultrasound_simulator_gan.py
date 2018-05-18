@@ -4,14 +4,8 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 import numpy as np
 
-from niftynet.layer import layer_util
-from niftynet.layer.activation import ActiLayer
-from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.convolution import ConvolutionalLayer
 from niftynet.layer.deconvolution import DeconvolutionalLayer
-from niftynet.layer.elementwise import ElementwiseLayer
-from niftynet.network.base_net import BaseNet
-from niftynet.layer.base_layer import LayerFromCallable
 from niftynet.layer.gan_blocks import GANImageBlock, BaseGenerator, BaseDiscriminator
 
 
@@ -33,10 +27,10 @@ class ImageGenerator(BaseGenerator):
     def layer_op(self, random_source, image_size, conditioning, is_training):
         spatial_rank = len(image_size) - 1
         add_noise = self.noise_channels_per_layer
-        conditioning_channels = conditioning.get_shape().as_list()[
+        conditioning_channels = conditioning.shape.as_list()[
                                     -1] + add_noise if not conditioning is None else add_noise
-        batch_size = random_source.get_shape().as_list()[0]
-        noise_size = random_source.get_shape().as_list()[1]
+        batch_size = random_source.shape.as_list()[0]
+        noise_size = random_source.shape.as_list()[1]
 
         w_init = tf.random_normal_initializer(0, 0.02)
         b_init = tf.constant_initializer(0.001)
@@ -49,7 +43,7 @@ class ImageGenerator(BaseGenerator):
             sz = [[round(i / 2) for i in sz[0]]] + sz
         if spatial_rank == 3:
             def resize_func(x, sz):
-                sz_x = x.get_shape().as_list()
+                sz_x = x.shape.as_list()
                 r1 = tf.image.resize_images(tf.reshape(x, sz_x[:3] + [-1]), sz[0:2])
                 r2 = tf.image.resize_images(tf.reshape(r1, [sz_x[0], sz[0] * sz[1], sz_x[3], -1]),
                                             [sz[0] * sz[1], sz[2]])
@@ -59,12 +53,12 @@ class ImageGenerator(BaseGenerator):
 
         def concat_cond(x, i):
             if add_noise:
-                noise = [tf.random_normal(x.get_shape().as_list()[0:-1] + [add_noise], 0, .1)]
+                noise = [tf.random_normal(x.shape.as_list()[0:-1] + [add_noise], 0, .1)]
             else:
                 noise = []
             if not conditioning is None and self.generator_shortcuts[i]:
                 with tf.name_scope('concat_conditioning'):
-                    return tf.concat([x, resize_func(conditioning, x.get_shape().as_list()[1:-1])] + noise, axis=3)
+                    return tf.concat([x, resize_func(conditioning, x.shape.as_list()[1:-1])] + noise, axis=3)
             else:
                 return x
 
@@ -84,7 +78,7 @@ class ImageGenerator(BaseGenerator):
         def up_block(ch, x, i, hack=False):
             with tf.name_scope('up_block'):
                 cond = concat_cond(up(ch, x, hack), i)
-                return conv(cond.get_shape().as_list()[-1], cond)
+                return conv(cond.shape.as_list()[-1], cond)
 
         with tf.name_scope('noise_to_image'):
             g_no_0 = np.prod(sz[0]) * ch[0]
@@ -100,7 +94,7 @@ class ImageGenerator(BaseGenerator):
         g_h5 = up_block(ch[4], g_h4, 4)
         with tf.name_scope('final_image'):
             if add_noise:
-                noise = tf.random_normal(g_h5.get_shape().as_list()[0:-1] + [add_noise], 0, .1)
+                noise = tf.random_normal(g_h5.shape.as_list()[0:-1] + [add_noise], 0, .1)
                 g_h5 = tf.concat([g_h5, noise],axis=3)
             x_sample = ConvolutionalLayer(1, 3, with_bn=False, with_bias=True,
                                           w_initializer=w_init,
@@ -137,7 +131,7 @@ class ImageDiscriminator(BaseDiscriminator):
     def layer_op(self, image, conditioning, is_training):
         conditioning = tf.image.resize_images(conditioning, [160, 120])
 
-        batch_size = image.get_shape().as_list()[0]
+        batch_size = image.shape.as_list()[0]
 
         w_init = tf.random_normal_initializer(0, 0.02)
         b_init = tf.constant_initializer(0.001)
@@ -190,7 +184,7 @@ class ImageDiscriminator(BaseDiscriminator):
         d_h6 = down_block(ch[5], d_h5)
         with tf.name_scope('fc'):
             d_hf = tf.reshape(d_h6, [batch_size, -1])
-            d_nf_o = np.prod(d_hf.get_shape().as_list()[1:])
+            d_nf_o = np.prod(d_hf.shape.as_list()[1:])
             D_Wo = tf.get_variable("D_Wo", shape=[d_nf_o, 1], initializer=w_init)
             D_bo = tf.get_variable('D_bo', shape=[1], initializer=b_init)
 

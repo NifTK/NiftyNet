@@ -3,15 +3,14 @@ from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 
-from niftynet.engine.application_variables import NETORK_OUTPUT
-from niftynet.engine.application_variables import TF_SUMMARIES
+from niftynet.engine.application_variables import \
+    NETWORK_OUTPUT, CONSOLE, TF_SUMMARIES
 from niftynet.engine.application_variables import OutputsCollector
-from niftynet.network.toynet import ToyNet
 
 
-def get_test_network():
-    net = ToyNet(num_classes=4)
-    return net
+# def get_test_network():
+#    net = ToyNet(num_classes=4)
+#    return net
 
 
 class OutputCollectorTest(tf.test.TestCase):
@@ -31,14 +30,14 @@ class OutputCollectorTest(tf.test.TestCase):
                                             average_over_devices=False)
                 collector.add_to_collection(name='bar',
                                             var=bar,
-                                            collection=NETORK_OUTPUT,
+                                            collection=NETWORK_OUTPUT,
                                             average_over_devices=False)
-        self.assertDictEqual(collector.console_vars,
+        self.assertDictEqual(collector.variables(collection=CONSOLE),
                              {'image': image, 'foo': foo})
-        self.assertDictEqual(collector.output_vars,
+        self.assertDictEqual(collector.variables(collection=NETWORK_OUTPUT),
                              {'bar': bar})
 
-    def test_add_to_mutiple_device(self):
+    def test_add_to_multiple_device(self):
         n_device = 4
         collector = OutputsCollector(n_devices=n_device)
         for idx in range(n_device):
@@ -56,12 +55,12 @@ class OutputCollectorTest(tf.test.TestCase):
                                             var=bar,
                                             average_over_devices=True)
         self.assertEqual(
-            set(collector.console_vars),
+            set(collector.variables()),
             {'image_1', 'image_3', 'image_2',
              'image', 'foo_1', 'foo_2', 'foo_3', 'foo', 'bar'})
-        self.assertEqual(len(collector.console_vars['bar']), n_device)
+        self.assertEqual(len(collector.variables()['bar']), n_device)
         collector.finalise_output_op()
-        self.assertIsInstance(collector.console_vars['bar'], tf.Tensor)
+        self.assertIsInstance(collector.variables()['bar'], tf.Tensor)
 
     def test_netout_single_device(self):
         n_device = 1
@@ -72,16 +71,16 @@ class OutputCollectorTest(tf.test.TestCase):
                 foo = tf.zeros([2, 2])
                 collector.add_to_collection(name='image',
                                             var=image,
-                                            collection=NETORK_OUTPUT,
+                                            collection=NETWORK_OUTPUT,
                                             average_over_devices=False)
                 collector.add_to_collection(name='foo',
                                             var=foo,
-                                            collection=NETORK_OUTPUT,
+                                            collection=NETWORK_OUTPUT,
                                             average_over_devices=False)
-        self.assertDictEqual(collector.output_vars,
-                             {'image': image, 'foo': foo})
+            self.assertDictEqual(collector.variables(collection=NETWORK_OUTPUT),
+                                 {'image': image, 'foo': foo})
 
-    def test_netout_mutiple_device(self):
+    def test_netout_multiple_device(self):
         n_device = 4
         collector = OutputsCollector(n_devices=n_device)
         for idx in range(n_device):
@@ -91,24 +90,25 @@ class OutputCollectorTest(tf.test.TestCase):
                 bar = tf.zeros([42])
                 collector.add_to_collection(name='image',
                                             var=image,
-                                            collection=NETORK_OUTPUT,
+                                            collection=NETWORK_OUTPUT,
                                             average_over_devices=False)
                 collector.add_to_collection(name='foo',
                                             var=foo,
-                                            collection=NETORK_OUTPUT,
+                                            collection=NETWORK_OUTPUT,
                                             average_over_devices=False)
                 collector.add_to_collection(name='bar',
                                             var=bar,
-                                            collection=NETORK_OUTPUT,
+                                            collection=NETWORK_OUTPUT,
                                             average_over_devices=True)
         self.assertEqual(
-            set(collector.output_vars),
+            set(collector.variables(NETWORK_OUTPUT)),
             {'image_1', 'image_3', 'image_2',
              'image', 'foo_1', 'foo_2', 'foo_3', 'foo', 'bar'})
-        self.assertEqual(len(collector.output_vars['bar']), n_device)
+        self.assertEqual(len(collector.variables(NETWORK_OUTPUT)['bar']),
+                         n_device)
         collector.finalise_output_op()
-        self.assertIsInstance(collector.output_vars['bar'], tf.Tensor)
-
+        self.assertIsInstance(collector.variables(NETWORK_OUTPUT)['bar'],
+                              tf.Tensor)
 
     def test_tf_summary_single_device(self):
         n_device = 1
@@ -128,7 +128,7 @@ class OutputCollectorTest(tf.test.TestCase):
         self.assertDictEqual(collector.summary_vars,
                              {'image': image, 'foo': foo})
 
-    def test_tf_summary_mutiple_device(self):
+    def test_tf_summary_multiple_device(self):
         n_device = 4
         collector = OutputsCollector(n_devices=n_device)
         for idx in range(n_device):
@@ -171,6 +171,7 @@ class OutputCollectorTest(tf.test.TestCase):
                                         average_over_devices=True)
             collector.add_to_collection(name=foo, var=bar,
                                         average_over_devices=True)
+
 
 if __name__ == "__main__":
     tf.test.main()

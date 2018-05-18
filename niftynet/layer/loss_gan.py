@@ -10,11 +10,11 @@ from niftynet.layer.base_layer import Layer
 class LossFunction(Layer):
     def __init__(self,
                  loss_type='CrossEntropy',
-                 loss_func_params={},
+                 loss_func_params=None,
                  name='loss_function'):
 
         super(LossFunction, self).__init__(name=name)
-        if loss_func_params:
+        if loss_func_params is not None:
             self._loss_func_params = loss_func_params
         else:
             self._loss_func_params = {}

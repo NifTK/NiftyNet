@@ -9,10 +9,11 @@ import tensorflow as tf
 from niftynet.engine.sampler_grid import GridSampler
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.io.image_reader import ImageReader
+from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
 from niftynet.layer.pad import PadLayer
-from tests.test_util import ParserNamespace
+from niftynet.utilities.util_common import ParserNamespace
 
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
@@ -23,7 +24,8 @@ MULTI_MOD_DATA = {
         interp_order=3,
         pixdim=(2.4, 5.0, 2.0),
         axcodes='LAS',
-        spatial_window_size=(23, 32, 15)
+        spatial_window_size=(23, 32, 15),
+        loader=None
     ),
     'FLAIR': ParserNamespace(
         csv_file=os.path.join('testing_data', 'FLAIRsampler.csv'),
@@ -33,7 +35,8 @@ MULTI_MOD_DATA = {
         interp_order=3,
         pixdim=(2.4, 5.0, 2.0),
         axcodes='LAS',
-        spatial_window_size=(23, 32, 15)
+        spatial_window_size=(23, 32, 15),
+        loader=None
     )
 }
 MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'))
@@ -47,7 +50,8 @@ MOD_2D_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(72, 83, 1)
+        spatial_window_size=(72, 83, 1),
+        loader=None
     ),
 }
 MOD_2D_TASK = ParserNamespace(image=('ultrasound',))
@@ -61,7 +65,8 @@ MOD_LABEL_DATA = {
         interp_order=0,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(150, 140, 100)
+        spatial_window_size=(150, 140, 100),
+        loader=None
     ),
 }
 MOD_LABEl_TASK = ParserNamespace(label=('parcellation',))
@@ -75,33 +80,34 @@ SINGLE_25D_DATA = {
         interp_order=3,
         pixdim=(3.0, 5.0, 5.0),
         axcodes='LAS',
-        spatial_window_size=(40, 30, 1)
+        spatial_window_size=(40, 30, 1),
+        loader=None
     ),
 }
 SINGLE_25D_TASK = ParserNamespace(image=('T1',))
 
+data_partitioner = ImageSetsPartitioner()
+multi_mod_list = data_partitioner.initialise(MULTI_MOD_DATA).get_file_list()
+mod_2d_list = data_partitioner.initialise(MOD_2D_DATA).get_file_list()
+mod_label_list = data_partitioner.initialise(MOD_LABEL_DATA).get_file_list()
+single_25d_list = data_partitioner.initialise(SINGLE_25D_DATA).get_file_list()
+
 
 def get_3d_reader():
     reader = ImageReader(['image'])
-    reader.initialise_reader(MULTI_MOD_DATA, MULTI_MOD_TASK)
+    reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
     return reader
 
 
 def get_2d_reader():
     reader = ImageReader(['image'])
-    reader.initialise_reader(MOD_2D_DATA, MOD_2D_TASK)
-    return reader
-
-
-def get_25d_reader():
-    reader = ImageReader(['image'])
-    reader.initialise_reader(SINGLE_25D_DATA, SINGLE_25D_TASK)
+    reader.initialise(MOD_2D_DATA, MOD_2D_TASK, mod_2d_list)
     return reader
 
 
 def get_label_reader():
     reader = ImageReader(['label'])
-    reader.initialise_reader(MOD_LABEL_DATA, MOD_LABEl_TASK)
+    reader.initialise(MOD_LABEL_DATA, MOD_LABEl_TASK, mod_label_list)
     label_normaliser = DiscreteLabelNormalisationLayer(
         image_name='label',
         modalities=vars(SINGLE_25D_TASK).get('label'),
@@ -109,6 +115,12 @@ def get_label_reader():
     reader.add_preprocessing_layers(label_normaliser)
     pad_layer = PadLayer(image_name=('label',), border=(5, 6, 7))
     reader.add_preprocessing_layers([pad_layer])
+    return reader
+
+
+def get_25d_reader():
+    reader = ImageReader(['image'])
+    reader.initialise(SINGLE_25D_DATA, SINGLE_25D_TASK, single_25d_list)
     return reader
 
 

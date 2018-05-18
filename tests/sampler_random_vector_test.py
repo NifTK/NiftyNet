@@ -51,9 +51,9 @@ class RandomVectorSamplerTest(tf.test.TestCase):
                 self.assertAllClose(out_vector['test_vector'].shape,
                                     (batch_size, 100))
                 self.assertAllClose(np.mean(out_vector['test_vector']),
-                                     0.0, atol=0.5, rtol=0.5)
+                                    0.0, atol=0.5, rtol=0.5)
                 self.assertAllClose(np.std(out_vector['test_vector']),
-                                     1.0, atol=1.0, rtol=1.0)
+                                    1.0, atol=1.0, rtol=1.0)
             self.assertEquals(n_output, n_interpolations * repeat)
         sampler.close_all()
 

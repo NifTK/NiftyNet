@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.engine.image_window import ImageWindow
-from tests.test_util import ParserNamespace
+from niftynet.utilities.util_common import ParserNamespace
 
 
 def get_static_window_param():
@@ -18,7 +18,7 @@ def get_static_window_param():
         image_dtypes={
             'image': tf.float32,
             'label': tf.float32},
-        data_param={
+        window_sizes={
             'modality1': ParserNamespace(spatial_window_size=(10, 10, 2)),
             'modality2': ParserNamespace(spatial_window_size=(10, 10, 2)),
             'modality3': ParserNamespace(spatial_window_size=(5, 5, 1))}
@@ -36,10 +36,11 @@ def get_dynamic_image_window():
         image_dtypes={
             'image': tf.float32,
             'label': tf.float32},
-        data_param={
+        window_sizes={
             'modality1': ParserNamespace(spatial_window_size=(10, 10)),
             'modality2': ParserNamespace(spatial_window_size=(10, 10)),
-            'modality3': ParserNamespace(spatial_window_size=2)}
+            'modality3': ParserNamespace(spatial_window_size=(2,))},
+        allow_dynamic=True
     )
 
 
@@ -54,10 +55,11 @@ def get_all_dynamic_image_window():
         image_dtypes={
             'image': tf.float32,
             'label': tf.float32},
-        data_param={
+        window_sizes={
             'modality1': ParserNamespace(spatial_window_size=(-1, -1)),
             'modality2': ParserNamespace(spatial_window_size=(-1, -1)),
-            'modality3': ParserNamespace(spatial_window_size=-1)}
+            'modality3': ParserNamespace(spatial_window_size=(-1,))},
+        allow_dynamic=True
     )
 
 
@@ -72,7 +74,7 @@ def get_ill_image_window():
         image_dtypes={
             'image': tf.float32,
             'label': tf.float32},
-        data_param={
+        window_sizes={
             'modality1': ParserNamespace(spatial_window_size=(10, 10)),
             'modality3': ParserNamespace(spatial_window_size=())}
     )
@@ -89,7 +91,7 @@ def get_ill_image_window_1():
         image_dtypes={
             'image': tf.float32,
             'label': tf.float32},
-        data_param={
+        window_sizes={
             'modality1': ParserNamespace(spatial_window_size=(10, 10)),
             'modality2': ParserNamespace(spatial_window_size=(10, 10)),
             'modality3': ParserNamespace(spatial_window_size=())}
@@ -106,29 +108,29 @@ def get_ill_image_window_2():
             'label': (192, 160, 192, 1, 1)},
         image_dtypes={
             'image': tf.float32},
-        data_param={
+        window_sizes={
             'modality1': ParserNamespace(spatial_window_size=(10, 10)),
             'modality2': ParserNamespace(spatial_window_size=(10, 10)),
             'modality3': ParserNamespace(spatial_window_size=())}
     )
 
 
-def get_ill_image_window_3():
-    return dict(
-        source_names={
-            'image': (u'modality1', u'modality2'),
-            'label': (u'modality3',)},
-        image_shapes={
-            'image': (192, 160, 192, 1, 2),
-            'label': (192, 160, 192, 1, 1)},
-        image_dtypes={
-            'image': tf.float32},
-        data_param={
-            'modality1': ParserNamespace(spatial_window_size=(10, 10)),
-            'modality2': ParserNamespace(spatial_window_size=(10, 10)),
-            'modality3': ParserNamespace(spatial_window_size=())}
-
-    )
+# def get_ill_image_window_3():
+#    return dict(
+#        source_names={
+#            'image': (u'modality1', u'modality2'),
+#            'label': (u'modality3',)},
+#        image_shapes={
+#            'image': (192, 160, 192, 1, 2),
+#            'label': (192, 160, 192, 1, 1)},
+#        image_dtypes={
+#            'image': tf.float32},
+#        data_param={
+#            'modality1': ParserNamespace(spatial_window_size=(10, 10)),
+#            'modality2': ParserNamespace(spatial_window_size=(10, 10)),
+#            'modality3': ParserNamespace(spatial_window_size=())}
+#
+#    )
 
 
 class ImageWindowTest(tf.test.TestCase):
@@ -136,40 +138,40 @@ class ImageWindowTest(tf.test.TestCase):
         window = ImageWindow.from_data_reader_properties(
             **get_static_window_param())
         self.assertAllEqual(
-            window.placeholders_dict(1)['image'].get_shape().as_list(),
+            window.placeholders_dict(1)['image'].shape.as_list(),
             [1, 10, 10, 2, 1, 2])
         self.assertAllEqual(
-            window.placeholders_dict(1)['label'].get_shape().as_list(),
+            window.placeholders_dict(1)['label'].shape.as_list(),
             [1, 5, 5, 1, 1, 1])
 
         window = ImageWindow.from_data_reader_properties(
             **get_dynamic_image_window())
         self.assertAllEqual(
-            window.placeholders_dict(1)['image'].get_shape().as_list(),
+            window.placeholders_dict(1)['image'].shape.as_list(),
             [1, 10, 10, None, 1, 2])
         self.assertAllEqual(
-            window.placeholders_dict(1)['label'].get_shape().as_list(),
+            window.placeholders_dict(1)['label'].shape.as_list(),
             [1, 2, None, None, 1, 1])
 
         window = ImageWindow.from_data_reader_properties(
             **get_all_dynamic_image_window())
         self.assertAllEqual(
-            window.placeholders_dict(1)['image'].get_shape().as_list(),
+            window.placeholders_dict(1)['image'].shape.as_list(),
             [1, None, None, None, 1, 2])
         self.assertAllEqual(
-            window.placeholders_dict(1)['label'].get_shape().as_list(),
+            window.placeholders_dict(1)['label'].shape.as_list(),
             [1, None, None, None, 1, 1])
 
     def test_ill_cases(self):
-        with self.assertRaisesRegexp(TypeError, ""):
+        with self.assertRaisesRegexp(ValueError, ""):
             ImageWindow.from_data_reader_properties(
                 **get_ill_image_window())
 
-        with self.assertRaisesRegexp(TypeError, ""):
+        with self.assertRaisesRegexp(ValueError, ""):
             ImageWindow.from_data_reader_properties(
                 **get_ill_image_window_1())
 
-        with self.assertRaisesRegexp(TypeError, ""):
+        with self.assertRaisesRegexp(ValueError, ""):
             ImageWindow.from_data_reader_properties(
                 **get_ill_image_window_2())
 
@@ -199,25 +201,25 @@ class ImageWindowTest(tf.test.TestCase):
         window.placeholders_dict(10)
 
         self.assertAllEqual(
-            window.image_data_placeholder('image').get_shape().as_list(),
+            window.image_data_placeholder('image').shape.as_list(),
             [10, 10, 10, 2, 1, 2])
         self.assertAllEqual(
             window.image_data_placeholder('image').dtype,
-            window.dtypes['image'])
+            window.tf_dtypes['image'])
         self.assertAllEqual(
-            window.coordinates_placeholder('image').get_shape().as_list(),
+            window.coordinates_placeholder('image').shape.as_list(),
             [10, 7])
         self.assertAllEqual(
             window.coordinates_placeholder('image').dtype, tf.int32)
 
         self.assertAllEqual(
-            window.image_data_placeholder('label').get_shape().as_list(),
+            window.image_data_placeholder('label').shape.as_list(),
             [10, 5, 5, 1, 1, 1])
         self.assertAllEqual(
             window.image_data_placeholder('label').dtype,
-            window.dtypes['label'])
+            window.tf_dtypes['label'])
         self.assertAllEqual(
-            window.coordinates_placeholder('label').get_shape().as_list(),
+            window.coordinates_placeholder('label').shape.as_list(),
             [10, 7])
         self.assertAllEqual(
             window.coordinates_placeholder('label').dtype, tf.int32)
@@ -227,25 +229,25 @@ class ImageWindowTest(tf.test.TestCase):
         window.placeholders_dict(10)
 
         self.assertAllEqual(
-            window.image_data_placeholder('image').get_shape().as_list(),
+            window.image_data_placeholder('image').shape.as_list(),
             [1, 10, 10, None, 1, 2])
         self.assertAllEqual(
             window.image_data_placeholder('image').dtype,
-            window.dtypes['image'])
+            window.tf_dtypes['image'])
         self.assertAllEqual(
-            window.coordinates_placeholder('image').get_shape().as_list(),
+            window.coordinates_placeholder('image').shape.as_list(),
             [1, 7])
         self.assertAllEqual(
             window.coordinates_placeholder('image').dtype, tf.int32)
 
         self.assertAllEqual(
-            window.image_data_placeholder('label').get_shape().as_list(),
+            window.image_data_placeholder('label').shape.as_list(),
             [1, 2, None, None, 1, 1])
         self.assertAllEqual(
             window.image_data_placeholder('label').dtype,
-            window.dtypes['label'])
+            window.tf_dtypes['label'])
         self.assertAllEqual(
-            window.coordinates_placeholder('label').get_shape().as_list(),
+            window.coordinates_placeholder('label').shape.as_list(),
             [1, 7])
         self.assertAllEqual(
             window.coordinates_placeholder('label').dtype, tf.int32)
@@ -255,25 +257,25 @@ class ImageWindowTest(tf.test.TestCase):
         window.placeholders_dict(10)
 
         self.assertAllEqual(
-            window.image_data_placeholder('image').get_shape().as_list(),
+            window.image_data_placeholder('image').shape.as_list(),
             [1, None, None, None, 1, 2])
         self.assertAllEqual(
             window.image_data_placeholder('image').dtype,
-            window.dtypes['image'])
+            window.tf_dtypes['image'])
         self.assertAllEqual(
-            window.coordinates_placeholder('image').get_shape().as_list(),
+            window.coordinates_placeholder('image').shape.as_list(),
             [1, 7])
         self.assertAllEqual(
             window.coordinates_placeholder('image').dtype, tf.int32)
 
         self.assertAllEqual(
-            window.image_data_placeholder('label').get_shape().as_list(),
+            window.image_data_placeholder('label').shape.as_list(),
             [1, None, None, None, 1, 1])
         self.assertAllEqual(
             window.image_data_placeholder('label').dtype,
-            window.dtypes['label'])
+            window.tf_dtypes['label'])
         self.assertAllEqual(
-            window.coordinates_placeholder('label').get_shape().as_list(),
+            window.coordinates_placeholder('label').shape.as_list(),
             [1, 7])
         self.assertAllEqual(
             window.coordinates_placeholder('label').dtype, tf.int32)
@@ -284,30 +286,30 @@ class ImageWindowTest(tf.test.TestCase):
             **get_static_window_param())
         window.placeholders_dict(10)
         window.set_spatial_shape(new_shape)
-        self.assertAllClose(window.shapes['image'], (42, 43, 44, 1, 2))
-        self.assertAllClose(window.shapes['label'], (42, 43, 44, 1, 1))
+        self.assertAllClose(window.shapes['image'], (10, 42, 43, 44, 1, 2))
+        self.assertAllClose(window.shapes['label'], (10, 42, 43, 44, 1, 1))
         window.placeholders_dict(10)
 
         self.assertAllEqual(
-            window.image_data_placeholder('image').get_shape().as_list(),
+            window.image_data_placeholder('image').shape.as_list(),
             [10, 42, 43, 44, 1, 2])
         self.assertAllEqual(
             window.image_data_placeholder('image').dtype,
-            window.dtypes['image'])
+            window.tf_dtypes['image'])
         self.assertAllEqual(
-            window.coordinates_placeholder('image').get_shape().as_list(),
+            window.coordinates_placeholder('image').shape.as_list(),
             [10, 7])
         self.assertAllEqual(
             window.coordinates_placeholder('image').dtype, tf.int32)
 
         self.assertAllEqual(
-            window.image_data_placeholder('label').get_shape().as_list(),
+            window.image_data_placeholder('label').shape.as_list(),
             [10, 42, 43, 44, 1, 1])
         self.assertAllEqual(
             window.image_data_placeholder('label').dtype,
-            window.dtypes['label'])
+            window.tf_dtypes['label'])
         self.assertAllEqual(
-            window.coordinates_placeholder('label').get_shape().as_list(),
+            window.coordinates_placeholder('label').shape.as_list(),
             [10, 7])
         self.assertAllEqual(
             window.coordinates_placeholder('label').dtype, tf.int32)

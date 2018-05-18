@@ -15,7 +15,8 @@ def default_w_initializer():
     def _initializer(shape, dtype, partition_info):
         stddev = np.sqrt(2.0 / np.prod(shape[:-1]))
         from tensorflow.python.ops import random_ops
-        return random_ops.truncated_normal(shape, 0.0, stddev, dtype=tf.float32)
+        return random_ops.truncated_normal(
+            shape, 0.0, stddev, dtype=tf.float32)
         # return tf.truncated_normal_initializer(
         #    mean=0.0, stddev=stddev, dtype=tf.float32)
 
@@ -30,12 +31,12 @@ class FCLayer(TrainableLayer):
     """
     This class defines a simple fully connected layer with
     an optional bias term.
-    Please consider `FullyConnectedLayer` if batch_norm and activation
+    Please consider ``FullyConnectedLayer`` if batch_norm and activation
     are also used.
     """
 
     def __init__(self,
-                 n_output_nodes,
+                 n_output_chns,
                  with_bias=True,
                  w_initializer=None,
                  w_regularizer=None,
@@ -44,7 +45,7 @@ class FCLayer(TrainableLayer):
                  name='fc'):
         super(FCLayer, self).__init__(name=name)
 
-        self.n_output_nodes = n_output_nodes
+        self.n_output_chns = n_output_chns
         self.with_bias = with_bias
 
         self.initializers = {
@@ -54,12 +55,16 @@ class FCLayer(TrainableLayer):
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
     def layer_op(self, input_tensor):
-        input_shape = input_tensor.get_shape().as_list()
+        input_shape = input_tensor.shape.as_list()
+        if len(input_shape) > 2:
+            batch_size = input_shape[0]
+            input_tensor = tf.reshape(input_tensor, [batch_size, -1])
+            input_shape = input_tensor.shape.as_list()
         n_input_chns = input_shape[-1]
 
         # initialize weight matrix and then apply
         weight_matrix = tf.get_variable(
-            'w', shape=[n_input_chns, self.n_output_nodes],
+            'w', shape=[n_input_chns, self.n_output_chns],
             initializer=self.initializers['w'],
             regularizer=self.regularizers['w'])
         output_tensor = tf.matmul(input_tensor,
@@ -70,25 +75,27 @@ class FCLayer(TrainableLayer):
 
         # adding the bias term
         bias_term = tf.get_variable(
-            'b', shape=self.n_output_nodes,
+            'b', shape=self.n_output_chns,
             initializer=self.initializers['b'],
             regularizer=self.regularizers['b'])
-        output_tensor = tf.nn.bias_add(output_tensor, bias_term,
-                                       name='add_bias')
+        output_tensor = tf.nn.bias_add(
+            output_tensor, bias_term, name='add_bias')
         return output_tensor
 
 
 class FullyConnectedLayer(TrainableLayer):
     """
-    This class defines a composite layer with optional components:
+    This class defines a composite layer with optional components::
+
         fully connected layer -> batch_norm -> activation -> dropout
+
     The b_initializer and b_regularizer are applied to the FCLayer
     The w_initializer and w_regularizer are applied to the FCLayer,
     the batch normalisation layer, and the activation layer (for 'prelu')
     """
 
     def __init__(self,
-                 n_output_nodes,
+                 n_output_chns,
                  with_bias=True,
                  with_bn=True,
                  acti_func=None,
@@ -110,7 +117,7 @@ class FullyConnectedLayer(TrainableLayer):
         super(FullyConnectedLayer, self).__init__(name=self.layer_name)
 
         # for FCLayer
-        self.n_output_nodes = n_output_nodes
+        self.n_output_chns = n_output_chns
         self.with_bias = with_bias
 
         # for BNLayer
@@ -124,7 +131,7 @@ class FullyConnectedLayer(TrainableLayer):
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
     def layer_op(self, input_tensor, is_training=None, keep_prob=None):
-        fc_layer = FCLayer(n_output_nodes=self.n_output_nodes,
+        fc_layer = FCLayer(n_output_chns=self.n_output_chns,
                            with_bias=self.with_bias,
                            w_initializer=self.initializers['w'],
                            w_regularizer=self.regularizers['w'],

@@ -19,9 +19,9 @@ def selu(x, name):
     return scale * tf.where(x >= 0.0, x, alpha * tf.nn.elu(x))
 
 
-def leakyRelu(x, name):
-    alpha = 0.01
-    return tf.maximum(alpha * x, x, name)
+def leaky_relu(x, name):
+    half_alpha = 0.01
+    return (0.5 + half_alpha) * x + (0.5 - half_alpha) * abs(x)
 
 
 SUPPORTED_OP = {'relu': tf.nn.relu,
@@ -33,7 +33,7 @@ SUPPORTED_OP = {'relu': tf.nn.relu,
                 'tanh': tf.nn.tanh,
                 'prelu': prelu,
                 'selu': selu,
-                'leakyrelu': leakyRelu,
+                'leakyrelu': leaky_relu,
                 'dropout': tf.nn.dropout}
 
 
@@ -58,7 +58,7 @@ class ActiLayer(TrainableLayer):
         func_ = look_up_operations(self.func, SUPPORTED_OP)
         if self.func == 'prelu':
             alphas = tf.get_variable(
-                'alpha', input_tensor.get_shape()[-1],
+                'alpha', input_tensor.shape[-1],
                 initializer=self.initializers['alpha'],
                 regularizer=self.regularizers['alpha'])
             output_tensor = func_(input_tensor, alphas)

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function
 
 
 def get_niftynet_version_string():
@@ -40,20 +42,36 @@ def get_niftynet_version():
 
 
 def get_niftynet_git_version():
-    """Return a version string based on the git repository, conforming to PEP440"""
-
+    """
+    Return a version string based on the git repository,
+    conforming to PEP440
+    """
+    
+    import os
     from subprocess import check_output
 
     # Describe the version relative to last tag
     command_git = ['git', 'describe', '--match', 'v[0-9]*']
-    version_buf = check_output(command_git, stderr=open('/dev/null', 'w')).rstrip()
+    version_buf = check_output(command_git,
+                               stderr=open(os.devnull, 'w')).rstrip()
 
     # Exclude the 'v' for PEP440 conformity, see
     # https://www.python.org/dev/peps/pep-0440/#public-version-identifiers
     version_buf = version_buf[1:]
 
     # Split the git describe output, as it may not be a tagged commit
-    tokens = version_buf.split('-')
+    try:
+        # converting if string returned as bytes object
+        # (not Unicode str object)
+        version_buf = version_buf.decode('utf-8')
+    except AttributeError:
+        pass
+
+    try:
+        tokens = version_buf.split('-')
+    except TypeError:
+        tokens = ['unknown token']
+
     if len(tokens) > 1:  # not a tagged commit
         # Format a developmental release identifier according to PEP440, see:
         # https://www.python.org/dev/peps/pep-0440/#developmental-releases

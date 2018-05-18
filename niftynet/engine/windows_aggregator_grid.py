@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 windows aggregator decode sampling grid coordinates and image id from
-batch data, forms image level output and write to hard drive
+batch data, forms image level output and write to hard drive.
 """
 from __future__ import absolute_import, print_function, division
 
@@ -20,20 +20,22 @@ class GridSamplesAggregator(ImageWindowsAggregator):
     """
     This class keeps record of the currently cached image,
     initialised as all zeros, and the values are replaced
-    by image window data decoded from batch
+    by image window data decoded from batch.
     """
     def __init__(self,
                  image_reader,
                  name='image',
                  output_path=os.path.join('.', 'output'),
                  window_border=(),
-                 interp_order=0):
-        ImageWindowsAggregator.__init__(self, image_reader=image_reader)
+                 interp_order=0,
+                 prefix='_niftynet_out'):
+        ImageWindowsAggregator.__init__(
+            self, image_reader=image_reader, output_path=output_path)
         self.name = name
         self.image_out = None
-        self.output_path = os.path.abspath(output_path)
         self.window_border = window_border
         self.output_interp_order = interp_order
+        self.prefix = prefix
 
     def decode_batch(self, window, location):
         n_samples = location.shape[0]
@@ -78,11 +80,12 @@ class GridSamplesAggregator(ImageWindowsAggregator):
             if isinstance(layer, DiscreteLabelNormalisationLayer):
                 self.image_out, _ = layer.inverse_op(self.image_out)
         subject_name = self.reader.get_subject_id(self.image_id)
-        filename = "{}_niftynet_out.nii.gz".format(subject_name)
+        filename = "{}{}.nii.gz".format(subject_name, self.prefix)
         source_image_obj = self.input_image[self.name]
         misc_io.save_data_array(self.output_path,
                                 filename,
                                 self.image_out,
                                 source_image_obj,
                                 self.output_interp_order)
+        self.log_inferred(subject_name, filename)
         return

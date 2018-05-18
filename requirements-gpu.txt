@@ -1,8 +1,9 @@
 six>=1.10
 nibabel>=2.1.0
-numpy>=1.11
+numpy>=1.12
 scipy>=0.18
 configparser
-tensorflow-gpu==1.2
-pillow
+tensorflow-gpu==1.7
 pandas
+pillow
+blinker

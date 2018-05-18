@@ -1,8 +1,8 @@
 # Freehand Ultrasound Image Simulation with Spatially-Conditioned Generative Adversarial Networks
 
-This page describes how to acquire and use the network described in 
+This page describes how to acquire and use the network described in
 
-Yipeng Hu1, Eli Gibson, Li-Lin Lee, Weidi Xie, Dean C. Barratt, Tom Vercauteren, J. Alison Noble
+Yipeng Hu, Eli Gibson, Li-Lin Lee, Weidi Xie, Dean C. Barratt, Tom Vercauteren, J. Alison Noble
 (2017). [Freehand Ultrasound Image Simulation with Spatially-Conditioned Generative Adversarial Networks](https://arxiv.org/abs/1707.05392), In MICCAI RAMBO 2017
 
 ## Downloading model zoo file and conditioning data

@@ -1,28 +1,30 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 
 from niftynet.layer.base_layer import TrainableLayer
+from niftynet.layer.layer_util import infer_spatial_rank
 import numpy
 
 """
 Re-implementation of [1] for volumetric image processing.
 
 
-[1] Zheng, Shuai, et al. "Conditional random names as recurrent neural networks." 
-CVPR 2015.
+[1] Zheng, Shuai, et al. "Conditional random fields as recurrent neural networks."
+CVPR 2015. https://arxiv.org/abs/1502.03240
 """
 
 def permutohedral_prepare(position_vectors):
-    batch_size = int(position_vectors.get_shape()[0])
-    nCh=int(position_vectors.get_shape()[-1])
-    nVoxels=int(position_vectors.get_shape().num_elements())//batch_size//nCh
+    batch_size = int(position_vectors.shape[0])
+    nCh=int(position_vectors.shape[-1])
+    nVoxels=int(position_vectors.shape.num_elements())//batch_size//nCh
     # reshaping batches and voxels into one dimension means we can use 1D gather and hashing easily
     position_vectors=tf.reshape(position_vectors,[-1,nCh])
 
     ## Generate position vectors in lattice space
     x=position_vectors/(numpy.sqrt(2./3.)*(nCh+1))
-    
+
     # Embed in lattice space using black magic from the permutohedral paper
     alpha=lambda i:numpy.sqrt(float(i)/(float(i)+1.))
     Ex=[None]*(nCh+1)
@@ -40,10 +42,10 @@ def permutohedral_prepare(position_vectors):
     # Find the simplex we are in and store it in rank (where rank describes what position coorinate i has
     #in the sorted order of the features values)
     di=Ex-tf.to_float(rem0)
-    _,index=tf.nn.top_k(di,nCh+1,sorted=True) 
+    _,index=tf.nn.top_k(di,nCh+1,sorted=True)
     _,rank=tf.nn.top_k(-index,nCh+1,sorted=True) # This can be done more efficiently if necessary following the permutohedral paper
 
-    # if the point doesn't lie on the plane (sum != 0) bring it back 
+    # if the point doesn't lie on the plane (sum != 0) bring it back
     rank=tf.to_int32(rank)+sumV
     addMinusSub=tf.to_int32(rank<0)*(nCh+1)-tf.to_int32(rank>=nCh+1)*(nCh+1)
     rank=rank+addMinusSub
@@ -81,7 +83,7 @@ def permutohedral_prepare(position_vectors):
         fusedKeys=tf.boolean_mask(fusedKeys,tf.not_equal(fusedI64Keys,-1))
         fusedI64Keys=tf.boolean_mask(fusedI64Keys,tf.not_equal(fusedI64Keys,-1))
 
-    insertIndices = indextable.insert(fusedI64Keys,tf.expand_dims(tf.transpose(tf.range(1,tf.to_int64(tf.size(fusedI64Keys)+1),dtype=tf.int64)),1))                                
+    insertIndices = indextable.insert(fusedI64Keys,tf.expand_dims(tf.transpose(tf.range(1,tf.to_int64(tf.size(fusedI64Keys)+1),dtype=tf.int64)),1))
     blurNeighbours1=[None]*(nCh+1)
     blurNeighbours2=[None]*(nCh+1)
     indices=[None]*(nCh+1)
@@ -93,10 +95,10 @@ def permutohedral_prepare(position_vectors):
             batch_index=tf.reshape(tf.meshgrid(tf.range(batch_size),tf.zeros([nVoxels],dtype=tf.int32))[0],[-1,1])
             indices[dit] = tf.stack([tf.to_int32(indextable.lookup(i64keys[dit])),batch_index[:,0]],1) # where in the splat variable each simplex vertex is
     return barycentric,blurNeighbours1,blurNeighbours2,indices
-        
+
 def permutohedral_compute(data_vectors,barycentric,blurNeighbours1,blurNeighbours2,indices,name,reverse):
     batch_size=tf.shape(data_vectors)[0]
-    numSimplexCorners=int(barycentric.get_shape()[-1])
+    numSimplexCorners=int(barycentric.shape[-1])
     nCh=numSimplexCorners-1
     nChData=tf.shape(data_vectors)[-1]
     data_vectors = tf.reshape(data_vectors,[-1,nChData])
@@ -139,22 +141,22 @@ def permutohedral_compute(data_vectors,barycentric,blurNeighbours1,blurNeighbour
     return sliced
 
 # Differentiation can be done using permutohedral lattice with gaussion filter order reversed
-# To get this to work with automatic differentiation we use a hack attributed to Sergey Ioffe 
+# To get this to work with automatic differentiation we use a hack attributed to Sergey Ioffe
 # mentioned here: http://stackoverflow.com/questions/36456436/how-can-i-define-only-the-gradient-for-a-tensorflow-subgraph/36480182
 
 # Define custom py_func which takes also a grad op as argument: from https://gist.github.com/harpone/3453185b41d8d985356cbe5e57d67342
 def py_func(func, inp, Tout, stateful=True, name=None, grad=None):
-    
+
     # Need to generate a unique name to avoid duplicates:
     rnd_name = 'PyFuncGrad' + str(numpy.random.randint(0, 1E+8))
-    
+    print(rnd_name)
     tf.RegisterGradient(rnd_name)(grad)  # see _MySquareGrad for grad example
     g = tf.get_default_graph()
     with g.gradient_override_map({"PyFunc": rnd_name}):
         return tf.py_func(func, inp, Tout, stateful=stateful, name=name)
 
 def gradientStub(data_vectors,barycentric,blurNeighbours1,blurNeighbours2,indices,name):
-# This is a stub operator whose purpose is to allow us to overwrite the gradient. 
+# This is a stub operator whose purpose is to allow us to overwrite the gradient.
 # The forward pass gives zeros and the backward pass gives the correct gradients for the permutohedral_compute function
     return py_func(lambda data_vectors,barycentric,blurNeighbours1,blurNeighbours2,indices: data_vectors*0,
                         [data_vectors,barycentric,blurNeighbours1,blurNeighbours2,indices],
@@ -166,11 +168,11 @@ def gradientStub(data_vectors,barycentric,blurNeighbours1,blurNeighbours2,indice
 def permutohedral_gen(permutohedral, data_vectors,name):
     barycentric,blurNeighbours1,blurNeighbours2,indices=permutohedral
     return gradientStub(data_vectors,barycentric,blurNeighbours1,blurNeighbours2,indices,name)+ tf.stop_gradient(tf.reshape(permutohedral_compute(data_vectors,barycentric,blurNeighbours1,blurNeighbours2,indices,name,reverse=False),data_vectors.get_shape()))
-    
-    
+
+
 def ftheta(U,H1,permutohedrals,mu,kernel_weights, aspect_ratio,name):
-    nCh=U.get_shape().as_list()[-1]
-    batch_size=int(U.get_shape()[0])
+    nCh=U.shape.as_list()[-1]
+    batch_size=int(U.shape[0])
     # Message Passing
     data=tf.reshape(tf.nn.softmax(H1),[batch_size,-1,nCh])
     Q1=[None]*len(permutohedrals)
@@ -180,7 +182,13 @@ def ftheta(U,H1,permutohedrals,mu,kernel_weights, aspect_ratio,name):
     # Weighting Filter Outputs
     Q2=tf.add_n([Q1*w for Q1,w in zip(Q1,kernel_weights)])
     # Compatibility Transform
-    Q3=tf.nn.conv3d(Q2,mu,strides=[1,1,1,1,1],padding='SAME')
+    spatial_dim = infer_spatial_rank(U)
+    if spatial_dim == 2:
+      Q3=tf.nn.conv2d(Q2,mu,strides=[1,1,1,1],padding='SAME')
+    elif spatial_dim == 3:
+      Q3=tf.nn.conv3d(Q2,mu,strides=[1,1,1,1,1],padding='SAME')
+    else:
+        raise NotImplementedError('CRFAsRNNLayer is only implemented for 2d and 3d images.')
     # Adding Unary Potentials
     Q4=U-Q3
     # Normalizing
@@ -188,17 +196,17 @@ def ftheta(U,H1,permutohedrals,mu,kernel_weights, aspect_ratio,name):
 
 class CRFAsRNNLayer(TrainableLayer):
     """
-    This class defines a layer implementing CRFAsRNN described in [1] using 
+    This class defines a layer implementing CRFAsRNN described in [1] using
     a bilateral and a spatial kernel as in [2].
     Essentially, this layer smooths its input based on a distance in a feature
     space comprising spatial and feature dimensions.
     [1] Zheng, Shuai, et al. "Conditional random names as recurrent neural networks." CVPR 2015.
     [2] https://arxiv.org/pdf/1210.5644.pdf
     """
-    def __init__(self,alpha=5.,beta=5.,gamma=5.,T=5,aspect_ratio=[1.,1.,1.], name="crf_as_rnn"):
+    def __init__(self,alpha=5.,beta=5.,gamma=5.,T=5,aspect_ratio=None, name="crf_as_rnn"):
       """
-      Parameters: 
-      alpha:        bandwidth for spatial coordinates in bilateral kernel. 
+      Parameters:
+      alpha:        bandwidth for spatial coordinates in bilateral kernel.
                       Higher values cause more spatial blurring
       beta:         bandwidth for feature coordinates in bilateral kernel
                       Higher values cause more feature blurring
@@ -220,26 +228,31 @@ class CRFAsRNNLayer(TrainableLayer):
       Parameters:
         I: feature maps defining the non-spatial dimensions within which smoothing is performed
            For example, to smooth U within regions of similar intensity this would be the
-           image intensity 
+           image intensity
         U: activation maps to smooth
       """
-      batch_size=int(U.get_shape()[0])
+      spatial_dim = infer_spatial_rank(U)
+      if self._aspect_ratio is None:
+          self._aspect_ratio = [1.] * spatial_dim
+          
+      batch_size=int(U.shape[0])
       H1=[U]
       # Build permutohedral structures for smoothing
-      coords=tf.tile(tf.expand_dims(tf.stack(tf.meshgrid(*[numpy.array(range(int(i)),dtype=numpy.float32)*a for i,a in zip(U.get_shape()[1:4],self._aspect_ratio)]),3),0),[batch_size,1,1,1,1])
-      bilateralCoords =tf.reshape(tf.concat([coords/self._alpha,I/self._beta],4),[batch_size,-1,int(I.get_shape()[-1])+3])
-      spatialCoords=tf.reshape(coords/self._gamma,[batch_size,-1,3])
+      coords=tf.tile(tf.expand_dims(tf.stack(tf.meshgrid(*[numpy.array(range(int(i)),dtype=numpy.float32)*a for i,a in zip(U.shape[1:spatial_dim+1],self._aspect_ratio)],indexing='ij'),spatial_dim),0),[batch_size]+[1]*spatial_dim+[1])
+      print(coords.shape, I.shape)
+      bilateralCoords =tf.reshape(tf.concat([coords/self._alpha,I/self._beta],-1),[batch_size,-1,int(I.shape[-1])+spatial_dim])
+      spatialCoords=tf.reshape(coords/self._gamma,[batch_size,-1,spatial_dim])
       kernel_coords=[bilateralCoords,spatialCoords]
       permutohedrals = [permutohedral_prepare(coords) for coords in kernel_coords]
 
-      nCh=U.get_shape()[-1]
-      mu = tf.get_variable('Compatibility',initializer=tf.constant(numpy.reshape(numpy.eye(nCh),[1,1,1,nCh,nCh]),dtype=tf.float32))
-      kernel_weights = [tf.get_variable("FilterWeights"+str(idx), shape=[1,1,1,1,nCh], initializer=tf.zeros_initializer()) for idx,k in enumerate(permutohedrals)]
-    
+      nCh=U.shape[-1]
+      mu = tf.get_variable('Compatibility',initializer=tf.constant(numpy.reshape(numpy.eye(nCh),[1]*spatial_dim+[nCh,nCh]),dtype=tf.float32))
+      kernel_weights = [tf.get_variable("FilterWeights"+str(idx), shape=[1]*spatial_dim+[1,nCh], initializer=tf.zeros_initializer()) for idx,k in enumerate(permutohedrals)]
+
       for t in range(self._T):
         H1.append(ftheta(U,H1[-1],permutohedrals,mu,kernel_weights, aspect_ratio=self._aspect_ratio,name=self._name+str(t)))
       return H1[-1]
-    
 
-    
-    
+
+
+

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-windows aggregator saves each item in a batch output as an image
+windows aggregator saves each item in a batch output as an image.
 """
 from __future__ import absolute_import, print_function, division
 
@@ -14,31 +14,42 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
     """
     This class saves each item in a batch output to images,
     the output filenames can be defined in three ways:
+
         1. location is None (input image from a random distribution):
-            a uuid is generated as output filename
+        a uuid is generated as output filename.
+
         2. the length of the location array is 2:
-            (indicates output image is from an
-            interpolation of two input images):
-            location[batch_id, 0] is used as a base_name,
-            location[batch_id, 0] is used as a relative_id
-            output file name is "{}_{}"%(base_name, relative_id)
-        3. the length of the locaiton array is greater than 2:
-            (indicates output image is from single input image)
-            location[batch_id, 0] is used as the file_name
+        (indicates output image is from an
+        interpolation of two input images):
+
+                - ``location[batch_id, 0]`` is used as a ``base_name``,
+                - ``location[batch_id, 0]`` is used as a ``relative_id``
+
+        output file name is ``"{}_{}"%(base_name, relative_id)``.
+
+        3. the length of the location array is greater than 2:
+        (indicates output image is from single input image)
+        ``location[batch_id, 0]`` is used as the file name
     """
     def __init__(self,
                  image_reader=None,
-                 output_path=os.path.join('.', 'output')):
-        ImageWindowsAggregator.__init__(self, image_reader=image_reader)
+                 output_path=os.path.join('.', 'output'),
+                 prefix='_niftynet_generated'):
+        ImageWindowsAggregator.__init__(
+            self, image_reader=image_reader, output_path=output_path)
         self.output_path = os.path.abspath(output_path)
+        self.inferred_csv = os.path.join(self.output_path, 'inferred.csv')
         self.output_id = {'base_name': None, 'relative_id': 0}
+        self.prefix = prefix
+        if os.path.exists(self.inferred_csv):
+            os.remove(self.inferred_csv)
 
     def _decode_subject_name(self, location=None):
         if self.reader:
             image_id = int(location)
             return self.reader.get_subject_id(image_id)
         import uuid
-        return uuid.uuid4()
+        return str(uuid.uuid4())
 
     def decode_batch(self, window, location=None):
         if location is not None:
@@ -74,6 +85,9 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
     def _save_current_image(self, idx, filename, image):
         if image is None:
             return
-        uniq_name = "{}_{}_niftynet_generated.nii.gz".format(idx, filename)
+        uniq_name = "{}_{}{}.nii.gz".format(idx, filename, self.prefix)
         misc_io.save_data_array(self.output_path, uniq_name, image, None)
+        with open(self.inferred_csv, 'a') as csv_file:
+            filename = os.path.join(self.output_path, filename)
+            csv_file.write('{},{}\n'.format(idx, uniq_name))
         return

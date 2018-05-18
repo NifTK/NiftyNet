@@ -7,8 +7,8 @@ from niftynet.layer import layer_util
 from niftynet.layer.base_layer import Layer
 from niftynet.utilities.util_common import look_up_operations
 
-SUPPORTED_OP = {'AVG', 'MAX', 'CONSTANT'}
-SUPPORTED_PADDING = {'SAME', 'VALID'}
+SUPPORTED_OP = set(['AVG', 'MAX', 'CONSTANT'])
+SUPPORTED_PADDING = set(['SAME', 'VALID'])
 
 
 class DownSampleLayer(Layer):

@@ -18,8 +18,8 @@ class RandomSpatialScalingLayer(RandomisedLayer):
     """
 
     def __init__(self,
-                 min_percentage=-10,
-                 max_percentage=10,
+                 min_percentage=-10.0,
+                 max_percentage=10.0,
                  name='random_spatial_scaling'):
         super(RandomSpatialScalingLayer, self).__init__(name=name)
         assert min_percentage < max_percentage
@@ -35,6 +35,8 @@ class RandomSpatialScalingLayer(RandomisedLayer):
         self._rand_zoom = (rand_zoom + 100.0) / 100.0
 
     def _apply_transformation(self, image, interp_order=3):
+        if interp_order < 0:
+            return image
         assert self._rand_zoom is not None
         full_zoom = np.array(self._rand_zoom)
         while len(full_zoom) < image.ndim:
