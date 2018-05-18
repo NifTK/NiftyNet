@@ -58,7 +58,7 @@ class RandomElasticDeformationLayer(RandomisedLayer):
     def randomise(self, image_dict):
         images = list(image_dict.values())
         equal_shapes = np.all(
-            [images[0].shape == image.shape for image in images])
+            [images[0].shape[:self.spatial_rank] == image.shape[:self.spatial_rank] for image in images])
         if equal_shapes and self.proportion_to_augment >= 0:
             self._randomise_bspline_transformation(images[0].shape)
         else:
