@@ -80,12 +80,14 @@ testjob:
     # check whether version command works
     # Git-clone:
     - python net_segment.py --version 2>&1 | grep -E 'NiftyNet.*version.*untagged'
+    - python -c 'import niftynet; print(niftynet.__version__)' | grep -E 'NiftyNet.*version.*untagged'
     # downloaded ZIP ball:
     - export check_version_zip=check_version_zip
     - mkdir $check_version_zip
     - git archive --format=tar HEAD | (cd $check_version_zip && tar xf -)
     - cd $check_version_zip
     - python net_segment.py --version 2>&1 | grep -E 'NiftyNet.*version.*unknown'
+    - python -c 'import niftynet; print(niftynet.__version__)' | grep -E 'NiftyNet.*version.*unknown'
     - cd ..
     - unset check_version_zip
 
@@ -347,6 +349,7 @@ pip-installer:
     - python $package_importer
     # check whether version command works
     - net_segment --version 2>&1 | grep -E 'NiftyNet.*version.*untagged'
+    - python -c 'import niftynet; print(niftynet.__version__)' | grep -E 'NiftyNet.*version.*untagged'
     # test niftynet command
     - net_download testing -r
 
@@ -487,6 +490,7 @@ pip-camera-ready:
     - pip install -r requirements-gpu.txt
     - pip install $niftynet_wheel
     - net_segment --version 2>&1 | grep -E 'NiftyNet.*version'
+    - python -c 'import niftynet; print(niftynet.__version__)' | grep -E 'NiftyNet.*version'
     - deactivate
     - rm -rf $check_version_venv
     # Finally do copy
