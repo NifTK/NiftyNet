@@ -417,6 +417,11 @@ class DenseFeatureStackBlock(TrainableLayer):
             stack.append(conv)
 
         if self.use_bdo:  # unmask the conv channels
+            # modify the returning stack by:
+            # 1. Removing the input of the DFS from the stack
+            # 2. Unmasking the stack by filling in zeros
+            # see: https://github.com/NifTK/NiftyNet/pull/101
+
             conv_channels = tf.concat(stack[1:], axis=-1)
 
             # insert a channel with zeros to be placed
@@ -430,7 +435,7 @@ class DenseFeatureStackBlock(TrainableLayer):
             indices = tf.cumsum(int_mask) * int_mask
             # rearrange stack with zeros where channels were not calculated
             conv_channels = tf.gather(conv_channels, indices, axis=-1)
-            stack = [input_tensor, conv_channels]
+            stack = [conv_channels]
 
         return stack
 
