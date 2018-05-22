@@ -78,7 +78,7 @@ class ClassificationApplication(BaseApplication):
                 reader.initialise(data_param, task_param, file_list)
                 self.readers.append(reader)
 
-        elif self.is_inference:  
+        elif self.is_inference:
             # in the inference process use image input only
             inference_reader = ImageReader(['image'])
             inference_reader.initialise(data_param, task_param, file_lists[0])
@@ -258,7 +258,9 @@ class ClassificationApplication(BaseApplication):
             else:
                 data_dict = switch_sampler(for_training=True)
             image = tf.cast(data_dict['image'], tf.float32)
-            net_out = self.net(image, is_training=self.is_training)
+            net_args = {'is_training': self.is_training,
+                        'keep_prob': self.net_param.keep_prob}
+            net_out = self.net(image, **net_args)
 
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
@@ -298,7 +300,9 @@ class ClassificationApplication(BaseApplication):
             # classification probabilities or argmax classification labels
             data_dict = switch_sampler(for_training=False)
             image = tf.cast(data_dict['image'], tf.float32)
-            net_out = self.net(image, is_training=self.is_training)
+            net_args = {'is_training': self.is_training,
+                        'keep_prob': self.net_param.keep_prob}
+            net_out = self.net(image, **net_args)
             print('net_out.shape may need to be resized:', net_out.shape)
             output_prob = self.classification_param.output_prob
             num_classes = self.classification_param.num_classes

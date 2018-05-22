@@ -307,7 +307,9 @@ class SegmentationApplication(BaseApplication):
                 data_dict = switch_sampler(for_training=True)
 
             image = tf.cast(data_dict['image'], tf.float32)
-            net_out = self.net(image, is_training=self.is_training)
+            net_args = {'is_training': self.is_training,
+                        'keep_prob': self.net_param.keep_prob}
+            net_out = self.net(image, **net_args)
 
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
@@ -361,7 +363,9 @@ class SegmentationApplication(BaseApplication):
             # classification probabilities or argmax classification labels
             data_dict = switch_sampler(for_training=False)
             image = tf.cast(data_dict['image'], tf.float32)
-            net_out = self.net(image, is_training=self.is_training)
+            net_args = {'is_training': self.is_training,
+                        'keep_prob': self.net_param.keep_prob}
+            net_out = self.net(image, **net_args)
 
             output_prob = self.segmentation_param.output_prob
             num_classes = self.segmentation_param.num_classes

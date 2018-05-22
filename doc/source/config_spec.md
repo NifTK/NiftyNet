@@ -239,6 +239,7 @@ If the string is a relative path, NiftyNet interpret this as relative to `model_
 - [volume_padding_size](#volume-padding-size) :: `integer array` :: `volume_padding_size=4, 4, 4` :: `0,0,0`
 - [window_sampling](#window-sampling) :: `string` :: `window_sampling=uniform` :: `uniform`
 - [queue_length](#queue-length) :: `integer` :: `queue_length=10` :: `5`
+- [keep_prob](#keep_prob) :: `non-negative float` :: `keep_prob=0.2` :: `0.5`
 
 ######  `name`
 A network class from [niftynet/network](./niftynet.network.html) or from user
@@ -287,7 +288,14 @@ The same amount of padding will be removed when before writing the output volume
 ###### `window_sampling`
 Type of sampler used to generate image windows from each image volume:
 - uniform: fixed size uniformly distributed,
+- weighted: fixed size where the likelihood of sampling a voxel is proportional to the cumulative intensity histogram,
+- balanced: fixed size where each label has the same probability of being sampled,
 - resize: resize image to the window size.
+
+For `weighted` and `balanced`, an input section is required to load sampling priors.
+As an [example in the demo folder](https://github.com/NifTK/NiftyNet/blob/v0.3.0/demos/PROMISE12/promise12_balanced_train_config.ini#L61),
+`sampler` parameter is set to `label`, indicating that the sampler uses `label`
+section as the sampling prior.
 
 ###### `queue_length`
 Integer specifies window buffer size used when sampling image windows from image volumes.
@@ -295,6 +303,21 @@ Image window samplers fill the buffer and networks read the buffer.
 Because the network reads [batch_size](#batch-size) windows at each iteration,
 this value is set to at least `batch_size * 2.5` to allow for a possible randomised buffer,
 i.e. `max(queue_length, round(batch_size * 2.5))`.
+
+###### `keep_prob`
+The probability that each element is kept if dropout is supported by the network.
+The default value is `0.5`, meaning randomly dropout at the ratio of 0.5.
+This is also used as a default value at inference stage.
+
+To achieve a deterministic inference, set `keep_prob=1`;
+to draw stochastic samples at inferece, set `keep_prob` to a value in between 0 and 1.
+
+In the case of drawing multiple Monte Carlo samples, the user can run the
+inference command mutiple times, with each time a different `save_seg_dir`, for
+example:
+
+`python net_segment.py inference ... --save_seg_dir run_2 --keep_prob 0.5`.
+
 
 
 ##### Volume-normalisation
