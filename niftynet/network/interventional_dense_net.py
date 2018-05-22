@@ -85,7 +85,8 @@ class INetDense(BaseNet):
                  fixed_image,
                  moving_image,
                  base_grid=None,
-                 is_training=True):
+                 is_training=True,
+                 **unused_kwargs):
         """
 
         :param fixed_image:

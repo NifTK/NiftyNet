@@ -46,7 +46,7 @@ class HighRes3DNet(BaseNet):
             {'name': 'conv_1', 'n_features': 80, 'kernel_size': 1},
             {'name': 'conv_2', 'n_features': num_classes, 'kernel_size': 1}]
 
-    def layer_op(self, images, is_training, layer_id=-1):
+    def layer_op(self, images, is_training=True, layer_id=-1, **unused_kwargs):
         assert layer_util.check_spatial_dims(
             images, lambda x: x % 8 == 0)
         # go through self.layers, create an instance of each layer

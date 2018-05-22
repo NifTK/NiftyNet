@@ -51,7 +51,11 @@ class INetAffine(BaseNet):
             'w_regularizer': regularizers.l2_regularizer(decay),
             'b_regularizer': None}
 
-    def layer_op(self, fixed_image, moving_image, is_training=True):
+    def layer_op(self,
+                 fixed_image,
+                 moving_image,
+                 is_training=True,
+                 **unused_kwargs):
         """
 
         :param fixed_image:

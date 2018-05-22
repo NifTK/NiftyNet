@@ -59,7 +59,6 @@ class DenseVNet(BaseNet):
 
     __hyper_params__ = dict(
         prior_size=12,
-        p_channels_selected=0.5,
         n_dense_channels=(4, 8, 16),
         n_seg_channels=(12, 24, 24),
         n_input_channels=(24, 24, 24),
@@ -173,7 +172,12 @@ class DenseVNet(BaseNet):
             raise NotImplementedError(
                 'Downsampling only supports 2D and 3D images')
 
-    def layer_op(self, input_tensor, is_training, layer_id=-1):
+    def layer_op(self,
+                 input_tensor,
+                 is_training=True,
+                 layer_id=-1,
+                 keep_prob=0.5,
+                 **unused_kwargs):
         hyper = self.hyperparameters
 
         # Initialize DenseVNet network layers
@@ -188,9 +192,6 @@ class DenseVNet(BaseNet):
         input_size = input_tensor.shape.as_list()
         spatial_size = input_size[1:-1]
         n_spatial_dims = input_tensor.shape.ndims - 2
-
-        # Quick access to hyperparams
-        pkeep = hyper['p_channels_selected']
 
         # Validate input dimension with dilation rates
         modulo = 2 ** (len(hyper['dilation_rates']))
@@ -241,7 +242,9 @@ class DenseVNet(BaseNet):
         # Process Dense VNet Blocks
         for dblock in net.dense_vblocks:
             # Get skip layer and activation output
-            skip, down = dblock(down, is_training=is_training, keep_prob=pkeep)
+            skip, down = dblock(down,
+                                is_training=is_training,
+                                keep_prob=keep_prob)
 
             # Resize skip layer to original shape and add VLink
             skip = image_resize(skip, output_shape)
@@ -389,7 +392,7 @@ class DenseFeatureStackBlock(TrainableLayer):
 
         return DenseFSBlockDesc(conv_layers=net_conv_layers)
 
-    def layer_op(self, input_tensor, is_training=None, keep_prob=None):
+    def layer_op(self, input_tensor, is_training=True, keep_prob=None):
         # Initialize FeatureStackBlocks
         block = self.create_block()
 
@@ -494,7 +497,7 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
         return DenseSDBlockDesc(dense_fstack=net_dense_fstack,
                                 conv=net_conv, down=net_down)
 
-    def layer_op(self, input_tensor, is_training=None, keep_prob=None):
+    def layer_op(self, input_tensor, is_training=True, keep_prob=None):
         # Current block model
         block = self.create_block()
 
