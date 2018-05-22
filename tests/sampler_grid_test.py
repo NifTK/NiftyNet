@@ -158,18 +158,18 @@ class GridSamplerTest(tf.test.TestCase):
             coordinator = tf.train.Coordinator()
             sampler.run_threads(sess, coordinator, num_threads=1)
             out = sess.run(sampler.pop_batch_op())
-            self.assertAllClose(out['image'].shape, (1, 8, 2, 256, 2))
+            self.assertAllClose(out['image'].shape, (10, 8, 2, 256, 2))
         sampler.close_all()
 
     def test_name_mismatch(self):
-        with self.assertRaisesRegexp(KeyError, ""):
+        with self.assertRaisesRegexp(ValueError, ""):
             sampler = GridSampler(reader=get_dynamic_window_reader(),
                                   data_param=MOD_2D_DATA,
                                   batch_size=10,
                                   spatial_window_size=None,
                                   window_border=(0, 0, 0),
                                   queue_length=10)
-        with self.assertRaisesRegexp(KeyError, ""):
+        with self.assertRaisesRegexp(ValueError, ""):
             sampler = GridSampler(reader=get_3d_reader(),
                                   data_param=MOD_2D_DATA,
                                   batch_size=10,

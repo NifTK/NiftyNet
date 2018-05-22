@@ -32,15 +32,16 @@ class WeightedSampler(UniformSampler):
                  data_param,
                  batch_size,
                  windows_per_image,
-                 queue_length=10):
+                 queue_length=10,
+                 name='weighted_sampler'):
         UniformSampler.__init__(self,
                                 reader=reader,
                                 data_param=data_param,
                                 batch_size=batch_size,
                                 windows_per_image=windows_per_image,
-                                queue_length=queue_length)
+                                queue_length=queue_length,
+                                name=name)
         tf.logging.info('Initialised weighted sampler window instance')
-        self.intensity_based_sampling = True
         self.window_centers_sampler = weighted_spatial_coordinates
 
 

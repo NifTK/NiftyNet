@@ -76,7 +76,7 @@ def register_image_loader(name, requires, min_version=None, auto_discover=True):
     return _wrapper
 
 
-def load_image_from_file(filename, loader=None):
+def load_image_obj(filename, loader=None):
     """
     Loads an image from a given loader or checking multiple loaders.
 
@@ -170,7 +170,7 @@ def imread_sitk(filename):
     return image2nibabel(img, affine=make_affine_from_sitk(simg))
 
 
-@register_image_loader('fake', requires='numpy', auto_discover=False)
+@register_image_loader('dummy', requires='numpy', auto_discover=False)
 def imread_numpy(filename=None):
     """Fake loader to load random data with numpy"""
     fake_img = np.random.randint(255, size=(100, 100, 3)).astype(np.uint8)
@@ -179,7 +179,7 @@ def imread_numpy(filename=None):
 
 
 tf.logging.info(
-    'Available Image Loaders: {}.'.format(list(AVAILABLE_LOADERS.keys())))
+    'Available Image Loaders:\n{}.'.format(list(AVAILABLE_LOADERS.keys())))
 
 
 ###############################################################################

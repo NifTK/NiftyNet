@@ -7,6 +7,7 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.engine.sampler_uniform import UniformSampler
+# from niftynet.contrib.dataset_sampler.sampler_uniform_v2 import UniformSampler
 from niftynet.engine.sampler_uniform import rand_spatial_coordinates
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
@@ -191,11 +192,11 @@ class UniformSamplerTest(tf.test.TestCase):
             coordinator = tf.train.Coordinator()
             sampler.run_threads(sess, coordinator, num_threads=2)
             out = sess.run(sampler.pop_batch_op())
-            self.assertAllClose(out['image'].shape, (1, 8, 2, 256, 2))
+            self.assertAllClose(out['image'].shape[1:], (8, 2, 256, 2))
         sampler.close_all()
 
     def test_ill_init(self):
-        with self.assertRaisesRegexp(KeyError, ""):
+        with self.assertRaisesRegexp(ValueError, ""):
             sampler = UniformSampler(reader=get_3d_reader(),
                                      data_param=MOD_2D_DATA,
                                      batch_size=2,

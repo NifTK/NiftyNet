@@ -27,10 +27,11 @@ class LinearInterpolateSampler(Layer, InputBatchQueueRunner):
                  data_param,
                  batch_size=10,
                  n_interpolations=10,
-                 queue_length=10):
+                 queue_length=10,
+                 name='linear_interpolation_sampler'):
         self.n_interpolations = n_interpolations
         self.reader = reader
-        Layer.__init__(self, name='input_buffer')
+        Layer.__init__(self, name=name)
         InputBatchQueueRunner.__init__(
             self,
             capacity=queue_length,

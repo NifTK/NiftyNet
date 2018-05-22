@@ -202,7 +202,7 @@ def add_input_data_args(parser):
         "--interp_order",
         type=int,
         choices=[0, 1, 2, 3],
-        default=3,
+        default=1,
         help="interpolation order of the input images")
 
     parser.add_argument(
@@ -368,6 +368,13 @@ def add_network_args(parser):
         help="Set the initializer for the bias parameters",
         type=str,
         default='zeros')
+
+    parser.add_argument(
+        "--keep_prob",
+        help="Probability that each element is kept "
+             "if dropout is supported by the network",
+        type=float,
+        default=1.0)
 
     yaml = require_module('yaml', mandatory=False)
     if yaml:

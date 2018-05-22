@@ -129,7 +129,7 @@ class VAE(TrainableLayer):
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
-    def layer_op(self, images, is_training):
+    def layer_op(self, images, is_training=True, **unused_kwargs):
 
         def clip(x):
             return tf.clip_by_value(x, self.logvars_lower_bound,

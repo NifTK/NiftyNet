@@ -44,7 +44,11 @@ class HolisticNet(BaseNet):
 
         # self.loss = LossFunction(num_classes, loss_type='Dice', decay=0.0)
 
-    def layer_op(self, input_tensor, is_training, layer_id=-1):
+    def layer_op(self,
+                 input_tensor,
+                 is_training=True,
+                 layer_id=-1,
+                 **unused_kwargs):
         layer_instances = []
         scores_instances = []
         first_conv_layer = ConvolutionalLayer(

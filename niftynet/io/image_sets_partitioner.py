@@ -20,7 +20,7 @@ from niftynet.engine.signal import TRAIN, VALID, INFER, ALL
 from niftynet.utilities.decorators import singleton
 from niftynet.utilities.filename_matching import KeywordsMatching
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
-from niftynet.utilities.util_common import look_up_operations, ParserNamespace
+from niftynet.utilities.util_common import look_up_operations
 from niftynet.utilities.util_csv import match_and_write_filenames_to_csv
 from niftynet.utilities.util_csv import write_csv
 
@@ -242,16 +242,16 @@ class ImageSetsPartitioner(object):
         # input data section must have a ``csv_file`` section for loading
         # or writing filename lists
         if isinstance(self.data_param[modality_name], dict):
-            mod_spec = ParserNamespace(**self.data_param[modality_name])
-        else:
             mod_spec = self.data_param[modality_name]
+        else:
+            mod_spec = vars(self.data_param[modality_name])
 
         #########################
         # guess the csv_file path
         #########################
         temp_csv_file = None
         try:
-            csv_file = os.path.expanduser(mod_spec.csv_file)
+            csv_file = os.path.expanduser(mod_spec.get('csv_file', None))
             if not os.path.isfile(csv_file):
                 # writing to the same folder as data_split_file
                 default_csv_file = os.path.join(
@@ -264,7 +264,7 @@ class ImageSetsPartitioner(object):
                 if os.path.isfile(csv_file):
                     tf.logging.info('Overwriting existing: "%s".', csv_file)
             csv_file = os.path.abspath(csv_file)
-        except (AttributeError, TypeError):
+        except (AttributeError, KeyError, TypeError):
             tf.logging.debug('`csv_file` not specified, writing the list of '
                              'filenames to a temporary file.')
             import tempfile
@@ -275,17 +275,16 @@ class ImageSetsPartitioner(object):
         #############################################
         # writing csv file if path_to_search specified
         ##############################################
-        if hasattr(mod_spec, 'path_to_search') and mod_spec.path_to_search:
+        if mod_spec.get('path_to_search', None):
             if not temp_csv_file:
                 tf.logging.info(
                     '[%s] search file folders, writing csv file %s',
                     modality_name, csv_file)
-            section_properties = mod_spec.__dict__.items()
             # grep files by section properties and write csv
             try:
-                matcher = KeywordsMatching.from_tuple(
-                    section_properties,
-                    self.default_image_file_location)
+                matcher = KeywordsMatching.from_dict(
+                    input_dict=mod_spec,
+                    default_folder=self.default_image_file_location)
                 match_and_write_filenames_to_csv([matcher], csv_file)
             except (IOError, ValueError) as reading_error:
                 tf.logging.warning('Ignoring input section: [%s], '

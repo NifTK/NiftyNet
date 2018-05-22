@@ -59,7 +59,6 @@ class DenseVNet(BaseNet):
 
     __hyper_params__ = dict(
         prior_size=12,
-        p_channels_selected=0.5,
         n_dense_channels=(4, 8, 16),
         n_seg_channels=(12, 24, 24),
         n_input_channels=(24, 24, 24),
@@ -173,7 +172,12 @@ class DenseVNet(BaseNet):
             raise NotImplementedError(
                 'Downsampling only supports 2D and 3D images')
 
-    def layer_op(self, input_tensor, is_training, layer_id=-1):
+    def layer_op(self,
+                 input_tensor,
+                 is_training=True,
+                 layer_id=-1,
+                 keep_prob=0.5,
+                 **unused_kwargs):
         hyper = self.hyperparameters
 
         # Initialize DenseVNet network layers
@@ -188,9 +192,6 @@ class DenseVNet(BaseNet):
         input_size = input_tensor.shape.as_list()
         spatial_size = input_size[1:-1]
         n_spatial_dims = input_tensor.shape.ndims - 2
-
-        # Quick access to hyperparams
-        pkeep = hyper['p_channels_selected']
 
         # Validate input dimension with dilation rates
         modulo = 2 ** (len(hyper['dilation_rates']))
@@ -241,7 +242,9 @@ class DenseVNet(BaseNet):
         # Process Dense VNet Blocks
         for dblock in net.dense_vblocks:
             # Get skip layer and activation output
-            skip, down = dblock(down, is_training=is_training, keep_prob=pkeep)
+            skip, down = dblock(down,
+                                is_training=is_training,
+                                keep_prob=keep_prob)
 
             # Resize skip layer to original shape and add VLink
             skip = image_resize(skip, output_shape)
@@ -389,13 +392,14 @@ class DenseFeatureStackBlock(TrainableLayer):
 
         return DenseFSBlockDesc(conv_layers=net_conv_layers)
 
-    def layer_op(self, input_tensor, is_training=None, keep_prob=None):
+    def layer_op(self, input_tensor, is_training=True, keep_prob=None):
         # Initialize FeatureStackBlocks
         block = self.create_block()
 
         stack = [input_tensor]
         channel_dim = len(input_tensor.shape) - 1
-        input_mask = tf.ones([input_tensor.shape.as_list()[-1]]) > 0
+        n_channels = input_tensor.shape.as_list()[-1]
+        input_mask = tf.ones([n_channels]) > 0
 
         # Stack all convolution outputs
         for idx, conv in enumerate(block.conv_layers):
@@ -414,6 +418,27 @@ class DenseFeatureStackBlock(TrainableLayer):
                             keep_prob=keep_prob)
 
             stack.append(conv)
+
+        if self.use_bdo:  # unmask the conv channels
+            # modify the returning stack by:
+            # 1. Removing the input of the DFS from the stack
+            # 2. Unmasking the stack by filling in zeros
+            # see: https://github.com/NifTK/NiftyNet/pull/101
+
+            conv_channels = tf.concat(stack[1:], axis=-1)
+
+            # insert a channel with zeros to be placed
+            # where channels were not calculated
+            zero_channel = tf.zeros(conv_channels.shape[:-1])
+            zero_channel = tf.expand_dims(zero_channel, axis=-1)
+            conv_channels = tf.concat([zero_channel, conv_channels], axis=-1)
+
+            # indices to keep
+            int_mask = tf.cast(input_mask[n_channels:], tf.int32)
+            indices = tf.cumsum(int_mask) * int_mask
+            # rearrange stack with zeros where channels were not calculated
+            conv_channels = tf.gather(conv_channels, indices, axis=-1)
+            stack = [conv_channels]
 
         return stack
 
@@ -472,7 +497,7 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
         return DenseSDBlockDesc(dense_fstack=net_dense_fstack,
                                 conv=net_conv, down=net_down)
 
-    def layer_op(self, input_tensor, is_training=None, keep_prob=None):
+    def layer_op(self, input_tensor, is_training=True, keep_prob=None):
         # Current block model
         block = self.create_block()
 

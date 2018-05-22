@@ -7,8 +7,8 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.engine.image_window import N_SPATIAL
-from niftynet.engine.sampler_weighted import WeightedSampler
-from niftynet.engine.sampler_weighted import weighted_spatial_coordinates
+from niftynet.engine.sampler_weighted import \
+    WeightedSampler, weighted_spatial_coordinates
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
@@ -144,10 +144,10 @@ class WeightedSamplerTest(tf.test.TestCase):
             coordinator = tf.train.Coordinator()
             sampler.run_threads(sess, coordinator, num_threads=2)
             out = sess.run(sampler.pop_batch_op())
-            self.assertAllClose(out['image'].shape, (1, 8, 2, 256, 2))
+            self.assertAllClose(out['image'].shape[1:], (8, 2, 256, 2))
 
     def test_ill_init(self):
-        with self.assertRaisesRegexp(KeyError, ""):
+        with self.assertRaisesRegexp(ValueError, ""):
             sampler = WeightedSampler(reader=get_3d_reader(),
                                       data_param=MOD_2D_DATA,
                                       batch_size=2,

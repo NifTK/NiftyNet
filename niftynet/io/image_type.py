@@ -16,8 +16,8 @@ import tensorflow as tf
 from six import with_metaclass, string_types
 
 import niftynet.io.misc_io as misc
-from niftynet.io.image_loader import load_image_from_file
-from niftynet.io.misc_io import resolve_file_name
+from niftynet.io.image_loader import load_image_obj
+from niftynet.io.misc_io import resolve_file_name, dtype_casting
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 
 
@@ -66,8 +66,7 @@ class DataFromFile(Loadable):
         if not self._dtype:
             try:
                 self._dtype = tuple(
-                    load_image_from_file(
-                        _file, _loader).header.get_data_dtype()
+                    load_image_obj(_file, _loader).header.get_data_dtype()
                     for _file, _loader in zip(self.file_path, self.loader))
             except (IOError, TypeError, AttributeError):
                 tf.logging.warning('could not decide image data type')
@@ -197,7 +196,7 @@ class SpatialImage2D(DataFromFile):
         if self._original_shape is None:
             try:
                 self._original_shape = tuple(
-                    load_image_from_file(_file, _loader).header['dim'][1:6]
+                    load_image_obj(_file, _loader).header['dim'][1:6]
                     for _file, _loader in zip(self.file_path, self.loader))
             except (IOError, KeyError, AttributeError, IndexError):
                 tf.logging.fatal(
@@ -230,11 +229,11 @@ class SpatialImage2D(DataFromFile):
         self._original_pixdim = []
         self._original_affine = []
         for file_i, loader_i in zip(self.file_path, self.loader):
-            _obj = load_image_from_file(file_i, loader_i)
+            image_obj = load_image_obj(file_i, loader_i)
             try:
-                misc.correct_image_if_necessary(_obj)
-                self._original_pixdim.append(_obj.header.get_zooms()[:3])
-                self._original_affine.append(_obj.affine)
+                misc.correct_image_if_necessary(image_obj)
+                self._original_pixdim.append(image_obj.header.get_zooms()[:3])
+                self._original_affine.append(image_obj.affine)
             except (TypeError, IndexError, AttributeError):
                 tf.logging.fatal('could not read header from %s', file_i)
                 raise ValueError
@@ -315,6 +314,21 @@ class SpatialImage2D(DataFromFile):
             raise ValueError
 
     @property
+    def dtype(self):
+        """
+        data type property of the input images.
+
+        :return: a tuple of input image data types
+            ``len(self.dtype) == len(self.file_path)``
+        """
+        if not self._dtype:
+            self._dtype = super(SpatialImage2D, self).dtype
+            self._dtype = tuple(
+                dtype_casting(dtype, interp_order)
+                for dtype, interp_order in zip(self._dtype, self.interp_order))
+        return self._dtype
+
+    @property
     def output_pixdim(self):
         """
         output pixdim info specified by user
@@ -393,17 +407,19 @@ class SpatialImage2D(DataFromFile):
             raise
 
     @classmethod
-    def _load_single_file(cls, file_path, loader):
-        image_obj = load_image_from_file(file_path, loader)
-        image_data = image_obj.get_data()
+    def _load_single_file(cls, file_path, loader, dtype=np.float32):
+        image_obj = load_image_obj(file_path, loader)
+        image_data = image_obj.get_data()  # new API: get_fdata()
         image_data = misc.expand_to_5d(image_data)
-        return image_data
+        return image_data.astype(dtype)
 
     def get_data(self):
         if len(self._file_path) > 1:
             image_data = []
-            for file_path, loader in zip(self._file_path, self.loader):
-                image_data.append(self._load_single_file(file_path, loader))
+            for file_path, loader, dtype in \
+                    zip(self._file_path, self.loader, self.dtype):
+                data_array = self._load_single_file(file_path, loader, dtype)
+                image_data.append(data_array)
             try:
                 return np.concatenate(image_data, axis=4)
             except ValueError:
@@ -411,7 +427,9 @@ class SpatialImage2D(DataFromFile):
                     "multi-modal data shapes not consistent -- trying to "
                     "concat {}.".format([mod.shape for mod in image_data]))
                 raise
-        return self._load_single_file(self.file_path[0], self.loader[0])
+        image_data = self._load_single_file(
+            self.file_path[0], self.loader[0], self.dtype[0])
+        return image_data
 
 
 class SpatialImage3D(SpatialImage2D):
@@ -487,8 +505,9 @@ class SpatialImage3D(SpatialImage2D):
                 raise ValueError
         return spatial_shape + rest_shape
 
-    def _load_single_file(self, file_path, loader):
-        image_data = SpatialImage2D._load_single_file(file_path, loader)
+    def _load_single_file(self, file_path, loader, dtype=np.float32):
+        image_data = SpatialImage2D._load_single_file(
+            file_path, loader, dtype)
 
         if self.spatial_rank < 3:
             return image_data

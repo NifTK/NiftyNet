@@ -235,7 +235,9 @@ class RegressionApplication(BaseApplication):
                 data_dict = switch_sampler(for_training=True)
 
             image = tf.cast(data_dict['image'], tf.float32)
-            net_out = self.net(image, is_training=self.is_training)
+            net_args = {'is_training': self.is_training,
+                        'keep_prob': self.net_param.keep_prob}
+            net_out = self.net(image, **net_args)
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
@@ -276,7 +278,9 @@ class RegressionApplication(BaseApplication):
         elif self.is_inference:
             data_dict = switch_sampler(for_training=False)
             image = tf.cast(data_dict['image'], tf.float32)
-            net_out = self.net(image, is_training=self.is_training)
+            net_args = {'is_training': self.is_training,
+                        'keep_prob': self.net_param.keep_prob}
+            net_out = self.net(image, **net_args)
 
             crop_layer = CropLayer(border=0, name='crop-88')
             post_process_layer = PostProcessingLayer('IDENTITY')
