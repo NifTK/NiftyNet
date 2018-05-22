@@ -63,7 +63,7 @@ class ResNet(BaseNet):
             blocks+=[DownResBlock(n, self.n_blocks_per_resolution, 2, self.Conv)]
         return ResNetDesc(bn=bn,fc=fc,conv1=conv1,blocks=blocks)
 
-    def layer_op(self, images, is_training):
+    def layer_op(self, images, is_training=True, **unused_kwargs):
         layers = self.create()
         out = layers.conv1(images, is_training)
         for block in layers.blocks:
@@ -101,7 +101,7 @@ class BottleneckBlock(TrainableLayer):
             return BottleneckBlockDesc2(common_bn=b1, conv=[b2, b3, b4], 
                               conv_shortcut=b5)
 
-    def layer_op(self, images, is_training):
+    def layer_op(self, images, is_training=True):
         layers = self.create(images.shape[-1])
         if self.n_output_chns == images.shape[-1]:
             out=layers.conv[0](images, is_training)

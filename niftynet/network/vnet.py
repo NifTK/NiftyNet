@@ -40,7 +40,7 @@ class VNet(BaseNet):
 
         self.n_features = [16, 32, 64, 128, 256]
 
-    def layer_op(self, images, is_training, layer_id=-1):
+    def layer_op(self, images, is_training=True, layer_id=-1, **unused_kwargs):
         assert layer_util.check_spatial_dims(images, lambda x: x % 8 == 0)
 
         if layer_util.infer_spatial_rank(images) == 2:

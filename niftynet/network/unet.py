@@ -37,7 +37,7 @@ class UNet3D(TrainableLayer):
 
         print('using {}'.format(name))
 
-    def layer_op(self, images, is_training, layer_id=-1):
+    def layer_op(self, images, is_training=True, layer_id=-1, **unused_kwargs):
         # image_size  should be divisible by 8
         assert layer_util.check_spatial_dims(images, lambda x: x % 8 == 0)
         assert layer_util.check_spatial_dims(images, lambda x: x >= 89)

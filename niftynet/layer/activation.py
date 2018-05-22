@@ -63,8 +63,6 @@ class ActiLayer(TrainableLayer):
                 regularizer=self.regularizers['alpha'])
             output_tensor = func_(input_tensor, alphas)
         elif self.func == 'dropout':
-            assert keep_prob > 0.0
-            assert keep_prob <= 1.0
             output_tensor = func_(input_tensor,
                                   keep_prob=keep_prob,
                                   name='dropout')

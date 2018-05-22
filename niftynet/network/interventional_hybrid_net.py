@@ -49,7 +49,11 @@ class INetHybridPreWarp(BaseNet):
         self.interp = interp
         self.boundary = boundary
 
-    def layer_op(self, fixed_image, moving_image, is_training=True):
+    def layer_op(self,
+                 fixed_image,
+                 moving_image,
+                 is_training=True,
+                 **unused_kwargs):
         affine_field = self.global_net(fixed_image, moving_image, is_training)
         moving_image = resampler(
             interpolation=self.interp,
@@ -84,7 +88,11 @@ class INetHybridTwoStream(BaseNet):
         self.interp = interp
         self.boundary = boundary
 
-    def layer_op(self, fixed_image, moving_image, is_training=True):
+    def layer_op(self,
+                 fixed_image,
+                 moving_image,
+                 is_training=True,
+                 **unused_kwargs):
         affine_field = self.global_net(fixed_image, moving_image, is_training)
         dense_field = self.local_net(fixed_image, moving_image, is_training)
         return dense_field + affine_field, dense_field, affine_field

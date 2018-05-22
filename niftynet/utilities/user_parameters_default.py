@@ -347,6 +347,13 @@ def add_network_args(parser):
         type=str,
         default='zeros')
 
+    parser.add_argument(
+        "--keep_prob",
+        help="Probability that each element is kept "
+             "if dropout is supported by the network",
+        type=float,
+        default=1.0)
+
     yaml = require_module('yaml', mandatory=False)
     if yaml:
         parser.add_argument(
