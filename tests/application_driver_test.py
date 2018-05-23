@@ -76,15 +76,15 @@ class ApplicationDriverTest(tf.test.TestCase):
         with self.assertRaisesRegexp(AttributeError, ''):
             app_driver.initialise_application([], [])
 
-    def test_create_app(self):
-        test_driver = get_initialised_driver(499, True)
-        with self.assertRaisesRegexp(ValueError, 'Could not import'):
-            test_driver._create_app('test.test')
-        with self.assertRaisesRegexp(ValueError, 'Could not import'):
-            test_driver._create_app('testtest')
-        with self.assertRaisesRegexp(ValueError, 'Could not import'):
-            test_driver._create_app(1)
-        test_driver._create_app('tests.toy_application.ToyApplication')
+    # def test_create_app(self):
+    #     test_driver = get_initialised_driver(499, True)
+    #     with self.assertRaisesRegexp(ValueError, 'Could not import'):
+    #         test_driver._create_app('test.test')
+    #     with self.assertRaisesRegexp(ValueError, 'Could not import'):
+    #         test_driver._create_app('testtest')
+    #     with self.assertRaisesRegexp(ValueError, 'Could not import'):
+    #         test_driver._create_app(1)
+    #     test_driver._create_app('tests.toy_application.ToyApplication')
 
     def test_stop_app(self):
         test_driver = get_initialised_driver()

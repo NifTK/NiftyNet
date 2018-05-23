@@ -27,7 +27,6 @@ from niftynet.engine.application_variables import \
 from niftynet.engine.signal import TRAIN, \
     ITER_STARTED, ITER_FINISHED, SESS_STARTED, SESS_FINISHED, GRAPH_FINALISING
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
-from niftynet.io.misc_io import get_latest_subfolder, touch_folder
 from niftynet.utilities.util_common import \
     set_cuda_device, tf_config, device_string
 from niftynet.utilities.user_parameters_default import \
@@ -50,9 +49,8 @@ class ApplicationDriver(object):
         self.is_training_action = True
         self.num_threads = 0
         self.num_gpus = 0
-
         self.model_dir = None
-        self.summary_dir = None
+
         self.max_checkpoints = 2
         self.save_every_n = 0
         self.tensorboard_every_n = -1
@@ -100,6 +98,8 @@ class ApplicationDriver(object):
 
         assert os.path.exists(system_param.model_dir), \
             'Model folder not exists {}'.format(system_param.model_dir)
+        self.model_dir = system_param.model_dir
+
         self.is_training_action = TRAIN.startswith(system_param.action.lower())
         # hardware-related parameters
         self.num_threads = max(system_param.num_threads, 1) \
@@ -108,24 +108,15 @@ class ApplicationDriver(object):
             if self.is_training_action else min(system_param.num_gpus, 1)
         set_cuda_device(system_param.cuda_devices)
 
-        # set output TF model folders
-        self.model_dir = touch_folder(
-            os.path.join(system_param.model_dir, 'models'))
-
         # set training params.
         if self.is_training_action:
             assert train_param, 'training parameters not specified'
             self.initial_iter = train_param.starting_iter
-            # creating new summary subfolder if it's not finetuning
-            summary_root = os.path.join(system_param.model_dir, 'logs')
-            self.summary_dir = get_latest_subfolder(
-                summary_root, create_new=train_param.starting_iter == 0)
-
             self.final_iter = max(train_param.max_iter, self.initial_iter)
             self.save_every_n = train_param.save_every_n
             self.tensorboard_every_n = train_param.tensorboard_every_n
-            self.max_checkpoints = \
-                max(train_param.max_checkpoints, self.max_checkpoints)
+            self.max_checkpoints = max(self.max_checkpoints,
+                                       train_param.max_checkpoints)
             self.validation_every_n = train_param.validation_every_n
             if self.validation_every_n > 0:
                 self.validation_max_iter = max(self.validation_max_iter,
@@ -138,7 +129,7 @@ class ApplicationDriver(object):
 
         # create an application instance
         assert app_param, 'application specific param. not specified'
-        app_module = ApplicationDriver._create_app(app_param.name)
+        app_module = ApplicationFactory.create(app_param.name)
         self.app = app_module(net_param, action_param, system_param.action)
 
         # clear the cached file lists
@@ -196,7 +187,7 @@ class ApplicationDriver(object):
             # self.app.check_initialisations()
 
             # import the generator class
-            generator = ApplicationDriver._create_iters(self.iterator_type)
+            generator = IteratorFactory.create(self.iterator_type)
 
             # make the list of initialised event handler instances.
             self.load_event_handlers(self.event_handler_names)
@@ -350,22 +341,22 @@ class ApplicationDriver(object):
         SESS_FINISHED.send(application, iter_msg=iter_msg)
 
     @staticmethod
-    def loop_step(app, iteration_message):
+    def loop_step(application, iteration_message):
         """
         Calling ``tf.session.run`` with parameters encapsulated in
         iteration message as an iteration.
         Broadcasting ITER_* events before and afterward.
 
-        :param app:
+        :param application:
         :param iteration_message: an ``engine.IterationMessage`` instances
         :return:
         """
         # broadcasting event of starting an iteration
-        ITER_STARTED.send(app, iter_msg=iteration_message)
+        ITER_STARTED.send(application, iter_msg=iteration_message)
 
         # ``iter_msg.ops_to_run`` are populated with the ops to run in
         # each iteration, fed into ``session.run()`` and then
-        # passed to the app (and observers) for interpretation.
+        # passed to the application (and observers) for interpretation.
         sess = tf.get_default_session()
         assert sess, 'method should be called within a TF session context.'
         iteration_message.current_iter_output = sess.run(
@@ -373,18 +364,4 @@ class ApplicationDriver(object):
             feed_dict=iteration_message.data_feed_dict)
 
         # broadcasting event of finishing an iteration
-        ITER_FINISHED.send(app, iter_msg=iteration_message)
-
-    @staticmethod
-    def _create_app(app_type_string):
-        """
-        Import the application module
-        """
-        return ApplicationFactory.create(app_type_string)
-
-    @staticmethod
-    def _create_iters(iterator_string):
-        """
-        Import the Iterator module (used in the main training/infer loop).
-        """
-        return IteratorFactory.create(iterator_string)
+        ITER_FINISHED.send(application, iter_msg=iteration_message)

@@ -8,6 +8,7 @@ import tensorflow as tf
 
 from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.signal import TRAIN, VALID, ITER_STARTED, ITER_FINISHED
+from niftynet.io.misc_io import get_latest_subfolder
 
 
 class TensorBoardLogger(object):
@@ -17,11 +18,16 @@ class TensorBoardLogger(object):
     """
 
     def __init__(self,
-                 summary_dir=None,
+                 model_dir=None,
+                 initial_iter=0,
                  tensorboard_every_n=0,
                  **_unused):
+
         self.tensorboard_every_n = tensorboard_every_n
-        self.summary_dir = summary_dir
+        summary_root = os.path.join(model_dir, 'logs')
+        # creating new summary subfolder if it's not finetuning
+        self.summary_dir = get_latest_subfolder(
+            summary_root, create_new=initial_iter == 0)
         # initialise summary writer
         if not self.summary_dir:
             return
