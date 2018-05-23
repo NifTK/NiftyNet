@@ -22,7 +22,7 @@ class ImageWindowsAggregator(object):
     def __init__(self, image_reader=None, output_path='.'):
         self.reader = image_reader
         self._image_id = None
-        self.prefix = ''
+        self.postfix = ''
         self.output_path = os.path.abspath(output_path)
         self.inferred_cleared = False
 

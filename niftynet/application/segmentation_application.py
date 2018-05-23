@@ -235,14 +235,16 @@ class SegmentationApplication(BaseApplication):
             image_reader=self.readers[0],
             output_path=self.action_param.save_seg_dir,
             window_border=self.action_param.border,
-            interp_order=self.action_param.output_interp_order)
+            interp_order=self.action_param.output_interp_order,
+            postfix=self.action_param.output_postfix)
 
     def initialise_resize_aggregator(self):
         self.output_decoder = ResizeSamplesAggregator(
             image_reader=self.readers[0],
             output_path=self.action_param.save_seg_dir,
             window_border=self.action_param.border,
-            interp_order=self.action_param.output_interp_order)
+            interp_order=self.action_param.output_interp_order,
+            postfix=self.action_param.output_postfix)
 
     def initialise_sampler(self):
         if self.is_training:

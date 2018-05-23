@@ -167,7 +167,8 @@ class ClassificationApplication(BaseApplication):
     def initialise_aggregator(self):
         self.output_decoder = ClassifierSamplesAggregator(
             image_reader=self.readers[0],
-            output_path=self.action_param.save_seg_dir)
+            output_path=self.action_param.save_seg_dir,
+            postfix=self.action_param.output_postfix)
 
     def initialise_sampler(self):
         if self.is_training:
