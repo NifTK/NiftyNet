@@ -47,7 +47,7 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
             return self._key
         # provide a readable key for the label mapping item
         name1 = self.image_name
-        name2 = self.image_name if (len(self.modalities)==0) else self.modalities[0]
+        name2 = self.image_name if not self.modalities else self.modalities[0]
         key_from = "{}_{}-from".format(name1, name2)
         key_to = "{}_{}-to".format(name1, name2)
         return standardise_string(key_from), standardise_string(key_to)
@@ -144,7 +144,7 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
 
 def find_set_of_labels(image_list, field, output_key):
     label_set = set()
-    if(field in image_list[0]):
+    if field in image_list[0] :
         for idx, image in enumerate(image_list):
             assert field in image, \
                 "label normalisation layer requires {} input, " \
@@ -152,7 +152,7 @@ def find_set_of_labels(image_list, field, output_key):
                 "Please consider setting " \
                 "label_normalisation to False.".format(field)
             print_progress_bar(idx, len(image_list),
-                               prefix='searching unique labels from training files',
+                               prefix='searching unique labels from files',
                                decimals=1, length=10, fill='*')
             unique_label = np.unique(image[field].get_data())
             if len(unique_label) > 500 or len(unique_label) <= 1:

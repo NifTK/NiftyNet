@@ -108,7 +108,7 @@ def add_inference_args(parser):
         "--output_postfix",
         metavar='',
         help="[Inference only] Prediction filename postfix",
-        default="out")
+        default="_niftynet_out")
 
     parser.add_argument(
         "--output_interp_order",
