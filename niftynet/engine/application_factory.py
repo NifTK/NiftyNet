@@ -198,6 +198,21 @@ SUPPORTED_EVALUATIONS = {
     'roc': 'niftynet.contrib.evaluation.classification_evaluations.roc',
 }
 
+SUPPORTED_EVENT_HANDLERS = {
+    'model_saver':
+        'niftynet.engine.handler_checkpoint.ModelSaver',
+    'sampler_threading':
+        'niftynet.engine.handler_sampler.SamplerThreading',
+    'apply_gradients':
+        'niftynet.engine.handler_gradient.ApplyGradients',
+    'output_interpreter':
+        'niftynet.engine.handler_network_output.OutputInterpreter',
+    'console_logger':
+        'niftynet.engine.handler_console.ConsoleLogger',
+    'tensorboard_logger':
+        'niftynet.engine.handler_tensorboard.TensorBoardLogger'
+}
+
 
 def select_module(module_name, type_str, lookup_table=None):
     """
@@ -213,15 +228,19 @@ def select_module(module_name, type_str, lookup_table=None):
     """
     lookup_table = lookup_table or {}
     module_name = '{}'.format(module_name)
+    is_external = True
     if module_name in lookup_table:
         module_name = lookup_table[module_name]
+        is_external = False
     module_str, class_name = None, None
     try:
         module_str, class_name = module_name.rsplit('.', 1)
         the_module = importlib.import_module(module_str)
         the_class = getattr(the_module, class_name)
-        tf.logging.info('Import [%s] from %s.',
-                        class_name, os.path.abspath(the_module.__file__))
+        if is_external:
+            # print location of external module
+            tf.logging.info('Import [%s] from %s.',
+                            class_name, os.path.abspath(the_module.__file__))
         return the_class
     except (AttributeError, ValueError, ImportError) as not_imported:
         tf.logging.fatal(repr(not_imported))
@@ -371,7 +390,7 @@ class EventHandlerFactory(ModuleFactory):
     """
     Import an event handler such as niftynet.engine.handler_console
     """
-    SUPPORTED = {}
+    SUPPORTED = SUPPORTED_EVENT_HANDLERS
     type_str = 'event handler'
 
 

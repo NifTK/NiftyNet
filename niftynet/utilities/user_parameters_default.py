@@ -25,11 +25,12 @@ DEFAULT_DATASET_SPLIT_FILE = os.path.join('.', 'dataset_split.csv')
 DEFAULT_HISTOGRAM_REF_FILE = os.path.join('.', 'histogram_ref_file.txt')
 DEFAULT_MODEL_DIR = None
 DEFAULT_EVENT_HANDLERS = (
-    'niftynet.engine.handler_sampler.SamplerThreading',
-    'niftynet.engine.handler_gradient.ApplyGradients',
-    'niftynet.engine.handler_network_output.OutputInterpreter',
-    'niftynet.engine.handler_console.ConsoleLogger',
-    'niftynet.engine.handler_tensorboard.TensorBoardLogger')
+    'sampler_threading',
+    'apply_gradients',
+    'output_interpreter',
+    'console_logger',
+    'tensorboard_logger')
+
 DEFAULT_ITERATION_GENERATOR = \
     'niftynet.engine.application_iteration.IterationMessageGenerator'
 

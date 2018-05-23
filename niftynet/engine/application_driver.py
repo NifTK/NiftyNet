@@ -90,8 +90,7 @@ class ApplicationDriver(object):
         self.event_handler_names = \
             list(system_param.event_handler or DEFAULT_EVENT_HANDLERS)
         # extending with a model saver (for variables initialisation)
-        self.event_handler_names.append(
-            'niftynet.engine.handler_checkpoint.ModelSaver')
+        self.event_handler_names.append('model_saver')
 
         self.iterator_type = \
             system_param.iteration_generator or DEFAULT_ITERATION_GENERATOR
@@ -285,7 +284,8 @@ class ApplicationDriver(object):
             the_event_class = EventHandlerFactory.create(name)
             # initialise all registered event handler classes
             engine_config_dict = vars(self)
-            self._event_handlers[name] = the_event_class(**engine_config_dict)
+            key = '{}'.format(the_event_class)
+            self._event_handlers[key] = the_event_class(**engine_config_dict)
 
     @staticmethod
     def loop(application,
