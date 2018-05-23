@@ -105,6 +105,12 @@ def add_inference_args(parser):
         default=DEFAULT_INFERENCE_OUTPUT)
 
     parser.add_argument(
+        "--output_postfix",
+        metavar='',
+        help="[Inference only] Prediction filename postfix",
+        default="out")
+
+    parser.add_argument(
         "--output_interp_order",
         metavar='',
         help="[Inference only] interpolation order of the network output",
