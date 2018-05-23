@@ -24,21 +24,19 @@ class TensorBoardLogger(object):
                  **_unused):
 
         self.tensorboard_every_n = tensorboard_every_n
-        summary_root = os.path.join(model_dir, 'logs')
         # creating new summary subfolder if it's not finetuning
         self.summary_dir = get_latest_subfolder(
-            summary_root, create_new=initial_iter == 0)
+            os.path.join(model_dir, 'logs'), create_new=initial_iter == 0)
         # initialise summary writer
-        if not self.summary_dir:
+        if not self.summary_dir or tensorboard_every_n <= 0:
             return
         self.writer_train = tf.summary.FileWriter(
             os.path.join(self.summary_dir, TRAIN), tf.get_default_graph())
         self.writer_valid = tf.summary.FileWriter(
             os.path.join(self.summary_dir, VALID), tf.get_default_graph())
 
-        if tensorboard_every_n > 0:
-            ITER_STARTED.connect(self.read_tensorboard_op)
-            ITER_FINISHED.connect(self.write_tensorboard)
+        ITER_STARTED.connect(self.read_tensorboard_op)
+        ITER_FINISHED.connect(self.write_tensorboard)
 
     def read_tensorboard_op(self, sender, **msg):
         """
@@ -69,14 +67,12 @@ class TensorBoardLogger(object):
             _iter_msg.to_tf_summary(self.writer_train)
         elif _iter_msg.is_validation:
             _iter_msg.to_tf_summary(self.writer_valid)
-        return
 
-    def _is_writing(self, current_iter):
+    def _is_writing(self, c_iter):
         """
         Decide whether to save a TensorBoard log entry for a given iteration.
 
-        :param current_iter: Integer of the current iteration number
+        :param c_iter: Integer of the current iteration number
         :return: boolean True if is writing at the current iteration
         """
-        return self.summary_dir and \
-               current_iter % self.tensorboard_every_n == 0
+        return self.summary_dir and c_iter % self.tensorboard_every_n == 0
