@@ -239,7 +239,7 @@ If the string is a relative path, NiftyNet interpret this as relative to `model_
 - [volume_padding_size](#volume-padding-size) :: `integer array` :: `volume_padding_size=4, 4, 4` :: `0,0,0`
 - [window_sampling](#window-sampling) :: `string` :: `window_sampling=uniform` :: `uniform`
 - [queue_length](#queue-length) :: `integer` :: `queue_length=10` :: `5`
-- [keep_prob](#keep_prob) :: `non-negative float` :: `keep_prob=0.2` :: `0.5`
+- [keep_prob](#keep-prob) :: `non-negative float` :: `keep_prob=0.2` :: `0.5`
 
 ######  `name`
 A network class from [niftynet/network](./niftynet.network.html) or from user
@@ -547,6 +547,7 @@ For a 2-D slice, e.g, `Nx1xM`, the second dimension of `border` should be `0`.
 - [border](#border) :: `integer array` :: `border=5,5,5` :: `0, 0, 0`
 - [inference_iter](#inference-iter) :: `integer` :: `inference_iter=1000` :: `-1`
 - [save_seg_dir](#save-seg-dir) :: `string` :: `save_seg_dir=output/test` :: `output`
+- [output_postfix](#output-postfix) :: `string` :: `output_postfix=_output` :: `_niftynet_out`
 - [output_interp_order](#output-interp-order) :: `non-negative integer` :: `output_interp_order=0` :: `0`
 - [dataset_to_infer](#dataset-to-infer) :: `Training|Validation|Inference` :: `dataset_to_infer=Training` :: `''`
 
@@ -567,6 +568,9 @@ Integer specifies the trained model to be used for inference.
 
 ###### `save_seg_dir`
 Prediction directory name. If it's a relative path, it is set to be relative to [`model_dir`](#model-dir).
+
+###### `output_postfix`
+Postfix appended to every inference output filenames.
 
 ###### `output_interp_order`
 Interpolation order of the network outputs.
