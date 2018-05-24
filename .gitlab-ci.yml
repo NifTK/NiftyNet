@@ -86,8 +86,8 @@ testjob:
     - mkdir $check_version_zip
     - git archive --format=tar HEAD | (cd $check_version_zip && tar xf -)
     - cd $check_version_zip
-    - python net_segment.py --version 2>&1 | grep -E 'NiftyNet.*version.*unknown'
-    - python -c 'import niftynet; print(niftynet.__version__)' | grep -E 'NiftyNet.*version.*unknown'
+    - python net_segment.py --version 2>&1 | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+'
+    - python -c 'import niftynet; print(niftynet.__version__)' | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+'
     - cd $niftynet_dir
     - rm -rf $check_version_zip
     - unset check_version_zip
