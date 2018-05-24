@@ -32,6 +32,7 @@ def get_niftynet_version():
     try:
         from .versioneer_version import get_versions
         version_info = get_versions()
+        print('versioneer:\n', version_info)
         if version_info['error'] is None:
             version_string = version_info['version']
     except:
@@ -42,6 +43,7 @@ def get_niftynet_version():
         try:
             import pkg_resources
             version_string = pkg_resources.get_distribution("niftynet").version
+            print('pkg_resources:\n', version_string)
         except:
             pass  # version_string is None by default
 
