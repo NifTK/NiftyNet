@@ -349,8 +349,8 @@ pip-installer:
     - cat $package_importer
     - python $package_importer
     # check whether version command works
-    - net_segment --version 2>&1 | grep -E 'NiftyNet.*version.*untagged'
-    - python -c 'import niftynet; print(niftynet.__version__)' | grep -E 'NiftyNet.*version.*untagged'
+    - net_segment --version 2>&1 | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+'
+    - python -c 'import niftynet; print(niftynet.__version__)' | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+'
     # test niftynet command
     - net_download testing -r
 
