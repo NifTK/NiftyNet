@@ -79,8 +79,8 @@ testjob:
 
     # check whether version command works
     # Git-clone:
-    - python net_segment.py --version 2>&1 | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+' | grep -E '\+[0-9]+.g[0-9|a-f]+'
-    - python -c 'import niftynet; print(niftynet.__version__)' | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+' | grep -E '\+[0-9]+.g[0-9|a-f]+'
+    - python net_segment.py --version 2>&1 | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+'
+    - python -c 'import niftynet; print(niftynet.__version__)' | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+'
     # downloaded ZIP ball:
     - export check_version_zip=check_version_zip
     - mkdir $check_version_zip
