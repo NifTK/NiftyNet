@@ -25,12 +25,13 @@ from niftynet.engine.application_iteration import IterationMessage
 from niftynet.engine.application_variables import \
     GradientsCollector, OutputsCollector
 from niftynet.engine.signal import TRAIN, \
-    ITER_STARTED, ITER_FINISHED, SESS_STARTED, SESS_FINISHED, GRAPH_FINALISING
+    ITER_STARTED, ITER_FINISHED, SESS_STARTED, SESS_FINISHED, GRAPH_FINALISED
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import \
     set_cuda_device, tf_config, device_string
 from niftynet.utilities.user_parameters_default import \
     DEFAULT_EVENT_HANDLERS, DEFAULT_ITERATION_GENERATOR
+from niftynet.io.misc_io import infer_latest_model_file
 
 
 # pylint: disable=too-many-instance-attributes
@@ -89,9 +90,6 @@ class ApplicationDriver(object):
             raise
         self.event_handler_names = \
             list(system_param.event_handler or DEFAULT_EVENT_HANDLERS)
-        # extending with a model saver (for variables initialisation)
-        self.event_handler_names.append('model_saver')
-
         self.iterator_type = \
             system_param.iteration_generator or DEFAULT_ITERATION_GENERATOR
 
@@ -125,6 +123,11 @@ class ApplicationDriver(object):
             assert infer_param, 'inference parameters not specified'
             self.initial_iter = infer_param.inference_iter
             action_param = infer_param
+
+        # infer the initial iteration from model files
+        if self.initial_iter < 0:
+            self.initial_iter = infer_latest_model_file(
+                os.path.join(self.model_dir, 'models'))
 
         # create an application instance
         assert app_param, 'application specific param. not specified'
@@ -317,7 +320,8 @@ class ApplicationDriver(object):
         """
         # broadcasting event of session started
         SESS_STARTED.send(application, iter_msg=None)
-        GRAPH_FINALISING.send(application, iter_msg=None)
+        # tf.Graph.finalize(tf.get_default_graph())
+        GRAPH_FINALISED.send(application, iter_msg=None)
 
         loop_status = loop_status or {}
         for iter_msg in iteration_messages:

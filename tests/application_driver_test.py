@@ -9,10 +9,10 @@ import tensorflow as tf
 
 from niftynet.engine.application_driver import ApplicationDriver
 from niftynet.engine.application_variables import global_vars_init_or_restore
-from niftynet.engine.handler_checkpoint import ModelSaver
+from niftynet.engine.handler_model import ModelSaver
 from niftynet.io.misc_io import set_logger
 from niftynet.utilities.util_common import ParserNamespace
-from niftynet.engine.signal import SESS_STARTED, SESS_FINISHED, GRAPH_FINALISING
+from niftynet.engine.signal import SESS_STARTED, SESS_FINISHED, GRAPH_FINALISED
 
 
 # def _run_test_application():
@@ -108,7 +108,7 @@ class ApplicationDriverTest(tf.test.TestCase):
         graph = test_driver.create_graph(test_driver.app, 1, True)
         with self.test_session(graph=graph) as sess:
             SESS_STARTED.send(test_driver.app, iter_msg=None)
-            GRAPH_FINALISING.send(test_driver.app, iter_msg=None)
+            GRAPH_FINALISED.send(test_driver.app, iter_msg=None)
 
             train_op = test_driver.app.gradient_op
             test_tensor = tf.get_default_graph().get_tensor_by_name(
@@ -128,7 +128,7 @@ class ApplicationDriverTest(tf.test.TestCase):
             test_driver.app, test_driver.num_gpus, True)
         with self.test_session(graph=graph) as sess:
             SESS_STARTED.send(test_driver.app, iter_msg=None)
-            GRAPH_FINALISING.send(test_driver.app, iter_msg=None)
+            GRAPH_FINALISED.send(test_driver.app, iter_msg=None)
             for i in range(2):
                 sess.run(test_driver.app.gradient_op)
                 s_0, s_1, s_2, s_3 = sess.run([
@@ -157,7 +157,7 @@ class ApplicationDriverTest(tf.test.TestCase):
             test_driver.app, test_driver.num_gpus, True)
         with self.test_session(graph=graph) as sess:
             SESS_STARTED.send(test_driver.app, iter_msg=None)
-            GRAPH_FINALISING.send(test_driver.app, iter_msg=None)
+            GRAPH_FINALISED.send(test_driver.app, iter_msg=None)
             for i in range(2):
                 sess.run(test_driver.app.gradient_op)
                 g_0, g_1, g_2, g_3, g_ave = sess.run([

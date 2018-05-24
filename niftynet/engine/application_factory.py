@@ -199,8 +199,10 @@ SUPPORTED_EVALUATIONS = {
 }
 
 SUPPORTED_EVENT_HANDLERS = {
+    'model_restorer':
+        'niftynet.engine.handler_model.ModelRestorer',
     'model_saver':
-        'niftynet.engine.handler_checkpoint.ModelSaver',
+        'niftynet.engine.handler_model.ModelSaver',
     'sampler_threading':
         'niftynet.engine.handler_sampler.SamplerThreading',
     'apply_gradients':

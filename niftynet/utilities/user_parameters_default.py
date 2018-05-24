@@ -25,6 +25,8 @@ DEFAULT_DATASET_SPLIT_FILE = os.path.join('.', 'dataset_split.csv')
 DEFAULT_HISTOGRAM_REF_FILE = os.path.join('.', 'histogram_ref_file.txt')
 DEFAULT_MODEL_DIR = None
 DEFAULT_EVENT_HANDLERS = (
+    'model_saver',
+    'model_restorer',
     'sampler_threading',
     'apply_gradients',
     'output_interpreter',

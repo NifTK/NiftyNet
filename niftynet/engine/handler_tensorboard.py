@@ -28,7 +28,7 @@ class TensorBoardLogger(object):
         self.summary_dir = get_latest_subfolder(
             os.path.join(model_dir, 'logs'), create_new=initial_iter == 0)
         # initialise summary writer
-        if not self.summary_dir or tensorboard_every_n <= 0:
+        if not self.summary_dir or self.tensorboard_every_n <= 0:
             return
         self.writer_train = tf.summary.FileWriter(
             os.path.join(self.summary_dir, TRAIN), tf.get_default_graph())

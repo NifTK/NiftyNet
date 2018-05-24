@@ -36,10 +36,10 @@ SESS_FINISHED = NIFTYNET.signal(
     'session_finished',
     doc='signal emitted at the end of the training/inference loop.')
 
-GRAPH_FINALISING = NIFTYNET.signal(
-    'tf_graph_finalising',
-    doc='signal emitted when finalising graph, '
-        'creating session saver and initialiser.')
+GRAPH_FINALISED = NIFTYNET.signal(
+    'tf_graph_finalised',
+    doc='signal emitted when the graph is finalised.')
+
 # EPOCH_STARTED = NIFTYNET.signal(
 #     'epoch_started',
 #     doc='emitted at the beginning of each training epoch')
