@@ -169,10 +169,8 @@ class ResamplerLayer(Layer):
         if self.boundary == 'ZERO' and in_spatial_size:
             scale = 1. / (tf.constant(in_spatial_size, dtype=tf.float32) - 1.)
             mask = tf.logical_and(
-                tf.reduce_all(sample_coords > 0,
-                              axis=-1, keep_dims=True),
-                tf.reduce_all(scale * sample_coords < 1,
-                              axis=-1, keep_dims=True))
+                tf.reduce_all(sample_coords > 0, -1, True),
+                tf.reduce_all(scale * sample_coords < 1, -1, True))
             return output * tf.to_float(mask)
         return output
 
