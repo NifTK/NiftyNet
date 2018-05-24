@@ -38,7 +38,7 @@ def permutohedral_prepare(position_vectors):
     # Get closest remainder-0 point
     v=tf.to_int32(tf.round(Ex*(1./float(nCh+1))))
     rem0=v*(nCh+1)
-    sumV=tf.reduce_sum(v,1,keep_dims=True)
+    sumV=tf.reduce_sum(v,1,True)
     # Find the simplex we are in and store it in rank (where rank describes what position coorinate i has
     #in the sorted order of the features values)
     di=Ex-tf.to_float(rem0)
@@ -234,7 +234,7 @@ class CRFAsRNNLayer(TrainableLayer):
       spatial_dim = infer_spatial_rank(U)
       if self._aspect_ratio is None:
           self._aspect_ratio = [1.] * spatial_dim
-          
+
       batch_size=int(U.shape[0])
       H1=[U]
       # Build permutohedral structures for smoothing

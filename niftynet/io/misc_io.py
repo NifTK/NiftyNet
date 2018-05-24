@@ -630,17 +630,21 @@ def image3_axial(name,
 
 
 def set_logger(file_name=None):
-    tf.logging._logger.handlers = []
-    tf.logging._logger = log.getLogger('tensorflow')
+    #tf.logging._get_logger().handlers = []
+    #tf.logging._get_logger() = log.getLogger('tensorflow')
+    logger = tf.logging._get_logger()
     tf.logging.set_verbosity(tf.logging.INFO)
+    logger.handlers = []
 
+    # adding console output
     f = log.Formatter(CONSOLE_LOG_FORMAT)
     std_handler = log.StreamHandler(sys.stdout)
     std_handler.setFormatter(f)
-    tf.logging._logger.addHandler(std_handler)
+    logger.addHandler(std_handler)
 
     if file_name:
+        # adding file output
         f = log.Formatter(FILE_LOG_FORMAT)
         file_handler = log.FileHandler(file_name)
         file_handler.setFormatter(f)
-        tf.logging._logger.addHandler(file_handler)
+        logger.addHandler(file_handler)
