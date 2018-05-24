@@ -215,6 +215,11 @@ SUPPORTED_EVENT_HANDLERS = {
         'niftynet.engine.handler_tensorboard.TensorBoardLogger'
 }
 
+SUPPORTED_ITERATION_GENERATORS = {
+    'iteration_generator':
+        'niftynet.engine.application_iteration.IterationMessageGenerator'
+}
+
 
 def select_module(module_name, type_str, lookup_table=None):
     """
@@ -400,5 +405,5 @@ class IteratorFactory(ModuleFactory):
     """
     Import an iterative message generator for the main engine loop
     """
-    SUPPORTED = {}
+    SUPPORTED = SUPPORTED_ITERATION_GENERATORS
     type_str = 'engine iterator'

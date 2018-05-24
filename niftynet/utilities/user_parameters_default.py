@@ -33,8 +33,7 @@ DEFAULT_EVENT_HANDLERS = (
     'console_logger',
     'tensorboard_logger')
 
-DEFAULT_ITERATION_GENERATOR = \
-    'niftynet.engine.application_iteration.IterationMessageGenerator'
+DEFAULT_ITERATION_GENERATOR = 'iteration_generator'
 
 
 def add_application_args(parser):
