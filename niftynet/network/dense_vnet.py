@@ -282,7 +282,7 @@ class DenseVNet(BaseNet):
         mean, var = tf.nn.moments(input_tensor, axes=norm_axes, keep_dims=True)
         timg = tf.to_float(input_tensor - mean) / (tf.sqrt(var) * 2.)
         timg = (timg + 1.) * 127.
-        single_channel = tf.reduce_mean(timg, axis=-1, keep_dims=True)
+        single_channel = tf.reduce_mean(timg, -1, True)
         img_summary = tf.minimum(255., tf.maximum(0., single_channel))
         if n_spatial_dims == 2:
             tf.summary.image(
