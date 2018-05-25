@@ -63,7 +63,6 @@ def get_initialised_driver(starting_iter=0, model_dir_rand=True):
     }
     app_driver = ApplicationDriver()
     app_driver.initialise_application(system_param, {})
-    app_driver.load_event_handlers(app_driver.event_handler_names)
     # set parameters without __init__
     app_driver.app.action_param = system_param['TRAINING']
     app_driver.app.net_param = system_param['NETWORK']

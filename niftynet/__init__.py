@@ -138,5 +138,5 @@ def main():
         EVAL: EvaluationApplicationDriver}
     app_driver = driver_table[system_param['SYSTEM'].action]()
     app_driver.initialise_application(system_param, input_data_param)
-    app_driver.run_application()
+    app_driver.run(app_driver.app)
     return 0

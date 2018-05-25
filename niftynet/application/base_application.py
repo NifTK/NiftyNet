@@ -72,32 +72,6 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     outputs_collector = None
     gradients_collector = None
 
-    def check_initialisations(self):
-        """
-        Check that the derived class should initialise
-        the application components properly.
-
-        :return:
-        """
-        if self.readers is None:
-            raise NotImplementedError('reader should be initialised')
-        if self.sampler is None:
-            raise NotImplementedError(
-                'Sampler should be initialised; to disable the sampler, '
-                'set self.sampler to [None].')
-        if self.net is None:
-            raise NotImplementedError('net should be initialised')
-        # from niftynet.layer.base_layer import TrainableLayer
-        # if not isinstance(self.net, TrainableLayer):
-        #     raise ValueError('self.net should be an instance'
-        #                      ' of niftynet.layer.TrainableLayer')
-        if self.optimiser is None and self.is_training:
-            raise NotImplementedError('optimiser should be initialised')
-        if self.gradient_op is None and self.is_training:
-            raise NotImplementedError('gradient_op should be initialised')
-        if self.output_decoder is None and not self.is_training:
-            raise NotImplementedError('output decoder should be initialised')
-
     def get_file_lists(self, data_partitioner):
         """
         This function pull the correct file_lists from the data partitioner

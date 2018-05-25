@@ -39,6 +39,7 @@ class EventConsoleTest(tf.test.TestCase):
 
             iterator = IterationMessageGenerator(is_training_action=False)
             app_driver.loop(app_driver.app, iterator())
+        app_driver.app.stop()
 
 
 if __name__ == "__main__":

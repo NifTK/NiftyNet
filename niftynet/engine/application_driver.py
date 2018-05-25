@@ -64,11 +64,10 @@ class ApplicationDriver(object):
         self.coordinator = tf.train.Coordinator()
         self.data_partitioner = ImageSetsPartitioner()
 
-        self.event_handler_names = None
-        self.iterator_type = None
         self._event_handlers = None
+        self._generator = None
 
-    def initialise_application(self, workflow_param, data_param):
+    def initialise_application(self, workflow_param, data_param=None):
         """
         This function receives all parameters from user config file,
         create an instance of application.
@@ -88,10 +87,6 @@ class ApplicationDriver(object):
         except AttributeError:
             tf.logging.fatal('parameters should be dictionaries')
             raise
-        self.event_handler_names = \
-            list(system_param.event_handler or DEFAULT_EVENT_HANDLERS)
-        self.iterator_type = \
-            system_param.iteration_generator or DEFAULT_ITERATION_GENERATOR
 
         assert os.path.exists(system_param.model_dir), \
             'Model folder not exists {}'.format(system_param.model_dir)
@@ -168,50 +163,43 @@ class ApplicationDriver(object):
         self.app.initialise_dataset_loader(
             data_param, app_param, self.data_partitioner)
 
-    def run_application(self, graph=None):
+        # make the list of initialised event handler instances.
+        self.load_event_handlers(
+            system_param.event_handler or DEFAULT_EVENT_HANDLERS)
+        self._generator = IteratorFactory.create(
+            system_param.iteration_generator or DEFAULT_ITERATION_GENERATOR)
+
+    def run(self, application, graph=None):
         """
         Initialise a TF graph, connect data sampler and network within
         the graph context, run training loops or inference loops.
 
+        :param application: a niftynet application
         :param graph: default base graph to run the application
         :return:
         """
-        assert self.app is not None, \
-            "application_driver.app should be initialised first."
-
-        # make the list of initialised event handler instances.
-        self.load_event_handlers(self.event_handler_names)
-
         if graph is None:
             graph = ApplicationDriver.create_graph(
-                application=self.app,
+                application=application,
                 num_gpus=self.num_gpus,
                 is_training_action=self.is_training_action)
 
         with tf.Session(config=tf_config(), graph=graph):
-            # check app variables initialised and ready for starts
-            # self.app.check_initialisations()
             start_time = time.time()
             loop_status = {
                 'current_iter': self.initial_iter, 'normal_exit': False}
             try:
+                # broadcasting event of session started
+                SESS_STARTED.send(application, iter_msg=None)
+
                 # create a iteration message generator and
                 # iteratively run the graph (the main engine loop)
-                # broadcasting event of session started
-                SESS_STARTED.send(self.app, iter_msg=None)
-
-                # import the generator class
-                generator = IteratorFactory.create(self.iterator_type)
-                engine_config_dict = vars(self)
-                self.loop(application=self.app,
-                          iteration_messages=generator(**engine_config_dict)(),
-                          loop_status=loop_status,
-                          coordinator=self.coordinator)
-
-                # broadcasting event of session finished
-                iter_msg = IterationMessage()
-                iter_msg.current_iter = loop_status.get('current_iter', -1)
-                SESS_FINISHED.send(self.app, iter_msg=iter_msg)
+                iteration_messages = self._generator(**vars(self))()
+                ApplicationDriver.loop(
+                    application=application,
+                    iteration_messages=iteration_messages,
+                    loop_status=loop_status,
+                    coordinator=self.coordinator)
 
             except KeyboardInterrupt:
                 tf.logging.warning('User cancelled application')
@@ -227,17 +215,17 @@ class ApplicationDriver(object):
                     exc_type, exc_value, exc_traceback, file=sys.stdout)
             finally:
                 tf.logging.info('cleaning up...')
+                # broadcasting session finished event
+                iter_msg = IterationMessage()
+                iter_msg.current_iter = loop_status.get('current_iter', -1)
+                SESS_FINISHED.send(application, iter_msg=iter_msg)
+                application.stop()
                 if not loop_status.get('normal_exit', False):
-                    # loop didn't finish normally,
-                    # again broadcasting session finished event
-                    iter_msg = IterationMessage()
-                    iter_msg.current_iter = loop_status.get('current_iter', -1)
-                    SESS_FINISHED.send(self.app, iter_msg=iter_msg)
+                    # loop didn't finish normally
                     tf.logging.warning('stopped early, incomplete iterations.')
-                self.app.stop()
                 tf.logging.info(
                     "%s stopped (time in second %.2f).",
-                    type(self.app).__name__, (time.time() - start_time))
+                    type(application).__name__, (time.time() - start_time))
 
     # pylint: disable=not-context-manager
     @staticmethod
@@ -290,6 +278,10 @@ class ApplicationDriver(object):
         """
         if not names:
             return
+        if self._event_handlers:
+            # disconnect all handlers (assuming always weak connection)
+            for handler in list(self._event_handlers):
+                del self._event_handlers[handler]
         self._event_handlers = {}
         for name in set(names):
             the_event_class = EventHandlerFactory.create(name)

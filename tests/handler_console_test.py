@@ -21,6 +21,7 @@ class EventConsoleTest(tf.test.TestCase):
             SESS_STARTED.send(app_driver.app, iter_msg=None)
             msg = IterationMessage()
             app_driver.loop(app_driver.app, [msg])
+        app_driver.app.stop()
 
     def iteration_listener(self, sender, **msg):
         msg = msg['iter_msg']
