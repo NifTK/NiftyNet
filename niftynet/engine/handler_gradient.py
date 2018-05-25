@@ -5,7 +5,7 @@ This module implements a network model updater with gradient ops.
 
 import tensorflow as tf
 
-from niftynet.engine.signal import ITER_STARTED, SESS_STARTED
+from niftynet.engine.signal import ITER_STARTED, GRAPH_CREATED
 from niftynet.layer.bn import BN_COLLECTION
 from niftynet.utilities import util_common
 
@@ -20,8 +20,9 @@ class ApplyGradients(object):
     """
 
     def __init__(self, is_training_action=False, **_unused):
-        if is_training_action:
-            SESS_STARTED.connect(self.make_gradients_op)
+        if not is_training_action:
+            return
+        GRAPH_CREATED.connect(self.make_gradients_op)
         ITER_STARTED.connect(self.add_gradients)
 
     @staticmethod

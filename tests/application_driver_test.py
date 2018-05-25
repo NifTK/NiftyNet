@@ -9,10 +9,10 @@ import tensorflow as tf
 
 from niftynet.engine.application_driver import ApplicationDriver
 from niftynet.engine.application_variables import global_vars_init_or_restore
-from niftynet.engine.handler_model import ModelSaver
+from niftynet.engine.handler_model import ModelRestorer
 from niftynet.io.misc_io import set_logger
 from niftynet.utilities.util_common import ParserNamespace
-from niftynet.engine.signal import SESS_STARTED, SESS_FINISHED, GRAPH_FINALISED
+from niftynet.engine.signal import GRAPH_CREATED, SESS_FINISHED, SESS_STARTED
 
 
 # def _run_test_application():
@@ -37,6 +37,7 @@ def get_initialised_driver(starting_iter=0, model_dir_rand=True):
             dataset_split_file=os.path.join(
                 '.', 'testing_data', 'testtoyapp.csv'),
             event_handler=[
+                'niftynet.engine.handler_model.ModelRestorer',
                 'niftynet.engine.handler_sampler.SamplerThreading',
                 'niftynet.engine.handler_gradient.ApplyGradients'],
             iteration_generator=None),
@@ -92,6 +93,7 @@ class ApplicationDriverTest(tf.test.TestCase):
             test_driver.app, test_driver.num_gpus, True)
         with self.test_session(graph=graph) as sess:
             sess.run(global_vars_init_or_restore())
+            GRAPH_CREATED.send(test_driver.app, iter_msg=None)
             SESS_STARTED.send(test_driver.app, iter_msg=None)
             train_op = test_driver.app.gradient_op
             SESS_FINISHED.send(test_driver.app, itermsg=None)
@@ -107,8 +109,8 @@ class ApplicationDriverTest(tf.test.TestCase):
         test_driver = get_initialised_driver()
         graph = test_driver.create_graph(test_driver.app, 1, True)
         with self.test_session(graph=graph) as sess:
+            GRAPH_CREATED.send(test_driver.app, iter_msg=None)
             SESS_STARTED.send(test_driver.app, iter_msg=None)
-            GRAPH_FINALISED.send(test_driver.app, iter_msg=None)
 
             train_op = test_driver.app.gradient_op
             test_tensor = tf.get_default_graph().get_tensor_by_name(
@@ -127,8 +129,8 @@ class ApplicationDriverTest(tf.test.TestCase):
         graph = test_driver.create_graph(
             test_driver.app, test_driver.num_gpus, True)
         with self.test_session(graph=graph) as sess:
+            GRAPH_CREATED.send(test_driver.app, iter_msg=None)
             SESS_STARTED.send(test_driver.app, iter_msg=None)
-            GRAPH_FINALISED.send(test_driver.app, iter_msg=None)
             for i in range(2):
                 sess.run(test_driver.app.gradient_op)
                 s_0, s_1, s_2, s_3 = sess.run([
@@ -156,8 +158,8 @@ class ApplicationDriverTest(tf.test.TestCase):
         graph = test_driver.create_graph(
             test_driver.app, test_driver.num_gpus, True)
         with self.test_session(graph=graph) as sess:
+            GRAPH_CREATED.send(test_driver.app, iter_msg=None)
             SESS_STARTED.send(test_driver.app, iter_msg=None)
-            GRAPH_FINALISED.send(test_driver.app, iter_msg=None)
             for i in range(2):
                 sess.run(test_driver.app.gradient_op)
                 g_0, g_1, g_2, g_3, g_ave = sess.run([
@@ -199,7 +201,7 @@ class ApplicationDriverTest(tf.test.TestCase):
                     tf.errors.FailedPreconditionError,
                     'uninitialized value'):
                 sess.run(test_tensor)
-            ModelSaver(**vars(test_driver)).rand_init_model(None)
+            ModelRestorer(**vars(test_driver)).rand_init_model(None)
             sess.run(test_tensor)
             _ = sess.run(tf.global_variables())
 
@@ -219,7 +221,7 @@ class ApplicationDriverTest(tf.test.TestCase):
                     tf.errors.FailedPreconditionError,
                     'uninitialized value'):
                 _ = sess.run(test_tensor)
-            ModelSaver(**vars(test_driver)).restore_model(None)
+            ModelRestorer(**vars(test_driver)).restore_model(None)
             after_init = sess.run(test_tensor)
             self.assertAllClose(after_init[0], expected_init)
             _ = sess.run(tf.global_variables())
@@ -230,7 +232,7 @@ class ApplicationDriverTest(tf.test.TestCase):
         with self.test_session(graph=graph) as sess:
             with self.assertRaisesRegexp(
                     tf.errors.NotFoundError, 'Failed to find'):
-                ModelSaver(**vars(test_driver)).restore_model(None)
+                ModelRestorer(**vars(test_driver)).restore_model(None)
 
     def test_from_file_initialisation(self):
         test_driver = get_initialised_driver(40, False)
@@ -248,7 +250,7 @@ class ApplicationDriverTest(tf.test.TestCase):
                     tf.errors.FailedPreconditionError,
                     'uninitialized value'):
                 _ = sess.run(test_tensor)
-            ModelSaver(**vars(test_driver)).restore_model(None)
+            ModelRestorer(**vars(test_driver)).restore_model(None)
             after_init = sess.run(test_tensor)
             self.assertAllClose(after_init[0], expected_init)
             _ = sess.run(tf.global_variables())

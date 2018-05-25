@@ -4,9 +4,7 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 from tests.application_driver_test import get_initialised_driver
 from niftynet.engine.application_iteration import IterationMessage
-from niftynet.engine.application_variables import global_vars_init_or_restore
-#from niftynet.engine.signal import SESS_FINISHED, SESS_STARTED, ITER_FINISHED
-from niftynet.engine.signal import ITER_FINISHED
+from niftynet.engine.signal import GRAPH_CREATED, SESS_STARTED, ITER_FINISHED
 
 
 class EventConsoleTest(tf.test.TestCase):
@@ -15,9 +13,12 @@ class EventConsoleTest(tf.test.TestCase):
 
         app_driver = get_initialised_driver()
         app_driver.load_event_handlers(
-            ['niftynet.engine.handler_console.ConsoleLogger'])
+            ['niftynet.engine.handler_console.ConsoleLogger',
+             'niftynet.engine.handler_sampler.SamplerThreading'])
         graph = app_driver.create_graph(app_driver.app, 1, True)
         with self.test_session(graph=graph) as sess:
+            GRAPH_CREATED.send(app_driver.app, iter_msg=None)
+            SESS_STARTED.send(app_driver.app, iter_msg=None)
             msg = IterationMessage()
             app_driver.loop(app_driver.app, [msg])
 

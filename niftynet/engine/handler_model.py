@@ -8,7 +8,7 @@ import tensorflow as tf
 
 from niftynet.engine.application_variables import global_vars_init_or_restore
 from niftynet.engine.signal import \
-    ITER_FINISHED, SESS_FINISHED, GRAPH_FINALISED
+    ITER_FINISHED, SESS_FINISHED, SESS_STARTED
 from niftynet.io.misc_io import touch_folder
 
 FILE_PREFIX = 'model.ckpt'
@@ -41,9 +41,9 @@ class ModelRestorer(object):
         self.file_name_prefix = make_model_name(model_dir)
         # randomly initialise or restoring model
         if is_training_action and initial_iter == 0:
-            GRAPH_FINALISED.connect(self.rand_init_model)
+            SESS_STARTED.connect(self.rand_init_model)
         else:
-            GRAPH_FINALISED.connect(self.restore_model)
+            SESS_STARTED.connect(self.restore_model)
 
     @staticmethod
     def rand_init_model(_sender, **_unused):
@@ -104,7 +104,7 @@ class ModelSaver(object):
         self.saver = None
 
         # initialise the saver after the graph finalised
-        GRAPH_FINALISED.connect(self.init_saver)
+        SESS_STARTED.connect(self.init_saver)
         # save the training model at a positive frequency
         if self.save_every_n > 0:
             ITER_FINISHED.connect(self.save_model_interval)
@@ -112,12 +112,12 @@ class ModelSaver(object):
         if is_training_action:
             SESS_FINISHED.connect(self.save_model)
 
-    def init_saver(self, _sender, **msg):
+    def init_saver(self, _sender, **_unused):
         """
         Initialise a model saver.
 
         :param _sender:
-        :param msg:
+        :param _unused:
         :return:
         """
         self.saver = tf.train.Saver(

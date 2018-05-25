@@ -25,7 +25,7 @@ from niftynet.engine.application_iteration import IterationMessage
 from niftynet.engine.application_variables import \
     GradientsCollector, OutputsCollector
 from niftynet.engine.signal import TRAIN, \
-    ITER_STARTED, ITER_FINISHED, SESS_STARTED, SESS_FINISHED, GRAPH_FINALISED
+    ITER_STARTED, ITER_FINISHED, GRAPH_CREATED, SESS_FINISHED, SESS_STARTED
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import \
     set_cuda_device, tf_config, device_string
@@ -178,8 +178,12 @@ class ApplicationDriver(object):
         """
         assert self.app is not None, \
             "application_driver.app should be initialised first."
+
+        # make the list of initialised event handler instances.
+        self.load_event_handlers(self.event_handler_names)
+
         if graph is None:
-            graph = self.create_graph(
+            graph = ApplicationDriver.create_graph(
                 application=self.app,
                 num_gpus=self.num_gpus,
                 is_training_action=self.is_training_action)
@@ -187,24 +191,27 @@ class ApplicationDriver(object):
         with tf.Session(config=tf_config(), graph=graph):
             # check app variables initialised and ready for starts
             # self.app.check_initialisations()
-
-            # import the generator class
-            generator = IteratorFactory.create(self.iterator_type)
-
-            # make the list of initialised event handler instances.
-            self.load_event_handlers(self.event_handler_names)
-
             start_time = time.time()
             loop_status = {
                 'current_iter': self.initial_iter, 'normal_exit': False}
             try:
                 # create a iteration message generator and
                 # iteratively run the graph (the main engine loop)
+                # broadcasting event of session started
+                SESS_STARTED.send(self.app, iter_msg=None)
+
+                # import the generator class
+                generator = IteratorFactory.create(self.iterator_type)
                 engine_config_dict = vars(self)
                 self.loop(application=self.app,
                           iteration_messages=generator(**engine_config_dict)(),
                           loop_status=loop_status,
                           coordinator=self.coordinator)
+
+                # broadcasting event of session finished
+                iter_msg = IterationMessage()
+                iter_msg.current_iter = loop_status.get('current_iter', -1)
+                SESS_FINISHED.send(self.app, iter_msg=iter_msg)
 
             except KeyboardInterrupt:
                 tf.logging.warning('User cancelled application')
@@ -270,6 +277,7 @@ class ApplicationDriver(object):
                 outputs_collector.finalise_output_op()
             application.outputs_collector = outputs_collector
             application.gradients_collector = gradients_collector
+            GRAPH_CREATED.send(application, iter_msg=None)
         return graph
 
     def load_event_handlers(self, names):
@@ -282,7 +290,7 @@ class ApplicationDriver(object):
         """
         if not names:
             return
-        self._event_handlers = self._event_handlers or {}
+        self._event_handlers = {}
         for name in set(names):
             the_event_class = EventHandlerFactory.create(name)
             # initialise all registered event handler classes
@@ -318,11 +326,6 @@ class ApplicationDriver(object):
         :param coordinator: thread coordinator used to stop the loop.
         :return:
         """
-        # broadcasting event of session started
-        SESS_STARTED.send(application, iter_msg=None)
-        # tf.Graph.finalize(tf.get_default_graph())
-        GRAPH_FINALISED.send(application, iter_msg=None)
-
         loop_status = loop_status or {}
         for iter_msg in iteration_messages:
             if coordinator and coordinator.should_stop():
@@ -337,12 +340,8 @@ class ApplicationDriver(object):
                 tf.logging.info('stopping -- event handler: %s.',
                                 iter_msg.should_stop)
                 break
-
+        # loop finished without any exception
         loop_status['normal_exit'] = True
-        # broadcasting event of session finished
-        iter_msg = IterationMessage()
-        iter_msg.current_iter = loop_status.get('current_iter', -1)
-        SESS_FINISHED.send(application, iter_msg=iter_msg)
 
     @staticmethod
     def loop_step(application, iteration_message):
@@ -363,6 +362,7 @@ class ApplicationDriver(object):
         # passed to the application (and observers) for interpretation.
         sess = tf.get_default_session()
         assert sess, 'method should be called within a TF session context.'
+
         iteration_message.current_iter_output = sess.run(
             iteration_message.ops_to_run,
             feed_dict=iteration_message.data_feed_dict)

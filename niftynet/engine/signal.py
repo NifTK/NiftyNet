@@ -22,6 +22,10 @@ ALL = 'all'
 # namespace of NiftyNet's default signals.
 NIFTYNET = Namespace()
 
+GRAPH_CREATED = NIFTYNET.signal(
+    'graph_started',
+    doc="emitted when application's graph is created")
+
 ITER_STARTED = NIFTYNET.signal(
     'iteration_started',
     doc='emitted when every iteration starts, before ``tf.session.run(...)``.')
@@ -31,14 +35,10 @@ ITER_FINISHED = NIFTYNET.signal(
 
 SESS_STARTED = NIFTYNET.signal(
     'session_started',
-    doc='emitted at the beginning of the training/inference loop.')
+    doc='signal emitted at the end of the training/inference loop.')
 SESS_FINISHED = NIFTYNET.signal(
     'session_finished',
     doc='signal emitted at the end of the training/inference loop.')
-
-GRAPH_FINALISED = NIFTYNET.signal(
-    'tf_graph_finalised',
-    doc='signal emitted when the graph is finalised.')
 
 # EPOCH_STARTED = NIFTYNET.signal(
 #     'epoch_started',
