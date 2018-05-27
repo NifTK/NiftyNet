@@ -52,7 +52,12 @@ class SelectiveSampling(BaseApplication):
         self.data_param = data_param
         self.segmentation_param = task_param
 
-        file_lists = self.get_file_lists(data_partitioner)
+        try:
+            reader_phase = self.action_param.dataset_to_infer
+        except AttributeError:
+            reader_phase = None
+        file_lists = data_partitioner.get_file_lists_by(
+            phase=reader_phase, action=self.action)
         # read each line of csv files into an instance of Subject
         if self.is_training:
             self.readers = []

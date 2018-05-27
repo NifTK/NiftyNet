@@ -43,16 +43,20 @@ class ISampleRegression(RegressionApplication):
         if self.is_training:
             return
         if not task_param.error_map:
+            # use the regression application implementation
             return
 
-        file_lists = self.get_file_lists(data_partitioner)
+        try:
+            reader_phase = self.action_param.dataset_to_infer
+        except AttributeError:
+            reader_phase = None
+        file_lists = data_partitioner.get_file_lists_by(
+            phase=reader_phase, action=self.action)
         # modifying the original readers in regression application
         # as we need ground truth labels to generate error maps
-        self.readers=[]
-        for file_list in file_lists:
-            reader = ImageReader(['image', 'output'])
-            reader.initialise(data_param, task_param, file_list)
-            self.readers.append(reader)
+        self.readers = [
+            ImageReader(['image', 'output']).initialise(
+                data_param, task_param, file_list) for file_list in file_lists]
 
         mean_var_normaliser = MeanVarNormalisationLayer(image_name='image')
         histogram_normaliser = None
