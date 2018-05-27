@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
@@ -75,7 +76,7 @@ class SegmentationApplication(BaseApplication):
         elif self.is_evaluation:
             reader_names = ('image', 'label', 'inferred')
         else:
-            tf.logging.fatal('Action %s not supported. Expected one of %s',
+            tf.logging.fatal('Action `%s` not supported. Expected one of %s',
                              self.action, self.SUPPORTED_PHASES)
             raise ValueError
         try:
@@ -105,8 +106,8 @@ class SegmentationApplication(BaseApplication):
             norm_type=self.net_param.norm_type,
             cutoff=self.net_param.cutoff,
             name='hist_norm_layer') \
-            if self.net_param.histogram_ref_file \
-               and self.net_param.normalisation else None
+            if (self.net_param.histogram_ref_file and
+                self.net_param.normalisation) else None
         label_normalisers = None
         if self.net_param.histogram_ref_file and \
                 task_param.label_normalisation:
@@ -276,12 +277,6 @@ class SegmentationApplication(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
-        # def data_net(for_training):
-        #    with tf.name_scope('train' if for_training else 'validation'):
-        #        sampler = self.get_sampler()[0][0 if for_training else -1]
-        #        data_dict = sampler.pop_batch_op()
-        #        image = tf.cast(data_dict['image'], tf.float32)
-        #        return data_dict, self.net(image, is_training=for_training)
 
         def switch_sampler(for_training):
             with tf.name_scope('train' if for_training else 'validation'):
@@ -289,12 +284,6 @@ class SegmentationApplication(BaseApplication):
                 return sampler.pop_batch_op()
 
         if self.is_training:
-            # if self.action_param.validation_every_n > 0:
-            #    data_dict, net_out = tf.cond(tf.logical_not(self.is_validation),
-            #                                 lambda: data_net(True),
-            #                                 lambda: data_net(False))
-            # else:
-            #    data_dict, net_out = data_net(True)
             if self.action_param.validation_every_n > 0:
                 data_dict = tf.cond(tf.logical_not(self.is_validation),
                                     lambda: switch_sampler(for_training=True),
@@ -320,8 +309,7 @@ class SegmentationApplication(BaseApplication):
                 prediction=net_out,
                 ground_truth=data_dict.get('label', None),
                 weight_map=data_dict.get('weight', None))
-            reg_losses = tf.get_collection(
-                tf.GraphKeys.REGULARIZATION_LOSSES)
+            reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(
                     [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
