@@ -70,28 +70,6 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     outputs_collector = None
     gradients_collector = None
 
-    def get_file_lists(self, data_partitioner):
-        """
-        This function pull the correct file_lists from the data partitioner
-        depending on the phase.
-
-        :param data_partitioner: specifies train/valid/infer splitting if needed
-        :return: list of file lists of length 2
-            if validation is needed otherwise 1
-        """
-        if self.is_training:
-            if self.action_param.validation_every_n > 0 and \
-                    data_partitioner.has_validation:
-                return [data_partitioner.train_files,
-                        data_partitioner.validation_files]
-            return [data_partitioner.train_files]
-
-        dataset = self.action_param.dataset_to_infer
-        if dataset:
-            return [data_partitioner.get_file_list(dataset)]
-
-        return [data_partitioner.inference_files]
-
     def initialise_dataset_loader(
             self, data_param=None, task_param=None, data_partitioner=None):
         """
