@@ -507,6 +507,40 @@ class ImageSetsPartitioner(object):
         """
         return self.get_file_list()
 
+    def get_file_lists_by(self, phase=None, action='train'):
+        """
+        Get file lists by action and phase.
+
+        This function returns file lists for training/validation/inference
+        based on the phase or action specified by the user.
+
+        ``phase`` has a higher priority:
+        If `phase` specified, the function returns the corresponding
+        file list (as a list).
+
+        otherwise, the function checks ``action``:
+        it returns train and validation file lists if it's training action,
+        otherwise returns inference file list.
+
+        :param action: an action
+        :param phase: an element from ``{TRAIN, VALID, INFER, ALL}``
+        :return:
+        """
+        if phase:
+            try:
+                return [self.get_file_list(phase=phase)]
+            except (ValueError, AttributeError):
+                tf.logging.warning('phase `parameter` %s ignored', phase)
+                pass
+
+        if action and TRAIN.startswith(action):
+            file_lists = [self.train_files]
+            if self.has_validation:
+                file_lists.append(self.validation_files)
+            return file_lists
+
+        return [self.inference_files]
+
     def reset(self):
         """
         reset all fields of this singleton class.

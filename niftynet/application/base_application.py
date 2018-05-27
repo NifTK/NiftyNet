@@ -9,8 +9,6 @@ import tensorflow as tf
 from six import with_metaclass
 
 from niftynet.engine.signal import TRAIN, INFER, EVAL
-from niftynet.utilities import util_common
-
 
 APP_INSTANCE = None  # global so it can be reset
 
