@@ -74,8 +74,9 @@ class RegressionApplication(BaseApplication):
         elif self.is_evaluation:
             reader_names = ('image', 'output', 'inferred')
         else:
-            tf.logging.fatal('Action `%s` not supported. Expected one of %s',
-                             self.action, self.SUPPORTED_PHASES)
+            tf.logging.fatal(
+                'Action `%s` not supported. Expected one of %s',
+                self.action, self.SUPPORTED_PHASES)
             raise ValueError
         try:
             reader_phase = self.action_param.dataset_to_infer
