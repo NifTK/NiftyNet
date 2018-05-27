@@ -43,8 +43,12 @@ class AutoencoderApplication(BaseApplication):
                 self.autoencoder_param.inference_type, SUPPORTED_INFERENCE)
         else:
             self._infer_type = None
-
-        file_lists = self.get_file_lists(data_partitioner)
+        try:
+            reader_phase = self.action_param.dataset_to_infer
+        except AttributeError:
+            reader_phase = None
+        file_lists = data_partitioner.get_file_lists_by(
+            phase=reader_phase, action=self.action)
         # read each line of csv files into an instance of Subject
         if self.is_evaluation:
             NotImplementedError('Evaluation is not yet '
@@ -66,7 +70,7 @@ class AutoencoderApplication(BaseApplication):
             self.readers = [ImageReader(['feature'])]
             self.readers[0].initialise(data_param,
                                        task_param,
-                                       [file_lists])
+                                       file_lists[0])
         # if self.is_training or self._infer_type in ('encode', 'encode-decode'):
         #    mean_var_normaliser = MeanVarNormalisationLayer(image_name='image')
         #    self.reader.add_preprocessing_layers([mean_var_normaliser])
