@@ -98,7 +98,7 @@ class EvaluationApplicationDriver(object):
                                            data_partitioner)
         self.app.initialise_evaluator(eval_param)
 
-    def run_application(self):
+    def run(self, application):
         """
         This is the main application logic for evaluation.
         Computation of all metrics for all subjects is delegated to an
@@ -115,7 +115,7 @@ class EvaluationApplicationDriver(object):
             if not os.path.exists(self.eval_param.save_csv_dir):
                 os.makedirs(self.eval_param.save_csv_dir)
             # iteratively run the graph
-            all_results = self.app.evaluator.evaluate()
+            all_results = application.evaluator.evaluate()
             for group_by, data_frame in all_results.items():
                 if group_by == (None,):
                     csv_id = ''
@@ -137,4 +137,4 @@ class EvaluationApplicationDriver(object):
             tf.logging.info('Cleaning up...')
             tf.logging.info(
                 "%s stopped (time in second %.2f).",
-                type(self.app).__name__, (time.time() - start_time))
+                type(application).__name__, (time.time() - start_time))
