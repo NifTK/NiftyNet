@@ -43,11 +43,15 @@ class RegApp(BaseApplication):
         self.data_param = data_param
         self.registration_param = task_param
 
-        file_lists = self.get_file_lists(data_partitioner)
-
         if self.is_evaluation:
             NotImplementedError('Evaluation is not yet '
                                 'supported in this application.')
+        try:
+            reader_phase = self.action_param.dataset_to_infer
+        except AttributeError:
+            reader_phase = None
+        file_lists = data_partitioner.get_file_lists_by(
+            phase=reader_phase, action=self.action)
 
         self.readers = []
         for file_list in file_lists:
