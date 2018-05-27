@@ -531,7 +531,6 @@ class ImageSetsPartitioner(object):
                 return [self.get_file_list(phase=phase)]
             except (ValueError, AttributeError):
                 tf.logging.warning('phase `parameter` %s ignored', phase)
-                pass
 
         if action and TRAIN.startswith(action):
             file_lists = [self.train_files]
