@@ -4,6 +4,9 @@ python:
   - "2.7"
   - "3.6"
 
+before_install:
+  - pip install packaging
+
 install:
   - pip install -r requirements-cpu.txt
   - pip install .
