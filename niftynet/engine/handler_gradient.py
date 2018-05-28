@@ -25,8 +25,7 @@ class ApplyGradients(object):
         GRAPH_CREATED.connect(self.make_gradients_op)
         ITER_STARTED.connect(self.add_gradients)
 
-    @staticmethod
-    def make_gradients_op(sender, **_unused):
+    def make_gradients_op(self, sender, **_unused):
         """
         Making ``optimiser.apply_gradients`` ops.
 
@@ -45,8 +44,7 @@ class ApplyGradients(object):
                     sender.gradient_op = _apply_gradients(
                         sender.optimiser, gradients)
 
-    @staticmethod
-    def add_gradients(sender, **msg):
+    def add_gradients(self, sender, **msg):
         """
         Event handler to add gradients to iteration message ops_to_run.
 

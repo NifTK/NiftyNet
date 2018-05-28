@@ -18,8 +18,7 @@ class ConsoleLogger(object):
         ITER_STARTED.connect(self.read_console_vars)
         ITER_FINISHED.connect(self.print_console_vars)
 
-    @staticmethod
-    def read_console_vars(sender, **msg):
+    def read_console_vars(self, sender, **msg):
         """
         Event handler to add all console output ops to the iteration message
 
@@ -30,8 +29,7 @@ class ConsoleLogger(object):
         msg['iter_msg'].ops_to_run[CONSOLE] = \
             sender.outputs_collector.variables(CONSOLE)
 
-    @staticmethod
-    def print_console_vars(_sender, **msg):
+    def print_console_vars(self, _sender, **msg):
         """
         Printing iteration message with ``tf.logging`` interface.
 

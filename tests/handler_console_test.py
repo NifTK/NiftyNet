@@ -13,15 +13,19 @@ class EventConsoleTest(tf.test.TestCase):
 
         app_driver = get_initialised_driver()
         app_driver.load_event_handlers(
-            ['niftynet.engine.handler_console.ConsoleLogger',
+            ['niftynet.engine.handler_model.ModelRestorer',
+             'niftynet.engine.handler_console.ConsoleLogger',
              'niftynet.engine.handler_sampler.SamplerThreading'])
         graph = app_driver.create_graph(app_driver.app, 1, True)
         with self.test_session(graph=graph) as sess:
             GRAPH_CREATED.send(app_driver.app, iter_msg=None)
             SESS_STARTED.send(app_driver.app, iter_msg=None)
             msg = IterationMessage()
+            msg.current_iter = 1
             app_driver.loop(app_driver.app, [msg])
         app_driver.app.stop()
+
+        ITER_FINISHED.disconnect(self.iteration_listener)
 
     def iteration_listener(self, sender, **msg):
         msg = msg['iter_msg']
