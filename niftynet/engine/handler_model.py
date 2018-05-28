@@ -45,8 +45,7 @@ class ModelRestorer(object):
         else:
             SESS_STARTED.connect(self.restore_model)
 
-    @staticmethod
-    def rand_init_model(_sender, **_unused):
+    def rand_init_model(self, _sender, **_unused):
         """
         Randomly initialising all trainable variables defined in
         the default session.

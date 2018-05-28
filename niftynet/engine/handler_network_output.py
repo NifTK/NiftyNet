@@ -15,8 +15,7 @@ class OutputInterpreter(object):
         ITER_STARTED.connect(self.set_tensors_to_run)
         ITER_FINISHED.connect(self.interpret_output)
 
-    @staticmethod
-    def set_tensors_to_run(sender, **msg):
+    def set_tensors_to_run(self, sender, **msg):
         """
         Event handler to add all tensors to evaluate to the iteration message.
 
@@ -35,8 +34,7 @@ class OutputInterpreter(object):
 
         sender.set_iteration_update(_iter_msg)
 
-    @staticmethod
-    def interpret_output(sender, **msg):
+    def interpret_output(self, sender, **msg):
         """
         Calling sender application to interpret evaluated tensors.
         Set _iter_msg.should_stop to a True value

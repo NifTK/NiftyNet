@@ -44,8 +44,7 @@ class SamplerThreading(object):
                 "are blocked.")
             raise
 
-    @staticmethod
-    def stop_sampler_threads(sender, **_unused_msg):
+    def stop_sampler_threads(self, sender, **_unused_msg):
         """
         Stop the sampler's threads
 
