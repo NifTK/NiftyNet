@@ -1,0 +1,13 @@
+language: python
+
+python:
+  - "2.7"
+  - "3.6"
+
+install:
+  - pip install -r requirements-cpu.txt
+  - pip install .
+
+script:
+  - python -c "import tensorflow as tf; print(tf.__version__)"
+  - python -c "import niftynet; print(niftynet.__version__)"
