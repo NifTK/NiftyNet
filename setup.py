@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 from packaging import version
 import re
 from niftynet.utilities.versioning import get_niftynet_version
-from .versioneer import get_cmdclass
+import versioneer
 
 
 niftynet_version = get_niftynet_version()
@@ -34,7 +34,7 @@ setup(
     name='NiftyNet',
 
     version=niftynet_version,
-    cmdclass=get_cmdclass(),
+    cmdclass=versioneer.get_cmdclass(),
 
     description=description,
     long_description=long_description,
