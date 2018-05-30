@@ -219,7 +219,6 @@ quicktest:
     - 223-put-bug-fixes-under-fixed-header-in-changelog
     - 195-add-evaluation-action-3
     - 192-model_zoo_tests
-    - github-109-reactivate-ci-test-for-version-command
   script:
     # print system info
     - which nvidia-smi
