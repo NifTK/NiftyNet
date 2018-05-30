@@ -29,6 +29,7 @@ testjob:
     - dev
     - tags
     - cherrypick-from-dev-to-v0.2.1-for-v0.2.2-release
+    - github-109-reactivate-ci-test-for-version-command
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
