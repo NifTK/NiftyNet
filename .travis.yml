@@ -2,9 +2,6 @@ sudo: false
 
 language: python
 
-before_install:
-  - pip install packaging
-
 install:
   - pip install tox-travis
 
