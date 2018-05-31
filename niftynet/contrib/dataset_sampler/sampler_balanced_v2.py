@@ -73,7 +73,9 @@ def balanced_spatial_coordinates(
     :return: (n_samples, N_SPATIAL) coordinates representing sampling
               window centres relative to img_spatial_size
     """
-
+    assert sampler_map is not None, \
+        'sampling prior map is not specified, ' \
+        'please check `sampler=` option in the config.'
     assert np.all(img_spatial_size[:N_SPATIAL] ==
                   sampler_map.shape[:N_SPATIAL]), \
         'image and sampling map shapes do not match'
