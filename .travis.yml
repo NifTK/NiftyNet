@@ -8,4 +8,4 @@ python:
 
 install: pip install tox-travis
 
-script: tox -e lint
+script: tox
