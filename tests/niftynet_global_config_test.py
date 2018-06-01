@@ -8,7 +8,7 @@ from unittest import (TestCase, skipUnless)
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 
 
-class NiftyNetGlobalConfigTest(TestCase):
+class NiftyNetGlobalConfigTestBase(TestCase):
     """Tests included here all pertain to the NiftyNet global configuration
     file and `NiftyNetGlobalConfig` is a singleton. These require each test
     to be run separately. This is why all tests are decorated with
@@ -43,10 +43,10 @@ class NiftyNetGlobalConfigTest(TestCase):
         }
 
     def setUp(self):
-        NiftyNetGlobalConfigTest.remove_path(
-            NiftyNetGlobalConfigTest.config_home)
-        NiftyNetGlobalConfigTest.remove_path(
-            expanduser(NiftyNetGlobalConfigTest.default_config_opts['home'])
+        NiftyNetGlobalConfigTestBase.remove_path(
+            NiftyNetGlobalConfigTestBase.config_home)
+        NiftyNetGlobalConfigTestBase.remove_path(
+            expanduser(NiftyNetGlobalConfigTestBase.default_config_opts['home'])
         )
 
     def tearDown(self):
@@ -63,86 +63,86 @@ class NiftyNetGlobalConfigTest(TestCase):
     @skipUnless('GLOBAL_CONFIG_TEST_necfc' in environ,
                 'set GLOBAL_CONFIG_TEST_necfc to run')
     def test_non_existing_config_file_created(self):
-        self.assertFalse(isfile(NiftyNetGlobalConfigTest.config_file))
+        self.assertFalse(isfile(NiftyNetGlobalConfigTestBase.config_file))
         global_config = NiftyNetGlobalConfig().setup()
-        self.assertTrue(isfile(NiftyNetGlobalConfigTest.config_file))
+        self.assertTrue(isfile(NiftyNetGlobalConfigTestBase.config_file))
         self.assertEqual(global_config.get_niftynet_config_folder(),
-                         NiftyNetGlobalConfigTest.config_home)
+                         NiftyNetGlobalConfigTestBase.config_home)
 
     @skipUnless('GLOBAL_CONFIG_TEST_ecfl' in environ,
                 'set GLOBAL_CONFIG_TEST_ecfl to run')
     def test_existing_config_file_loaded(self):
         # create a config file with a custom NiftyNet home
-        makedirs(NiftyNetGlobalConfigTest.config_home)
+        makedirs(NiftyNetGlobalConfigTestBase.config_home)
         custom_niftynet_home = '~/customniftynethome'
         custom_niftynet_home_abs = expanduser(custom_niftynet_home)
         config = ''.join(['home = ', custom_niftynet_home])
-        with open(NiftyNetGlobalConfigTest.config_file, 'w') as config_file:
+        with open(NiftyNetGlobalConfigTestBase.config_file, 'w') as config_file:
             config_file.write('\n'.join(
-                [NiftyNetGlobalConfigTest.header, config]))
+                [NiftyNetGlobalConfigTestBase.header, config]))
 
         global_config = NiftyNetGlobalConfig().setup()
         self.assertEqual(global_config.get_niftynet_home_folder(),
                          custom_niftynet_home_abs)
-        NiftyNetGlobalConfigTest.remove_path(custom_niftynet_home_abs)
+        NiftyNetGlobalConfigTestBase.remove_path(custom_niftynet_home_abs)
 
     @skipUnless('GLOBAL_CONFIG_TEST_icfbu' in environ,
                 'set GLOBAL_CONFIG_TEST_icfbu to run')
     def test_incorrect_config_file_backed_up(self):
         # create an incorrect config file at the correct location
-        makedirs(NiftyNetGlobalConfigTest.config_home)
-        incorrect_config = '\n'.join([NiftyNetGlobalConfigTest.header,
+        makedirs(NiftyNetGlobalConfigTestBase.config_home)
+        incorrect_config = '\n'.join([NiftyNetGlobalConfigTestBase.header,
                                       'invalid_home_tag = ~/niftynet'])
-        with open(NiftyNetGlobalConfigTest.config_file, 'w') as config_file:
+        with open(NiftyNetGlobalConfigTestBase.config_file, 'w') as config_file:
             config_file.write(incorrect_config)
 
         # the following should back it up and replace it with default config
         global_config = NiftyNetGlobalConfig().setup()
 
-        self.assertTrue(isfile(NiftyNetGlobalConfigTest.config_file))
+        self.assertTrue(isfile(NiftyNetGlobalConfigTestBase.config_file))
         self.assertEqual(global_config.get_niftynet_config_folder(),
-                         NiftyNetGlobalConfigTest.config_home)
+                         NiftyNetGlobalConfigTestBase.config_home)
 
         # check if incorrect file was backed up
         found_files = glob(
-            join(NiftyNetGlobalConfigTest.config_home,
-                 NiftyNetGlobalConfigTest.typify('config-backup-*')))
+            join(NiftyNetGlobalConfigTestBase.config_home,
+                 NiftyNetGlobalConfigTestBase.typify('config-backup-*')))
         self.assertTrue(len(found_files) == 1)
         with open(found_files[0], 'r') as backup_file:
             self.assertEqual(backup_file.read(), incorrect_config)
 
         # cleanup: remove backup file
-        NiftyNetGlobalConfigTest.remove_path(found_files[0])
+        NiftyNetGlobalConfigTestBase.remove_path(found_files[0])
 
     @skipUnless('GLOBAL_CONFIG_TEST_nenhc' in environ,
                 'set GLOBAL_CONFIG_TEST_nenhc to run')
     def test_non_existing_niftynet_home_created(self):
         niftynet_home = expanduser(
-            NiftyNetGlobalConfigTest.default_config_opts['home'])
-        NiftyNetGlobalConfigTest.remove_path(niftynet_home)
+            NiftyNetGlobalConfigTestBase.default_config_opts['home'])
+        NiftyNetGlobalConfigTestBase.remove_path(niftynet_home)
         self.assertFalse(isdir(niftynet_home))
         niftynet_ext = join(
-            niftynet_home, NiftyNetGlobalConfigTest.default_config_opts['ext']
+            niftynet_home, NiftyNetGlobalConfigTestBase.default_config_opts['ext']
         )
         self.assertFalse(isfile(join(niftynet_ext, '__init__.py')))
-        for mod in NiftyNetGlobalConfigTest.default_config_opts['ext_mods']:
+        for mod in NiftyNetGlobalConfigTestBase.default_config_opts['ext_mods']:
             self.assertFalse(isfile(join(niftynet_ext, mod, '__init__.py')))
 
         global_config = NiftyNetGlobalConfig().setup()
 
         self.assertTrue(isdir(niftynet_home))
         self.assertTrue(isfile(join(niftynet_ext, '__init__.py')))
-        for mod in NiftyNetGlobalConfigTest.default_config_opts['ext_mods']:
+        for mod in NiftyNetGlobalConfigTestBase.default_config_opts['ext_mods']:
             self.assertTrue(isfile(join(niftynet_ext, mod, '__init__.py')))
 
     @skipUnless('GLOBAL_CONFIG_TEST_enhnt' in environ,
                 'set GLOBAL_CONFIG_TEST_enhnt to run')
     def test_existing_niftynet_home_not_touched(self):
         niftynet_home = expanduser(
-            NiftyNetGlobalConfigTest.default_config_opts['home'])
+            NiftyNetGlobalConfigTestBase.default_config_opts['home'])
         makedirs(niftynet_home)
         niftynet_ext = join(
-            niftynet_home, NiftyNetGlobalConfigTest.default_config_opts['ext']
+            niftynet_home, NiftyNetGlobalConfigTestBase.default_config_opts['ext']
         )
         makedirs(niftynet_ext)
         niftynet_ext_init = join(niftynet_ext, '__init__.py')
