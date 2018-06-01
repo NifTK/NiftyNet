@@ -153,3 +153,27 @@ class NiftyNetGlobalConfigTestBase(TestCase):
 
         mtime_after = getmtime(niftynet_ext_init)
         self.assertEqual(mtime_before, mtime_after)
+
+
+class TestGlobalConfigSingleton(NiftyNetGlobalConfigTestBase):
+    pass
+
+
+class TestNonExistingConfigFileCreated(NiftyNetGlobalConfigTestBase):
+    pass
+
+
+class TestExistingConfigFileLoaded(NiftyNetGlobalConfigTestBase):
+    pass
+
+
+class TestIncorrectConfigFileBackedUp(NiftyNetGlobalConfigTestBase):
+    pass
+
+
+class TestNonExistingNiftynetHomeCreated(NiftyNetGlobalConfigTestBase):
+    pass
+
+
+class TestExistingNiftynetHomeNotTouched(NiftyNetGlobalConfigTestBase):
+    pass
