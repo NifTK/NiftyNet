@@ -52,6 +52,9 @@ class NiftyNetGlobalConfigTestBase(TestCase):
     def tearDown(self):
         self.setUp()
 
+
+class TestGlobalConfigSingleton(NiftyNetGlobalConfigTestBase):
+
     @skipUnless('GLOBAL_CONFIG_TEST_gcs' in environ,
                 'set GLOBAL_CONFIG_TEST_gcs to run')
     def test_global_config_singleton(self):
@@ -59,6 +62,9 @@ class NiftyNetGlobalConfigTestBase(TestCase):
         global_config_2 = NiftyNetGlobalConfig()
         self.assertEqual(global_config_1, global_config_2)
         self.assertTrue(global_config_1 is global_config_2)
+
+
+class TestNonExistingConfigFileCreated(NiftyNetGlobalConfigTestBase):
 
     @skipUnless('GLOBAL_CONFIG_TEST_necfc' in environ,
                 'set GLOBAL_CONFIG_TEST_necfc to run')
@@ -68,6 +74,9 @@ class NiftyNetGlobalConfigTestBase(TestCase):
         self.assertTrue(isfile(NiftyNetGlobalConfigTestBase.config_file))
         self.assertEqual(global_config.get_niftynet_config_folder(),
                          NiftyNetGlobalConfigTestBase.config_home)
+
+
+class TestExistingConfigFileLoaded(NiftyNetGlobalConfigTestBase):
 
     @skipUnless('GLOBAL_CONFIG_TEST_ecfl' in environ,
                 'set GLOBAL_CONFIG_TEST_ecfl to run')
@@ -85,6 +94,9 @@ class NiftyNetGlobalConfigTestBase(TestCase):
         self.assertEqual(global_config.get_niftynet_home_folder(),
                          custom_niftynet_home_abs)
         NiftyNetGlobalConfigTestBase.remove_path(custom_niftynet_home_abs)
+
+
+class TestIncorrectConfigFileBackedUp(NiftyNetGlobalConfigTestBase):
 
     @skipUnless('GLOBAL_CONFIG_TEST_icfbu' in environ,
                 'set GLOBAL_CONFIG_TEST_icfbu to run')
@@ -114,6 +126,9 @@ class NiftyNetGlobalConfigTestBase(TestCase):
         # cleanup: remove backup file
         NiftyNetGlobalConfigTestBase.remove_path(found_files[0])
 
+
+class TestNonExistingNiftynetHomeCreated(NiftyNetGlobalConfigTestBase):
+
     @skipUnless('GLOBAL_CONFIG_TEST_nenhc' in environ,
                 'set GLOBAL_CONFIG_TEST_nenhc to run')
     def test_non_existing_niftynet_home_created(self):
@@ -135,6 +150,9 @@ class NiftyNetGlobalConfigTestBase(TestCase):
         for mod in NiftyNetGlobalConfigTestBase.default_config_opts['ext_mods']:
             self.assertTrue(isfile(join(niftynet_ext, mod, '__init__.py')))
 
+
+class TestExistingNiftynetHomeNotTouched(NiftyNetGlobalConfigTestBase):
+
     @skipUnless('GLOBAL_CONFIG_TEST_enhnt' in environ,
                 'set GLOBAL_CONFIG_TEST_enhnt to run')
     def test_existing_niftynet_home_not_touched(self):
@@ -153,27 +171,3 @@ class NiftyNetGlobalConfigTestBase(TestCase):
 
         mtime_after = getmtime(niftynet_ext_init)
         self.assertEqual(mtime_before, mtime_after)
-
-
-class TestGlobalConfigSingleton(NiftyNetGlobalConfigTestBase):
-    pass
-
-
-class TestNonExistingConfigFileCreated(NiftyNetGlobalConfigTestBase):
-    pass
-
-
-class TestExistingConfigFileLoaded(NiftyNetGlobalConfigTestBase):
-    pass
-
-
-class TestIncorrectConfigFileBackedUp(NiftyNetGlobalConfigTestBase):
-    pass
-
-
-class TestNonExistingNiftynetHomeCreated(NiftyNetGlobalConfigTestBase):
-    pass
-
-
-class TestExistingNiftynetHomeNotTouched(NiftyNetGlobalConfigTestBase):
-    pass
