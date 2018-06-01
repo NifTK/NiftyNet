@@ -55,6 +55,10 @@ class NiftyNetGlobalConfigTestBase(TestCase):
 
 class TestGlobalConfigSingleton(NiftyNetGlobalConfigTestBase):
 
+    @classmethod
+    def setUpClass(cls):
+        NiftyNetGlobalConfigTestBase.setupClass()
+
     @skipUnless('GLOBAL_CONFIG_TEST_gcs' in environ,
                 'set GLOBAL_CONFIG_TEST_gcs to run')
     def test_global_config_singleton(self):
