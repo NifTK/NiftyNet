@@ -31,6 +31,11 @@ class NiftyNetGlobalConfigTestBase(TestCase):
 
     @classmethod
     def setUpClass(cls):
+        # use this method in sub-classes
+        if cls is not NiftyNetGlobalConfigTestBase:
+            NiftyNetGlobalConfigTestBase.setUpClass()
+            return
+
         cls.config_home = join(expanduser('~'), '.niftynet')
         cls.file_type = 'ini'
         cls.config_file = join(cls.config_home, cls.typify('config'))
