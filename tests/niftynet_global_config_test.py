@@ -1,9 +1,9 @@
 from glob import glob
-from os import (remove, makedirs, environ)
+from os import (remove, makedirs)
 from os.path import (expanduser, join, isdir, isfile)
 from os.path import getmtime
 from shutil import rmtree
-from unittest import (TestCase, skipUnless)
+from unittest import TestCase
 
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 
@@ -64,8 +64,6 @@ class TestGlobalConfigSingleton(NiftyNetGlobalConfigTestBase):
     def setUpClass(cls):
         NiftyNetGlobalConfigTestBase.setUpClass()
 
-    @skipUnless('GLOBAL_CONFIG_TEST_gcs' in environ,
-                'set GLOBAL_CONFIG_TEST_gcs to run')
     def test_global_config_singleton(self):
         global_config_1 = NiftyNetGlobalConfig()
         global_config_2 = NiftyNetGlobalConfig()
@@ -75,8 +73,6 @@ class TestGlobalConfigSingleton(NiftyNetGlobalConfigTestBase):
 
 class TestNonExistingConfigFileCreated(NiftyNetGlobalConfigTestBase):
 
-    @skipUnless('GLOBAL_CONFIG_TEST_necfc' in environ,
-                'set GLOBAL_CONFIG_TEST_necfc to run')
     def test_non_existing_config_file_created(self):
         self.assertFalse(isfile(NiftyNetGlobalConfigTestBase.config_file))
         global_config = NiftyNetGlobalConfig().setup()
@@ -87,8 +83,6 @@ class TestNonExistingConfigFileCreated(NiftyNetGlobalConfigTestBase):
 
 class TestExistingConfigFileLoaded(NiftyNetGlobalConfigTestBase):
 
-    @skipUnless('GLOBAL_CONFIG_TEST_ecfl' in environ,
-                'set GLOBAL_CONFIG_TEST_ecfl to run')
     def test_existing_config_file_loaded(self):
         # create a config file with a custom NiftyNet home
         makedirs(NiftyNetGlobalConfigTestBase.config_home)
@@ -107,8 +101,6 @@ class TestExistingConfigFileLoaded(NiftyNetGlobalConfigTestBase):
 
 class TestIncorrectConfigFileBackedUp(NiftyNetGlobalConfigTestBase):
 
-    @skipUnless('GLOBAL_CONFIG_TEST_icfbu' in environ,
-                'set GLOBAL_CONFIG_TEST_icfbu to run')
     def test_incorrect_config_file_backed_up(self):
         # create an incorrect config file at the correct location
         makedirs(NiftyNetGlobalConfigTestBase.config_home)
@@ -138,8 +130,6 @@ class TestIncorrectConfigFileBackedUp(NiftyNetGlobalConfigTestBase):
 
 class TestNonExistingNiftynetHomeCreated(NiftyNetGlobalConfigTestBase):
 
-    @skipUnless('GLOBAL_CONFIG_TEST_nenhc' in environ,
-                'set GLOBAL_CONFIG_TEST_nenhc to run')
     def test_non_existing_niftynet_home_created(self):
         niftynet_home = expanduser(
             NiftyNetGlobalConfigTestBase.default_config_opts['home'])
@@ -162,8 +152,6 @@ class TestNonExistingNiftynetHomeCreated(NiftyNetGlobalConfigTestBase):
 
 class TestExistingNiftynetHomeNotTouched(NiftyNetGlobalConfigTestBase):
 
-    @skipUnless('GLOBAL_CONFIG_TEST_enhnt' in environ,
-                'set GLOBAL_CONFIG_TEST_enhnt to run')
     def test_existing_niftynet_home_not_touched(self):
         niftynet_home = expanduser(
             NiftyNetGlobalConfigTestBase.default_config_opts['home'])
