@@ -101,6 +101,8 @@ class DriverLoopTest(tf.test.TestCase):
 
             app_driver.app.stop()
 
+        ITER_FINISHED.disconnect(get_iter_msgs)
+
 
 if __name__ == "__main__":
     tf.test.main()
