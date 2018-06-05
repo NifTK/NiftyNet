@@ -2,27 +2,11 @@
 from setuptools import setup, find_packages
 from packaging import version
 import re
-import os
+from niftynet.utilities.versioning import get_niftynet_version
+import versioneer
 
-from niftynet.utilities.versioning import get_niftynet_git_version
 
-version_buf, version_git, command_git = get_niftynet_git_version()
-
-# Create a niftynet/info.py module that will keep the
-# version descriptor returned by Git
-info_module = open(os.path.join('niftynet', 'info.py'), 'w')
-info_module.write('# -*- coding: utf-8 -*-\n')
-info_module.write('"""NiftyNet version tracker.\n')
-info_module.write('\n')
-info_module.write('This module only holds the NiftyNet version,')
-info_module.write(' generated using the \n')
-info_module.write('``{}`` command.\n'.format(' '.join(command_git)))
-info_module.write('\n')
-info_module.write('"""\n')
-info_module.write('\n')
-info_module.write('\n')
-info_module.write('VERSION_DESCRIPTOR = "{}"\n'.format(version_buf))
-info_module.close()
+niftynet_version = get_niftynet_version()
 
 # Regex for checking PEP 440 conformity
 # https://www.python.org/dev/peps/pep-0440/#id79
@@ -32,11 +16,9 @@ pep440_regex = re.compile(
 )
 
 # Check PEP 440 conformity
-if pep440_regex.match(version_git) is None:
-    raise ValueError('The version tag {} constructed from {} output'
-                     ' (generated using the "{}" command) does not'
-                     ' conform to PEP 440'.format(
-                         version_git, version_buf, ' '.join(command_git)))
+if pep440_regex.match(niftynet_version) is None:
+    raise ValueError('The version string {} does not conform to'
+                     ' PEP 440'.format(niftynet_version))
 
 # Get the summary
 description = 'An open-source convolutional neural networks platform' +\
@@ -51,7 +33,8 @@ with open('pip/long_description.rst') as f:
 setup(
     name='NiftyNet',
 
-    version=version_git,
+    version=niftynet_version,
+    cmdclass=versioneer.get_cmdclass(),
 
     description=description,
     long_description=long_description,

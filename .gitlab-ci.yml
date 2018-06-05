@@ -77,6 +77,21 @@ testjob:
 
     - pip install -r requirements-gpu.txt
 
+    # check whether version command works
+    # Git-clone:
+    - python net_segment.py --version 2>&1 | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+'
+    - python -c 'import niftynet; print(niftynet.__version__)' | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+'
+    # downloaded ZIP ball:
+    - export check_version_zip=/tmp/check_version_zip-$(git rev-parse --short HEAD)
+    - mkdir $check_version_zip
+    - git archive --format=tar HEAD | (cd $check_version_zip && tar xf -)
+    - cd $check_version_zip
+    - python net_segment.py --version 2>&1 | grep -E 'NiftyNet.*version.*unknown'
+    - python -c 'import niftynet; print(niftynet.__version__)' | grep -E 'NiftyNet.*version.*unknown'
+    - cd $niftynet_dir
+    - rm -rf $check_version_zip
+    - unset check_version_zip
+
     # tests
     - python net_download.py testing -r
 
@@ -235,16 +250,6 @@ quicktest:
     - QUICKTEST=True coverage run -a --source . -m unittest discover -s "tests" -p "*_test.py"
     - coverage report -m
 
-    # run global config tests
-    # These need to be run separately because NiftyNetGlobalConfig is a singleton, AND
-    # its operations pertain to a global configuration file (~/.niftynet/config.ini).
-    - GLOBAL_CONFIG_TEST_gcs=True python -m unittest tests.niftynet_global_config_test
-    - GLOBAL_CONFIG_TEST_necfc=True python -m unittest tests.niftynet_global_config_test
-    - GLOBAL_CONFIG_TEST_ecfl=True python -m unittest tests.niftynet_global_config_test
-    - GLOBAL_CONFIG_TEST_icfbu=True python -m unittest tests.niftynet_global_config_test
-    - GLOBAL_CONFIG_TEST_nenhc=True python -m unittest tests.niftynet_global_config_test
-    - GLOBAL_CONFIG_TEST_enhnt=True python -m unittest tests.niftynet_global_config_test
-
     - echo 'finished quick tests'
   tags:
     - gift-linux
@@ -257,6 +262,7 @@ pip-installer:
     - dev
     - refactoring-engine-with-blinker
     - tags
+    - 117-support-for-user-defined-networks-using-pip-installed-niftynet
   script:
     # get the shortened version of last commit's hash
     - LAST_COMMIT=$(git rev-parse --short HEAD)
@@ -332,6 +338,9 @@ pip-installer:
     # check whether all packages are importable
     - cat $package_importer
     - python $package_importer
+    # check whether version command works
+    - net_segment --version 2>&1 | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+'
+    - python -c 'import niftynet; print(niftynet.__version__)' | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+'
     # test niftynet command
     - net_download testing -r
 
@@ -465,6 +474,16 @@ pip-camera-ready:
     - ls -lrtha $camera_ready_dir
     # Clean up the camera-ready folder if already there
     - rm -rf $camera_ready_dir/*.whl
+    # check whether version command works
+    - export check_version_venv=check_version_venv
+    - virtualenv $check_version_venv
+    - source $check_version_venv/bin/activate
+    - pip install -r requirements-gpu.txt
+    - pip install $niftynet_wheel
+    - net_segment --version 2>&1 | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+' | grep -v +
+    - python -c 'import niftynet; print(niftynet.__version__)' | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+' | grep -v +
+    - deactivate
+    - rm -rf $check_version_venv
     # Finally do copy
     - cp $niftynet_wheel $camera_ready_dir
     - ls -lrtha $camera_ready_dir
