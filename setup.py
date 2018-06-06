@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-from setuptools import setup, find_packages
-from packaging import version
 import re
-from niftynet.utilities.versioning import get_niftynet_version
-import versioneer
 
+from packaging import version
+from setuptools import setup, find_packages
+
+import versioneer
+from niftynet.utilities.versioning import get_niftynet_version
 
 niftynet_version = get_niftynet_version()
 
@@ -16,19 +17,19 @@ pep440_regex = re.compile(
 )
 
 # Check PEP 440 conformity
-if pep440_regex.match(niftynet_version) is None:
+if niftynet_version is not None and \
+        pep440_regex.match(niftynet_version) is None:
     raise ValueError('The version string {} does not conform to'
                      ' PEP 440'.format(niftynet_version))
 
 # Get the summary
-description = 'An open-source convolutional neural networks platform' +\
-              ' for research in medical image analysis and' +\
+description = 'An open-source convolutional neural networks platform' + \
+              ' for research in medical image analysis and' + \
               ' image-guided therapy'
 
 # Get the long description
 with open('pip/long_description.rst') as f:
     long_description = f.read()
-
 
 setup(
     name='NiftyNet',
@@ -97,4 +98,3 @@ setup(
         ],
     },
 )
-
