@@ -223,18 +223,25 @@ class ConfigStore:
     def _check_minimum_versions(remote_config):
         # Checks whether a minimum download API is specified
         if 'min_download_api' in remote_config:
-            min_download_api = remote_config['min_download_api']
-            current_download_api_version = DOWNLOAD_API_VERSION
-            if LooseVersion(min_download_api) > LooseVersion(
-                    current_download_api_version):
+            try:
+                min_download_api = LooseVersion(
+                    remote_config['min_download_api'])
+            except AttributeError:
+                min_download_api = LooseVersion(DOWNLOAD_API_VERSION)
+            current_download_api_version = LooseVersion(DOWNLOAD_API_VERSION)
+            if min_download_api > current_download_api_version:
                 raise ValueError(
                     "This example requires a newer version of NiftyNet.")
 
         # Checks whether a minimum NiftyNet version is specified
         if 'min_niftynet' in remote_config:
-            min_niftynet = remote_config['min_niftynet']
-            current_version = get_niftynet_version()
-            if LooseVersion(min_niftynet) > LooseVersion(current_version):
+            try:
+                min_niftynet = LooseVersion(remote_config['min_niftynet'])
+                current_version = LooseVersion(get_niftynet_version())
+            except AttributeError:
+                min_niftynet = 0
+                current_version = 0
+            if min_niftynet > current_version:
                 raise ValueError("This example requires NiftyNet "
                                  "version %s or later.", min_niftynet)
 
