@@ -268,7 +268,8 @@ def add_network_args(parser):
         "--volume_padding_mode",
         metavar='',
         help="Set which type of numpy padding to do, see "
-             "https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.pad.html "
+             "https://docs.scipy.org/doc/numpy-1.14.0/"
+             "reference/generated/numpy.pad.html "
              "for details",
         type=str,
         default='minimum')
