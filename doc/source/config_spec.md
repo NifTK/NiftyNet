@@ -239,7 +239,7 @@ If the string is a relative path, NiftyNet interpret this as relative to `model_
 - [volume_padding_size](#volume-padding-size) :: `integer array` :: `volume_padding_size=4, 4, 4` :: `0,0,0`
 - [window_sampling](#window-sampling) :: `string` :: `window_sampling=uniform` :: `uniform`
 - [queue_length](#queue-length) :: `integer` :: `queue_length=10` :: `5`
-- [keep_prob](#keep-prob) :: `non-negative float` :: `keep_prob=0.2` :: `0.5`
+- [keep_prob](#keep-prob) :: `non-negative float` :: `keep_prob=0.2` :: `1.0`
 
 ######  `name`
 A network class from [niftynet/network](./niftynet.network.html) or from user
