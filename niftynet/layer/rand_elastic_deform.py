@@ -126,7 +126,8 @@ class RandomElasticDeformationLayer(RandomisedLayer):
             return inputs
 
         # only do augmentation with a probability `proportion_to_augment`
-        if np.random.rand() >= self.proportion_to_augment:
+        do_augmentation = np.random.rand() < self.proportion_to_augment
+        if not do_augmentation:
             return inputs
 
         if isinstance(inputs, dict) and isinstance(interp_orders, dict):
