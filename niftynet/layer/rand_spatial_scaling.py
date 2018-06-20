@@ -41,7 +41,6 @@ class RandomSpatialScalingLayer(RandomisedLayer):
         full_zoom = np.array(self._rand_zoom)
         while len(full_zoom) < image.ndim:
             full_zoom = np.hstack((full_zoom, [1.0]))
-
         if image.ndim == 4:
             output = []
             for mod in range(image.shape[-1]):
@@ -62,17 +61,19 @@ class RandomSpatialScalingLayer(RandomisedLayer):
             return inputs
 
         if isinstance(inputs, dict) and isinstance(interp_orders, dict):
+            
             for (field, image) in inputs.items():
-                assert image.shape[-1] == len(interp_orders[field]), \
-                    "interpolation orders should be" \
-                    "specified for each inputs modality"
-
                 transformed_data = []
-                for mod_i, interp_order in enumerate(interp_orders[field]):
+                interp_order = interp_orders[field][0]
+                for mod_i in range(image.shape[-1]):
                     scaled_data = self._apply_transformation(
                         image[..., mod_i], interp_order)
                     transformed_data.append(scaled_data[..., np.newaxis])
                 inputs[field] = np.concatenate(transformed_data, axis=-1)
+            shapes = []
+            for (field, image) in inputs.items():
+                shapes.append(image.shape)
+            assert(len(shapes) == 2 and shapes[0][0:4] == shapes[1][0:4]), shapes
         else:
             raise NotImplementedError("unknown input format")
         return inputs
