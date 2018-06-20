@@ -120,11 +120,10 @@ class RandomRotationLayer(RandomisedLayer):
                                     image[..., t, channel_idx], interp_order)
                     else:
                         raise NotImplementedError("unknown input format")
-            shapes = []
-            for (field, image) in inputs.items():
-                shapes.append(image.shape)
-            assert(len(shapes) == 2 and shapes[0][0:4] == shapes[1][0:4]), shapes
-
+            # shapes = []
+            # for (field, image) in inputs.items():
+            #     shapes.append(image.shape)
+            # assert(len(shapes) == 2 and shapes[0][0:4] == shapes[1][0:4]), shapes
         else:
             raise NotImplementedError("unknown input format")
         return inputs
