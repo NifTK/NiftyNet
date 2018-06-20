@@ -1,7 +1,13 @@
+---
+name: niftynet issue template
+about: template for reporting bugs/requesting new features
+
+---
+
 Before filing your issue, please note that it might be more appropriate for Stack Overflow, using the `niftynet` tag:
 https://stackoverflow.com/questions/tagged/niftynet
 
-Read the following to decide whether to file and issue here or ask a question on Stack Overflow:
+Read the following to decide whether to file an issue here or ask a question on Stack Overflow:
 
 **Issue** → **Action**
 - How do I ...? → Stack Overflow
