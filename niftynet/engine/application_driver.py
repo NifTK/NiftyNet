@@ -351,6 +351,22 @@ class ApplicationDriver(object):
 
             with tf.name_scope('MergedOutputs'):
                 self.outputs_collector.finalise_output_op()
+
+            ###################
+            # starting two savers, one restore the feature extractor
+            # the other randomly initialise the last classification layer
+            ################### originally restoring all layers
+            var_list = tf.global_variables()
+            # list of variables to restore from the trained model
+            to_restore = [x for x in var_list
+                          if not x.name.startswith('HighRes3DNet/conv_2')]
+            # list of variables to randomly initialise
+            to_randomise = [x for x in var_list if x not in to_restore]
+            # create initialisation operation
+            self._init_op = tf.variables_initializer(to_randomise)
+            self.restorer = tf.train.Saver(var_list=to_restore)
+            ###################
+
             # saving operation
             self.saver = tf.train.Saver(max_to_keep=self.max_checkpoints,
                                         save_relative_paths=True)
@@ -399,7 +415,15 @@ class ApplicationDriver(object):
         # restore session
         tf.logging.info('Accessing %s ...', checkpoint)
         try:
-            self.saver.restore(sess, checkpoint)
+            #####################################
+            # instead of restoring all parameters,
+            # retore only feature extractor
+            #####################################
+            # self.saver.restore(sess, checkpoint)
+            #####################################
+            self.restorer.restore(sess, checkpoint)
+            # randomly initialise the classification layer
+            sess.run(self._init_op)
         except tf.errors.NotFoundError:
             tf.logging.fatal(
                 'checkpoint %s not found or variables to restore do not '
