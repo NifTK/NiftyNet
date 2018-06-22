@@ -311,7 +311,7 @@ class SegmentationApplication(BaseApplication):
                 data_dict = switch_sampler(for_training=True)
 
             image = tf.cast(data_dict['image'], tf.float32)
-            net_args = {'is_training': self.is_training,
+            net_args = {'is_training': True, # self.is_training,
                         'keep_prob': self.net_param.keep_prob}
             net_out = self.net(image, **net_args)
 
@@ -341,11 +341,11 @@ class SegmentationApplication(BaseApplication):
             # computing gradients for the last classification layer only
             # grads = self.optimiser.compute_gradients(loss)
             ###############################
-            # the final classification layer names are
-            #      HighRes3DNet/conv_2*
+            # only computing grads for the matched variables
             var_list = tf.global_variables()
-            to_optimise = [x for x in var_list
-                           if x.name.startswith('HighRes3DNet/conv_2')]
+            import re
+            name_regex = re.compile("HighRes3DNet/conv_[12]")
+            to_optimise = [x for x in var_list if name_regex.search(x.name)]
             grads = self.optimiser.compute_gradients(
                 loss, var_list=to_optimise)
             ##############################
@@ -380,7 +380,7 @@ class SegmentationApplication(BaseApplication):
             # classification probabilities or argmax classification labels
             data_dict = switch_sampler(for_training=False)
             image = tf.cast(data_dict['image'], tf.float32)
-            net_args = {'is_training': self.is_training,
+            net_args = {'is_training': True,# self.is_training,
                         'keep_prob': self.net_param.keep_prob}
             net_out = self.net(image, **net_args)
 

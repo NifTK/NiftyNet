@@ -353,17 +353,18 @@ class ApplicationDriver(object):
                 self.outputs_collector.finalise_output_op()
 
             ###################
-            # starting two savers, one restore the feature extractor
-            # the other randomly initialise the last classification layer
+            # starting two savers, one restores the feature extractor
+            # the other randomly initialises the last classification layer
             ################### originally restoring all layers
             var_list = tf.global_variables()
             # list of variables to restore from the trained model
-            to_restore = [x for x in var_list
-                          if not x.name.startswith('HighRes3DNet/conv_2')]
+            import re
+            name_regex = re.compile("(RMSProp|(HighRes3DNet/conv_2))")
+            to_randomise = [x for x in var_list if name_regex.search(x.name)]
             # list of variables to randomly initialise
-            to_randomise = [x for x in var_list if x not in to_restore]
+            to_restore = [x for x in var_list if x not in to_randomise]
             # create initialisation operation
-            self._init_op = tf.variables_initializer(to_randomise)
+            self._init_op = global_vars_init_or_restore(to_randomise)
             self.restorer = tf.train.Saver(var_list=to_restore)
             ###################
 
@@ -415,15 +416,16 @@ class ApplicationDriver(object):
         # restore session
         tf.logging.info('Accessing %s ...', checkpoint)
         try:
-            #####################################
-            # instead of restoring all parameters,
-            # retore only feature extractor
-            #####################################
-            # self.saver.restore(sess, checkpoint)
-            #####################################
-            self.restorer.restore(sess, checkpoint)
-            # randomly initialise the classification layer
-            sess.run(self._init_op)
+            if self.is_training:  # TODO: need a flag for finetuning.
+                #####################################
+                # instead of restoring all parameters,
+                # retore only feature extractor
+                #####################################
+                self.restorer.restore(sess, checkpoint)
+                # randomly initialise the classification layer
+                sess.run(self._init_op)
+            else:
+                self.saver.restore(sess, checkpoint)
         except tf.errors.NotFoundError:
             tf.logging.fatal(
                 'checkpoint %s not found or variables to restore do not '
