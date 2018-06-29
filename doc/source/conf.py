@@ -91,7 +91,9 @@ extensions = [
     'sphinx.ext.imgmath',
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
-    'sphinx.ext.viewcode']
+    'sphinx.ext.viewcode',
+    'sphinx_markdown_tables',
+]
 autodoc_default_flags = ['members', 'show-inheritance']
 autodoc_member_order = 'bysource'
 
@@ -256,6 +258,3 @@ texinfo_documents = [
      author, 'NiftyNet', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-
