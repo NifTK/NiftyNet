@@ -30,6 +30,13 @@ class INetAffine(BaseNet):
             multimodal deformable image registration, arXiv:1711.01666
             https://arxiv.org/abs/1711.01666
 
+            Hu et al., Weakly-Supervised Convolutional Neural Networks for
+            Multimodal Image Registration, Medical Image Analysis (2018)
+            https://doi.org/10.1016/j.media.2018.07.002
+
+        see also:
+            https://github.com/YipengHu/label-reg
+
         :param decay:
         :param affine_w_initializer:
         :param affine_b_initializer:
