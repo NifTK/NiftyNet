@@ -1,10 +1,10 @@
 # NiftyNet
 
-<img src="https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/raw/master/niftynet-logo.png" width="263" height="155">
+<img src="https://github.com/NifTK/NiftyNet/raw/dev/niftynet-logo.png" width="263" height="155">
 
-[![build status](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/dev/build.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/dev)
-[![coverage report](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/badges/dev/coverage.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/commits/dev)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/dev/LICENSE)
+[![pipeline status](https://gitlab.com/NifTK/NiftyNet/badges/dev/pipeline.svg)](https://github.com/NifTK/NiftyNet/commits/dev)
+[![coverage report](https://gitlab.com/NifTK/NiftyNet/badges/dev/coverage.svg)](https://github.com/NifTK/NiftyNet)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/NifTK/NiftyNet/blob/dev/LICENSE)
 [![PyPI version](https://badge.fury.io/py/NiftyNet.svg)](https://badge.fury.io/py/NiftyNet)
 
 NiftyNet is a [TensorFlow][tf]-based open-source convolutional neural networks (CNN) platform for research in medical image analysis and image-guided therapy.
@@ -20,21 +20,19 @@ NiftyNet is a consortium of research groups (WEISS -- [Wellcome EPSRC Centre for
 
 ### Features
 
-NiftyNet currently supports medical image segmentation and generative adversarial networks.
-**NiftyNet is not intended for clinical use**.
-Other features of NiftyNet include:
-
 * Easy-to-customise interfaces of network components
 * Sharing networks and pretrained models
 * Support for 2-D, 2.5-D, 3-D, 4-D inputs*
-* Efficient discriminative training with multiple-GPU support
+* Efficient training with multiple-GPU support
 * Implementation of recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
 * Comprehensive evaluation metrics for medical image segmentation
 
+ <sup>NiftyNet is not intended for clinical use.</sup>
+
+ <sup>NiftyNet release notes are available [here][changelog].</sup>
+
  <sup>*2.5-D: volumetric images processed as a stack of 2D slices;
 4-D: co-registered multi-modal 3D volumes</sup>
-
-NiftyNet release notes are available [here][changelog].
 
 [changelog]: CHANGELOG.md
 
@@ -46,9 +44,9 @@ NiftyNet release notes are available [here][changelog].
    * [`pip install tensorflow==1.7`][tf-pypi] for CPU-only TensorFlow
 1. [`pip install niftynet`](https://pypi.org/project/NiftyNet/)
 
- <sup>*All other NiftyNet dependencies are installed automatically as part of the pip installation process.
- 
-*To install from the source repository, please checkout [the instructions](http://niftynet.readthedocs.io/en/dev/installation.html).</sup>
+ <sup>All other NiftyNet dependencies are installed automatically as part of the pip installation process.
+
+To install from the source repository, please checkout [the instructions](http://niftynet.readthedocs.io/en/dev/installation.html).</sup>
 
 [tf-pypi-gpu]: https://pypi.org/project/tensorflow-gpu/
 [tf-pypi]: https://pypi.org/project/tensorflow/
@@ -63,20 +61,17 @@ The API reference and how-to guides are available on [Read the Docs][rtd-niftyne
 
 [NiftyNet website][niftynet-io]
 
-[NiftyNet source code on CmicLab][niftynet-cmiclab]
+[NiftyNet source code on GitHub][niftynet-github]
 
-[NiftyNet source code mirror on GitHub][niftynet-github]
-
-[Model zoo repository][niftynet-zoo]
+[NiftyNet Model zoo repository][niftynet-zoo]
 
 NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
 
 [Stack Overflow](https://stackoverflow.com/questions/tagged/niftynet) for general questions
 
 [niftynet-io]: http://niftynet.io/
-[niftynet-cmiclab]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 [niftynet-github]: https://github.com/NifTK/NiftyNet
-[niftynet-zoo]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/blob/master/model_zoo.md
+[niftynet-zoo]: https://github.com/NifTK/NiftyNetModelZoo/blob/master/README.md
 [ml-niftynet]: mailto:nifty-net@live.ucl.ac.uk
 
 
@@ -121,15 +116,17 @@ DOI: [10.1007/978-3-319-59050-9_28][ipmi2017]
 
 ### Licensing and Copyright
 
-Copyright 2018 University College London and the NiftyNet Contributors.
-NiftyNet is released under the Apache License, Version 2.0. Please see the LICENSE file for details.
+NiftyNet is released under [the Apache License, Version 2.0](https://github.com/NifTK/NiftyNet/blob/dev/LICENSE).
+
+Copyright 2018 the NiftyNet Consortium.
 
 ### Acknowledgements
 
-This project is grateful for the support from the [Wellcome Trust][wt], the [Engineering and Physical Sciences Research Council (EPSRC)][epsrc], the [National Institute for Health Research (NIHR)][nihr], the [Department of Health (DoH)][doh], [Cancer Research UK][cruk], [University College London (UCL)][ucl], the [Science and Engineering South Consortium (SES)][ses], the [STFC Rutherford-Appleton Laboratory][ral], and [NVIDIA][nvidia].
+This project is grateful for the support from the [Wellcome Trust][wt], the [Engineering and Physical Sciences Research Council (EPSRC)][epsrc], the [National Institute for Health Research (NIHR)][nihr], the [Department of Health (DoH)][doh], [Cancer Research UK][cruk], [University College London (UCL)][ucl], [King's College London (KCL)][kcl], the [Science and Engineering South Consortium (SES)][ses], the [STFC Rutherford-Appleton Laboratory][ral], and [NVIDIA][nvidia].
 
 [cmic]: http://cmic.cs.ucl.ac.uk
 [ucl]: http://www.ucl.ac.uk
+[kcl]: http://www.kcl.ac.uk
 [cruk]: https://www.cancerresearchuk.org
 [tf]: https://www.tensorflow.org/
 [weiss]: http://www.ucl.ac.uk/weiss

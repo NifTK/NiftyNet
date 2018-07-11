@@ -1,8 +1,6 @@
 # Contributor guide
-The main source code repository for NiftyNet is [GitHub][github-niftynet].
-The NiftyNet codebase is also mirrored on [CMICLab][cmiclab-niftynet].
+The source code for NiftyNet is released via [GitHub][github-niftynet].
 
-[cmiclab-niftynet]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 [github-niftynet]: https://github.com/NifTK/NiftyNet
 
 
@@ -47,7 +45,7 @@ sh run_test.sh
 ```
 
 ### 3. Creating GitHub pull requests
-1. **[on GitHub]** Sign up/in GitHub.com (The rest steps assume GitHub user id: `nntestuser`).
+1. **[on GitHub]** Sign up/in [GitHub.com](https://github.com/) (The rest steps assume GitHub user id: `nntestuser`).
 1. **[on GitHub]** Go to [https://github.com/NifTK/NiftyNet](https://github.com/NifTK/NiftyNet), click the 'Fork' button.
 1. Download the repo:
    * `git clone https://github.com/nntestuser/NiftyNet.git`
@@ -70,6 +68,10 @@ sh run_test.sh
 *This section describes steps to create unit tests for NiftyNet.*
 
 #### 1. Determine which module to test
+Go to [Gitlab pipeline](https://gitlab.com/NifTK/NiftyNet/pipelines) page,
+click on the latest successful testing pipeline and check the test coverage report at the bottom of the test log.
+The coverage report lists all untested files (with line numbers of specific statements) in the project.
+
 
 #### 2. File an issue
 Create a new issue indicating that you'll be working on the tests of a particular module.
@@ -216,7 +218,7 @@ This creates a [wheel binary package][wheel-binary] in a newly created `dist` di
 
 [niftynet-cmiclab]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 [git-tag]: https://git-scm.com/book/en/v2/Git-Basics-Tagging
-[pip-camera-ready]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L323
+[pip-camera-ready]: https://github.com/niftk/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L323
 [pip-camera-ready-output]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/-/jobs/30450
 [python-setuptools]: https://packaging.python.org/tutorials/distributing-packages/#wheels
 [wheel-binary]: https://www.python.org/dev/peps/pep-0491/
@@ -229,9 +231,4 @@ For an example how to do this please see [lines 223 to 270 in the `.gitlab-ci.ym
 
 [pip-console-entry]: http://python-packaging.readthedocs.io/en/latest/command-line-scripts.html#the-console-scripts-entry-point
 [gitlab-ci-yaml]: https://docs.gitlab.com/ce/ci/yaml/
-[gitlab-ci-pip-installer-test]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L223
-
-
-Go to [Cmiclab pipeline](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/pipelines) page,
-click on the latest successful testing pipeline and check the test coverage report at the bottom of the test log, e.g. a coverage report is available at the last part of this [log](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/-/jobs/35553).
-The coverage report lists all untested files (with line numbers of specific statements) in the project.
+[gitlab-ci-pip-installer-test]: https://github.com/niftk/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L223

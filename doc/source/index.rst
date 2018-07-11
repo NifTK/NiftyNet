@@ -22,12 +22,11 @@ Using NiftyNet's modular structure you can:
 * Quickly build new solutions to your own image analysis problems
 
 
-The code is available via `GitLab`_ and `GitHub`_,
+The code is available via `GitHub`_,
 or you can quickly get started with the released versions in the
 `Python Package Index`_.
 You can also check out the `release notes`_.
 
-.. _`GitLab`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 .. _`GitHub`: https://github.com/NifTK/NiftyNet
 .. _`Python Package Index`: https://pypi.org/project/NiftyNet/
 .. _`release notes`: https://github.com/NifTK/NiftyNet/blob/dev/CHANGELOG.md
@@ -87,7 +86,7 @@ All how-to guides are listed in `the following section <#guides>`_.
 
 .. _`installed from PyPI`: installation.html
 .. _`source code`: installation.html
-.. _`NiftyNet model zoo`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/blob/master/model_zoo.md
+.. _`NiftyNet model zoo`: https://github.com/NifTK/NiftyNetModelZoo/blob/master/README.md
 .. _`network`: niftynet.network.html
 .. _`Configuration docs`: config_spec.html
 .. _`Extending application`: extending_app.html
@@ -114,9 +113,7 @@ Resources
 
 `NiftyNet website`_
 
-`Source code on CmicLab`_
-
-`Source code mirror on GitHub`_
+`Source code on GitHub`_
 
 `Model zoo repository`_
 
@@ -126,8 +123,7 @@ Mailing list: nifty-net@live.ucl.ac.uk
 
 
 .. _`NiftyNet website`: http://niftynet.io/
-.. _`Source code on CmicLab`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
-.. _`Source code mirror on GitHub`: https://github.com/NifTK/NiftyNet
+.. _`Source code on GitHub`: https://github.com/NifTK/NiftyNet
 .. _`Model zoo repository`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/blob/master/model_zoo.md
 .. _`Stack Overflow`: https://stackoverflow.com/questions/tagged/niftynet
 
@@ -144,9 +140,11 @@ APIs & reference
 Licensing and copyright
 =======================
 
-Copyright 2018 University College London and the NiftyNet Contributors.
-NiftyNet is released under the Apache License, Version 2.0.
-Please see the `LICENSE file`_ in the `NiftyNet source code repository`_ for details.
+NiftyNet is released under `the Apache License, Version 2.0`_.
+
+
+Copyright 2018 the NiftyNet Consortium.
+
 
 
 Acknowledgements
@@ -159,7 +157,7 @@ the `Department of Health (DoH)`_, `University College London (UCL)`_,
 the `Science and Engineering South Consortium (SES)`_,
 the `STFC Rutherford-Appleton Laboratory`_, and `NVIDIA`_.
 
-.. _`LICENSE file`: https://github.com/NifTK/NiftyNet/blob/dev/LICENSE
+.. _`the Apache License, Version 2.0`: https://github.com/NifTK/NiftyNet/blob/dev/LICENSE
 .. _`TensorFlow`: https://www.tensorflow.org/
 .. _`Wellcome EPSRC Centre for Interventional and Surgical Sciences`: http://www.ucl.ac.uk/weiss
 .. _`Centre for Medical Image Computing`: http://cmic.cs.ucl.ac.uk/
