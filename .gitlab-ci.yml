@@ -21,6 +21,8 @@ pylintjob:
     - pylint --rcfile=tests/pylintrc niftynet/engine
     - pylint --rcfile=tests/pylintrc niftynet/io/image_*py
     - pylint --rcfile=tests/pylintrc niftynet/utilities/user_parameters_*py
+    - pylint --rcfile=tests/pylintrc niftynet/utilities/download.py
+    - pylint --rcfile=tests/pylintrc niftynet/utilities/niftynet_global_config.py
 
 testjob:
   stage: dev_test
