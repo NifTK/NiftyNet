@@ -84,7 +84,7 @@ Useful links
 
 `NiftyNet source code on GitHub`_
 
-NiftyNet mailing list: nifty-net@live.ucl.ac.uk
+NiftyNet mailing list: niftynet@googlegroups.com
 
 
 .. _`NiftyNet website`: http://niftynet.io/

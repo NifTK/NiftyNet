@@ -65,14 +65,14 @@ The API reference and how-to guides are available on [Read the Docs][rtd-niftyne
 
 [NiftyNet Model zoo repository][niftynet-zoo]
 
-NiftyNet mailing list: [nifty-net@live.ucl.ac.uk][ml-niftynet]
+NiftyNet mailing list: [niftynet@googlegroups.com][ml-niftynet]
 
 [Stack Overflow](https://stackoverflow.com/questions/tagged/niftynet) for general questions
 
 [niftynet-io]: http://niftynet.io/
 [niftynet-github]: https://github.com/NifTK/NiftyNet
 [niftynet-zoo]: https://github.com/NifTK/NiftyNetModelZoo/blob/master/README.md
-[ml-niftynet]: mailto:nifty-net@live.ucl.ac.uk
+[ml-niftynet]: mailto:niftynet@googlegroups.com
 
 
 ### Citing NiftyNet
