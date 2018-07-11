@@ -1,24 +1,26 @@
 # Contributor guide
+The main source code repository for NiftyNet is [GitHub][github-niftynet].
+The NiftyNet codebase is also mirrored on [CMICLab][cmiclab-niftynet].
 
-## Bug reports and feature requests
+[cmiclab-niftynet]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
+[github-niftynet]: https://github.com/NifTK/NiftyNet
 
-Bug reports and feature requests should be submitted by creating an issue on
-[CMICLab][cmiclab-niftynet-issue] or [GitHub][github-niftynet-issue].
 
-[cmiclab-niftynet-issue]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/issues/new
+## Submitting bug reports and feature requests
+
+Bug reports and feature requests should be submitted by creating an issue on [GitHub][github-niftynet-issue].
+
 [github-niftynet-issue]: https://github.com/NifTK/NiftyNet/issues/new
 
 
-## Merge requests
+## Submitting merge requests
 
-All merge requests should be submitted via [CMICLab][cmiclab-niftynet-mr]
-or GitHub's new pull request.
+All merge requests should be submitted via GitHub pull request.
+
 Please make sure you have read the following subsections before submitting a merge request.
 
-[cmiclab-niftynet-mr]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/merge_requests/new
 
-
-### Python style guide
+### 1. Python style guide
 
 Please follow the [PEP8 Style Guide for Python Code][pep8].
 In particular (from the guide):
@@ -32,7 +34,7 @@ In particular (from the guide):
 [pep8]: https://www.python.org/dev/peps/pep-0008/
 
 
-### Testing your changes
+### 2. Testing your changes
 
 Please submit merge requests from your branch to the `dev` branch.
 
@@ -44,36 +46,39 @@ cd NiftyNet/
 sh run_test.sh
 ```
 
+### 3. Creating GitHub pull requests
+1. **[on GitHub]** Sign up/in GitHub.com (The rest steps assume GitHub user id: `nntestuser`).
+1. **[on GitHub]** Go to [https://github.com/NifTK/NiftyNet](https://github.com/NifTK/NiftyNet), click the 'Fork' button.
+1. Download the repo:
+   * `git clone https://github.com/nntestuser/NiftyNet.git`
+1. Synchronise your repo with the `dev` branch of [https://github.com/NifTK/NiftyNet](https://github.com/NifTK/NiftyNet):
+   * `git remote add upstream https://github.com/NiftTK/NiftyNet.git`
+   * `git pull upstream dev`
+1. Make commits, test changes locally, and push to `nntestuser`'s repo:
+   * `git push github dev`
+
+   (This step assumes `github` is a remote name pointing at `https://github.com/nntestuser/NiftyNet.git`;
+
+    set this with command: `git remote add github https://github.com/nntestuser/NiftyNet.git`;
+
+    confirm this with command: `git remote -v`)
+
+1. **[on GitHub]** Create a pull request by clicking the 'pull request' button.
+
 
 ## Writing unit tests
-
 *This section describes steps to create unit tests for NiftyNet.*
 
-#### 1. Which module to test
-Go to [Cmiclab pipeline](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/pipelines) page,
-click on the latest successful testing pipeline and check the test coverage report at the bottom of the test log, e.g. a coverage report is available at the last part of this [log](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/-/jobs/35553).
-The coverage report lists all untested files (with line numbers of specific statements) in the project.
+#### 1. Determine which module to test
 
 #### 2. File an issue
 Create a new issue indicating that you'll be working on the tests of a particular module.
 
-To avoid duplicated effort, please check the [issue list](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/issues) and
+To avoid duplicated effort, please check the [issue list](https://github.com/NifTK/NiftyNet/issues) and
 make sure nobody is implementing the unit tests for that module at the moment.
 Also make sure the issue description is concise and has specific tasks.
 
 #### 3. Create `[name]_test.py`
-Clone NiftyNet and create a dedicated branch (from `dev`) for the unit tests.
-
-For Cmiclab users:
-```bash
-git clone git@cmiclab.cs.ucl.ac.uk:CMIC/NiftyNet.git
-git checkout -b unit-test-for-xxx dev
-```
-
-For GitHub users, please fork the project to your workspace and
-create a branch.
-
-
 Create a unit test Python script with file name ends with `_test.py`. This file
 should be added to
 [`NiftyNet/tests/`](https://github.com/NifTK/NiftyNet/tree/dev/tests) directory.
@@ -124,13 +129,105 @@ Normally the newly created unit test should not depend on the outcome of the oth
 
 (In `run_test.sh`, `wget` and `tar` are used to automatically download and unzip testing data. This can be done manually.)
 
-
-#### 6. Send a merge request
-After finishing the local tests, git-push the changes to a Cmiclab branch.
-This will trigger CI tests, which will run the unit tests on our test server with Ubuntu Linux + Python 2&3).
-
 Please send a merge request with only relevant changes to a particular unit tests.
 
 ---
 
 *Thanks for your contributions :)*
+
+
+## NiftyNet admin tasks
+
+### Making a release
+
+NiftyNet versions are numbered following [Semantic Versioning (semver)](http://semver.org/spec/v2.0.0.html).
+After adding notes for the current release to the [NiftyNet changelog][changelog], the current release should be [tagged][git-tag] with a [PEP440][pep440]-compliant semver number preceded by the letter `v` (for "version").
+
+[pep440]: https://www.python.org/dev/peps/pep-0440/
+[changelog]: CHANGELOG.md
+
+### Publishing a NiftyNet pip installer on PyPI
+
+Making NiftyNet available to the world via a simple `pip install niftynet` requires publishing the created wheel on the [Python Package Index (PyPI)][niftynet-pypi].
+**BUT PLEASE TAKE YOUR TIME TO READ THE NOTES BELOW BEFORE PROCEEDING:**
+
+* PyPI is very tightly coupled to [package versions][wheel-version-tag].
+That means, once a wheel tagged e.g. as version `1.0.1` has been published, it is final.
+In other words, **you cannot change your source code, bundle it again using the same version and re-submit to PyPI as the "updated" version `1.0.1`**.
+* Please consider submitting the bundled wheel to the [PyPI test site][uploading-to-pypi] (see the [NiftyNet test page][niftynet-pypi-test]) to assess the visual appearance of the PyPI page before publishing on the actual PyPI.
+
+[wheel-version-tag]: https://www.python.org/dev/peps/pep-0491/#file-name-convention
+[niftynet-pypi]: https://pypi.org/project/NiftyNet/
+[niftynet-pypi-test]: https://test.pypi.org/project/NiftyNet/
+[uploading-to-pypi]: https://packaging.python.org/tutorials/distributing-packages/#uploading-your-project-to-pypi
+
+To actually publish the bundled wheel on PyPI, you will need to run the `twine upload` command e.g. `twine upload dist/NiftyNet-0.2.0-py2.py3-none-any.whl` - this will of course work only if you have set the corresponding [PyPI account credentials][pypi-create-account].
+
+[pypi-create-account]: https://packaging.python.org/tutorials/distributing-packages/#create-an-account
+
+
+### Merging GitHub pull requests
+
+Please follow the steps below for merging pull requests on GitHub:
+
+1. **[on GitHub]** Review the pull request, and ask for changes if needed.
+1. Create a new branch off `dev` of `https://github.com/NifTK/NiftyNet` with a name representative of the pull request.
+   For instance, if the pull request on GitHub was numbered `7` (assuming `github` is set to `https://github.com/nntestuser/NiftyNet.git`):
+   * `git checkout -b merging-github-pr-7 github/dev`
+1. Download the contributing commits and merge to `merging-pr-7`.
+   For instance, if the pull request is from `nntestuser`'s `bug-fixing-branch`:
+   * `git pull https://github.com/nntestuser/NiftyNet bug-fixing-branch`
+1. Review and test locally.
+1. Push the commits to branch `merging-github-pr-7` of remote repository [https://github.com/NifTK/NiftyNet](https://github.com/NifTK/NiftyNet):
+   * `git push github merging-github-pr-7`
+
+   (This command assumes `github` is a remote name pointing at `https://github.com/nntestuser/NiftyNet.git`)
+1. **[on GitHub]** Check CI tests results (Travis, Gitlab.com; quick tests only).
+1. **[on GitHub]** Create a new pull request from `merging-github-pr-7` to `dev`.
+1. **[on GitHub]** Accept the new pull request onto `dev`.
+1. **[on GitHub]** Check CI tests results (Travis, Gitlab.com; full tests for `dev`)
+
+
+## Enhancing the pip installer
+
+### Adding a new command callable from a pip-installed NiftyNet
+
+This requires added a new [`console_scripts` entry point][pip-console-entry] in the `setup.py` file.
+For a practical example see [how the `net_segment` CLI command is implemented][net-segment-entry].
+
+[net-segment-entry]: https://github.com/NifTK/NiftyNet/blob/v0.3.0/setup.py#L107
+
+
+
+## Deprecating instructions
+
+### Bundling a pip installer
+
+The NiftyNet pip installer gets bundled automatically for [Git tags][git-tag] starting with a `v` (for "version") pushed to [CMICLab][niftynet-cmiclab].
+The [wheel version][wheel-version-tag] is determined automatically as part of this process.
+To see how this is done in practice, please go to the [`pip-camera-ready` section of `.gitlab-ci.yml`][pip-camera-ready] (and see the result in [this build log - esp. the last few lines lines, which show where the pip installer can be found on the build server][pip-camera-ready-output]).
+
+In particular, bundling a pip installer boils down to running the command [`python setup.py bdist_wheel`][python-setuptools] in the top-level directory.
+This creates a [wheel binary package][wheel-binary] in a newly created `dist` directory, e.g. `dist/NiftyNet-0.2.0-py2.py3-none-any.whl`.
+
+[niftynet-cmiclab]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
+[git-tag]: https://git-scm.com/book/en/v2/Git-Basics-Tagging
+[pip-camera-ready]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L323
+[pip-camera-ready-output]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/-/jobs/30450
+[python-setuptools]: https://packaging.python.org/tutorials/distributing-packages/#wheels
+[wheel-binary]: https://www.python.org/dev/peps/pep-0491/
+
+
+**If you have made changes to the pip installer, please test these.**
+For instance if you have added a new [CLI entry point][pip-console-entry]  (i.e. a new "command" - also see the respective section below),
+make sure you include the appropriate tests in the [GitLab CI configuration][gitlab-ci-yaml].
+For an example how to do this please see [lines 223 to 270 in the `.gitlab-ci.yml` file][gitlab-ci-pip-installer-test].
+
+[pip-console-entry]: http://python-packaging.readthedocs.io/en/latest/command-line-scripts.html#the-console-scripts-entry-point
+[gitlab-ci-yaml]: https://docs.gitlab.com/ce/ci/yaml/
+[gitlab-ci-pip-installer-test]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L223
+
+
+Go to [Cmiclab pipeline](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/pipelines) page,
+click on the latest successful testing pipeline and check the test coverage report at the bottom of the test log, e.g. a coverage report is available at the last part of this [log](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/-/jobs/35553).
+The coverage report lists all untested files (with line numbers of specific statements) in the project.
