@@ -186,6 +186,11 @@ Please follow the steps below for merging pull requests on GitHub:
 1. **[on GitHub]** Accept the new pull request onto `dev`.
 1. **[on GitHub]** Check CI tests results ([Gitlab.com](https://gitlab.com/NifTK/NiftyNet/pipelines); full tests for `dev`)
 
+*At the moment only pushes (instead of pull requests from forks) to GitHub
+trigger GitLab's CI runner, [a feature
+request](https://gitlab.com/gitlab-org/gitlab-ee/issues/6775) has been
+submitted -- will simplify the workflow once resolved ([more
+info](https://github.com/NifTK/NiftyNet/issues/120#issuecomment-401531891)).*
 
 ## Enhancing the pip installer
 
@@ -198,7 +203,7 @@ For a practical example see [how the `net_segment` CLI command is implemented][n
 
 
 
-## Deprecating instructions
+## Deprecated instructions
 
 ### Bundling a pip installer
 

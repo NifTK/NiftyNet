@@ -10,7 +10,7 @@ The NiftyNet codebase is also mirrored on [CMICLab][cmiclab-niftynet].
 
 Bug reports and feature requests should be submitted by creating an issue on [GitHub][github-niftynet-issue].
 
-[github-niftynet-issue]: https://github.com/NifTK/NiftyNet/issues/new
+[github-niftynet-issue]: https://github.com/NifTK/NiftyNet/issues/new?template=niftynet-issue-template.md
 
 
 ## Submitting merge requests
@@ -52,14 +52,14 @@ sh run_test.sh
 1. Download the repo:
    * `git clone https://github.com/nntestuser/NiftyNet.git`
 1. Synchronise your repo with the `dev` branch of [https://github.com/NifTK/NiftyNet](https://github.com/NifTK/NiftyNet):
-   * `git remote add upstream https://github.com/NiftTK/NiftyNet.git`
+   * `git remote add upstream git@github.com:NifTK/NiftyNet.git`
    * `git pull upstream dev`
 1. Make commits, test changes locally, and push to `nntestuser`'s repo:
    * `git push github dev`
 
-   (This step assumes `github` is a remote name pointing at `https://github.com/nntestuser/NiftyNet.git`;
+   (This step assumes `github` is a remote name pointing at `git@github.com:nntestuser/NiftyNet.git`;
 
-    set this with command: `git remote add github https://github.com/nntestuser/NiftyNet.git`;
+    set this with command: `git remote add github git@github.com:nntestuser/NiftyNet.git`;
 
     confirm this with command: `git remote -v`)
 
@@ -172,21 +172,25 @@ Please follow the steps below for merging pull requests on GitHub:
 
 1. **[on GitHub]** Review the pull request, and ask for changes if needed.
 1. Create a new branch off `dev` of `https://github.com/NifTK/NiftyNet` with a name representative of the pull request.
-   For instance, if the pull request on GitHub was numbered `7` (assuming `github` is set to `https://github.com/nntestuser/NiftyNet.git`):
-   * `git checkout -b merging-github-pr-7 github/dev`
+   For instance, if the pull request on GitHub was numbered `7` (assuming `upstream` is set to `git@github.com:NifTK/NiftyNet.git`):
+   * `git checkout -b merging-github-pr-7 upstream/dev`
 1. Download the contributing commits and merge to `merging-pr-7`.
    For instance, if the pull request is from `nntestuser`'s `bug-fixing-branch`:
    * `git pull https://github.com/nntestuser/NiftyNet bug-fixing-branch`
 1. Review and test locally.
 1. Push the commits to branch `merging-github-pr-7` of remote repository [https://github.com/NifTK/NiftyNet](https://github.com/NifTK/NiftyNet):
-   * `git push github merging-github-pr-7`
+   * `git push upstream merging-github-pr-7`
 
-   (This command assumes `github` is a remote name pointing at `https://github.com/nntestuser/NiftyNet.git`)
-1. **[on GitHub]** Check CI tests results (Travis, Gitlab.com; quick tests only).
+1. **[on GitHub]** Check CI tests results ([Gitlab.com](https://gitlab.com/NifTK/NiftyNet/pipelines); quick tests only).
 1. **[on GitHub]** Create a new pull request from `merging-github-pr-7` to `dev`.
 1. **[on GitHub]** Accept the new pull request onto `dev`.
-1. **[on GitHub]** Check CI tests results (Travis, Gitlab.com; full tests for `dev`)
+1. **[on GitHub]** Check CI tests results ([Gitlab.com](https://gitlab.com/NifTK/NiftyNet/pipelines); full tests for `dev`)
 
+*At the moment only pushes (instead of pull requests from forks) to GitHub
+trigger GitLab's CI runner, [a feature
+request](https://gitlab.com/gitlab-org/gitlab-ee/issues/6775) has been
+submitted -- will simplify the workflow once resolved ([more
+info](https://github.com/NifTK/NiftyNet/issues/120#issuecomment-401531891)).*
 
 ## Enhancing the pip installer
 
@@ -199,7 +203,7 @@ For a practical example see [how the `net_segment` CLI command is implemented][n
 
 
 
-## Deprecating instructions
+## Deprecated instructions
 
 ### Bundling a pip installer
 
