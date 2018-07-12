@@ -136,7 +136,7 @@ author = u'the NiftyNet Consortium'
 from niftynet.utilities.versioning import get_niftynet_version
 try:
     # The short X.Y version.
-    version = get_niftynet_version().split('.dev')[0]
+    version = get_niftynet_version().split('+')[0]
 except (IndexError, AttributeError):
     version = u''
 # The full version, including alpha/beta/rc tags.

@@ -15,7 +15,11 @@ Using this modular structure you can:
 * Adapt existing networks to your imaging data
 * Quickly build new solutions to your own image analysis problems
 
-NiftyNet is a consortium of research groups (WEISS -- [Wellcome EPSRC Centre for Interventional and Surgical Sciences][weiss], CMIC -- [Centre for Medical Image Computing][cmic], HIG -- High-dimensional Imaging Group), where WEISS acts as the consortium lead.
+NiftyNet is a consortium of research organisations
+(BMEIS -- [School of Biomedical Engineering and Imaging Sciences, King's College London][bmeis];
+WEISS -- [Wellcome EPSRC Centre for Interventional and Surgical Sciences, UCL][weiss];
+CMIC -- [Centre for Medical Image Computing, UCL][cmic];
+HIG -- High-dimensional Imaging Group, UCL), where BMEIS acts as the consortium lead.
 
 
 ### Features
@@ -122,8 +126,18 @@ Copyright 2018 the NiftyNet Consortium.
 
 ### Acknowledgements
 
-This project is grateful for the support from the [Wellcome Trust][wt], the [Engineering and Physical Sciences Research Council (EPSRC)][epsrc], the [National Institute for Health Research (NIHR)][nihr], the [Department of Health (DoH)][doh], [Cancer Research UK][cruk], [University College London (UCL)][ucl], [King's College London (KCL)][kcl], the [Science and Engineering South Consortium (SES)][ses], the [STFC Rutherford-Appleton Laboratory][ral], and [NVIDIA][nvidia].
+This project is grateful for the support from
+the [Wellcome Trust][wt],
+the [Engineering and Physical Sciences Research Council (EPSRC)][epsrc],
+the [National Institute for Health Research (NIHR)][nihr],
+the [Department of Health (DoH)][doh],
+[Cancer Research UK][cruk],
+[King's College London (KCL)][kcl],
+[University College London (UCL)][ucl],
+the [Science and Engineering South Consortium (SES)][ses],
+the [STFC Rutherford-Appleton Laboratory][ral], and [NVIDIA][nvidia].
 
+[bmeis]: https://www.kcl.ac.uk/lsm/research/divisions/imaging/index.aspx
 [cmic]: http://cmic.cs.ucl.ac.uk
 [ucl]: http://www.ucl.ac.uk
 [kcl]: http://www.kcl.ac.uk

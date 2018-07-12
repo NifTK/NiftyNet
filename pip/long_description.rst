@@ -9,7 +9,11 @@ Using this modular structure you can:
 * Adapt existing networks to your imaging data
 * Quickly build new solutions to your own image analysis problems
 
-NiftyNet is a consortium of research groups (WEISS -- `Wellcome EPSRC Centre for Interventional and Surgical Sciences`_, CMIC -- `Centre for Medical Image Computing`_, HIG -- High-dimensional Imaging Group), where WEISS acts as the consortium lead.
+NiftyNet is a consortium of research organisations
+(BMEIS -- `School of Biomedical Engineering and Imaging Sciences, King's College London`_;
+WEISS -- `Wellcome EPSRC Centre for Interventional and Surgical Sciences, UCL`_;
+CMIC -- `Centre for Medical Image Computing, UCL`_;
+HIG -- High-dimensional Imaging Group, UCL), where BMEIS acts as the consortium lead.
 
 .. image:: https://badge.fury.io/py/NiftyNet.svg
   :target: https://badge.fury.io/py/NiftyNet
@@ -138,9 +142,10 @@ the `Science and Engineering South Consortium (SES)`_,
 the `STFC Rutherford-Appleton Laboratory`_, and `NVIDIA`_.
 
 .. _`TensorFlow`: https://www.tensorflow.org/
-.. _`Wellcome EPSRC Centre for Interventional and Surgical Sciences`: http://www.ucl.ac.uk/weiss
+.. _`School of Biomedical Engineering and Imaging Sciences, King's College London`: https://www.kcl.ac.uk/lsm/research/divisions/imaging/index.aspx
+.. _`Wellcome EPSRC Centre for Interventional and Surgical Sciences, UCL`: http://www.ucl.ac.uk/weiss
 .. _`NiftyNet source code repository`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
-.. _`Centre for Medical Image Computing`: http://cmic.cs.ucl.ac.uk/
+.. _`Centre for Medical Image Computing, UCL`: http://cmic.cs.ucl.ac.uk/
 .. _`Centre for Medical Image Computing (CMIC)`: http://cmic.cs.ucl.ac.uk/
 .. _`University College London (UCL)`: http://www.ucl.ac.uk/
 .. _`King's College London (KCL)`: http://www.kcl.ac.uk/
