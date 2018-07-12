@@ -126,8 +126,8 @@ modindex_common_prefix = [
 
 # General information about the project.
 project = u'NiftyNet'
-copyright = u'2018, NiftyNet Consortium'
-author = u'NiftyNet Consortium'
+copyright = u'2018, the NiftyNet Consortium'
+author = u'the NiftyNet Consortium'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -136,7 +136,7 @@ author = u'NiftyNet Consortium'
 from niftynet.utilities.versioning import get_niftynet_version
 try:
     # The short X.Y version.
-    version = get_niftynet_version().split('.dev')[0]
+    version = get_niftynet_version().split('+')[0]
 except (IndexError, AttributeError):
     version = u''
 # The full version, including alpha/beta/rc tags.

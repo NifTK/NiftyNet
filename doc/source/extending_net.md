@@ -101,5 +101,5 @@ should be prepared in the following steps:
 
 ## Share the network and trained weights
    Please consider submitting the design to our [model zoo](./model_zoo.html)
-   (contact `nifty-net@live.ucl.ac.uk` if interested).
+   (contact `niftynet-team@googlegroups.com` if interested).
 

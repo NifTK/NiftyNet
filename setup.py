@@ -43,7 +43,7 @@ setup(
     url='http://niftynet.io/',
 
     author='NiftyNet Consortium',
-    author_email='nifty-net@live.ucl.ac.uk',
+    author_email='niftynet-team@googlegroups.com',
 
     license='Apache 2.0',
 

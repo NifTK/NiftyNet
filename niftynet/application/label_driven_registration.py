@@ -1,3 +1,13 @@
+"""
+A preliminary re-implementation of:
+    Hu et al., Weakly-Supervised Convolutional Neural Networks for
+    Multimodal Image Registration, Medical Image Analysis (2018)
+    https://doi.org/10.1016/j.media.2018.07.002
+
+The original implementation and tutorial is available at:
+    https://github.com/YipengHu/label-reg
+"""
+
 from __future__ import absolute_import, division, print_function
 
 import tensorflow as tf
