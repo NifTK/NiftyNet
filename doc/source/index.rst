@@ -118,7 +118,7 @@ Resources
 
 `Model zoo repository`_
 
-Mailing list: nifty-net@live.ucl.ac.uk
+Mailing list: niftynet@googlegroups.com
 
 `Stack Overflow`_ (for general questions)
 
