@@ -19,7 +19,7 @@ and segmentation probability map using this demo [1].
 *[1] This method ranked the first (in terms of averaged Dice score 0.90499) according
 to the online validation leaderboard of [BRATS challenge 2017](https://www.cbica.upenn.edu/BraTS17/lboardValidation.html).*
 
-_Please checkout a trained model in [NiftyNet model zoo](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/blob/master/anisotropic_nets_brats_challenge_model_zoo.md)._
+_Please checkout a trained model in [NiftyNet model zoo](https://github.com/NifTK/NiftyNetModelZoo/blob/master/anisotropic_nets_brats_challenge_model_zoo.md)._
 
 
 Model training requires
