@@ -18,6 +18,40 @@ class HighRes3DNet(BaseNet):
     implementation of HighRes3DNet:
       Li et al., "On the compactness, efficiency, and representation of 3D
       convolutional networks: Brain parcellation as a pretext task", IPMI '17
+
+      ### Building blocks
+
+      {   }       -  Residual connections: see He et al. "Deep residual learning for
+                                                          image recogntion", in CVPR '16
+
+      [CONV]      -  Convolutional layer in form: Activation(Convolution(X))
+                     where X = input tensor or output of previous layer
+
+                     and Activation is a function which includes:
+
+                        a) Batch-Norm
+                        b) Activation Function (ReLu, PreLu, Sigmoid, Tanh etc.)
+                        c) Drop-out layer by sampling random variables from a Bernouilli distribution
+                           if p < 1
+
+      [CONV*]      - Convolutional layer with no activation function
+
+      (r)[D-CONV(d)] - Convolutional layer with dilated convolutions with blocks in
+                     pre-activation mode: D-Convolution(Activation(X))
+                     see He et al., "Identity Mappings in Deep Residual Networks", ECCV '16
+
+                     dilation factor = d
+                     D-CONV(2) : dilated convolution with dilation factor 2
+
+                     repeat factor = r
+                     e.g.
+                     (2)[D-CONV(d)]     : 2 dilated convolutional layers in a row [D-CONV] -> [D-CONV]
+                     { (2)[D-CONV(d)] } : 2 dilated convolutional layers within residual block
+
+    ### Diagram
+
+    INPUT --> [CONV] --> { (3)[D-CONV(1)] } --> { (3)[D-CONV(2)] } --> { (3)[D-CONV(4)] } -> [CONV*] -> Loss
+
     """
 
     def __init__(self,
