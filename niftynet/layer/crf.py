@@ -36,8 +36,6 @@ class CRFAsRNNLayer(TrainableLayer):
                  aspect_ratio=None,
                  mu_init=None,
                  w_init=None,
-                 update_mu=True,
-                 update_w=True,
                  name="crf_as_rnn"):
         """
 
@@ -61,8 +59,6 @@ class CRFAsRNNLayer(TrainableLayer):
         self._aspect_ratio = aspect_ratio
         self._mu_init = mu_init
         self._w_init = w_init
-        self._update_mu = update_mu
-        self._update_w = update_w
 
     def layer_op(self, I, U):
         """
@@ -95,7 +91,7 @@ class CRFAsRNNLayer(TrainableLayer):
         spatial_coords = tf.tile(
             tf.expand_dims(spatial_coords, 0),
             [batch_size] + [1] * spatial_dim + [1])
-        print(spatial_coords.shape, I.shape)
+        # print(spatial_coords.shape, I.shape)
 
         # concatenating spatial coordinates and features
         # (and squeeze spatially)
@@ -123,10 +119,12 @@ class CRFAsRNNLayer(TrainableLayer):
 
         # trainable kernel weights
         weight_shape = [1] * spatial_dim + [1, n_ch]
-        # TODO: user-defined init vals
+        if self._w_init is None:
+            self._w_init = np.ones(n_ch)
+        self._w_init = np.reshape(self._w_init, weight_shape)
         kernel_weights = [tf.get_variable(
             'FilterWeights{}'.format(idx),
-            shape=weight_shape, initializer=tf.ones_initializer())
+            initializer=tf.constant(self._w_init, dtype=tf.float32))
             for idx, k in enumerate(permutohedrals)]
 
         H1 = U
@@ -148,8 +146,7 @@ def ftheta(U, H1, permutohedrals, mu, kernel_weights, name):
     :param name: layer name
     :return: updated mean-field distribution
     """
-    batch_size = U.shape.as_list()[0]
-    n_ch = U.shape.as_list()[-1]
+    batch_size, n_ch = U.shape.as_list()[0], U.shape.as_list()[-1]
 
     # Message Passing
     data = tf.reshape(tf.nn.softmax(H1), [batch_size, -1, n_ch])
@@ -211,7 +208,7 @@ def permutohedral_prepare(position_vectors):
                   dit * position_vectors[:, dit - 1] * scale_factor[dit - 1] + \
                   (dit + 2) * position_vectors[:, dit] * scale_factor[dit]
     Ex[0] = 2 * position_vectors[:, 0] * scale_factor[0] + Ex[1]
-    Ex = tf.stack(Ex, 1)
+    Ex = tf.stack(Ex, -1)
 
     # Compute coordinates
     # Get closest remainder-0 point
@@ -290,10 +287,9 @@ def permutohedral_prepare(position_vectors):
 
     with tf.control_dependencies(insert_ops):
         fused_loc_hash, fused_loc = hash_table.export()
-        fused_loc = tf.boolean_mask(
-            fused_loc, tf.not_equal(fused_loc_hash, -1))
-        fused_loc_hash = tf.boolean_mask(
-            fused_loc_hash, tf.not_equal(fused_loc_hash, -1))
+        is_good_key = tf.where(tf.not_equal(fused_loc_hash, -1))[:, 0]
+        fused_loc = tf.gather(fused_loc, is_good_key)
+        fused_loc_hash = tf.gather(fused_loc_hash, is_good_key)
 
     # The additional index hash table is used to
     # linearise the hash table so that we can `tf.scatter` and `tf.gather`
@@ -345,9 +341,9 @@ def permutohedral_compute(data_vectors,
     :return:
     """
 
-    batch_size = tf.shape(data_vectors)[0]
     num_simplex_corners = barycentric.shape.as_list()[-1]
     n_ch = num_simplex_corners - 1
+    batch_size = tf.shape(data_vectors)[0]
     n_ch_data = tf.shape(data_vectors)[-1]
     data_vectors = tf.reshape(data_vectors, [-1, n_ch_data])
     # Convert to homogeneous coordinates
@@ -418,7 +414,7 @@ def py_func_with_grads(func, inp, Tout, stateful=True, name=None, grad=None):
     # Need to generate a unique name to avoid duplicates:
     import uuid
     rnd_name = 'PyFuncGrad' + str(uuid.uuid4())
-    tf.logging.info('CRFasRNN layer iteration {}'.format(rnd_name))
+    # tf.logging.info('CRFasRNN layer iteration {}'.format(rnd_name))
     tf.RegisterGradient(rnd_name)(grad)  # see _MySquareGrad for grad example
     with tf.get_default_graph().gradient_override_map({"PyFunc": rnd_name}):
         return tf.py_func(func, inp, Tout, stateful=stateful, name=name)
@@ -446,8 +442,8 @@ def gradient_stub(data_vectors,
     :return:
     """
 
-    def _dummy_wrapper(*_unused):
-        return np.float32(0.0)
+    def _dummy_wrapper(data_vectors_np, *_unused):
+        return np.zeros_like(data_vectors_np)
 
     def _permutohedral_grad_wrapper(op, grad):
         # Differentiation can be done using permutohedral lattice
@@ -459,6 +455,7 @@ def gradient_stub(data_vectors,
 
     _inputs = [
         data_vectors, barycentric, blur_neighbours1, blur_neighbours2, indices]
+
     partial_grads_func = py_func_with_grads(
         _dummy_wrapper,
         _inputs,
