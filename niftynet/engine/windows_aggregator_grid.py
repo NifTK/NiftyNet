@@ -59,6 +59,47 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                            z_start:z_end, ...] = window[batch_id, ...]
         return True
 
+    def decode_dict_batch(self, window, location):
+        """
+        Create the aggregation in case of multiple outputs with same location
+         information. The dictionary keys are used in the saving name when
+         calling save_dict_current_image
+        :param window:
+        :param location:
+        :param name_opt:
+        :return:
+        """
+        n_samples = location.shape[0]
+        location_init = np.copy(location)
+        dummy = None
+        for w in window:
+            dummy = np.ones_like(window[w])
+            window[w], _ = self.crop_batch(window[w], location_init,
+                                           self.window_border)
+            location_init = np.copy(location)
+        _, location = self.crop_batch(dummy, location_init, self.window_border)
+        for batch_id in range(n_samples):
+            image_id, x_start, y_start, z_start, x_end, y_end, z_end = \
+                location[batch_id, :]
+            if image_id != self.image_id:
+                # image name changed:
+                #    save current image and create an empty image
+                self._save_dict_current_image()
+                if self._is_stopping_signal(location[batch_id]):
+                    return False
+                self.image_out = {}
+                for w in window:
+                    self.image_out[w] = self._initialise_empty_image(
+                        image_id=image_id,
+                        n_channels=window[w].shape[-1],
+                        dtype=window[w].dtype)
+            for w in window:
+                self.image_out[w][x_start:x_end,
+                y_start:y_end,
+                z_start:z_end, ...] = window[w][batch_id, ...]
+                print(np.sum(self.image_out[w]), w)
+        return True
+
     def _initialise_empty_image(self, image_id, n_channels, dtype=np.float):
         self.image_id = image_id
         spatial_shape = self.input_image[self.name].shape[:3]
@@ -88,4 +129,26 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                                 source_image_obj,
                                 self.output_interp_order)
         self.log_inferred(subject_name, filename)
+        return
+
+    def _save_dict_current_image(self):
+        if self.input_image is None:
+            return
+
+        for layer in reversed(self.reader.preprocessors):
+            if isinstance(layer, PadLayer):
+                self.image_out, _ = layer.inverse_op(self.image_out)
+            if isinstance(layer, DiscreteLabelNormalisationLayer):
+                self.image_out, _ = layer.inverse_op(self.image_out)
+        subject_name = self.reader.get_subject_id(self.image_id)
+        for i in self.image_out:
+            filename = "{}_{}{}.nii.gz".format(i, subject_name,
+                                               self.postfix)
+            source_image_obj = self.input_image[self.name]
+            misc_io.save_data_array(self.output_path,
+                                    filename,
+                                    self.image_out,
+                                    source_image_obj,
+                                    self.output_interp_order)
+            self.log_inferred(subject_name, filename)
         return
