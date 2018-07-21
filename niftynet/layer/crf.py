@@ -48,6 +48,10 @@ class CRFAsRNNLayer(TrainableLayer):
         :param T: number of stacked layers in the RNN
         :param aspect_ratio: spacing of adjacent voxels
             (allows isotropic spatial smoothing when voxels are not isotropic)
+        :param mu_init: initial compatibility matrix [n_classes x n_classes]
+        :param w_init: initial kernel weights [2 x n_classes]
+            where w_init[0] are the weights for the appearance kernel,
+                  w_init[1] are the weights for the smoothness kernel.
         :param name:
         """
 
@@ -120,11 +124,12 @@ class CRFAsRNNLayer(TrainableLayer):
         # trainable kernel weights
         weight_shape = [1] * spatial_dim + [1, n_ch]
         if self._w_init is None:
-            self._w_init = np.ones(n_ch)
-        self._w_init = np.reshape(self._w_init, weight_shape)
+            self._w_init = [np.ones(n_ch), np.ones(n_ch)]
+        for _w in self._w_init:
+            _w = np.reshape(_w, weight_shape)
         kernel_weights = [tf.get_variable(
             'FilterWeights{}'.format(idx),
-            initializer=tf.constant(self._w_init, dtype=tf.float32))
+            initializer=tf.constant(self._w_init[idx], dtype=tf.float32))
             for idx, k in enumerate(permutohedrals)]
 
         H1 = U
