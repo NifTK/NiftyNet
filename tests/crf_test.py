@@ -6,23 +6,24 @@ import tensorflow as tf
 
 from niftynet.layer.crf import CRFAsRNNLayer
 
+
 class CRFTest(tf.test.TestCase):
     def test_2d3d_shape(self):
         tf.reset_default_graph()
-        I = tf.random_normal(shape=[2,4,5,6,3])
-        U = tf.random_normal(shape=[2,4,5,6,2])
+        I = tf.random_normal(shape=[2, 4, 5, 6, 3])
+        U = tf.random_normal(shape=[2, 4, 5, 6, 2])
         crf_layer = CRFAsRNNLayer(T=3)
         crf_layer2 = CRFAsRNNLayer(T=2)
         out1 = crf_layer(I, U)
-        out2 = crf_layer2(I[:,:,:,0,:], out1[:,:,:,0,:])
+        out2 = crf_layer2(I[:, :, :, 0, :], out1[:, :, :, 0, :])
 
         with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
 
-            out1,out2 = sess.run([out1,out2])
+            out1, out2 = sess.run([out1, out2])
             U_shape = tuple(U.shape.as_list())
             self.assertAllClose(U_shape, out1.shape)
-            U_shape = tuple(U[:,:,:,0,:].shape.as_list())
+            U_shape = tuple(U[:, :, :, 0, :].shape.as_list())
             self.assertAllClose(U_shape, out2.shape)
 
     def test_training_3d(self):
@@ -47,17 +48,16 @@ class CRFTest(tf.test.TestCase):
             params = sess.run(tf.trainable_variables())
             for param in params:
                 if param.shape == (1, 1, 1, n_classes, n_classes):
-                    self.assertAllClose(param[0, 0, 0], np.eye(n_classes))
+                    self.assertAllClose(param[0, 0, 0], -1.0 * np.eye(n_classes))
             sess.run(opt)
             params_1 = sess.run(tf.trainable_variables())
             self.assertGreater(np.sum(np.abs(params_1[0] - params[0])), 0.0)
-
 
     def test_training_2d(self):
         batch_size = 1
         n_features = 2
         n_classes = 3
-        # 4-features
+        # 2-features
         features = tf.random_normal(shape=[batch_size, 8, 8, n_features])
         # 3-class classification
         logits = tf.random_normal(shape=[batch_size, 8, 8, n_classes])
@@ -65,7 +65,10 @@ class CRFTest(tf.test.TestCase):
         gt = tf.random_uniform(
             shape=[batch_size, 8, 8, n_classes], minval=0, maxval=1)
 
-        crf_layer = CRFAsRNNLayer(T=2)
+        crf_layer = CRFAsRNNLayer(
+            w_init=[[1] * n_classes, [1] * n_classes],
+            mu_init=np.eye(n_classes),
+            T=2)
         smoothed_logits = crf_layer(features, logits)
         pred = tf.nn.softmax(smoothed_logits)
         loss = tf.reduce_mean(tf.abs(smoothed_logits - gt))
@@ -80,6 +83,7 @@ class CRFTest(tf.test.TestCase):
             sess.run(opt)
             params_1 = sess.run(tf.trainable_variables())
             self.assertGreater(np.sum(np.abs(params_1[0] - params[0])), 0.0)
+
 
 if __name__ == "__main__":
     tf.test.main()

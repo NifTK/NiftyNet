@@ -50,8 +50,8 @@ class CRFAsRNNLayer(TrainableLayer):
             (allows isotropic spatial smoothing when voxels are not isotropic)
         :param mu_init: initial compatibility matrix [n_classes x n_classes]
         :param w_init: initial kernel weights [2 x n_classes]
-            where w_init[0] are the weights for the appearance kernel,
-                  w_init[1] are the weights for the smoothness kernel.
+            where w_init[0] are the weights for the bilateral kernel,
+                  w_init[1] are the weights for the spatial kernel.
         :param name:
         """
 
@@ -63,6 +63,10 @@ class CRFAsRNNLayer(TrainableLayer):
         self._aspect_ratio = aspect_ratio
         self._mu_init = mu_init
         self._w_init = w_init
+
+        assert self._alpha > 0, 'alpha should be positive'
+        assert self._beta > 0, 'beta should be positive'
+        assert self._gamma > 0, 'gamma should be positive'
 
     def layer_op(self, I, U):
         """
@@ -89,7 +93,7 @@ class CRFAsRNNLayer(TrainableLayer):
         # constructing the scaled regular grid
         spatial_coords = tf.meshgrid(
             *[np.arange(i, dtype=np.float32) * a
-              for i, a in zip(spatial_shape, self._aspect_ratio)],
+                for i, a in zip(spatial_shape, self._aspect_ratio)],
             indexing='ij')
         spatial_coords = tf.stack(spatial_coords, spatial_dim)
         spatial_coords = tf.tile(
@@ -99,11 +103,11 @@ class CRFAsRNNLayer(TrainableLayer):
 
         # concatenating spatial coordinates and features
         # (and squeeze spatially)
-        # for the appearance kernel
+        # for the bilateral kernel
         bilateral_coords = tf.reshape(
             tf.concat([spatial_coords / self._alpha, I / self._beta], -1),
             [batch_size, -1, n_feat + spatial_dim])
-        # for the smoothness kernel
+        # for the spatial kernel
         spatial_coords = tf.reshape(
             spatial_coords / self._gamma, [batch_size, -1, spatial_dim])
 
@@ -112,10 +116,10 @@ class CRFAsRNNLayer(TrainableLayer):
             permutohedral_prepare(coords)
             for coords in (bilateral_coords, spatial_coords)]
 
-        # trainable compatibility matrix mu (initialised as identity)
+        # trainable compatibility matrix mu (initialised as identity * -1)
         mu_shape = [1] * spatial_dim + [n_ch, n_ch]
         if self._mu_init is None:
-            self._mu_init = np.eye(n_ch)
+            self._mu_init = np.eye(n_ch) * -1.0
         self._mu_init = np.reshape(self._mu_init, mu_shape)
         mu = tf.get_variable(
             'Compatibility',
@@ -126,7 +130,9 @@ class CRFAsRNNLayer(TrainableLayer):
         if self._w_init is None:
             self._w_init = [np.ones(n_ch), np.ones(n_ch)]
         for _w in self._w_init:
-            _w = np.reshape(_w, weight_shape)
+            # optimising (w - 1.0) so that we get rid of the
+            # -Q_i term (in equ.(5) of Krahenbuhl and Koltun 2012).
+            _w = np.reshape(_w, weight_shape) - 1.0
         kernel_weights = [tf.get_variable(
             'FilterWeights{}'.format(idx),
             initializer=tf.constant(self._w_init[idx], dtype=tf.float32))
@@ -147,7 +153,7 @@ def ftheta(U, H1, permutohedrals, mu, kernel_weights, name):
     :param H1: the previous mean-field approximation to be updated
     :param permutohedrals: fixed position vectors for fast filtering
     :param mu: compatibility function
-    :param kernel_weights: weights apperance/smoothness kernels
+    :param kernel_weights: weights bilateral/spatial kernels
     :param name: layer name
     :return: updated mean-field distribution
     """
@@ -159,7 +165,7 @@ def ftheta(U, H1, permutohedrals, mu, kernel_weights, name):
     with tf.device('/cpu:0'):
         for idx, permutohedral in enumerate(permutohedrals):
             Q1[idx] = tf.reshape(
-                permutohedral_gen(permutohedral, data, name + str(idx)),
+                _permutohedral_gen(permutohedral, data, name + str(idx)),
                 U.shape)
 
     # Weighting Filter Outputs
@@ -308,7 +314,7 @@ def permutohedral_prepare(position_vectors):
     indices = [None] * (n_ch + 1)
     with tf.control_dependencies([insert_indices]):
         for dit in range(n_ch + 1):
-            # the neighbors along the .
+            # the neighbors along each axis.
             offset = [n_ch if i == dit else -1 for i in range(n_ch)]
             offset = tf.constant(offset, dtype=tf.int64)
             blur_neighbours1[dit] = \
@@ -336,14 +342,14 @@ def permutohedral_compute(data_vectors,
     """
     Splat, Gaussian blur, and slice
 
-    :param data_vectors:
-    :param barycentric:
-    :param blur_neighbours1:
-    :param blur_neighbours2:
-    :param indices:
-    :param name:
-    :param reverse:
-    :return:
+    :param data_vectors: value
+    :param barycentric: embedding coordinates
+    :param blur_neighbours1: first neighbours' coordinates relative to indices
+    :param blur_neighbours2: second neighbours' coordinates relative to indices
+    :param indices: corresponding locations of data_vectors
+    :param name: layer name
+    :param reverse: transpose the Gaussian kernel if True
+    :return: filtered data_vectors (sliced to the original space)
     """
 
     num_simplex_corners = barycentric.shape.as_list()[-1]
@@ -375,20 +381,16 @@ def permutohedral_compute(data_vectors,
             splat = tf.scatter_nd_add(splat, indices[scit], data)
 
     # Blur with 1D kernels
-    with tf.control_dependencies([splat]):
-        blurred = [splat]
-        order = range(n_ch, -1, -1) if reverse else range(n_ch + 1)
-        for dit in order:
-            with tf.control_dependencies([blurred[-1]]):
-                b1 = tf.gather(blurred[-1], blur_neighbours1[dit])
-                b2 = blurred[-1][1:, :, :]
-                b3 = tf.gather(blurred[-1], blur_neighbours2[dit])
-                blurred.append(tf.concat(
-                    [blurred[-1][0:1, :, :], b2 + 0.5 * (b1 + b3)], 0))
+    for dit in range(n_ch, -1, -1) if reverse else range(n_ch + 1):
+        with tf.control_dependencies([splat]):
+            b1 = tf.gather(splat, blur_neighbours1[dit])
+            b3 = tf.gather(splat, blur_neighbours2[dit])
+            splat = tf.concat([
+                splat[0:1, ...], splat[1:, ...] + 0.5 * (b1 + b3)], 0)
 
     # Alpha is a magic scaling constant from CRFAsRNN code
     alpha = 1. / (1. + np.power(2., -n_ch))
-    normalized = blurred[-1][:, :, :-1] / blurred[-1][:, :, -1:]
+    normalized = splat[..., :-1] / splat[..., -1:]
 
     # Slice
     sliced = tf.gather_nd(normalized, indices[0]) * barycentric[:, 0:1] * alpha
@@ -399,13 +401,13 @@ def permutohedral_compute(data_vectors,
     return sliced
 
 
-def py_func_with_grads(func, inp, Tout, stateful=True, name=None, grad=None):
+def _py_func_with_grads(func, inp, Tout, stateful=True, name=None, grad=None):
     """
     To get this to work with automatic differentiation
     we use a hack attributed to Sergey Ioffe
     mentioned here: http://stackoverflow.com/questions/36456436
 
-    Define custom py_func_with_grads which takes also a grad op as argument:
+    Define custom _py_func_with_grads which takes also a grad op as argument:
     from https://gist.github.com/harpone/3453185b41d8d985356cbe5e57d67342
 
     :param func:
@@ -425,12 +427,12 @@ def py_func_with_grads(func, inp, Tout, stateful=True, name=None, grad=None):
         return tf.py_func(func, inp, Tout, stateful=stateful, name=name)
 
 
-def gradient_stub(data_vectors,
-                  barycentric,
-                  blur_neighbours1,
-                  blur_neighbours2,
-                  indices,
-                  name):
+def _gradient_stub(data_vectors,
+                   barycentric,
+                   blur_neighbours1,
+                   blur_neighbours2,
+                   indices,
+                   name):
     """
     This is a stub operator whose purpose is
     to allow us to overwrite the gradient.
@@ -461,7 +463,7 @@ def gradient_stub(data_vectors,
     _inputs = [
         data_vectors, barycentric, blur_neighbours1, blur_neighbours2, indices]
 
-    partial_grads_func = py_func_with_grads(
+    partial_grads_func = _py_func_with_grads(
         _dummy_wrapper,
         _inputs,
         [tf.float32],
@@ -471,7 +473,7 @@ def gradient_stub(data_vectors,
     return partial_grads_func
 
 
-def permutohedral_gen(permutohedral, data_vectors, name):
+def _permutohedral_gen(permutohedral, data_vectors, name):
     """
     a wrapper combines permutohedral_compute and a customised gradient op.
 
@@ -481,7 +483,7 @@ def permutohedral_gen(permutohedral, data_vectors, name):
     :return:
     """
     barycentric, blur_neighbours1, blur_neighbours2, indices = permutohedral
-    backward_branch = gradient_stub(
+    backward_branch = _gradient_stub(
         data_vectors,
         barycentric,
         blur_neighbours1,
