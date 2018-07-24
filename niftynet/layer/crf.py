@@ -2,8 +2,8 @@
 """
 Re-implementation of [1] in Tensorflow for volumetric image processing.
 
-[1] Zheng, Shuai, et al.
-"Conditional random fields as recurrent neural networks." CVPR 2015.
+[1] Zheng et al.
+"Conditional random fields as recurrent neural networks." ICCV 2015.
 https://arxiv.org/abs/1502.03240
 """
 from __future__ import absolute_import, print_function
@@ -38,6 +38,21 @@ class CRFAsRNNLayer(TrainableLayer):
                  w_init=None,
                  name="crf_as_rnn"):
         """
+        Currently this layer supports spatial ND dense CRF with CPU only.
+        To place the layer on CPU::
+
+            with tf.device('/cpu:0'):
+                crf_layer = CRFAsRNNLayer()
+                crf_output = crf_layer(features, raw_logits)
+
+        To ensure backpropagations during training are placed on CPU as well,
+        the optimiser should be used with argument
+        ``colocate_gradients_with_ops=True``, e.g.,::
+
+            train_op = tf.train.GradientDescentOptimizer(.5).minimise(
+                training_loss, colocate_gradients_with_ops=True)
+
+
 
         :param alpha: bandwidth for spatial coordinates in bilateral kernel.
                       Higher values cause more spatial blurring
@@ -117,9 +132,9 @@ class CRFAsRNNLayer(TrainableLayer):
             for coords in (bilateral_coords, spatial_coords)]
 
         # trainable compatibility matrix mu (initialised as identity * -1)
-        mu_shape = [1] * spatial_dim + [n_ch, n_ch]
+        mu_shape = [n_ch, n_ch]
         if self._mu_init is None:
-            self._mu_init = np.eye(n_ch) * -1.0
+            self._mu_init = -np.eye(n_ch)
         self._mu_init = np.reshape(self._mu_init, mu_shape)
         mu = tf.get_variable(
             'Compatibility',
@@ -158,32 +173,20 @@ def ftheta(U, H1, permutohedrals, mu, kernel_weights, name):
     :return: updated mean-field distribution
     """
     batch_size, n_ch = U.shape.as_list()[0], U.shape.as_list()[-1]
+    n_voxels = np.prod(U.shape.as_list()[:-1])
 
-    # Message Passing
-    data = tf.reshape(tf.nn.softmax(H1), [batch_size, -1, n_ch])
-    Q1 = [None] * len(permutohedrals)
-    with tf.device('/cpu:0'):
-        for idx, permutohedral in enumerate(permutohedrals):
-            Q1[idx] = tf.reshape(
-                _permutohedral_gen(permutohedral, data, name + str(idx)),
-                U.shape)
+    H1 = tf.reshape(tf.nn.softmax(H1), [batch_size, -1, n_ch])
+    Q1 = 0
+    for idx, permutohedral in enumerate(permutohedrals):
+        # Message Passing
+        Q = _permutohedral_gen(permutohedral, H1, name + str(idx))
+        Q.set_shape([n_voxels, n_ch])
+        # Weighting Filtered Outputs
+        Q1 = Q1 + Q * kernel_weights[idx]
 
-    # Weighting Filter Outputs
-    Q2 = tf.add_n([Q1 * w for Q1, w in zip(Q1, kernel_weights)])
-
-    # Compatibility Transform
-    spatial_dim = infer_spatial_rank(U)
-    assert spatial_dim == 2 or 3, \
-        'Currently CRFAsRNNLayer supports 2D/3D images.'
-    full_stride = expand_spatial_params(1, spatial_dim)
-    Q3 = tf.nn.convolution(input=Q2,
-                           filter=mu,
-                           strides=full_stride,
-                           padding='SAME')
-    # Adding Unary Potentials
-    Q4 = U - Q3
+    # Compatibility Transform, Adding Unary Potentials
     # output logits, not the softmax
-    return Q4
+    return U - tf.reshape(tf.matmul(Q1, mu), U.shape.as_list())
 
 
 def permutohedral_prepare(position_vectors):
@@ -202,6 +205,7 @@ def permutohedral_prepare(position_vectors):
     pos_shape = position_vectors.shape.as_list()
     batch_size, n_voxels, n_ch = pos_shape[0], pos_shape[1:-1], pos_shape[-1]
     n_voxels = np.prod(n_voxels)
+    n_ch_1 = n_ch + 1
 
     # reshaping batches and voxels into one dimension
     # means we can use 1D gather and hashing easily
@@ -209,10 +213,10 @@ def permutohedral_prepare(position_vectors):
 
     # Generate position vectors in lattice space
     # first rotate position into the (n_ch+1)-dimensional hyperplane
-    inv_std_dev = np.sqrt(2 / 3.) * (n_ch + 1)
+    inv_std_dev = np.sqrt(2 / 3.) * n_ch_1
     scale_factor = [
         inv_std_dev / np.sqrt((i + 1) * (i + 2)) for i in range(n_ch)]
-    Ex = [None] * (n_ch + 1)
+    Ex = [None] * n_ch_1
     Ex[n_ch] = -n_ch * position_vectors[:, n_ch - 1] * scale_factor[n_ch - 1]
     for dit in range(n_ch - 1, 0, -1):
         Ex[dit] = Ex[dit + 1] - \
@@ -223,8 +227,8 @@ def permutohedral_prepare(position_vectors):
 
     # Compute coordinates
     # Get closest remainder-0 point
-    v = tf.to_int32(tf.round(Ex / float(n_ch + 1)))
-    rem0 = v * (n_ch + 1)
+    v = tf.to_int32(tf.round(Ex / float(n_ch_1)))
+    rem0 = v * n_ch_1
     # (sumV != 0)  meaning off the plane
     sumV = tf.reduce_sum(v, 1, True)
 
@@ -233,25 +237,25 @@ def permutohedral_prepare(position_vectors):
     # in the sorted order of the features values).
     # This can be done more efficiently
     # if necessary following the permutohedral paper.
-    _, index = tf.nn.top_k(Ex - tf.to_float(rem0), n_ch + 1, sorted=True)
-    _, rank = tf.nn.top_k(-index, n_ch + 1, sorted=True)
+    _, index = tf.nn.top_k(Ex - tf.to_float(rem0), n_ch_1, sorted=True)
+    _, rank = tf.nn.top_k(-index, n_ch_1, sorted=True)
 
     # if the point doesn't lie on the plane (sum != 0) bring it back
     rank = rank + sumV
     add_minus_sub = \
-        tf.to_int32(rank < 0) * (n_ch + 1) - \
-        tf.to_int32(rank >= n_ch + 1) * (n_ch + 1)
+        tf.to_int32(rank < 0) * n_ch_1 - \
+        tf.to_int32(rank >= n_ch_1) * n_ch_1
     rem0 = rem0 + add_minus_sub
     rank = rank + add_minus_sub
 
     # Compute the barycentric coordinates (p.10 in [Adams et al 2010])
-    v2 = (Ex - tf.to_float(rem0)) / float(n_ch + 1)
+    v2 = (Ex - tf.to_float(rem0)) / float(n_ch_1)
     # CRF2RNN uses the calculated ranks to get v2 sorted in O(n_ch) time
     # We cheat here by using the easy to implement
     # but slower method of sorting again in O(n_ch log n_ch)
     # we might get this even more efficient
     # if we correct the original sorted data above
-    v_sorted, _ = tf.nn.top_k(v2, n_ch + 1, sorted=True)
+    v_sorted, _ = tf.nn.top_k(v2, n_ch_1, sorted=True)
     v_sorted = tf.reverse(v_sorted, [-1])
     # weighted against the canonical simplex vertices
     barycentric = \
@@ -263,7 +267,7 @@ def permutohedral_prepare(position_vectors):
         # uniqueness of different position_vectors
         hash_vector = np.power(
             int(np.floor(np.power(tf.int64.max, 1. / (n_ch + 2)))),
-            [range(1, n_ch + 1)])
+            [range(1, n_ch_1)])
         hash_vector = tf.constant(hash_vector, dtype=tf.int64)
         return tf.reduce_sum(tf.to_int64(key) * hash_vector, 1)
 
@@ -282,12 +286,12 @@ def permutohedral_prepare(position_vectors):
 
     # canonical simplex (p.4 in [Adams et al 2010])
     canonical = \
-        [[i] * (n_ch + 1 - i) + [i - n_ch - 1] * i for i in range(n_ch + 1)]
+        [[i] * (n_ch_1 - i) + [i - n_ch - 1] * i for i in range(n_ch_1)]
 
     insert_ops = []
-    loc = [None] * (n_ch + 1)
-    loc_hash = [None] * (n_ch + 1)
-    for scit in range(n_ch + 1):
+    loc = [None] * n_ch_1
+    loc_hash = [None] * n_ch_1
+    for scit in range(n_ch_1):
         # Compute the location of the lattice point explicitly
         # (all but the last coordinate -
         #  it's redundant because they sum to zero)
@@ -309,11 +313,19 @@ def permutohedral_prepare(position_vectors):
         1, tf.size(fused_loc_hash, out_type=tf.int64) + 1, dtype=tf.int64)
     range_id = tf.expand_dims(range_id, 1)
     insert_indices = index_table.insert(fused_loc_hash, range_id)
-    blur_neighbours1 = [None] * (n_ch + 1)
-    blur_neighbours2 = [None] * (n_ch + 1)
-    indices = [None] * (n_ch + 1)
+
+    # linearised [batch, spatial_dim] indices
+    # where in the splat variable each simplex vertex is
+    batch_index = tf.range(batch_size, dtype=tf.int32)
+    batch_index = tf.expand_dims(batch_index, 0)
+    batch_index = tf.tile(batch_index, [n_voxels, 1])
+    batch_index = tf.to_int64(tf.reshape(batch_index, [-1]))
+
+    indices = [None] * n_ch_1
+    blur_neighbours1 = [None] * n_ch_1
+    blur_neighbours2 = [None] * n_ch_1
     with tf.control_dependencies([insert_indices]):
-        for dit in range(n_ch + 1):
+        for dit in range(n_ch_1):
             # the neighbors along each axis.
             offset = [n_ch if i == dit else -1 for i in range(n_ch)]
             offset = tf.constant(offset, dtype=tf.int64)
@@ -321,14 +333,9 @@ def permutohedral_prepare(position_vectors):
                 index_table.lookup(_simple_hash(fused_loc + offset))
             blur_neighbours2[dit] = \
                 index_table.lookup(_simple_hash(fused_loc - offset))
-            # linearised [batch, spatial_dim] indices
-            batch_index = tf.meshgrid(
-                tf.range(batch_size), tf.zeros([n_voxels], dtype=tf.int32))
-            batch_index = tf.reshape(batch_index[0], [-1])
-            # where in the splat variable each simplex vertex is
             indices[dit] = tf.stack([
-                tf.to_int32(index_table.lookup(loc_hash[dit])),
-                batch_index], 1)
+                index_table.lookup(loc_hash[dit]), batch_index], 1)
+
     return barycentric, blur_neighbours1, blur_neighbours2, indices
 
 
@@ -342,7 +349,7 @@ def permutohedral_compute(data_vectors,
     """
     Splat, Gaussian blur, and slice
 
-    :param data_vectors: value
+    :param data_vectors: value map to be filtered
     :param barycentric: embedding coordinates
     :param blur_neighbours1: first neighbours' coordinates relative to indices
     :param blur_neighbours2: second neighbours' coordinates relative to indices
@@ -354,8 +361,8 @@ def permutohedral_compute(data_vectors,
 
     num_simplex_corners = barycentric.shape.as_list()[-1]
     n_ch = num_simplex_corners - 1
-    batch_size = tf.shape(data_vectors)[0]
-    n_ch_data = tf.shape(data_vectors)[-1]
+    batch_size = data_vectors.shape.as_list()[0]
+    n_ch_data = data_vectors.shape.as_list()[-1]
     data_vectors = tf.reshape(data_vectors, [-1, n_ch_data])
     # Convert to homogeneous coordinates
     data_vectors = tf.concat(
@@ -364,36 +371,31 @@ def permutohedral_compute(data_vectors,
     # Splatting
     with tf.variable_scope(name):
         splat = tf.contrib.framework.local_variable(
-            tf.ones([0, 0]), validate_shape=False, name='splatbuffer')
+            tf.constant(0.0), validate_shape=False, name='splatbuffer')
 
-    with tf.control_dependencies([splat.initialized_value()]):
-        initial_splat = tf.zeros(
-            [tf.shape(blur_neighbours1[0])[0] + 1, batch_size, n_ch_data + 1])
-        reset_splat = tf.assign(splat, initial_splat, validate_shape=False)
+    #with tf.control_dependencies([splat.initialized_value()]):
+    initial_splat = tf.zeros(
+        [tf.shape(blur_neighbours1[0])[0] + 1, batch_size, n_ch_data + 1])
+    reset_splat = tf.assign(splat, initial_splat, validate_shape=False)
 
-    # This is needed to force tensorflow to update the cache
     with tf.control_dependencies([reset_splat]):
-        uncached_splat = splat.read_value()
-
-    with tf.control_dependencies([uncached_splat]):
         for scit in range(num_simplex_corners):
             data = data_vectors * barycentric[:, scit:scit + 1]
             splat = tf.scatter_nd_add(splat, indices[scit], data)
 
     # Blur with 1D kernels
     for dit in range(n_ch, -1, -1) if reverse else range(n_ch + 1):
-        with tf.control_dependencies([splat]):
-            b1 = tf.gather(splat, blur_neighbours1[dit])
-            b3 = tf.gather(splat, blur_neighbours2[dit])
-            splat = tf.concat([
-                splat[0:1, ...], splat[1:, ...] + 0.5 * (b1 + b3)], 0)
+        b1 = tf.gather(splat, blur_neighbours1[dit])
+        b3 = tf.gather(splat, blur_neighbours2[dit])
+        splat = tf.concat([
+            splat[:1, ...], splat[1:, ...] + 0.5 * (b1 + b3)], 0)
 
     # Alpha is a magic scaling constant from CRFAsRNN code
     alpha = 1. / (1. + np.power(2., -n_ch))
-    normalized = splat[..., :-1] / splat[..., -1:]
+    normalized = splat[..., :-1] / (splat[..., -1:] + 1e-20)
 
     # Slice
-    sliced = tf.gather_nd(normalized, indices[0]) * barycentric[:, 0:1] * alpha
+    sliced = tf.gather_nd(normalized, indices[0]) * barycentric[:, :1] * alpha
     for scit in range(1, num_simplex_corners):
         sliced = sliced + \
                  tf.gather_nd(normalized, indices[scit]) * \
@@ -424,7 +426,7 @@ def _py_func_with_grads(func, inp, Tout, stateful=True, name=None, grad=None):
     # tf.logging.info('CRFasRNN layer iteration {}'.format(rnd_name))
     tf.RegisterGradient(rnd_name)(grad)  # see _MySquareGrad for grad example
     with tf.get_default_graph().gradient_override_map({"PyFunc": rnd_name}):
-        return tf.py_func(func, inp, Tout, stateful=stateful, name=name)
+        return tf.py_func(func, inp, Tout, stateful=stateful, name=name)[0]
 
 
 def _gradient_stub(data_vectors,
@@ -450,7 +452,7 @@ def _gradient_stub(data_vectors,
     """
 
     def _dummy_wrapper(data_vectors_np, *_unused):
-        return np.zeros_like(data_vectors_np)
+        return np.float32(0)
 
     def _permutohedral_grad_wrapper(op, grad):
         # Differentiation can be done using permutohedral lattice
@@ -458,7 +460,7 @@ def _gradient_stub(data_vectors,
         filtering_grad = permutohedral_compute(
             grad, op.inputs[1], op.inputs[2], op.inputs[3], op.inputs[4],
             name, reverse=True)
-        return [filtering_grad] + [tf.zeros_like(i) for i in op.inputs[1:]]
+        return [filtering_grad] + [None for i in op.inputs[1:]]
 
     _inputs = [
         data_vectors, barycentric, blur_neighbours1, blur_neighbours2, indices]
@@ -469,7 +471,9 @@ def _gradient_stub(data_vectors,
         [tf.float32],
         name=name,
         grad=_permutohedral_grad_wrapper)
-
+    n_voxels = np.prod(data_vectors.shape[:-1].as_list())
+    n_ch = data_vectors.shape[-1]
+    partial_grads_func.set_shape([n_voxels, n_ch])
     return partial_grads_func
 
 
@@ -498,5 +502,4 @@ def _permutohedral_gen(permutohedral, data_vectors, name):
         indices,
         name,
         reverse=False)
-    forward_branch = tf.reshape(forward_branch, data_vectors.shape)
     return backward_branch + tf.stop_gradient(forward_branch)

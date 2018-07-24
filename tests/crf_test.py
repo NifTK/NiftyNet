@@ -82,6 +82,42 @@ class CRFTest(tf.test.TestCase):
                     self.assertAllClose(param[0, 0], np.eye(n_classes))
             sess.run(opt)
             params_1 = sess.run(tf.trainable_variables())
+            print(params_1)
+            self.assertGreater(np.sum(np.abs(params_1[0] - params[0])), 0.0)
+
+    def test_training_4d(self):
+        sp = 8
+        batch_size = 2
+        n_features = 2
+        n_classes = 3
+        # 2-features
+        features = tf.random_normal(
+            shape=[batch_size, sp, sp, sp, sp, n_features])
+        # 3-class classification
+        logits = tf.random_normal(
+            shape=[batch_size, sp, sp, sp, sp, n_classes])
+        # ground truth
+        gt = tf.random_uniform(
+            shape=[batch_size, sp, sp, sp, sp, n_classes], minval=0, maxval=1)
+
+        with tf.device('/cpu:0'):
+            crf_layer = CRFAsRNNLayer(
+                w_init=[[1] * n_classes, [1] * n_classes],
+                mu_init=np.eye(n_classes),
+                T=2)
+            smoothed_logits = crf_layer(features, logits)
+        pred = tf.nn.softmax(smoothed_logits)
+        loss = tf.reduce_mean(tf.abs(smoothed_logits - gt))
+        opt = tf.train.GradientDescentOptimizer(0.5).minimize(loss, colocate_gradients_with_ops=True)
+
+        with tf.Session(config=tf.ConfigProto(log_device_placement=False)) as sess:
+            sess.run(tf.global_variables_initializer())
+            params = sess.run(tf.trainable_variables())
+            for param in params:
+                if param.shape == (1, 1, n_classes, n_classes):
+                    self.assertAllClose(param[0, 0], np.eye(n_classes))
+            sess.run(opt)
+            params_1 = sess.run(tf.trainable_variables())
             self.assertGreater(np.sum(np.abs(params_1[0] - params[0])), 0.0)
 
 
