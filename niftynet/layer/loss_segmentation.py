@@ -187,6 +187,8 @@ def generalised_dice_loss(prediction,
         n_classes = prediction.shape[1].value
         weight_map_nclasses = tf.reshape(
             tf.tile(weight_map, [n_classes]), prediction.get_shape())
+        weight_map_nclasses = tf.tile(tf.expand_dims(
+            tf.reshape(weight_map, [-1]), 1), [1, n_classes])
         ref_vol = tf.sparse_reduce_sum(
             weight_map_nclasses * one_hot, reduction_axes=[0])
 
@@ -213,10 +215,15 @@ def generalised_dice_loss(prediction,
                        tf.reduce_max(new_weights), weights)
     generalised_dice_numerator = \
         2 * tf.reduce_sum(tf.multiply(weights, intersect))
-    generalised_dice_denominator = \
-        tf.reduce_sum(tf.multiply(weights, seg_vol + ref_vol)) + 1e-6
+    # generalised_dice_denominator = \
+    #     tf.reduce_sum(tf.multiply(weights, seg_vol + ref_vol)) + 1e-6
+
+    generalised_dice_denominator = tf.reduce_sum(
+        tf.multiply(weights,  tf.maximum(seg_vol+ref_vol, 1)))
     generalised_dice_score = \
         generalised_dice_numerator / generalised_dice_denominator
+    generalised_dice_score = tf.where(tf.is_nan(generalised_dice_score), 1.0,
+                                      generalised_dice_score)
     return 1 - generalised_dice_score
 
 
@@ -397,8 +404,8 @@ def dice(prediction, ground_truth, weight_map=None):
 
     if weight_map is not None:
         n_classes = prediction.shape[1].value
-        weight_map_nclasses = tf.reshape(
-            tf.tile(weight_map, [n_classes]), prediction.get_shape())
+        weight_map_nclasses = tf.tile(tf.expand_dims(
+            tf.reshape(weight_map, [-1]), 1), [1, n_classes])
         dice_numerator = 2.0 * tf.sparse_reduce_sum(
             weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
         dice_denominator = \
@@ -437,8 +444,8 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
     # dice
     if weight_map is not None:
         n_classes = prediction.shape[1].value
-        weight_map_nclasses = tf.reshape(
-            tf.tile(weight_map, [n_classes]), prediction.get_shape())
+        weight_map_nclasses = tf.tile(tf.expand_dims(
+            tf.reshape(weight_map, [-1]), 1), [1, n_classes])
         dice_numerator = 2.0 * tf.sparse_reduce_sum(
             weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
         dice_denominator = \
