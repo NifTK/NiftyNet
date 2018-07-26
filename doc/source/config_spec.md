@@ -14,18 +14,19 @@ presents a few examples of configuration files for NiftyNet
   * [`[Validation during training]`](#validation-during-training)
   * [`[Data augmentation during training]`](#data-augmentation-during-training)
 - [`[INFERENCE]`](#inference)
+- [`[EVALUATION]`](#evaluation)
 
 ## Overview
 In general, a NiftyNet workflow can be fully specified by a NiftyNet application and a configuration file.
 The command to run the workflow is:
 ```bash
 # command to run from git-cloned NiftyNet source code folder
-python net_run.py [train|inference] -c <path_to/config.ini> -a <application>
+python net_run.py [train|inference|evaluation] -c <path_to/config.ini> -a <application>
 ```
 or:
 ```bash
 # command to run using pip-installed NiftyNet
-net_run [train|inference] -c <path_to/config.ini> -a <application>
+net_run [train|inference|evaluation] -c <path_to/config.ini> -a <application>
 ```
 `net_run` is the entry point of NiftyNet, followed by an action argument of either `train`
 or `inference`:
@@ -578,3 +579,43 @@ Interpolation order of the network outputs.
 ###### `dataset_to_infer`
 String specifies which dataset ('Training', 'Validation', 'Inference') to compute inference for.
 By default 'Inference' dataset is used.
+
+
+### EVALUATION
+For evaluation of the output of an application against some available ground
+truth, an `EVALUATION` section must be present. Examples of evaluation config
+files are available in [the config
+folder](https://github.com/NifTK/NiftyNet/tree/dev/config) with the suffix
+`_eval.ini`.
+
+The evaluation command is:
+```bash
+# command to run from git-cloned NiftyNet source code folder
+python net_run.py evaluation -c <path_to/config.ini> -a <application>
+```
+(For example, multimodal segmentation evaluation could be:
+`python net_run.py evaluation -a niftynet.applications.segmentation_application.SegmentationApplication -c config/default_multimodal_segmentation_eval.ini`)
+
+In order to run the evaluation, the input sources section must contain the
+details on
+* The ground truth against which to compare (label in case of the segmentation)
+* The corresponding files to evaluate (inferred)
+
+The final evaluation file is saved in the folder indicated as input of the
+field `model_dir` in the section `[SYSTEM]` under the form of a csv file with
+indication of subject id (label if relevant) and the calculated metrics as
+columns.
+
+The evaluation configuration section (`[EVALUATION]`) must contain:
+- `save_csv_dir` -- Path where to save the csv file output
+- `evaluations` -- List of metrics of evaluation to be calculated presented as a
+ string separated by commas (e.g. `dice`, `jaccard`, `n_pos_ref`, `n_pos_seg`).
+ Lists of possible evaluations metrics per application are available in
+ [regression evaluations](./niftynet.evaluation.regression_evaluations.html),
+ [segmentation evaluations](./niftynet.evaluation.segmentation_evaluations.html),
+ and [classification evaluations](./niftynet.evaluation.classification_evaluations.html).
+- `evaluation_units` -- `foreground`, `label` or `cc`. Describe how the
+  evaluation should be performed in the case of segmentation mostly
+  (`foreground` means only one label, `label` means metrics per label, `cc`
+  means metrics per connected component).  More on this topic can be found at
+  [segmentation evaluations](./niftynet.evaluation.segmentation_evaluations.html).
