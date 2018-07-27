@@ -83,7 +83,8 @@ setup(
         'configparser',
         'pandas',
         'pillow',
-        'blinker'
+        'blinker',
+        'packaging'
     ],
 
     entry_points={
