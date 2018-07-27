@@ -1,26 +1,10 @@
 # -*- coding: utf-8 -*-
-import re
-
-from packaging import version
 from setuptools import setup, find_packages
 
 import versioneer
 from niftynet.utilities.versioning import get_niftynet_version
 
 niftynet_version = get_niftynet_version()
-
-# Regex for checking PEP 440 conformity
-# https://www.python.org/dev/peps/pep-0440/#id79
-pep440_regex = re.compile(
-    r"^\s*" + version.VERSION_PATTERN + r"\s*$",
-    re.VERBOSE | re.IGNORECASE,
-)
-
-# Check PEP 440 conformity
-if niftynet_version is not None and \
-        pep440_regex.match(niftynet_version) is None:
-    raise ValueError('The version string {} does not conform to'
-                     ' PEP 440'.format(niftynet_version))
 
 # Get the summary
 description = 'An open-source convolutional neural networks platform' + \

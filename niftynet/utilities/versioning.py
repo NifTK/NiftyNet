@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
+import re
+from packaging import version
 
 
 def get_niftynet_version_string():
@@ -46,3 +48,19 @@ def get_niftynet_version():
             pass  # version_string is None by default
 
     return version_string
+
+def check_pep_440():
+    niftynet_version = get_niftynet_version()
+    # Regex for checking PEP 440 conformity
+    # https://www.python.org/dev/peps/pep-0440/#id79
+    pep440_regex = re.compile(
+        r"^\s*" + version.VERSION_PATTERN + r"\s*$",
+        re.VERBOSE | re.IGNORECASE,
+    )
+
+    # Check PEP 440 conformity
+    if niftynet_version is not None and \
+            pep440_regex.match(niftynet_version) is None:
+        raise ValueError('The version string {} does not conform to'
+                         ' PEP 440'.format(niftynet_version))
+
