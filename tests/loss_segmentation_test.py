@@ -107,7 +107,7 @@ class GeneralisedDiceTest(tf.test.TestCase):
             one_minus_generalised_dice_score = test_loss_func(
                 predicted, labels, weights)
             self.assertAllClose(one_minus_generalised_dice_score.eval(),
-                                0.0, atol=1e-4)
+                                0.3333, atol=1e-4)
 
 
 class DiceTest(tf.test.TestCase):

@@ -14,18 +14,19 @@ presents a few examples of configuration files for NiftyNet
   * [`[Validation during training]`](#validation-during-training)
   * [`[Data augmentation during training]`](#data-augmentation-during-training)
 - [`[INFERENCE]`](#inference)
+- [`[EVALUATION]`](#evaluation)
 
 ## Overview
 In general, a NiftyNet workflow can be fully specified by a NiftyNet application and a configuration file.
 The command to run the workflow is:
 ```bash
 # command to run from git-cloned NiftyNet source code folder
-python net_run.py [train|inference] -c <path_to/config.ini> -a <application>
+python net_run.py [train|inference|evaluation] -c <path_to/config.ini> -a <application>
 ```
 or:
 ```bash
 # command to run using pip-installed NiftyNet
-net_run [train|inference] -c <path_to/config.ini> -a <application>
+net_run [train|inference|evaluation] -c <path_to/config.ini> -a <application>
 ```
 `net_run` is the entry point of NiftyNet, followed by an action argument of either `train`
 or `inference`:
@@ -115,15 +116,18 @@ within each section.
 
 ### Input data source section
 
-- [csv_file](#csv-file) :: `string` :: `csv_file=file_list.csv` :: `''`
-- [path_to_search](#path-to-search) :: `string` :: `path_to_search=my_data/fold_1` :: NiftyNet home folder
-- [filename_contains](#filename-contains) :: `string` or `string array` :: `filename_contains=foo, bar` :: `''`
-- [filename_not_contains](#filename-not-contains) :: `string` or `string array` :: `filename_not_contains=foo` :: `''`
-- [interp_order](#interp-order) :: `integer` :: `interp_order=0` :: `3`
-- [pixdim](#pixdim) :: `float array` :: `pixdim=1.2, 1.2, 1.2` :: `''`
-- [axcodes](#axcodes) :: `string array` :: `axcodes=L, P, S` :: `''`
-- [spatial_window_size](#spatial-window-size) :: `integer array` :: `spatial_window_size=64, 64, 64` :: `''`
-- [loader](#loader) :: `string` :: `loader=simpleitk` :: `None`
+
+ Name | Type | Example | Default 
+ ---- | ---- | ------- | ------- 
+[csv_file](#csv-file) | `string` | `csv_file=file_list.csv` | `''`
+[path_to_search](#path-to-search) | `string` | `path_to_search=my_data/fold_1` | NiftyNet home folder
+[filename_contains](#filename-contains) | `string` or `string array` | `filename_contains=foo, bar` | `''`
+[filename_not_contains](#filename-not-contains) | `string` or `string array` | `filename_not_contains=foo` | `''`
+[interp_order](#interp-order) | `integer` | `interp_order=0` | `3`
+[pixdim](#pixdim) | `float array` | `pixdim=1.2, 1.2, 1.2` | `''`
+[axcodes](#axcodes) | `string array` | `axcodes=L, P, S` | `''`
+[spatial_window_size](#spatial-window-size) | `integer array` | `spatial_window_size=64, 64, 64` | `''`
+[loader](#loader) | `string` | `loader=simpleitk` | `None`
 
 ###### `csv_file`
 A file path to a list of input images.  If the file exists, input image name
@@ -201,11 +205,14 @@ The following sections describe system parameters that can be specified in the c
 
 
 ### SYSTEM
-- [cuda_devices](#cuda-devices) :: `integer array` :: `cuda_devices=0,1,2` :: `''`
-- [num_threads](#num-threads) :: `positive integer` :: `num_threads=1` :: `2`
-- [num_gpus](#num-gpus) :: `integer` :: `num_gpus=4` :: `1`
-- [model_dir](#model-dir) :: `string` :: `model_dir=/User/test_dir` :: The directory of the config. file
-- [dataset_split_file](#dataset-split-file) :: `string` :: `dataset_split_file=/User/my_test` :: `./dataset_split_file.csv`
+
+ Name | Type | Example | Default 
+ ---- | ---- | ------- | ------- 
+[cuda_devices](#cuda-devices) | `integer array` | `cuda_devices=0,1,2` | `''`
+[num_threads](#num-threads) | `positive integer` | `num_threads=1` | `2`
+[num_gpus](#num-gpus) | `integer` | `num_gpus=4` | `1`
+[model_dir](#model-dir) | `string` | `model_dir=/User/test_dir` | The directory of the config. file
+[dataset_split_file](#dataset-split-file) | `string` | `dataset_split_file=/User/my_test` | `./dataset_split_file.csv`
 
 ###### `cuda_devices`
 Sets the environment variable `CUDA_VISIBLE_DEVICES` variable,
@@ -231,15 +238,18 @@ If the string is a relative path, NiftyNet interpret this as relative to `model_
 
 
 ### NETWORK
-- [name](#name) :: `string` :: `name=niftynet.network.toynet.ToyNet` :: `''`
-- [activation_function](#activation-function) :: `string` :: `activation_function=prelu` :: `relu`
-- [batch_size](#batch-size) :: `integer` :: `batch_size=10` :: `2`
-- [decay](#decay) :: `non-negative float` :: `decay=1e-5` :: `0.0`
-- [reg_type](#reg-type) :: `string` :: `reg_type=L1` :: `L2`
-- [volume_padding_size](#volume-padding-size) :: `integer array` :: `volume_padding_size=4, 4, 4` :: `0,0,0`
-- [window_sampling](#window-sampling) :: `string` :: `window_sampling=uniform` :: `uniform`
-- [queue_length](#queue-length) :: `integer` :: `queue_length=10` :: `5`
-- [keep_prob](#keep-prob) :: `non-negative float` :: `keep_prob=0.2` :: `1.0`
+
+ Name | Type | Example | Default 
+ ---- | ---- | ------- | ------- 
+[name](#name) | `string` | `name=niftynet.network.toynet.ToyNet` | `''`
+[activation_function](#activation-function) | `string` | `activation_function=prelu` | `relu`
+[batch_size](#batch-size) | `integer` | `batch_size=10` | `2`
+[decay](#decay) | `non-negative float` | `decay=1e-5` | `0.0`
+[reg_type](#reg-type) | `string` | `reg_type=L1` | `L2`
+[volume_padding_size](#volume-padding-size) | `integer array` | `volume_padding_size=4, 4, 4` | `0,0,0`
+[window_sampling](#window-sampling) | `string` | `window_sampling=uniform` | `uniform`
+[queue_length](#queue-length) | `integer` | `queue_length=10` | `5`
+[keep_prob](#keep-prob) | `non-negative float` | `keep_prob=0.2` | `1.0`
 
 ######  `name`
 A network class from [niftynet/network](./niftynet.network.html) or from user
@@ -338,14 +348,17 @@ These parameters are ignored and whitening is disabled if `whitening=False`.
 
 More specifically:
 
-- [normalisation](#normalisation) :: `boolean` :: `normalisation=True` :: `False`
-- [whitening](#whitening) :: `boolean` :: `whitening=True` :: `False`
-- [histogram_ref_file](#histogram-ref-file) :: `string` :: `histogram_ref_file=./hist_ref.txt` :: `''`
-- [norm_type](#norm-type) :: `string` :: `norm_type=percentile` :: `percentile`
-- [cutoff](#cutoff) :: `float array (two elements)` :: `cutoff=0.1, 0.9` :: `0.01, 0.99`
-- [normalise_foreground_only](#normalise-foreground-only) :: `boolean` :: `normalise_foreground_only=True` :: `False`
-- [foreground_type](#foreground-type) :: `string` :: `foreground_type=otsu_plus` :: `otsu_plus`
-- [multimod_foreground_type](#multimod-foreground-type) :: `string` :: `multimod_foreground_type=and` :: `and`
+
+ Name | Type | Example | Default 
+ ---- | ---- | ------- | ------- 
+[normalisation](#normalisation) | `boolean` | `normalisation=True` | `False`
+[whitening](#whitening) | `boolean` | `whitening=True` | `False`
+[histogram_ref_file](#histogram-ref-file) | `string` | `histogram_ref_file=./hist_ref.txt` | `''`
+[norm_type](#norm-type) | `string` | `norm_type=percentile` | `percentile`
+[cutoff](#cutoff) | `float array (two elements)` | `cutoff=0.1, 0.9` | `0.01, 0.99`
+[normalise_foreground_only](#normalise-foreground-only) | `boolean` | `normalise_foreground_only=True` | `False`
+[foreground_type](#foreground-type) | `string` | `foreground_type=otsu_plus` | `otsu_plus`
+[multimod_foreground_type](#multimod-foreground-type) | `string` | `multimod_foreground_type=and` | `and`
 
 ###### `normalisation`
 Boolean indicates if an histogram standardisation should be applied to the data.
@@ -381,15 +394,18 @@ Strategies applied to combine foreground masks of multiple modalities, can take 
 
 
 ### TRAINING
-- [optimiser](#optimiser) :: `string` :: `optimiser=momentum` :: `adam`
-- [sample_per_volume](#sample-per-volume) :: `positive integer` :: `sample_per_volume=5` :: `1`
-- [lr](#lr) :: `float` :: `lr=0.001` :: `0.1`
-- [loss_type](#loss-type) :: `string` :: `loss_type=CrossEntropy` :: `Dice`
-- [starting_iter](#starting-iter) :: `integer` :: `starting_iter=0` :: `0`
-- [save_every_n](#save-every-n) :: `integer` :: `save_every_n=5` :: `500`
-- [tensorboard_every_n](#tensorboard-every-n) :: `integer` :: `tensorboard_every_n=5` :: `20`
-- [max_iter](#max-iter) :: `integer` :: `max_iter=1000` :: `10000`
-- [max_checkpoints](#max-checkpoints) :: `integer` :: `max_checkpoints=5` :: `100`
+
+ Name | Type | Example | Default 
+ ---- | ---- | ------- | ------- 
+[optimiser](#optimiser) | `string` | `optimiser=momentum` | `adam`
+[sample_per_volume](#sample-per-volume) | `positive integer` | `sample_per_volume=5` | `1`
+[lr](#lr) | `float` | `lr=0.001` | `0.1`
+[loss_type](#loss-type) | `string` | `loss_type=CrossEntropy` | `Dice`
+[starting_iter](#starting-iter) | `integer` | `starting_iter=0` | `0`
+[save_every_n](#save-every-n) | `integer` | `save_every_n=5` | `500`
+[tensorboard_every_n](#tensorboard-every-n) | `integer` | `tensorboard_every_n=5` | `20`
+[max_iter](#max-iter) | `integer` | `max_iter=1000` | `10000`
+[max_checkpoints](#max-checkpoints) | `integer` | `max_checkpoints=5` | `100`
 
 ###### `optimiser`
 Type of optimiser for computing graph gradients.  Current available options are
@@ -481,10 +497,13 @@ During inference, if a [dataset_split_file](#dataset-split-file) is available,
 only image files in the `Inference` phase will be used, otherwise inference
 will process all image files defined by [input specifications](#input-data-source-section).
 
-- [validation_every_n](#validation-every-n) :: `integer` :: `validation_every_n=10` :: `-1`
-- [validation_max_iter](#validation-max-iter) :: `integer` :: `validation_max_iter=5` :: `1`
-- [exclude_fraction_for_validation](#exclude-fraction-for-validation) :: `float` :: `exclude_fraction_for_validation=0.2` :: `0.0`
-- [exclude_fraction_for_inference](#exclude-fraction-for-inference) :: `float` :: `exclude_fraction_for_inference=0.1` :: `0.0`
+
+ Name | Type | Example | Default 
+ ---- | ---- | ------- | ------- 
+[validation_every_n](#validation-every-n) | `integer` | `validation_every_n=10` | `-1`
+[validation_max_iter](#validation-max-iter) | `integer` | `validation_max_iter=5` | `1`
+[exclude_fraction_for_validation](#exclude-fraction-for-validation) | `float` | `exclude_fraction_for_validation=0.2` | `0.0`
+[exclude_fraction_for_inference](#exclude-fraction-for-inference) | `float` | `exclude_fraction_for_inference=0.1` | `0.0`
 
 ###### `validation_every_n`
 Run validation iterations after every N training iterations.
@@ -504,9 +523,12 @@ Value should be in `[0, 1]`.
 
 ##### Data augmentation during training
 
-- [rotation_angle](#rotation-angle) :: `float array` :: `rotation_angle=-10.0,10.0` :: `''`
-- [scaling_percentage](#scaling-percentage) :: `float array` :: `scaling_percentage=0.8,1.2` :: `''`
-- [random_flipping_axes](#random-flipping-axes) :: `integer array` :: `random_flipping_axes=1,2` :: `-1`
+
+ Name | Type | Example | Default 
+ ---- | ---- | ------- | ------- 
+[rotation_angle](#rotation-angle) | `float array` | `rotation_angle=-10.0,10.0` | `''`
+[scaling_percentage](#scaling-percentage) | `float array` | `scaling_percentage=0.8,1.2` | `''`
+[random_flipping_axes](#random-flipping-axes) | `integer array` | `random_flipping_axes=1,2` | `-1`
 
 ###### `rotation_angle`
 Float array, indicates a random rotation operation should be applied to the
@@ -543,13 +565,16 @@ Note that the above implementation generalises to
 `NxMxP`-voxel windows and `BxCxD`-voxel window outputs.
 For a 2-D slice, e.g, `Nx1xM`, the second dimension of `border` should be `0`.
 
-- [spatial_window_size](#spatial-window-size) :: `integer array` :: `spatial_window_size=64,64,64` :: `''`
-- [border](#border) :: `integer array` :: `border=5,5,5` :: `0, 0, 0`
-- [inference_iter](#inference-iter) :: `integer` :: `inference_iter=1000` :: `-1`
-- [save_seg_dir](#save-seg-dir) :: `string` :: `save_seg_dir=output/test` :: `output`
-- [output_postfix](#output-postfix) :: `string` :: `output_postfix=_output` :: `_niftynet_out`
-- [output_interp_order](#output-interp-order) :: `non-negative integer` :: `output_interp_order=0` :: `0`
-- [dataset_to_infer](#dataset-to-infer) :: `Training|Validation|Inference` :: `dataset_to_infer=Training` :: `''`
+
+ Name | Type | Example | Default 
+ ---- | ---- | ------- | ------- 
+[spatial_window_size](#spatial-window-size) | `integer array` | `spatial_window_size=64,64,64` | `''`
+[border](#border) | `integer array` | `border=5,5,5` | `0, 0, 0`
+[inference_iter](#inference-iter) | `integer` | `inference_iter=1000` | `-1`
+[save_seg_dir](#save-seg-dir) | `string` | `save_seg_dir=output/test` | `output`
+[output_postfix](#output-postfix) | `string` | `output_postfix=_output` | `_niftynet_out`
+[output_interp_order](#output-interp-order) | `non-negative integer` | `output_interp_order=0` | `0`
+[dataset_to_infer](#dataset-to-infer) | `Training|Validation|Inference` | `dataset_to_infer=Training` | `''`
 
 ###### `spatial_window_size`
 Array of integers indicating the size of input window.  By default, the window
@@ -578,3 +603,43 @@ Interpolation order of the network outputs.
 ###### `dataset_to_infer`
 String specifies which dataset ('Training', 'Validation', 'Inference') to compute inference for.
 By default 'Inference' dataset is used.
+
+
+### EVALUATION
+For evaluation of the output of an application against some available ground
+truth, an `EVALUATION` section must be present. Examples of evaluation config
+files are available in [the config
+folder](https://github.com/NifTK/NiftyNet/tree/dev/config) with the suffix
+`_eval.ini`.
+
+The evaluation command is:
+```bash
+# command to run from git-cloned NiftyNet source code folder
+python net_run.py evaluation -c <path_to/config.ini> -a <application>
+```
+(For example, multimodal segmentation evaluation could be:
+`python net_run.py evaluation -a niftynet.applications.segmentation_application.SegmentationApplication -c config/default_multimodal_segmentation_eval.ini`)
+
+In order to run the evaluation, the input sources section must contain the
+details on
+* The ground truth against which to compare (label in case of the segmentation)
+* The corresponding files to evaluate (inferred)
+
+The final evaluation file is saved in the folder indicated as input of the
+field `model_dir` in the section `[SYSTEM]` under the form of a csv file with
+indication of subject id (label if relevant) and the calculated metrics as
+columns.
+
+The evaluation configuration section (`[EVALUATION]`) must contain:
+- `save_csv_dir` -- Path where to save the csv file output
+- `evaluations` -- List of metrics of evaluation to be calculated presented as a
+ string separated by commas (e.g. `dice`, `jaccard`, `n_pos_ref`, `n_pos_seg`).
+ Lists of possible evaluations metrics per application are available in
+ [regression evaluations](./niftynet.evaluation.regression_evaluations.html),
+ [segmentation evaluations](./niftynet.evaluation.segmentation_evaluations.html),
+ and [classification evaluations](./niftynet.evaluation.classification_evaluations.html).
+- `evaluation_units` -- `foreground`, `label` or `cc`. Describe how the
+  evaluation should be performed in the case of segmentation mostly
+  (`foreground` means only one label, `label` means metrics per label, `cc`
+  means metrics per connected component).  More on this topic can be found at
+  [segmentation evaluations](./niftynet.evaluation.segmentation_evaluations.html).

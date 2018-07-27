@@ -91,7 +91,9 @@ extensions = [
     'sphinx.ext.imgmath',
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
-    'sphinx.ext.viewcode']
+    'sphinx.ext.viewcode',
+    'sphinx_markdown_tables',
+]
 autodoc_default_flags = ['members', 'show-inheritance']
 autodoc_member_order = 'bysource'
 
@@ -110,7 +112,8 @@ templates_path = ['_templates']
 # You can specify multiple suffix as a list of string:
 #
 source_parsers = {
-    '.md': CommonMarkParser
+    # '.md': CommonMarkParser
+    '.md': 'recommonmark.parser.CommonMarkParser',
 }
 source_suffix = ['.rst', '.md']
 #source_suffix = '.rst'
@@ -256,6 +259,3 @@ texinfo_documents = [
      author, 'NiftyNet', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-
