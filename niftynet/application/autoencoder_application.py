@@ -61,16 +61,12 @@ class AutoencoderApplication(BaseApplication):
                 self.readers.append(reader)
         if self._infer_type in ('encode', 'encode-decode'):
             self.readers = [ImageReader(['image'])]
-            self.readers[0].initialise(data_param,
-                                       task_param,
-                                       file_lists[0])
+            self.readers[0].initialise(data_param, task_param, file_lists[0])
         elif self._infer_type == 'sample':
             self.readers = []
         elif self._infer_type == 'linear_interpolation':
             self.readers = [ImageReader(['feature'])]
-            self.readers[0].initialise(data_param,
-                                       task_param,
-                                       file_lists[0])
+            self.readers[0].initialise(data_param, task_param, file_lists[0])
         # if self.is_training or self._infer_type in ('encode', 'encode-decode'):
         #    mean_var_normaliser = MeanVarNormalisationLayer(image_name='image')
         #    self.reader.add_preprocessing_layers([mean_var_normaliser])
