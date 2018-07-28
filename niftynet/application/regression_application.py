@@ -74,11 +74,9 @@ class RegressionApplication(BaseApplication):
                 self.readers.append(reader)
         elif self.is_inference:
             inference_reader = ImageReader(['image'])
-            file_list = data_partitioner.inference_files
             inference_reader.initialise(data_param, task_param, file_lists[0])
             self.readers = [inference_reader]
         elif self.is_evaluation:
-            file_list = data_partitioner.inference_files
             reader = ImageReader({'image', 'output', 'inferred'})
             reader.initialise(data_param, task_param, file_lists[0])
             self.readers = [reader]
