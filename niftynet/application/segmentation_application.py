@@ -78,13 +78,11 @@ class SegmentationApplication(BaseApplication):
         elif self.is_inference:
             # in the inference process use image input only
             inference_reader = ImageReader({'image'})
-            file_list = data_partitioner.inference_files
-            inference_reader.initialise(data_param, task_param, file_list)
+            inference_reader.initialise(data_param, task_param, file_lists[0])
             self.readers = [inference_reader]
         elif self.is_evaluation:
-            file_list = data_partitioner.inference_files
             reader = ImageReader({'image', 'label', 'inferred'})
-            reader.initialise(data_param, task_param, file_list)
+            reader.initialise(data_param, task_param, file_lists[0])
             self.readers = [reader]
         else:
             raise ValueError('Action `{}` not supported. Expected one of {}'
