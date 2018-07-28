@@ -78,11 +78,11 @@ class SegmentationApplication(BaseApplication):
         elif self.is_inference:
             # in the inference process use image input only
             inference_reader = ImageReader({'image'})
-            file_list = data_partitioner.inference_files
+            file_list = self.get_file_lists(data_partitioner)
             inference_reader.initialise(data_param, task_param, file_list)
             self.readers = [inference_reader]
         elif self.is_evaluation:
-            file_list = data_partitioner.inference_files
+            file_list = self.get_file_lists(data_partitioner)
             reader = ImageReader({'image', 'label', 'inferred'})
             reader.initialise(data_param, task_param, file_list)
             self.readers = [reader]
