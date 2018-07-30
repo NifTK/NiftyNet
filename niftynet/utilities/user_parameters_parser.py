@@ -8,6 +8,7 @@ from __future__ import print_function
 
 import argparse
 import os
+import warnings
 import textwrap
 
 from niftynet.engine.signal import TRAIN, INFER, EVAL
