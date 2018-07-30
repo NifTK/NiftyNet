@@ -91,7 +91,9 @@ extensions = [
     'sphinx.ext.imgmath',
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
-    'sphinx.ext.viewcode']
+    'sphinx.ext.viewcode',
+    'sphinx_markdown_tables',
+]
 autodoc_default_flags = ['members', 'show-inheritance']
 autodoc_member_order = 'bysource'
 
@@ -110,7 +112,8 @@ templates_path = ['_templates']
 # You can specify multiple suffix as a list of string:
 #
 source_parsers = {
-    '.md': CommonMarkParser
+    # '.md': CommonMarkParser
+    '.md': 'recommonmark.parser.CommonMarkParser',
 }
 source_suffix = ['.rst', '.md']
 #source_suffix = '.rst'
@@ -126,8 +129,8 @@ modindex_common_prefix = [
 
 # General information about the project.
 project = u'NiftyNet'
-copyright = u'2018, NiftyNet Consortium'
-author = u'NiftyNet Consortium'
+copyright = u'2018, the NiftyNet Consortium'
+author = u'the NiftyNet Consortium'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -136,7 +139,7 @@ author = u'NiftyNet Consortium'
 from niftynet.utilities.versioning import get_niftynet_version
 try:
     # The short X.Y version.
-    version = get_niftynet_version().split('.dev')[0]
+    version = get_niftynet_version().split('+')[0]
 except (IndexError, AttributeError):
     version = u''
 # The full version, including alpha/beta/rc tags.
@@ -256,6 +259,3 @@ texinfo_documents = [
      author, 'NiftyNet', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-

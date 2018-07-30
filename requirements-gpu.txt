@@ -7,3 +7,4 @@ tensorflow-gpu==1.7
 pandas
 pillow
 blinker
+packaging

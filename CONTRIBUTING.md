@@ -1,30 +1,24 @@
-## NiftyNet
+# Contributor guide
+The source code for NiftyNet is released via [GitHub][github-niftynet].
 
-The main source code repository for NiftyNet is [CMICLab][cmiclab-niftynet].
-The NiftyNet codebase is also mirrored on [GitHub][github-niftynet].
-
-[cmiclab-niftynet]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 [github-niftynet]: https://github.com/NifTK/NiftyNet
 
 
 ## Submitting bug reports and feature requests
 
-Bug reports and feature requests should be submitted by creating an issue on [CMICLab][cmiclab-niftynet-issue] or [GitHub][github-niftynet-issue].
+Bug reports and feature requests should be submitted by creating an issue on [GitHub][github-niftynet-issue].
 
-[cmiclab-niftynet-issue]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/issues/new
-[github-niftynet-issue]: https://github.com/NifTK/NiftyNet/issues/new
+[github-niftynet-issue]: https://github.com/NifTK/NiftyNet/issues/new?template=niftynet-issue-template.md
 
 
 ## Submitting merge requests
 
-All merge requests should be submitted via [CMICLab][cmiclab-niftynet-mr] or
-GitHub pull request.
+All merge requests should be submitted via GitHub pull request.
+
 Please make sure you have read the following subsections before submitting a merge request.
 
-[cmiclab-niftynet-mr]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/merge_requests/new
 
-
-### Python style guide
+### 1. Python style guide
 
 Please follow the [PEP8 Style Guide for Python Code][pep8].
 In particular (from the guide):
@@ -38,7 +32,7 @@ In particular (from the guide):
 [pep8]: https://www.python.org/dev/peps/pep-0008/
 
 
-### Testing your changes
+### 2. Testing your changes
 
 Please submit merge requests from your branch to the `dev` branch.
 
@@ -50,29 +44,99 @@ cd NiftyNet/
 sh run_test.sh
 ```
 
-**If you have made changes to the pip installer, please test these.**
-For instance if you have added a new [CLI entry point][pip-console-entry]  (i.e. a new "command" - also see the respective section below), make sure you include the appropriate tests in the [GitLab CI configuration][gitlab-ci-yaml].
-For an example how to do this please see [lines 223 to 270 in the `.gitlab-ci.yml` file][gitlab-ci-pip-installer-test].
+### 3. Creating GitHub pull requests
+1. **[on GitHub]** Sign up/in [GitHub.com](https://github.com/) (The rest steps assume GitHub user id: `nntestuser`).
+1. **[on GitHub]** Go to [https://github.com/NifTK/NiftyNet](https://github.com/NifTK/NiftyNet), click the 'Fork' button.
+1. Download the repo:
+   * `git clone https://github.com/nntestuser/NiftyNet.git`
+1. Synchronise your repo with the `dev` branch of [https://github.com/NifTK/NiftyNet](https://github.com/NifTK/NiftyNet):
+   * `git remote add upstream git@github.com:NifTK/NiftyNet.git`
+   * `git pull upstream dev`
+1. Make commits, test changes locally, and push to `nntestuser`'s repo:
+   * `git push github dev`
 
-[pip-console-entry]: http://python-packaging.readthedocs.io/en/latest/command-line-scripts.html#the-console-scripts-entry-point
-[gitlab-ci-yaml]: https://docs.gitlab.com/ce/ci/yaml/
-[gitlab-ci-pip-installer-test]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L223
+   (This step assumes `github` is a remote name pointing at `git@github.com:nntestuser/NiftyNet.git`;
 
+    set this with command: `git remote add github git@github.com:nntestuser/NiftyNet.git`;
 
-## Enhancing the pip installer
+    confirm this with command: `git remote -v`)
 
-### Adding a new command callable from a pip-installed NiftyNet
-
-This requires added a new [`console_scripts` entry point][pip-console-entry] in the `setup.py` file.
-For a practical example see [how the `net_segment` CLI command is implemented][net-segment-entry].
-Also see [how this command is tested][net-segment-test].
-
-[net-segment-entry]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/setup.py#L105
-[net-segment-test]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L252
+1. **[on GitHub]** Create a pull request by clicking the 'pull request' button.
 
 
 ## Writing unit tests
-Please see this [README](tests/README.md) for more information on how to write unit tests for NiftyNet.
+*This section describes steps to create unit tests for NiftyNet.*
+
+#### 1. Determine which module to test
+Go to [Gitlab pipeline](https://gitlab.com/NifTK/NiftyNet/pipelines) page,
+click on the latest successful testing pipeline and check the test coverage report at the bottom of the test log.
+The coverage report lists all untested files (with line numbers of specific statements) in the project.
+
+
+#### 2. File an issue
+Create a new issue indicating that you'll be working on the tests of a particular module.
+
+To avoid duplicated effort, please check the [issue list](https://github.com/NifTK/NiftyNet/issues) and
+make sure nobody is implementing the unit tests for that module at the moment.
+Also make sure the issue description is concise and has specific tasks.
+
+#### 3. Create `[name]_test.py`
+Create a unit test Python script with file name ends with `_test.py`. This file
+should be added to
+[`NiftyNet/tests/`](https://github.com/NifTK/NiftyNet/tree/dev/tests) directory.
+(CI runner will automatically pick up the script and run it with Python 2.7&3)
+
+A minimal working template for  `[name]_test.py` is:
+```python
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function
+
+import tensorflow as tf
+
+class ModuleNameTest(tf.test.TestCase):
+    def test_my_function(self):
+        x = tf.constant(1.0)
+        self.assertEqual(x.eval(), 1.0)
+    # preferably using self.assert* functions from TensorFlow unit tests API
+    # https://www.tensorflow.org/versions/r0.12/api_docs/python/test/unit_tests
+
+if __name__ == "__main__":
+    # so that we can run this test independently
+    tf.test.main()
+```
+If the unit tests write files locally, please ensure it's writing to `NiftyNet/testing_data` folder.
+
+
+#### 4. Run tests locally
+In NiftyNet source code folder, run:
+```bash
+python -m tests.[name]_test.py
+```
+make sure the test works locally.
+The test should finish in a few seconds (using CPU). If it takes significantly longer, please set it as `slow test` in the file:
+```python
+...
+@unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
+class ModuleNameTest(tf.test.TestCase):
+    def test_my_function(self):
+        pass
+    # preferably using self.assert* functions from tensorflow unit tests API
+    # https://www.tensorflow.org/versions/r0.12/api_docs/python/test/unit_tests
+...
+```
+
+#### 5. Run all tests locally
+Normally the newly created unit test should not depend on the outcome of the other unit tests.
+[A Bash script is defined](https://github.com/NifTK/NiftyNet/blob/dev/run_test.sh) for running all quick tests to confirm this.
+
+(In `run_test.sh`, `wget` and `tar` are used to automatically download and unzip testing data. This can be done manually.)
+
+Please send a merge request with only relevant changes to a particular unit tests.
+
+---
+
+*Thanks for your contributions :)*
+
 
 ## NiftyNet admin tasks
 
@@ -83,23 +147,6 @@ After adding notes for the current release to the [NiftyNet changelog][changelog
 
 [pep440]: https://www.python.org/dev/peps/pep-0440/
 [changelog]: CHANGELOG.md
-
-### Bundling a pip installer
-
-The NiftyNet pip installer gets bundled automatically for [Git tags][git-tag] starting with a `v` (for "version") pushed to [CMICLab][niftynet-cmiclab].
-The [wheel version][wheel-version-tag] is determined automatically as part of this process.
-To see how this is done in practice, please go to the [`pip-camera-ready` section of `.gitlab-ci.yml`][pip-camera-ready] (and see the result in [this build log - esp. the last few lines lines, which show where the pip installer can be found on the build server][pip-camera-ready-output]).
-
-In particular, bundling a pip installer boils down to running the command [`python setup.py bdist_wheel`][python-setuptools] in the top-level directory.
-This creates a [wheel binary package][wheel-binary] in a newly created `dist` directory, e.g. `dist/NiftyNet-0.2.0-py2.py3-none-any.whl`.
-
-[niftynet-cmiclab]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
-[git-tag]: https://git-scm.com/book/en/v2/Git-Basics-Tagging
-[pip-camera-ready]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L323
-[pip-camera-ready-output]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/-/jobs/30450
-[python-setuptools]: https://packaging.python.org/tutorials/distributing-packages/#wheels
-[wheel-binary]: https://www.python.org/dev/peps/pep-0491/
-
 
 ### Publishing a NiftyNet pip installer on PyPI
 
@@ -123,19 +170,65 @@ To actually publish the bundled wheel on PyPI, you will need to run the `twine u
 
 ### Merging GitHub pull requests
 
-The main development hub for NiftyNet is [CMICLab][cmiclab-niftynet].
-However we would also like to support the [GitHub][github-niftynet]-based workflow in a way that is minimally disruptive to the workflow on CMICLab.
-For this purpose, please follow the steps below for merging pull requests on GitHub:
+Please follow the steps below for merging pull requests on GitHub:
 
-1. **[on GitHub]** Review the pull request, and ask for changes if needed
-1. **[on GitHub]** Accept the pull request (i.e. click the "Merge pull request" button)
-1. **[on CMICLab]** Create a new branch off `dev` with a name representative of the pull request. For instance `merging-github-pr-7` if the pull request on GitHub was numbered `7` (assuming `origin` is set to `git@cmiclab.cs.ucl.ac.uk:CMIC/NiftyNet.git`):
-   * `git checkout -b merging-github-pr-7 origin/dev`
-1. **[on CMICLab]** Pull GitHub's `dev` branch onto the new branch `merging-github-pr-7` you've created (assuming `origin` is set to `git@cmiclab.cs.ucl.ac.uk:CMIC/NiftyNet.git`) **and** push this new branch to CMICLab:
-   1. `git pull git@github.com:NifTK/NiftyNet.git dev`
-   1. `git push -u origin merging-github-pr-7`
-1. **[on CMICLab]** Make sure `merging-github-pr-7` passes all [continuous integration tests on CMICLab][cmiclab-niftynet-pipelines]
-1. **[on CMICLab]** Merge the new branch `merging-github-pr-7` onto `dev`
-1. **[on GitHub]** Check that the last step has updated the `dev` branch mirror
+1. **[on GitHub]** Review the pull request, and ask for changes if needed.
+1. Create a new branch off `dev` of `https://github.com/NifTK/NiftyNet` with a name representative of the pull request.
+   For instance, if the pull request on GitHub was numbered `7` (assuming `upstream` is set to `git@github.com:NifTK/NiftyNet.git`):
+   * `git checkout -b merging-github-pr-7 upstream/dev`
+1. Download the contributing commits and merge to `merging-pr-7`.
+   For instance, if the pull request is from `nntestuser`'s `bug-fixing-branch`:
+   * `git pull https://github.com/nntestuser/NiftyNet bug-fixing-branch`
+1. Review and test locally.
+1. Push the commits to branch `merging-github-pr-7` of remote repository [https://github.com/NifTK/NiftyNet](https://github.com/NifTK/NiftyNet):
+   * `git push upstream merging-github-pr-7`
 
-[cmiclab-niftynet-pipelines]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/pipelines
+1. **[on GitHub]** Check CI tests results ([Gitlab.com](https://gitlab.com/NifTK/NiftyNet/pipelines); quick tests only).
+1. **[on GitHub]** Create a new pull request from `merging-github-pr-7` to `dev`.
+1. **[on GitHub]** Accept the new pull request onto `dev`.
+1. **[on GitHub]** Check CI tests results ([Gitlab.com](https://gitlab.com/NifTK/NiftyNet/pipelines); full tests for `dev`)
+
+*At the moment only pushes (instead of pull requests from forks) to GitHub
+trigger GitLab's CI runner, [a feature
+request](https://gitlab.com/gitlab-org/gitlab-ee/issues/6775) has been
+submitted -- will simplify the workflow once resolved ([more
+info](https://github.com/NifTK/NiftyNet/issues/120#issuecomment-401531891)).*
+
+## Enhancing the pip installer
+
+### Adding a new command callable from a pip-installed NiftyNet
+
+This requires added a new [`console_scripts` entry point][pip-console-entry] in the `setup.py` file.
+For a practical example see [how the `net_segment` CLI command is implemented][net-segment-entry].
+
+[net-segment-entry]: https://github.com/NifTK/NiftyNet/blob/v0.3.0/setup.py#L107
+
+
+
+## Deprecated instructions
+
+### Bundling a pip installer
+
+The NiftyNet pip installer gets bundled automatically for [Git tags][git-tag] starting with a `v` (for "version") pushed to [CMICLab][niftynet-cmiclab].
+The [wheel version][wheel-version-tag] is determined automatically as part of this process.
+To see how this is done in practice, please go to the [`pip-camera-ready` section of `.gitlab-ci.yml`][pip-camera-ready] (and see the result in [this build log - esp. the last few lines lines, which show where the pip installer can be found on the build server][pip-camera-ready-output]).
+
+In particular, bundling a pip installer boils down to running the command [`python setup.py bdist_wheel`][python-setuptools] in the top-level directory.
+This creates a [wheel binary package][wheel-binary] in a newly created `dist` directory, e.g. `dist/NiftyNet-0.2.0-py2.py3-none-any.whl`.
+
+[niftynet-cmiclab]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
+[git-tag]: https://git-scm.com/book/en/v2/Git-Basics-Tagging
+[pip-camera-ready]: https://github.com/niftk/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L323
+[pip-camera-ready-output]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/-/jobs/30450
+[python-setuptools]: https://packaging.python.org/tutorials/distributing-packages/#wheels
+[wheel-binary]: https://www.python.org/dev/peps/pep-0491/
+
+
+**If you have made changes to the pip installer, please test these.**
+For instance if you have added a new [CLI entry point][pip-console-entry]  (i.e. a new "command" - also see the respective section below),
+make sure you include the appropriate tests in the [GitLab CI configuration][gitlab-ci-yaml].
+For an example how to do this please see [lines 223 to 270 in the `.gitlab-ci.yml` file][gitlab-ci-pip-installer-test].
+
+[pip-console-entry]: http://python-packaging.readthedocs.io/en/latest/command-line-scripts.html#the-console-scripts-entry-point
+[gitlab-ci-yaml]: https://docs.gitlab.com/ce/ci/yaml/
+[gitlab-ci-pip-installer-test]: https://github.com/niftk/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L223
