@@ -118,9 +118,11 @@ def run():
     config.read([config_file_name])
 
     if os.path.splitext(config_file_name)[1].lower() == '.ini':
-        raise DeprecationWarning('INI configuration files are deprecated in favor of'
-                                 ' YAML configuration files. Support for INI configuration'
-                                 ' files will be dropped in a future release.')
+        raise DeprecationWarning(
+            'INI configuration files are deprecated in favor of'
+            ' YAML configuration files. Support for INI configuration'
+            ' files will be dropped in a future release.'
+        )
 
     # infer application name from command
     app_name = None
