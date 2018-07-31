@@ -253,7 +253,7 @@ quicktest:
 
     - echo 'finished quick tests'
   tags:
-    - gift-linux
+    - gift-little
 
 
 pip-installer:
