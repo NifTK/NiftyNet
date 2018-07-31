@@ -17,6 +17,7 @@ pylintjob:
     - 206-improve-the-handling-of-release-notes
     - 221-add-changelog-entry-for-version-0.2.2
     - 223-put-bug-fixes-under-fixed-header-in-changelog
+    - 173-move-ci-tests-to-gift-little
   script:
     - pylint --rcfile=tests/pylintrc niftynet/engine
     - pylint --rcfile=tests/pylintrc niftynet/io/image_*py
@@ -33,6 +34,7 @@ testjob:
     - dev
     - tags
     - cherrypick-from-dev-to-v0.2.1-for-v0.2.2-release
+    - 173-move-ci-tests-to-gift-little
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
@@ -223,6 +225,7 @@ quicktest:
     - 223-put-bug-fixes-under-fixed-header-in-changelog
     - 195-add-evaluation-action-3
     - 192-model_zoo_tests
+    - 173-move-ci-tests-to-gift-little
   script:
     # print system info
     - which nvidia-smi
@@ -265,6 +268,7 @@ pip-installer:
     - dev
     - tags
     - 117-support-for-user-defined-networks-using-pip-installed-niftynet
+    - 173-move-ci-tests-to-gift-little
   script:
     # get the shortened version of last commit's hash
     - LAST_COMMIT=$(git rev-parse --short HEAD)
@@ -462,6 +466,7 @@ pip-camera-ready:
   stage: pip_publish
   only:
     - tags
+    - 173-move-ci-tests-to-gift-little
   script:
     # Copy wheel created in previous stage to a specific location on GIFT-Adelie
     - export niftynet_dir=$(pwd)
@@ -499,6 +504,7 @@ release-notes:
   stage: release_notes
   only:
     - tags
+    - 173-move-ci-tests-to-gift-little
   script:
     - echo $CI_COMMIT_REF_NAME
     - echo $CI_COMMIT_TAG
