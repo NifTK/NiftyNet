@@ -200,7 +200,7 @@ testjob:
     - coverage report -m
     - echo 'finished test'
   tags:
-    - gift-linux
+    - gift-little
 
 quicktest:
   stage: dev_test
@@ -456,7 +456,7 @@ pip-installer:
     - deactivate
     - cd $niftynet_dir
   tags:
-    - gift-adelie
+    - gift-little
 
 pip-camera-ready:
   stage: pip_publish
@@ -493,7 +493,7 @@ pip-camera-ready:
     - echo "Camera-ready pip installer bundle (wheel) created:"
     - echo "$(ls $camera_ready_dir/*.whl)"
   tags:
-    - gift-adelie
+    - gift-little
 
 release-notes:
   stage: release_notes
@@ -514,4 +514,4 @@ release-notes:
           echo "... DONE"
         fi
   tags:
-    - gift-adelie
+    - gift-little
