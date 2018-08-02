@@ -119,7 +119,7 @@ testjob:
     - python net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6 --starting_iter 0 --max_iter 15
     - python net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 15
     - python net_segment.py evaluation -c config/default_segmentation.ini
-    - python net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 15 --dataset_to_infer Validation
+    - python net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 15 --dataset_to_infer validation
 
     - python net_segment.py train -c config/default_multimodal_segmentation.ini --batch_size 3
     - python net_segment.py inference -c config/default_multimodal_segmentation.ini --spatial_window_size 64,64,64 --batch_size 7
