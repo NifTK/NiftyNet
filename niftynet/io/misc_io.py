@@ -630,9 +630,16 @@ def image3_axial(name,
 
 
 def set_logger(file_name=None):
-    #tf.logging._get_logger().handlers = []
-    #tf.logging._get_logger() = log.getLogger('tensorflow')
-    logger = tf.logging._get_logger()
+    """
+    Writing logs to a file if file_name,
+    the handler needs to be closed by `close_logger()` after use.
+
+    :param file_name:
+    :return:
+    """
+    from tensorflow.python.platform.tf_logging import _get_logger
+
+    logger = _get_logger()
     tf.logging.set_verbosity(tf.logging.INFO)
     logger.handlers = []
 
@@ -648,6 +655,24 @@ def set_logger(file_name=None):
         file_handler = log.FileHandler(file_name)
         file_handler.setFormatter(f)
         logger.addHandler(file_handler)
+
+
+def close_logger():
+    """
+    Close file-based outputs
+
+    :return:
+    """
+    from tensorflow.python.platform.tf_logging import _get_logger
+
+    logger = _get_logger()
+    for handler in reversed(logger.handlers):
+        try:
+            handler.flush()
+            handler.close()
+            logger.removeHandler(handler)
+        except (OSError, ValueError):
+            pass
 
 
 def infer_latest_model_file(model_dir):

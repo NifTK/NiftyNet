@@ -31,6 +31,7 @@ testjob:
   only:
     - master
     - dev
+    - refactoring-engine-with-blinker
     - tags
     - cherrypick-from-dev-to-v0.2.1-for-v0.2.2-release
   script:
@@ -207,6 +208,7 @@ quicktest:
   except:
     - master
     - dev
+    - refactoring-engine-with-blinker
     - tags
     - 177-merging-net_regress-to-dev
     - 112-publish-api-docs-online
@@ -263,6 +265,7 @@ pip-installer:
   only:
     - master
     - dev
+    - refactoring-engine-with-blinker
     - tags
     - 117-support-for-user-defined-networks-using-pip-installed-niftynet
   script:
