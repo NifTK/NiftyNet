@@ -31,6 +31,7 @@ testjob:
   only:
     - master
     - dev
+    - refactoring-engine-with-blinker
     - tags
     - cherrypick-from-dev-to-v0.2.1-for-v0.2.2-release
   script:
@@ -119,7 +120,7 @@ testjob:
     - python net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6 --starting_iter 0 --max_iter 15
     - python net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 15
     - python net_segment.py evaluation -c config/default_segmentation.ini
-    - python net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 15 --dataset_to_infer Validation
+    - python net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 15 --dataset_to_infer validation
 
     - python net_segment.py train -c config/default_multimodal_segmentation.ini --batch_size 3
     - python net_segment.py inference -c config/default_multimodal_segmentation.ini --spatial_window_size 64,64,64 --batch_size 7
@@ -207,6 +208,7 @@ quicktest:
   except:
     - master
     - dev
+    - refactoring-engine-with-blinker
     - tags
     - 177-merging-net_regress-to-dev
     - 112-publish-api-docs-online
@@ -263,6 +265,7 @@ pip-installer:
   only:
     - master
     - dev
+    - refactoring-engine-with-blinker
     - tags
     - 117-support-for-user-defined-networks-using-pip-installed-niftynet
   script:

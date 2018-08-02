@@ -184,10 +184,10 @@ class ApplicationDriver(object):
                 num_gpus=self.num_gpus,
                 is_training_action=self.is_training_action)
 
-        with tf.Session(config=tf_config(), graph=graph):
-            start_time = time.time()
-            loop_status = {
-                'current_iter': self.initial_iter, 'normal_exit': False}
+        start_time = time.time()
+        loop_status = {'current_iter': self.initial_iter, 'normal_exit': False}
+
+        with tf.Session(config=tf_config(), graph=graph) as sess:
             try:
                 # broadcasting event of session started
                 SESS_STARTED.send(application, iter_msg=None)
@@ -219,13 +219,16 @@ class ApplicationDriver(object):
                 iter_msg = IterationMessage()
                 iter_msg.current_iter = loop_status.get('current_iter', -1)
                 SESS_FINISHED.send(application, iter_msg=iter_msg)
-                application.stop()
-                if not loop_status.get('normal_exit', False):
-                    # loop didn't finish normally
-                    tf.logging.warning('stopped early, incomplete iterations.')
-                tf.logging.info(
-                    "%s stopped (time in second %.2f).",
-                    type(application).__name__, (time.time() - start_time))
+                sess.close()
+                tf.reset_default_graph()
+
+        application.stop()
+        if not loop_status.get('normal_exit', False):
+            # loop didn't finish normally
+            tf.logging.warning('stopped early, incomplete iterations.')
+        tf.logging.info(
+            "%s stopped (time in second %.2f).",
+            type(application).__name__, (time.time() - start_time))
 
     # pylint: disable=not-context-manager
     @staticmethod
