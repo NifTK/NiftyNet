@@ -218,13 +218,17 @@ class GANApplication(BaseApplication):
                 generator_variables = tf.get_collection(
                     tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
                 generator_grads = self.optimiser.compute_gradients(
-                    lossG, var_list=generator_variables)
+                    lossG,
+                    var_list=generator_variables,
+                    colocate_gradients_with_ops=True)
 
                 # gradients of discriminator
                 discriminator_variables = tf.get_collection(
                     tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator')
                 discriminator_grads = self.optimiser.compute_gradients(
-                    lossD, var_list=discriminator_variables)
+                    lossD,
+                    var_list=discriminator_variables,
+                    colocate_gradients_with_ops=True)
                 grads = [generator_grads, discriminator_grads]
 
                 # add the grads back to application_driver's training_grads

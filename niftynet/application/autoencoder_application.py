@@ -156,7 +156,8 @@ class AutoencoderApplication(BaseApplication):
                     reg_loss = tf.reduce_mean(
                         [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
                     loss = loss + reg_loss
-            grads = self.optimiser.compute_gradients(loss)
+            grads = self.optimiser.compute_gradients(
+                loss, colocate_gradients_with_ops=True)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
 

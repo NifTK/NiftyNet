@@ -285,7 +285,8 @@ class RegressionApplication(BaseApplication):
                 loss = data_loss + reg_loss
             else:
                 loss = data_loss
-            grads = self.optimiser.compute_gradients(loss)
+            grads = self.optimiser.compute_gradients(
+                loss, colocate_gradients_with_ops=True)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
             # collecting output variables
