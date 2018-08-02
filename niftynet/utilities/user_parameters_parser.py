@@ -15,6 +15,8 @@ try:
 except ImportError:
     import configparser
 
+from niftynet.engine.signal import TRAIN, INFER, EVAL
+from niftynet.utilities.util_common import look_up_operations
 from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.engine.application_factory import SUPPORTED_APP
 from niftynet.io.misc_io import resolve_file_name
@@ -31,6 +33,7 @@ from niftynet.utilities.util_common import \
 from niftynet.utilities.versioning import get_niftynet_version_string
 
 SYSTEM_SECTIONS = {'SYSTEM', 'NETWORK', 'TRAINING', 'INFERENCE', 'EVALUATION'}
+ACTIONS = {'train': TRAIN, 'inference': INFER, 'evaluation': EVAL}
 EPILOG_STRING = \
     '\n\n======\nFor more information please visit:\n' \
     'http://niftynet.readthedocs.io/en/dev/config_spec.html\n' \
@@ -98,7 +101,7 @@ def run():
                              help="train networks, run inferences "
                                   "or evaluate inferences",
                              metavar='ACTION',
-                             choices=['train', 'inference', 'evaluation'])
+                             choices=list(ACTIONS))
     meta_parser.add_argument("-v", "--version",
                              action='version',
                              version=version_string)
@@ -203,7 +206,9 @@ def run():
 
     # preserve ``config_file`` and ``action parameter`` from the meta_args
     system_args['CONFIG_FILE'] = argparse.Namespace(path=config_file_name)
-    system_args['SYSTEM'].action = meta_args.action
+    # mapping the captured action argument to a string in ACTIONS
+    system_args['SYSTEM'].action = \
+        look_up_operations(meta_args.action, ACTIONS)
     if not system_args['SYSTEM'].model_dir:
         system_args['SYSTEM'].model_dir = os.path.join(
             os.path.dirname(config_file_name), 'model')
@@ -242,8 +247,11 @@ def _parse_arguments_by_section(parents,
         add_args_func = SUPPORTED_DEFAULT_SECTIONS[section]
     except KeyError:
         if section == required_section:
-            add_args_func = lambda parser: add_customised_args(
-                parser, section.upper())
+            def add_args_func(parser):
+                """
+                wrapper around add_customised_args
+                """
+                return add_customised_args(parser, section.upper())
         else:
             # all remaining sections are defaulting to input section
             add_args_func = add_input_data_args
@@ -283,8 +291,8 @@ def _check_cmd_remaining_keywords(args_from_cmdline):
     means unrecognised parameters.
     """
 
-    args_from_cmdline = [arg_item.replace('-', '')
-                         for arg_item in args_from_cmdline]
+    args_from_cmdline = [
+        arg_item.replace('-', '') for arg_item in args_from_cmdline]
     _raises_bad_keys(args_from_cmdline, error_info='command line')
 
     # command line parameters should be valid

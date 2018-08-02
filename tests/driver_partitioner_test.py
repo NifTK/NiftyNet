@@ -19,7 +19,9 @@ def _generate_base_params():
         model_dir='./testing_data',
         num_threads=2,
         num_gpus=1,
-        cuda_devices='')
+        cuda_devices='',
+        event_handler=None,
+        iteration_generator=None)
 
     user_param['NETWORK'] = ParserNamespace(
         batch_size=20,
@@ -105,7 +107,7 @@ class DriverPartitionerTestExistingFile(tf.test.TestCase):
         data_param = _generate_data_param()
         app_driver = ApplicationDriver()
         app_driver.initialise_application(user_param, data_param)
-        partitioner = app_driver._data_partitioner
+        partitioner = app_driver.data_partitioner
         self.assertTrue(partitioner.has_training)
         self.assertTrue(partitioner.has_inference)
         self.assertTrue(partitioner.has_validation)
@@ -125,7 +127,7 @@ class DriverPartitionerTestExistingFile(tf.test.TestCase):
         data_param = _generate_data_param()
         app_driver = ApplicationDriver()
         app_driver.initialise_application(user_param, data_param)
-        partitioner = app_driver._data_partitioner
+        partitioner = app_driver.data_partitioner
         self.assertTrue(partitioner.has_training)
         self.assertTrue(partitioner.has_inference)
         self.assertTrue(partitioner.has_validation)
@@ -145,7 +147,7 @@ class DriverPartitionerTestExistingFile(tf.test.TestCase):
         data_param = _generate_data_param()
         app_driver = ApplicationDriver()
         app_driver.initialise_application(user_param, data_param)
-        partitioner = app_driver._data_partitioner
+        partitioner = app_driver.data_partitioner
         self.assertTrue(partitioner.has_training)
         self.assertTrue(partitioner.has_inference)
         self.assertTrue(partitioner.has_validation)
@@ -165,7 +167,7 @@ class DriverPartitionerTestExistingFile(tf.test.TestCase):
         data_param = _generate_data_param()
         app_driver = ApplicationDriver()
         app_driver.initialise_application(user_param, data_param)
-        partitioner = app_driver._data_partitioner
+        partitioner = app_driver.data_partitioner
         self.assertTrue(partitioner.has_training)
         self.assertTrue(partitioner.has_inference)
         self.assertTrue(partitioner.has_validation)
@@ -187,7 +189,7 @@ class DriverPartitionerTestNoFile(tf.test.TestCase):
         data_param = _generate_data_param()
         app_driver = ApplicationDriver()
         app_driver.initialise_application(user_param, data_param)
-        partitioner = app_driver._data_partitioner
+        partitioner = app_driver.data_partitioner
         self.assertTrue(partitioner.has_training)
         self.assertTrue(partitioner.has_inference)
         self.assertTrue(partitioner.has_validation)
@@ -207,7 +209,7 @@ class DriverPartitionerTestNoFile(tf.test.TestCase):
         data_param = _generate_data_param()
         app_driver = ApplicationDriver()
         app_driver.initialise_application(user_param, data_param)
-        partitioner = app_driver._data_partitioner
+        partitioner = app_driver.data_partitioner
         self.assertFalse(partitioner.has_training)
         self.assertFalse(partitioner.has_inference)
         self.assertFalse(partitioner.has_validation)
@@ -227,7 +229,7 @@ class DriverPartitionerTestNoFile(tf.test.TestCase):
         data_param = _generate_data_param()
         app_driver = ApplicationDriver()
         app_driver.initialise_application(user_param, data_param)
-        partitioner = app_driver._data_partitioner
+        partitioner = app_driver.data_partitioner
         self.assertFalse(partitioner.has_training)
         self.assertFalse(partitioner.has_inference)
         self.assertFalse(partitioner.has_validation)
@@ -249,9 +251,9 @@ class DriverPartitionerTestNoFile(tf.test.TestCase):
         app_driver = ApplicationDriver()
         app_driver.initialise_application(user_param, data_param)
 
-        self.assertTrue(app_driver._data_partitioner is not None)
+        self.assertTrue(app_driver.data_partitioner is not None)
         self.assertFalse(os.path.isfile(TARGET_FILE))
-        partitioner = app_driver._data_partitioner
+        partitioner = app_driver.data_partitioner
         self.assertTrue(partitioner._partition_ids is None)
 
     def test_inference_no_validation(self):
@@ -265,9 +267,9 @@ class DriverPartitionerTestNoFile(tf.test.TestCase):
         app_driver = ApplicationDriver()
         app_driver.initialise_application(user_param, data_param)
 
-        self.assertTrue(app_driver._data_partitioner is not None)
+        self.assertTrue(app_driver.data_partitioner is not None)
         self.assertFalse(os.path.isfile(TARGET_FILE))
-        partitioner = app_driver._data_partitioner
+        partitioner = app_driver.data_partitioner
         self.assertTrue(partitioner._partition_ids is None)
 
 
@@ -281,10 +283,10 @@ class DriverPartitionerTestNoData(tf.test.TestCase):
         )
         app_driver = ApplicationDriver()
         app_driver.initialise_application(user_param, {})
-        self.assertTrue(app_driver._data_partitioner is not None)
+        self.assertTrue(app_driver.data_partitioner is not None)
         self.assertFalse(os.path.isfile(TARGET_FILE))
 
-        partitioner = app_driver._data_partitioner
+        partitioner = app_driver.data_partitioner
         self.assertFalse(partitioner.all_files)
 
     def test_no_data_param_train(self):
@@ -300,10 +302,10 @@ class DriverPartitionerTestNoData(tf.test.TestCase):
         )
         app_driver = ApplicationDriver()
         app_driver.initialise_application(user_param, {})
-        self.assertTrue(app_driver._data_partitioner is not None)
+        self.assertTrue(app_driver.data_partitioner is not None)
         self.assertFalse(os.path.isfile(TARGET_FILE))
 
-        partitioner = app_driver._data_partitioner
+        partitioner = app_driver.data_partitioner
         self.assertFalse(partitioner.all_files)
 
 

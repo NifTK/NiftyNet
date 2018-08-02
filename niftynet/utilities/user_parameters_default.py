@@ -24,11 +24,21 @@ DEFAULT_EVALUATION_OUTPUT = os.path.join('.', 'evaluation')
 DEFAULT_DATASET_SPLIT_FILE = os.path.join('.', 'dataset_split.csv')
 DEFAULT_HISTOGRAM_REF_FILE = os.path.join('.', 'histogram_ref_file.txt')
 DEFAULT_MODEL_DIR = None
+DEFAULT_EVENT_HANDLERS = (
+    'model_saver',
+    'model_restorer',
+    'sampler_threading',
+    'apply_gradients',
+    'output_interpreter',
+    'console_logger',
+    'tensorboard_logger')
+
+DEFAULT_ITERATION_GENERATOR = 'iteration_generator'
 
 
 def add_application_args(parser):
     """
-    Common keywords  for all applications
+    Common keywords for all applications
 
     :param parser:
     :return:
@@ -67,6 +77,19 @@ def add_application_args(parser):
         help="File assigning subjects to training/validation/inference subsets",
         default=DEFAULT_DATASET_SPLIT_FILE)
 
+    parser.add_argument(
+        "--event_handler",
+        metavar='',
+        help="String(s) representing event handler module(s)",
+        type=str_array,
+        default=DEFAULT_EVENT_HANDLERS)
+
+    parser.add_argument(
+        "--iteration_generator",
+        metavar='',
+        help='String representing an iteration generator class',
+        type=str,
+        default=DEFAULT_ITERATION_GENERATOR)
     return parser
 
 
@@ -123,6 +146,7 @@ def add_inference_args(parser):
         help="[Inference only] Width of borders to crop for segmented patch",
         type=spatialnumarray,
         default=(0, 0, 0))
+
     return parser
 
 

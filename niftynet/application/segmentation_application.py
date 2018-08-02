@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
@@ -66,48 +67,48 @@ class SegmentationApplication(BaseApplication):
         self.data_param = data_param
         self.segmentation_param = task_param
 
-        file_lists = self.get_file_lists(data_partitioner)
-        # read each line of csv files into an instance of Subject
+        # initialise input image readers
         if self.is_training:
-            self.readers = []
-            for file_list in file_lists:
-                reader = ImageReader({'image', 'label', 'weight', 'sampler'})
-                reader.initialise(data_param, task_param, file_list)
-                self.readers.append(reader)
-
+            reader_names = ('image', 'label', 'weight', 'sampler')
         elif self.is_inference:
-            # in the inference process use image input only
-            inference_reader = ImageReader({'image'})
-            inference_reader.initialise(data_param, task_param, file_lists[0])
-            self.readers = [inference_reader]
+            # in the inference process use `image` input only
+            reader_names = ('image',)
         elif self.is_evaluation:
-            reader = ImageReader({'image', 'label', 'inferred'})
-            reader.initialise(data_param, task_param, file_lists[0])
-            self.readers = [reader]
+            reader_names = ('image', 'label', 'inferred')
         else:
-            raise ValueError('Action `{}` not supported. Expected one of {}'
-                             .format(self.action, self.SUPPORTED_ACTIONS))
+            tf.logging.fatal(
+                'Action `%s` not supported. Expected one of %s',
+                self.action, self.SUPPORTED_PHASES)
+            raise ValueError
+        try:
+            reader_phase = self.action_param.dataset_to_infer
+        except AttributeError:
+            reader_phase = None
+        file_lists = data_partitioner.get_file_lists_by(
+            phase=reader_phase, action=self.action)
+        self.readers = [
+            ImageReader(reader_names).initialise(
+                data_param, task_param, file_list) for file_list in file_lists]
 
-        foreground_masking_layer = None
-        if self.net_param.normalise_foreground_only:
-            foreground_masking_layer = BinaryMaskingLayer(
-                type_str=self.net_param.foreground_type,
-                multimod_fusion=self.net_param.multimod_foreground_type,
-                threshold=0.0)
-
+        # initialise input preprocessing layers
+        foreground_masking_layer = BinaryMaskingLayer(
+            type_str=self.net_param.foreground_type,
+            multimod_fusion=self.net_param.multimod_foreground_type,
+            threshold=0.0) \
+            if self.net_param.normalise_foreground_only else None
         mean_var_normaliser = MeanVarNormalisationLayer(
-            image_name='image', binary_masking_func=foreground_masking_layer)
-        histogram_normaliser = None
-        if self.net_param.histogram_ref_file:
-            histogram_normaliser = HistogramNormalisationLayer(
-                image_name='image',
-                modalities=vars(task_param).get('image'),
-                model_filename=self.net_param.histogram_ref_file,
-                binary_masking_func=foreground_masking_layer,
-                norm_type=self.net_param.norm_type,
-                cutoff=self.net_param.cutoff,
-                name='hist_norm_layer')
-
+            image_name='image', binary_masking_func=foreground_masking_layer) \
+            if self.net_param.whitening else None
+        histogram_normaliser = HistogramNormalisationLayer(
+            image_name='image',
+            modalities=vars(task_param).get('image'),
+            model_filename=self.net_param.histogram_ref_file,
+            binary_masking_func=foreground_masking_layer,
+            norm_type=self.net_param.norm_type,
+            cutoff=self.net_param.cutoff,
+            name='hist_norm_layer') \
+            if (self.net_param.histogram_ref_file and
+                self.net_param.normalisation) else None
         label_normalisers = None
         if self.net_param.histogram_ref_file and \
                 task_param.label_normalisation:
@@ -124,65 +125,61 @@ class SegmentationApplication(BaseApplication):
                 label_normalisers[-1].key = label_normalisers[0].key
 
         normalisation_layers = []
-        if self.net_param.normalisation:
+        if histogram_normaliser is not None:
             normalisation_layers.append(histogram_normaliser)
-        if self.net_param.whitening:
+        if mean_var_normaliser is not None:
             normalisation_layers.append(mean_var_normaliser)
         if task_param.label_normalisation and \
                 (self.is_training or not task_param.output_prob):
             normalisation_layers.extend(label_normalisers)
-
-        augmentation_layers = []
-        if self.is_training:
-            if self.action_param.random_flipping_axes != -1:
-                augmentation_layers.append(RandomFlipLayer(
-                    flip_axes=self.action_param.random_flipping_axes))
-            if self.action_param.scaling_percentage:
-                augmentation_layers.append(RandomSpatialScalingLayer(
-                    min_percentage=self.action_param.scaling_percentage[0],
-                    max_percentage=self.action_param.scaling_percentage[1]))
-            if self.action_param.rotation_angle or \
-                    self.action_param.rotation_angle_x or \
-                    self.action_param.rotation_angle_y or \
-                    self.action_param.rotation_angle_z:
-                rotation_layer = RandomRotationLayer()
-                if self.action_param.rotation_angle:
-                    rotation_layer.init_uniform_angle(
-                        self.action_param.rotation_angle)
-                else:
-                    rotation_layer.init_non_uniform_angle(
-                        self.action_param.rotation_angle_x,
-                        self.action_param.rotation_angle_y,
-                        self.action_param.rotation_angle_z)
-                augmentation_layers.append(rotation_layer)
-
-            # add deformation layer
-            if self.action_param.do_elastic_deformation:
-                spatial_rank = list(self.readers[0].spatial_ranks.values())[0]
-                augmentation_layers.append(RandomElasticDeformationLayer(
-                    spatial_rank=spatial_rank,
-                    num_controlpoints=self.action_param.num_ctrl_points,
-                    std_deformation_sigma=self.action_param.deformation_sigma,
-                    proportion_to_augment=self.action_param.proportion_to_deform))
 
         volume_padding_layer = []
         if self.net_param.volume_padding_size:
             volume_padding_layer.append(PadLayer(
                 image_name=SUPPORTED_INPUT,
                 border=self.net_param.volume_padding_size,
-                mode=self.net_param.volume_padding_mode
-                ))
+                mode=self.net_param.volume_padding_mode))
+
+        # initialise training data augmentation layers
+        augmentation_layers = []
+        if self.is_training:
+            train_param = self.action_param
+            if train_param.random_flipping_axes != -1:
+                augmentation_layers.append(RandomFlipLayer(
+                    flip_axes=train_param.random_flipping_axes))
+            if train_param.scaling_percentage:
+                augmentation_layers.append(RandomSpatialScalingLayer(
+                    min_percentage=train_param.scaling_percentage[0],
+                    max_percentage=train_param.scaling_percentage[1]))
+            if train_param.rotation_angle or \
+                    train_param.rotation_angle_x or \
+                    train_param.rotation_angle_y or \
+                    train_param.rotation_angle_z:
+                rotation_layer = RandomRotationLayer()
+                if train_param.rotation_angle:
+                    rotation_layer.init_uniform_angle(
+                        train_param.rotation_angle)
+                else:
+                    rotation_layer.init_non_uniform_angle(
+                        train_param.rotation_angle_x,
+                        train_param.rotation_angle_y,
+                        train_param.rotation_angle_z)
+                augmentation_layers.append(rotation_layer)
+            if train_param.do_elastic_deformation:
+                spatial_rank = list(self.readers[0].spatial_ranks.values())[0]
+                augmentation_layers.append(RandomElasticDeformationLayer(
+                    spatial_rank=spatial_rank,
+                    num_controlpoints=train_param.num_ctrl_points,
+                    std_deformation_sigma=train_param.deformation_sigma,
+                    proportion_to_augment=train_param.proportion_to_deform))
 
         # only add augmentation to first reader (not validation reader)
         self.readers[0].add_preprocessing_layers(
-            volume_padding_layer +
-            normalisation_layers +
-            augmentation_layers)
+            volume_padding_layer + normalisation_layers + augmentation_layers)
 
         for reader in self.readers[1:]:
             reader.add_preprocessing_layers(
-                volume_padding_layer +
-                normalisation_layers)
+                volume_padding_layer + normalisation_layers)
 
     def initialise_uniform_sampler(self):
         self.sampler = [[UniformSampler(
@@ -282,12 +279,6 @@ class SegmentationApplication(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
-        # def data_net(for_training):
-        #    with tf.name_scope('train' if for_training else 'validation'):
-        #        sampler = self.get_sampler()[0][0 if for_training else -1]
-        #        data_dict = sampler.pop_batch_op()
-        #        image = tf.cast(data_dict['image'], tf.float32)
-        #        return data_dict, self.net(image, is_training=for_training)
 
         def switch_sampler(for_training):
             with tf.name_scope('train' if for_training else 'validation'):
@@ -295,12 +286,6 @@ class SegmentationApplication(BaseApplication):
                 return sampler.pop_batch_op()
 
         if self.is_training:
-            # if self.action_param.validation_every_n > 0:
-            #    data_dict, net_out = tf.cond(tf.logical_not(self.is_validation),
-            #                                 lambda: data_net(True),
-            #                                 lambda: data_net(False))
-            # else:
-            #    data_dict, net_out = data_net(True)
             if self.action_param.validation_every_n > 0:
                 data_dict = tf.cond(tf.logical_not(self.is_validation),
                                     lambda: switch_sampler(for_training=True),
@@ -326,15 +311,15 @@ class SegmentationApplication(BaseApplication):
                 prediction=net_out,
                 ground_truth=data_dict.get('label', None),
                 weight_map=data_dict.get('weight', None))
-            reg_losses = tf.get_collection(
-                tf.GraphKeys.REGULARIZATION_LOSSES)
+            reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(
                     [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
                 loss = data_loss + reg_loss
             else:
                 loss = data_loss
-            grads = self.optimiser.compute_gradients(loss)
+            grads = self.optimiser.compute_gradients(
+                loss, colocate_gradients_with_ops=True)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
             # collecting output variables

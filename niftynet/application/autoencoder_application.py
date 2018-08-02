@@ -43,8 +43,12 @@ class AutoencoderApplication(BaseApplication):
                 self.autoencoder_param.inference_type, SUPPORTED_INFERENCE)
         else:
             self._infer_type = None
-
-        file_lists = self.get_file_lists(data_partitioner)
+        try:
+            reader_phase = self.action_param.dataset_to_infer
+        except AttributeError:
+            reader_phase = None
+        file_lists = data_partitioner.get_file_lists_by(
+            phase=reader_phase, action=self.action)
         # read each line of csv files into an instance of Subject
         if self.is_evaluation:
             NotImplementedError('Evaluation is not yet '
@@ -152,7 +156,8 @@ class AutoencoderApplication(BaseApplication):
                     reg_loss = tf.reduce_mean(
                         [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
                     loss = loss + reg_loss
-            grads = self.optimiser.compute_gradients(loss)
+            grads = self.optimiser.compute_gradients(
+                loss, colocate_gradients_with_ops=True)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
 

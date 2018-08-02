@@ -16,6 +16,7 @@ import random
 import pandas
 import tensorflow as tf  # to use the system level logging
 
+from niftynet.engine.signal import TRAIN, VALID, INFER, ALL
 from niftynet.utilities.decorators import singleton
 from niftynet.utilities.filename_matching import KeywordsMatching
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
@@ -25,11 +26,7 @@ from niftynet.utilities.util_csv import write_csv
 
 COLUMN_UNIQ_ID = 'subject_id'
 COLUMN_PHASE = 'phase'
-TRAIN = 'Training'
-VALID = 'Validation'
-INFER = 'Inference'
-ALL = 'All'
-SUPPORTED_PHASES = set([TRAIN, VALID, INFER, ALL])
+SUPPORTED_PHASES = {TRAIN, VALID, INFER, ALL}
 
 
 @singleton
@@ -101,7 +98,12 @@ class ImageSetsPartitioner(object):
         """
         if self._file_list is None:
             return 0
-        phase = look_up_operations(phase, SUPPORTED_PHASES)
+        try:
+            phase = look_up_operations(phase.lower(), SUPPORTED_PHASES)
+        except (ValueError, AttributeError):
+            tf.logging.fatal('Unknown phase argument.')
+            raise
+
         if phase == ALL:
             return self._file_list[COLUMN_UNIQ_ID].count()
         if self._partition_ids is None:
@@ -124,10 +126,11 @@ class ImageSetsPartitioner(object):
                                'ImageSetsPartitioner first.')
             return []
         try:
-            look_up_operations(phase, SUPPORTED_PHASES)
-        except ValueError:
+            phase = look_up_operations(phase.lower(), SUPPORTED_PHASES)
+        except (ValueError, AttributeError):
             tf.logging.fatal('Unknown phase argument.')
             raise
+
         for name in section_names:
             try:
                 look_up_operations(name, set(self._file_list))
@@ -137,7 +140,7 @@ class ImageSetsPartitioner(object):
                     'however the section does not exist in the config.', name)
                 raise
         if phase == ALL:
-            self._file_list = self._file_list.sort_index()
+            self._file_list = self._file_list.sort_values(COLUMN_UNIQ_ID)
             if section_names:
                 section_names = [COLUMN_UNIQ_ID] + list(section_names)
                 return self._file_list[section_names]
@@ -163,7 +166,8 @@ class ImageSetsPartitioner(object):
                 'Empty subset for phase [%s], returning None as file list. '
                 'Please adjust splitting fractions.', phase)
             return None
-        subset = pandas.merge(self._file_list, selected, on=COLUMN_UNIQ_ID)
+        subset = pandas.merge(
+            self._file_list, selected, on=COLUMN_UNIQ_ID, sort=True)
         if subset.empty:
             tf.logging.warning(
                 'No subject id matched in between file names and '
@@ -172,7 +176,7 @@ class ImageSetsPartitioner(object):
                 self.data_split_file)
         if section_names:
             section_names = [COLUMN_UNIQ_ID] + list(section_names)
-            return subset[list(section_names)]
+            return subset[section_names]
         return subset
 
     def load_data_sections_by_subject(self):
@@ -351,9 +355,7 @@ class ImageSetsPartitioner(object):
             n_valid = int(math.ceil(n_total * valid_fraction))
             n_infer = int(math.ceil(n_total * infer_fraction))
             n_train = int(n_total - n_infer - n_valid)
-            phases = [TRAIN] * n_train + \
-                     [VALID] * n_valid + \
-                     [INFER] * n_infer
+            phases = [TRAIN] * n_train + [VALID] * n_valid + [INFER] * n_infer
             if len(phases) > n_total:
                 phases = phases[:n_total]
             random.shuffle(phases)
@@ -381,10 +383,12 @@ class ImageSetsPartitioner(object):
                 self._partition_ids = None
 
             try:
-                is_valid_phase = \
-                    self._partition_ids[COLUMN_PHASE].isin(SUPPORTED_PHASES)
+                phase_strings = self._partition_ids[COLUMN_PHASE]
+                phase_strings = phase_strings.astype(str).str.lower()
+                is_valid_phase = phase_strings.isin(SUPPORTED_PHASES)
                 assert is_valid_phase.all(), \
                     "Partition file contains unknown phase id."
+                self._partition_ids[COLUMN_PHASE] = phase_strings
             except (TypeError, AssertionError):
                 tf.logging.warning(
                     'Please make sure the values of the second column '
@@ -431,7 +435,14 @@ class ImageSetsPartitioner(object):
         """
         if self._partition_ids is None or self._partition_ids.empty:
             return False
-        return (self._partition_ids[COLUMN_PHASE] == phase).any()
+        selector = self._partition_ids[COLUMN_PHASE] == phase
+        if not selector.any():
+            return False
+        selected = self._partition_ids[selector][[COLUMN_UNIQ_ID]]
+        subset = pandas.merge(
+            left=self._file_list, right=selected,
+            on=COLUMN_UNIQ_ID, sort=False)
+        return not subset.empty
 
     @property
     def has_training(self):
@@ -495,6 +506,39 @@ class ImageSetsPartitioner(object):
         :return: list of all filenames
         """
         return self.get_file_list()
+
+    def get_file_lists_by(self, phase=None, action='train'):
+        """
+        Get file lists by action and phase.
+
+        This function returns file lists for training/validation/inference
+        based on the phase or action specified by the user.
+
+        ``phase`` has a higher priority:
+        If `phase` specified, the function returns the corresponding
+        file list (as a list).
+
+        otherwise, the function checks ``action``:
+        it returns train and validation file lists if it's training action,
+        otherwise returns inference file list.
+
+        :param action: an action
+        :param phase: an element from ``{TRAIN, VALID, INFER, ALL}``
+        :return:
+        """
+        if phase:
+            try:
+                return [self.get_file_list(phase=phase)]
+            except (ValueError, AttributeError):
+                tf.logging.warning('phase `parameter` %s ignored', phase)
+
+        if action and TRAIN.startswith(action):
+            file_lists = [self.train_files]
+            if self.has_validation:
+                file_lists.append(self.validation_files)
+            return file_lists
+
+        return [self.inference_files]
 
     def reset(self):
         """
