@@ -105,6 +105,7 @@ Guides
    config_spec
    model_zoo
    extending_app
+   extending_event_handler
    extending_net
    contributing
 

@@ -117,8 +117,8 @@ within each section.
 ### Input data source section
 
 
- Name | Type | Example | Default 
- ---- | ---- | ------- | ------- 
+ Name | Type | Example | Default
+ ---- | ---- | ------- | -------
 [csv_file](#csv-file) | `string` | `csv_file=file_list.csv` | `''`
 [path_to_search](#path-to-search) | `string` | `path_to_search=my_data/fold_1` | NiftyNet home folder
 [filename_contains](#filename-contains) | `string` or `string array` | `filename_contains=foo, bar` | `''`
@@ -206,13 +206,14 @@ The following sections describe system parameters that can be specified in the c
 
 ### SYSTEM
 
- Name | Type | Example | Default 
- ---- | ---- | ------- | ------- 
+ Name | Type | Example | Default
+ ---- | ---- | ------- | -------
 [cuda_devices](#cuda-devices) | `integer array` | `cuda_devices=0,1,2` | `''`
 [num_threads](#num-threads) | `positive integer` | `num_threads=1` | `2`
 [num_gpus](#num-gpus) | `integer` | `num_gpus=4` | `1`
 [model_dir](#model-dir) | `string` | `model_dir=/User/test_dir` | The directory of the config. file
 [dataset_split_file](#dataset-split-file) | `string` | `dataset_split_file=/User/my_test` | `./dataset_split_file.csv`
+[event_handler](#event-handler) | `string` or a list of `string`s | `event_handler=model_restorer` | `model_saver, model_restorer, sampler_threading, apply_gradients, output_interpreter, console_logger, tensorboard_logger`
 
 ###### `cuda_devices`
 Sets the environment variable `CUDA_VISIBLE_DEVICES` variable,
@@ -236,11 +237,16 @@ configuration file if left blank.
 File assigning subjects to training/validation/inference subsets.
 If the string is a relative path, NiftyNet interpret this as relative to `model_dir`.
 
+######  `event_handler`
+Event handler functions registered to these signals will be called by the
+engine, along with NiftyNet application properties and iteration messages as
+function parameters. See [Signals and event handlers](extending_event_handler.html) for more details.
+
 
 ### NETWORK
 
- Name | Type | Example | Default 
- ---- | ---- | ------- | ------- 
+ Name | Type | Example | Default
+ ---- | ---- | ------- | -------
 [name](#name) | `string` | `name=niftynet.network.toynet.ToyNet` | `''`
 [activation_function](#activation-function) | `string` | `activation_function=prelu` | `relu`
 [batch_size](#batch-size) | `integer` | `batch_size=10` | `2`
@@ -349,8 +355,8 @@ These parameters are ignored and whitening is disabled if `whitening=False`.
 More specifically:
 
 
- Name | Type | Example | Default 
- ---- | ---- | ------- | ------- 
+ Name | Type | Example | Default
+ ---- | ---- | ------- | -------
 [normalisation](#normalisation) | `boolean` | `normalisation=True` | `False`
 [whitening](#whitening) | `boolean` | `whitening=True` | `False`
 [histogram_ref_file](#histogram-ref-file) | `string` | `histogram_ref_file=./hist_ref.txt` | `''`
@@ -395,8 +401,8 @@ Strategies applied to combine foreground masks of multiple modalities, can take 
 
 ### TRAINING
 
- Name | Type | Example | Default 
- ---- | ---- | ------- | ------- 
+ Name | Type | Example | Default
+ ---- | ---- | ------- | -------
 [optimiser](#optimiser) | `string` | `optimiser=momentum` | `adam`
 [sample_per_volume](#sample-per-volume) | `positive integer` | `sample_per_volume=5` | `1`
 [lr](#lr) | `float` | `lr=0.001` | `0.1`
@@ -498,8 +504,8 @@ only image files in the `Inference` phase will be used, otherwise inference
 will process all image files defined by [input specifications](#input-data-source-section).
 
 
- Name | Type | Example | Default 
- ---- | ---- | ------- | ------- 
+ Name | Type | Example | Default
+ ---- | ---- | ------- | -------
 [validation_every_n](#validation-every-n) | `integer` | `validation_every_n=10` | `-1`
 [validation_max_iter](#validation-max-iter) | `integer` | `validation_max_iter=5` | `1`
 [exclude_fraction_for_validation](#exclude-fraction-for-validation) | `float` | `exclude_fraction_for_validation=0.2` | `0.0`
@@ -524,8 +530,8 @@ Value should be in `[0, 1]`.
 ##### Data augmentation during training
 
 
- Name | Type | Example | Default 
- ---- | ---- | ------- | ------- 
+ Name | Type | Example | Default
+ ---- | ---- | ------- | -------
 [rotation_angle](#rotation-angle) | `float array` | `rotation_angle=-10.0,10.0` | `''`
 [scaling_percentage](#scaling-percentage) | `float array` | `scaling_percentage=0.8,1.2` | `''`
 [random_flipping_axes](#random-flipping-axes) | `integer array` | `random_flipping_axes=1,2` | `-1`
@@ -566,8 +572,8 @@ Note that the above implementation generalises to
 For a 2-D slice, e.g, `Nx1xM`, the second dimension of `border` should be `0`.
 
 
- Name | Type | Example | Default 
- ---- | ---- | ------- | ------- 
+ Name | Type | Example | Default
+ ---- | ---- | ------- | -------
 [spatial_window_size](#spatial-window-size) | `integer array` | `spatial_window_size=64,64,64` | `''`
 [border](#border) | `integer array` | `border=5,5,5` | `0, 0, 0`
 [inference_iter](#inference-iter) | `integer` | `inference_iter=1000` | `-1`
