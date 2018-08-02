@@ -1,7 +1,7 @@
 Sphinx>=1.6
 simpleitk
 sphinx-nameko-theme
-sphinx-markdown-tables
+sphinx-markdown-tables==0.0.6
 recommonmark==0.4.0
 
 six>=1.10
