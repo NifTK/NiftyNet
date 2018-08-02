@@ -159,19 +159,22 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
         to evaluate TF graph elements, where
         ``variables_to_eval`` and ``data_dict`` are retrieved from
-        ``application_iteration.IterationMessage.ops_to_run`` and
-        ``application_iteration.IterationMessage.data_feed_dict``
-         (In addition to the variables collected by output_collector;
-        implemented in ``application_driver.run_vars``).
+        ``iteration_message.ops_to_run`` and
+        ``iteration_message.data_feed_dict``
+         (In addition to the variables collected by self.output_collector).
 
-        This function (is called before ``tf.session.run`` by the
-        driver) provides an interface for accessing ``variables_to_eval`` and
-        ``data_dict`` at each iteration.
+        The output of `tf.session.run(...)` will be stored at
+        ``iteration_message.current_iter_output``, and can be accessed
+        from ``engine.handler_network_output.OutputInterpreter``.
 
-        Override this function for more complex operations according to
-        ``application_iteration.IterationMessage.current_iter``.
+        override this function for more complex operations
+        (such as learning rate decay) according to
+        ``iteration_message.current_iter``.
         """
-        pass
+        if iteration_message.is_training:
+            iteration_message.data_feed_dict[self.is_validation] = False
+        elif iteration_message.is_validation:
+            iteration_message.data_feed_dict[self.is_validation] = True
 
     def get_sampler(self):
         """

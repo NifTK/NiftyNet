@@ -18,6 +18,8 @@ class OutputInterpreter(object):
     def set_tensors_to_run(self, sender, **msg):
         """
         Event handler to add all tensors to evaluate to the iteration message.
+        The driver will fetch tensors' values from
+        ``_iter_msg.ops_to_run``.
 
         :param sender: a niftynet.application instance
         :param msg: an iteration message instance
@@ -27,17 +29,13 @@ class OutputInterpreter(object):
         _iter_msg.ops_to_run[NETWORK_OUTPUT] = \
             sender.outputs_collector.variables(NETWORK_OUTPUT)
 
-        if _iter_msg.is_training:
-            _iter_msg.data_feed_dict[sender.is_validation] = False
-        elif _iter_msg.is_validation:
-            _iter_msg.data_feed_dict[sender.is_validation] = True
-
+        # modifying `_iter_msg` using applications's set_iteration_update
         sender.set_iteration_update(_iter_msg)
 
     def interpret_output(self, sender, **msg):
         """
         Calling sender application to interpret evaluated tensors.
-        Set _iter_msg.should_stop to a True value
+        Set ``_iter_msg.should_stop`` to a True value
         if it's an end of the engine loop.
 
         See also:
