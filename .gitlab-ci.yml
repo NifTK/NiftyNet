@@ -33,6 +33,7 @@ testjob:
     - dev
     - tags
     - cherrypick-from-dev-to-v0.2.1-for-v0.2.2-release
+    - 173-move-ci-tests-to-gift-little
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
