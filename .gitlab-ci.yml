@@ -33,7 +33,6 @@ testjob:
     - dev
     - refactoring-engine-with-blinker
     - tags
-    - cherrypick-from-dev-to-v0.2.1-for-v0.2.2-release
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
@@ -150,6 +149,7 @@ testjob:
     ###############end of python3
 
     ######### Python 2 ###################### run python2 code with coverage wrapper
+    # This is using the system-wide Tensorflow. Probably put this in a virtualenv instead
     - python net_download.py testing -r
     - coverage run -a --source . net_segment.py train -c config/highres3dnet_config.ini --batch_size=1 --num_threads=2 --queue_length=40 --max_iter=10
     - coverage run -a --source . net_segment.py inference -c config/highres3dnet_config.ini --batch_size 8 --spatial_window_size 64,64,64 --queue_length 64
@@ -210,11 +210,8 @@ quicktest:
     - dev
     - refactoring-engine-with-blinker
     - tags
-    - 177-merging-net_regress-to-dev
-    - 112-publish-api-docs-online
     - 147-revise-contribution-guidelines-to-include-github
     - 150-properly-format-the-bibtex-entry-to-the-ipmi-2017-paper-on-the-main-readme
-    - 139-correct-toynet-demo-instructions
     - 148-publish-niftynet-v0-2-0-on-python-package-index-pypi
     - 170-add-niftynet-paper-on-rtd-doc
     - 167-document-cli-option-for-path-to-new-networks
@@ -224,7 +221,6 @@ quicktest:
     - 221-add-changelog-entry-for-version-0.2.2
     - 223-put-bug-fixes-under-fixed-header-in-changelog
     - 195-add-evaluation-action-3
-    - 192-model_zoo_tests
   script:
     # print system info
     - which nvidia-smi
@@ -307,7 +303,7 @@ pip-installer:
     - set -e
     - cd $venv_dir
     # install TF
-    - pip install tensorflow-gpu==1.7
+    - pip install tensorflow-gpu==1.9
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
@@ -407,7 +403,7 @@ pip-installer:
     - set -e
     - cd $venv_dir
     # install TF
-    - pip install tensorflow-gpu==1.7
+    - pip install tensorflow-gpu==1.9
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly

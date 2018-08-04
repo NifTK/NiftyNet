@@ -187,7 +187,7 @@ class ApplicationDriver(object):
         start_time = time.time()
         loop_status = {'current_iter': self.initial_iter, 'normal_exit': False}
 
-        with tf.Session(config=tf_config(), graph=graph) as sess:
+        with tf.Session(config=tf_config(), graph=graph):
             try:
                 # broadcasting event of session started
                 SESS_STARTED.send(application, iter_msg=None)
@@ -219,8 +219,6 @@ class ApplicationDriver(object):
                 iter_msg = IterationMessage()
                 iter_msg.current_iter = loop_status.get('current_iter', -1)
                 SESS_FINISHED.send(application, iter_msg=iter_msg)
-                sess.close()
-                tf.reset_default_graph()
 
         application.stop()
         if not loop_status.get('normal_exit', False):
