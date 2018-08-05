@@ -5,16 +5,18 @@ Creating ``tf.data.Dataset`` instance for image window sampler.
 from __future__ import absolute_import, division, print_function
 
 import inspect
+
 import numpy as np
 import tensorflow as tf
-# pylint: disable=no-name-in-module
 from tensorflow.python.data.util import nest
 
-from niftynet.engine.image_window import ImageWindow
-from niftynet.engine.image_window import \
-    N_SPATIAL, LOCATION_FORMAT, BUFFER_POSITION_NP_TYPE
+from niftynet.engine.image_window import ImageWindow, N_SPATIAL, \
+    LOCATION_FORMAT, BUFFER_POSITION_NP_TYPE
 from niftynet.io.misc_io import squeeze_spatial_temporal_dim
 from niftynet.layer.base_layer import Layer
+
+
+# pylint: disable=no-name-in-module
 
 
 class ImageWindowDataset(Layer):
@@ -261,7 +263,7 @@ class ImageWindowDataset(Layer):
         # dataset: slice the n-element window into n single windows
         def _slice_from_each(*args):
             datasets = [tf.data.Dataset.from_tensor_slices(tensor)
-                        for tensor in args]
+                for tensor in args]
             return tf.data.Dataset.zip(tuple(datasets))
 
         dataset = dataset.flat_map(map_func=_slice_from_each)

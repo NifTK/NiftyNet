@@ -9,8 +9,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import tensorflow as tf
 
-from niftynet.contrib.dataset_sampler.image_window_dataset import \
-    ImageWindowDataset
+from niftynet.engine.image_window_dataset import ImageWindowDataset
 from niftynet.engine.image_window import N_SPATIAL, LOCATION_FORMAT
 
 

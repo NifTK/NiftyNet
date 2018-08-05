@@ -8,8 +8,7 @@ import numpy as np
 import scipy.ndimage
 import tensorflow as tf
 
-from niftynet.contrib.dataset_sampler.image_window_dataset import \
-    ImageWindowDataset
+from niftynet.engine.image_window_dataset import ImageWindowDataset
 from niftynet.engine.image_window import LOCATION_FORMAT
 
 

@@ -7,9 +7,7 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.io.image_reader import ImageReader
-from niftynet.contrib.dataset_sampler.image_window_dataset import \
-    ImageWindowDataset
-
+from niftynet.engine.image_window_dataset import ImageWindowDataset
 
 IMAGE_PATH_2D_1 = os.path.join('.', 'example_volumes', 'gan_test_data')
 IMAGE_PATH_3D = os.path.join('.', 'testing_data')
