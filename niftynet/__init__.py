@@ -43,7 +43,7 @@ __version__ = get_niftynet_version_string()
 
 import os
 
-from niftynet.io.misc_io import set_logger
+from niftynet.io.misc_io import set_logger, close_logger
 
 set_logger()
 
@@ -140,4 +140,10 @@ def main():
     app_driver = driver_table[system_param['SYSTEM'].action]()
     app_driver.initialise_application(system_param, input_data_param)
     app_driver.run(app_driver.app)
+
+    if tf.get_default_session() is not None:
+        tf.get_default_session().close()
+    tf.reset_default_graph()
+    close_logger()
+
     return 0
