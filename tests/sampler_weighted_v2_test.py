@@ -7,7 +7,7 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.engine.image_window import N_SPATIAL
-from niftynet.contrib.dataset_sampler.sampler_weighted_v2 import \
+from niftynet.engine.sampler_weighted_v2 import \
     WeightedSampler, weighted_spatial_coordinates
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner

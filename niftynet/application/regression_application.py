@@ -8,9 +8,9 @@ from niftynet.engine.application_variables import \
     CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
 from niftynet.engine.sampler_grid_v2 import GridSampler
 from niftynet.engine.sampler_resize import ResizeSampler
-from niftynet.engine.sampler_uniform import UniformSampler
-from niftynet.engine.sampler_weighted import WeightedSampler
-from niftynet.engine.sampler_balanced import BalancedSampler
+from niftynet.engine.sampler_uniform_v2 import UniformSampler
+from niftynet.engine.sampler_weighted_v2 import WeightedSampler
+from niftynet.engine.sampler_balanced_v2 import BalancedSampler
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.io.image_reader import ImageReader
@@ -150,7 +150,7 @@ class RegressionApplication(BaseApplication):
     def initialise_uniform_sampler(self):
         self.sampler = [[UniformSampler(
             reader=reader,
-            data_param=self.data_param,
+            window_sizes=self.data_param,
             batch_size=self.net_param.batch_size,
             windows_per_image=self.action_param.sample_per_volume,
             queue_length=self.net_param.queue_length) for reader in
@@ -159,7 +159,7 @@ class RegressionApplication(BaseApplication):
     def initialise_weighted_sampler(self):
         self.sampler = [[WeightedSampler(
             reader=reader,
-            data_param=self.data_param,
+            window_sizes=self.data_param,
             batch_size=self.net_param.batch_size,
             windows_per_image=self.action_param.sample_per_volume,
             queue_length=self.net_param.queue_length) for reader in
@@ -187,7 +187,7 @@ class RegressionApplication(BaseApplication):
     def initialise_balanced_sampler(self):
         self.sampler = [[BalancedSampler(
             reader=reader,
-            data_param=self.data_param,
+            window_sizes=self.data_param,
             batch_size=self.net_param.batch_size,
             windows_per_image=self.action_param.sample_per_volume,
             queue_length=self.net_param.queue_length) for reader in

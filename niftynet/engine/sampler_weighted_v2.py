@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import tensorflow as tf
 
-from niftynet.contrib.dataset_sampler.sampler_uniform_v2 import UniformSampler
+from niftynet.engine.sampler_uniform_v2 import UniformSampler
 from niftynet.engine.image_window import N_SPATIAL
 
 

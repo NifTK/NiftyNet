@@ -7,8 +7,8 @@ import numpy as np
 import tensorflow as tf
 
 # from niftynet.engine.sampler_uniform import UniformSampler
-from niftynet.contrib.dataset_sampler.sampler_uniform_v2 import UniformSampler
-from niftynet.engine.sampler_uniform import rand_spatial_coordinates
+from niftynet.engine.sampler_uniform_v2 import UniformSampler
+from niftynet.engine.sampler_uniform_v2 import rand_spatial_coordinates
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace

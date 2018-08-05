@@ -42,18 +42,17 @@ class ImageWindowDataset(Layer):
         self.reader = reader
 
         self.batch_size = batch_size
-        self.queue_length = int(max(queue_length, round(batch_size * 2.5)))
+        self.queue_length = int(max(queue_length, round(batch_size * 5.0)))
         if self.queue_length > queue_length:
             tf.logging.warning(
                 'queue_length should be larger than batch_size, '
-                'defaulting to batch_size * 2.5 (%s).', self.queue_length)
-
-        self.n_subjects = 1
+                'defaulting to batch_size * 5.0 (%s).', self.queue_length)
 
         self.from_generator = inspect.isgeneratorfunction(self.layer_op)
         self.shuffle = shuffle
         self.epoch = epoch
 
+        self.n_subjects = 1
         self.window = None
         if reader is not None:
             self.window = ImageWindow.from_data_reader_properties(
@@ -226,7 +225,12 @@ class ImageWindowDataset(Layer):
         dataset = dataset.prefetch(buffer_size=self.queue_length)
         if self.shuffle:
             dataset = dataset.shuffle(buffer_size=self.queue_length, seed=None)
-        dataset = dataset.batch(batch_size=self.batch_size)
+        # dataset = dataset.batch(batch_size=self.batch_size)
+        # drop the remainder if there's not enough windows to form a batch,
+        # so that we have a fixed batch size.
+        dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(
+            batch_size=self.batch_size))
+
         return dataset
 
     def _dataset_from_range(self, num_threads):
@@ -237,6 +241,8 @@ class ImageWindowDataset(Layer):
         """
         # dataset: a list of integers
         dataset = tf.data.Dataset.range(self.n_subjects)
+        if self.shuffle:
+            dataset = dataset.shuffle(buffer_size=self.n_subjects, seed=None)
 
         # dataset: map each integer i to n windows sampled from subject i
         def _tf_wrapper(idx):
