@@ -31,7 +31,6 @@ testjob:
   only:
     - master
     - dev
-    - refactoring-engine-with-blinker
     - tags
   script:
     # !!kill coverage in case of hanging processes
@@ -208,7 +207,6 @@ quicktest:
   except:
     - master
     - dev
-    - refactoring-engine-with-blinker
     - tags
     - 147-revise-contribution-guidelines-to-include-github
     - 150-properly-format-the-bibtex-entry-to-the-ipmi-2017-paper-on-the-main-readme
@@ -261,7 +259,6 @@ pip-installer:
   only:
     - master
     - dev
-    - refactoring-engine-with-blinker
     - tags
     - 117-support-for-user-defined-networks-using-pip-installed-niftynet
   script:
