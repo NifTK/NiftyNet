@@ -6,7 +6,7 @@ from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import TF_SUMMARIES
-from niftynet.engine.sampler_linear_interpolate import LinearInterpolateSampler
+from niftynet.engine.sampler_linear_interpolate_v2 import LinearInterpolateSampler
 from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.engine.windows_aggregator_identity import WindowAsImageAggregator
 from niftynet.io.image_reader import ImageReader
@@ -96,7 +96,7 @@ class AutoencoderApplication(BaseApplication):
         if self._infer_type == 'linear_interpolation':
             self.sampler.append([LinearInterpolateSampler(
                 reader=reader,
-                data_param=self.data_param,
+                window_sizes=self.data_param,
                 batch_size=self.net_param.batch_size,
                 n_interpolations=self.autoencoder_param.n_interpolations,
                 queue_length=self.net_param.queue_length) for reader in

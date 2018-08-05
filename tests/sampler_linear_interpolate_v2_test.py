@@ -5,7 +5,7 @@ import os
 
 import tensorflow as tf
 
-from niftynet.contrib.dataset_sampler.sampler_linear_interpolate_v2 import LinearInterpolateSampler
+from niftynet.engine.sampler_linear_interpolate_v2 import LinearInterpolateSampler
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
