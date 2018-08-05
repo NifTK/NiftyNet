@@ -4,7 +4,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import tensorflow as tf
 
-from niftynet.contrib.dataset_sampler.sampler_random_vector_v2 import RandomVectorSampler
+from niftynet.engine.sampler_random_vector_v2 import RandomVectorSampler
 
 
 class RandomVectorSamplerTest(tf.test.TestCase):
