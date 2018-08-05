@@ -6,7 +6,7 @@ from niftynet.engine.application_factory import \
     ApplicationNetFactory, InitializerFactory, OptimiserFactory
 from niftynet.engine.application_variables import \
     CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
-from niftynet.engine.sampler_grid import GridSampler
+from niftynet.engine.sampler_grid_v2 import GridSampler
 from niftynet.engine.sampler_resize import ResizeSampler
 from niftynet.engine.sampler_uniform import UniformSampler
 from niftynet.engine.sampler_weighted import WeightedSampler
@@ -211,7 +211,7 @@ class SegmentationApplication(BaseApplication):
     def initialise_grid_sampler(self):
         self.sampler = [[GridSampler(
             reader=reader,
-            data_param=self.data_param,
+            window_sizes=self.data_param,
             batch_size=self.net_param.batch_size,
             spatial_window_size=self.action_param.spatial_window_size,
             window_border=self.action_param.border,

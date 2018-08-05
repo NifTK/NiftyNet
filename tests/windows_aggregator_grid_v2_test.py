@@ -6,7 +6,7 @@ import os
 import nibabel as nib
 import tensorflow as tf
 
-from niftynet.contrib.dataset_sampler.sampler_grid_v2 import GridSampler
+from niftynet.engine.sampler_grid_v2 import GridSampler
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner

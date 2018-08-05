@@ -6,7 +6,7 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from niftynet.contrib.dataset_sampler.sampler_grid_v2 import \
+from niftynet.engine.sampler_grid_v2 import \
         GridSampler, _enumerate_step_points, grid_spatial_coordinates
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner

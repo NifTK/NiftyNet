@@ -42,7 +42,12 @@ class ImageWindowDataset(Layer):
         self.reader = reader
 
         self.batch_size = batch_size
-        self.queue_length = queue_length
+        self.queue_length = int(max(queue_length, round(batch_size * 2.5)))
+        if self.queue_length > queue_length:
+            tf.logging.warning(
+                'queue_length should be larger than batch_size, '
+                'defaulting to batch_size * 2.5 (%s).', self.queue_length)
+
         self.n_subjects = 1
 
         self.from_generator = inspect.isgeneratorfunction(self.layer_op)
@@ -59,8 +64,6 @@ class ImageWindowDataset(Layer):
             self.n_subjects = reader.num_subjects
             self.window.n_samples = \
                 1 if self.from_generator else windows_per_image
-        # OutOfRange error?
-        # num_threads?
         # random seeds? (requires num_threads = 1)
 
     @property
@@ -144,19 +147,27 @@ class ImageWindowDataset(Layer):
             image_data[mod] = image_data[mod][np.newaxis, ...]
         return image_data
 
-    def run_threads(self, session=None, *_unused_args, **_unused_argvs):
+    def run_threads(self,
+                    session=None,
+                    _coordinator=None,
+                    num_threads=1):
         """
         To be called at the beginning of running graph variables,
         to initialise dataset iterator.
+
+        :param session:
+        :param _coordinator: deprecating param. for compatibility
+        :param num_threads:
+        :return:
         """
         if session is None:
             session = tf.get_default_session()
         if self.dataset is None or self.iterator is None:
-            self.init_dataset()
+            self.init_dataset(num_threads=num_threads)
             self.iterator = self.dataset.make_initializable_iterator()
         session.run(self.iterator.initializer)
 
-    def pop_batch_op(self):
+    def pop_batch_op(self, num_threads=1):
         """
         This function is used when connecting a sampler output
         to a network. e.g.::
@@ -174,7 +185,10 @@ class ImageWindowDataset(Layer):
         """
 
         if self.dataset is None or self.iterator is None:
-            self.init_dataset()
+            # in case `run_threads` is not called,
+            # here we initialise the dataset and iterator
+            # user should also have `session.run(self.iterator.initializer)`
+            self.init_dataset(num_threads=num_threads)
             self.iterator = self.dataset.make_initializable_iterator()
 
         window_output = self.iterator.get_next()
@@ -188,7 +202,7 @@ class ImageWindowDataset(Layer):
                 window_output[name])
         return window_output
 
-    def init_dataset(self):
+    def init_dataset(self, num_threads=1):
         """
         Make a window samples dataset from the reader and layer_op.
         This function sets ``self.dataset``.
@@ -196,7 +210,7 @@ class ImageWindowDataset(Layer):
         :return:
         """
         if not self.from_generator:
-            dataset = self._dataset_from_range()
+            dataset = self._dataset_from_range(num_threads)
         else:
             dataset = self._dataset_from_generator()
         self.dataset = self.dataset_preprocessing(dataset)
@@ -209,14 +223,13 @@ class ImageWindowDataset(Layer):
         :return: a `tf.data.Dataset` instance
         """
         dataset = dataset.repeat(self.epoch)
-        buffer_size = int(max(self.queue_length, round(self.batch_size * 3.0)))
-        dataset = dataset.prefetch(buffer_size=buffer_size)
+        dataset = dataset.prefetch(buffer_size=self.queue_length)
         if self.shuffle:
-            dataset = dataset.shuffle(buffer_size=buffer_size, seed=None)
+            dataset = dataset.shuffle(buffer_size=self.queue_length, seed=None)
         dataset = dataset.batch(batch_size=self.batch_size)
         return dataset
 
-    def _dataset_from_range(self):
+    def _dataset_from_range(self, num_threads):
         """
         This function maps a dataset of integers to a dataset of images.
 
@@ -237,7 +250,7 @@ class ImageWindowDataset(Layer):
                 ret_t.set_shape(shape)
             return nest.pack_sequence_as(self.tf_dtypes, flat_values)
 
-        dataset = dataset.map(_tf_wrapper, num_parallel_calls=4)
+        dataset = dataset.map(_tf_wrapper, num_parallel_calls=num_threads)
 
         # dataset: slice the n-element window into n single windows
         def _slice_from_each(*args):
