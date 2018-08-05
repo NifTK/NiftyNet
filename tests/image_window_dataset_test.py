@@ -35,7 +35,7 @@ class ImageWindowDataset_2D_Test(tf.test.TestCase):
 
     def assert_tf_window(self, sampler):
         with self.test_session() as sess:
-            sampler.run_threads(sess)
+            sampler.run_threads()
             window = sess.run(sampler.pop_batch_op())
         self.assert_window(window)
 
@@ -82,7 +82,7 @@ class ImageWindowDataset_2D_Test(tf.test.TestCase):
         sampler = ImageWindowDataset(
             reader=reader, batch_size=batch_size, epoch=1)
         with self.test_session() as sess:
-            sampler.run_threads(sess)
+            sampler.run_threads()
             iters = 0
             try:
                 for _ in range(400):
@@ -105,7 +105,7 @@ class ImageWindowDataset_3D_Test(tf.test.TestCase):
 
     def assert_tf_window(self, sampler):
         with self.test_session() as sess:
-            sampler.run_threads(sess)
+            sampler.run_threads()
             window = sess.run(sampler.pop_batch_op())
         self.assert_window(window)
 
@@ -145,7 +145,7 @@ class ImageWindowDataset_3D_Test(tf.test.TestCase):
         sampler = ImageWindowDataset(
             reader=reader, batch_size=batch_size, epoch=1)
         with self.test_session() as sess:
-            sampler.run_threads(sess)
+            sampler.run_threads()
             iters = 0
             try:
                 for _ in range(400):

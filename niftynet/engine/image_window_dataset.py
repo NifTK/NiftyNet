@@ -8,15 +8,13 @@ import inspect
 
 import numpy as np
 import tensorflow as tf
+# pylint: disable=no-name-in-module
 from tensorflow.python.data.util import nest
 
 from niftynet.engine.image_window import ImageWindow, N_SPATIAL, \
     LOCATION_FORMAT, BUFFER_POSITION_NP_TYPE
 from niftynet.io.misc_io import squeeze_spatial_temporal_dim
 from niftynet.layer.base_layer import Layer
-
-
-# pylint: disable=no-name-in-module
 
 
 class ImageWindowDataset(Layer):
@@ -148,25 +146,22 @@ class ImageWindowDataset(Layer):
             image_data[mod] = image_data[mod][np.newaxis, ...]
         return image_data
 
-    def run_threads(self,
-                    session=None,
-                    _coordinator=None,
-                    num_threads=1):
+    def run_threads(self, num_threads=1):
         """
         To be called at the beginning of running graph variables,
         to initialise dataset iterator.
 
-        :param session:
-        :param _coordinator: deprecating param. for compatibility
         :param num_threads:
         :return:
         """
-        if session is None:
-            session = tf.get_default_session()
         if self.dataset is None or self.iterator is None:
             self.init_dataset(num_threads=num_threads)
-            self.iterator = self.dataset.make_initializable_iterator()
-        session.run(self.iterator.initializer)
+            self.iterator = self.dataset.make_one_shot_iterator()
+        #     self.iterator = tf.data.Iterator.from_structure(
+        #         self.dataset.output_types, self.dataset.output_shapes)
+        # sess = session or tf.get_default_session()
+        # if sess is not None:
+        #     sess.run(self.iterator.make_initializer(self.dataset))
 
     def pop_batch_op(self, num_threads=1):
         """
@@ -188,9 +183,10 @@ class ImageWindowDataset(Layer):
         if self.dataset is None or self.iterator is None:
             # in case `run_threads` is not called,
             # here we initialise the dataset and iterator
-            # user should also have `session.run(self.iterator.initializer)`
             self.init_dataset(num_threads=num_threads)
-            self.iterator = self.dataset.make_initializable_iterator()
+            self.iterator = self.dataset.make_one_shot_iterator()
+            # self.iterator = tf.data.Iterator.from_structure(
+            #     self.dataset.output_types, self.dataset.output_shapes)
 
         window_output = self.iterator.get_next()
         if not self.from_generator:
@@ -235,6 +231,7 @@ class ImageWindowDataset(Layer):
 
         return dataset
 
+    # pylint: disable=redefined-variable-type
     def _dataset_from_range(self, num_threads):
         """
         This function maps a dataset of integers to a dataset of images.
@@ -262,8 +259,8 @@ class ImageWindowDataset(Layer):
 
         # dataset: slice the n-element window into n single windows
         def _slice_from_each(*args):
-            datasets = [tf.data.Dataset.from_tensor_slices(tensor)
-                for tensor in args]
+            datasets = [
+                tf.data.Dataset.from_tensor_slices(tensor) for tensor in args]
             return tf.data.Dataset.zip(tuple(datasets))
 
         dataset = dataset.flat_map(map_func=_slice_from_each)

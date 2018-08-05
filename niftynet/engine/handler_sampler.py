@@ -13,8 +13,7 @@ class SamplerThreading(object):
     This class handles iteration events to start/stop samplers' threads.
     """
 
-    def __init__(self, coordinator, num_threads=1, **_unused):
-        self.coordinator = coordinator
+    def __init__(self, num_threads=1, **_unused):
         self.num_threads = num_threads
 
         SESS_STARTED.connect(self.start_sampler_threads)
@@ -28,15 +27,11 @@ class SamplerThreading(object):
         :param _unused_msg:
         :return:
         """
-        sess = tf.get_default_session()
-        if not sess or not self.coordinator:
-            return
-
         try:
             for sampler in traverse_nested(sender.get_sampler()):
                 if sampler is None:
                     continue
-                sampler.run_threads(sess, self.coordinator, self.num_threads)
+                sampler.run_threads(self.num_threads)
             tf.logging.info('filling queues (this can take a few minutes).')
         except (NameError, TypeError, AttributeError, IndexError):
             tf.logging.fatal(

@@ -55,8 +55,7 @@ class LinearInterpolateSamplerTest(tf.test.TestCase):
             n_interpolations=8,
             queue_length=1)
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=2)
+            sampler.run_threads(num_threads=2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, [1, 256, 168, 256, 2])
         sampler.close_all()
