@@ -7,7 +7,7 @@ from niftynet.engine.application_factory import \
 from niftynet.engine.application_variables import \
     CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
 from niftynet.engine.sampler_grid_v2 import GridSampler
-from niftynet.engine.sampler_resize import ResizeSampler
+from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.engine.sampler_uniform_v2 import UniformSampler
 from niftynet.engine.sampler_weighted_v2 import WeightedSampler
 from niftynet.engine.sampler_balanced_v2 import BalancedSampler
@@ -202,9 +202,9 @@ class SegmentationApplication(BaseApplication):
     def initialise_resize_sampler(self):
         self.sampler = [[ResizeSampler(
             reader=reader,
-            data_param=self.data_param,
+            window_sizes=self.data_param,
             batch_size=self.net_param.batch_size,
-            shuffle_buffer=self.is_training,
+            shuffle=self.is_training,
             queue_length=self.net_param.queue_length) for reader in
             self.readers]]
 

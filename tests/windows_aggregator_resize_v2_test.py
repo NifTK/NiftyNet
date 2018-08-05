@@ -6,7 +6,7 @@ import os
 import nibabel as nib
 import tensorflow as tf
 
-from niftynet.contrib.dataset_sampler.sampler_resize_v2 import ResizeSampler
+from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner

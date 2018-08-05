@@ -90,10 +90,9 @@ class ResizeSampler(ImageWindowDataset):
                 else:
                     zoom_ratio = [float(p) / float(d) for p, d in
                                   zip(window_shape, image_shape)]
-                    image_window = self.zoom_3d(
-                        image=data[name],
-                        ratio=zoom_ratio,
-                        interp_order=interp_orders[name][0])
+                    image_window = zoom_3d(image=data[name],
+                                           ratio=zoom_ratio, interp_order=
+                                           interp_orders[name][0])
                 image_array.append(image_window[np.newaxis, ...])
             if len(image_array) > 1:
                 output_dict[image_data_key] = \
@@ -106,18 +105,18 @@ class ResizeSampler(ImageWindowDataset):
         # per image
         return output_dict
 
-    @classmethod
-    def zoom_3d(cls, image, ratio, interp_order):
-        """
-        Taking 5D image as input, and zoom each 3D slice independently
-        """
-        assert image.ndim == 5, "input images should be 5D array"
-        output = []
-        for time_pt in range(image.shape[3]):
-            output_mod = []
-            for mod in range(image.shape[4]):
-                zoomed = scipy.ndimage.zoom(
-                    image[..., time_pt, mod], ratio[:3], order=interp_order)
-                output_mod.append(zoomed[..., np.newaxis, np.newaxis])
-            output.append(np.concatenate(output_mod, axis=-1))
-        return np.concatenate(output, axis=-2)
+
+def zoom_3d(image, ratio, interp_order):
+    """
+    Taking 5D image as input, and zoom each 3D slice independently
+    """
+    assert image.ndim == 5, "input images should be 5D array"
+    output = []
+    for time_pt in range(image.shape[3]):
+        output_mod = []
+        for mod in range(image.shape[4]):
+            zoomed = scipy.ndimage.zoom(
+                image[..., time_pt, mod], ratio[:3], order=interp_order)
+            output_mod.append(zoomed[..., np.newaxis, np.newaxis])
+        output.append(np.concatenate(output_mod, axis=-1))
+    return np.concatenate(output, axis=-2)
