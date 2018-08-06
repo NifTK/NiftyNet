@@ -45,6 +45,7 @@ class RandomVectorSampler(ImageWindowDataset):
             queue_length=queue_length,
             shuffle=False,
             epoch=1,
+            allow_smaller_final_batch=False,
             name=name)
         self.window = ImageWindow(shapes={names[0]: vector_size},
                                   dtypes={names[0]: tf.float32})

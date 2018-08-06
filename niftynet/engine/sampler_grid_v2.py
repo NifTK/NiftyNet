@@ -24,6 +24,7 @@ class GridSampler(ImageWindowDataset):
                  spatial_window_size=None,
                  window_border=None,
                  queue_length=10,
+                 allow_smaller_final_batch=False,
                  name='grid_sampler'):
 
         # override all spatial window defined in input
@@ -39,6 +40,7 @@ class GridSampler(ImageWindowDataset):
             queue_length=queue_length,
             shuffle=False,
             epoch=1,
+            allow_smaller_final_batch=allow_smaller_final_batch,
             name=name)
 
         self.border_size = window_border or (0, 0, 0)
@@ -108,7 +110,7 @@ class GridSampler(ImageWindowDataset):
         # raises an outofrange error, and the last grid sample
         # will not be processed properly.
         try:
-            for _ in range(self.queue_length):
+            for _ in range(1):
                 for name in list(output_dict):
                     output_dict[name] = np.ones_like(output_dict[name]) * -1
                 yield output_dict

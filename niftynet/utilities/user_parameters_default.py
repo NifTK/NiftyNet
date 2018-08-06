@@ -275,6 +275,16 @@ def add_network_args(parser):
         default=2)
 
     parser.add_argument(
+        "--allow_smaller_final_batch",
+        metavar='',
+        help="If True, allow the final batch to be smaller "
+             "if there are insufficient items left in the queue, "
+             "and the batch size will be undetermined during "
+             "graph construction.",
+        type=str2boolean,
+        default=-1)
+
+    parser.add_argument(
         "--decay",
         help="[Training only] Set weight decay",
         type=float,

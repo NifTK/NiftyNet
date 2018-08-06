@@ -17,6 +17,7 @@ from niftynet.io.misc_io import squeeze_spatial_temporal_dim
 from niftynet.layer.base_layer import Layer
 
 
+# pylint: disable=too-many-instance-attributes
 class ImageWindowDataset(Layer):
     """
     This class creates a ``tf.data.Dataset`` instance from
@@ -34,6 +35,7 @@ class ImageWindowDataset(Layer):
                  queue_length=10,
                  shuffle=True,
                  epoch=-1,
+                 allow_smaller_final_batch=False,
                  name='image_dataset'):
         Layer.__init__(self, name=name)
 
@@ -51,6 +53,7 @@ class ImageWindowDataset(Layer):
         self.from_generator = inspect.isgeneratorfunction(self.layer_op)
         self.shuffle = shuffle
         self.epoch = epoch
+        self.allow_smaller_final_batch = allow_smaller_final_batch
 
         self.n_subjects = 1
         self.window = None
@@ -223,12 +226,15 @@ class ImageWindowDataset(Layer):
         dataset = dataset.prefetch(buffer_size=self.queue_length)
         if self.shuffle:
             dataset = dataset.shuffle(buffer_size=self.queue_length, seed=None)
-        # dataset = dataset.batch(batch_size=self.batch_size)
-        # drop the remainder if there's not enough windows to form a batch,
-        # so that we have a fixed batch size.
-        dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(
-            batch_size=self.batch_size))
-
+        if not self.allow_smaller_final_batch:
+            # drop the remainder if there's not enough windows to
+            # form a batch, so that we have a fixed batch size.
+            dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(
+                batch_size=self.batch_size))
+        else:
+            # allow smaller final batch, but
+            # we don't have a fixed batch size in advance.
+            dataset = dataset.batch(batch_size=self.batch_size)
         return dataset
 
     # pylint: disable=redefined-variable-type

@@ -36,6 +36,7 @@ class LinearInterpolateSampler(ImageWindowDataset):
             queue_length=queue_length,
             shuffle=False,
             epoch=1,
+            allow_smaller_final_batch=False,
             name=name)
         self.n_interpolations = n_interpolations
         # only try to use the first spatial shape available
