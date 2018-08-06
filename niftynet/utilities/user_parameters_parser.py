@@ -123,7 +123,7 @@ def run():
             'INI configuration files are deprecated in favor of'
             ' YAML configuration files. Support for INI configuration'
             ' files will be dropped in a future release.',
-            DeprecationWarning
+            UserWarning
         )
 
     # infer application name from command
