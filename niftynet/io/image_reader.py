@@ -429,7 +429,7 @@ def _create_image(file_list, idx, modalities, data_param):
     parameter and create <niftynet.io.input_type.SpatialImage*D>
     """
     try:
-        file_path = tuple(file_list.loc[idx, mod] for mod in modalities)
+        file_path = tuple(file_list.iloc[idx][mod] for mod in modalities)
         any_missing = any([pandas.isnull(file_name) or not bool(file_name)
                            for file_name in file_path])
         if any_missing:
