@@ -98,47 +98,47 @@ testjob:
     # tests
     - python net_download.py testing -r
 
-    - python net_segment.py train -c config/highres3dnet_config.ini --batch_size=1 --num_threads=2 --queue_length=40 --max_iter=10
-    - python net_segment.py inference -c config/highres3dnet_config.ini --batch_size 8 --spatial_window_size 64,64,64 --queue_length 64
+    - python net_segment.py train -c config/highres3dnet_config.yml --batch_size=1 --num_threads=2 --queue_length=40 --max_iter=10
+    - python net_segment.py inference -c config/highres3dnet_config.yml --batch_size 8 --spatial_window_size 64,64,64 --queue_length 64
 
-    - python net_segment.py train -c config/scalenet_config.ini --batch_size 1 --queue_length 5 --num_threads 2
-    - python net_segment.py inference -c config/scalenet_config.ini --batch_size 16 --spatial_window_size 64,64,64 --queue_length 32
+    - python net_segment.py train -c config/scalenet_config.yml --batch_size 1 --queue_length 5 --num_threads 2
+    - python net_segment.py inference -c config/scalenet_config.yml --batch_size 16 --spatial_window_size 64,64,64 --queue_length 32
 
-    - python net_segment.py train -c config/vnet_config.ini --batch_size 1 --queue_length 5 --num_threads 2 --activation_function relu
-    - python net_segment.py inference -c config/vnet_config.ini --batch_size 16 --spatial_window_size 64,64,64 --queue_length 32 --activation_function relu
+    - python net_segment.py train -c config/vnet_config.yml --batch_size 1 --queue_length 5 --num_threads 2 --activation_function relu
+    - python net_segment.py inference -c config/vnet_config.yml --batch_size 16 --spatial_window_size 64,64,64 --queue_length 32 --activation_function relu
 
     # need a large GPU to run
-    #- python net_segment.py train -c config/unet_config.ini --batch_size 1 --queue_length 5 --num_threads 2
-    #- python net_segment.py inference -c config/unet_config.ini --batch_size 1 --spatial_window_size 96,96,96 --queue_length 5
+    #- python net_segment.py train -c config/unet_config.yml --batch_size 1 --queue_length 5 --num_threads 2
+    #- python net_segment.py inference -c config/unet_config.yml --batch_size 1 --spatial_window_size 96,96,96 --queue_length 5
 
-    #- python net_segment.py train -c config/deepmedic_config.ini --batch_size 128 --queue_length 48 --num_threads 4
-    #- python net_segment.py inference -c config/deepmedic_config.ini --batch_size 12 --spatial_window_size 135,135,135  --queue_length 128
+    #- python net_segment.py train -c config/deepmedic_config.yml --batch_size 128 --queue_length 48 --num_threads 4
+    #- python net_segment.py inference -c config/deepmedic_config.yml --batch_size 12 --spatial_window_size 135,135,135  --queue_length 128
 
-    - python net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6
-    - python net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6  --exclude_fraction_for_validation 0.1 --validation_every_n 3
-    - python net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6 --starting_iter 0 --max_iter 15
-    - python net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 15
-    - python net_segment.py evaluation -c config/default_segmentation.ini
-    - python net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 15 --dataset_to_infer validation
+    - python net_segment.py train -c config/default_segmentation.yml --batch_size 3 --queue_length 6
+    - python net_segment.py train -c config/default_segmentation.yml --batch_size 3 --queue_length 6  --exclude_fraction_for_validation 0.1 --validation_every_n 3
+    - python net_segment.py train -c config/default_segmentation.yml --batch_size 3 --queue_length 6 --starting_iter 0 --max_iter 15
+    - python net_segment.py inference -c config/default_segmentation.yml --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 15
+    - python net_segment.py evaluation -c config/default_segmentation.yml
+    - python net_segment.py inference -c config/default_segmentation.yml --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 15 --dataset_to_infer validation
 
-    - python net_segment.py train -c config/default_multimodal_segmentation.ini --batch_size 3
-    - python net_segment.py inference -c config/default_multimodal_segmentation.ini --spatial_window_size 64,64,64 --batch_size 7
+    - python net_segment.py train -c config/default_multimodal_segmentation.yml --batch_size 3
+    - python net_segment.py inference -c config/default_multimodal_segmentation.yml --spatial_window_size 64,64,64 --batch_size 7
 
-    - python net_classify.py train -c testing_data/test_classification.ini
-    - python net_classify.py inference -c testing_data/test_classification.ini
-    - python net_classify.py evaluation -c testing_data/test_classification.ini
+    - python net_classify.py train -c testing_data/test_classification.yml
+    - python net_classify.py inference -c testing_data/test_classification.yml
+    - python net_classify.py evaluation -c testing_data/test_classification.yml
 
-    - python net_regress.py train -c config/default_monomodal_regression.ini --batch_size=1 --name toynet --max_iter 10
-    - python net_regress.py inference -c config/default_monomodal_regression.ini --batch_size=7 --name toynet --spatial_window_size 84,84,84
-    - python net_regress.py evaluation -c config/default_monomodal_regression.ini
+    - python net_regress.py train -c config/default_monomodal_regression.yml --batch_size=1 --name toynet --max_iter 10
+    - python net_regress.py inference -c config/default_monomodal_regression.yml --batch_size=7 --name toynet --spatial_window_size 84,84,84
+    - python net_regress.py evaluation -c config/default_monomodal_regression.yml
 
-    - python net_gan.py train -c config/GAN_demo_train_config.ini --max_iter 5
-    - python net_gan.py inference -c config/GAN_demo_train_config.ini
+    - python net_gan.py train -c config/GAN_demo_train_config.yml --max_iter 5
+    - python net_gan.py inference -c config/GAN_demo_train_config.yml
 
-    - python net_autoencoder.py train -c config/vae_config.ini --max_iter 5
-    - python net_autoencoder.py inference -c config/vae_config.ini --inference_type sample
-    - python net_autoencoder.py inference -c config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
-    - python net_autoencoder.py inference -c config/vae_config.ini --inference_type encode-decode
+    - python net_autoencoder.py train -c config/vae_config.yml --max_iter 5
+    - python net_autoencoder.py inference -c config/vae_config.yml --inference_type sample
+    - python net_autoencoder.py inference -c config/vae_config.yml --inference_type encode --save_seg_dir output/vae_demo_features
+    - python net_autoencoder.py inference -c config/vae_config.yml --inference_type encode-decode
 
     - python -m tests.test_model_zoo
     - python -m unittest discover -s "tests" -p "*_test.py"
@@ -151,48 +151,48 @@ testjob:
     ######### Python 2 ###################### run python2 code with coverage wrapper
     # This is using the system-wide Tensorflow. Probably put this in a virtualenv instead
     - python net_download.py testing -r
-    - coverage run -a --source . net_segment.py train -c config/highres3dnet_config.ini --batch_size=1 --num_threads=2 --queue_length=40 --max_iter=10
-    - coverage run -a --source . net_segment.py inference -c config/highres3dnet_config.ini --batch_size 8 --spatial_window_size 64,64,64 --queue_length 64
+    - coverage run -a --source . net_segment.py train -c config/highres3dnet_config.yml --batch_size=1 --num_threads=2 --queue_length=40 --max_iter=10
+    - coverage run -a --source . net_segment.py inference -c config/highres3dnet_config.yml --batch_size 8 --spatial_window_size 64,64,64 --queue_length 64
 
-    - coverage run -a --source . net_segment.py train -c config/scalenet_config.ini --batch_size 1 --queue_length 5 --num_threads 2
-    - coverage run -a --source . net_segment.py inference -c config/scalenet_config.ini --batch_size 16 --spatial_window_size 64,64,64 --queue_length 32
+    - coverage run -a --source . net_segment.py train -c config/scalenet_config.yml --batch_size 1 --queue_length 5 --num_threads 2
+    - coverage run -a --source . net_segment.py inference -c config/scalenet_config.yml --batch_size 16 --spatial_window_size 64,64,64 --queue_length 32
 
-    - coverage run -a --source . net_segment.py train -c config/vnet_config.ini --batch_size 1 --queue_length 5 --num_threads 2 --activation_function relu
-    - coverage run -a --source . net_segment.py inference -c config/vnet_config.ini --batch_size 16 --spatial_window_size 64,64,64 --queue_length 32 --activation_function relu
+    - coverage run -a --source . net_segment.py train -c config/vnet_config.yml --batch_size 1 --queue_length 5 --num_threads 2 --activation_function relu
+    - coverage run -a --source . net_segment.py inference -c config/vnet_config.yml --batch_size 16 --spatial_window_size 64,64,64 --queue_length 32 --activation_function relu
 
     # need a large GPU to run
-      #- coverage run -a --source . net_segment.py train -c config/unet_config.ini --batch_size 1 --queue_length 5 --num_threads 2
-      #- coverage run -a --source . net_segment.py inference -c config/unet_config.ini --batch_size 1 --spatial_window_size 96,96,96 --queue_length 5
+      #- coverage run -a --source . net_segment.py train -c config/unet_config.yml --batch_size 1 --queue_length 5 --num_threads 2
+      #- coverage run -a --source . net_segment.py inference -c config/unet_config.yml --batch_size 1 --spatial_window_size 96,96,96 --queue_length 5
 
-      #- coverage run -a --source . net_segment.py train -c config/deepmedic_config.ini --batch_size 128 --queue_length 48 --num_threads 4
-      #- coverage run -a --source . net_segment.py inference -c config/deepmedic_config.ini --batch_size 12 --spatial_window_size 135,135,135  --queue_length 128
+      #- coverage run -a --source . net_segment.py train -c config/deepmedic_config.yml --batch_size 128 --queue_length 48 --num_threads 4
+      #- coverage run -a --source . net_segment.py inference -c config/deepmedic_config.yml --batch_size 12 --spatial_window_size 135,135,135  --queue_length 128
 
-    - coverage run -a --source . net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6
-    - coverage run -a --source . net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6 --exclude_fraction_for_validation 0.1 --validation_every_n 3
-    - coverage run -a --source . net_segment.py train -c config/default_segmentation.ini --batch_size 3 --queue_length 6 --starting_iter 0 --max_iter 15
-    - coverage run -a --source . net_segment.py inference -c config/default_segmentation.ini --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 15
-    - coverage run -a --source . net_segment.py evaluation -c config/default_segmentation.ini
+    - coverage run -a --source . net_segment.py train -c config/default_segmentation.yml --batch_size 3 --queue_length 6
+    - coverage run -a --source . net_segment.py train -c config/default_segmentation.yml --batch_size 3 --queue_length 6 --exclude_fraction_for_validation 0.1 --validation_every_n 3
+    - coverage run -a --source . net_segment.py train -c config/default_segmentation.yml --batch_size 3 --queue_length 6 --starting_iter 0 --max_iter 15
+    - coverage run -a --source . net_segment.py inference -c config/default_segmentation.yml --spatial_window_size 84,84,84 --batch_size 7 --queue_length 14 --inference_iter 15
+    - coverage run -a --source . net_segment.py evaluation -c config/default_segmentation.yml
 
-    - coverage run -a --source . net_segment.py train -c config/default_multimodal_segmentation.ini --batch_size 3
-    - coverage run -a --source . net_segment.py inference -c config/default_multimodal_segmentation.ini --spatial_window_size 64,64,64 --batch_size 7
+    - coverage run -a --source . net_segment.py train -c config/default_multimodal_segmentation.yml --batch_size 3
+    - coverage run -a --source . net_segment.py inference -c config/default_multimodal_segmentation.yml --spatial_window_size 64,64,64 --batch_size 7
 
-    - coverage run -a --source .  net_classify.py train -c testing_data/test_classification.ini
-    - coverage run -a --source .  net_classify.py inference -c testing_data/test_classification.ini
-    - coverage run -a --source .  net_classify.py evaluation -c testing_data/test_classification.ini
+    - coverage run -a --source .  net_classify.py train -c testing_data/test_classification.yml
+    - coverage run -a --source .  net_classify.py inference -c testing_data/test_classification.yml
+    - coverage run -a --source .  net_classify.py evaluation -c testing_data/test_classification.yml
 
-    - coverage run -a --source . net_regress.py train -c config/default_monomodal_regression.ini --max_iter 10 --name toynet --batch_size=2
-    - coverage run -a --source . net_run.py train -a net_regress -c config/default_monomodal_regression.ini --max_iter 10 --name toynet --batch_size=2
-    - coverage run -a --source . net_regress.py inference -c config/default_monomodal_regression.ini --name toynet --spatial_window_size 84,84,84 --batch_size 7
-    - coverage run -a --source . net_regress.py evaluation -c config/default_monomodal_regression.ini
+    - coverage run -a --source . net_regress.py train -c config/default_monomodal_regression.yml --max_iter 10 --name toynet --batch_size=2
+    - coverage run -a --source . net_run.py train -a net_regress -c config/default_monomodal_regression.yml --max_iter 10 --name toynet --batch_size=2
+    - coverage run -a --source . net_regress.py inference -c config/default_monomodal_regression.yml --name toynet --spatial_window_size 84,84,84 --batch_size 7
+    - coverage run -a --source . net_regress.py evaluation -c config/default_monomodal_regression.yml
 
-    - coverage run -a --source . net_gan.py train -c config/GAN_demo_train_config.ini --max_iter 5
-    - coverage run -a --source . net_run.py train -a net_gan -c config/GAN_demo_train_config.ini --max_iter 5
-    - coverage run -a --source . net_gan.py inference -c config/GAN_demo_train_config.ini
+    - coverage run -a --source . net_gan.py train -c config/GAN_demo_train_config.yml --max_iter 5
+    - coverage run -a --source . net_run.py train -a net_gan -c config/GAN_demo_train_config.yml --max_iter 5
+    - coverage run -a --source . net_gan.py inference -c config/GAN_demo_train_config.yml
 
-    - coverage run -a --source . net_autoencoder.py train -c config/vae_config.ini --max_iter 5
-    - coverage run -a --source . net_autoencoder.py inference -c config/vae_config.ini --inference_type sample
-    - coverage run -a --source . net_autoencoder.py inference -c config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
-    - coverage run -a --source . net_autoencoder.py inference -c config/vae_config.ini --inference_type encode-decode
+    - coverage run -a --source . net_autoencoder.py train -c config/vae_config.yml --max_iter 5
+    - coverage run -a --source . net_autoencoder.py inference -c config/vae_config.yml --inference_type sample
+    - coverage run -a --source . net_autoencoder.py inference -c config/vae_config.yml --inference_type encode --save_seg_dir output/vae_demo_features
+    - coverage run -a --source . net_autoencoder.py inference -c config/vae_config.yml --inference_type encode-decode
 
     - coverage run -a --source . net_download.py dense_vnet_abdominal_ct_model_zoo -r
 
@@ -316,7 +316,7 @@ pip-installer:
     - mkdir -p $CONFIG_HOME
     - NIFTYNET_HOME=~/niftynet-$LAST_COMMIT
     - mkdir $NIFTYNET_HOME
-    - GLOBAL_CONFIG=$CONFIG_HOME/config.ini
+    - GLOBAL_CONFIG=$CONFIG_HOME/config.yml
     - echo "[global]" > $GLOBAL_CONFIG
     - echo "home = $NIFTYNET_HOME" >> $GLOBAL_CONFIG
     - cat $GLOBAL_CONFIG
@@ -329,8 +329,8 @@ pip-installer:
     - cp $niftynet_dir/niftynet/network/toynet.py $TOYNET_REPLICA
     - sed -i 's/ToyNet/NoToyNet/g' $TOYNET_REPLICA
     # 4) run e.g. segmentation using ToyNet replica
-    - net_segment train -c $niftynet_dir/config/default_segmentation.ini --name niftynetext.network.notoynet.NoToyNet --batch_size 3 --max_iter 5
-    - net_segment inference -c $niftynet_dir/config/default_segmentation.ini --name niftynetext.network.notoynet.NoToyNet --spatial_window_size 80,80,80 --batch_size 8
+    - net_segment train -c $niftynet_dir/config/default_segmentation.yml --name niftynetext.network.notoynet.NoToyNet --batch_size 3 --max_iter 5
+    - net_segment inference -c $niftynet_dir/config/default_segmentation.yml --name niftynetext.network.notoynet.NoToyNet --spatial_window_size 80,80,80 --batch_size 8
     # 5) clean up created config + NiftyNet home hierarchy
     - rm -rf $CONFIG_HOME
     - unset CONFIG_HOME
@@ -345,40 +345,40 @@ pip-installer:
     # test niftynet command
     - net_download testing -r
 
-    - net_segment train -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
-    - net_segment inference -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
-    - net_segment evaluation -c $niftynet_dir/config/default_segmentation.ini
-    - net_run train --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
-    - net_run inference --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
-    - net_run evaluation --app net_segment -c $niftynet_dir/config/default_segmentation.ini
+    - net_segment train -c $niftynet_dir/config/default_segmentation.yml --name toynet --batch_size 3 --max_iter 5
+    - net_segment inference -c $niftynet_dir/config/default_segmentation.yml --name toynet --spatial_window_size 80,80,80 --batch_size 8
+    - net_segment evaluation -c $niftynet_dir/config/default_segmentation.yml
+    - net_run train --app net_segment -c $niftynet_dir/config/default_segmentation.yml --name toynet --batch_size 3 --max_iter 5
+    - net_run inference --app net_segment -c $niftynet_dir/config/default_segmentation.yml --name toynet --spatial_window_size 80,80,80 --batch_size 8
+    - net_run evaluation --app net_segment -c $niftynet_dir/config/default_segmentation.yml
 
-    - net_classify train -c extensions/testing/test_classification.ini
-    - net_classify inference -c extensions/testing/test_classification.ini
-    - net_classify evaluation -c extensions/testing/test_classification.ini
-    - net_run --app net_classify train -c extensions/testing/test_classification.ini
-    - net_run --app net_classify inference -c extensions/testing/test_classification.ini
-    - net_run --app net_classify evaluation -c extensions/testing/test_classification.ini
+    - net_classify train -c extensions/testing/test_classification.yml
+    - net_classify inference -c extensions/testing/test_classification.yml
+    - net_classify evaluation -c extensions/testing/test_classification.yml
+    - net_run --app net_classify train -c extensions/testing/test_classification.yml
+    - net_run --app net_classify inference -c extensions/testing/test_classification.yml
+    - net_run --app net_classify evaluation -c extensions/testing/test_classification.yml
 
-    - net_regress train -c $niftynet_dir/config/default_monomodal_regression.ini --max_iter 10 --name toynet --batch_size=2
-    - net_regress inference -c $niftynet_dir/config/default_monomodal_regression.ini --name toynet --spatial_window_size 84,84,84 --batch_size 7
-    - net_regress evaluation -c $niftynet_dir/config/default_monomodal_regression.ini
-    - net_run train -a net_regress -c $niftynet_dir/config/default_monomodal_regression.ini --max_iter 10 --name toynet --batch_size=2
-    - net_run inference -a net_regress -c $niftynet_dir/config/default_monomodal_regression.ini --name toynet --spatial_window_size 84,84,84 --batch_size 7
-    - net_run evaluation -a net_regress -c $niftynet_dir/config/default_monomodal_regression.ini
+    - net_regress train -c $niftynet_dir/config/default_monomodal_regression.yml --max_iter 10 --name toynet --batch_size=2
+    - net_regress inference -c $niftynet_dir/config/default_monomodal_regression.yml --name toynet --spatial_window_size 84,84,84 --batch_size 7
+    - net_regress evaluation -c $niftynet_dir/config/default_monomodal_regression.yml
+    - net_run train -a net_regress -c $niftynet_dir/config/default_monomodal_regression.yml --max_iter 10 --name toynet --batch_size=2
+    - net_run inference -a net_regress -c $niftynet_dir/config/default_monomodal_regression.yml --name toynet --spatial_window_size 84,84,84 --batch_size 7
+    - net_run evaluation -a net_regress -c $niftynet_dir/config/default_monomodal_regression.yml
 
-    - net_gan train -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
-    - net_gan inference -c $niftynet_dir/config/GAN_demo_train_config.ini
-    - net_run train --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
-    - net_run inference --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini
+    - net_gan train -c $niftynet_dir/config/GAN_demo_train_config.yml --max_iter 5
+    - net_gan inference -c $niftynet_dir/config/GAN_demo_train_config.yml
+    - net_run train --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.yml --max_iter 5
+    - net_run inference --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.yml
 
-    - net_autoencoder train -c $niftynet_dir/config/vae_config.ini --max_iter 5
-    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type sample
-    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
-    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type encode-decode
-    - net_run train --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --max_iter 5
-    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type sample
-    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
-    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type encode-decode
+    - net_autoencoder train -c $niftynet_dir/config/vae_config.yml --max_iter 5
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.yml --inference_type sample
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.yml --inference_type encode --save_seg_dir output/vae_demo_features
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.yml --inference_type encode-decode
+    - net_run train --app net_autoencoder -c $niftynet_dir/config/vae_config.yml --max_iter 5
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.yml --inference_type sample
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.yml --inference_type encode --save_seg_dir output/vae_demo_features
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.yml --inference_type encode-decode
 
     - net_download dense_vnet_abdominal_ct_model_zoo -r
     # deactivate virtual environment
@@ -415,40 +415,40 @@ pip-installer:
     - ln -s /home/gitlab-runner/environments/niftynet/data/example_volumes ./example_volumes
     - net_download testing -r
 
-    - net_segment train -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
-    - net_segment inference -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
-    - net_segment evaluation -c $niftynet_dir/config/default_segmentation.ini
-    - net_run train --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --batch_size 3 --max_iter 5
-    - net_run inference --app net_segment -c $niftynet_dir/config/default_segmentation.ini --name toynet --spatial_window_size 80,80,80 --batch_size 8
-    - net_run evaluation --app net_segment -c $niftynet_dir/config/default_segmentation.ini
+    - net_segment train -c $niftynet_dir/config/default_segmentation.yml --name toynet --batch_size 3 --max_iter 5
+    - net_segment inference -c $niftynet_dir/config/default_segmentation.yml --name toynet --spatial_window_size 80,80,80 --batch_size 8
+    - net_segment evaluation -c $niftynet_dir/config/default_segmentation.yml
+    - net_run train --app net_segment -c $niftynet_dir/config/default_segmentation.yml --name toynet --batch_size 3 --max_iter 5
+    - net_run inference --app net_segment -c $niftynet_dir/config/default_segmentation.yml --name toynet --spatial_window_size 80,80,80 --batch_size 8
+    - net_run evaluation --app net_segment -c $niftynet_dir/config/default_segmentation.yml
 
-    - net_classify train -c extensions/testing/test_classification.ini
-    - net_classify inference -c extensions/testing/test_classification.ini
-    - net_classify evaluation -c extensions/testing/test_classification.ini
-    - net_run --app net_classify train -c extensions/testing/test_classification.ini
-    - net_run --app net_classify inference -c extensions/testing/test_classification.ini
-    - net_run --app net_classify evaluation -c extensions/testing/test_classification.ini
+    - net_classify train -c extensions/testing/test_classification.yml
+    - net_classify inference -c extensions/testing/test_classification.yml
+    - net_classify evaluation -c extensions/testing/test_classification.yml
+    - net_run --app net_classify train -c extensions/testing/test_classification.yml
+    - net_run --app net_classify inference -c extensions/testing/test_classification.yml
+    - net_run --app net_classify evaluation -c extensions/testing/test_classification.yml
 
-    - net_regress train -c $niftynet_dir/config/default_monomodal_regression.ini --max_iter 10 --name toynet --batch_size=2
-    - net_regress inference -c $niftynet_dir/config/default_monomodal_regression.ini --name toynet --spatial_window_size 84,84,84 --batch_size 7
-    - net_regress evaluation -c $niftynet_dir/config/default_monomodal_regression.ini
-    - net_run train -a net_regress -c $niftynet_dir/config/default_monomodal_regression.ini --max_iter 10 --name toynet --batch_size=2
-    - net_run inference -a net_regress -c $niftynet_dir/config/default_monomodal_regression.ini --name toynet --spatial_window_size 84,84,84 --batch_size 7
-    - net_run evaluation -a net_regress -c $niftynet_dir/config/default_monomodal_regression.ini
+    - net_regress train -c $niftynet_dir/config/default_monomodal_regression.yml --max_iter 10 --name toynet --batch_size=2
+    - net_regress inference -c $niftynet_dir/config/default_monomodal_regression.yml --name toynet --spatial_window_size 84,84,84 --batch_size 7
+    - net_regress evaluation -c $niftynet_dir/config/default_monomodal_regression.yml
+    - net_run train -a net_regress -c $niftynet_dir/config/default_monomodal_regression.yml --max_iter 10 --name toynet --batch_size=2
+    - net_run inference -a net_regress -c $niftynet_dir/config/default_monomodal_regression.yml --name toynet --spatial_window_size 84,84,84 --batch_size 7
+    - net_run evaluation -a net_regress -c $niftynet_dir/config/default_monomodal_regression.yml
 
-    - net_gan train -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
-    - net_gan inference -c $niftynet_dir/config/GAN_demo_train_config.ini
-    - net_run train --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini --max_iter 5
-    - net_run inference --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.ini
+    - net_gan train -c $niftynet_dir/config/GAN_demo_train_config.yml --max_iter 5
+    - net_gan inference -c $niftynet_dir/config/GAN_demo_train_config.yml
+    - net_run train --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.yml --max_iter 5
+    - net_run inference --app net_gan -c $niftynet_dir/config/GAN_demo_train_config.yml
 
-    - net_autoencoder train -c $niftynet_dir/config/vae_config.ini --max_iter 5
-    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type sample
-    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
-    - net_autoencoder inference -c $niftynet_dir/config/vae_config.ini --inference_type encode-decode
-    - net_run train --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --max_iter 5
-    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type sample
-    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type encode --save_seg_dir output/vae_demo_features
-    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.ini --inference_type encode-decode
+    - net_autoencoder train -c $niftynet_dir/config/vae_config.yml --max_iter 5
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.yml --inference_type sample
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.yml --inference_type encode --save_seg_dir output/vae_demo_features
+    - net_autoencoder inference -c $niftynet_dir/config/vae_config.yml --inference_type encode-decode
+    - net_run train --app net_autoencoder -c $niftynet_dir/config/vae_config.yml --max_iter 5
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.yml --inference_type sample
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.yml --inference_type encode --save_seg_dir output/vae_demo_features
+    - net_run inference --app net_autoencoder -c $niftynet_dir/config/vae_config.yml --inference_type encode-decode
 
     - net_download dense_vnet_abdominal_ct_model_zoo -r
     # deactivate virtual environment
