@@ -8,7 +8,6 @@ from __future__ import print_function
 
 import argparse
 import os
-import warnings
 import textwrap
 
 from tensorflow import logging as tf_logging
