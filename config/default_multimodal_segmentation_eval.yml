@@ -1,0 +1,58 @@
+---
+seg:
+  csv_file: 
+  path_to_search: "./NiftyNetTestEval"
+  filename_contains: Correct_WS3WT3WC1MergedSPCP_,_corr_corrIT
+  filename_not_contains: 
+  spatial_window_size: "(64, 64, 64)"
+  interp_order: 0
+label:
+  csv_file: 
+  path_to_search: "./NiftyNetTestEval"
+  filename_contains: CHJP_,_vote
+  filename_not_contains: 
+  spatial_window_size: "(64, 64, 64)"
+  interp_order: 0
+SYSTEM:
+  cuda_devices: 
+  num_threads: 2
+  num_gpus: 1
+  model_dir: "./models/model_multimodal_toy"
+  queue_length: 20
+NETWORK:
+  name: toynet
+  activation_function: prelu
+  batch_size: 1
+  decay: 0
+  reg_type: L2
+  volume_padding_size: 21
+  cutoff: "(0.01, 0.99)"
+  normalisation: false
+  whitening: false
+  normalise_foreground_only: false
+  foreground_type: otsu_plus
+  multimod_foreground_type: and
+TRAINING:
+  sample_per_volume: 32
+  lr: 0.01
+  loss_type: WGDL
+  starting_iter: 0
+  save_every_n: 100
+  max_iter: 10
+  max_checkpoints: 20
+INFERENCE:
+  border: 5
+  save_seg_dir: "./output/toy"
+  output_interp_order: 0
+  spatial_window_size: "(64, 64, 64)"
+EVALUATION:
+  save_csv_dir: "./NiftyNetTestEval"
+  evaluations: dice,jaccard,false_positive_rate,positive_predictive_values,n_pos_ref,n_pos_seg
+  evaluation_units: foreground
+SEGMENTATION:
+  inferred: seg
+  label: label
+  weight: T1
+  output_prob: false
+  num_classes: 5
+  label_normalisation: false

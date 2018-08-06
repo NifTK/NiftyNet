@@ -1,0 +1,48 @@
+---
+promise12:
+  path_to_search: data/PROMISE12/TrainingData_Part1,data/PROMISE12/TrainingData_Part2,data/PROMISE12/TrainingData_Part3
+  filename_contains: Case2,mhd
+  filename_not_contains: segmentation
+  spatial_window_size: "(64, 64, 64)"
+  interp_order: 3
+  axcodes: "(A, R, S)"
+label:
+  path_to_search: data/PROMISE12/TrainingData_Part1,data/PROMISE12/TrainingData_Part2,data/PROMISE12/TrainingData_Part3
+  filename_contains: Case2,_segmentation,mhd
+  filename_not_contains: 
+  spatial_window_size: "(64, 64, 64)"
+  interp_order: 3
+  axcodes: "(A, R, S)"
+SYSTEM:
+  cuda_devices: 
+  num_threads: 2
+  num_gpus: 1
+  model_dir: "./promise12_model"
+NETWORK:
+  name: dense_vnet
+  activation_function: prelu
+  batch_size: 1
+  volume_padding_size: 0
+  histogram_ref_file: standardisation_models.txt
+  norm_type: percentile
+  cutoff: "(0.01, 0.99)"
+  normalisation: true
+  whitening: true
+  normalise_foreground_only: true
+  foreground_type: otsu_plus
+  multimod_foreground_type: and
+  window_sampling: resize
+  queue_length: 8
+INFERENCE:
+  border: "(5, 5, 5)"
+  save_seg_dir: output/
+  output_interp_order: 0
+  spatial_window_size: "(0, 0, 3)"
+SEGMENTATION:
+  image: promise12
+  label: label
+  output_prob: false
+  num_classes: 2
+  label_normalisation: true
+  min_numb_labels: 2
+  min_sampling_ratio: 1.0e-06

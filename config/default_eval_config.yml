@@ -1,0 +1,27 @@
+---
+output modality 1:
+  path_to_search: "/Users/csudre/Temp/Seg"
+  filename_contains: Lesion,group2
+  filename_not_contains: 
+ref 1:
+  path_to_search: "/Users/csudre/Temp/Ref"
+  filename_contains: Lesion
+  filename_not_contains: 
+data 1:
+  path_to_search: "/Users/csudre/Temp/Data"
+  filename_contains: T2
+  filename_not_contains: 
+data 2:
+  path_to_search: "/Users/csudre/Temp/Data"
+  filename_contains: T1
+  filename_not_contains: 
+settings:
+  application_type: segmentation
+  threshold: 0.5
+  step: 0.5
+  ext: ".nii.gz"
+  seg_type: discrete
+  save_csv_dir: "/Users/csudre/Temp"
+  save_name: Special
+  save_discrete: true
+  save_maps: true
