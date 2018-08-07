@@ -49,7 +49,7 @@ class NiftyNetGlobalConfig(object):
         except KeyError:
             pass
 
-        self._config_file = join(self._config_home, 'config.ini')
+        self._config_file = join(self._config_home, 'config.yml')
 
         self._niftynet_home = self._config_home
 

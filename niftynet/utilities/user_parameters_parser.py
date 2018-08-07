@@ -347,7 +347,7 @@ def __resolve_config_file_path(cmdline_arg):
 
     config_file_path = os.path.join(
         NiftyNetGlobalConfig().get_default_examples_folder(),
-        config_file_path, config_file_path + "_config.ini")
+        config_file_path, config_file_path + "_config.yml")
     if os.path.isfile(config_file_path):
         return config_file_path
 

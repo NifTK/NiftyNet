@@ -29,7 +29,7 @@ from niftynet.utilities.versioning import get_niftynet_version, \
     get_niftynet_version_string
 
 DOWNLOAD_API_VERSION = "1.0"
-CONFIG_FILE_EXT = ".ini"
+CONFIG_FILE_EXT = ".yml"
 
 
 def download(example_ids,
