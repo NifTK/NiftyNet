@@ -9,6 +9,7 @@ import numpy as np
 import tensorflow as tf
 # pylint: disable=no-name-in-module
 from tensorflow.python.data.util import nest
+from tensorflow.python.keras.utils import GeneratorEnqueuer
 
 from niftynet.engine.image_window import ImageWindow
 from niftynet.engine.image_window import \
@@ -31,6 +32,7 @@ class ImageWindowDataset(Layer):
                  window_sizes=None,
                  batch_size=1,
                  windows_per_image=1,
+                 num_threads=4,
                  queue_length=10,
                  shuffle=True,
                  epoch=-1,
@@ -39,10 +41,12 @@ class ImageWindowDataset(Layer):
 
         self.dataset = None
         self.iterator = None
+        self.enqueuer = None
         self.reader = reader
 
         self.batch_size = batch_size
         self.queue_length = queue_length
+        self.num_threads = num_threads
         self.n_subjects = 1
 
         self.from_generator = inspect.isgeneratorfunction(self.layer_op)
@@ -195,6 +199,8 @@ class ImageWindowDataset(Layer):
 
         :return:
         """
+        tf.logging.info('Initiating dataset...')
+        tf.logging.info('self.from_generator: {}'.format(str(self.from_generator)))
         if not self.from_generator:
             dataset = self._dataset_from_range()
         else:
@@ -237,7 +243,7 @@ class ImageWindowDataset(Layer):
                 ret_t.set_shape(shape)
             return nest.pack_sequence_as(self.tf_dtypes, flat_values)
 
-        dataset = dataset.map(_tf_wrapper, num_parallel_calls=4)
+        dataset = dataset.map(_tf_wrapper, num_parallel_calls=self.num_threads)
 
         # dataset: slice the n-element window into n single windows
         def _slice_from_each(*args):
@@ -256,9 +262,18 @@ class ImageWindowDataset(Layer):
         """
         win_shapes = {}
         for name in self.tf_shapes:
-            win_shapes[name] = self.tf_shapes[name][1:]
+            win_shapes[name] = self.tf_shapes[name]
+        # tf.logging.info('win_shapes: {}'.format(str(win_shapes)))
+        # tf.logging.info('self.tf_dtypes: {}'.format(str(self.tf_dtypes)))
+        # tf.logging.info('self.tf_shapes: {}'.format(str(self.tf_shapes)))
+        tf.logging.info('Initiating dataset from generator...')
+        self.enqueuer = GeneratorEnqueuer(
+            self(),
+            use_multiprocessing=True,
+            wait_time=0.01)
+        self.enqueuer.start(workers=self.num_threads, max_queue_size=self.queue_length)
         dataset = tf.data.Dataset.from_generator(
-            generator=self,
+            generator=self.enqueuer.get,
             output_types=self.tf_dtypes,
             output_shapes=win_shapes)
         return dataset
@@ -275,7 +290,8 @@ class ImageWindowDataset(Layer):
         """
         For compatibility with the queue-based sampler.
         """
-        pass
+        if self.enqueuer is not None:
+            self.enqueuer.stop()
 
     @classmethod
     def dummy_coordinates(cls, image_id, image_sizes, n_samples):
@@ -291,3 +307,110 @@ class ImageWindowDataset(Layer):
         coords = [image_id] + starting_coordinates + image_spatial_shape
         coords = np.tile(np.asarray(coords), [n_samples, 1])
         return coords.astype(BUFFER_POSITION_NP_TYPE)
+    
+class ImageWindowDatasetCSV(ImageWindowDataset):
+    """
+    Extending the default sampler to include csv data
+    """
+
+    def __init__(self,
+                 reader,
+                 csv_reader=None,
+                 window_sizes=None,
+                 batch_size=10,
+                 windows_per_image=1,
+                 shuffle=True,
+                 queue_length=10,
+                 num_threads=4,
+                 epoch=-1,
+                 name='random_vector_sampler'):
+        ImageWindowDataset.__init__(
+            self,
+            reader=reader,
+            window_sizes=window_sizes,
+            batch_size=batch_size,
+            windows_per_image=windows_per_image,
+            shuffle=shuffle,
+            queue_length=queue_length,
+            num_threads=num_threads,
+            epoch=epoch,
+            name=name)
+        self.csv_reader = csv_reader
+        # tf.logging.info("initialised sampler output %s ", self.window.shapes)
+        # tf.logging.info("self.csv_reader.tf_dtypes {}".format(self.csv_reader.tf_dtypes))
+        # tf.logging.info("self.csv_reader.tf_shapes {}".format(self.csv_reader.tf_shapes))
+        # tf.logging.info("self.window.tf_shapes {}".format(self.window.tf_shapes))
+        # tf.logging.info("self.window.tf_dtypes {}".format(self.window.tf_dtypes))
+        
+    def layer_op(self, idx=None):
+        """
+        Generating each image as a window.
+        Overriding this function to create new image sampling strategies.
+
+        This function should either yield a dictionary
+        (for single window per image)::
+
+            yield a dictionary
+
+            {
+             'image_name': a numpy array,
+             'image_name_location': (image_id,
+                                     x_start, y_start, z_start,
+                                     x_end, y_end, z_end)
+            }
+
+        or return a dictionary (for multiple windows per image)::
+
+            return a dictionary:
+            {
+             'image_name': a numpy array,
+             'image_name_location': [n_samples, 7]
+            }
+
+        where the 7-element location vector encode the image_id,
+        starting and ending coordinates of the image window.
+
+        Following the same notation, the dictionary can be extended
+        to multiple modalities; the keys will be::
+
+            {'image_name_1', 'image_name_location_1',
+             'image_name_2', 'image_name_location_2', ...}
+
+        :param idx: image_id used to load the image at the i-th row of
+            the input
+        :return: a image data dictionary
+        """
+
+        # dataset: from a window generator
+        # assumes self.window.n_samples == 1
+        # the generator should yield one window at each iteration
+        assert self.window.n_samples == 1, \
+            'image_window_dataset.layer_op() requires: ' \
+            'windows_per_image should be 1.'
+        image_id, image_data, _ = self.reader(idx=idx)
+        for mod in list(image_data):
+            spatial_shape = image_data[mod].shape[:N_SPATIAL]
+            coords = self.dummy_coordinates(image_id, spatial_shape, 1)
+            image_data[LOCATION_FORMAT.format(mod)] = coords
+            image_data[mod] = image_data[mod][np.newaxis, ...]
+        if self.csv_reader is not None:
+            _, label_data, _ =  self.csv_reader(idx=image_id)
+            image_data['label'] = label_data['label']
+            image_data['label_location'] = image_data['image_location']
+        return image_data
+    
+    @property
+    def tf_shapes(self):
+        """
+        returns a dictionary of sampler output tensor shapes
+        """
+        assert self.window, 'Unknown output shapes: self.window not initialised'
+        return {**self.window.tf_shapes, **self.csv_reader.tf_shapes}
+
+    @property
+    def tf_dtypes(self):
+        """
+        returns a dictionary of sampler output tensorflow dtypes
+        """
+        assert self.window, 'Unknown output shapes: self.window not initialised'
+        return {**self.window.tf_dtypes, **self.csv_reader.tf_dtypes}
