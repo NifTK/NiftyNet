@@ -9,11 +9,10 @@ from __future__ import print_function
 import argparse
 import math
 import os
+import shutil
 import tarfile
 import tempfile
 from distutils.version import LooseVersion
-from shutil import copyfile
-from shutil import move
 
 # pylint: disable=wrong-import-order
 from six.moves.urllib.parse import urlparse
@@ -109,14 +108,16 @@ def download_file(url, download_path):
         os.makedirs(download_path)
 
     # Get a temporary file path for the compressed file download
-    downloaded_file = os.path.join(tempfile.gettempdir(), filename)
+    temp_folder = tempfile.mkdtemp()
+    downloaded_file = os.path.join(temp_folder, filename)
 
     # Download the file
     urlretrieve(url, downloaded_file, reporthook=progress_bar_wrapper)
 
     # Move the file to the destination folder
     destination_path = os.path.join(download_path, filename)
-    move(downloaded_file, destination_path)
+    shutil.move(downloaded_file, destination_path)
+    shutil.rmtree(temp_folder, ignore_errors=True)
 
 
 def download_and_decompress(url, download_path, verbose=True):
@@ -138,7 +139,8 @@ def download_and_decompress(url, download_path, verbose=True):
         os.makedirs(download_path)
 
     # Get a temporary file path for the compressed file download
-    downloaded_file = os.path.join(tempfile.gettempdir(), filename)
+    temp_folder = tempfile.mkdtemp()
+    downloaded_file = os.path.join(temp_folder, filename)
 
     # Download the file
     if verbose:
@@ -152,7 +154,7 @@ def download_and_decompress(url, download_path, verbose=True):
     tar.close()
 
     # Remove the downloaded file
-    os.remove(downloaded_file)
+    shutil.rmtree(temp_folder, ignore_errors=True)
 
 
 class ConfigStore(object):
@@ -297,7 +299,7 @@ class ConfigStore(object):
     def _replace_local_with_remote(self, example_id):
         local_filename = self._local.get_local_path(example_id)
         remote_filename = self._remote.get_local_path(example_id)
-        copyfile(remote_filename, local_filename)
+        shutil.copyfile(remote_filename, local_filename)
 
     def _are_data_missing(self, remote_config_sections, example_id):
         for _, config_params in remote_config_sections.items():
