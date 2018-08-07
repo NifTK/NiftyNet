@@ -161,14 +161,15 @@ class ImageWindowDataset(Layer):
             image_data[mod] = image_data[mod][np.newaxis, ...]
         return image_data
 
-    def run_threads(self):
+    def run_threads(self, *_args, **_kwargs):
         """
         To be called at the beginning of running graph variables,
         to initialise dataset iterator.
 
         (Deprecating)
 
-        :param num_threads:
+        :param _args: for compatibilities
+        :param _kwargs:
         :return:
         """
         if self.dataset is None or self.iterator is None:
