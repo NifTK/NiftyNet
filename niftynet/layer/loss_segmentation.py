@@ -72,11 +72,15 @@ class LossFunction(Layer):
             for ind, pred in enumerate(prediction):
                 # go through each scale
 
-                loss_batch = []
-                for b_ind, pred_b in enumerate(tf.unstack(pred, axis=0)):
-                    # go through each image in a batch
+                def _batch_i_loss(b_id):
+                    """
+                    loss for the `b_id`-th batch (over spatial dimensions)
 
-                    pred_b = tf.reshape(pred_b, [-1, self._num_classes])
+                    :param b_id:
+                    :return:
+                    """
+
+                    pred_b = tf.reshape(pred[b_id], [-1, self._num_classes])
                     # performs softmax if required
                     if self._softmax:
                         pred_b = tf.cast(pred_b, dtype=tf.float32)
@@ -92,15 +96,15 @@ class LossFunction(Layer):
                     else:
                         ref_shape = pred_b.shape.as_list()[:-1] + [-1]
 
-                    ground_truth_b = tf.reshape(ground_truth[b_ind], ref_shape)
+                    ground_truth_b = tf.reshape(
+                        ground_truth[b_id], ref_shape)
                     if ground_truth_b.shape.as_list()[-1] == 1:
                         ground_truth_b = tf.squeeze(ground_truth_b, axis=-1)
+                    weight_b = None
                     if weight_map is not None:
-                        weight_b = tf.reshape(weight_map[b_ind], ref_shape)
+                        weight_b = tf.reshape(weight_map[b_id], ref_shape)
                         if weight_b.shape.as_list()[-1] == 1:
                             weight_b = tf.squeeze(weight_b, axis=-1)
-                    else:
-                        weight_b = None
 
                     # preparing loss function parameters
                     loss_params = {
@@ -110,8 +114,14 @@ class LossFunction(Layer):
                     if self._loss_func_params:
                         loss_params.update(self._loss_func_params)
 
-                    # loss for each batch over spatial dimensions
-                    loss_batch.append(self._data_loss_func(**loss_params))
+                    return tf.to_float(self._data_loss_func(**loss_params))
+
+                loss_batch = tf.map_fn(
+                    fn=_batch_i_loss,
+                    elems=tf.range(tf.shape(pred)[0], dtype=tf.int32),
+                    dtype=tf.float32,
+                    parallel_iterations=1)
+
                 # loss averaged over batch
                 data_loss.append(tf.reduce_mean(loss_batch))
             # loss averaged over multiple scales
