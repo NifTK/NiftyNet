@@ -24,7 +24,7 @@ class GridSampler(ImageWindowDataset):
                  spatial_window_size=None,
                  window_border=None,
                  queue_length=10,
-                 allow_smaller_final_batch=False,
+                 smaller_final_batch_mode='pad',
                  name='grid_sampler'):
 
         # override all spatial window defined in input
@@ -40,7 +40,7 @@ class GridSampler(ImageWindowDataset):
             queue_length=queue_length,
             shuffle=False,
             epoch=1,
-            allow_smaller_final_batch=allow_smaller_final_batch,
+            smaller_final_batch_mode=smaller_final_batch_mode,
             name=name)
 
         self.border_size = window_border or (0, 0, 0)

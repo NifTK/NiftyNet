@@ -15,6 +15,15 @@ from niftynet.engine.image_window import ImageWindow, N_SPATIAL, \
     LOCATION_FORMAT, BUFFER_POSITION_NP_TYPE
 from niftynet.io.misc_io import squeeze_spatial_temporal_dim
 from niftynet.layer.base_layer import Layer
+from niftynet.utilities.util_common import look_up_operations
+
+# when total number of window samples are not divisible by batch_size
+# the class supports different modes for the final batch
+#   'drop': drop the remainder batch
+#   'pad': padding the final smaller batch with -1s
+#   'dynamic': output the remainder directly (in this case the batch_size
+#              is undetermined at 'compile time')
+SMALLER_FINAL_BATCH_MODE = {'drop', 'pad', 'dynamic'}
 
 
 # pylint: disable=too-many-instance-attributes
@@ -35,9 +44,11 @@ class ImageWindowDataset(Layer):
                  queue_length=10,
                  shuffle=True,
                  epoch=-1,
-                 allow_smaller_final_batch=False,
+                 smaller_final_batch_mode='pad',
                  name='image_dataset'):
         Layer.__init__(self, name=name)
+
+        self.num_threads = 1
 
         self.dataset = None
         self.iterator = None
@@ -53,7 +64,8 @@ class ImageWindowDataset(Layer):
         self.from_generator = inspect.isgeneratorfunction(self.layer_op)
         self.shuffle = shuffle
         self.epoch = epoch
-        self.allow_smaller_final_batch = allow_smaller_final_batch
+        self.smaller_final_batch_mode = look_up_operations(
+            smaller_final_batch_mode.lower(), SMALLER_FINAL_BATCH_MODE)
 
         self.n_subjects = 1
         self.window = None
@@ -149,16 +161,19 @@ class ImageWindowDataset(Layer):
             image_data[mod] = image_data[mod][np.newaxis, ...]
         return image_data
 
-    def run_threads(self, num_threads=1):
+    def run_threads(self, *args, **kwargs):
         """
         To be called at the beginning of running graph variables,
         to initialise dataset iterator.
 
-        :param num_threads:
+        (Deprecating)
+
+        :param args: for compatibilities
+        :param kwargs:
         :return:
         """
         if self.dataset is None or self.iterator is None:
-            self.init_dataset(num_threads=num_threads)
+            self.init_dataset()
             self.iterator = self.dataset.make_one_shot_iterator()
         #     self.iterator = tf.data.Iterator.from_structure(
         #         self.dataset.output_types, self.dataset.output_shapes)
@@ -166,7 +181,7 @@ class ImageWindowDataset(Layer):
         # if sess is not None:
         #     sess.run(self.iterator.make_initializer(self.dataset))
 
-    def pop_batch_op(self, num_threads=1):
+    def pop_batch_op(self):
         """
         This function is used when connecting a sampler output
         to a network. e.g.::
@@ -186,23 +201,18 @@ class ImageWindowDataset(Layer):
         if self.dataset is None or self.iterator is None:
             # in case `run_threads` is not called,
             # here we initialise the dataset and iterator
-            self.init_dataset(num_threads=num_threads)
+            self.init_dataset()
             self.iterator = self.dataset.make_one_shot_iterator()
             # self.iterator = tf.data.Iterator.from_structure(
             #     self.dataset.output_types, self.dataset.output_shapes)
 
         window_output = self.iterator.get_next()
-        if not self.from_generator:
-            window_output = window_output[0]
-        # for name in list(self.shapes):
-        #     window_output[name].set_shape(
-        #         [self.batch_size] + list(self.shapes[name][1:]))
         for name in window_output:
             window_output[name] = squeeze_spatial_temporal_dim(
                 window_output[name])
         return window_output
 
-    def init_dataset(self, num_threads=1):
+    def init_dataset(self):
         """
         Make a window samples dataset from the reader and layer_op.
         This function sets ``self.dataset``.
@@ -210,7 +220,7 @@ class ImageWindowDataset(Layer):
         :return:
         """
         if not self.from_generator:
-            dataset = self._dataset_from_range(num_threads)
+            dataset = self._dataset_from_range()
         else:
             dataset = self._dataset_from_generator()
         self.dataset = self.dataset_preprocessing(dataset)
@@ -226,19 +236,49 @@ class ImageWindowDataset(Layer):
         dataset = dataset.prefetch(buffer_size=self.queue_length)
         if self.shuffle:
             dataset = dataset.shuffle(buffer_size=self.queue_length, seed=None)
-        if not self.allow_smaller_final_batch:
+
+        if self.smaller_final_batch_mode == 'drop':
             # drop the remainder if there's not enough windows to
             # form a batch, so that we have a fixed batch size.
             dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(
                 batch_size=self.batch_size))
-        else:
-            # allow smaller final batch, but
-            # we don't have a fixed batch size in advance.
-            dataset = dataset.batch(batch_size=self.batch_size)
+            return dataset
+
+        dataset = dataset.batch(batch_size=self.batch_size)
+
+        if self.smaller_final_batch_mode == 'dynamic' and self.batch_size > 1:
+            return dataset
+
+        # self.smaller_final_batch_mode is 'pad'
+        # if self.batch_size == 1 no actual padding
+        # but this function will set the output shapes properly.
+        def _pad_batch(batch_size):
+            def _pad_batch_func(input_tensor_dict):
+                """
+                function to pad the batch dim to `batch_size`.
+                (assuming the input dataset is a dictionary-based one)
+                """
+                out_dict = {}
+                for in_name in list(input_tensor_dict):
+                    in_var = input_tensor_dict[in_name]
+                    if batch_size > 1:
+                        paddings = [[0, 0] for _ in in_var.shape]
+                        paddings[0][1] = batch_size - tf.shape(in_var)[0]
+                        in_var = tf.pad(
+                            in_var, paddings, "CONSTANT", constant_values=-1)
+                    var_shape = in_var.shape.as_list()
+                    var_shape[0] = batch_size
+                    in_var.set_shape(var_shape)
+                    out_dict[in_name] = in_var
+                return out_dict
+
+            return _pad_batch_func
+
+        dataset = dataset.map(_pad_batch(self.batch_size))
         return dataset
 
     # pylint: disable=redefined-variable-type
-    def _dataset_from_range(self, num_threads):
+    def _dataset_from_range(self):
         """
         This function maps a dataset of integers to a dataset of images.
 
@@ -261,15 +301,10 @@ class ImageWindowDataset(Layer):
                 ret_t.set_shape(shape)
             return nest.pack_sequence_as(self.tf_dtypes, flat_values)
 
-        dataset = dataset.map(_tf_wrapper, num_parallel_calls=num_threads)
+        dataset = dataset.map(_tf_wrapper, num_parallel_calls=self.num_threads)
 
         # dataset: slice the n-element window into n single windows
-        def _slice_from_each(*args):
-            datasets = [
-                tf.data.Dataset.from_tensor_slices(tensor) for tensor in args]
-            return tf.data.Dataset.zip(tuple(datasets))
-
-        dataset = dataset.flat_map(map_func=_slice_from_each)
+        dataset = dataset.flat_map(map_func=tf.data.Dataset.from_tensor_slices)
         return dataset
 
     def _dataset_from_generator(self):

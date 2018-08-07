@@ -166,29 +166,23 @@ class RegressionApplication(BaseApplication):
             self.readers]]
 
     def initialise_resize_sampler(self):
-        batch_flag = not self.is_training
-        if self.net_param.allow_smaller_final_batch != -1:
-            batch_flag = bool(self.net_param.allow_smaller_final_batch)
         self.sampler = [[ResizeSampler(
             reader=reader,
             window_sizes=self.data_param,
             batch_size=self.net_param.batch_size,
             shuffle=self.is_training,
-            allow_smaller_final_batch=batch_flag,
+            smaller_final_batch_mode=self.net_param.smaller_final_batch_mode,
             queue_length=self.net_param.queue_length) for reader in
             self.readers]]
 
     def initialise_grid_sampler(self):
-        batch_flag = not self.is_training
-        if self.net_param.allow_smaller_final_batch != -1:
-            batch_flag = bool(self.net_param.allow_smaller_final_batch)
         self.sampler = [[GridSampler(
             reader=reader,
             window_sizes=self.data_param,
             batch_size=self.net_param.batch_size,
             spatial_window_size=self.action_param.spatial_window_size,
             window_border=self.action_param.border,
-            allow_smaller_final_batch=batch_flag,
+            smaller_final_batch_mode=self.net_param.smaller_final_batch_mode,
             queue_length=self.net_param.queue_length) for reader in
             self.readers]]
 

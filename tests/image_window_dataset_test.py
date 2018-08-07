@@ -92,7 +92,7 @@ class ImageWindowDataset_2D_Test(tf.test.TestCase):
                 pass
             # batch size 3, 40 images in total
             self.assertEqual(
-                np.floor(reader.num_subjects/np.float(batch_size)), iters)
+                np.ceil(reader.num_subjects/np.float(batch_size)), iters)
 
 
 class ImageWindowDataset_3D_Test(tf.test.TestCase):
@@ -155,7 +155,7 @@ class ImageWindowDataset_3D_Test(tf.test.TestCase):
                 pass
             # batch size 3, 4 images in total
             self.assertEqual(
-                np.floor(reader.num_subjects/np.float(batch_size)), iters)
+                np.ceil(reader.num_subjects/np.float(batch_size)), iters)
 
 if __name__ == "__main__":
     tf.test.main()
