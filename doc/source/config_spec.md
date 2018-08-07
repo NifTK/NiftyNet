@@ -250,7 +250,7 @@ function parameters. See [Signals and event handlers](extending_event_handler.ht
 [name](#name) | `string` | `name=niftynet.network.toynet.ToyNet` | `''`
 [activation_function](#activation-function) | `string` | `activation_function=prelu` | `relu`
 [batch_size](#batch-size) | `integer` | `batch_size=10` | `2`
-[allow_smaller_final_batch](#allow-smaller-final-batch) | `boolean` | | `-1`
+[smaller_final_batch_mode](#smaller-final-batch-mode) | `string` | | `pad`
 [decay](#decay) | `non-negative float` | `decay=1e-5` | `0.0`
 [reg_type](#reg-type) | `string` | `reg_type=L1` | `L2`
 [volume_padding_size](#volume-padding-size) | `integer array` | `volume_padding_size=4, 4, 4` | `0,0,0`
@@ -279,11 +279,13 @@ Sets number of image windows to be processed at each iteration.
 When `num_gpus` is greater than 1, `batch_size` is used for each computing device.
 That is, the effective inputs at each iteration become `batch_size` x `num_gpus`.
 
-######  `allow_smaller_final_batch`
-If True, allow the final batch to be smaller if there are insufficient items left
-in the queue, and the batch size will be undetermined during graph construction.
-The default value is `-1`, which means `allow_smaller_final_batch = False`
-for training, and `True` for inference.
+######  `smaller_final_batch_mode`
+When total number of window samples are not divisible by batch_size
+the class supports different modes for the final batch:
+- `drop`: drop the remainder batch
+- `pad`: padding the final smaller batch with -1
+- `dynamic`: output the remainder directly (
+    in this case the batch_size is undetermined at "compile time")
 
 ###### `reg_type`
 Type of trainable parameter regularisation; currently the available choices are "L1" and "L2".

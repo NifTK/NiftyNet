@@ -11,6 +11,7 @@ import os
 
 from niftynet.io.image_loader import SUPPORTED_LOADERS
 from niftynet.io.image_sets_partitioner import SUPPORTED_PHASES
+from niftynet.engine.image_window_dataset import SMALLER_FINAL_BATCH_MODE
 from niftynet.utilities.user_parameters_helper import float_array
 from niftynet.utilities.user_parameters_helper import int_array
 from niftynet.utilities.user_parameters_helper import spatial_atleast3d
@@ -275,14 +276,14 @@ def add_network_args(parser):
         default=2)
 
     parser.add_argument(
-        "--allow_smaller_final_batch",
-        metavar='',
+        "--smaller_final_batch_mode",
+        metavar='TYPE_STR',
         help="If True, allow the final batch to be smaller "
              "if there are insufficient items left in the queue, "
              "and the batch size will be undetermined during "
              "graph construction.",
-        type=str2boolean,
-        default=-1)
+        choices=list(SMALLER_FINAL_BATCH_MODE),
+        default='pad')
 
     parser.add_argument(
         "--decay",

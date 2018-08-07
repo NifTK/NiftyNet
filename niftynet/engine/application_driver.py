@@ -27,11 +27,12 @@ from niftynet.engine.application_variables import \
 from niftynet.engine.signal import TRAIN, \
     ITER_STARTED, ITER_FINISHED, GRAPH_CREATED, SESS_FINISHED, SESS_STARTED
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
-from niftynet.utilities.util_common import \
-    set_cuda_device, tf_config, device_string
+from niftynet.io.misc_io import infer_latest_model_file
 from niftynet.utilities.user_parameters_default import \
     DEFAULT_EVENT_HANDLERS, DEFAULT_ITERATION_GENERATOR
-from niftynet.io.misc_io import infer_latest_model_file
+from niftynet.utilities.util_common import \
+    set_cuda_device, tf_config, device_string
+from niftynet.utilities.util_common import traverse_nested
 
 
 # pylint: disable=too-many-instance-attributes
@@ -181,6 +182,7 @@ class ApplicationDriver(object):
             graph = ApplicationDriver.create_graph(
                 application=application,
                 num_gpus=self.num_gpus,
+                num_threads=self.num_threads,
                 is_training_action=self.is_training_action)
 
         start_time = time.time()
@@ -228,7 +230,8 @@ class ApplicationDriver(object):
 
     # pylint: disable=not-context-manager
     @staticmethod
-    def create_graph(application, num_gpus=1, is_training_action=False):
+    def create_graph(
+            application, num_gpus=1, num_threads=1, is_training_action=False):
         """
         Create a TF graph based on self.app properties
         and engine parameters.
@@ -244,6 +247,8 @@ class ApplicationDriver(object):
             # initialise sampler
             with tf.name_scope('Sampler'):
                 application.initialise_sampler()
+                for sampler in traverse_nested(application.get_sampler()):
+                    sampler.num_threads = num_threads
 
             # initialise network, these are connected in
             # the context of multiple gpus

@@ -28,7 +28,7 @@ class ResizeSampler(ImageWindowDataset):
                  windows_per_image=1,
                  shuffle=True,
                  queue_length=10,
-                 allow_smaller_final_batch=False,
+                 smaller_final_batch_mode='pad',
                  name='resize_sampler_v2'):
         tf.logging.info('reading size of preprocessed images')
         ImageWindowDataset.__init__(
@@ -40,7 +40,7 @@ class ResizeSampler(ImageWindowDataset):
             queue_length=queue_length,
             shuffle=shuffle,
             epoch=-1 if shuffle else 1,
-            allow_smaller_final_batch=allow_smaller_final_batch,
+            smaller_final_batch_mode=smaller_final_batch_mode,
             name=name)
         if spatial_window_size:
             # override all spatial window defined in input
