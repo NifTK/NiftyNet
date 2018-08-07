@@ -31,7 +31,7 @@ def net_run_with_sys_argv(argv):
 class DenseVNetAbdominalCTModelZooTest(tf.test.TestCase):
     id = 'dense_vnet_abdominal_ct_model_zoo'
     location = 'dense_vnet_abdominal_ct'
-    config = os.path.join(MODEL_HOME, 'extensions', 'dense_vnet_abdominal_ct', 'config.ini')
+    config = os.path.join(MODEL_HOME, 'extensions', 'dense_vnet_abdominal_ct', 'config.yml')
     application = 'net_segment'
     expected_output = os.path.join('segmentation_output','100__niftynet_out.nii.gz')
 
@@ -58,7 +58,7 @@ class DenseVNetAbdominalCTModelZooTest(tf.test.TestCase):
 class UltrasoundSimulatorGanModelZooTest(tf.test.TestCase):
     id = 'ultrasound_simulator_gan_model_zoo'
     location = 'ultrasound_simulator_gan'
-    config = os.path.join(MODEL_HOME, 'extensions', 'ultrasound_simulator_gan', 'config.ini')
+    config = os.path.join(MODEL_HOME, 'extensions', 'ultrasound_simulator_gan', 'config.yml')
     application = 'net_gan'
     expected_output = os.path.join('ultrasound_gan_simulated','0_000053__niftynet_generated.nii.gz')
 
@@ -76,7 +76,7 @@ class UltrasoundSimulatorGanModelZooTest(tf.test.TestCase):
 class Highres3dnetBrainParcellationModelZooTest(tf.test.TestCase):
     id = 'highres3dnet_brain_parcellation_model_zoo'
     location = 'highres3dnet_brain_parcellation'
-    config = os.path.join(MODEL_HOME, 'extensions', 'highres3dnet_brain_parcellation', 'highres3dnet_config_eval.ini')
+    config = os.path.join(MODEL_HOME, 'extensions', 'highres3dnet_brain_parcellation', 'highres3dnet_config_eval.yml')
     application = 'net_segment'
     expected_output = os.path.join('parcellation_output','OAS1_0145_MR2_mpr_n4_anon_sbj_111_niftynet_out.nii.gz')
 
@@ -98,9 +98,9 @@ class AnisotropicNetsBratsChallengeModelZooTest(tf.test.TestCase):
     expected_outputs = [os.path.join('model_whole_tumor_axial','pred_whole_tumor_axial','LGG71__niftynet_out.nii.gz'),
                         os.path.join('model_whole_tumor_coronal','pred_whole_tumor_coronal','LGG71__niftynet_out.nii.gz'),
                         os.path.join('model_whole_tumor_sagittal','pred_whole_tumor_sagittal','LGG71__niftynet_out.nii.gz')]
-    configA = os.path.join(MODEL_HOME, 'extensions', 'anisotropic_nets_brats_challenge', 'whole_tumor_axial.ini')
-    configC = os.path.join(MODEL_HOME, 'extensions', 'anisotropic_nets_brats_challenge', 'whole_tumor_coronal.ini')
-    configS = os.path.join(MODEL_HOME, 'extensions', 'anisotropic_nets_brats_challenge', 'whole_tumor_sagittal.ini')
+    configA = os.path.join(MODEL_HOME, 'extensions', 'anisotropic_nets_brats_challenge', 'whole_tumor_axial.yml')
+    configC = os.path.join(MODEL_HOME, 'extensions', 'anisotropic_nets_brats_challenge', 'whole_tumor_coronal.yml')
+    configS = os.path.join(MODEL_HOME, 'extensions', 'anisotropic_nets_brats_challenge', 'whole_tumor_sagittal.yml')
 
     def setUp(self):
         tf.test.TestCase.setUp(self)
@@ -120,7 +120,7 @@ class MRCTRegressionModelZooTest(tf.test.TestCase):
     id = 'mr_ct_regression_model_zoo'
     location = 'mr_ct_regression'
     application = 'niftynet.contrib.regression_weighted_sampler.isample_regression.ISampleRegression'
-    config = os.path.join(MODEL_HOME, 'extensions', 'mr_ct_regression','net_isampler.ini')
+    config = os.path.join(MODEL_HOME, 'extensions', 'mr_ct_regression','net_isampler.yml')
     expected_output_train = [
         os.path.join('error_maps','CRI.nii.gz'),
         ]
@@ -148,7 +148,7 @@ class AutoContextMRCTModelZooTest(tf.test.TestCase):
     id = 'autocontext_mr_ct_model_zoo'
     location = 'autocontext_mr_ct'
     application = 'net_regress'
-    config = os.path.join(MODEL_HOME, 'extensions', 'autocontext_mr_ct','net_autocontext.ini')
+    config = os.path.join(MODEL_HOME, 'extensions', 'autocontext_mr_ct','net_autocontext.yml')
     expected_output_train = [
         os.path.join('error_maps','WEB.nii.gz'),
         ]

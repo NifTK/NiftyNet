@@ -17,19 +17,19 @@ class EntryPointTest(tf.test.TestCase):
     def test_wrong_app(self):
         sys.argv = ['', 'train',
                     '-a', 'foo',
-                    '-c', os.path.join('config', 'default_segmentation.ini')]
+                    '-c', os.path.join('config', 'default_segmentation.yml')]
         with self.assertRaisesRegexp(ValueError, 'application'):
             net_run.main()
 
         sys.argv = ['', 'train',
-                    '-c', os.path.join('config', 'default_segmentation.ini')]
+                    '-c', os.path.join('config', 'default_segmentation.yml')]
         with self.assertRaisesRegexp(ValueError, 'application'):
             net_run.main()
 
     def test_wrong_config(self):
         sys.argv = ['', 'train',
                     '-a', 'net_segment',
-                    '-c', os.path.join('foo', 'default_segmentation.ini')]
+                    '-c', os.path.join('foo', 'default_segmentation.yml')]
         with self.assertRaisesRegexp(IOError, ''):
             net_run.main()
 
@@ -41,14 +41,14 @@ class EntryPointTest(tf.test.TestCase):
     def test_no_action(self):
         sys.argv = ['',
                     '-a', 'net_segment',
-                    '-c', os.path.join('config', 'default_segmentation.ini')]
+                    '-c', os.path.join('config', 'default_segmentation.yml')]
         with self.assertRaisesRegexp(SystemExit, ''):
             net_run.main()
 
     def test_wrong_param(self):
         sys.argv = ['',
                     '-a', 'net_segment',
-                    '-c', os.path.join('config', 'default_segmentation.ini'),
+                    '-c', os.path.join('config', 'default_segmentation.yml'),
                     '--foo=bar']
         with self.assertRaisesRegexp(SystemExit, ''):
             net_run.main()

@@ -37,7 +37,7 @@ class NiftyNetGlobalConfigTestBase(TestCase):
             return
 
         cls.config_home = join(expanduser('~'), '.niftynet')
-        cls.file_type = 'ini'
+        cls.file_type = 'yml'
         cls.config_file = join(cls.config_home, cls.typify('config'))
 
         cls.header = '[global]'
