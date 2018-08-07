@@ -47,7 +47,7 @@ def dict_product(dicts):
 
 
 def main():
-    base_command = "python net_segment.py train -c ./demos/unet/U373.ini"
+    base_command = "python net_segment.py train -c ./demos/unet/U373.yml"
     model_dir_prefix = "./models/U373"
     # note: these paths are relative to the model directory
     d_split_files = ["../../demos/unet/u373_d_split_%i.csv" % i for i in [1, 2]]
@@ -59,7 +59,7 @@ def main():
     u373_experiments.generate_commands()
     u373_experiments.to_file("./run_U373.sh")
 
-    base_command = "python net_segment.py train -c ./demos/unet/HeLa.ini"
+    base_command = "python net_segment.py train -c ./demos/unet/HeLa.yml"
     model_dir_prefix = "./models/HeLa"
     # note: these paths are relative to the model directory
     d_split_files = ["../../demos/unet/hela_d_split_%i.csv" % i for i in [1, 2]]
