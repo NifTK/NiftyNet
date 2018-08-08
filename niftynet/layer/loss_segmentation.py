@@ -70,17 +70,24 @@ class LossFunction(Layer):
 
             data_loss = []
             for ind, pred in enumerate(prediction):
-                # go through each scale
 
-                def _batch_i_loss(b_id):
+                # go through each scale
+                def _batch_i_loss(*args):
                     """
                     loss for the `b_id`-th batch (over spatial dimensions)
 
                     :param b_id:
                     :return:
                     """
+                    # unpacking input from map_fn elements
+                    if len(args[0]) == 2:
+                        # pred and ground_truth
+                        pred_b, ground_truth_b = args[0]
+                        weight_b = None
+                    else:
+                        pred_b, ground_truth_b, weight_b = args[0]
 
-                    pred_b = tf.reshape(pred[b_id], [-1, self._num_classes])
+                    pred_b = tf.reshape(pred_b, [-1, self._num_classes])
                     # performs softmax if required
                     if self._softmax:
                         pred_b = tf.cast(pred_b, dtype=tf.float32)
@@ -96,13 +103,12 @@ class LossFunction(Layer):
                     else:
                         ref_shape = pred_b.shape.as_list()[:-1] + [-1]
 
-                    ground_truth_b = tf.reshape(
-                        ground_truth[b_id], ref_shape)
+                    ground_truth_b = tf.reshape(ground_truth_b, ref_shape)
                     if ground_truth_b.shape.as_list()[-1] == 1:
                         ground_truth_b = tf.squeeze(ground_truth_b, axis=-1)
-                    weight_b = None
-                    if weight_map is not None:
-                        weight_b = tf.reshape(weight_map[b_id], ref_shape)
+
+                    if weight_b is not None:
+                        weight_b = tf.reshape(weight_b, ref_shape)
                         if weight_b.shape.as_list()[-1] == 1:
                             weight_b = tf.squeeze(weight_b, axis=-1)
 
@@ -116,11 +122,17 @@ class LossFunction(Layer):
 
                     return tf.to_float(self._data_loss_func(**loss_params))
 
+                if weight_map is not None:
+                    elements = (pred, ground_truth, weight_map)
+                else:
+                    elements = (pred, ground_truth)
+
                 loss_batch = tf.map_fn(
                     fn=_batch_i_loss,
-                    elems=tf.range(tf.shape(pred)[0], dtype=tf.int32),
+                    elems=elements,
                     dtype=tf.float32,
                     parallel_iterations=1)
+
 
                 # loss averaged over batch
                 data_loss.append(tf.reduce_mean(loss_batch))
