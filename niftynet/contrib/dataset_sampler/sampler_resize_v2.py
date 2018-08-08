@@ -33,6 +33,7 @@ class ResizeSampler(ImageWindowDatasetCSV):
                  num_threads=4,
                  name='resize_sampler_v2'):
         tf.logging.info('reading size of preprocessed images')
+        self.csv_reader = csv_reader
         ImageWindowDatasetCSV.__init__(
             self,
             reader=reader,
@@ -51,7 +52,6 @@ class ResizeSampler(ImageWindowDatasetCSV):
             # this is useful when do inference with a spatial window
             # which is different from the training specifications
             self.window.set_spatial_shape(spatial_window_size)
-        self.csv_reader = csv_reader
         # tf.logging.info("initialised resize sampler %s ", self.window.shapes)
         # tf.logging.info('CSV reader is {}'.format(self.csv_reader))
 

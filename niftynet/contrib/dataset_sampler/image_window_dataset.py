@@ -324,6 +324,7 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
                  num_threads=4,
                  epoch=-1,
                  name='random_vector_sampler'):
+        self.csv_reader = csv_reader
         ImageWindowDataset.__init__(
             self,
             reader=reader,
@@ -335,7 +336,6 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
             num_threads=num_threads,
             epoch=epoch,
             name=name)
-        self.csv_reader = csv_reader
         # tf.logging.info("initialised sampler output %s ", self.window.shapes)
         # tf.logging.info("self.csv_reader.tf_dtypes {}".format(self.csv_reader.tf_dtypes))
         # tf.logging.info("self.csv_reader.tf_shapes {}".format(self.csv_reader.tf_shapes))
@@ -405,7 +405,10 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
         returns a dictionary of sampler output tensor shapes
         """
         assert self.window, 'Unknown output shapes: self.window not initialised'
-        return {**self.window.tf_shapes, **self.csv_reader.tf_shapes}
+        if self.csv_reader is not None:
+            return {**self.window.tf_shapes, **self.csv_reader.tf_shapes}
+        else:
+            return {**self.window.tf_shapes}
 
     @property
     def tf_dtypes(self):
@@ -413,4 +416,7 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
         returns a dictionary of sampler output tensorflow dtypes
         """
         assert self.window, 'Unknown output shapes: self.window not initialised'
-        return {**self.window.tf_dtypes, **self.csv_reader.tf_dtypes}
+        if self.csv_reader is not None:
+            return {**self.window.tf_dtypes, **self.csv_reader.tf_dtypes}
+        else:
+            return {**self.window.tf_dtypes}
