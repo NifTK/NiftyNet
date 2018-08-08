@@ -38,7 +38,7 @@ class ImageWindowDataset(Layer):
     """
 
     def __init__(self,
-                 reader=None,
+                 reader,
                  window_sizes=None,
                  batch_size=1,
                  windows_per_image=1,
@@ -50,13 +50,11 @@ class ImageWindowDataset(Layer):
                  name='image_dataset'):
         Layer.__init__(self, name=name)
 
-        self.num_threads = 1
-
         self.dataset = None
         self.iterator = None
         self.enqueuer = None
-        self.reader = reader
 
+        self.num_threads = 1
         self.batch_size = batch_size
         self.num_threads = num_threads
         self.queue_length = int(max(queue_length, round(batch_size * 5.0)))
@@ -71,17 +69,14 @@ class ImageWindowDataset(Layer):
         self.smaller_final_batch_mode = look_up_operations(
             smaller_final_batch_mode.lower(), SMALLER_FINAL_BATCH_MODE)
 
-        self.n_subjects = 1
-        self.window = None
-        if reader is not None:
-            self.window = ImageWindow.from_data_reader_properties(
-                reader.input_sources,
-                reader.shapes,
-                reader.tf_dtypes,
-                window_sizes or (-1, -1, -1))
-            self.n_subjects = reader.num_subjects
-            self.window.n_samples = \
-                1 if self.from_generator else windows_per_image
+        self.reader = reader
+        self.window = ImageWindow.from_data_reader_properties(
+            reader.input_sources,
+            reader.shapes,
+            reader.tf_dtypes,
+            window_sizes or (-1, -1, -1))
+        self.window.n_samples = \
+            1 if self.from_generator else windows_per_image
         # random seeds? (requires num_threads = 1)
 
     @property
@@ -109,7 +104,7 @@ class ImageWindowDataset(Layer):
         """
         returns a dictionary of sampler output tensorflow dtypes
         """
-        assert self.window, 'Unknown output shapes: self.window not initialised'
+        assert self.window, 'Unknown output dtypes: self.window not initialised'
         return self.window.tf_dtypes
 
     def layer_op(self, idx=None):
@@ -123,7 +118,7 @@ class ImageWindowDataset(Layer):
             yield a dictionary
 
             {
-             'image_name': a numpy array,
+             'image_name': a numpy array [h, w, d, chn],
              'image_name_location': (image_id,
                                      x_start, y_start, z_start,
                                      x_end, y_end, z_end)
@@ -133,7 +128,7 @@ class ImageWindowDataset(Layer):
 
             return a dictionary:
             {
-             'image_name': a numpy array,
+             'image_name': a numpy array [n_samples, h, w, d, chn],
              'image_name_location': [n_samples, 7]
             }
 
@@ -157,6 +152,7 @@ class ImageWindowDataset(Layer):
         assert self.window.n_samples == 1, \
             'image_window_dataset.layer_op() requires: ' \
             'windows_per_image should be 1.'
+
         image_id, image_data, _ = self.reader(idx=idx)
         for mod in list(image_data):
             spatial_shape = image_data[mod].shape[:N_SPATIAL]
@@ -291,9 +287,10 @@ class ImageWindowDataset(Layer):
         :return: a `tf.data.Dataset`
         """
         # dataset: a list of integers
-        dataset = tf.data.Dataset.range(self.n_subjects)
+        num_subjects = self.reader.num_subjects
+        dataset = tf.data.Dataset.range(num_subjects)
         if self.shuffle:
-            dataset = dataset.shuffle(buffer_size=self.n_subjects, seed=None)
+            dataset = dataset.shuffle(buffer_size=num_subjects, seed=None)
 
         # dataset: map each integer i to n windows sampled from subject i
         def _tf_wrapper(idx):
@@ -366,7 +363,7 @@ class ImageWindowDataset(Layer):
         coords = [image_id] + starting_coordinates + image_spatial_shape
         coords = np.tile(np.asarray(coords), [n_samples, 1])
         return coords.astype(BUFFER_POSITION_NP_TYPE)
-    
+
 class ImageWindowDatasetCSV(ImageWindowDataset):
     """
     Extending the default sampler to include csv data
@@ -397,7 +394,7 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
             epoch=epoch,
             smaller_final_batch_mode=smaller_final_batch_mode,
             name=name)
-        
+
     def layer_op(self, idx=None):
         """
         Generating each image as a window.
@@ -454,7 +451,7 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
             image_data['label'] = label_data['label']
             image_data['label_location'] = image_data['image_location']
         return image_data
-    
+
     @property
     def tf_shapes(self):
         """
