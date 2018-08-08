@@ -7,8 +7,7 @@ from __future__ import absolute_import, print_function, division
 import numpy as np
 import tensorflow as tf
 
-from niftynet.contrib.dataset_sampler.image_window_dataset import \
-    ImageWindowDataset
+from niftynet.engine.image_window_dataset import ImageWindowDataset
 from niftynet.engine.image_window import \
     N_SPATIAL, LOCATION_FORMAT, ImageWindow
 
@@ -46,6 +45,7 @@ class RandomVectorSampler(ImageWindowDataset):
             queue_length=queue_length,
             shuffle=False,
             epoch=1,
+            smaller_final_batch_mode='drop',
             name=name)
         self.window = ImageWindow(shapes={names[0]: vector_size},
                                   dtypes={names[0]: tf.float32})

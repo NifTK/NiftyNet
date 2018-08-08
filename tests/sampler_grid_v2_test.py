@@ -6,7 +6,7 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from niftynet.contrib.dataset_sampler.sampler_grid_v2 import \
+from niftynet.engine.sampler_grid_v2 import \
         GridSampler, _enumerate_step_points, grid_spatial_coordinates
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
@@ -112,8 +112,7 @@ class GridSamplerTest(tf.test.TestCase):
                               window_border=(0, 0, 0),
                               queue_length=10)
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=2)
+            sampler.run_threads(num_threads=2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, (10, 8, 10, 2, 2))
         sampler.close_all()
@@ -126,8 +125,7 @@ class GridSamplerTest(tf.test.TestCase):
                               window_border=(0, 0, 0),
                               queue_length=10)
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=2)
+            sampler.run_threads(num_threads=2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, (10, 20, 15, 2))
         sampler.close_all()
@@ -140,8 +138,7 @@ class GridSamplerTest(tf.test.TestCase):
                               window_border=(0, 0, 0),
                               queue_length=10)
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=1)
+            sampler.run_threads(num_threads=1)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, (10, 10, 7, 1))
         sampler.close_all()
@@ -154,8 +151,7 @@ class GridSamplerTest(tf.test.TestCase):
                               window_border=(0, 0, 0),
                               queue_length=10)
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=1)
+            sampler.run_threads(num_threads=1)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, (10, 8, 2, 256, 2))
         sampler.close_all()

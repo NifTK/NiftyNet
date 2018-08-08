@@ -4,8 +4,8 @@ import tensorflow as tf
 
 from niftynet.application.regression_application import \
     RegressionApplication, SUPPORTED_INPUT
-from niftynet.engine.sampler_uniform import UniformSampler
-from niftynet.engine.sampler_weighted import WeightedSampler
+from niftynet.engine.sampler_uniform_v2 import UniformSampler
+from niftynet.engine.sampler_weighted_v2 import WeightedSampler
 from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.histogram_normalisation import \
@@ -21,13 +21,13 @@ class ISampleRegression(RegressionApplication):
     #    if len(self.readers) == 2:
     #        training_sampler = WeightedSampler(
     #            reader=self.readers[0],
-    #            data_param=self.data_param,
+    #            window_sizes=self.data_param,
     #            batch_size=self.net_param.batch_size,
     #            windows_per_image=self.action_param.sample_per_volume,
     #            queue_length=self.net_param.queue_length)
     #        validation_sampler = UniformSampler(
     #            reader=self.readers[1],
-    #            data_param=self.data_param,
+    #            window_sizes=self.data_param,
     #            batch_size=self.net_param.batch_size,
     #            windows_per_image=self.action_param.sample_per_volume,
     #            queue_length=self.net_param.queue_length)

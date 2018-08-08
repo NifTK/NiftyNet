@@ -6,8 +6,8 @@ from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import TF_SUMMARIES
-from niftynet.engine.sampler_linear_interpolate import LinearInterpolateSampler
-from niftynet.engine.sampler_resize import ResizeSampler
+from niftynet.engine.sampler_linear_interpolate_v2 import LinearInterpolateSampler
+from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.engine.windows_aggregator_identity import WindowAsImageAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.loss_autoencoder import LossFunction
@@ -76,27 +76,27 @@ class AutoencoderApplication(BaseApplication):
         if self.is_training:
             self.sampler.append([ResizeSampler(
                 reader=reader,
-                data_param=self.data_param,
+                window_sizes=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=1,
-                shuffle_buffer=True,
+                shuffle=True,
                 queue_length=self.net_param.queue_length) for reader in
                 self.readers])
             return
         if self._infer_type in ('encode', 'encode-decode'):
             self.sampler.append([ResizeSampler(
                 reader=reader,
-                data_param=self.data_param,
+                window_sizes=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=1,
-                shuffle_buffer=False,
+                shuffle=False,
                 queue_length=self.net_param.queue_length) for reader in
                 self.readers])
             return
         if self._infer_type == 'linear_interpolation':
             self.sampler.append([LinearInterpolateSampler(
                 reader=reader,
-                data_param=self.data_param,
+                window_sizes=self.data_param,
                 batch_size=self.net_param.batch_size,
                 n_interpolations=self.autoencoder_param.n_interpolations,
                 queue_length=self.net_param.queue_length) for reader in

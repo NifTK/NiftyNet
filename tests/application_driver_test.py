@@ -86,23 +86,23 @@ class ApplicationDriverTest(tf.test.TestCase):
     #         test_driver._create_app(1)
     #     test_driver._create_app('tests.toy_application.ToyApplication')
 
-    def test_stop_app(self):
-        test_driver = get_initialised_driver()
-        graph = test_driver.create_graph(
-            test_driver.app, test_driver.num_gpus, True)
-        with self.test_session(graph=graph) as sess:
-            sess.run(global_vars_init_or_restore())
-            GRAPH_CREATED.send(test_driver.app, iter_msg=None)
-            SESS_STARTED.send(test_driver.app, iter_msg=None)
-            train_op = test_driver.app.gradient_op
-            SESS_FINISHED.send(test_driver.app, itermsg=None)
-            test_driver.app.stop()
-            try:
-                while True:
-                    sess.run(train_op)
-            except tf.errors.OutOfRangeError:
-                for thread in test_driver.app.sampler[0][0]._threads:
-                    self.assertFalse(thread.isAlive(), "threads not closed")
+    # def test_stop_app(self):
+    #     test_driver = get_initialised_driver()
+    #     graph = test_driver.create_graph(
+    #         test_driver.app, test_driver.num_gpus, True)
+    #     with self.test_session(graph=graph) as sess:
+    #         sess.run(global_vars_init_or_restore())
+    #         GRAPH_CREATED.send(test_driver.app, iter_msg=None)
+    #         SESS_STARTED.send(test_driver.app, iter_msg=None)
+    #         train_op = test_driver.app.gradient_op
+    #         SESS_FINISHED.send(test_driver.app, itermsg=None)
+    #         test_driver.app.stop()
+    #         try:
+    #             while True:
+    #                 sess.run(train_op)
+    #         except tf.errors.OutOfRangeError:
+    #             for thread in test_driver.app.sampler[0][0]._threads:
+    #                 self.assertFalse(thread.isAlive(), "threads not closed")
 
     def test_training_update(self):
         test_driver = get_initialised_driver()

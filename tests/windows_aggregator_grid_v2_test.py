@@ -6,7 +6,7 @@ import os
 import nibabel as nib
 import tensorflow as tf
 
-from niftynet.contrib.dataset_sampler.sampler_grid_v2 import GridSampler
+from niftynet.engine.sampler_grid_v2 import GridSampler
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
@@ -142,8 +142,7 @@ class GridSamplesAggregatorTest(tf.test.TestCase):
         more_batch = True
 
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=2)
+            sampler.run_threads(num_threads=2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
                 more_batch = aggregator.decode_batch(
@@ -173,8 +172,7 @@ class GridSamplesAggregatorTest(tf.test.TestCase):
             interp_order=0)
         more_batch = True
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=2)
+            sampler.run_threads(num_threads=2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
                 more_batch = aggregator.decode_batch(
@@ -204,8 +202,7 @@ class GridSamplesAggregatorTest(tf.test.TestCase):
             interp_order=0)
         more_batch = True
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=2)
+            sampler.run_threads(num_threads=2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
                 more_batch = aggregator.decode_batch(
@@ -237,8 +234,7 @@ class GridSamplesAggregatorTest(tf.test.TestCase):
             interp_order=0)
         more_batch = True
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=2)
+            sampler.run_threads(num_threads=2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
                 more_batch = aggregator.decode_batch(

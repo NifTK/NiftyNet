@@ -8,8 +8,7 @@ import numpy as np
 import scipy.ndimage
 import tensorflow as tf
 
-from niftynet.contrib.dataset_sampler.image_window_dataset import \
-    ImageWindowDataset, ImageWindowDatasetCSV
+from niftynet.engine.image_window_dataset import ImageWindowDataset, ImageWindowDatasetCSV
 from niftynet.engine.image_window import LOCATION_FORMAT
 
 
@@ -31,6 +30,7 @@ class ResizeSampler(ImageWindowDatasetCSV):
                  shuffle=True,
                  queue_length=10,
                  num_threads=4,
+                 smaller_final_batch_mode='pad',
                  name='resize_sampler_v2'):
         tf.logging.info('reading size of preprocessed images')
         self.csv_reader = csv_reader
@@ -45,6 +45,7 @@ class ResizeSampler(ImageWindowDatasetCSV):
             num_threads=num_threads,
             shuffle=shuffle,
             epoch=-1 if shuffle else 1,
+            smaller_final_batch_mode=smaller_final_batch_mode,
             name=name)
         if spatial_window_size:
             # override all spatial window defined in input
@@ -97,10 +98,9 @@ class ResizeSampler(ImageWindowDatasetCSV):
                     else:
                         zoom_ratio = [float(p) / float(d) for p, d in
                                       zip(window_shape, image_shape)]
-                        image_window = self.zoom_3d(
-                            image=data[name],
-                            ratio=zoom_ratio,
-                            interp_order=interp_orders[name][0])
+                        image_window = zoom_3d(image=data[name],
+                                               ratio=zoom_ratio, interp_order=
+                                               interp_orders[name][0])
                     image_array.append(image_window[np.newaxis, ...])
                 if len(image_array) > 1:
                     output_dict[image_data_key] = \
@@ -116,19 +116,19 @@ class ResizeSampler(ImageWindowDatasetCSV):
                 output_dict['label'] = label_dict['label']
                 output_dict['label_location'] = output_dict['image_location']
             yield output_dict
+            
 
-    @classmethod
-    def zoom_3d(cls, image, ratio, interp_order):
-        """
-        Taking 5D image as input, and zoom each 3D slice independently
-        """
-        assert image.ndim == 5, "input images should be 5D array"
-        output = []
-        for time_pt in range(image.shape[3]):
-            output_mod = []
-            for mod in range(image.shape[4]):
-                zoomed = scipy.ndimage.zoom(
-                    image[..., time_pt, mod], ratio[:3], order=interp_order)
-                output_mod.append(zoomed[..., np.newaxis, np.newaxis])
-            output.append(np.concatenate(output_mod, axis=-1))
-        return np.concatenate(output, axis=-2)
+def zoom_3d(image, ratio, interp_order):
+    """
+    Taking 5D image as input, and zoom each 3D slice independently
+    """
+    assert image.ndim == 5, "input images should be 5D array"
+    output = []
+    for time_pt in range(image.shape[3]):
+        output_mod = []
+        for mod in range(image.shape[4]):
+            zoomed = scipy.ndimage.zoom(
+                image[..., time_pt, mod], ratio[:3], order=interp_order)
+            output_mod.append(zoomed[..., np.newaxis, np.newaxis])
+        output.append(np.concatenate(output_mod, axis=-1))
+    return np.concatenate(output, axis=-2)

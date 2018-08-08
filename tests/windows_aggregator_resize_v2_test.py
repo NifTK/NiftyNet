@@ -6,7 +6,7 @@ import os
 import nibabel as nib
 import tensorflow as tf
 
-from niftynet.contrib.dataset_sampler.sampler_resize_v2 import ResizeSampler
+from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
@@ -140,8 +140,7 @@ class ResizeSamplesAggregatorTest(tf.test.TestCase):
         more_batch = True
 
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=2)
+            sampler.run_threads(num_threads=2)
             while more_batch:
                 try:
                     out = sess.run(sampler.pop_batch_op())
@@ -173,8 +172,7 @@ class ResizeSamplesAggregatorTest(tf.test.TestCase):
         more_batch = True
 
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=2)
+            sampler.run_threads(num_threads=2)
             while more_batch:
                 try:
                     out = sess.run(sampler.pop_batch_op())
@@ -206,8 +204,7 @@ class ResizeSamplesAggregatorTest(tf.test.TestCase):
         more_batch = True
 
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=2)
+            sampler.run_threads(num_threads=2)
             while more_batch:
                 try:
                     out = sess.run(sampler.pop_batch_op())
@@ -240,8 +237,7 @@ class ResizeSamplesAggregatorTest(tf.test.TestCase):
         more_batch = True
 
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=2)
+            sampler.run_threads(num_threads=2)
             while more_batch:
                 try:
                     out = sess.run(sampler.pop_batch_op())
