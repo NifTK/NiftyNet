@@ -485,6 +485,21 @@ def add_training_args(parser):
         default=())
 
     parser.add_argument(
+        "--bias_field_range",
+        help="[Training only] The range of bias field coeffs in [min_coeff, "
+             "max_coeff]",
+        type=float_array,
+        default=())
+
+    parser.add_argument(
+        "--bf_order",
+        help="[Training only] maximal polynomial order to use for the "
+             "creation of the bias field augmentation",
+        metavar='',
+        type=int,
+        default=3)
+
+    parser.add_argument(
         "--random_flipping_axes",
         help="The axes which can be flipped to augment the data. Supply as "
              "comma-separated values within single quotes, e.g. '0,1'. Note "
