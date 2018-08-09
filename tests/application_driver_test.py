@@ -230,8 +230,11 @@ class ApplicationDriverTest(tf.test.TestCase):
         graph = test_driver.create_graph(test_driver.app, 1, True)
         with self.test_session(graph=graph) as sess:
             with self.assertRaisesRegexp(
-                    tf.errors.NotFoundError, 'Failed to find'):
+                    ValueError, 'checkpoint'):
                 ModelRestorer(**vars(test_driver)).restore_model(None)
+            # with self.assertRaisesRegexp(
+            #         tf.errors.NotFoundError, 'Failed to find'):
+            #     ModelRestorer(**vars(test_driver)).restore_model(None)
 
     def test_from_file_initialisation(self):
         test_driver = get_initialised_driver(40, False)
