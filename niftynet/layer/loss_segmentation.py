@@ -485,6 +485,7 @@ def tversky(prediction, ground_truth, weight_map=None, alpha=0.5, beta=0.5):
     if len(ground_truth.shape) == len(prediction.shape):
         ground_truth = ground_truth[..., -1]
     one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
+    one_hot = tf.sparse_tensor_to_dense(one_hot)
 
     p0 = prediction
     p1 = 1 - prediction
@@ -495,13 +496,13 @@ def tversky(prediction, ground_truth, weight_map=None, alpha=0.5, beta=0.5):
         num_classes = prediction.shape[1].value
         weight_map_flattened = tf.reshape(weight_map, [-1])
         weight_map_expanded = tf.expand_dims(weight_map_flattened, 1)
-        w = tf.tile(weight_map_expanded, [1, num_classes])
+        weight_map_nclasses = tf.tile(weight_map_expanded, [1, num_classes])
     else:
-        w = 1
+        weight_map_nclasses = 1
 
-    tp = tf.sparse_reduce_sum(w * p0 * g0, reduction_axes=[0])
-    fp = alpha * tf.sparse_reduce_sum(w * p0 * g1, reduction_axes=[0])
-    fn = beta * tf.sparse_reduce_sum(w * p1 * g0, reduction_axes=[0])
+    tp = tf.reduce_sum(weight_map_nclasses * p0 * g0)
+    fp = alpha * tf.reduce_sum(weight_map_nclasses * p0 * g1)
+    fn = beta * tf.reduce_sum(weight_map_nclasses * p1 * g0)
 
     EPSILON = 0.00001
     numerator = tp
