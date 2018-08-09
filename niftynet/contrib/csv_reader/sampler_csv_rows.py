@@ -96,10 +96,10 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
         returns a dictionary of sampler output tensor shapes
         """
         assert self.window, 'Unknown output shapes: self.window not initialised'
+        shape_dict = self.window.tf_shapes
         if self.csv_reader is not None:
-            return {**self.window.tf_shapes, **self.csv_reader.tf_shapes}
-        else:
-            return {**self.window.tf_shapes}
+            shape_dict.update(self.csv_reader.tf_shapes)
+        return shape_dict
 
     @property
     def tf_dtypes(self):
@@ -107,7 +107,7 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
         returns a dictionary of sampler output tensorflow dtypes
         """
         assert self.window, 'Unknown output shapes: self.window not initialised'
+        shape_dict = self.window.tf_dtypes
         if self.csv_reader is not None:
-            return {**self.window.tf_dtypes, **self.csv_reader.tf_dtypes}
-        else:
-            return {**self.window.tf_dtypes}
+            shape_dict.update(self.csv_reader.tf_dtypes)
+        return shape_dict
