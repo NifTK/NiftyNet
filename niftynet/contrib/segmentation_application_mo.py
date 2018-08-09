@@ -32,11 +32,11 @@ from niftynet.layer.rand_elastic_deform import RandomElasticDeformationLayer
 SUPPORTED_INPUT = set(['image', 'label', 'weight', 'sampler', 'inferred'])
 
 
-class SegmentationApplication(BaseApplication):
+class SegmentationApplicationMO(BaseApplication):
     REQUIRED_CONFIG_SECTION = "SEGMENTATION"
 
     def __init__(self, net_param, action_param, action):
-        super(SegmentationApplication, self).__init__()
+        super(SegmentationApplicationMO, self).__init__()
         tf.logging.info('starting segmentation application')
         self.action = action
 
@@ -373,19 +373,25 @@ class SegmentationApplication(BaseApplication):
 
             output_prob = self.segmentation_param.output_prob
             num_classes = self.segmentation_param.num_classes
-            if output_prob and num_classes > 1:
-                post_process_layer = PostProcessingLayer(
+            if  num_classes > 1:
+                post_process_layer_proba = PostProcessingLayer(
                     'SOFTMAX', num_classes=num_classes)
-            elif not output_prob and num_classes > 1:
-                post_process_layer = PostProcessingLayer(
+                post_process_layer_argmax = PostProcessingLayer(
                     'ARGMAX', num_classes=num_classes)
             else:
-                post_process_layer = PostProcessingLayer(
+                post_process_layer_proba = PostProcessingLayer(
                     'IDENTITY', num_classes=num_classes)
-            net_out = post_process_layer(net_out)
+                post_process_layer_argmax = PostProcessingLayer(
+                    'IDENTITY', num_classes=num_classes)
+
+            net_out_proba = post_process_layer_proba(net_out)
+            net_out_argmax = post_process_layer_argmax(net_out)
 
             outputs_collector.add_to_collection(
-                var=net_out, name='window',
+                var=net_out_proba, name='window_proba',
+                average_over_devices=False, collection=NETWORK_OUTPUT)
+            outputs_collector.add_to_collection(
+                var=net_out_argmax, name='window_argmax',
                 average_over_devices=False, collection=NETWORK_OUTPUT)
             outputs_collector.add_to_collection(
                 var=data_dict['image_location'], name='location',
@@ -394,8 +400,10 @@ class SegmentationApplication(BaseApplication):
 
     def interpret_output(self, batch_output):
         if self.is_inference:
-            return self.output_decoder.decode_batch(
-                batch_output['window'], batch_output['location'])
+            return self.output_decoder.decode_dict_batch({
+                'window_proba': batch_output['window_proba'],
+                'window_argmax': batch_output['window_argmax']}
+                , batch_output['location'])
         return True
 
     def initialise_evaluator(self, eval_param):
