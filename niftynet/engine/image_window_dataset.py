@@ -10,6 +10,7 @@ import numpy as np
 import tensorflow as tf
 # pylint: disable=no-name-in-module
 from tensorflow.python.data.util import nest
+from tensorflow.python.keras.utils import GeneratorEnqueuer
 
 from niftynet.engine.image_window import ImageWindow, N_SPATIAL, \
     LOCATION_FORMAT, BUFFER_POSITION_NP_TYPE
@@ -53,6 +54,7 @@ class ImageWindowDataset(Layer):
         self.dataset = None
         self.iterator = None
         self.reader = reader
+        self.enqueuer = None
 
         self.batch_size = batch_size
         self.queue_length = int(max(queue_length, round(batch_size * 5.0)))
@@ -105,8 +107,14 @@ class ImageWindowDataset(Layer):
         """
         returns a dictionary of sampler output tensorflow dtypes
         """
-        assert self.window, 'Unknown output shapes: self.window not initialised'
+        assert self.window, 'Unknown output dtypes: self.window not initialised'
         return self.window.tf_dtypes
+
+    def set_num_threads(self, num_threads):
+        """
+        Set number windows to generate in parallel.
+        """
+        self.num_threads = int(num_threads)
 
     def layer_op(self, idx=None):
         """
@@ -119,7 +127,7 @@ class ImageWindowDataset(Layer):
             yield a dictionary
 
             {
-             'image_name': a numpy array,
+             'image_name': a numpy array [h, w, d, chn],
              'image_name_location': (image_id,
                                      x_start, y_start, z_start,
                                      x_end, y_end, z_end)
@@ -129,7 +137,7 @@ class ImageWindowDataset(Layer):
 
             return a dictionary:
             {
-             'image_name': a numpy array,
+             'image_name': a numpy array [n_samples, h, w, d, chn],
              'image_name_location': [n_samples, 7]
             }
 
@@ -153,6 +161,7 @@ class ImageWindowDataset(Layer):
         assert self.window.n_samples == 1, \
             'image_window_dataset.layer_op() requires: ' \
             'windows_per_image should be 1.'
+
         image_id, image_data, _ = self.reader(idx=idx)
         for mod in list(image_data):
             spatial_shape = image_data[mod].shape[:N_SPATIAL]
@@ -285,6 +294,8 @@ class ImageWindowDataset(Layer):
         :return: a `tf.data.Dataset`
         """
         # dataset: a list of integers
+        tf.logging.info(
+            'Initialising Dataset from %s subjects...', self.n_subjects)
         dataset = tf.data.Dataset.range(self.n_subjects)
         if self.shuffle:
             dataset = dataset.shuffle(buffer_size=self.n_subjects, seed=None)
@@ -313,13 +324,26 @@ class ImageWindowDataset(Layer):
 
         :return: a `tf.data.Dataset`
         """
-        win_shapes = {}
-        for name in self.tf_shapes:
-            win_shapes[name] = self.tf_shapes[name][1:]
+        tf.logging.info('Initialising dataset from generator...')
+
+        if self.num_threads < 2 or not self.shuffle:
+            window_generator = self
+        else:
+            self.enqueuer = GeneratorEnqueuer(
+                self(), use_multiprocessing=True, wait_time=0.01)
+            self.enqueuer.start(
+                workers=self.num_threads, max_queue_size=self.queue_length)
+            window_generator = self.enqueuer.get
+
+        # element shape expected by `tf.data.Dataset.from_generator`
+        # (the batch dim is removed as the length is 1)
+        element_shapes = {
+            name: self.tf_shapes[name][1:]
+            for name in self.tf_shapes}
         dataset = tf.data.Dataset.from_generator(
-            generator=self,
+            generator=window_generator,
             output_types=self.tf_dtypes,
-            output_shapes=win_shapes)
+            output_shapes=element_shapes)
         return dataset
 
     def _flatten_layer_op(self, idx=None):
@@ -334,7 +358,8 @@ class ImageWindowDataset(Layer):
         """
         For compatibility with the queue-based sampler.
         """
-        pass
+        if self.enqueuer is not None:
+            self.enqueuer.stop()
 
     @classmethod
     def dummy_coordinates(cls, image_id, image_sizes, n_samples):

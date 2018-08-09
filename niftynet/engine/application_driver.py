@@ -248,7 +248,7 @@ class ApplicationDriver(object):
             with tf.name_scope('Sampler'):
                 application.initialise_sampler()
                 for sampler in traverse_nested(application.get_sampler()):
-                    sampler.num_threads = num_threads
+                    sampler.set_num_threads(num_threads)
 
             # initialise network, these are connected in
             # the context of multiple gpus
