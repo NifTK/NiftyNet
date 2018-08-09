@@ -42,6 +42,7 @@ class ImageWindowDataset(Layer):
                  window_sizes=None,
                  batch_size=1,
                  windows_per_image=1,
+                 num_threads=1,
                  queue_length=10,
                  shuffle=True,
                  epoch=-1,
@@ -49,7 +50,7 @@ class ImageWindowDataset(Layer):
                  name='image_dataset'):
         Layer.__init__(self, name=name)
 
-        self.num_threads = 1
+        self.num_threads = num_threads
 
         self.dataset = None
         self.iterator = None

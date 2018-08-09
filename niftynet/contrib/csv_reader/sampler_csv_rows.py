@@ -1,3 +1,7 @@
+from niftynet.engine.image_window_dataset import ImageWindowDataset
+from niftynet.engine.image_window import N_SPATIAL, LOCATION_FORMAT
+
+
 class ImageWindowDatasetCSV(ImageWindowDataset):
     """
     Extending the default sampler to include csv data
@@ -11,7 +15,7 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
                  windows_per_image=1,
                  shuffle=True,
                  queue_length=10,
-                 num_threads=4,
+                 num_threads=1,
                  epoch=-1,
                  smaller_final_batch_mode='pad',
                  name='random_vector_sampler'):
