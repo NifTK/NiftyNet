@@ -37,6 +37,7 @@ class ImageWindowDataset(Layer):
     ``Dataset.map`` interface will be used otherwise.
     """
 
+    # pylint: disable=too-many-arguments
     def __init__(self,
                  reader=None,
                  window_sizes=None,
@@ -46,21 +47,23 @@ class ImageWindowDataset(Layer):
                  shuffle=True,
                  epoch=-1,
                  smaller_final_batch_mode='pad',
+                 seed=None,
                  name='image_dataset'):
         Layer.__init__(self, name=name)
 
-        self.num_threads = 1
+        self._num_threads = 1
+        self._enqueuer = None
+        self._seed = seed
 
         self.dataset = None
         self.iterator = None
         self.reader = reader
-        self.enqueuer = None
 
         self.batch_size = batch_size
         self.queue_length = int(max(queue_length, round(batch_size * 5.0)))
         if self.queue_length > queue_length:
             tf.logging.warning(
-                'queue_length should be larger than batch_size, '
+                'sampler queue_length should be larger than batch_size, '
                 'defaulting to batch_size * 5.0 (%s).', self.queue_length)
 
         self.from_generator = inspect.isgeneratorfunction(self.layer_op)
@@ -80,7 +83,6 @@ class ImageWindowDataset(Layer):
             self.n_subjects = reader.num_subjects
             self.window.n_samples = \
                 1 if self.from_generator else windows_per_image
-        # random seeds? (requires num_threads = 1)
 
     @property
     def shapes(self):
@@ -114,7 +116,7 @@ class ImageWindowDataset(Layer):
         """
         Set number windows to generate in parallel.
         """
-        self.num_threads = int(num_threads)
+        self._num_threads = int(num_threads)
 
     def layer_op(self, idx=None):
         """
@@ -244,13 +246,17 @@ class ImageWindowDataset(Layer):
         dataset = dataset.repeat(self.epoch)
         dataset = dataset.prefetch(buffer_size=self.queue_length)
         if self.shuffle:
-            dataset = dataset.shuffle(buffer_size=self.queue_length, seed=None)
+            # locally shuffle the buffer of image windows
+            dataset = dataset.shuffle(
+                buffer_size=self.queue_length, seed=self._seed)
 
         if self.smaller_final_batch_mode == 'drop':
             # drop the remainder if there's not enough windows to
             # form a batch, so that we have a fixed batch size.
             dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(
                 batch_size=self.batch_size))
+            # dataset = dataset.batch(batch_size=self.batch_size,
+            #                         drop_remainder=True)
             return dataset
 
         dataset = dataset.batch(batch_size=self.batch_size)
@@ -298,21 +304,24 @@ class ImageWindowDataset(Layer):
             'Initialising Dataset from %s subjects...', self.n_subjects)
         dataset = tf.data.Dataset.range(self.n_subjects)
         if self.shuffle:
-            dataset = dataset.shuffle(buffer_size=self.n_subjects, seed=None)
+            # global shuffle of the entire set of subjects
+            dataset = dataset.shuffle(
+                buffer_size=self.n_subjects, seed=self._seed)
 
         # dataset: map each integer i to n windows sampled from subject i
         def _tf_wrapper(idx):
             flattened_types = nest.flatten(self.tf_dtypes)
             flattened_shapes = nest.flatten(self.tf_shapes)
-            flat_values = tf.py_func(func=self._flatten_layer_op,
-                                     inp=[idx],
-                                     Tout=flattened_types)
+            flat_values = tf.py_func(
+                func=lambda subject_id: nest.flatten(self(subject_id)),
+                inp=[idx],
+                Tout=flattened_types)
             for ret_t, shape in zip(flat_values, flattened_shapes):
                 # the actual returned numpy array shapes are not checked
                 ret_t.set_shape(shape)
             return nest.pack_sequence_as(self.tf_dtypes, flat_values)
 
-        dataset = dataset.map(_tf_wrapper, num_parallel_calls=self.num_threads)
+        dataset = dataset.map(_tf_wrapper, num_parallel_calls=self._num_threads)
 
         # dataset: slice the n-element window into n single windows
         dataset = dataset.flat_map(map_func=tf.data.Dataset.from_tensor_slices)
@@ -326,14 +335,17 @@ class ImageWindowDataset(Layer):
         """
         tf.logging.info('Initialising dataset from generator...')
 
-        if self.num_threads < 2 or not self.shuffle:
+        if self._num_threads < 2 or not self.shuffle:
             window_generator = self
         else:
-            self.enqueuer = GeneratorEnqueuer(
-                self(), use_multiprocessing=True, wait_time=0.01)
-            self.enqueuer.start(
-                workers=self.num_threads, max_queue_size=self.queue_length)
-            window_generator = self.enqueuer.get
+            self._enqueuer = GeneratorEnqueuer(
+                self(),
+                use_multiprocessing=True,
+                wait_time=0.01,
+                seed=self._seed)
+            self._enqueuer.start(
+                workers=self._num_threads, max_queue_size=self.queue_length)
+            window_generator = self._enqueuer.get
 
         # element shape expected by `tf.data.Dataset.from_generator`
         # (the batch dim is removed as the length is 1)
@@ -346,26 +358,18 @@ class ImageWindowDataset(Layer):
             output_shapes=element_shapes)
         return dataset
 
-    def _flatten_layer_op(self, idx=None):
-        """
-        wrapper of the ``layer_op``
-
-        :return: flattened output dictionary as a list
-        """
-        return nest.flatten(self(idx))
-
     def close_all(self):
         """
         For compatibility with the queue-based sampler.
         """
-        if self.enqueuer is not None:
-            self.enqueuer.stop()
+        if self._enqueuer is not None:
+            self._enqueuer.stop()
 
     @classmethod
     def dummy_coordinates(cls, image_id, image_sizes, n_samples):
         """
         This function returns a set of image window coordinates
-        which are just from 0 to image_shapes.
+        which are just spatially from 0 to `image_sizes`.
 
         :return: a numpy array of `n_samples` spatial coordinates
         """

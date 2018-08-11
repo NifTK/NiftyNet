@@ -8,11 +8,11 @@ import numpy as np
 import scipy.ndimage
 import tensorflow as tf
 
-from niftynet.engine.image_window_dataset import ImageWindowDataset, ImageWindowDatasetCSV
+from niftynet.contrib.csv_reader.sampler_csv_rows import ImageWindowDatasetCSV
 from niftynet.engine.image_window import LOCATION_FORMAT
 
 
-class ResizeSampler(ImageWindowDatasetCSV):
+class ResizeSamplerCSV(ImageWindowDatasetCSV):
     """
     This class generates samples by rescaling
     the whole image to the desired size
@@ -29,7 +29,6 @@ class ResizeSampler(ImageWindowDatasetCSV):
                  windows_per_image=1,
                  shuffle=True,
                  queue_length=10,
-                 num_threads=4,
                  smaller_final_batch_mode='pad',
                  name='resize_sampler_v2'):
         tf.logging.info('reading size of preprocessed images')
@@ -42,7 +41,6 @@ class ResizeSampler(ImageWindowDatasetCSV):
             batch_size=batch_size,
             windows_per_image=windows_per_image,
             queue_length=queue_length,
-            num_threads=num_threads,
             shuffle=shuffle,
             epoch=-1 if shuffle else 1,
             smaller_final_batch_mode=smaller_final_batch_mode,
@@ -84,8 +82,8 @@ class ResizeSampler(ImageWindowDatasetCSV):
                 coordinates_key = LOCATION_FORMAT.format(name)
                 image_data_key = name
 
-                output_dict[coordinates_key] = self.dummy_coordinates(
-                    image_id, static_window_shapes[name], self.window.n_samples)
+                output_dict[coordinates_key] = np.squeeze(self.dummy_coordinates(
+                    image_id, static_window_shapes[name], self.window.n_samples), axis=0)
                 image_array = []
                 for _ in range(self.window.n_samples):
                     # prepare image data
@@ -106,17 +104,17 @@ class ResizeSampler(ImageWindowDatasetCSV):
                     output_dict[image_data_key] = \
                         np.concatenate(image_array, axis=0)
                 else:
-                    output_dict[image_data_key] = image_array[0]
+                    output_dict[image_data_key] = np.squeeze(image_array[0], axis=0)
             # the output image shape should be
             # [enqueue_batch_size, x, y, z, time, modality]
             # here enqueue_batch_size = 1 as we only have one sample
             # per image
             if self.csv_reader is not None:
                 _, label_dict, _ = self.csv_reader(idx=image_id)
-                output_dict['label'] = label_dict['label']
+                output_dict['label'] = np.squeeze(label_dict['label'], axis=0)
                 output_dict['label_location'] = output_dict['image_location']
             yield output_dict
-            
+
 
 def zoom_3d(image, ratio, interp_order):
     """

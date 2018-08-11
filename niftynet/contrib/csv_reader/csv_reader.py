@@ -8,9 +8,9 @@ from niftynet.layer.base_layer import Layer
 class CSVReader(Layer):
     
     def __init__(self, names=None):
-        self.__paths = None
-        self.__labels = None
-        self.__df = None
+        self._paths = None
+        self._labels = None
+        self._df = None
         self.label_names = None
         self.dims = None
         
@@ -18,25 +18,27 @@ class CSVReader(Layer):
     
     def initialise(self, path_to_csv):
         label_df = pd.read_csv(path_to_csv, header=None, names=['subject_ids', 'labels'])
-        self.__paths = label_df['subject_ids'].values
+        self._paths = label_df['subject_ids'].values
         self.label_names = list(label_df['labels'].unique())
-        self.__df = label_df
+        self._df = label_df
         self.dims = len(self.label_names)
         
-        self.__labels = self.to_ohe(label_df['labels'].values)
+        self._labels = self.to_ohe(label_df['labels'].values)
         return self
     
     def to_ohe(self, labels):
         return [np.eye(len(self.label_names))[self.label_names.index(label)] for label in labels]
     
     def layer_op(self, idx=None, shuffle=True):
-        def apply_expand_dims(x, n):
-            if n==0:
-                return x
-            else:
-                return np.expand_dims(apply_expand_dims(x, n -1), -1)
-        data = self.__labels[idx]
-        label_dict = {'label': apply_expand_dims(np.expand_dims(np.array(data).astype(np.float32), 0), 4)}
+        # def apply_expand_dims(x, n):
+        #     if n==0:
+        #         return x
+        #     return np.expand_dims(apply_expand_dims(x, n - 1), -1)
+        data = self._labels[idx]
+        while len(data.shape) < 4:
+            data = np.expand_dims(data, -1)
+        label_dict = {'label': data}
+        # label_dict = {'label': apply_expand_dims(np.expand_dims(np.array(data).astype(np.float32), 0), 4)}
         return idx, label_dict, None
     
     @property

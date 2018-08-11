@@ -6,21 +6,23 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from niftynet.io.image_reader import ImageReader
 from niftynet.engine.image_window_dataset import ImageWindowDataset
+from niftynet.io.image_reader import ImageReader
 
 IMAGE_PATH_2D_1 = os.path.join('.', 'example_volumes', 'gan_test_data')
 IMAGE_PATH_3D = os.path.join('.', 'testing_data')
+
 
 def get_2d_reader():
     data_param = {'mr': {'path_to_search': IMAGE_PATH_2D_1}}
     reader = ImageReader().initialise(data_param)
     return reader
 
+
 def get_3d_reader():
     data_param = {'mr': {'path_to_search': IMAGE_PATH_3D,
-                         'filename_contains': 'FLAIR',
-                         'interp_order': 1}}
+        'filename_contains': 'FLAIR',
+        'interp_order': 1}}
     reader = ImageReader().initialise(data_param)
     return reader
 
@@ -64,11 +66,11 @@ class ImageWindowDataset_2D_Test(tf.test.TestCase):
         self.assert_window(sampler())
 
     # sampler layer_op()'s output shape is not checked
-    #def test_wrong_window_size_dict(self):
-    #    sampler = ImageWindowDataset(reader=get_2d_reader(),
-    #                                 batch_size=2,
-    #                                 window_sizes=(3,3,0))
-    #    self.assert_tf_window(sampler)
+    def test_wrong_window_size_dict(self):
+       sampler = ImageWindowDataset(reader=get_2d_reader(),
+                                    batch_size=2,
+                                    window_sizes=(3,3,0))
+       self.assert_tf_window(sampler)
 
     def test_windows_per_image(self):
         with self.assertRaisesRegexp(AssertionError, ''):
@@ -92,7 +94,7 @@ class ImageWindowDataset_2D_Test(tf.test.TestCase):
                 pass
             # batch size 3, 40 images in total
             self.assertEqual(
-                np.ceil(reader.num_subjects/np.float(batch_size)), iters)
+                np.ceil(reader.num_subjects / np.float(batch_size)), iters)
 
 
 class ImageWindowDataset_3D_Test(tf.test.TestCase):
@@ -155,7 +157,76 @@ class ImageWindowDataset_3D_Test(tf.test.TestCase):
                 pass
             # batch size 3, 4 images in total
             self.assertEqual(
-                np.ceil(reader.num_subjects/np.float(batch_size)), iters)
+                np.ceil(reader.num_subjects / np.float(batch_size)), iters)
+
+
+class ImageDatasetParamTest(tf.test.TestCase):
+    def run_dataset(self, n_iters, n_threads, **kwargs):
+        sampler = ImageWindowDataset(**kwargs)
+        sampler.set_num_threads(n_threads)
+        with self.test_session() as sess:
+            true_iters = 0
+            windows = []
+            try:
+                for _ in range(min(n_iters, 100)):
+                    windows.append(
+                        sess.run(sampler.pop_batch_op())['mr_location'])
+                    true_iters = true_iters + 1
+            except tf.errors.OutOfRangeError:
+                pass
+            assert true_iters <= 100, 'keep the test smaller than 100 iters'
+        return true_iters, np.concatenate(windows, 0)
+
+
+    def test_function(self):
+        reader = get_2d_reader()
+        #### with default batch padding
+        n_iters, windows = self.run_dataset(
+            n_iters=2,
+            n_threads=3,
+            reader=reader,
+            batch_size=100,
+            smaller_final_batch_mode='pad',
+            epoch=4)
+        # elements: 4 * 40, batch size 100, resulting 2 batches
+        self.assertEqual(n_iters, 2)
+        self.assertEqual(windows.shape[0], 200)
+        # all subjects evaluated
+        uniq, counts = np.unique(windows[:, 0], return_counts=True)
+        self.assertEqual(len(uniq), 41)
+        self.assertTrue(np.all(counts[1:] == 4))
+
+        #### with drop batch
+        n_iters, windows = self.run_dataset(
+            n_iters=2,
+            n_threads=2,
+            reader=reader,
+            batch_size=100,
+            smaller_final_batch_mode='drop',
+            epoch=3)
+        # elements: 4 * 40, batch size 100, resulting 1 batches
+        self.assertEqual(n_iters, 1)
+        self.assertEqual(windows.shape[0], 100)
+        # all subjects evaluated, might not get all unique items
+        # self.assertEqual(len(np.unique(windows[:, 0])), 40)
+
+        #### with drop batch
+        n_iters, windows = self.run_dataset(
+            n_iters=2,
+            n_threads=2,
+            reader=reader,
+            batch_size=100,
+            queue_length=100,
+            smaller_final_batch_mode='dynamic',
+            epoch=4)
+        # elements: 4 * 40, batch size 100, resulting 2 batches
+        self.assertEqual(n_iters, 2)
+        self.assertEqual(windows.shape[0], 160)
+        # all subjects evaluated
+        uniq, counts = np.unique(windows[:, 0], return_counts=True)
+        self.assertEqual(len(uniq), 40)
+        self.assertTrue(np.all(counts == 4))
+
 
 if __name__ == "__main__":
     tf.test.main()

@@ -1,3 +1,7 @@
+from niftynet.engine.image_window_dataset import ImageWindowDataset
+from niftynet.engine.image_window import N_SPATIAL, LOCATION_FORMAT
+
+
 class ImageWindowDatasetCSV(ImageWindowDataset):
     """
     Extending the default sampler to include csv data
@@ -11,7 +15,6 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
                  windows_per_image=1,
                  shuffle=True,
                  queue_length=10,
-                 num_threads=4,
                  epoch=-1,
                  smaller_final_batch_mode='pad',
                  name='random_vector_sampler'):
@@ -24,7 +27,6 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
             windows_per_image=windows_per_image,
             shuffle=shuffle,
             queue_length=queue_length,
-            num_threads=num_threads,
             epoch=epoch,
             smaller_final_batch_mode=smaller_final_batch_mode,
             name=name)
@@ -92,11 +94,10 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
         returns a dictionary of sampler output tensor shapes
         """
         assert self.window, 'Unknown output shapes: self.window not initialised'
-        # if self.csv_reader is not None:
-        #     return {**self.window.tf_shapes, **self.csv_reader.tf_shapes}
-        # else:
-        #     return {**self.window.tf_shapes}
-        return self.window.tf_shapes
+        shape_dict = self.window.tf_shapes
+        if self.csv_reader is not None:
+            shape_dict.update(self.csv_reader.tf_shapes)
+        return shape_dict
 
     @property
     def tf_dtypes(self):
@@ -104,8 +105,7 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
         returns a dictionary of sampler output tensorflow dtypes
         """
         assert self.window, 'Unknown output shapes: self.window not initialised'
-        # if self.csv_reader is not None:
-        #     return {**self.window.tf_dtypes, **self.csv_reader.tf_dtypes}
-        # else:
-        #     return {**self.window.tf_dtypes}
-        return self.window.tf_dtypes
+        shape_dict = self.window.tf_dtypes
+        if self.csv_reader is not None:
+            shape_dict.update(self.csv_reader.tf_dtypes)
+        return shape_dict
