@@ -19,15 +19,11 @@ from six.moves.urllib.parse import urlparse
 from six.moves.urllib.request import urlopen
 from six.moves.urllib.request import urlretrieve
 
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
-
 # Used with the min_download_api settings option to determine
 # if the downloaded configuration file is compatible with
 # this version of NiftyNet downloader code
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
+from niftynet.utilities import NiftyNetLaunchConfig
 from niftynet.utilities.util_common import print_progress_bar
 from niftynet.utilities.versioning import get_niftynet_version, \
     get_niftynet_version_string
@@ -358,7 +354,7 @@ class ConfigStoreCache(object):
 
         config_filename = self.get_local_path(example_id)
 
-        parser = configparser.ConfigParser()
+        parser = NiftyNetLaunchConfig()
         parser.read(config_filename)
         if parser.has_section('config'):
             config_section = dict(parser.items('config'))
