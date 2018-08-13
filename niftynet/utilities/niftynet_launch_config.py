@@ -47,8 +47,11 @@ class NiftyNetLaunchConfig(configparser.ConfigParser):
     def sections(self):
         return super(NiftyNetLaunchConfig, self).sections()
 
-    def items(self, section=configparser._UNSET, raw=False, vars=None):
-        return super(NiftyNetLaunchConfig, self).items(section, raw, vars)
+    def items(self, section=None, raw=False, vars=None):
+        kwargs = {'vars': vars, 'raw': raw}
+        if section is not None:
+            kwargs['section'] = section
+        return super(NiftyNetLaunchConfig, self).items(**kwargs)
 
     def add_section(self, section):
         super(NiftyNetLaunchConfig, self).add_section(section)
