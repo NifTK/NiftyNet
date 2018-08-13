@@ -3,11 +3,12 @@
 NiftyNet launch configuration
 """
 
-
+import os
 try:
     import ConfigParser as configparser
 except ImportError:
     import configparser
+from tensorflow import logging as tf_logging
 
 
 class NiftyNetLaunchConfig(configparser.ConfigParser):
@@ -22,6 +23,25 @@ class NiftyNetLaunchConfig(configparser.ConfigParser):
     """
 
     def read(self, filenames, encoding=None):
+
+        if not isinstance(filenames, (list, )):
+            _filenames = [filenames]
+        else:
+            _filenames = filenames
+
+        warn_deprecation = False
+        for filename in _filenames:
+            if os.path.splitext(filename)[1].lower() == '.ini':
+                warn_deprecation = True
+                break
+
+        if warn_deprecation:
+            tf_logging.warn(
+                'INI configuration files are deprecated in favor of'
+                ' YAML configuration files. Support for INI configuration'
+                ' files will be dropped in a future release.'
+            )
+
         return super(NiftyNetLaunchConfig, self).read(filenames, encoding)
 
     def sections(self):

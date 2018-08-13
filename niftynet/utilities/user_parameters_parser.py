@@ -10,7 +10,6 @@ import argparse
 import os
 import textwrap
 
-from tensorflow import logging as tf_logging
 from niftynet.engine.signal import TRAIN, INFER, EVAL
 from niftynet.utilities.util_common import look_up_operations
 from niftynet.engine.application_factory import ApplicationFactory
@@ -117,13 +116,6 @@ def run():
     config_file_name = __resolve_config_file_path(meta_args.conf)
     config = NiftyNetLaunchConfig()
     config.read(config_file_name)
-
-    if os.path.splitext(config_file_name)[1].lower() == '.ini':
-        tf_logging.warn(
-            'INI configuration files are deprecated in favor of'
-            ' YAML configuration files. Support for INI configuration'
-            ' files will be dropped in a future release.'
-        )
 
     # infer application name from command
     app_name = None
