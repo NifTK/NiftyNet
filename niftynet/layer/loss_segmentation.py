@@ -465,6 +465,52 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
     return 1.0 - tf.reduce_mean(dice_score)
 
 
+def tversky(prediction, ground_truth, weight_map=None, alpha=0.5, beta=0.5):
+    """
+    Function to calculate the Tversky loss for imbalanced data
+
+        Sadegh et al. (2017)
+
+        Tversky loss function for image segmentation
+        using 3D fully convolutional deep networks
+
+    :param prediction: the logits
+    :param ground_truth: the segmentation ground_truth
+    :param alpha: weight of false positives
+    :param beta: weight of false negatives
+    :param weight_map:
+    :return: the loss
+    """
+    prediction = tf.to_float(prediction)
+    if len(ground_truth.shape) == len(prediction.shape):
+        ground_truth = ground_truth[..., -1]
+    one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
+    one_hot = tf.sparse_tensor_to_dense(one_hot)
+
+    p0 = prediction
+    p1 = 1 - prediction
+    g0 = one_hot
+    g1 = 1 - one_hot
+
+    if weight_map is not None:
+        num_classes = prediction.shape[1].value
+        weight_map_flattened = tf.reshape(weight_map, [-1])
+        weight_map_expanded = tf.expand_dims(weight_map_flattened, 1)
+        weight_map_nclasses = tf.tile(weight_map_expanded, [1, num_classes])
+    else:
+        weight_map_nclasses = 1
+
+    tp = tf.reduce_sum(weight_map_nclasses * p0 * g0)
+    fp = alpha * tf.reduce_sum(weight_map_nclasses * p0 * g1)
+    fn = beta * tf.reduce_sum(weight_map_nclasses * p1 * g0)
+
+    EPSILON = 0.00001
+    numerator = tp
+    denominator = tp + fp + fn + EPSILON
+    score = numerator / denominator
+    return 1.0 - tf.reduce_mean(score)
+
+
 def dice_dense(prediction, ground_truth, weight_map=None):
     """
     Computing mean-class Dice similarity.
