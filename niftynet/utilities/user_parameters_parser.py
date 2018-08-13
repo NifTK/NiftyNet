@@ -116,7 +116,7 @@ def run():
     # read configurations, to be parsed by sections
     config_file_name = __resolve_config_file_path(meta_args.conf)
     config = NiftyNetLaunchConfig()
-    config.read([config_file_name])
+    config.read(config_file_name)
 
     if os.path.splitext(config_file_name)[1].lower() == '.ini':
         tf_logging.warn(
