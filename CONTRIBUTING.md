@@ -110,7 +110,7 @@ If the unit tests write files locally, please ensure it's writing to `NiftyNet/t
 #### 4. Run tests locally
 In NiftyNet source code folder, run:
 ```bash
-python -m tests.[name]_test.py
+python -m tests.[name]_test
 ```
 make sure the test works locally.
 The test should finish in a few seconds (using CPU). If it takes significantly longer, please set it as `slow test` in the file:

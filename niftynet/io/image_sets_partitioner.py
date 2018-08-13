@@ -12,6 +12,7 @@ from __future__ import print_function
 import math
 import os
 import random
+import shutil
 
 import pandas
 import tensorflow as tf  # to use the system level logging
@@ -315,10 +316,10 @@ class ImageSetsPartitioner(object):
         except Exception as csv_error:
             tf.logging.fatal(repr(csv_error))
             raise
-        finally:
-            if temp_csv_file:
-                os.remove(temp_csv_file)
-                os.rmdir(os.path.dirname(temp_csv_file))
+
+        if temp_csv_file:
+            shutil.rmtree(os.path.dirname(temp_csv_file), ignore_errors=True)
+
         return csv_list
 
     # pylint: disable=broad-except

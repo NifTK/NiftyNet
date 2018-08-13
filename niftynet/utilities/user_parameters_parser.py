@@ -10,17 +10,13 @@ import argparse
 import os
 import textwrap
 
-try:
-    import ConfigParser as configparser
-except ImportError:
-    import configparser
-
 from niftynet.engine.signal import TRAIN, INFER, EVAL
 from niftynet.utilities.util_common import look_up_operations
 from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.engine.application_factory import SUPPORTED_APP
 from niftynet.io.misc_io import resolve_file_name
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
+from niftynet.utilities import NiftyNetLaunchConfig
 from niftynet.utilities.user_parameters_custom import SUPPORTED_ARG_SECTIONS
 from niftynet.utilities.user_parameters_custom import add_customised_args
 from niftynet.utilities.user_parameters_default import \
@@ -118,7 +114,7 @@ def run():
 
     # read configurations, to be parsed by sections
     config_file_name = __resolve_config_file_path(meta_args.conf)
-    config = configparser.ConfigParser()
+    config = NiftyNetLaunchConfig()
     config.read([config_file_name])
 
     # infer application name from command

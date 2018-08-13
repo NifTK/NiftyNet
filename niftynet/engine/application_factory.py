@@ -86,18 +86,20 @@ SUPPORTED_LOSS_SEGMENTATION = {
         'niftynet.layer.loss_segmentation.dice_dense',
     "Dice_Dense_NS":
         'niftynet.layer.loss_segmentation.dice_dense_nosquare',
+    "Tversky":
+        'niftynet.layer.loss_segmentation.tversky',
     "GDSC":
         'niftynet.layer.loss_segmentation.generalised_dice_loss',
     "WGDL":
         'niftynet.layer.loss_segmentation.generalised_wasserstein_dice_loss',
     "SensSpec":
         'niftynet.layer.loss_segmentation.sensitivity_specificity_loss',
-    "L1Loss":
-        'niftynet.layer.loss_segmentation.l1_loss',
-    "L2Loss":
-        'niftynet.layer.loss_segmentation.l2_loss',
-    "Huber":
-        'niftynet.layer.loss_segmentation.huber_loss'
+    # "L1Loss":
+    #     'niftynet.layer.loss_segmentation.l1_loss',
+    # "L2Loss":
+    #     'niftynet.layer.loss_segmentation.l2_loss',
+    # "Huber":
+    #     'niftynet.layer.loss_segmentation.huber_loss'
 }
 
 SUPPORTED_LOSS_REGRESSION = {
@@ -191,7 +193,7 @@ SUPPORTED_EVALUATIONS = {
     'mse': 'niftynet.evaluation.regression_evaluations.mse',
     'rmse': 'niftynet.evaluation.regression_evaluations.rmse',
     'mae': 'niftynet.evaluation.regression_evaluations.mae',
-    'r2': 'niftynet.contrib.evaluation.regression_evaluations.r2',
+    # 'r2': 'niftynet.contrib.evaluation.regression_evaluations.r2',
     'classification_accuracy': 'niftynet.evaluation.classification_evaluations'
                                '.accuracy',
     'roc_auc': 'niftynet.contrib.evaluation.classification_evaluations.roc_auc',
