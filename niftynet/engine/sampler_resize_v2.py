@@ -92,8 +92,8 @@ class ResizeSampler(ImageWindowDataset):
                     zoom_ratio = [float(p) / float(d) for p, d in
                                   zip(window_shape, image_shape)]
                     image_window = zoom_3d(image=data[name],
-                                           ratio=zoom_ratio, interp_order=
-                                           interp_orders[name][0])
+                                           ratio=zoom_ratio,
+                                           interp_order=interp_orders[name][0])
                 image_array.append(image_window[np.newaxis, ...])
             if len(image_array) > 1:
                 output_dict[image_data_key] = \

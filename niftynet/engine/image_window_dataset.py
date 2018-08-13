@@ -34,7 +34,16 @@ class ImageWindowDataset(Layer):
     a sampler's layer_op function or generator.
 
     If ``from_generator``, ``Dataset.from_generator`` interface will be used,
-    ``Dataset.map`` interface will be used otherwise.
+    ``Dataset.map`` interface will be used otherwise::
+
+        if the windows are from a image reader,
+        the total number of windows produced
+        will be: `epoch x n_subjects x windows_per_image`
+
+        if the windows are from a generator,
+        the total number of windows produced
+        will be: "iterations from the generator" x num_threads
+
     """
 
     # pylint: disable=too-many-arguments
@@ -68,7 +77,7 @@ class ImageWindowDataset(Layer):
 
         self.from_generator = inspect.isgeneratorfunction(self.layer_op)
         self.shuffle = shuffle
-        self.epoch = epoch
+        self.epoch = 1 if self.from_generator else epoch
         self.smaller_final_batch_mode = look_up_operations(
             smaller_final_batch_mode.lower(), SMALLER_FINAL_BATCH_MODE)
 
@@ -81,8 +90,7 @@ class ImageWindowDataset(Layer):
                 reader.tf_dtypes,
                 window_sizes or (-1, -1, -1))
             self.n_subjects = reader.num_subjects
-            self.window.n_samples = \
-                1 if self.from_generator else windows_per_image
+            self.window.n_samples = windows_per_image
 
     @property
     def shapes(self):
@@ -123,19 +131,8 @@ class ImageWindowDataset(Layer):
         Generating each image as a window.
         Overriding this function to create new image sampling strategies.
 
-        This function should either yield a dictionary
-        (for single window per image)::
-
-            yield a dictionary
-
-            {
-             'image_name': a numpy array [h, w, d, chn],
-             'image_name_location': (image_id,
-                                     x_start, y_start, z_start,
-                                     x_end, y_end, z_end)
-            }
-
-        or return a dictionary (for multiple windows per image)::
+        This function should either yield or return a dictionary
+        (of multiple windows per image)::
 
             return a dictionary:
             {
@@ -149,21 +146,13 @@ class ImageWindowDataset(Layer):
         Following the same notation, the dictionary can be extended
         to multiple modalities; the keys will be::
 
-            {'image_name_1', 'image_name_location_1',
-             'image_name_2', 'image_name_location_2', ...}
+            {'image_name_1', 'image_name_1_location',
+             'image_name_2', 'image_name_2_location', ...}
 
         :param idx: image_id used to load the image at the i-th row of
             the input
         :return: a image data dictionary
         """
-
-        # dataset: from a window generator
-        # assumes self.window.n_samples == 1
-        # the generator should yield one window at each iteration
-        assert self.window.n_samples == 1, \
-            'image_window_dataset.layer_op() requires: ' \
-            'windows_per_image should be 1.'
-
         image_id, image_data, _ = self.reader(idx=idx)
         for mod in list(image_data):
             spatial_shape = image_data[mod].shape[:N_SPATIAL]
@@ -171,6 +160,18 @@ class ImageWindowDataset(Layer):
             image_data[LOCATION_FORMAT.format(mod)] = coords
             image_data[mod] = image_data[mod][np.newaxis, ...]
         return image_data
+
+        # # The following is a demo of generator as the layer_op
+        # # Often we don't know the total number of elements that
+        # # will be generated, epoch is always 1.
+        # for idx in range(100):
+        #     image_id, image_data, _ = self.reader()
+        #     for mod in list(image_data):
+        #         spatial_shape = image_data[mod].shape[:N_SPATIAL]
+        #         coords = self.dummy_coordinates(image_id, spatial_shape, 1)
+        #         image_data[LOCATION_FORMAT.format(mod)] = coords
+        #         image_data[mod] = image_data[mod][np.newaxis, ...]
+        #     yield image_data
 
     def run_threads(self, *_args, **_kwargs):
         """
@@ -347,15 +348,14 @@ class ImageWindowDataset(Layer):
                 workers=self._num_threads, max_queue_size=self.queue_length)
             window_generator = self._enqueuer.get
 
-        # element shape expected by `tf.data.Dataset.from_generator`
-        # (the batch dim is removed as the length is 1)
-        element_shapes = {
-            name: self.tf_shapes[name][1:]
-            for name in self.tf_shapes}
+        # dataset from generator
         dataset = tf.data.Dataset.from_generator(
             generator=window_generator,
             output_types=self.tf_dtypes,
-            output_shapes=element_shapes)
+            output_shapes=self.tf_shapes)
+
+        # dataset: slice the n-element window into n single windows
+        dataset = dataset.flat_map(map_func=tf.data.Dataset.from_tensor_slices)
         return dataset
 
     def close_all(self):

@@ -69,12 +69,12 @@ class LinearInterpolateSampler(ImageWindowDataset):
             for (_, mixture) in enumerate(steps):
                 output_vector = \
                     embedding_x * mixture + embedding_y * (1 - mixture)
-                coordinates = np.ones((N_SPATIAL * 2 + 1), dtype=np.int32)
-                coordinates[0:2] = [image_id_x, image_id_y]
+                coordinates = np.ones((1, N_SPATIAL * 2 + 1), dtype=np.int32)
+                coordinates[0, 0:2] = [image_id_x, image_id_y]
                 output_dict = {}
                 for name in self.window.names:
                     coordinates_key = LOCATION_FORMAT.format(name)
                     image_data_key = name
                     output_dict[coordinates_key] = coordinates
-                    output_dict[image_data_key] = output_vector
+                    output_dict[image_data_key] = output_vector[np.newaxis, ...]
                 yield output_dict

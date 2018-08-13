@@ -6,6 +6,7 @@ import os
 import numpy as np
 import tensorflow as tf
 
+from niftynet.engine.image_window import N_SPATIAL, LOCATION_FORMAT
 from niftynet.engine.image_window_dataset import ImageWindowDataset
 from niftynet.io.image_reader import ImageReader
 
@@ -20,14 +21,37 @@ def get_2d_reader():
 
 
 def get_3d_reader():
-    data_param = {'mr': {'path_to_search': IMAGE_PATH_3D,
-        'filename_contains': 'FLAIR',
-        'interp_order': 1}}
+    data_param = {
+        'mr': {
+            'path_to_search': IMAGE_PATH_3D,
+            'filename_contains': 'FLAIR',
+            'interp_order': 1}}
     reader = ImageReader().initialise(data_param)
     return reader
 
 
-class ImageWindowDataset_2D_Test(tf.test.TestCase):
+class ImageWindowGenerator(ImageWindowDataset):
+    """
+    simple test class, replace ImageWindowDataset's layer_op
+    """
+
+    def __init__(self, *args, **kwargs):
+        ImageWindowDataset.__init__(self, *args, **kwargs)
+
+    def layer_op(self):
+        for idx in range(self.n_subjects):
+            yield super(ImageWindowGenerator, self).layer_op(idx)
+        # for idx in range(self.n_subjects):
+        #     image_id, image_data, _ = self.reader(idx=idx)
+        #     for mod in list(image_data):
+        #         spatial_shape = image_data[mod].shape[:N_SPATIAL]
+        #         coords = self.dummy_coordinates(image_id, spatial_shape, 1)
+        #         image_data[LOCATION_FORMAT.format(mod)] = coords
+        #         image_data[mod] = image_data[mod][np.newaxis, ...]
+        #     yield image_data
+
+
+class ImageWindowDataset_Generator_2D_Test(tf.test.TestCase):
     def assert_window(self, window):
         if not isinstance(window, dict):
             window = next(window)
@@ -43,45 +67,48 @@ class ImageWindowDataset_2D_Test(tf.test.TestCase):
         self.assert_window(window)
 
     def test_simple(self):
-        sampler = ImageWindowDataset(reader=get_2d_reader())
+        sampler = ImageWindowGenerator(reader=get_2d_reader())
         self.assert_tf_window(sampler)
         self.assert_window(sampler())
 
     def test_batch_size(self):
         # batch size doesn't change the numpy interface
-        sampler = ImageWindowDataset(reader=get_2d_reader(), batch_size=2)
+        sampler = ImageWindowGenerator(reader=get_2d_reader(), batch_size=2)
         self.assert_tf_window(sampler)
         self.assert_window(sampler())
 
     def test_window_size(self):
-        sampler = ImageWindowDataset(reader=get_2d_reader(),
-                                     window_sizes=(0, 0, 0), batch_size=2)
+        sampler = ImageWindowGenerator(
+            reader=get_2d_reader(),
+            window_sizes=(0, 0, 0), batch_size=2)
         self.assert_tf_window(sampler)
         self.assert_window(sampler())
 
     def test_window_size_dict(self):
-        sampler = ImageWindowDataset(reader=get_2d_reader(),
-                                     window_sizes={'mr': (0, 0, 0)},
-                                     batch_size=2)
+        sampler = ImageWindowGenerator(
+            reader=get_2d_reader(),
+            window_sizes={'mr': (0, 0, 0)},
+            batch_size=2)
         self.assert_tf_window(sampler)
         self.assert_window(sampler())
 
     # # sampler layer_op()'s output shape is not checked
     # def test_wrong_window_size_dict(self):
-    #    sampler = ImageWindowDataset(reader=get_2d_reader(),
-    #                                 batch_size=2,
-    #                                 window_sizes=(3,3,0))
-    #    self.assert_tf_window(sampler)
+    #     sampler = ImageWindowGenerator(
+    #         reader=get_2d_reader(),
+    #         batch_size=2,
+    #         window_sizes=(3, 3, 0))
+    #     self.assert_tf_window(sampler)
 
     def test_windows_per_image(self):
-        sampler = ImageWindowDataset(reader=get_2d_reader(), batch_size=2,
-                                     windows_per_image=2)
+        sampler = ImageWindowGenerator(
+            reader=get_2d_reader(), batch_size=2, windows_per_image=2)
         self.assert_window(sampler())
 
     def test_epoch(self):
         reader = get_2d_reader()
         batch_size = 3
-        sampler = ImageWindowDataset(
+        sampler = ImageWindowGenerator(
             reader=reader, batch_size=batch_size, epoch=1)
         with self.test_session() as sess:
             sampler.run_threads()
@@ -98,7 +125,7 @@ class ImageWindowDataset_2D_Test(tf.test.TestCase):
                 np.ceil(reader.num_subjects / np.float(batch_size)), iters)
 
 
-class ImageWindowDataset_3D_Test(tf.test.TestCase):
+class ImageWindowDataset_Generator_3D_Test(tf.test.TestCase):
     def assert_window(self, window):
         if not isinstance(window, dict):
             window = next(window)
@@ -115,38 +142,41 @@ class ImageWindowDataset_3D_Test(tf.test.TestCase):
         self.assert_window(window)
 
     def test_simple(self):
-        sampler = ImageWindowDataset(reader=get_3d_reader())
+        sampler = ImageWindowGenerator(reader=get_3d_reader())
         self.assert_tf_window(sampler)
         self.assert_window(sampler())
 
     def test_batch_size(self):
         # batch size doesn't change the numpy interface
-        sampler = ImageWindowDataset(reader=get_3d_reader(), batch_size=2)
+        sampler = ImageWindowGenerator(reader=get_3d_reader(), batch_size=2)
         self.assert_tf_window(sampler)
         self.assert_window(sampler())
 
     def test_window_size(self):
-        sampler = ImageWindowDataset(reader=get_3d_reader(),
-                                     window_sizes=(0, 0, 0), batch_size=2)
+        sampler = ImageWindowGenerator(
+            reader=get_3d_reader(),
+            window_sizes=(0, 0, 0), batch_size=2)
         self.assert_tf_window(sampler)
         self.assert_window(sampler())
 
     def test_window_size_dict(self):
-        sampler = ImageWindowDataset(reader=get_3d_reader(),
-                                     window_sizes={'mr': (0, 0, 0)},
-                                     batch_size=2)
+        sampler = ImageWindowGenerator(
+            reader=get_3d_reader(),
+            window_sizes={'mr': (0, 0, 0)},
+            batch_size=2)
         self.assert_tf_window(sampler)
         self.assert_window(sampler())
 
     def test_windows_per_image(self):
-        sampler = ImageWindowDataset(reader=get_3d_reader(), batch_size=2,
-                                     windows_per_image=2)
+        sampler = ImageWindowGenerator(
+            reader=get_3d_reader(), batch_size=2,
+            windows_per_image=2)
         self.assert_window(sampler())
 
     def test_epoch(self):
         reader = get_3d_reader()
         batch_size = 3
-        sampler = ImageWindowDataset(
+        sampler = ImageWindowGenerator(
             reader=reader, batch_size=batch_size, epoch=1)
         with self.test_session() as sess:
             sampler.run_threads()
@@ -165,7 +195,7 @@ class ImageWindowDataset_3D_Test(tf.test.TestCase):
 
 class ImageDatasetParamTest(tf.test.TestCase):
     def run_dataset(self, n_iters, n_threads, **kwargs):
-        sampler = ImageWindowDataset(**kwargs)
+        sampler = ImageWindowGenerator(**kwargs)
         sampler.set_num_threads(n_threads)
         with self.test_session() as sess:
             true_iters = 0
@@ -190,6 +220,7 @@ class ImageDatasetParamTest(tf.test.TestCase):
             reader=reader,
             batch_size=100,
             smaller_final_batch_mode='pad',
+            windows_per_image=1,
             epoch=4)
         # elements: 4 * 40, batch size 100, resulting 2 batches
         self.assertEqual(n_iters, 2)

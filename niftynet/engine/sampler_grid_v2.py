@@ -73,8 +73,8 @@ class GridSampler(ImageWindowDataset):
                 'grid sampling window sizes: %s', static_window_shapes)
             if extra_locations > 0:
                 tf.logging.info(
-                    "yielding %d locations from image, "
-                    "extended to %d to be divisible by batch size %d",
+                    "yielding %s locations from image, "
+                    "extended to %s to be divisible by batch size %s",
                     n_locations, total_locations, self.batch_size)
             else:
                 tf.logging.info(
@@ -100,14 +100,14 @@ class GridSampler(ImageWindowDataset):
                             "smaller than the image length in each dim.")
                         raise
                     # fill output dict with data
-                    coordinates_key = LOCATION_FORMAT.format(name)
-                    image_data_key = name
-                    output_dict[coordinates_key] = coordinates[name][idx, ...]
-                    output_dict[image_data_key] = image_window[...]
+                    coord_key = LOCATION_FORMAT.format(name)
+                    image_key = name
+                    output_dict[coord_key] = coordinates[name][idx:idx+1, ...]
+                    output_dict[image_key] = image_window[np.newaxis, ...]
                 yield output_dict
 
         # this is needed because otherwise reading beyond the last element
-        # raises an outofrange error, and the last grid sample
+        # raises an out-of-range error, and the last grid sample
         # will not be processed properly.
         try:
             for _ in range(1):

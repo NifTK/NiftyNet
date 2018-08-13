@@ -64,16 +64,16 @@ class RandomVectorSampler(ImageWindowDataset):
             embedding_x = np.random.normal(
                 self.mean,
                 self.stddev,
-                *self.window.shapes[self.window.names[0]][1:])
+                self.window.shapes[self.window.names[0]])
             embedding_y = np.random.normal(
                 self.mean,
                 self.stddev,
-                *self.window.shapes[self.window.names[0]][1:])
+                self.window.shapes[self.window.names[0]])
             steps = np.linspace(0, 1, self.n_interpolations)
             for (_, mixture) in enumerate(steps):
                 output_vector = \
                     embedding_x * mixture + embedding_y * (1 - mixture)
-                coordinates = np.ones((N_SPATIAL * 2 + 1), dtype=np.int32)
+                coordinates = np.ones((1, N_SPATIAL * 2 + 1), dtype=np.int32)
                 output_dict = {}
                 for name in self.window.names:
                     coordinates_key = LOCATION_FORMAT.format(name)

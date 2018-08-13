@@ -4,7 +4,8 @@ This module implements a sampler threads controller.
 """
 import tensorflow as tf
 
-from niftynet.engine.signal import SESS_STARTED, SESS_FINISHED
+# from niftynet.engine.signal import SESS_STARTED
+from niftynet.engine.signal import SESS_FINISHED
 from niftynet.utilities.util_common import traverse_nested
 
 

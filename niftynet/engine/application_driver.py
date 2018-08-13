@@ -203,7 +203,7 @@ class ApplicationDriver(object):
 
             except KeyboardInterrupt:
                 tf.logging.warning('User cancelled application')
-            except tf.errors.OutOfRangeError:
+            except (tf.errors.OutOfRangeError, EOFError):
                 if not loop_status.get('normal_exit', False):
                     # reached the end of inference Dataset
                     loop_status['normal_exit'] = True
