@@ -133,7 +133,6 @@ class LossFunction(Layer):
                     dtype=tf.float32,
                     parallel_iterations=1)
 
-
                 # loss averaged over batch
                 data_loss.append(tf.reduce_mean(loss_batch))
             # loss averaged over multiple scales

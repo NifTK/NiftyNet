@@ -14,12 +14,14 @@ class SamplerThreading(object):
     """
 
     def __init__(self, **_unused):
-        SESS_STARTED.connect(self.start_sampler_threads)
+        # SESS_STARTED.connect(self.start_sampler_threads)
         SESS_FINISHED.connect(self.stop_sampler_threads)
 
     def start_sampler_threads(self, _sender, **_unused_msg):
         """
         Get samplers from application and try to run sampler's threads.
+
+        (deprecating)
 
         :param sender:
         :param _unused_msg:
