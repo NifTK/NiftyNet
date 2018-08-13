@@ -140,7 +140,7 @@ class ResizeSamplesAggregatorTest(tf.test.TestCase):
         more_batch = True
 
         with self.test_session() as sess:
-            sampler.run_threads(num_threads=2)
+            sampler.set_num_threads(2)
             while more_batch:
                 try:
                     out = sess.run(sampler.pop_batch_op())
@@ -172,7 +172,7 @@ class ResizeSamplesAggregatorTest(tf.test.TestCase):
         more_batch = True
 
         with self.test_session() as sess:
-            sampler.run_threads(num_threads=2)
+            sampler.set_num_threads(2)
             while more_batch:
                 try:
                     out = sess.run(sampler.pop_batch_op())
@@ -204,7 +204,7 @@ class ResizeSamplesAggregatorTest(tf.test.TestCase):
         more_batch = True
 
         with self.test_session() as sess:
-            sampler.run_threads(num_threads=2)
+            sampler.set_num_threads(2)
             while more_batch:
                 try:
                     out = sess.run(sampler.pop_batch_op())
@@ -237,7 +237,7 @@ class ResizeSamplesAggregatorTest(tf.test.TestCase):
         more_batch = True
 
         with self.test_session() as sess:
-            sampler.run_threads(num_threads=2)
+            sampler.set_num_threads(2)
             while more_batch:
                 try:
                     out = sess.run(sampler.pop_batch_op())

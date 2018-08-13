@@ -112,7 +112,7 @@ class GridSamplerTest(tf.test.TestCase):
                               window_border=(0, 0, 0),
                               queue_length=10)
         with self.test_session() as sess:
-            sampler.run_threads(num_threads=2)
+            sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, (10, 8, 10, 2, 2))
         sampler.close_all()
@@ -125,7 +125,7 @@ class GridSamplerTest(tf.test.TestCase):
                               window_border=(0, 0, 0),
                               queue_length=10)
         with self.test_session() as sess:
-            sampler.run_threads(num_threads=2)
+            sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, (10, 20, 15, 2))
         sampler.close_all()
@@ -138,7 +138,7 @@ class GridSamplerTest(tf.test.TestCase):
                               window_border=(0, 0, 0),
                               queue_length=10)
         with self.test_session() as sess:
-            sampler.run_threads(num_threads=1)
+            sampler.set_num_threads(1)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, (10, 10, 7, 1))
         sampler.close_all()
@@ -151,7 +151,7 @@ class GridSamplerTest(tf.test.TestCase):
                               window_border=(0, 0, 0),
                               queue_length=10)
         with self.test_session() as sess:
-            sampler.run_threads(num_threads=1)
+            sampler.set_num_threads(1)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, (10, 8, 2, 256, 2))
         sampler.close_all()

@@ -117,7 +117,7 @@ class BalancedSamplerTest(tf.test.TestCase):
                                   windows_per_image=10,
                                   queue_length=10)
         with self.test_session() as sess:
-            sampler.run_threads(num_threads=2)
+            sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, (2, 7, 10, 2, 2))
         sampler.close_all()
@@ -129,7 +129,7 @@ class BalancedSamplerTest(tf.test.TestCase):
                                   windows_per_image=10,
                                   queue_length=10)
         with self.test_session() as sess:
-            sampler.run_threads(num_threads=2)
+            sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, (2, 10, 9, 1))
         sampler.close_all()
@@ -141,7 +141,7 @@ class BalancedSamplerTest(tf.test.TestCase):
                                   windows_per_image=10,
                                   queue_length=10)
         with self.test_session() as sess:
-            sampler.run_threads(num_threads=2)
+            sampler.set_num_threads(2)
             #with self.assertRaisesRegexp(tf.errors.OutOfRangeError, ""):
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape[1:], (8, 2, 256, 2))

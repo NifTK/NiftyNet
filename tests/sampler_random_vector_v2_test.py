@@ -14,7 +14,7 @@ class RandomVectorSamplerTest(tf.test.TestCase):
                                       batch_size=20,
                                       repeat=None)
         with self.test_session() as sess:
-            sampler.run_threads(num_threads=2)
+            sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['test_vector'].shape, (20, 100))
         sampler.close_all()
@@ -39,7 +39,7 @@ class RandomVectorSamplerTest(tf.test.TestCase):
                                       n_interpolations=n_interpolations,
                                       repeat=repeat)
         with self.test_session() as sess:
-            sampler.run_threads(num_threads=1)
+            sampler.set_num_threads(1)
             n_output = 0
             for _ in range(2):
                 out_vector = sess.run(sampler.pop_batch_op())

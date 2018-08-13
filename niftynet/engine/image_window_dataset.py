@@ -173,26 +173,6 @@ class ImageWindowDataset(Layer):
         #         image_data[mod] = image_data[mod][np.newaxis, ...]
         #     yield image_data
 
-    def run_threads(self, *_args, **_kwargs):
-        """
-        To be called at the beginning of running graph variables,
-        to initialise dataset iterator.
-
-        (Deprecating)
-
-        :param _args: for compatibilities
-        :param _kwargs:
-        :return:
-        """
-        if self.dataset is None or self.iterator is None:
-            self.init_dataset()
-            self.iterator = self.dataset.make_one_shot_iterator()
-        #     self.iterator = tf.data.Iterator.from_structure(
-        #         self.dataset.output_types, self.dataset.output_shapes)
-        # sess = session or tf.get_default_session()
-        # if sess is not None:
-        #     sess.run(self.iterator.make_initializer(self.dataset))
-
     def pop_batch_op(self):
         """
         This function is used when connecting a sampler output
@@ -357,6 +337,27 @@ class ImageWindowDataset(Layer):
         # dataset: slice the n-element window into n single windows
         dataset = dataset.flat_map(map_func=tf.data.Dataset.from_tensor_slices)
         return dataset
+
+    def run_threads(self, *_args, **_kwargs):
+        """
+        This function is created for compatibility purposes
+
+        (Deprecating)
+
+        :param _args:
+        :param _kwargs:
+        :return:
+        """
+        pass
+        # if self.dataset is None or self.iterator is None:
+        #     self.init_dataset()
+        #     self.iterator = self.dataset.make_one_shot_iterator()
+
+        #     self.iterator = tf.data.Iterator.from_structure(
+        #         self.dataset.output_types, self.dataset.output_shapes)
+        # sess = session or tf.get_default_session()
+        # if sess is not None:
+        #     sess.run(self.iterator.make_initializer(self.dataset))
 
     def close_all(self):
         """

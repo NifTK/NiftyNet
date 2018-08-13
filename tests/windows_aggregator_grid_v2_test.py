@@ -142,7 +142,7 @@ class GridSamplesAggregatorTest(tf.test.TestCase):
         more_batch = True
 
         with self.test_session() as sess:
-            sampler.run_threads(num_threads=2)
+            sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
                 more_batch = aggregator.decode_batch(
@@ -172,7 +172,7 @@ class GridSamplesAggregatorTest(tf.test.TestCase):
             interp_order=0)
         more_batch = True
         with self.test_session() as sess:
-            sampler.run_threads(num_threads=2)
+            sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
                 more_batch = aggregator.decode_batch(
@@ -202,7 +202,7 @@ class GridSamplesAggregatorTest(tf.test.TestCase):
             interp_order=0)
         more_batch = True
         with self.test_session() as sess:
-            sampler.run_threads(num_threads=2)
+            sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
                 more_batch = aggregator.decode_batch(
@@ -234,7 +234,7 @@ class GridSamplesAggregatorTest(tf.test.TestCase):
             interp_order=0)
         more_batch = True
         with self.test_session() as sess:
-            sampler.run_threads(num_threads=2)
+            sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
                 more_batch = aggregator.decode_batch(

@@ -111,7 +111,6 @@ class ImageWindowDataset_Generator_2D_Test(tf.test.TestCase):
         sampler = ImageWindowGenerator(
             reader=reader, batch_size=batch_size, epoch=1)
         with self.test_session() as sess:
-            sampler.run_threads()
             next_element = sampler.pop_batch_op()
             iters = 0
             try:
@@ -137,7 +136,6 @@ class ImageWindowDataset_Generator_3D_Test(tf.test.TestCase):
 
     def assert_tf_window(self, sampler):
         with self.test_session() as sess:
-            sampler.run_threads()
             window = sess.run(sampler.pop_batch_op())
         self.assert_window(window)
 
@@ -179,7 +177,6 @@ class ImageWindowDataset_Generator_3D_Test(tf.test.TestCase):
         sampler = ImageWindowGenerator(
             reader=reader, batch_size=batch_size, epoch=1)
         with self.test_session() as sess:
-            sampler.run_threads()
             next_element = sampler.pop_batch_op()
             iters = 0
             try:
