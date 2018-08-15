@@ -68,7 +68,8 @@ setup(
         'pandas',
         'pillow',
         'blinker',
-        'packaging'
+        'packaging',
+        'pyyaml',
     ],
 
     entry_points={
