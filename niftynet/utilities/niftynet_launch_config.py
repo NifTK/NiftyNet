@@ -42,25 +42,25 @@ class NiftyNetLaunchConfig(configparser.ConfigParser):
                 ' files will be dropped in a future release.'
             )
 
-        return super(NiftyNetLaunchConfig, self).read(filenames, encoding)
+        return configparser.ConfigParser.read(self, filenames, encoding)
 
     def sections(self):
-        return super(NiftyNetLaunchConfig, self).sections()
+        return configparser.ConfigParser.sections(self)
 
     def items(self, section=None, raw=False, vars=None):
         kwargs = {'vars': vars, 'raw': raw}
         if section is not None:
             kwargs['section'] = section
-        return super(NiftyNetLaunchConfig, self).items(**kwargs)
+        return configparser.ConfigParser.items(self, **kwargs)
 
     def add_section(self, section):
-        super(NiftyNetLaunchConfig, self).add_section(section)
+        configparser.ConfigParser.add_section(self, section)
 
     def set(self, section, option, value=None):
-        super(NiftyNetLaunchConfig, self).set(section, option, value)
+        configparser.ConfigParser.set(self, section, option, value)
 
     def remove_section(self, section):
-        super(NiftyNetLaunchConfig, self).remove_section(section)
+        configparser.ConfigParser.remove_section(self, section)
 
     def has_section(self, section):
-        return super(NiftyNetLaunchConfig, self).has_section(section)
+        return configparser.ConfigParser.has_section(self, section)
