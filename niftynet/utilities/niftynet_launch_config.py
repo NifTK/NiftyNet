@@ -31,6 +31,10 @@ class NiftyNetLaunchConfig(configparser.ConfigParser):
 
         configparser.ConfigParser.__init__(self)
 
+        # used both as actual configuration dict, and as flag
+        # indicating what file has been used
+        self._yaml_dict = dict()
+
     def read(self, filename, encoding=None):
         """
         Read in given file and store configuration.
