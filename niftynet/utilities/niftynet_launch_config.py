@@ -31,27 +31,27 @@ class NiftyNetLaunchConfig(configparser.ConfigParser):
 
         configparser.ConfigParser.__init__(self)
 
-    def read(self, filenames, encoding=None):
+    def read(self, filename, encoding=None):
+        """
+        Read in given file and store configuration.
 
-        if not isinstance(filenames, (list, )):
-            _filenames = [filenames]
-        else:
-            _filenames = filenames
+        Any newly read-in configuration will have precedence
+        over existing configuration.
 
-        warn_deprecation = False
-        for filename in _filenames:
-            if os.path.splitext(filename)[1].lower() == '.ini':
-                warn_deprecation = True
-                break
+        :param filename: contrary to `ConfigParser`, this
+        method supports reading of only a single file
+        """
 
-        if warn_deprecation:
+        file_ext = os.path.splitext(filename)[1].lower()
+
+        if file_ext == '.ini':
             tf_logging.warn(
                 'INI configuration files are deprecated in favor of'
                 ' YAML configuration files. Support for INI configuration'
                 ' files will be dropped in a future release.'
             )
 
-        return configparser.ConfigParser.read(self, filenames, encoding)
+        return configparser.ConfigParser.read(self, filename, encoding)
 
     def sections(self):
         return configparser.ConfigParser.sections(self)
