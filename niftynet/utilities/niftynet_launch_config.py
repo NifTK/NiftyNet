@@ -85,7 +85,10 @@ class NiftyNetLaunchConfig(configparser.ConfigParser):
             raise ValueError('Configuration file format not recognised.')
 
     def sections(self):
-        return configparser.ConfigParser.sections(self)
+        if self._yaml_dict:
+            return self._yaml_dict.keys()
+        else:
+            return configparser.ConfigParser.sections(self)
 
     def items(self, section=None, raw=False, vars=None):
         kwargs = {'vars': vars, 'raw': raw}
