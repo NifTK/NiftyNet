@@ -9,6 +9,7 @@ try:
 except ImportError:
     import configparser
 from tensorflow import logging as tf_logging
+import yaml
 
 
 class NiftyNetLaunchConfig(configparser.ConfigParser):
@@ -44,18 +45,44 @@ class NiftyNetLaunchConfig(configparser.ConfigParser):
 
         :param filename: contrary to `ConfigParser`, this
         method supports reading of only a single file
+
+        :raises ValueError: if newly passed configuration file
+        is incompatible with existing configuration, i.e.
+        YAML configuration has been read previously, or vice
+        versa.
         """
 
+        yaml_ext, ini_ext = '.yml', '.ini'
         file_ext = os.path.splitext(filename)[1].lower()
 
-        if file_ext == '.ini':
+        if file_ext == ini_ext:
             tf_logging.warn(
                 'INI configuration files are deprecated in favor of'
                 ' YAML configuration files. Support for INI configuration'
                 ' files will be dropped in a future release.'
             )
+            if self._yaml_dict:
+                raise ValueError(
+                    'YAML configuration read previously. Refusing to'
+                    ' read in INI on top of it.'
+                )
 
-        return configparser.ConfigParser.read(self, filename, encoding)
+            return configparser.ConfigParser.read(self, filename, encoding)
+
+        elif file_ext == yaml_ext:
+            if configparser.ConfigParser.sections(self):
+                raise ValueError(
+                    'INI configuration read previously. Refusing to'
+                    ' read in YAML on top of it.'
+                )
+
+            with open(filename) as yaml_file:
+                self._yaml_dict = yaml.load(yaml_file.read())
+
+            return self._yaml_dict
+
+        else:
+            raise ValueError('Configuration file format not recognised.')
 
     def sections(self):
         return configparser.ConfigParser.sections(self)
