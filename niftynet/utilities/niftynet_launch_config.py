@@ -103,7 +103,13 @@ class NiftyNetLaunchConfig(configparser.ConfigParser):
             return configparser.ConfigParser.items(self, **kwargs)
 
     def add_section(self, section):
-        configparser.ConfigParser.add_section(self, section)
+        # sanity check
+        assert section
+        if self._yaml_dict:
+            if section not in self._yaml_dict:
+                self._yaml_dict[section] = dict()
+        else:
+            configparser.ConfigParser.add_section(self, section)
 
     def set(self, section, option, value=None):
         configparser.ConfigParser.set(self, section, option, value)
