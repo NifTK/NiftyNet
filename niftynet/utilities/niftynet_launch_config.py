@@ -123,7 +123,13 @@ class NiftyNetLaunchConfig(configparser.ConfigParser):
             configparser.ConfigParser.set(self, section, option, value)
 
     def remove_section(self, section):
-        configparser.ConfigParser.remove_section(self, section)
+        # sanity check
+        assert section
+
+        if self._yaml_dict:
+            self._yaml_dict.pop(section, None)
+        else:
+            configparser.ConfigParser.remove_section(self, section)
 
     def has_section(self, section):
         return configparser.ConfigParser.has_section(self, section)
