@@ -91,10 +91,16 @@ class NiftyNetLaunchConfig(configparser.ConfigParser):
             return configparser.ConfigParser.sections(self)
 
     def items(self, section=None, raw=False, vars=None):
-        kwargs = {'vars': vars, 'raw': raw}
-        if section is not None:
-            kwargs['section'] = section
-        return configparser.ConfigParser.items(self, **kwargs)
+        if self._yaml_dict:
+            if section is not None:
+                return self._yaml_dict[section]
+            else:
+                return self._yaml_dict
+        else:
+            kwargs = {'vars': vars, 'raw': raw}
+            if section is not None:
+                kwargs['section'] = section
+            return configparser.ConfigParser.items(self, **kwargs)
 
     def add_section(self, section):
         configparser.ConfigParser.add_section(self, section)
