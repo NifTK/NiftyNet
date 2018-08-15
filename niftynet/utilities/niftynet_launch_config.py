@@ -16,11 +16,20 @@ class NiftyNetLaunchConfig(configparser.ConfigParser):
     Launch configuration settings.
 
     This class provides the same interface and functionality
-    as the built-in `ConfigParser` class. Beyond that, it
+    as the built-in `ConfigParser` class, except for the
+    constructor, which takes no arguments. Beyond that, it
     can also parse the new YAML configuration format of
     NiftyNet. The former is for backwards compatibility only,
     while the latter is the purpose of this class' life.
     """
+
+    def __init__(self):
+        """
+        Initialise empty configuration, ready to read in a
+        configuration file.
+        """
+
+        configparser.ConfigParser.__init__(self)
 
     def read(self, filenames, encoding=None):
 
