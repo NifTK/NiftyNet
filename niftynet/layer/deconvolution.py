@@ -8,6 +8,7 @@ from niftynet.layer import layer_util
 from niftynet.layer.activation import ActiLayer
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.bn import BNLayer
+from niftynet.layer.gn import GNLayer
 from niftynet.utilities.util_common import look_up_operations
 
 SUPPORTED_OP = {'2D': tf.nn.conv2d_transpose,
@@ -175,6 +176,8 @@ class DeconvolutionalLayer(TrainableLayer):
         self.layer_name = '{}'.format(name)
         if self.with_bn:
             self.layer_name += '_bn'
+        else:
+            self.layer_name += '_gn'
         if self.acti_func is not None:
             self.layer_name += '_{}'.format(self.acti_func)
         super(DeconvolutionalLayer, self).__init__(name=self.layer_name)
@@ -220,7 +223,13 @@ class DeconvolutionalLayer(TrainableLayer):
                 eps=self.eps,
                 name='bn_')
             output_tensor = bn_layer(output_tensor, is_training)
-
+        else:
+            gn_layer = GNLayer(
+                regularizer=self.regularizers['w'],
+                eps=self.eps,
+                name='gn_')
+            output_tensor = gn_layer(output_tensor)
+        
         if self.acti_func is not None:
             acti_layer = ActiLayer(
                 func=self.acti_func,
