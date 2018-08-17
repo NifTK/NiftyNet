@@ -27,8 +27,13 @@ class IniYamlEquivalenceTest(TestCase):
         raise NotImplementedError
 
     def test_incompatible_file_not_read(self):
-        # TODO
-        raise NotImplementedError
+        self.ini_config.read(IniYamlEquivalenceTest.ini_file)
+        with self.assertRaises(ValueError):
+            self.ini_config.read(IniYamlEquivalenceTest.yaml_file)
+
+        self.yaml_config.read(IniYamlEquivalenceTest.yaml_config)
+        with self.assertRaises(ValueError):
+            self.yaml_config.read(IniYamlEquivalenceTest.ini_file)
 
     def test_sections_same(self):
         # TODO
