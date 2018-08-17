@@ -41,8 +41,11 @@ class IniYamlEquivalenceTest(TestCase):
             self.yaml_config.read(IniYamlEquivalenceTest.ini_file)
 
     def test_sections_same(self):
-        # TODO
-        raise NotImplementedError
+        ini_sections = self.ini_config.sections()
+        yaml_sections = self.yaml_config.sections()
+        self.assertIsNotNone(yaml_sections)
+        self.assertFalse(yaml_sections == dict())
+        self.assertTrue(yaml_sections == ini_sections)
 
     def test_items_same(self):
         # TODO
