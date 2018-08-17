@@ -48,8 +48,11 @@ class IniYamlEquivalenceTest(TestCase):
         self.assertTrue(yaml_sections == ini_sections)
 
     def test_add_section_same(self):
-        # TODO
-        raise NotImplementedError
+        new_section = 'new_section_that_should_not_exist'
+        self.ini_config.add_section(new_section)
+        self.assertIn(new_section, self.ini_config.sections())
+        self.yaml_config.add_section(new_section)
+        self.assertTrue(self.yaml_config.items() == self.ini_config.items())
 
     def test_set_same(self):
         # TODO
