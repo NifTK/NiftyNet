@@ -8,3 +8,4 @@ pandas
 pillow
 blinker
 packaging
+pyyaml
