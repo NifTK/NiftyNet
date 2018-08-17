@@ -59,8 +59,10 @@ class IniYamlEquivalenceTest(TestCase):
         raise NotImplementedError
 
     def test_remove_section_same(self):
-        # TODO
-        raise NotImplementedError
+        section_to_remove = self.ini_config.sections()[0]
+        self.ini_config.remove_section(section_to_remove)
+        self.yaml_config.remove_section(section_to_remove)
+        self.assertTrue(self.yaml_config.items() == self.ini_config.items())
 
     def has_section_same(self):
         # TODO
