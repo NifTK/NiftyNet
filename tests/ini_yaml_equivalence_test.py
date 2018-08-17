@@ -1,5 +1,6 @@
 from unittest import TestCase
 import os
+from niftynet.utilities import NiftyNetLaunchConfig
 
 
 class IniYamlEquivalenceTest(TestCase):
@@ -18,8 +19,8 @@ class IniYamlEquivalenceTest(TestCase):
         )
 
     def setUp(self):
-        # TODO
-        raise NotImplementedError
+        self.ini_config = NiftyNetLaunchConfig()
+        self.yaml_config = NiftyNetLaunchConfig()
 
     def test_read_ini_equivalent_to_read_yaml(self):
         # TODO
