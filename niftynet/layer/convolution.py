@@ -134,6 +134,7 @@ class ConvolutionalLayer(TrainableLayer):
 
         self.acti_func = acti_func
         self.with_bn = with_bn
+        self.with_gn = with_gn
         self.preactivation = preactivation
         self.layer_name = '{}'.format(name)
         if self.with_bn and self.with_gn:

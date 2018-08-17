@@ -174,12 +174,13 @@ class DeconvolutionalLayer(TrainableLayer):
 
         self.acti_func = acti_func
         self.with_bn = with_bn
+        self.with_gn = with_gn
         self.layer_name = '{}'.format(name)
         if self.with_bn and self.with_gn:
             raise ValueError('only choose either with_bn or with_gn')
         elif self.with_bn:
             self.layer_name += '_bn'
-        elif:
+        elif self.with_gn:
             self.layer_name += '_gn'
         else:
             pass
