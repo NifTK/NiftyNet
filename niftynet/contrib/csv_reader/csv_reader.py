@@ -35,9 +35,9 @@ class CSVReader(Layer):
         #         return x
         #     return np.expand_dims(apply_expand_dims(x, n - 1), -1)
         data = self._labels[idx]
-        while len(data.shape) < 4:
+        while len(data.shape) < 5:
             data = np.expand_dims(data, -1)
-        label_dict = {'label': data}
+        label_dict = {'label': np.expand_dims(data, 0)}
         # label_dict = {'label': apply_expand_dims(np.expand_dims(np.array(data).astype(np.float32), 0), 4)}
         return idx, label_dict, None
     
