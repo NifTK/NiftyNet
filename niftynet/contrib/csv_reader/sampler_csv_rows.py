@@ -15,6 +15,7 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
                  windows_per_image=1,
                  shuffle=True,
                  queue_length=10,
+                 num_threads=4,
                  epoch=-1,
                  smaller_final_batch_mode='pad',
                  name='random_vector_sampler'):
@@ -30,6 +31,7 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
             epoch=epoch,
             smaller_final_batch_mode=smaller_final_batch_mode,
             name=name)
+        self.set_num_threads(num_threads)
 
     def layer_op(self, idx=None):
         """
