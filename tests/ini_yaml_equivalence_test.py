@@ -20,18 +20,19 @@ class IniYamlEquivalenceTest(TestCase):
 
     def setUp(self):
         self.ini_config = NiftyNetLaunchConfig()
+        self.ini_config.read(IniYamlEquivalenceTest.ini_file)
+
         self.yaml_config = NiftyNetLaunchConfig()
+        self.yaml_config.read(IniYamlEquivalenceTest.yaml_config)
 
     def test_read_ini_equivalent_to_read_yaml(self):
         # TODO
         raise NotImplementedError
 
     def test_incompatible_file_not_read(self):
-        self.ini_config.read(IniYamlEquivalenceTest.ini_file)
         with self.assertRaises(ValueError):
             self.ini_config.read(IniYamlEquivalenceTest.yaml_file)
 
-        self.yaml_config.read(IniYamlEquivalenceTest.yaml_config)
         with self.assertRaises(ValueError):
             self.yaml_config.read(IniYamlEquivalenceTest.ini_file)
 
