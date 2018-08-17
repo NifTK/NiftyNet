@@ -121,6 +121,7 @@ class ConvolutionalLayer(TrainableLayer):
                  padding='SAME',
                  with_bias=False,
                  with_bn=True,
+                 with_gn=False,
                  acti_func=None,
                  preactivation=False,
                  w_initializer=None,
@@ -135,10 +136,14 @@ class ConvolutionalLayer(TrainableLayer):
         self.with_bn = with_bn
         self.preactivation = preactivation
         self.layer_name = '{}'.format(name)
-        if self.with_bn:
-            self.layer_name += '_bn'
-        else:
+        if self.with_bn and self.with_gn:
+            raise ValueError('only choose either with_bn or with_gn')
+        elif self.with_bn:
+             self.layer_name += '_bn'
+        elif self.with_gn:
             self.layer_name += '_gn'
+        else:
+            pass
         if self.acti_func is not None:
             self.layer_name += '_{}'.format(self.acti_func)
         super(ConvolutionalLayer, self).__init__(name=self.layer_name)
@@ -183,12 +188,14 @@ class ConvolutionalLayer(TrainableLayer):
                 moving_decay=self.moving_decay,
                 eps=self.eps,
                 name='bn_')
-        else:
+        elif self.with_gn:
             gn_layer = GNLayer(
                 regularizer=self.regularizers['w'],
                 eps=self.eps,
                 name='gn_')
-
+        else:
+            pass
+        
         if self.acti_func is not None:
             acti_layer = ActiLayer(
                 func=self.acti_func,
@@ -201,8 +208,10 @@ class ConvolutionalLayer(TrainableLayer):
         def activation(output_tensor):
             if self.with_bn:
                 output_tensor = bn_layer(output_tensor, is_training)
-            else:
+            elif self.with_gn:
                 output_tensor = gn_layer(output_tensor)
+            else:
+                pass
             if self.acti_func is not None:
                 output_tensor = acti_layer(output_tensor)
             if keep_prob is not None:

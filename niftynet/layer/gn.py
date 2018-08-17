@@ -39,6 +39,7 @@ class GNLayer(TrainableLayer):
         # operates on all dims except the group dim
         axes = list(range(1, input_shape.ndims-1)) + [input_shape.ndims]
         
+        # create the shape of trainable variables
         shape = [1]*(len(range(input_shape.ndims-1))) + [input_shape[-1]]
         
         # create trainable variables
