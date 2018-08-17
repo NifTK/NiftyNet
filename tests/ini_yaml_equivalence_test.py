@@ -1,7 +1,21 @@
 from unittest import TestCase
+import os
 
 
 class IniYamlEquivalenceTest(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        config_files_dir = os.path.join(
+            os.path.split(__file__)[0], '..', 'config'
+        )
+        config_file = 'default_segmentation'
+        cls.ini_file = os.path.join(
+            config_files_dir, '{}.ini'.format(config_file)
+        )
+        cls.yaml_file = os.path.join(
+            config_files_dir, '{}.yml'.format(config_file)
+        )
 
     def setUp(self):
         # TODO
