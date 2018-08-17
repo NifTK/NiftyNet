@@ -25,7 +25,7 @@ class IniYamlEquivalenceTest(TestCase):
         self.yaml_config = NiftyNetLaunchConfig()
         self.yaml_config.read(IniYamlEquivalenceTest.yaml_config)
 
-    def test_read_ini_equivalent_to_read_yaml(self):
+    def test_items_same(self):
         ini_items = self.ini_config.items()
         self.assertIsNotNone(ini_items)
         yaml_items = self.yaml_config.items()
@@ -46,10 +46,6 @@ class IniYamlEquivalenceTest(TestCase):
         self.assertIsNotNone(yaml_sections)
         self.assertFalse(yaml_sections == dict())
         self.assertTrue(yaml_sections == ini_sections)
-
-    def test_items_same(self):
-        # TODO
-        raise NotImplementedError
 
     def test_add_section_same(self):
         # TODO
