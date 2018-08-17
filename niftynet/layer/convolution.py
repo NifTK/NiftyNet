@@ -121,7 +121,7 @@ class ConvolutionalLayer(TrainableLayer):
                  padding='SAME',
                  with_bias=False,
                  with_bn=True,
-                 with_gn=False,
+                 group_size=-1,
                  acti_func=None,
                  preactivation=False,
                  w_initializer=None,
@@ -134,16 +134,15 @@ class ConvolutionalLayer(TrainableLayer):
 
         self.acti_func = acti_func
         self.with_bn = with_bn
+        self.g_size = group_size
         self.preactivation = preactivation
         self.layer_name = '{}'.format(name)
-        if self.with_bn and self.with_gn:
-            raise ValueError('only choose either with_bn or with_gn')
-        elif self.with_bn:
+        if self.with_bn and group_size > 0:
+            raise ValueError('only choose either batchnorm or groupnorm')
+        if self.with_bn:
              self.layer_name += '_bn'
-        elif self.with_gn:
+        if self.g_size > 0:
             self.layer_name += '_gn'
-        else:
-            pass
         if self.acti_func is not None:
             self.layer_name += '_{}'.format(self.acti_func)
         super(ConvolutionalLayer, self).__init__(name=self.layer_name)
@@ -188,13 +187,12 @@ class ConvolutionalLayer(TrainableLayer):
                 moving_decay=self.moving_decay,
                 eps=self.eps,
                 name='bn_')
-        elif self.with_gn:
+        if self.g_size > 0:
             gn_layer = GNLayer(
                 regularizer=self.regularizers['w'],
+                group_size=self.g_size,
                 eps=self.eps,
                 name='gn_')
-        else:
-            pass
         
         if self.acti_func is not None:
             acti_layer = ActiLayer(
@@ -208,10 +206,9 @@ class ConvolutionalLayer(TrainableLayer):
         def activation(output_tensor):
             if self.with_bn:
                 output_tensor = bn_layer(output_tensor, is_training)
-            elif self.with_gn:
+            if self.g_size > 0:
                 output_tensor = gn_layer(output_tensor)
-            else:
-                pass
+
             if self.acti_func is not None:
                 output_tensor = acti_layer(output_tensor)
             if keep_prob is not None:
