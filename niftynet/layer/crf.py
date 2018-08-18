@@ -64,9 +64,11 @@ class CRFAsRNNLayer(TrainableLayer):
         :param aspect_ratio: spacing of adjacent voxels
             (allows isotropic spatial smoothing when voxels are not isotropic)
         :param mu_init: initial compatibility matrix [n_classes x n_classes]
+            default value: `-1.0 * eye(n_classes)`
         :param w_init: initial kernel weights [2 x n_classes]
             where w_init[0] are the weights for the bilateral kernel,
                   w_init[1] are the weights for the spatial kernel.
+            default value: `[ones(n_classes), ones(n_classes)]`
         :param name:
         """
 
@@ -95,25 +97,25 @@ class CRFAsRNNLayer(TrainableLayer):
         :return: Maximum a posteriori labeling (before softmax)
         """
 
-        spatial_dim = infer_spatial_rank(U)
+        spatial_rank = infer_spatial_rank(U)
         all_shape = U.shape.as_list()
         batch_size, spatial_shape, n_ch = \
             all_shape[0], all_shape[1:-1], all_shape[-1]
         n_feat = I.shape.as_list()[-1]
         if self._aspect_ratio is None:
-            self._aspect_ratio = [1.] * spatial_dim
+            self._aspect_ratio = [1.] * spatial_rank
         self._aspect_ratio = expand_spatial_params(
-            self._aspect_ratio, spatial_dim, float)
+            self._aspect_ratio, spatial_rank, float)
 
         # constructing the scaled regular grid
-        spatial_coords = tf.meshgrid(
+        spatial_grid = tf.meshgrid(
             *[np.arange(i, dtype=np.float32) * a
                 for i, a in zip(spatial_shape, self._aspect_ratio)],
             indexing='ij')
-        spatial_coords = tf.stack(spatial_coords, spatial_dim)
+        spatial_coords = tf.stack(spatial_grid[::-1], spatial_rank)
         spatial_coords = tf.tile(
             tf.expand_dims(spatial_coords, 0),
-            [batch_size] + [1] * spatial_dim + [1])
+            [batch_size] + [1] * spatial_rank + [1])
         # print(spatial_coords.shape, I.shape)
 
         # concatenating spatial coordinates and features
@@ -121,15 +123,29 @@ class CRFAsRNNLayer(TrainableLayer):
         # for the bilateral kernel
         bilateral_coords = tf.reshape(
             tf.concat([spatial_coords / self._alpha, I / self._beta], -1),
-            [batch_size, -1, n_feat + spatial_dim])
+            [batch_size, -1, n_feat + spatial_rank])
         # for the spatial kernel
         spatial_coords = tf.reshape(
-            spatial_coords / self._gamma, [batch_size, -1, spatial_dim])
+            spatial_coords / self._gamma, [batch_size, -1, spatial_rank])
 
         # Build permutohedral structures for smoothing
         permutohedrals = [
             permutohedral_prepare(coords)
             for coords in (bilateral_coords, spatial_coords)]
+
+        # squeeze the spatial shapes and recover them in the end
+        U = tf.reshape(U, [batch_size, -1, n_ch])
+        n_voxels = U.shape.as_list()[1]
+        # normalisation factor
+        norms = []
+        for idx, permutohedral in enumerate(permutohedrals):
+            spatial_norm = _permutohedral_gen(
+                permutohedral,
+                tf.ones((batch_size, n_voxels, 1)),
+                'spatial_norms' + str(idx))
+            spatial_norm.set_shape([batch_size, n_voxels, 1])
+            spatial_norm = 1.0 / tf.sqrt(spatial_norm + 1e-20)
+            norms.append(spatial_norm)
 
         # trainable compatibility matrix mu (initialised as identity * -1)
         mu_shape = [n_ch, n_ch]
@@ -141,13 +157,11 @@ class CRFAsRNNLayer(TrainableLayer):
             initializer=tf.constant(self._mu_init, dtype=tf.float32))
 
         # trainable kernel weights
-        weight_shape = [1] * spatial_dim + [1, n_ch]
+        weight_shape = [n_ch]
         if self._w_init is None:
             self._w_init = [np.ones(n_ch), np.ones(n_ch)]
-        for _w in self._w_init:
-            # optimising (w - 1.0) so that we get rid of the
-            # -Q_i term (in equ.(5) of Krahenbuhl and Koltun 2012).
-            _w = np.reshape(_w, weight_shape) - 1.0
+        self._w_init = [
+            np.reshape(_w, weight_shape) for _w in self._w_init]
         kernel_weights = [tf.get_variable(
             'FilterWeights{}'.format(idx),
             initializer=tf.constant(self._w_init[idx], dtype=tf.float32))
@@ -155,12 +169,12 @@ class CRFAsRNNLayer(TrainableLayer):
 
         H1 = U
         for t in range(self._T):
-            H1 = ftheta(U, H1, permutohedrals, mu, kernel_weights,
+            H1 = ftheta(U, H1, permutohedrals, mu, kernel_weights, norms,
                         name='{}{}'.format(self.name, t))
-        return H1
+        return tf.reshape(H1, all_shape)
 
 
-def ftheta(U, H1, permutohedrals, mu, kernel_weights, name):
+def ftheta(U, H1, permutohedrals, mu, kernel_weights, norms, name):
     """
     A mean-field update
 
@@ -169,24 +183,26 @@ def ftheta(U, H1, permutohedrals, mu, kernel_weights, name):
     :param permutohedrals: fixed position vectors for fast filtering
     :param mu: compatibility function
     :param kernel_weights: weights bilateral/spatial kernels
+    :param norms: precomputed normalisation factor
     :param name: layer name
     :return: updated mean-field distribution
     """
-    batch_size, n_ch = U.shape.as_list()[0], U.shape.as_list()[-1]
-    n_voxels = np.prod(U.shape.as_list()[:-1])
-
-    H1 = tf.reshape(tf.nn.softmax(H1), [batch_size, -1, n_ch])
+    batch_size, n_voxels, n_ch = U.shape.as_list()
+    H1 = tf.nn.softmax(H1)
     Q1 = 0
     for idx, permutohedral in enumerate(permutohedrals):
         # Message Passing
-        Q = _permutohedral_gen(permutohedral, H1, name + str(idx))
-        Q.set_shape([n_voxels, n_ch])
+        norm_H = H1 * norms[idx]
+        Q = _permutohedral_gen(
+            permutohedral, norm_H, name + str(idx))
+        Q.set_shape([batch_size, n_voxels, n_ch])
         # Weighting Filtered Outputs
-        Q1 = Q1 + Q * kernel_weights[idx]
+        Q1 += Q * kernel_weights[idx] * norms[idx]
 
     # Compatibility Transform, Adding Unary Potentials
     # output logits, not the softmax
-    return U - tf.reshape(tf.matmul(Q1, mu), U.shape.as_list())
+    mat_Q = tf.reshape(Q1, [-1, n_ch])
+    return U - tf.reshape(tf.matmul(mat_Q, mu), U.shape.as_list())
 
 
 def permutohedral_prepare(position_vectors):
@@ -214,37 +230,35 @@ def permutohedral_prepare(position_vectors):
     # Generate position vectors in lattice space
     # first rotate position into the (n_ch+1)-dimensional hyperplane
     inv_std_dev = np.sqrt(2 / 3.) * n_ch_1
-    scale_factor = [
-        inv_std_dev / np.sqrt((i + 1) * (i + 2)) for i in range(n_ch)]
+    scale_factor = tf.constant([
+        inv_std_dev / np.sqrt((i + 1) * (i + 2)) for i in range(n_ch)])
     Ex = [None] * n_ch_1
-    Ex[n_ch] = -n_ch * position_vectors[:, n_ch - 1] * scale_factor[n_ch - 1]
-    for dit in range(n_ch - 1, 0, -1):
-        Ex[dit] = Ex[dit + 1] - \
-                  dit * position_vectors[:, dit - 1] * scale_factor[dit - 1] + \
-                  (dit + 2) * position_vectors[:, dit] * scale_factor[dit]
-    Ex[0] = 2 * position_vectors[:, 0] * scale_factor[0] + Ex[1]
+    cum_sum = 0.0
+    for dit in range(n_ch, 0, -1):
+        scaled_vectors = position_vectors[:, dit - 1] * scale_factor[dit - 1]
+        Ex[dit] = cum_sum - scaled_vectors * dit
+        cum_sum += scaled_vectors
+    Ex[0] = cum_sum
     Ex = tf.stack(Ex, -1)
 
     # Compute coordinates
     # Get closest remainder-0 point
     v = tf.to_int32(tf.round(Ex / float(n_ch_1)))
     rem0 = v * n_ch_1
-    # (sumV != 0)  meaning off the plane
-    sumV = tf.reduce_sum(v, 1, True)
 
     # Find the simplex we are in and store it in rank
     # (where rank describes what position coordinate i has
     # in the sorted order of the features values).
     # This can be done more efficiently
     # if necessary following the permutohedral paper.
-    _, index = tf.nn.top_k(Ex - tf.to_float(rem0), n_ch_1, sorted=True)
-    _, rank = tf.nn.top_k(-index, n_ch_1, sorted=True)
+    index = tf.nn.top_k(Ex - tf.to_float(rem0), n_ch_1, sorted=True).indices
+    rank = tf.nn.top_k(-index, n_ch_1, sorted=True).indices
 
     # if the point doesn't lie on the plane (sum != 0) bring it back
-    rank = rank + sumV
-    add_minus_sub = \
-        tf.to_int32(rank < 0) * n_ch_1 - \
-        tf.to_int32(rank >= n_ch_1) * n_ch_1
+    # (sum(v) != 0)  meaning off the plane
+    rank = rank + tf.reduce_sum(v, 1, True)
+    add_minus_sub = tf.to_int32(rank < 0) - tf.to_int32(rank > n_ch)
+    add_minus_sub *= n_ch_1
     rem0 = rem0 + add_minus_sub
     rank = rank + add_minus_sub
 
@@ -255,8 +269,7 @@ def permutohedral_prepare(position_vectors):
     # but slower method of sorting again in O(n_ch log n_ch)
     # we might get this even more efficient
     # if we correct the original sorted data above
-    v_sorted, _ = tf.nn.top_k(v2, n_ch_1, sorted=True)
-    v_sorted = tf.reverse(v_sorted, [-1])
+    v_sorted = -tf.nn.top_k(-v2, n_ch_1, sorted=True).values
     # weighted against the canonical simplex vertices
     barycentric = \
         v_sorted - tf.concat([v_sorted[:, -1:] - 1., v_sorted[:, :-1]], 1)
@@ -274,7 +287,7 @@ def permutohedral_prepare(position_vectors):
     hash_table = tf.contrib.lookup.MutableDenseHashTable(
         tf.int64, tf.int64,
         default_value=tf.constant([-1] * n_ch, dtype=tf.int64),
-        empty_key=-1,
+        empty_key=-2,
         initial_num_buckets=8,
         checkpoint=False)
     index_table = tf.contrib.lookup.MutableDenseHashTable(
@@ -302,7 +315,7 @@ def permutohedral_prepare(position_vectors):
 
     with tf.control_dependencies(insert_ops):
         fused_loc_hash, fused_loc = hash_table.export()
-        is_good_key = tf.where(tf.not_equal(fused_loc_hash, -1))[:, 0]
+        is_good_key = tf.where(tf.not_equal(fused_loc_hash, -2))[:, 0]
         fused_loc = tf.gather(fused_loc, is_good_key)
         fused_loc_hash = tf.gather(fused_loc_hash, is_good_key)
 
@@ -361,23 +374,18 @@ def permutohedral_compute(data_vectors,
 
     num_simplex_corners = barycentric.shape.as_list()[-1]
     n_ch = num_simplex_corners - 1
-    batch_size = data_vectors.shape.as_list()[0]
-    n_ch_data = data_vectors.shape.as_list()[-1]
+    batch_size, n_voxels, n_ch_data = data_vectors.shape.as_list()
     data_vectors = tf.reshape(data_vectors, [-1, n_ch_data])
-    # Convert to homogeneous coordinates
-    data_vectors = tf.concat(
-        [data_vectors, tf.ones_like(data_vectors[:, 0:1])], 1)
 
     # Splatting
     with tf.variable_scope(name):
         splat = tf.contrib.framework.local_variable(
             tf.constant(0.0), validate_shape=False, name='splatbuffer')
 
-    #with tf.control_dependencies([splat.initialized_value()]):
+    # with tf.control_dependencies([splat.initialized_value()]):
     initial_splat = tf.zeros(
-        [tf.shape(blur_neighbours1[0])[0] + 1, batch_size, n_ch_data + 1])
+        [tf.shape(blur_neighbours1[0])[0] + 1, batch_size, n_ch_data])
     reset_splat = tf.assign(splat, initial_splat, validate_shape=False)
-
     with tf.control_dependencies([reset_splat]):
         for scit in range(num_simplex_corners):
             data = data_vectors * barycentric[:, scit:scit + 1]
@@ -390,16 +398,14 @@ def permutohedral_compute(data_vectors,
         splat = tf.concat([
             splat[:1, ...], splat[1:, ...] + 0.5 * (b1 + b3)], 0)
 
+    # Slice
+    sliced = 0.0
     # Alpha is a magic scaling constant from CRFAsRNN code
     alpha = 1. / (1. + np.power(2., -n_ch))
-    normalized = splat[..., :-1] / (splat[..., -1:] + 1e-20)
-
-    # Slice
-    sliced = tf.gather_nd(normalized, indices[0]) * barycentric[:, :1] * alpha
-    for scit in range(1, num_simplex_corners):
-        sliced = sliced + \
-                 tf.gather_nd(normalized, indices[scit]) * \
-                 barycentric[:, scit:scit + 1] * alpha
+    for scit in range(0, num_simplex_corners):
+        sliced += tf.gather_nd(splat, indices[scit]) * \
+                  barycentric[:, scit:scit + 1] * alpha
+    sliced = tf.reshape(sliced, [batch_size, n_voxels, n_ch_data])
     return sliced
 
 
@@ -451,7 +457,7 @@ def _gradient_stub(data_vectors,
     :return:
     """
 
-    def _dummy_wrapper(data_vectors_np, *_unused):
+    def _dummy_wrapper(*_unused):
         return np.float32(0)
 
     def _permutohedral_grad_wrapper(op, grad):
@@ -471,9 +477,7 @@ def _gradient_stub(data_vectors,
         [tf.float32],
         name=name,
         grad=_permutohedral_grad_wrapper)
-    n_voxels = np.prod(data_vectors.shape[:-1].as_list())
-    n_ch = data_vectors.shape[-1]
-    partial_grads_func.set_shape([n_voxels, n_ch])
+    partial_grads_func.set_shape(data_vectors.shape.as_list())
     return partial_grads_func
 
 
