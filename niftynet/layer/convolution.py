@@ -134,14 +134,14 @@ class ConvolutionalLayer(TrainableLayer):
 
         self.acti_func = acti_func
         self.with_bn = with_bn
-        self.g_size = group_size
+        self.group_size = group_size
         self.preactivation = preactivation
         self.layer_name = '{}'.format(name)
         if self.with_bn and group_size > 0:
             raise ValueError('only choose either batchnorm or groupnorm')
         if self.with_bn:
-             self.layer_name += '_bn'
-        if self.g_size > 0:
+            self.layer_name += '_bn'
+        if self.group_size > 0:
             self.layer_name += '_gn'
         if self.acti_func is not None:
             self.layer_name += '_{}'.format(self.acti_func)
@@ -187,13 +187,12 @@ class ConvolutionalLayer(TrainableLayer):
                 moving_decay=self.moving_decay,
                 eps=self.eps,
                 name='bn_')
-        if self.g_size > 0:
+        if self.group_size > 0:
             gn_layer = GNLayer(
                 regularizer=self.regularizers['w'],
-                group_size=self.g_size,
+                group_size=self.group_size,
                 eps=self.eps,
                 name='gn_')
-        
         if self.acti_func is not None:
             acti_layer = ActiLayer(
                 func=self.acti_func,
@@ -206,13 +205,13 @@ class ConvolutionalLayer(TrainableLayer):
         def activation(output_tensor):
             if self.with_bn:
                 output_tensor = bn_layer(output_tensor, is_training)
-            if self.g_size > 0:
+            if self.group_size > 0:
                 output_tensor = gn_layer(output_tensor)
-
             if self.acti_func is not None:
                 output_tensor = acti_layer(output_tensor)
             if keep_prob is not None:
-                output_tensor = dropout_layer(output_tensor, keep_prob=keep_prob)
+                output_tensor = dropout_layer(output_tensor,
+                                              keep_prob=keep_prob)
             return output_tensor
 
         if self.preactivation:

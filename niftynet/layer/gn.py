@@ -23,7 +23,7 @@ class GNLayer(TrainableLayer):
                  eps=1e-5,
                  name='group_norm'):
         super(GNLayer, self).__init__(name=name)
-        self.g_size = group_size
+        self.group_size = group_size
         self.eps = eps
         self.initializers = {
             'beta': tf.constant_initializer(0.0),
@@ -32,18 +32,20 @@ class GNLayer(TrainableLayer):
 
     def layer_op(self, inputs):
         input_shape = inputs.shape
-        g_size = min(self.g_size, input_shape[-1])
+        group_size = max(min(self.group_size, input_shape[-1]), 1)
 
-        # TODO: raise an informative error when size not divisible
-        grouped_shape = \
-            list(input_shape[:-1]) + [g_size, input_shape[-1] // g_size]
-        inputs = tf.reshape(inputs, grouped_shape)
+        assert input_shape[-1] % group_size == 0, \
+            'number of input channels should be divisible by group size.'
+        grouped_shape = tf.stack(
+            list(input_shape[:-1]) +
+            [group_size, input_shape[-1] // group_size])
+        grouped_inputs = tf.reshape(inputs, grouped_shape)
 
-        # operates on all dims except the grouped dim
+        # operates on all dims except the batch and grouped dim
         axes = list(range(1, input_shape.ndims - 1)) + [input_shape.ndims]
 
         # create the shape of trainable variables
-        param_shape = [1] * (input_shape.ndims - 2) + [input_shape[-1]]
+        param_shape = [1] * (input_shape.ndims - 1) + [input_shape[-1]]
 
         # create trainable variables
         beta = tf.get_variable(
@@ -60,8 +62,8 @@ class GNLayer(TrainableLayer):
             dtype=tf.float32, trainable=True)
 
         # mean and var
-        mean, variance = tf.nn.moments(inputs, axes, keep_dims=True)
+        mean, variance = tf.nn.moments(grouped_inputs, axes, keep_dims=True)
 
-        outputs = (inputs - mean) / tf.sqrt(variance + self.eps)
-        outputs = tf.reshape(outputs, list(input_shape)) * gamma + beta
+        outputs = (grouped_inputs - mean) / tf.sqrt(variance + self.eps)
+        outputs = tf.reshape(outputs, input_shape) * gamma + beta
         return outputs
