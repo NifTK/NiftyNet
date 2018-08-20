@@ -55,8 +55,31 @@ class IniYamlEquivalenceTest(TestCase):
         self.assertTrue(self.yaml_config.items() == self.ini_config.items())
 
     def test_set_same(self):
-        # TODO
-        raise NotImplementedError
+        existing_section = self.ini_config.sections()[0]
+        existing_option, existing_value = self.ini_config.items(existing_section)
+        existing_option_new_value = 'new_value_that_should_not_exist'
+
+        self.ini_config.set(existing_section,
+                            existing_option, existing_option_new_value)
+        self.assertNotEqual(
+            self.ini_config.items(existing_option)[existing_option],
+            self.yaml_config.items(existing_option)[existing_option]
+        )
+        self.yaml_config.set(existing_section,
+                             existing_option, existing_option_new_value)
+        self.assertEqual(self.yaml_config.items(), self.ini_config.items())
+
+        new_option, new_value = 'new_option_that_should_not_exist', 1
+
+        self.ini_config.set(existing_section,
+                            new_option, new_value)
+        self.assertNotEqual(
+            self.ini_config.items(existing_option)[existing_option],
+            self.yaml_config.items(existing_option)[existing_option]
+        )
+        self.yaml_config.set(existing_section,
+                             new_option, new_value)
+        self.assertEqual(self.yaml_config.items(), self.ini_config.items())
 
     def test_remove_section_same(self):
         section_to_remove = self.ini_config.sections()[0]
