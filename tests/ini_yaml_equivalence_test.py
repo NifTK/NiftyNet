@@ -23,7 +23,7 @@ class IniYamlEquivalenceTest(TestCase):
         self.ini_config.read(IniYamlEquivalenceTest.ini_file)
 
         self.yaml_config = NiftyNetLaunchConfig()
-        self.yaml_config.read(IniYamlEquivalenceTest.yaml_config)
+        self.yaml_config.read(IniYamlEquivalenceTest.yaml_file)
 
     def test_read_non_existing_file_same(self):
         """
