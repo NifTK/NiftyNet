@@ -370,6 +370,27 @@ class DeconvTest(tf.test.TestCase):
                                              is_training=False,
                                              dropout_prob=1.0)
 
+    def test_deconvlayer_2d_group_reg_valid_shape(self):
+        input_param = {'n_output_chns': 10,
+                       'kernel_size': [4, 3],
+                       'stride': [1, 2],
+                       'with_bias': False,
+                       'with_bn': False,
+                       'group_size': 5,
+                       'acti_func': 'prelu',
+                       'padding': 'VALID',
+                       'w_regularizer': regularizers.l2_regularizer(0.5)}
+        self._test_deconv_layer_output_shape(rank=2,
+                                             param_dict=input_param,
+                                             output_shape=(2, 19, 33, 10),
+                                             is_training=True,
+                                             dropout_prob=0.4)
+        self._test_deconv_layer_output_shape(rank=2,
+                                             param_dict=input_param,
+                                             output_shape=(2, 19, 33, 10),
+                                             is_training=False,
+                                             dropout_prob=1.0)
+
 
 if __name__ == "__main__":
     tf.test.main()
