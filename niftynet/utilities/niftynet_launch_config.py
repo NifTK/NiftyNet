@@ -36,7 +36,7 @@ class NiftyNetLaunchConfig(configparser.ConfigParser):
         # indicating what file has been used
         self._yaml_dict = dict()
 
-    def read(self, filename, encoding=None):
+    def read(self, filename):
         """
         Read in given file and store configuration.
 
@@ -67,7 +67,7 @@ class NiftyNetLaunchConfig(configparser.ConfigParser):
                     ' read in INI on top of it.'
                 )
 
-            return configparser.ConfigParser.read(self, filename, encoding)
+            return configparser.ConfigParser.read(self, filename)
 
         elif file_ext == yaml_ext:
             if configparser.ConfigParser.sections(self):
