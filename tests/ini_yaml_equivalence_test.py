@@ -42,8 +42,8 @@ class IniYamlEquivalenceTest(TestCase):
         self.assertIsNotNone(ini_items)
         yaml_items = self.yaml_config.items()
         self.assertIsNotNone(yaml_items)
-        self.assertFalse(yaml_items == dict())
-        self.assertTrue(yaml_items == ini_items)
+        self.assertNotEqual(yaml_items, dict())
+        self.assertEqual(yaml_items, ini_items)
 
     def test_incompatible_file_not_read(self):
         with self.assertRaises(ValueError):
@@ -56,15 +56,15 @@ class IniYamlEquivalenceTest(TestCase):
         ini_sections = self.ini_config.sections()
         yaml_sections = self.yaml_config.sections()
         self.assertIsNotNone(yaml_sections)
-        self.assertFalse(yaml_sections == dict())
-        self.assertTrue(yaml_sections == ini_sections)
+        self.assertNotEqual(yaml_sections, dict())
+        self.assertEqual(yaml_sections, ini_sections)
 
     def test_add_section_same(self):
         new_section = 'new_section_that_should_not_exist'
         self.ini_config.add_section(new_section)
         self.assertIn(new_section, self.ini_config.sections())
         self.yaml_config.add_section(new_section)
-        self.assertTrue(self.yaml_config.items() == self.ini_config.items())
+        self.assertEqual(self.yaml_config.items(), self.ini_config.items())
 
     def test_set_same(self):
         existing_section = self.ini_config.sections()[0]
@@ -97,7 +97,7 @@ class IniYamlEquivalenceTest(TestCase):
         section_to_remove = self.ini_config.sections()[0]
         self.ini_config.remove_section(section_to_remove)
         self.yaml_config.remove_section(section_to_remove)
-        self.assertTrue(self.yaml_config.items() == self.ini_config.items())
+        self.assertEqual(self.yaml_config.items(), self.ini_config.items())
 
     def test_has_section_same(self):
         non_existent_section = 'section_that_does_not_exist'
