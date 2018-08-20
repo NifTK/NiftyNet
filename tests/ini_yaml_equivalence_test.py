@@ -104,9 +104,6 @@ class IniYamlEquivalenceTest(TestCase):
         existing_section = self.ini_config.sections()[0]
         for section in [non_existent_section, existing_section]:
             self.assertEqual(
-                self.yaml_config.has_section(
-                    section
-                ) == self.ini_config.has_section(
-                    section
-                )
+                self.yaml_config.has_section(section),
+                self.ini_config.has_section(section)
             )
