@@ -217,6 +217,20 @@ class ConvTest(tf.test.TestCase):
                                            is_training=True,
                                            dropout_prob=0.4)
 
+    def test_convlayer_3d_group_reg_dropout_valid_shape(self):
+        input_param = {'n_output_chns': 8,
+                       'kernel_size': [5, 3, 2],
+                       'stride': [2, 2, 3],
+                       'with_bias': False,
+                       'with_bn': False,
+                       'group_size': 4,
+                       'w_regularizer': regularizers.l2_regularizer(0.5)}
+        self._test_conv_layer_output_shape(rank=3,
+                                           param_dict=input_param,
+                                           output_shape=(2, 8, 8, 6, 8),
+                                           is_training=True,
+                                           dropout_prob=0.4)
+
     # 2d tests
     def test_2d_conv_default_shape(self):
         input_param = {'n_output_chns': 10,

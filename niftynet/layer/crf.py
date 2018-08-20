@@ -116,7 +116,6 @@ class CRFAsRNNLayer(TrainableLayer):
         spatial_coords = tf.tile(
             tf.expand_dims(spatial_coords, 0),
             [batch_size] + [1] * spatial_rank + [1])
-        # print(spatial_coords.shape, I.shape)
 
         # concatenating spatial coordinates and features
         # (and squeeze spatially)
@@ -126,7 +125,8 @@ class CRFAsRNNLayer(TrainableLayer):
             [batch_size, -1, n_feat + spatial_rank])
         # for the spatial kernel
         spatial_coords = tf.reshape(
-            spatial_coords / self._gamma, [batch_size, -1, spatial_rank])
+            spatial_coords / self._gamma,
+            [batch_size, -1, spatial_rank])
 
         # Build permutohedral structures for smoothing
         permutohedrals = [
@@ -187,22 +187,21 @@ def ftheta(U, H1, permutohedrals, mu, kernel_weights, norms, name):
     :param name: layer name
     :return: updated mean-field distribution
     """
-    batch_size, n_voxels, n_ch = U.shape.as_list()
+    unary_shape = U.shape.as_list()
+    n_ch = unary_shape[-1]
     H1 = tf.nn.softmax(H1)
     Q1 = 0
     for idx, permutohedral in enumerate(permutohedrals):
         # Message Passing
-        norm_H = H1 * norms[idx]
-        Q = _permutohedral_gen(
-            permutohedral, norm_H, name + str(idx))
-        Q.set_shape([batch_size, n_voxels, n_ch])
+        Q = _permutohedral_gen(permutohedral, H1 * norms[idx], name + str(idx))
+        Q.set_shape(unary_shape)
         # Weighting Filtered Outputs
         Q1 += Q * kernel_weights[idx] * norms[idx]
 
     # Compatibility Transform, Adding Unary Potentials
     # output logits, not the softmax
-    mat_Q = tf.reshape(Q1, [-1, n_ch])
-    return U - tf.reshape(tf.matmul(mat_Q, mu), U.shape.as_list())
+    Q1 = tf.reshape(tf.matmul(tf.reshape(Q1, [-1, n_ch]), mu), unary_shape)
+    return U - Q1
 
 
 def permutohedral_prepare(position_vectors):
@@ -218,9 +217,7 @@ def permutohedral_prepare(position_vectors):
     :param position_vectors: N x d position
     :return: barycentric weights, blur neighbours points in the hyperplane
     """
-    pos_shape = position_vectors.shape.as_list()
-    batch_size, n_voxels, n_ch = pos_shape[0], pos_shape[1:-1], pos_shape[-1]
-    n_voxels = np.prod(n_voxels)
+    batch_size, n_voxels, n_ch = position_vectors.shape.as_list()
     n_ch_1 = n_ch + 1
 
     # reshaping batches and voxels into one dimension
