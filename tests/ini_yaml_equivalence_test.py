@@ -25,6 +25,18 @@ class IniYamlEquivalenceTest(TestCase):
         self.yaml_config = NiftyNetLaunchConfig()
         self.yaml_config.read(IniYamlEquivalenceTest.yaml_config)
 
+    def test_read_non_existing_file_same(self):
+        """
+        Make sure non-existing YAML files treated like
+        non-existing INI files. `ConfigParser` documentation
+        explains that non-existing files are simply ignored:
+        https://docs.python.org/2/library/configparser.html#ConfigParser.RawConfigParser.read
+
+        """
+        yaml_config = NiftyNetLaunchConfig()
+        yaml_config.read('this_file_should_not_exist.yml')
+        self.assertEqual(yaml_config.items(), dict())
+
     def test_items_same(self):
         ini_items = self.ini_config.items()
         self.assertIsNotNone(ini_items)
