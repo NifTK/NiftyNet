@@ -67,7 +67,7 @@ class NiftyNetLaunchConfig(configparser.ConfigParser):
                     ' read in INI on top of it.'
                 )
 
-            return configparser.ConfigParser.read(self, filename, encoding)
+            return super(NiftyNetLaunchConfig, self).read(filename, encoding)
 
         elif file_ext == yaml_ext:
             if configparser.ConfigParser.sections(self):
