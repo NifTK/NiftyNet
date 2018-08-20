@@ -27,8 +27,8 @@ class IniYamlEquivalenceTest(TestCase):
 
     def test_read_non_existing_file_same(self):
         """
-        Make sure non-existing YAML files treated like
-        non-existing INI files. `ConfigParser` documentation
+        Make sure YAML files that cannot be opened are treated like
+        INI files that cannot be opened. `ConfigParser` documentation
         explains that non-existing files are simply ignored:
         https://docs.python.org/2/library/configparser.html#ConfigParser.RawConfigParser.read
 
