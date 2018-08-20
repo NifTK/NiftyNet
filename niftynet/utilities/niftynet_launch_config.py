@@ -76,8 +76,13 @@ class NiftyNetLaunchConfig(configparser.ConfigParser):
                     ' read in YAML on top of it.'
                 )
 
-            with open(filename) as yaml_file:
-                self._yaml_dict = yaml.load(yaml_file.read())
+            try:
+                with open(filename) as yaml_file:
+                    self._yaml_dict = yaml.load(yaml_file.read())
+            except IOError:
+                # ignore files that cannot be opened,
+                # in-line with ConfigParser.read
+                pass
 
             return self._yaml_dict
 
