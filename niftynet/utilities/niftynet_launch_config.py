@@ -12,7 +12,7 @@ from tensorflow import logging as tf_logging
 import yaml
 
 
-class NiftyNetLaunchConfig(configparser.ConfigParser):
+class NiftyNetLaunchConfig(configparser.ConfigParser, object):
     """
     Launch configuration settings.
 
