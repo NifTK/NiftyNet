@@ -257,12 +257,12 @@ class ImageWindowDataset(Layer):
                 out_dict = {}
                 for in_name in list(input_tensor_dict):
                     in_var = input_tensor_dict[in_name]
+                    var_shape = in_var.shape.as_list()
                     if batch_size > 1:
                         paddings = [[0, 0] for _ in in_var.shape]
                         paddings[0][1] = batch_size - tf.shape(in_var)[0]
                         in_var = tf.pad(
                             in_var, paddings, "CONSTANT", constant_values=-1)
-                    var_shape = in_var.shape.as_list()
                     var_shape[0] = batch_size
                     in_var.set_shape(var_shape)
                     out_dict[in_name] = in_var
