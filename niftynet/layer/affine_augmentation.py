@@ -25,8 +25,8 @@ class AffineAugmentationLayer(Layer):
                  name='AffineAugmentation'):
         """
 
-        :param scale: how extreme the perturbation is, with 1. meaning
-            no perturbation and 0.5 giving larger perturbations.
+        :param scale: how extreme the perturbation is, with 0. meaning
+            no perturbation and 1.0 giving largest perturbations.
         :param interpolation: the image value interpolation used by
             the resampling.
         :param boundary: the boundary handling used by the resampling
@@ -34,7 +34,7 @@ class AffineAugmentationLayer(Layer):
         """
         Layer.__init__(self, name=name)
 
-        self.scale = scale
+        self.scale = min(max(float(scale), 0.0), 1.0)
         self.interpolation = interpolation
         self.boundary = boundary
 
@@ -52,20 +52,20 @@ class AffineAugmentationLayer(Layer):
         :param spatial_rank: number of spatial dimensions
         :return:
         """
-        source_corners = get_relative_corners(spatial_rank)
-        source_corners = tf.tile([source_corners], [batch_size, 1, 1])
+        output_corners = get_relative_corners(spatial_rank)
+        output_corners = tf.tile([output_corners], [batch_size, 1, 1])
 
         # make randomised output corners
         random_size = [batch_size, 2 ** spatial_rank, spatial_rank]
-        random_scale = tf.random_uniform(random_size, 0, self.scale)
-        output_corners = source_corners * (1 - random_scale)
+        random_scale = tf.random_uniform(random_size, 1. - self.scale, 1.0)
+        source_corners = output_corners * random_scale
 
         # make homogeneous corners
-        batch_ones = tf.ones_like(source_corners[..., 0:1])
+        batch_ones = tf.ones_like(output_corners[..., 0:1])
         source_corners = tf.concat([source_corners, batch_ones], -1)
         output_corners = tf.concat([output_corners, batch_ones], -1)
 
-        ls_transform = tf.matrix_solve_ls(source_corners, output_corners)
+        ls_transform = tf.matrix_solve_ls(output_corners, source_corners)
         return tf.transpose(ls_transform, [0, 2, 1])
 
     def layer_op(self, input_tensor):
