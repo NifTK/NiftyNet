@@ -375,7 +375,10 @@ def squeeze_spatial_temporal_dim(tf_tensor):
     if tf_tensor.shape.ndims != 6:
         return tf_tensor
     if tf_tensor.shape[4] != 1:
-        raise NotImplementedError("time sequences not currently supported")
+        if tf_tensor.shape[5] > 1:
+            raise NotImplementedError("time sequences not currently supported")
+        else:  # input shape [batch, x, y, z, t, 1]: swapping 't' and 1
+            tf_tensor = tf.transpose(tf_tensor, [0, 1, 2, 3, 5, 4])
     axis_to_squeeze = []
     for (idx, axis) in enumerate(tf_tensor.shape.as_list()):
         if idx == 0 or idx == 5:

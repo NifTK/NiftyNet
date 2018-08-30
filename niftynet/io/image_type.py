@@ -531,7 +531,6 @@ class SpatialImage4D(SpatialImage3D):
     supports resampling and reorientation.
 
     The 3D volumes are concatenated in the fifth dim (modality dim)
-    (4D image from a single file is currently not supported)
     """
 
     def __init__(self,
