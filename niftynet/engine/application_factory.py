@@ -64,6 +64,7 @@ SUPPORTED_NETWORK = {
 
     # classification
     "resnet": 'niftynet.network.resnet.ResNet',
+    "se_resnet": 'niftynet.network.se_resnet.SE_ResNet',
 
     # autoencoder
     "vae": 'niftynet.network.vae.VAE'
