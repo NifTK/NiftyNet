@@ -142,6 +142,8 @@ class ModelSaver(object):
         :param msg: an iteration message instance
         :return:
         """
+        if not msg['iter_msg'].is_training:
+            return
         iter_i = msg['iter_msg'].current_iter
         if iter_i > 0 and iter_i % self.save_every_n == 0:
             self._save_at(iter_i)
