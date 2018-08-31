@@ -10,7 +10,7 @@ from niftynet.utilities.util_common import look_up_operations
 SUPPORTED_OP = set(['AVG', 'MAX'])
 
 
-class SELayer(Layer):
+class ChannelSELayer(Layer):
     def __init__(self,
                  func='AVG',
                  reduction_ratio=16,
@@ -18,7 +18,7 @@ class SELayer(Layer):
         self.func = func.upper()
         self.reduction_ratio = reduction_ratio
         self.layer_name = '{}_{}'.format(self.func.lower(), name)
-        super(SELayer, self).__init__(name=self.layer_name)
+        super(ChannelSELayer, self).__init__(name=self.layer_name)
 
         look_up_operations(self.func, SUPPORTED_OP)
 
