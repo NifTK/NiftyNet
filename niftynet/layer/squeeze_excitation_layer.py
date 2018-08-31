@@ -84,3 +84,25 @@ class SpatialSELayer(Layer):
         output_tensor = tf.multiply(input_tensor, squeeze_tensor)
 
         return output_tensor
+    
+class ChannelSpatialSELayer(Layer):
+    def __init__(self,
+                 func='AVG',
+                 reduction_ratio=16,
+                 name='channel_spatial_squeeze_excitation'):
+        self.func = func.upper()
+        self.reduction_ratio = reduction_ratio
+        self.layer_name = '{}_{}'.format(self.func.lower(), name)
+        super(ChannelSpatialSELayer, self).__init__(name=self.layer_name)
+
+        look_up_operations(self.func, SUPPORTED_OP)
+
+    def layer_op(self, input_tensor):
+        cSE = ChannelSELayer(func=self.func,
+                             reduction_ratio=self.reduction_ratio,
+                             name='cSE')
+        sSE = SpatialSELayer(name='sSE')
+    
+        output_tensor = tf.add(cSE(input_tensor), sSE(input_tensor))
+
+        return output_tensor
