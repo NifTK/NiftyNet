@@ -18,8 +18,7 @@ class ChannelSELayer(Layer):
                  name='channel_squeeze_excitation'):
         self.func = func.upper()
         self.reduction_ratio = reduction_ratio
-        self.layer_name = '{}_{}'.format(self.func.lower(), name)
-        super(ChannelSELayer, self).__init__(name=self.layer_name)
+        super(ChannelSELayer, self).__init__(name=name)
 
         look_up_operations(self.func, SUPPORTED_OP)
 
@@ -67,8 +66,7 @@ class ChannelSELayer(Layer):
 class SpatialSELayer(Layer):
     def __init__(self,
                  name='spatial_squeeze_excitation'):
-        self.layer_name = '{}_{}'.format(self.func.lower(), name)
-        super(SpatialSELayer, self).__init__(name=self.layer_name)
+        super(SpatialSELayer, self).__init__(name=name)
 
     def layer_op(self, input_tensor):
         # channel squeeze
@@ -92,8 +90,7 @@ class ChannelSpatialSELayer(Layer):
                  name='channel_spatial_squeeze_excitation'):
         self.func = func.upper()
         self.reduction_ratio = reduction_ratio
-        self.layer_name = '{}_{}'.format(self.func.lower(), name)
-        super(ChannelSpatialSELayer, self).__init__(name=self.layer_name)
+        super(ChannelSpatialSELayer, self).__init__(name=name)
 
         look_up_operations(self.func, SUPPORTED_OP)
 
