@@ -2,9 +2,9 @@
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
-from niftynet.layer.squeeze_excitation_layer import ChannelSELayer
-from niftynet.layer.squeeze_excitation_layer import SpatialSELayer
-from niftynet.layer.squeeze_excitation_layer import ChannelSpatialSELayer
+from niftynet.layer.squeeze_excitation import ChannelSELayer
+from niftynet.layer.squeeze_excitation import SpatialSELayer
+from niftynet.layer.squeeze_excitation import ChannelSpatialSELayer
 
 class SETest(tf.test.TestCase):
     def test_cSE_3d_shape(self):

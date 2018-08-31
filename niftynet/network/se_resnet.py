@@ -10,7 +10,7 @@ from niftynet.layer.bn import BNLayer
 from niftynet.layer.fully_connected import FCLayer
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.convolution import ConvolutionalLayer
-from niftynet.layer.squeeze_excitation_layer import ChannelSELayer
+from niftynet.layer.squeeze_excitation import ChannelSELayer
 from niftynet.network.base_net import BaseNet
 
 SE_ResNetDesc = namedtuple('SE_ResNetDesc', ['bn', 'fc', 'conv1', 'blocks'])

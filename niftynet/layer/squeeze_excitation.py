@@ -12,6 +12,11 @@ SUPPORTED_OP = set(['AVG', 'MAX'])
 
 
 class ChannelSELayer(Layer):
+    """
+    Re-implementation of Squeeze-and-Excitation (SE) block described in::
+
+         Hu et al., Squeeze-and-Excitation Networks, arXiv:1709.01507
+    """
     def __init__(self,
                  func='AVG',
                  reduction_ratio=16,
@@ -62,8 +67,17 @@ class ChannelSELayer(Layer):
         output_tensor = tf.multiply(input_tensor, fc_out_2)
 
         return output_tensor
-    
+
+
 class SpatialSELayer(Layer):
+    """
+    Re-implementation of SE block -- squeezing spatially
+    and exciting channel-wise described in::
+
+        Roy et al., Concurrent Spatial and Channel Squeeze & Excitation
+        in Fully Convolutional Networks, arXiv:1803.02579
+
+    """
     def __init__(self,
                  name='spatial_squeeze_excitation'):
         super(SpatialSELayer, self).__init__(name=name)
@@ -75,15 +89,24 @@ class SpatialSELayer(Layer):
                                   with_bn=False,
                                   acti_func='sigmoid',
                                   name="se_conv")
-        
+
         squeeze_tensor = conv(input_tensor)
-        
+
         # spatial excitation
         output_tensor = tf.multiply(input_tensor, squeeze_tensor)
 
         return output_tensor
-    
+
+
 class ChannelSpatialSELayer(Layer):
+    """
+    Re-implementation of concurrent spatial and channel
+    squeeze & excitation::
+
+        Roy et al., Concurrent Spatial and Channel Squeeze & Excitation
+        in Fully Convolutional Networks, arXiv:1803.02579
+
+    """
     def __init__(self,
                  func='AVG',
                  reduction_ratio=16,
@@ -99,7 +122,7 @@ class ChannelSpatialSELayer(Layer):
                              reduction_ratio=self.reduction_ratio,
                              name='cSE')
         sSE = SpatialSELayer(name='sSE')
-    
+
         output_tensor = tf.add(cSE(input_tensor), sSE(input_tensor))
 
         return output_tensor
