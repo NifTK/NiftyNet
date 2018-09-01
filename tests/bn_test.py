@@ -5,6 +5,7 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.layer.bn import BNLayer
+from niftynet.layer.bn import InstanceNormLayer
 
 
 class BNTest(tf.test.TestCase):
@@ -29,6 +30,21 @@ class BNTest(tf.test.TestCase):
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_bn)
+            x_shape = tuple(x.shape.as_list())
+            self.assertAllClose(x_shape, out.shape)
+            # self.assertAllClose(np.zeros(x_shape), out)
+
+    def test_3d_instnorm_shape(self):
+        x = self.get_3d_input()
+        instnorm_layer = InstanceNormLayer()
+        print(instnorm_layer)
+        out_inst = instnorm_layer(x)
+        print(instnorm_layer)
+
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+
+            out = sess.run(out_inst)
             x_shape = tuple(x.shape.as_list())
             self.assertAllClose(x_shape, out.shape)
             # self.assertAllClose(np.zeros(x_shape), out)
@@ -62,6 +78,20 @@ class BNTest(tf.test.TestCase):
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_bn)
+            x_shape = tuple(x.shape.as_list())
+            self.assertAllClose(x_shape, out.shape)
+            # self.assertAllClose(np.zeros(x_shape), out)
+
+    def test_2d_instnorm_shape(self):
+        x = self.get_2d_input()
+        instnorm_layer = InstanceNormLayer()
+        out_inst = instnorm_layer(x)
+        print(instnorm_layer)
+
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+
+            out = sess.run(out_inst)
             x_shape = tuple(x.shape.as_list())
             self.assertAllClose(x_shape, out.shape)
             # self.assertAllClose(np.zeros(x_shape), out)

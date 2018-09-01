@@ -111,3 +111,30 @@ class BNLayer(TrainableLayer):
         #     data_format='NHWC',
         #     zero_debias_moving_mean=False,
         #     scope=None)
+
+
+class InstanceNormLayer(TrainableLayer):
+    """
+    Instance normalisation layer, wrapper of `tf.contrib.layers.instance_norm`.
+    """
+    def __init__(self, eps=1e-6, gamma_initializer=None, name='instance_norm'):
+        TrainableLayer.__init__(self, name=name)
+        self.eps = eps
+        self.gamma_initializer = gamma_initializer
+
+    def layer_op(self, inputs):
+        if self.gamma_initializer is None:
+            self.gamma_initializer = tf.constant_initializer(1.0)
+        return tf.contrib.layers.instance_norm(
+            inputs,
+            center=True,
+            scale=True,
+            epsilon=self.eps,
+            param_initializers={'gamma': self.gamma_initializer},
+            reuse=None,
+            variables_collections=None,
+            outputs_collections=None,
+            trainable=True,
+            data_format='NHWC',
+            scope=None)
+
