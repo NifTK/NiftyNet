@@ -10,7 +10,7 @@ from niftynet.layer.bn import BNLayer
 from niftynet.layer.fully_connected import FCLayer
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.convolution import ConvolutionalLayer
-from niftynet.layer.squeeze_excitation_layer import SELayer
+from niftynet.layer.squeeze_excitation import ChannelSELayer
 from niftynet.network.base_net import BaseNet
 
 SE_ResNetDesc = namedtuple('SE_ResNetDesc', ['bn', 'fc', 'conv1', 'blocks'])
@@ -98,7 +98,7 @@ class BottleneckBlock(TrainableLayer):
 
     def layer_op(self, images, is_training=True):
         layers = self.create(images.shape[-1])
-        se=SELayer()
+        se=ChannelSELayer()
         if self.n_output_chns == images.shape[-1]:
             out=layers.conv[0](images, is_training)
             out=layers.conv[1](out, is_training)
