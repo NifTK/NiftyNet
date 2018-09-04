@@ -399,7 +399,7 @@ regions only.
 ###### `foreground_type`
 To generate a foreground mask and the normalisation will be applied to foreground only.
 Available choices:
-> `otsu_plus`, `otsu_minus`, `thresh_plus`, `thresh_minus`.
+> `otsu_plus`, `otsu_minus`, `thresh_plus`, `thresh_minus`, `mean_plus`.
 
 ###### `multimod_foreground_type`
 Strategies applied to combine foreground masks of multiple modalities, can take one of the following:
@@ -589,7 +589,7 @@ For a 2-D slice, e.g, `Nx1xM`, the second dimension of `border` should be `0`.
 [save_seg_dir](#save-seg-dir) | `string` | `save_seg_dir=output/test` | `output`
 [output_postfix](#output-postfix) | `string` | `output_postfix=_output` | `_niftynet_out`
 [output_interp_order](#output-interp-order) | `non-negative integer` | `output_interp_order=0` | `0`
-[dataset_to_infer](#dataset-to-infer) | `Training|Validation|Inference` | `dataset_to_infer=Training` | `''`
+[dataset_to_infer](#dataset-to-infer) | `all|training|validation|inference` | `dataset_to_infer=training` | `''`
 
 ###### `spatial_window_size`
 Array of integers indicating the size of input window.  By default, the window
@@ -616,8 +616,8 @@ Postfix appended to every inference output filenames.
 Interpolation order of the network outputs.
 
 ###### `dataset_to_infer`
-String specifies which dataset ('Training', 'Validation', 'Inference') to compute inference for.
-By default 'Inference' dataset is used.
+String specifies which dataset ('training', 'validation', 'inference') to compute inference for.
+By default 'inference' dataset is used.
 
 
 ### EVALUATION
