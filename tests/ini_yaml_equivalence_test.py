@@ -57,7 +57,9 @@ class IniYamlEquivalenceTest(TestCase):
         yaml_sections = self.yaml_config.sections()
         self.assertIsNotNone(yaml_sections)
         self.assertNotEqual(yaml_sections, dict())
-        self.assertEqual(yaml_sections, ini_sections)
+        for (yaml_section, ini_section) in zip(yaml_sections, ini_sections):
+            self.assertIn(yaml_section, ini_sections)
+            self.assertIn(ini_section, yaml_sections)
 
     def test_add_section_same(self):
         new_section = 'new_section_that_should_not_exist'
