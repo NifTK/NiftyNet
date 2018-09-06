@@ -206,6 +206,12 @@ def add_input_data_args(parser):
         type=str_array,
         help="keywords in input file names, negatively matches filenames",
         default='')
+    parser.add_argument(
+        "--filename_removefromid",
+        metavar='',
+        type=str_array,
+        help="keywords in input file names to be removed to create subject id",
+        default='')
 
     parser.add_argument(
         "--interp_order",
