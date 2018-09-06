@@ -17,10 +17,12 @@ class KeywordsMatching(object):
     as input based on the constraints given in the config file.
     """
 
-    def __init__(self, list_paths=(), list_contain=(), list_not_contain=()):
+    def __init__(self, list_paths=(), list_contain=(), list_not_contain=(),
+                 list_remove=()):
         self.path_to_search = list_paths
         self.filename_contains = list_contain
         self.filename_not_contains = list_not_contain
+        self.filename_toremove_fromid = list_remove
 
     @classmethod
     def from_dict(cls, input_dict, default_folder=None):
@@ -38,7 +40,7 @@ class KeywordsMatching(object):
         :param input_dict: set of searching parameters.
         :return:
         """
-        path, contain, not_contain = [], (), ()
+        path, contain, not_contain, remove = [], (), (), ()
         for (name, value) in input_dict.items():
             if not value:
                 continue
@@ -76,8 +78,12 @@ class KeywordsMatching(object):
                 not_contain = tuple(set(value)) \
                     if not isinstance(value, six.string_types) \
                     else tuple([value])
+            elif name == "filename_removefromid":
+                remove = tuple(set(value)) \
+                    if not isinstance(value, six.string_types) \
+                    else tuple([value])
         path = tuple(set(path))
-        new_matcher = cls(path, contain, not_contain)
+        new_matcher = cls(path, contain, not_contain, remove)
         return new_matcher
 
     def matching_subjects_and_filenames(self):
@@ -114,6 +120,8 @@ class KeywordsMatching(object):
         removed from the filename to provide the list of possible names. If
         after reduction of the filename from the constraints the name is
         empty the initial filename is returned.
+        if remove is not empty, will remove only the strings indicated in
+        remove. Otherwise, by default will remove all those in filename_contains
 
         :param fullname:
         :return name_pot: list of potential subject name given the constraint
@@ -121,8 +129,13 @@ class KeywordsMatching(object):
         """
         _, name, _ = util.split_filename(fullname)
         # split name into parts that might be the subject_id
-        noncapturing_regex_delimiters = \
-            ['(?:{})'.format(re.escape(c)) for c in self.filename_contains]
+        if len(self.filename_toremove_fromid) == 0:
+            noncapturing_regex_delimiters = \
+                ['(?:{})'.format(re.escape(c)) for c in self.filename_contains]
+        else:
+            noncapturing_regex_delimiters = \
+                ['(?:{})'.format(re.escape(c)) for c in
+                 self.filename_toremove_fromid]
         if noncapturing_regex_delimiters:
             potential_names = re.split(
                 '|'.join(noncapturing_regex_delimiters), name)
