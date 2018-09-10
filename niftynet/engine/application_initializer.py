@@ -148,7 +148,7 @@ class HeUniform(object):
     # Returns
     An initializer.
     # References
-    He et al., http://arxiv.org/abs/1502.01852
+    He et al., https://arxiv.org/abs/1502.01852
     """
 
     @staticmethod
@@ -174,7 +174,7 @@ class HeNormal(object):
     # Returns
     An initializer.
     # References
-    He et al., http://arxiv.org/abs/1502.01852
+    He et al., https://arxiv.org/abs/1502.01852
     """
 
     @staticmethod

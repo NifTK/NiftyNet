@@ -306,6 +306,7 @@ class ApplicationDriver(object):
             1. no more element from the ``iteration_generator``;
             2. ``application.interpret_output`` returns False;
             3. any exception raised.
+
         Broadcasting SESS_* signals at the beginning and end of this method.
 
         This function should be used in a context of
