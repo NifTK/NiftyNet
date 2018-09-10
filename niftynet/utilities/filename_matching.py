@@ -6,6 +6,7 @@ from __future__ import absolute_import, print_function
 
 import os
 import re
+
 import six
 
 import niftynet.io.misc_io as util
@@ -17,7 +18,10 @@ class KeywordsMatching(object):
     as input based on the constraints given in the config file.
     """
 
-    def __init__(self, list_paths=(), list_contain=(), list_not_contain=(),
+    def __init__(self,
+                 list_paths=(),
+                 list_contain=(),
+                 list_not_contain=(),
                  list_remove=()):
         self.path_to_search = list_paths
         self.filename_contains = list_contain
@@ -60,13 +64,13 @@ class KeywordsMatching(object):
 
                     if not default_folder:
                         raise ValueError(
-                            'data input folder {} not found, did you maybe '
+                            'data input folder "{}" not found, did you maybe '
                             'forget to download data?'.format(path_i))
                     path_def = os.path.join(default_folder, path_i)
                     path_def = os.path.abspath(path_def)
                     if not os.path.exists(path_def):
                         raise ValueError(
-                            'data input folder {} not found, did you maybe '
+                            'data input folder "{}" not found, did you maybe '
                             'forget to download data?'.format(path_i))
                     path.append(path_def)
 
@@ -95,17 +99,18 @@ class KeywordsMatching(object):
 
         :return: filename_list, subjectname_list
         """
-        path_file = [(p, filename)
-                     for p in self.path_to_search
-                     for filename in sorted(os.listdir(p))]
+        path_file = [
+            (p, filename) for p in self.path_to_search
+            for filename in sorted(os.listdir(p))]
         matching_path_file = list(filter(self.__is_a_candidate, path_file))
         filename_list = \
             [os.path.join(p, filename) for p, filename in matching_path_file]
         subjectname_list = [self.__extract_subject_id_from(filename)
-                            for p, filename in matching_path_file]
+            for p, filename in matching_path_file]
+        self.__check_unique_names(filename_list, subjectname_list)
         if not filename_list or not subjectname_list:
-            raise IOError('no file matched based on this matcher: {}'.format(
-                self.__dict__))
+            raise ValueError(
+                'no file matched based on this matcher: {}'.format(self))
         return filename_list, subjectname_list
 
     def __is_a_candidate(self, x):
@@ -147,3 +152,37 @@ class KeywordsMatching(object):
         if len(potential_names) > 1:
             potential_names.append(''.join(potential_names))
         return potential_names
+
+    def __check_unique_names(self, file_list, id_list):
+        uniq_dict = dict()
+        for idx, subject_id in enumerate(id_list):
+            id_string = subject_id[0]
+            if id_string in uniq_dict:
+                raise ValueError(
+                    'extracted the same unique_id "{}" from '
+                    'filenames "{}" and "{}", using matcher: {}'.format(
+                        id_string, uniq_dict[id_string], file_list[idx], self))
+            uniq_dict[id_string] = file_list[idx]
+
+    def __str__(self):
+        return self.to_string()
+
+    def to_string(self):
+        """
+        Formatting the class as an intuitive string for printing.
+
+        :return:
+        """
+        summary_str = '\n\nMatch file names and extract subject_ids from: \n'
+        if self.path_to_search:
+            summary_str += '-- path to search: {}\n'.format(self.path_to_search)
+        if self.filename_contains:
+            summary_str += '-- filename contains: {}\n'.format(
+                self.filename_contains)
+        if self.filename_not_contains:
+            summary_str += '-- filename not contains: {}\n'.format(
+                self.filename_not_contains)
+        if self.filename_toremove_fromid:
+            summary_str += '-- filename to remove from id: {}\n'.format(
+                self.filename_toremove_fromid)
+        return summary_str
