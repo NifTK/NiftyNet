@@ -23,8 +23,8 @@ from niftynet.engine.signal import GRAPH_CREATED, SESS_FINISHED, SESS_STARTED
 
 def get_initialised_driver(starting_iter=0, model_dir_rand=True):
     if model_dir_rand:
-        model_dir = os.path.join('.', 'testing_data', str(uuid.uuid4()))
-        os.mkdir(model_dir)
+        model_dir = os.path.join('.', 'testing_data', 'tmp', str(uuid.uuid4()))
+        os.makedirs(model_dir)
     else:
         model_dir = os.path.join('.', 'testing_data')
     system_param = {

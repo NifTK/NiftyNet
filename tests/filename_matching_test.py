@@ -14,7 +14,7 @@ class FileNameMatchingTest(tf.test.TestCase):
             KeywordsMatching.from_dict('wrong_argument')
 
     def test_from_dict(self):
-        with self.assertRaisesRegexp(ValueError, "not found"):
+        with self.assertRaisesRegexp(ValueError, ""):
             KeywordsMatching.from_dict({'path_to_search': 'wrong_folder'})
         matcher = KeywordsMatching.from_dict(
             {'path_to_search': 'testing_data/images2d'})
@@ -61,7 +61,7 @@ class FileNameMatchingTest(tf.test.TestCase):
         matcher = KeywordsMatching.from_dict(
             {'path_to_search': 'testing_data/images2d',
              'filename_contains': '_g',
-             'filename_removefromid': ('img', '_g')})
+             'filename_removefromid': 'img|_g'})
         f_list, s_list = matcher.matching_subjects_and_filenames()
         self.assertEqual(len(f_list), 10)
         self.assertEqual(len(s_list), 10)
@@ -69,14 +69,14 @@ class FileNameMatchingTest(tf.test.TestCase):
         matcher_comp = KeywordsMatching.from_dict(
             {'path_to_search': 'testing_data/images2d',
              'filename_not_contains': ('_m', '_u'),
-             'filename_removefromid': ('img', '_g')})
+             'filename_removefromid': "img|_g"})
         f_comp, s_comp = matcher_comp.matching_subjects_and_filenames()
         self.assertEqual(f_comp, f_list)
         self.assertEqual(s_comp, s_list)
 
         matcher = KeywordsMatching.from_dict(
             {'path_to_search': 'testing_data/images2d',
-             'filename_removefromid': ('img', '_g', '_m', '_u')})
+             'filename_removefromid': 'img|_g|_m|_u'})
         with self.assertRaisesRegexp(ValueError, ""):
             matcher.matching_subjects_and_filenames()
 

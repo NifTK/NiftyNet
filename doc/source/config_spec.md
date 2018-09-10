@@ -123,6 +123,7 @@ within each section.
 [path_to_search](#path-to-search) | `string` | `path_to_search=my_data/fold_1` | NiftyNet home folder
 [filename_contains](#filename-contains) | `string` or `string array` | `filename_contains=foo, bar` | `''`
 [filename_not_contains](#filename-not-contains) | `string` or `string array` | `filename_not_contains=foo` | `''`
+[filename_removefromid](#filename-removefromid) | `string` | `filename_removefromid=bar` | `''`
 [interp_order](#interp-order) | `integer` | `interp_order=0` | `3`
 [pixdim](#pixdim) | `float array` | `pixdim=1.2, 1.2, 1.2` | `''`
 [axcodes](#axcodes) | `string array` | `axcodes=L, P, S` | `''`
@@ -133,22 +134,36 @@ within each section.
 A file path to a list of input images.  If the file exists, input image name
 list will be loaded from the file; the filename based input image search will
 be disabled; [path_to_search](#path-to-search),
-[filename_contains](#filename-contains), and
-[filename_not_contains](#filename-not-contains) will be ignored.  If this
+[filename_contains](#filename-contains),
+ [filename_not_contains](#filename-not-contains),
+ and [filename_removefromid](#filename-removefromid) will be ignored.  If this
 parameter is left blank or the file does not exist, input image search will be
 enabled, and the matched filenames will be written to this file path.
 
 ###### `path_to_search`
 Single or multiple folders to search for input images.
 
+See also: [input filename matching guide](./filename_matching.html)
+
+
 ###### `filename_contains`
 Keywords used to match filenames.
 The matched keywords will be removed, and the remaining part is used as
 subject name (for loading corresponding images across modalities).
 
+See also: [input filename matching guide](./filename_matching.html)
+
 ###### `filename_not_contains`
 Keywords used to exclude filenames.
 The filenames with these keywords will not be used as input.
+
+See also: [input filename matching guide](./filename_matching.html)
+
+###### `filename_removefromid`
+Regular expression for extracting subject id from filename, 
+matched pattern will be removed from the file names to form the subject id.
+
+See also: [input filename matching guide](./filename_matching.html)
 
 ###### `interp_order`
 Interpolation order of the input data.

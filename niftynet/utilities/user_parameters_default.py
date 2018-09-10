@@ -209,8 +209,10 @@ def add_input_data_args(parser):
     parser.add_argument(
         "--filename_removefromid",
         metavar='',
-        type=str_array,
-        help="keywords in input file names to be removed to create subject id",
+        type=str,
+        help="Regular expression for extracting subject id from filename, "
+             "matched pattern will be removed from the file names "
+             "to form the subject id",
         default='')
 
     parser.add_argument(
