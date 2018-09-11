@@ -225,7 +225,7 @@ def look_up_operations(type_str, supported):
     if ``supported`` is a ``set``, returns ``type_str``
     if ``supported`` is a ``dict``, return ``supported[type_str]``
     else:
-        raise an error possibly with a guess of the closest match.
+    raise an error possibly with a guess of the closest match.
 
     :param type_str:
     :param supported:

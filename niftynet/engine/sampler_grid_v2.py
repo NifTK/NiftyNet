@@ -7,50 +7,45 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import tensorflow as tf
 
-from niftynet.engine.image_window import ImageWindow, N_SPATIAL
-from niftynet.engine.image_window_buffer import InputBatchQueueRunner
-from niftynet.layer.base_layer import Layer
+from niftynet.engine.image_window_dataset import ImageWindowDataset
+from niftynet.engine.image_window import N_SPATIAL, LOCATION_FORMAT
 
 
 # pylint: disable=too-many-locals
-class GridSampler(Layer, InputBatchQueueRunner):
+class GridSampler(ImageWindowDataset):
     """
     This class generators ND image samples with a sliding window.
     """
 
     def __init__(self,
                  reader,
-                 data_param,
-                 batch_size,
+                 window_sizes,
+                 batch_size=1,
                  spatial_window_size=None,
                  window_border=None,
                  queue_length=10,
+                 smaller_final_batch_mode='pad',
                  name='grid_sampler'):
-        self.batch_size = batch_size
-        self.border_size = window_border or (0, 0, 0)
-        self.reader = reader
-        Layer.__init__(self, name=name)
-        InputBatchQueueRunner.__init__(
-            self,
-            capacity=queue_length,
-            shuffle=False)
-        tf.logging.info('reading size of preprocessed inputs')
 
         # override all spatial window defined in input
         # modalities sections
         # this is useful when do inference with a spatial window
         # which is different from the training specifications
-        self.window = ImageWindow.from_data_reader_properties(
-            self.reader.input_sources,
-            self.reader.shapes,
-            self.reader.tf_dtypes,
-            spatial_window_size or data_param)
+        ImageWindowDataset.__init__(
+            self,
+            reader=reader,
+            window_sizes=spatial_window_size or window_sizes,
+            batch_size=batch_size,
+            windows_per_image=1,
+            queue_length=queue_length,
+            shuffle=False,
+            epoch=1,
+            smaller_final_batch_mode=smaller_final_batch_mode,
+            name=name)
 
+        self.border_size = window_border or (0, 0, 0)
         tf.logging.info('initialised window instance')
-        self._create_queue_and_ops(self.window,
-                                   enqueue_size=1,
-                                   dequeue_size=batch_size)
-        tf.logging.info("initialised sampler output %s", self.window.shapes)
+        tf.logging.info("initialised grid sampler %s", self.window.shapes)
 
     def layer_op(self):
         while True:
@@ -78,13 +73,12 @@ class GridSampler(Layer, InputBatchQueueRunner):
                 'grid sampling window sizes: %s', static_window_shapes)
             if extra_locations > 0:
                 tf.logging.info(
-                    "yielding %d locations from image, "
-                    "extended to %d to be divisible by batch size %d",
+                    "yielding %s locations from image, "
+                    "extended to %s to be divisible by batch size %s",
                     n_locations, total_locations, self.batch_size)
             else:
                 tf.logging.info(
                     "yielding %s locations from image", n_locations)
-
             for i in range(total_locations):
                 idx = i % n_locations
                 #  initialise output dict
@@ -106,11 +100,23 @@ class GridSampler(Layer, InputBatchQueueRunner):
                             "smaller than the image length in each dim.")
                         raise
                     # fill output dict with data
-                    coordinates_key = self.window.coordinates_placeholder(name)
-                    image_data_key = self.window.image_data_placeholder(name)
-                    output_dict[coordinates_key] = coordinates[name][[idx], ...]
-                    output_dict[image_data_key] = image_window[np.newaxis, ...]
+                    coord_key = LOCATION_FORMAT.format(name)
+                    image_key = name
+                    output_dict[coord_key] = coordinates[name][idx:idx+1, ...]
+                    output_dict[image_key] = image_window[np.newaxis, ...]
                 yield output_dict
+
+        # this is needed because otherwise reading beyond the last element
+        # raises an out-of-range error, and the last grid sample
+        # will not be processed properly.
+        try:
+            for _ in range(1):
+                for name in list(output_dict):
+                    output_dict[name] = np.ones_like(output_dict[name]) * -1
+                yield output_dict
+        except (NameError, KeyError):
+            tf.logging.fatal("No feasible samples from %s", self)
+            raise
 
 
 def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
@@ -133,9 +139,12 @@ def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
         window_shape = win_sizes[name]
         grid_size = [max(win_size - 2 * border, 0)
                      for (win_size, border) in zip(window_shape, border_size)]
-        assert len(image_shape) >= N_SPATIAL, 'incompatible image shapes'
-        assert len(window_shape) >= N_SPATIAL, 'incompatible window shapes'
-        assert len(grid_size) >= N_SPATIAL, 'incompatible step sizes'
+        assert len(image_shape) >= N_SPATIAL, \
+            'incompatible image shapes in grid_spatial_coordinates'
+        assert len(window_shape) >= N_SPATIAL, \
+            'incompatible window shapes in grid_spatial_coordinates'
+        assert len(grid_size) >= N_SPATIAL, \
+            'incompatible step sizes grid_spatial_coordinates'
         steps_along_each_dim = [
             _enumerate_step_points(starting=0,
                                    ending=image_shape[i],

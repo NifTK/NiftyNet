@@ -39,7 +39,6 @@ class CRFTest(tf.test.TestCase):
 
         crf_layer = CRFAsRNNLayer()
         smoothed_logits = crf_layer(features, logits)
-        pred = tf.nn.softmax(smoothed_logits)
         loss = tf.reduce_mean(tf.abs(smoothed_logits - gt))
         opt = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
 
@@ -47,8 +46,8 @@ class CRFTest(tf.test.TestCase):
             sess.run(tf.global_variables_initializer())
             params = sess.run(tf.trainable_variables())
             for param in params:
-                if param.shape == (1, 1, 1, n_classes, n_classes):
-                    self.assertAllClose(param[0, 0, 0], -1.0 * np.eye(n_classes))
+                if param.shape == (n_classes, n_classes):
+                    self.assertAllClose(param, -1.0 * np.eye(n_classes))
             sess.run(opt)
             params_1 = sess.run(tf.trainable_variables())
             self.assertGreater(np.sum(np.abs(params_1[0] - params[0])), 0.0)
@@ -78,8 +77,8 @@ class CRFTest(tf.test.TestCase):
             sess.run(tf.global_variables_initializer())
             params = sess.run(tf.trainable_variables())
             for param in params:
-                if param.shape == (1, 1, n_classes, n_classes):
-                    self.assertAllClose(param[0, 0], np.eye(n_classes))
+                if param.shape == (n_classes, n_classes):
+                    self.assertAllClose(param, np.eye(n_classes))
             sess.run(opt)
             params_1 = sess.run(tf.trainable_variables())
             print(params_1)
@@ -106,16 +105,16 @@ class CRFTest(tf.test.TestCase):
                 mu_init=np.eye(n_classes),
                 T=2)
             smoothed_logits = crf_layer(features, logits)
-        pred = tf.nn.softmax(smoothed_logits)
         loss = tf.reduce_mean(tf.abs(smoothed_logits - gt))
-        opt = tf.train.GradientDescentOptimizer(0.5).minimize(loss, colocate_gradients_with_ops=True)
+        opt = tf.train.GradientDescentOptimizer(0.5).minimize(
+            loss, colocate_gradients_with_ops=True)
 
-        with tf.Session(config=tf.ConfigProto(log_device_placement=False)) as sess:
+        with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             params = sess.run(tf.trainable_variables())
             for param in params:
-                if param.shape == (1, 1, n_classes, n_classes):
-                    self.assertAllClose(param[0, 0], np.eye(n_classes))
+                if param.shape == (n_classes, n_classes):
+                    self.assertAllClose(param, np.eye(n_classes))
             sess.run(opt)
             params_1 = sess.run(tf.trainable_variables())
             self.assertGreater(np.sum(np.abs(params_1[0] - params[0])), 0.0)

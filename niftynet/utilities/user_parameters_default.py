@@ -11,6 +11,7 @@ import os
 
 from niftynet.io.image_loader import SUPPORTED_LOADERS
 from niftynet.io.image_sets_partitioner import SUPPORTED_PHASES
+from niftynet.engine.image_window_dataset import SMALLER_FINAL_BATCH_MODE
 from niftynet.utilities.user_parameters_helper import float_array
 from niftynet.utilities.user_parameters_helper import int_array
 from niftynet.utilities.user_parameters_helper import spatial_atleast3d
@@ -205,6 +206,14 @@ def add_input_data_args(parser):
         type=str_array,
         help="keywords in input file names, negatively matches filenames",
         default='')
+    parser.add_argument(
+        "--filename_removefromid",
+        metavar='',
+        type=str,
+        help="Regular expression for extracting subject id from filename, "
+             "matched pattern will be removed from the file names "
+             "to form the subject id",
+        default='')
 
     parser.add_argument(
         "--interp_order",
@@ -273,6 +282,16 @@ def add_network_args(parser):
         help="Set batch size of the net",
         type=int,
         default=2)
+
+    parser.add_argument(
+        "--smaller_final_batch_mode",
+        metavar='TYPE_STR',
+        help="If True, allow the final batch to be smaller "
+             "if there are insufficient items left in the queue, "
+             "and the batch size will be undetermined during "
+             "graph construction.",
+        choices=list(SMALLER_FINAL_BATCH_MODE),
+        default='pad')
 
     parser.add_argument(
         "--decay",
@@ -464,6 +483,21 @@ def add_training_args(parser):
         help="The spatial scaling factor in [min_percentage, max_percentage]",
         type=float_array,
         default=())
+
+    parser.add_argument(
+        "--bias_field_range",
+        help="[Training only] The range of bias field coeffs in [min_coeff, "
+             "max_coeff]",
+        type=float_array,
+        default=())
+
+    parser.add_argument(
+        "--bf_order",
+        help="[Training only] maximal polynomial order to use for the "
+             "creation of the bias field augmentation",
+        metavar='',
+        type=int,
+        default=3)
 
     parser.add_argument(
         "--random_flipping_axes",

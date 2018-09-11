@@ -154,8 +154,9 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
     def set_iteration_update(self, iteration_message):
         """
-        At each iteration ``application_driver`` calls:
-            ``output = tf.session.run(variables_to_eval, feed_dict=data_dict)``
+        At each iteration ``application_driver`` calls::
+
+            output = tf.session.run(variables_to_eval, feed_dict=data_dict)
 
         to evaluate TF graph elements, where
         ``variables_to_eval`` and ``data_dict`` are retrieved from

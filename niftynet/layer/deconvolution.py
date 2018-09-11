@@ -123,7 +123,13 @@ class DeconvLayer(TrainableLayer):
                                         stride_all_dim,
                                         kernel_size_all_dim,
                                         self.padding)
-        full_output_size = [input_shape[0]] + output_dims + [self.n_output_chns]
+        if input_tensor.shape.is_fully_defined():
+            full_output_size = \
+                [input_shape[0]] + output_dims + [self.n_output_chns]
+        else:
+            batch_size = tf.shape(input_tensor)[0]
+            full_output_size = tf.stack(
+                [batch_size] + output_dims + [self.n_output_chns])
         output_tensor = op_(value=input_tensor,
                             filter=deconv_kernel,
                             output_shape=full_output_size,

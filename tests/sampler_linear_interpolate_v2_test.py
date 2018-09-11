@@ -5,7 +5,7 @@ import os
 
 import tensorflow as tf
 
-from niftynet.contrib.dataset_sampler.sampler_linear_interpolate_v2 import LinearInterpolateSampler
+from niftynet.engine.sampler_linear_interpolate_v2 import LinearInterpolateSampler
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
@@ -55,8 +55,7 @@ class LinearInterpolateSamplerTest(tf.test.TestCase):
             n_interpolations=8,
             queue_length=1)
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=2)
+            sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, [1, 256, 168, 256, 2])
         sampler.close_all()

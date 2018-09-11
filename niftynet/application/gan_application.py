@@ -8,8 +8,8 @@ from niftynet.engine.application_factory import ApplicationNetFactory
 from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import \
     CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
-from niftynet.engine.sampler_random_vector import RandomVectorSampler
-from niftynet.engine.sampler_resize import ResizeSampler
+from niftynet.engine.sampler_random_vector_v2 import RandomVectorSampler
+from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.engine.windows_aggregator_identity import WindowAsImageAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.binary_masking import BinaryMaskingLayer
@@ -121,10 +121,10 @@ class GANApplication(BaseApplication):
         if self.is_training:
             self.sampler.append([ResizeSampler(
                 reader=reader,
-                data_param=self.data_param,
+                window_sizes=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=1,
-                shuffle_buffer=True,
+                shuffle=True,
                 queue_length=self.net_param.queue_length) for reader in
                 self.readers])
         else:
@@ -141,10 +141,10 @@ class GANApplication(BaseApplication):
             # (n = self.gan_param.n_interpolations)
             self.sampler.append([ResizeSampler(
                 reader=reader,
-                data_param=self.data_param,
+                window_sizes=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=self.gan_param.n_interpolations,
-                shuffle_buffer=False,
+                shuffle=False,
                 queue_length=self.net_param.queue_length) for reader in
                 self.readers])
 

@@ -142,7 +142,7 @@ Please send a merge request with only relevant changes to a particular unit test
 
 ### Making a release
 
-NiftyNet versions are numbered following [Semantic Versioning (semver)](http://semver.org/spec/v2.0.0.html).
+NiftyNet versions are numbered following [Semantic Versioning (semver)](https://semver.org/spec/v2.0.0.html).
 After adding notes for the current release to the [NiftyNet changelog][changelog], the current release should be [tagged][git-tag] with a [PEP440][pep440]-compliant semver number preceded by the letter `v` (for "version").
 
 [pep440]: https://www.python.org/dev/peps/pep-0440/

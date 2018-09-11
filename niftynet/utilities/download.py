@@ -438,7 +438,8 @@ def gitlab_raw_file_url(base_url, file_name):
     Returns the url for the raw file on a GitLab server
     """
 
-    return base_url + '/raw/master/' + file_name
+    return base_url + '/raw/new_dataset_api/' + file_name
+    # return base_url + '/raw/master/' + file_name
     # return base_url + '/raw/revising-config/' + file_name
 
 

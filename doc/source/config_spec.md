@@ -123,6 +123,7 @@ within each section.
 [path_to_search](#path-to-search) | `string` | `path_to_search=my_data/fold_1` | NiftyNet home folder
 [filename_contains](#filename-contains) | `string` or `string array` | `filename_contains=foo, bar` | `''`
 [filename_not_contains](#filename-not-contains) | `string` or `string array` | `filename_not_contains=foo` | `''`
+[filename_removefromid](#filename-removefromid) | `string` | `filename_removefromid=bar` | `''`
 [interp_order](#interp-order) | `integer` | `interp_order=0` | `3`
 [pixdim](#pixdim) | `float array` | `pixdim=1.2, 1.2, 1.2` | `''`
 [axcodes](#axcodes) | `string array` | `axcodes=L, P, S` | `''`
@@ -133,22 +134,36 @@ within each section.
 A file path to a list of input images.  If the file exists, input image name
 list will be loaded from the file; the filename based input image search will
 be disabled; [path_to_search](#path-to-search),
-[filename_contains](#filename-contains), and
-[filename_not_contains](#filename-not-contains) will be ignored.  If this
+[filename_contains](#filename-contains),
+ [filename_not_contains](#filename-not-contains),
+ and [filename_removefromid](#filename-removefromid) will be ignored.  If this
 parameter is left blank or the file does not exist, input image search will be
 enabled, and the matched filenames will be written to this file path.
 
 ###### `path_to_search`
 Single or multiple folders to search for input images.
 
+See also: [input filename matching guide](./filename_matching.html)
+
+
 ###### `filename_contains`
 Keywords used to match filenames.
 The matched keywords will be removed, and the remaining part is used as
 subject name (for loading corresponding images across modalities).
 
+See also: [input filename matching guide](./filename_matching.html)
+
 ###### `filename_not_contains`
 Keywords used to exclude filenames.
 The filenames with these keywords will not be used as input.
+
+See also: [input filename matching guide](./filename_matching.html)
+
+###### `filename_removefromid`
+Regular expression for extracting subject id from filename, 
+matched pattern will be removed from the file names to form the subject id.
+
+See also: [input filename matching guide](./filename_matching.html)
 
 ###### `interp_order`
 Interpolation order of the input data.
@@ -250,6 +265,7 @@ function parameters. See [Signals and event handlers](extending_event_handler.ht
 [name](#name) | `string` | `name=niftynet.network.toynet.ToyNet` | `''`
 [activation_function](#activation-function) | `string` | `activation_function=prelu` | `relu`
 [batch_size](#batch-size) | `integer` | `batch_size=10` | `2`
+[smaller_final_batch_mode](#smaller-final-batch-mode) | `string` | | `pad`
 [decay](#decay) | `non-negative float` | `decay=1e-5` | `0.0`
 [reg_type](#reg-type) | `string` | `reg_type=L1` | `L2`
 [volume_padding_size](#volume-padding-size) | `integer array` | `volume_padding_size=4, 4, 4` | `0,0,0`
@@ -277,6 +293,14 @@ Depending on its implementation, the network might ignore this option .
 Sets number of image windows to be processed at each iteration.
 When `num_gpus` is greater than 1, `batch_size` is used for each computing device.
 That is, the effective inputs at each iteration become `batch_size` x `num_gpus`.
+
+######  `smaller_final_batch_mode`
+When total number of window samples are not divisible by batch_size
+the class supports different modes for the final batch:
+- `drop`: drop the remainder batch
+- `pad`: padding the final smaller batch with -1
+- `dynamic`: output the remainder directly (
+    in this case the batch_size is undetermined at "compile time")
 
 ###### `reg_type`
 Type of trainable parameter regularisation; currently the available choices are "L1" and "L2".
@@ -390,7 +414,7 @@ regions only.
 ###### `foreground_type`
 To generate a foreground mask and the normalisation will be applied to foreground only.
 Available choices:
-> `otsu_plus`, `otsu_minus`, `thresh_plus`, `thresh_minus`.
+> `otsu_plus`, `otsu_minus`, `thresh_plus`, `thresh_minus`, `mean_plus`.
 
 ###### `multimod_foreground_type`
 Strategies applied to combine foreground masks of multiple modalities, can take one of the following:
@@ -533,7 +557,7 @@ Value should be in `[0, 1]`.
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
 [rotation_angle](#rotation-angle) | `float array` | `rotation_angle=-10.0,10.0` | `''`
-[scaling_percentage](#scaling-percentage) | `float array` | `scaling_percentage=0.8,1.2` | `''`
+[scaling_percentage](#scaling-percentage) | `float array` | `scaling_percentage=-20.0,20.0` | `''`
 [random_flipping_axes](#random-flipping-axes) | `integer array` | `random_flipping_axes=1,2` | `-1`
 
 ###### `rotation_angle`
@@ -543,6 +567,10 @@ volumes (This can be slow depending on the input volume dimensionality).
 ###### `scaling_percentage`
 Float array indicates a random spatial scaling should be applied
 (This can be slow depending on the input volume dimensionality).
+The option accepts percentages relative to 100 (the original input size). 
+E.g, `(-50, 50)` indicates transforming
+image (size `d`) to image with its size in between `0.5*d` and `1.5d`.
+
 
 ###### `random_flipping_axes`
 The axes which can be flipped to augment the data.
@@ -580,7 +608,7 @@ For a 2-D slice, e.g, `Nx1xM`, the second dimension of `border` should be `0`.
 [save_seg_dir](#save-seg-dir) | `string` | `save_seg_dir=output/test` | `output`
 [output_postfix](#output-postfix) | `string` | `output_postfix=_output` | `_niftynet_out`
 [output_interp_order](#output-interp-order) | `non-negative integer` | `output_interp_order=0` | `0`
-[dataset_to_infer](#dataset-to-infer) | `Training|Validation|Inference` | `dataset_to_infer=Training` | `''`
+[dataset_to_infer](#dataset-to-infer) | `all|training|validation|inference` | `dataset_to_infer=training` | `''`
 
 ###### `spatial_window_size`
 Array of integers indicating the size of input window.  By default, the window
@@ -607,8 +635,8 @@ Postfix appended to every inference output filenames.
 Interpolation order of the network outputs.
 
 ###### `dataset_to_infer`
-String specifies which dataset ('Training', 'Validation', 'Inference') to compute inference for.
-By default 'Inference' dataset is used.
+String specifies which dataset ('training', 'validation', 'inference') to compute inference for.
+By default 'inference' dataset is used.
 
 
 ### EVALUATION

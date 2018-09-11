@@ -204,8 +204,7 @@ class SelectiveSamplerTest(tf.test.TestCase):
                                    windows_per_image=2,
                                    queue_length=10)
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=1)
+            sampler.run_threads(sess, num_threads=1)
             out = sess.run(sampler.pop_batch_op())
             self.assertTrue(check_constraint(out['label'], constraint_built))
             self.assertAllClose(out['image'].shape, (2, 7, 10, 2, 2))
@@ -220,8 +219,7 @@ class SelectiveSamplerTest(tf.test.TestCase):
     #                              windows_per_image=10,
     #                              queue_length=10)
     #     with self.test_session() as sess:
-    #         coordinator = tf.train.Coordinator()
-    #         sampler.run_threads(sess, coordinator, num_threads=2)
+    #         sampler.run_threads(sess, num_threads=2)
     #         out = sess.run(sampler.pop_batch_op())
     #         self.assertAllClose(out['image'].shape, (2, 10, 9, 1))
     #     sampler.close_all()
@@ -237,8 +235,7 @@ class SelectiveSamplerTest(tf.test.TestCase):
     #                                windows_per_image=2,
     #                                queue_length=2)
     #     with self.test_session() as sess:
-    #         coordinator = tf.train.Coordinator()
-    #         sampler.run_threads(sess, coordinator, num_threads=2)
+    #         sampler.run_threads(sess, num_threads=2)
     #         out = sess.run(sampler.pop_batch_op())
     #         test = np.zeros_like(out['label'])
     #         test[out['label'] == 1] = 1

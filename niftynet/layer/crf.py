@@ -188,7 +188,7 @@ def ftheta(U, H1, permutohedrals, mu, kernel_weights, norms, name):
     :return: updated mean-field distribution
     """
     unary_shape = U.shape.as_list()
-    batch_size, n_voxels, n_ch = unary_shape
+    n_ch = unary_shape[-1]
     H1 = tf.nn.softmax(H1)
     Q1 = 0
     for idx, permutohedral in enumerate(permutohedrals):

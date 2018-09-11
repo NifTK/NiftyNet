@@ -10,7 +10,7 @@ import os
 import numpy as np
 
 import niftynet.io.misc_io as misc_io
-from niftynet.engine.sampler_resize import zoom_3d
+from niftynet.engine.sampler_resize_v2 import zoom_3d
 from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer

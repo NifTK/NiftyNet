@@ -19,7 +19,7 @@ pylintjob:
     - 223-put-bug-fixes-under-fixed-header-in-changelog
   script:
     - pylint --rcfile=tests/pylintrc niftynet/engine
-    - pylint --rcfile=tests/pylintrc niftynet/io/image_*py
+    - pylint --rcfile=tests/pylintrc niftynet/io
     - pylint --rcfile=tests/pylintrc niftynet/utilities/user_parameters_*py
     - pylint --rcfile=tests/pylintrc niftynet/utilities/download.py
     - pylint --rcfile=tests/pylintrc niftynet/utilities/niftynet_global_config.py
@@ -31,8 +31,8 @@ testjob:
   only:
     - master
     - dev
-    - refactoring-engine-with-blinker
     - tags
+    - refactoring-data-app
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
@@ -208,8 +208,8 @@ quicktest:
   except:
     - master
     - dev
-    - refactoring-engine-with-blinker
     - tags
+    - refactoring-data-app
     - 147-revise-contribution-guidelines-to-include-github
     - 150-properly-format-the-bibtex-entry-to-the-ipmi-2017-paper-on-the-main-readme
     - 148-publish-niftynet-v0-2-0-on-python-package-index-pypi
@@ -261,9 +261,8 @@ pip-installer:
   only:
     - master
     - dev
-    - refactoring-engine-with-blinker
     - tags
-    - 117-support-for-user-defined-networks-using-pip-installed-niftynet
+    - refactoring-data-app
   script:
     # get the shortened version of last commit's hash
     - LAST_COMMIT=$(git rev-parse --short HEAD)
@@ -303,7 +302,7 @@ pip-installer:
     - set -e
     - cd $venv_dir
     # install TF
-    - pip install tensorflow-gpu==1.9
+    - pip install tensorflow-gpu==1.10
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
@@ -403,7 +402,7 @@ pip-installer:
     - set -e
     - cd $venv_dir
     # install TF
-    - pip install tensorflow-gpu==1.9
+    - pip install tensorflow-gpu==1.10
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
