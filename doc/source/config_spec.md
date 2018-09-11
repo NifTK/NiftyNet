@@ -557,7 +557,7 @@ Value should be in `[0, 1]`.
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
 [rotation_angle](#rotation-angle) | `float array` | `rotation_angle=-10.0,10.0` | `''`
-[scaling_percentage](#scaling-percentage) | `float array` | `scaling_percentage=0.8,1.2` | `''`
+[scaling_percentage](#scaling-percentage) | `float array` | `scaling_percentage=-20.0,20.0` | `''`
 [random_flipping_axes](#random-flipping-axes) | `integer array` | `random_flipping_axes=1,2` | `-1`
 
 ###### `rotation_angle`
@@ -567,6 +567,10 @@ volumes (This can be slow depending on the input volume dimensionality).
 ###### `scaling_percentage`
 Float array indicates a random spatial scaling should be applied
 (This can be slow depending on the input volume dimensionality).
+The option accepts percentages relative to 100 (the original input size). 
+E.g, `(-50, 50)` indicates transforming
+image (size `d`) to image with its size in between `0.5*d` and `1.5d`.
+
 
 ###### `random_flipping_axes`
 The axes which can be flipped to augment the data.
