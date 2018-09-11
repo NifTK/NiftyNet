@@ -142,8 +142,9 @@ def has_section_in_config(config, required_custom_section):
     """
     required_custom_section = standardise_string(required_custom_section)
     if required_custom_section is not None:
-        user_sections = [standardise_string(section_name)
-                         for section_name in config.sections()]
+        user_sections = [
+            standardise_string(section_name)
+            for section_name in config.sections()]
         if required_custom_section not in user_sections:
             raise ValueError
 
@@ -173,7 +174,7 @@ def spatialnumarray(string_input):
     if the input has less than 3 elements,
     the last element is repeated as padding.
     """
-    int_tuple = int_array(string_input)
+    int_tuple = int_array(string_input) or (0,)
     while len(int_tuple) < 3:
         int_tuple = int_tuple + (int_tuple[-1],)
     int_tuple = int_tuple[:3]
@@ -185,7 +186,7 @@ def spatial_atleast3d(string_input):
     This function parses a 3-element tuple from a string input.
     The input will be padded with ones, if the length is less than 3.
     """
-    output_tuple = int_array(string_input)
+    output_tuple = int_array(string_input) or (0,)
     if len(output_tuple) < 3:
         # will pad the array with single dimensions
         output_tuple = output_tuple + (1,) * (3 - len(output_tuple))
