@@ -4,6 +4,24 @@ The source code for NiftyNet is released via [GitHub][github-niftynet].
 [github-niftynet]: https://github.com/NifTK/NiftyNet
 
 
+- [Submitting bug reports and feature requests](#submitting-bug-reports-and-feature-requests)
+- [Submitting merge requests](#submitting-merge-requests)
+    - Python style guide
+    - Testing your changes
+    - Creating GitHub pull requests
+- [Writing unit tests](#writing-unit-tests)
+    - Determine which module to test
+    - File an issue
+    - Create `[name]_test.py`
+    - Run tests locally
+    - Run all tests locally
+- [NiftyNet admin tasks](#niftynet-admin-tasks)
+    - Making a release
+    - Publishing a NiftyNet pip installer on PyPI
+    - Merging GitHub pull requests
+    - Enhancing the pip installer
+    - Bundling a pip installer
+
 ## Submitting bug reports and feature requests
 
 Bug reports and feature requests should be submitted by creating an issue on [GitHub][github-niftynet-issue].
