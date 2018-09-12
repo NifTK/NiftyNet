@@ -204,10 +204,7 @@ For a practical example see [how the `net_segment` CLI command is implemented][n
 [net-segment-entry]: https://github.com/NifTK/NiftyNet/blob/v0.3.0/setup.py#L107
 
 
-
-## Deprecated instructions
-
-### Bundling a pip installer
+## Bundling a pip installer
 
 The NiftyNet pip installer gets bundled automatically for [Git tags][git-tag] starting with a `v` (for "version").
 The [wheel version][wheel-version-tag] is determined automatically as part of this process.
