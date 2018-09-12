@@ -144,7 +144,7 @@ the `STFC Rutherford-Appleton Laboratory`_, and `NVIDIA`_.
 .. _`TensorFlow`: https://www.tensorflow.org/
 .. _`School of Biomedical Engineering and Imaging Sciences, King's College London`: https://www.kcl.ac.uk/lsm/research/divisions/imaging/index.aspx
 .. _`Wellcome EPSRC Centre for Interventional and Surgical Sciences, UCL`: http://www.ucl.ac.uk/weiss
-.. _`NiftyNet source code repository`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
+.. _`NiftyNet source code repository`: https://github.com/NifTK/NiftyNet
 .. _`Centre for Medical Image Computing, UCL`: http://cmic.cs.ucl.ac.uk/
 .. _`Centre for Medical Image Computing (CMIC)`: http://cmic.cs.ucl.ac.uk/
 .. _`University College London (UCL)`: http://www.ucl.ac.uk/
