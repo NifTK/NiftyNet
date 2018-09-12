@@ -209,17 +209,22 @@ For a practical example see [how the `net_segment` CLI command is implemented][n
 
 ### Bundling a pip installer
 
-The NiftyNet pip installer gets bundled automatically for [Git tags][git-tag] starting with a `v` (for "version") pushed to [CMICLab][niftynet-cmiclab].
+The NiftyNet pip installer gets bundled automatically for [Git tags][git-tag] starting with a `v` (for "version").
 The [wheel version][wheel-version-tag] is determined automatically as part of this process.
-To see how this is done in practice, please go to the [`pip-camera-ready` section of `.gitlab-ci.yml`][pip-camera-ready] (and see the result in [this build log - esp. the last few lines lines, which show where the pip installer can be found on the build server][pip-camera-ready-output]).
+The last few lines of the CI build log show the location of the bundled pip installer on the server, e.g.:
+
+```bash
+$ echo "Camera-ready pip installer bundle (wheel) created:"
+Camera-ready pip installer bundle (wheel) created:
+$ echo "$(ls $camera_ready_dir/*.whl)"
+/home/gitlab-runner/environments/niftynet/pip/camera-ready/NiftyNet-0.2.0-py2.py3-none-any.whl
+Job succeeded
+```
 
 In particular, bundling a pip installer boils down to running the command [`python setup.py bdist_wheel`][python-setuptools] in the top-level directory.
 This creates a [wheel binary package][wheel-binary] in a newly created `dist` directory, e.g. `dist/NiftyNet-0.2.0-py2.py3-none-any.whl`.
 
-[niftynet-cmiclab]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 [git-tag]: https://git-scm.com/book/en/v2/Git-Basics-Tagging
-[pip-camera-ready]: https://github.com/niftk/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L323
-[pip-camera-ready-output]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/-/jobs/30450
 [python-setuptools]: https://packaging.python.org/tutorials/distributing-packages/#wheels
 [wheel-binary]: https://www.python.org/dev/peps/pep-0491/
 
