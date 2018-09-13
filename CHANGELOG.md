@@ -28,8 +28,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 * `niftynet.engine`: improved core functions
     - IO modules based on `tf.data.Dataset` (breaking changes)
     - Decoupled the engine and event handlers
-* Migrated the code repository, model zoo, and [niftynet.io](http://niftynet.io) source code to [github.com/niftk]
-(https://github.com/niftk).
+* Migrated the code repository, model zoo, and [niftynet.io](http://niftynet.io) source code to 
+[github.com/niftk](https://github.com/niftk).
 
 ## [0.3.0] - 2018-05-15
 ### Added
