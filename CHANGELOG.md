@@ -6,6 +6,31 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.4.0] - 2018-09-13
+### Added
+* `niftynet.layer`: new layers
+    - Tversky loss function for image segmentation
+    - Random affine augmentation layer
+    - Random bias field augmentation layer
+    - Group normalisation layer
+    - Squeeze and excitation blocks
+* Documentation
+    - [Image reader and window sampler demo](https://github.com/NifTK/NiftyNet/tree/c457a5bb07284b030ce588d1d82b2907f7e4e65e/demos/module_examples)
+    - [2D U-net demo](https://github.com/NifTK/NiftyNet/tree/c88cb1e4c6794ebbd6bf681901ee8902da41d7eb/demos/unet)
+    - [Dense CRF layer demo](https://github.com/NifTK/NiftyNet/tree/8b9f3e40b6d0f3db61fab34d3b7afca43b93723d/demos/crf_as_rnn)
+    - [FAQ list](https://github.com/NifTK/NiftyNet/wiki/NiftyNet-FAQ)
+* Misc.
+    - [Subject id from filename with regular expression](https://niftynet.readthedocs.io/en/dev/filename_matching.html)
+    - Versioning with python-versioneer
+    - Tested with TensorFlow 1.10
+
+### Changed
+* `niftynet.engine`: improved core functions
+    - IO modules based on `tf.data.Dataset` (breaking changes)
+    - Decoupled the engine and event handlers
+* Migrated the code repository, model zoo, and [niftynet.io](http://niftynet.io) source code to [github.com/niftk]
+(https://github.com/niftk).
+
 ## [0.3.0] - 2018-05-15
 ### Added
 * Support for 2D image loading optionally using `skimage`, `pillow`, or `simpleitk`
@@ -75,7 +100,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 * Bugs in data augmentation, I/O, sampler
 
-[Unreleased]: https://github.com/NifTK/NiftyNet/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/NifTK/NiftyNet/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/NifTK/NiftyNet/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/NifTK/NiftyNet/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/NifTK/NiftyNet/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/NifTK/NiftyNet/compare/v0.2.0.post1...v0.2.1
