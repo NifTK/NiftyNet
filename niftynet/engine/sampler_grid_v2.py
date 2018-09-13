@@ -44,6 +44,12 @@ class GridSampler(ImageWindowDataset):
             name=name)
 
         self.border_size = window_border or (0, 0, 0)
+        assert isinstance(self.border_size, (list, tuple)), \
+            "window_border should be a list or tuple"
+        while len(self.border_size) < N_SPATIAL:
+            self.border_size = tuple(self.border_size) + \
+                               (self.border_size[-1],)
+        self.border_size = self.border_size[:N_SPATIAL]
         tf.logging.info('initialised window instance')
         tf.logging.info("initialised grid sampler %s", self.window.shapes)
 
@@ -144,7 +150,7 @@ def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):
         assert len(window_shape) >= N_SPATIAL, \
             'incompatible window shapes in grid_spatial_coordinates'
         assert len(grid_size) >= N_SPATIAL, \
-            'incompatible step sizes grid_spatial_coordinates'
+            'incompatible border sizes in grid_spatial_coordinates'
         steps_along_each_dim = [
             _enumerate_step_points(starting=0,
                                    ending=image_shape[i],
