@@ -158,6 +158,19 @@ Please send a merge request with only relevant changes to a particular unit test
 
 ## NiftyNet admin tasks
 
+### Adding release notes
+
+The notes for NiftyNet releases are kept in the [NiftyNet changelog][changelog], and follow the ["keep a changelog" 
+standards][keep-a-changelog]. Notes should be added for each release, highlighting the changes in the appropriate 
+sections. See for instance [this commit][sample-changelog-commit]. Following the tagging of the new release on GitHub
+ (see the section below), the release notes can be synchronised with the [GitHub release page][github-release-page] 
+ using [chandler][chandler]
+
+[sample-changelog-commit]: https://github.com/NifTK/NiftyNet/commit/1d936d3b9cebb79cd58982863d8d5b97d3293511
+[keep-a-changelog]: http://keepachangelog.com/
+[github-release-page]: https://github.com/NifTK/NiftyNet/releases
+[chandler]: https://github.com/mattbrictson/chandler
+
 ### Making a release
 
 NiftyNet versions are numbered following [Semantic Versioning (semver)](https://semver.org/spec/v2.0.0.html).
