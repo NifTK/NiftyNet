@@ -32,7 +32,6 @@ testjob:
     - master
     - dev
     - tags
-    - refactoring-data-app
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
@@ -209,7 +208,6 @@ quicktest:
     - master
     - dev
     - tags
-    - refactoring-data-app
     - 147-revise-contribution-guidelines-to-include-github
     - 150-properly-format-the-bibtex-entry-to-the-ipmi-2017-paper-on-the-main-readme
     - 148-publish-niftynet-v0-2-0-on-python-package-index-pypi
@@ -262,7 +260,6 @@ pip-installer:
     - master
     - dev
     - tags
-    - refactoring-data-app
   script:
     # get the shortened version of last commit's hash
     - LAST_COMMIT=$(git rev-parse --short HEAD)
