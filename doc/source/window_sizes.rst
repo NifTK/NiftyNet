@@ -115,10 +115,10 @@ x 76``-pixel prediction when the input size is ``100 x 100``, we have to adjust
 the sampling step of the grid window sampler so that all input spatial
 locations get evaluated by the network.
 
-Therefore, for the grid window sampler,
+Therefore,
 
-1. we would like to have ``100 x 100``-pixel window generated with a step size
-   of ``76`` in both directions;
+1. for the grid window sampler, we would like to have ``100 x 100``-pixel 
+   window generated with a step size of ``76`` in both directions;
 
 2. for the window aggregation, the spatial coordinates of the ``76 x 76``-pixel
    window should be adjusted, for example, from the input's window coordinates
@@ -131,7 +131,6 @@ The follow figure shows `input` image window sampling with the configurations::
 
   # in the input source section
   spatial_window_size = (100, 100)
-
 
   # in the [NETWORK] section
   volume_padding_size = (50, 50)
@@ -184,7 +183,7 @@ Other features
 
 2.5D windows
 ~~~~~~~~~~~~
-Examples in the previous are in 2-D, but the idea generalises to 3D input::
+Examples in the previous section are in 2-D, but the idea generalises to 3D input::
 
   spatial_window_size = (h, w, d)
 
