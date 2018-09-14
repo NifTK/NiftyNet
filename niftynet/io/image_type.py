@@ -183,6 +183,15 @@ class SpatialImage2D(DataFromFile):
         return int(np.sum([dim > 1 for dim in self.shape[:3]]))
 
     @property
+    def original_shape(self):
+        """
+        Shape with multi-modal concatenation, before any resampling.
+
+        :return: a tuple of integers as the original image shape
+        """
+        return self._original_shape
+
+    @property
     def shape(self):
         """
         This function read image shape info from the headers
