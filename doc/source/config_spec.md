@@ -180,6 +180,8 @@ before fed into the network.
 Array of three integers specifies the input window size.
 Setting it to single slice, e.g., `spatial_window_size=64, 64, 1`, yields a 2-D slice window.
 
+See also: [Patch-base analysis guide](./window_sizes.html)
+
 ###### `loader`
 Specify the loader to be used to load the files in the input section.
 Some loaders require additional Python packages.
@@ -269,6 +271,7 @@ function parameters. See [Signals and event handlers](extending_event_handler.ht
 [decay](#decay) | `non-negative float` | `decay=1e-5` | `0.0`
 [reg_type](#reg-type) | `string` | `reg_type=L1` | `L2`
 [volume_padding_size](#volume-padding-size) | `integer array` | `volume_padding_size=4, 4, 4` | `0,0,0`
+[volume_padding_mode](#volume-padding-mode) | `string` | `volume_padding_mode=symmetric` | `minimum`
 [window_sampling](#window-sampling) | `string` | `window_sampling=uniform` | `uniform`
 [queue_length](#queue-length) | `integer` | `queue_length=10` | `5`
 [keep_prob](#keep-prob) | `non-negative float` | `keep_prob=0.2` | `1.0`
@@ -324,6 +327,12 @@ For 2-D inputs, the third dimension of `volume_padding_size` should be set to `0
 e.g. `volume_padding_size=M,N,0`.
 `volume_padding_size=M` is a shortcut for 3-D inputs, equivalent to `volume_padding_size=M,M,M`.
 The same amount of padding will be removed when before writing the output volume.
+
+See also: [Patch-base analysis guide](./window_sizes.html)
+
+###### `volume_padding_mode`
+Set which type of numpy padding to do, see 
+[https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.pad.html](https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.pad.html) for details.
 
 ###### `window_sampling`
 Type of sampler used to generate image windows from each image volume:
@@ -579,27 +588,6 @@ Note that these are 0-indexed, so choose some combination of 0, 1.
 
 
 ### INFERENCE
-Many networks are fully convolutional (without fully connected layers) and
-the resolution of the output volume can be different from the input image.
-That is, given input of an `NxNxN` voxel volume, the network generates
-a `DxDxD`-voxel output, where `0 < D < N`.
-
-This configuration section is design for such a process of sampling `NxNxN` windows
-from image volumes, and aggregating the network-generated `DxDxD` windows to output
-volumes.
-
-In terms of sampling by a sliding window, the sampling step size should be `D/2` in each
-spatial dimension.  However automatically inferring `D` as a function of network architecture and `N`
-is not implemented at the moment. Therefore, NiftyNet requires a [`border`](#border) to describe the
-spatial window size changes. `border` should be at least `floor((N - D) / 2)`.
-
-If the network is designed such that `N==D` is always true, `border` should be `0` (default value).
-
-Note that the above implementation generalises to
-`NxMxP`-voxel windows and `BxCxD`-voxel window outputs.
-For a 2-D slice, e.g, `Nx1xM`, the second dimension of `border` should be `0`.
-
-
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
 [spatial_window_size](#spatial-window-size) | `integer array` | `spatial_window_size=64,64,64` | `''`
@@ -616,10 +604,14 @@ size at inference time is the same as the [input source specification](#input-da
 If this parameter is specified, it
 overrides the `spatial_window_size` parameter in input source sections.
 
+See also: [Patch-base analysis guide](./window_sizes.html)
+
 ###### `border`
 Tuple of integers specifying a border size used to crop (along both sides of each
 dimension) the network output image window. E.g., `3, 3, 3` will crop a
 `64x64x64` window to size `58x58x58`.
+
+See also: [Patch-base analysis guide](./window_sizes.html)
 
 ###### `inference_iter`
 Integer specifies the trained model to be used for inference.
