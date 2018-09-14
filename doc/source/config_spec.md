@@ -596,7 +596,7 @@ Note that these are 0-indexed, so choose some combination of 0, 1.
 [save_seg_dir](#save-seg-dir) | `string` | `save_seg_dir=output/test` | `output`
 [output_postfix](#output-postfix) | `string` | `output_postfix=_output` | `_niftynet_out`
 [output_interp_order](#output-interp-order) | `non-negative integer` | `output_interp_order=0` | `0`
-[dataset_to_infer](#dataset-to-infer) | `all|training|validation|inference` | `dataset_to_infer=training` | `''`
+[dataset_to_infer](#dataset-to-infer) | `string` | `dataset_to_infer=training` | `''`
 
 ###### `spatial_window_size`
 Array of integers indicating the size of input window.  By default, the window
@@ -627,7 +627,7 @@ Postfix appended to every inference output filenames.
 Interpolation order of the network outputs.
 
 ###### `dataset_to_infer`
-String specifies which dataset ('training', 'validation', 'inference') to compute inference for.
+String specifies which dataset ('all', 'training', 'validation', 'inference') to compute inference for.
 By default 'inference' dataset is used.
 
 
