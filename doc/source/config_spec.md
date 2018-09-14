@@ -588,6 +588,7 @@ Note that these are 0-indexed, so choose some combination of 0, 1.
 
 
 ### INFERENCE
+
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
 [spatial_window_size](#spatial-window-size) | `integer array` | `spatial_window_size=64,64,64` | `''`
