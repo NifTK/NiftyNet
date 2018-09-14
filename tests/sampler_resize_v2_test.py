@@ -5,7 +5,7 @@ import os
 
 import tensorflow as tf
 
-from niftynet.contrib.dataset_sampler.sampler_resize_v2 import ResizeSampler
+from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
@@ -110,8 +110,7 @@ class ResizeSamplerTest(tf.test.TestCase):
             shuffle=False,
             queue_length=1)
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=2)
+            sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, [1, 7, 10, 2, 2])
         sampler.close_all()
@@ -124,8 +123,7 @@ class ResizeSamplerTest(tf.test.TestCase):
             shuffle=False,
             queue_length=1)
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=2)
+            sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, [1, 8, 2, 256, 2])
         sampler.close_all()
@@ -138,8 +136,7 @@ class ResizeSamplerTest(tf.test.TestCase):
             shuffle=True,
             queue_length=1)
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=2)
+            sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, [1, 10, 9, 1])
         sampler.close_all()

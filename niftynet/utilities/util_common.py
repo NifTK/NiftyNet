@@ -82,7 +82,7 @@ def __average_grads(tower_grads):
         if not grads:
             continue
         grad = tf.concat(grads, 0)
-        grad = tf.reduce_mean(grad, 0)
+        grad = tf.reduce_mean(grad, 0, name='AveOverDevices')
 
         v = grad_and_vars[0][1]
         grad_and_var = (grad, v)
@@ -166,25 +166,28 @@ class MorphologyOps(object):
     def foreground_component(self):
         return ndimage.label(self.binary_map)
 
-cache={}
+
+cache = {}
+
+
 def CachedFunction(func):
     def decorated(*args, **kwargs):
         key = (func, args, frozenset(kwargs.items()))
         if key not in cache:
-            cache[key] = func(*args,**kwargs)
+            cache[key] = func(*args, **kwargs)
         return cache[key]
     return decorated
+
 
 def CachedFunctionByID(func):
     def decorated(*args, **kwargs):
         id_args = tuple(id(a) for a in args)
-        id_kwargs = ((k,id(kwargs[k])) for k in sorted(kwargs.keys()))
+        id_kwargs = ((k, id(kwargs[k])) for k in sorted(kwargs.keys()))
         key = (func, id_args, id_kwargs)
         if key not in cache:
-            cache[key] = func(*args,**kwargs)
+            cache[key] = func(*args, **kwargs)
         return cache[key]
     return decorated
-
 
 
 class CacheFunctionOutput(object):
@@ -222,24 +225,22 @@ def look_up_operations(type_str, supported):
     if ``supported`` is a ``set``, returns ``type_str``
     if ``supported`` is a ``dict``, return ``supported[type_str]``
     else:
-        raise an error possibly with a guess of the closest match.
+    raise an error possibly with a guess of the closest match.
 
     :param type_str:
     :param supported:
     :return:
     """
     assert isinstance(type_str, string_types), 'unrecognised type string'
-    if type_str in supported and isinstance(supported, dict):
+    if isinstance(supported, dict) and type_str in supported:
         return supported[type_str]
 
-    if type_str in supported and isinstance(supported, set):
+    if isinstance(supported, set) and type_str in supported:
         return type_str
 
-    if isinstance(supported, set):
-        set_to_check = supported
-    elif isinstance(supported, dict):
+    try:
         set_to_check = set(supported)
-    else:
+    except TypeError:
         set_to_check = set()
 
     edit_distances = {}
@@ -254,11 +255,11 @@ def look_up_operations(type_str, supported):
         raise ValueError('By "{0}", did you mean "{1}"?\n'
                          '"{0}" is not a valid option.\n'
                          'Available options are {2}\n'.format(
-            type_str, guess_at_correct_spelling, supported))
+                             type_str, guess_at_correct_spelling, supported))
     else:
         raise ValueError("No supported option \"{}\" "
                          "is not found.\nAvailable options are {}\n".format(
-            type_str, supported))
+                             type_str, supported))
 
 
 def damerau_levenshtein_distance(s1, s2):
@@ -401,3 +402,39 @@ class ParserNamespace(object):
 
     def update(self, **kwargs):
         self.__dict__.update(kwargs)
+
+
+def device_string(n_devices=0, device_id=0, is_worker=True, is_training=True):
+    """
+    assigning CPU/GPU based on user specifications
+    """
+    # pylint: disable=no-name-in-module
+    from tensorflow.python.client import device_lib
+    devices = device_lib.list_local_devices()
+    n_local_gpus = sum([x.device_type == 'GPU' for x in devices])
+    if n_devices <= 0:  # user specified no gpu at all
+        return '/cpu:{}'.format(device_id)
+    if is_training:
+        # in training: use gpu only for workers whenever n_local_gpus
+        device = 'gpu' if (is_worker and n_local_gpus > 0) else 'cpu'
+        if device == 'gpu' and device_id >= n_local_gpus:
+            tf.logging.warning(
+                'trying to use gpu id %s, but only has %s GPU(s), '
+                'please set num_gpus to %s at most',
+                device_id, n_local_gpus, n_local_gpus)
+            # raise ValueError
+        return '/{}:{}'.format(device, device_id)
+    # in inference: use gpu for everything whenever n_local_gpus
+    return '/gpu:0' if n_local_gpus > 0 else '/cpu:0'
+
+
+def tf_config():
+    """
+    tensorflow system configurations
+    """
+    config = tf.ConfigProto()
+    config.log_device_placement = False
+    config.allow_soft_placement = True
+    return config
+
+

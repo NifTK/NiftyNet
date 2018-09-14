@@ -49,7 +49,7 @@ class UNet2D(BaseNet):
         self.conv_params.update(net_params)
         self.deconv_params.update(net_params)
 
-    def layer_op(self, images, is_training=None):
+    def layer_op(self, images, is_training=True, **unused_kwargs):
         # contracting path
         output_1 = TwoLayerConv(self.n_fea[0], self.conv_params)(images)
         down_1 = Pooling(func='MAX', **self.pooling_params)(output_1)

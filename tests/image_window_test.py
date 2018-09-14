@@ -20,8 +20,8 @@ def get_static_window_param():
             'label': tf.float32},
         window_sizes={
             'modality1': ParserNamespace(spatial_window_size=(10, 10, 2)),
-            'modality2': ParserNamespace(spatial_window_size=(10, 10, 2)),
-            'modality3': ParserNamespace(spatial_window_size=(5, 5, 1))}
+            'modality2': (10, 10, 2),
+            'modality3': (5, 5, 1)}
     )
 
 

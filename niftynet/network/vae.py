@@ -9,7 +9,6 @@ from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.convolution import ConvolutionalLayer
 from niftynet.layer.deconvolution import DeconvolutionalLayer
 from niftynet.layer.fully_connected import FullyConnectedLayer
-from niftynet.layer.reshape import ReshapeLayer
 from niftynet.layer.upsample import UpSampleLayer
 
 
@@ -130,7 +129,7 @@ class VAE(TrainableLayer):
         self.initializers = {'w': w_initializer, 'b': b_initializer}
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
-    def layer_op(self, images, is_training):
+    def layer_op(self, images, is_training=True, **unused_kwargs):
 
         def clip(x):
             return tf.clip_by_value(x, self.logvars_lower_bound,
@@ -330,9 +329,6 @@ class ConvEncoder(TrainableLayer):
 
             print(encoders_downsamplers[-1])
 
-        serialise_feature_maps = ReshapeLayer([-1, self.serialised_shape])
-        print(serialise_feature_maps)
-
         # Define the encoding fully-connected layers
         encoders_fc = []
         for i in range(0, len(self.layer_sizes_encoder)):
@@ -359,7 +355,7 @@ class ConvEncoder(TrainableLayer):
                 encoders_cnn[i](flow, is_training), is_training)
 
         # Flatten the feature maps
-        flow = serialise_feature_maps(flow)
+        flow = tf.reshape(flow, [-1, self.serialised_shape])
 
         # Fully-connected encoder layers
         for i in range(0, len(self.layer_sizes_encoder)):
@@ -496,9 +492,6 @@ class ConvDecoder(TrainableLayer):
                 name='decoder_fc_{}'.format(self.layer_sizes_decoder[i])))
             print(decoders_fc[-1])
 
-        reconstitute_feature_maps = ReshapeLayer([-1] + self.downsampled_shape)
-        print(reconstitute_feature_maps)
-
         # Define the decoding convolutional layers
         decoders_cnn = []
         decoders_upsamplers = []
@@ -542,7 +535,7 @@ class ConvDecoder(TrainableLayer):
             flow = decoders_fc[i](flow, is_training)
 
         # Reconstitute the feature maps
-        flow = reconstitute_feature_maps(flow)
+        flow = tf.reshape(flow, [-1] + self.downsampled_shape)
 
         # Convolutional decoder layers
         for i in range(0, len(self.trans_conv_output_channels)):

@@ -8,11 +8,11 @@ from niftynet.engine.application_factory import ApplicationNetFactory
 from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import TF_SUMMARIES
-from niftynet.engine.sampler_random_vector import RandomVectorSampler
+from niftynet.engine.sampler_random_vector_v2 import RandomVectorSampler
 from niftynet.layer.convolution import ConvolutionalLayer
 from niftynet.layer.fully_connected import FullyConnectedLayer
 from niftynet.network.base_net import BaseNet
-from niftynet.application.base_application import TRAIN, INFER
+
 
 class ToyApplication(BaseApplication):
     REQUIRED_CONFIG_SECTION = "TOY"

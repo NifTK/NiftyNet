@@ -18,5 +18,5 @@ This demo will download an MR volume and a
 trained network model, and then using the NiftyNet inference program to
 generate brain parcellation.
 
-_Please visit the [NiftyNet model zoo entry](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/blob/master/highres3dnet_brain_parcellation_model_zoo.md)
+_Please visit the [NiftyNet model zoo entry](https://github.com/NifTK/NiftyNetModelZoo/blob/master/highres3dnet_brain_parcellation_model_zoo.md)
 for more information on running this demo._

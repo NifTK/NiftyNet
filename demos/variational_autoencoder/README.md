@@ -67,7 +67,7 @@ cd ${demopath};
 net_autoencoder train -c ${demopath}/vae_config.ini
 ```
 
-or using NiftyNet cloned from [GitHub](https://github.com/NifTK/NiftyNet) or [CMICLab](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet):
+or using NiftyNet cloned from [GitHub](https://github.com/NifTK/NiftyNet):
 ```bash
 cd NiftyNet/
 # train a variational autoencoder
@@ -87,7 +87,7 @@ net_autoencoder inference -c ${demopath}/vae_config.ini \
         --inference_iter -1
 ```
 
-or using NiftyNet cloned from [GitHub](https://github.com/NifTK/NiftyNet) or [CMICLab](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet):
+or using NiftyNet cloned from [GitHub](https://github.com/NifTK/NiftyNet):
 ```bash
 cd NiftyNet;
 # encode each image using the latest trained model,
@@ -111,7 +111,7 @@ net_autoencoder inference -c ${demopath}/vae_config.ini \
         --inference_iter -1
 ```
 
-or using NiftyNet cloned from [GitHub](https://github.com/NifTK/NiftyNet) or [CMICLab](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet):
+or using NiftyNet cloned from [GitHub](https://github.com/NifTK/NiftyNet):
 ```bash
 cd NiftyNet;
 # decode image embedding using the latest trained model,

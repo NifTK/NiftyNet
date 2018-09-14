@@ -1,7 +1,7 @@
 # Model zoo
 
 With `net_download` command and [the model zoo
-server](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/blob/master/model_zoo.md),
+server](https://github.com/NifTK/NiftyNetModelZoo/blob/master/README.md),
 NiftyNet provides convenient access to the shared trained/untrained networks.
 Trained networks can be used directly (as part of a workflow or for performance
 comparisons), fine-tuned for different data distributions (e.g. a different
@@ -41,7 +41,7 @@ will automatically take the following two steps:
 
 * download the model zoo entry specification
   `highres3dnet_brain_parcellation_model_zoo.ini` from [NiftyNet model zoo
-  server](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer/tree/master).
+  server](https://github.com/NifTK/NiftyNetModelZoo).
 
 ```ini
 [config]
@@ -86,8 +86,10 @@ data, or trained weight, or both._
 
 ## Global-settings
 
-The global NiftyNet configuration is read from `~/.niftynet/config.ini`.
-NiftyNet attempts to load this file for the global configuration.
+The global NiftyNet configuration is read from
+`$niftynet_config_home/config.ini`, where `niftynet_config_home` is a system
+environment variable.  NiftyNet attempts to load this file (defaulting to
+`~/.niftynet/config.init` if undefined) for the global configuration.
 
 * If it does not exist, NiftyNet will create a default one.
 * If it exists but cannot be read (e.g., due to incorrect formatting):

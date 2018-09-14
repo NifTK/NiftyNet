@@ -24,13 +24,13 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
                  image_reader,
                  name='image',
                  output_path=os.path.join('.', 'output'),
-                 prefix='_niftynet_out'):
+                 postfix='_niftynet_out'):
         ImageWindowsAggregator.__init__(
             self, image_reader=image_reader, output_path=output_path)
         self.name = name
         self.output_interp_order = 0
-        self.prefix = prefix
-        self.csv_path = os.path.join(self.output_path, self.prefix+'.csv')
+        self.postfix = postfix
+        self.csv_path = os.path.join(self.output_path, self.postfix+'.csv')
         if os.path.exists(self.csv_path):
             os.remove(self.csv_path)
 
@@ -58,7 +58,7 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
             if isinstance(layer, DiscreteLabelNormalisationLayer):
                 image_out, _ = layer.inverse_op(image_out)
         subject_name = self.reader.get_subject_id(self.image_id)
-        filename = "{}{}.nii.gz".format(subject_name, self.prefix)
+        filename = "{}{}.nii.gz".format(subject_name, self.postfix)
         source_image_obj = self.input_image[self.name]
         misc_io.save_data_array(self.output_path,
                                 filename,

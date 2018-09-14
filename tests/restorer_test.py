@@ -15,7 +15,7 @@ class RestorerTest(tf.test.TestCase):
         scopes = {}
         tf.reset_default_graph()
         [tf.Variable(definition[k], name=k, dtype=np.float32)
-         for k in definition]
+            for k in definition]
         with tf.Session() as sess:
             saver = tf.train.Saver()
             sess.run(tf.global_variables_initializer())
@@ -25,9 +25,9 @@ class RestorerTest(tf.test.TestCase):
 
     def test_restore_block(self):
         definition = {'foo': [1], 'bar/conv_/w': np.random.randn(3, 3, 1, 3),
-                      'bar2/conv_/w': np.random.randn(3, 3, 1, 3),
-                      'foo3/conv_/w': np.random.randn(3, 3, 1, 3),
-                      'bar/bing/boffin': [2]}
+            'bar2/conv_/w': np.random.randn(3, 3, 1, 3),
+            'foo3/conv_/w': np.random.randn(3, 3, 1, 3),
+            'bar/bing/boffin': [2]}
         checkpoint_name = self.make_checkpoint('chk1', definition)
         tf.reset_default_graph()
         block1 = ConvolutionalLayer(3, 3, with_bn=False, name='foo')

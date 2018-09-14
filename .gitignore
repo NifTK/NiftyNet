@@ -17,10 +17,10 @@ testing_data*
 *.csv
 *.swp
 data/brain_parcellation/OASIS
+data/u-net
 dist
 build
 *.egg-info
-niftynet/info.py
 *.zip
 *.mhd
 *.raw
@@ -28,3 +28,6 @@ doc/source/niftynet*
 doc/source/modules.rst
 .vscode/
 .ipynb_checkpoints
+demos/unet/run_U373.sh
+demos/unet/run_hela.sh
+

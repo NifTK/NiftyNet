@@ -52,8 +52,7 @@ network should be prepared in the following steps:
    net_segment train -c /path/to/customised_config \
                      --name my_network_collection.new_net.NewNet
    ```
-   or using NiftyNet cloned from [GitHub](https://github.com/NifTK/NiftyNet) or
-   [CMICLab](https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet):
+   or using NiftyNet cloned from [GitHub](https://github.com/NifTK/NiftyNet):
    ```
    python net_segment.py train -c /path/to/customised_config \
                                --name my_network_collection.new_net.NewNet

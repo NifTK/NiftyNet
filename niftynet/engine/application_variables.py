@@ -113,15 +113,15 @@ class OutputsCollector(object):
                                  "in the collector", name)
                 raise ValueError
             return name
-        else:
-            # collecting variables and rename if exists
-            new_name = name
-            _uniq_id = 0
-            while new_name in var_dict:
-                _uniq_id += 1
-                new_name = '{}_{}'.format(name, _uniq_id)
-            var_dict[new_name] = var
-            return new_name
+
+        # collecting variables and rename if exists
+        new_name = name
+        _uniq_id = 0
+        while new_name in var_dict:
+            _uniq_id += 1
+            new_name = '{}_{}'.format(name, _uniq_id)
+        var_dict[new_name] = var
+        return new_name
 
     # pylint: disable=too-many-arguments
     def add_to_collection(self,

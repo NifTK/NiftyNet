@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 This module defines an image-level classification application
 that maps from images to scalar, multi-class labels.
@@ -14,7 +15,7 @@ from niftynet.engine.application_factory import \
     ApplicationNetFactory, InitializerFactory, OptimiserFactory
 from niftynet.engine.application_variables import \
     CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
-from niftynet.engine.sampler_resize import ResizeSampler
+from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.engine.windows_aggregator_classifier import \
     ClassifierSamplesAggregator
 from niftynet.io.image_reader import ImageReader
@@ -69,80 +70,80 @@ class ClassificationApplication(BaseApplication):
         self.data_param = data_param
         self.classification_param = task_param
 
-        file_lists = self.get_file_lists(data_partitioner)
-        # read each line of csv files into an instance of Subject
         if self.is_training:
-            self.readers = []
-            for file_list in file_lists:
-                reader = ImageReader(['image', 'label', 'sampler'])
-                reader.initialise(data_param, task_param, file_list)
-                self.readers.append(reader)
-
-        elif self.is_inference:  
-            # in the inference process use image input only
-            inference_reader = ImageReader(['image'])
-            inference_reader.initialise(data_param, task_param, file_lists[0])
-            self.readers = [inference_reader]
+            reader_names = ('image', 'label', 'sampler')
+        elif self.is_inference:
+            reader_names = ('image',)
         elif self.is_evaluation:
-            reader = ImageReader({'image', 'label', 'inferred'})
-            reader.initialise(data_param, task_param, file_lists[0])
-            self.readers = [reader]
+            reader_names = ('image', 'label', 'inferred')
         else:
-            raise ValueError('Action `{}` not supported. Expected one of {}'
-                             .format(self.action, self.SUPPORTED_ACTIONS))
+            tf.logging.fatal(
+                'Action `%s` not supported. Expected one of %s',
+                self.action, self.SUPPORTED_PHASES)
+            raise ValueError
+        try:
+            reader_phase = self.action_param.dataset_to_infer
+        except AttributeError:
+            reader_phase = None
+        file_lists = data_partitioner.get_file_lists_by(
+            phase=reader_phase, action=self.action)
+        self.readers = [
+            ImageReader(reader_names).initialise(
+                data_param, task_param, file_list) for file_list in file_lists]
 
-        foreground_masking_layer = None
-        if self.net_param.normalise_foreground_only:
-            foreground_masking_layer = BinaryMaskingLayer(
-                type_str=self.net_param.foreground_type,
-                multimod_fusion=self.net_param.multimod_foreground_type,
-                threshold=0.0)
+        foreground_masking_layer = BinaryMaskingLayer(
+            type_str=self.net_param.foreground_type,
+            multimod_fusion=self.net_param.multimod_foreground_type,
+            threshold=0.0) \
+            if self.net_param.normalise_foreground_only else None
 
         mean_var_normaliser = MeanVarNormalisationLayer(
-            image_name='image', binary_masking_func=foreground_masking_layer)
-        histogram_normaliser = None
-        if self.net_param.histogram_ref_file:
-            histogram_normaliser = HistogramNormalisationLayer(
-                image_name='image',
-                modalities=vars(task_param).get('image'),
-                model_filename=self.net_param.histogram_ref_file,
-                binary_masking_func=foreground_masking_layer,
-                norm_type=self.net_param.norm_type,
-                cutoff=self.net_param.cutoff,
-                name='hist_norm_layer')
+            image_name='image', binary_masking_func=foreground_masking_layer) \
+            if self.net_param.whitening else None
+        histogram_normaliser = HistogramNormalisationLayer(
+            image_name='image',
+            modalities=vars(task_param).get('image'),
+            model_filename=self.net_param.histogram_ref_file,
+            binary_masking_func=foreground_masking_layer,
+            norm_type=self.net_param.norm_type,
+            cutoff=self.net_param.cutoff,
+            name='hist_norm_layer') \
+            if (self.net_param.histogram_ref_file and
+                self.net_param.normalisation) else None
 
-        label_normaliser = None
-        if self.net_param.histogram_ref_file:
-            label_normaliser = DiscreteLabelNormalisationLayer(
-                image_name='label',
-                modalities=vars(task_param).get('label'),
-                model_filename=self.net_param.histogram_ref_file)
+        label_normaliser = DiscreteLabelNormalisationLayer(
+            image_name='label',
+            modalities=vars(task_param).get('label'),
+            model_filename=self.net_param.histogram_ref_file) \
+            if (self.net_param.histogram_ref_file and
+                task_param.label_normalisation) else None
 
         normalisation_layers = []
-        if self.net_param.normalisation:
+        if histogram_normaliser is not None:
             normalisation_layers.append(histogram_normaliser)
-        if self.net_param.whitening:
+        if mean_var_normaliser is not None:
             normalisation_layers.append(mean_var_normaliser)
-        if task_param.label_normalisation:
+        if label_normaliser is not None:
             normalisation_layers.append(label_normaliser)
 
         augmentation_layers = []
         if self.is_training:
-            if self.action_param.random_flipping_axes != -1:
+            train_param = self.action_param
+            if train_param.random_flipping_axes != -1:
                 augmentation_layers.append(RandomFlipLayer(
-                    flip_axes=self.action_param.random_flipping_axes))
-            if self.action_param.scaling_percentage:
+                    flip_axes=train_param.random_flipping_axes))
+            if train_param.scaling_percentage:
                 augmentation_layers.append(RandomSpatialScalingLayer(
-                    min_percentage=self.action_param.scaling_percentage[0],
-                    max_percentage=self.action_param.scaling_percentage[1]))
-            if self.action_param.rotation_angle or \
+                    min_percentage=train_param.scaling_percentage[0],
+                    max_percentage=train_param.scaling_percentage[1]))
+            if train_param.rotation_angle or \
                     self.action_param.rotation_angle_x or \
                     self.action_param.rotation_angle_y or \
                     self.action_param.rotation_angle_z:
                 rotation_layer = RandomRotationLayer()
-                if self.action_param.rotation_angle:
+                if train_param.rotation_angle:
                     rotation_layer.init_uniform_angle(
-                        self.action_param.rotation_angle)
+                        train_param.rotation_angle)
                 else:
                     rotation_layer.init_non_uniform_angle(
                         self.action_param.rotation_angle_x,
@@ -150,24 +151,27 @@ class ClassificationApplication(BaseApplication):
                         self.action_param.rotation_angle_z)
                 augmentation_layers.append(rotation_layer)
 
-        for reader in self.readers:
-            reader.add_preprocessing_layers(
-                normalisation_layers +
-                augmentation_layers)
+        # only add augmentation to first reader (not validation reader)
+        self.readers[0].add_preprocessing_layers(
+             normalisation_layers + augmentation_layers)
+
+        for reader in self.readers[1:]:
+            reader.add_preprocessing_layers(normalisation_layers)
 
     def initialise_resize_sampler(self):
         self.sampler = [[ResizeSampler(
             reader=reader,
-            data_param=self.data_param,
+            window_sizes=self.data_param,
             batch_size=self.net_param.batch_size,
-            shuffle_buffer=self.is_training,
+            shuffle=self.is_training,
             queue_length=self.net_param.queue_length) for reader in
-                         self.readers]]
+            self.readers]]
 
     def initialise_aggregator(self):
         self.output_decoder = ClassifierSamplesAggregator(
             image_reader=self.readers[0],
-            output_path=self.action_param.save_seg_dir)
+            output_path=self.action_param.save_seg_dir,
+            postfix=self.action_param.output_postfix)
 
     def initialise_sampler(self):
         if self.is_training:
@@ -245,6 +249,7 @@ class ClassificationApplication(BaseApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
+
         def switch_sampler(for_training):
             with tf.name_scope('train' if for_training else 'validation'):
                 sampler = self.get_sampler()[0][0 if for_training else -1]
@@ -257,8 +262,11 @@ class ClassificationApplication(BaseApplication):
                                     lambda: switch_sampler(for_training=False))
             else:
                 data_dict = switch_sampler(for_training=True)
+
             image = tf.cast(data_dict['image'], tf.float32)
-            net_out = self.net(image, is_training=self.is_training)
+            net_args = {'is_training': self.is_training,
+                        'keep_prob': self.net_param.keep_prob}
+            net_out = self.net(image, **net_args)
 
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
@@ -271,15 +279,15 @@ class ClassificationApplication(BaseApplication):
             data_loss = loss_func(
                 prediction=net_out,
                 ground_truth=data_dict.get('label', None))
-            reg_losses = tf.get_collection(
-                tf.GraphKeys.REGULARIZATION_LOSSES)
+            reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(
                     [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
                 loss = data_loss + reg_loss
             else:
                 loss = data_loss
-            grads = self.optimiser.compute_gradients(loss)
+            grads = self.optimiser.compute_gradients(
+                loss, colocate_gradients_with_ops=True)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
             # collecting output variables
@@ -298,8 +306,11 @@ class ClassificationApplication(BaseApplication):
             # classification probabilities or argmax classification labels
             data_dict = switch_sampler(for_training=False)
             image = tf.cast(data_dict['image'], tf.float32)
-            net_out = self.net(image, is_training=self.is_training)
-            print('net_out.shape may need to be resized:', net_out.shape)
+            net_args = {'is_training': self.is_training,
+                        'keep_prob': self.net_param.keep_prob}
+            net_out = self.net(image, **net_args)
+            tf.logging.info(
+                'net_out.shape may need to be resized: %s', net_out.shape)
             output_prob = self.classification_param.output_prob
             num_classes = self.classification_param.num_classes
             if output_prob and num_classes > 1:

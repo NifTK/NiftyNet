@@ -9,6 +9,7 @@ from __future__ import absolute_import, print_function, division
 import os
 import numpy as np
 import tensorflow as tf
+from niftynet.engine.image_window import N_SPATIAL
 
 
 class ImageWindowsAggregator(object):
@@ -22,7 +23,7 @@ class ImageWindowsAggregator(object):
     def __init__(self, image_reader=None, output_path='.'):
         self.reader = image_reader
         self._image_id = None
-        self.prefix = ''
+        self.postfix = ''
         self.output_path = os.path.abspath(output_path)
         self.inferred_cleared = False
 
@@ -74,7 +75,7 @@ class ImageWindowsAggregator(object):
         return np.any(location_vector < 0)
 
     @staticmethod
-    def crop_batch(window, location, border):
+    def crop_batch(window, location, border=None):
         """
         This utility function removes two borders along each
         spatial dim of the output image window data,
@@ -85,11 +86,13 @@ class ImageWindowsAggregator(object):
         :param border:
         :return:
         """
-        if border == ():
-            border = (0, 0, 0)
-        assert len(border) == 3, \
-            "unknown border format (should be an array of" \
-            "three elements corresponding to 3 spatial dims"
+        if not border:
+            return window, location
+        assert isinstance(border, (list, tuple)), \
+            "border should be a list or tuple"
+        while len(border) < N_SPATIAL:
+            border = tuple(border) + (border[-1],)
+        border = border[:N_SPATIAL]
 
         location = location.astype(np.int)
         window_shape = window.shape

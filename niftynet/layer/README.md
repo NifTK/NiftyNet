@@ -6,13 +6,13 @@ Summary of layers that can be used to build networks and their characteristics
 File: activation.py
 Possible activation layers to be specified as the acti_func field of ConvolutionLayer or DeconvolutionLayer among the following values:
 
-Field | Equation 
+Field | Equation
 ------|----------
 relu  |[relu_eq](./figures/relu_eq.pdf)
 relu6 |[relu6_eq](./figures/relu6_eq.pdf)
 elu | [elu_eq](./figures/elu_eq.pdf)
 softplus |[softplus_eq](./figures/softplus_eq.pdf)
-softsign |[softsign_eq](./figures/softsign_eq.pdf) 
+softsign |[softsign_eq](./figures/softsign_eq.pdf)
 sigmoid |[sigmoid_eq](./figures/sigmoid_eq.pdf)
 tanh |[tanh_eq](./figures/tanh_eq.pdf)
 prelu |[prelu_eq](./figures/prelu_eq.pdf)
@@ -111,7 +111,7 @@ The normalisation follows [the method](http://ieeexplore.ieee.org/abstract/docum
 [^1]: Nyúl, L. G., Udupa, J. K., & Zhang, X. (2000). New variants of a method of MRI scale standardization. IEEE transactions on medical imaging, 19(2), 143-150.
 
 ## Loss functions
-Loss functions are application-specific. 
+Loss functions are application-specific.
 
 File: loss_segmentation.py
 Class: LossFunction
@@ -122,44 +122,45 @@ Fields:
 * loss_func_params: Additional parameters to be used for the specified loss
 * name
 
-Following is a brief description of the loss functions for segmentation: 
+Following is a brief description of the loss functions for segmentation:
 
 Loss function| Notes | Citation | Additional Arguments
-------|----------|------ | -----| 
-Cross-entropy |  | 
+------|----------|------ | -----|
+Cross-entropy |  |
 Dice Loss |  | "V-net: Fully convolutional neural networks for volumetric medical image segmentation", Milletari, et al, 3DV 2016.
 Dice Loss (no square) | Similar to Dice Loss, but probabilities are not squared in the denominator. |
-Generalised Dice Loss | | "Generalised Dice overlap as a deep learning loss function for highly unbalanced segmentations", Sudre, C. et. al.  DLMIA 2017.| type_weight: default 'Square'. Indicates how the volume of each label is weighted. Square - Multiplication by the inverse of square of the volume / Simple - Multiplication by 1/V / Uniform - No weighting 
+Generalised Dice Loss | | "Generalised Dice overlap as a deep learning loss function for highly unbalanced segmentations", Sudre, C. et. al.  DLMIA 2017.| type_weight: default 'Square'. Indicates how the volume of each label is weighted. Square - Multiplication by the inverse of square of the volume / Simple - Multiplication by 1/V / Uniform - No weighting
 Generalised Wasserstein Dice Loss | | "Generalised Wasserstein Dice Score for Imbalanced Multi-class Segmentation using Holistic Convolutional Networks", Fidon, L. et. al. MICCAI 2017 (BrainLes).
 Sensitivity-Specificity Loss  | | "Deep Convolutional Encoder Networks for Multiple Sclerosis Lesion Segmentation", Brosch et al, MICCAI 2015. | r: default 0.05. The 'sensitivity ratio' (authors suggest values from 0.01-0.10 will have similar effects)
+Tversky index | | "Tversky loss function for image segmentation using 3D fully convolutional deep networks", Sadegh S. et al., 2017 | `alpha` and `beta` are parameters that control the trade-off between false positives and false negatives
 
 
-File: loss_regression.py 
+File: loss_regression.py
 Class: LossFunction
 * n_class: Number of classes/labels
 * loss_type: ['L1Loss'/ 'L2Loss'/ 'Huber'/ 'RMSE'] Name of the loss to be applied
 * loss_func_params: Additional parameters to be used for the specified loss
 * name
 
-Following is a brief description of the regression loss functions: 
+Following is a brief description of the regression loss functions:
 
 Loss function| Notes | Citation | Additional Arguments
-----------|----|---- | ---| 
+----------|----|---- | ---|
 L<sub>1</sub> Loss | |
-L<sub>2</sub> Loss | | 
+L<sub>2</sub> Loss | |
 Huber Loss |     The Huber loss is a smooth piecewise loss function that is quadratic for &#x7c;x&#x7c; <= delta, and linear for &#x7c;x&#x7c;> delta. See https://en.wikipedia.org/wiki/Huber_loss| | delta: default 1.0
-Root Mean Square Error | | | 
+Root Mean Square Error | | |
 
 ## Random flip
-This layer introduces flipping along user-specified axes. 
-This can be useful as a data-augmentation step in training. 
+This layer introduces flipping along user-specified axes.
+This can be useful as a data-augmentation step in training.
 
-File: rand_flip.py 
+File: rand_flip.py
 Class: RandomFlipLayer
-Fields: 
+Fields:
 
-* flip_axes: which axes to flip on. 
-* flip_probability: default 0.5. The probability of flipping along any of the specified axes. 
+* flip_axes: which axes to flip on.
+* flip_probability: default 0.5. The probability of flipping along any of the specified axes.
 
 ## Random rotation
 File: rand_rotation.py

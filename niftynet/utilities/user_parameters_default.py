@@ -11,6 +11,7 @@ import os
 
 from niftynet.io.image_loader import SUPPORTED_LOADERS
 from niftynet.io.image_sets_partitioner import SUPPORTED_PHASES
+from niftynet.engine.image_window_dataset import SMALLER_FINAL_BATCH_MODE
 from niftynet.utilities.user_parameters_helper import float_array
 from niftynet.utilities.user_parameters_helper import int_array
 from niftynet.utilities.user_parameters_helper import spatial_atleast3d
@@ -24,11 +25,21 @@ DEFAULT_EVALUATION_OUTPUT = os.path.join('.', 'evaluation')
 DEFAULT_DATASET_SPLIT_FILE = os.path.join('.', 'dataset_split.csv')
 DEFAULT_HISTOGRAM_REF_FILE = os.path.join('.', 'histogram_ref_file.txt')
 DEFAULT_MODEL_DIR = None
+DEFAULT_EVENT_HANDLERS = (
+    'model_saver',
+    'model_restorer',
+    'sampler_threading',
+    'apply_gradients',
+    'output_interpreter',
+    'console_logger',
+    'tensorboard_logger')
+
+DEFAULT_ITERATION_GENERATOR = 'iteration_generator'
 
 
 def add_application_args(parser):
     """
-    Common keywords  for all applications
+    Common keywords for all applications
 
     :param parser:
     :return:
@@ -67,6 +78,19 @@ def add_application_args(parser):
         help="File assigning subjects to training/validation/inference subsets",
         default=DEFAULT_DATASET_SPLIT_FILE)
 
+    parser.add_argument(
+        "--event_handler",
+        metavar='',
+        help="String(s) representing event handler module(s)",
+        type=str_array,
+        default=DEFAULT_EVENT_HANDLERS)
+
+    parser.add_argument(
+        "--iteration_generator",
+        metavar='',
+        help='String representing an iteration generator class',
+        type=str,
+        default=DEFAULT_ITERATION_GENERATOR)
     return parser
 
 
@@ -105,6 +129,12 @@ def add_inference_args(parser):
         default=DEFAULT_INFERENCE_OUTPUT)
 
     parser.add_argument(
+        "--output_postfix",
+        metavar='',
+        help="[Inference only] Prediction filename postfix",
+        default="_niftynet_out")
+
+    parser.add_argument(
         "--output_interp_order",
         metavar='',
         help="[Inference only] interpolation order of the network output",
@@ -117,6 +147,7 @@ def add_inference_args(parser):
         help="[Inference only] Width of borders to crop for segmented patch",
         type=spatialnumarray,
         default=(0, 0, 0))
+
     return parser
 
 
@@ -174,6 +205,14 @@ def add_input_data_args(parser):
         metavar='',
         type=str_array,
         help="keywords in input file names, negatively matches filenames",
+        default='')
+    parser.add_argument(
+        "--filename_removefromid",
+        metavar='',
+        type=str,
+        help="Regular expression for extracting subject id from filename, "
+             "matched pattern will be removed from the file names "
+             "to form the subject id",
         default='')
 
     parser.add_argument(
@@ -245,6 +284,16 @@ def add_network_args(parser):
         default=2)
 
     parser.add_argument(
+        "--smaller_final_batch_mode",
+        metavar='TYPE_STR',
+        help="If True, allow the final batch to be smaller "
+             "if there are insufficient items left in the queue, "
+             "and the batch size will be undetermined during "
+             "graph construction.",
+        choices=list(SMALLER_FINAL_BATCH_MODE),
+        default='pad')
+
+    parser.add_argument(
         "--decay",
         help="[Training only] Set weight decay",
         type=float,
@@ -263,6 +312,16 @@ def add_network_args(parser):
         help="Set padding size of each volume (in all dimensions)",
         type=spatialnumarray,
         default=(0, 0, 0))
+
+    parser.add_argument(
+        "--volume_padding_mode",
+        metavar='',
+        help="Set which type of numpy padding to do, see "
+             "https://docs.scipy.org/doc/numpy-1.14.0/"
+             "reference/generated/numpy.pad.html "
+             "for details",
+        type=str,
+        default='minimum')
 
     parser.add_argument(
         "--window_sampling",
@@ -347,6 +406,13 @@ def add_network_args(parser):
         type=str,
         default='zeros')
 
+    parser.add_argument(
+        "--keep_prob",
+        help="Probability that each element is kept "
+             "if dropout is supported by the network",
+        type=float,
+        default=1.0)
+
     yaml = require_module('yaml', mandatory=False)
     if yaml:
         parser.add_argument(
@@ -417,6 +483,21 @@ def add_training_args(parser):
         help="The spatial scaling factor in [min_percentage, max_percentage]",
         type=float_array,
         default=())
+
+    parser.add_argument(
+        "--bias_field_range",
+        help="[Training only] The range of bias field coeffs in [min_coeff, "
+             "max_coeff]",
+        type=float_array,
+        default=())
+
+    parser.add_argument(
+        "--bf_order",
+        help="[Training only] maximal polynomial order to use for the "
+             "creation of the bias field augmentation",
+        metavar='',
+        type=int,
+        default=3)
 
     parser.add_argument(
         "--random_flipping_axes",

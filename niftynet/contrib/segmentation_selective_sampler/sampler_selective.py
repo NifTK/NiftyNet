@@ -10,7 +10,7 @@ from scipy import ndimage
 from scipy.signal import fftconvolve
 
 from niftynet.engine.image_window import N_SPATIAL
-from niftynet.engine.sampler_uniform import UniformSampler
+from niftynet.engine.sampler_uniform_v2 import UniformSampler
 
 
 # pylint: disable=too-many-arguments

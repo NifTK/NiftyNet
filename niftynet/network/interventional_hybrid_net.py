@@ -25,6 +25,13 @@ class INetHybridPreWarp(BaseNet):
             multimodal deformable image registration, arXiv:1711.01666
             https://arxiv.org/abs/1711.01666
 
+            Hu et al., Weakly-Supervised Convolutional Neural Networks for
+            Multimodal Image Registration, Medical Image Analysis (2018)
+            https://doi.org/10.1016/j.media.2018.07.002
+
+        see also:
+            https://github.com/YipengHu/label-reg
+
         :param decay:
         :param affine_w_initializer:
         :param affine_b_initializer:
@@ -49,7 +56,11 @@ class INetHybridPreWarp(BaseNet):
         self.interp = interp
         self.boundary = boundary
 
-    def layer_op(self, fixed_image, moving_image, is_training=True):
+    def layer_op(self,
+                 fixed_image,
+                 moving_image,
+                 is_training=True,
+                 **unused_kwargs):
         affine_field = self.global_net(fixed_image, moving_image, is_training)
         moving_image = resampler(
             interpolation=self.interp,
@@ -84,7 +95,11 @@ class INetHybridTwoStream(BaseNet):
         self.interp = interp
         self.boundary = boundary
 
-    def layer_op(self, fixed_image, moving_image, is_training=True):
+    def layer_op(self,
+                 fixed_image,
+                 moving_image,
+                 is_training=True,
+                 **unused_kwargs):
         affine_field = self.global_net(fixed_image, moving_image, is_training)
         dense_field = self.local_net(fixed_image, moving_image, is_training)
         return dense_field + affine_field, dense_field, affine_field

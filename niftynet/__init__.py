@@ -21,8 +21,9 @@ except ImportError:
                       ' able to use NiftyNet.')
 
 try:
-    minimal_required_version = "1.5"
-    tf_version = tf.__version__
+    from distutils.version import LooseVersion
+    minimal_required_version = LooseVersion("1.5")
+    tf_version = LooseVersion(tf.__version__)
     if tf_version < minimal_required_version:
         tf.logging.fatal('TensorFlow %s or later is required.'
                          '\n\nPlease upgrade TensorFlow'
@@ -42,7 +43,7 @@ __version__ = get_niftynet_version_string()
 
 import os
 
-from niftynet.io.misc_io import set_logger
+from niftynet.io.misc_io import set_logger, close_logger
 
 set_logger()
 
@@ -50,6 +51,7 @@ from niftynet.utilities.util_import import require_module
 
 require_module('blinker', descriptor='New dependency', mandatory=True)
 
+from niftynet.engine.signal import TRAIN, INFER, EVAL
 import niftynet.utilities.util_common as util
 import niftynet.utilities.user_parameters_parser as user_parameters_parser
 from niftynet.engine.application_driver import ApplicationDriver
@@ -74,7 +76,7 @@ def main():
     # (rewriting user input with an absolute path)
     system_param['SYSTEM'].model_dir = resolve_module_dir(
         system_param['SYSTEM'].model_dir,
-        create_new=system_param['SYSTEM'].action == "train")
+        create_new=system_param['SYSTEM'].action == TRAIN)
 
     # writing all params for future reference
     txt_file = 'settings_{}.txt'.format(system_param['SYSTEM'].action)
@@ -131,10 +133,17 @@ def main():
         pass
 
     # start application
-    driver_table = {'train': ApplicationDriver,
-                    'inference': ApplicationDriver,
-                    'evaluation': EvaluationApplicationDriver}
+    driver_table = {
+        TRAIN: ApplicationDriver,
+        INFER: ApplicationDriver,
+        EVAL: EvaluationApplicationDriver}
     app_driver = driver_table[system_param['SYSTEM'].action]()
     app_driver.initialise_application(system_param, input_data_param)
-    app_driver.run_application()
+    app_driver.run(app_driver.app)
+
+    if tf.get_default_session() is not None:
+        tf.get_default_session().close()
+    tf.reset_default_graph()
+    close_logger()
+
     return 0

@@ -4,8 +4,8 @@ import tensorflow as tf
 
 from niftynet.application.regression_application import \
     RegressionApplication, SUPPORTED_INPUT
-from niftynet.engine.sampler_uniform import UniformSampler
-from niftynet.engine.sampler_weighted import WeightedSampler
+from niftynet.engine.sampler_uniform_v2 import UniformSampler
+from niftynet.engine.sampler_weighted_v2 import WeightedSampler
 from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.histogram_normalisation import \
@@ -21,13 +21,13 @@ class ISampleRegression(RegressionApplication):
     #    if len(self.readers) == 2:
     #        training_sampler = WeightedSampler(
     #            reader=self.readers[0],
-    #            data_param=self.data_param,
+    #            window_sizes=self.data_param,
     #            batch_size=self.net_param.batch_size,
     #            windows_per_image=self.action_param.sample_per_volume,
     #            queue_length=self.net_param.queue_length)
     #        validation_sampler = UniformSampler(
     #            reader=self.readers[1],
-    #            data_param=self.data_param,
+    #            window_sizes=self.data_param,
     #            batch_size=self.net_param.batch_size,
     #            windows_per_image=self.action_param.sample_per_volume,
     #            queue_length=self.net_param.queue_length)
@@ -43,16 +43,20 @@ class ISampleRegression(RegressionApplication):
         if self.is_training:
             return
         if not task_param.error_map:
+            # use the regression application implementation
             return
 
-        file_lists = self.get_file_lists(data_partitioner)
+        try:
+            reader_phase = self.action_param.dataset_to_infer
+        except AttributeError:
+            reader_phase = None
+        file_lists = data_partitioner.get_file_lists_by(
+            phase=reader_phase, action=self.action)
         # modifying the original readers in regression application
         # as we need ground truth labels to generate error maps
-        self.readers=[]
-        for file_list in file_lists:
-            reader = ImageReader(['image', 'output'])
-            reader.initialise(data_param, task_param, file_list)
-            self.readers.append(reader)
+        self.readers = [
+            ImageReader(['image', 'output']).initialise(
+                data_param, task_param, file_list) for file_list in file_lists]
 
         mean_var_normaliser = MeanVarNormalisationLayer(image_name='image')
         histogram_normaliser = None

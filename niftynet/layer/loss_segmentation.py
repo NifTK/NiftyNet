@@ -70,11 +70,22 @@ class LossFunction(Layer):
 
             data_loss = []
             for ind, pred in enumerate(prediction):
-                # go through each scale
 
-                loss_batch = []
-                for b_ind, pred_b in enumerate(tf.unstack(pred, axis=0)):
-                    # go through each image in a batch
+                # go through each scale
+                def _batch_i_loss(*args):
+                    """
+                    loss for the `b_id`-th batch (over spatial dimensions)
+
+                    :param b_id:
+                    :return:
+                    """
+                    # unpacking input from map_fn elements
+                    if len(args[0]) == 2:
+                        # pred and ground_truth
+                        pred_b, ground_truth_b = args[0]
+                        weight_b = None
+                    else:
+                        pred_b, ground_truth_b, weight_b = args[0]
 
                     pred_b = tf.reshape(pred_b, [-1, self._num_classes])
                     # performs softmax if required
@@ -92,15 +103,14 @@ class LossFunction(Layer):
                     else:
                         ref_shape = pred_b.shape.as_list()[:-1] + [-1]
 
-                    ground_truth_b = tf.reshape(ground_truth[b_ind], ref_shape)
+                    ground_truth_b = tf.reshape(ground_truth_b, ref_shape)
                     if ground_truth_b.shape.as_list()[-1] == 1:
                         ground_truth_b = tf.squeeze(ground_truth_b, axis=-1)
-                    if weight_map is not None:
-                        weight_b = tf.reshape(weight_map[b_ind], ref_shape)
+
+                    if weight_b is not None:
+                        weight_b = tf.reshape(weight_b, ref_shape)
                         if weight_b.shape.as_list()[-1] == 1:
                             weight_b = tf.squeeze(weight_b, axis=-1)
-                    else:
-                        weight_b = None
 
                     # preparing loss function parameters
                     loss_params = {
@@ -110,8 +120,19 @@ class LossFunction(Layer):
                     if self._loss_func_params:
                         loss_params.update(self._loss_func_params)
 
-                    # loss for each batch over spatial dimensions
-                    loss_batch.append(self._data_loss_func(**loss_params))
+                    return tf.to_float(self._data_loss_func(**loss_params))
+
+                if weight_map is not None:
+                    elements = (pred, ground_truth, weight_map)
+                else:
+                    elements = (pred, ground_truth)
+
+                loss_batch = tf.map_fn(
+                    fn=_batch_i_loss,
+                    elems=elements,
+                    dtype=tf.float32,
+                    parallel_iterations=1)
+
                 # loss averaged over batch
                 data_loss.append(tf.reduce_mean(loss_batch))
             # loss averaged over multiple scales
@@ -185,8 +206,10 @@ def generalised_dice_loss(prediction,
 
     if weight_map is not None:
         n_classes = prediction.shape[1].value
-        weight_map_nclasses = tf.reshape(
-            tf.tile(weight_map, [n_classes]), prediction.get_shape())
+        # weight_map_nclasses = tf.reshape(
+        #     tf.tile(weight_map, [n_classes]), prediction.get_shape())
+        weight_map_nclasses = tf.tile(
+            tf.expand_dims(tf.reshape(weight_map, [-1]), 1), [1, n_classes])
         ref_vol = tf.sparse_reduce_sum(
             weight_map_nclasses * one_hot, reduction_axes=[0])
 
@@ -213,10 +236,14 @@ def generalised_dice_loss(prediction,
                        tf.reduce_max(new_weights), weights)
     generalised_dice_numerator = \
         2 * tf.reduce_sum(tf.multiply(weights, intersect))
-    generalised_dice_denominator = \
-        tf.reduce_sum(tf.multiply(weights, seg_vol + ref_vol)) + 1e-6
+    # generalised_dice_denominator = \
+    #     tf.reduce_sum(tf.multiply(weights, seg_vol + ref_vol)) + 1e-6
+    generalised_dice_denominator = tf.reduce_sum(
+        tf.multiply(weights,  tf.maximum(seg_vol + ref_vol, 1)))
     generalised_dice_score = \
         generalised_dice_numerator / generalised_dice_denominator
+    generalised_dice_score = tf.where(tf.is_nan(generalised_dice_score), 1.0,
+                                      generalised_dice_score)
     return 1 - generalised_dice_score
 
 
@@ -397,8 +424,8 @@ def dice(prediction, ground_truth, weight_map=None):
 
     if weight_map is not None:
         n_classes = prediction.shape[1].value
-        weight_map_nclasses = tf.reshape(
-            tf.tile(weight_map, [n_classes]), prediction.get_shape())
+        weight_map_nclasses = tf.tile(tf.expand_dims(
+            tf.reshape(weight_map, [-1]), 1), [1, n_classes])
         dice_numerator = 2.0 * tf.sparse_reduce_sum(
             weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
         dice_denominator = \
@@ -437,8 +464,8 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
     # dice
     if weight_map is not None:
         n_classes = prediction.shape[1].value
-        weight_map_nclasses = tf.reshape(
-            tf.tile(weight_map, [n_classes]), prediction.get_shape())
+        weight_map_nclasses = tf.tile(tf.expand_dims(
+            tf.reshape(weight_map, [-1]), 1), [1, n_classes])
         dice_numerator = 2.0 * tf.sparse_reduce_sum(
             weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
         dice_denominator = \
@@ -457,6 +484,52 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
     # dice_score.set_shape([n_classes])
     # minimising (1 - dice_coefficients)
     return 1.0 - tf.reduce_mean(dice_score)
+
+
+def tversky(prediction, ground_truth, weight_map=None, alpha=0.5, beta=0.5):
+    """
+    Function to calculate the Tversky loss for imbalanced data
+
+        Sadegh et al. (2017)
+
+        Tversky loss function for image segmentation
+        using 3D fully convolutional deep networks
+
+    :param prediction: the logits
+    :param ground_truth: the segmentation ground_truth
+    :param alpha: weight of false positives
+    :param beta: weight of false negatives
+    :param weight_map:
+    :return: the loss
+    """
+    prediction = tf.to_float(prediction)
+    if len(ground_truth.shape) == len(prediction.shape):
+        ground_truth = ground_truth[..., -1]
+    one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
+    one_hot = tf.sparse_tensor_to_dense(one_hot)
+
+    p0 = prediction
+    p1 = 1 - prediction
+    g0 = one_hot
+    g1 = 1 - one_hot
+
+    if weight_map is not None:
+        num_classes = prediction.shape[1].value
+        weight_map_flattened = tf.reshape(weight_map, [-1])
+        weight_map_expanded = tf.expand_dims(weight_map_flattened, 1)
+        weight_map_nclasses = tf.tile(weight_map_expanded, [1, num_classes])
+    else:
+        weight_map_nclasses = 1
+
+    tp = tf.reduce_sum(weight_map_nclasses * p0 * g0)
+    fp = alpha * tf.reduce_sum(weight_map_nclasses * p0 * g1)
+    fn = beta * tf.reduce_sum(weight_map_nclasses * p1 * g0)
+
+    EPSILON = 0.00001
+    numerator = tp
+    denominator = tp + fp + fn + EPSILON
+    score = numerator / denominator
+    return 1.0 - tf.reduce_mean(score)
 
 
 def dice_dense(prediction, ground_truth, weight_map=None):

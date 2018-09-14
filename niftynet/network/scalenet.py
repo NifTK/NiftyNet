@@ -36,7 +36,7 @@ class ScaleNet(BaseNet):
 
         self.n_features = 16
 
-    def layer_op(self, images, is_training, layer_id=-1):
+    def layer_op(self, images, is_training=True, layer_id=-1, **unused_kwargs):
         n_modality = images.shape.as_list()[-1]
         rank = images.shape.ndims
         assert n_modality > 1

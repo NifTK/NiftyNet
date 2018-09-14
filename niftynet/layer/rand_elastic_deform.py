@@ -58,7 +58,7 @@ class RandomElasticDeformationLayer(RandomisedLayer):
     def randomise(self, image_dict):
         images = list(image_dict.values())
         equal_shapes = np.all(
-            [images[0].shape == image.shape for image in images])
+            [images[0].shape[:self.spatial_rank] == image.shape[:self.spatial_rank] for image in images])
         if equal_shapes and self.proportion_to_augment >= 0:
             self._randomise_bspline_transformation(images[0].shape)
         else:
@@ -98,23 +98,23 @@ class RandomElasticDeformationLayer(RandomisedLayer):
         :param interp_order: order of interpolation
         :return: the transformed image
         """
+        resampler = sitk.ResampleImageFilter()
+        if interp_order > 1:
+            resampler.SetInterpolator(sitk.sitkBSpline)
+        elif interp_order == 1:
+            resampler.SetInterpolator(sitk.sitkLinear)
+        elif interp_order == 0:
+            resampler.SetInterpolator(sitk.sitkNearestNeighbor)
+        else:
+            return image
+
         squeezed_image = np.squeeze(image)
         while squeezed_image.ndim < self.spatial_rank:
             # pad to the required number of dimensions
             squeezed_image = squeezed_image[..., None]
         sitk_image = sitk.GetImageFromArray(squeezed_image)
-
-        resampler = sitk.ResampleImageFilter()
+        
         resampler.SetReferenceImage(sitk_image)
-        if interp_order == 3:
-            resampler.SetInterpolator(sitk.sitkBSpline)
-        elif interp_order == 2:
-            resampler.SetInterpolator(sitk.sitkLinear)
-        elif interp_order == 1 or interp_order == 0:
-            resampler.SetInterpolator(sitk.sitkNearestNeighbor)
-        else:
-            raise RuntimeError("not supported interpolation_order")
-
         resampler.SetDefaultPixelValue(0)
         resampler.SetTransform(self._bspline_transformation)
         out_img_sitk = resampler.Execute(sitk_image)
@@ -126,7 +126,8 @@ class RandomElasticDeformationLayer(RandomisedLayer):
             return inputs
 
         # only do augmentation with a probability `proportion_to_augment`
-        if np.random.rand() >= self.proportion_to_augment:
+        do_augmentation = np.random.rand() < self.proportion_to_augment
+        if not do_augmentation:
             return inputs
 
         if isinstance(inputs, dict) and isinstance(interp_orders, dict):
