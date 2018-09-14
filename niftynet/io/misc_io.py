@@ -264,9 +264,12 @@ def save_data_array(filefolder,
         image_axcodes = image_object.output_axcodes[0]
         dst_pixdim = image_object.original_pixdim[0]
         dst_axcodes = image_object.original_axcodes[0]
+        original_shape = image_object.original_shape
     else:
         affine = np.eye(4)
-        image_pixdim, image_axcodes, dst_pixdim, dst_axcodes = (), (), (), ()
+        image_pixdim, dst_pixdim = (), ()
+        image_axcodes, dst_axcodes = (), ()
+        original_shape = ()
 
     if reshape:
         input_ndim = array_to_save.ndim
@@ -283,6 +286,12 @@ def save_data_array(filefolder,
             array_to_save = np.expand_dims(array_to_save, axis=3)
 
     if image_pixdim:
+        if original_shape:
+            # generating image_pixdim from original shape
+            # so that `do_resampling` returns deterministic shape
+            spatial_shape = np.asarray(array_to_save.shape[:3], dtype=np.float)
+            original_shape = np.asarray(original_shape[:3], dtype=np.float)
+            image_pixdim = dst_pixdim * np.divide(original_shape, spatial_shape)
         array_to_save = do_resampling(
             array_to_save, image_pixdim, dst_pixdim, interp_order)
     if image_axcodes:

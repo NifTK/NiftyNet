@@ -218,8 +218,7 @@ class ResizeSamplesAggregatorTest(tf.test.TestCase):
                                    'aggregated',
                                    output_filename)
         self.assertAllClose(
-            nib.load(output_file).shape, [255, 168, 256, 1, 1],
-            rtol=1e-03, atol=1e-03)
+            nib.load(output_file).shape, [256, 168, 256, 1, 1])
         sampler.close_all()
 
     def test_inverse_mapping(self):
