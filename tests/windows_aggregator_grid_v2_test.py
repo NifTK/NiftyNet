@@ -213,7 +213,7 @@ class GridSamplesAggregatorTest(tf.test.TestCase):
                                    'aggregated',
                                    output_filename)
         self.assertAllClose(
-            nib.load(output_file).shape, [168, 256, 256, 1, 1],
+            nib.load(output_file).shape, [256, 168, 256, 1, 1],
             rtol=1e-03, atol=1e-03)
         sampler.close_all()
 
