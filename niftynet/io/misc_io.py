@@ -309,7 +309,7 @@ def save_data_array(filefolder,
             spatial_shape = np.asarray(array_to_save.shape[:3], dtype=np.float)
             original_shape = np.asarray(original_shape[:3], dtype=np.float)
             if image_axcodes and dst_axcodes:
-                transf, _, _ = compute_orientation(dst_axcodes, image_axcodes)
+                transf, _, _ = compute_orientation(image_axcodes, dst_axcodes)
                 original_shape = tuple(
                     original_shape[k] for k in transf[:, 0].astype(np.int))
             image_pixdim = dst_pixdim * np.divide(original_shape, spatial_shape)
