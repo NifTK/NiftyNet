@@ -171,7 +171,30 @@ def rectify_header_sform_qform(img_nii):
     img_nii.set_qform(new_affine)
     return img_nii
 
+
 # end of utilities for file headers #
+
+
+def compute_orientation(init_axcodes, final_axcodes):
+    """
+    A thin wrapper around ``nib.orientations.ornt_transform``
+
+    :param init_axcodes: Initial orientation codes
+    :param final_axcodes: Target orientation codes
+    :return: orientations array, start_ornt, end_ornt
+    """
+    ornt_init = nib.orientations.axcodes2ornt(init_axcodes)
+    ornt_fin = nib.orientations.axcodes2ornt(final_axcodes)
+    if np.any(np.isnan(ornt_init)) or np.any(np.isnan(ornt_fin)):
+        tf.logging.fatal("unknown axcodes %s, %s", ornt_init, ornt_fin)
+        raise ValueError
+    try:
+        ornt_transf = nib.orientations.ornt_transform(ornt_init, ornt_fin)
+        return ornt_transf, ornt_init, ornt_fin
+    except (ValueError, IndexError):
+        tf.logging.fatal(
+            'reorientation transform error: %s, %s', ornt_init, ornt_fin)
+        raise ValueError
 
 
 def do_reorientation(data_array, init_axcodes, final_axcodes):
@@ -183,21 +206,15 @@ def do_reorientation(data_array, init_axcodes, final_axcodes):
     :param final_axcodes: Target orientation
     :return data_reoriented: New data array in its reoriented form
     """
-    ornt_init = nib.orientations.axcodes2ornt(init_axcodes)
-    ornt_fin = nib.orientations.axcodes2ornt(final_axcodes)
+    ornt_transf, ornt_init, ornt_fin = \
+        compute_orientation(init_axcodes, final_axcodes)
     if np.array_equal(ornt_init, ornt_fin):
         return data_array
-    if np.any(np.isnan(ornt_init)) or np.any(np.isnan(ornt_fin)):
-        tf.logging.fatal("unknown axcodes %s, %s", ornt_init, ornt_fin)
-        raise ValueError
     try:
-        ornt_transf = nib.orientations.ornt_transform(ornt_init, ornt_fin)
-        data_reoriented = nib.orientations.apply_orientation(
-            data_array, ornt_transf)
+        return nib.orientations.apply_orientation(data_array, ornt_transf)
     except (ValueError, IndexError):
         tf.logging.fatal('reorientation undecided %s, %s', ornt_init, ornt_fin)
         raise ValueError
-    return data_reoriented
 
 
 def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
@@ -285,16 +302,21 @@ def save_data_array(filefolder,
             # recover a time dimension for nifti format output
             array_to_save = np.expand_dims(array_to_save, axis=3)
 
-    if image_pixdim:
+    if image_pixdim and dst_pixdim:
         if original_shape:
             # generating image_pixdim from original shape
             # so that `do_resampling` returns deterministic shape
             spatial_shape = np.asarray(array_to_save.shape[:3], dtype=np.float)
             original_shape = np.asarray(original_shape[:3], dtype=np.float)
+            if image_axcodes and dst_axcodes:
+                transf, _, _ = compute_orientation(dst_axcodes, image_axcodes)
+                original_shape = tuple(
+                    original_shape[k] for k in transf[:, 0].astype(np.int))
             image_pixdim = dst_pixdim * np.divide(original_shape, spatial_shape)
         array_to_save = do_resampling(
             array_to_save, image_pixdim, dst_pixdim, interp_order)
-    if image_axcodes:
+
+    if image_axcodes and dst_axcodes:
         array_to_save = do_reorientation(
             array_to_save, image_axcodes, dst_axcodes)
     save_volume_5d(array_to_save, filename, filefolder, affine)
@@ -658,9 +680,10 @@ def image3(name,
         axis_order + [i for i in range(len(tensor.shape.as_list()))
                       if i not in axis_order]
     original_shape = tensor.shape.as_list()
-    new_shape = [original_shape[0], -1,
-                 original_shape[axis_order[-2]],
-                 original_shape[axis_order[-1]]]
+    new_shape = [
+        original_shape[0], -1,
+        original_shape[axis_order[-2]],
+        original_shape[axis_order[-1]]]
     transposed_tensor = tf.transpose(tensor, axis_order_all)
     transposed_tensor = tf.reshape(transposed_tensor, new_shape)
     # split images

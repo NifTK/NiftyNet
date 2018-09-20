@@ -484,29 +484,23 @@ class SpatialImage3D(SpatialImage2D):
         rest_shape = image_shape[3:]
 
         if int(np.sum([dim > 1 for dim in spatial_shape])) < 3:
+            # skip resampling and reorientation for spatially 2D
             return image_shape
+        pixdim = tuple(self.original_pixdim[0])
+        if self.original_axcodes[0] and self.output_axcodes[0]:
+            transf, _, _ = misc.compute_orientation(
+                self.output_axcodes[0], self.original_axcodes[0])
+            spatial_shape = tuple(
+                spatial_shape[k] for k in transf[:, 0].astype(np.int))
+            if pixdim:
+                pixdim = tuple(pixdim[k] for k in transf[:, 0].astype(np.int))
 
-        if self.original_affine[0] is not None and self.output_axcodes[0]:
-            src_ornt = nib.orientations.axcodes2ornt(self.original_axcodes[0])
-            dst_ornt = nib.orientations.axcodes2ornt(self.output_axcodes[0])
-            if np.any(np.isnan(dst_ornt)) or np.any(np.isnan(src_ornt)):
-                tf.logging.fatal(
-                    'unknown output axcodes %s for %s',
-                    self.output_axcodes, self.original_axcodes)
-                raise ValueError
-            transf = nib.orientations.ornt_transform(src_ornt, dst_ornt)
-            spatial_transf = transf[:, 0].astype(np.int).tolist()
-            new_shape = [0, 0, 0]
-            for i, k in enumerate(spatial_transf):
-                new_shape[k] = spatial_shape[i]
-            spatial_shape = tuple(new_shape)
-
-        if self.original_pixdim[0] and self.output_pixdim[0]:
+        if pixdim and self.output_pixdim[0]:
             try:
-                zoom_ratio = np.divide(self.original_pixdim[0][:3],
-                                       self.output_pixdim[0][:3])
-                spatial_shape = tuple(int(round(ii * jj)) for ii, jj in
-                                      zip(spatial_shape, zoom_ratio))
+                zoom_ratio = np.divide(pixdim[:3], self.output_pixdim[0][:3])
+                spatial_shape = tuple(
+                    int(round(ii * jj))
+                    for ii, jj in zip(spatial_shape, zoom_ratio))
             except (ValueError, IndexError):
                 tf.logging.fatal(
                     'unknown pixdim %s: %s',
@@ -515,20 +509,24 @@ class SpatialImage3D(SpatialImage2D):
         return spatial_shape + rest_shape
 
     def _load_single_file(self, file_path, loader, dtype=np.float32):
-        image_data = SpatialImage2D._load_single_file(
-            file_path, loader, dtype)
+        image_data = SpatialImage2D._load_single_file(file_path, loader, dtype)
 
         if self.spatial_rank < 3:
             return image_data
 
+        pixdim = self.original_pixdim[0]
         if self.original_axcodes[0] and self.output_axcodes[0]:
             image_data = misc.do_reorientation(
                 image_data, self.original_axcodes[0], self.output_axcodes[0])
+            transf, _, _ = misc.compute_orientation(
+                self.output_axcodes[0], self.original_axcodes[0])
+            if pixdim:
+                pixdim = tuple(pixdim[k] for k in transf[:, 0].astype(np.int))
 
-        if self.original_pixdim[0] and self.output_pixdim[0]:
+        if pixdim and self.output_pixdim[0]:
             # verbose: warning when interpolate_order>1 for integers
             image_data = misc.do_resampling(image_data,
-                                            self.original_pixdim[0],
+                                            pixdim,
                                             self.output_pixdim[0],
                                             self.interp_order[0])
         return image_data
@@ -626,11 +624,12 @@ class ImageFactory(object):
     Create image instance according to number of dimensions
     specified in image headers.
     """
-    INSTANCE_DICT = {2: SpatialImage2D,
-                     3: SpatialImage3D,
-                     4: SpatialImage4D,
-                     5: SpatialImage5D,
-                     6: SpatialImage5D}
+    INSTANCE_DICT = {
+        2: SpatialImage2D,
+        3: SpatialImage3D,
+        4: SpatialImage4D,
+        5: SpatialImage5D,
+        6: SpatialImage5D}
 
     @classmethod
     def create_instance(cls, file_path, **kwargs):
@@ -661,8 +660,9 @@ class ImageFactory(object):
 
         if image_type is None:
             try:
-                file_path = [resolve_file_name(path, ('.', home_folder))
-                             for path in file_path]
+                file_path = [
+                    resolve_file_name(path, ('.', home_folder))
+                    for path in file_path]
                 loader = kwargs.get('loader', None) or (None,)
                 ndims = misc.infer_ndims_from_file(file_path[0], loader[0])
                 ndims = ndims + (1 if len(file_path) > 1 else 0)
