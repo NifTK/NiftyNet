@@ -51,7 +51,7 @@ class SegmentationApplication(BaseApplication):
                         self.initialise_grid_sampler,
                         self.initialise_grid_aggregator),
             'weighted': (self.initialise_weighted_sampler,
-                         self.initialise_grid_sampler,
+                         self.initialise_weighted_sampler_inference,
                          self.initialise_grid_aggregator),
             'resize': (self.initialise_resize_sampler,
                        self.initialise_resize_sampler,
@@ -59,7 +59,10 @@ class SegmentationApplication(BaseApplication):
             'balanced': (self.initialise_balanced_sampler,
                          self.initialise_grid_sampler,
                          self.initialise_grid_aggregator),
-        }
+            'weighted_inference': (self.initialise_weighted_sampler,
+                                   self.initialise_weighted_sampler_inference,
+                                  self.initialise_grid_aggregator)
+}
 
     def initialise_dataset_loader(
             self, data_param=None, task_param=None, data_partitioner=None):
@@ -196,6 +199,15 @@ class SegmentationApplication(BaseApplication):
             window_sizes=self.data_param,
             batch_size=self.net_param.batch_size,
             windows_per_image=self.action_param.sample_per_volume,
+            queue_length=self.net_param.queue_length) for reader in
+            self.readers]]
+
+    def initialise_weighted_sampler_inference(self):
+        self.sampler = [[WeightedSamplerInference(
+            reader=reader,
+            window_sizes=self.data_param,
+            batch_size=self.net_param.batch_size,
+            windows_per_image=100,#just a high number to ensure we get it all
             queue_length=self.net_param.queue_length) for reader in
             self.readers]]
 

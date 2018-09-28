@@ -18,17 +18,17 @@ class UniformSampler(ImageWindowDataset):
     This class generates samples by uniformly sampling each input volume
     currently the coordinates are randomised for spatial dims only,
     i.e., the first three dims of image.
-
     This layer can be considered as a "random cropping" layer of the
     input image.
     """
-
     def __init__(self,
                  reader,
                  window_sizes,
                  batch_size=1,
                  windows_per_image=1,
                  queue_length=10,
+                 epoch = -1,
+                 shuffle=True,
                  name='uniform_sampler_v2'):
         ImageWindowDataset.__init__(
             self,
@@ -37,8 +37,8 @@ class UniformSampler(ImageWindowDataset):
             batch_size=batch_size,
             windows_per_image=windows_per_image,
             queue_length=queue_length,
-            shuffle=True,
-            epoch=-1,
+            shuffle=shuffle,
+            epoch=epoch,
             smaller_final_batch_mode='drop',
             name=name)
 
