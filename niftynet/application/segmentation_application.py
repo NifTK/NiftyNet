@@ -75,7 +75,7 @@ class SegmentationApplication(BaseApplication):
             reader_names = ('image', 'label', 'weight', 'sampler')
         elif self.is_inference:
             # in the inference process use `image` input only
-            reader_names = ('image',)
+            reader_names = ('image','sampler')
         elif self.is_evaluation:
             reader_names = ('image', 'label', 'inferred')
         else:
