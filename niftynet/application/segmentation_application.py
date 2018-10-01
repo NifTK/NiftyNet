@@ -10,6 +10,7 @@ from niftynet.engine.sampler_grid_v2 import GridSampler
 from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.engine.sampler_uniform_v2 import UniformSampler
 from niftynet.engine.sampler_weighted_v2 import WeightedSampler
+from niftynet.engine.sampler_weighted_inference import WeightedSamplerInference
 from niftynet.engine.sampler_balanced_v2 import BalancedSampler
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
