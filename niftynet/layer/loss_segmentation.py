@@ -239,12 +239,49 @@ def generalised_dice_loss(prediction,
     # generalised_dice_denominator = \
     #     tf.reduce_sum(tf.multiply(weights, seg_vol + ref_vol)) + 1e-6
     generalised_dice_denominator = tf.reduce_sum(
-        tf.multiply(weights,  tf.maximum(seg_vol + ref_vol, 1)))
+        tf.multiply(weights, tf.maximum(seg_vol + ref_vol, 1)))
     generalised_dice_score = \
         generalised_dice_numerator / generalised_dice_denominator
     generalised_dice_score = tf.where(tf.is_nan(generalised_dice_score), 1.0,
                                       generalised_dice_score)
     return 1 - generalised_dice_score
+
+
+def no_new_loss(prediction, ground_truth, weight_map=None):
+    """
+    Function to calculate the loss used in https://arxiv.org/pdf/1809.10486.pdf,
+    no-new net, Isenseee et al (used to win the Medical Imaging Decathlon).
+
+    It is the sum of the cross-entropy and the Dice-loss.
+
+    :param prediction: the logits
+    :param ground_truth: the segmentation ground truth
+    :param weight_map:
+    :return: the loss (cross_entropy + Dice)
+
+    """
+    if weight_map is not None:
+        raise NotImplementedError
+
+    n_labels = tf.shape(prediction)[-1]
+
+    prediction = tf.cast(prediction, tf.float32)
+    loss_xent = cross_entropy(prediction, ground_truth)
+
+    # Dice as according to the paper:
+    one_hot = labels_to_one_hot(ground_truth, n_labels=n_labels)
+    softmax_of_logits = tf.nn.softmax(prediction)
+
+    dice_numerator = -2.0 * tf.sparse_reduce_sum(one_hot * softmax_of_logits,
+                                                 reduction_axes=[0])
+    dice_denominator = tf.reduce_sum(softmax_of_logits, reduction_indices=[0]) + \
+                       tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
+
+    dice_denominator = dice_denominator * n_labels
+    epsilon_denominator = 0.00001
+
+    loss_dice = dice_numerator / (dice_denominator + epsilon_denominator)
+    return loss_xent + loss_dice
 
 
 def sensitivity_specificity_loss(prediction,
