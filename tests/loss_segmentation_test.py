@@ -31,27 +31,10 @@ class DicePlusXEntTest(tf.test.TestCase):
             test_loss_func = LossFunction(3, loss_type='DicePlusXEnt', softmax=False)
             loss_value = test_loss_func(predicted, labels)
 
-            print('\n\n\n\n')
-            print(LossFunction(3, loss_type='Dice', softmax=True)(predicted, labels).eval())
-            print('\n\n\n\n')
-
             # cross-ent of zero, Dice loss of -1, so sum \approx -1
             self.assertAllClose(loss_value.eval(), -1.0, atol=1e-3)
 
-    def test_dice_plus_multilabel(self):
-        with self.test_session():
-            predicted = tf.constant(
-                [[0, 0, 9999], [9999, 0, 0], [0, 9999, 0], [9999, 0, 0]],
-                dtype=tf.float32, name='predicted')
-            labels = tf.constant([2, 0, 1, 0], dtype=tf.int16, name='labels')
-            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
-            test_loss_func = LossFunction(3, loss_type='DicePlusXEnt', softmax=False)
-            loss_value = test_loss_func(predicted, labels)
-
-            # cross-ent of zero. Dice loss of -1, so sum \approx -1
-            self.assertAllClose(loss_value.eval(), -1.0, atol=1e-3)
-
-    def test_dice_plus_(self):
+    def test_dice_plus_non_zeros(self):
         with self.test_session():
             predicted = tf.constant(
                 [[0, 9999, 9999], [9999, 0, 0], [0, 9999, 9999], [9999, 0, 0]],
@@ -59,6 +42,19 @@ class DicePlusXEntTest(tf.test.TestCase):
             labels = tf.constant([2, 0, 1, 0], dtype=tf.int16, name='labels')
             predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
             test_loss_func = LossFunction(3, loss_type='DicePlusXEnt', softmax=False)
+            loss_value = test_loss_func(predicted, labels)
+            # cross-ent of mean(ln(2), 0, 0, ln(2)) = .5*ln(2)
+            # Dice loss of -mean(1, .5, .5)=-2/3
+            self.assertAllClose(loss_value.eval(), .5 * np.log(2) - 2 / 3, atol=1e-3)
+
+    def test_dice_plus_wrong_softmax(self):
+        with self.test_session():
+            predicted = tf.constant(
+                [[0, 9999, 9999], [9999, 0, 0], [0, 9999, 9999], [9999, 0, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([2, 0, 1, 0], dtype=tf.int16, name='labels')
+            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
+            test_loss_func = LossFunction(3, loss_type='DicePlusXEnt', softmax=True)
             loss_value = test_loss_func(predicted, labels)
             # cross-ent of mean(ln(2), 0, 0, ln(2)) = .5*ln(2)
             # Dice loss of -mean(1, .5, .5)=-2/3
@@ -114,6 +110,7 @@ class SensitivitySpecificityTests(tf.test.TestCase):
                                           loss_func_params={'r': 0.05})
             test_loss = test_loss_func(predicted, labels)
             self.assertAlmostEqual(test_loss.eval(), 0.14598623)
+
 
 class GeneralisedDiceTest(tf.test.TestCase):
     # test done by regression for refactoring purposes

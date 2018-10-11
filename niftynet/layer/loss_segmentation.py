@@ -36,7 +36,9 @@ class LossFunction(Layer):
         self._loss_func_params = \
             loss_func_params if loss_func_params is not None else dict()
 
-        if self._data_loss_func.__name__.startswith('cross_entropy'):
+        data_loss_function_name = self._data_loss_func.__name__
+        if data_loss_function_name.startswith('cross_entropy')\
+                or 'xent' in data_loss_function_name:
             tf.logging.info(
                 'Cross entropy loss function calls '
                 'tf.nn.sparse_softmax_cross_entropy_with_logits '
