@@ -45,7 +45,7 @@ class DicePlusXEntTest(tf.test.TestCase):
             loss_value = test_loss_func(predicted, labels)
             # cross-ent of mean(ln(2), 0, 0, ln(2)) = .5*ln(2)
             # Dice loss of -mean(1, .5, .5)=-2/3
-            self.assertAllClose(loss_value.eval(), .5 * np.log(2) - 2 / 3, atol=1e-3)
+            self.assertAllClose(loss_value.eval(), .5 * np.log(2) - 2. / 3., atol=1e-3)
 
     def test_dice_plus_wrong_softmax(self):
         with self.test_session():
@@ -58,7 +58,7 @@ class DicePlusXEntTest(tf.test.TestCase):
             loss_value = test_loss_func(predicted, labels)
             # cross-ent of mean(ln(2), 0, 0, ln(2)) = .5*ln(2)
             # Dice loss of -mean(1, .5, .5)=-2/3
-            self.assertAllClose(loss_value.eval(), .5 * np.log(2) - 2 / 3, atol=1e-3)
+            self.assertAllClose(loss_value.eval(), .5 * np.log(2) - 2. / 3., atol=1e-3)
 
 
 class OneHotTester(tf.test.TestCase):
