@@ -46,7 +46,7 @@ class RandomSpatialScalingLayer(RandomisedLayer):
         sigma = np.sqrt(variance)
         return sigma
 
-    def _apply_transformation(self, image, interp_order=3):
+    def _apply_transformation(self, image, interp_order=3, antialiasing=True):
         if interp_order < 0:
             return image
         assert self._rand_zoom is not None
@@ -59,7 +59,7 @@ class RandomSpatialScalingLayer(RandomisedLayer):
         if image.ndim == 4:
             output = []
             for mod in range(image.shape[-1]):
-                if smooth:
+                if smooth and antialiasing:
                     original_resolution = ndi.gaussian_filter(
                         image[..., mod], sigma)
                 else:
@@ -69,7 +69,7 @@ class RandomSpatialScalingLayer(RandomisedLayer):
                 output.append(scaled[..., np.newaxis])
             return np.concatenate(output, axis=-1)
         elif image.ndim == 3:
-            if smooth:
+            if smooth and antialiasing:
                 original_resolution = ndi.gaussian_filter(
                     image, sigma)
             else:
