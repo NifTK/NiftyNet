@@ -54,7 +54,6 @@ class RandomSpatialScalingLayer(RandomisedLayer):
         while len(full_zoom) < image.ndim:
             full_zoom = np.hstack((full_zoom, [1.0]))
         smooth = all(full_zoom[:3] < 1)  # perform smoothing if undersampling
-        smooth = False
         if smooth:
             sigma = self._get_sigma(full_zoom[:3])
         if image.ndim == 4:
