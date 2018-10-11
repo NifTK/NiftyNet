@@ -9,6 +9,7 @@ from __future__ import print_function
 import argparse
 import math
 import os
+import re
 import shutil
 import tarfile
 import tempfile
@@ -58,8 +59,8 @@ def download(example_ids,
         return False
 
     # Check if the server is running by looking for a known file
-    remote_base_url_test = gitlab_raw_file_url(
-        global_config.get_download_server_url(), 'README.md')
+    remote_base_url_test = raw_file_url(
+        global_config.get_download_server_url())
     server_ok = url_exists(remote_base_url_test)
     if verbose:
         print("Accessing: {}".format(global_config.get_download_server_url()))
@@ -94,14 +95,13 @@ def download_file(url, download_path):
     :param url: URL of the file to download
     :param download_path: location where the file should be saved
     """
-
     # Extract the filename from the URL
-    parsed = urlparse(url)
-    filename = os.path.basename(parsed.path)
+    filename = os.path.basename(download_path)
 
     # Ensure the output directory exists
-    if not os.path.exists(download_path):
-        os.makedirs(download_path)
+    output_directory = os.path.dirname(download_path)
+    if not os.path.exists(output_directory):
+        os.makedirs(output_directory)
 
     # Get a temporary file path for the compressed file download
     temp_folder = tempfile.mkdtemp()
@@ -111,8 +111,7 @@ def download_file(url, download_path):
     urlretrieve(url, downloaded_file, reporthook=progress_bar_wrapper)
 
     # Move the file to the destination folder
-    destination_path = os.path.join(download_path, filename)
-    shutil.move(downloaded_file, destination_path)
+    shutil.move(downloaded_file, download_path)
     shutil.rmtree(temp_folder, ignore_errors=True)
 
 
@@ -338,7 +337,9 @@ class ConfigStoreCache(object):
         Returns the full path to the locally cached configuration file
         """
 
-        return os.path.join(self._cache_folder, example_id + CONFIG_FILE_EXT)
+        return os.path.join(self._cache_folder,
+                            example_id + '_main'+ CONFIG_FILE_EXT)
+        # return os.path.join(self._cache_folder, example_id + CONFIG_FILE_EXT)
 
     def get_local_cache_folder(self):
         """
@@ -351,7 +352,6 @@ class ConfigStoreCache(object):
         """
         Returns the local configuration file for this example_id
         """
-
         config_filename = self.get_local_path(example_id)
 
         parser = NiftyNetLaunchConfig()
@@ -392,7 +392,7 @@ class RemoteProxy(object):
         """
 
         download_file(self._remote.get_url(example_id),
-                      self._cache.get_local_cache_folder())
+                      self._cache.get_local_path(example_id))
 
     def get_download_params(self, example_id):
         """
@@ -428,17 +428,21 @@ class RemoteConfigStore(object):
         """
         Gets the URL for the record for this example_id
         """
-
-        return gitlab_raw_file_url(self._base_url,
-                                   example_id + CONFIG_FILE_EXT)
+        return raw_file_url(self._base_url, example_id)
 
 
-def gitlab_raw_file_url(base_url, file_name):
+def raw_file_url(base_url, example_id=None):
     """
     Returns the url for the raw file on a GitLab server
     """
+    _branch_name = '5-reorganising-with-lfs'
 
-    return base_url + '/raw/new_dataset_api/' + file_name
+    if not example_id:
+        return '{}/raw/{}/README.md'.format(base_url, _branch_name)
+    example_id = re.sub('_model_zoo', '', example_id, 1)
+    return '{}/raw/{}/{}/main{}'.format(
+        base_url, _branch_name, example_id, CONFIG_FILE_EXT)
+    # return base_url + '/raw/new_dataset_api/' + file_name
     # return base_url + '/raw/master/' + file_name
     # return base_url + '/raw/revising-config/' + file_name
 
