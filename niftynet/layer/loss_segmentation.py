@@ -36,7 +36,9 @@ class LossFunction(Layer):
         self._loss_func_params = \
             loss_func_params if loss_func_params is not None else dict()
 
-        if self._data_loss_func.__name__.startswith('cross_entropy'):
+        data_loss_function_name = self._data_loss_func.__name__
+        if data_loss_function_name.startswith('cross_entropy')\
+                or 'xent' in data_loss_function_name:
             tf.logging.info(
                 'Cross entropy loss function calls '
                 'tf.nn.sparse_softmax_cross_entropy_with_logits '
@@ -205,11 +207,11 @@ def generalised_dice_loss(prediction,
     one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
 
     if weight_map is not None:
-        n_classes = prediction.shape[1].value
+        num_classes = prediction.shape[1].value
         # weight_map_nclasses = tf.reshape(
-        #     tf.tile(weight_map, [n_classes]), prediction.get_shape())
+        #     tf.tile(weight_map, [num_classes]), prediction.get_shape())
         weight_map_nclasses = tf.tile(
-            tf.expand_dims(tf.reshape(weight_map, [-1]), 1), [1, n_classes])
+            tf.expand_dims(tf.reshape(weight_map, [-1]), 1), [1, num_classes])
         ref_vol = tf.sparse_reduce_sum(
             weight_map_nclasses * one_hot, reduction_axes=[0])
 
@@ -239,12 +241,48 @@ def generalised_dice_loss(prediction,
     # generalised_dice_denominator = \
     #     tf.reduce_sum(tf.multiply(weights, seg_vol + ref_vol)) + 1e-6
     generalised_dice_denominator = tf.reduce_sum(
-        tf.multiply(weights,  tf.maximum(seg_vol + ref_vol, 1)))
+        tf.multiply(weights, tf.maximum(seg_vol + ref_vol, 1)))
     generalised_dice_score = \
         generalised_dice_numerator / generalised_dice_denominator
     generalised_dice_score = tf.where(tf.is_nan(generalised_dice_score), 1.0,
                                       generalised_dice_score)
     return 1 - generalised_dice_score
+
+
+def dice_plus_xent_loss(prediction, ground_truth, weight_map=None):
+    """
+    Function to calculate the loss used in https://arxiv.org/pdf/1809.10486.pdf,
+    no-new net, Isenseee et al (used to win the Medical Imaging Decathlon).
+
+    It is the sum of the cross-entropy and the Dice-loss.
+
+    :param prediction: the logits
+    :param ground_truth: the segmentation ground truth
+    :param weight_map:
+    :return: the loss (cross_entropy + Dice)
+
+    """
+    if weight_map is not None:
+        raise NotImplementedError
+
+    num_classes = tf.shape(prediction)[-1]
+
+    prediction = tf.cast(prediction, tf.float32)
+    loss_xent = cross_entropy(prediction, ground_truth)
+
+    # Dice as according to the paper:
+    one_hot = labels_to_one_hot(ground_truth, num_classes=num_classes)
+    softmax_of_logits = tf.nn.softmax(prediction)
+
+    dice_numerator = -2.0 * tf.sparse_reduce_sum(one_hot * softmax_of_logits,
+                                                 reduction_axes=[0])
+    dice_denominator = tf.reduce_sum(softmax_of_logits, reduction_indices=[0]) + \
+                       tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
+
+    epsilon_denominator = 0.00001
+    loss_dice = dice_numerator / (dice_denominator + epsilon_denominator)
+
+    return loss_dice + loss_xent
 
 
 def sensitivity_specificity_loss(prediction,
@@ -344,7 +382,7 @@ def wasserstein_disagreement_map(
     assert M is not None, "Distance matrix is required."
     # pixel-wise Wassertein distance (W) between flat_pred_proba and flat_labels
     # wrt the distance matrix on the label space M
-    n_classes = prediction.shape[1].value
+    num_classes = prediction.shape[1].value
     ground_truth.set_shape(prediction.shape)
     unstack_labels = tf.unstack(ground_truth, axis=-1)
     unstack_labels = tf.cast(unstack_labels, dtype=tf.float64)
@@ -354,8 +392,8 @@ def wasserstein_disagreement_map(
     #       "unstacked pred" ,unstack_pred)
     # W is a weighting sum of all pairwise correlations (pred_ci x labels_cj)
     pairwise_correlations = []
-    for i in range(n_classes):
-        for j in range(n_classes):
+    for i in range(num_classes):
+        for j in range(num_classes):
             pairwise_correlations.append(
                 M[i, j] * tf.multiply(unstack_pred[i], unstack_labels[j]))
     wass_dis_map = tf.add_n(pairwise_correlations)
@@ -382,7 +420,7 @@ def generalised_wasserstein_dice_loss(prediction,
         tf.logging.warning('Weight map specified but not used.')
 
     prediction = tf.cast(prediction, tf.float32)
-    n_classes = prediction.shape[1].value
+    num_classes = prediction.shape[1].value
     one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
 
     one_hot = tf.sparse_tensor_to_dense(one_hot)
@@ -395,7 +433,7 @@ def generalised_wasserstein_dice_loss(prediction,
     # compute generalisation of true positives for multi-class seg
     one_hot = tf.cast(one_hot, dtype=tf.float64)
     true_pos = tf.reduce_sum(
-        tf.multiply(tf.constant(M[0, :n_classes], dtype=tf.float64), one_hot),
+        tf.multiply(tf.constant(M[0, :num_classes], dtype=tf.float64), one_hot),
         axis=1)
     true_pos = tf.reduce_sum(tf.multiply(true_pos, 1. - delta), axis=0)
     WGDL = 1. - (2. * true_pos) / (2. * true_pos + all_error)
@@ -423,9 +461,9 @@ def dice(prediction, ground_truth, weight_map=None):
     one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
 
     if weight_map is not None:
-        n_classes = prediction.shape[1].value
+        num_classes = prediction.shape[1].value
         weight_map_nclasses = tf.tile(tf.expand_dims(
-            tf.reshape(weight_map, [-1]), 1), [1, n_classes])
+            tf.reshape(weight_map, [-1]), 1), [1, num_classes])
         dice_numerator = 2.0 * tf.sparse_reduce_sum(
             weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
         dice_denominator = \
@@ -442,7 +480,7 @@ def dice(prediction, ground_truth, weight_map=None):
     epsilon_denominator = 0.00001
 
     dice_score = dice_numerator / (dice_denominator + epsilon_denominator)
-    # dice_score.set_shape([n_classes])
+    # dice_score.set_shape([num_classes])
     # minimising (1 - dice_coefficients)
     return 1.0 - tf.reduce_mean(dice_score)
 
@@ -463,9 +501,9 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
 
     # dice
     if weight_map is not None:
-        n_classes = prediction.shape[1].value
+        num_classes = prediction.shape[1].value
         weight_map_nclasses = tf.tile(tf.expand_dims(
-            tf.reshape(weight_map, [-1]), 1), [1, n_classes])
+            tf.reshape(weight_map, [-1]), 1), [1, num_classes])
         dice_numerator = 2.0 * tf.sparse_reduce_sum(
             weight_map_nclasses * one_hot * prediction, reduction_axes=[0])
         dice_denominator = \
@@ -481,7 +519,7 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
     epsilon_denominator = 0.00001
 
     dice_score = dice_numerator / (dice_denominator + epsilon_denominator)
-    # dice_score.set_shape([n_classes])
+    # dice_score.set_shape([num_classes])
     # minimising (1 - dice_coefficients)
     return 1.0 - tf.reduce_mean(dice_score)
 
