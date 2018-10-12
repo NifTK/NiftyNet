@@ -36,8 +36,10 @@ class ModelRestorer(object):
                  model_dir,
                  initial_iter=0,
                  is_training_action=True,
+                 vars_to_restore=''
                  **_unused):
         self.initial_iter = initial_iter
+        self.vars_to_restore = vars_to_restore
         self.file_name_prefix = make_model_name(model_dir)
         # randomly initialise or restoring model
         if is_training_action and initial_iter == 0:
@@ -70,8 +72,23 @@ class ModelRestorer(object):
         tf.logging.info('starting from iter %d', self.initial_iter)
         checkpoint = '{}-{}'.format(self.file_name_prefix, self.initial_iter)
         tf.logging.info('Accessing %s', checkpoint)
+
+        var_list = tf.global_variables()
+        if self.vars_to_restore:
+            import re
+            var_regex = re.compile(self.vars_to_restore)
+            to_restore = [v for v in var_list if var_regex.search(v.name)]
+            to_randomise = [v for v in var_list if v not in to_restore]]
+            init_op = tf.variables_initializer(to_randomise)
+            tf.get_default_session().run(init_op)
+        else:
+            to_restore = var_list
+
+        tf.logging.info("Randomizing the following variables: ")
+        tf.logging.info([v.name for v in to_randomise])
+
         try:
-            saver = tf.train.Saver(save_relative_paths=True)
+            saver = tf.train.Saver(var_list=to_restore, save_relative_paths=True)
             saver.restore(tf.get_default_session(), checkpoint)
         except tf.errors.NotFoundError:
             tf.logging.fatal(

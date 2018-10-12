@@ -110,6 +110,7 @@ class ApplicationDriver(object):
             self.max_checkpoints = max(self.max_checkpoints,
                                        train_param.max_checkpoints)
             self.validation_every_n = train_param.validation_every_n
+            self.vars_to_restore = train_param.vars_to_restore
             if self.validation_every_n > 0:
                 self.validation_max_iter = max(self.validation_max_iter,
                                                train_param.validation_max_iter)

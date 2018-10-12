@@ -599,6 +599,18 @@ def add_training_args(parser):
         type=float,
         default=0.)
 
+    parser.add_argument(
+        "--vars_to_restore",
+        help="regex strings matching variable names to restore",
+        type=str,
+        default='')
+
+    parser.add_argument(
+        "--freeze_restored_vars",
+        help="Indicates whether to continue training restored variables",
+        type=str2boolean,
+        default=False)
+
     return parser
 
 
