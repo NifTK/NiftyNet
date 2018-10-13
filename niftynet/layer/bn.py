@@ -137,4 +137,3 @@ class InstanceNormLayer(TrainableLayer):
             trainable=True,
             data_format='NHWC',
             scope=None)
-

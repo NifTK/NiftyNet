@@ -49,25 +49,24 @@ class DenseVNet(BaseNet):
 
     """
 
+    """ Default network hyperparameters
+
+    Params:
+        prior_size (): size of spatial prior
+        n_dense_channels (): num dense channels in each block
+        n_seg_channels (): num of segmentation channels
+        n_initial_conv_channels (): num of channels in inital convolution
+        n_down_channels (): num of downsampling channels
+        dilation_rate (): dilation rate of each layer in each vblock
+        seg_kernel_size (): kernel size of final conv segmentation
+        augmentation_scale (): determines extent of the affine perturbation.
+            0.0 gives no perturbation and 1.0 gives the largest perturbation
+        use_bdo (): use batch-wise dropout
+        use_prior (): use spatial prior
+        use_dense_connections (): densely connect layers of each vblock
+        use_coords (): use image coordinate augmentation
+    """
     __hyper_params__ = dict(
-        """ Default network hyperparameters
-
-        Params:
-            prior_size (): size of spatial prior
-            n_dense_channels (): num dense channels in each block
-            n_seg_channels (): num of segmentation channels
-            n_initial_conv_channels (): num of channels in inital convolution
-            n_down_channels (): num of downsampling channels
-            dilation_rate (): dilation rate of each layer in each vblock
-            seg_kernel_size (): kernel size of final conv segmentation
-            augmentation_scale (): determines extent of the affine perturbation.
-                0.0 gives no perturbation and 1.0 gives the largest perturbation
-            use_bdo (): use batch-wise dropout
-            use_prior (): use spatial prior
-            use_dense_connections (): densely connect layers of each vblock
-            use_coords (): use image coordinate augmentation
-        """
-
         prior_size=12,
         n_dense_channels=[4, 8, 16],
         n_seg_channels=[12, 24, 24],
@@ -75,7 +74,7 @@ class DenseVNet(BaseNet):
         n_down_channels=[24, 24, None],
         dilation_rates=[[1] * 5, [1] * 10, [1] * 10],
         seg_kernel_size=3,
-        augmentation_scale=0.1
+        augmentation_scale=0.1,
         use_bdo=False,
         use_prior=False,
         use_dense_connections=True,
@@ -192,7 +191,8 @@ class DenseVNet(BaseNet):
         # Downsample input to the network
         downsample_layer = DownSampleLayer(func='AVG', kernel_size=3, stride=2)
         downsampled_tensor = downsample_layer(input_tensor)
-        downsampled_tensor = BNLayer(downsampled_tensor, is_training=is_training)
+        bn_layer = BNLayer()
+        downsampled_tensor = bn_layer(downsampled_tensor, is_training=is_training)
         feature_maps.append(downsampled_tensor)
 
         # All feature maps should match the downsampled tensor's shape
@@ -240,7 +240,7 @@ class DenseVNet(BaseNet):
 
         # Resize output to original size
         input_tensor_spatial_size = input_tensor.shape.as_list()[1:-1]
-        output = LinearResizeLayer(input_tensor_spacial_size)(output)
+        output = LinearResizeLayer(input_tensor_spatial_size)(output)
 
         # Segmentation summary
         seg_argmax = tf.to_float(tf.expand_dims(tf.argmax(output, -1), -1))
@@ -359,9 +359,9 @@ class DenseFeatureStackBlock(TrainableLayer):
         input_mask = tf.ones([n_channels]) > 0
 
         # Stack convolution outputs
-        for i, conv in enumerate(dfs_block.conv_layers):
+        for i, conv in enumerate(dfs_block):
             # No dropout on last layer of the stack
-            if i == len(dfs_block.conv_layers) - 1:
+            if i == len(dfs_block) - 1:
                 keep_prob = None
 
             # Merge feature stack along channel dimension
@@ -461,7 +461,7 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
             down_conv = ConvolutionalLayer(self.n_down_channels,
                                            kernel_size=self.kernel_size,
                                            stride=2,
-                                           name='down_conv'
+                                           name='down_conv',
                                            **self.kwargs)
 
         dfssd_block = namedtuple('DenseSDBlock',
