@@ -36,7 +36,7 @@ class ModelRestorer(object):
                  model_dir,
                  initial_iter=0,
                  is_training_action=True,
-                 vars_to_restore=''
+                 vars_to_restore=None,
                  **_unused):
         self.initial_iter = initial_iter
         self.vars_to_restore = vars_to_restore
@@ -69,23 +69,35 @@ class ModelRestorer(object):
         :param _unused:
         :return:
         """
-        tf.logging.info('starting from iter %d', self.initial_iter)
-        checkpoint = '{}-{}'.format(self.file_name_prefix, self.initial_iter)
-        tf.logging.info('Accessing %s', checkpoint)
 
+        tf.logging.info("Deciding which variables to restore...")
+
+        # Get all vars
         var_list = tf.global_variables()
         if self.vars_to_restore:
             import re
+            # Determine which vars to
+            # restore using regex matching
             var_regex = re.compile(self.vars_to_restore)
-            to_restore = [v for v in var_list if var_regex.search(v.name)]
-            to_randomise = [v for v in var_list if v not in to_restore]]
+            to_restore, to_randomise = [], []
+            for v in var_list:
+                if var_regex.search(v.name):
+                    to_restore.append(v)
+                else:
+                    to_randomise.append(v)
+
+            tf.logging.info("Randomizing the following variables: {}".format(
+                str([v.name + '\n' for v in to_randomise])))
+            # Initialize vars to randomize
             init_op = tf.variables_initializer(to_randomise)
             tf.get_default_session().run(init_op)
         else:
+            # Restore all vars
             to_restore = var_list
 
-        tf.logging.info("Randomizing the following variables: ")
-        tf.logging.info([v.name for v in to_randomise])
+        tf.logging.info('Restoring other vars from iter %d', self.initial_iter)
+        checkpoint = '{}-{}'.format(self.file_name_prefix, self.initial_iter)
+        tf.logging.info('Accessing %s', checkpoint)
 
         try:
             saver = tf.train.Saver(var_list=to_restore, save_relative_paths=True)

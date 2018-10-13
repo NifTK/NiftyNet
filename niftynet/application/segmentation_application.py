@@ -321,21 +321,24 @@ class SegmentationApplication(BaseApplication):
             else:
                 loss = data_loss
 
+            # Get all vars
             var_list = tf.global_variables()
-            if action_param.freeze_restored_vars \
-                and action_param.vars_to_restore:
+            if self.action_param.freeze_restored_vars and \
+                self.action_param.vars_to_restore:
                 import re
-                var_regex = re.compile(action_param.vars_to_restore)
+                var_regex = re.compile(self.action_param.vars_to_restore)
                 # Only optimise vars that weren't restored
                 to_optimise = \
                     [v for v in var_list if not var_regex.search(v.name)]
-                tf.logging.info("Optimizing the following variables: ")
-                tf.logging.info([v.name for v in to_optimise])
+                tf.logging.info("Optimizing the following variables: {}".format(
+                    str([v.name + '\n' for v in to_optimise])))
             else:
+                # Optimize all vars
                 to_optimise = var_list
 
-            grads = self.optimiser.compute_gradients(
-                loss, colocate_gradients_with_ops=True, var_list=to_optimise)
+            grads = self.optimiser.compute_gradients(loss, var_list=to_optimise,
+                colocate_gradients_with_ops=True)
+
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
             # collecting output variables
