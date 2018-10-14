@@ -70,7 +70,7 @@ class ModelRestorer(object):
         :return:
         """
 
-        tf.logging.info("Deciding which variables to restore...")
+        tf.logging.info("Finding variables to restore...")
 
         # Get all vars
         var_list = tf.global_variables()
@@ -86,8 +86,8 @@ class ModelRestorer(object):
                 else:
                     to_randomise.append(v)
 
-            tf.logging.info("Randomizing the following variables: {}".format(
-                str([v.name + '\n' for v in to_randomise])))
+            tf.logging.info("Randomizing {} variables".format(
+                len(to_randomise])))
             # Initialize vars to randomize
             init_op = tf.variables_initializer(to_randomise)
             tf.get_default_session().run(init_op)
@@ -95,7 +95,8 @@ class ModelRestorer(object):
             # Restore all vars
             to_restore = var_list
 
-        tf.logging.info('Restoring other vars from iter %d', self.initial_iter)
+        tf.logging.info('Restoring %d variables from iter %d',
+            len(to_restore), self.initial_iter)
         checkpoint = '{}-{}'.format(self.file_name_prefix, self.initial_iter)
         tf.logging.info('Accessing %s', checkpoint)
 

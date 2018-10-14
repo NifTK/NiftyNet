@@ -330,8 +330,8 @@ class SegmentationApplication(BaseApplication):
                 # Only optimise vars that weren't restored
                 to_optimise = \
                     [v for v in var_list if not var_regex.search(v.name)]
-                tf.logging.info("Optimizing the following variables: {}".format(
-                    str([v.name + '\n' for v in to_optimise])))
+                tf.logging.info("Optimizing {} variables".format(
+                    len(to_optimise])))
             else:
                 # Optimize all vars
                 to_optimise = var_list

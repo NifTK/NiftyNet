@@ -65,9 +65,9 @@ their name (the '|' acts like a boolean OR).
 
 **For excluding a few variables:**
 
-`^((?!DenseVNet\/(conv|batch_norm)).)*$` = don't match any vars that contain
-*DenseVNet/conv* or *DenseVNet/batch_norm* in their name (the '\' is an escape
-character for '/').
+`^((?!DenseVNet\/(skip_conv|fin_conv)).)*$` = don't match any vars that contain
+*DenseVNet/skip_conv* or *DenseVNet/fin_conv* in their name (the '\' is an
+escape character for '/').
 
 Once you've created a regex expression, it's recommended that you use a tool
 like [RegEx101](https://regex101.com) to double check that it works as
@@ -85,12 +85,15 @@ layers of a network while leaving the pre-trained feature extractors intact.
 While `freeze_restored_vars` does not allow you to pick and choose which vars
 to optimise, it stills offers quite a bit of flexibility. For example, when
 adapting your network to a new task your can first freeze your feature
-extractors until your top layers are reasonably well trained. Then you can stop training, unfreeze all layers and proceed to fine-tune the whole network
+extractors until your top layers are reasonably well trained. Then you can stop
+training, unfreeze all layers and proceed to fine-tune the whole network
 with a lower learning rate.
+
 
 ### *Notes*
 
-- Transfer learning in NiftyNet only works between networks using the exact same
-graph. Therefore you cannot initialize variables with weights from a random
-pre-trained VGG net for example, unless they share all of the same variables
-and they are named the same.
+- Transfer learning in NiftyNet will work between any networks that share the
+exact same variables as those being restored. In other words, you can change
+network layers that you plan to randomise but if you try to restore variables
+that aren't the exact shape and name between models, Tensorflow will throw an
+error.
