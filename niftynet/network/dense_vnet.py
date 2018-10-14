@@ -230,7 +230,8 @@ class DenseVNet(BaseNet):
 
         # Refine segmentation with prior
         if self.hyperparams['use_prior']:
-            xyz_prior = SpatialPriorBlock([12] * n_spatial_dims, feature_map_shape)
+            xyz_prior = SpatialPriorBlock([12] * n_spatial_dims, \
+                feature_map_shape)
             output += xyz_prior
 
         # Invert augmentation
@@ -274,14 +275,13 @@ class DenseVNet(BaseNet):
 class SpatialPriorBlock(TrainableLayer):
     def __init__(self,
                  prior_shape,
-                 feature_map_shape,
+                 output_shape,
                  name='spatial_prior_block'):
 
         super(SpatialPriorBlock, self).__init__(name=name)
-
+        
         self.prior_shape = prior_shape
-        self.feature_map = feature_map
-
+        self.output_shape = output_shape
 
     def layer_op(self):
         # The internal representation is probabilities so
@@ -289,7 +289,7 @@ class SpatialPriorBlock(TrainableLayer):
         prior = tf.get_variable('prior',
                                 shape=self.prior_shape,
                                 initializer=tf.constant_initializer(1))
-        return tf.log(LinearResizeLayer(self.feature_map)(prior))
+        return tf.log(LinearResizeLayer(self.output_shape)(prior))
 
 
 class DenseFeatureStackBlock(TrainableLayer):
