@@ -148,18 +148,18 @@ def get_3d_input1():
 class ResamplerGridWarperTest(tf.test.TestCase):
     def _test_correctness(
             self, inputs, grid, interpolation, boundary, expected_value):
-        resampler = ResamplerLayer(interpolation=interpolation,
-                                   boundary=boundary)
+        resampler = ResamplerLayer(
+            interpolation=interpolation, boundary=boundary)
         out = resampler(inputs, grid)
         with self.test_session() as sess:
             out_value = sess.run(out)
             self.assertAllClose(expected_value, out_value)
 
     def test_combined(self):
-        expected = [[[[[1], [2]], [[3], [4]]],
-                     [[[5], [6]], [[7], [8]]]],
-                    [[[[9.5], [2.5]], [[11.5], [3.0]]],
-                     [[[13.5], [3.5]], [[15.5], [4.0]]]]]
+        expected = [[[[[1], [-1]], [[3], [-2]]],
+                     [[[5], [-3]], [[7], [-4]]]],
+                    [[[[9.5], [-5]], [[11.5], [-6]]],
+                     [[[13.5], [-7]], [[15.5], [-8]]]]]
         affine_grid = AffineGridWarperLayer(source_shape=(2, 2, 3),
                                             output_shape=(2, 2, 2))
         test_grid = affine_grid(

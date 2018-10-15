@@ -64,6 +64,7 @@ SUPPORTED_NETWORK = {
 
     # classification
     "resnet": 'niftynet.network.resnet.ResNet',
+    "se_resnet": 'niftynet.network.se_resnet.SE_ResNet',
 
     # autoencoder
     "vae": 'niftynet.network.vae.VAE'
@@ -90,6 +91,8 @@ SUPPORTED_LOSS_SEGMENTATION = {
         'niftynet.layer.loss_segmentation.tversky',
     "GDSC":
         'niftynet.layer.loss_segmentation.generalised_dice_loss',
+    "DicePlusXEnt":
+        'niftynet.layer.loss_segmentation.dice_plus_xent_loss',
     "WGDL":
         'niftynet.layer.loss_segmentation.generalised_wasserstein_dice_loss',
     "SensSpec":

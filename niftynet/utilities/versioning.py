@@ -36,6 +36,11 @@ def get_niftynet_version():
         version_info = get_versions()
         if version_info['error'] is None:
             version_string = version_info['version']
+        elif 'full-revisionid' in version_info:
+            if version_info['full-revisionid']:
+                version_string = '{} ({})'.format(
+                    version_info['full-revisionid'], version_info['error']
+                )
     except:
         pass  # version_string is None by default
 

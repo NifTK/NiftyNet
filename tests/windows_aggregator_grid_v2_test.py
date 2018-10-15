@@ -23,7 +23,7 @@ MULTI_MOD_DATA = {
         filename_not_contains=('Parcellation',),
         interp_order=3,
         pixdim=(2.4, 5.0, 2.0),
-        axcodes='LAS',
+        axcodes='LSA',
         spatial_window_size=(23, 32, 15),
         loader=None
     ),
@@ -34,7 +34,7 @@ MULTI_MOD_DATA = {
         filename_not_contains=('Parcellation',),
         interp_order=3,
         pixdim=(2.4, 5.0, 2.0),
-        axcodes='LAS',
+        axcodes='LSA',
         spatial_window_size=(23, 32, 15),
         loader=None
     )
@@ -79,7 +79,7 @@ SINGLE_25D_DATA = {
         filename_not_contains=('Parcellation',),
         interp_order=3,
         pixdim=(3.0, 5.0, 5.0),
-        axcodes='LAS',
+        axcodes='ASL',
         spatial_window_size=(40, 30, 1),
         loader=None
     ),
@@ -213,7 +213,7 @@ class GridSamplesAggregatorTest(tf.test.TestCase):
                                    'aggregated',
                                    output_filename)
         self.assertAllClose(
-            nib.load(output_file).shape, [255, 168, 256, 1, 1],
+            nib.load(output_file).shape, [256, 168, 256, 1, 1],
             rtol=1e-03, atol=1e-03)
         sampler.close_all()
 

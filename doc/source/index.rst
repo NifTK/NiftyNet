@@ -103,6 +103,8 @@ Guides
    introductory
    installation
    config_spec
+   filename_matching
+   window_sizes
    model_zoo
    extending_app
    extending_event_handler
@@ -164,17 +166,17 @@ the `STFC Rutherford-Appleton Laboratory`_, and `NVIDIA`_.
 .. _`the Apache License, Version 2.0`: https://github.com/NifTK/NiftyNet/blob/dev/LICENSE
 .. _`TensorFlow`: https://www.tensorflow.org/
 .. _`School of Biomedical Engineering and Imaging Sciences, King's College London`: https://www.kcl.ac.uk/lsm/research/divisions/imaging/index.aspx
-.. _`Wellcome EPSRC Centre for Interventional and Surgical Sciences, UCL`: http://www.ucl.ac.uk/weiss
-.. _`Centre for Medical Image Computing, UCL`: http://cmic.cs.ucl.ac.uk/
-.. _`Centre for Medical Image Computing (CMIC)`: http://cmic.cs.ucl.ac.uk/
+.. _`Wellcome EPSRC Centre for Interventional and Surgical Sciences, UCL`: http://www.ucl.ac.uk/interventional-surgical-sciences
+.. _`Centre for Medical Image Computing, UCL`: http://www.ucl.ac.uk/medical-image-computing
+.. _`Centre for Medical Image Computing (CMIC)`: http://www.ucl.ac.uk/medical-image-computing
 .. _`King's College London (KCL)`: https://www.kcl.ac.uk/
-.. _`University College London (UCL)`: http://www.ucl.ac.uk/
+.. _`University College London (UCL)`: https://www.ucl.ac.uk/
 .. _`Wellcome Trust`: https://wellcome.ac.uk/
-.. _`Engineering and Physical Sciences Research Council (EPSRC)`: https://www.epsrc.ac.uk/
+.. _`Engineering and Physical Sciences Research Council (EPSRC)`: https://epsrc.ukri.org/
 .. _`National Institute for Health Research (NIHR)`: https://www.nihr.ac.uk/
-.. _`Department of Health (DoH)`: https://www.gov.uk/government/organisations/department-of-health
+.. _`Department of Health (DoH)`: https://www.gov.uk/government/organisations/department-of-health-and-social-care
 .. _`Science and Engineering South Consortium (SES)`: https://www.ses.ac.uk/
-.. _`STFC Rutherford-Appleton Laboratory`: http://www.stfc.ac.uk/about-us/where-we-work/rutherford-appleton-laboratory/
+.. _`STFC Rutherford-Appleton Laboratory`: https://stfc.ukri.org/about-us/where-we-work/rutherford-appleton-laboratory/
 .. _`NVIDIA`: http://www.nvidia.com
 .. _`NiftyNet source code repository`: https://github.com/NifTK/NiftyNet/blob/dev/LICENSE
 

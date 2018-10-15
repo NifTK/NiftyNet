@@ -123,6 +123,7 @@ within each section.
 [path_to_search](#path-to-search) | `string` | `path_to_search=my_data/fold_1` | NiftyNet home folder
 [filename_contains](#filename-contains) | `string` or `string array` | `filename_contains=foo, bar` | `''`
 [filename_not_contains](#filename-not-contains) | `string` or `string array` | `filename_not_contains=foo` | `''`
+[filename_removefromid](#filename-removefromid) | `string` | `filename_removefromid=bar` | `''`
 [interp_order](#interp-order) | `integer` | `interp_order=0` | `3`
 [pixdim](#pixdim) | `float array` | `pixdim=1.2, 1.2, 1.2` | `''`
 [axcodes](#axcodes) | `string array` | `axcodes=L, P, S` | `''`
@@ -133,22 +134,36 @@ within each section.
 A file path to a list of input images.  If the file exists, input image name
 list will be loaded from the file; the filename based input image search will
 be disabled; [path_to_search](#path-to-search),
-[filename_contains](#filename-contains), and
-[filename_not_contains](#filename-not-contains) will be ignored.  If this
+[filename_contains](#filename-contains),
+ [filename_not_contains](#filename-not-contains),
+ and [filename_removefromid](#filename-removefromid) will be ignored.  If this
 parameter is left blank or the file does not exist, input image search will be
 enabled, and the matched filenames will be written to this file path.
 
 ###### `path_to_search`
 Single or multiple folders to search for input images.
 
+See also: [input filename matching guide](./filename_matching.html)
+
+
 ###### `filename_contains`
 Keywords used to match filenames.
 The matched keywords will be removed, and the remaining part is used as
 subject name (for loading corresponding images across modalities).
 
+See also: [input filename matching guide](./filename_matching.html)
+
 ###### `filename_not_contains`
 Keywords used to exclude filenames.
 The filenames with these keywords will not be used as input.
+
+See also: [input filename matching guide](./filename_matching.html)
+
+###### `filename_removefromid`
+Regular expression for extracting subject id from filename, 
+matched pattern will be removed from the file names to form the subject id.
+
+See also: [input filename matching guide](./filename_matching.html)
 
 ###### `interp_order`
 Interpolation order of the input data.
@@ -164,6 +179,8 @@ before fed into the network.
 ###### `spatial_window_size`
 Array of three integers specifies the input window size.
 Setting it to single slice, e.g., `spatial_window_size=64, 64, 1`, yields a 2-D slice window.
+
+See also: [Patch-base analysis guide](./window_sizes.html)
 
 ###### `loader`
 Specify the loader to be used to load the files in the input section.
@@ -254,6 +271,7 @@ function parameters. See [Signals and event handlers](extending_event_handler.ht
 [decay](#decay) | `non-negative float` | `decay=1e-5` | `0.0`
 [reg_type](#reg-type) | `string` | `reg_type=L1` | `L2`
 [volume_padding_size](#volume-padding-size) | `integer array` | `volume_padding_size=4, 4, 4` | `0,0,0`
+[volume_padding_mode](#volume-padding-mode) | `string` | `volume_padding_mode=symmetric` | `minimum`
 [window_sampling](#window-sampling) | `string` | `window_sampling=uniform` | `uniform`
 [queue_length](#queue-length) | `integer` | `queue_length=10` | `5`
 [keep_prob](#keep-prob) | `non-negative float` | `keep_prob=0.2` | `1.0`
@@ -309,6 +327,12 @@ For 2-D inputs, the third dimension of `volume_padding_size` should be set to `0
 e.g. `volume_padding_size=M,N,0`.
 `volume_padding_size=M` is a shortcut for 3-D inputs, equivalent to `volume_padding_size=M,M,M`.
 The same amount of padding will be removed when before writing the output volume.
+
+See also: [Patch-base analysis guide](./window_sizes.html)
+
+###### `volume_padding_mode`
+Set which type of numpy padding to do, see 
+[https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.pad.html](https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.pad.html) for details.
 
 ###### `window_sampling`
 Type of sampler used to generate image windows from each image volume:
@@ -399,7 +423,7 @@ regions only.
 ###### `foreground_type`
 To generate a foreground mask and the normalisation will be applied to foreground only.
 Available choices:
-> `otsu_plus`, `otsu_minus`, `thresh_plus`, `thresh_minus`.
+> `otsu_plus`, `otsu_minus`, `thresh_plus`, `thresh_minus`, `mean_plus`.
 
 ###### `multimod_foreground_type`
 Strategies applied to combine foreground masks of multiple modalities, can take one of the following:
@@ -542,7 +566,7 @@ Value should be in `[0, 1]`.
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
 [rotation_angle](#rotation-angle) | `float array` | `rotation_angle=-10.0,10.0` | `''`
-[scaling_percentage](#scaling-percentage) | `float array` | `scaling_percentage=0.8,1.2` | `''`
+[scaling_percentage](#scaling-percentage) | `float array` | `scaling_percentage=-20.0,20.0` | `''`
 [random_flipping_axes](#random-flipping-axes) | `integer array` | `random_flipping_axes=1,2` | `-1`
 
 ###### `rotation_angle`
@@ -552,6 +576,10 @@ volumes (This can be slow depending on the input volume dimensionality).
 ###### `scaling_percentage`
 Float array indicates a random spatial scaling should be applied
 (This can be slow depending on the input volume dimensionality).
+The option accepts percentages relative to 100 (the original input size). 
+E.g, `(-50, 50)` indicates transforming
+image (size `d`) to image with its size in between `0.5*d` and `1.5d`.
+
 
 ###### `random_flipping_axes`
 The axes which can be flipped to augment the data.
@@ -560,26 +588,6 @@ Note that these are 0-indexed, so choose some combination of 0, 1.
 
 
 ### INFERENCE
-Many networks are fully convolutional (without fully connected layers) and
-the resolution of the output volume can be different from the input image.
-That is, given input of an `NxNxN` voxel volume, the network generates
-a `DxDxD`-voxel output, where `0 < D < N`.
-
-This configuration section is design for such a process of sampling `NxNxN` windows
-from image volumes, and aggregating the network-generated `DxDxD` windows to output
-volumes.
-
-In terms of sampling by a sliding window, the sampling step size should be `D/2` in each
-spatial dimension.  However automatically inferring `D` as a function of network architecture and `N`
-is not implemented at the moment. Therefore, NiftyNet requires a [`border`](#border) to describe the
-spatial window size changes. `border` should be at least `floor((N - D) / 2)`.
-
-If the network is designed such that `N==D` is always true, `border` should be `0` (default value).
-
-Note that the above implementation generalises to
-`NxMxP`-voxel windows and `BxCxD`-voxel window outputs.
-For a 2-D slice, e.g, `Nx1xM`, the second dimension of `border` should be `0`.
-
 
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
@@ -589,7 +597,7 @@ For a 2-D slice, e.g, `Nx1xM`, the second dimension of `border` should be `0`.
 [save_seg_dir](#save-seg-dir) | `string` | `save_seg_dir=output/test` | `output`
 [output_postfix](#output-postfix) | `string` | `output_postfix=_output` | `_niftynet_out`
 [output_interp_order](#output-interp-order) | `non-negative integer` | `output_interp_order=0` | `0`
-[dataset_to_infer](#dataset-to-infer) | `Training|Validation|Inference` | `dataset_to_infer=Training` | `''`
+[dataset_to_infer](#dataset-to-infer) | `string` | `dataset_to_infer=training` | `''`
 
 ###### `spatial_window_size`
 Array of integers indicating the size of input window.  By default, the window
@@ -597,10 +605,14 @@ size at inference time is the same as the [input source specification](#input-da
 If this parameter is specified, it
 overrides the `spatial_window_size` parameter in input source sections.
 
+See also: [Patch-base analysis guide](./window_sizes.html)
+
 ###### `border`
 Tuple of integers specifying a border size used to crop (along both sides of each
 dimension) the network output image window. E.g., `3, 3, 3` will crop a
 `64x64x64` window to size `58x58x58`.
+
+See also: [Patch-base analysis guide](./window_sizes.html)
 
 ###### `inference_iter`
 Integer specifies the trained model to be used for inference.
@@ -616,8 +628,8 @@ Postfix appended to every inference output filenames.
 Interpolation order of the network outputs.
 
 ###### `dataset_to_infer`
-String specifies which dataset ('Training', 'Validation', 'Inference') to compute inference for.
-By default 'Inference' dataset is used.
+String specifies which dataset ('all', 'training', 'validation', 'inference') to compute inference for.
+By default 'inference' dataset is used.
 
 
 ### EVALUATION

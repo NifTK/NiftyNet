@@ -4,6 +4,24 @@ The source code for NiftyNet is released via [GitHub][github-niftynet].
 [github-niftynet]: https://github.com/NifTK/NiftyNet
 
 
+- [Submitting bug reports and feature requests](#submitting-bug-reports-and-feature-requests)
+- [Submitting merge requests](#submitting-merge-requests)
+    - Python style guide
+    - Testing your changes
+    - Creating GitHub pull requests
+- [Writing unit tests](#writing-unit-tests)
+    - Determine which module to test
+    - File an issue
+    - Create `[name]_test.py`
+    - Run tests locally
+    - Run all tests locally
+- [NiftyNet admin tasks](#niftynet-admin-tasks)
+    - Making a release
+    - Publishing a NiftyNet pip installer on PyPI
+    - Merging GitHub pull requests
+    - Enhancing the pip installer
+    - Bundling a pip installer
+
 ## Submitting bug reports and feature requests
 
 Bug reports and feature requests should be submitted by creating an issue on [GitHub][github-niftynet-issue].
@@ -140,9 +158,22 @@ Please send a merge request with only relevant changes to a particular unit test
 
 ## NiftyNet admin tasks
 
+### Adding release notes
+
+The notes for NiftyNet releases are kept in the [NiftyNet changelog][changelog], and follow the ["keep a changelog" 
+standards][keep-a-changelog]. Notes should be added for each release, highlighting the changes in the appropriate 
+sections. See for instance [this commit][sample-changelog-commit]. Following the tagging of the new release on GitHub
+ (see the section below), the release notes can be synchronised with the [GitHub release page][github-release-page] 
+ using [chandler][chandler]
+
+[sample-changelog-commit]: https://github.com/NifTK/NiftyNet/commit/1d936d3b9cebb79cd58982863d8d5b97d3293511
+[keep-a-changelog]: http://keepachangelog.com/
+[github-release-page]: https://github.com/NifTK/NiftyNet/releases
+[chandler]: https://github.com/mattbrictson/chandler
+
 ### Making a release
 
-NiftyNet versions are numbered following [Semantic Versioning (semver)](http://semver.org/spec/v2.0.0.html).
+NiftyNet versions are numbered following [Semantic Versioning (semver)](https://semver.org/spec/v2.0.0.html).
 After adding notes for the current release to the [NiftyNet changelog][changelog], the current release should be [tagged][git-tag] with a [PEP440][pep440]-compliant semver number preceded by the letter `v` (for "version").
 
 [pep440]: https://www.python.org/dev/peps/pep-0440/
@@ -204,22 +235,24 @@ For a practical example see [how the `net_segment` CLI command is implemented][n
 [net-segment-entry]: https://github.com/NifTK/NiftyNet/blob/v0.3.0/setup.py#L107
 
 
+## Bundling a pip installer
 
-## Deprecated instructions
-
-### Bundling a pip installer
-
-The NiftyNet pip installer gets bundled automatically for [Git tags][git-tag] starting with a `v` (for "version") pushed to [CMICLab][niftynet-cmiclab].
+The NiftyNet pip installer gets bundled automatically for [Git tags][git-tag] starting with a `v` (for "version").
 The [wheel version][wheel-version-tag] is determined automatically as part of this process.
-To see how this is done in practice, please go to the [`pip-camera-ready` section of `.gitlab-ci.yml`][pip-camera-ready] (and see the result in [this build log - esp. the last few lines lines, which show where the pip installer can be found on the build server][pip-camera-ready-output]).
+The last few lines of the CI build log show the location of the bundled pip installer on the server, e.g.:
+
+```bash
+$ echo "Camera-ready pip installer bundle (wheel) created:"
+Camera-ready pip installer bundle (wheel) created:
+$ echo "$(ls $camera_ready_dir/*.whl)"
+/home/gitlab-runner/environments/niftynet/pip/camera-ready/NiftyNet-0.2.0-py2.py3-none-any.whl
+Job succeeded
+```
 
 In particular, bundling a pip installer boils down to running the command [`python setup.py bdist_wheel`][python-setuptools] in the top-level directory.
 This creates a [wheel binary package][wheel-binary] in a newly created `dist` directory, e.g. `dist/NiftyNet-0.2.0-py2.py3-none-any.whl`.
 
-[niftynet-cmiclab]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
 [git-tag]: https://git-scm.com/book/en/v2/Git-Basics-Tagging
-[pip-camera-ready]: https://github.com/niftk/NiftyNet/blob/940d7a827d6835a4ce10637014c0c36b3c980476/.gitlab-ci.yml#L323
-[pip-camera-ready-output]: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/-/jobs/30450
 [python-setuptools]: https://packaging.python.org/tutorials/distributing-packages/#wheels
 [wheel-binary]: https://www.python.org/dev/peps/pep-0491/
 

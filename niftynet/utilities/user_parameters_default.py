@@ -206,6 +206,14 @@ def add_input_data_args(parser):
         type=str_array,
         help="keywords in input file names, negatively matches filenames",
         default='')
+    parser.add_argument(
+        "--filename_removefromid",
+        metavar='',
+        type=str,
+        help="Regular expression for extracting subject id from filename, "
+             "matched pattern will be removed from the file names "
+             "to form the subject id",
+        default='')
 
     parser.add_argument(
         "--interp_order",
@@ -475,6 +483,21 @@ def add_training_args(parser):
         help="The spatial scaling factor in [min_percentage, max_percentage]",
         type=float_array,
         default=())
+
+    parser.add_argument(
+        "--bias_field_range",
+        help="[Training only] The range of bias field coeffs in [min_coeff, "
+             "max_coeff]",
+        type=float_array,
+        default=())
+
+    parser.add_argument(
+        "--bf_order",
+        help="[Training only] maximal polynomial order to use for the "
+             "creation of the bias field augmentation",
+        metavar='',
+        type=int,
+        default=3)
 
     parser.add_argument(
         "--random_flipping_axes",

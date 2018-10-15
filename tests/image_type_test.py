@@ -87,8 +87,8 @@ class ImageTypeTest(tf.test.TestCase):
             loader=None)
         self.assertIsInstance(image, SpatialImage3D)
         output = image.get_data()
-        self.assertAllClose(np.array([23, 317, 31, 1, 1]), output.shape)
-        self.assertAllClose(np.array([23, 317, 31, 1, 1]), image.shape)
+        self.assertAllClose(np.array([36, 208, 31, 1, 1]), output.shape)
+        self.assertAllClose(np.array([36, 208, 31, 1, 1]), image.shape)
 
     def test_multiple_3d_as_4d(self):
         image = ImageFactory.create_instance(
@@ -168,8 +168,8 @@ class ImageTypeTest(tf.test.TestCase):
             loader=(None, None))
         self.assertIsInstance(image, SpatialImage4D)
         output = image.get_data()
-        self.assertAllClose(np.array([33, 190, 42, 1, 2]), output.shape)
-        self.assertAllClose(np.array([33, 190, 42, 1, 2]), image.shape)
+        self.assertAllClose(np.array([50, 125, 42, 1, 2]), output.shape)
+        self.assertAllClose(np.array([50, 125, 42, 1, 2]), image.shape)
 
     def test_5d(self):
         image = ImageFactory.create_instance(
@@ -221,8 +221,8 @@ class ImageTypeTest(tf.test.TestCase):
             loader=(None,))
         self.assertIsInstance(image, SpatialImage5D)
         output = image.get_data()
-        self.assertAllClose(np.array([29, 31, 29, 1, 1]), output.shape)
-        self.assertAllClose(np.array([29, 31, 29, 1, 1]), image.shape)
+        self.assertAllClose(np.array([29, 33, 28, 1, 1]), output.shape)
+        self.assertAllClose(np.array([29, 33, 28, 1, 1]), image.shape)
 
 
 if __name__ == "__main__":

@@ -98,23 +98,23 @@ class RandomElasticDeformationLayer(RandomisedLayer):
         :param interp_order: order of interpolation
         :return: the transformed image
         """
+        resampler = sitk.ResampleImageFilter()
+        if interp_order > 1:
+            resampler.SetInterpolator(sitk.sitkBSpline)
+        elif interp_order == 1:
+            resampler.SetInterpolator(sitk.sitkLinear)
+        elif interp_order == 0:
+            resampler.SetInterpolator(sitk.sitkNearestNeighbor)
+        else:
+            return image
+
         squeezed_image = np.squeeze(image)
         while squeezed_image.ndim < self.spatial_rank:
             # pad to the required number of dimensions
             squeezed_image = squeezed_image[..., None]
         sitk_image = sitk.GetImageFromArray(squeezed_image)
-
-        resampler = sitk.ResampleImageFilter()
+        
         resampler.SetReferenceImage(sitk_image)
-        if interp_order == 3:
-            resampler.SetInterpolator(sitk.sitkBSpline)
-        elif interp_order == 2:
-            resampler.SetInterpolator(sitk.sitkLinear)
-        elif interp_order == 1 or interp_order == 0:
-            resampler.SetInterpolator(sitk.sitkNearestNeighbor)
-        else:
-            raise RuntimeError("not supported interpolation_order")
-
         resampler.SetDefaultPixelValue(0)
         resampler.SetTransform(self._bspline_transformation)
         out_img_sitk = resampler.Execute(sitk_image)
