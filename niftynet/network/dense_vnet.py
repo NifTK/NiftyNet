@@ -230,9 +230,9 @@ class DenseVNet(BaseNet):
 
         # Refine segmentation with prior
         if self.hyperparams['use_prior']:
-            xyz_prior = SpatialPriorBlock([12] * n_spatial_dims, \
+            spatial_prior = SpatialPriorBlock([12] * n_spatial_dims, \
                 feature_map_shape)
-            output += xyz_prior
+            output += spatial_prior()
 
         # Invert augmentation
         if is_training and hyperparams['augmentation_scale'] > 0:
@@ -279,7 +279,7 @@ class SpatialPriorBlock(TrainableLayer):
                  name='spatial_prior_block'):
 
         super(SpatialPriorBlock, self).__init__(name=name)
-        
+
         self.prior_shape = prior_shape
         self.output_shape = output_shape
 
