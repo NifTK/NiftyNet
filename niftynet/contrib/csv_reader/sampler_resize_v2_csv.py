@@ -75,7 +75,6 @@ class ResizeSamplerCSV(ImageWindowDatasetCSV):
             # are converted to static ones
             # as now we know the image shapes
             static_window_shapes = self.window.match_image_shapes(image_shapes)
-
             # for resize sampler the coordinates are not used
             # simply use the spatial dims of the input image
             output_dict = {}
@@ -113,8 +112,8 @@ class ResizeSamplerCSV(ImageWindowDatasetCSV):
             # per image
             if self.csv_reader is not None:
                 _, label_dict, _ = self.csv_reader(idx=image_id)
-                output_dict['label'] = label_dict['label']
-                output_dict['label_location'] = output_dict['image_location']
+                output_dict.update(label_dict)
+                output_dict[self.csv_reader.task_param + '_location'] = output_dict['image_location']
             yield output_dict
 
 
