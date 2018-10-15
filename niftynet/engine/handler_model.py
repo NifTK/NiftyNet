@@ -87,7 +87,7 @@ class ModelRestorer(object):
                     to_randomise.append(v)
 
             tf.logging.info("Randomizing {} variables".format(
-                len(to_randomise])))
+                len(to_randomise)))
             # Initialize vars to randomize
             init_op = tf.variables_initializer(to_randomise)
             tf.get_default_session().run(init_op)
