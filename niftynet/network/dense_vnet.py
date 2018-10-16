@@ -229,8 +229,9 @@ class DenseVNet(BaseNet):
         n_spatial_dims = input_tensor.shape.ndims - 2
 
         # Refine segmentation with prior
-        if self.hyperparams['use_prior']:
-            spatial_prior = SpatialPriorBlock([12] * n_spatial_dims, \
+        if hyperparams['use_prior']:
+            spatial_prior = SpatialPriorBlock(
+                [hyperparams.prior_size] * n_spatial_dims,
                 feature_map_shape)
             output += spatial_prior()
 
