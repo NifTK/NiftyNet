@@ -1,4 +1,5 @@
 import numpy as np
+import random
 import pandas as pd
 import tensorflow as tf
 from tensorflow.python.data.util import nest
@@ -82,8 +83,13 @@ class CSVReader(Layer):
         label_names = list(set(labels))
         return [np.eye(self._dims)[label_names.index(label)] for label in labels]
     
-    def layer_op(self, idx=None, shuffle=True):
-        if idx is None:
+    def layer_op(self, idx=None, subject_id=None, ):
+        if idx is None and subject_id is not None:
+            #  Take the list of idx corresponding to subject id and randomly
+            # sample from there
+            relevant_indices = self._df.loc[subject_id]
+            idx = random.choice(relevant_indices)
+        elif idx is None:
             idx = np.random.randint(len(self.num_rows))
         if self._indexable_output is not None:
             data = self._indexable_output[idx]
