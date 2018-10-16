@@ -485,6 +485,13 @@ def add_training_args(parser):
         default=())
 
     parser.add_argument(
+        "--antialiasing",
+        help="Indicates if antialiasing must be performed "
+             "when randomly scaling the input images",
+        type=str2boolean,
+        default=True)
+
+    parser.add_argument(
         "--bias_field_range",
         help="[Training only] The range of bias field coeffs in [min_coeff, "
              "max_coeff]",
