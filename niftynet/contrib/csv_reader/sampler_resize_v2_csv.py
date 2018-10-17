@@ -113,7 +113,8 @@ class ResizeSamplerCSV(ImageWindowDatasetCSV):
             if self.csv_reader is not None:
                 _, label_dict, _ = self.csv_reader(idx=image_id)
                 output_dict.update(label_dict)
-                output_dict[self.csv_reader.task_param + '_location'] = output_dict['image_location']
+                for name in self.csv_reader.task_param.keys():
+                    output_dict[name + '_location'] = output_dict['image_location']
             yield output_dict
 
 
