@@ -10,14 +10,14 @@ from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 
 class CSVReader(Layer):
     
-    def __init__(self, name=None):
-        self.name = name
+    def __init__(self, names=None):
+        self.names = names
         self._paths = None
         self._labels = None
         self._df = None
         self.label_names = None
         self.dims = None
-        
+
         super(CSVReader, self).__init__(name='csv_reader')
     
     def initialise(self, data_param, task_param=None, file_list=None):
@@ -26,7 +26,6 @@ class CSVReader(Layer):
         the csv data. Three input modes are supported:
         - 'label' - expects a csv with header subject_id,label.
         - 'features' - expects a csv with header subject_id,<name of feature 1>,<name of feature 2>
-        - 'coords' expects a csv with subject_id,x_0,y_0,x_1,y_1
         e.g.::
 
              data_param = {'label': {'csv_data_file': 'path/to/some_data.csv', 'to_ohe': False}}
@@ -39,49 +38,62 @@ class CSVReader(Layer):
 
         
         """
+        assert self.names is not None
+        valid_names = [name for name in self.names if task_param.get(name, None)]
+        if not valid_names:
+            tf.logging.fatal("CSVReader requires task input keywords %s, but "
+                             "not exist in the config file.\n"
+                             "Available task keywords: %s",
+                             self.names, list(task_param))
+            raise ValueError
+        self.names = valid_names
         self.data_param = data_param
         self.task_param = task_param
-        self._path_to_csv = data_param[task_param].get('csv_data_file', None)
-        self._to_ohe = data_param[task_param].get('to_ohe', False)
-        assert isinstance(self._path_to_csv, str)
-        
         self._dims = None
-        self.lol = np.nan
-        self._indexable_output = None
-        self._non_indexable_output = None
+        self._indexable_output = {}
         self.file_list = file_list
-        self._df = self._parse_csv()
-        
+        self._input_sources = dict((name, task_param.get(name)) for name in self.names)
+        self.subject_ids = self.file_list['subject_id'].values
+        self.df_by_task = {}
+        self.dims_by_task = {}
+        for name in valid_names:
+            df, _indexable_output, _dims = self._parse_csv(
+                path_to_csv=data_param[name].get('csv_data_file', None),
+                to_ohe=data_param[name].get('to_ohe', False)
+            )
+            self.df_by_task[name] = df
+            self.dims_by_task[name] = _dims
+            self._indexable_output[name] = _indexable_output
+        # Converts Dictionary of Lists to List of Dictionaries
+        self._indexable_output = pd.DataFrame(self._indexable_output).to_dict('records')
         assert file_list is not None
-            
-        self.num_rows = len(self._df)
-        self._paths = self._df['subject_id'].values
         return self
     
-    def _parse_csv(self):
+    def _parse_csv(self, path_to_csv, to_ohe):
         tf.logging.warning('This method will read your entire csv into memory')
-        df = pd.read_csv(self._path_to_csv)
+        df = pd.read_csv(path_to_csv)
         if df.columns[0] != 'subject_id' and len(df.columns) >= 2:
             tf.logging.fatal(
                 "The first column of the csv should be called 'subject_id' and there should be at least 2 columns"
             )
         df.index = df['subject_id']
-        df = df.loc[self.file_list['subject_id'].values]
-        if self._to_ohe and len(df.columns[1:])==1:
-            self._dims = len(list(df[df.columns[1]].unique()))
-            self._indexable_output = self.to_ohe(df['label'].values)
-            return df
-        elif not self._to_ohe:
-            self._mode = 'features'
-            self._dims = len(df.columns[1:])
-            self._indexable_output = df.iloc[:, 1:].values
-            return df
+        assert set(df.index) == set(self.subject_ids)
+        df = df.loc[self.subject_ids]
+        if to_ohe and len(df.columns[1:])==1:
+            _dims = len(list(df[df.columns[1]].unique()))
+            _indexable_output = self.to_ohe(df['label'].values, _dims)
+            return df, _indexable_output, _dims
+        elif not to_ohe:
+            _dims = len(df.columns[1:])
+            _indexable_output = list(df.iloc[:, 1:].values)
+            return df, _indexable_output, _dims
         else:
-            tf.logging.fatal('Unrecognised input format for {}'.format(self.path_to_csv))
+            tf.logging.fatal('Unrecognised input format for {}'.format(path_to_csv))
     
-    def to_ohe(self, labels):
+    def to_ohe(self, labels, _dims):
         label_names = list(set(labels))
-        return [np.eye(self._dims)[label_names.index(label)] for label in labels]
+        ohe = [np.eye(_dims)[label_names.index(label)] for label in labels]
+        return ohe
     
     def layer_op(self, idx=None, subject_id=None, ):
         if idx is None and subject_id is not None:
@@ -92,10 +104,8 @@ class CSVReader(Layer):
         elif idx is None:
             idx = np.random.randint(len(self.num_rows))
         if self._indexable_output is not None:
-            data = self._indexable_output[idx]
-            while len(data.shape) < 5:
-                data = np.expand_dims(data, -1)
-            output_dict = {self.task_param: np.expand_dims(data, 0)}
+            output_dict = {k: self.apply_niftynet_format_to_data(v) for k, v\
+                           in self._indexable_output[idx].items()}
             return idx, output_dict, None
         else:
             raise Exception('Invalid mode')
@@ -105,8 +115,10 @@ class CSVReader(Layer):
         """
         :return: dict of label shape and label location shape
         """
-        self._shapes = {self.task_param: (1, self._dims, 1, 1, 1, 1), self.task_param + '_location': (1, 7)}
-        print(self._shapes)
+        self._shapes = {}
+        for name in task_param.keys():
+            self._shapes.update({name: (1, self._dims, 1, 1, 1, 1),
+                        name + '_location': (1, 7)})        
         return self._shapes
     
     @property
@@ -114,8 +126,10 @@ class CSVReader(Layer):
         """
         Infer input data dtypes in TF
         """
-        self._dtypes = {self.task_param: tf.float32, self.task_param + '_location': tf.int32}
-        print(self._dtypes)
+        self._dtypes = {}
+        for name in task_param.keys():
+            self._shapes.update({name: tf.float32,
+                        name + '_location': tf.int32})
         return self._dtypes
     
     @property
@@ -126,3 +140,12 @@ class CSVReader(Layer):
         output_shapes = nest.map_structure_up_to(
             self.tf_dtypes, tf.TensorShape, self.shapes)
         return output_shapes
+<<<<<<< HEAD
+=======
+    
+    @staticmethod
+    def apply_niftynet_format_to_data(data):
+        while len(data.shape) < 5:
+            data = np.expand_dims(data, -1)
+        return np.expand_dims(data, 0)
+>>>>>>> Introduced support for multiple sources in a single CSV Reader
