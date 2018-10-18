@@ -68,7 +68,7 @@ class ResNet(BaseNet):
         out = layers.conv1(images, is_training)
         for block in layers.blocks:
             out = block(out, is_training)
-        out = tf.reduce_mean(tf.nn.relu(layers.bn(out, is_training)),axis=[1,2,3])
+        out = tf.nn.relu(layers.bn(out, is_training))
         return layers.fc(out)
         
 
@@ -114,7 +114,6 @@ class BottleneckBlock(TrainableLayer):
             out=layers.conv[1](out, is_training)
             out=layers.conv[2](out, is_training)
             out = layers.conv_shortcut(tmp, is_training) + out
-        print(out.shape)
         return out
 
 DownResBlockDesc = namedtuple('DownResBlockDesc', ['blocks'])

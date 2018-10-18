@@ -20,8 +20,8 @@ from niftynet.utilities.util_common import look_up_operations
 
 DEFAULT_INTERP_ORDER = 1
 SUPPORTED_DATA_SPEC = {
-    'csv_file', 'path_to_search', 'csv_data_file',
-    'filename_contains', 'filename_not_contains',
+    'csv_path_file', 'path_to_search', 'csv_data_file', 'filename_removefromid',
+    'filename_contains', 'filename_not_contains', 'to_ohe',
     'interp_order', 'loader', 'pixdim', 'axcodes', 'spatial_window_size'}
 
 
