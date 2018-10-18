@@ -15,10 +15,11 @@ from niftynet.engine.application_factory import \
     ApplicationNetFactory, InitializerFactory, OptimiserFactory
 from niftynet.engine.application_variables import \
     CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
-from niftynet.engine.sampler_resize_v2 import ResizeSampler
-from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
-from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
+from niftynet.contrib.csv_reader.sampler_resize_v2_csv import ResizeSamplerCSV as ResizeSampler
+from niftynet.engine.windows_aggregator_classifier import \
+    ClassifierSamplesAggregator
 from niftynet.io.image_reader import ImageReader
+from niftynet.contrib.csv_reader.csv_reader import CSVReader
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
 from niftynet.layer.histogram_normalisation import \
@@ -71,11 +72,13 @@ class ClassificationApplication(BaseApplication):
         self.classification_param = task_param
 
         if self.is_training:
-            reader_names = ('image', 'label', 'sampler')
+            image_reader_names = ('image', 'sampler')
+            csv_reader_names = ('label',)
         elif self.is_inference:
-            reader_names = ('image',)
+            image_reader_names = ('image',)
         elif self.is_evaluation:
-            reader_names = ('image', 'label', 'inferred')
+            image_reader_names = ('image', 'inferred')
+            csv_reader_names = ('label',)
         else:
             tf.logging.fatal(
                 'Action `%s` not supported. Expected one of %s',
@@ -88,7 +91,10 @@ class ClassificationApplication(BaseApplication):
         file_lists = data_partitioner.get_file_lists_by(
             phase=reader_phase, action=self.action)
         self.readers = [
-            ImageReader(reader_names).initialise(
+            ImageReader(image_reader_names).initialise(
+                data_param, task_param, file_list) for file_list in file_lists]
+        self.csv_readers = [
+            CSVReader(csv_reader_names).initialise(
                 data_param, task_param, file_list) for file_list in file_lists]
 
         foreground_masking_layer = BinaryMaskingLayer(
@@ -135,9 +141,7 @@ class ClassificationApplication(BaseApplication):
             if train_param.scaling_percentage:
                 augmentation_layers.append(RandomSpatialScalingLayer(
                     min_percentage=train_param.scaling_percentage[0],
-                    max_percentage=train_param.scaling_percentage[1],
-                    antialiasing=train_param.antialiasing,
-                    isotropic=train_param.isotropic_scaling))
+                    max_percentage=train_param.scaling_percentage[1]))
             if train_param.rotation_angle or \
                     self.action_param.rotation_angle_x or \
                     self.action_param.rotation_angle_y or \
@@ -160,26 +164,18 @@ class ClassificationApplication(BaseApplication):
         for reader in self.readers[1:]:
             reader.add_preprocessing_layers(normalisation_layers)
 
-        # Checking num_classes is set correctly
-        if self.classification_param.num_classes <= 1:
-            raise ValueError("Number of classes must be at least 2 for classification")
-        for preprocessor in self.readers[0].preprocessors:
-            if preprocessor.name == 'label_norm':
-                if len(preprocessor.label_map[preprocessor.key[0]]) != self.classification_param.num_classes:
-                    raise ValueError("Number of unique labels must be equal to "
-                                     "number of classes (check histogram_ref file)")
-
     def initialise_resize_sampler(self):
         self.sampler = [[ResizeSampler(
-            reader=reader,
+            reader=image_reader,
+            csv_reader=csv_reader,
             window_sizes=self.data_param,
             batch_size=self.net_param.batch_size,
             shuffle=self.is_training,
-            queue_length=self.net_param.queue_length) for reader in
-            self.readers]]
+            queue_length=self.net_param.queue_length) for image_reader, csv_reader in
+            zip(self.readers, self.csv_readers)]]
 
     def initialise_aggregator(self):
-        self.output_decoder = ResizeSamplesAggregator(
+        self.output_decoder = ClassifierSamplesAggregator(
             image_reader=self.readers[0],
             output_path=self.action_param.save_seg_dir,
             postfix=self.action_param.output_postfix)
@@ -223,7 +219,7 @@ class ClassificationApplication(BaseApplication):
         labels = tf.reshape(tf.cast(data_dict['label'], tf.int64), [-1])
         prediction = tf.reshape(tf.argmax(net_out, -1), [-1])
         num_classes = self.classification_param.num_classes
-        conf_mat = tf.metrics.confusion_matrix(labels, prediction, num_classes)
+        conf_mat = tf.confusion_matrix(labels, prediction, num_classes)
         conf_mat = tf.to_float(conf_mat)
         if self.classification_param.num_classes == 2:
             outputs_collector.add_to_collection(
@@ -265,8 +261,6 @@ class ClassificationApplication(BaseApplication):
                 return sampler.pop_batch_op()
 
         if self.is_training:
-            self.patience = self.action_param.patience
-            self.mode = self.action_param.early_stopping_mode
             if self.action_param.validation_every_n > 0:
                 data_dict = tf.cond(tf.logical_not(self.is_validation),
                                     lambda: switch_sampler(for_training=True),
@@ -275,6 +269,7 @@ class ClassificationApplication(BaseApplication):
                 data_dict = switch_sampler(for_training=True)
 
             image = tf.cast(data_dict['image'], tf.float32)
+            print(self.sampler[0][0]()['label'])
             net_args = {'is_training': self.is_training,
                         'keep_prob': self.net_param.keep_prob}
             net_out = self.net(image, **net_args)
@@ -297,19 +292,8 @@ class ClassificationApplication(BaseApplication):
                 loss = data_loss + reg_loss
             else:
                 loss = data_loss
-
-            self.total_loss = loss
-
             grads = self.optimiser.compute_gradients(
                 loss, colocate_gradients_with_ops=True)
-
-            outputs_collector.add_to_collection(
-                var=self.total_loss, name='total_loss',
-                average_over_devices=True, collection=CONSOLE)
-            outputs_collector.add_to_collection(
-                var=self.total_loss, name='total_loss',
-                average_over_devices=True, summary_type='scalar',
-                collection=TF_SUMMARIES)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
             # collecting output variables
@@ -357,8 +341,7 @@ class ClassificationApplication(BaseApplication):
     def interpret_output(self, batch_output):
         if not self.is_training:
             return self.output_decoder.decode_batch(
-                {'csv': batch_output['window']},
-                batch_output['location'])
+                batch_output['window'], batch_output['location'])
         return True
 
     def initialise_evaluator(self, eval_param):
