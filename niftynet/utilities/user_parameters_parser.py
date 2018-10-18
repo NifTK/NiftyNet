@@ -189,16 +189,16 @@ def run():
         # set the output path of csv list if not exists
         try:
             csv_path = resolve_file_name(
-                input_data_args[section].csv_file,
+                input_data_args[section].csv_path_file,
                 (os.path.dirname(config_file_name), NIFTYNET_HOME))
-            input_data_args[section].csv_file = csv_path
+            input_data_args[section].csv_path_file = csv_path
             # don't search files if csv specified in config
             try:
                 delattr(input_data_args[section], 'path_to_search')
             except AttributeError:
                 pass
         except (IOError, TypeError):
-            input_data_args[section].csv_file = ''
+            input_data_args[section].csv_path_file = ''
 
     # preserve ``config_file`` and ``action parameter`` from the meta_args
     system_args['CONFIG_FILE'] = argparse.Namespace(path=config_file_name)

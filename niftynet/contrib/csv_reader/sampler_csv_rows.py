@@ -1,3 +1,4 @@
+import numpy as np
 from niftynet.engine.image_window_dataset import ImageWindowDataset
 from niftynet.engine.image_window import N_SPATIAL, LOCATION_FORMAT
 
@@ -85,9 +86,10 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
             image_data[LOCATION_FORMAT.format(mod)] = coords
             image_data[mod] = image_data[mod][np.newaxis, ...]
         if self.csv_reader is not None:
-            _, label_data, _ =  self.csv_reader(idx=image_id)
-            image_data['label'] = label_data['label']
-            image_data['label_location'] = image_data['image_location']
+            _, label_dict, _ = self.csv_reader(idx=image_id)
+            image_data.update(label_dict)
+            for name in self.csv_reader.names:
+                image_data[name + '_location'] = image_data['image_location']
         return image_data
 
     @property

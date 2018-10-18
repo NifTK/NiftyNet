@@ -15,10 +15,11 @@ from niftynet.engine.application_factory import \
     ApplicationNetFactory, InitializerFactory, OptimiserFactory
 from niftynet.engine.application_variables import \
     CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
-from niftynet.engine.sampler_resize_v2 import ResizeSampler
+from niftynet.contrib.csv_reader.sampler_resize_v2_csv import ResizeSamplerCSV as ResizeSampler
 from niftynet.engine.windows_aggregator_classifier import \
     ClassifierSamplesAggregator
 from niftynet.io.image_reader import ImageReader
+from niftynet.contrib.csv_reader.csv_reader import CSVReader
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
 from niftynet.layer.histogram_normalisation import \
@@ -71,11 +72,13 @@ class ClassificationApplication(BaseApplication):
         self.classification_param = task_param
 
         if self.is_training:
-            reader_names = ('image', 'label', 'sampler')
+            image_reader_names = ('image', 'sampler')
+            csv_reader_names = ('label',)
         elif self.is_inference:
-            reader_names = ('image',)
+            image_reader_names = ('image',)
         elif self.is_evaluation:
-            reader_names = ('image', 'label', 'inferred')
+            image_reader_names = ('image', 'inferred')
+            csv_reader_names = ('label',)
         else:
             tf.logging.fatal(
                 'Action `%s` not supported. Expected one of %s',
@@ -88,7 +91,10 @@ class ClassificationApplication(BaseApplication):
         file_lists = data_partitioner.get_file_lists_by(
             phase=reader_phase, action=self.action)
         self.readers = [
-            ImageReader(reader_names).initialise(
+            ImageReader(image_reader_names).initialise(
+                data_param, task_param, file_list) for file_list in file_lists]
+        self.csv_readers = [
+            CSVReader(csv_reader_names).initialise(
                 data_param, task_param, file_list) for file_list in file_lists]
 
         foreground_masking_layer = BinaryMaskingLayer(
@@ -160,12 +166,13 @@ class ClassificationApplication(BaseApplication):
 
     def initialise_resize_sampler(self):
         self.sampler = [[ResizeSampler(
-            reader=reader,
+            reader=image_reader,
+            csv_reader=csv_reader,
             window_sizes=self.data_param,
             batch_size=self.net_param.batch_size,
             shuffle=self.is_training,
-            queue_length=self.net_param.queue_length) for reader in
-            self.readers]]
+            queue_length=self.net_param.queue_length) for image_reader, csv_reader in
+            zip(self.readers, self.csv_readers)]]
 
     def initialise_aggregator(self):
         self.output_decoder = ClassifierSamplesAggregator(
@@ -212,7 +219,7 @@ class ClassificationApplication(BaseApplication):
         labels = tf.reshape(tf.cast(data_dict['label'], tf.int64), [-1])
         prediction = tf.reshape(tf.argmax(net_out, -1), [-1])
         num_classes = self.classification_param.num_classes
-        conf_mat = tf.metrics.confusion_matrix(labels, prediction, num_classes)
+        conf_mat = tf.confusion_matrix(labels, prediction, num_classes)
         conf_mat = tf.to_float(conf_mat)
         if self.classification_param.num_classes == 2:
             outputs_collector.add_to_collection(
@@ -262,6 +269,7 @@ class ClassificationApplication(BaseApplication):
                 data_dict = switch_sampler(for_training=True)
 
             image = tf.cast(data_dict['image'], tf.float32)
+            print(self.sampler[0][0]()['label'])
             net_args = {'is_training': self.is_training,
                         'keep_prob': self.net_param.keep_prob}
             net_out = self.net(image, **net_args)

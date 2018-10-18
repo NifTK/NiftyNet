@@ -181,11 +181,26 @@ def add_input_data_args(parser):
     :return:
     """
     parser.add_argument(
-        "--csv_file",
+        "--csv_path_file",
         metavar='',
         type=str,
         help="Input list of subjects in csv files",
         default='')
+
+    parser.add_argument(
+        "--csv_data_file",
+        metavar='',
+        type=str,
+        help="Path to a csv with data; labels, features or coordinates for"
+             "the patch based sampler",
+        default='')
+
+    parser.add_argument(
+        "--to_ohe",
+        help="Indicates if the data provided in the csv should be one-hot-encoded."
+             "This is only valid when the csv_data_file has 2 columns",
+        type=str2boolean,
+        default=False)
 
     parser.add_argument(
         "--path_to_search",
