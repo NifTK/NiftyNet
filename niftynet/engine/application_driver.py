@@ -113,7 +113,12 @@ class ApplicationDriver(object):
             if self.validation_every_n > 0:
                 self.validation_max_iter = max(self.validation_max_iter,
                                                train_param.validation_max_iter)
+
+            print(dir(train_param))
             action_param = train_param
+            if train_param.do_whole_volume_validation:
+                action_param.__dict__.update(infer_param.__dict__)
+
         else:  # set inference params.
             assert infer_param, 'inference parameters not specified'
             self.initial_iter = infer_param.inference_iter
@@ -147,7 +152,7 @@ class ApplicationDriver(object):
                 ratios=data_fractions,
                 data_split_file=system_param.dataset_split_file)
             assert self.data_partitioner.has_validation or \
-                self.validation_every_n <= 0, \
+                   self.validation_every_n <= 0, \
                 'validation_every_n is set to {}, ' \
                 'but train/validation splitting not available.\nPlease ' \
                 'check dataset partition list {} ' \
