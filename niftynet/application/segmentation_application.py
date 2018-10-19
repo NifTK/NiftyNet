@@ -288,6 +288,8 @@ class SegmentationApplication(BaseApplication):
                 sampler = self.get_sampler()[0][0 if for_training else -1]
                 return sampler.pop_batch_op()
 
+        print(self.action_param)
+        self.initialise_aggregator()
         if self.is_training:
             if self.action_param.validation_every_n > 0:
                 data_dict = tf.cond(tf.logical_not(self.is_validation),
@@ -376,7 +378,8 @@ class SegmentationApplication(BaseApplication):
             outputs_collector.add_to_collection(
                 var=data_dict['image_location'], name='location',
                 average_over_devices=False, collection=NETWORK_OUTPUT)
-            self.initialise_aggregator()
+
+            print(self.action_param)
 
     def interpret_output(self, batch_output):
         if self.is_inference or self.is_whole_volume_validating:

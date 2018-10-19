@@ -615,6 +615,12 @@ def add_training_args(parser):
         type=str2boolean,
         default=False)
 
+    parser.add_argument(
+        "--save_seg_dir",  # save_whole_volume_dir
+        help="Directory to save whole-volume validation results",
+        type=str,
+        default='./output_whole_validations')
+
     return parser
 
 

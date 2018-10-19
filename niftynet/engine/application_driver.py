@@ -258,6 +258,8 @@ class ApplicationDriver(object):
             # initialise network, these are connected in
             # the context of multiple gpus
             application.initialise_network()
+            # application.initialise_aggregator()
+
             application.add_validation_flag()
 
             # for data parallelism --

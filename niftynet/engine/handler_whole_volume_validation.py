@@ -2,12 +2,12 @@ import os
 
 import tensorflow as tf
 from niftynet.engine.signal import \
-ITER_STARTED, ITER_FINISHED, GRAPH_CREATED
+TRAIN, INFER, ITER_STARTED, ITER_FINISHED, GRAPH_CREATED
 
 
 class WholeVolumeValidation(object):
     """
-        This class handles whole volume validation
+        This class does not handle whole volume validation
     """
 
     def __init__(self,
@@ -26,7 +26,7 @@ class WholeVolumeValidation(object):
         if _iter_msg.is_training and not _iter_msg.is_validation:
             return
         # _sender.is_whole_volume_validating = True
-        _sender.action = 'INFER'
+        _sender.action = INFER
 
     def run_whole_volume_validation(self, _sender, **msg):
         _iter_msg = msg['iter_msg']
@@ -42,4 +42,4 @@ class WholeVolumeValidation(object):
         # _sender.is_whole_volume_validating = False
         if not _iter_msg.is_validation:
             # _sender.is_training = True
-            _sender.action = 'TRAIN'
+            _sender.action = TRAIN
