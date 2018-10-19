@@ -609,6 +609,12 @@ def add_training_args(parser):
         type=float,
         default=0.)
 
+    parser.add_argument(
+        "--do_whole_volume_validation",
+        help="Does validation on entire volumes and aggregates.",
+        type=str2boolean,
+        default=False)
+
     return parser
 
 

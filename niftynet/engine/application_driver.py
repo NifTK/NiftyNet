@@ -166,6 +166,11 @@ class ApplicationDriver(object):
         # make the list of initialised event handler instances.
         self.load_event_handlers(
             system_param.event_handler or DEFAULT_EVENT_HANDLERS)
+
+        if train_param.do_whole_volume_validation:
+            self.load_event_handlers(list(DEFAULT_EVENT_HANDLERS) +
+                                     ['whole_volume_validation'])
+
         self._generator = IteratorFactory.create(
             system_param.iteration_generator or DEFAULT_ITERATION_GENERATOR)
 

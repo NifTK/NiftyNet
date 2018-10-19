@@ -28,6 +28,8 @@ class OutputInterpreter(object):
         _iter_msg = msg['iter_msg']
         _iter_msg.ops_to_run[NETWORK_OUTPUT] = \
             sender.outputs_collector.variables(NETWORK_OUTPUT)
+        print('Will output this many tensors:', len(NETWORK_OUTPUT))
+        print(NETWORK_OUTPUT)
 
         # modifying `_iter_msg` using applications's set_iteration_update
         sender.set_iteration_update(_iter_msg)

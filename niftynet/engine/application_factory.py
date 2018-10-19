@@ -123,7 +123,6 @@ SUPPORTED_LOSS_CLASSIFICATION = {
         'niftynet.layer.loss_classification.cross_entropy',
 }
 
-
 SUPPORTED_LOSS_AUTOENCODER = {
     "VariationalLowerBound":
         'niftynet.layer.loss_autoencoder.variational_lower_bound',
@@ -217,7 +216,9 @@ SUPPORTED_EVENT_HANDLERS = {
     'console_logger':
         'niftynet.engine.handler_console.ConsoleLogger',
     'tensorboard_logger':
-        'niftynet.engine.handler_tensorboard.TensorBoardLogger'
+        'niftynet.engine.handler_tensorboard.TensorBoardLogger',
+    'whole_volume_validation':
+        'niftynet.engine.handler_whole_volume_validation.WholeVolumeValidation'
 }
 
 SUPPORTED_ITERATION_GENERATORS = {

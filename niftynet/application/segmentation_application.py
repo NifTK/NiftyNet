@@ -348,7 +348,7 @@ class SegmentationApplication(BaseApplication):
             #    var=tf.reduce_mean(image), name='mean_image',
             #    average_over_devices=False, summary_type='scalar',
             #    collection=CONSOLE)
-        elif self.is_inference:
+        elif self.is_inference or self.is_whole_volume_validating:
             # converting logits into final output for
             # classification probabilities or argmax classification labels
             data_dict = switch_sampler(for_training=False)
@@ -379,7 +379,7 @@ class SegmentationApplication(BaseApplication):
             self.initialise_aggregator()
 
     def interpret_output(self, batch_output):
-        if self.is_inference:
+        if self.is_inference or self.is_whole_volume_validating:
             return self.output_decoder.decode_batch(
                 batch_output['window'], batch_output['location'])
         return True

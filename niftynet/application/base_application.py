@@ -53,6 +53,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     _action = TRAIN
     # TF placeholders for switching network on the fly
     is_validation = None
+    _is_whole_volume_validating = None
 
     # input of the network
     readers = None
@@ -227,6 +228,22 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         :return: boolean value indicating if the phase is training
         """
         return TRAIN.startswith(self.action)
+
+    @property
+    def is_whole_volume_validating(self):
+        """
+
+        :return: boolean value indicating if the phase is training
+        """
+        return self._is_whole_volume_validating
+
+    @is_whole_volume_validating.setter
+    def is_whole_volume_validating(self, value):
+        """
+        :param value:
+        :return:
+        """
+        self._is_whole_volume_validating = value
 
     @property
     def is_inference(self):
