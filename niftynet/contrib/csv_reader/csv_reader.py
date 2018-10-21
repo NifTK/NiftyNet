@@ -52,7 +52,8 @@ class CSVReader(Layer):
                 "{'new_modality_name': ['modality_1', 'modality_2',...]}.")
             raise
         self.task_param = task_param
-        valid_names = [name for name in self.names if self.task_param.get(name, None)]
+        valid_names = [name for name in self.names if self.task_param.get(
+            name, None)]
         if not valid_names:
             tf.logging.fatal("CSVReader requires task input keywords %s, but "
                              "not exist in the config file.\n"
@@ -69,6 +70,7 @@ class CSVReader(Layer):
         self._input_sources = dict((name, self.task_param.get(name)) for name in self.names)
         self.df_by_task = {}
         self.dims_by_task = {}
+        self.type_by_task = {}
 
         for name in valid_names:
             df, _indexable_output, _dims = self._parse_csv(
@@ -78,14 +80,20 @@ class CSVReader(Layer):
             self.df_by_task[name] = df
             self.dims_by_task[name] = _dims
             self._indexable_output[name] = _indexable_output
+            if df.shape[0] > len(set(self.subject_ids)):
+                self.type_by_task[name] = 'multi'
+            else:
+                self.type_by_task[name] = 'mono'
         # Converts Dictionary of Lists to List of Dictionaries
-        self._indexable_output = pd.DataFrame(self._indexable_output).to_dict('records')
+        # self._indexable_output = pd.DataFrame(
+        # self._indexable_output).to_dict('records')
         assert file_list is not None
         return self
     
     def _parse_csv(self, path_to_csv, to_ohe):
         tf.logging.warning('This method will read your entire csv into memory')
         df = pd.read_csv(path_to_csv, index_col=0, header=None)
+        df.index = df.index.map(str)
         if set(df.index) != set(self.subject_ids):
             print(set(self.subject_ids) - set(df.index))
             tf.logging.fatal('csv file provided at: {} does not have all the subject_ids'.format(path_to_csv))
@@ -94,7 +102,7 @@ class CSVReader(Layer):
             _dims = len(list(df[1].unique()))
             _indexable_output = self.to_ohe(df[1].values, _dims)
             return df, _indexable_output, _dims
-        elif not to_ohe and len(df.columns==1):
+        elif not to_ohe and len(df.columns)==1:
             _dims = 1
             _indexable_output = self.to_categorical(df[1].values, df[1].unique())
             return df, _indexable_output, _dims
@@ -115,18 +123,59 @@ class CSVReader(Layer):
     def to_categorical(labels, label_names):
         return [np.array(list(label_names).index(label)).astype(np.float32) for label in labels]
 
-    def layer_op(self, idx=None, subject_id=None, ):
+    def layer_op(self, idx=None, subject_id=None, mode='single'):
         if idx is None and subject_id is not None:
-            #  Take the list of idx corresponding to subject id and randomly
-            # sample from there
-            relevant_indices = self._df.loc[subject_id]
-            idx = random.choice(relevant_indices)
+            idx = {}
+            if mode =='single':
+                #  Take the list of idx corresponding to subject id and randomly
+                # sample from there
+                for name in self.names:
+                    relevant_indices = np.where(self.df_by_task[
+                        name].index.get_loc(
+                        subject_id))[0]
+                    #relevant_indices = self._df.loc[subject_id]
+                    idx[name] = random.choice(relevant_indices)
+            else: # mode full i.e. output all the lines corresponding to
+                    # subject_id
+                for name in self.names:
+                    relevant_indices = np.where(self.df_by_task[
+                        name].index.get_loc(
+                        subject_id))[0]
+                    idx[name] = relevant_indices
+
         elif idx is None:
-            idx = np.random.randint(len(self.num_rows))
+            idx = {}
+            for name in self.names:
+                if subject_id is None:
+                    idx[name] = np.random.randint(self.df_by_task[
+                                                      name].shape[0])
+                    subject_id = self.df_by_task[name].iloc[idx[name]].name
+                if mode == 'single':
+                    #  Take the list of idx corresponding to subject id and randomly
+                    # sample from there
+
+                    relevant_indices = np.where(self.df_by_task[
+                        name].index.get_loc(
+                        subject_id))[0]
+                    # print(relevant_indices, subject_id)
+                        # relevant_indices = self._df.loc[subject_id]
+                    idx[name] = random.choice(relevant_indices)
+                else:  # mode full i.e. output all the lines corresponding to
+                    # subject_id
+
+                    relevant_indices = np.where(self.df_by_task[
+                        name].index.get_loc(
+                        subject_id))[0]
+                    idx[name] = relevant_indices
+
+
         if self._indexable_output is not None:
-            output_dict = {k: self.apply_niftynet_format_to_data(v) for k, v\
-                           in self._indexable_output[idx].items()}
-            return idx, output_dict, None
+            # output_dict = {k: self.apply_niftynet_format_to_data(v) for k, v\
+            #                in self._indexable_output[idx].items()}
+            output_dict = {k: self.apply_niftynet_format_to_data(
+                np.asarray(self._indexable_output[k])[idx[k]]) for k in
+                           idx.keys()}
+            return idx, output_dict, subject_id
         else:
             raise Exception('Invalid mode')
     
@@ -163,6 +212,8 @@ class CSVReader(Layer):
     
     @staticmethod
     def apply_niftynet_format_to_data(data):
-        while len(data.shape) < 5:
+        if len(data.shape)==1:
+            data = np.expand_dims(data, 0)
+        while len(data.shape) < 6:
             data = np.expand_dims(data, -1)
-        return np.expand_dims(data, 0)
+        return data
