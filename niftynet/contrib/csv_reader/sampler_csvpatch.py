@@ -32,7 +32,8 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
                  batch_size=1,
                  windows_per_image=1,
                  queue_length=10,
-                 name='uniform_sampler_v2'):
+                 mode_correction='remove',
+                 name='csv_patchsampler_v2'):
         ImageWindowDatasetCSV.__init__(
             self,
             reader=reader,
@@ -46,8 +47,9 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
             smaller_final_batch_mode='drop',
             name=name)
 
-        tf.logging.info("initialised uniform sampler %s ", self.window.shapes)
-        self.window_centers_sampler = csvcenter_spatial_coordinates
+        tf.logging.info("initialised csv patch sampler %s ", self.window.shapes)
+        self.mode_correction='remove'
+        self.window_centers_sampler = rand_spatial_coordinates
 
     # pylint: disable=too-many-locals
     def layer_op(self, idx=None):
@@ -63,35 +65,46 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
         :return: output data dictionary
             ``{image_modality: data_array, image_location: n_samples * 7}``
         """
-        csv_sampler = None
-        for csv_reader_inst in self.csv_reader:
-            if csv_reader_inst.task_param == "sampler":
-                csv_sampler = csv_reader_inst
-        flag_multi_row = test_imbalance_rows(csv_sampler)
-        if flag_multi_row:
-            _, _, idx = csv_sampler.reader(shuffle=True)
+        csv_sampler_data = None
+        flag_multi_row = False
+        if 'sampler' not in self.csv_reader.names:
+            print('Uniform sampling because no csv sampler provided')
+        else:
+            csv_sampler_data = self.csv_reader.df_by_task['sampler']
 
-        image_id, data, _ = self.reader(idx=idx, shuffle=True)
-        subj_indices, csv_data, _ = self.csv_reader(subject_id=idx,
-                                                        shuffle=True)
+        if 'multi' in self.csv_reader.type_by_task.values():
+            flag_multi_row=True
+
+
+        if flag_multi_row:
+            _, _, subject_id = self.csv_reader()
+
+        idx_subject_id = np.where(
+            self.reader._file_list.subject_id==subject_id)[0][0]
+
+        image_id, data, _ = self.reader(idx=idx_subject_id, shuffle=True)
+        subj_indices, csv_data, _ = self.csv_reader(subject_id=subject_id)
+
+        if 'sampler' not in self.csv_reader.names:
+            print('Uniform sampling because no csv sampler provided')
+        else:
+            csv_sampler_data = csv_data['sampler']
 
         image_shapes = dict(
             (name, data[name].shape) for name in self.window.names)
         static_window_shapes = self.window.match_image_shapes(image_shapes)
 
         # find random coordinates based on window and image shapes
-        coordinates, idx, pb_coord = self._spatial_coordinates_generator(
-            subject_id=image_id,
+        coordinates, idx= self.csvcenter_spatial_coordinates_generator(
+            subject_id=subject_id,
             data=data,
-            csv_sampler=csv_sampler,
             img_sizes=image_shapes,
             win_sizes=static_window_shapes,
-            n_samples=self.window.n_samples
+            n_samples=self.window.n_samples,
+            mode_correction=self.mode_correction
             )
-        coordinates_corr = correction_coordinates(coordinates, idx, pb_coord,
-                                                  csv_sampler, img_sizes,
-                                                  win_sizes)
 
+        print(idx, "index selected")
         # initialise output dict, placeholders as dictionary keys
         # this dictionary will be used in
         # enqueue operation in the form of: `feed_dict=output_dict`
@@ -127,18 +140,55 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
                     np.concatenate(image_array, axis=0)
             else:
                 output_dict[image_data_key] = image_array[0]
+        # fill output dict with csv_data
+        if self.csv_reader is not None:
+            idx_dict = {}
+            list_keys = self.csv_reader.df_by_task.keys()
+            for k in list_keys:
+                if k == 'sampler':
+                    idx_dict[k] = idx
+                else:
+                    for n in range(0, self.window.n_samples):
+                        idx_dict[k] = 0
+
+            _, csv_data_dict,_ = self.csv_reader(idx=idx_dict,
+                                                 subject_id=subject_id)
+            for name in csv_data_dict.keys():
+                if name != 'sampler':
+                    csv_data_array = []
+                    for n in range(0, self.window.n_samples):
+                        csv_data_array.append(csv_data_dict[name])
+                    if len(csv_data_array) == 1:
+                        output_dict[name] = np.asarray(csv_data_array[0])
+                    else:
+                        output_dict[name] = np.concatenate(csv_data_array,0)
+
+                else:
+                    csv_data_array=[]
+                    for n in range(0, self.window.n_samples):
+                        csv_data_array.append(csv_data_dict['sampler'])
+                    if len(csv_data_array) == 1:
+                        output_dict['sampler'] = np.asarray(csv_data_array[0])
+                    else:
+                        output_dict['sampler'] = np.concatenate(csv_data_array,0)
+            # _, label_dict, _ = self.csv_reader(subject_id=image_id)
+            # for name in self.csv_reader.task_param.keys():
+            #
+            # output_dict.update(label_dict)
+            for name in csv_data_dict.keys():
+                output_dict[name + '_location'] = output_dict['image_location']
+        yield output_dict
         # the output image shape should be
         # [enqueue_batch_size, x, y, z, time, modality]
         # where enqueue_batch_size = windows_per_image
-        return output_dict
 
-    def _spatial_coordinates_generator(self,
+
+    def csvcenter_spatial_coordinates_generator(self,
                                        subject_id,
                                        data,
-                                       csv_sampler,
                                        img_sizes,
                                        win_sizes,
-                                       mode='pad',
+                                       mode_correction='pad',
                                        n_samples=1):
         """
         Generate spatial coordinates for sampling.
@@ -169,20 +219,29 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
         #     pass
 
         n_samples = max(n_samples, 1)
-        if csv_sampler is None:
+        all_coordinates = {}
+        pb_coordinates = {}
+        list_idx = {}
+        if 'sampler' not in self.csv_reader.task_param.keys():
             window_centres = rand_spatial_coordinates(n_samples,
                                                             img_spatial_size,
                                                             win_spatial_size,
                                                             None)
             list_idx = np.arange(0, n_samples)
+
         else :
             window_centres_list = []
             list_idx = []
+            for mod in self.csv_reader.task_param:
+                all_coordinates[mod] = []
             for n in range(0, n_samples):
-                idx, data_csv, _ = csv_sampler.csv_reader(
-                    subject_id=subject_id, shuffle=True)
-                centre_tmp = np.squeeze(data_csv['sampler'])
-                list_idx.append(idx)
+                idx, data_csv, _ = self.csv_reader(
+                    subject_id=subject_id,  mode='single')
+                centre_tmp = np.expand_dims(np.squeeze(data_csv['sampler']),0)
+                for mod in idx.keys():
+                    all_coordinates[mod].append(np.expand_dims(
+                        np.squeeze(data_csv[mod]),0))
+                list_idx.append(idx['sampler'])
                 window_centres_list.append(centre_tmp)
                 window_centres = np.concatenate(window_centres_list, 0)
 
@@ -191,8 +250,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
             "{} samples of rank {} locations".format(n_samples, N_SPATIAL)
 
         # adjust spatial coordinates based on each mod spatial window size
-        all_coordinates = {}
-        pb_coordinates = {}
+
         for mod in list(win_sizes):
             win_size = np.asarray(win_sizes[mod][:N_SPATIAL])
             half_win = np.floor(win_size / 2.0).astype(int)
@@ -202,12 +260,11 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
                 (1, N_SPATIAL * 2), dtype=np.int32)
             spatial_coords[:, :N_SPATIAL] = np.maximum(
                 window_centres[0, :N_SPATIAL] - half_win[:N_SPATIAL], 0)
-            sign_pb_min = np.square(np.sign(window_centres[0,
+            sign_pb_min = (np.square(np.sign(window_centres[0,
                                           :N_SPATIAL]-half_win[
                                                              :N_SPATIAL])) - \
                       np.sign(window_centres[0, :N_SPATIAL] - half_win[
-                                                              :N_SPATIAL])
-            sign_pb_min /= 2
+                                                              :N_SPATIAL]))/2
 
             # Make the opposite corner of the window is
             # just adding the mod specific window size
@@ -215,21 +272,41 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
                 spatial_coords[:, :N_SPATIAL] + win_size[:N_SPATIAL]
             sign_pb_max = np.sign(spatial_coords[:, N_SPATIAL:] - img_spatial_size)
             pb_coordinates_tmp = np.where(sign_pb_max == 1, np.ones_like(
-                sign_pb_max), np.zeros_like(sign_pb_max))
+                sign_pb_max, dtype=np.float64), np.zeros_like(sign_pb_max,
+                                                           dtype=np.float64))
             pb_coordinates_tmp += sign_pb_min
+            needed_correction_min = window_centres[0,
+                                          :N_SPATIAL]-half_win[
+                                                             :N_SPATIAL]
+            needed_correction_min = np.expand_dims(np.where(
+                needed_correction_min<0,
+                                             -1 * needed_correction_min,
+                                             np.zeros_like(
+                                                 needed_correction_min)),0)
+            needed_correction_max = spatial_coords[:, N_SPATIAL:] - img_spatial_size
+            needed_correction_max = np.where(needed_correction_max>0,
+                                             needed_correction_max,
+                                             np.zeros_like(
+                                                 needed_correction_max))
+            needed_correction_full = np.concatenate((needed_correction_min,
+                                                     needed_correction_max),
+                                                    axis=1)
+
 
             assert np.all(spatial_coords[:, N_SPATIAL:] <= img_spatial_size), \
                 'spatial coords: out of bounds.'
 
             # include subject id as the 1st column of all_coordinates values
-            subject_id = np.ones((n_samples,), dtype=np.int32) * subject_id
+            idx_subject_id = np.where(
+                self.reader._file_list.subject_id == subject_id)[0][0]
+            idx_subject_id = np.ones((n_samples,), dtype=np.int32) * \
+                             idx_subject_id
             spatial_coords = np.append(
-                subject_id[:, None], spatial_coords, axis=1)
+                idx_subject_id[:, None], spatial_coords, axis=1)
             all_coordinates[mod] = spatial_coords
-            pb_coordinates[mod] = pb_coordinates_tmp
+            pb_coordinates[mod] = needed_correction_full
 
-
-        return all_coordinates, list_idx, pb_coordinates
+        return all_coordinates, list_idx
 
 
 def correction_coordinates(coordinates, idx, pb_coord, img_sizes, win_sizes,
@@ -243,17 +320,17 @@ def correction_coordinates(coordinates, idx, pb_coord, img_sizes, win_sizes,
     if np.sum(overall_pb) == 0:
         return coordinates, None
     else:
+        list_nopb = np.where(overall_pb == 0)
+        list_pb = np.where(overall_pb > 0)
         if mode == "remove":
-            list_nopb = np.where(overall_pb == 0)
-            list_pb = np.where(overall_pb > 0)
             for mod in list(win_sizes):
                 coordinates[mod]=coordinates[mod][list_nopb, :]
-            csv_sampler._df = csv_sampler._df.drop(list_pb)
-            return coordinates, None
+
+            return coordinates, idx_pb
         elif mode == "pad" :
-            return coordinates, padding_corr
+            return coordinates, idx_pb
         else:
-            return shifted_coordinates, None
+            return shifted_coordinates, idx_pb
 
 
 
