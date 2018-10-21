@@ -180,7 +180,7 @@ class ImageSetsPartitioner(object):
             return subset[section_names]
         return subset
 
-    def load_data_sections_by_subject(self):
+    def load_data_sections_by_subject(self, merge_multi=False):
         """
         Go through all input data sections, converting each section
         to a list of file names.
@@ -194,14 +194,34 @@ class ImageSetsPartitioner(object):
                 'Nothing to load, please check input sections in the config.')
             raise ValueError
         self._file_list = None
-        for section_name in self.data_param:
+        section_first = [section_name for section_name in
+                              self.data_param if
+                          self.data_param[section_name].csv_data_file =='']
+        section_second = [section_name for section_name in self.data_param if
+                          section_name not in section_first]
+        usable_section = section_first + section_second
+        for section_name in usable_section:
+
             modality_file_list = self.grep_files_by_data_section(section_name)
             if self._file_list is None:
                 # adding all rows of the first modality
                 self._file_list = modality_file_list
                 continue
             n_rows = self._file_list[COLUMN_UNIQ_ID].count()
-            self._file_list = pandas.merge(self._file_list,
+            if len(modality_file_list.index) > n_rows and set(
+                    modality_file_list.index) == set(self._file_list[
+                COLUMN_UNIQ_ID]):
+                tf.logging.warning('The data file has multiple entries for '
+                                   'each subject')
+                if merge_multi:
+
+                    modality_file_list[COLUMN_UNIQ_ID] = modality_file_list.index
+                    self._file_list = pandas.merge(self._file_list,
+                                               modality_file_list,
+                                               on=COLUMN_UNIQ_ID,
+                                               how='outer')
+            else:
+                self._file_list = pandas.merge(self._file_list,
                                            modality_file_list,
                                            how='outer',
                                            on=COLUMN_UNIQ_ID)
@@ -307,12 +327,21 @@ class ImageSetsPartitioner(object):
         # loading the file as dataframe
         ###############################
         try:
-            csv_list = pandas.read_csv(
-                csv_data_file,
-                header=None,
-                dtype=(str, str),
-                names=[COLUMN_UNIQ_ID, modality_name],
-                skipinitialspace=True)
+            if self.data_param[modality_name].csv_data_file == '':
+                csv_list = pandas.read_csv(
+                    csv_data_file,
+                    header=None,
+                    dtype=(str, str),
+                    names=[COLUMN_UNIQ_ID, modality_name],
+                    skipinitialspace=True)
+            else:
+                csv_list = pandas.read_csv(
+                    csv_data_file,
+                    header=None,
+                    index_col=0,
+
+                )
+                csv_list.index = csv_list.index.map(str)
         except Exception as csv_error:
             tf.logging.fatal(repr(csv_error))
             raise

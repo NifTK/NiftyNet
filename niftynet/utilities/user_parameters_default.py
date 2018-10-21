@@ -344,7 +344,7 @@ def add_network_args(parser):
         help="How to sample patches from each loaded image:"
              " 'uniform': fixed size uniformly distributed,"
              " 'resize': resize image to the patch size.",
-        choices=['uniform', 'resize', 'balanced', 'weighted'],
+        choices=['uniform', 'resize', 'balanced', 'weighted','patch'],
         default='uniform')
 
     parser.add_argument(
