@@ -159,25 +159,29 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
                     for n in range(0, self.window.n_samples):
                         csv_data_array.append(csv_data_dict[name])
                     if len(csv_data_array) == 1:
-                        output_dict[name] = np.asarray(csv_data_array[0])
+                        output_dict[name] = np.asarray(csv_data_array[0],
+                                                       dtype=np.float32)
                     else:
-                        output_dict[name] = np.concatenate(csv_data_array,0)
+                        output_dict[name] = np.concatenate(
+                            csv_data_array,0).astype(dtype=np.float32)
 
                 else:
                     csv_data_array=[]
                     for n in range(0, self.window.n_samples):
                         csv_data_array.append(csv_data_dict['sampler'])
                     if len(csv_data_array) == 1:
-                        output_dict['sampler'] = np.asarray(csv_data_array[0])
+                        output_dict['sampler'] = np.asarray(csv_data_array[0],
+                                                       dtype=np.float32)
                     else:
-                        output_dict['sampler'] = np.concatenate(csv_data_array,0)
+                        output_dict['sampler'] = np.concatenate(
+                            csv_data_array,0).astype(np.float32)
             # _, label_dict, _ = self.csv_reader(subject_id=image_id)
             # for name in self.csv_reader.task_param.keys():
             #
             # output_dict.update(label_dict)
             for name in csv_data_dict.keys():
                 output_dict[name + '_location'] = output_dict['image_location']
-        yield output_dict
+        return output_dict
         # the output image shape should be
         # [enqueue_batch_size, x, y, z, time, modality]
         # where enqueue_batch_size = windows_per_image
