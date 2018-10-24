@@ -67,7 +67,7 @@ class DenseVNet(BaseNet):
         use_coords (): use image coordinate augmentation
     """
     __hyper_params__ = dict(
-        prior_size=12,
+        prior_size=24,
         n_dense_channels=[4, 8, 16],
         n_seg_channels=[12, 24, 24],
         n_initial_conv_channels=24,
@@ -230,9 +230,11 @@ class DenseVNet(BaseNet):
 
         # Refine segmentation with prior
         if hyperparams['use_prior']:
-            spatial_prior = SpatialPriorBlock(
-                [hyperparams.prior_size] * n_spatial_dims,
-                feature_map_shape)
+            spatial_prior_shape = [hyperparams['prior_size']] * n_spatial_dims
+            # Prior shape must be 4 or 5 dim to work with linear_resize layer
+            # ie to conform to shape=[batch, X, Y, Z, channels] 
+            prior_shape = [1] + spatial_prior_shape + [1]
+            spatial_prior = SpatialPriorBlock(prior_shape, feature_map_shape)
             output += spatial_prior()
 
         # Invert augmentation
