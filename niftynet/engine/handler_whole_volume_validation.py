@@ -22,24 +22,14 @@ class WholeVolumeValidation(object):
 
     def change_to_inference(self, _sender, **msg):
         _iter_msg = msg['iter_msg']
-        self.current_iter = _iter_msg.current_iter
         if _iter_msg.is_training and not _iter_msg.is_validation:
             return
-        # _sender.is_whole_volume_validating = True
-        _sender.action = INFER
+        _sender.is_whole_volume_validating = True
+        # _sender.action = INFER
 
     def run_whole_volume_validation(self, _sender, **msg):
         _iter_msg = msg['iter_msg']
         if _iter_msg.is_training:
             return
-        self.revert_to_training(_sender, **msg)
-
-    def revert_to_training(self, _sender, **msg):
         # Must make sure current_iter hasn't been incremented
         _iter_msg = msg['iter_msg']
-        _iter_msg.current_iter = self.current_iter
-        # Set application flag back to is_training
-        # _sender.is_whole_volume_validating = False
-        if not _iter_msg.is_validation:
-            # _sender.is_training = True
-            _sender.action = TRAIN

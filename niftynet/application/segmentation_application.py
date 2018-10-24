@@ -184,12 +184,21 @@ class SegmentationApplication(BaseApplication):
 
     def initialise_uniform_sampler(self):
         self.sampler = [[UniformSampler(
-            reader=reader,
+            reader=self.readers[0],
             window_sizes=self.data_param,
             batch_size=self.net_param.batch_size,
             windows_per_image=self.action_param.sample_per_volume,
-            queue_length=self.net_param.queue_length) for reader in
-            self.readers]]
+            queue_length=self.net_param.queue_length),
+            GridSampler(
+                reader=self.readers[1],
+                window_sizes=self.data_param,
+                batch_size=self.net_param.batch_size,
+                spatial_window_size=self.action_param.spatial_window_size,
+                window_border=self.action_param.border,
+                smaller_final_batch_mode=self.net_param.smaller_final_batch_mode,
+                queue_length=self.net_param.queue_length
+            )
+        ]]
 
     def initialise_weighted_sampler(self):
         self.sampler = [[WeightedSampler(
@@ -202,13 +211,23 @@ class SegmentationApplication(BaseApplication):
 
     def initialise_resize_sampler(self):
         self.sampler = [[ResizeSampler(
-            reader=reader,
+            reader=self.readers[0],
             window_sizes=self.data_param,
             batch_size=self.net_param.batch_size,
             shuffle=self.is_training,
             smaller_final_batch_mode=self.net_param.smaller_final_batch_mode,
-            queue_length=self.net_param.queue_length) for reader in
-            self.readers]]
+            queue_length=self.net_param.queue_length
+        ),
+            GridSampler(
+                reader=self.readers[1],
+                window_sizes=self.data_param,
+                batch_size=self.net_param.batch_size,
+                spatial_window_size=self.action_param.spatial_window_size,
+                window_border=self.action_param.border,
+                smaller_final_batch_mode=self.net_param.smaller_final_batch_mode,
+                queue_length=self.net_param.queue_length
+            )
+            ]]
 
     def initialise_grid_sampler(self):
         self.sampler = [[GridSampler(
@@ -288,8 +307,6 @@ class SegmentationApplication(BaseApplication):
                 sampler = self.get_sampler()[0][0 if for_training else -1]
                 return sampler.pop_batch_op()
 
-        print(self.action_param)
-        self.initialise_aggregator()
         if self.is_training:
             if self.action_param.validation_every_n > 0:
                 data_dict = tf.cond(tf.logical_not(self.is_validation),
@@ -336,6 +353,27 @@ class SegmentationApplication(BaseApplication):
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
 
+            output_prob = self.segmentation_param.output_prob
+            num_classes = self.segmentation_param.num_classes
+            if output_prob and num_classes > 1:
+                post_process_layer = PostProcessingLayer(
+                    'SOFTMAX', num_classes=num_classes)
+            elif not output_prob and num_classes > 1:
+                post_process_layer = PostProcessingLayer(
+                    'ARGMAX', num_classes=num_classes)
+            else:
+                post_process_layer = PostProcessingLayer(
+                    'IDENTITY', num_classes=num_classes)
+            net_out_ = post_process_layer(net_out)
+
+            outputs_collector.add_to_collection(
+                var=net_out_, name='window',
+                average_over_devices=False, collection=NETWORK_OUTPUT)
+            outputs_collector.add_to_collection(
+                var=data_dict['image_location'], name='location',
+                average_over_devices=False, collection=NETWORK_OUTPUT)
+            self.initialise_aggregator()
+
             # outputs_collector.add_to_collection(
             #    var=image*180.0, name='image',
             #    average_over_devices=False, summary_type='image3_sagittal',
@@ -350,7 +388,7 @@ class SegmentationApplication(BaseApplication):
             #    var=tf.reduce_mean(image), name='mean_image',
             #    average_over_devices=False, summary_type='scalar',
             #    collection=CONSOLE)
-        elif self.is_inference or self.is_whole_volume_validating:
+        elif self.is_inference:
             # converting logits into final output for
             # classification probabilities or argmax classification labels
             data_dict = switch_sampler(for_training=False)

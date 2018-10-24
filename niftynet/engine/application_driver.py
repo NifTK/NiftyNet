@@ -114,7 +114,6 @@ class ApplicationDriver(object):
                 self.validation_max_iter = max(self.validation_max_iter,
                                                train_param.validation_max_iter)
 
-            print(dir(train_param))
             action_param = train_param
             if train_param.do_whole_volume_validation:
                 action_param.__dict__.update(infer_param.__dict__)

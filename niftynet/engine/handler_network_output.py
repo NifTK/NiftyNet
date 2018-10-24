@@ -28,7 +28,6 @@ class OutputInterpreter(object):
         _iter_msg = msg['iter_msg']
         _iter_msg.ops_to_run[NETWORK_OUTPUT] = \
             sender.outputs_collector.variables(NETWORK_OUTPUT)
-        print(sender.outputs_collector.variables(NETWORK_OUTPUT))
 
         # modifying `_iter_msg` using applications's set_iteration_update
         sender.set_iteration_update(_iter_msg)
@@ -50,4 +49,6 @@ class OutputInterpreter(object):
         waiting_for_more_output = sender.interpret_output(
             _iter_msg.current_iter_output[NETWORK_OUTPUT])
         if not waiting_for_more_output:
-            _iter_msg.should_stop = OutputInterpreter.__name__
+            sender.is_whole_volume_validating = False
+            if not _iter_msg.is_validation:
+                _iter_msg.should_stop = OutputInterpreter.__name__
