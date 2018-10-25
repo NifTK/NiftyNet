@@ -62,7 +62,7 @@ setup(
     install_requires=[
         'six>=1.10',
         'nibabel>=2.1.0',
-        'numpy>=1.12',
+        'numpy>=1.13.3, <= 1.14.5',
         'scipy>=0.18',
         'configparser',
         'pandas',
