@@ -103,7 +103,8 @@ class GANApplication(BaseApplication):
             if self.action_param.scaling_percentage:
                 augmentation_layers.append(RandomSpatialScalingLayer(
                     min_percentage=self.action_param.scaling_percentage[0],
-                    max_percentage=self.action_param.scaling_percentage[1]))
+                    max_percentage=self.action_param.scaling_percentage[1],
+                    antialiasing=self.action_param.antialiasing))
             if self.action_param.rotation_angle:
                 augmentation_layers.append(RandomRotationLayer())
                 augmentation_layers[-1].init_uniform_angle(

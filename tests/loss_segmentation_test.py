@@ -7,6 +7,98 @@ import tensorflow as tf
 from niftynet.layer.loss_segmentation import LossFunction, labels_to_one_hot
 
 
+class DiceWithMissingClass(tf.test.TestCase):
+    # all dice methods should return 0.0 for this case:
+    def test_missing_class(self):
+        with self.test_session():
+            predicted = tf.constant(
+                [[0, 0, 1], [1, 0, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([2, 0], dtype=tf.int32)
+
+            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
+
+            for loss_func in ('Dice', 'Dice_NS', 'Dice_Dense', 'Dice_Dense_NS'):
+
+                test_loss_func = LossFunction(3, loss_type=loss_func, softmax=False)
+                if 'Dense' in loss_func:
+                    loss_value = test_loss_func(predicted, tf.one_hot(labels, 3))
+                else:
+                    loss_value = test_loss_func(predicted, labels)
+
+                # softmax of zero, Dice loss of -1, so sum \approx -1
+                self.assertAllClose(loss_value.eval(), 0.0, atol=1e-4)
+
+    def test_missing_class_dice_plus_xent(self):
+        with self.test_session():
+            predicted = tf.constant(
+                [[0, 0, 999], [999, 0, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([2, 0], dtype=tf.int32)
+
+            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
+
+            test_loss_func = LossFunction(3, loss_type='DicePlusXEnt', softmax=False)
+            loss_value = test_loss_func(predicted, labels)
+
+            # softmax of zero, Dice loss of -1, so sum \approx -1
+            self.assertAllClose(loss_value.eval(), -1.0, atol=1e-4)
+
+
+class DicePlusXEntTest(tf.test.TestCase):
+    def test_dice_plus(self):
+        with self.test_session():
+            predicted = tf.constant(
+                [[0, 9999], [9999, 0], [9999, 0], [9999, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([1, 0, 0, 0], dtype=tf.int16, name='labels')
+            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
+            test_loss_func = LossFunction(2, loss_type='DicePlusXEnt', softmax=False)
+            loss_value = test_loss_func(predicted, labels)
+
+            # softmax of zero, Dice loss of -1, so sum \approx -1
+            self.assertAllClose(loss_value.eval(), -1.0, atol=1e-3)
+
+    def test_dice_plus_multilabel(self):
+        with self.test_session():
+            predicted = tf.constant(
+                [[0, 0, 9999], [9999, 0, 0], [0, 9999, 0], [9999, 0, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([2, 0, 1, 0], dtype=tf.int16, name='labels')
+            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
+            test_loss_func = LossFunction(3, loss_type='DicePlusXEnt', softmax=False)
+            loss_value = test_loss_func(predicted, labels)
+
+            # cross-ent of zero, Dice loss of -1, so sum \approx -1
+            self.assertAllClose(loss_value.eval(), -1.0, atol=1e-3)
+
+    def test_dice_plus_non_zeros(self):
+        with self.test_session():
+            predicted = tf.constant(
+                [[0, 9999, 9999], [9999, 0, 0], [0, 9999, 9999], [9999, 0, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([2, 0, 1, 0], dtype=tf.int16, name='labels')
+            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
+            test_loss_func = LossFunction(3, loss_type='DicePlusXEnt', softmax=False)
+            loss_value = test_loss_func(predicted, labels)
+            # cross-ent of mean(ln(2), 0, 0, ln(2)) = .5*ln(2)
+            # Dice loss of -mean(1, .5, .5)=-2/3
+            self.assertAllClose(loss_value.eval(), .5 * np.log(2) - 2. / 3., atol=1e-3)
+
+    def test_dice_plus_wrong_softmax(self):
+        with self.test_session():
+            predicted = tf.constant(
+                [[0, 9999, 9999], [9999, 0, 0], [0, 9999, 9999], [9999, 0, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([2, 0, 1, 0], dtype=tf.int16, name='labels')
+            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
+            test_loss_func = LossFunction(3, loss_type='DicePlusXEnt', softmax=True)
+            loss_value = test_loss_func(predicted, labels)
+            # cross-ent of mean(ln(2), 0, 0, ln(2)) = .5*ln(2)
+            # Dice loss of -mean(1, .5, .5)=-2/3
+            self.assertAllClose(loss_value.eval(), .5 * np.log(2) - 2. / 3., atol=1e-3)
+
+
 class OneHotTester(tf.test.TestCase):
     def test_vs_tf_onehot(self):
         with self.test_session():
@@ -17,13 +109,13 @@ class OneHotTester(tf.test.TestCase):
 
     def test_one_hot(self):
         ref = np.asarray(
-            [[[ 0.,  1.,  0.,  0.,  0.], [ 0.,  0.,  1.,  0.,  0.]],
-             [[ 0.,  0.,  0.,  1.,  0.], [ 0.,  0.,  0.,  0.,  1.]]],
+            [[[0., 1., 0., 0., 0.], [0., 0., 1., 0., 0.]],
+             [[0., 0., 0., 1., 0.], [0., 0., 0., 0., 1.]]],
             dtype=np.float32)
 
         with self.test_session():
             labels = tf.constant([[1, 2], [3, 4]])
-            #import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             one_hot = tf.sparse_tensor_to_dense(
                 labels_to_one_hot(labels, 5)).eval()
             self.assertAllEqual(one_hot, ref)
@@ -149,11 +241,11 @@ class DiceTest(tf.test.TestCase):
 
             test_loss_func = LossFunction(2, loss_type='Dice')
             one_minus_dice_score = test_loss_func(predicted, labels)
-            self.assertAlmostEqual(one_minus_dice_score.eval(), 1.0)
+            self.assertAllClose(one_minus_dice_score.eval(), 1.0, atol=1e-4)
 
     def test_dice_batch_size_greater_than_one(self):
         # test for Github issue #22: need to take mean per-image before
-        # averaging Dice of ~2/3 and ~0.16, should get dice ~ 0.41495
+        # averaging Dice of ~1 and ~0.16, should get dice ~ 1 - 0.5816
         with self.test_session():
             # predictions ~ [1, 0, 0]; [0, 0, 1]; [0, .5, .5]; [.333, .333, .333]
             predictions_numpy = np.array([[[10., 0, 0], [0, 0, 10]],
@@ -166,7 +258,7 @@ class DiceTest(tf.test.TestCase):
             test_loss_func = LossFunction(3, loss_type='Dice')
             one_minus_dice_score = test_loss_func(predicted, labels)
 
-            self.assertAllClose(one_minus_dice_score.eval(), 1 - 0.41495, atol=1e-4)
+            self.assertAllClose(one_minus_dice_score.eval(), 1 - 0.5816, atol=1e-4)
 
 
 class CrossEntropyTests(tf.test.TestCase):
@@ -252,7 +344,7 @@ class DiceTestNoSquare(tf.test.TestCase):
 
             test_loss_func = LossFunction(2, loss_type='Dice_NS')
             one_minus_dice_score = test_loss_func(predicted, labels)
-            self.assertAlmostEqual(one_minus_dice_score.eval(), 1.0)
+            self.assertAllClose(one_minus_dice_score.eval(), 1.0, atol=1e-4)
 
 
 class TverskyTest(tf.test.TestCase):
@@ -325,7 +417,7 @@ class DiceDenseTest(tf.test.TestCase):
 
             test_loss_func = LossFunction(2, loss_type='Dice_Dense')
             one_minus_dice_score = test_loss_func(predicted, one_hot)
-            self.assertAlmostEqual(one_minus_dice_score.eval(), 1.0)
+            self.assertAllClose(one_minus_dice_score.eval(), 1.0, atol=1e-4)
 
     def test_dense_dice_vs_sparse(self):
         # regression test vs dense version
