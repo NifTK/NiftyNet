@@ -32,7 +32,7 @@ class OutputInterpreter(object):
         # modifying `_iter_msg` using applications's set_iteration_update
         sender.set_iteration_update(_iter_msg)
 
-    def interpret_output(self, sender, **msg):
+    def interpret_output(self, _sender, **msg):
         """
         Calling sender application to interpret evaluated tensors.
         Set ``_iter_msg.should_stop`` to a True value
@@ -46,9 +46,9 @@ class OutputInterpreter(object):
         :return:
         """
         _iter_msg = msg['iter_msg']
-        waiting_for_more_output = sender.interpret_output(
-            _iter_msg.current_iter_output[NETWORK_OUTPUT])
-        if not waiting_for_more_output:
-            sender.is_whole_volume_validating = False
-            if not _iter_msg.is_validation:
-                _iter_msg.should_stop = OutputInterpreter.__name__
+        waiting_for_more_output = True
+        if (_sender.is_whole_volume_validating and _iter_msg.is_validation) or _sender.is_inference:
+            waiting_for_more_output = _sender.interpret_output(
+                _iter_msg.current_iter_output[NETWORK_OUTPUT])
+        if not waiting_for_more_output and _sender.is_inference:
+            _iter_msg.should_stop = OutputInterpreter.__name__

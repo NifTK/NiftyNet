@@ -33,6 +33,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
             self, image_reader=image_reader, output_path=output_path)
         self.name = name
         self.image_out = None
+        self.finished_validating = False
         self.window_border = window_border
         self.output_interp_order = interp_order
         self.postfix = postfix
@@ -44,11 +45,14 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         for batch_id in range(n_samples):
             image_id, x_start, y_start, z_start, x_end, y_end, z_end = \
                 location[batch_id, :]
+            self.finished_validating = False
             if image_id != self.image_id:
                 # image name changed:
                 #    save current image and create an empty image
                 self._save_current_image()
                 if self._is_stopping_signal(location[batch_id]):
+                    print('Has finished validating')
+                    self.finished_validating = True
                     return False
                 self.image_out = self._initialise_empty_image(
                     image_id=image_id,

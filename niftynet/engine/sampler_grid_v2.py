@@ -24,7 +24,7 @@ class GridSampler(ImageWindowDataset):
                  spatial_window_size=None,
                  window_border=None,
                  queue_length=10,
-                 smaller_final_batch_mode='pad',
+                 smaller_final_batch_mode='dynamic',
                  name='grid_sampler'):
 
         # override all spatial window defined in input
@@ -50,79 +50,84 @@ class GridSampler(ImageWindowDataset):
             self.border_size = tuple(self.border_size) + \
                                (self.border_size[-1],)
         self.border_size = self.border_size[:N_SPATIAL]
+        self.finished_validating = False
         tf.logging.info('initialised window instance')
         tf.logging.info("initialised grid sampler %s", self.window.shapes)
 
     def layer_op(self):
         while True:
-            image_id, data, _ = self.reader(idx=None, shuffle=False)
-            if not data:
-                break
-            image_shapes = {name: data[name].shape
-                            for name in self.window.names}
-            static_window_shapes = self.window.match_image_shapes(image_shapes)
-            coordinates = grid_spatial_coordinates(
-                image_id, image_shapes, static_window_shapes, self.border_size)
+            self.finished_validating = False
+            self.reader.current_id = -1
+            while True:
+                image_id, data, _ = self.reader(idx=None, shuffle=False)
+                if not data:
+                    break
+                image_shapes = {name: data[name].shape
+                                for name in self.window.names}
+                static_window_shapes = self.window.match_image_shapes(image_shapes)
+                coordinates = grid_spatial_coordinates(
+                    image_id, image_shapes, static_window_shapes, self.border_size)
 
-            # extend the number of sampling locations to be divisible
-            # by batch size
-            n_locations = list(coordinates.values())[0].shape[0]
-            extra_locations = 0
-            if (n_locations % self.batch_size) > 0:
-                extra_locations = \
-                    self.batch_size - n_locations % self.batch_size
-            total_locations = n_locations + extra_locations
+                # extend the number of sampling locations to be divisible
+                # by batch size
+                n_locations = list(coordinates.values())[0].shape[0]
+                extra_locations = 0
+                if (n_locations % self.batch_size) > 0:
+                    extra_locations = \
+                        self.batch_size - n_locations % self.batch_size
+                total_locations = n_locations + extra_locations
 
-            tf.logging.info(
-                'grid sampling image sizes: %s', image_shapes)
-            tf.logging.info(
-                'grid sampling window sizes: %s', static_window_shapes)
-            if extra_locations > 0:
                 tf.logging.info(
-                    "yielding %s locations from image, "
-                    "extended to %s to be divisible by batch size %s",
-                    n_locations, total_locations, self.batch_size)
-            else:
+                    'grid sampling image sizes: %s', image_shapes)
                 tf.logging.info(
-                    "yielding %s locations from image", n_locations)
-            for i in range(total_locations):
-                idx = i % n_locations
-                #  initialise output dict
-                output_dict = {}
-                for name in list(data):
-                    assert coordinates[name].shape[0] == n_locations, \
-                        "different number of grid samples from the input" \
-                        "images, don't know how to combine them in the queue"
-                    x_start, y_start, z_start, x_end, y_end, z_end = \
-                        coordinates[name][idx, 1:]
-                    try:
-                        image_window = data[name][
-                            x_start:x_end, y_start:y_end, z_start:z_end, ...]
-                    except ValueError:
-                        tf.logging.fatal(
-                            "dimensionality miss match in input volumes, "
-                            "please specify spatial_window_size with a "
-                            "3D tuple and make sure each element is "
-                            "smaller than the image length in each dim.")
-                        raise
-                    # fill output dict with data
-                    coord_key = LOCATION_FORMAT.format(name)
-                    image_key = name
-                    output_dict[coord_key] = coordinates[name][idx:idx+1, ...]
-                    output_dict[image_key] = image_window[np.newaxis, ...]
-                yield output_dict
-
-        # this is needed because otherwise reading beyond the last element
-        # raises an out-of-range error, and the last grid sample
-        # will not be processed properly.
-        try:
-            for _ in range(1):
-                for name in list(output_dict):
-                    output_dict[name] = np.ones_like(output_dict[name]) * -1
-                yield output_dict
-        except (NameError, KeyError):
-            tf.logging.fatal("No feasible samples from %s", self)
-            raise
+                    'grid sampling window sizes: %s', static_window_shapes)
+                if extra_locations > 0:
+                    tf.logging.info(
+                        "yielding %s locations from image, "
+                        "extended to %s to be divisible by batch size %s",
+                        n_locations, total_locations, self.batch_size)
+                else:
+                    tf.logging.info(
+                        "yielding %s locations from image", n_locations)
+                for i in range(total_locations):
+                    idx = i % n_locations
+                    print('Yielding at {} / {}'.format(i+1, total_locations))
+                    #  initialise output dict
+                    output_dict = {}
+                    for name in list(data):
+                        assert coordinates[name].shape[0] == n_locations, \
+                            "different number of grid samples from the input" \
+                            "images, don't know how to combine them in the queue"
+                        x_start, y_start, z_start, x_end, y_end, z_end = \
+                            coordinates[name][idx, 1:]
+                        try:
+                            image_window = data[name][
+                                x_start:x_end, y_start:y_end, z_start:z_end, ...]
+                        except ValueError:
+                            tf.logging.fatal(
+                                "dimensionality miss match in input volumes, "
+                                "please specify spatial_window_size with a "
+                                "3D tuple and make sure each element is "
+                                "smaller than the image length in each dim.")
+                            raise
+                        # fill output dict with data
+                        coord_key = LOCATION_FORMAT.format(name)
+                        image_key = name
+                        output_dict[coord_key] = coordinates[name][idx:idx+1, ...]
+                        output_dict[image_key] = image_window[np.newaxis, ...]
+                    yield output_dict
+                # this is needed because otherwise reading beyond the last element
+                # raises an out-of-range error, and the last grid sample
+                # will not be processed properly.
+            try:
+                for _ in range(1):
+                    for name in list(output_dict):
+                        output_dict[name] = np.ones_like(output_dict[name])
+                    self.finished_validating = True
+                    yield output_dict
+            except (NameError, KeyError):
+                tf.logging.fatal("No feasible samples from %s", self)
+                raise
 
 
 def grid_spatial_coordinates(subject_id, img_sizes, win_sizes, border_size):

@@ -251,7 +251,7 @@ class SegmentationApplication(BaseApplication):
 
     def initialise_grid_aggregator(self):
         self.output_decoder = GridSamplesAggregator(
-            image_reader=self.readers[0],
+            image_reader=self.readers[1],
             output_path=self.action_param.save_seg_dir,
             window_border=self.action_param.border,
             interp_order=self.action_param.output_interp_order,
@@ -304,6 +304,7 @@ class SegmentationApplication(BaseApplication):
 
         def switch_sampler(for_training):
             with tf.name_scope('train' if for_training else 'validation'):
+                self.initialise_sampler()
                 sampler = self.get_sampler()[0][0 if for_training else -1]
                 return sampler.pop_batch_op()
 
@@ -333,6 +334,7 @@ class SegmentationApplication(BaseApplication):
                 prediction=net_out,
                 ground_truth=data_dict.get('label', None),
                 weight_map=data_dict.get('weight', None))
+
             reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(
@@ -417,13 +419,11 @@ class SegmentationApplication(BaseApplication):
                 var=data_dict['image_location'], name='location',
                 average_over_devices=False, collection=NETWORK_OUTPUT)
 
-            print(self.action_param)
+            self.initialise_aggregator()
 
     def interpret_output(self, batch_output):
-        if self.is_inference or self.is_whole_volume_validating:
-            return self.output_decoder.decode_batch(
-                batch_output['window'], batch_output['location'])
-        return True
+        return self.output_decoder.decode_batch(batch_output['window'],
+                                                batch_output['location'])
 
     def initialise_evaluator(self, eval_param):
         self.eval_param = eval_param

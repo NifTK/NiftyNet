@@ -216,12 +216,14 @@ class IterationMessageGenerator(object):
                  validation_every_n=0,
                  validation_max_iter=0,
                  is_training_action=True,
+                 do_whole_volume_validation=False,
                  **_unused):
         self.initial_iter = max(initial_iter, -1)
         self.final_iter = max(final_iter, self.initial_iter)
         self.validation_every_n = validation_every_n
         self.validation_max_iter = validation_max_iter
         self.is_training_action = is_training_action
+        self.do_whole_volume_validation = do_whole_volume_validation
 
     def __call__(self):
         if not self.is_training_action:
@@ -298,3 +300,62 @@ def _console_vars_to_str(console_dict):
     else:
         console_str = '{}'.format(console_dict)
     return console_str
+
+
+class IterationMessageCreator(object):
+    """
+    Class provides function which returns an iteration message.
+    """
+
+    def __init__(self,
+                 initial_iter=0,
+                 final_iter=0,
+                 validation_every_n=0,
+                 validation_max_iter=0,
+                 is_training_action=True,
+                 do_whole_volume_validation=False,
+                 **_unused):
+        self.initial_iter = max(initial_iter, -1)
+        self.final_iter = max(final_iter, self.initial_iter)
+        self.current_iter = -1
+        self.validation_counter = validation_max_iter
+        self.currently_validating = False
+        self.validation_every_n = validation_every_n
+        self.validation_max_iter = validation_max_iter
+        self.is_training_action = is_training_action
+        self.do_whole_volume_validation = do_whole_volume_validation
+
+    def iter_msg_func(self, app):
+        """
+        This function will generate an IterationMessage given a loop_counter
+        and an application object
+        :param application: Application object
+        :param loop_counter: How many times the ApplicationDriver.loop method has been called
+        :return: an IterationMessage object
+        """
+        if not self.do_whole_volume_validation:
+            iter_msg = IterationMessage()
+            if self.current_iter > 0 and self.validation_every_n > 0 and \
+                self.validation_counter > 0 and self.current_iter % self.validation_every_n == 0:
+                iter_msg.current_iter, iter_msg.phase = self.current_iter, VALID
+                self.validation_counter -= 1
+                if self.validation_counter == 0:
+                    self.validation_counter = self.validation_max_iter
+                return iter_msg
+            iter_msg.current_iter, iter_msg.phase = self.current_iter, TRAIN
+            self.current_iter += 1
+            return iter_msg
+        else:
+            iter_msg = IterationMessage()
+            finished_validating = app.sampler[0][1].finished_validating
+            if finished_validating and self.currently_validating:
+                app.sampler[0][1].finished_validating = False
+                self.currently_validating = False
+            if self.current_iter > 0 and self.validation_every_n > 0\
+                    and self.current_iter % self.validation_every_n == 0 and not finished_validating:
+                iter_msg.current_iter, iter_msg.phase = self.current_iter, VALID
+                self.currently_validating = True
+                return iter_msg
+            iter_msg.current_iter, iter_msg.phase = self.current_iter, TRAIN
+            self.current_iter += 1
+            return iter_msg
