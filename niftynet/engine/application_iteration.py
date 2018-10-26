@@ -347,9 +347,9 @@ class IterationMessageCreator(object):
             return iter_msg
         else:
             iter_msg = IterationMessage()
-            finished_validating = app.sampler[0][1].finished_validating
+            finished_validating = app.sampler[0][1].no_more_samples
             if finished_validating and self.currently_validating:
-                app.sampler[0][1].finished_validating = False
+                app.sampler[0][1].no_more_samples = False
                 self.currently_validating = False
             if self.current_iter > 0 and self.validation_every_n > 0\
                     and self.current_iter % self.validation_every_n == 0 and not finished_validating:

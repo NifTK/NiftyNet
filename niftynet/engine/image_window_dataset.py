@@ -69,7 +69,8 @@ class ImageWindowDataset(Layer):
         self.reader = reader
 
         self.batch_size = batch_size
-        self.queue_length = int(max(queue_length, round(batch_size * 5.0)))
+        # self.queue_length = int(max(queue_length, round(batch_size * 5.0)))
+        self.queue_length = queue_length
         if self.queue_length > queue_length:
             tf.logging.warning(
                 'sampler queue_length should be larger than batch_size, '
@@ -335,7 +336,7 @@ class ImageWindowDataset(Layer):
             output_shapes=self.tf_shapes)
 
         # dataset: slice the n-element window into n single windows
-        dataset = dataset.flat_map(map_func=tf.data.Dataset.from_tensor_slices)
+        dataset = dataset.flat_map(map_func=tf.data.Dataset.from_tensor_slices).repeat(-1)
         return dataset
 
     def run_threads(self, *_args, **_kwargs):

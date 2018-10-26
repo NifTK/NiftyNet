@@ -382,6 +382,13 @@ class ImageReader(Layer):
             tf.logging.warning('Unknown subject id in reader file list.')
             raise
 
+    def reset(self):
+        """
+        Resets the current id so that the reader may be used again
+        :return: self
+        """
+        self.current_id = -1
+        return self
 
 def _filename_to_image_list(file_list, mod_dict, data_param):
     """
