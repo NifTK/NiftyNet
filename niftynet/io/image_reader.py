@@ -409,7 +409,7 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
     if not volume_list:
         tf.logging.fatal(
             "Empty filename lists, please check the csv "
-            "files. (removing csv_file keyword if it is in the config file "
+            "files. (removing csv_path_file keyword if it is in the config file "
             "to automatically search folders and generate new csv "
             "files again)\n\n"
             "Please note in the matched file names, each subject id are "

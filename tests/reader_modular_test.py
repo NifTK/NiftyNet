@@ -138,7 +138,7 @@ class Read2DTest(tf.test.TestCase):
 
     def test_input_properties(self):
         data_param = {'mr': {'path_to_search': IMAGE_PATH_2D,
-                             'csv_file': '2d_test.csv'}}
+                             'csv_path_file': '2d_test.csv'}}
         reader = ImageReader().initialise(data_param)
         self.default_property_asserts(reader)
         idx, data, interp = reader()
@@ -151,7 +151,7 @@ class Read2DTest(tf.test.TestCase):
 
     def test_no_2d_resampling_properties(self):
         data_param = {'mr': {'path_to_search': IMAGE_PATH_2D,
-                             'csv_file': '2d_test.csv',
+                             'csv_path_file': '2d_test.csv',
                              'pixdim': (2, 2, 2),
                              'axcodes': 'RAS'}}
         reader = ImageReader().initialise(data_param)
@@ -199,7 +199,7 @@ class Read2D_1DTest(tf.test.TestCase):
     # loading 2d images of rank 3: [x, y, 1]
     def test_no_2d_resampling_properties(self):
         data_param = {'mr': {'path_to_search': IMAGE_PATH_2D_1,
-                             'csv_file': '2d_test.csv',
+                             'csv_path_file': '2d_test.csv',
                              'filename_contains': '_img',
                              'pixdim': (2, 2, 2),
                              'axcodes': 'RAS'}}
@@ -282,7 +282,7 @@ class Read2D_colorTest(tf.test.TestCase):
     # loading 2d images of rank 3: [x, y, 3] or [x, y, 4]
     def test_no_2d_resampling_properties(self):
         data_param = {'mr': {'path_to_search': IMAGE_PATH_2D,
-                             'csv_file': '2d_test.csv',
+                             'csv_path_file': '2d_test.csv',
                              'filename_contains': '_u',
                              'pixdim': (2, 2, 2),
                              'axcodes': 'RAS'}}

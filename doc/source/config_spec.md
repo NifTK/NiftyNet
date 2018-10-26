@@ -119,7 +119,7 @@ within each section.
 
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
-[csv_file](#csv-file) | `string` | `csv_file=file_list.csv` | `''`
+[csv_path_file](#csv-path-file) | `string` | `csv_path_file=file_list.csv` | `''`
 [path_to_search](#path-to-search) | `string` | `path_to_search=my_data/fold_1` | NiftyNet home folder
 [filename_contains](#filename-contains) | `string` or `string array` | `filename_contains=foo, bar` | `''`
 [filename_not_contains](#filename-not-contains) | `string` or `string array` | `filename_not_contains=foo` | `''`
@@ -130,7 +130,7 @@ within each section.
 [spatial_window_size](#spatial-window-size) | `integer array` | `spatial_window_size=64, 64, 64` | `''`
 [loader](#loader) | `string` | `loader=simpleitk` | `None`
 
-###### `csv_file`
+###### `csv_path_file`
 A file path to a list of input images.  If the file exists, input image name
 list will be loaded from the file; the filename based input image search will
 be disabled; [path_to_search](#path-to-search),
@@ -211,8 +211,8 @@ with an interpolation order of `3`.
 
 A CSV file with the matched filenames and extracted subject names will be
 generated to `T1Image.csv` in [`model_dir`](#model-dir) (by default; the CSV
-file location can be specified by setting [csv_file](#csv-file)).  To exclude
-particular images, the [csv_file](#csv-file) can be edited manually.
+file location can be specified by setting [csv_path_file](#csv-path-file)).  To exclude
+particular images, the [csv_path_file](#csv-path-file) can be edited manually.
 
 This input source can be used alone, as a `T1` MRI input to an application.
 It can also be used along with other modalities, a multi-modality example
