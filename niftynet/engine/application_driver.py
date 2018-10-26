@@ -170,6 +170,9 @@ class ApplicationDriver(object):
             data_param, app_param, self.data_partitioner)
 
         # make the list of initialised event handler instances.
+        if self.do_whole_volume_validation:
+            self.app.is_whole_volume_validating = True
+
         self.load_event_handlers(
             system_param.event_handler or DEFAULT_EVENT_HANDLERS)
 
