@@ -125,8 +125,8 @@ class CSVReader(Layer):
 
     def layer_op(self, idx=None, subject_id=None, mode='single'):
         if idx is None and subject_id is not None:
-            idx = {}
-            if mode =='single':
+            idx_dict = {}
+            if mode == 'single':
                 #  Take the list of idx corresponding to subject id and randomly
                 # sample from there
                 for name in self.names:
@@ -134,22 +134,22 @@ class CSVReader(Layer):
                         name].index.get_loc(
                         subject_id))[0]
                     #relevant_indices = self._df.loc[subject_id]
-                    idx[name] = random.choice(relevant_indices)
+                    idx_dict[name] = random.choice(relevant_indices)
             else: # mode full i.e. output all the lines corresponding to
                     # subject_id
                 for name in self.names:
                     relevant_indices = np.where(self.df_by_task[
                         name].index.get_loc(
                         subject_id))[0]
-                    idx[name] = relevant_indices
+                    idx_dict[name] = relevant_indices
 
-        elif idx is None:
-            idx = {}
+        elif idx is None and subject_id is None:
+            idx_dict = {}
             for name in self.names:
                 if subject_id is None:
-                    idx[name] = np.random.randint(self.df_by_task[
+                    idx_dict[name] = np.random.randint(self.df_by_task[
                                                       name].shape[0])
-                    subject_id = self.df_by_task[name].iloc[idx[name]].name
+                    subject_id = self.df_by_task[name].iloc[idx_dict[name]].name
                 if mode == 'single':
                     #  Take the list of idx corresponding to subject id and randomly
                     # sample from there
@@ -159,23 +159,25 @@ class CSVReader(Layer):
                         subject_id))[0]
                     # print(relevant_indices, subject_id)
                         # relevant_indices = self._df.loc[subject_id]
-                    idx[name] = random.choice(relevant_indices)
+                    idx_dict[name] = random.choice(relevant_indices)
                 else:  # mode full i.e. output all the lines corresponding to
                     # subject_id
 
                     relevant_indices = np.where(self.df_by_task[
                         name].index.get_loc(
                         subject_id))[0]
-                    idx[name] = relevant_indices
-
+                    idx_dict[name] = relevant_indices
+        else:
+            idx_dict = {}
+            for name in self.names:
+                idx_dict[name] = idx
+                subject_id = self.df_by_task[name].iloc[idx_dict[name]].name
 
         if self._indexable_output is not None:
-            # output_dict = {k: self.apply_niftynet_format_to_data(v) for k, v\
-            #                in self._indexable_output[idx].items()}
             output_dict = {k: self.apply_niftynet_format_to_data(
-                np.asarray(self._indexable_output[k])[idx[k]]) for k in
-                           idx.keys()}
-            return idx, output_dict, subject_id
+                np.asarray(self._indexable_output[k])[idx_dict[k]]) for k in
+                idx_dict.keys()}
+            return idx_dict, output_dict, subject_id
         else:
             raise Exception('Invalid mode')
     
