@@ -188,10 +188,9 @@ class CSVReader(Layer):
         :return:
         '''
         if idx is None and subject_id is not None:
-            print("Need to decide upon idx from subject %s" % subject_id)
+
             idx_dict = {}
             if mode == 'single':
-                print("Taking only one index among other valid")
                 #  Take the list of idx corresponding to subject id and randomly
                 # sample from there
                 for name in self.names:
@@ -263,6 +262,7 @@ class CSVReader(Layer):
                     relevant_final = [relevant_indices[v] for v in
                                       relevant_valid]
                     # print(relevant_indices, subject_id)
+
                     # relevant_indices = self._df.loc[subject_id]
                     assert list(relevant_final), 'no valid index for subject ' \
                         '%s and field %s' % (subject_id, name)
@@ -328,7 +328,7 @@ class CSVReader(Layer):
                 dtype=np.int))
             print("tiling done", data.shape)
             return data
-    
+
     @property
     def shapes(self):
         """
