@@ -21,7 +21,7 @@ from niftynet.engine.signal import GRAPH_CREATED, SESS_FINISHED, SESS_STARTED
 #    return
 
 
-def get_initialised_driver(starting_iter=0, model_dir_rand=True):
+def get_initialised_driver(starting_iter=0, model_dir_rand=True, application='tests.toy_application.ToyApplication'):
     if model_dir_rand:
         model_dir = os.path.join('.', 'testing_data', 'tmp', str(uuid.uuid4()))
         os.makedirs(model_dir)
@@ -59,7 +59,7 @@ def get_initialised_driver(starting_iter=0, model_dir_rand=True):
             vector_size=100,
             mean=10.0,
             stddev=2.0,
-            name='tests.toy_application.ToyApplication')
+            name=application)
     }
     app_driver = ApplicationDriver()
     app_driver.initialise_application(system_param, {})
@@ -170,6 +170,44 @@ class ApplicationDriverTest(tf.test.TestCase):
                         'worker_2/ComputeGradients/gradients/AddN_5:0'),
                     tf.get_default_graph().get_tensor_by_name(
                         'worker_3/ComputeGradients/gradients/AddN_5:0'),
+                    tf.get_default_graph().get_tensor_by_name(
+                        'ApplyGradients/AveOverDevices:0')
+                ])
+                msg = 'same gradients for different devices'
+                self.assertGreater(np.sum(np.abs(g_0 - g_1)), 0.0, msg)
+                self.assertGreater(np.sum(np.abs(g_0 - g_2)), 0.0, msg)
+                self.assertGreater(np.sum(np.abs(g_0 - g_3)), 0.0, msg)
+                self.assertGreater(np.sum(np.abs(g_1 - g_2)), 0.0, msg)
+                self.assertGreater(np.sum(np.abs(g_1 - g_3)), 0.0, msg)
+                self.assertGreater(np.sum(np.abs(g_2 - g_3)), 0.0, msg)
+                g_array = np.concatenate([g_0.reshape((1, -1)),
+                                          g_1.reshape((1, -1)),
+                                          g_2.reshape((1, -1)),
+                                          g_3.reshape((1, -1))], axis=0)
+                g_ave = g_ave.reshape(-1)
+                g_np_ave = np.mean(g_array, axis=0)
+                self.assertAllClose(g_np_ave, g_ave)
+            SESS_FINISHED.send(test_driver.app, itermsg=None)
+            test_driver.app.stop()
+
+    def test_multi_device_multi_optimiser_gradients(self):
+        test_driver = get_initialised_driver(application='tests.toy_application.ToyApplicationMultOpti')
+        graph = test_driver.create_graph(
+            test_driver.app, test_driver.num_gpus, True)
+        with self.test_session(graph=graph) as sess:
+            GRAPH_CREATED.send(test_driver.app, iter_msg=None)
+            SESS_STARTED.send(test_driver.app, iter_msg=None)
+            for i in range(2):
+                sess.run(test_driver.app.gradient_op)
+                g_0, g_1, g_2, g_3, g_ave = sess.run([
+                    tf.get_default_graph().get_tensor_by_name(
+                        'worker_0/ComputeGradientsDis/gradients/AddN_5:0'),
+                    tf.get_default_graph().get_tensor_by_name(
+                        'worker_1/ComputeGradientsDis/gradients/AddN_5:0'),
+                    tf.get_default_graph().get_tensor_by_name(
+                        'worker_2/ComputeGradientsDis/gradients/AddN_5:0'),
+                    tf.get_default_graph().get_tensor_by_name(
+                        'worker_3/ComputeGradientsDis/gradients/AddN_5:0'),
                     tf.get_default_graph().get_tensor_by_name(
                         'ApplyGradients/AveOverDevices:0')
                 ])

@@ -61,7 +61,7 @@ class GradientsCollector(object):
         """
         assert self._gradients, \
             "Please add gradients to collector when constructing the graph"
-        return util.average_gradients(self._gradients)
+        return util.average_multi_opt_gradients(self._gradients)
 
 
 class OutputsCollector(object):
