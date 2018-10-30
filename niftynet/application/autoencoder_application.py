@@ -156,6 +156,7 @@ class AutoencoderApplication(BaseApplication):
                     reg_loss = tf.reduce_mean(
                         [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
                     loss = loss + reg_loss
+            self.total_loss = loss
             grads = self.optimiser.compute_gradients(
                 loss, colocate_gradients_with_ops=True)
             # collecting gradients variables
@@ -166,6 +167,14 @@ class AutoencoderApplication(BaseApplication):
                 average_over_devices=True, collection=CONSOLE)
             outputs_collector.add_to_collection(
                 var=data_loss, name='variational_lower_bound',
+                average_over_devices=True, summary_type='scalar',
+                collection=TF_SUMMARIES)
+
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
+                average_over_devices=False, collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
 

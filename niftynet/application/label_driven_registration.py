@@ -174,6 +174,7 @@ class RegApp(BaseApplication):
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
                     learning_rate=self.action_param.lr)
+            self.total_loss = total_loss
             grads = self.optimiser.compute_gradients(
                 total_loss, colocate_gradients_with_ops=True)
             gradients_collector.add_to_collection(grads)

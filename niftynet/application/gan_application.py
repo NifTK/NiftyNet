@@ -192,6 +192,7 @@ class GANApplication(BaseApplication):
                         [tf.reduce_mean(l_reg) for l_reg in reg_losses])
                     lossD = lossD + reg_loss
                     lossG = lossG + reg_loss
+            self.total_loss = lossD + lossG
 
             # variables to display in STDOUT
             outputs_collector.add_to_collection(
@@ -206,6 +207,13 @@ class GANApplication(BaseApplication):
                 collection=TF_SUMMARIES)
             outputs_collector.add_to_collection(
                 var=lossG, name='lossD', average_over_devices=True,
+                collection=TF_SUMMARIES)
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
+                average_over_devices=False, collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
+                average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
 
             with tf.name_scope('Optimiser'):

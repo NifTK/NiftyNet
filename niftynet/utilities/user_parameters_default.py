@@ -32,7 +32,8 @@ DEFAULT_EVENT_HANDLERS = (
     'apply_gradients',
     'output_interpreter',
     'console_logger',
-    'tensorboard_logger')
+    'tensorboard_logger',
+    'performance_logger')
 
 DEFAULT_ITERATION_GENERATOR = 'iteration_generator'
 

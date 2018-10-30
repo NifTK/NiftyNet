@@ -287,6 +287,7 @@ class ClassificationApplication(BaseApplication):
                 loss = data_loss + reg_loss
             else:
                 loss = data_loss
+            self.total_loss = loss
             grads = self.optimiser.compute_gradients(
                 loss, colocate_gradients_with_ops=True)
             # collecting gradients variables
@@ -297,6 +298,14 @@ class ClassificationApplication(BaseApplication):
                 average_over_devices=False, collection=CONSOLE)
             outputs_collector.add_to_collection(
                 var=data_loss, name='data_loss',
+                average_over_devices=True, summary_type='scalar',
+                collection=TF_SUMMARIES)
+
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
+                average_over_devices=False, collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
             self.add_confusion_matrix_summaries_(outputs_collector,

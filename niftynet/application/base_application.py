@@ -60,6 +60,11 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
     # the network
     net = None
+    training_mode = None
+
+    # performance
+    total_loss = None
+    performance_history = None
 
     # training the network
     optimiser = None
