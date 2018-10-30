@@ -80,7 +80,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
             _, _, subject_id = self.csv_reader()
 
         idx_subject_id = np.where(
-            self.reader._file_list.subject_id==subject_id)[0][0]
+            self.reader._file_list.subject_id == subject_id)[0][0]
 
         image_id, data, _ = self.reader(idx=idx_subject_id, shuffle=True)
         subj_indices, csv_data, _ = self.csv_reader(subject_id=subject_id)
@@ -170,6 +170,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
                     for n in range(0, self.window.n_samples):
                         csv_data_array.append(csv_data_dict['sampler'])
                     if len(csv_data_array) == 1:
+                        # Need to cast to float
                         output_dict['sampler'] = np.asarray(csv_data_array[0],
                                                        dtype=np.float32)
                     else:
@@ -192,7 +193,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
                                        data,
                                        img_sizes,
                                        win_sizes,
-                                       mode_correction='pad',
+                                       mode_correction='replace',
                                        n_samples=1):
         """
         Generate spatial coordinates for sampling.
@@ -316,28 +317,49 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
 def correction_coordinates(coordinates, idx, pb_coord, img_sizes, win_sizes,
                            csv_sampler, mode="remove"):
     # infer the largest spatial window size and check image spatial shapes
-    img_spatial_size, win_spatial_size = \
-        _infer_spatial_size(img_sizes, win_sizes)
+
+    img_spatial_size, win_spatial_size =_infer_spatial_size(img_sizes, win_sizes)
     overall_pb = np.zeros([len(idx), 1])
+    numb_wind = len(idx)
     for mod in list(win_sizes):
-        overall_pb += np.sum(pb_coord[mod], 1)
+        overall_pb += np.sum(np.abs(pb_coord[mod]), 1)
     if np.sum(overall_pb) == 0:
         return coordinates, None
     else:
+
         list_nopb = np.where(overall_pb == 0)
         list_pb = np.where(overall_pb > 0)
+        idx_pb = idx[list_pb]
         if mode == "remove":
             for mod in list(win_sizes):
                 coordinates[mod]=coordinates[mod][list_nopb, :]
-
             return coordinates, idx_pb
-        elif mode == "pad" :
+        elif mode == "replace" :
+            n_pb = np.sum(overall_pb)
+            window_centres_replacement = rand_spatial_coordinates(n_pb,
+                                                      img_spatial_size,
+                                                      win_spatial_size,
+                                                      None)
+            spatial_coords_replacement = np.zeros(
+                (n_pb, N_SPATIAL * 2), dtype=np.int32)
+
+            for mod in list(win_sizes):
+                win_size = np.asarray(win_sizes[mod][:N_SPATIAL])
+                half_win = np.floor(win_size / 2.0).astype(int)
+
+                # Make starting coordinates of the window
+                spatial_coords_replacement[:, :N_SPATIAL] = np.maximum(
+                    window_centres_replacement[:, :N_SPATIAL] - np.tile(
+                        half_win[:N_SPATIAL], [n_pb, 1]), 0)
+                spatial_coords_replacement[:, N_SPATIAL:] = \
+                    spatial_coords_replacement[:, :N_SPATIAL] + np.tile(
+                        win_size[:N_SPATIAL], [n_pb, 1])
+            n_replaced = 0
+            for n in range(0, numb_wind):
+                if overall_pb[n]:
+                    coordinates[n, :] = spatial_coords_replacement[n_replaced]
+                    n_replaced += 1
             return coordinates, idx_pb
-        else:
-            return shifted_coordinates, idx_pb
-
-
-
 
 
 def rand_spatial_coordinates(
