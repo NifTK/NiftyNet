@@ -70,6 +70,7 @@ def average_multi_opt_gradients(multi_device_gradients):
 def average_gradients(multi_device_gradients):
     # the input gradients are grouped by device,
     # this function average the gradients of multiple devices
+    # print(len(multi_device_gradients), len(multi_device_gradients[0]), len(multi_device_gradients[0][0]), len(multi_device_gradients[0][0][0]))
 
     if len(multi_device_gradients) == 1:
         # only one device, so we get rid of the first level list
