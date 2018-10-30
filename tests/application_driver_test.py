@@ -186,7 +186,7 @@ class ApplicationDriverTest(tf.test.TestCase):
             SESS_STARTED.send(test_driver.app, iter_msg=None)
             for i in range(2):
                 sess.run(test_driver.app.gradient_op)
-                # query sample generator gradient to check
+                # query generator gradient sample to check
                 dis_0, dis_1, dis_2, dis_3, dis_ave = sess.run([
                     tf.get_default_graph().get_tensor_by_name(
                         'worker_0/ComputeGradients/gradients/AddN_5:0'),
@@ -200,7 +200,7 @@ class ApplicationDriverTest(tf.test.TestCase):
                         'ApplyGradients/AveOverDevices_10:0')
                 ])
 
-                # query sample discriminator gradient to check
+                # query discriminator gradient sample to check
                 gen_0, gen_1, gen_2, gen_3, gen_ave = sess.run([
                     tf.get_default_graph().get_tensor_by_name(
                         'worker_0/ComputeGradients/gradients_1/worker_0/tinynet/G/conv/conv_/conv/ExpandDims_1_grad/Reshape:0'),
