@@ -269,7 +269,6 @@ class ClassificationApplication(BaseApplication):
                 data_dict = switch_sampler(for_training=True)
 
             image = tf.cast(data_dict['image'], tf.float32)
-            print(self.sampler[0][0]()['label'])
             net_args = {'is_training': self.is_training,
                         'keep_prob': self.net_param.keep_prob}
             net_out = self.net(image, **net_args)

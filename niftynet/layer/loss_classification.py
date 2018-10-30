@@ -79,5 +79,5 @@ def cross_entropy(prediction,
     :return: the loss
     """
     ground_truth = tf.to_int64(ground_truth)
-    loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=prediction, labels=ground_truth) 
+    loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=prediction, labels=ground_truth)
     return loss

@@ -78,7 +78,6 @@ class BSplineFieldImageGridWarperLayer(GridWarperLayer):
                     for d in [0, 1, 2]]
     resampled=tf.stack(resampled_list,5)
     permuted_shape=[batch_size]+[f-3 for f in self._coeff_shape]+self._knot_spacing+[spatial_rank]
-    print(permuted_shape)
     permuted=tf.transpose(tf.reshape(resampled,permuted_shape),[0,1,4,2,5,3,6,7])
     valid_size=[(f-3)*k for f,k in zip(self._coeff_shape,self._knot_spacing)]
     reshaped=tf.reshape(permuted,[batch_size]+valid_size+[spatial_rank])
