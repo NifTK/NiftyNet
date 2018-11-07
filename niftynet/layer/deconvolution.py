@@ -7,7 +7,7 @@ import tensorflow as tf
 from niftynet.layer import layer_util
 from niftynet.layer.activation import ActiLayer
 from niftynet.layer.base_layer import TrainableLayer
-from niftynet.layer.bn import BNLayer
+from niftynet.layer.bn import BNLayer, InstanceNormLayer
 from niftynet.layer.gn import GNLayer
 from niftynet.utilities.util_common import look_up_operations
 
@@ -168,7 +168,7 @@ class DeconvolutionalLayer(TrainableLayer):
                  stride=1,
                  padding='SAME',
                  with_bias=False,
-                 with_bn=True,
+                 with_bn='batch',
                  group_size=-1,
                  acti_func=None,
                  w_initializer=None,
@@ -183,12 +183,14 @@ class DeconvolutionalLayer(TrainableLayer):
         self.with_bn = with_bn
         self.group_size = group_size
         self.layer_name = '{}'.format(name)
-        if self.with_bn and self.group_size > 0:
-            raise ValueError('only choose either batchnorm or groupnorm')
-        if self.with_bn:
-            self.layer_name += '_bn'
-        if self.group_size > 0:
-            self.layer_name += '_gn'
+        if self.with_bn != 'group' and group_size > 0:
+            raise ValueError('You cannot have a group_size > 0 if not using group norm')
+        elif self.with_bn == 'group' and group_size <= 0:
+            raise ValueError('You cannot have a group_size <= 0 if using group norm')
+
+        if self.with_bn is not None: 
+            # appending, for example, '_bn' to the name 
+            self.layer_name += '_' + self.with_bn[0] + 'n'
         if self.acti_func is not None:
             self.layer_name += '_{}'.format(self.acti_func)
         super(DeconvolutionalLayer, self).__init__(name=self.layer_name)
@@ -224,7 +226,7 @@ class DeconvolutionalLayer(TrainableLayer):
                                    name='deconv_')
         output_tensor = deconv_layer(input_tensor)
 
-        if self.with_bn:
+        if self.with_bn == 'batch':
             if is_training is None:
                 raise ValueError('is_training argument should be '
                                  'True or False unless with_bn is False')
@@ -233,23 +235,36 @@ class DeconvolutionalLayer(TrainableLayer):
                 moving_decay=self.moving_decay,
                 eps=self.eps,
                 name='bn_')
-            output_tensor = bn_layer(output_tensor, is_training)
-        if self.group_size > 0:
+        elif self.with_bn == 'instance': 
+            in_layer = InstanceNormLayer(eps=self.eps, name='in_')
+        elif self.with_bn == 'group': 
             gn_layer = GNLayer(
                 regularizer=self.regularizers['w'],
                 group_size=self.group_size,
                 eps=self.eps,
                 name='gn_')
-            output_tensor = gn_layer(output_tensor)
 
         if self.acti_func is not None:
             acti_layer = ActiLayer(
                 func=self.acti_func,
                 regularizer=self.regularizers['w'],
                 name='acti_')
-            output_tensor = acti_layer(output_tensor)
 
         if keep_prob is not None:
             dropout_layer = ActiLayer(func='dropout', name='dropout_')
-            output_tensor = dropout_layer(output_tensor, keep_prob=keep_prob)
+ 
+        def activation(output_tensor):
+            if self.with_bn == 'batch':
+                output_tensor = bn_layer(output_tensor, is_training)
+            elif self.with_bn == 'instance':
+                output_tensor = in_layer(output_tensor)
+            elif self.with_bn == 'group':
+                output_tensor = gn_layer(output_tensor)
+            if self.acti_func is not None:
+                output_tensor = acti_layer(output_tensor)
+            if keep_prob is not None:
+                output_tensor = dropout_layer(output_tensor, keep_prob=keep_prob)
+            return output_tensor
+
+        output_tensor = activation(conv_layer(input_tensor))
         return output_tensor

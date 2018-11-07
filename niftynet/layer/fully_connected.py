@@ -97,7 +97,7 @@ class FullyConnectedLayer(TrainableLayer):
     def __init__(self,
                  n_output_chns,
                  with_bias=True,
-                 with_bn=True,
+                 with_bn='batch',
                  acti_func=None,
                  w_initializer=None,
                  w_regularizer=None,
@@ -110,8 +110,9 @@ class FullyConnectedLayer(TrainableLayer):
         self.acti_func = acti_func
         self.with_bn = with_bn
         self.layer_name = '{}'.format(name)
-        if self.with_bn:
-            self.layer_name += '_bn'
+        if self.with_bn is not None:
+            # to append batch_norm as _bn and likewise for other norms
+            self.layer_name += '_' + self.with_bn[0] + 'n'
         if self.acti_func is not None:
             self.layer_name += '_{}'.format(self.acti_func)
         super(FullyConnectedLayer, self).__init__(name=self.layer_name)
@@ -140,13 +141,26 @@ class FullyConnectedLayer(TrainableLayer):
                            name='fc_')
         output_tensor = fc_layer(input_tensor)
 
-        if self.with_bn:
+        if self.with_bn == 'batch':
+            if is_training is None:
+                raise ValueError('is_training argument should be '
+                                 'True or False unless with_bn is False')
             bn_layer = BNLayer(
                 regularizer=self.regularizers['w'],
                 moving_decay=self.moving_decay,
                 eps=self.eps,
                 name='bn_')
             output_tensor = bn_layer(output_tensor, is_training)
+        elif self.with_bn == 'instance': 
+            in_layer = InstanceNormLayer(eps=self.eps, name='in_')
+            output_tensor = in_layer(output_tensor)
+        elif self.with_bn == 'group': 
+            gn_layer = GNLayer(
+                regularizer=self.regularizers['w'],
+                group_size=self.group_size,
+                eps=self.eps,
+                name='gn_')
+            output_tensor = gn_layer(output_tensor)
 
         if self.acti_func is not None:
             acti_layer = ActiLayer(

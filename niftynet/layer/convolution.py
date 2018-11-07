@@ -7,7 +7,7 @@ import tensorflow as tf
 from niftynet.layer import layer_util
 from niftynet.layer.activation import ActiLayer
 from niftynet.layer.base_layer import TrainableLayer
-from niftynet.layer.bn import BNLayer
+from niftynet.layer.bn import BNLayer, InstanceNormLayer
 from niftynet.layer.gn import GNLayer
 from niftynet.utilities.util_common import look_up_operations
 
@@ -120,7 +120,7 @@ class ConvolutionalLayer(TrainableLayer):
                  dilation=1,
                  padding='SAME',
                  with_bias=False,
-                 with_bn=True,
+                 with_bn='batch',
                  group_size=-1,
                  acti_func=None,
                  preactivation=False,
@@ -137,12 +137,17 @@ class ConvolutionalLayer(TrainableLayer):
         self.group_size = group_size
         self.preactivation = preactivation
         self.layer_name = '{}'.format(name)
-        if self.with_bn and group_size > 0:
-            raise ValueError('only choose either batchnorm or groupnorm')
-        if self.with_bn:
+        if self.with_bn != 'group' and group_size > 0:
+            raise ValueError('You cannot have a group_size > 0 if not using group norm')
+        elif self.with_bn == 'group' and group_size <= 0:
+            raise ValueError('You cannot have a group_size <= 0 if using group norm')
+    
+        if self.with_bn == 'batch':
             self.layer_name += '_bn'
-        if self.group_size > 0:
+        elif self.with_bn == 'group':
             self.layer_name += '_gn'
+        elif self.with_bn == 'instance':
+            self.layer_name += '_in'
         if self.acti_func is not None:
             self.layer_name += '_{}'.format(self.acti_func)
         super(ConvolutionalLayer, self).__init__(name=self.layer_name)
@@ -178,7 +183,7 @@ class ConvolutionalLayer(TrainableLayer):
                                b_regularizer=self.regularizers['b'],
                                name='conv_')
 
-        if self.with_bn:
+        if self.with_bn == 'batch':
             if is_training is None:
                 raise ValueError('is_training argument should be '
                                  'True or False unless with_bn is False')
@@ -187,7 +192,9 @@ class ConvolutionalLayer(TrainableLayer):
                 moving_decay=self.moving_decay,
                 eps=self.eps,
                 name='bn_')
-        if self.group_size > 0:
+        elif self.with_bn == 'instance': 
+            in_layer = InstanceNormLayer(eps=self.eps, name='in_')
+        elif self.with_bn == 'group': 
             gn_layer = GNLayer(
                 regularizer=self.regularizers['w'],
                 group_size=self.group_size,
@@ -203,9 +210,11 @@ class ConvolutionalLayer(TrainableLayer):
             dropout_layer = ActiLayer(func='dropout', name='dropout_')
 
         def activation(output_tensor):
-            if self.with_bn:
+            if self.with_bn == 'batch':
                 output_tensor = bn_layer(output_tensor, is_training)
-            if self.group_size > 0:
+            elif self.with_bn == 'instance':
+                output_tensor = in_layer(output_tensor)
+            elif self.with_bn == 'group':
                 output_tensor = gn_layer(output_tensor)
             if self.acti_func is not None:
                 output_tensor = acti_layer(output_tensor)
