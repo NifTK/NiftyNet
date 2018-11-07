@@ -375,7 +375,7 @@ class DeconvTest(tf.test.TestCase):
                        'kernel_size': [4, 3],
                        'stride': [1, 2],
                        'with_bias': False,
-                       'bn_type': None,
+                       'bn_type': 'group',
                        'group_size': 5,
                        'acti_func': 'prelu',
                        'padding': 'VALID',

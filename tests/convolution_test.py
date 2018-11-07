@@ -222,7 +222,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [5, 3, 2],
                        'stride': [2, 2, 3],
                        'with_bias': False,
-                       'bn_type': None,
+                       'bn_type': 'group',
                        'group_size': 4,
                        'w_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_conv_layer_output_shape(rank=3,
