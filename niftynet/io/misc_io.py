@@ -197,6 +197,34 @@ def compute_orientation(init_axcodes, final_axcodes):
         raise ValueError
 
 
+def do_reorientation_idx(idx_array, init_axcodes, final_axcodes,
+                         fin_spatial_size):
+    """
+    Perform the indices change based on the the orinetation transformation
+    :param idx_array:
+    :param init_axcodes:
+    :param final_axcodes:
+    :return:
+    """
+    new_idx = idx_array
+    ornt_transf, ornt_init, ornt_fin = compute_orientation(init_axcodes,
+                                                           final_axcodes)
+    print(ornt_transf, ornt_init, "orientation prior idx transfo",
+          idx_array.shape, fin_spatial_size)
+    if np.array_equal(ornt_init, ornt_fin):
+        return new_idx
+    else:
+        print(ornt_transf[:,0])
+        # print(idx_array[:, np.asarray(ornt_transf[:,0],dtype=np.int32)])
+        new_idx = idx_array[:, np.asarray(ornt_transf[:,0],dtype=np.int32)]
+        print("obtained new first", fin_spatial_size)
+        for d in range(ornt_transf.shape[0]):
+            if ornt_transf[d,1] < 0:
+                new_idx[:,d] = fin_spatial_size[d] - np.asarray(new_idx[:,d])
+                print("Updated idx for %d" % d)
+        return new_idx
+
+
 def do_reorientation(data_array, init_axcodes, final_axcodes):
     """
     Performs the reorientation (changing order of axes)
@@ -208,6 +236,7 @@ def do_reorientation(data_array, init_axcodes, final_axcodes):
     """
     ornt_transf, ornt_init, ornt_fin = \
         compute_orientation(init_axcodes, final_axcodes)
+    print(ornt_transf, init_axcodes, final_axcodes)
     if np.array_equal(ornt_init, ornt_fin):
         return data_array
     try:

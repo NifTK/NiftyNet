@@ -74,8 +74,14 @@ class ImageSetsPartitioner(object):
             initialise to None will disable data partitioning
             and get_file_list always returns all subjects.
         """
-        self.data_param = {key: self.data_param[key] for key in self.data_param \
-                           if not self.data_param[key].csv_data_file}
+        self.data_param = {}
+        for key in data_param.keys():
+            if len(data_param[key].csv_data_file) == 0:
+                self.data_param[key] = data_param[key]
+
+        # self.data_param = {key: self.data_param[key] for key in
+        #                    self.data_param if not self.data_param[
+        # key].csv_data_file}
 
         if data_split_file is None:
             self.data_split_file = os.path.join('.', 'dataset_split.csv')
