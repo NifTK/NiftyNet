@@ -59,6 +59,7 @@ class CSVReader(Layer):
         """
         assert self.names is not None
         data_param = param_to_dict(data_param)
+
         self.n_samples_per_id = sample_per_volume
         print(data_param)
         if not task_param:
@@ -104,6 +105,7 @@ class CSVReader(Layer):
             self.df_by_task[name] = df_fin
             self.dims_by_task[name] = _dims
             self._indexable_output[name] = _indexable_output
+
             self.valid_by_task[name] = -1 * np.ones(
                 [self.df_by_task[name].shape[0]])
             self.pad_by_task[name] = np.zeros(
@@ -179,6 +181,7 @@ class CSVReader(Layer):
                 for label in labels]
 
     def layer_op(self, idx=None, subject_id=None, mode='single', reject=True):
+
         '''
         Perform the csv_reading and assignment to dictionary
         :param idx: index of the image
@@ -188,9 +191,9 @@ class CSVReader(Layer):
         :return:
         '''
         if idx is None and subject_id is not None:
-
             idx_dict = {}
             if mode == 'single':
+                print("Taking only one index among other valid")
                 #  Take the list of idx corresponding to subject id and randomly
                 # sample from there
                 for name in self.names:
@@ -254,6 +257,7 @@ class CSVReader(Layer):
                     #       self.df_by_task[name].index.get_loc(subject_id).shape)
                     if reject:
                         relevant_valid = np.asarray(np.where(np.abs(
+
                             self.valid_by_task[name][relevant_indices]) > 0)[0])
                     else:
                         relevant_valid = np.arange(len(relevant_indices))
@@ -270,6 +274,7 @@ class CSVReader(Layer):
                 else:  # mode full i.e. output all the lines corresponding to
                     # subject_id
                     relevant_indices = np.asarray(np.where(self.df_by_task[
+
                         name].index.get_loc(subject_id))[0])
                     # print("Found initial relevant", relevant_indices,
                     #       set(self.df_by_task[name].index), name,
@@ -283,6 +288,7 @@ class CSVReader(Layer):
                     #       np.max(relevant_valid), relevant_indices.shape)
                     relevant_final = [relevant_indices[v] for v in
                                       relevant_valid]
+
                     assert list(relevant_final), 'no valid index for subject ' \
                         '%s and field %s' % (subject_id, name)
                     idx_dict[name] = relevant_final
