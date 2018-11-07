@@ -79,6 +79,7 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
         assert self.window.n_samples == 1, \
             'image_window_dataset.layer_op() requires: ' \
             'windows_per_image should be 1.'
+
         image_id, image_data, _ = self.reader(idx=idx)
         for mod in list(image_data):
             spatial_shape = image_data[mod].shape[:N_SPATIAL]

@@ -40,6 +40,7 @@ class CSVReader(Layer):
         """
         assert self.names is not None
         data_param = param_to_dict(data_param)
+        print(data_param)
         if not task_param:
             task_param = {mod: (mod,) for mod in list(data_param)}
         try:
@@ -69,6 +70,8 @@ class CSVReader(Layer):
 
         self._input_sources = dict((name, self.task_param.get(name)) for name in self.names)
         self.df_by_task = {}
+        self.valid_by_task = {}
+        self.pad_by_task = {}
         self.dims_by_task = {}
         self.type_by_task = {}
 
@@ -80,6 +83,11 @@ class CSVReader(Layer):
             self.df_by_task[name] = df
             self.dims_by_task[name] = _dims
             self._indexable_output[name] = _indexable_output
+            self.valid_by_task[name] = -1 * np.ones([self.df_by_task[
+                                                         name].shape[
+                                                    0]])
+            self.pad_by_task[name] = np.zeros([self.df_by_task[name].shape[0],
+                                               2*_dims])
             if df.shape[0] > len(set(self.subject_ids)):
                 self.type_by_task[name] = 'multi'
             else:
@@ -123,55 +131,114 @@ class CSVReader(Layer):
     def to_categorical(labels, label_names):
         return [np.array(list(label_names).index(label)).astype(np.float32) for label in labels]
 
-    def layer_op(self, idx=None, subject_id=None, mode='single'):
+    def layer_op(self, idx=None, subject_id=None, mode='single', reject=True):
         if idx is None and subject_id is not None:
+            print("Need to decide upon idx from subject %s" % subject_id)
             idx_dict = {}
             if mode == 'single':
+                print("Taking only one index among other valid")
                 #  Take the list of idx corresponding to subject id and randomly
                 # sample from there
                 for name in self.names:
                     relevant_indices = np.where(self.df_by_task[
                         name].index.get_loc(
                         subject_id))[0]
+                    if reject:
+                        relevant_valid = np.asarray(np.where(np.abs(
+                            self.valid_by_task[name][relevant_indices]) > 0)[0])
+                    else:
+                        relevant_valid = np.arange(len(relevant_indices))
+                    relevant_final = [relevant_indices[v] for v in
+                                      relevant_valid]
                     #relevant_indices = self._df.loc[subject_id]
-                    idx_dict[name] = random.choice(relevant_indices)
+                    idx_dict[name] = random.choice(relevant_final)
             else: # mode full i.e. output all the lines corresponding to
                     # subject_id
+                print(" Taking all valid indices")
                 for name in self.names:
                     relevant_indices = np.where(self.df_by_task[
                         name].index.get_loc(
                         subject_id))[0]
-                    idx_dict[name] = relevant_indices
+                    if reject:
+                        relevant_valid = np.asarray(np.where(np.abs(
+                            self.valid_by_task[name][relevant_indices]) > 0)[0])
+                    else:
+                        relevant_valid = np.arange(len(relevant_indices))
+                    relevant_final = [relevant_indices[v] for v in
+                                      relevant_valid]
+                    idx_dict[name] = relevant_final
 
         elif idx is None and subject_id is None:
             idx_dict = {}
+            print("Need to also choose subject id")
             for name in self.names:
                 if subject_id is None:
                     idx_dict[name] = np.random.randint(self.df_by_task[
                                                       name].shape[0])
                     subject_id = self.df_by_task[name].iloc[idx_dict[name]].name
+                    print("new subject id is ", subject_id)
                 if mode == 'single':
                     #  Take the list of idx corresponding to subject id and randomly
                     # sample from there
+                    print("Need to find index in single mode")
 
-                    relevant_indices = np.where(self.df_by_task[
+                    relevant_indices = np.asarray(np.where(self.df_by_task[
                         name].index.get_loc(
-                        subject_id))[0]
+                        subject_id))[0])
+                    # print("Found initial relevant", relevant_indices,
+                    #       set(self.df_by_task[name].index), name,
+                    #       self.df_by_task[name].index.get_loc(subject_id).shape)
+                    if reject:
+                        relevant_valid = np.asarray(np.where(np.abs(
+                            self.valid_by_task[name][relevant_indices])>0)[0])
+                    else:
+                        relevant_valid = np.arange(len(relevant_indices))
+                    # print("Found corresponding valid", relevant_valid,
+                    #       np.max(relevant_valid), relevant_indices.shape)
+                    relevant_final = [relevant_indices[v] for v in
+                                      relevant_valid]
                     # print(relevant_indices, subject_id)
                         # relevant_indices = self._df.loc[subject_id]
-                    idx_dict[name] = random.choice(relevant_indices)
+                    assert len(
+                        relevant_final) > 0, 'no valid index for subject %s ' \
+                                             'and field ' \
+                                             '%s' % (subject_id,name)
+                    idx_dict[name] = random.choice(relevant_final)
                 else:  # mode full i.e. output all the lines corresponding to
                     # subject_id
-
-                    relevant_indices = np.where(self.df_by_task[
+                    relevant_indices = np.asarray(np.where(self.df_by_task[
                         name].index.get_loc(
-                        subject_id))[0]
-                    idx_dict[name] = relevant_indices
-        else:
+                        subject_id))[0])
+                    # print("Found initial relevant", relevant_indices,
+                    #       set(self.df_by_task[name].index), name,
+                    #       self.df_by_task[name].index.get_loc(subject_id).shape)
+                    if reject:
+                        relevant_valid = np.asarray(np.where(np.abs(
+                            self.valid_by_task[name][relevant_indices])>0)[0])
+                    else:
+                        relevant_valid = np.ones_like(relevant_indices)
+                    # print("Found corresponding valid", relevant_valid,
+                    #       np.max(relevant_valid), relevant_indices.shape)
+                    relevant_final = [relevant_indices[v] for v in
+                                      relevant_valid]
+                    assert len(
+                        relevant_final) > 0, 'no valid index for subject %s ' \
+                                             'and field ' \
+                                             '%s' % (subject_id, name)
+                    idx_dict[name] = relevant_final
+        elif not isinstance(idx, dict):
             idx_dict = {}
             for name in self.names:
                 idx_dict[name] = idx
-                subject_id = self.df_by_task[name].iloc[idx_dict[name]].name
+                if subject_id is None:
+                    subject_id = self.df_by_task[name].iloc[idx_dict[name]].name
+        else:
+            idx_dict = {}
+            for name in self.names:
+                idx_dict[name] = idx[name]
+                assert len(idx[name])>0, 'no valid index for %s' % name
+                if subject_id is None:
+                    subject_id = self.df_by_task[name].iloc[idx_dict[name]].name
 
         if self._indexable_output is not None:
             output_dict = {k: self.apply_niftynet_format_to_data(
