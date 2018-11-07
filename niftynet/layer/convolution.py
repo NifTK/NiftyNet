@@ -141,7 +141,7 @@ class ConvolutionalLayer(TrainableLayer):
             raise ValueError('You cannot have a group_size > 0 if not using group norm')
         elif self.with_bn == 'group' and group_size <= 0:
             raise ValueError('You cannot have a group_size <= 0 if using group norm')
-    
+
         if self.with_bn == 'batch':
             self.layer_name += '_bn'
         elif self.with_bn == 'group':
@@ -192,9 +192,9 @@ class ConvolutionalLayer(TrainableLayer):
                 moving_decay=self.moving_decay,
                 eps=self.eps,
                 name='bn_')
-        elif self.with_bn == 'instance': 
+        elif self.with_bn == 'instance':
             in_layer = InstanceNormLayer(eps=self.eps, name='in_')
-        elif self.with_bn == 'group': 
+        elif self.with_bn == 'group':
             gn_layer = GNLayer(
                 regularizer=self.regularizers['w'],
                 group_size=self.group_size,

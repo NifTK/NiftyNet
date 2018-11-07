@@ -8,7 +8,8 @@ import tensorflow as tf
 # from . import layer_util
 from niftynet.layer.activation import ActiLayer
 from niftynet.layer.base_layer import TrainableLayer
-from niftynet.layer.bn import BNLayer
+from niftynet.layer.bn import BNLayer, InstanceNormLayer
+from niftynet.layer.gn import GNLayer
 
 
 def default_w_initializer():
@@ -98,6 +99,7 @@ class FullyConnectedLayer(TrainableLayer):
                  n_output_chns,
                  with_bias=True,
                  with_bn='batch',
+                 group_size=-1,
                  acti_func=None,
                  w_initializer=None,
                  w_regularizer=None,
@@ -109,7 +111,14 @@ class FullyConnectedLayer(TrainableLayer):
 
         self.acti_func = acti_func
         self.with_bn = with_bn
+        self.group_size = group_size
         self.layer_name = '{}'.format(name)
+
+        if self.with_bn != 'group' and group_size > 0:
+            raise ValueError('You cannot have a group_size > 0 if not using group norm')
+        elif self.with_bn == 'group' and group_size <= 0:
+            raise ValueError('You cannot have a group_size <= 0 if using group norm')
+
         if self.with_bn is not None:
             # to append batch_norm as _bn and likewise for other norms
             self.layer_name += '_' + self.with_bn[0] + 'n'
@@ -151,10 +160,10 @@ class FullyConnectedLayer(TrainableLayer):
                 eps=self.eps,
                 name='bn_')
             output_tensor = bn_layer(output_tensor, is_training)
-        elif self.with_bn == 'instance': 
+        elif self.with_bn == 'instance':
             in_layer = InstanceNormLayer(eps=self.eps, name='in_')
             output_tensor = in_layer(output_tensor)
-        elif self.with_bn == 'group': 
+        elif self.with_bn == 'group':
             gn_layer = GNLayer(
                 regularizer=self.regularizers['w'],
                 group_size=self.group_size,

@@ -188,7 +188,7 @@ class DeconvolutionalLayer(TrainableLayer):
         elif self.with_bn == 'group' and group_size <= 0:
             raise ValueError('You cannot have a group_size <= 0 if using group norm')
 
-        if self.with_bn is not None: 
+        if self.with_bn is not None:
             # appending, for example, '_bn' to the name 
             self.layer_name += '_' + self.with_bn[0] + 'n'
         if self.acti_func is not None:
@@ -235,36 +235,27 @@ class DeconvolutionalLayer(TrainableLayer):
                 moving_decay=self.moving_decay,
                 eps=self.eps,
                 name='bn_')
-        elif self.with_bn == 'instance': 
+            output_tensor = bn_layer(output_tensor, is_training)
+        elif self.with_bn == 'instance':
             in_layer = InstanceNormLayer(eps=self.eps, name='in_')
-        elif self.with_bn == 'group': 
+            output_tensor = in_layer(output_tensor)
+        elif self.with_bn == 'group':
             gn_layer = GNLayer(
                 regularizer=self.regularizers['w'],
                 group_size=self.group_size,
                 eps=self.eps,
                 name='gn_')
+            output_tensor = gn_layer(output_tensor)
 
         if self.acti_func is not None:
             acti_layer = ActiLayer(
                 func=self.acti_func,
                 regularizer=self.regularizers['w'],
                 name='acti_')
+            output_tensor = acti_layer(output_tensor)
 
         if keep_prob is not None:
             dropout_layer = ActiLayer(func='dropout', name='dropout_')
- 
-        def activation(output_tensor):
-            if self.with_bn == 'batch':
-                output_tensor = bn_layer(output_tensor, is_training)
-            elif self.with_bn == 'instance':
-                output_tensor = in_layer(output_tensor)
-            elif self.with_bn == 'group':
-                output_tensor = gn_layer(output_tensor)
-            if self.acti_func is not None:
-                output_tensor = acti_layer(output_tensor)
-            if keep_prob is not None:
-                output_tensor = dropout_layer(output_tensor, keep_prob=keep_prob)
-            return output_tensor
+            output_tensor = dropout_layer(output_tensor, keep_prob=keep_prob)
 
-        output_tensor = activation(conv_layer(input_tensor))
         return output_tensor
