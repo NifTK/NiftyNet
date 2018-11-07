@@ -14,7 +14,7 @@ from niftynet.contrib.csv_reader.sampler_csv_rows import ImageWindowDatasetCSV
 from niftynet.engine.image_window import LOCATION_FORMAT
 from niftynet.engine.image_window_dataset import ImageWindowDataset
 from niftynet.engine.image_window import N_SPATIAL, LOCATION_FORMAT
-from niftynet.io.misc_io import do_reorientation_idx
+from niftynet.io.misc_io import do_reorientation_idx, do_resampling_idx
 
 
 class CSVPatchSampler(ImageWindowDatasetCSV):
@@ -385,6 +385,8 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
         print(list_mod)
         idx_subject_id = np.where(
             self.reader._file_list.subject_id == subject_id)[0][0]
+        input_shape = self.reader.output_list[idx_subject_id][list_mod[
+            0]].original_shape[:N_SPATIAL]
         output_shape = self.reader.output_list[idx_subject_id][list_mod[
             0]].shape[:N_SPATIAL]
         init_axcodes = self.reader.output_list[idx_subject_id][list_mod[
@@ -393,13 +395,29 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
         fin_axcodes = self.reader.output_list[idx_subject_id][
             list_mod[0]].output_axcodes
         print(output_shape, init_axcodes[0], fin_axcodes[0])
-        transformed_centres = do_reorientation_idx(windows_centres,
+        transformed_centres, ornt_transf = do_reorientation_idx(windows_centres,
                                                    init_axcodes[0],
                                                    fin_axcodes[0],
-                                                   output_shape)
+                                                   input_shape)
         padding = (np.asarray(img_sizes[list_mod[0]][:N_SPATIAL]) -
                    np.asarray(output_shape)) / 2.0
         transformed_centres = np.squeeze(transformed_centres.astype(np.int32))
+
+
+        # then taking care of change in pixdim
+        input_pixdim = self.reader.output_list[idx_subject_id][list_mod[
+            0]].original_pixdim[0]
+        output_pixdim = self.reader.output_list[idx_subject_id][list_mod[
+            0]].output_pixdim[0]
+        reorder_axes = np.squeeze(np.asarray(ornt_transf[:,0]).astype(
+            np.int32))
+        print("found pixdim to change", input_pixdim, output_pixdim, reorder_axes
+                         )
+        input_pixdim_no = [input_pixdim[r] for r in reorder_axes]
+        transformed_centres = do_resampling_idx(transformed_centres,
+                                                input_pixdim_no, output_pixdim)
+
+
         if transformed_centres.ndim==1:
             transformed_centres = np.expand_dims(transformed_centres,0)
         padding = padding.astype(np.int32)
