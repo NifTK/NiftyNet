@@ -92,7 +92,7 @@ class ImageGenerator(BaseGenerator):
                 conv_layer = ConvolutionalLayer(
                     n_output_chns=ch,
                     kernel_size=3,
-                    with_bn=True,
+                    bn_type='batch',
                     with_bias=False,
                     acti_func='relu',
                     w_initializer=self.initializers['w'])
@@ -104,7 +104,7 @@ class ImageGenerator(BaseGenerator):
                     n_output_chns=ch,
                     kernel_size=3,
                     stride=2,
-                    with_bn=True,
+                    bn_type='batch',
                     with_bias=False,
                     acti_func='relu',
                     w_initializer=self.initializers['w'])
@@ -123,7 +123,7 @@ class ImageGenerator(BaseGenerator):
                 g_no_0 = np.prod(sz) * ch
                 fc_layer = FullyConnectedLayer(
                     n_output_chns=g_no_0,
-                    with_bn=False,
+                    bn_type=None,
                     with_bias=True,
                     w_initializer=self.initializers['w'],
                     b_initializer=self.initializers['b'])
@@ -143,7 +143,7 @@ class ImageGenerator(BaseGenerator):
                     n_output_chns=n_chns,
                     kernel_size=3,
                     acti_func='tanh',
-                    with_bn=False,
+                    bn_type=None,
                     with_bias=True,
                     w_initializer=self.initializers['w'],
                     b_initializer=self.initializers['b'])
@@ -185,7 +185,7 @@ class ImageDiscriminator(BaseDiscriminator):
                     n_output_chns=ch,
                     kernel_size=3,
                     stride=2,
-                    with_bn=True,
+                    bn_type='batch',
                     acti_func='selu',
                     w_initializer=self.initializers['w'])
                 return conv_layer(x, is_training=is_training)
@@ -194,7 +194,7 @@ class ImageDiscriminator(BaseDiscriminator):
             conv_layer = ConvolutionalLayer(
                 n_output_chns=ch,
                 kernel_size=3,
-                with_bn=True,
+                bn_type='batch',
                 acti_func='selu',
                 w_initializer=self.initializers['w'])
             return conv_layer(x, is_training=is_training)
@@ -203,7 +203,7 @@ class ImageDiscriminator(BaseDiscriminator):
             conv_layer = ConvolutionalLayer(
                 n_output_chns=ch,
                 kernel_size=3,
-                with_bn=True,
+                bn_type='batch',
                 w_initializer=self.initializers['w'])
             acti_layer = ActiLayer(func='selu')
 
@@ -223,7 +223,7 @@ class ImageDiscriminator(BaseDiscriminator):
                     n_output_chns=ch,
                     kernel_size=5,
                     with_bias=True,
-                    with_bn=False,
+                    bn_type=None,
                     acti_func='selu',
                     w_initializer=self.initializers['w'],
                     b_initializer=self.initializers['b'])
@@ -235,7 +235,7 @@ class ImageDiscriminator(BaseDiscriminator):
             with tf.name_scope('fully_connected'):
                 # with bn?
                 fc_layer = FullyConnectedLayer(
-                    n_output_chns=ch, with_bn=False, with_bias=True)
+                    n_output_chns=ch, bn_type=None, with_bias=True)
                 return fc_layer(features, is_training=is_training)
 
         if conditioning is not None:

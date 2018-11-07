@@ -168,7 +168,7 @@ class DeconvolutionalLayer(TrainableLayer):
                  stride=1,
                  padding='SAME',
                  with_bias=False,
-                 with_bn='batch',
+                 bn_type='batch',
                  group_size=-1,
                  acti_func=None,
                  w_initializer=None,
@@ -180,17 +180,17 @@ class DeconvolutionalLayer(TrainableLayer):
                  name="deconv"):
 
         self.acti_func = acti_func
-        self.with_bn = with_bn
+        self.bn_type = bn_type
         self.group_size = group_size
         self.layer_name = '{}'.format(name)
-        if self.with_bn != 'group' and group_size > 0:
+        if self.bn_type != 'group' and group_size > 0:
             raise ValueError('You cannot have a group_size > 0 if not using group norm')
-        elif self.with_bn == 'group' and group_size <= 0:
+        elif self.bn_type == 'group' and group_size <= 0:
             raise ValueError('You cannot have a group_size <= 0 if using group norm')
 
-        if self.with_bn is not None:
+        if self.bn_type is not None:
             # appending, for example, '_bn' to the name 
-            self.layer_name += '_' + self.with_bn[0] + 'n'
+            self.layer_name += '_' + self.bn_type[0] + 'n'
         if self.acti_func is not None:
             self.layer_name += '_{}'.format(self.acti_func)
         super(DeconvolutionalLayer, self).__init__(name=self.layer_name)
@@ -226,20 +226,20 @@ class DeconvolutionalLayer(TrainableLayer):
                                    name='deconv_')
         output_tensor = deconv_layer(input_tensor)
 
-        if self.with_bn == 'batch':
+        if self.bn_type == 'batch':
             if is_training is None:
                 raise ValueError('is_training argument should be '
-                                 'True or False unless with_bn is False')
+                                 'True or False unless bn_type is False')
             bn_layer = BNLayer(
                 regularizer=self.regularizers['w'],
                 moving_decay=self.moving_decay,
                 eps=self.eps,
                 name='bn_')
             output_tensor = bn_layer(output_tensor, is_training)
-        elif self.with_bn == 'instance':
+        elif self.bn_type == 'instance':
             in_layer = InstanceNormLayer(eps=self.eps, name='in_')
             output_tensor = in_layer(output_tensor)
-        elif self.with_bn == 'group':
+        elif self.bn_type == 'group':
             gn_layer = GNLayer(
                 regularizer=self.regularizers['w'],
                 group_size=self.group_size,

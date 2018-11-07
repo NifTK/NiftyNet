@@ -148,7 +148,7 @@ class DenseVNet(BaseNet):
         # Segmentation
         net_seg_layer = ConvolutionalLayer(
             self.num_classes, kernel_size=hyper['final_kernel'],
-            with_bn=False, with_bias=True
+            bn_type=None, with_bias=True
         )
 
         return DenseVNetDesc(initial_bn=BNLayer(),
