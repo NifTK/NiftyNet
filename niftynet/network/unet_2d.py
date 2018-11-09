@@ -35,7 +35,7 @@ class UNet2D(BaseNet):
 
         net_params = {'padding': 'VALID',
                       'with_bias': True,
-                      'bn_type': None,
+                      'featnorm_type': None,
                       'acti_func': acti_func,
                       'w_initializer': w_initializer,
                       'b_initializer': b_initializer,
@@ -86,7 +86,7 @@ class UNet2D(BaseNet):
         classifier = Conv(n_output_chns=self.num_classes,
                           kernel_size=1,
                           with_bias=True,
-                          bn_type=None)
+                          featnorm_type=None)
         output_tensor = classifier(output_1)
         tf.logging.info('output shape %s', output_tensor.shape)
         return output_tensor

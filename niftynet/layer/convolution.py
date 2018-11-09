@@ -120,7 +120,7 @@ class ConvolutionalLayer(TrainableLayer):
                  dilation=1,
                  padding='SAME',
                  with_bias=False,
-                 bn_type='batch',
+                 featnorm_type='batch',
                  group_size=-1,
                  acti_func=None,
                  preactivation=False,
@@ -133,20 +133,20 @@ class ConvolutionalLayer(TrainableLayer):
                  name="conv"):
 
         self.acti_func = acti_func
-        self.bn_type = bn_type
+        self.featnorm_type = featnorm_type
         self.group_size = group_size
         self.preactivation = preactivation
         self.layer_name = '{}'.format(name)
-        if self.bn_type != 'group' and group_size > 0:
+        if self.featnorm_type != 'group' and group_size > 0:
             raise ValueError('You cannot have a group_size > 0 if not using group norm')
-        elif self.bn_type == 'group' and group_size <= 0:
+        elif self.featnorm_type == 'group' and group_size <= 0:
             raise ValueError('You cannot have a group_size <= 0 if using group norm')
 
-        if self.bn_type == 'batch':
+        if self.featnorm_type == 'batch':
             self.layer_name += '_bn'
-        elif self.bn_type == 'group':
+        elif self.featnorm_type == 'group':
             self.layer_name += '_gn'
-        elif self.bn_type == 'instance':
+        elif self.featnorm_type == 'instance':
             self.layer_name += '_in'
         if self.acti_func is not None:
             self.layer_name += '_{}'.format(self.acti_func)
@@ -183,18 +183,18 @@ class ConvolutionalLayer(TrainableLayer):
                                b_regularizer=self.regularizers['b'],
                                name='conv_')
 
-        if self.bn_type == 'batch':
+        if self.featnorm_type == 'batch':
             if is_training is None:
                 raise ValueError('is_training argument should be '
-                                 'True or False unless bn_type is False')
+                                 'True or False unless featnorm_type is False')
             bn_layer = BNLayer(
                 regularizer=self.regularizers['w'],
                 moving_decay=self.moving_decay,
                 eps=self.eps,
                 name='bn_')
-        elif self.bn_type == 'instance':
+        elif self.featnorm_type == 'instance':
             in_layer = InstanceNormLayer(eps=self.eps, name='in_')
-        elif self.bn_type == 'group':
+        elif self.featnorm_type == 'group':
             gn_layer = GNLayer(
                 regularizer=self.regularizers['w'],
                 group_size=self.group_size,
@@ -210,11 +210,11 @@ class ConvolutionalLayer(TrainableLayer):
             dropout_layer = ActiLayer(func='dropout', name='dropout_')
 
         def activation(output_tensor):
-            if self.bn_type == 'batch':
+            if self.featnorm_type == 'batch':
                 output_tensor = bn_layer(output_tensor, is_training)
-            elif self.bn_type == 'instance':
+            elif self.featnorm_type == 'instance':
                 output_tensor = in_layer(output_tensor)
-            elif self.bn_type == 'group':
+            elif self.featnorm_type == 'group':
                 output_tensor = gn_layer(output_tensor)
             if self.acti_func is not None:
                 output_tensor = acti_layer(output_tensor)
