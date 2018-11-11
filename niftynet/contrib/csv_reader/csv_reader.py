@@ -146,12 +146,22 @@ class CSVReader(Layer):
                     if reject:
                         relevant_valid = np.asarray(np.where(np.abs(
                             self.valid_by_task[name][relevant_indices]) > 0)[0])
+                        if relevant_valid is None:
+                            relevant_valid = []
+                        print(relevant_valid, reject)
                     else:
                         relevant_valid = np.arange(len(relevant_indices))
+                        print(relevant_valid, " is list of indices to sample "
+                                              "from")
+                    print(relevant_valid.shape[0], "is shape of "
+                                                   "relevant_valid")
                     relevant_final = [relevant_indices[v] for v in
-                                      relevant_valid]
+                                      relevant_valid] if \
+                        relevant_valid.shape[0] > 0 else []
+                    print(relevant_final, "is relevant final")
                     #relevant_indices = self._df.loc[subject_id]
-                    idx_dict[name] = random.choice(relevant_final)
+                    idx_dict[name] = random.choice(relevant_final) if \
+                        len(relevant_final)>0 else []
             else: # mode full i.e. output all the lines corresponding to
                     # subject_id
                 print(" Taking all valid indices")
@@ -162,10 +172,13 @@ class CSVReader(Layer):
                     if reject:
                         relevant_valid = np.asarray(np.where(np.abs(
                             self.valid_by_task[name][relevant_indices]) > 0)[0])
+                        if relevant_valid is None:
+                            relevant_valid = []
                     else:
                         relevant_valid = np.arange(len(relevant_indices))
                     relevant_final = [relevant_indices[v] for v in
-                                      relevant_valid]
+                                      relevant_valid] if \
+                        relevant_valid.shape[0] >0 else []
                     idx_dict[name] = relevant_final
 
         elif idx is None and subject_id is None:
