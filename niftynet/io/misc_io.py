@@ -206,7 +206,9 @@ def do_resampling_idx(idx_array, init_pixdim, fin_pixdim):
     :param fin_pixdim: target pixdim
     :return: new_idx transformed array of indices according to resampling
     """
-
+    if fin_pixdim is None:
+        new_idx = idx_array
+        return new_idx
     factor_mult = np.asarray(init_pixdim) / np.asarray(fin_pixdim)
     new_idx = idx_array.astype(np.float32) * factor_mult
     new_idx = new_idx.astype(np.int32)
@@ -224,6 +226,10 @@ def do_reorientation_idx(idx_array, init_axcodes, final_axcodes,
     :return: new_idx the array of tranformed indices
     """
     new_idx = idx_array
+    if final_axcodes is None:
+        ornt_transf, ornt_init, ornt_fin = compute_orientation(init_axcodes,
+                                                               init_axcodes)
+        return new_idx, ornt_transf
     ornt_transf, ornt_init, ornt_fin = compute_orientation(init_axcodes,
                                                            final_axcodes)
     # print(ornt_transf, ornt_init, "orientation prior idx transfo",
