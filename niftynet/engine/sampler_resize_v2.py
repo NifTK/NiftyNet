@@ -27,6 +27,7 @@ class ResizeSampler(ImageWindowDataset):
                  spatial_window_size=None,
                  windows_per_image=1,
                  shuffle=True,
+                 epoch=None,
                  queue_length=10,
                  smaller_final_batch_mode='pad',
                  name='resize_sampler_v2'):
@@ -39,7 +40,7 @@ class ResizeSampler(ImageWindowDataset):
             windows_per_image=windows_per_image,
             queue_length=queue_length,
             shuffle=shuffle,
-            epoch=-1 if shuffle else 1,
+            epoch=epoch or (-1 if shuffle else 1),
             smaller_final_batch_mode=smaller_final_batch_mode,
             name=name)
         if spatial_window_size:
