@@ -1,4 +1,4 @@
-# Transfer learning
+# Finetuning networks
 
 With NiftyNet, it's possible to initialize your neural net with pre-trained
 variables and then fine-tune it for a seperate but similar task. This
@@ -14,10 +14,10 @@ three checkpoint files which constitue your model inside. Your directory
 structure should look like this:
 
 ```
-model_dir/  
-  models/  
-    model.ckpt-###.data-00000-of-00001  
-    model.ckpt-###.index  
+model_dir/
+  models/
+    model.ckpt-###.data-00000-of-00001
+    model.ckpt-###.index
     model.ckpt-###.meta
 ```
 
@@ -61,14 +61,15 @@ a few examples to get you started:
 
 **For matching variables:**
 
-`^.*(conv_1|conv_2).*$` = match all vars that have *conv_1* or *conv_2* in
-their name (the '|' acts like a boolean OR).
+`vars_to_restore=^.*(conv_1|conv_2).*$` will match all trainable variables that
+have `conv_1` or `conv_2` in their name (the `|` acts like a boolean OR).
 
 **For excluding variables:**
 
-`^((?!DenseVNet\/(skip_conv|fin_conv)).)*$` = don't match any vars that contain
-*DenseVNet/skip_conv* or *DenseVNet/fin_conv* in their name (the '\' is an
-escape character for '/').
+`vars_to_restore=^((?!DenseVNet\/(skip_conv|fin_conv)).)*$` will not match any 
+trainable variables that contain
+`DenseVNet/skip_conv` or `DenseVNet/fin_conv` in their name (the `\` is an
+escape character for `/`).
 
 Once you've created a regex expression, it's recommended that you use a tool
 like [RegEx101](https://regex101.com) to double check that it works as
