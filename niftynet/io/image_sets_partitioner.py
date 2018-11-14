@@ -203,8 +203,8 @@ class ImageSetsPartitioner(object):
             raise ValueError
         self._file_list = None
         section_first = [section_name for section_name in
-                              self.data_param if
-                          self.data_param[section_name].csv_data_file =='']
+                         self.data_param if
+                         self.data_param[section_name].csv_data_file == '']
         section_second = [section_name for section_name in self.data_param if
                           section_name not in section_first]
         usable_section = section_first + section_second
@@ -218,21 +218,22 @@ class ImageSetsPartitioner(object):
             n_rows = self._file_list[COLUMN_UNIQ_ID].count()
             if len(modality_file_list.index) > n_rows and set(
                     modality_file_list.index) == set(self._file_list[
-                COLUMN_UNIQ_ID]):
+                    COLUMN_UNIQ_ID]):
                 tf.logging.warning('The data file has multiple entries for '
                                    'each subject')
                 if merge_multi:
 
-                    modality_file_list[COLUMN_UNIQ_ID] = modality_file_list.index
+                    modality_file_list[COLUMN_UNIQ_ID] = modality_file_list.\
+                        index
                     self._file_list = pandas.merge(self._file_list,
-                                               modality_file_list,
-                                               on=COLUMN_UNIQ_ID,
-                                               how='outer')
+                                                   modality_file_list,
+                                                   on=COLUMN_UNIQ_ID,
+                                                   how='outer')
             else:
                 self._file_list = pandas.merge(self._file_list,
-                                           modality_file_list,
-                                           how='outer',
-                                           on=COLUMN_UNIQ_ID)
+                                               modality_file_list,
+                                               how='outer',
+                                               on=COLUMN_UNIQ_ID)
             if self._file_list[COLUMN_UNIQ_ID].count() < n_rows:
                 tf.logging.warning('rows not matched in section [%s]',
                                    section_name)
@@ -240,7 +241,8 @@ class ImageSetsPartitioner(object):
         if self._file_list is None or self._file_list.size == 0:
             tf.logging.fatal(
                 "Empty filename lists, please check the csv "
-                "files (removing csv_data_file keyword if it is in the config file "
+                "files (removing csv_data_file keyword if it is "
+                "in the config file "
                 "to automatically search folders and generate new csv "
                 "files again).\n\n"
                 "Please note in the matched file names, each subject id are "
@@ -280,7 +282,8 @@ class ImageSetsPartitioner(object):
         #########################
         temp_csv_data_file = None
         try:
-            csv_data_file = os.path.expanduser(mod_spec.get('csv_data_file', None))
+            csv_data_file = os.path.expanduser(mod_spec.get('csv_data_file',
+                                                            None))
             if not os.path.isfile(csv_data_file):
                 # writing to the same folder as data_split_file
                 default_csv_data_file = os.path.join(
@@ -291,10 +294,12 @@ class ImageSetsPartitioner(object):
                                 csv_data_file, default_csv_data_file)
                 csv_data_file = default_csv_data_file
                 if os.path.isfile(csv_data_file):
-                    tf.logging.info('Overwriting existing: "%s".', csv_data_file)
+                    tf.logging.info('Overwriting existing: "%s".',
+                                    csv_data_file)
             csv_data_file = os.path.abspath(csv_data_file)
         except (AttributeError, KeyError, TypeError):
-            tf.logging.debug('`csv_data_file` not specified, writing the list of '
+            tf.logging.debug('`csv_data_file` not specified,'
+                             ' writing the list of '
                              'filenames to a temporary file.')
             import tempfile
             temp_csv_data_file = os.path.join(
@@ -355,7 +360,8 @@ class ImageSetsPartitioner(object):
             raise
 
         if temp_csv_data_file:
-            shutil.rmtree(os.path.dirname(temp_csv_data_file), ignore_errors=True)
+            shutil.rmtree(os.path.dirname(temp_csv_data_file),
+                          ignore_errors=True)
 
         return csv_list
 
