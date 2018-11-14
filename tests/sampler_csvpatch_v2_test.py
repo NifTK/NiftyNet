@@ -204,6 +204,7 @@ def get_csvpatch_reader():
     csv_reader.initialise(CSV_DATA, DYNAMIC_MOD_TASK, dynamic_list)
     return csv_reader
 
+
 def get_csvpatchbad_reader():
     csv_reader = CSVReader(['sampler'])
     csv_reader.initialise(CSVBAD_DATA, DYNAMIC_MOD_TASK, dynamic_list)
@@ -229,7 +230,7 @@ class CSVPatchSamplerTest(tf.test.TestCase):
         sampler.close_all()
 
 
-    def test_dynamic_init(self):
+    def test_pad_init(self):
         sampler = CSVPatchSampler(reader=get_large_window_reader(),
                                   csv_reader=get_csvpatch_reader(),
                                     window_sizes=LARGE_MOD_DATA,
@@ -244,21 +245,70 @@ class CSVPatchSamplerTest(tf.test.TestCase):
             self.assertAllClose(out['image'].shape[1:], (75,75,75, 1))
         sampler.close_all()
 
-    def test_remove_element(self):
+
+
+    def test_padd_volume(self):
+        sampler = CSVPatchSampler(reader=get_large_window_reader(),
+                                  csv_reader=get_csvpatch_reader(),
+                                  window_sizes=LARGE_MOD_DATA,
+                                  batch_size=2,
+                                  windows_per_image=1,
+                                  queue_length=3)
+        with self.test_session() as sess:
+            sampler.set_num_threads(2)
+            out = sess.run(sampler.pop_batch_op())
+            img_loc = out['image_location']
+            print(img_loc)
+            self.assertAllClose(out['image'].shape[1:], (75, 75, 75, 1))
+        sampler.close_all()
+
+    def test_change_orientation(self):
+        sampler = CSVPatchSampler(reader=get_large_window_reader(),
+                                  csv_reader=get_csvpatch_reader(),
+                                  window_sizes=LARGE_MOD_DATA,
+                                  batch_size=2,
+                                  windows_per_image=1,
+                                  queue_length=3)
+        with self.test_session() as sess:
+            sampler.set_num_threads(2)
+            out = sess.run(sampler.pop_batch_op())
+            img_loc = out['image_location']
+            print(img_loc)
+            self.assertAllClose(out['image'].shape[1:], (75, 75, 75, 1))
+        sampler.close_all()
+
+    def test_random_init(self):
         sampler = CSVPatchSampler(reader=get_large_window_reader(),
                                   csv_reader=get_csvpatch_reader(),
                                   window_sizes=LARGE_MOD_DATA,
                                   batch_size=2,
                                   windows_per_image=1,
                                   queue_length=3,
-                                  mode_correction='remove')
+                                  mode_correction='random')
         with self.test_session() as sess:
-            sampler.set_num_threads(1)
+            sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             img_loc = out['image_location']
             print(img_loc)
             self.assertAllClose(out['image'].shape[1:], (75, 75, 75, 1))
         sampler.close_all()
+
+
+    def test_remove_element(self):
+
+        sampler = CSVPatchSampler(reader=get_large_window_reader(),
+                              csv_reader=get_csvpatch_reader(),
+                              window_sizes=LARGE_MOD_DATA,
+                              batch_size=2,
+                              windows_per_image=1,
+                              queue_length=3,
+                              mode_correction='remove')
+        with self.test_session() as sess:
+            sampler.set_num_threads(2)
+            with self.assertRaisesRegexp(ValueError, ""):
+                out = sess.run(sampler.pop_batch_op())
+
+
 
     def test_ill_init(self):
         with self.assertRaisesRegexp(Exception, ""):
