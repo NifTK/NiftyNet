@@ -218,12 +218,12 @@ def do_resampling_idx(idx_array, init_pixdim, fin_pixdim):
 def do_reorientation_idx(idx_array, init_axcodes, final_axcodes,
                          init_spatial_size):
     """
-    Perform the indices change based on the the orinetation transformation
+    Perform the indices change based on the the orientation transformation
     :param idx_array: array of indices to transform when reorienting
     :param init_axcodes: initial orientation codes
     :param final_axcodes: target orientation codes
     :param init_spatial_size: initial image spatial size
-    :return: new_idx the array of tranformed indices
+    :return: new_idx the array of transformed indices and orientation transform
     """
     new_idx = idx_array
     if final_axcodes is None:
