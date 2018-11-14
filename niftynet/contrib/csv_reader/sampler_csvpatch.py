@@ -21,12 +21,11 @@ SUPPORTED_MODES_CORRECTION=['pad', 'remove', 'random']
 
 class CSVPatchSampler(ImageWindowDatasetCSV):
     """
-    This class generates samples by uniformly sampling each input volume
-    currently the coordinates are randomised for spatial dims only,
-    i.e., the first three dims of image.
+    This class generates samples using the coordinates of the centre as
+    extracted from a csv file
 
-    This layer can be considered as a "random cropping" layer of the
-    input image.
+    This layer can be considered as a "guided cropping" layer of the
+    input image based on preselected input.
     """
 
     def __init__(self,
@@ -61,10 +60,12 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
         This function generates sampling windows to the input buffer
         image data are from ``self.reader()``
 
-        It first completes window shapes based on image data,
-        then finds random coordinates based on the window shapes
-        finally extract window with the coordinates and output
-        a dictionary (required by input buffer).
+        It first find the appropriate indices from the data frame in which
+        the centre samples are stored and extract information about the
+        windows to draw on the data.
+        The final dictionary is filled according to the appropriate samples.
+        Different modes on how to take care of unsuitable centres (too big
+        patch size for instance are implemented)
 
         :return: output data dictionary
             ``{image_modality: data_array, image_location: n_samples * 7}``
@@ -98,10 +99,17 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
             (name, data[name].shape) for name in self.window.names)
         static_window_shapes = self.window.match_image_shapes(image_shapes)
 
+        # Perform the checks relative to the sample choices and create the
+        # corresponding (if needed) padding information to be applied
         num_idx, num_discard = self.check_csv_sampler_valid(subject_id,
                                                             image_shapes,
                                                             static_window_shapes
                                                             )
+
+        # In the remove configuration, none of the unsuitable sample is used.
+        #  Thus if the chosen subject does not have any suitable sample,
+        # another one must be drawn. An error is raised if none of the
+        # subjects has suitable samples
         if self.mode_correction == 'remove':
             if num_idx == num_discard:
                 self.available_subjects.drop(subject_id)
@@ -110,7 +118,8 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
                     _, _, subject_id = self.csv_reader(idx)
 
                     # print("subject id is ", subject_id)
-
+                    # Find the index corresponding to the drawn subject id in
+                    #  the reader
                     idx_subject_id = np.where(
                         self.available_subjects == subject_id)[0][0]
                     image_id, data, _ = self.reader(idx=idx_subject_id,

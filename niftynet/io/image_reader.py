@@ -410,7 +410,8 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
     if not volume_list:
         tf.logging.fatal(
             "Empty filename lists, please check the csv "
-            "files. (removing csv_path_file keyword if it is in the config file "
+            "files. (removing csv_path_file keyword if it is"
+            " in the config file "
             "to automatically search folders and generate new csv "
             "files again)\n\n"
             "Please note in the matched file names, each subject id are "
@@ -468,6 +469,7 @@ def _create_image(file_list, idx, modalities, data_param):
                         'output_axcodes': axcodes,
                         'loader': loader}
     return ImageFactory.create_instance(**image_properties)
+
 
 def param_to_dict(input_data_param):
     """
