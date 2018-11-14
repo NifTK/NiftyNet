@@ -8,6 +8,7 @@ from niftynet.layer.base_layer import Layer
 from niftynet.io.image_reader import param_to_dict
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 
+
 class CSVReader(Layer):
     
     def __init__(self, names=None):
@@ -104,32 +105,37 @@ class CSVReader(Layer):
         df.index = df.index.map(str)
         if set(df.index) != set(self.subject_ids):
             print(set(self.subject_ids) - set(df.index))
-            tf.logging.fatal('csv file provided at: {} does not have all the subject_ids'.format(path_to_csv))
+            tf.logging.fatal('csv file provided at: {} does not have '
+                             'all the subject_ids'.format(path_to_csv))
             raise Exception
-        if to_ohe and len(df.columns)==1:
+        if to_ohe and len(df.columns) == 1:
             _dims = len(list(df[1].unique()))
             _indexable_output = self.to_ohe(df[1].values, _dims)
             return df, _indexable_output, _dims
-        elif not to_ohe and len(df.columns)==1:
+        elif not to_ohe and len(df.columns) == 1:
             _dims = 1
-            _indexable_output = self.to_categorical(df[1].values, df[1].unique())
+            _indexable_output = self.to_categorical(df[1].values,
+                                                    df[1].unique())
             return df, _indexable_output, _dims
         elif not to_ohe:
             _dims = len(df.columns)
             _indexable_output = list(df.values)
             return df, _indexable_output, _dims
         else:
-            tf.logging.fatal('Unrecognised input format for {}'.format(path_to_csv))
+            tf.logging.fatal('Unrecognised input format for {}'.
+                             format(path_to_csv))
 
     @staticmethod
     def to_ohe(labels, _dims):
         label_names = list(set(labels))
-        ohe = [np.eye(_dims)[label_names.index(label)].astype(np.float32) for label in labels]
+        ohe = [np.eye(_dims)[label_names.index(label)].astype(np.float32)
+               for label in labels]
         return ohe
 
     @staticmethod
     def to_categorical(labels, label_names):
-        return [np.array(list(label_names).index(label)).astype(np.float32) for label in labels]
+        return [np.array(list(label_names).index(label)).astype(np.float32)
+                for label in labels]
 
     def layer_op(self, idx=None, subject_id=None, mode='single', reject=True):
         if idx is None and subject_id is not None:
@@ -159,11 +165,11 @@ class CSVReader(Layer):
                                       relevant_valid] if \
                         relevant_valid.shape[0] > 0 else []
                     print(relevant_final, "is relevant final")
-                    #relevant_indices = self._df.loc[subject_id]
                     idx_dict[name] = random.choice(relevant_final) if \
-                        len(relevant_final)>0 else []
-            else: # mode full i.e. output all the lines corresponding to
-                    # subject_id
+                        len(relevant_final) > 0 else []
+            else:
+                # mode full i.e. output all the lines corresponding to
+                # subject_id
                 print(" Taking all valid indices")
                 for name in self.names:
                     relevant_indices = np.where(self.df_by_task[
@@ -178,7 +184,7 @@ class CSVReader(Layer):
                         relevant_valid = np.arange(len(relevant_indices))
                     relevant_final = [relevant_indices[v] for v in
                                       relevant_valid] if \
-                        relevant_valid.shape[0] >0 else []
+                        relevant_valid.shape[0] > 0 else []
                     idx_dict[name] = relevant_final
 
         elif idx is None and subject_id is None:
@@ -191,8 +197,8 @@ class CSVReader(Layer):
                     subject_id = self.df_by_task[name].iloc[idx_dict[name]].name
                     print("new subject id is ", subject_id)
                 if mode == 'single':
-                    #  Take the list of idx corresponding to subject id and randomly
-                    # sample from there
+                    #  Take the list of idx corresponding to subject id
+                    # and randomly sample from there
                     print("Need to find index in single mode")
 
                     relevant_indices = np.asarray(np.where(self.df_by_task[
@@ -203,7 +209,7 @@ class CSVReader(Layer):
                     #       self.df_by_task[name].index.get_loc(subject_id).shape)
                     if reject:
                         relevant_valid = np.asarray(np.where(np.abs(
-                            self.valid_by_task[name][relevant_indices])>0)[0])
+                            self.valid_by_task[name][relevant_indices]) > 0)[0])
                     else:
                         relevant_valid = np.arange(len(relevant_indices))
                     # print("Found corresponding valid", relevant_valid,
@@ -211,11 +217,11 @@ class CSVReader(Layer):
                     relevant_final = [relevant_indices[v] for v in
                                       relevant_valid]
                     # print(relevant_indices, subject_id)
-                        # relevant_indices = self._df.loc[subject_id]
+                    # relevant_indices = self._df.loc[subject_id]
                     assert len(
                         relevant_final) > 0, 'no valid index for subject %s ' \
                                              'and field ' \
-                                             '%s' % (subject_id,name)
+                                             '%s' % (subject_id, name)
                     idx_dict[name] = random.choice(relevant_final)
                 else:  # mode full i.e. output all the lines corresponding to
                     # subject_id
@@ -227,7 +233,7 @@ class CSVReader(Layer):
                     #       self.df_by_task[name].index.get_loc(subject_id).shape)
                     if reject:
                         relevant_valid = np.asarray(np.where(np.abs(
-                            self.valid_by_task[name][relevant_indices])>0)[0])
+                            self.valid_by_task[name][relevant_indices]) > 0)[0])
                     else:
                         relevant_valid = np.ones_like(relevant_indices)
                     # print("Found corresponding valid", relevant_valid,
@@ -249,7 +255,7 @@ class CSVReader(Layer):
             idx_dict = {}
             for name in self.names:
                 idx_dict[name] = idx[name]
-                assert len(idx[name])>0, 'no valid index for %s' % name
+                assert len(idx[name]) > 0, 'no valid index for %s' % name
                 if subject_id is None:
                     subject_id = self.df_by_task[name].iloc[idx_dict[name]].name
 
@@ -268,8 +274,8 @@ class CSVReader(Layer):
         """
         self._shapes = {}
         for name in self.names:
-            self._shapes.update({name: (1, self.dims_by_task[name], 1, 1, 1, 1),
-                        name + '_location': (1, 7)})        
+            self._shapes.update({name: (1, self.dims_by_task[name], 1, 1, 1,
+                                        1), name + '_location': (1, 7)})
         return self._shapes
     
     @property
@@ -280,7 +286,7 @@ class CSVReader(Layer):
         self._dtypes = {}
         for name in self.names:
             self._dtypes.update({name: tf.float32,
-                        name + '_location': tf.int32})
+                                 name + '_location': tf.int32})
         return self._dtypes
     
     @property
@@ -294,7 +300,7 @@ class CSVReader(Layer):
     
     @staticmethod
     def apply_niftynet_format_to_data(data):
-        if len(data.shape)==1:
+        if len(data.shape) == 1:
             data = np.expand_dims(data, 0)
         while len(data.shape) < 6:
             data = np.expand_dims(data, -1)
