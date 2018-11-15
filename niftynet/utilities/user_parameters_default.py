@@ -610,6 +610,48 @@ def add_training_args(parser):
         type=float,
         default=0.)
 
+    parser.add_argument(
+        "--training_mode_start",
+        metavar='',
+        type=int,
+        default=0,
+        help="[Training only] Mode of initial training,"
+    )
+
+    parser.add_argument(
+        "--training_values",
+        type=float_array,
+        default=(),
+        help="[Training only] List of values to use as criterion for training mode changes,"
+    )
+
+    parser.add_argument(
+        "--training_types",
+        type=str_array,
+        default=(),
+        help="[Training only] List of training types in parallel to each "
+             "training value"
+
+    )
+
+    parser.add_argument(
+        "--omit_save",
+        help="[Training only] list of variables that won't be saved into "
+             "checkpoint ",
+        metavar='',
+        type=str_array,
+        default=()
+    )
+
+    parser.add_argument(
+        "--omit_restore",
+        help="[Training only] list of variables that won't be restored from " \
+             "saver",
+        metavar='',
+        type=str_array,
+        default=()
+    )
+
     return parser
 
 

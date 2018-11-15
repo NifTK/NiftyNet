@@ -27,6 +27,13 @@ class ApplyGradients(object):
         ITER_STARTED.connect(self.add_gradients)
 
     def check_updates_param(self, sender):
+        """
+        This function checks if the providing rules for training updates
+        are consistent and valid and throws errors or warning if the
+        situation warrants it
+        :param sender:
+        :return:
+        """
         gradient_ops = sender.gradient_op
         training_types = sender.training_types
         training_values = sender.training_values
@@ -38,18 +45,25 @@ class ApplyGradients(object):
             raise ValueError
         if len(training_values) < len(gradient_ops) - 1:
             tf.logging.warning("The last updates of training may not be "
-                               "reached since the number of updates is %d and the number of training modes is %d " %(len(training_values), len(gradient_ops)))
+                               "reached since the number of updates is %d "
+                               "and the number of training modes is %d "
+                               %(len(training_values), len(gradient_ops)))
 
         for i in range(len(training_types)):
             if training_types[i] == 'time':
                 if training_values[i] < 2:
-                    tf.logging.fatal("Incompatibility between training_values and training type with value %f and type %s at update %d" %(training_values[i], training_types[i], i))
+                    tf.logging.fatal("Incompatibility between training_values"
+                                     " and training type with value %f and "
+                                     "type %s at update %d"
+                                     %(training_values[i],
+                                       training_types[i], i))
                     raise ValueError
         return
 
     def make_gradients_op(self, sender, **_unused):
         """
-        Making ``optimiser.apply_gradients`` ops.
+        Making ``optimiser.apply_gradients`` ops. Create an array of gradient
+         ops that can be called according to the training mode
 
         :param sender: a niftynet.application instance
         :param _unused:
@@ -57,7 +71,7 @@ class ApplyGradients(object):
         """
         with tf.name_scope('ApplyGradients'):
             gradients_array = sender.gradients_collector.gradients
-            depth_gradients_array =  util_common.list_depth_count(
+            depth_gradients_array = util_common.list_depth_count(
                 gradients_array)
             if depth_gradients_array == 2:
                 true_gradients_array = [gradients_array]
@@ -81,10 +95,11 @@ class ApplyGradients(object):
                             sender.optimiser, true_gradients_array[d]))
             self.check_updates_param(sender)
 
-
     def add_gradients(self, sender, **msg):
         """
         Event handler to add gradients to iteration message ops_to_run.
+        Update the training mode according to the rules specified for the
+        application
 
         See also
         ``niftynet.application.base_application.set_network_gradient_op``
@@ -103,20 +118,33 @@ class ApplyGradients(object):
 
             if not sender.training_types[sender.training_mode] == 'time':
                 self.update_training_mode_perfbased(sender,
-                                                    thresh=sender.training_values[sender.training_mode],
-                                                patience=10,
-                mode=sender.training_types[sender.training_mode])
+                                                    thresh=sender.
+                                                    training_values
+                                                    [sender.training_mode],
+                                                    patience=10,
+                                                    mode=sender.training_types[
+                                                     sender.training_mode])
             else:
                 self.update_training_mode_timebased(sender,
                                                     time=
                                                     sender.training_values[
-                                                        sender.training_mode], **msg)
+                                                        sender.training_mode],
+                                                    **msg)
 
         if msg['iter_msg'].is_training:
             msg['iter_msg'].ops_to_run['gradients'] = sender.gradient_op[
                 sender.training_mode]
 
     def update_training_mode_timebased(self, sender, time, **msg):
+        """
+        Update the training mode when the update is based on the number of
+        iterations
+        :param sender: application
+        :param time: time (iteration limit) at which an update in the
+        training should be made
+        :param msg: Contains information relative to the current state
+        :return:
+        """
         if msg['iter_msg'].current_iter <= time:
             print(msg['iter_msg'].current_iter, 'but limit is ', time)
             return
@@ -125,8 +153,18 @@ class ApplyGradients(object):
             sender.training_mode += 1
             return
 
-
     def update_training_mode_perfbased(self, sender, thresh, patience, mode):
+        """
+        Update the training mode according to the performance history. Clean
+        the performance buffer after each update
+        :param sender: application
+        :param thresh: threshold on which the update is made
+        :param patience: number of iterations to look at in the history to
+        take a decision
+        :param mode: way of looking at the performance over the last (
+        patience) number of iterations
+        :return:
+        """
         if sender.performance_history is None:
             sender.performance_history = []
         if len(sender.performance_history) < patience:
@@ -136,24 +174,22 @@ class ApplyGradients(object):
         if mode == 'max':
             value = tf.reduce_max(performance_to_consider)
         elif mode == 'perc':
-            value = np.abs((np.max(performance_to_consider) - \
-                    np.min(performance_to_consider))/np.max(
+            value = np.abs((np.max(performance_to_consider) - np.min(
+                performance_to_consider))/np.max(
                 performance_to_consider))
         elif mode == 'robust_perc':
-            perc = np.percentile(performance_to_consider, q=[5,95])
-            value = np.abs((perc[0] - perc[1])/ perc[1])
+            perc = np.percentile(performance_to_consider, q=[5, 95])
+            value = np.abs((perc[0] - perc[1]) / perc[1])
         elif mode == 'mean':
             value = np.mean(performance_to_consider)
         else:
             value = np.mean(performance_to_consider)
-        print('value is %f but target is %f' %(value, thresh))
+        print('value is %f but target is %f' % (value, thresh))
         if value < thresh:
             sender.training_mode += 1
-            tf.logging.warning("Going on to next training phase %d" \
-            % sender.training_mode)
+            tf.logging.warning("Going on to next training phase %d"
+                               % sender.training_mode)
             sender.performance_history = []
-
-
 
 
 def _apply_gradients(optimiser, gradients):

@@ -178,7 +178,7 @@ def run():
             continue
 
         # copy application specific sections to ``system_args``
-        if section == app_module.REQUIRED_CONFIG_SECTION:
+        if section in app_module.REQUIRED_CONFIG_SECTION:
             system_args['CUSTOM'] = all_args[section]
             vars(system_args['CUSTOM'])['name'] = app_name
             continue
@@ -242,7 +242,7 @@ def _parse_arguments_by_section(parents,
     try:
         add_args_func = SUPPORTED_DEFAULT_SECTIONS[section]
     except KeyError:
-        if section == required_section:
+        if section in required_section:
             def add_args_func(parser):
                 """
                 wrapper around add_customised_args

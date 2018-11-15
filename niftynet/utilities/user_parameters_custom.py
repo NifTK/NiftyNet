@@ -9,6 +9,8 @@ from __future__ import unicode_literals
 
 from niftynet.utilities.user_parameters_helper import add_input_name_args
 from niftynet.utilities.user_parameters_helper import int_array
+from niftynet.utilities.user_parameters_helper import str_array
+from niftynet.utilities.user_parameters_helper import float_array
 from niftynet.utilities.user_parameters_helper import str2boolean
 
 
@@ -171,6 +173,26 @@ def __add_segmentation_args(parser):
         choices=['foreground', 'label', 'cc'],
         default='foreground')
 
+    # # for training curriculum only
+    # parser.add_argument(
+    #     "--omit",
+    #     help="[Training only] List of variables to omit from saver and "
+    #          "restorer",
+    #     metavar='',
+    #     default=()
+    # )
+    #
+    # # for training curriculum only
+    # parser.add_argument(
+    #     "--training_mode",
+    #     help="[Training only] Which part of the training should be performed",
+    #     metavar='',
+    #     type=int,
+    #     default=0
+    # )
+
+
+
     from niftynet.application.segmentation_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser
@@ -295,5 +317,5 @@ SUPPORTED_ARG_SECTIONS = {
     'CLASSIFICATION': __add_classification_args,
     'AUTOENCODER': __add_autoencoder_args,
     'GAN': __add_gan_args,
-    'REGISTRATION': __add_registration_args
+    'REGISTRATION': __add_registration_args,
 }

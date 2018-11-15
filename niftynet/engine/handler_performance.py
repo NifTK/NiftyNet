@@ -13,6 +13,7 @@ MAX_HISTORY = 5000
 # Maximum number of losses values saved in the performance
 #  history
 
+
 class PerformanceLogger(object):
     """
     This class handles iteration events to store the current performance as
@@ -21,7 +22,6 @@ class PerformanceLogger(object):
 
     def __init__(self, **_unused):
         ITER_FINISHED.connect(self.update_performance_history)
-
 
     def update_performance_history(self, _sender, **msg):
         """
@@ -44,8 +44,8 @@ class PerformanceLogger(object):
                 _sender.performance_history = _sender.performance_history[
                                               1:] + [current_loss]
         except AttributeError:
-            tf.logging.warning("does not contain any performance field " \
-                                "called loss.")
+            tf.logging.warning("does not contain any performance field "
+                               "called total loss.")
 
 
 

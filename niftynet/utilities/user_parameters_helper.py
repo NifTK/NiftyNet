@@ -140,13 +140,15 @@ def has_section_in_config(config, required_custom_section):
     :param required_custom_section:
     :return:
     """
-    required_custom_section = standardise_string(required_custom_section)
+    required_custom_section = [standardise_string(rcs) for rcs in
+                               required_custom_section]
     if required_custom_section is not None:
         user_sections = [
             standardise_string(section_name)
             for section_name in config.sections()]
-        if required_custom_section not in user_sections:
-            raise ValueError
+        for rcs in required_custom_section:
+            if rcs not in user_sections:
+                raise ValueError
 
 
 def add_input_name_args(parser, supported_input):
