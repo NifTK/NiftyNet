@@ -37,7 +37,7 @@ class ApplyGradients(object):
         gradient_ops = sender.gradient_op
         training_types = sender.training_types
         training_values = sender.training_values
-        if not len(training_values) == len(training_types):
+        if len(training_values) != len(training_types):
             tf.logging.fatal("The number of values for training updates (%d) "
                              "is "
                              "different that the number of update types (%d) "
@@ -47,7 +47,7 @@ class ApplyGradients(object):
             tf.logging.warning("The last updates of training may not be "
                                "reached since the number of updates is %d "
                                "and the number of training modes is %d "
-                               %(len(training_values), len(gradient_ops)))
+                               % (len(training_values), len(gradient_ops)))
 
         for i in range(len(training_types)):
             if training_types[i] == 'time':
@@ -84,15 +84,15 @@ class ApplyGradients(object):
 
             bn_ops = tf.get_collection(BN_COLLECTION, PRIMARY_NAME_SCOPE)
             if not bn_ops:
-                for d in range(0, len(true_gradients_array)):
+                for ops_item in range(0, len(true_gradients_array)):
                     sender.gradient_op.append(_apply_gradients(
-                        sender.optimiser, true_gradients_array[d]))
+                        sender.optimiser, true_gradients_array[ops_item]))
 
             else:
                 with tf.get_default_graph().control_dependencies(bn_ops):
-                    for d in range(0, len(true_gradients_array)):
+                    for ops_item in range(0, len(true_gradients_array)):
                         sender.gradient_op.append(_apply_gradients(
-                            sender.optimiser, true_gradients_array[d]))
+                            sender.optimiser, true_gradients_array[ops_item]))
             self.check_updates_param(sender)
 
     def add_gradients(self, sender, **msg):
@@ -116,19 +116,19 @@ class ApplyGradients(object):
                   sender.training_mode, sender.training_types[
                       sender.training_mode])
 
-            if not sender.training_types[sender.training_mode] == 'time':
+            if 'time' not in sender.training_types[sender.training_mode]:
                 self.update_training_mode_perfbased(sender,
                                                     thresh=sender.
                                                     training_values
                                                     [sender.training_mode],
                                                     patience=10,
                                                     mode=sender.training_types[
-                                                     sender.training_mode])
+                                                        sender.training_mode])
             else:
                 self.update_training_mode_timebased(sender,
                                                     time=
                                                     sender.training_values[
-                                                           sender.training_mode]
+                                                      sender.training_mode]
                                                     , **msg)
 
         if msg['iter_msg'].is_training:
@@ -178,7 +178,7 @@ class ApplyGradients(object):
         elif mode == 'perc':
             value = np.abs((np.max(performance_to_consider) - np.min(
                 performance_to_consider))/np.max(
-                performance_to_consider))
+                    performance_to_consider))
         elif mode == 'robust_perc':
             perc = np.percentile(performance_to_consider, q=[5, 95])
             value = np.abs((perc[0] - perc[1]) / perc[1])
@@ -186,11 +186,12 @@ class ApplyGradients(object):
             value = np.mean(performance_to_consider)
         else:
             value = np.mean(performance_to_consider)
-        print('value is %f but target is %f' % (value, thresh))
+        # print('value is %f but target is %f' % (value, thresh))
         if value < thresh:
             sender.training_mode += 1
-            tf.logging.warning("Going on to next training phase %d"
-                               % sender.training_mode)
+            tf.logging.warning("Going on to next training phase %d since "
+                               "value is %f and target is %f"
+                               % (sender.training_mode, value, thresh))
             sender.performance_history = []
 
 
