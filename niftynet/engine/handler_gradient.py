@@ -49,14 +49,15 @@ class ApplyGradients(object):
                                "and the number of training modes is %d "
                                % (len(training_values), len(gradient_ops)))
 
-        for i in range(len(training_types)):
-            if training_types[i] == 'time':
-                if training_values[i] < 2:
+        for (type_train, value_train, i_update) in zip(training_types,
+                                                       training_values,
+                                                       np.arange(len(
+                                                           training_values))):
+            if type_train == 'time' and value_train < 2:
                     tf.logging.fatal("Incompatibility between training_values"
                                      " and training type with value %f and "
-                                     "type %s at update %d"
-                                     %(training_values[i],
-                                       training_types[i], i))
+                                     "type %s at training update %d"
+                                     % (value_train, type_train, i_update))
                     raise ValueError
         return
 
