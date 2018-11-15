@@ -128,8 +128,8 @@ class ApplyGradients(object):
                 self.update_training_mode_timebased(sender,
                                                     time=
                                                     sender.training_values[
-                                                        sender.training_mode],
-                                                    **msg)
+                                                           sender.training_mode]
+                                                    , **msg)
 
         if msg['iter_msg'].is_training:
             msg['iter_msg'].ops_to_run['gradients'] = sender.gradient_op[
@@ -146,10 +146,12 @@ class ApplyGradients(object):
         :return:
         """
         if msg['iter_msg'].current_iter <= time:
-            print(msg['iter_msg'].current_iter, 'but limit is ', time)
+            # print(msg['iter_msg'].current_iter, 'but limit is ', time)
             return
         else:
-            print("Limit for training time updated reached")
+            # print("Limit for training time updated reached")
+            tf.logging.warning("Updating of training mode after %d "
+                               "operations" % time)
             sender.training_mode += 1
             return
 
