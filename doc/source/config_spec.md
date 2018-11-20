@@ -446,7 +446,7 @@ Strategies applied to combine foreground masks of multiple modalities, can take 
 [max_iter](#max-iter) | `integer` | `max_iter=1000` | `10000`
 [max_checkpoints](#max-checkpoints) | `integer` | `max_checkpoints=5` | `100`
 [vars_to_restore](#vars-to-restore) | `string` | `vars_to_restore=^.*(conv_1|conv_2).*$` | `''`
-[freeze_restored_vars](#freeze-restored-vars) | `boolean` | `freeze_restored_vars=True` | `False`
+[vars_to_freeze](#vars-to-freeze) | `string` | `vars_to_freeze=^.*(conv_3|conv_4).*$` | value of `vars_to_restore`
 
 ###### `optimiser`
 Type of optimiser for computing graph gradients.  Current available options are
@@ -500,9 +500,10 @@ values of the matched variables will be initialised for a checkpoint file.
 
 See also: [guide for finetuning pre-trained networks](./transfer_learning.html)
 
-###### `freeze_restored_vars`
-Indicates whether to continue training restored variables,
-matched by regular expression `vars_to_restore`.
+###### `vars_to_freeze`
+Regular expression string to match variable names,
+values of the matched variables will be updated during training.
+Defaulting to the value of `vars_to_restore`.
 
 See also: [guide for finetuning pre-trained networks](./transfer_learning.html)
 

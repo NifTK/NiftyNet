@@ -616,10 +616,10 @@ def add_training_args(parser):
         default='')
 
     parser.add_argument(
-        "--freeze_restored_vars",
-        help="Indicates whether to continue training restored variables",
-        type=str2boolean,
-        default=False)
+        "--vars_to_freeze",
+        help="regex strings matching variable to be fixed during training",
+        type=str,
+        default='')
 
     return parser
 

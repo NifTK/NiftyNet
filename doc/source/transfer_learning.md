@@ -3,7 +3,7 @@
 With NiftyNet, it's possible to initialize your neural net with pre-trained
 variables and then fine-tune it for a seperate but similar task. This
 functionality is provided through two config file parameters: `vars_to_restore`
-and `freeze_restored_vars`.
+and `vars_to_freeze`.
 
 ### Setting up your model directory
 
@@ -43,8 +43,8 @@ bit of code:
 ```python
 import tensorflow as tf
 
-# ckpt_path: full path to checkpoint file (ex: /path/to/ckpt/model.ckpt-###)
-# output_file: name of output file (ex: /path/to/file/net_vars.txt)
+# ckpt_path: full path to checkpoint file (e.g.: /path/to/ckpt/model.ckpt-###)
+# output_file: name of output file (e.g.: /path/to/file/net_vars.txt)
 def get_ckpt_vars(ckpt_path, output_file):
     file = open(output_file, 'w+')
     for var in tf.train.list_variables(ckpt_path):
@@ -66,7 +66,7 @@ have `conv_1` or `conv_2` in their name (the `|` acts like a boolean OR).
 
 **For excluding variables:**
 
-`vars_to_restore=^((?!DenseVNet\/(skip_conv|fin_conv)).)*$` will not match any 
+`vars_to_restore=^((?!DenseVNet\/(skip_conv|fin_conv)).)*$` will not match any
 trainable variables that contain
 `DenseVNet/skip_conv` or `DenseVNet/fin_conv` in their name (the `\` is an
 escape character for `/`).
@@ -79,22 +79,19 @@ you can use it to set `vars_to_restore`.
 
 
 ### Freezing model weights
-
-If you only wish to optimise the randomized variables of your network, you can
-set `freeze_restored_vars` to **True**. This is useful for only training the top
-layers of a network while leaving the pre-trained feature extractors intact.
-
-While `freeze_restored_vars` does not allow you to pick and choose which vars
-to optimise, it stills offers quite a bit of flexibility. For example, when
-adapting your network to a new task your can first freeze your feature
-extractors until your top layers are reasonably well trained. Then you can stop
-training, unfreeze all layers and proceed to fine-tune the whole network
-with a lower learning rate.
+The model variables matched by `vars_to_restore` will be restored from
+checkpoint and by default, remain intact during training.  To change the model
+parameter updating behaviour, you can also specify a regular expression of
+`vars_to_freeze`.  The matched variables within the collection of trainable
+parameters (`tf.trainable_variables()`) will *not* be updated during training.
+This is useful for training a subset of layers of a network while leaving the
+rest of the network fixed.
 
 
 ### Common Pitfalls
 
-Transfer learning in NiftyNet will work between any models that share the same variables as those being restored. In other words, you can completely change
+Transfer learning in NiftyNet will work between any models that share the same
+variables as those being restored. In other words, you can completely change
 network layers that you plan to randomise but if you try to restore variables
 that aren't the exact shape and name between models, Tensorflow and NiftyNet
 will throw an error. For example, you may encounter the following error in your
@@ -106,10 +103,12 @@ model.ckpt-### not found or variables to restore do not match the current
 application graph
 ```
 
-This means that certain variables in your network are not present in your model checkpoint. Often this can occur unexpectedly when you restore variables that
-were frozen during the previous round of training. Since these variables weren't
-being trained, optimizer specific variables used in methods like Adam were never
-created and therefore never saved in the checkpoint. You can overcome this by
-simply restoring all variables except for those used by Adam: `vars_to_restore =
-^((?!(Adam)).)*$`. In general, if you read the error thrown by Tensorflow, you
-should be able to figure out which variables are causing the problem.
+This means that certain variables in your network are not present in your model
+checkpoint. Often this can occur unexpectedly when you restore variables that
+were frozen during the previous round of training. Since these variables
+weren't being trained, optimizer specific variables used in methods like Adam
+were never created and therefore never saved in the checkpoint. You can
+overcome this by simply restoring all variables except for those used by Adam:
+`vars_to_restore = ^((?!(Adam)).)*$`. In general, if you read the error thrown
+by Tensorflow, you should be able to figure out which variables are causing the
+problem.
