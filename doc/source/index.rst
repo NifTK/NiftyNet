@@ -105,10 +105,10 @@ Guides
    config_spec
    filename_matching
    window_sizes
-   model_zoo
    extending_app
    extending_event_handler
    extending_net
+   transfer_learning
    contributing
 
 

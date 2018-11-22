@@ -160,7 +160,7 @@ The filenames with these keywords will not be used as input.
 See also: [input filename matching guide](./filename_matching.html)
 
 ###### `filename_removefromid`
-Regular expression for extracting subject id from filename, 
+Regular expression for extracting subject id from filename,
 matched pattern will be removed from the file names to form the subject id.
 
 See also: [input filename matching guide](./filename_matching.html)
@@ -331,7 +331,7 @@ The same amount of padding will be removed when before writing the output volume
 See also: [Patch-base analysis guide](./window_sizes.html)
 
 ###### `volume_padding_mode`
-Set which type of numpy padding to do, see 
+Set which type of numpy padding to do, see
 [https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.pad.html](https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.pad.html) for details.
 
 ###### `window_sampling`
@@ -445,6 +445,8 @@ Strategies applied to combine foreground masks of multiple modalities, can take 
 [tensorboard_every_n](#tensorboard-every-n) | `integer` | `tensorboard_every_n=5` | `20`
 [max_iter](#max-iter) | `integer` | `max_iter=1000` | `10000`
 [max_checkpoints](#max-checkpoints) | `integer` | `max_checkpoints=5` | `100`
+[vars_to_restore](#vars-to-restore) | `string` | `vars_to_restore=^.*(conv_1|conv_2).*$` | `''`
+[vars_to_freeze](#vars-to-freeze) | `string` | `vars_to_freeze=^.*(conv_3|conv_4).*$` | value of `vars_to_restore`
 
 ###### `optimiser`
 Type of optimiser for computing graph gradients.  Current available options are
@@ -491,6 +493,19 @@ save the random model initialisation.
 
 ###### `max_checkpoints`
 Maximum number of recent checkpoints to keep.
+
+###### `vars_to_restore`
+Regular expression string to match variable names,
+values of the matched variables will be initialised for a checkpoint file.
+
+See also: [guide for finetuning pre-trained networks](./transfer_learning.html)
+
+###### `vars_to_freeze`
+Regular expression string to match variable names,
+values of the matched variables will be updated during training.
+Defaulting to the value of `vars_to_restore`.
+
+See also: [guide for finetuning pre-trained networks](./transfer_learning.html)
 
 ##### Validation during training
 Setting [`validation_every_n`](#validation-every-n) to a positive integer
@@ -584,7 +599,7 @@ volumes (This can be slow depending on the input volume dimensionality).
 ###### `scaling_percentage`
 Float array indicates a random spatial scaling should be applied
 (This can be slow depending on the input volume dimensionality).
-The option accepts percentages relative to 100 (the original input size). 
+The option accepts percentages relative to 100 (the original input size).
 E.g, `(-50, 50)` indicates transforming
 image (size `d`) to image with its size in between `0.5*d` and `1.5d`.
 
