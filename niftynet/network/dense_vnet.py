@@ -138,8 +138,14 @@ class DenseVNet(BaseNet):
 
         dense_vblocks = []
         for i in range(num_blocks):
-            vblock = DenseFeatureStackBlockWithSkipAndDownsample(dense_ch[i], 3,
-                dil_rate[i], seg_ch[i], down_ch[i], use_bdo, acti_func='relu')
+            vblock = DenseFeatureStackBlockWithSkipAndDownsample(
+                n_dense_channels=dense_ch[i],
+                kernel_size=3,
+                dilation_rates=dil_rate[i],
+                n_seg_channels=seg_ch[i],
+                n_down_channels=down_ch[i],
+                use_bdo=use_bdo,
+                acti_func='relu')
             dense_vblocks.append(vblock)
 
         # Create final convolutional layer
@@ -192,7 +198,8 @@ class DenseVNet(BaseNet):
         downsample_layer = DownSampleLayer(func='AVG', kernel_size=3, stride=2)
         downsampled_tensor = downsample_layer(input_tensor)
         bn_layer = BNLayer()
-        downsampled_tensor = bn_layer(downsampled_tensor, is_training=is_training)
+        downsampled_tensor = bn_layer(
+            downsampled_tensor, is_training=is_training)
         feature_maps.append(downsampled_tensor)
 
         # All feature maps should match the downsampled tensor's shape
@@ -331,7 +338,6 @@ class DenseFeatureStackBlock(TrainableLayer):
         self.use_bdo = use_bdo
         self.kwargs = kwargs
 
-
     def create_block(self):
         dfs_block = []
         for _ in self.dilation_rates:
@@ -349,7 +355,6 @@ class DenseFeatureStackBlock(TrainableLayer):
             dfs_block.append(conv)
 
         return dfs_block
-
 
     def layer_op(self, input_tensor, is_training=True, keep_prob=None):
         # Create dense feature stack block
@@ -445,9 +450,7 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
         self.use_bdo = use_bdo
         self.kwargs = kwargs
 
-
     def create_block(self):
-
         dfs_block = DenseFeatureStackBlock(self.n_dense_channels,
                                            self.kernel_size,
                                            self.dilation_rates,
@@ -473,7 +476,6 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
         return dfssd_block(dfs_block=dfs_block,
                            skip_conv=skip_conv,
                            down_conv=down_conv)
-
 
     def layer_op(self, input_tensor, is_training=True, keep_prob=None):
         # Create dense feature stack block with skip and downsample
