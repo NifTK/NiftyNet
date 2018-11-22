@@ -324,17 +324,21 @@ class SegmentationApplication(BaseApplication):
 
             # Get all vars
             to_optimise = tf.trainable_variables()
-            self.action_param.vars_to_freeze = \
+            vars_to_freeze = \
                 self.action_param.vars_to_freeze or \
                 self.action_param.vars_to_restore
-            if self.action_param.vars_to_freeze:
+            if vars_to_freeze:
                 import re
-                var_regex = re.compile(self.action_param.vars_to_freeze)
+                var_regex = re.compile(vars_to_freeze)
                 # Only optimise vars that are not frozen
                 to_optimise = \
                     [v for v in to_optimise if not var_regex.search(v.name)]
-                tf.logging.info("Optimizing %d out of %d variables",
-                    len(to_optimise), len(tf.trainable_variables()))
+                tf.logging.info(
+                    "Optimizing %d out of %d trainable variables, "
+                    "the other variables fixed (--vars_to_freeze %s)",
+                    len(to_optimise),
+                    len(tf.trainable_variables()),
+                    vars_to_freeze)
 
             grads = self.optimiser.compute_gradients(
                 loss, var_list=to_optimise, colocate_gradients_with_ops=True)

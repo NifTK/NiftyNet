@@ -69,35 +69,40 @@ class ModelRestorer(object):
         :param _unused:
         :return:
         """
+        checkpoint = '{}-{}'.format(self.file_name_prefix, self.initial_iter)
+        to_restore = None  # tf.train.Saver's default value, restoring all
 
-        # Get all vars
-        var_list = tf.global_variables()
         if self.vars_to_restore:
+            # partially restore (updating `to_restore` list)
             tf.logging.info("Finding variables to restore...")
             import re
             # Determine which vars to
             # restore using regex matching
             var_regex = re.compile(self.vars_to_restore)
             to_restore, to_randomise = [], []
-            for restorable in var_list:
+            for restorable in tf.global_variables():
                 if var_regex.search(restorable.name):
                     to_restore.append(restorable)
                 else:
                     to_randomise.append(restorable)
 
-            tf.logging.info("Randomizing {} variables".format(
-                len(to_randomise)))
+            if not to_restore:
+                tf.logging.fatal(
+                    'vars_to_restore specified: %s, but nothing matched.',
+                    self.vars_to_restore)
+                assert to_restore, 'Nothing to restore (--vars_to_restore)'
+
+            var_names = [  # getting first three item to print
+                var_restore.name for var_restore in to_restore[:3]]
+            tf.logging.info(
+                'Restoring %s out of %s variables from %s: \n%s, ...',
+                len(to_restore),
+                len(tf.global_variables()),
+                checkpoint, ',\n'.join(var_names))
             # Initialize vars to randomize
             init_op = tf.variables_initializer(to_randomise)
             tf.get_default_session().run(init_op)
-            tf.logging.info('Restoring %d variables from iter %d',
-                            len(to_restore), self.initial_iter)
-        else:
-            # Restore all vars
-            to_restore = None
 
-        checkpoint = '{}-{}'.format(self.file_name_prefix, self.initial_iter)
-        tf.logging.info('Accessing %s', checkpoint)
 
         try:
             saver = tf.train.Saver(
