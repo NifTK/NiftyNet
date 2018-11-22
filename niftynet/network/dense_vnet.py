@@ -125,8 +125,8 @@ class DenseVNet(BaseNet):
         initial_conv = ConvolutionalLayer(
             hyperparams['n_initial_conv_channels'],
             kernel_size=5,
-            stride=2,
-            name='initial_conv')
+            stride=2)
+            # name='initial_conv')
 
         # Create dense vblocks
         num_blocks = len(hyperparams["n_dense_channels"]) # Num dense blocks
@@ -147,8 +147,8 @@ class DenseVNet(BaseNet):
             self.num_classes,
             kernel_size=hyperparams['seg_kernel_size'],
             with_bn=False,
-            with_bias=True,
-            name='final_conv')
+            with_bias=True)
+            # name='final_conv')
 
         # Create a structure with all the fields of a DenseVNet
         dense_vnet = namedtuple('DenseVNet',
@@ -232,7 +232,7 @@ class DenseVNet(BaseNet):
         if hyperparams['use_prior']:
             spatial_prior_shape = [hyperparams['prior_size']] * n_spatial_dims
             # Prior shape must be 4 or 5 dim to work with linear_resize layer
-            # ie to conform to shape=[batch, X, Y, Z, channels] 
+            # ie to conform to shape=[batch, X, Y, Z, channels]
             prior_shape = [1] + spatial_prior_shape + [1]
             spatial_prior = SpatialPriorBlock(prior_shape, feature_map_shape)
             output += spatial_prior()
@@ -431,7 +431,7 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
                  n_seg_channels,
                  n_down_channels,
                  use_bdo,
-                 name='dense_feature_stack_block_with_skip_and_downsample',
+                 name='dense_feature_stack_block',
                  **kwargs):
 
         super(DenseFeatureStackBlockWithSkipAndDownsample, self).__init__(
@@ -456,7 +456,7 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
 
         skip_conv = ConvolutionalLayer(self.n_seg_channels,
                                        kernel_size=self.kernel_size,
-                                       name='skip_conv',
+                                       # name='skip_conv',
                                        **self.kwargs)
 
         down_conv = None
@@ -464,7 +464,7 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
             down_conv = ConvolutionalLayer(self.n_down_channels,
                                            kernel_size=self.kernel_size,
                                            stride=2,
-                                           name='down_conv',
+                                           # name='down_conv',
                                            **self.kwargs)
 
         dfssd_block = namedtuple('DenseSDBlock',
