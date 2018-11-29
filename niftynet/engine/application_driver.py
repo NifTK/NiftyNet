@@ -56,6 +56,7 @@ class ApplicationDriver(object):
         self.max_checkpoints = 2
         self.save_every_n = 0
         self.tensorboard_every_n = -1
+        self.vars_to_restore = ''
 
         self.initial_iter = 0
         self.final_iter = 0
@@ -110,6 +111,8 @@ class ApplicationDriver(object):
             self.max_checkpoints = max(self.max_checkpoints,
                                        train_param.max_checkpoints)
             self.validation_every_n = train_param.validation_every_n
+            self.vars_to_restore = train_param.vars_to_restore \
+                if hasattr(train_param, 'vars_to_restore') else ''
             if self.validation_every_n > 0:
                 self.validation_max_iter = max(self.validation_max_iter,
                                                train_param.validation_max_iter)
@@ -133,7 +136,7 @@ class ApplicationDriver(object):
         self.data_partitioner.reset()
         if data_param:
             do_new_partition = \
-                self.is_training_action and self.initial_iter == 0 and \
+                self.is_training_action and \
                 (not os.path.isfile(system_param.dataset_split_file)) and \
                 (train_param.exclude_fraction_for_validation > 0 or
                  train_param.exclude_fraction_for_inference > 0)

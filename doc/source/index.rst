@@ -109,6 +109,7 @@ Guides
    extending_app
    extending_event_handler
    extending_net
+   transfer_learning
    contributing
 
 
