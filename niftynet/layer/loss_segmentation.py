@@ -37,7 +37,7 @@ class LossFunction(Layer):
             loss_func_params if loss_func_params is not None else dict()
 
         data_loss_function_name = self._data_loss_func.__name__
-        if data_loss_function_name.startswith('cross_entropy')\
+        if data_loss_function_name.startswith('cross_entropy') \
                 or 'xent' in data_loss_function_name:
             tf.logging.info(
                 'Cross entropy loss function calls '
@@ -265,22 +265,23 @@ def dice_plus_xent_loss(prediction, ground_truth, weight_map=None):
     if weight_map is not None:
         raise NotImplementedError
 
-    num_classes = tf.shape(prediction)[-1]
-
     prediction = tf.cast(prediction, tf.float32)
     loss_xent = cross_entropy(prediction, ground_truth)
 
-    # Dice as according to the paper:
-    one_hot = labels_to_one_hot(ground_truth, num_classes=num_classes)
-    softmax_of_logits = tf.nn.softmax(prediction)
+    softmax_of_logits = tf.nn.softmax(prediction, axis=-1)
 
-    dice_numerator = -2.0 * tf.sparse_reduce_sum(one_hot * softmax_of_logits,
-                                                 reduction_axes=[0])
+    # Dice as according to the paper:
+    num_classes = tf.shape(prediction)[-1]
+    one_hot = labels_to_one_hot(ground_truth, num_classes=num_classes)
+
+    dice_numerator = 2.0 * tf.sparse_reduce_sum(one_hot * softmax_of_logits,
+                                                reduction_axes=[0])
     dice_denominator = tf.reduce_sum(softmax_of_logits, reduction_indices=[0]) + \
                        tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
 
-    epsilon_denominator = 0.00001
-    loss_dice = dice_numerator / (dice_denominator + epsilon_denominator)
+    epsilon = 0.00001
+
+    loss_dice = -(dice_numerator + epsilon) / (dice_denominator + epsilon)
 
     return loss_dice + loss_xent
 
@@ -316,15 +317,15 @@ def sensitivity_specificity_loss(prediction,
     one_cold = 1 - one_hot
 
     # chosen region may contain no voxels of a given label. Prevents nans.
-    epsilon_denominator = 1e-5
+    epsilon = 1e-5
 
     squared_error = tf.square(one_hot - prediction)
     specificity_part = tf.reduce_sum(
         squared_error * one_hot, 0) / \
-                       (tf.reduce_sum(one_hot, 0) + epsilon_denominator)
+                       (tf.reduce_sum(one_hot, 0) + epsilon)
     sensitivity_part = \
         (tf.reduce_sum(tf.multiply(squared_error, one_cold), 0) /
-         (tf.reduce_sum(one_cold, 0) + epsilon_denominator))
+         (tf.reduce_sum(one_cold, 0) + epsilon))
 
     return tf.reduce_sum(r * specificity_part + (1 - r) * sensitivity_part)
 
@@ -477,9 +478,9 @@ def dice(prediction, ground_truth, weight_map=None):
         dice_denominator = \
             tf.reduce_sum(tf.square(prediction), reduction_indices=[0]) + \
             tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
-    epsilon_denominator = 0.00001
+    epsilon = 0.00001
 
-    dice_score = dice_numerator / (dice_denominator + epsilon_denominator)
+    dice_score = (dice_numerator + epsilon) / (dice_denominator + epsilon)
     # dice_score.set_shape([num_classes])
     # minimising (1 - dice_coefficients)
     return 1.0 - tf.reduce_mean(dice_score)
@@ -516,9 +517,9 @@ def dice_nosquare(prediction, ground_truth, weight_map=None):
                                                     reduction_axes=[0])
         dice_denominator = tf.reduce_sum(prediction, reduction_indices=[0]) + \
                            tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
-    epsilon_denominator = 0.00001
+    epsilon = 0.00001
 
-    dice_score = dice_numerator / (dice_denominator + epsilon_denominator)
+    dice_score = (dice_numerator + epsilon) / (dice_denominator + epsilon)
     # dice_score.set_shape([num_classes])
     # minimising (1 - dice_coefficients)
     return 1.0 - tf.reduce_mean(dice_score)
@@ -593,9 +594,10 @@ def dice_dense(prediction, ground_truth, weight_map=None):
     dice_denominator = \
         tf.reduce_sum(tf.square(prediction), axis=reduce_axes) + \
         tf.reduce_sum(tf.square(ground_truth), axis=reduce_axes)
-    epsilon_denominator = 0.00001
 
-    dice_score = dice_numerator / (dice_denominator + epsilon_denominator)
+    epsilon = 0.00001
+
+    dice_score = (dice_numerator + epsilon) / (dice_denominator + epsilon)
     return 1.0 - tf.reduce_mean(dice_score)
 
 
@@ -622,7 +624,7 @@ def dice_dense_nosquare(prediction, ground_truth, weight_map=None):
     dice_denominator = \
         tf.reduce_sum(prediction, axis=reduce_axes) + \
         tf.reduce_sum(ground_truth, axis=reduce_axes)
-    epsilon_denominator = 0.00001
+    epsilon = 0.00001
 
-    dice_score = dice_numerator / (dice_denominator + epsilon_denominator)
+    dice_score = (dice_numerator + epsilon) / (dice_denominator + epsilon)
     return 1.0 - tf.reduce_mean(dice_score)

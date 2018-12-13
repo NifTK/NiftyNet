@@ -21,7 +21,9 @@ from niftynet.engine.signal import GRAPH_CREATED, SESS_FINISHED, SESS_STARTED
 #    return
 
 
-def get_initialised_driver(starting_iter=0, model_dir_rand=True):
+def get_initialised_driver(starting_iter=0,
+                           model_dir_rand=True,
+                           vars_to_restore=''):
     if model_dir_rand:
         model_dir = os.path.join('.', 'testing_data', 'tmp', str(uuid.uuid4()))
         os.makedirs(model_dir)
@@ -54,6 +56,7 @@ def get_initialised_driver(starting_iter=0, model_dir_rand=True):
             validation_every_n=-1,
             exclude_fraction_for_validation=0.1,
             exclude_fraction_for_inference=0.1,
+            vars_to_restore=vars_to_restore,
             lr=0.01),
         'CUSTOM': ParserNamespace(
             vector_size=100,
@@ -256,6 +259,35 @@ class ApplicationDriverTest(tf.test.TestCase):
             after_init = sess.run(test_tensor)
             self.assertAllClose(after_init[0], expected_init)
             _ = sess.run(tf.global_variables())
+
+    def test_from_file_finetuning(self):
+        test_driver = get_initialised_driver(
+            40, False, '.*conv_bn_selu/.*conv_.*')
+        expected_init = np.array(
+            [[-0.23192197, 0.60880029, -0.24921742, -0.00186354, -0.3345384,
+              0.16067748, -0.2210995, -0.19460233, -0.3035436, -0.42839912,
+              -0.0489039, -0.90753943, -0.12664583, -0.23129687, 0.01584663,
+              -0.43854219, 0.40412974, 0.0396539, -0.1590578, -0.53759819]],
+            dtype=np.float32)
+        graph = test_driver.create_graph(test_driver.app, 1, True)
+        with self.test_session(graph=graph) as sess:
+            test_tensor = tf.get_default_graph().get_tensor_by_name(
+                "G/conv_bn_selu/conv_/w:0")
+            test_negative_tensor = tf.get_default_graph().get_tensor_by_name(
+                "D/conv_relu/conv_/b:0")
+            with self.assertRaisesRegexp(
+                    tf.errors.FailedPreconditionError,
+                    'uninitialized value'):
+                _ = sess.run(test_tensor)
+            ModelRestorer(**vars(test_driver)).restore_model(None)
+            after_init = sess.run(test_tensor)
+            after_init_negative = sess.run(test_negative_tensor)
+            self.assertAllClose(after_init[0], expected_init)
+            # the not matched should be initialised using default initializer
+            self.assertEqual(np.any(after_init_negative), False)
+            _ = sess.run(tf.global_variables())
+            bad_init = sess.run(tf.report_uninitialized_variables())
+            self.assertEqual(bad_init.size, 0)
 
 
 if __name__ == "__main__":

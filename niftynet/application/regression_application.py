@@ -124,7 +124,8 @@ class RegressionApplication(BaseApplication):
             if train_param.scaling_percentage:
                 augmentation_layers.append(RandomSpatialScalingLayer(
                     min_percentage=train_param.scaling_percentage[0],
-                    max_percentage=train_param.scaling_percentage[1]))
+                    max_percentage=train_param.scaling_percentage[1],
+                    antialiasing=train_param.antialiasing))
             if train_param.rotation_angle:
                 rotation_layer = RandomRotationLayer()
                 if train_param.rotation_angle:
@@ -287,8 +288,27 @@ class RegressionApplication(BaseApplication):
                 loss = data_loss + reg_loss
             else:
                 loss = data_loss
+
+            # Get all vars
+            to_optimise = tf.trainable_variables()
+            vars_to_freeze = \
+                self.action_param.vars_to_freeze or \
+                self.action_param.vars_to_restore
+            if vars_to_freeze:
+                import re
+                var_regex = re.compile(vars_to_freeze)
+                # Only optimise vars that are not frozen
+                to_optimise = \
+                    [v for v in to_optimise if not var_regex.search(v.name)]
+                tf.logging.info(
+                    "Optimizing %d out of %d trainable variables, "
+                    "the other variables are fixed (--vars_to_freeze %s)",
+                    len(to_optimise),
+                    len(tf.trainable_variables()),
+                    vars_to_freeze)
+
             grads = self.optimiser.compute_gradients(
-                loss, colocate_gradients_with_ops=True)
+                loss, var_list=to_optimise, colocate_gradients_with_ops=True)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
             # collecting output variables

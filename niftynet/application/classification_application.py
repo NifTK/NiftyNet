@@ -135,7 +135,8 @@ class ClassificationApplication(BaseApplication):
             if train_param.scaling_percentage:
                 augmentation_layers.append(RandomSpatialScalingLayer(
                     min_percentage=train_param.scaling_percentage[0],
-                    max_percentage=train_param.scaling_percentage[1]))
+                    max_percentage=train_param.scaling_percentage[1],
+                    antialiasing=train_param.antialiasing))
             if train_param.rotation_angle or \
                     self.action_param.rotation_angle_x or \
                     self.action_param.rotation_angle_y or \
