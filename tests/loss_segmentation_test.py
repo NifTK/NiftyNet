@@ -98,6 +98,18 @@ class DicePlusXEntTest(tf.test.TestCase):
             # Dice loss of -mean(1, .5, .5)=-2/3
             self.assertAllClose(loss_value.eval(), .5 * np.log(2) - 2. / 3., atol=1e-3)
 
+    def test_dice_plus_weighted(self):
+        with self.test_session():
+            predicted = tf.constant(
+                [[0, 9999, 9999], [9999, 0, 0], [0, 9999, 9999], [9999, 0, 0]],
+                dtype=tf.float32, name='predicted')
+            labels = tf.constant([2, 0, 1, 0], dtype=tf.int16, name='labels')
+            weights = tf.expand_dims(tf.constant([0, 1, 0, 0], dtype=tf.float32), axis=0)
+            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
+            test_loss_func = LossFunction(3, loss_type='DicePlusXEnt', softmax=True)
+            loss_value = test_loss_func(predicted, labels, weight_map=weights)
+            self.assertAllClose(loss_value.eval(), -1.)
+
 
 class OneHotTester(tf.test.TestCase):
     def test_vs_tf_onehot(self):
@@ -223,10 +235,9 @@ class DiceTest(tf.test.TestCase):
                 [[0, 10], [10, 0], [10, 0], [10, 0]],
                 dtype=tf.float32, name='predicted')
             labels = tf.constant([[1, 0, 0, 0]], dtype=tf.int64, name='labels')
-            predicted, labels = [tf.expand_dims(x, axis=0) for x in (predicted, labels)]
+            predicted, labels, weights = [tf.expand_dims(x, axis=0) for x in (predicted, labels, weights)]
 
-            test_loss_func = LossFunction(2,
-                                          loss_type='Dice')
+            test_loss_func = LossFunction(2, loss_type='Dice')
             one_minus_dice_score = test_loss_func(predicted, labels,
                                                   weight_map=weights)
             self.assertAllClose(one_minus_dice_score.eval(), 0.0, atol=1e-4)
