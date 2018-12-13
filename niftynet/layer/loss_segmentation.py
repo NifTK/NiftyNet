@@ -280,12 +280,13 @@ def dice_plus_xent_loss(prediction, ground_truth, weight_map=None):
                            tf.sparse_reduce_sum(one_hot * weight_map_nclasses, reduction_axes=[0])
 
     else:
-        dice_numerator = 2.0 * tf.sparse_reduce_sum(one_hot * softmax_of_logits,reduction_axes=[0])
+        dice_numerator = 2.0 * tf.sparse_reduce_sum(one_hot * softmax_of_logits, reduction_axes=[0])
         dice_denominator = tf.reduce_sum(softmax_of_logits, reduction_indices=[0]) + \
                            tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
 
     epsilon = 0.00001
     loss_dice = -(dice_numerator + epsilon) / (dice_denominator + epsilon)
+    dice_numerator = tf.Print(dice_denominator, [dice_numerator, dice_denominator, loss_dice])
 
     return loss_dice + loss_xent
 
