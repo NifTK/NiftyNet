@@ -8,6 +8,16 @@ This document may be useful to anyone new to NiftyNet who is wishing to adapt th
 
 ## Data Preparation
 
+The config, trained weights can be downloaded by
+```bash
+net_download unet_histology
+```
+(Replace `net_download` with `python net_download.py` if you cloned the NiftyNet repository; see also: `unet_histology_model_zoo` entry in the [model zoo repo](https://github.com/NifTK/NiftyNetModelZoo)).
+By default the data will be downloaded into folder
+- `~/niftynet/data/unet_histology` (for demo images);
+- `~/niftynet/extensions/unet_histology` (for application configurations);
+- `~/niftynet/models/unet_histology` (for trained weights).
+
 The training data was downloaded from [warwick.ac.uk/fac/sci/dcs/research/tia/glascontest/download](https://warwick.ac.uk/fac/sci/dcs/research/tia/glascontest/download/). The data served up by the challenge site contains multinomial training labels with a random labelling order. To make it more suitable for processing by a neural net, a sensible first step is to binarise the target labels using a script similar to the following:
 ```python
 import nibabel as nib
