@@ -100,6 +100,7 @@ should be prepared in the following steps:
    See also the configuration doc for [`name` parameter](./config_spec.html#name).
 
 ## Share the network and trained weights
-   Please consider submitting the design to our [model zoo](./model_zoo.html)
-   (contact `niftynet-team@googlegroups.com` if interested).
+   Please consider submitting the design to our [model zoo](./model_zoo.html).
+   
+   _See also: [Contributor guide/submitting model zoo entries](./contributing.html#submitting-model-zoo-entries)._
 
