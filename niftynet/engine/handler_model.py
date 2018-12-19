@@ -10,6 +10,11 @@ from niftynet.engine.application_variables import global_vars_init_or_restore
 from niftynet.engine.signal import \
     ITER_FINISHED, SESS_FINISHED, SESS_STARTED
 from niftynet.io.misc_io import touch_folder
+from tensorflow.python.tools.inspect_checkpoint import print_tensors_in_checkpoint_file
+from tensorflow.contrib.framework.python.framework import checkpoint_utils
+
+
+
 
 FILE_PREFIX = 'model.ckpt'
 
@@ -36,9 +41,13 @@ class ModelRestorer(object):
                  model_dir,
                  initial_iter=0,
                  is_training_action=True,
+                 omit_restore=None,
                  **_unused):
+        if omit_restore is None:
+            omit_restore = []
         self.initial_iter = initial_iter
         self.file_name_prefix = make_model_name(model_dir)
+        self.omit_restore = omit_restore
         # randomly initialise or restoring model
         if is_training_action and initial_iter == 0:
             SESS_STARTED.connect(self.rand_init_model)
@@ -70,9 +79,29 @@ class ModelRestorer(object):
         tf.logging.info('starting from iter %d', self.initial_iter)
         checkpoint = '{}-{}'.format(self.file_name_prefix, self.initial_iter)
         tf.logging.info('Accessing %s', checkpoint)
+        all_variables = tf.get_collection_ref(tf.GraphKeys.GLOBAL_VARIABLES)
+
+        var_list = [v for v in all_variables]
+        var_list_fin = [v for v in var_list if len([f for f in list(
+            self.omit_restore) if f in v.name]) == 0]
+        all_ckpt_var = checkpoint_utils.list_variables(checkpoint)
+        all_names = [c[0] for c in all_ckpt_var]
         try:
-            saver = tf.train.Saver(save_relative_paths=True)
+            v_to_init = [v for v in all_variables if v not in var_list_fin]
+            var_list_fin2 = [v for v in var_list_fin if v.name[:-2] in
+                             all_names]
+            saver = tf.train.Saver(save_relative_paths=True,
+                                   var_list=var_list_fin2)
             saver.restore(tf.get_default_session(), checkpoint)
+            var_list_fin2_names = [ v.name for v in var_list_fin2]
+            v_to_init2 = [v for v in all_variables if v.name not in
+                          var_list_fin2_names]
+            for v in v_to_init2:
+                print("Initialising ", v.name)
+            init_others = tf.variables_initializer(
+                v_to_init2)
+            tf.get_default_session().run(init_others)
+            print("Restored model")
         except tf.errors.NotFoundError:
             tf.logging.fatal(
                 'checkpoint %s not found or variables to restore do not '
@@ -95,8 +124,12 @@ class ModelSaver(object):
                  save_every_n=0,
                  max_checkpoints=1,
                  is_training_action=True,
+                 omit_save=None,
                  **_unused):
 
+        if omit_save is None:
+            omit_save = []
+        self.omit_save = omit_save
         self.save_every_n = save_every_n
         self.max_checkpoints = max_checkpoints
         self.file_name_prefix = make_model_name(model_dir)
@@ -119,8 +152,15 @@ class ModelSaver(object):
         :param _unused:
         :return:
         """
+        all_variables = tf.get_collection_ref(tf.GraphKeys.GLOBAL_VARIABLES)
+        var_list = [v for v in all_variables if
+                    "Adam" not in v.name]
+        var_list = [v for v in all_variables]
+        var_list_fin = [ v for v in var_list if len([f for f in list(
+            self.omit_save) if f in v.name]) == 0]
         self.saver = tf.train.Saver(
-            max_to_keep=self.max_checkpoints, save_relative_paths=True)
+            max_to_keep=self.max_checkpoints, save_relative_paths=True,
+            var_list=var_list_fin)
 
     def save_model(self, _sender, **msg):
         """

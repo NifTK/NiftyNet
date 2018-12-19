@@ -94,6 +94,20 @@ def __add_segmentation_args(parser):
         default=-1)
 
     parser.add_argument(
+        "--change_mrcnn",
+        metavar='',
+        help="Set number of classes",
+        type=str2boolean,
+        default=False)
+
+    parser.add_argument(
+        "--change_rpn",
+        metavar='',
+        help="Set number of classes",
+        type=str2boolean,
+        default=True)
+
+    parser.add_argument(
         "--output_prob",
         metavar='',
         help="[Inference only] whether to output multi-class probabilities",
@@ -172,6 +186,30 @@ def __add_segmentation_args(parser):
              "component. [foreground, label, or cc]",
         choices=['foreground', 'label', 'cc'],
         default='foreground')
+
+    parser.add_argument(
+        "--training_dist",
+        help="[Training only] Distance transfomraton to apply",
+        metavar='',
+        type=int,
+        default=0
+    )
+
+    parser.add_argument(
+        "--soft_label",
+        help="[Training only] Distance transfomraton to apply",
+        metavar='',
+        type=float,
+        default=0.0
+    )
+
+    parser.add_argument(
+        "--nms_threshold_infer",
+        help="[Training only] Distance transfomraton to apply",
+        metavar='',
+        type=float,
+        default=0.7
+    )
 
     # # for training curriculum only
     # parser.add_argument(

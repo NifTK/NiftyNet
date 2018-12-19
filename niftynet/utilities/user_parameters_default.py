@@ -619,6 +619,23 @@ def add_training_args(parser):
     )
 
     parser.add_argument(
+        "--training_item",
+        metavar='',
+        type=int,
+        default=0,
+        help="[Training only] Where to start from the list of training mode "
+             "to go through,"
+    )
+
+    parser.add_argument(
+        "--training_list",
+        metavar='',
+        type=int_array,
+        default=(),
+        help="[Training only] List of training modes to go through,"
+    )
+
+    parser.add_argument(
         "--training_values",
         type=float_array,
         default=(),

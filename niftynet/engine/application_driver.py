@@ -52,6 +52,9 @@ class ApplicationDriver(object):
         self.num_threads = 0
         self.num_gpus = 0
         self.model_dir = None
+        self.training_type = None
+        self.omit_restore = None
+        self.omit_save = None
 
         self.max_checkpoints = 2
         self.save_every_n = 0
@@ -96,6 +99,7 @@ class ApplicationDriver(object):
         # hardware-related parameters
         self.num_threads = max(system_param.num_threads, 1) \
             if self.is_training_action else 1
+
         self.num_gpus = system_param.num_gpus \
             if self.is_training_action else min(system_param.num_gpus, 1)
         set_cuda_device(system_param.cuda_devices)
@@ -109,6 +113,7 @@ class ApplicationDriver(object):
             self.tensorboard_every_n = train_param.tensorboard_every_n
             self.max_checkpoints = max(self.max_checkpoints,
                                        train_param.max_checkpoints)
+            self.training_mode = train_param.training_mode_start
             self.validation_every_n = train_param.validation_every_n
             if self.validation_every_n > 0:
                 self.validation_max_iter = max(self.validation_max_iter,
@@ -123,6 +128,9 @@ class ApplicationDriver(object):
         if self.initial_iter < 0:
             self.initial_iter = infer_latest_model_file(
                 os.path.join(self.model_dir, 'models'))
+            action_param.starting_iter = self.initial_iter
+        self.omit_restore = train_param.omit_restore
+        self.omit_save = train_param.omit_save
 
         # create an application instance
         assert app_param, 'application specific param. not specified'
@@ -269,7 +277,7 @@ class ApplicationDriver(object):
                 outputs_collector.finalise_output_op()
             application.outputs_collector = outputs_collector
             application.gradients_collector = gradients_collector
-            GRAPH_CREATED.send(application, iter_msg=None)
+            GRAPH_CREATED.send(application, iter_msg=0)
         return graph
 
     def load_event_handlers(self, names):
@@ -347,6 +355,7 @@ class ApplicationDriver(object):
         :return:
         """
         # broadcasting event of starting an iteration
+
         ITER_STARTED.send(application, iter_msg=iteration_message)
 
         # ``iter_msg.ops_to_run`` are populated with the ops to run in
@@ -361,3 +370,5 @@ class ApplicationDriver(object):
 
         # broadcasting event of finishing an iteration
         ITER_FINISHED.send(application, iter_msg=iteration_message)
+        if iteration_message.is_training:
+            print("training mode after iter is %d" %application.training_mode)

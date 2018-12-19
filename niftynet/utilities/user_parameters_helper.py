@@ -140,6 +140,8 @@ def has_section_in_config(config, required_custom_section):
     :param required_custom_section:
     :return:
     """
+    if not isinstance(required_custom_section,(list, tuple)):
+        required_custom_section = [required_custom_section]
     required_custom_section = [standardise_string(rcs) for rcs in
                                required_custom_section]
     if required_custom_section is not None:
