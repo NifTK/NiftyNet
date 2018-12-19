@@ -3,8 +3,8 @@ Code from the following repository:
 https://github.com/pykao/Modified-3D-UNet-Pytorch
 """
 
-import torch.nn as nn
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 
@@ -54,8 +54,8 @@ class Modified3DUNet(nn.Module):
         # Level 4 context pathway
         self.conv3d_c4 = nn.Conv3d(
             self.base_n_filter * 4, self.base_n_filter * 8,
-			kernel_size=3, stride=2, padding=1, bias=False
-		)
+            kernel_size=3, stride=2, padding=1, bias=False
+        )
         self.norm_lrelu_conv_c4 = self.norm_lrelu_conv(
             self.base_n_filter * 8, self.base_n_filter * 8)
         self.inorm3d_c4 = nn.InstanceNorm3d(self.base_n_filter * 8)
@@ -63,17 +63,18 @@ class Modified3DUNet(nn.Module):
         # Level 5 context pathway, level 0 localization pathway
         self.conv3d_c5 = nn.Conv3d(
             self.base_n_filter * 8, self.base_n_filter * 16,
-			kernel_size=3, stride=2, padding=1, bias=False
-		)
+            kernel_size=3, stride=2, padding=1, bias=False
+        )
         self.norm_lrelu_conv_c5 = self.norm_lrelu_conv(
             self.base_n_filter * 16, self.base_n_filter * 16)
-        self.norm_lrelu_upscale_conv_norm_lrelu_l0 = self.norm_lrelu_upscale_conv_norm_lrelu(
-            self.base_n_filter * 16, self.base_n_filter * 8)
+        self.norm_lrelu_upscale_conv_norm_lrelu_l0 = \
+            self.norm_lrelu_upscale_conv_norm_lrelu(
+                self.base_n_filter * 16, self.base_n_filter * 8)
 
         self.conv3d_l0 = nn.Conv3d(
             self.base_n_filter * 8, self.base_n_filter * 8,
-			kernel_size=1, stride=1, padding=0, bias=False
-		)
+            kernel_size=1, stride=1, padding=0, bias=False
+        )
         self.inorm3d_l0 = nn.InstanceNorm3d(self.base_n_filter * 8)
 
         # Level 1 localization pathway
@@ -81,47 +82,50 @@ class Modified3DUNet(nn.Module):
             self.base_n_filter * 16, self.base_n_filter * 16)
         self.conv3d_l1 = nn.Conv3d(
             self.base_n_filter * 16, self.base_n_filter * 8,
-			kernel_size=1, stride=1, padding=0, bias=False
-		)
-        self.norm_lrelu_upscale_conv_norm_lrelu_l1 = self.norm_lrelu_upscale_conv_norm_lrelu(
-            self.base_n_filter * 8, self.base_n_filter * 4)
+            kernel_size=1, stride=1, padding=0, bias=False
+        )
+        self.norm_lrelu_upscale_conv_norm_lrelu_l1 = \
+            self.norm_lrelu_upscale_conv_norm_lrelu(
+                self.base_n_filter * 8, self.base_n_filter * 4)
 
         # Level 2 localization pathway
         self.conv_norm_lrelu_l2 = self.conv_norm_lrelu(
             self.base_n_filter * 8, self.base_n_filter * 8)
         self.conv3d_l2 = nn.Conv3d(
             self.base_n_filter * 8, self.base_n_filter * 4,
-			kernel_size=1, stride=1, padding=0, bias=False
-		)
-        self.norm_lrelu_upscale_conv_norm_lrelu_l2 = self.norm_lrelu_upscale_conv_norm_lrelu(
-            self.base_n_filter * 4, self.base_n_filter * 2)
+            kernel_size=1, stride=1, padding=0, bias=False
+        )
+        self.norm_lrelu_upscale_conv_norm_lrelu_l2 = \
+            self.norm_lrelu_upscale_conv_norm_lrelu(
+                self.base_n_filter * 4, self.base_n_filter * 2)
 
         # Level 3 localization pathway
         self.conv_norm_lrelu_l3 = self.conv_norm_lrelu(
             self.base_n_filter * 4, self.base_n_filter * 4)
         self.conv3d_l3 = nn.Conv3d(
             self.base_n_filter * 4, self.base_n_filter * 2,
-			kernel_size=1, stride=1, padding=0, bias=False
-		)
-        self.norm_lrelu_upscale_conv_norm_lrelu_l3 = self.norm_lrelu_upscale_conv_norm_lrelu(
-            self.base_n_filter * 2, self.base_n_filter)
+            kernel_size=1, stride=1, padding=0, bias=False
+        )
+        self.norm_lrelu_upscale_conv_norm_lrelu_l3 = \
+            self.norm_lrelu_upscale_conv_norm_lrelu(
+                self.base_n_filter * 2, self.base_n_filter)
 
         # Level 4 localization pathway
         self.conv_norm_lrelu_l4 = self.conv_norm_lrelu(
             self.base_n_filter * 2, self.base_n_filter * 2)
         self.conv3d_l4 = nn.Conv3d(
             self.base_n_filter * 2, self.n_classes,
-			kernel_size=1, stride=1, padding=0, bias=False
-		)
+            kernel_size=1, stride=1, padding=0, bias=False
+        )
 
         self.ds2_1x1_conv3d = nn.Conv3d(
             self.base_n_filter * 8, self.n_classes,
-			kernel_size=1, stride=1, padding=0, bias=False
-		)
+            kernel_size=1, stride=1, padding=0, bias=False
+        )
         self.ds3_1x1_conv3d = nn.Conv3d(
             self.base_n_filter * 4, self.n_classes,
-			kernel_size=1, stride=1, padding=0, bias=False
-		)
+            kernel_size=1, stride=1, padding=0, bias=False
+        )
 
     def conv_norm_lrelu(self, feat_in, feat_out):
         return nn.Sequential(
@@ -135,13 +139,13 @@ class Modified3DUNet(nn.Module):
             nn.InstanceNorm3d(feat_in),
             nn.LeakyReLU(),
             nn.Conv3d(feat_in, feat_out,
-				      kernel_size=3, stride=1, padding=1, bias=False))
+                      kernel_size=3, stride=1, padding=1, bias=False))
 
     def lrelu_conv(self, feat_in, feat_out):
         return nn.Sequential(
             nn.LeakyReLU(),
             nn.Conv3d(feat_in, feat_out,
-			          kernel_size=3, stride=1, padding=1, bias=False))
+                      kernel_size=3, stride=1, padding=1, bias=False))
 
     def norm_lrelu_upscale_conv_norm_lrelu(self, feat_in, feat_out):
         return nn.Sequential(

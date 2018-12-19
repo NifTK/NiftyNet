@@ -18,7 +18,6 @@ class SoftDiceLoss(nn.Module):
         return -soft_dice
 
 
-
 def dice(input, target):
     epsilon = 1e-8
     iflat = input.view(-1)
