@@ -72,7 +72,8 @@ class ApplyGradients(object):
                                    % (sender.training_mode,
                                       sender.training_list[
                                           sender.training_item]))
-                sender.training_mode = sender.training_list[sender.training_item]
+                sender.training_mode = \
+                    sender.training_list[sender.training_item]
         if len(training_values) < len(gradient_ops) - 1:
             tf.logging.warning("The last updates of training may not be "
                                "reached since the number of updates is %d "
@@ -80,8 +81,7 @@ class ApplyGradients(object):
                                % (len(training_values), len(gradient_ops)))
             if len(training_values) == 1:
                 sender.training_values = np.asarray(list(training_values) *
-                                                     len(
-                    sender.training_list))
+                                                    len(sender.training_list))
 
                 sender.training_types = training_types * len(
                     sender.training_list)
@@ -94,11 +94,11 @@ class ApplyGradients(object):
                                                        np.arange(len(
                                                            training_values))):
             if type_train == 'time' and value_train < 2:
-                    tf.logging.fatal("Incompatibility between training_values"
+                tf.logging.fatal("Incompatibility between training_values"
                                      " and training type with value %f and "
                                      "type %s at training update %d"
                                      % (value_train, type_train, i_update))
-                    raise ValueError
+                raise ValueError
 
         return
 
@@ -153,8 +153,8 @@ class ApplyGradients(object):
 
         if sender.training_mode is None:
             sender.training_mode = 0
-        if sender.action_param.starting_iter + 1 == msg[
-            'iter_msg'].current_iter:
+        if sender.action_param.starting_iter + 1 ==\
+                msg['iter_msg'].current_iter:
             sender.training_values = np.asarray(sender.training_values)
             if len(sender.training_types) > 0 and sender.training_types[
                        sender.training_item] == 'time':
@@ -185,7 +185,7 @@ class ApplyGradients(object):
                                                     , **msg)
 
         if msg['iter_msg'].is_training:
-            print("training mode is %d" %sender.training_mode)
+            print("training mode is %d" % sender.training_mode)
             msg['iter_msg'].ops_to_run['gradients'] = sender.gradient_op[
                 sender.training_mode]
 
@@ -208,7 +208,8 @@ class ApplyGradients(object):
                                "operations" % time)
             sender.training_item += 1
             if sender.training_item < len(sender.training_list):
-                sender.training_mode = sender.training_list[sender.training_item]
+                sender.training_mode = \
+                    sender.training_list[sender.training_item]
             else:
                 tf.logging.warning("Maximum update reached from training "
                                    "list, no further mode update")
@@ -219,7 +220,7 @@ class ApplyGradients(object):
                 sender.training_values[sender.training_item] += msg[
                     'iter_msg'].current_iter
                 tf.logging.warning("updating max iter for update to %d" %
-                sender.training_values[sender.training_item] )
+                                   sender.training_values[sender.training_item])
                 sender.outputs_collector.console_vars['train_mode_test'] = \
                     tf.constant(sender.training_mode)
 

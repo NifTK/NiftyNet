@@ -10,7 +10,8 @@ from niftynet.engine.application_variables import global_vars_init_or_restore
 from niftynet.engine.signal import \
     ITER_FINISHED, SESS_FINISHED, SESS_STARTED
 from niftynet.io.misc_io import touch_folder
-from tensorflow.python.tools.inspect_checkpoint import print_tensors_in_checkpoint_file
+# from tensorflow.python.tools.inspect_checkpoint
+# import print_tensors_in_checkpoint_file
 from tensorflow.contrib.framework.python.framework import checkpoint_utils
 
 
@@ -87,13 +88,12 @@ class ModelRestorer(object):
         all_ckpt_var = checkpoint_utils.list_variables(checkpoint)
         all_names = [c[0] for c in all_ckpt_var]
         try:
-            v_to_init = [v for v in all_variables if v not in var_list_fin]
             var_list_fin2 = [v for v in var_list_fin if v.name[:-2] in
                              all_names]
             saver = tf.train.Saver(save_relative_paths=True,
                                    var_list=var_list_fin2)
             saver.restore(tf.get_default_session(), checkpoint)
-            var_list_fin2_names = [ v.name for v in var_list_fin2]
+            var_list_fin2_names = [v.name for v in var_list_fin2]
             v_to_init2 = [v for v in all_variables if v.name not in
                           var_list_fin2_names]
             for v in v_to_init2:
@@ -153,10 +153,10 @@ class ModelSaver(object):
         :return:
         """
         all_variables = tf.get_collection_ref(tf.GraphKeys.GLOBAL_VARIABLES)
-        var_list = [v for v in all_variables if
-                    "Adam" not in v.name]
+        # var_list = [v for v in all_variables if
+        #             "Adam" not in v.name]
         var_list = [v for v in all_variables]
-        var_list_fin = [ v for v in var_list if len([f for f in list(
+        var_list_fin = [v for v in var_list if len([f for f in list(
             self.omit_save) if f in v.name]) == 0]
         self.saver = tf.train.Saver(
             max_to_keep=self.max_checkpoints, save_relative_paths=True,
