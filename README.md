@@ -63,27 +63,23 @@ The API reference and how-to guides are available on [Read the Docs][rtd-niftyne
 
 ### Useful links
 
-[NiftyNet website][niftynet-io]
-
-[NiftyNet source code on GitHub][niftynet-github]
-
-[NiftyNet Model zoo repository][niftynet-zoo]
-
-NiftyNet mailing list: [niftynet@googlegroups.com][ml-niftynet]
-
-[Stack Overflow](https://stackoverflow.com/questions/tagged/niftynet) for general questions
+* [NiftyNet website][niftynet-io]
+* [NiftyNet source code on GitHub][niftynet-github]
+* [NiftyNet Model zoo repository][niftynet-zoo]
+* [NiftyNet Google Group / Mailing List][ml-niftynet]
+* [Stack Overflow](https://stackoverflow.com/questions/tagged/niftynet) for general questions
 
 [niftynet-io]: http://niftynet.io/
 [niftynet-github]: https://github.com/NifTK/NiftyNet
 [niftynet-zoo]: https://github.com/NifTK/NiftyNetModelZoo/blob/master/README.md
-[ml-niftynet]: mailto:niftynet@googlegroups.com
+[ml-niftynet]: https://groups.google.com/forum/#!forum/niftynet
 
 
 ### Citing NiftyNet
 
 If you use NiftyNet in your work, please cite [Gibson and Li, et al. 2018][cmpb2018]:
 
-* E. Gibson\*, W. Li\*, C. Sudre, L. Fidon, D. I. Shakir, G. Wang, Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, M. Modat, D. C. Barratt, S. Ourselin, M. J. Cardoso\^ and T. Vercauteren\^ (2018)
+* E. Gibson\*, W. Li\*, C. Sudre, L. Fidon, D. I. Shakir, G. Wang, Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, M. Modat, D. C. Barratt, S. Ourselin, M. J. Cardoso† and T. Vercauteren† (2018)
 [NiftyNet: a deep-learning platform for medical imaging][cmpb2018], _Computer Methods and Programs in Biomedicine_.
 DOI: [10.1016/j.cmpb.2018.01.025][cmpb2018]
 
