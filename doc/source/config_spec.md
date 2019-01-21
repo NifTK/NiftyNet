@@ -159,7 +159,7 @@ See also: [input filename matching guide](./filename_matching.html)
 Keywords used to exclude filenames.
 The filenames with these keywords will not be used as input. Note that
 if the type of `filename_not_contains` is a string array, then a filename
-must not contain any of the strings inthe array to be a match.
+must not contain any of the strings in the array to be a match.
 
 See also: [input filename matching guide](./filename_matching.html)
 
@@ -257,7 +257,9 @@ This option is ignored if there's no GPU device.
 Directory to save/load intermediate training models and logs.  NiftyNet tries
 to interpret this parameter as an absolute system path or a path relative to
 the current command.  It's defaulting to the directory of the current
-configuration file if left blank.
+configuration file if left blank. 
+
+It is assumed that `model_dir` contains two folders, `models` and `logs`. 
 
 ######  `dataset_split_file`
 File assigning subjects to training/validation/inference subsets.
