@@ -196,6 +196,9 @@ Specify the loader to be used to load the files in the input section.
 Some loaders require additional Python packages.
 Default value `None` indicates trying all available loaders.
 
+Supported loaders: `nibabel`, `opencv`, `skimage`, `pillow`, `simpleitk`, `dummy`
+in prioriy order. 
+
 This section will be used by [ImageReader](./niftynet.io.image_reader.html)
 to generate a list of [input images objects](./niftynet.io.image_type.html).
 For example:
