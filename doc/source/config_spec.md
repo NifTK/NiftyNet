@@ -170,7 +170,12 @@ matched pattern will be removed from the file names to form the subject id.
 See also: [input filename matching guide](./filename_matching.html)
 
 ###### `interp_order`
-Interpolation order of the input data.
+Interpolation order of the input data. Note that only the following values
+are supported.
+- `0`: nearest neighbor with `sitk.sitkNearestNeighbor`
+- `1`: linear interpolation with `sitk.sitkLinear`
+- `2` and above: b-spline interpolation with `sitk.sitkBSpline`
+- negative values: returns original image
 
 ###### `pixdim`
 If specified, the input volume will be resampled to the voxel sizes
