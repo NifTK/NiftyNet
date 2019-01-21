@@ -149,13 +149,17 @@ See also: [input filename matching guide](./filename_matching.html)
 ###### `filename_contains`
 Keywords used to match filenames.
 The matched keywords will be removed, and the remaining part is used as
-subject name (for loading corresponding images across modalities).
+subject name (for loading corresponding images across modalities). Note
+that if the type pf `filename_contains` is a string array, then a filename
+has to contain every string in the array to be a match.
 
 See also: [input filename matching guide](./filename_matching.html)
 
 ###### `filename_not_contains`
 Keywords used to exclude filenames.
-The filenames with these keywords will not be used as input.
+The filenames with these keywords will not be used as input. Note that
+if the type of `filename_not_contains` is a string array, then a filename
+must not contain any of the strings inthe array to be a match.
 
 See also: [input filename matching guide](./filename_matching.html)
 
@@ -166,7 +170,12 @@ matched pattern will be removed from the file names to form the subject id.
 See also: [input filename matching guide](./filename_matching.html)
 
 ###### `interp_order`
-Interpolation order of the input data.
+Interpolation order of the input data. Note that only the following values
+are supported.
+- `0`: nearest neighbor with `sitk.sitkNearestNeighbor`
+- `1`: linear interpolation with `sitk.sitkLinear`
+- `2` and above: b-spline interpolation with `sitk.sitkBSpline`
+- negative values: returns original image
 
 ###### `pixdim`
 If specified, the input volume will be resampled to the voxel sizes
