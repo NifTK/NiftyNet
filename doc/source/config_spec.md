@@ -680,7 +680,8 @@ Interpolation order of the network outputs.
 
 ###### `dataset_to_infer`
 String specifies which dataset ('all', 'training', 'validation', 'inference') to compute inference for.
-By default 'inference' dataset is used.
+By default 'inference' dataset is used. If no `dataset_split_file` is specified, then all data specified
+in the csv or search path are used for inference. 
 
 
 ### EVALUATION
