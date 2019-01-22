@@ -718,8 +718,13 @@ The evaluation configuration section (`[EVALUATION]`) must contain:
  [regression evaluations](./niftynet.evaluation.regression_evaluations.html),
  [segmentation evaluations](./niftynet.evaluation.segmentation_evaluations.html),
  and [classification evaluations](./niftynet.evaluation.classification_evaluations.html).
+
+Note that application specific configuration (such as `evaluation_units`) are specified
+in the application configuration section (such as `[SEGMENTATION]`).
+<!---
 - `evaluation_units` -- `foreground`, `label` or `cc`. Describe how the
   evaluation should be performed in the case of segmentation mostly
   (`foreground` means only one label, `label` means metrics per label, `cc`
   means metrics per connected component).  More on this topic can be found at
   [segmentation evaluations](./niftynet.evaluation.segmentation_evaluations.html).
+-->
