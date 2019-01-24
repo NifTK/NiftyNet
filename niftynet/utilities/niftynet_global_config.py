@@ -30,6 +30,7 @@ class NiftyNetGlobalConfig(object):
 
     global_section = 'global'
     home_key = 'home'
+    custom_key = 'custom'
 
     niftynet_exts = {'extensions': ['network']}
 
@@ -81,6 +82,18 @@ class NiftyNetGlobalConfig(object):
             extension_subfolder = join(self._niftynet_home, ext)
             sys.path.insert(1, extension_subfolder)
         sys.path.insert(1, self._niftynet_home)
+
+        custom_paths = expanduser(
+            config_opts[NiftyNetGlobalConfig.global_section].get(
+                NiftyNetGlobalConfig.custom_key, '')).split(';')
+        for c in custom_paths:
+            if len(c) == 0:
+                print('warning: global:custom entry is empty')
+            elif not os.path.exists(c):
+                print('warning: global: custom entry does not exist {}'.format(c))
+            else:
+                sys.path.insert(1, os.path.abspath(c))
+
         return self
 
     @staticmethod

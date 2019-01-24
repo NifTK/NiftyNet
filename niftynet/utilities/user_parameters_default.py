@@ -546,6 +546,18 @@ def add_training_args(parser):
         default=0.01)
 
     parser.add_argument(
+        "--lr_decay_base",
+        help="[Training only] Set learning rate decay base.",
+        type=float,
+        default=2)
+
+    parser.add_argument(
+        "--lr_decay_rate",
+        help="[Training only] Set learning rate decay rate.",
+        type=float,
+        default=2014)
+
+    parser.add_argument(
         "--loss_type",
         metavar='TYPE_STR',
         help="[Training only] Specify loss type_str",
