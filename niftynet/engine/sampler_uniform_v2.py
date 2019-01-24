@@ -29,6 +29,7 @@ class UniformSampler(ImageWindowDataset):
                  batch_size=1,
                  windows_per_image=1,
                  queue_length=10,
+                 pad_if_smaller=False,
                  name='uniform_sampler_v2'):
         ImageWindowDataset.__init__(
             self,
@@ -44,6 +45,7 @@ class UniformSampler(ImageWindowDataset):
 
         tf.logging.info("initialised uniform sampler %s ", self.window.shapes)
         self.window_centers_sampler = rand_spatial_coordinates
+        self.pad_if_smaller = pad_if_smaller
 
     # pylint: disable=too-many-locals
     def layer_op(self, idx=None):
@@ -70,7 +72,8 @@ class UniformSampler(ImageWindowDataset):
             data=data,
             img_sizes=image_shapes,
             win_sizes=static_window_shapes,
-            n_samples=self.window.n_samples)
+            n_samples=self.window.n_samples,
+            pad_if_smaller=self.pad_if_smaller)
 
         # initialise output dict, placeholders as dictionary keys
         # this dictionary will be used in
@@ -103,21 +106,29 @@ class UniformSampler(ImageWindowDataset):
                         "Current coords %s", location_array[window_id])
                     raise
             if len(image_array) > 1:
-                output_dict[image_data_key] = \
-                    np.concatenate(image_array, axis=0)
+                np_images = np.concatenate(image_array, axis=0)
+                if self.pad_if_smaller:
+                    output_dict[image_data_key] = pad_image_array(static_window_shapes[name], np_images, 0)
+                else:
+                    output_dict[image_data_key] = np_images
             else:
-                output_dict[image_data_key] = image_array[0]
+                if self.pad_if_smaller:
+                    output_dict[image_data_key] = pad_image_array(static_window_shapes[name], image_array[0], 0)
+                else:
+                    output_dict[image_data_key] = image_array[0]
         # the output image shape should be
         # [enqueue_batch_size, x, y, z, time, modality]
         # where enqueue_batch_size = windows_per_image
         return output_dict
+
 
     def _spatial_coordinates_generator(self,
                                        subject_id,
                                        data,
                                        img_sizes,
                                        win_sizes,
-                                       n_samples=1):
+                                       n_samples=1,
+                                       pad_if_smaller=False):
         """
         Generate spatial coordinates for sampling.
 
@@ -138,7 +149,7 @@ class UniformSampler(ImageWindowDataset):
 
         # infer the largest spatial window size and check image spatial shapes
         img_spatial_size, win_spatial_size = \
-            _infer_spatial_size(img_sizes, win_sizes)
+            _infer_spatial_size(img_sizes, win_sizes, pad_if_smaller)
 
         sampling_prior_map = None
         try:
@@ -169,8 +180,9 @@ class UniformSampler(ImageWindowDataset):
             # just adding the mod specific window size
             spatial_coords[:, N_SPATIAL:] = \
                 spatial_coords[:, :N_SPATIAL] + win_size[:N_SPATIAL]
-            assert np.all(spatial_coords[:, N_SPATIAL:] <= img_spatial_size), \
-                'spatial coords: out of bounds.'
+            if not self.pad_if_smaller:
+                assert np.all(spatial_coords[:, N_SPATIAL:] <= img_spatial_size), \
+                    'spatial coords: out of bounds.'
 
             # include subject id as the 1st column of all_coordinates values
             subject_id = np.ones((n_samples,), dtype=np.int32) * subject_id
@@ -200,14 +212,17 @@ def rand_spatial_coordinates(
     max_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
     for (idx, (img, win)) in enumerate(
             zip(img_spatial_size[:N_SPATIAL], win_spatial_size[:N_SPATIAL])):
-        max_coords[:, idx] = np.random.randint(
-            0, max(img - win + 1, 1), n_samples)
+        if win > img:
+            max_coords[:, idx] = 0
+        else:
+            max_coords[:, idx] = np.random.randint(
+                0, max(img - win + 1, 1), n_samples)
     max_coords[:, :N_SPATIAL] = \
         max_coords[:, :N_SPATIAL] + half_win[:N_SPATIAL]
     return max_coords
 
 
-def _infer_spatial_size(img_sizes, win_sizes):
+def _infer_spatial_size(img_sizes, win_sizes, pad_if_smaller=False):
     """
     Utility function to find the spatial size of image,
     and the largest spatial window size across input sections.
@@ -235,9 +250,34 @@ def _infer_spatial_size(img_sizes, win_sizes):
     _win_spatial_sizes = np.asarray(_win_spatial_sizes, dtype=np.int32)
     win_spatial_size = np.max(_win_spatial_sizes, axis=0)
 
-    assert all([img_spatial_size[i] >= win_spatial_size[i]
-                for i in range(N_SPATIAL)]), \
-        "window size {} is larger than image size {}".format(
-            win_spatial_size, img_spatial_size)
+    if not pad_if_smaller:
+        assert all([img_spatial_size[i] >= win_spatial_size[i]
+                    for i in range(N_SPATIAL)]), \
+            "window size {} is larger than image size {}".format(
+                win_spatial_size, img_spatial_size)
 
     return img_spatial_size, win_spatial_size
+
+
+def pad_image_array(win_sizes, image_array, pad_value=0):
+    assert len(win_sizes) + 1 == len(image_array.shape)
+
+    if win_sizes == image_array.shape[1:]:
+        return image_array
+
+    # ignore the initial dimension in the image array
+    mapping_list = [slice(0, image_array.shape[0])]
+    for i in range(N_SPATIAL):
+        vmin = max(0, (win_sizes[i] - image_array.shape[i+1]) // 2)
+        vmax = image_array.shape[i+1] + vmin
+        mapping_list.append(slice(vmin, vmax))
+
+    for i in range(N_SPATIAL+1, len(image_array.shape)):
+        mapping_list.append(slice(0, image_array.shape[i]))
+
+    desttuple = (image_array.shape[0],) + win_sizes
+    destination = np.full(desttuple, pad_value, dtype=image_array.dtype)
+    destination[mapping_list] = image_array
+    return destination
+
+
