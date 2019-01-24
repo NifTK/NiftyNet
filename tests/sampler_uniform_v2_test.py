@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+import unittest
 
 import numpy as np
 import tensorflow as tf
@@ -13,6 +14,7 @@ from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
 from niftynet.engine.image_window import N_SPATIAL
+from niftynet.engine.sampler_uniform_v2 import pad_image_array
 
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
@@ -243,5 +245,15 @@ class RandomCoordinatesTest(tf.test.TestCase):
         self.assertCoordinatesAreValid(coords, img_size, win_size)
 
 
+class PaddingModeUnitTest(unittest.TestCase):
+    def test_pad_image_array(self):
+        win_sizes = (4, 4, 4, 1)
+        image_sizes = [(1, 4, 4, 4, 1), (1, 3, 4, 4, 1), (1, 4, 3, 4, 1), (1, 4, 4, 3, 1)]
+        for i in image_sizes:
+            self._impl(win_sizes, i)
+    def _impl(self, win_sizes, image_sizes):
+        image_array = np.ones(image_sizes)
+        actual = pad_image_array(win_sizes, image_array, 0)
+        self.assertEqual(actual.shape, (image_sizes[0],) + win_sizes)
 if __name__ == "__main__":
     tf.test.main()
