@@ -236,6 +236,7 @@ class ImageWindowDataset(Layer):
             # form a batch, so that we have a fixed batch size.
             # dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(
             #     batch_size=self.batch_size))
+            # new API since TF 1.10
             dataset = dataset.batch(batch_size=self.batch_size,
                                     drop_remainder=True)
             return dataset
