@@ -149,6 +149,7 @@ testjob:
 
     ######### Python 2 ###################### run python2 code with coverage wrapper
     # This is using the system-wide Tensorflow. Probably put this in a virtualenv instead
+    - pip install -r requirements-gpu.txt
     - python net_download.py testing -r
     - coverage run -a --source . net_segment.py train -c config/highres3dnet_config.ini --batch_size=1 --num_threads=2 --queue_length=40 --max_iter=10
     - coverage run -a --source . net_segment.py inference -c config/highres3dnet_config.ini --batch_size 8 --spatial_window_size 64,64,64 --queue_length 64
@@ -245,6 +246,7 @@ quicktest:
 
     - coverage erase
     # run only fast tests
+    - pip install -r requirements-gpu.txt
     - python net_download.py testing -r
     - QUICKTEST=True coverage run -a --source . -m unittest discover -s "tests" -p "*_test.py"
     - coverage report -m
@@ -299,7 +301,7 @@ pip-installer:
     - set -e
     - cd $venv_dir
     # install TF
-    - pip install tensorflow-gpu==1.10
+    - pip install tensorflow-gpu==1.12
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
@@ -399,7 +401,7 @@ pip-installer:
     - set -e
     - cd $venv_dir
     # install TF
-    - pip install tensorflow-gpu==1.10
+    - pip install tensorflow-gpu==1.12
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly

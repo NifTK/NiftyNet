@@ -3,8 +3,8 @@ Installation
 
 1. Installing the appropriate `TensorFlow`_ package:
 
-    - ``pip install tensorflow-gpu==1.10`` for TensorFlow with GPU support
-    - ``pip install tensorflow==1.10`` for CPU-only TensorFlow
+    - ``pip install tensorflow-gpu==1.12`` for TensorFlow with GPU support
+    - ``pip install tensorflow==1.12`` for CPU-only TensorFlow
 
 2. Installing NiftyNet package
 
