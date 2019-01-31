@@ -37,11 +37,11 @@ class ApplyGradients(object):
             gradients = sender.gradients_collector.gradients
             bn_ops = tf.get_collection(BN_COLLECTION, PRIMARY_NAME_SCOPE)
             if not bn_ops:
-                sender.gradient_op = _apply_gradients(
+                sender.gradient_op = _apply_multiopt_gradients(
                     sender.optimiser, gradients)
             else:
                 with tf.get_default_graph().control_dependencies(bn_ops):
-                    sender.gradient_op = _apply_gradients(
+                    sender.gradient_op = _apply_multiopt_gradients(
                         sender.optimiser, gradients)
 
     def add_gradients(self, sender, **msg):
@@ -59,17 +59,39 @@ class ApplyGradients(object):
             msg['iter_msg'].ops_to_run['gradients'] = sender.gradient_op
 
 
-def _apply_gradients(optimiser, gradients):
+def _apply_multiopt_gradients(optimiser, gradients):
     """
-    Create gradient op by ``optimiser.apply_gradients``.
+    Apply gradients by using the correct optimiser.
     This function sets ``self.gradient_op``.
 
-    Override this function for more complex optimisations such as
-    using different optimisers for sub-networks.
+    :param optimiser: single optimiser or dict of optimiser to be used to process
+    the passed gradients
+    :param gradients: list or dict (having a reference to the optimiser used)
+    of processed gradients from the gradient_collector
+    :return:
+    """
 
+    if isinstance(gradients, dict) and isinstance(optimiser, dict):
+        ret = list()
+        for key, value in gradients.items():
+            tmp_optimiser = optimiser.get(key)
+            if tmp_optimiser is not None:
+                ret.append(_apply_gradients(tmp_optimiser, value))
+            else:
+                tf.logging.warning('No optimizer found for %s', key)
+        return ret
+    return _apply_gradients(optimiser, gradients)
+
+
+def _apply_gradients(optimiser, gradients):
+    """
+    Apply gradients op by ``optimiser.apply_gradients``.
+
+    :param optimiser: single optimiser processing the passed gradients
     :param gradients: processed gradients from the gradient_collector
     :return:
     """
+
     grad_list_depth = util_common.list_depth_count(gradients)
     if grad_list_depth == 3:
         # nested depth 3 means: gradients list is nested in terms of:
