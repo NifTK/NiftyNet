@@ -12,7 +12,7 @@ from niftynet.engine.application_variables import global_vars_init_or_restore
 from niftynet.engine.handler_model import ModelRestorer
 from niftynet.io.misc_io import set_logger
 from niftynet.utilities.util_common import ParserNamespace
-from niftynet.engine.signal import GRAPH_CREATED, SESS_FINISHED, SESS_STARTED
+from niftynet.engine.signal import SESS_FINISHED, SESS_STARTED
 
 
 # def _run_test_application():
@@ -21,7 +21,10 @@ from niftynet.engine.signal import GRAPH_CREATED, SESS_FINISHED, SESS_STARTED
 #    return
 
 
-def get_initialised_driver(starting_iter=0, model_dir_rand=True, vars_to_restore='', application='tests.toy_application.ToyApplication'):
+def get_initialised_driver(starting_iter=0,
+                           model_dir_rand=True,
+                           vars_to_restore='',
+                           application='tests.toy_application.ToyApplication'):
     if model_dir_rand:
         model_dir = os.path.join('.', 'testing_data', 'tmp', str(uuid.uuid4()))
         os.makedirs(model_dir)
@@ -109,11 +112,10 @@ class ApplicationDriverTest(tf.test.TestCase):
         test_driver = get_initialised_driver()
         graph = test_driver.create_graph(test_driver.app, 1, True)
         with self.test_session(graph=graph) as sess:
-            GRAPH_CREATED.send(test_driver.app, iter_msg=None)
             SESS_STARTED.send(test_driver.app, iter_msg=None)
 
             train_op = test_driver.app.gradient_op
-            test_tensor = tf.get_default_graph().get_tensor_by_name(
+            test_tensor = graph.get_tensor_by_name(
                 'G/conv_bn_selu/conv_/w:0')
             var_0 = sess.run(test_tensor)
             sess.run(train_op)
@@ -129,18 +131,17 @@ class ApplicationDriverTest(tf.test.TestCase):
         graph = test_driver.create_graph(
             test_driver.app, test_driver.num_gpus, True)
         with self.test_session(graph=graph) as sess:
-            GRAPH_CREATED.send(test_driver.app, iter_msg=None)
             SESS_STARTED.send(test_driver.app, iter_msg=None)
             for i in range(2):
                 sess.run(test_driver.app.gradient_op)
                 s_0, s_1, s_2, s_3 = sess.run([
-                    tf.get_default_graph().get_tensor_by_name(
+                    graph.get_tensor_by_name(
                         'worker_0/feature_input:0'),
-                    tf.get_default_graph().get_tensor_by_name(
+                    graph.get_tensor_by_name(
                         'worker_1/feature_input:0'),
-                    tf.get_default_graph().get_tensor_by_name(
+                    graph.get_tensor_by_name(
                         'worker_2/feature_input:0'),
-                    tf.get_default_graph().get_tensor_by_name(
+                    graph.get_tensor_by_name(
                         'worker_3/feature_input:0')
                 ])
                 msg = 'same input data for different devices'
@@ -158,20 +159,19 @@ class ApplicationDriverTest(tf.test.TestCase):
         graph = test_driver.create_graph(
             test_driver.app, test_driver.num_gpus, True)
         with self.test_session(graph=graph) as sess:
-            GRAPH_CREATED.send(test_driver.app, iter_msg=None)
             SESS_STARTED.send(test_driver.app, iter_msg=None)
             for i in range(2):
                 sess.run(test_driver.app.gradient_op)
                 g_0, g_1, g_2, g_3, g_ave = sess.run([
-                    tf.get_default_graph().get_tensor_by_name(
+                    graph.get_tensor_by_name(
                         'worker_0/ComputeGradients/gradients/AddN_5:0'),
-                    tf.get_default_graph().get_tensor_by_name(
+                    graph.get_tensor_by_name(
                         'worker_1/ComputeGradients/gradients/AddN_5:0'),
-                    tf.get_default_graph().get_tensor_by_name(
+                    graph.get_tensor_by_name(
                         'worker_2/ComputeGradients/gradients/AddN_5:0'),
-                    tf.get_default_graph().get_tensor_by_name(
+                    graph.get_tensor_by_name(
                         'worker_3/ComputeGradients/gradients/AddN_5:0'),
-                    tf.get_default_graph().get_tensor_by_name(
+                    graph.get_tensor_by_name(
                         'ApplyGradients/AveOverDevices:0')
                 ])
                 self.check_gradients(g_0, g_1, g_2, g_3, g_ave)
@@ -179,40 +179,40 @@ class ApplicationDriverTest(tf.test.TestCase):
             test_driver.app.stop()
 
     def test_multi_device_multi_optimiser_gradients(self):
-        test_driver = get_initialised_driver(application='tests.toy_application.ToyApplicationMultOpti')
+        test_driver = get_initialised_driver(
+            application='tests.toy_application.ToyApplicationMultOpti')
         graph = test_driver.create_graph(
             test_driver.app, test_driver.num_gpus, True)
         with self.test_session(graph=graph) as sess:
-            GRAPH_CREATED.send(test_driver.app, iter_msg=None)
             SESS_STARTED.send(test_driver.app, iter_msg=None)
             for i in range(2):
                 sess.run(test_driver.app.gradient_op)
                 # query generator gradient sample to check
                 dis_0, dis_1, dis_2, dis_3, dis_ave = sess.run([
-                    tf.get_default_graph().get_tensor_by_name(
-                        'worker_0/ComputeGradients/gradients/AddN_5:0'),
-                    tf.get_default_graph().get_tensor_by_name(
-                        'worker_1/ComputeGradients/gradients/AddN_5:0'),
-                    tf.get_default_graph().get_tensor_by_name(
-                        'worker_2/ComputeGradients/gradients/AddN_5:0'),
-                    tf.get_default_graph().get_tensor_by_name(
-                        'worker_3/ComputeGradients/gradients/AddN_5:0'),
-                    tf.get_default_graph().get_tensor_by_name(
-                        'ApplyGradients/AveOverDevices_10:0')
+                    graph.get_tensor_by_name(
+                        'worker_0/ComputeGradientsD/gradients/AddN_5:0'),
+                    graph.get_tensor_by_name(
+                        'worker_1/ComputeGradientsD/gradients/AddN_5:0'),
+                    graph.get_tensor_by_name(
+                        'worker_2/ComputeGradientsD/gradients/AddN_5:0'),
+                    graph.get_tensor_by_name(
+                        'worker_3/ComputeGradientsD/gradients/AddN_5:0'),
+                    graph.get_tensor_by_name(
+                        'ApplyGradients/AveOverDevices:0')
                 ])
 
                 # query discriminator gradient sample to check
                 gen_0, gen_1, gen_2, gen_3, gen_ave = sess.run([
-                    tf.get_default_graph().get_tensor_by_name(
-                        'worker_0/ComputeGradients/gradients_1/worker_0/tinynet/G/conv/conv_/conv/ExpandDims_1_grad/Reshape:0'),
-                    tf.get_default_graph().get_tensor_by_name(
-                        'worker_1/ComputeGradients/gradients_1/worker_1/tinynet/G/conv/conv_/conv/ExpandDims_1_grad/Reshape:0'),
-                    tf.get_default_graph().get_tensor_by_name(
-                        'worker_2/ComputeGradients/gradients_1/worker_2/tinynet/G/conv/conv_/conv/ExpandDims_1_grad/Reshape:0'),
-                    tf.get_default_graph().get_tensor_by_name(
-                        'worker_3/ComputeGradients/gradients_1/worker_3/tinynet/G/conv/conv_/conv/ExpandDims_1_grad/Reshape:0'),
-                    tf.get_default_graph().get_tensor_by_name(
-                        'ApplyGradients_1/AveOverDevices_8:0')
+                    graph.get_tensor_by_name(
+                        'worker_0/ComputeGradientsG/gradients/worker_0/tinynet/G/conv/conv_/conv/ExpandDims_1_grad/Reshape:0'),
+                    graph.get_tensor_by_name(
+                        'worker_1/ComputeGradientsG/gradients/worker_1/tinynet/G/conv/conv_/conv/ExpandDims_1_grad/Reshape:0'),
+                    graph.get_tensor_by_name(
+                        'worker_2/ComputeGradientsG/gradients/worker_2/tinynet/G/conv/conv_/conv/ExpandDims_1_grad/Reshape:0'),
+                    graph.get_tensor_by_name(
+                        'worker_3/ComputeGradientsG/gradients/worker_3/tinynet/G/conv/conv_/conv/ExpandDims_1_grad/Reshape:0'),
+                    graph.get_tensor_by_name(
+                        'ApplyGradients/AveOverDevices_14:0')
                 ])
                 self.check_gradients(gen_0, gen_1, gen_2, gen_3, gen_ave)
                 self.check_gradients(dis_0, dis_1, dis_2, dis_3, dis_ave)
@@ -239,7 +239,7 @@ class ApplicationDriverTest(tf.test.TestCase):
         test_driver = get_initialised_driver(0, True)
         graph = test_driver.create_graph(test_driver.app, 1, True)
         with self.test_session(graph=graph) as sess:
-            test_tensor = tf.get_default_graph().get_tensor_by_name(
+            test_tensor = graph.get_tensor_by_name(
                 "G/conv_bn_selu/conv_/w:0")
             with self.assertRaisesRegexp(
                     tf.errors.FailedPreconditionError,
@@ -259,7 +259,7 @@ class ApplicationDriverTest(tf.test.TestCase):
             dtype=np.float32)
         graph = test_driver.create_graph(test_driver.app, 1, True)
         with self.test_session(graph=graph) as sess:
-            test_tensor = tf.get_default_graph().get_tensor_by_name(
+            test_tensor = graph.get_tensor_by_name(
                 "G/conv_bn_selu/conv_/w:0")
             with self.assertRaisesRegexp(
                     tf.errors.FailedPreconditionError,
@@ -291,7 +291,7 @@ class ApplicationDriverTest(tf.test.TestCase):
             dtype=np.float32)
         graph = test_driver.create_graph(test_driver.app, 1, True)
         with self.test_session(graph=graph) as sess:
-            test_tensor = tf.get_default_graph().get_tensor_by_name(
+            test_tensor = graph.get_tensor_by_name(
                 "G/conv_bn_selu/conv_/w:0")
             with self.assertRaisesRegexp(
                     tf.errors.FailedPreconditionError,
@@ -313,9 +313,9 @@ class ApplicationDriverTest(tf.test.TestCase):
             dtype=np.float32)
         graph = test_driver.create_graph(test_driver.app, 1, True)
         with self.test_session(graph=graph) as sess:
-            test_tensor = tf.get_default_graph().get_tensor_by_name(
+            test_tensor = graph.get_tensor_by_name(
                 "G/conv_bn_selu/conv_/w:0")
-            test_negative_tensor = tf.get_default_graph().get_tensor_by_name(
+            test_negative_tensor = graph.get_tensor_by_name(
                 "D/conv_relu/conv_/b:0")
             with self.assertRaisesRegexp(
                     tf.errors.FailedPreconditionError,

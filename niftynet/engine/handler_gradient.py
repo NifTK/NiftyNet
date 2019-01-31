@@ -61,7 +61,7 @@ class ApplyGradients(object):
 
 def _apply_multiopt_gradients(optimiser, gradients):
     """
-    Apply gradients by using the correct optimiser.
+    Apply gradients by using the corresponding optimiser.
     This function sets ``self.gradient_op``.
 
     :param optimiser: single optimiser or dict of optimisers
@@ -71,14 +71,15 @@ def _apply_multiopt_gradients(optimiser, gradients):
     :return:
     """
 
-    if isinstance(gradients, dict) and isinstance(optimiser, dict):
+    if isinstance(gradients, dict):
         ret = list()
-        for key, value in gradients.items():
-            tmp_optimiser = optimiser.get(key)
-            if tmp_optimiser is not None:
-                ret.append(_apply_gradients(tmp_optimiser, value))
-            else:
-                tf.logging.warning('No optimizer found for %s', key)
+        for key in sorted(gradients):
+            optimiser_k = optimiser.get(key) \
+                if isinstance(optimiser, dict) else optimiser
+            if not optimiser_k:
+                tf.logging.fatal('No optimizer found for %s', key)
+                raise ValueError
+            ret.append(_apply_gradients(optimiser_k, gradients[key]))
         return ret
     return _apply_gradients(optimiser, gradients)
 

@@ -6,7 +6,7 @@ import tensorflow as tf
 from niftynet.engine.application_iteration import IterationMessageGenerator
 from niftynet.engine.application_variables import NETWORK_OUTPUT
 from tests.application_driver_test import get_initialised_driver
-from niftynet.engine.signal import GRAPH_CREATED, SESS_STARTED
+from niftynet.engine.signal import SESS_STARTED
 
 
 
@@ -35,7 +35,6 @@ class EventConsoleTest(tf.test.TestCase):
              'niftynet.engine.handler_network_output.OutputInterpreter',
              'niftynet.engine.handler_sampler.SamplerThreading'])
         with self.test_session(graph=test_graph) as sess:
-            GRAPH_CREATED.send(app_driver.app, iter_msg=None)
             SESS_STARTED.send(app_driver.app, iter_msg=None)
 
             iterator = IterationMessageGenerator(is_training_action=False)

@@ -31,6 +31,7 @@ testjob:
   only:
     - master
     - dev
+    - merging-github-pr-269
     - tags
   script:
     # !!kill coverage in case of hanging processes
@@ -229,6 +230,7 @@ quicktest:
   except:
     - master
     - dev
+    - merging-github-pr-269
     - tags
     - 147-revise-contribution-guidelines-to-include-github
     - 150-properly-format-the-bibtex-entry-to-the-ipmi-2017-paper-on-the-main-readme
@@ -305,6 +307,7 @@ pip-installer:
   only:
     - master
     - dev
+    - merging-github-pr-269
     - tags
   script:
     # get the shortened version of last commit's hash

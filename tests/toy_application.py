@@ -142,12 +142,13 @@ class ToyApplicationMultOpti(ToyApplication):
         d_loss, g_loss = self.compute_loss(fake_logits, real_logits)
 
         grads = dict()
-        with tf.name_scope('ComputeGradients'):
+        with tf.name_scope('ComputeGradientsD'):
             d_vars = tf.get_collection(
                 tf.GraphKeys.TRAINABLE_VARIABLES,
                 scope=self.net.d_net.layer_scope().name)
             grads['dis'] = self.optimiser['dis'].compute_gradients(
                 d_loss, var_list=d_vars)
+        with tf.name_scope('ComputeGradientsG'):
             g_vars = tf.get_collection(
                 tf.GraphKeys.TRAINABLE_VARIABLES,
                 scope=self.net.g_net.layer_scope().name)
