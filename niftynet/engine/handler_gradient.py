@@ -64,10 +64,10 @@ def _apply_multiopt_gradients(optimiser, gradients):
     Apply gradients by using the correct optimiser.
     This function sets ``self.gradient_op``.
 
-    :param optimiser: single optimiser or dict of optimiser to be used to process
-    the passed gradients
+    :param optimiser: single optimiser or dict of optimisers
+        to be used to process the passed gradients
     :param gradients: list or dict (having a reference to the optimiser used)
-    of processed gradients from the gradient_collector
+        of processed gradients from the gradient_collector
     :return:
     """
 

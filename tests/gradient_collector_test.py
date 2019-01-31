@@ -151,7 +151,7 @@ class GradientCollectorTest(tf.test.TestCase):
         self.assertAllClose(
             grad_collector._gradients[0][0][0].shape.as_list(),
             ave_grads[0][0].shape.as_list())
-        
+
 
 if __name__ == "__main__":
     tf.test.main()
