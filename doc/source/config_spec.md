@@ -159,7 +159,7 @@ See also: [input filename matching guide](./filename_matching.html)
 Keywords used to exclude filenames.
 The filenames with these keywords will not be used as input. Note that
 if the type of `filename_not_contains` is a string array, then a filename
-must not contain any of the strings inthe array to be a match.
+must not contain any of the strings in the array to be a match.
 
 See also: [input filename matching guide](./filename_matching.html)
 
@@ -194,7 +194,8 @@ See also: [Patch-base analysis guide](./window_sizes.html)
 ###### `loader`
 Specify the loader to be used to load the files in the input section.
 Some loaders require additional Python packages.
-Default value `None` indicates trying all available loaders.
+Supported loaders: `nibabel`, `opencv`, `skimage`, `pillow`, `simpleitk`, `dummy` in prioriy order. 
+Default value `None` indicates trying all available loaders, in the above priority order.
 
 This section will be used by [ImageReader](./niftynet.io.image_reader.html)
 to generate a list of [input images objects](./niftynet.io.image_type.html).
@@ -257,7 +258,9 @@ This option is ignored if there's no GPU device.
 Directory to save/load intermediate training models and logs.  NiftyNet tries
 to interpret this parameter as an absolute system path or a path relative to
 the current command.  It's defaulting to the directory of the current
-configuration file if left blank.
+configuration file if left blank. 
+
+It is assumed that `model_dir` contains two folders, `models` and `logs`. 
 
 ######  `dataset_split_file`
 File assigning subjects to training/validation/inference subsets.
@@ -678,7 +681,8 @@ Interpolation order of the network outputs.
 
 ###### `dataset_to_infer`
 String specifies which dataset ('all', 'training', 'validation', 'inference') to compute inference for.
-By default 'inference' dataset is used.
+By default 'inference' dataset is used. If no `dataset_split_file` is specified, then all data specified
+in the csv or search path are used for inference. 
 
 
 ### EVALUATION
@@ -714,8 +718,13 @@ The evaluation configuration section (`[EVALUATION]`) must contain:
  [regression evaluations](./niftynet.evaluation.regression_evaluations.html),
  [segmentation evaluations](./niftynet.evaluation.segmentation_evaluations.html),
  and [classification evaluations](./niftynet.evaluation.classification_evaluations.html).
+
+Note that application specific configuration (such as `evaluation_units`) are specified
+in the application configuration section (such as `[SEGMENTATION]`).
+<!---
 - `evaluation_units` -- `foreground`, `label` or `cc`. Describe how the
   evaluation should be performed in the case of segmentation mostly
   (`foreground` means only one label, `label` means metrics per label, `cc`
   means metrics per connected component).  More on this topic can be found at
   [segmentation evaluations](./niftynet.evaluation.segmentation_evaluations.html).
+-->
