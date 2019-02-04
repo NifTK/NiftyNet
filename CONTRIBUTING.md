@@ -278,6 +278,7 @@ After adding notes for the current release to the [NiftyNet changelog][changelog
 
 [pep440]: https://www.python.org/dev/peps/pep-0440/
 [changelog]: CHANGELOG.md
+[git-tag]: https://git-scm.com/book/en/v2/Git-Basics-Tagging
 
 ### Publishing a NiftyNet pip installer on PyPI
 
@@ -332,5 +333,6 @@ info](https://github.com/NifTK/NiftyNet/issues/120#issuecomment-401531891)).*
 This requires added a new [`console_scripts` entry point][pip-console-entry] in the `setup.py` file.
 For a practical example see [how the `net_segment` CLI command is implemented][net-segment-entry].
 
+[pip-console-entry]: http://python-packaging.readthedocs.io/en/latest/command-line-scripts.html#the-console-scripts-entry-point
 [net-segment-entry]: https://github.com/NifTK/NiftyNet/blob/v0.3.0/setup.py#L107
 
