@@ -276,8 +276,27 @@ Please send a merge request with only relevant changes to a particular unit test
 NiftyNet versions are numbered following [Semantic Versioning (semver)](http://semver.org/spec/v2.0.0.html).
 After adding notes for the current release to the [NiftyNet changelog][changelog], the current release should be [tagged][git-tag] with a [PEP440][pep440]-compliant semver number preceded by the letter `v` (for "version").
 
+Steps to release a new version:
+1. Prepare and proofread a draft release note;
+1. Add release note to the changelog in the [Changelog][keepachangelog] format;
+    * Update the `[Unreleased]` link in the changelog,
+    * Append a GitHub comparison URL entry to the changelog file;
+1. Push the release note changes to a new branch `releasing-x`;
+1. Send a pull request from `releasing-x` to `dev`;
+1. Check CI tests outcome, check changelog, accept the pull request;
+1. Tag the latest commit of `dev`;
+1. the `pip stage` will be triggered in CI, there should be a wheel ready;
+1. Publish the pip wheel on [PyPI test server][pypi-test];
+1. Inspect testing front page, make sure everything looks fine, links work, etc.;
+1. Push pip wheel to release (warning: not revertible);
+1. Merge `dev` to `master` (archiving the new version).
+
+
 [pep440]: https://www.python.org/dev/peps/pep-0440/
 [changelog]: CHANGELOG.md
+[git-tag]: https://git-scm.com/book/en/v2/Git-Basics-Tagging
+[keepachangelog]: http://keepachangelog.com/en/1.0.0/
+[pypi-test]: https://test.pypi.org/
 
 ### Publishing a NiftyNet pip installer on PyPI
 
@@ -332,5 +351,6 @@ info](https://github.com/NifTK/NiftyNet/issues/120#issuecomment-401531891)).*
 This requires added a new [`console_scripts` entry point][pip-console-entry] in the `setup.py` file.
 For a practical example see [how the `net_segment` CLI command is implemented][net-segment-entry].
 
+[pip-console-entry]: http://python-packaging.readthedocs.io/en/latest/command-line-scripts.html#the-console-scripts-entry-point
 [net-segment-entry]: https://github.com/NifTK/NiftyNet/blob/v0.3.0/setup.py#L107
 
