@@ -285,13 +285,14 @@ Steps to release a new version:
 1. Send a pull request from `releasing-x` to `dev`;
 1. Check CI tests outcome, check changelog, accept the pull request;
 1. Tag the latest commit of `dev`;
+1. Once the tag has been pushed to GitHub, run [chandler][chandler] to synchronise the changelog with the published release on GitHub
 1. the `pip stage` will be triggered in CI, there should be a wheel ready;
 1. Publish the pip wheel on [PyPI test server][pypi-test];
 1. Inspect testing front page, make sure everything looks fine, links work, etc.;
 1. Push pip wheel to release (warning: not revertible);
 1. Merge `dev` to `master` (archiving the new version).
 
-
+[chandler]: https://github.com/mattbrictson/chandler
 [pep440]: https://www.python.org/dev/peps/pep-0440/
 [changelog]: CHANGELOG.md
 [git-tag]: https://git-scm.com/book/en/v2/Git-Basics-Tagging
