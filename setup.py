@@ -12,7 +12,7 @@ description = 'An open-source convolutional neural networks platform' + \
               ' image-guided therapy'
 
 # Get the long description
-with open('pip/long_description.rst') as f:
+with open('README.md') as f:
     long_description = f.read()
 
 setup(
