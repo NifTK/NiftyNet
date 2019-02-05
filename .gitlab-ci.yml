@@ -31,7 +31,6 @@ testjob:
   only:
     - master
     - dev
-    - merging-github-pr-269
     - tags
   script:
     # !!kill coverage in case of hanging processes
@@ -44,9 +43,6 @@ testjob:
     - python -c "import tensorflow as tf; print tf.__version__"
     - python -c "import tensorflow as tf; from tensorflow.python.client import device_lib; print device_lib.list_local_devices()"
     - ls -la /dev | grep nvidia
-
-    - echo $(python tests/get_gpu_index.py)
-    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
 
     # removing existing testing data
     - if [ -d models ]; then rm -r models; fi
@@ -79,6 +75,9 @@ testjob:
     - cd $niftynet_dir
 
     - pip install -r requirements-gpu.txt
+
+    - echo $(python tests/get_gpu_index.py)
+    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
 
     # check whether version command works
     # Git-clone:
@@ -167,6 +166,9 @@ testjob:
     - pip install coverage
     - pip install -r requirements-gpu.txt
 
+    - echo $(python tests/get_gpu_index.py)
+    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
+
     - python net_download.py testing -r
     - coverage run -a --source . net_segment.py train -c config/highres3dnet_config.ini --batch_size=1 --num_threads=2 --queue_length=40 --max_iter=10
     - coverage run -a --source . net_segment.py inference -c config/highres3dnet_config.ini --batch_size 8 --spatial_window_size 64,64,64 --queue_length 64
@@ -230,7 +232,6 @@ quicktest:
   except:
     - master
     - dev
-    - merging-github-pr-269
     - tags
     - 147-revise-contribution-guidelines-to-include-github
     - 150-properly-format-the-bibtex-entry-to-the-ipmi-2017-paper-on-the-main-readme
@@ -289,6 +290,10 @@ quicktest:
     - coverage erase
     # run only fast tests
     - pip install -r requirements-gpu.txt
+
+    - echo $(python tests/get_gpu_index.py)
+    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
+
     - python net_download.py testing -r
     - QUICKTEST=True coverage run -a --source . -m unittest discover -s "tests" -p "*_test.py"
     - coverage report --omit='niftynet-dev-test*' -m
@@ -307,7 +312,7 @@ pip-installer:
   only:
     - master
     - dev
-    - merging-github-pr-269
+    - release-v0.5.0
     - tags
   script:
     # get the shortened version of last commit's hash
@@ -343,6 +348,10 @@ pip-installer:
     # NiftyNet console entries should fail gracefully if TF not installed
     # i.e. check that the warning displays the TF website
     - cd $niftynet_dir
+
+    - echo $(python tests/get_gpu_index.py)
+    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
+
     - set +e
     - python -c "import niftynet" 2>&1 | grep "https://www.tensorflow.org/"
     - set -e
@@ -443,6 +452,10 @@ pip-installer:
     # NiftyNet console entries should fail gracefully if TF not installed
     # i.e. check that the warning displays the TF website
     - cd $niftynet_dir
+
+    - echo $(python tests/get_gpu_index.py)
+    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
+
     - set +e
     - python -c "import niftynet" 2>&1 | grep "https://www.tensorflow.org/"
     - set -e

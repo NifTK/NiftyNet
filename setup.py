@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
+from io import open
 
 import versioneer
 from niftynet.utilities.versioning import get_niftynet_version
