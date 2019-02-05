@@ -515,7 +515,7 @@ pip-camera-ready:
     - source ci/findwheel.sh
     - echo $niftynet_wheel
     # Creat camera-ready folder if doesn't exist
-    - camera_ready_dir=/home/dzhoshkun/environments/niftynet/pip/camera-ready
+    - camera_ready_dir=/home/gitlab-runner/environments/niftynet/pip/camera-ready
     - mkdir -p $camera_ready_dir
     - ls -lrtha $camera_ready_dir
     # Clean up the camera-ready folder if already there
