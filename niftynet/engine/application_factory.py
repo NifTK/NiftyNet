@@ -97,6 +97,17 @@ SUPPORTED_LOSS_SEGMENTATION = {
         'niftynet.layer.loss_segmentation.generalised_wasserstein_dice_loss',
     "SensSpec":
         'niftynet.layer.loss_segmentation.sensitivity_specificity_loss',
+    "Dice_Mixed":
+        'niftynet.layer.loss_segmentation.dice_mixed',
+    "VolumeCheck":
+        'niftynet.layer.loss_segmentation.volume_check',
+    "Volume":
+        'niftynet.layer.loss_segmentation.volume_enforcement',
+    "ColdFeet":
+        'niftynet.layer.loss_segmentation.undecided_loss',
+    "VolumeFin":
+        'niftynet.layer.loss_segmentation.volume_enforcement_fin',
+
     # "L1Loss":
     #     'niftynet.layer.loss_segmentation.l1_loss',
     # "L2Loss":
@@ -121,6 +132,11 @@ SUPPORTED_LOSS_REGRESSION = {
 SUPPORTED_LOSS_CLASSIFICATION = {
     "CrossEntropy":
         'niftynet.layer.loss_classification.cross_entropy',
+    "SymKLD":
+        'niftynet.layer.loss_classification.kld_softlabels',
+    "RMSE":
+        'niftynet.layer.loss_classification.rmse_prob'
+
 }
 
 

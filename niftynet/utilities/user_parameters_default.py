@@ -33,7 +33,9 @@ DEFAULT_EVENT_HANDLERS = (
     'output_interpreter',
     'console_logger',
     'tensorboard_logger',
-    'performance_logger')
+    'performance_logger',
+    # 'history_logger',
+    'inside_updater')
 
 DEFAULT_ITERATION_GENERATOR = 'iteration_generator'
 

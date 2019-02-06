@@ -22,7 +22,8 @@ SUPPORTED_SUMMARY = {'scalar': tf.summary.scalar,
                      'image': tf.summary.image,
                      'image3_sagittal': image3_sagittal,
                      'image3_coronal': image3_coronal,
-                     'image3_axial': image3_axial}
+                     'image3_axial': image3_axial,
+                     'tensor': tf.summary.tensor_summary}
 
 
 class GradientsCollector(object):
@@ -266,3 +267,5 @@ def global_vars_init_or_restore(var_list=None):
         [v for v in var_list if v not in restored_vars])
     restore_op = tf.group(init_others, *list(restored_vars.values()))
     return restore_op
+
+

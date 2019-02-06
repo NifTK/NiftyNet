@@ -94,11 +94,32 @@ def __add_segmentation_args(parser):
         default=-1)
 
     parser.add_argument(
+        "--save_historyfreq",
+        metavar='',
+        help="Indicates if frequency of classes should be dynamically saved",
+        type=str2boolean,
+        default=True)
+
+    parser.add_argument(
         "--change_mrcnn",
         metavar='',
         help="Set number of classes",
         type=str2boolean,
         default=False)
+
+    parser.add_argument(
+        "--scale_dirup",
+        metavar='',
+        help="Defines if the mrcnn part corrects the scale in each direction",
+        type=str2boolean,
+        default=True)
+
+    parser.add_argument(
+        "--tensor",
+        metavar='',
+        help="Defines if the mrcnn part tries to guess the tensor",
+        type=int,
+        default=0)
 
     parser.add_argument(
         "--change_rpn",

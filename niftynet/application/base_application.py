@@ -60,13 +60,18 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
 
     # the network
     net = None
+
+    # saving encounters of class frequency
+    frequency_history = None
+
+    # performance
+    performance_history = None
+    training_list = None
+    training_item = None
     training_mode = None
     training_values = None
     training_types = None
-
-    # performance
     total_loss = None
-    performance_history = None
 
     # training the network
     optimiser = None
