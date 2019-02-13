@@ -320,6 +320,14 @@ def __add_semisupervised_args(parser):
         type=str2boolean,
         default=True)
 
+    parser.add_argument(
+        "--kl_l2_ratio",
+        metavar='',
+        help="[Training only] set the ratio between kl and l2 components of"
+             "the unsupervised loss function",
+        type=float,
+        default=0.0001)
+
 
     from deeploop.prototypes.semi_supervised_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
