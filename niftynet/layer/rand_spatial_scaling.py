@@ -3,7 +3,6 @@ from __future__ import absolute_import, print_function
 
 import warnings
 
-import tensorflow as tf
 import numpy as np
 import scipy.ndimage as ndi
 
@@ -22,7 +21,7 @@ class RandomSpatialScalingLayer(RandomisedLayer):
                  min_percentage=-10.0,
                  max_percentage=10.0,
                  antialiasing=True,
-                 isotropic=True,
+                 isotropic=False,
                  name='random_spatial_scaling'):
         super(RandomSpatialScalingLayer, self).__init__(name=name)
         assert min_percentage <= max_percentage
