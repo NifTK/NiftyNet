@@ -194,7 +194,7 @@ See also: [Patch-base analysis guide](./window_sizes.html)
 ###### `loader`
 Specify the loader to be used to load the files in the input section.
 Some loaders require additional Python packages.
-Supported loaders: `nibabel`, `opencv`, `skimage`, `pillow`, `simpleitk`, `dummy` in prioriy order. 
+Supported loaders: `nibabel`, `opencv`, `skimage`, `pillow`, `simpleitk`, `dummy` in prioriy order.
 Default value `None` indicates trying all available loaders, in the above priority order.
 
 This section will be used by [ImageReader](./niftynet.io.image_reader.html)
@@ -258,9 +258,9 @@ This option is ignored if there's no GPU device.
 Directory to save/load intermediate training models and logs.  NiftyNet tries
 to interpret this parameter as an absolute system path or a path relative to
 the current command.  It's defaulting to the directory of the current
-configuration file if left blank. 
+configuration file if left blank.
 
-It is assumed that `model_dir` contains two folders, `models` and `logs`. 
+It is assumed that `model_dir` contains two folders, `models` and `logs`.
 
 ######  `dataset_split_file`
 File assigning subjects to training/validation/inference subsets.
@@ -595,6 +595,7 @@ Value should be in `[0, 1]`.
 [rotation_angle](#rotation-angle) | `float array` | `rotation_angle=-10.0,10.0` | `''`
 [scaling_percentage](#scaling-percentage) | `float array` | `scaling_percentage=-20.0,20.0` | `''`
 [antialiasing](#scaling-percentage) | `boolean` | `antialiasing=True` | `True`
+[isotropic_scaling](#scaling-percentage) | `boolean` | `isotropic_scaling=True` | `False`
 [random_flipping_axes](#random-flipping-axes) | `integer array` | `random_flipping_axes=1,2` | `-1`
 [do_elastic_deformation](#do-elastic-deformation) | `boolean` | `do_elastic_deformation=True` | `False`
 [num_ctrl_points](#do-elastic-deformation) | `integer` | `num_ctrl_points=1` | `4`
@@ -616,8 +617,10 @@ E.g, `(-50, 50)` indicates transforming
 image (size `d`) to image with its size in between `0.5*d` and `1.5d`.
 
 When random scaling is enabled, it is possible to further specify:
-- `antialiasing` indicating if antialiasing should be performed
+- `antialiasing` indicating if Gaussian filtering should be performed
 when randomly downsampling the input images.
+- `isotropic_scaling` indicating if the same amount of scaling should be applied
+in each dimension.
 
 ###### `random_flipping_axes`
 The axes which can be flipped to augment the data.
@@ -682,7 +685,7 @@ Interpolation order of the network outputs.
 ###### `dataset_to_infer`
 String specifies which dataset ('all', 'training', 'validation', 'inference') to compute inference for.
 By default 'inference' dataset is used. If no `dataset_split_file` is specified, then all data specified
-in the csv or search path are used for inference. 
+in the csv or search path are used for inference.
 
 
 ### EVALUATION

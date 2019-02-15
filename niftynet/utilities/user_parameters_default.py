@@ -485,6 +485,13 @@ def add_training_args(parser):
         default=())
 
     parser.add_argument(
+        "--isotropic_scaling",
+        help="Indicates if the same random scaling factor should be applied "
+             "to each dimension",
+        type=str2boolean,
+        default=False)
+
+    parser.add_argument(
         "--antialiasing",
         help="Indicates if antialiasing must be performed "
              "when randomly scaling the input images",
