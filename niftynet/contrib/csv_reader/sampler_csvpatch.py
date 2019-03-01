@@ -82,171 +82,204 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
 
         # if 'multi' in self.csv_reader.type_by_task.values():
         #     flag_multi_row = True
+        try:
+            _, _, subject_id = self.csv_reader(idx)
+        except ValueError:
+            tf.logging.fatal("No available subject")
+            raise
 
-        _, _, subject_id = self.csv_reader(idx)
+        assert len(self.available_subjects) >0, "No available subject from " \
+                                                "check"
 
         print("subject id is ", subject_id)
-        idx_subject_id = np.where(
+        if len(self.available_subjects) > 0:
+            idx_subject_id = np.where(
             self.available_subjects == subject_id)[0][0]
-        image_id, data, _ = self.reader(idx=idx_subject_id, shuffle=True)
-        subj_indices, csv_data, _ = self.csv_reader(subject_id=subject_id)
+            image_id, data, _ = self.reader(idx=idx_subject_id, shuffle=True)
+            subj_indices, csv_data, _ = self.csv_reader(subject_id=subject_id)
+            image_shapes = dict(
+                (name, data[name].shape) for name in self.window.names)
+            static_window_shapes = self.window.match_image_shapes(image_shapes)
 
-        if 'sampler' not in self.csv_reader.names:
-            tf.logging.warning('Uniform sampling because no csv sampler '
-                              'provided')
+            # Perform the checks relative to the sample choices and create the
+            # corresponding (if needed) padding information to be applied
+            num_idx, num_discard = self.check_csv_sampler_valid(subject_id,
+                                                                image_shapes,
+                                                                static_window_shapes
+                                                                )
 
-        image_shapes = dict(
-            (name, data[name].shape) for name in self.window.names)
-        static_window_shapes = self.window.match_image_shapes(image_shapes)
+            print(num_idx, num_discard, "available, discarded")
 
-        # Perform the checks relative to the sample choices and create the
-        # corresponding (if needed) padding information to be applied
-        num_idx, num_discard = self.check_csv_sampler_valid(subject_id,
-                                                            image_shapes,
-                                                            static_window_shapes
-                                                            )
 
-        # In the remove configuration, none of the unsuitable sample is used.
-        #  Thus if the chosen subject does not have any suitable sample,
-        # another one must be drawn. An error is raised if none of the
-        # subjects has suitable samples
-        if self.mode_correction == 'remove':
-            if num_idx == num_discard:
-                self.available_subjects.drop(subject_id)
-                subject_id = None
-                while subject_id is None and len(self.available_subjects) > 0:
-                    _, _, subject_id = self.csv_reader(idx)
+            if 'sampler' not in self.csv_reader.names:
+                tf.logging.warning('Uniform sampling because no csv sampler '
+                                  'provided')
 
-                    # print("subject id is ", subject_id)
-                    # Find the index corresponding to the drawn subject id in
-                    #  the reader
-                    idx_subject_id = np.where(
-                        self.available_subjects == subject_id)[0][0]
-                    image_id, data, _ = self.reader(idx=idx_subject_id,
-                                                    shuffle=True)
-                    subj_indices, csv_data, _ = self.csv_reader(
-                        subject_id=subject_id)
-                    if 'sampler' not in self.csv_reader.names:
-                        tf.logging.warning(
-                            'Uniform sampling because no csv sampler provided')
-                    image_shapes = dict(
-                        (name, data[name].shape) for name in self.window.names)
-                    static_window_shapes = self.window.match_image_shapes(
-                        image_shapes)
-                    num_idx, num_discard = self.check_csv_sampler_valid(
-                        subject_id,
-                        image_shapes,
-                        static_window_shapes)
-                    if num_idx == num_discard:
-                        self.available_subjects.drop(subject_id)
+
+
+            # In the remove configuration, none of the unsuitable sample is used.
+            #  Thus if the chosen subject does not have any suitable sample,
+            # another one must be drawn. An error is raised if none of the
+            # subjects has suitable samples
+            if self.mode_correction == 'remove':
+                if num_idx == num_discard:
+                    if subject_id in set(self.available_subjects):
+                        self.available_subjects.drop([idx_subject_id], inplace=True)
+
+                        print(self.available_subjects, idx_subject_id)
                         subject_id = None
-            if subject_id is None:
-                tf.logging.fatal("None of the subjects has any suitable "
-                                 "samples. Consider using a different "
-                                 "alternative to unsuitable samples or "
-                                 "reducing your patch size")
-                raise ValueError
-
-        # find csv coordinates and return coordinates (not corrected) and
-        # corresponding csv indices
-        coordinates, idx = self.csvcenter_spatial_coordinates(
-            subject_id=subject_id,
-            data=data,
-            img_sizes=image_shapes,
-            win_sizes=static_window_shapes,
-            n_samples=self.window.n_samples,
-            mode_correction=self.mode_correction
-            )
-        reject = False
-        if self.mode_correction == 'remove':
-            reject = True
-        # print(idx, "index selected")
-        # initialise output dict, placeholders as dictionary keys
-        # this dictionary will be used in
-        # enqueue operation in the form of: `feed_dict=output_dict`
-        output_dict = {}
-        potential_pad = self.csv_reader.pad_by_task['sampler'][idx][0]
-        potential_pad_corr_end = -1.0 * np.asarray(potential_pad[N_SPATIAL:])
-        potential_pad_corr = np.concatenate((potential_pad[:N_SPATIAL],
-                                             potential_pad_corr_end), 0)
-
-        # fill output dict with data
-        for name in list(data):
-            coordinates_key = LOCATION_FORMAT.format(name)
-            image_data_key = name
-
-            # fill the coordinates
-            location_array = coordinates[name]
-            output_dict[coordinates_key] = location_array
-
-            # fill output window array
-            image_array = []
-            for window_id in range(self.window.n_samples):
-                x_start, y_start, z_start, x_end, y_end, z_end = \
-                    location_array[window_id, 1:].astype(np.int32) + \
-                    potential_pad_corr.astype(np.int32)
-                # print(location_array[window_id, 1:]+potential_pad_corr)
-                try:
-                    image_window = data[name][
-                                   x_start:x_end, y_start:y_end,
-                                   z_start:z_end, ...]
-                    if np.sum(potential_pad) > 0:
-                        new_pad = np.reshape(potential_pad, [2, N_SPATIAL]).T
-                        add_pad = np.tile([0, 0], [len(np.shape(
-                            image_window))-N_SPATIAL, 1])
-                        new_pad = np.concatenate((new_pad, add_pad),
-                                                 0).astype(np.int32)
-                        # print(new_pad, "is padding")
-                        new_img = np.pad(image_window, pad_width=new_pad,
-                                         mode='constant',
-                                         constant_values=0)
-                        image_array.append(new_img[np.newaxis, ...])
                     else:
-                        image_array.append(image_window[np.newaxis, ...])
-                except ValueError:
-                    tf.logging.fatal(
-                        "dimensionality miss match in input volumes, "
-                        "please specify spatial_window_size with a "
-                        "3D tuple and make sure each element is "
-                        "smaller than the image length in each dim. "
-                        "Current coords %s", location_array[window_id])
-                    raise
-            if len(image_array) > 1:
-                output_dict[image_data_key] = \
-                    np.concatenate(image_array, axis=0)
-            else:
-                output_dict[image_data_key] = image_array[0]
-        # fill output dict with csv_data
-        # print("filling output dict")
-        if self.csv_reader is not None:
-            idx_dict = {}
-            list_keys = self.csv_reader.df_by_task.keys()
-            for k in list_keys:
-                if self.csv_reader.type_by_task[k] == 'multi':
-                    idx_dict[k] = idx
-                else:
-                    for n in range(0, self.window.n_samples):
-                        idx_dict[k] = 0
-            _, csv_data_dict, _ = self.csv_reader(idx=idx_dict,
-                                                  subject_id=subject_id,
-                                                  reject=reject)
-            for name in csv_data_dict.keys():
-                csv_data_array = []
-                for n in range(0, self.window.n_samples):
-                    csv_data_array.append(csv_data_dict[name])
-                if len(csv_data_array) == 1:
-                    output_dict[name] = np.asarray(csv_data_array[0],
-                                                   dtype=np.float32)
-                else:
-                    output_dict[name] = np.concatenate(
-                        csv_data_array, 0).astype(dtype=np.float32)
+                        tf.logging.warning('%s may have already been dropped from list of available subjects' %subject_id)
+                        subject_id = None
+                    while subject_id is None and len(self.available_subjects) > 0:
+                        _, _, subject_id = self.csv_reader(idx)
+                        print('list of available subjects is ',
+                              self.available_subjects, idx_subject_id)
+                        # print("subject id is ", subject_id)
+                        # Find the index corresponding to the drawn subject id in
+                        #  the reader
+                        if subject_id in set(self.available_subjects):
+                            idx_subject_id = np.where(
+                                self.available_subjects == subject_id)[0][0]
+                            image_id, data, _ = self.reader(idx=idx_subject_id,
+                                                            shuffle=True)
+                            subj_indices, csv_data, _ = self.csv_reader(
+                                subject_id=subject_id)
+                            if 'sampler' not in self.csv_reader.names:
+                                tf.logging.warning(
+                                    'Uniform sampling because no csv sampler provided')
+                            image_shapes = dict(
+                                (name, data[name].shape) for name in self.window.names)
+                            static_window_shapes = self.window.match_image_shapes(
+                                image_shapes)
+                            num_idx, num_discard = self.check_csv_sampler_valid(
+                                subject_id,
+                                image_shapes,
+                                static_window_shapes)
+                            if num_idx == num_discard:
+                                if subject_id in set(self.available_subjects):
+                                    self.available_subjects.drop(idx_subject_id)
+                                    subject_id = None
+                                else:
+                                    subject_id = None
+                        else:
+                            subject_id = None
+                if subject_id is None:
+                    tf.logging.fatal("None of the subjects has any suitable "
+                                     "samples. Consider using a different "
+                                     "alternative to unsuitable samples or "
+                                     "reducing your patch size")
+                    raise ValueError
 
-            for name in csv_data_dict.keys():
-                output_dict[name + '_location'] = output_dict['image_location']
-        return output_dict
-        # the output image shape should be
-        # [enqueue_batch_size, x, y, z, time, modality]
-        # where enqueue_batch_size = windows_per_image
+
+            # find csv coordinates and return coordinates (not corrected) and
+            # corresponding csv indices
+            try:
+                print('subject id to try is %s' % subject_id)
+                coordinates, idx = self.csvcenter_spatial_coordinates(
+                    subject_id=subject_id,
+                    data=data,
+                    img_sizes=image_shapes,
+                    win_sizes=static_window_shapes,
+                    n_samples=self.window.n_samples,
+                    mode_correction=self.mode_correction
+                    )
+                reject = False
+                if self.mode_correction == 'remove':
+                    reject = True
+                # print(idx, "index selected")
+                # initialise output dict, placeholders as dictionary keys
+                # this dictionary will be used in
+                # enqueue operation in the form of: `feed_dict=output_dict`
+                output_dict = {}
+                potential_pad = self.csv_reader.pad_by_task['sampler'][idx][0]
+                potential_pad_corr_end = -1.0 * np.asarray(potential_pad[N_SPATIAL:])
+                potential_pad_corr = np.concatenate((potential_pad[:N_SPATIAL],
+                                                     potential_pad_corr_end), 0)
+
+                # fill output dict with data
+                for name in list(data):
+                    coordinates_key = LOCATION_FORMAT.format(name)
+                    image_data_key = name
+
+                    # fill the coordinates
+                    location_array = coordinates[name]
+                    output_dict[coordinates_key] = location_array
+
+                    # fill output window array
+                    image_array = []
+                    for window_id in range(self.window.n_samples):
+                        x_start, y_start, z_start, x_end, y_end, z_end = \
+                            location_array[window_id, 1:].astype(np.int32) + \
+                            potential_pad_corr.astype(np.int32)
+                        # print(location_array[window_id, 1:]+potential_pad_corr)
+                        try:
+                            image_window = data[name][
+                                           x_start:x_end, y_start:y_end,
+                                           z_start:z_end, ...]
+                            if np.sum(potential_pad) > 0:
+                                new_pad = np.reshape(potential_pad, [2, N_SPATIAL]).T
+                                add_pad = np.tile([0, 0], [len(np.shape(
+                                    image_window))-N_SPATIAL, 1])
+                                new_pad = np.concatenate((new_pad, add_pad),
+                                                         0).astype(np.int32)
+                                # print(new_pad, "is padding")
+                                new_img = np.pad(image_window, pad_width=new_pad,
+                                                 mode='constant',
+                                                 constant_values=0)
+                                image_array.append(new_img[np.newaxis, ...])
+                            else:
+                                image_array.append(image_window[np.newaxis, ...])
+                        except ValueError:
+                            tf.logging.fatal(
+                                "dimensionality miss match in input volumes, "
+                                "please specify spatial_window_size with a "
+                                "3D tuple and make sure each element is "
+                                "smaller than the image length in each dim. "
+                                "Current coords %s", location_array[window_id])
+                            raise
+                    if len(image_array) > 1:
+                        output_dict[image_data_key] = \
+                            np.concatenate(image_array, axis=0)
+                    else:
+                        output_dict[image_data_key] = image_array[0]
+                # fill output dict with csv_data
+                # print("filling output dict")
+                if self.csv_reader is not None:
+                    idx_dict = {}
+                    list_keys = self.csv_reader.df_by_task.keys()
+                    for k in list_keys:
+                        if self.csv_reader.type_by_task[k] == 'multi':
+                            idx_dict[k] = idx
+                        else:
+                            for n in range(0, self.window.n_samples):
+                                idx_dict[k] = 0
+                    _, csv_data_dict, _ = self.csv_reader(idx=idx_dict,
+                                                          subject_id=subject_id,
+                                                          reject=reject)
+                    for name in csv_data_dict.keys():
+                        csv_data_array = []
+                        for n in range(0, self.window.n_samples):
+                            csv_data_array.append(csv_data_dict[name])
+                        if len(csv_data_array) == 1:
+                            output_dict[name] = np.asarray(csv_data_array[0],
+                                                           dtype=np.float32)
+                        else:
+                            output_dict[name] = np.concatenate(
+                                csv_data_array, 0).astype(dtype=np.float32)
+
+                    for name in csv_data_dict.keys():
+                        output_dict[name + '_location'] = output_dict['image_location']
+                return output_dict
+                # the output image shape should be
+                # [enqueue_batch_size, x, y, z, time, modality]
+                # where enqueue_batch_size = windows_per_image
+            except ValueError:
+                tf.logging.fatal("Cannot provide output for %s" %subject_id)
+                raise
+        else:
+            tf.logging.fatal("%s not in available list of subjects" %subject_id)
+            raise ValueError
 
     def csvcenter_spatial_coordinates(self,
                                       subject_id,
@@ -267,7 +300,10 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
         This function handles this situation by first find the largest
         window across these window definitions, and generate the coordinates.
         These coordinates are then adjusted for each of the
-        smaller window sizes (the output windows are almost concentric).
+        smaller window sizes (the output windows are almost concentric)
+        This function provide the appropriate sampled coordinates modified
+        according to knowledge of the reader constraints on resolution and
+        orientation.
         """
 
         assert data is not None, "No input from image reader. Please check" \
@@ -290,6 +326,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
         n_samples = max(n_samples, 1)
         all_coordinates = {}
 
+# If there is no csv reader for the sampler, we fall back to a uniform sampling
         if 'sampler' not in self.csv_reader.task_param.keys():
             window_centres = rand_spatial_coordinates(n_samples,
                                                       img_spatial_size,
@@ -324,9 +361,11 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
                     print(centre_transform.shape)
                     window_centres_list.append(centre_transform)
                     window_centres = np.concatenate(window_centres_list, 0)
-
+            # If nothing is valid and the mode of correction is rand, then we
+            #  default back to a uniform sampling
             if np.sum(self.csv_reader.valid_by_task['sampler'][idx_multi]) ==\
-                    0 and np.asarray(window_centres).shape[0] == 0:
+                    0 and np.asarray(window_centres).shape[0] == 0 and \
+                    mode_correction == 'rand':
                 tf.logging.warning("Nothing is valid, taking random centres")
                 window_centres = rand_spatial_coordinates(n_samples,
                                                           img_spatial_size,
@@ -348,8 +387,12 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
             # Make starting coordinates of the window
             spatial_coords = np.zeros(
                 (1, N_SPATIAL * 2), dtype=np.int32)
-            spatial_coords[:, :N_SPATIAL] = np.maximum(
-                window_centres[0, :N_SPATIAL] - half_win[:N_SPATIAL], 0)
+            if mode_correction != 'pad':
+                spatial_coords[:, :N_SPATIAL] = np.maximum(
+                    window_centres[0, :N_SPATIAL] - half_win[:N_SPATIAL], 0)
+            else:
+                spatial_coords[:, :N_SPATIAL] = window_centres[0, :N_SPATIAL] \
+                                                - half_win[:N_SPATIAL]
 
             # Make the opposite corner of the window is
             # just adding the mod specific window size
