@@ -81,6 +81,7 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
             'windows_per_image should be 1.'
 
         image_id, image_data, _ = self.reader(idx=idx)
+        print(image_id, idx)
         for mod in list(image_data):
             spatial_shape = image_data[mod].shape[:N_SPATIAL]
             coords = self.dummy_coordinates(image_id, spatial_shape, 1)
@@ -88,6 +89,7 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
             image_data[mod] = image_data[mod][np.newaxis, ...]
         if self.csv_reader is not None:
             _, label_dict, _ = self.csv_reader(subject_id=image_id)
+            print(label_dict, image_id, idx)
             image_data.update(label_dict)
             for name in self.csv_reader.names:
                 image_data[name + '_location'] = image_data['image_location']

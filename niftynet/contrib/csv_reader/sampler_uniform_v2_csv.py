@@ -117,6 +117,7 @@ class UniformSamplerCSV(ImageWindowDatasetCSV):
             # where enqueue_batch_size = windows_per_image
             if self.csv_reader is not None:
                 _, label_dict, _ = self.csv_reader(idx=image_id)
+                print(idx, image_id, label_dict)
                 output_dict.update(label_dict)
                 for name in self.csv_reader.task_param.keys():
                     output_dict[name + '_location'] = output_dict['image_location']
