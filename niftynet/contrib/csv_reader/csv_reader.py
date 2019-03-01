@@ -101,13 +101,25 @@ class CSVReader(Layer):
     
     def _parse_csv(self, path_to_csv, to_ohe):
         tf.logging.warning('This method will read your entire csv into memory')
-        df = pd.read_csv(path_to_csv, index_col=0, header=None)
-        df.index = df.index.map(str)
-        if set(df.index) != set(self.subject_ids):
-            print(set(self.subject_ids) - set(df.index))
-            tf.logging.fatal('csv file provided at: {} does not have '
-                             'all the subject_ids'.format(path_to_csv))
-            raise Exception
+        df_init = pd.read_csv(path_to_csv, index_col=0, header=None)
+
+        df_init.index = df_init.index.map(str)
+
+        if set(df_init.index) != set(self.subject_ids):
+            print("probably different because of split file - drop not "
+                  "relevant ones")
+            df = df_init.drop(index=[s for s in set(df_init.index) if s not in
+                                     set(
+                    self.subject_ids)])
+            #df.reset_index(drop=True, inplace=True)
+
+            if set(df.index) != set(self.subject_ids):
+                print(set(self.subject_ids) - set(df.index))
+                tf.logging.fatal('csv file provided at: {} does not have '
+                                 'all the subject_ids'.format(path_to_csv))
+                raise Exception
+        else:
+            df = df_init.copy()
         if to_ohe and len(df.columns) == 1:
             _dims = len(list(df[1].unique()))
             _indexable_output = self.to_ohe(df[1].values, _dims)
@@ -115,7 +127,7 @@ class CSVReader(Layer):
         elif not to_ohe and len(df.columns) == 1:
             _dims = 1
             _indexable_output = self.to_categorical(df[1].values,
-                                                    df[1].unique())
+                                                    np.sort(df[1].unique()))
             return df, _indexable_output, _dims
         elif not to_ohe:
             _dims = len(df.columns)
@@ -263,6 +275,8 @@ class CSVReader(Layer):
             output_dict = {k: self.apply_niftynet_format_to_data(
                 np.asarray(self._indexable_output[k])[idx_dict[k]]) for k in
                 idx_dict.keys()}
+            # print(idx_dict, self._indexable_output['modality_label'][
+            #     idx_dict['modality_label']])
             return idx_dict, output_dict, subject_id
         else:
             raise Exception('Invalid mode')
