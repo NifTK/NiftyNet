@@ -275,13 +275,21 @@ class RegressionApplication(BaseApplication):
                     learning_rate=self.action_param.lr)
             loss_func = LossFunction(loss_type=self.action_param.loss_type)
 
-            crop_layer = CropLayer(border=self.regression_param.loss_border)
             weight_map = data_dict.get('weight', None)
-            weight_map = None if weight_map is None else crop_layer(weight_map)
-            data_loss = loss_func(
-                prediction=crop_layer(net_out),
-                ground_truth=crop_layer(data_dict['output']),
-                weight_map=weight_map)
+            border=self.regression_param.loss_border
+            if border > 0:
+                crop_layer = CropLayer(border)
+                weight_map = None if weight_map is None else crop_layer(weight_map)
+                data_loss = loss_func(
+                        prediction=crop_layer(net_out),
+                        ground_truth=crop_layer(data_dict['output']),
+                        weight_map=weight_map)
+            else:
+                data_loss = loss_func(
+                        prediction=net_out,
+                        ground_truth=data_dict['output'],
+                        weight_map=weight_map)
+                
             reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(
