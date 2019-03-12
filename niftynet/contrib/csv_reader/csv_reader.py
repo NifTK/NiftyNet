@@ -17,11 +17,13 @@ class CSVReader(Layer):
         self._labels = None
         self._df = None
         self.label_names = None
+        self.n_samples_per_id = None
         self.dims = None
 
         super(CSVReader, self).__init__(name='csv_reader')
     
-    def initialise(self, data_param, task_param=None, file_list=None):
+    def initialise(self, data_param, task_param=None, file_list=None,
+                   sample_per_volume=1):
         """
         this function takes in a data_param specifying the name of the source and the location of
         the csv data. Three input modes are supported:
@@ -41,6 +43,7 @@ class CSVReader(Layer):
         """
         assert self.names is not None
         data_param = param_to_dict(data_param)
+        self.n_samples_per_id = sample_per_volume
         print(data_param)
         if not task_param:
             task_param = {mod: (mod,) for mod in list(data_param)}
@@ -273,13 +276,28 @@ class CSVReader(Layer):
 
         if self._indexable_output is not None:
             output_dict = {k: self.apply_niftynet_format_to_data(
-                np.asarray(self._indexable_output[k])[idx_dict[k]]) for k in
+                self.tile_nsamples(np.asarray(self._indexable_output[k])[
+                    idx_dict[k]]))
+                for k in
                 idx_dict.keys()}
             # print(idx_dict, self._indexable_output['modality_label'][
             #     idx_dict['modality_label']])
             return idx_dict, output_dict, subject_id
         else:
             raise Exception('Invalid mode')
+
+    def tile_nsamples(self, data):
+        if self.n_samples_per_id > 1:
+            print("preparing tiling")
+            data = np.expand_dims(data,1)
+            data = np.tile(data, np.asarray(np.concatenate(([
+                                                             self.n_samples_per_id],
+                                                 [1,]*(len(
+                                                     np.asarray(
+                                                         data.shape))))),
+                dtype=np.int))
+            print("tiling done", data.shape)
+            return data
     
     @property
     def shapes(self):
@@ -288,8 +306,15 @@ class CSVReader(Layer):
         """
         self._shapes = {}
         for name in self.names:
-            self._shapes.update({name: (1, self.dims_by_task[name], 1, 1, 1,
+            if self.n_samples_per_id == 1:
+                self._shapes.update({name: (1, self.dims_by_task[name], 1, 1, 1,
                                         1), name + '_location': (1, 7)})
+            else:
+                self._shapes.update({name: (self.n_samples_per_id,
+                                            self.dims_by_task[name], 1,
+                                            1, 1,
+                                            1), name + '_location': (
+                    self.n_samples_per_id, 7)})
         return self._shapes
     
     @property
@@ -318,4 +343,6 @@ class CSVReader(Layer):
             data = np.expand_dims(data, 0)
         while len(data.shape) < 6:
             data = np.expand_dims(data, -1)
+
+
         return data

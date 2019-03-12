@@ -167,6 +167,7 @@ class UniformSamplerCSV(ImageWindowDatasetCSV):
         # adjust spatial coordinates based on each mod spatial window size
         all_coordinates = {}
         for mod in list(win_sizes):
+            print(mod, win_sizes[mod][:N_SPATIAL], "checking coord per mod")
             win_size = np.asarray(win_sizes[mod][:N_SPATIAL])
             half_win = np.floor(win_size / 2.0).astype(int)
 
