@@ -321,13 +321,43 @@ def __add_semisupervised_args(parser):
         default=True)
 
     parser.add_argument(
-        "--kl_l2_ratio",
+        "--seg_weight",
         metavar='',
-        help="[Training only] set the ratio between kl and l2 components of"
-             "the unsupervised loss function",
+        help=("[Training only] set the strength of the segmentation decoder "
+              "loss, relative to the learning rate"),
         type=float,
-        default=0.0001)
+        default=1)
 
+    parser.add_argument(
+        "--kl_weight",
+        metavar='',
+        help=("[Training only] set the strength of the kl_divergence loss, ",
+              "relative to the learning rate"),
+        type=float,
+        default=1)
+
+    parser.add_argument(
+        "--vae_weight",
+        metavar='',
+        help=("[Training only] set the strength of the variational auto "
+              "encoder decoder loss, relative to the learning rate"),
+        type=float,
+        default=1)
+
+    parser.add_argument(
+        "--enable_seg",
+        metavar='',
+        help="[Training only] set whether the segmentation task is performed",
+        type=str2boolean,
+        default=True)
+
+    parser.add_argument(
+        "--enable_vae",
+        metavar='',
+        help=("[Training only] set whether the variation autoencoder task is",
+              "performed"),
+        type=str2boolean,
+        default=True)
 
     from deeploop.prototypes.semi_supervised_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
