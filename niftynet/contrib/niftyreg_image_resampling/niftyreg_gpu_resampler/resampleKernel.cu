@@ -7,7 +7,6 @@
 #include "resampleKernel.h"
 #include "_reg_common_cuda.h"
 #include"_reg_tools.h"
-#include"_reg_ReadWriteImage.h"
 
 #define SINC_KERNEL_RADIUS 3
 #define SINC_KERNEL_SIZE SINC_KERNEL_RADIUS*2
