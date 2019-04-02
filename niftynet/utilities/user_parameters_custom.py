@@ -359,7 +359,7 @@ def __add_semisupervised_args(parser):
         type=str2boolean,
         default=True)
 
-    from deeploop.prototypes.semi_supervised_application import SUPPORTED_INPUT
+    from niftynet.application.semi_supervised_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser
 

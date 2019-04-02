@@ -81,7 +81,7 @@ class ImageReader(Layer):
         self.preprocessors = []
         super(ImageReader, self).__init__(name='image_reader')
 
-    def initialise(self, data_param, task_param=None, file_list=None):
+    def initialise(self, data_param, task_param=None, file_list=None, include_partial=False):
         """
         ``task_param`` specifies how to combine user input modalities.
         e.g., for multimodal segmentation 'image' corresponds to multiple
@@ -170,7 +170,7 @@ class ImageReader(Layer):
                 raise
 
         self.output_list, self._file_list = _filename_to_image_list(
-            file_list, self._input_sources, data_param)
+            file_list, self._input_sources, data_param, include_partial)
         for name in self.names:
             tf.logging.info(
                 'Image reader: loading %d subjects '
@@ -203,7 +203,7 @@ class ImageReader(Layer):
         self.prepare_preprocessors()
 
     # pylint: disable=arguments-differ,too-many-branches
-    def layer_op(self, idx=None, shuffle=True):
+    def layer_op(self, idx=None, shuffle=True, allow_missing=True):
         """
         this layer returns dictionaries::
 
@@ -227,9 +227,9 @@ class ImageReader(Layer):
             return -1, None, None
 
         image_data_dict = \
-            {field: image.get_data() for (field, image) in image_dict.items()}
+            {field: image.get_data() if image is not None else None for (field, image) in image_dict.items()}
         interp_order_dict = \
-            {field: image.interp_order for (
+            {field: image.interp_order if image is not None else None for (
                 field, image) in image_dict.items()}
 
         preprocessors = [deepcopy(layer) for layer in self.preprocessors]
@@ -383,7 +383,7 @@ class ImageReader(Layer):
             raise
 
 
-def _filename_to_image_list(file_list, mod_dict, data_param):
+def _filename_to_image_list(file_list, mod_dict, data_param, include_partial=False):
     """
     Converting a list of filenames to a list of image objects,
     Properties (e.g. interp_order) are added to each object
@@ -400,10 +400,10 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
         _dict = {}
         for field, modalities in mod_dict.items():
             _dict[field] = _create_image(
-                file_list, idx, modalities, data_param)
+                file_list, idx, modalities, data_param, include_partial)
 
         # skipping the subject if there're missing image components
-        if _dict and None not in list(_dict.values()):
+        if _dict and (include_partial or (None not in list(_dict.values()))):
             volume_list.append(_dict)
             valid_idx.append(idx)
 
@@ -422,22 +422,42 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
     return volume_list, file_list.iloc[valid_idx]
 
 
-def _create_image(file_list, idx, modalities, data_param):
+def _create_image(file_list, idx, modalities, data_param, include_partial=False):
     """
     data_param consists of description of each modality
     This function combines modalities according to the 'modalities'
     parameter and create <niftynet.io.input_type.SpatialImage*D>
     """
     try:
+        # file_path = tuple(file_list.iloc[idx][mod] for mod in modalities)
+        # any_missing = any([pandas.isnull(file_name) or not bool(file_name)
+        #                    for file_name in file_path])
+        # if any_missing and not include_partial:
+        #     # todo: enable missing modalities again
+        #     # the file_path of a multimodal image will contain `nan`, e.g.
+        #     # this should be handled by `ImageFactory.create_instance`
+        #     # ('testT1.nii.gz', 'testT2.nii.gz', nan, 'testFlair.nii.gz')
+        #     return None
+        #
+        # interp_order, pixdim, axcodes, loader = [], [], [], []
+        # for mod in modalities:
+        #     mod_spec = data_param[mod] \
+        #         if isinstance(data_param[mod], dict) else vars(data_param[mod])
+        #     interp_order.append(mod_spec.get('interp_order',
+        #                                      DEFAULT_INTERP_ORDER))
+        #     pixdim.append(mod_spec.get('pixdim', None))
+        #     axcodes.append(mod_spec.get('axcodes', None))
+        #     loader.append(mod_spec.get('loader', None))
+
         file_path = tuple(file_list.iloc[idx][mod] for mod in modalities)
-        any_missing = any([pandas.isnull(file_name) or not bool(file_name)
-                           for file_name in file_path])
-        if any_missing:
-            # todo: enable missing modalities again
-            # the file_path of a multimodal image will contain `nan`, e.g.
-            # this should be handled by `ImageFactory.create_instance`
-            # ('testT1.nii.gz', 'testT2.nii.gz', nan, 'testFlair.nii.gz')
-            return None
+        file_path = tuple(map(lambda fn: None if pandas.isnull(fn) or not bool(fn) else fn, file_path))
+        for mod in modalities:
+            file_names = map(
+                lambda fn: None if pandas.isnull(fn) or not bool(fn) else fn,
+                file_path)
+            for fn in file_names:
+                if fn is None and not include_partial:
+                    return None
 
         interp_order, pixdim, axcodes, loader = [], [], [], []
         for mod in modalities:

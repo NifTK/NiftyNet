@@ -544,6 +544,8 @@ def resolve_file_name(file_name, paths):
     :return:
     """
     try:
+        if file_name is None:
+            return None
         assert file_name
         if os.path.isfile(file_name):
             return os.path.abspath(file_name)

@@ -63,7 +63,7 @@ class UniformSampler(ImageWindowDataset):
         """
         image_id, data, _ = self.reader(idx=idx, shuffle=True)
         image_shapes = dict(
-            (name, data[name].shape) for name in self.window.names)
+             (name, data[name].shape if data[name] is not None else None) for name in self.window.names)
         static_window_shapes = self.window.match_image_shapes(image_shapes)
 
         # find random coordinates based on window and image shapes
@@ -234,8 +234,14 @@ def _infer_spatial_size(img_sizes, win_sizes, pad_if_smaller=False):
     :param win_sizes: dictionary of {'input_name': (win_size_x, win_size_y,...)}
     :return: (image_spatial_size, window_largest_spatial_size)
     """
-    uniq_spatial_size = \
-        set([img_size[:N_SPATIAL] for img_size in list(img_sizes.values())])
+    for img_size in list(img_sizes.values()):
+        if img_size is not None:
+            print(img_size[:N_SPATIAL])
+
+    filtered_img_sizes = filter(lambda i: i is not None, img_sizes.values())
+    uniq_spatial_size = set(i[:N_SPATIAL] for i in filtered_img_sizes)
+    # uniq_spatial_size = \
+    #     set([img_size[:N_SPATIAL] for img_size in list(img_sizes.values())])
     if len(uniq_spatial_size) != 1:
         tf.logging.fatal("Don't know how to generate sampling "
                          "locations: Spatial dimensions of the "

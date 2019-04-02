@@ -649,16 +649,19 @@ class ImageFactory(object):
         ndims = 0
         image_type = None
         home_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
-        try:
-            file_path = resolve_file_name(file_path, ('.', home_folder))
-            if os.path.isfile(file_path):
-                loader = kwargs.get('loader', None) or None
-                ndims = misc.infer_ndims_from_file(file_path, loader)
-                image_type = cls.INSTANCE_DICT.get(ndims, None)
-        except (TypeError, IOError, AttributeError):
-            pass
+        # Note: this code section is required for user-specified image readers,
+        # so that they are not required to wrap file strings in tuples
+        #TODO: BenM: wrap the string -> tuple test at the top level call to initialise
+        # try:
+        #     file_path = resolve_file_name(file_path, ('.', home_folder))
+        #     if os.path.isfile(file_path):
+        #         loader = kwargs.get('loader', None) or None
+        #         ndims = misc.infer_ndims_from_file(file_path, loader)
+        #         image_type = cls.INSTANCE_DICT.get(ndims, None)
+        # except (TypeError, IOError, AttributeError):
+        #     pass
 
-        if image_type is None:
+        if image_type is None and all(file_path):
             try:
                 file_path = [
                     resolve_file_name(path, ('.', home_folder))
@@ -670,8 +673,12 @@ class ImageFactory(object):
             except (AssertionError, TypeError, IOError, AttributeError):
                 tf.logging.fatal('Could not load file: %s', file_path)
                 raise IOError
+        # if image_type is None:
+        #     tf.logging.fatal('Not supported image type from:\n%s', file_path)
+        #     raise NotImplementedError(
+        #         "unrecognised spatial rank {}".format(ndims))
         if image_type is None:
-            tf.logging.fatal('Not supported image type from:\n%s', file_path)
-            raise NotImplementedError(
-                "unrecognised spatial rank {}".format(ndims))
-        return image_type(file_path, **kwargs)
+            return None
+        else:
+            return image_type(file_path, **kwargs)
+        # return image_type(file_path, **kwargs) if image_type else None

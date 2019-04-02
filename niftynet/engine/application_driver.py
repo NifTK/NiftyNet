@@ -343,7 +343,7 @@ class ApplicationDriver(object):
         """
         Calling ``tf.session.run`` with parameters encapsulated in
         iteration message as an iteration.
-        Broadcasting ITER_* events before and afterward.
+        Broadcasting ITER_* events before and afterward.sl
 
         :param application:
         :param iteration_message: an ``engine.IterationMessage`` instances
@@ -361,6 +361,7 @@ class ApplicationDriver(object):
         iteration_message.current_iter_output = sess.run(
             iteration_message.ops_to_run,
             feed_dict=iteration_message.data_feed_dict)
+
 
         # broadcasting event of finishing an iteration
         ITER_FINISHED.send(application, iter_msg=iteration_message)
