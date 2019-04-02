@@ -12,12 +12,13 @@ from niftyreg_module_loader import get_niftyreg_module
 __BOUNDARY_CODES__ = {
     'ZERO': 0,
     'NAN': 1,
-    'REPLICATE': 2
+    'REPLICATE': 2,
+    'SYMMETRIC': 3
 }
 
 
 # Exposure of supported boundary types for compat. w/ ResamplerLayer
-SUPPORTED_BOUNDARY = {k for k in __BOUNDARY_CODES__.keys()}
+SUPPORTED_BOUNDARY = {k for k in __BOUNDARY_CODES__}
 
 
 # NiftyNet interpolation types to NiftyReg code mapping
@@ -27,7 +28,7 @@ __INTERPOLATION_CODES__ = {'NEAREST': 0,
 
 
 # Exposure of supported interpolation types for compat. w/ ResamplerLayer
-SUPPORTED_INTERPOLATION = {k for k in __INTERPOLATION_CODES__.keys()}
+SUPPORTED_INTERPOLATION = {k for k in __INTERPOLATION_CODES__}
 
 
 # NiftyReg expects displacement components to be

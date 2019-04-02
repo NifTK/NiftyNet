@@ -16,7 +16,9 @@
 
 #include <fstream>
 #include <map>
+
 #include "_reg_maths.h"
+#include "resampler_boundary.h"
 
 typedef enum
 {
@@ -25,19 +27,6 @@ typedef enum
    GAUSSIAN_KERNEL,
    CUBIC_SPLINE_KERNEL
 } NREG_CONV_KERNEL_TYPE;
-/* *************************************************************** */
-#ifdef __CUDACC__
-#define NR_HOST_DEV __host__ __device__
-#else
-#define NR_HOST_DEV
-#endif
-/* *************************************************************** */
-template <typename TIndex, typename TBound>
-NR_HOST_DEV TIndex clampIndex(const TIndex idx, const TBound bound) {
-  TIndex clampedIdx = idx >= 0? idx : 0;
-
-  return clampedIdx < bound? clampedIdx : bound - 1;
-}
 /* *************************************************************** */
 /** @brief This function check some header parameters and correct them in
  * case of error. For example no dimension is lower than one. The scl_sclope

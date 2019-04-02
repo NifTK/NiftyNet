@@ -134,7 +134,8 @@ __inline__ __device__ double interpLoop2D(const float* floatingIntensity,
   return intensity;
 }
 /* *************************************************************** */
-__inline__ __device__ double interpLoop2DClamping(const float* floatingIntensity,
+template <const bool tDoClamp>
+__inline__ __device__ double interpLoop2DBoundary(const float* floatingIntensity,
                                                   double* xBasis,
                                                   double* yBasis,
                                                   double* zBasis,
@@ -145,12 +146,12 @@ __inline__ __device__ double interpLoop2DClamping(const float* floatingIntensity
   double intensity = (double)(0.0);
 
   for (int b = 0; b < kernel_size; b++) {
-    const int offset_x = clampIndex(previous[1] + b, fi_xyz.y)*fi_xyz.x;
+    const int offset_x = reg_applyBoundary<tDoClamp, !tDoClamp>(previous[1] + b, fi_xyz.y)*fi_xyz.x;
 
     double xTempNewValue = 0.0;
 
     for (int a = 0; a < kernel_size; a++) {
-      const unsigned int idx = offset_x + clampIndex(previous[0] + a, fi_xyz.x);
+      const unsigned int idx = offset_x + reg_applyBoundary<tDoClamp, !tDoClamp>(previous[0] + a, fi_xyz.x);
 
       xTempNewValue += floatingIntensity[idx]*xBasis[a];
     }
@@ -192,7 +193,8 @@ __inline__ __device__ double interpLoop3D(const float* floatingIntensity,
   return intensity;
 }
 /* *************************************************************** */
-__inline__ __device__ double interpLoop3DClamping(const float* floatingIntensity,
+template <const bool tDoClamp>
+__inline__ __device__ double interpLoop3DBoundary(const float* floatingIntensity,
                                                   double* xBasis,
                                                   double* yBasis,
                                                   double* zBasis,
@@ -202,17 +204,17 @@ __inline__ __device__ double interpLoop3DClamping(const float* floatingIntensity
 {
   double intensity = (double)(0.0);
   for (int c = 0; c < kernel_size; c++) {
-    const int offset_y = clampIndex(previous[2] + c, fi_xyz.z)*fi_xyz.y;
+    const int offset_y = reg_applyBoundary<tDoClamp, !tDoClamp>(previous[2] + c, fi_xyz.z)*fi_xyz.y;
 
     double yTempNewValue = 0.0;
 
     for (int b = 0; b < kernel_size; b++) {
-      const int offset_x = (offset_y + clampIndex(previous[1] + b, fi_xyz.y))*fi_xyz.x;
+      const int offset_x = (offset_y + reg_applyBoundary<tDoClamp, !tDoClamp>(previous[1] + b, fi_xyz.y))*fi_xyz.x;
 
       double xTempNewValue = 0.0;
 
       for (int a = 0; a < kernel_size; a++) {
-        const unsigned int idx = offset_x + clampIndex(previous[0] + a, fi_xyz.x);
+        const unsigned int idx = offset_x + reg_applyBoundary<tDoClamp, !tDoClamp>(previous[0] + a, fi_xyz.x);
 
         xTempNewValue += floatingIntensity[idx]*xBasis[a];
       }
@@ -223,7 +225,7 @@ __inline__ __device__ double interpLoop3DClamping(const float* floatingIntensity
   return intensity;
 }
 /* *************************************************************** */
-template <const bool tDoClamp>
+template <const bool tDoClamp, const bool tDoReflect>
 __global__ void ResampleImage2D(const float* floatingImage,
                                 const float* deformationField,
                                 float* warpedImage,
@@ -266,8 +268,8 @@ __global__ void ResampleImage2D(const float* floatingImage,
         double xBasisIn[2], yBasisIn[2], zBasisIn[2];
         interpNearestNeighKernel(relative[0], xBasisIn);
         interpNearestNeighKernel(relative[1], yBasisIn);
-        if (tDoClamp) {
-          intensity = interpLoop2DClamping(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 2);
+        if (tDoClamp || tDoReflect) {
+          intensity = interpLoop2DBoundary<tDoClamp>(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 2);
         } else {
           intensity = interpLoop2D(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, paddingValue, 2);
         }
@@ -277,8 +279,8 @@ __global__ void ResampleImage2D(const float* floatingImage,
         double xBasisIn[2], yBasisIn[2], zBasisIn[2];
         interpLinearKernel(relative[0], xBasisIn);
         interpLinearKernel(relative[1], yBasisIn);
-        if (tDoClamp) {
-          intensity = interpLoop2DClamping(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 2);
+        if (tDoClamp || tDoReflect) {
+          intensity = interpLoop2DBoundary<tDoClamp>(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 2);
         } else {
           intensity = interpLoop2D(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, paddingValue, 2);
         }
@@ -293,8 +295,8 @@ __global__ void ResampleImage2D(const float* floatingImage,
 
         interpWindowedSincKernel(relative[0], xBasisIn);
         interpWindowedSincKernel(relative[1], yBasisIn);
-        if (tDoClamp) {
-          intensity = interpLoop2DClamping(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 6);
+        if (tDoClamp || tDoReflect) {
+          intensity = interpLoop2DBoundary<tDoClamp>(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 6);
         } else {
           intensity = interpLoop2D(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, paddingValue, 6);
         }
@@ -309,8 +311,8 @@ __global__ void ResampleImage2D(const float* floatingImage,
 
         interpCubicSplineKernel(relative[0], xBasisIn);
         interpCubicSplineKernel(relative[1], yBasisIn);
-        if (tDoClamp) {
-          intensity = interpLoop2DClamping(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 4);
+        if (tDoClamp || tDoReflect) {
+          intensity = interpLoop2DBoundary<tDoClamp>(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 4);
         } else {
           intensity = interpLoop2D(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, paddingValue, 4);
         }
@@ -322,7 +324,7 @@ __global__ void ResampleImage2D(const float* floatingImage,
   }
 }
 /* *************************************************************** */
-template <const bool tDoClamp>
+template <const bool tDoClamp, const bool tDoReflect>
 __global__ void ResampleImage3D(const float* floatingImage,
                                 const float* deformationField,
                                 float* warpedImage,
@@ -370,8 +372,8 @@ __global__ void ResampleImage3D(const float* floatingImage,
         interpNearestNeighKernel(relative[0], xBasisIn);
         interpNearestNeighKernel(relative[1], yBasisIn);
         interpNearestNeighKernel(relative[2], zBasisIn);
-        if (tDoClamp) {
-          intensity = interpLoop3DClamping(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 2);
+        if (tDoClamp || tDoReflect) {
+          intensity = interpLoop3DBoundary<tDoClamp>(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 2);
         } else {
           intensity = interpLoop3D(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, paddingValue, 2);
         }
@@ -381,8 +383,8 @@ __global__ void ResampleImage3D(const float* floatingImage,
         interpLinearKernel(relative[0], xBasisIn);
         interpLinearKernel(relative[1], yBasisIn);
         interpLinearKernel(relative[2], zBasisIn);
-        if (tDoClamp) {
-          intensity = interpLoop3DClamping(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 2);
+        if (tDoClamp || tDoReflect) {
+          intensity = interpLoop3DBoundary<tDoClamp>(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 2);
         } else {
           intensity = interpLoop3D(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, paddingValue, 2);
         }
@@ -397,8 +399,8 @@ __global__ void ResampleImage3D(const float* floatingImage,
         interpWindowedSincKernel(relative[0], xBasisIn);
         interpWindowedSincKernel(relative[1], yBasisIn);
         interpWindowedSincKernel(relative[2], zBasisIn);
-        if (tDoClamp) {
-          intensity = interpLoop3DClamping(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 6);
+        if (tDoClamp || tDoReflect) {
+          intensity = interpLoop3DBoundary<tDoClamp>(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 6);
         } else {
           intensity = interpLoop3D(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, paddingValue, 6);
         }
@@ -413,8 +415,8 @@ __global__ void ResampleImage3D(const float* floatingImage,
         interpCubicSplineKernel(relative[0], xBasisIn);
         interpCubicSplineKernel(relative[1], yBasisIn);
         interpCubicSplineKernel(relative[2], zBasisIn);
-        if (tDoClamp) {
-          intensity = interpLoop3DClamping(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 4);
+        if (tDoClamp || tDoReflect) {
+          intensity = interpLoop3DBoundary<tDoClamp>(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 4);
         } else {
           intensity = interpLoop3D(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, paddingValue, 4);
         }
@@ -444,17 +446,31 @@ void launchResample(const nifti_image *floatingImage,
 
   cudaCommon_computeGridConfiguration(myblocks, mygrid, targetVoxelNumber);
   if (floatingImage->nz > 1) {
-    if (boundary == resampler_boundary_e::CLAMPING) {
-      ResampleImage3D<true> <<<mygrid, myblocks >>>(floatingImage_d,
-                                                    deformationFieldImage_d,
-                                                    warpedImage_d,
-                                                    voxelNumber,
-                                                    fi_xyz,
-                                                    wi_tu,
-                                                    paddingValue,
-                                                    interp);
-    } else {
-      ResampleImage3D<false> <<<mygrid, myblocks >>>(floatingImage_d,
+    switch (boundary) {
+    case resampler_boundary_e::CLAMPING:
+      ResampleImage3D<true, false> <<<mygrid, myblocks >>>(floatingImage_d,
+                                                           deformationFieldImage_d,
+                                                           warpedImage_d,
+                                                           voxelNumber,
+                                                           fi_xyz,
+                                                           wi_tu,
+                                                           paddingValue,
+                                                           interp);
+      break;
+
+    case resampler_boundary_e::REFLECTING:
+      ResampleImage3D<false, true> <<<mygrid, myblocks >>>(floatingImage_d,
+                                                           deformationFieldImage_d,
+                                                           warpedImage_d,
+                                                           voxelNumber,
+                                                           fi_xyz,
+                                                           wi_tu,
+                                                           paddingValue,
+                                                           interp);
+      break;
+
+    default:
+      ResampleImage3D<false, false> <<<mygrid, myblocks >>>(floatingImage_d,
                                                      deformationFieldImage_d,
                                                      warpedImage_d,
                                                      voxelNumber,
@@ -463,26 +479,40 @@ void launchResample(const nifti_image *floatingImage,
                                                      paddingValue,
                                                      interp);
     }
-  }
-  else{
-    if (boundary == resampler_boundary_e::CLAMPING) {
-      ResampleImage2D<true> <<<mygrid, myblocks >>>(floatingImage_d,
-                                                    deformationFieldImage_d,
-                                                    warpedImage_d,
-                                                    voxelNumber,
-                                                    fi_xyz,
-                                                    wi_tu,
-                                                    paddingValue,
-                                                    interp);
-    } else {
-      ResampleImage2D<false> <<<mygrid, myblocks >>>(floatingImage_d,
-                                                     deformationFieldImage_d,
-                                                     warpedImage_d,
-                                                     voxelNumber,
-                                                     fi_xyz,
-                                                     wi_tu,
-                                                     paddingValue,
-                                                     interp);
+  } else{
+    switch (boundary) {
+    case resampler_boundary_e::CLAMPING:
+      ResampleImage2D<true, false> <<<mygrid, myblocks >>>(floatingImage_d,
+                                                           deformationFieldImage_d,
+                                                           warpedImage_d,
+                                                           voxelNumber,
+                                                           fi_xyz,
+                                                           wi_tu,
+                                                           paddingValue,
+                                                           interp);
+      break;
+
+    case resampler_boundary_e::REFLECTING:
+      ResampleImage2D<false, true> <<<mygrid, myblocks >>>(floatingImage_d,
+                                                           deformationFieldImage_d,
+                                                           warpedImage_d,
+                                                           voxelNumber,
+                                                           fi_xyz,
+                                                           wi_tu,
+                                                           paddingValue,
+                                                           interp);
+      break;
+
+
+    default:
+      ResampleImage2D<false, false> <<<mygrid, myblocks >>>(floatingImage_d,
+                                                            deformationFieldImage_d,
+                                                            warpedImage_d,
+                                                            voxelNumber,
+                                                            fi_xyz,
+                                                            wi_tu,
+                                                            paddingValue,
+                                                            interp);
     }
   }
 #ifndef NDEBUG
