@@ -78,7 +78,7 @@ class WrapperResamplerTest(ResamplerTest):
 
     def test_gpu_differential(self):
         if tft.is_gpu_available(cuda_only=True) and tft.is_built_with_cuda():
-            self._test_differential(True, ('LINEAR',))
+            self._test_differential(True, ('LINEAR', 'BSPLINE'))
         else:
             self.skipTest('No CUDA support available')
 

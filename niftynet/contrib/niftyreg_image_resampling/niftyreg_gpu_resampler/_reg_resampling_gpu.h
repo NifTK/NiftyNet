@@ -21,5 +21,6 @@ void reg_getImageGradient_gpu(const nifti_image &sourceImage,
                               const float *sourceImageArray_d,
                               const float *positionFieldImageArray_d,
                               float *resultGradientArray_d,
-                              const resampler_boundary_e boundary);
+                              const resampler_boundary_e boundary,
+                              const int interpolation);
 #endif

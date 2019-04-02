@@ -18,8 +18,8 @@ void NiftyRegGPUResampleGradientOp::Compute(tf::OpKernelContext *p_context) {
   p_context->allocate_output(0, this->compute_gradient_shape(p_context), &p_output);
   dp_gradient = p_output->flat<float>().data();
 
-  if (this->interpolation() != 1) {
-    std::cerr << "WARNING: gradient is only available for linear interpolation.\n";
+  if (this->interpolation() != 1 && this->interpolation() != 3) {
+    std::cerr << "WARNING: gradient is only available for cubic/linear interpolation.\n";
   }
 
   for (int b = 0; b < this->batch_size(p_context); ++b) {
@@ -32,7 +32,8 @@ void NiftyRegGPUResampleGradientOp::Compute(tf::OpKernelContext *p_context) {
                                dpc_source,
                                dpc_deformation,
                                dp_gradient,
-                               this->boundary());
+                               this->boundary(),
+                               this->interpolation());
 
       dp_gradient += deformation_nim.nvox;
     }
