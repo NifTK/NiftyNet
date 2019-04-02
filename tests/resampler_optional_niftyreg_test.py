@@ -69,9 +69,6 @@ class ResamplerTest(tf.test.TestCase):
         for inter in ('LINEAR', 'BSPLINE'):
             for b in ('ZERO', 'REPLICATE'):
                 for use_gpu in self._get_devs():
-                    if inter != 'LINEAR' and use_gpu:
-                        continue
-
                     inputs = ((self.get_3d_input1(as_tensor=False),
                                [[[-5.2, .25, .25], [.25, .95, .25]],
                                 [[.75, .25, .25], [.25, .25, .75]]]),
