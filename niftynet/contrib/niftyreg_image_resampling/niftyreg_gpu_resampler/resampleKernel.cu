@@ -525,37 +525,3 @@ void launchResample(const nifti_image *floatingImage,
 #endif
 }
 /* *************************************************************** */
-__host__ nifti_image* resample(nifti_image &r_displacements, const nifti_image &floating, const int interp_code, const resampler_boundary_e boundary, const bool is_displacement_argument) {
-  nifti_image *p_warped = nifti_copy_nim_info(&floating);
-
-  assert(floating.dim[1] == r_displacements.dim[1] && floating.dim[2] == r_displacements.dim[2]
-         && (floating.dim[3] == r_displacements.dim[3] || floating.ndim == 2));
-
-  if (is_displacement_argument) {
-    reg_getDeformationFromDisplacement(&r_displacements);
-  }
-
-  {
-    float *dp_floating;
-    float *dp_warped;
-    float *dp_deformation;
-
-    assert(floating.datatype == NIFTI_TYPE_FLOAT32);
-    cudaCommon_allocateArrayToDevice(&dp_floating, floating.nvox);
-    cudaCommon_allocateArrayToDevice(&dp_warped, floating.nvox);
-    cudaCommon_allocateArrayToDevice(&dp_deformation, r_displacements.nvox);
-
-    cudaCommon_transferNiftiToArrayOnDevice(&dp_floating, &floating);
-    cudaCommon_transferNiftiToArrayOnDevice(&dp_deformation, &r_displacements);
-    launchResample(&floating, p_warped, interp_code, boundary, dp_floating, dp_warped, dp_deformation);
-    p_warped->data = std::malloc(p_warped->nvox*sizeof(float));
-    cudaCommon_transferFromDeviceToNifti(p_warped, &dp_warped);
-
-    cudaFree(dp_floating);
-    cudaFree(dp_warped);
-    cudaFree(dp_deformation);
-  }
-
-  return p_warped;
-}
-/* *************************************************************** */
