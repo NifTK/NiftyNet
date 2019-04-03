@@ -48,7 +48,7 @@ NR_HOST_DEV int reg_applyBoundary(const int idx, const int bound) {
 /* *************************************************************** */
 /** \returns the appropriate padding value for a given boundary treatment */
 template <typename TVoxel>
-NR_HOST_DEV constexpr TVoxel get_padding_value(const resampler_boundary_e boundary) {
+NR_HOST_DEV constexpr TVoxel reg_getPaddingValue(const resampler_boundary_e boundary) {
   return boundary == resampler_boundary_e::ZEROPAD? TVoxel(0)
     : (std::is_integral<TVoxel>::value? std::numeric_limits<TVoxel>::lowest() : std::numeric_limits<TVoxel>::quiet_NaN());
 }

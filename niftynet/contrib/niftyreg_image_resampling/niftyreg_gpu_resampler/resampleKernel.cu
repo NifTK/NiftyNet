@@ -437,7 +437,7 @@ void launchResample(const nifti_image *floatingImage,
                     const float *floatingImage_d,
                     float *warpedImage_d,
                     const float *deformationFieldImage_d) {
-  const float paddingValue = get_padding_value<float>(boundary);
+  const float paddingValue = reg_getPaddingValue<float>(boundary);
 
 
   long targetVoxelNumber = (long) warpedImage->nx * warpedImage->ny * warpedImage->nz;

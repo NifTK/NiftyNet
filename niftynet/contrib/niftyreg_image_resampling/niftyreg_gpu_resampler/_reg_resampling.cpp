@@ -466,7 +466,7 @@ void reg_resampleImage2(nifti_image *floatingImage,
                         int interp,
                         resampler_boundary_e boundaryTreatment)
 {
-    const FieldTYPE paddingValue = get_padding_value<FieldTYPE>(boundaryTreatment);
+    const FieldTYPE paddingValue = reg_getPaddingValue<FieldTYPE>(boundaryTreatment);
 
     // The deformation field contains the position in the real world
     if(deformationFieldImage->nz>1 || floatingImage->nz>1)
@@ -1272,7 +1272,7 @@ void reg_getImageGradient(nifti_image *floatingImage,
                           nifti_image *warpedImage
                           )
 {
-    const float paddingValue = get_padding_value<float>(boundary);
+    const float paddingValue = reg_getPaddingValue<float>(boundary);
 
     switch(deformationField->datatype)
     {
@@ -1420,7 +1420,7 @@ static void _compute_gradient_product_bdy(nifti_image &r_destination, const nift
 template <const bool t_is_3d>
 static void _compute_gradient_product_nd(nifti_image &r_destination, const nifti_image &image, const nifti_image &deformation, const nifti_image &gradient_out,
                                          const resampler_boundary_e boundary, const int interpolation) {
-  const float padvalue = get_padding_value<float>(boundary);
+  const float padvalue = reg_getPaddingValue<float>(boundary);
 
   switch (boundary) {
   case resampler_boundary_e::CLAMPING:

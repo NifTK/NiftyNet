@@ -263,7 +263,7 @@ static void _launchGradientKernelND(const nifti_image &sourceImage,
                                     float *resultGradientArray_d,
                                     const resampler_boundary_e boundary,
                                     const int interpolation) {
-  const float pad = get_padding_value<float>(boundary);
+  const float pad = reg_getPaddingValue<float>(boundary);
 
   switch (boundary) {
   case resampler_boundary_e::CLAMPING:
