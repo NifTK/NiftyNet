@@ -26,9 +26,9 @@ enum class resampler_boundary_e {
  * \tparam tDoReflect Clamping boundary
  * \returns an appropriately modified index
  */
-template <const bool tDoClamp, const bool tDoReflect, typename TIndex, typename TBound>
-NR_HOST_DEV TIndex reg_applyBoundary(const TIndex idx, const TBound bound) {
-  TIndex bdyIdx = idx;
+template <const bool tDoClamp, const bool tDoReflect>
+NR_HOST_DEV int reg_applyBoundary(const int idx, const int bound) {
+  int bdyIdx = idx;
 
 #ifndef __CUDACC__
   static_assert(!(tDoReflect && tDoClamp), "clamping and reflecting cannot be requested at the same time.");
@@ -38,11 +38,9 @@ NR_HOST_DEV TIndex reg_applyBoundary(const TIndex idx, const TBound bound) {
     bdyIdx = bdyIdx >= 0? bdyIdx : 0;
     bdyIdx = bdyIdx < bound? bdyIdx : bound - 1;
   } else if (tDoReflect) {
-    bdyIdx = bdyIdx%(2*bound - 2);
-    bdyIdx = bdyIdx <= -bound? std::abs(bound + bdyIdx)
-      : (bdyIdx < 0? std::abs(bdyIdx)
-         : (bdyIdx >= bound? bound - (bdyIdx - bound + 2)
-            : bdyIdx));
+    const int wrap_size = 2*bound - 2;
+
+    bdyIdx = bound - 1 - std::abs(bound - 1 - (bdyIdx%wrap_size + wrap_size)%wrap_size);
   }
 
   return bdyIdx;
