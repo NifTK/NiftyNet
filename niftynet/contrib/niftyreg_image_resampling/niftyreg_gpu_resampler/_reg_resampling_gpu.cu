@@ -14,6 +14,7 @@
 
 #include "_reg_resampling_gpu.h"
 #include "_reg_tools.h"
+#include "interpolations.h"
 
 /* *************************************************************** */
 /* *************************************************************** */
@@ -38,23 +39,14 @@ __global__ void reg_getImageGradient_spline_kernel(float *p_gradientArray,
 
     for (int d = 0; d < nof_dims; ++d) {
       float relative;
-      float FF;
 
       voxeldeformation[d] = pc_deformation[tid+d*ref_size];
       voxel[d] = int(voxeldeformation[d]);
 
       relative = fabsf(voxeldeformation[d] - voxel[d]);
-      FF = relative*relative;
 
-      basis[d][0] = (relative*((2.0-relative)*relative - 1.0))/2.0;
-      basis[d][1] = (FF*(3.0*relative-5.0) + 2.0)/2.0;
-      basis[d][2] = (relative*((4.0 - 3.0*relative)*relative + 1.0))/2.0;
-      basis[d][3] = (relative - 1.0)*FF/2.0;
-
-      derivative[d][0] = (4.0*relative - 3.0*FF - 1.0)/2.0;
-      derivative[d][1] = (9.0*relative - 10.0)*relative/2.0;
-      derivative[d][2] = (8.0*relative - 9.0*FF + 1.0)/2.0;
-      derivative[d][3] = (3.0*relative - 2.0)*relative/2.0;
+      reg_getNiftynetCubicSpline(relative, basis[d]);
+      reg_getNiftynetCubicSplineDerivative(relative, derivative[d]);
 
       voxel[d] -= 1;
     }

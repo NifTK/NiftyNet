@@ -16,6 +16,7 @@
 #include "_reg_maths.h"
 #include "_reg_maths_eigen.h"
 #include "_reg_tools.h"
+#include "interpolations.h"
 
 #include <cassert>
 
@@ -157,7 +158,7 @@ void ResampleImage3D(nifti_image *floatingImage,
         break; // sinc interpolation
     default:
         kernel_size=4;
-        kernelCompFctPtr=&interpCubicSplineKernel;
+        kernelCompFctPtr=&reg_getNiftynetCubicSpline<double, double>;
         kernel_offset=1;
         break; // cubic spline interpolation
     }

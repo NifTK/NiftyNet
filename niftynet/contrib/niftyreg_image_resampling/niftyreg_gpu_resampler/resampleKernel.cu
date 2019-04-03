@@ -7,6 +7,7 @@
 #include "resampleKernel.h"
 #include "_reg_common_cuda.h"
 #include"_reg_tools.h"
+#include "interpolations.h"
 
 #define SINC_KERNEL_RADIUS 3
 #define SINC_KERNEL_SIZE SINC_KERNEL_RADIUS*2
@@ -77,8 +78,8 @@ __inline__ __device__ void interpWindowedSincKernel(double relative, double *bas
 /* *************************************************************** */
 __inline__ __device__ void interpCubicSplineKernel(double relative, double *basis)
 {
-  if (relative < 0.0)
-    relative = 0.0; //reg_rounding error
+  // if (relative < 0.0)
+  //   relative = 0.0; //reg_rounding error
   double FF = relative * relative;
   basis[0] = (relative * ((2.0 - relative) * relative - 1.0)) / 2.0;
   basis[1] = (FF * (3.0 * relative - 5.0) + 2.0) / 2.0;
@@ -203,6 +204,7 @@ __inline__ __device__ double interpLoop3DBoundary(const float* floatingIntensity
                                                   unsigned int kernel_size)
 {
   double intensity = (double)(0.0);
+
   for (int c = 0; c < kernel_size; c++) {
     const int offset_y = reg_applyBoundary<tDoClamp, !tDoClamp>(previous[2] + c, fi_xyz.z)*fi_xyz.y;
 
@@ -222,6 +224,7 @@ __inline__ __device__ double interpLoop3DBoundary(const float* floatingIntensity
     }
     intensity += yTempNewValue*zBasis[c];
   }
+
   return intensity;
 }
 /* *************************************************************** */
@@ -309,8 +312,8 @@ __global__ void ResampleImage2D(const float* floatingImage,
         previous[1]--;
         previous[2]--;
 
-        interpCubicSplineKernel(relative[0], xBasisIn);
-        interpCubicSplineKernel(relative[1], yBasisIn);
+        reg_getNiftynetCubicSpline(relative[0], xBasisIn);
+        reg_getNiftynetCubicSpline(relative[1], yBasisIn);
         if (tDoClamp || tDoReflect) {
           intensity = interpLoop2DBoundary<tDoClamp>(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 4);
         } else {
@@ -412,9 +415,9 @@ __global__ void ResampleImage3D(const float* floatingImage,
         previous[1]--;
         previous[2]--;
 
-        interpCubicSplineKernel(relative[0], xBasisIn);
-        interpCubicSplineKernel(relative[1], yBasisIn);
-        interpCubicSplineKernel(relative[2], zBasisIn);
+        reg_getNiftynetCubicSpline(relative[0], xBasisIn);
+        reg_getNiftynetCubicSpline(relative[1], yBasisIn);
+        reg_getNiftynetCubicSpline(relative[2], zBasisIn);
         if (tDoClamp || tDoReflect) {
           intensity = interpLoop3DBoundary<tDoClamp>(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, 4);
         } else {
