@@ -482,6 +482,12 @@ void reg_resampleImage2(nifti_image *floatingImage,
                                                            warpedImage,
                                                            paddingValue,
                                                            interp);
+      } else if (boundaryTreatment == resampler_boundary_e::REFLECTING) {
+        ResampleImage3D<false,true,FloatingTYPE,FieldTYPE>(floatingImage,
+                                                           deformationFieldImage,
+                                                           warpedImage,
+                                                           paddingValue,
+                                                           interp);
       }
     }
     else
@@ -494,6 +500,12 @@ void reg_resampleImage2(nifti_image *floatingImage,
                                                             interp);
       } else if (boundaryTreatment == resampler_boundary_e::CLAMPING) {
         ResampleImage2D<true,false,FloatingTYPE,FieldTYPE>(floatingImage,
+                                                           deformationFieldImage,
+                                                           warpedImage,
+                                                           paddingValue,
+                                                           interp);
+      } else if (boundaryTreatment == resampler_boundary_e::REFLECTING) {
+        ResampleImage2D<false,true,FloatingTYPE,FieldTYPE>(floatingImage,
                                                            deformationFieldImage,
                                                            warpedImage,
                                                            paddingValue,
@@ -527,48 +539,6 @@ void reg_resampleImage(nifti_image *floatingImage,
     case NIFTI_TYPE_FLOAT32:
         switch ( floatingImage->datatype )
         {
-        case NIFTI_TYPE_UINT8:
-            reg_resampleImage2<float,unsigned char>(floatingImage,
-                                                    warpedImage,
-                                                    deformationField,
-                                                    interp,
-                                                    boundaryTreatment);
-            break;
-        case NIFTI_TYPE_INT8:
-            reg_resampleImage2<float,char>(floatingImage,
-                                           warpedImage,
-                                           deformationField,
-                                           interp,
-                                           boundaryTreatment);
-            break;
-        case NIFTI_TYPE_UINT16:
-            reg_resampleImage2<float,unsigned short>(floatingImage,
-                                                     warpedImage,
-                                                     deformationField,
-                                                     interp,
-                                                     boundaryTreatment);
-            break;
-        case NIFTI_TYPE_INT16:
-            reg_resampleImage2<float,short>(floatingImage,
-                                            warpedImage,
-                                            deformationField,
-                                            interp,
-                                            boundaryTreatment);
-            break;
-        case NIFTI_TYPE_UINT32:
-            reg_resampleImage2<float,unsigned int>(floatingImage,
-                                                   warpedImage,
-                                                   deformationField,
-                                                   interp,
-                                                   boundaryTreatment);
-            break;
-        case NIFTI_TYPE_INT32:
-            reg_resampleImage2<float,int>(floatingImage,
-                                          warpedImage,
-                                          deformationField,
-                                          interp,
-                                          boundaryTreatment);
-            break;
         case NIFTI_TYPE_FLOAT32:
             reg_resampleImage2<float,float>(floatingImage,
                                             warpedImage,
@@ -591,48 +561,6 @@ void reg_resampleImage(nifti_image *floatingImage,
     case NIFTI_TYPE_FLOAT64:
         switch ( floatingImage->datatype )
         {
-        case NIFTI_TYPE_UINT8:
-            reg_resampleImage2<double,unsigned char>(floatingImage,
-                                                     warpedImage,
-                                                     deformationField,
-                                                     interp,
-                                                     boundaryTreatment);
-            break;
-        case NIFTI_TYPE_INT8:
-            reg_resampleImage2<double,char>(floatingImage,
-                                            warpedImage,
-                                            deformationField,
-                                            interp,
-                                            boundaryTreatment);
-            break;
-        case NIFTI_TYPE_UINT16:
-            reg_resampleImage2<double,unsigned short>(floatingImage,
-                                                      warpedImage,
-                                                      deformationField,
-                                                      interp,
-                                                      boundaryTreatment);
-            break;
-        case NIFTI_TYPE_INT16:
-            reg_resampleImage2<double,short>(floatingImage,
-                                             warpedImage,
-                                             deformationField,
-                                             interp,
-                                             boundaryTreatment);
-            break;
-        case NIFTI_TYPE_UINT32:
-            reg_resampleImage2<double,unsigned int>(floatingImage,
-                                                    warpedImage,
-                                                    deformationField,
-                                                    interp,
-                                                    boundaryTreatment);
-            break;
-        case NIFTI_TYPE_INT32:
-            reg_resampleImage2<double,int>(floatingImage,
-                                           warpedImage,
-                                           deformationField,
-                                           interp,
-                                           boundaryTreatment);
-            break;
         case NIFTI_TYPE_FLOAT32:
             reg_resampleImage2<double,float>(floatingImage,
                                              warpedImage,
@@ -1354,6 +1282,7 @@ void reg_getImageGradient(nifti_image *floatingImage,
           (floatingImage,warImgGradient,deformationField,interp,paddingValue,active_timepoint, warpedImage);
       }
       break;
+
     case NIFTI_TYPE_FLOAT64:
       if (boundary == resampler_boundary_e::CLAMPING) {
         reg_getImageGradient1<true, false, double>
