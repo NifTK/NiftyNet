@@ -4,7 +4,7 @@
 
 This module provides a faster implementation of image resampling. For most usage scenarios, it is a drop-in replacement for niftynet.layer.resampler.ResamplerLayer, however, its feature set is limited to:
 
-* ZERO (zero-padding) and REPLICATE (clamping of intensities at edges) boundaries
+* ZERO (zero-padding), REPLICATE (clamping of intensities at edges), and SYMMETRIC (mirroring) boundaries
 * NEAREST (constant), LINEAR, and BSPLINE (cubic spline) interpolation.
 * Differentiation with respect to the floating image is a CPU-only operation.
 
