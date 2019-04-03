@@ -67,7 +67,7 @@ class ResamplerTest(tf.test.TestCase):
 
     def test_gradient_correctness(self):
         for inter in ('LINEAR', 'BSPLINE'):
-            for b in ('ZERO', 'REPLICATE'):
+            for b in ('ZERO', 'REPLICATE', 'SYMMETRIC'):
                 for use_gpu in self._get_devs():
                     inputs = ((self.get_3d_input1(as_tensor=False),
                                [[[-5.2, .25, .25], [.25, .95, .25]],
@@ -109,7 +109,7 @@ class ResamplerTest(tf.test.TestCase):
 
     def test_image_derivative_correctness(self):
         for inter in ('LINEAR', 'BSPLINE'):
-            for b in ('ZERO', 'REPLICATE'):
+            for b in ('ZERO', 'REPLICATE', 'SYMMETRIC'):
                 for use_gpu in self._get_devs():
                     if inter != 'LINEAR' and use_gpu:
                         continue
@@ -158,6 +158,50 @@ class ResamplerTest(tf.test.TestCase):
                                grid=test_grid,
                                interpolation='NEAREST',
                                boundary='ZERO',
+                               expected_value=expected)
+
+    def test_resampler_3d_symmetric_nearest_correctness(self):
+        test_grid = tf.constant(
+            [[[-.25, -.25, -.25],
+              [.25 + 2, .75 + 2, .25 + 4]],
+             [[.75, .25, -.25 + 4],
+              [.25, .25, .75]]],
+            dtype=tf.float32)
+        expected = [[[1], [3]], [[13], [10]]]
+        self._test_correctness(input=self.get_3d_input1(),
+                               grid=test_grid,
+                               interpolation='NEAREST',
+                               boundary='SYMMETRIC',
+                               expected_value=expected)
+
+    def test_resampler_3d_symmetric_linear_correctness(self):
+        test_grid = tf.constant(
+            [[[-.25, -.25, -.25],
+              [.25 + 2, .75 + 2, .25 + 4]],
+             [[.75, .25, -.25 + 4],
+              [.25, .25, .75]]],
+            dtype=tf.float32)
+        expected = [[[2.75], [3.75]],
+                    [[12.75], [11.25]]]
+        self._test_correctness(input=self.get_3d_input1(),
+                               grid=test_grid,
+                               interpolation='LINEAR',
+                               boundary='SYMMETRIC',
+                               expected_value=expected)
+
+    def test_resampler_3d_symmetric_cubic_correctness(self):
+        test_grid = tf.constant(
+            [[[-.25, -.25, -.25],
+              [.25 + 2, .75 + 2, .25 + 4]],
+             [[.75, .25, -.25 + 4],
+              [.25, .25, .75]]],
+            dtype=tf.float32)
+        expected = [[[3.683675], [4.140218]],
+                    [[12.56551075], [10.69881153]]]
+        self._test_correctness(input=self.get_3d_input1(),
+                               grid=test_grid,
+                               interpolation='BSPLINE',
+                               boundary='SYMMETRIC',
                                expected_value=expected)
 
     def _test_partial_shape_correctness(self,

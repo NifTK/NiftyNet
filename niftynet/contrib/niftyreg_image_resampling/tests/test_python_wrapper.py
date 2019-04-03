@@ -98,7 +98,7 @@ class WrapperResamplerTest(ResamplerTest):
                 imgdata = np.stack(multimod_data, axis=-1)
 
                 for _, inter in self.INTERPOLATIONS:
-                    for bdy in ('REPLICATE', 'ZERO'):
+                    for bdy in ('REPLICATE', 'ZERO', 'SYMMETRIC'):
                         u = 3.5001
                         d = 1
                         disp = self._make_constant_displacement_image(
