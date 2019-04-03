@@ -348,7 +348,7 @@ void ResampleImage2D(nifti_image *floatingImage,
         break; // sinc interpolation
     default:
         kernel_size=4;
-        kernelCompFctPtr=&interpCubicSplineKernel;
+        kernelCompFctPtr=&reg_getNiftynetCubicSpline<double, double>;
         kernel_offset=1;
         break; // cubic spline interpolation
     }
@@ -956,15 +956,18 @@ void CubicSplineImageGradient3D(nifti_image *floatingImage,
 
         // basis values along the x axis
         relative=position[0]-(FieldTYPE)previous[0];
-        interpCubicSplineKernel(relative, xBasis, xDeriv);
+        reg_getNiftynetCubicSpline(relative, xBasis);
+        reg_getNiftynetCubicSplineDerivative(relative, xDeriv);
 
         // basis values along the y axis
         relative=position[1]-(FieldTYPE)previous[1];
-        interpCubicSplineKernel(relative, yBasis, yDeriv);
+        reg_getNiftynetCubicSpline(relative, yBasis);
+        reg_getNiftynetCubicSplineDerivative(relative, yDeriv);
 
         // basis values along the z axis
         relative=position[2]-(FieldTYPE)previous[2];
-        interpCubicSplineKernel(relative, zBasis, zDeriv);
+        reg_getNiftynetCubicSpline(relative, zBasis);
+        reg_getNiftynetCubicSplineDerivative(relative, zDeriv);
 
         previous[0]--;
         previous[1]--;
@@ -1098,11 +1101,13 @@ void CubicSplineImageGradient2D(nifti_image *floatingImage,
       // basis values along the x axis
       relative=position[0]-(FieldTYPE)previous[0];
       relative=relative>0?relative:0;
-      interpCubicSplineKernel(relative, xBasis, xDeriv);
+      reg_getNiftynetCubicSpline(relative, xBasis);
+      reg_getNiftynetCubicSplineDerivative(relative, xDeriv);
       // basis values along the y axis
       relative=position[1]-(FieldTYPE)previous[1];
       relative=relative>0?relative:0;
-      interpCubicSplineKernel(relative, yBasis, yDeriv);
+      reg_getNiftynetCubicSpline(relative, yBasis);
+      reg_getNiftynetCubicSplineDerivative(relative, yDeriv);
 
       previous[0]--;
       previous[1]--;
@@ -1402,9 +1407,7 @@ static void _compute_gradient_product_bdy(nifti_image &r_destination, const nift
     break;
 
   case 3:
-    _compute_image_derivative<int(t_is_3d) + 2, t_is_clamping, t_is_reflecting, 4>(r_destination, image, deformation, gradient_out, padvalue, [](const double rel, double *p_out) {
-        interpCubicSplineKernel(rel, p_out);
-      });
+    _compute_image_derivative<int(t_is_3d) + 2, t_is_clamping, t_is_reflecting, 4>(r_destination, image, deformation, gradient_out, padvalue, reg_getNiftynetCubicSpline<double, double>);
     break;
 
   default:
