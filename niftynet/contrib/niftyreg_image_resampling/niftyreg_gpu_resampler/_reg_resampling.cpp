@@ -114,7 +114,7 @@ void interpNearestNeighKernel(double relative, double *basis)
     else basis[0]=1;
 }
 /* *************************************************************** */
-template<const bool tDoClamp, const bool tDoReflect, class FloatingTYPE, class FieldTYPE>
+template<const resampler_boundary_e tBoundary, class FloatingTYPE, class FieldTYPE>
 void ResampleImage3D(nifti_image *floatingImage,
                      nifti_image *deformationField,
                      nifti_image *warpedImage,
@@ -239,23 +239,22 @@ void ResampleImage3D(nifti_image *floatingImage,
             else{
               for(c=0; c<kernel_size; c++)
               {
-                Z= reg_applyBoundary<tDoClamp, tDoReflect>(previous[2] + c, floatingImage->nz);
+                Z= reg_applyBoundary<tBoundary>(previous[2] + c, floatingImage->nz);
                 zPointer = &floatingIntensity[Z*floatingImage->nx*floatingImage->ny];
                 yTempNewValue=0.0;
 
                 for(b=0; b<kernel_size; b++)
                 {
-                  Y= reg_applyBoundary<tDoClamp, tDoReflect>(previous[1] + b, floatingImage->ny);
+                  Y= reg_applyBoundary<tBoundary>(previous[1] + b, floatingImage->ny);
                   xyzPointer = &zPointer[Y*floatingImage->nx];
                   xTempNewValue=0.0;
                   for(a=0; a<kernel_size; a++)
                   {
-                    int X = reg_applyBoundary<tDoClamp, tDoReflect>(previous[0] + a, floatingImage->nx);
+                    int X = reg_applyBoundary<tBoundary>(previous[0] + a, floatingImage->nx);
 
-                    if(tDoClamp || tDoReflect || (-1<X && X<floatingImage->nx &&
-                                                  -1<Z && Z<floatingImage->nz &&
-                                                  -1<Y && Y<floatingImage->ny))
-                    {
+                    if(reg_checkImageDimensionIndex<tBoundary>(X, floatingImage->nx)
+                       && reg_checkImageDimensionIndex<tBoundary>(Y, floatingImage->ny)
+                       && reg_checkImageDimensionIndex<tBoundary>(Z, floatingImage->nz)) {
                       xTempNewValue +=  static_cast<double>(xyzPointer[X]) * xBasis[a];
                     }
                     else
@@ -306,7 +305,7 @@ void ResampleImage3D(nifti_image *floatingImage,
     }
 }
 /* *************************************************************** */
-template<const bool tDoClamp, const bool tDoReflect, class FloatingTYPE, class FieldTYPE>
+template<const resampler_boundary_e tBoundary, class FloatingTYPE, class FieldTYPE>
 void ResampleImage2D(nifti_image *floatingImage,
                      nifti_image *deformationField,
                      nifti_image *warpedImage,
@@ -398,16 +397,15 @@ void ResampleImage2D(nifti_image *floatingImage,
             intensity=0.0;
             for(b=0; b<kernel_size; b++)
             {
-              Y= reg_applyBoundary<tDoClamp, tDoReflect>(previous[1] + b, floatingImage->ny);
+              Y= reg_applyBoundary<tBoundary>(previous[1] + b, floatingImage->ny);
               xyzPointer = &floatingIntensity[Y*floatingImage->nx];
               xTempNewValue=0.0;
               for(a=0; a<kernel_size; a++)
               {
-                int X = reg_applyBoundary<tDoClamp, tDoReflect>(previous[0] + a, floatingImage->nx);
+                int X = reg_applyBoundary<tBoundary>(previous[0] + a, floatingImage->nx);
 
-                if(tDoClamp || tDoReflect || (-1<X && X<floatingImage->nx &&
-                                              -1<Y && Y<floatingImage->ny))
-                {
+                if(reg_checkImageDimensionIndex<tBoundary>(X, floatingImage->nx)
+                   && reg_checkImageDimensionIndex<tBoundary>(Y, floatingImage->ny)) {
                   xTempNewValue +=  static_cast<double>(xyzPointer[X]) * xBasis[a];
                 }
                 else
@@ -588,7 +586,7 @@ void reg_resampleImage(nifti_image *floatingImage,
 }
 /* *************************************************************** */
 /* *************************************************************** */
-template<const bool tDoClamp, const bool tDoReflect, class FloatingTYPE, class GradientTYPE, class FieldTYPE>
+template<const resampler_boundary_e tBoundary, class FloatingTYPE, class GradientTYPE, class FieldTYPE>
 void TrilinearImageGradient(nifti_image *floatingImage,
                             nifti_image *deformationField,
                             nifti_image *warImgGradient,
@@ -670,7 +668,7 @@ void TrilinearImageGradient(nifti_image *floatingImage,
         zBasis[1]= relative;
 
         // The padding value is used for interpolation if it is different from NaN
-        if(!tDoClamp && !tDoReflect && paddingValue==paddingValue)
+        if(tBoundary == resampler_boundary_e::ZEROPAD)
         {
           for(c=0; c<2; c++)
           {
@@ -728,26 +726,25 @@ void TrilinearImageGradient(nifti_image *floatingImage,
             }
           } // end c
         } // end padding value is different from NaN
-        else if(tDoClamp || tDoReflect || (previous[0]>=0 && previous[0]<(floatingImage->nx-1) &&
-                                           previous[1]>=0 && previous[1]<(floatingImage->ny-1) &&
-                                           previous[2]>=0 && previous[2]<(floatingImage->nz-1) ))
-        {
+        else if(reg_checkImageDimensionIndex<tBoundary>(previous[0],floatingImage->nx - 1)
+                && reg_checkImageDimensionIndex<tBoundary>(previous[1],floatingImage->ny - 1)
+                && reg_checkImageDimensionIndex<tBoundary>(previous[2],floatingImage->nz - 1)) {
           for(c=0; c<2; c++)
           {
-            Z = reg_applyBoundary<tDoClamp, tDoReflect>(previous[2] + c, floatingImage->nz);
+            Z = reg_applyBoundary<tBoundary>(previous[2] + c, floatingImage->nz);
             zPointer = &floatingIntensity[Z*floatingImage->nx*floatingImage->ny];
             xxTempNewValue=0.0;
             yyTempNewValue=0.0;
             zzTempNewValue=0.0;
             for(b=0; b<2; b++)
             {
-              Y = reg_applyBoundary<tDoClamp, tDoReflect>(previous[1] + b, floatingImage->ny);
+              Y = reg_applyBoundary<tBoundary>(previous[1] + b, floatingImage->ny);
               xyzPointer = &zPointer[Y*floatingImage->nx];
               xTempNewValue=0.0;
               yTempNewValue=0.0;
               for(a=0; a<2; a++)
               {
-                X = reg_applyBoundary<tDoClamp, tDoReflect>(previous[0] + a, floatingImage->nx);
+                X = reg_applyBoundary<tBoundary>(previous[0] + a, floatingImage->nx);
                 coeff = xyzPointer[X];
                 xTempNewValue +=  coeff * deriv[a];
                 yTempNewValue +=  coeff * xBasis[a];

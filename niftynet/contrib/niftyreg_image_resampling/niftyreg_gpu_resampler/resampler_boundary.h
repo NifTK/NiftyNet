@@ -26,25 +26,32 @@ enum class resampler_boundary_e {
  * \tparam tDoReflect Clamping boundary
  * \returns an appropriately modified index
  */
-template <const bool tDoClamp, const bool tDoReflect>
+template <const resampler_boundary_e tBoundary>
 NR_HOST_DEV int reg_applyBoundary(const int idx, const int bound) {
   int bdyIdx = idx;
 
-#ifndef __CUDACC__
-  static_assert(!(tDoReflect && tDoClamp), "clamping and reflecting cannot be requested at the same time.");
-#endif
-
-  if (tDoClamp) {
+  switch (tBoundary) {
+  case resampler_boundary_e::CLAMPING:
     bdyIdx = bdyIdx >= 0? bdyIdx : 0;
     bdyIdx = bdyIdx < bound? bdyIdx : bound - 1;
-  } else if (tDoReflect) {
+    break;
+
+  case resampler_boundary_e::REFLECTING: {
     const int wrap_size = 2*bound - 2;
 
     bdyIdx = bound - 1 - std::abs(bound - 1 - (bdyIdx%wrap_size + wrap_size)%wrap_size);
+    break;
+  }
   }
 
   return bdyIdx;
 }
+/* *************************************************************** */
+template <const resampler_boundary_e tBoundary, typename TIndex, typename TBound>
+NR_HOST_DEV bool reg_checkImageDimensionIndex(const TIndex index, const TBound bound) {
+  return tBoundary == resampler_boundary_e::CLAMPING || tBoundary == resampler_boundary_e::REFLECTING || (index >= 0 && index < bound);
+}
+
 /* *************************************************************** */
 /** \returns the appropriate padding value for a given boundary treatment */
 template <typename TVoxel>
