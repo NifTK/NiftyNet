@@ -46,13 +46,17 @@ NR_HOST_DEV int reg_applyBoundary(const int idx, const int bound) {
   return bdyIdx;
 }
 /* *************************************************************** */
+/**
+ * \param bound upper bound on index
+ * \tparam tBoundary boundary treatment enum value
+ * \returns true if the argument index lies between 0 (incl) and bound (excl), or the index is guearanteed to be valid by virtue of the applied boundary treatment.
+ */
 template <const resampler_boundary_e tBoundary, typename TIndex, typename TBound>
 NR_HOST_DEV bool reg_checkImageDimensionIndex(const TIndex index, const TBound bound) {
   return resampler_boundary_e(tBoundary) == resampler_boundary_e::CLAMPING || resampler_boundary_e(tBoundary) == resampler_boundary_e::REFLECTING || (index >= 0 && index < bound);
 }
-
 /* *************************************************************** */
-/** \returns the appropriate padding value for a given boundary treatment */
+/** \returns the appropriate padding value for a given boundary treatment enum value */
 template <typename TVoxel>
 NR_HOST_DEV constexpr TVoxel reg_getPaddingValue(const resampler_boundary_e boundary) {
   return boundary == resampler_boundary_e::ZEROPAD? TVoxel(0)
