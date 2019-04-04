@@ -5,7 +5,7 @@ import tensorflow as tf
 import tensorflow.test as tft
 
 from niftynet.contrib.layer.resampler_optional_niftyreg import ResamplerOptionalNiftyRegLayer
-
+import niftynet.contrib.layer.resampler_optional_niftyreg as resampler_module
 
 class ResamplerTest(tf.test.TestCase):
     def get_2d_input(self, as_tensor=True):
@@ -66,6 +66,10 @@ class ResamplerTest(tf.test.TestCase):
                                expected_value=expected)
 
     def test_gradient_correctness(self):
+        if not resampler_module.HAS_NIFTYREG_RESAMPLING:
+            self.skipTest('Using native NiftyNet resampler; skipping test')
+            return
+
         for inter in ('LINEAR', 'BSPLINE'):
             for b in ('ZERO', 'REPLICATE', 'SYMMETRIC'):
                 for use_gpu in self._get_devs():
@@ -108,6 +112,10 @@ class ResamplerTest(tf.test.TestCase):
                             self.assertLessEqual(error, 1e-2*refmag)
 
     def test_image_derivative_correctness(self):
+        if not resampler_module.HAS_NIFTYREG_RESAMPLING:
+            self.skipTest('Using native NiftyNet resampler; skipping test')
+            return
+
         for inter in ('LINEAR', 'BSPLINE'):
             for b in ('ZERO', 'REPLICATE', 'SYMMETRIC'):
                 for use_gpu in self._get_devs():
