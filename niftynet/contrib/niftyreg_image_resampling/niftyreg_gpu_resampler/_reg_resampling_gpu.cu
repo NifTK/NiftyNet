@@ -18,7 +18,7 @@
 
 /* *************************************************************** */
 /* *************************************************************** */
-template <const bool tIs3D, const bool tDoClamp, const bool tDoReflect>
+template <const bool tIs3D, const resampler_boundary_e tBoundary>
 __global__ void reg_getImageGradient_spline_kernel(float *p_gradientArray,
                                                    const float *pc_floating,
                                                    const float *pc_deformation,
@@ -55,20 +55,20 @@ __global__ void reg_getImageGradient_spline_kernel(float *p_gradientArray,
 
     if (tIs3D) {
       for(short c = 0; c < kernel_size; ++c) {
-        int z = reg_applyBoundary<tDoClamp, tDoReflect>(voxel[2] + c, floating_dims.z);
+        int z = reg_applyBoundary<tBoundary>(voxel[2] + c, floating_dims.z);
         float3 tempValueY = make_float3(0.0f, 0.0f, 0.0f);
 
         for(short b = 0; b < kernel_size; ++b){
           float2 tempValueX = make_float2(0.0f, 0.0f);
-          int y = reg_applyBoundary<tDoClamp, tDoReflect>(voxel[1] + b, floating_dims.y);
+          int y = reg_applyBoundary<tBoundary>(voxel[1] + b, floating_dims.y);
 
           for(short a = 0; a < kernel_size; ++a){
-            int x = reg_applyBoundary<tDoClamp, tDoReflect>(voxel[0] + a, floating_dims.x);
+            int x = reg_applyBoundary<tBoundary>(voxel[0] + a, floating_dims.x);
             float intensity = paddingValue;
 
-            if (tDoClamp || tDoReflect || (0 <= x && x < floating_dims.x
-                                           && 0 <= y && y < floating_dims.y
-                                           && 0 <= z && z < floating_dims.z)) {
+            if (reg_checkImageDimensionIndex<tBoundary>(x, floating_dims.x)
+                && reg_checkImageDimensionIndex<tBoundary>(y, floating_dims.y)
+                && reg_checkImageDimensionIndex<tBoundary>(z, floating_dims.z)) {
               intensity = pc_floating[((z*floating_dims.y)+y)*floating_dims.x+x];
             }
 
@@ -86,14 +86,14 @@ __global__ void reg_getImageGradient_spline_kernel(float *p_gradientArray,
     } else {
       for(short b = 0; b < kernel_size; ++b){
         float2 tempValueX = make_float2(0.0f, 0.0f);
-        int y = reg_applyBoundary<tDoClamp, tDoReflect>(voxel[1] + b, floating_dims.y);
+        int y = reg_applyBoundary<tBoundary>(voxel[1] + b, floating_dims.y);
 
         for(short a = 0; a < kernel_size; ++a){
-          int x = reg_applyBoundary<tDoClamp, tDoReflect>(voxel[0] + a, floating_dims.x);
+          int x = reg_applyBoundary<tBoundary>(voxel[0] + a, floating_dims.x);
           float intensity=paddingValue;
 
-          if (tDoClamp || tDoReflect || (0 <= x && x < floating_dims.x
-                                         && 0 <= y && y < floating_dims.y)) {
+          if (reg_checkImageDimensionIndex<tBoundary>(x, floating_dims.x)
+              && reg_checkImageDimensionIndex<tBoundary>(y, floating_dims.y)) {
             intensity = pc_floating[y*floating_dims.x+x];
           }
 
@@ -113,7 +113,7 @@ __global__ void reg_getImageGradient_spline_kernel(float *p_gradientArray,
   }
 }
 /* *************************************************************** */
-template <const bool tIs3D, const bool tDoClamp, const bool tDoReflect>
+template <const resampler_boundary_e tBoundary, const bool tDoReflect>
 __global__ void reg_getImageGradient_kernel(float *p_gradientArray,
                                             const float *pc_floating,
                                             const float *pc_deformation,
@@ -162,20 +162,20 @@ __global__ void reg_getImageGradient_kernel(float *p_gradientArray,
 
         if (tIs3D) {
           for(short c=0; c<2; c++){
-            int z = reg_applyBoundary<tDoClamp, tDoReflect>(voxel.z + c, floating_dims.z);
+            int z = reg_applyBoundary<tBoundary>(voxel.z + c, floating_dims.z);
 
             float3 tempValueY=make_float3(0.0f, 0.0f, 0.0f);
             for(short b=0; b<2; b++){
               float2 tempValueX=make_float2(0.0f, 0.0f);
-              int y = reg_applyBoundary<tDoClamp, tDoReflect>(voxel.y + b, floating_dims.y);
+              int y = reg_applyBoundary<tBoundary>(voxel.y + b, floating_dims.y);
 
               for(short a=0; a<2; a++){
-                int x= reg_applyBoundary<tDoClamp, tDoReflect>(voxel.x + a, floating_dims.x);
+                int x= reg_applyBoundary<tBoundary>(voxel.x + a, floating_dims.x);
                 float intensity=paddingValue;
 
-                if (tDoClamp || tDoReflect || (0 <= x && x < floating_dims.x
-                                               && 0 <= y && y < floating_dims.y
-                                               && 0 <= z && z < floating_dims.z)) {
+                if (reg_checkImageDimensionIndex<tBoundary>(x, floating_dims.x)
+                    && reg_checkImageDimensionIndex<tBoundary>(y, floating_dims.y)
+                    && reg_checkImageDimensionIndex<tBoundary>(z, floating_dims.z)) {
                   intensity = pc_floating[((z*floating_dims.y)+y)*floating_dims.x+x];
                 }
 
@@ -193,14 +193,14 @@ __global__ void reg_getImageGradient_kernel(float *p_gradientArray,
         } else {
           for(short b=0; b<2; b++){
             float2 tempValueX=make_float2(0.0f, 0.0f);
-            int y = reg_applyBoundary<tDoClamp, tDoReflect>(voxel.y + b, floating_dims.y);
+            int y = reg_applyBoundary<tBoundary>(voxel.y + b, floating_dims.y);
 
             for(short a=0; a<2; a++){
-              int x = reg_applyBoundary<tDoClamp, tDoReflect>(voxel.x + a, floating_dims.x);
+              int x = reg_applyBoundary<tBoundary>(voxel.x + a, floating_dims.x);
               float intensity=paddingValue;
 
-              if (tDoClamp || tDoReflect || (0 <= x && x < floating_dims.x
-                                             && 0 <= y && y < floating_dims.y)) {
+              if (reg_checkImageDimensionIndex<tBoundary>(x, floating_dims.x)
+                  && reg_checkImageDimensionIndex<tBoundary>(y, floating_dims.y)) {
                 intensity = pc_floating[y*floating_dims.x+x];
               }
 
@@ -220,7 +220,7 @@ __global__ void reg_getImageGradient_kernel(float *p_gradientArray,
     }
 }
 /* *************************************************************** */
-template <const bool tIs3D, const bool tDoClamp, const bool tDoReflect>
+template <const bool tIs3D, const resampler_boundary_e tBoundary>
 static void _launchGradientKernelBoundary(const nifti_image &sourceImage,
                                           const nifti_image &deformationImage,
                                           const float *sourceImageArray_d,
@@ -237,21 +237,21 @@ static void _launchGradientKernelBoundary(const nifti_image &sourceImage,
   cudaCommon_computeGridConfiguration(B1, G1, ref_size);
 
   if (interpolation == 3) {
-    reg_getImageGradient_spline_kernel<tIs3D, tDoClamp, tDoReflect> <<<G1, B1>>> (resultGradientArray_d,
-                                                                                  sourceImageArray_d,
-                                                                                  positionFieldImageArray_d,
-                                                                                  floatingDim,
-                                                                                  deformationDim,
-                                                                                  pad,
-                                                                                  ref_size);
+    reg_getImageGradient_spline_kernel<tIs3D, tBoundary> <<<G1, B1>>> (resultGradientArray_d,
+                                                                       sourceImageArray_d,
+                                                                       positionFieldImageArray_d,
+                                                                       floatingDim,
+                                                                       deformationDim,
+                                                                       pad,
+                                                                       ref_size);
   } else {
-    reg_getImageGradient_kernel<tIs3D, tDoClamp, tDoReflect> <<<G1, B1>>> (resultGradientArray_d,
-                                                                           sourceImageArray_d,
-                                                                           positionFieldImageArray_d,
-                                                                           floatingDim,
-                                                                           deformationDim,
-                                                                           pad,
-                                                                           ref_size);
+    reg_getImageGradient_kernel<tIs3D, tBoundary> <<<G1, B1>>> (resultGradientArray_d,
+                                                                sourceImageArray_d,
+                                                                positionFieldImageArray_d,
+                                                                floatingDim,
+                                                                deformationDim,
+                                                                pad,
+                                                                ref_size);
   }
 }
 /* *************************************************************** */
@@ -267,33 +267,33 @@ static void _launchGradientKernelND(const nifti_image &sourceImage,
 
   switch (boundary) {
   case resampler_boundary_e::CLAMPING:
-    _launchGradientKernelBoundary<tIs3D, true, false>(sourceImage,
-                                                      deformationImage,
-                                                      sourceImageArray_d,
-                                                      positionFieldImageArray_d,
-                                                      resultGradientArray_d,
-                                                      pad,
-                                                      interpolation);
+    _launchGradientKernelBoundary<tIs3D, resampler_boundary_e::CLAMPING>(sourceImage,
+                                                                         deformationImage,
+                                                                         sourceImageArray_d,
+                                                                         positionFieldImageArray_d,
+                                                                         resultGradientArray_d,
+                                                                         pad,
+                                                                         interpolation);
     break;
 
   case resampler_boundary_e::REFLECTING:
-    _launchGradientKernelBoundary<tIs3D, false, true>(sourceImage,
-                                                      deformationImage,
-                                                      sourceImageArray_d,
-                                                      positionFieldImageArray_d,
-                                                      resultGradientArray_d,
-                                                      pad,
-                                                      interpolation);
+    _launchGradientKernelBoundary<tIs3D, resampler_boundary_e::REFLECTING>(sourceImage,
+                                                                           deformationImage,
+                                                                           sourceImageArray_d,
+                                                                           positionFieldImageArray_d,
+                                                                           resultGradientArray_d,
+                                                                           pad,
+                                                                           interpolation);
     break;
 
   default:
-    _launchGradientKernelBoundary<tIs3D, false, false>(sourceImage,
-                                                       deformationImage,
-                                                       sourceImageArray_d,
-                                                       positionFieldImageArray_d,
-                                                       resultGradientArray_d,
-                                                       pad,
-                                                       interpolation);
+    _launchGradientKernelBoundary<tIs3D, resampler_boundary_e::ZEROPAD>(sourceImage,
+                                                                        deformationImage,
+                                                                        sourceImageArray_d,
+                                                                        positionFieldImageArray_d,
+                                                                        resultGradientArray_d,
+                                                                        pad,
+                                                                        interpolation);
   }
 }
 /* *************************************************************** */

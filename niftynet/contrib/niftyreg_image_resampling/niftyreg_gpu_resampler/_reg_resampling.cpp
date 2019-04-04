@@ -470,45 +470,45 @@ void reg_resampleImage2(nifti_image *floatingImage,
     if(deformationFieldImage->nz>1 || floatingImage->nz>1)
     {
       if (boundaryTreatment == resampler_boundary_e::ZEROPAD || boundaryTreatment == resampler_boundary_e::NANPAD) {
-        ResampleImage3D<false,false,FloatingTYPE,FieldTYPE>(floatingImage,
-                                                            deformationFieldImage,
-                                                            warpedImage,
-                                                            paddingValue,
-                                                            interp);
+        ResampleImage3D<resampler_boundary_e::ZEROPAD,FloatingTYPE,FieldTYPE>(floatingImage,
+                                                                              deformationFieldImage,
+                                                                              warpedImage,
+                                                                              paddingValue,
+                                                                              interp);
       } else if (boundaryTreatment == resampler_boundary_e::CLAMPING) {
-        ResampleImage3D<true,false,FloatingTYPE,FieldTYPE>(floatingImage,
-                                                           deformationFieldImage,
-                                                           warpedImage,
-                                                           paddingValue,
-                                                           interp);
+        ResampleImage3D<resampler_boundary_e::CLAMPING,FloatingTYPE,FieldTYPE>(floatingImage,
+                                                                               deformationFieldImage,
+                                                                               warpedImage,
+                                                                               paddingValue,
+                                                                               interp);
       } else if (boundaryTreatment == resampler_boundary_e::REFLECTING) {
-        ResampleImage3D<false,true,FloatingTYPE,FieldTYPE>(floatingImage,
-                                                           deformationFieldImage,
-                                                           warpedImage,
-                                                           paddingValue,
-                                                           interp);
+        ResampleImage3D<resampler_boundary_e::REFLECTING,FloatingTYPE,FieldTYPE>(floatingImage,
+                                                                                 deformationFieldImage,
+                                                                                 warpedImage,
+                                                                                 paddingValue,
+                                                                                 interp);
       }
     }
     else
     {
       if (boundaryTreatment == resampler_boundary_e::ZEROPAD || boundaryTreatment == resampler_boundary_e::NANPAD) {
-        ResampleImage2D<false,false,FloatingTYPE,FieldTYPE>(floatingImage,
-                                                            deformationFieldImage,
-                                                            warpedImage,
-                                                            paddingValue,
-                                                            interp);
+        ResampleImage2D<resampler_boundary_e::ZEROPAD,FloatingTYPE,FieldTYPE>(floatingImage,
+                                                                              deformationFieldImage,
+                                                                              warpedImage,
+                                                                              paddingValue,
+                                                                              interp);
       } else if (boundaryTreatment == resampler_boundary_e::CLAMPING) {
-        ResampleImage2D<true,false,FloatingTYPE,FieldTYPE>(floatingImage,
-                                                           deformationFieldImage,
-                                                           warpedImage,
-                                                           paddingValue,
-                                                           interp);
+        ResampleImage2D<resampler_boundary_e::CLAMPING,FloatingTYPE,FieldTYPE>(floatingImage,
+                                                                               deformationFieldImage,
+                                                                               warpedImage,
+                                                                               paddingValue,
+                                                                               interp);
       } else if (boundaryTreatment == resampler_boundary_e::REFLECTING) {
-        ResampleImage2D<false,true,FloatingTYPE,FieldTYPE>(floatingImage,
-                                                           deformationFieldImage,
-                                                           warpedImage,
-                                                           paddingValue,
-                                                           interp);
+        ResampleImage2D<resampler_boundary_e::REFLECTING,FloatingTYPE,FieldTYPE>(floatingImage,
+                                                                                 deformationFieldImage,
+                                                                                 warpedImage,
+                                                                                 paddingValue,
+                                                                                 interp);
       }
     }
 }
@@ -668,7 +668,7 @@ void TrilinearImageGradient(nifti_image *floatingImage,
         zBasis[1]= relative;
 
         // The padding value is used for interpolation if it is different from NaN
-        if(tBoundary == resampler_boundary_e::ZEROPAD)
+        if(tBoundary == resampler_boundary_e::ZEROPAD && std::isfinite(paddingValue))
         {
           for(c=0; c<2; c++)
           {
@@ -766,7 +766,7 @@ void TrilinearImageGradient(nifti_image *floatingImage,
     }
 }
 /* *************************************************************** */
-template<const bool tDoClamp, const bool tDoReflect, class FloatingTYPE, class GradientTYPE, class FieldTYPE>
+template<const resampler_boundary_e tBoundary, class FloatingTYPE, class GradientTYPE, class FieldTYPE>
 void BilinearImageGradient(nifti_image *floatingImage,
                            nifti_image *deformationField,
                            nifti_image *warImgGradient,
@@ -846,17 +846,15 @@ void BilinearImageGradient(nifti_image *floatingImage,
 
         for(b=0; b<2; b++)
         {
-          Y= reg_applyBoundary<tDoClamp, tDoReflect>(previous[1] + b, floatingImage->ny);
-          if(tDoClamp || tDoReflect || (Y>-1 && Y<floatingImage->ny))
-          {
+          Y= reg_applyBoundary<tBoundary>(previous[1] + b, floatingImage->ny);
+          if (reg_checkImageDimensionIndex<tBoundary>(Y, floatingImage->ny)) {
             xyPointer = &floatingIntensity[Y*floatingImage->nx];
             xTempNewValue=0.0;
             yTempNewValue=0.0;
             for(a=0; a<2; a++)
             {
-              X = reg_applyBoundary<tDoClamp, tDoReflect>(previous[0] + a, floatingImage->nx);
-              if(tDoClamp || tDoReflect || (X>-1 && X<floatingImage->nx))
-              {
+              X = reg_applyBoundary<tBoundary>(previous[0] + a, floatingImage->nx);
+              if (reg_checkImageDimensionIndex<tBoundary>(X, floatingImage->nx)) {
                 coeff = xyPointer[X];
                 xTempNewValue +=  coeff * deriv[a];
                 yTempNewValue +=  coeff * xBasis[a];
@@ -884,7 +882,7 @@ void BilinearImageGradient(nifti_image *floatingImage,
     }
 }
 /* *************************************************************** */
-template<const bool tDoClamp, const bool tDoReflect, class FloatingTYPE, class GradientTYPE, class FieldTYPE>
+template<const resampler_boundary_e tBoundary, class FloatingTYPE, class GradientTYPE, class FieldTYPE>
 void CubicSplineImageGradient3D(nifti_image *floatingImage,
                                 nifti_image *deformationField,
                                 nifti_image *warImgGradient,
@@ -972,27 +970,24 @@ void CubicSplineImageGradient3D(nifti_image *floatingImage,
 
         for(c=0; c<4; c++)
         {
-          Z = reg_applyBoundary<tDoClamp, tDoReflect>(previous[2] + c, floatingImage->nz);
-          if(tDoClamp || tDoReflect || (-1<Z && Z<floatingImage->nz))
-          {
+          Z = reg_applyBoundary<tBoundary>(previous[2] + c, floatingImage->nz);
+          if (reg_checkImageDimensionIndex<tBoundary>(Z, floatingImage->nz)) {
             zPointer = &floatingIntensity[Z*floatingImage->nx*floatingImage->ny];
             xxTempNewValue=0.0;
             yyTempNewValue=0.0;
             zzTempNewValue=0.0;
             for(b=0; b<4; b++)
             {
-              Y = reg_applyBoundary<tDoClamp, tDoReflect>(previous[1] + b, floatingImage->ny);
+              Y = reg_applyBoundary<tBoundary>(previous[1] + b, floatingImage->ny);
               yzPointer = &zPointer[Y*floatingImage->nx];
-              if(tDoClamp || tDoReflect || (-1<Y && Y<floatingImage->ny))
-              {
+              if (reg_checkImageDimensionIndex<tBoundary>(Y, floatingImage->ny)) {
                 xTempNewValue=0.0;
                 yTempNewValue=0.0;
                 for(a=0; a<4; a++)
                 {
-                  int X = reg_applyBoundary<tDoClamp, tDoReflect>(previous[0] + a, floatingImage->nx);
+                  int X = reg_applyBoundary<tBoundary>(previous[0] + a, floatingImage->nx);
 
-                  if(tDoClamp || tDoReflect || (-1<X && X<floatingImage->nx))
-                  {
+                  if (reg_checkImageDimensionIndex<tBoundary>(X, floatingImage->nx)) {
                     coeff = yzPointer[X];
                     xTempNewValue +=  coeff * xDeriv[a];
                     yTempNewValue +=  coeff * xBasis[a];
@@ -1036,7 +1031,7 @@ void CubicSplineImageGradient3D(nifti_image *floatingImage,
     }
 }
 /* *************************************************************** */
-template<const bool tDoClamp, const bool tDoReflect, class FloatingTYPE, class GradientTYPE, class FieldTYPE>
+template<const resampler_boundary_e tBoundary, class FloatingTYPE, class GradientTYPE, class FieldTYPE>
 void CubicSplineImageGradient2D(nifti_image *floatingImage,
                                 nifti_image *deformationField,
                                 nifti_image *warImgGradient,
@@ -1111,18 +1106,16 @@ void CubicSplineImageGradient2D(nifti_image *floatingImage,
 
       for(b=0; b<4; b++)
       {
-        Y= reg_applyBoundary<tDoClamp, tDoReflect>(previous[1] + b, floatingImage->ny);
+        Y= reg_applyBoundary<tBoundary>(previous[1] + b, floatingImage->ny);
         yPointer = &floatingIntensity[Y*floatingImage->nx];
-        if(tDoClamp || tDoReflect || (-1<Y && Y<floatingImage->ny))
-        {
+        if (reg_checkImageDimensionIndex<tBoundary>(Y, floatingImage->ny)) {
           xTempNewValue=0.0;
           yTempNewValue=0.0;
           for(a=0; a<4; a++)
           {
-            int X = reg_applyBoundary<tDoClamp, tDoReflect>(previous[0] + a, floatingImage->nx);
+            int X = reg_applyBoundary<tBoundary>(previous[0] + a, floatingImage->nx);
 
-            if(tDoClamp || tDoReflect || (-1<X && X<floatingImage->nx))
-            {
+            if (reg_checkImageDimensionIndex<tBoundary>(X, floatingImage->nx)) {
               coeff = yPointer[X];
               xTempNewValue +=  coeff * xDeriv[a];
               yTempNewValue +=  coeff * xBasis[a];
@@ -1151,7 +1144,7 @@ void CubicSplineImageGradient2D(nifti_image *floatingImage,
     }
 }
 /* *************************************************************** */
-template <const bool tDoClamp, const bool tDoReflect, class FieldTYPE, class FloatingTYPE, class GradientTYPE>
+template <const resampler_boundary_e tBoundary, class FieldTYPE, class FloatingTYPE, class GradientTYPE>
 void reg_getImageGradient3(nifti_image *floatingImage,
                            nifti_image *warImgGradient,
                            nifti_image *deformationField,
@@ -1167,46 +1160,46 @@ void reg_getImageGradient3(nifti_image *floatingImage,
         if(floatingImage->nz>1 || deformationField->nz>1)
         {
             CubicSplineImageGradient3D
-              <tDoClamp,tDoReflect,FloatingTYPE,GradientTYPE,FieldTYPE>(floatingImage,
-                                                                        deformationField,
-                                                                        warImgGradient,
-                                                                        paddingValue,
-                                                                        active_timepoint);
+              <tBoundary,FloatingTYPE,GradientTYPE,FieldTYPE>(floatingImage,
+                                                              deformationField,
+                                                              warImgGradient,
+                                                              paddingValue,
+                                                              active_timepoint);
         }
         else
         {
-            CubicSplineImageGradient2D
-              <tDoClamp,tDoReflect,FloatingTYPE,GradientTYPE,FieldTYPE>(floatingImage,
-                                                                        deformationField,
-                                                                        warImgGradient,
-                                                                        paddingValue,
-                                                                        active_timepoint);
+          CubicSplineImageGradient2D
+            <tBoundary,FloatingTYPE,GradientTYPE,FieldTYPE>(floatingImage,
+                                                            deformationField,
+                                                            warImgGradient,
+                                                            paddingValue,
+                                                            active_timepoint);
         }
     }
     else  // trilinear interpolation [ by default ]
     {
-        if(floatingImage->nz>1 || deformationField->nz>1)
-        {
-            TrilinearImageGradient
-              <tDoClamp,tDoReflect,FloatingTYPE,GradientTYPE,FieldTYPE>(floatingImage,
-                                                                        deformationField,
-                                                                        warImgGradient,
-                                                                        paddingValue,
-                                                                        active_timepoint);
-        }
-        else
-        {
-            BilinearImageGradient
-              <tDoClamp,tDoReflect,FloatingTYPE,GradientTYPE,FieldTYPE>(floatingImage,
-                                                                        deformationField,
-                                                                        warImgGradient,
-                                                                        paddingValue,
-                                                                        active_timepoint);
+      if(floatingImage->nz>1 || deformationField->nz>1)
+      {
+        TrilinearImageGradient
+          <tBoundary,FloatingTYPE,GradientTYPE,FieldTYPE>(floatingImage,
+                                                          deformationField,
+                                                          warImgGradient,
+                                                          paddingValue,
+                                                          active_timepoint);
+      }
+      else
+      {
+        BilinearImageGradient
+          <tBoundary,FloatingTYPE,GradientTYPE,FieldTYPE>(floatingImage,
+                                                          deformationField,
+                                                          warImgGradient,
+                                                          paddingValue,
+                                                          active_timepoint);
         }
     }
 }
 /* *************************************************************** */
-template <const bool tDoClamp, const bool tDoReflect, class FieldTYPE, class FloatingTYPE>
+template <const resampler_boundary_e tBoundary, class FieldTYPE, class FloatingTYPE>
 void reg_getImageGradient2(nifti_image *floatingImage,
                            nifti_image *warImgGradient,
                            nifti_image *deformationField,
@@ -1219,11 +1212,11 @@ void reg_getImageGradient2(nifti_image *floatingImage,
     switch(warImgGradient->datatype)
     {
     case NIFTI_TYPE_FLOAT32:
-      reg_getImageGradient3<tDoClamp,tDoReflect,FieldTYPE,FloatingTYPE,float>
+      reg_getImageGradient3<tBoundary,FieldTYPE,FloatingTYPE,float>
                 (floatingImage,warImgGradient,deformationField,interp,paddingValue,active_timepoint, warpedImage);
         break;
     case NIFTI_TYPE_FLOAT64:
-      reg_getImageGradient3<tDoClamp,tDoReflect,FieldTYPE,FloatingTYPE,double>
+      reg_getImageGradient3<tBoundary,FieldTYPE,FloatingTYPE,double>
                 (floatingImage,warImgGradient,deformationField,interp,paddingValue,active_timepoint, warpedImage);
         break;
     default:
@@ -1233,7 +1226,7 @@ void reg_getImageGradient2(nifti_image *floatingImage,
     }
 }
 /* *************************************************************** */
-template <const bool tDoClamp, const bool tDoReflect, class FieldTYPE>
+template <const resampler_boundary_e tBoundary, class FieldTYPE>
 void reg_getImageGradient1(nifti_image *floatingImage,
                            nifti_image *warImgGradient,
                            nifti_image *deformationField,
@@ -1246,11 +1239,11 @@ void reg_getImageGradient1(nifti_image *floatingImage,
     switch(floatingImage->datatype)
     {
     case NIFTI_TYPE_FLOAT32:
-        reg_getImageGradient2<tDoClamp,tDoReflect,FieldTYPE,float>
+        reg_getImageGradient2<tBoundary,FieldTYPE,float>
                 (floatingImage,warImgGradient,deformationField,interp,paddingValue,active_timepoint, warpedImage);
         break;
     case NIFTI_TYPE_FLOAT64:
-        reg_getImageGradient2<tDoClamp,tDoReflect,FieldTYPE,double>
+        reg_getImageGradient2<tBoundary,FieldTYPE,double>
                 (floatingImage,warImgGradient,deformationField,interp,paddingValue,active_timepoint, warpedImage);
         break;
     default:
@@ -1275,26 +1268,26 @@ void reg_getImageGradient(nifti_image *floatingImage,
     {
     case NIFTI_TYPE_FLOAT32:
       if (boundary == resampler_boundary_e::CLAMPING) {
-        reg_getImageGradient1<true, false, float>
+        reg_getImageGradient1<resampler_boundary_e::CLAMPING, float>
           (floatingImage,warImgGradient,deformationField,interp,paddingValue,active_timepoint, warpedImage);
       } else if (boundary == resampler_boundary_e::REFLECTING) {
-        reg_getImageGradient1<false, true, float>
+        reg_getImageGradient1<resampler_boundary_e::REFLECTING, float>
           (floatingImage,warImgGradient,deformationField,interp,paddingValue,active_timepoint, warpedImage);
       } else {
-        reg_getImageGradient1<false, false, float>
+        reg_getImageGradient1<resampler_boundary_e::ZEROPAD, float>
           (floatingImage,warImgGradient,deformationField,interp,paddingValue,active_timepoint, warpedImage);
       }
       break;
 
     case NIFTI_TYPE_FLOAT64:
       if (boundary == resampler_boundary_e::CLAMPING) {
-        reg_getImageGradient1<true, false, double>
+        reg_getImageGradient1<resampler_boundary_e::CLAMPING, double>
                 (floatingImage,warImgGradient,deformationField,interp,paddingValue,active_timepoint, warpedImage);
       } else if (boundary == resampler_boundary_e::REFLECTING) {
-        reg_getImageGradient1<false, true, double>
+        reg_getImageGradient1<resampler_boundary_e::REFLECTING, double>
                 (floatingImage,warImgGradient,deformationField,interp,paddingValue,active_timepoint, warpedImage);
       } else {
-        reg_getImageGradient1<false, false, double>
+        reg_getImageGradient1<resampler_boundary_e::ZEROPAD, double>
                 (floatingImage,warImgGradient,deformationField,interp,paddingValue,active_timepoint, warpedImage);
       }
       break;
@@ -1307,7 +1300,7 @@ void reg_getImageGradient(nifti_image *floatingImage,
 }
 /* *************************************************************** */
 /* *************************************************************** */
-template <const int t_nof_dims, const bool t_is_clamping, const bool t_is_reflecting, const int t_kernel_size, typename interp_function_tt>
+template <const int t_nof_dims, const resampler_boundary_e t_boundary, const int t_kernel_size, typename interp_function_tt>
 static void _compute_image_derivative(nifti_image &r_destination, const nifti_image &image, const nifti_image &deformation, const nifti_image &gradient_out,
                                       const float padvalue, const interp_function_tt &interp_function) {
   const long deformation_spatial_size = deformation.nx*deformation.ny*deformation.nz;
@@ -1347,9 +1340,9 @@ static void _compute_image_derivative(nifti_image &r_destination, const nifti_im
     {
       const auto x_loop = [&](const int off_x, const double &basis_multiplier) {
           for (int a = 0; a < t_kernel_size; ++a) {
-            int x = reg_applyBoundary<t_is_clamping, t_is_reflecting>(base_index[0] + a, image.nx);
+            int x = reg_applyBoundary<t_boundary>(base_index[0] + a, image.nx);
 
-            if (t_is_clamping || t_is_reflecting || (x >= 0 && x < image.nx)) {
+            if (reg_checkImageDimensionIndex<tBoundary>(x, image.nx)) {
               float const *pc_out_grad = outgradient_base + index;
               float *p_out = p_out_base + off_x + x;
 
@@ -1362,15 +1355,15 @@ static void _compute_image_derivative(nifti_image &r_destination, const nifti_im
 
       if (t_nof_dims == 3) {
         for (int c = 0; c < t_kernel_size; ++c) {
-          int z = reg_applyBoundary<t_is_clamping, t_is_reflecting>(base_index[2] + c, image.nz);
+          int z = reg_applyBoundary<t_boundary>(base_index[2] + c, image.nz);
 
-          if (t_is_clamping || t_is_reflecting || (z >= 0 && z < image.nz)) {
+          if (reg_checkImageDimensionIndex<t_boundary>(z, image.nz)) {
             const int off_y = z*image.ny;
 
             for (int b = 0; b < t_kernel_size; ++b) {
-              int y = reg_applyBoundary<t_is_clamping, t_is_reflecting>(base_index[1] + b, image.ny);
+              int y = reg_applyBoundary<t_boundary>(base_index[1] + b, image.ny);
 
-              if (t_is_clamping || t_is_reflecting || (y >= 0 && y < image.ny)) {
+              if (reg_checkImageDimensionIndex<t_boundary>(y, image.ny)) {
                 x_loop((y + off_y)*image.nx, basis[2][c]*basis[1][b]);
               }
             }
@@ -1389,22 +1382,22 @@ static void _compute_image_derivative(nifti_image &r_destination, const nifti_im
   }
 }
 /* *************************************************************** */
-template <const bool t_is_3d, const bool t_is_clamping, const bool t_is_reflecting>
+template <const bool t_is_3d, const resampler_boundary_e t_boundary, const bool t_is_reflecting>
 static void _compute_gradient_product_bdy(nifti_image &r_destination, const nifti_image &image, const nifti_image &deformation, const nifti_image &gradient_out,
                                           const float padvalue, const int interpolation) {
   switch (interpolation) {
   case 0:
-    _compute_image_derivative<int(t_is_3d) + 2, t_is_clamping, t_is_reflecting, 2>(r_destination, image, deformation, gradient_out, padvalue, interpNearestNeighKernel);
+    _compute_image_derivative<int(t_is_3d) + 2, t_boundary, 2>(r_destination, image, deformation, gradient_out, padvalue, interpNearestNeighKernel);
     break;
 
   case 1:
-    _compute_image_derivative<int(t_is_3d) + 2, t_is_clamping, t_is_reflecting, 2>(r_destination, image, deformation, gradient_out, padvalue, [](const double rel, double *p_out) {
+    _compute_image_derivative<int(t_is_3d) + 2, t_boundary, 2>(r_destination, image, deformation, gradient_out, padvalue, [](const double rel, double *p_out) {
         interpLinearKernel(rel, p_out);
       });
     break;
 
   case 3:
-    _compute_image_derivative<int(t_is_3d) + 2, t_is_clamping, t_is_reflecting, 4>(r_destination, image, deformation, gradient_out, padvalue, reg_getNiftynetCubicSpline<double, double>);
+    _compute_image_derivative<int(t_is_3d) + 2, t_boundary, 4>(r_destination, image, deformation, gradient_out, padvalue, reg_getNiftynetCubicSpline<double, double>);
     break;
 
   default:
@@ -1421,15 +1414,15 @@ static void _compute_gradient_product_nd(nifti_image &r_destination, const nifti
 
   switch (boundary) {
   case resampler_boundary_e::CLAMPING:
-    _compute_gradient_product_bdy<t_is_3d, true, false>(r_destination, image, deformation, gradient_out, padvalue, interpolation);
+    _compute_gradient_product_bdy<t_is_3d, resampler_boundary_e::CLAMPING>(r_destination, image, deformation, gradient_out, padvalue, interpolation);
     break;
 
   case resampler_boundary_e::REFLECTING:
-    _compute_gradient_product_bdy<t_is_3d, false, true>(r_destination, image, deformation, gradient_out, padvalue, interpolation);
+    _compute_gradient_product_bdy<t_is_3d, resampler_boundary_e::REFLECTING>(r_destination, image, deformation, gradient_out, padvalue, interpolation);
     break;
 
   default:
-    _compute_gradient_product_bdy<t_is_3d, false, false>(r_destination, image, deformation, gradient_out, padvalue, interpolation);
+    _compute_gradient_product_bdy<t_is_3d, resampler_boundary_e::ZEROPAD>(r_destination, image, deformation, gradient_out, padvalue, interpolation);
   }
 }
 /* *************************************************************** */
