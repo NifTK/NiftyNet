@@ -1,8 +1,13 @@
+# Flag stating whether C++/CUDA image resampling is available
+HAS_NIFTYREG_RESAMPLING = False
+
 try:
     from niftyreg_image_resampling import NiftyregImageResamplingLayer
     import niftyreg_image_resampling as resampler_module
 
     ResamplerOptionalNiftyRegLayer = NiftyregImageResamplingLayer
+
+    HAS_NIFTYREG_RESAMPLING = True
 except ImportError:
     import tensorflow as tf
 
