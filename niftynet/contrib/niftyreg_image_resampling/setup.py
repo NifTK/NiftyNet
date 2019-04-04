@@ -78,8 +78,6 @@ class CMakeBuildExt(build_ext):
         sp.call(['cmake'] + args, cwd=self.build_temp)
         sp.call(['cmake'] + args, cwd=self.build_temp)
         sp.call(['cmake', '--build', self.build_temp])
-        sp.call(['cmake', '--build', self.build_temp,
-                 '--target', 'copy_generated'])
 
 
 setup(

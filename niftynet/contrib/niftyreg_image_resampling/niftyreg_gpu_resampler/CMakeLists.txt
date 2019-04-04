@@ -62,8 +62,4 @@ set_target_properties(${GPU_RESAMPLING_LIB_TARGET} PROPERTIES PREFIX "")
 target_link_libraries(${GPU_RESAMPLING_LIB_TARGET}
   ${Tensorflow_LIBRARIES}
   )
-file(GENERATE OUTPUT niftyreg_module_loader.py INPUT "${CMAKE_CURRENT_SOURCE_DIR}/../niftyreg_module_loader.py.in")
-add_custom_target(copy_generated
-  COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/niftyreg_module_loader.py" ${GPU_RESAMPLING_CONFIGFILE_DIR}
-  COMMAND ${CMAKE_COMMAND} -E echo "Copied generated module"
-  )
+file(GENERATE OUTPUT "${GPU_RESAMPLING_CONFIGFILE_DIR}/niftyreg_module_loader.py" INPUT "${CMAKE_CURRENT_SOURCE_DIR}/../niftyreg_module_loader.py.in")
