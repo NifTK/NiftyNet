@@ -161,9 +161,9 @@ __inline__ __device__ double interpLoop2DBoundary(const float* floatingIntensity
 }
 /* *************************************************************** */
 __inline__ __device__ double interpLoop3D(const float* floatingIntensity,
-                                          double* xBasis,
-                                          double* yBasis,
-                                          double* zBasis,
+                                          const double* xBasis,
+                                          const double* yBasis,
+                                          const double* zBasis,
                                           int *previous,
                                           uint3 fi_xyz,
                                           float paddingValue,
@@ -255,7 +255,7 @@ __global__ void ResampleImage2D(const float* floatingImage,
       float position[3];
       double relative[3];
       auto launchInterpLoop = [&](const double xBasis[], const double yBasis[], const int kernelSize) {
-          if (tBoundary != resampler_boundary_e::ZEROPAD && tBoundary != resampler_boundary_e::NANPAD) {
+          if (resampler_boundary_e(tBoundary) != resampler_boundary_e::ZEROPAD && resampler_boundary_e(tBoundary) != resampler_boundary_e::NANPAD) {
             intensity = interpLoop2DBoundary<tBoundary>(floatingIntensity, xBasis, yBasis, previous, fi_xyz, kernelSize);
           } else {
             intensity = interpLoop2D(floatingIntensity, xBasis, yBasis, previous, fi_xyz, paddingValue, kernelSize);
@@ -346,7 +346,7 @@ __global__ void ResampleImage3D(const float* floatingImage,
       float position[3];
       double relative[3];
       auto launchInterpLoop = [&](const double xBasisIn[], const double yBasisIn[], const double zBasisIn[], const int kernelSize) {
-          if (tBoundary != resampler_boundary_e::ZEROPAD && tBoundary != resampler_boundary_e::NANPAD) {
+          if (resampler_boundary_e(tBoundary) != resampler_boundary_e::ZEROPAD && resampler_boundary_e(tBoundary) != resampler_boundary_e::NANPAD) {
             intensity = interpLoop3DBoundary<tBoundary>(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, kernelSize);
           } else {
             intensity = interpLoop3D(floatingIntensity, xBasisIn, yBasisIn, zBasisIn, previous, fi_xyz, paddingValue, kernelSize);

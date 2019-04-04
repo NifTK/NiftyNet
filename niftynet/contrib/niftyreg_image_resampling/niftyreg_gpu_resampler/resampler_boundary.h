@@ -49,7 +49,7 @@ NR_HOST_DEV int reg_applyBoundary(const int idx, const int bound) {
 /* *************************************************************** */
 template <const resampler_boundary_e tBoundary, typename TIndex, typename TBound>
 NR_HOST_DEV bool reg_checkImageDimensionIndex(const TIndex index, const TBound bound) {
-  return tBoundary == resampler_boundary_e::CLAMPING || tBoundary == resampler_boundary_e::REFLECTING || (index >= 0 && index < bound);
+  return resampler_boundary_e(tBoundary) == resampler_boundary_e::CLAMPING || resampler_boundary_e(tBoundary) == resampler_boundary_e::REFLECTING || (index >= 0 && index < bound);
 }
 
 /* *************************************************************** */

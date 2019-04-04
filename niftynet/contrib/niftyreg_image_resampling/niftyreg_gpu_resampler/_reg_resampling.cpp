@@ -49,7 +49,6 @@ void interpWindowedSincKernel(double relative, double *basis)
     for(int i=0;i<SINC_KERNEL_SIZE;++i)
         basis[i]/=sum;
 }
-
 /* *************************************************************** */
 /* *************************************************************** */
 double interpWindowedSincKernel_Samp(double x, double kernelsize)
@@ -65,28 +64,6 @@ double interpWindowedSincKernel_Samp(double x, double kernelsize)
                 sin(pi_x/static_cast<double>(kernelsize)) /
                 (pi_x*pi_x);
     }
-}
-/* *************************************************************** */
-/* *************************************************************** */
-void interpCubicSplineKernel(double relative, double *basis)
-{
-    if(relative<0.0) relative=0.0; //reg_rounding error
-    double FF= relative*relative;
-    basis[0] = (relative * ((2.0-relative)*relative - 1.0))/2.0;
-    basis[1] = (FF * (3.0*relative-5.0) + 2.0)/2.0;
-    basis[2] = (relative * ((4.0-3.0*relative)*relative + 1.0))/2.0;
-    basis[3] = (relative-1.0) * FF/2.0;
-}
-/* *************************************************************** */
-void interpCubicSplineKernel(double relative, double *basis, double *derivative)
-{
-    interpCubicSplineKernel(relative,basis);
-    if(relative<0.0) relative=0.0; //reg_rounding error
-    double FF= relative*relative;
-    derivative[0] = (4.0*relative - 3.0*FF - 1.0)/2.0;
-    derivative[1] = (9.0*relative - 10.0) * relative/2.0;
-    derivative[2] = (8.0*relative - 9.0*FF + 1.0)/2.0;
-    derivative[3] = (3.0*relative - 2.0) * relative/2.0;
 }
 /* *************************************************************** */
 /* *************************************************************** */
@@ -1342,7 +1319,7 @@ static void _compute_image_derivative(nifti_image &r_destination, const nifti_im
           for (int a = 0; a < t_kernel_size; ++a) {
             int x = reg_applyBoundary<t_boundary>(base_index[0] + a, image.nx);
 
-            if (reg_checkImageDimensionIndex<tBoundary>(x, image.nx)) {
+            if (reg_checkImageDimensionIndex<t_boundary>(x, image.nx)) {
               float const *pc_out_grad = outgradient_base + index;
               float *p_out = p_out_base + off_x + x;
 
@@ -1371,9 +1348,9 @@ static void _compute_image_derivative(nifti_image &r_destination, const nifti_im
         }
       } else {
         for (int b = 0; b < t_kernel_size; ++b) {
-          int y = reg_applyBoundary<t_is_clamping, t_is_reflecting>(base_index[1] + b, image.ny);
+          int y = reg_applyBoundary<t_boundary>(base_index[1] + b, image.ny);
 
-          if (t_is_clamping || t_is_reflecting || (y >= 0 && y < image.ny)) {
+          if (reg_checkImageDimensionIndex<t_boundary>(y, image.ny)) {
             x_loop(y*image.nx, basis[1][b]);
           }
         }
@@ -1382,7 +1359,7 @@ static void _compute_image_derivative(nifti_image &r_destination, const nifti_im
   }
 }
 /* *************************************************************** */
-template <const bool t_is_3d, const resampler_boundary_e t_boundary, const bool t_is_reflecting>
+template <const bool t_is_3d, const resampler_boundary_e t_boundary>
 static void _compute_gradient_product_bdy(nifti_image &r_destination, const nifti_image &image, const nifti_image &deformation, const nifti_image &gradient_out,
                                           const float padvalue, const int interpolation) {
   switch (interpolation) {

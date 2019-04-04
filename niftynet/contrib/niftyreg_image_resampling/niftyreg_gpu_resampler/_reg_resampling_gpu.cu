@@ -113,7 +113,7 @@ __global__ void reg_getImageGradient_spline_kernel(float *p_gradientArray,
   }
 }
 /* *************************************************************** */
-template <const resampler_boundary_e tBoundary, const bool tDoReflect>
+template <const bool tIs3D, const resampler_boundary_e tBoundary>
 __global__ void reg_getImageGradient_kernel(float *p_gradientArray,
                                             const float *pc_floating,
                                             const float *pc_deformation,
