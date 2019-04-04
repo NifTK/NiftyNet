@@ -22,8 +22,7 @@ enum class resampler_boundary_e {
 /* *************************************************************** */
 /**
  * \brief Boundary index modification function
- * \tparam tDoClamp Clamping boundary
- * \tparam tDoReflect Clamping boundary
+ * \tparam tBoundary boundary treatment enum value
  * \returns an appropriately modified index
  */
 template <const resampler_boundary_e tBoundary>
