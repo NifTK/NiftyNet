@@ -5,7 +5,6 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules;${CMAKE_MODULE_PATH}")
 
 set(GPU_RESAMPLING_CONFIGFILE_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE STRING "Destination directory for configured files.")
 
-#option(GPU_RESAMPLING_BUILD_TESTS "Build unit tests" OFF)
 add_definitions("-DGOOGLE_CUDA")
 set(GPU_RESAMPLING_LIB_TARGET niftyreg_image_resampling_ops)
 set(CMAKE_CXX_STANDARD 11)
