@@ -11,7 +11,7 @@ from niftynet.layer.bn import BNLayer
 from niftynet.layer.gn import GNLayer
 from niftynet.utilities.util_common import look_up_operations
 
-SUPPORTED_PADDING = set(['SAME', 'VALID'])
+SUPPORTED_PADDING = set(['SAME', 'VALID', 'REFLECT', 'SYMMETRIC', 'CONSTANT'])
 
 
 def default_w_initializer():
@@ -47,7 +47,13 @@ class ConvLayer(TrainableLayer):
                  w_regularizer=None,
                  b_initializer=None,
                  b_regularizer=None,
+                 padding_constant=0,
                  name='conv'):
+        """
+        :param padding_constant: a constant applied in padded convolution
+        (see also tf.pad)
+        """
+
         super(ConvLayer, self).__init__(name=name)
 
         self.padding = look_up_operations(padding.upper(), SUPPORTED_PADDING)
@@ -56,6 +62,7 @@ class ConvLayer(TrainableLayer):
         self.stride = stride
         self.dilation = dilation
         self.with_bias = with_bias
+        self.padding_constant = padding_constant
 
         self.initializers = {
             'w': w_initializer if w_initializer else default_w_initializer(),
@@ -82,12 +89,22 @@ class ConvLayer(TrainableLayer):
             'w', shape=w_full_size,
             initializer=self.initializers['w'],
             regularizer=self.regularizers['w'])
-        output_tensor = tf.nn.convolution(input=input_tensor,
-                                          filter=conv_kernel,
-                                          strides=full_stride,
-                                          dilation_rate=full_dilation,
-                                          padding=self.padding,
-                                          name='conv')
+        if self.padding in ('VALID', 'SAME'):
+            output_tensor = tf.nn.convolution(input=input_tensor,
+                                              filter=conv_kernel,
+                                              strides=full_stride,
+                                              dilation_rate=full_dilation,
+                                              padding=self.padding,
+                                              name='conv')
+        else:
+            output_tensor = _extended_convolution(
+                input_tensor,
+                conv_kernel,
+                full_stride,
+                full_dilation,
+                self.padding,
+                constant=self.padding_constant)
+
         if not self.with_bias:
             return output_tensor
 
@@ -130,7 +147,11 @@ class ConvolutionalLayer(TrainableLayer):
                  b_regularizer=None,
                  moving_decay=0.9,
                  eps=1e-5,
+                 padding_constant=0,
                  name="conv"):
+        """
+        :param padding_constant: constant applied with CONSTANT padding
+        """
 
         self.acti_func = acti_func
         self.with_bn = with_bn
@@ -154,6 +175,7 @@ class ConvolutionalLayer(TrainableLayer):
         self.dilation = dilation
         self.padding = padding
         self.with_bias = with_bias
+        self.padding_constant = padding_constant
 
         # for BNLayer
         self.moving_decay = moving_decay
@@ -176,6 +198,7 @@ class ConvolutionalLayer(TrainableLayer):
                                w_regularizer=self.regularizers['w'],
                                b_initializer=self.initializers['b'],
                                b_regularizer=self.regularizers['b'],
+                               padding_constant=self.padding_constant,
                                name='conv_')
 
         if self.with_bn:
@@ -220,3 +243,98 @@ class ConvolutionalLayer(TrainableLayer):
             output_tensor = activation(conv_layer(input_tensor))
 
         return output_tensor
+
+
+def _compute_pad_size(input_dim_size, output_dim_size, kernel_dim_size,
+                      stride, dilation):
+    """
+    Computes the size of the pad using the formula given in TF's conv_ops.cc.
+    :return: the one-sided pad size
+    """
+
+    return ((output_dim_size - 1)*stride + (kernel_dim_size - 1)*dilation + 2
+            - input_dim_size)//2
+
+
+def _extended_convolution(input_tensor,
+                          kernel,
+                          strides,
+                          dilations,
+                          padding,
+                          constant=0,
+                          name='extended_convolution'):
+    """
+    A simple wrapper for tf.nn.convolution that first expands the input tensor
+    by sampling at discrete locations in the original tensor then invokes
+    the original convolution operation on the expanded tensor, and finally
+    extracts a suitable output tensor from the output of the convolution of
+    the expanded tensor.
+    :param input_tensor: original convolution input tensor
+    :param kernel: convolution kernel
+    :param strides: strided convolution strides (one per spatial dimension)
+    :param dilations: dilated convolution dilation factors
+    (one per spatial dimension)
+    :param padding: a string specifying the type of padding to apply
+    :param constant: a padding constant (only read in the case of constant
+    padding)
+    :param name: a name for the operation
+    :return: a convolution result of the same size as the input tensor
+    """
+
+    input_shape = input_tensor.shape.as_list()
+    kernel_shape = kernel.shape.as_list()
+
+    dimpads = [0]
+    for i, k, s, d in zip(input_shape[1:-1], kernel_shape[:-1],
+                          strides, dilations):
+        if i is None or i < 0 or k is None or k < 0:
+            raise ValueError('The dimensions of the input tensor and the filter'
+                             ' must be known in advance for this operation to '
+                             'work.')
+
+        pad = _compute_pad_size(i, i, k, s, d)
+        dimpads.append(pad)
+    dimpads += [0]
+
+    # Cannot pad by more than 1 dimension size => repeatedly pad
+    if padding in ('REFLECT', 'SYMMETRIC'):
+        padded_input = input_tensor
+        offset = 1 if padding == 'REFLECT' else 0
+
+        while min(o - i - 2*p for o, i, p in zip(
+                padded_input.shape.as_list(),
+                input_shape,
+                dimpads)) < 0:
+            effective_pad = [(0, 0)]
+            padded_shape = padded_input.shape.as_list()
+            for i in range(1, len(input_shape) - 1):
+                epad = min((input_shape[i] + 2*dimpads[i] - padded_shape[i])//2,
+                           padded_shape[i] - offset)
+                epad = max(epad, 0)
+                effective_pad.append((epad, epad))
+            effective_pad += [(0, 0)]
+
+            padded_input = tf.pad(padded_input,
+                                  effective_pad,
+                                  mode=padding)
+    else:
+        padded_input = tf.pad(input_tensor,
+                              [(d, d) for d in dimpads],
+                              mode=padding,
+                              constant_values=constant)
+
+    conv_output = tf.nn.convolution(input=padded_input,
+                                    filter=kernel,
+                                    strides=strides,
+                                    dilation_rate=dilations,
+                                    padding='SAME',
+                                    name='conv_' + name)
+
+    output_shape = conv_output.shape.as_list()
+    out_pad = [0]
+    out_pad += [(o - i)//2 for i, o in zip(input_shape[1:-1], output_shape[1:-1])]
+    out_pad += [0]
+    out_shape = input_shape[:-1] + [output_shape[-1]]
+
+    return tf.slice(conv_output, out_pad, out_shape) if max(out_pad) > 0 \
+        else conv_output
