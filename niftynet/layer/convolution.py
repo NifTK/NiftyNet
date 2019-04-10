@@ -284,7 +284,8 @@ def _extended_convolution(input_tensor,
 
     input_shape = input_tensor.shape.as_list()
     kernel_shape = kernel.shape.as_list()
-    output_shape = [math.ceil(i/s) for i, s in zip(input_shape[1:-1], strides)]
+    output_shape = [int(math.ceil(i/s)) for i, s in
+                    zip(input_shape[1:-1], strides)]
     output_shape = [input_shape[0]] + output_shape + [kernel_shape[-1]]
 
     dimpads = [0]
@@ -295,7 +296,7 @@ def _extended_convolution(input_tensor,
                              ' must be known in advance for this operation to '
                              'work.')
 
-        pad = _compute_pad_size(i, math.ceil(i/s), k, s, d)
+        pad = _compute_pad_size(i, int(math.ceil(i/s)), k, s, d)
         dimpads.append(pad)
     dimpads += [0]
 
