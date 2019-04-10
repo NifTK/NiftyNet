@@ -284,6 +284,13 @@ def _extended_convolution(input_tensor,
 
     input_shape = input_tensor.shape.as_list()
     kernel_shape = kernel.shape.as_list()
+
+    if any(i is None or i < 0 or k is None or k < 0
+           for i, k in zip(input_shape, kernel_shape)):
+        raise ValueError('The dimensions of the input tensor and the filter'
+                         ' must be known in advance for this operation to '
+                         'work.')
+
     output_shape = [int(math.ceil(i/s)) for i, s in
                     zip(input_shape[1:-1], strides)]
     output_shape = [input_shape[0]] + output_shape + [kernel_shape[-1]]
@@ -291,11 +298,6 @@ def _extended_convolution(input_tensor,
     dimpads = [0]
     for i, k, s, d in zip(input_shape[1:-1], kernel_shape[:-1],
                           strides, dilations):
-        if i is None or i < 0 or k is None or k < 0:
-            raise ValueError('The dimensions of the input tensor and the filter'
-                             ' must be known in advance for this operation to '
-                             'work.')
-
         pad = _compute_pad_size(i, int(math.ceil(i/s)), k, s, d)
         dimpads.append(pad)
     dimpads += [0]
