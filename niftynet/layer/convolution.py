@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import math
 import numpy as np
 import tensorflow as tf
 
@@ -283,6 +284,8 @@ def _extended_convolution(input_tensor,
 
     input_shape = input_tensor.shape.as_list()
     kernel_shape = kernel.shape.as_list()
+    output_shape = [math.ceil(i/s) for i, s in zip(input_shape[1:-1], strides)]
+    output_shape = [input_shape[0]] + output_shape + [kernel_shape[-1]]
 
     dimpads = [0]
     for i, k, s, d in zip(input_shape[1:-1], kernel_shape[:-1],
@@ -292,7 +295,7 @@ def _extended_convolution(input_tensor,
                              ' must be known in advance for this operation to '
                              'work.')
 
-        pad = _compute_pad_size(i, i, k, s, d)
+        pad = _compute_pad_size(i, math.ceil(i/s), k, s, d)
         dimpads.append(pad)
     dimpads += [0]
 
@@ -330,11 +333,10 @@ def _extended_convolution(input_tensor,
                                     padding='SAME',
                                     name='conv_' + name)
 
-    output_shape = conv_output.shape.as_list()
+    conv_output_shape = conv_output.shape.as_list()
     out_pad = [0]
-    out_pad += [(o - i)//2 for i, o in zip(input_shape[1:-1], output_shape[1:-1])]
+    out_pad += [(o - i)//2 for i, o in zip(output_shape[1:-1], conv_output_shape[1:-1])]
     out_pad += [0]
-    out_shape = input_shape[:-1] + [output_shape[-1]]
 
-    return tf.slice(conv_output, out_pad, out_shape) if max(out_pad) > 0 \
+    return tf.slice(conv_output, out_pad, output_shape) if max(out_pad) > 0 \
         else conv_output
