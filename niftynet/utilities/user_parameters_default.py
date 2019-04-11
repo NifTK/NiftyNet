@@ -150,7 +150,7 @@ def add_inference_args(parser):
 
     parser.add_argument(
         "--fill-constant",
-        help="Output fill value used fill borders of output images.",
+        help="[Inference only] Output fill value used fill borders of output images.",
         type=float,
         default=0.0)
 
