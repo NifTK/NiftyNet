@@ -26,11 +26,10 @@ def str2boolean(string_input):
     """
     if string_input.lower() in TRUE_VALUE:
         return True
-    elif string_input.lower() in FALSE_VALUE:
+    if string_input.lower() in FALSE_VALUE:
         return False
-    else:
-        raise argparse.ArgumentTypeError(
-            'Boolean value expected, received {}'.format(string_input))
+    raise argparse.ArgumentTypeError(
+        'Boolean value expected, received {}'.format(string_input))
 
 
 def int_array(string_input):

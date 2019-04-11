@@ -653,6 +653,7 @@ When `bias_field_range` is not None, it is possible to further specify:
 [output_postfix](#output-postfix) | `string` | `output_postfix=_output` | `_niftynet_out`
 [output_interp_order](#output-interp-order) | `non-negative integer` | `output_interp_order=0` | `0`
 [dataset_to_infer](#dataset-to-infer) | `string` | `dataset_to_infer=training` | `''`
+[fill_constant](#fill-constant) | `float` | `fill_constant=1.0` | `0.0`
 
 ###### `spatial_window_size`
 Array of integers indicating the size of input window.  By default, the window
@@ -686,6 +687,9 @@ Interpolation order of the network outputs.
 String specifies which dataset ('all', 'training', 'validation', 'inference') to compute inference for.
 By default 'inference' dataset is used. If no `dataset_split_file` is specified, then all data specified
 in the csv or search path are used for inference.
+
+##### `fill_constant`
+Value used to fill borders of output images.
 
 
 ### EVALUATION
