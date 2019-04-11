@@ -148,6 +148,12 @@ def add_inference_args(parser):
         type=spatialnumarray,
         default=(0, 0, 0))
 
+    parser.add_argument(
+        "--fill-constant",
+        help="Output fill value used fill borders of output images.",
+        type=float,
+        default=0.0)
+
     return parser
 
 
