@@ -283,7 +283,11 @@ def _extended_convolution(input_tensor,
     """
 
     input_shape = input_tensor.shape.as_list()
+    batch_size = input_shape[0]
+    input_shape = input_shape[1:-1]
     kernel_shape = kernel.shape.as_list()
+    nof_output_features = kernel_shape[-1]
+    kernel_shape = kernel_shape[:-2]
 
     if any(i is None or i < 0 or k is None or k < 0
            for i, k in zip(input_shape, kernel_shape)):
@@ -291,13 +295,11 @@ def _extended_convolution(input_tensor,
                          ' must be known in advance for this operation to '
                          'work.')
 
-    output_shape = [int(math.ceil(i/s)) for i, s in
-                    zip(input_shape[1:-1], strides)]
-    output_shape = [input_shape[0]] + output_shape + [kernel_shape[-1]]
+    output_shape = [int(math.ceil(i/s)) for i, s in zip(input_shape, strides)]
+    output_shape = [batch_size] + output_shape + [nof_output_features]
 
     dimpads = [0]
-    for i, k, s, d in zip(input_shape[1:-1], kernel_shape[:-1],
-                          strides, dilations):
+    for i, k, s, d in zip(input_shape, kernel_shape, strides, dilations):
         pad = _compute_pad_size(i, int(math.ceil(i/s)), k, s, d)
         dimpads.append(pad)
     dimpads += [0]
@@ -305,20 +307,22 @@ def _extended_convolution(input_tensor,
     # Cannot pad by more than 1 dimension size => repeatedly pad
     if padding in ('REFLECT', 'SYMMETRIC'):
         padded_input = input_tensor
-        offset = 1 if padding == 'REFLECT' else 0
+        offset = int(padding == 'REFLECT')
 
         while min(o - i - 2*p for o, i, p in zip(
-                padded_input.shape.as_list(),
+                padded_input.shape.as_list()[1:-1],
                 input_shape,
-                dimpads)) < 0:
+                dimpads[1:-1])) < 0:
             effective_pad = [(0, 0)]
-            padded_shape = padded_input.shape.as_list()
-            for i in range(1, len(input_shape) - 1):
-                epad = min((input_shape[i] + 2*dimpads[i] - padded_shape[i])//2,
+            padded_shape = padded_input.shape.as_list()[1:-1]
+            for i in range(len(input_shape)):
+                epad = min((input_shape[i] + 2*dimpads[1+i] - padded_shape[i])//2,
                            padded_shape[i] - offset)
                 epad = max(epad, 0)
                 effective_pad.append((epad, epad))
             effective_pad += [(0, 0)]
+
+            assert max(e for e, _ in effective_pad) > 0
 
             padded_input = tf.pad(padded_input,
                                   effective_pad,
