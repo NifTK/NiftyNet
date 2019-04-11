@@ -2,22 +2,17 @@
 """
 This module defines niftynet parameters and their defaults.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 import os
 
+from niftynet.engine.image_window_dataset import SMALLER_FINAL_BATCH_MODE
 from niftynet.io.image_loader import SUPPORTED_LOADERS
 from niftynet.io.image_sets_partitioner import SUPPORTED_PHASES
-from niftynet.engine.image_window_dataset import SMALLER_FINAL_BATCH_MODE
-from niftynet.utilities.user_parameters_helper import float_array
-from niftynet.utilities.user_parameters_helper import int_array
-from niftynet.utilities.user_parameters_helper import spatial_atleast3d
-from niftynet.utilities.user_parameters_helper import spatialnumarray
-from niftynet.utilities.user_parameters_helper import str2boolean
-from niftynet.utilities.user_parameters_helper import str_array
+from niftynet.utilities.user_parameters_helper import (
+    float_array, int_array, spatial_atleast3d, spatialnumarray, str2boolean,
+    str_array)
 from niftynet.utilities.util_import import require_module
 
 DEFAULT_INFERENCE_OUTPUT = os.path.join('.', 'output')
@@ -25,14 +20,9 @@ DEFAULT_EVALUATION_OUTPUT = os.path.join('.', 'evaluation')
 DEFAULT_DATASET_SPLIT_FILE = os.path.join('.', 'dataset_split.csv')
 DEFAULT_HISTOGRAM_REF_FILE = os.path.join('.', 'histogram_ref_file.txt')
 DEFAULT_MODEL_DIR = None
-DEFAULT_EVENT_HANDLERS = (
-    'model_saver',
-    'model_restorer',
-    'sampler_threading',
-    'apply_gradients',
-    'output_interpreter',
-    'console_logger',
-    'tensorboard_logger')
+DEFAULT_EVENT_HANDLERS = ('model_saver', 'model_restorer', 'sampler_threading',
+                          'apply_gradients', 'output_interpreter',
+                          'console_logger', 'tensorboard_logger')
 
 DEFAULT_ITERATION_GENERATOR = 'iteration_generator'
 
@@ -48,7 +38,7 @@ def add_application_args(parser):
         "--cuda_devices",
         metavar='',
         help="Set CUDA_VISIBLE_DEVICES variable, e.g. '0,1,2,3'; "
-             "leave blank to use the system default value",
+        "leave blank to use the system default value",
         type=str,
         default='')
 
@@ -111,7 +101,7 @@ def add_inference_args(parser):
         "--inference_iter",
         metavar='',
         help="[Inference only] Use the checkpoint at this iteration for "
-             "inference",
+        "inference",
         type=int,
         default=-1)
 
@@ -147,6 +137,13 @@ def add_inference_args(parser):
         help="[Inference only] Width of borders to crop for segmented patch",
         type=spatialnumarray,
         default=(0, 0, 0))
+
+    parser.add_argument(
+        "--fill_constant",
+        help="[Inference only] Output fill value "
+        "used fill borders of output images.",
+        type=float,
+        default=0.0)
 
     return parser
 
@@ -211,8 +208,8 @@ def add_input_data_args(parser):
         metavar='',
         type=str,
         help="Regular expression for extracting subject id from filename, "
-             "matched pattern will be removed from the file names "
-             "to form the subject id",
+        "matched pattern will be removed from the file names "
+        "to form the subject id",
         default='')
 
     parser.add_argument(
@@ -228,7 +225,7 @@ def add_input_data_args(parser):
         choices=list(SUPPORTED_LOADERS),
         default=None,
         help="Image loader to use from {}. "
-             "Leave blank to try all loaders.".format(list(SUPPORTED_LOADERS)))
+        "Leave blank to try all loaders.".format(list(SUPPORTED_LOADERS)))
 
     parser.add_argument(
         "--pixdim",
@@ -241,8 +238,8 @@ def add_input_data_args(parser):
         type=str_array,
         default=(),
         help="labels for positive end of voxel axes, possible labels are"
-             " ('L','R'),('P','A'),('I','S')"
-             " *see also nibabel.orientations.ornt2axcodes")
+        " ('L','R'),('P','A'),('I','S')"
+        " *see also nibabel.orientations.ornt2axcodes")
 
     parser.add_argument(
         "--spatial_window_size",
@@ -266,7 +263,7 @@ def add_network_args(parser):
     parser.add_argument(
         "--name",
         help="Choose a net from NiftyNet/niftynet/network/ or from "
-             "user specified module string",
+        "user specified module string",
         metavar='')
 
     parser.add_argument(
@@ -287,9 +284,9 @@ def add_network_args(parser):
         "--smaller_final_batch_mode",
         metavar='TYPE_STR',
         help="If True, allow the final batch to be smaller "
-             "if there are insufficient items left in the queue, "
-             "and the batch size will be undetermined during "
-             "graph construction.",
+        "if there are insufficient items left in the queue, "
+        "and the batch size will be undetermined during "
+        "graph construction.",
         choices=list(SMALLER_FINAL_BATCH_MODE),
         default='pad')
 
@@ -317,9 +314,9 @@ def add_network_args(parser):
         "--volume_padding_mode",
         metavar='',
         help="Set which type of numpy padding to do, see "
-             "https://docs.scipy.org/doc/numpy-1.14.0/"
-             "reference/generated/numpy.pad.html "
-             "for details",
+        "https://docs.scipy.org/doc/numpy-1.14.0/"
+        "reference/generated/numpy.pad.html "
+        "for details",
         type=str,
         default='minimum')
 
@@ -327,8 +324,8 @@ def add_network_args(parser):
         "--window_sampling",
         metavar='TYPE_STR',
         help="How to sample patches from each loaded image:"
-             " 'uniform': fixed size uniformly distributed,"
-             " 'resize': resize image to the patch size.",
+        " 'uniform': fixed size uniformly distributed,"
+        " 'resize': resize image to the patch size.",
         choices=['uniform', 'resize', 'balanced', 'weighted'],
         default='uniform')
 
@@ -344,8 +341,8 @@ def add_network_args(parser):
         choices=list(
             niftynet.layer.binary_masking.SUPPORTED_MULTIMOD_MASK_TYPES),
         help="Way of combining the foreground masks from different "
-             "modalities. 'and' is the intersection, 'or' is the union "
-             "and 'multi' permits each modality to use its own mask.",
+        "modalities. 'and' is the intersection, 'or' is the union "
+        "and 'multi' permits each modality to use its own mask.",
         default='and')
 
     parser.add_argument(
@@ -370,8 +367,7 @@ def add_network_args(parser):
 
     parser.add_argument(
         "--foreground_type",
-        choices=list(
-            niftynet.layer.binary_masking.SUPPORTED_MASK_TYPES),
+        choices=list(niftynet.layer.binary_masking.SUPPORTED_MASK_TYPES),
         help="type_str of foreground masking strategy used",
         default='otsu_plus')
 
@@ -390,7 +386,7 @@ def add_network_args(parser):
     parser.add_argument(
         "--normalise_foreground_only",
         help="Indicates whether a foreground mask should be applied when"
-             " normalising volumes",
+        " normalising volumes",
         type=str2boolean,
         default=False)
 
@@ -409,7 +405,7 @@ def add_network_args(parser):
     parser.add_argument(
         "--keep_prob",
         help="Probability that each element is kept "
-             "if dropout is supported by the network",
+        "if dropout is supported by the network",
         type=float,
         default=1.0)
 
@@ -445,7 +441,7 @@ def add_training_args(parser):
     parser.add_argument(
         "--sample_per_volume",
         help="[Training only] Set number of samples to take from "
-             "each image that was loaded in a given training epoch",
+        "each image that was loaded in a given training epoch",
         metavar='',
         type=int,
         default=1)
@@ -453,28 +449,28 @@ def add_training_args(parser):
     parser.add_argument(
         "--rotation_angle",
         help="The min/max angles of rotation when rotation "
-             "augmentation is enabled",
+        "augmentation is enabled",
         type=float_array,
         default=())
 
     parser.add_argument(
         "--rotation_angle_x",
         help="The min/max angles of the x rotation when rotation "
-             "augmentation is enabled",
+        "augmentation is enabled",
         type=float_array,
         default=())
 
     parser.add_argument(
         "--rotation_angle_y",
         help="The min/max angles of the y rotation when rotation "
-             "augmentation is enabled",
+        "augmentation is enabled",
         type=float_array,
         default=())
 
     parser.add_argument(
         "--rotation_angle_z",
         help="The min/max angles of the z rotation when rotation "
-             "augmentation is enabled",
+        "augmentation is enabled",
         type=float_array,
         default=())
 
@@ -487,28 +483,28 @@ def add_training_args(parser):
     parser.add_argument(
         "--isotropic_scaling",
         help="Indicates if the same random scaling factor should be applied "
-             "to each dimension",
+        "to each dimension",
         type=str2boolean,
         default=False)
 
     parser.add_argument(
         "--antialiasing",
         help="Indicates if antialiasing must be performed "
-             "when randomly scaling the input images",
+        "when randomly scaling the input images",
         type=str2boolean,
         default=True)
 
     parser.add_argument(
         "--bias_field_range",
         help="[Training only] The range of bias field coeffs in [min_coeff, "
-             "max_coeff]",
+        "max_coeff]",
         type=float_array,
         default=())
 
     parser.add_argument(
         "--bf_order",
         help="[Training only] maximal polynomial order to use for the "
-             "creation of the bias field augmentation",
+        "creation of the bias field augmentation",
         metavar='',
         type=int,
         default=3)
@@ -516,8 +512,8 @@ def add_training_args(parser):
     parser.add_argument(
         "--random_flipping_axes",
         help="The axes which can be flipped to augment the data. Supply as "
-             "comma-separated values within single quotes, e.g. '0,1'. Note "
-             "that these are 0-indexed, so choose some combination of 0, 1.",
+        "comma-separated values within single quotes, e.g. '0,1'. Note "
+        "that these are 0-indexed, so choose some combination of 0, 1.",
         type=int_array,
         default=-1)
 

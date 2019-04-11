@@ -28,7 +28,8 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                  output_path=os.path.join('.', 'output'),
                  window_border=(),
                  interp_order=0,
-                 postfix='_niftynet_out'):
+                 postfix='_niftynet_out',
+                 fill_constant=0.0):
         ImageWindowsAggregator.__init__(
             self, image_reader=image_reader, output_path=output_path)
         self.name = name
@@ -36,6 +37,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         self.window_border = window_border
         self.output_interp_order = interp_order
         self.postfix = postfix
+        self.fill_constant = fill_constant
 
     def decode_batch(self, window, location):
         n_samples = location.shape[0]
@@ -68,6 +70,10 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         for layer in self.reader.preprocessors:
             if isinstance(layer, PadLayer):
                 empty_image, _ = layer(empty_image)
+
+        if self.fill_constant != 0.0:
+            empty_image[:] = self.fill_constant
+
         return empty_image
 
     def _save_current_image(self):

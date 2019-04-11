@@ -237,7 +237,8 @@ class SegmentationApplication(BaseApplication):
             output_path=self.action_param.save_seg_dir,
             window_border=self.action_param.border,
             interp_order=self.action_param.output_interp_order,
-            postfix=self.action_param.output_postfix)
+            postfix=self.action_param.output_postfix,
+            fill_constant=self.action_param.fill_constant)
 
     def initialise_resize_aggregator(self):
         self.output_decoder = ResizeSamplesAggregator(
