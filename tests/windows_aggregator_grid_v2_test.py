@@ -118,6 +118,12 @@ def get_label_reader():
     return reader
 
 
+def get_nonnormalising_label_reader():
+    reader = ImageReader(['label'])
+    reader.initialise(MOD_LABEL_DATA, MOD_LABEl_TASK, mod_label_list)
+    return reader
+
+
 def get_25d_reader():
     reader = ImageReader(['image'])
     reader.initialise(SINGLE_25D_DATA, SINGLE_25D_TASK, single_25d_list)
@@ -250,6 +256,54 @@ class GridSamplesAggregatorTest(tf.test.TestCase):
         expected_data = nib.load(
             'testing_data/T1_1023_NeuroMorph_Parcellation.nii.gz').get_data()
         self.assertAllClose(output_data, expected_data)
+
+    def test_filling(self):
+        reader = get_nonnormalising_label_reader()
+        test_constant = 0.5731
+        postfix = '_niftynet_out_background'
+        test_border = (10, 7, 8)
+        data_param = MOD_LABEL_DATA
+        sampler = GridSampler(reader=reader,
+                              window_sizes=data_param,
+                              batch_size=10,
+                              spatial_window_size=None,
+                              window_border=test_border,
+                              queue_length=50)
+        aggregator = GridSamplesAggregator(
+            image_reader=reader,
+            name='label',
+            output_path=os.path.join('testing_data', 'aggregated'),
+            window_border=test_border,
+            interp_order=0,
+            postfix=postfix,
+            fill_constant=test_constant)
+        more_batch = True
+        with self.test_session() as sess:
+            sampler.set_num_threads(2)
+            while more_batch:
+                out = sess.run(sampler.pop_batch_op())
+                more_batch = aggregator.decode_batch(
+                    out['label'], out['label_location'])
+        output_filename = '{}{}.nii.gz'.format(
+            sampler.reader.get_subject_id(0), postfix)
+        output_file = os.path.join(
+            'testing_data', 'aggregated', output_filename)
+        output_data = nib.load(output_file).get_data()[..., 0, 0]
+        output_shape = output_data.shape
+        for i in range(3):
+            def _test_background(idcs):
+                extract = output_data[idcs]
+                self.assertTrue((extract == test_constant).sum()
+                                == extract.size)
+
+            extract_idcs = [slice(None)]*3
+
+            extract_idcs[i] = slice(0, test_border[i])
+            _test_background(tuple(extract_idcs))
+
+            extract_idcs[i] = slice(output_shape[i] - test_border[i],
+                                    output_shape[i])
+            _test_background(tuple(extract_idcs))
 
 
 if __name__ == "__main__":
