@@ -82,40 +82,48 @@ class UniformSampler(ImageWindowDataset):
         # fill output dict with data
         for name in list(data):
             coordinates_key = LOCATION_FORMAT.format(name)
+            image_present_key = name + '_present'
             image_data_key = name
 
-            # fill the coordinates
-            location_array = coordinates[name]
-            output_dict[coordinates_key] = location_array
-
-            # fill output window array
-            image_array = []
-            for window_id in range(self.window.n_samples):
-                x_start, y_start, z_start, x_end, y_end, z_end = \
-                    location_array[window_id, 1:]
-                try:
-                    image_window = data[name][
-                        x_start:x_end, y_start:y_end, z_start:z_end, ...]
-                    image_array.append(image_window[np.newaxis, ...])
-                except ValueError:
-                    tf.logging.fatal(
-                        "dimensionality miss match in input volumes, "
-                        "please specify spatial_window_size with a "
-                        "3D tuple and make sure each element is "
-                        "smaller than the image length in each dim. "
-                        "Current coords %s", location_array[window_id])
-                    raise
-            if len(image_array) > 1:
-                np_images = np.concatenate(image_array, axis=0)
-                if self.pad_if_smaller:
-                    output_dict[image_data_key] = pad_image_array(static_window_shapes[name], np_images, 0)
-                else:
-                    output_dict[image_data_key] = np_images
+            if data[name] is None:
+                output_dict[coordinates_key] = None
+                output_dict[image_present_key] = np.array([False])
+                output_dict[image_data_key] = None
             else:
-                if self.pad_if_smaller:
-                    output_dict[image_data_key] = pad_image_array(static_window_shapes[name], image_array[0], 0)
+                # fill the coordinates
+                location_array = coordinates[name]
+                output_dict[coordinates_key] = location_array
+                output_dict[image_present_key] = np.array([True])
+
+                # fill output window array
+                image_array = []
+                for window_id in range(self.window.n_samples):
+                    x_start, y_start, z_start, x_end, y_end, z_end = \
+                        location_array[window_id, 1:]
+                    try:
+
+                        image_window = data[name][
+                            x_start:x_end, y_start:y_end, z_start:z_end, ...]
+                        image_array.append(image_window[np.newaxis, ...])
+                    except ValueError:
+                        tf.logging.fatal(
+                            "dimensionality miss match in input volumes, "
+                            "please specify spatial_window_size with a "
+                            "3D tuple and make sure each element is "
+                            "smaller than the image length in each dim. "
+                            "Current coords %s", location_array[window_id])
+                        raise
+                if len(image_array) > 1:
+                    np_images = np.concatenate(image_array, axis=0)
+                    if self.pad_if_smaller:
+                        output_dict[image_data_key] = pad_image_array(static_window_shapes[name], np_images, 0)
+                    else:
+                        output_dict[image_data_key] = np_images
                 else:
-                    output_dict[image_data_key] = image_array[0]
+                    if self.pad_if_smaller:
+                        output_dict[image_data_key] = pad_image_array(static_window_shapes[name], image_array[0], 0)
+                    else:
+                        output_dict[image_data_key] = image_array[0]
         # the output image shape should be
         # [enqueue_batch_size, x, y, z, time, modality]
         # where enqueue_batch_size = windows_per_image

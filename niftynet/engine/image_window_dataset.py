@@ -333,6 +333,14 @@ class ImageWindowDataset(Layer):
             generator=window_generator,
             output_types=self.tf_dtypes,
             output_shapes=self.tf_shapes)
+        # file_dataset = tf.data.Dataset.from_generator(
+        #     generator=window_generator,
+        #     output_types=self.tf_dtypes,
+        #     output_shapes=self.tf_shapes)
+        #
+        # placeholder_dataset = tf.data.Dataset.from_tensor_slices()
+        #
+        # dataset = tf.cond(file_dataset, placeholder_dataset, ???)
 
         # dataset: slice the n-element window into n single windows
         dataset = dataset.flat_map(map_func=tf.data.Dataset.from_tensor_slices)

@@ -23,6 +23,7 @@ import niftynet.layer.loss_segmentation as nnlls
 
 from niftynet.utilities.util_common import look_up_operations
 from niftynet.engine.sampler_uniform_v2 import UniformSampler
+from niftynet.engine.sampler_grid_v2 import GridSampler
 from niftynet.engine.application_factory import InitializerFactory
 
 import math
@@ -96,7 +97,7 @@ class SemiSupervisedApplication(BaseApplication):
                                                  flist, True) for flist in file_lists
         ]
 
-        self.readers[0].layer_op(idx=0)
+        #self.readers[0].layer_op(idx=0)
 
         preprocessing = []
 
@@ -194,7 +195,7 @@ class SemiSupervisedApplication(BaseApplication):
 
         if self.is_training:
 
-            self.sampler[0][0].layer_op(idx=0)
+            self.sampler[0][0].layer_op(idx=1)
             print("sampler =", self.sampler)
 
             if self.action_param.validation_every_n > 0:
@@ -260,7 +261,7 @@ class SemiSupervisedApplication(BaseApplication):
                 if self.has_autoencoder_feature:
                     loss = unsupervised_loss
                 else:
-                    raise ArgumentError("Features defined")
+                    raise ValueError("Features defined")
 
             #print('supervised_loss:', supervised_loss)
             #print('unsupervised_loss:', unsupervised_loss, unsupervised_loss['kl_loss'] + unsupervised_loss['l2_loss'])

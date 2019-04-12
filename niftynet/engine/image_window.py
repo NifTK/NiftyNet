@@ -66,6 +66,7 @@ class ImageWindow(object):
                 [self.n_samples] + list(self._shapes[name]))
             shapes[LOCATION_FORMAT.format(name)] = tuple(
                 [self.n_samples] + [1 + N_SPATIAL * 2])
+            shapes[name + '_present'] = tuple([self.n_samples, 1])
         return shapes
 
     @property
@@ -86,6 +87,7 @@ class ImageWindow(object):
         for name in list(self._dtypes):
             dtypes[name] = self._dtypes[name]
             dtypes[LOCATION_FORMAT.format(name)] = BUFFER_POSITION_DTYPE
+            dtypes[name + '_present'] = tf.bool
         return dtypes
 
     @classmethod

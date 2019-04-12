@@ -211,6 +211,7 @@ class ImageReader(Layer):
             values: image volume array
 
         """
+        tf.logging.info("running ImageReader.layer_op")
         if idx is None:
             if shuffle:
                 # training, with random list output
