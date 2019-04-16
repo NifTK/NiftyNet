@@ -246,7 +246,7 @@ class ImageReader(Layer):
                 else:
                     layer.randomise(image_data_dict)
 
-                image_data_dict = layer(image_data_dict, interp_order_dict)
+                image_data_dict = layer(image_data_dict, interp_order_dict)# add a is_placeholder_dict
             elif isinstance(layer, Layer):
                 image_data_dict, mask = layer(image_data_dict, mask)
                 # print('%s, %.3f sec'%(layer, -local_time + time.time()))
@@ -384,6 +384,7 @@ class ImageReader(Layer):
             raise
 
 
+# TODO: replace include partial with an additional required parameter in each data_param entry
 def _filename_to_image_list(file_list, mod_dict, data_param, include_partial=False):
     """
     Converting a list of filenames to a list of image objects,

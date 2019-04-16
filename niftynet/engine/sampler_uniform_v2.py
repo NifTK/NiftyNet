@@ -87,14 +87,17 @@ class UniformSampler(ImageWindowDataset):
 
             if data[name] is None:
                 output_dict[coordinates_key] = coordinates[name]
-                output_dict[image_present_key] = np.array([False])
-                output_dict[image_data_key] = np.empty((4,) + static_window_shapes[name], dtype=np.float32)
+                output_dict[image_present_key] = np.empty((self.window.n_samples, 1), dtype=np.bool)
+                output_dict[image_present_key].fill(False)
+                output_dict[image_data_key] =\
+                    np.empty((self.window.n_samples,) + static_window_shapes[name], dtype=np.float32)
                 output_dict[image_data_key].fill(0.0)
             else:
                 # fill the coordinates
                 location_array = coordinates[name]
                 output_dict[coordinates_key] = location_array
-                output_dict[image_present_key] = np.array([True])
+                output_dict[image_present_key] = np.empty((self.window.n_samples, 1), dtype=np.bool)
+                output_dict[image_present_key].fill(True)
 
                 # fill output window array
                 image_array = []
@@ -116,11 +119,13 @@ class UniformSampler(ImageWindowDataset):
                         raise
                 if len(image_array) > 1:
                     np_images = np.concatenate(image_array, axis=0)
+                    tf.logging.info("image shape in uniform sampler is {}".format(np_images.shape))
                     if self.pad_if_smaller:
                         output_dict[image_data_key] = pad_image_array(static_window_shapes[name], np_images, 0)
                     else:
                         output_dict[image_data_key] = np_images
                 else:
+                    tf.logging.info("image shape in uniform sampler is {}".format(image_array[0].shape))
                     if self.pad_if_smaller:
                         output_dict[image_data_key] = pad_image_array(static_window_shapes[name], image_array[0], 0)
                     else:

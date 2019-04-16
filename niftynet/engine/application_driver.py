@@ -343,7 +343,7 @@ class ApplicationDriver(object):
         """
         Calling ``tf.session.run`` with parameters encapsulated in
         iteration message as an iteration.
-        Broadcasting ITER_* events before and afterward.sl
+        Broadcasting ITER_* events before and afterward.
 
         :param application:
         :param iteration_message: an ``engine.IterationMessage`` instances

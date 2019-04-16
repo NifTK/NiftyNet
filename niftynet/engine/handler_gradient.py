@@ -57,9 +57,6 @@ class ApplyGradients(object):
         """
         if msg['iter_msg'].is_training:
             msg['iter_msg'].ops_to_run['gradients'] = sender.gradient_op
-        vals = sender.current_id.eval()
-        tf.logging.info(msg['iter_msg'].current_iter)
-        tf.logging.info(vals)
 
 
 def _apply_gradients(optimiser, gradients):
