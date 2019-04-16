@@ -86,9 +86,10 @@ class UniformSampler(ImageWindowDataset):
             image_data_key = name
 
             if data[name] is None:
-                output_dict[coordinates_key] = None
+                output_dict[coordinates_key] = coordinates[name]
                 output_dict[image_present_key] = np.array([False])
-                output_dict[image_data_key] = None
+                output_dict[image_data_key] = np.empty((4,) + static_window_shapes[name], dtype=np.float32)
+                output_dict[image_data_key].fill(0.0)
             else:
                 # fill the coordinates
                 location_array = coordinates[name]

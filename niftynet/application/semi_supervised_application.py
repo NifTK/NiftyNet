@@ -195,7 +195,8 @@ class SemiSupervisedApplication(BaseApplication):
 
         if self.is_training:
 
-            self.sampler[0][0].layer_op(idx=1)
+            #self.sampler[0][0].layer_op(idx=0)
+            #self.sampler[0][0].layer_op(idx=1)
             print("sampler =", self.sampler)
 
             if self.action_param.validation_every_n > 0:
