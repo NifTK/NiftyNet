@@ -31,6 +31,7 @@ import math
 SUPPORTED_INPUT = set(['image', 'label'])
 SUPPORTED_TRAINING = set(['label', 'no_label'])
 
+
 class SemiSupervisedApplication(BaseApplication):
     REQUIRED_CONFIG_SECTION = "SEMISUPERVISED"
 
@@ -195,9 +196,8 @@ class SemiSupervisedApplication(BaseApplication):
 
         if self.is_training:
 
-            self.sampler[0][0].layer_op(idx=0)
-            #self.sampler[0][0].layer_op(idx=1)
-            print("sampler =", self.sampler)
+            #self.sampler[0][0].layer_op(idx=0)
+            #print("sampler =", self.sampler)
 
             if self.action_param.validation_every_n > 0:
                 data_dict = tf.cond(tf.logical_not(self.is_validation),
@@ -330,6 +330,9 @@ class SemiSupervisedApplication(BaseApplication):
                 var=rescale_image(image, image_min, image_max, 255), name='original image',
                 average_over_devices=False, summary_type='image3_axial',
                 collection=TF_SUMMARIES)
+            outputs_collector.add_to_collection(
+                var= data_dict['label_present'][0], name='label_present',
+                average_over_devices=False, summary_type='scalar', collection=CONSOLE)
 
             if self.has_autoencoder_feature:
                 # for g in grads:
