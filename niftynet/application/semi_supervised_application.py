@@ -331,7 +331,10 @@ class SemiSupervisedApplication(BaseApplication):
                 average_over_devices=False, summary_type='image3_axial',
                 collection=TF_SUMMARIES)
             outputs_collector.add_to_collection(
-                var= data_dict['label_present'][0], name='label_present',
+                var=data_dict['label_present'][0], name='label_present',
+                average_over_devices=False, summary_type='scalar', collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=self.is_validation, name='is_validation',
                 average_over_devices=False, summary_type='scalar', collection=CONSOLE)
 
             if self.has_autoencoder_feature:

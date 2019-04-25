@@ -1,15 +1,16 @@
-import niftynet.layer.base_layer as nnlb
+import operator
+
+import tensorflow as tf
+
+import niftynet.layer.activation as nnla
 import niftynet.layer.convolution as nnlc
 import niftynet.layer.deconvolution as nnldc
-import niftynet.layer.activation as nnla
 import niftynet.layer.fully_connected as nnlfc
+import niftynet.layer.gaussian_sampler as nnlgs
 import niftynet.layer.gn as nnlg
 import niftynet.network.base_net as nnnbn
-import niftynet.utilities as nnu
-import niftynet.network.vae as nnnv
-import tensorflow as tf
+
 import functools as ft
-import operator
 
 
 class GuuNet(nnnbn.BaseNet):
@@ -145,8 +146,8 @@ class GuuNet(nnnbn.BaseNet):
                 _, gsc, lc, dense_down_gn, dense_down_acti, dense_down_conv,
                 dense_down_fc)
 
-            _, pmeans, plogvars = nnnv.GaussianSampler(
-                lc / 2, 1, 10, -10, name='gaussian_sampler')(_, is_training)
+            _, pmeans, plogvars = nnlgs.GaussianSampler(
+                lc / 2, 4, 10, -10, name='gaussian_sampler')(_, is_training)
 
             gaussian_sampler_out = self.dense_up(
                 _, bc << layers, restore_shape, dense_up_fc, dense_up_acti,
