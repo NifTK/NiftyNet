@@ -407,7 +407,7 @@ More specifically:
  ---- | ---- | ------- | -------
 [normalisation](#normalisation) | `boolean` | `normalisation=True` | `False`
 [whitening](#whitening) | `boolean` | `whitening=True` | `False`
-[rgb_normalisation](#rgb_normalisation) | `boolean` | `rgb_normalisation=True` | `False`
+[rgb_normalisation](#rgb-normalisation) | `boolean` | `rgb_normalisation=True` | `False`
 [histogram_ref_file](#histogram-ref-file) | `string` | `histogram_ref_file=./hist_ref.txt` | `''`
 [norm_type](#norm-type) | `string` | `norm_type=percentile` | `percentile`
 [cutoff](#cutoff) | `float array (two elements)` | `cutoff=0.1, 0.9` | `0.01, 0.99`

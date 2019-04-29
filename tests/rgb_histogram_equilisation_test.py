@@ -117,7 +117,7 @@ class RGBEquilisationTest(tf.test.TestCase):
         cv2 = require_module('cv2', mandatory=False)
 
         if cv2 is None:
-            self.skipTest()
+            self.skipTest('requires cv2 module')
             return
 
         def _get_histogram(img):
