@@ -10,12 +10,9 @@ import os
 import numpy as np
 
 import niftynet.io.misc_io as misc_io
+from niftynet.layer.pad import PadLayer
 from niftynet.engine.sampler_resize_v2 import zoom_3d
 from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
-from niftynet.layer.discrete_label_normalisation import \
-    DiscreteLabelNormalisationLayer
-from niftynet.layer.pad import PadLayer
-
 
 class ResizeSamplesAggregator(ImageWindowsAggregator):
     """
@@ -24,17 +21,16 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
     """
     def __init__(self,
                  image_reader,
+                 image_writer,
                  name='image',
-                 output_path=os.path.join('.', 'output'),
                  window_border=(),
-                 interp_order=0,
-                 postfix='_niftynet_out'):
-        ImageWindowsAggregator.__init__(
-            self, image_reader=image_reader, output_path=output_path)
+                 interp_order=0):
+        ImageWindowsAggregator.__init__(self,
+                                        image_reader,
+                                        image_writer)
         self.name = name
         self.window_border = window_border
         self.output_interp_order = interp_order
-        self.postfix = postfix
 
     def decode_batch(self, window, location):
         """
@@ -86,18 +82,5 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                             ratio=zoom_ratio,
                             interp_order=self.output_interp_order)
 
-        for layer in reversed(self.reader.preprocessors):
-            if isinstance(layer, PadLayer):
-                image_out, _ = layer.inverse_op(image_out)
-            if isinstance(layer, DiscreteLabelNormalisationLayer):
-                image_out, _ = layer.inverse_op(image_out)
         subject_name = self.reader.get_subject_id(self.image_id)
-        filename = "{}{}.nii.gz".format(subject_name, self.postfix)
-        source_image_obj = self.input_image[self.name]
-        misc_io.save_data_array(self.output_path,
-                                filename,
-                                image_out,
-                                source_image_obj,
-                                self.output_interp_order)
-        self.log_inferred(subject_name, filename)
-        return
+        self.writer(image_out, subject_name, self.input_image[self.name])

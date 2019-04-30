@@ -336,7 +336,7 @@ def cached_label_binarizer(label, output_prob):
         """
         This function binarizes a segmentation based on a specified
         label (defined by outer function)
-        :param data: a data dictionary as built by ImageReader
+        :param data: a data dictionary as built by BaseImageSource
         :return: a numpy array representing a binary label map
         """
         if output_prob:
@@ -371,7 +371,7 @@ def cached_cc_binarizer(cc_labels, output_prob):
         """
         This function binarizes a multi-object segmentation and reference
         into a specified connected component set (defined by outer function)
-        :param data: a data dictionary as built by ImageReader
+        :param data: a data dictionary as built by BaseImageSource
         :return: two numpy arrays representing binary masks (from
         inferred and reference segmentations) for a connected component set
         """

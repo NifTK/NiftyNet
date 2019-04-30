@@ -86,7 +86,7 @@ def run():
     :return: system parameters is a group of parameters including
         SYSTEM_SECTIONS and app_module.REQUIRED_CONFIG_SECTION
         input_data_args is a group of input data sources to be
-        used by niftynet.io.ImageReader
+        used by niftynet.io.base_image_source.BaseImageSource
     """
     meta_parser = argparse.ArgumentParser(
         description="Launch a NiftyNet application.",

@@ -18,7 +18,6 @@ from niftynet.engine.application_variables import \
 from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.engine.windows_aggregator_classifier import \
     ClassifierSamplesAggregator
-from niftynet.io.image_reader import ImageReader
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
 from niftynet.layer.histogram_normalisation import \
@@ -65,7 +64,7 @@ class ClassificationApplication(BaseApplication):
         }
 
     def initialise_dataset_loader(
-            self, data_param=None, task_param=None, data_partitioner=None):
+            self, data_param=None, task_param=None, endpoint_factory=None):
 
         self.data_param = data_param
         self.classification_param = task_param
@@ -85,11 +84,10 @@ class ClassificationApplication(BaseApplication):
             reader_phase = self.action_param.dataset_to_infer
         except AttributeError:
             reader_phase = None
-        file_lists = data_partitioner.get_file_lists_by(
-            phase=reader_phase, action=self.action)
-        self.readers = [
-            ImageReader(reader_names).initialise(
-                data_param, task_param, file_list) for file_list in file_lists]
+
+        self.endpoint_factory = endpoint_factory
+        self.readers = endpoint_factory.create_sources(
+            reader_names, reader_phase, self.action)
 
         foreground_masking_layer = BinaryMaskingLayer(
             type_str=self.net_param.foreground_type,
@@ -172,8 +170,7 @@ class ClassificationApplication(BaseApplication):
     def initialise_aggregator(self):
         self.output_decoder = ClassifierSamplesAggregator(
             image_reader=self.readers[0],
-            output_path=self.action_param.save_seg_dir,
-            postfix=self.action_param.output_postfix)
+            image_writer=self.writers[0])
 
     def initialise_sampler(self):
         if self.is_training:

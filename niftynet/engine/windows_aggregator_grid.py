@@ -9,10 +9,7 @@ import os
 
 import numpy as np
 
-import niftynet.io.misc_io as misc_io
 from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
-from niftynet.layer.discrete_label_normalisation import \
-    DiscreteLabelNormalisationLayer
 from niftynet.layer.pad import PadLayer
 
 
@@ -24,19 +21,18 @@ class GridSamplesAggregator(ImageWindowsAggregator):
     """
     def __init__(self,
                  image_reader,
+                 image_writer,
                  name='image',
-                 output_path=os.path.join('.', 'output'),
                  window_border=(),
-                 interp_order=0,
-                 postfix='_niftynet_out',
                  fill_constant=0.0):
         ImageWindowsAggregator.__init__(
-            self, image_reader=image_reader, output_path=output_path)
+            self,
+            image_reader,
+            image_writer)
+
         self.name = name
         self.image_out = None
         self.window_border = window_border
-        self.output_interp_order = interp_order
-        self.postfix = postfix
         self.fill_constant = fill_constant
 
     def decode_batch(self, window, location):
@@ -80,18 +76,5 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         if self.input_image is None:
             return
 
-        for layer in reversed(self.reader.preprocessors):
-            if isinstance(layer, PadLayer):
-                self.image_out, _ = layer.inverse_op(self.image_out)
-            if isinstance(layer, DiscreteLabelNormalisationLayer):
-                self.image_out, _ = layer.inverse_op(self.image_out)
-        subject_name = self.reader.get_subject_id(self.image_id)
-        filename = "{}{}.nii.gz".format(subject_name, self.postfix)
-        source_image_obj = self.input_image[self.name]
-        misc_io.save_data_array(self.output_path,
-                                filename,
-                                self.image_out,
-                                source_image_obj,
-                                self.output_interp_order)
-        self.log_inferred(subject_name, filename)
-        return
+        output_name = self.reader.get_subject_id(self.image_id)
+        self.writer(self.image_out, output_name, self.input_image[self.name])

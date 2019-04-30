@@ -1,40 +1,27 @@
 # -*- coding: utf-8 -*-
-"""This module loads images from csv files and outputs numpy arrays."""
-from __future__ import absolute_import, division, print_function
+"""
+Image F/S output module
+"""
+from __future__ import absolute_import
 
 from copy import deepcopy
-
-import argparse
 import numpy as np
+from six import string_types
 import pandas
 import tensorflow as tf
-from six import string_types
 
-from niftynet.io.misc_io import dtype_casting
 from niftynet.io.image_sets_partitioner import COLUMN_UNIQ_ID
+from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
+from niftynet.io.base_image_source import BaseImageSource, \
+    param_to_dict, \
+    infer_tf_dtypes, \
+    DEFAULT_INTERP_ORDER
 from niftynet.io.image_type import ImageFactory
 from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
 from niftynet.utilities.user_parameters_helper import make_input_tuple
-from niftynet.utilities.util_common import print_progress_bar, ParserNamespace
-from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
-from niftynet.utilities.util_common import look_up_operations
+from niftynet.utilities.util_common import print_progress_bar
 
-DEFAULT_INTERP_ORDER = 1
-SUPPORTED_DATA_SPEC = {
-    'csv_file', 'path_to_search',
-    'filename_contains', 'filename_not_contains', 'filename_removefromid',
-    'interp_order', 'loader', 'pixdim', 'axcodes', 'spatial_window_size'}
-
-
-def infer_tf_dtypes(image_array):
-    """
-    Choosing a suitable tf dtype based on the dtype of input numpy array.
-    """
-    return dtype_casting(
-        image_array.dtype[0], image_array.interp_order[0], as_tf=True)
-
-
-class ImageReader(Layer):
+class FileImageSource(BaseImageSource):
     """
     For a concrete example::
 
@@ -64,22 +51,14 @@ class ImageReader(Layer):
     """
 
     def __init__(self, names=None):
+        super(FileImageSource, self).__init__(name='image_reader')
         # list of file names
         self._file_list = None
         self._input_sources = None
-        self._spatial_ranks = None
-        self._shapes = None
-        self._dtypes = None
         self._names = None
         if names:
             self.names = names
-
-        # list of image objects
         self.output_list = None
-        self.current_id = -1
-
-        self.preprocessors = []
-        super(ImageReader, self).__init__(name='image_reader')
 
     def initialise(self, data_param, task_param=None, file_list=None):
         """
@@ -128,7 +107,8 @@ class ImageReader(Layer):
             raise
         if file_list is None:
             # defaulting to all files detected by the input specification
-            file_list = ImageSetsPartitioner().initialise(data_param).all_files
+            file_list = FileImageSetsPartitioner().initialise(data_param)\
+                                                  .all_files
         if not self.names:
             # defaulting to load all sections defined in the task_param
             self.names = list(task_param)
@@ -202,29 +182,11 @@ class ImageReader(Layer):
             self.preprocessors.extend(layers)
         self.prepare_preprocessors()
 
-    # pylint: disable=arguments-differ,too-many-branches
-    def layer_op(self, idx=None, shuffle=True):
-        """
-        this layer returns dictionaries::
-
-            keys: self.output_fields
-            values: image volume array
-
-        """
-        if idx is None:
-            if shuffle:
-                # training, with random list output
-                idx = np.random.randint(len(self.output_list))
-            else:
-                # testing, with sequential output
-                # accessing self.current_id, not suitable for multi-thread
-                idx = self.current_id + 1
-                self.current_id = idx
-
+    def _get_image_and_interp_dict(self, idx):
         try:
             image_dict = self.output_list[idx]
         except (IndexError, TypeError):
-            return -1, None, None
+            return None, None
 
         image_data_dict = \
             {field: image.get_data() for (field, image) in image_dict.items()}
@@ -249,63 +211,42 @@ class ImageReader(Layer):
             elif isinstance(layer, Layer):
                 image_data_dict, mask = layer(image_data_dict, mask)
                 # print('%s, %.3f sec'%(layer, -local_time + time.time()))
-        return idx, image_data_dict, interp_order_dict
+        return image_data_dict, interp_order_dict
 
-    @property
-    def spatial_ranks(self):
+    def _check_initialised(self):
         """
-        Number of spatial dimensions of the images.
+        Checks if the reader has been initialised, if not raises a RuntimeError
+        """
 
-        :return: integers of spatial rank
-        """
         if not self.output_list:
             tf.logging.fatal("Please initialise the reader first.")
             raise RuntimeError
-        if not self._spatial_ranks:
-            first_image = self.output_list[0]
-            self._spatial_ranks = {field: first_image[field].spatial_rank
-                                   for field in self.names}
-        return self._spatial_ranks
 
-    @property
-    def shapes(self):
-        """
-        Image shapes before any preprocessing.
+    def _load_spatial_ranks(self):
+        self._check_initialised()
 
-        :return: tuple of integers as image shape
+        first_image = self.output_list[0]
 
+        return {field: first_image[field].spatial_rank
+                for field in self.names}
 
-        .. caution::
+    def _load_shapes(self):
+        self._check_initialised()
 
-            To have fast access, the spatial dimensions are not accurate
+        first_image = self.output_list[0]
+        return {field: first_image[field].shape
+                for field in self.names}
 
-                1. only read from the first image in list
-                2. not considering effects of random augmentation layers
-                    but time and modality dimensions should be correct
-        """
-        if not self.output_list:
-            tf.logging.fatal("Please initialise the reader first.")
-            raise RuntimeError
-        if not self._shapes:
-            first_image = self.output_list[0]
-            self._shapes = {field: first_image[field].shape
-                            for field in self.names}
-        return self._shapes
-
-    @property
-    def tf_dtypes(self):
+    def _load_dtypes(self):
         """
         Infer input data dtypes in TF
         (using the first image in the file list).
         """
-        if not self.output_list:
-            tf.logging.fatal("Please initialise the reader first.")
-            raise RuntimeError
-        if not self._dtypes:
-            first_image = self.output_list[0]
-            self._dtypes = {field: infer_tf_dtypes(first_image[field])
-                            for field in self.names}
-        return self._dtypes
+        self._check_initialised()
+
+        first_image = self.output_list[0]
+        return {field: infer_tf_dtypes(first_image[field])
+                for field in self.names}
 
     @property
     def input_sources(self):
@@ -319,9 +260,8 @@ class ImageReader(Layer):
         map task parameter keywords ``image`` and ``label`` to
         section names ``T1``, ``T2``, and ``manual_map`` respectively.
         """
-        if not self._input_sources:
-            tf.logging.fatal("Please initialise the reader first.")
-            raise RuntimeError
+        self._check_initialised()
+
         return self._input_sources
 
     @property
@@ -468,35 +408,3 @@ def _create_image(file_list, idx, modalities, data_param):
                         'output_axcodes': axcodes,
                         'loader': loader}
     return ImageFactory.create_instance(**image_properties)
-
-
-def param_to_dict(input_data_param):
-    """
-    Validate the user input ``input_data_param``
-    raise an error if it's invalid.
-
-    :param input_data_param:
-    :return: input data specifications as a nested dictionary
-    """
-    error_msg = 'Unknown ``data_param`` type. ' \
-                'It should be a nested dictionary: '\
-                '{"modality_name": {"input_property": value}} '\
-                'or a dictionary of: {"modality_name": '\
-                'niftynet.utilities.util_common.ParserNamespace}'
-    data_param = deepcopy(input_data_param)
-    if isinstance(data_param, (ParserNamespace, argparse.Namespace)):
-        data_param = vars(data_param)
-    if not isinstance(data_param, dict):
-        raise ValueError(error_msg)
-    for mod in data_param:
-        mod_param = data_param[mod]
-        if isinstance(mod_param, (ParserNamespace, argparse.Namespace)):
-            dict_param = vars(mod_param)
-        elif isinstance(mod_param, dict):
-            dict_param = mod_param
-        else:
-            raise ValueError(error_msg)
-        for data_key in dict_param:
-            look_up_operations(data_key, SUPPORTED_DATA_SPEC)
-        data_param[mod] = dict_param
-    return data_param

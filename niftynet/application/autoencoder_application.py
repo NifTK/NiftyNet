@@ -9,7 +9,6 @@ from niftynet.engine.application_variables import TF_SUMMARIES
 from niftynet.engine.sampler_linear_interpolate_v2 import LinearInterpolateSampler
 from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.engine.windows_aggregator_identity import WindowAsImageAggregator
-from niftynet.io.image_reader import ImageReader
 from niftynet.layer.loss_autoencoder import LossFunction
 from niftynet.utilities.util_common import look_up_operations
 
@@ -34,7 +33,8 @@ class AutoencoderApplication(BaseApplication):
         self.autoencoder_param = None
 
     def initialise_dataset_loader(
-            self, data_param=None, task_param=None, data_partitioner=None):
+            self, data_param=None, task_param=None, factory=None):
+        self.endpoint_factory = factory
         self.data_param = data_param
         self.autoencoder_param = task_param
 
@@ -53,20 +53,19 @@ class AutoencoderApplication(BaseApplication):
         if self.is_evaluation:
             NotImplementedError('Evaluation is not yet '
                                 'supported in this application.')
-        if self.is_training:
+
+        if self._infer_type == 'sample' and not self.is_training:
             self.readers = []
-            for file_list in file_lists:
-                reader = ImageReader(['image'])
-                reader.initialise(data_param, task_param, file_list)
-                self.readers.append(reader)
-        if self._infer_type in ('encode', 'encode-decode'):
-            self.readers = [ImageReader(['image'])]
-            self.readers[0].initialise(data_param, task_param, file_lists[0])
-        elif self._infer_type == 'sample':
-            self.readers = []
-        elif self._infer_type == 'linear_interpolation':
-            self.readers = [ImageReader(['feature'])]
-            self.readers[0].initialise(data_param, task_param, file_lists[0])
+        else:
+            if self.is_training \
+               or self._infer_type in ('encode', 'encode-decode'):
+                reader_names = ['image']
+            elif self._infer_type == 'linear_interpolation':
+                reader_names = ['feature']
+
+            self.readers = self.endpoint_factory.create_sources(
+                reader_names, reader_phase, self.action)
+
         # if self.is_training or self._infer_type in ('encode', 'encode-decode'):
         #    mean_var_normaliser = MeanVarNormalisationLayer(image_name='image')
         #    self.reader.add_preprocessing_layers([mean_var_normaliser])
@@ -202,7 +201,7 @@ class AutoencoderApplication(BaseApplication):
 
                 self.output_decoder = WindowAsImageAggregator(
                     image_reader=self.readers[0],
-                    output_path=self.action_param.save_seg_dir)
+                    image_writer=self.writers[0])
                 return
             elif self._infer_type == 'sample':
                 image_size = (self.net_param.batch_size,) + \
@@ -225,7 +224,7 @@ class AutoencoderApplication(BaseApplication):
                     average_over_devices=True, collection=NETWORK_OUTPUT)
                 self.output_decoder = WindowAsImageAggregator(
                     image_reader=None,
-                    output_path=self.action_param.save_seg_dir)
+                    image_writer=self.writers[0])
                 return
             elif self._infer_type == 'linear_interpolation':
                 # construct the entire network
@@ -249,7 +248,7 @@ class AutoencoderApplication(BaseApplication):
                     average_over_devices=True, collection=NETWORK_OUTPUT)
                 self.output_decoder = WindowAsImageAggregator(
                     image_reader=self.readers[0],
-                    output_path=self.action_param.save_seg_dir)
+                    image_writer=self.writers[0])
             else:
                 raise NotImplementedError
 
