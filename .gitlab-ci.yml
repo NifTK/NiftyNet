@@ -357,7 +357,7 @@ pip-installer:
     - set -e
     - cd $venv_dir
     # install TF
-    - pip install tensorflow-gpu==1.12
+    - pip install tensorflow-gpu==1.12.2
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
@@ -461,7 +461,7 @@ pip-installer:
     - set -e
     - cd $venv_dir
     # install TF
-    - pip install tensorflow-gpu==1.12
+    - pip install tensorflow-gpu==1.12.2
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
