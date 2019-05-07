@@ -97,6 +97,8 @@ SUPPORTED_LOSS_SEGMENTATION = {
         'niftynet.layer.loss_segmentation.generalised_wasserstein_dice_loss',
     "SensSpec":
         'niftynet.layer.loss_segmentation.sensitivity_specificity_loss',
+    "VolEnforcement":
+        'niftynet.layer.loss_segmentation.volume_enforcement',
     # "L1Loss":
     #     'niftynet.layer.loss_segmentation.l1_loss',
     # "L2Loss":
