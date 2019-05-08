@@ -62,9 +62,9 @@ class RegressionApplication(BaseApplication):
 
     def initialise_dataset_loader(
             self, data_param=None, task_param=None, factory=None):
+        super(RegressionApplication, self).initialise_dataset_loader(
+            data_param=data_param, task_param=task_param, factory=factory)
 
-        self.endpoint_factory = factory
-        self.data_param = data_param
         self.regression_param = task_param
 
         # initialise input image readers

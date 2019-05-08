@@ -49,8 +49,9 @@ class RegApp(BaseApplication):
 
     def initialise_dataset_loader(
             self, data_param=None, task_param=None, factory=None):
-        self.endpoint_factory = factory
-        self.data_param = data_param
+        super(RegApp, self).initialise_dataset_loader(
+            data_param=data_param, task_param=task_param, factory=factory)
+
         self.registration_param = task_param
 
         if self.is_evaluation:

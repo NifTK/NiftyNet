@@ -64,9 +64,10 @@ class SegmentationApplication(BaseApplication):
     def initialise_dataset_loader(
             self, data_param=None, task_param=None, factory=None):
 
-        self.data_param = data_param
+        super(SegmentationApplication, self).initialise_dataset_loader(
+            data_param=data_param, task_param=task_param, factory=factory)
+
         self.segmentation_param = task_param
-        self.endpoint_factory = factory
 
         # initialise input image readers
         if self.is_training:

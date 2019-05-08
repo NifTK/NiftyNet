@@ -34,8 +34,9 @@ class AutoencoderApplication(BaseApplication):
 
     def initialise_dataset_loader(
             self, data_param=None, task_param=None, factory=None):
-        self.endpoint_factory = factory
-        self.data_param = data_param
+        super(AutoencoderApplication, self).initialise_dataset_loader(
+            data_param=data_param, task_param=task_param, factory=factory)
+
         self.autoencoder_param = task_param
 
         if not self.is_training:
@@ -47,8 +48,7 @@ class AutoencoderApplication(BaseApplication):
             reader_phase = self.action_param.dataset_to_infer
         except AttributeError:
             reader_phase = None
-        file_lists = data_partitioner.get_file_lists_by(
-            phase=reader_phase, action=self.action)
+
         # read each line of csv files into an instance of Subject
         if self.is_evaluation:
             NotImplementedError('Evaluation is not yet '

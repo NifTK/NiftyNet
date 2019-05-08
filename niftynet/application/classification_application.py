@@ -64,9 +64,10 @@ class ClassificationApplication(BaseApplication):
         }
 
     def initialise_dataset_loader(
-            self, data_param=None, task_param=None, endpoint_factory=None):
+            self, data_param=None, task_param=None, factory=None):
+        super(ClassificationApplication, self).initialise_dataset_loader(
+            data_param=data_param, task_param=task_param, factory=factory)
 
-        self.data_param = data_param
         self.classification_param = task_param
 
         if self.is_training:
@@ -85,8 +86,7 @@ class ClassificationApplication(BaseApplication):
         except AttributeError:
             reader_phase = None
 
-        self.endpoint_factory = endpoint_factory
-        self.readers = endpoint_factory.create_sources(
+        self.readers = factory.create_sources(
             reader_names, reader_phase, self.action)
 
         foreground_masking_layer = BinaryMaskingLayer(

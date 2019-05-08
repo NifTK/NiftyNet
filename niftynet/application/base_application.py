@@ -79,6 +79,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         self.data_param = None
         self.endpoint_factory = None
 
+    # pylint: disable=unused-argument
     def initialise_dataset_loader(
             self, data_param=None, task_param=None, factory=None):
         """
@@ -90,7 +91,9 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
         and image source and sink instances.
         :return:
         """
-        raise NotImplementedError
+
+        self.endpoint_factory = factory
+        self.data_param = data_param
 
     #pylint: disable=unused-argument
     def initialise_output(self):
