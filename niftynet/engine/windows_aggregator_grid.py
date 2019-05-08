@@ -3,12 +3,9 @@
 windows aggregator decode sampling grid coordinates and image id from
 batch data, forms image level output and write to hard drive.
 """
-from __future__ import absolute_import, print_function, division
-
-import os
+from __future__ import absolute_import, division, print_function
 
 import numpy as np
-
 from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
 from niftynet.layer.pad import PadLayer
 
@@ -19,16 +16,14 @@ class GridSamplesAggregator(ImageWindowsAggregator):
     initialised as all zeros, and the values are replaced
     by image window data decoded from batch.
     """
+
     def __init__(self,
                  image_reader,
                  image_writer,
                  name='image',
                  window_border=(),
                  fill_constant=0.0):
-        ImageWindowsAggregator.__init__(
-            self,
-            image_reader,
-            image_writer)
+        ImageWindowsAggregator.__init__(self, image_reader, image_writer)
 
         self.name = name
         self.image_out = None
@@ -37,7 +32,8 @@ class GridSamplesAggregator(ImageWindowsAggregator):
 
     def decode_batch(self, window, location):
         n_samples = location.shape[0]
-        window, location = self.crop_batch(window, location, self.window_border)
+        window, location = self.crop_batch(window, location,
+                                           self.window_border)
 
         for batch_id in range(n_samples):
             image_id, x_start, y_start, z_start, x_end, y_end, z_end = \
@@ -60,7 +56,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
     def _initialise_empty_image(self, image_id, n_channels, dtype=np.float):
         self.image_id = image_id
         spatial_shape = self.input_image[self.name].shape[:3]
-        output_image_shape = spatial_shape + (n_channels,)
+        output_image_shape = spatial_shape + (n_channels, )
         empty_image = np.zeros(output_image_shape, dtype=dtype)
 
         for layer in self.reader.preprocessors:

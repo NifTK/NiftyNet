@@ -3,31 +3,27 @@
 Windows aggregator resize each item
 in a batch output and save as an image.
 """
-from __future__ import absolute_import, print_function, division
-
-import os
+from __future__ import absolute_import, division, print_function
 
 import numpy as np
-
-import niftynet.io.misc_io as misc_io
-from niftynet.layer.pad import PadLayer
 from niftynet.engine.sampler_resize_v2 import zoom_3d
 from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
+from niftynet.layer.pad import PadLayer
+
 
 class ResizeSamplesAggregator(ImageWindowsAggregator):
     """
     This class decodes each item in a batch by resizing each image
     window and save as a new image volume.
     """
+
     def __init__(self,
                  image_reader,
                  image_writer,
                  name='image',
                  window_border=(),
                  interp_order=0):
-        ImageWindowsAggregator.__init__(self,
-                                        image_reader,
-                                        image_writer)
+        ImageWindowsAggregator.__init__(self, image_reader, image_writer)
         self.name = name
         self.window_border = window_border
         self.output_interp_order = interp_order
@@ -40,21 +36,22 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         generated outputs).
         """
         n_samples = location.shape[0]
-        window, location = self.crop_batch(window, location, self.window_border)
+        window, location = self.crop_batch(window, location,
+                                           self.window_border)
         for batch_id in range(n_samples):
             if self._is_stopping_signal(location[batch_id]):
                 return False
             self.image_id = location[batch_id, 0]
             resize_to_shape = self._initialise_image_shape(
-                image_id=self.image_id,
-                n_channels=window.shape[-1])
+                image_id=self.image_id, n_channels=window.shape[-1])
             self._save_current_image(window[batch_id, ...], resize_to_shape)
         return True
 
     def _initialise_image_shape(self, image_id, n_channels):
         self.image_id = image_id
         spatial_shape = self.input_image[self.name].shape[:3]
-        output_image_shape = spatial_shape + (1, n_channels,)
+        output_image_shape = \
+            spatial_shape + (1, n_channels, )
         empty_image = np.zeros(output_image_shape, dtype=np.bool)
         for layer in self.reader.preprocessors:
             if isinstance(layer, PadLayer):
@@ -70,17 +67,18 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         if self.window_border and any([b > 0 for b in self.window_border]):
             np_border = self.window_border
             while len(np_border) < 5:
-                np_border = np_border + (0,)
-            np_border = [(b,) for b in np_border]
+                np_border = np_border + (0, )
+            np_border = [(b, ) for b in np_border]
             image_out = np.pad(image_out, np_border, mode='edge')
         image_shape = image_out.shape
         zoom_ratio = \
             [float(p) / float(d) for p, d in zip(window_shape, image_shape)]
         image_shape = list(image_shape[:3]) + [1, image_shape[-1]]
         image_out = np.reshape(image_out, image_shape)
-        image_out = zoom_3d(image=image_out,
-                            ratio=zoom_ratio,
-                            interp_order=self.output_interp_order)
+        image_out = zoom_3d(
+            image=image_out,
+            ratio=zoom_ratio,
+            interp_order=self.output_interp_order)
 
         subject_name = self.reader.get_subject_id(self.image_id)
         self.writer(image_out, subject_name, self.input_image[self.name])

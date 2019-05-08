@@ -3,16 +3,14 @@
 windows aggregator resize each item
 in a batch output and save as an image
 """
-from __future__ import absolute_import, print_function, division
+from __future__ import absolute_import, division, print_function
 
 import os
 
 import numpy as np
-
-import niftynet.io.misc_io as misc_io
+from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
 from niftynet.io.file_image_sink import BaseFileImageSink
 from niftynet.io.file_image_sink_meta_decorator import FileImageSinkDecorator
-from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
 
 
 class _CSVWriterDecorator(FileImageSinkDecorator):
@@ -21,26 +19,26 @@ class _CSVWriterDecorator(FileImageSinkDecorator):
     in a CSV file.
     """
 
-    def __init__(self,
-                 base_writer):
+    def __init__(self, base_writer):
         """
         :param base_writer: Underlying image writer instance
         """
 
         super(_CSVWriterDecorator, self).__init__(base_writer)
 
-        self.csv_path = os.path.join(
-            base_writer.output_path, base_writer.postfix+'.csv')
+        self.csv_path = os.path.join(base_writer.output_path,
+                                     base_writer.postfix + '.csv')
         if os.path.exists(self.csv_path):
             os.remove(self.csv_path)
 
     # pylint: disable=arguments-differ
     def layer_op(self, image_out, subject_name, image_in):
-        super(_CSVWriterDecorator, self).layer_op(image_out, subject_name, image_in)
+        super(_CSVWriterDecorator, self).layer_op(image_out, subject_name,
+                                                  image_in)
 
         with open(self.csv_path, 'a') as csv_file:
             data_str = ','.join([str(i) for i in image_out[0, 0, 0, 0, :]])
-            csv_file.write(subject_name+','+data_str+'\n')
+            csv_file.write(subject_name + ',' + data_str + '\n')
 
 
 class ClassifierSamplesAggregator(ImageWindowsAggregator):
@@ -48,10 +46,8 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
     This class decodes each item in a batch by saving classification
     labels to a new image volume.
     """
-    def __init__(self,
-                 image_reader,
-                 image_writer,
-                 name='image'):
+
+    def __init__(self, image_reader, image_writer, name='image'):
         if isinstance(image_writer, BaseFileImageSink):
             image_writer = _CSVWriterDecorator(image_writer)
 

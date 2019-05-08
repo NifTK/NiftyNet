@@ -4,9 +4,8 @@ This module is used to cache window-based network outputs,
 form a image-level output,
 write the cached the results to hard drive.
 """
-from __future__ import absolute_import, print_function, division
+from __future__ import absolute_import, division, print_function
 
-import os
 import numpy as np
 import tensorflow as tf
 from niftynet.engine.image_window import N_SPATIAL
@@ -20,9 +19,7 @@ class ImageWindowsAggregator(object):
     information the reader is needed.
     """
 
-    def __init__(self,
-                 image_reader=None,
-                 image_writer=None):
+    def __init__(self, image_reader=None, image_writer=None):
         """
         :param image_reader: BaseImageSource descendant class instance
         handling the loading of input images
@@ -97,7 +94,7 @@ class ImageWindowsAggregator(object):
         assert isinstance(border, (list, tuple)), \
             "border should be a list or tuple"
         while len(border) < N_SPATIAL:
-            border = tuple(border) + (border[-1],)
+            border = tuple(border) + (border[-1], )
         border = border[:N_SPATIAL]
 
         location = location.astype(np.int)
@@ -112,15 +109,15 @@ class ImageWindowsAggregator(object):
 
         cropped_shape = np.max(location[:, 4:7] - location[:, 1:4], axis=0)
         left = np.floor(
-            (spatial_shape - cropped_shape[:n_spatial])/2.0).astype(np.int)
+            (spatial_shape - cropped_shape[:n_spatial]) / 2.0).astype(np.int)
         if np.any(left < 0):
             tf.logging.fatal(
                 'network output window can be '
                 'cropped by specifying the border parameter in config file, '
                 'but here the output window %s is already smaller '
                 'than the input window size minus padding: %s, '
-                'not supported by this aggregator',
-                spatial_shape, cropped_shape)
+                'not supported by this aggregator', spatial_shape,
+                cropped_shape)
             raise ValueError
         if n_spatial == 1:
             window = window[:,

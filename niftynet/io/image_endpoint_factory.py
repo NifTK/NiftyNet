@@ -5,15 +5,14 @@ partitioners, and image sources and sinks
 """
 from __future__ import absolute_import
 
-from niftynet.io.file_image_source import FileImageSource
-from niftynet.io.file_image_sink import FileImageSink
-from niftynet.io.memory_image_source import MemoryImageSource
-from niftynet.io.memory_image_sink import MemoryImageSink,\
-    MEMORY_OUTPUT_CALLBACK_PARAM
 from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
-from niftynet.io.memory_image_sets_partitioner \
-    import MemoryImageSetsPartitioner,\
-    MEMORY_INPUT_NUM_SUBJECTS_PARAM
+from niftynet.io.file_image_sink import FileImageSink
+from niftynet.io.file_image_source import FileImageSource
+from niftynet.io.memory_image_sets_partitioner import (
+    MEMORY_INPUT_NUM_SUBJECTS_PARAM, MemoryImageSetsPartitioner)
+from niftynet.io.memory_image_sink import (MEMORY_OUTPUT_CALLBACK_PARAM,
+                                           MemoryImageSink)
+from niftynet.io.memory_image_source import MemoryImageSource
 from niftynet.utilities.decorators import singleton
 
 ENDPOINT_MEMORY = 'memory'
@@ -34,12 +33,15 @@ class ImageEndPointFactory(object):
     _task_param = None
     _action_param = None
     _endpoint_type = ENDPOINT_FILESYSTEM
-    _source_classes = {'filesystem': FileImageSource,
-                       'memory': MemoryImageSource}
-    _sink_classes = {'filesystem': FileImageSink,
-                     'memory': MemoryImageSink}
-    _partitioner_classes = {'filesystem': FileImageSetsPartitioner,
-                            'memory': MemoryImageSetsPartitioner}
+    _source_classes = {
+        'filesystem': FileImageSource,
+        'memory': MemoryImageSource
+    }
+    _sink_classes = {'filesystem': FileImageSink, 'memory': MemoryImageSink}
+    _partitioner_classes = {
+        'filesystem': FileImageSetsPartitioner,
+        'memory': MemoryImageSetsPartitioner
+    }
     _partitioner = None
 
     def set_params(self, data_param, task_param, action_param):
@@ -55,7 +57,7 @@ class ImageEndPointFactory(object):
         self._task_param = task_param
         self._action_param = action_param
 
-        if not data_param is None \
+        if data_param is not None \
            and MEMORY_INPUT_NUM_SUBJECTS_PARAM in data_param:
             self._endpoint_type = ENDPOINT_MEMORY
         else:
@@ -72,7 +74,8 @@ class ImageEndPointFactory(object):
                                ' data set can be partitioned.')
 
         if self._partitioner is None:
-            self._partitioner = self._partitioner_classes[self._endpoint_type]()
+            self._partitioner = self._partitioner_classes[
+                self._endpoint_type]()
 
         return self._partitioner
 
@@ -90,10 +93,13 @@ class ImageEndPointFactory(object):
             raise RuntimeError('Sources can only be instantiated after'
                                'data set partitioning')
 
-        return [self._source_classes[self._endpoint_type](dataset_names)
-                .initialise(self._data_param, self._task_param, subject_list)
-                for subject_list in self._partitioner.get_image_lists_by(
-                    phase=phase, action=action)]
+        return [
+            self._source_classes[
+                self._endpoint_type](dataset_names).initialise(
+                    self._data_param, self._task_param, subject_list)
+            for subject_list in self._partitioner.get_image_lists_by(
+                phase=phase, action=action)
+        ]
 
     def create_sinks(self, sources):
         """
@@ -102,15 +108,10 @@ class ImageEndPointFactory(object):
         """
 
         if self._endpoint_type == ENDPOINT_FILESYSTEM:
-            sink = self._sink_classes[ENDPOINT_FILESYSTEM](
-                sources[0],
-                self._action_param.output_interp_order,
+            return [self._sink_classes[ENDPOINT_FILESYSTEM](
+                sources[0], self._action_param.output_interp_order,
                 self._action_param.save_seg_dir,
-                self._action_param.output_postfix)
-        else:
-            sink = self._sink_classes[ENDPOINT_MEMORY](
-                sources[0],
-                self._action_param.output_interp_order,
-                vars(self._action_param)[MEMORY_OUTPUT_CALLBACK_PARAM])
-
-        return [sink]
+                self._action_param.output_postfix)]
+        return [self._sink_classes[ENDPOINT_MEMORY](
+            sources[0], self._action_param.output_interp_order,
+            vars(self._action_param)[MEMORY_OUTPUT_CALLBACK_PARAM])]

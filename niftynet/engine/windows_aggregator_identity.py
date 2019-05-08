@@ -2,11 +2,8 @@
 """
 windows aggregator saves each item in a batch output as an image.
 """
-from __future__ import absolute_import, print_function, division
+from __future__ import absolute_import, division, print_function
 
-import os
-
-import niftynet.io.misc_io as misc_io
 from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
 
 
@@ -31,9 +28,8 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
         (indicates output image is from single input image)
         ``location[batch_id, 0]`` is used as the file name
     """
-    def __init__(self,
-                 image_reader=None,
-                 image_writer=None):
+
+    def __init__(self, image_reader=None, image_writer=None):
         ImageWindowsAggregator.__init__(self, image_reader, image_writer)
         self.output_id = {'base_name': None, 'relative_id': 0}
 
@@ -64,15 +60,13 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
                 else:
                     output_name = self.output_id['base_name']
                 self._save_current_image(self.output_id['relative_id'],
-                                         output_name,
-                                         window[batch_id, ...])
+                                         output_name, window[batch_id, ...])
                 self.output_id['relative_id'] += 1
             return True
         n_samples = window.shape[0]
         for batch_id in range(n_samples):
             filename = self._decode_subject_name()
-            self._save_current_image(
-                batch_id, filename, window[batch_id, ...])
+            self._save_current_image(batch_id, filename, window[batch_id, ...])
         return False
 
     def _save_current_image(self, idx, filename, image):

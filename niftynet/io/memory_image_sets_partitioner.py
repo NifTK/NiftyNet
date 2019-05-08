@@ -8,12 +8,9 @@ from __future__ import absolute_import
 import os
 
 import pandas
-
-from niftynet.engine.signal import TRAIN, VALID, INFER, ALL
-from niftynet.io.image_sets_partitioner import BaseImageSetsPartitioner,\
-    SUPPORTED_PHASES,\
-    COLUMN_UNIQ_ID,\
-    COLUMN_PHASE
+from niftynet.engine.signal import ALL, INFER, TRAIN, VALID
+from niftynet.io.image_sets_partitioner import (
+    COLUMN_PHASE, COLUMN_UNIQ_ID, SUPPORTED_PHASES, BaseImageSetsPartitioner)
 from niftynet.utilities.decorators import singleton
 
 # Name of the data_param namespace entry for number of in-memory subjects
@@ -87,12 +84,15 @@ class MemoryImageSetsPartitioner(BaseImageSetsPartitioner):
         phases = []
         indices = []
         for phase, idcs in self._partitions.items():
-            phases += [phase]*len(idcs)
+            phases += [phase] * len(idcs)
             indices += idcs
 
-        df = pandas.DataFrame({COLUMN_PHASE: phases, COLUMN_UNIQ_ID: indices})
-        df = df.sort_values(by=[COLUMN_UNIQ_ID])
-        df.to_csv(path)
+        data_frame = pandas.DataFrame({
+            COLUMN_PHASE: phases,
+            COLUMN_UNIQ_ID: indices
+        })
+        data_frame = data_frame.sort_values(by=[COLUMN_UNIQ_ID])
+        data_frame.to_csv(path)
 
     def _load_partitions(self, path):
         """
@@ -100,12 +100,13 @@ class MemoryImageSetsPartitioner(BaseImageSetsPartitioner):
         :param path: path to the CSV file containing the data partions
         """
 
-        df = pandas.DataFrame.from_csv(path)
+        data_frame = pandas.DataFrame.from_csv(path)
 
         partitions = {}
         for phase in SUPPORTED_PHASES:
-            partitions[phase] = df.loc(df[COLUMN_PHASE]==phase, COLUMN_UNIQ_ID)\
-                                  .values.tolist()
+            partitions[phase] = data_frame.loc(
+                data_frame[COLUMN_PHASE] == phase,
+                COLUMN_UNIQ_ID).values.tolist()
 
         return partitions
 

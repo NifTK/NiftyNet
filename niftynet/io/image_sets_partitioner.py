@@ -6,18 +6,18 @@ A subset of the table can be retrieved by partitioning the set of images into
 subsets of ``Train``, ``Validation``, ``Inference``.
 """
 
-from abc import ABCMeta, abstractmethod
 import math
 import random
+from abc import ABCMeta, abstractmethod
 
 import tensorflow as tf
-
-from niftynet.engine.signal import TRAIN, VALID, INFER, ALL
+from niftynet.engine.signal import ALL, INFER, TRAIN, VALID
 from niftynet.utilities.util_common import look_up_operations
 
 SUPPORTED_PHASES = {TRAIN, VALID, INFER, ALL}
 COLUMN_UNIQ_ID = 'subject_id'
 COLUMN_PHASE = 'phase'
+
 
 class BaseImageSetsPartitioner(object):
     """
@@ -29,6 +29,7 @@ class BaseImageSetsPartitioner(object):
     ratios = None
     data_param = None
 
+    # pylint: disable=unused-argument
     def initialise(self,
                    data_param,
                    new_partition=False,
@@ -77,8 +78,8 @@ class BaseImageSetsPartitioner(object):
             valid_fraction = max(min(1.0, float(valid_fraction)), 0.0)
             infer_fraction = max(min(1.0, float(infer_fraction)), 0.0)
         except (TypeError, ValueError):
-            tf.logging.fatal(
-                'Unknown format of faction values %s', self.ratios)
+            tf.logging.fatal('Unknown format of faction values %s',
+                             self.ratios)
             raise
 
         if (valid_fraction + infer_fraction) <= 0:
