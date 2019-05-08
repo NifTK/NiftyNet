@@ -104,8 +104,8 @@ class MemoryImageSetsPartitioner(BaseImageSetsPartitioner):
 
         partitions = {}
         for phase in SUPPORTED_PHASES:
-            partitions[phase] = df.loc(df[COLUMN_PHASE]==phase, COLUMN_UNIQ_ID)\
-                                  .values.tolist()
+            partitions[phase] = df.loc(df[COLUMN_PHASE] == phase,
+                                       COLUMN_UNIQ_ID).values.tolist()
 
         return partitions
 
@@ -126,6 +126,9 @@ class MemoryImageSetsPartitioner(BaseImageSetsPartitioner):
 
     def has_phase(self, phase):
         return phase in self._partitions and not self._partitions[phase]
+
+    def all_files(self):
+        return list(range(self._num_subjects))
 
     def reset(self):
         super(MemoryImageSetsPartitioner, self).reset()

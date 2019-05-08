@@ -425,10 +425,6 @@ class FileImageSetsPartitioner(BaseImageSetsPartitioner):
 
     @property
     def all_files(self):
-        """
-
-        :return: list of all filenames
-        """
         return self.get_file_list()
 
     def get_image_lists_by(self, phase=None, action='train'):

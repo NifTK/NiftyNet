@@ -6,7 +6,7 @@ A subset of the table can be retrieved by partitioning the set of images into
 subsets of ``Train``, ``Validation``, ``Inference``.
 """
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 import math
 import random
 
@@ -29,6 +29,7 @@ class BaseImageSetsPartitioner(object):
     ratios = None
     data_param = None
 
+    # pylint: disable=unused-argument
     def initialise(self,
                    data_param,
                    new_partition=False,
@@ -167,6 +168,15 @@ class BaseImageSetsPartitioner(object):
         :return: True if the VALID subset of images is not empty.
         """
         return self.has_phase(VALID)
+
+    @abstractproperty
+    def all_files(self):
+        """
+
+        :return: list of all filenames
+        """
+
+        return
 
     def reset(self):
         """
