@@ -397,6 +397,9 @@ The relevant configuration parameters are:
 
 These parameters are ignored and whitening is disabled if `whitening=False`.
 
+(3) Setting `rgb_normalisation=True` enables RGB histogram equilisation. Requires OpenCV (opencv-python) and only supports 2D images.
+Unlike `normalisation`, does not use histogram landmarks or files.
+
 More specifically:
 
 
@@ -404,6 +407,7 @@ More specifically:
  ---- | ---- | ------- | -------
 [normalisation](#normalisation) | `boolean` | `normalisation=True` | `False`
 [whitening](#whitening) | `boolean` | `whitening=True` | `False`
+[rgb_normalisation](#rgb-normalisation) | `boolean` | `rgb_normalisation=True` | `False`
 [histogram_ref_file](#histogram-ref-file) | `string` | `histogram_ref_file=./hist_ref.txt` | `''`
 [norm_type](#norm-type) | `string` | `norm_type=percentile` | `percentile`
 [cutoff](#cutoff) | `float array (two elements)` | `cutoff=0.1, 0.9` | `0.01, 0.99`
@@ -417,6 +421,9 @@ Boolean indicates if an histogram standardisation should be applied to the data.
 ###### `whitening`
 Boolean indicates if the loaded image should be whitened,
 that is, given input image `I`, returns  `(I - mean(I))/std(I)`.
+
+###### `rgb_normalisation`
+Boolean indicates if an RGB histogram equilisation should be applied to the data.
 
 ###### `histogram_ref_file`
 Name of the file that contains the normalisation parameter if it has been trained before or where to save it.

@@ -26,6 +26,8 @@ from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
+from niftynet.layer.rgb_histogram_equilisation import \
+    RGBHistogramEquilisationLayer
 from niftynet.evaluation.segmentation_evaluator import SegmentationEvaluator
 from niftynet.layer.rand_elastic_deform import RandomElasticDeformationLayer
 
@@ -105,6 +107,9 @@ class SegmentationApplication(BaseApplication):
             name='hist_norm_layer') \
             if (self.net_param.histogram_ref_file and
                 self.net_param.normalisation) else None
+        rgb_normaliser = RGBHistogramEquilisationLayer(
+            image_name='image',
+            name='rbg_norm_layer') if self.net_param.rgb_normalisation else None
         label_normalisers = None
         if self.net_param.histogram_ref_file and \
                 task_param.label_normalisation:
@@ -123,6 +128,8 @@ class SegmentationApplication(BaseApplication):
         normalisation_layers = []
         if histogram_normaliser is not None:
             normalisation_layers.append(histogram_normaliser)
+        if rgb_normaliser is not None:
+            normalisation_layers.append(rgb_normaliser)
         if mean_var_normaliser is not None:
             normalisation_layers.append(mean_var_normaliser)
         if task_param.label_normalisation and \
