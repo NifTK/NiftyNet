@@ -49,11 +49,12 @@ class BaseImageSink(Layer):
         :param image_out: the aggregated output samples as a image tensor.
         """
 
-        for layer in reversed(self.source.preprocessors):
-            if isinstance(layer, PadLayer):
-                image_out, _ = layer.inverse_op(image_out)
-            if isinstance(layer, DiscreteLabelNormalisationLayer):
-                image_out, _ = layer.inverse_op(image_out)
+        if self.source:
+            for layer in reversed(self.source.preprocessors):
+                if isinstance(layer, PadLayer):
+                    image_out, _ = layer.inverse_op(image_out)
+                if isinstance(layer, DiscreteLabelNormalisationLayer):
+                    image_out, _ = layer.inverse_op(image_out)
 
         return image_out
 

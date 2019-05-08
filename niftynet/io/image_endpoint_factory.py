@@ -5,6 +5,7 @@ partitioners, and image sources and sinks
 """
 from __future__ import absolute_import
 
+from niftynet.io.base_image_source import DEFAULT_INTERP_ORDER
 from niftynet.io.file_image_source import FileImageSource
 from niftynet.io.file_image_sink import FileImageSink
 from niftynet.io.memory_image_source import MemoryImageSource
@@ -101,16 +102,34 @@ class ImageEndPointFactory(object):
         output.
         """
 
-        if self._endpoint_type == ENDPOINT_FILESYSTEM:
-            sink = self._sink_classes[ENDPOINT_FILESYSTEM](
-                sources[0],
-                self._action_param.output_interp_order,
-                self._action_param.save_seg_dir,
-                self._action_param.output_postfix)
+        if 'output_interp_order' in vars(self._action_param):
+            interp_order = self._action_param.output_interp_order
         else:
+            interp_order = DEFAULT_INTERP_ORDER
+
+        if self._endpoint_type == ENDPOINT_FILESYSTEM:
+            kwargs = {}
+            if 'save_seg_dir' in vars(self._action_param):
+                kwargs['save_seg_dir'] = self._action_param.save_seg_dir
+
+            if 'output_postfix' in vars(self._action_param):
+                kwargs['output_postfix'] = self._action_param.output_postfix
+
+
+            sink = self._sink_classes[ENDPOINT_FILESYSTEM](
+                sources[0] if sources else None,
+                interp_order,
+                **kwargs)
+        else:
+            if MEMORY_OUTPUT_CALLBACK_PARAM not in vars(self._action_param):
+                raise RuntimeError('In memory I/O mode an output callback '
+                                   'function must be provided via the field'
+                                   ' %s in action_param' %
+                                   MEMORY_OUTPUT_CALLBACK_PARAM)
+
             sink = self._sink_classes[ENDPOINT_MEMORY](
-                sources[0],
-                self._action_param.output_interp_order,
+                sources[0] if sources else None,
+                interp_order,
                 vars(self._action_param)[MEMORY_OUTPUT_CALLBACK_PARAM])
 
         return [sink]
