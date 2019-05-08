@@ -6,6 +6,7 @@ import os
 import tensorflow as tf
 
 from niftynet.engine.application_driver import ApplicationDriver
+from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
 
 TARGET_FILE = os.path.join('testing_data', 'test_splitting.csv')
@@ -256,7 +257,8 @@ class DriverPartitionerTestNoFile(tf.test.TestCase):
         self.assertTrue(app_driver.data_partitioner is not None)
         self.assertFalse(os.path.isfile(TARGET_FILE))
         partitioner = app_driver.data_partitioner
-        self.assertTrue(partitioner._partition_ids is None)
+        self.assertTrue(not isinstance(partitioner, FileImageSetsPartitioner)
+                        or partitioner._partition_ids is None)
 
     def test_inference_no_validation(self):
         clear_target()
@@ -272,7 +274,8 @@ class DriverPartitionerTestNoFile(tf.test.TestCase):
         self.assertTrue(app_driver.data_partitioner is not None)
         self.assertFalse(os.path.isfile(TARGET_FILE))
         partitioner = app_driver.data_partitioner
-        self.assertTrue(partitioner._partition_ids is None)
+        self.assertTrue(not isinstance(partitioner, FileImageSetsPartitioner)
+                        or partitioner._partition_ids is None)
 
 
 class DriverPartitionerTestNoData(tf.test.TestCase):
