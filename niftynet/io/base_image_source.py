@@ -2,22 +2,22 @@
 """This module loads images from csv files and outputs numpy arrays."""
 from __future__ import absolute_import, division, print_function
 
-from abc import ABCMeta, abstractmethod, abstractproperty
 import argparse
+from abc import ABCMeta, abstractmethod, abstractproperty
 from copy import deepcopy
-import numpy as np
-import tensorflow as tf
 
+import numpy as np
 from niftynet.io.misc_io import dtype_casting
 from niftynet.layer.base_layer import Layer
-from niftynet.utilities.util_common import ParserNamespace
-from niftynet.utilities.util_common import look_up_operations
+from niftynet.utilities.util_common import ParserNamespace, look_up_operations
 
 DEFAULT_INTERP_ORDER = 1
 SUPPORTED_DATA_SPEC = {
-    'csv_file', 'path_to_search',
-    'filename_contains', 'filename_not_contains', 'filename_removefromid',
-    'interp_order', 'loader', 'pixdim', 'axcodes', 'spatial_window_size'}
+    'csv_file', 'path_to_search', 'filename_contains', 'filename_not_contains',
+    'filename_removefromid', 'interp_order', 'loader', 'pixdim', 'axcodes',
+    'spatial_window_size'
+}
+
 
 def infer_tf_dtypes(image_array):
     """

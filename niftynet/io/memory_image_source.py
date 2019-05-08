@@ -7,9 +7,7 @@ from __future__ import absolute_import
 from copy import deepcopy
 
 import numpy as np
-
-from niftynet.io.base_image_source import BaseImageSource,\
-    infer_tf_dtypes
+from niftynet.io.base_image_source import BaseImageSource, infer_tf_dtypes
 from niftynet.io.image_loader import image2nibabel
 
 # Name of the data_param namespace entry for the memory input sources
@@ -23,9 +21,7 @@ class MemoryImageSource(BaseImageSource):
     layer.
     """
 
-    def __init__(self,
-                 modality_names,
-                 name='memory_image_source'):
+    def __init__(self, modality_names, name='memory_image_source'):
         """
         :param modality_names: the list of modality names (in
         data_param) to read from.
@@ -39,10 +35,7 @@ class MemoryImageSource(BaseImageSource):
         self._modality_names = modality_names
 
     # pylint: disable=unused-argument
-    def initialise(self,
-                   data_param,
-                   task_param,
-                   phase_indices):
+    def initialise(self, data_param, task_param, phase_indices):
         """
         :param data_param: Data specification
         :param task_param: Application task specification
@@ -69,21 +62,27 @@ class MemoryImageSource(BaseImageSource):
         return len(self._phase_indices)
 
     def _load_spatial_ranks(self):
-        return {name: source(0).spatial_rank
-                for name, source in self._input_callback_functions.items()}
+        return {
+            name: source(0).spatial_rank
+            for name, source in self._input_callback_functions.items()
+        }
 
     def _load_shapes(self):
-        return {name: source(0).shape for name, source
-                in self._input_callback_functions.items()}
+        return {
+            name: source(0).shape
+            for name, source in self._input_callback_functions.items()
+        }
 
     def _load_dtypes(self):
-        return {name: infer_tf_dtypes(source(0)) for name, source
-                in self._input_callback_functions.items()}
+        return {
+            name: infer_tf_dtypes(source(0))
+            for name, source in self._input_callback_functions.items()
+        }
 
     def get_image_index(self, subject_id):
         idx = np.argwhere(np.array(self._phase_indices) == int(subject_id))
 
-        return idx[0,0] if idx else -1
+        return idx[0, 0] if idx else -1
 
     def get_subject_id(self, image_index):
         return str(self._phase_indices[image_index])
@@ -102,19 +101,20 @@ def make_input_spec(modality_spec, image_callback_function):
     """
     Updates a configuration-file modality specification with the
     necessary fields for loading from memory.
+
     :param image_callback_function: the function yielding the image tensor
-    given an index.
-    :param modality_spec: the original specification of the modality, containing
-    window sizes, pixel dimensions, etc.
+        given an index.
+    :param modality_spec: the original specification of the modality,
+        containing window sizes, pixel dimensions, etc.
     """
 
-    #pylint: disable=missing-docstring
-    def image_output_wrapper(idx):
+    def _image_output_wrapper(idx):
         return image2nibabel(image_callback_function(idx))
 
     if isinstance(modality_spec, dict):
-        modality_spec[MEMORY_INPUT_CALLBACK_PARAM] = image_output_wrapper
+        modality_spec[MEMORY_INPUT_CALLBACK_PARAM] = _image_output_wrapper
     else:
-        vars(modality_spec)[MEMORY_INPUT_CALLBACK_PARAM] = image_output_wrapper
+        vars(modality_spec)[MEMORY_INPUT_CALLBACK_PARAM] = \
+            _image_output_wrapper
 
     return modality_spec
