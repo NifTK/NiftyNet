@@ -117,7 +117,7 @@ class ImageEndPointFactory(object):
         if self._endpoint_type == ENDPOINT_FILESYSTEM:
             kwargs = {}
             if 'save_seg_dir' in vars(self._action_param):
-                kwargs['save_seg_dir'] = self._action_param.save_seg_dir
+                kwargs['output_path'] = self._action_param.save_seg_dir
 
             if 'output_postfix' in vars(self._action_param):
                 kwargs['output_postfix'] = self._action_param.output_postfix
