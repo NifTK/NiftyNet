@@ -36,13 +36,16 @@ class ImageEndPointFactory(object):
     _action_param = None
     _endpoint_type = ENDPOINT_FILESYSTEM
     _source_classes = {
-        'filesystem': FileImageSource,
-        'memory': MemoryImageSource
+        ENDPOINT_FILESYSTEM: FileImageSource,
+        ENDPOINT_MEMORY: MemoryImageSource
     }
-    _sink_classes = {'filesystem': FileImageSink, 'memory': MemoryImageSink}
+    _sink_classes = {
+        ENDPOINT_FILESYSTEM: FileImageSink,
+        ENDPOINT_MEMORY: MemoryImageSink
+    }
     _partitioner_classes = {
-        'filesystem': FileImageSetsPartitioner,
-        'memory': MemoryImageSetsPartitioner
+        ENDPOINT_FILESYSTEM: FileImageSetsPartitioner,
+        ENDPOINT_MEMORY: MemoryImageSetsPartitioner
     }
     _partitioner = None
 
@@ -68,16 +71,18 @@ class ImageEndPointFactory(object):
     def create_partitioner(self):
         """
         Instantiates a new data-set partitioner suitable for the image
-        end-point type specified via this factories parameters.
+        end-point type specified via this factory's parameters.
         """
 
         if self._data_param is None and self._task_param is None:
             raise RuntimeError('Application parameters must be set before any'
                                ' data set can be partitioned.')
 
-        if self._partitioner is None:
-            self._partitioner = self._partitioner_classes[
-                self._endpoint_type]()
+        assert self._endpoint_type == ENDPOINT_MEMORY \
+            or MEMORY_INPUT_NUM_SUBJECTS_PARAM not in self._data_param
+
+        self._partitioner = self._partitioner_classes[
+            self._endpoint_type]()
 
         return self._partitioner
 
@@ -120,12 +125,12 @@ class ImageEndPointFactory(object):
                 kwargs['output_path'] = self._action_param.save_seg_dir
 
             if 'output_postfix' in vars(self._action_param):
-                kwargs['output_postfix'] = self._action_param.output_postfix
+                kwargs['postfix'] = self._action_param.output_postfix
 
-            return self._sink_classes[ENDPOINT_FILESYSTEM](
+            return [self._sink_classes[ENDPOINT_FILESYSTEM](
                 sources[0] if sources else None,
                 interp_order,
-                **kwargs)
+                **kwargs)]
 
         if MEMORY_OUTPUT_CALLBACK_PARAM not in vars(self._action_param):
             raise RuntimeError('In memory I/O mode an output callback '
@@ -136,4 +141,3 @@ class ImageEndPointFactory(object):
         return [self._sink_classes[ENDPOINT_MEMORY](
             sources[0], self._action_param.output_interp_order,
             vars(self._action_param)[MEMORY_OUTPUT_CALLBACK_PARAM])]
-
