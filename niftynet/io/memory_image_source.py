@@ -88,13 +88,16 @@ class MemoryImageSource(BaseImageSource):
         return str(self._phase_indices[image_index])
 
     def _get_image_and_interp_dict(self, idx):
-        image_data = {}
+        try:
+            image_data = {}
 
-        for name, funct in self._input_callback_functions.items():
-            data = funct(self._phase_indices[idx]).get_data()
-            image_data[name] = data
+            for name, funct in self._input_callback_functions.items():
+                data = funct(self._phase_indices[idx]).get_data()
+                image_data[name] = data
 
-        return image_data, deepcopy(self._modality_interp_orders)
+            return image_data, deepcopy(self._modality_interp_orders)
+        except (TypeError, IndexError):
+            return None, None
 
 
 def make_input_spec(modality_spec, image_callback_function):
