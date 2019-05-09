@@ -10,7 +10,7 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.io.misc_io import dtype_casting
-from niftynet.layer.base_layer import Layer
+from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
 from niftynet.utilities.util_common import ParserNamespace, look_up_operations
 
 DEFAULT_INTERP_ORDER = 1
@@ -47,7 +47,7 @@ class BaseImageSource(Layer):
         super(BaseImageSource, self).__init__(name='image_reader')
 
     @staticmethod
-    def _get_valid_sections_and_input_sources(task_param, section_names):
+    def _get_section_input_sources(task_param, section_names):
         """
         Filters a list of section names against a task_param
         struct eliminating any invalid section names. Throws an
@@ -127,6 +127,30 @@ class BaseImageSource(Layer):
 
         return self._shapes
 
+    def prepare_preprocessors(self):
+        """
+        Some preprocessors requires an initial step to initialise
+        data dependent internal parameters.
+
+        This function find these preprocessors and run the initialisations.
+        """
+        for layer in self.preprocessors:
+            if isinstance(layer, DataDependentLayer):
+                layer.train(self.output_list)
+
+    def add_preprocessing_layers(self, layers):
+        """
+        Adding a ``niftynet.layer`` or a list of layers as preprocessing steps.
+        """
+        assert self.output_list is not None, \
+            'Please initialise the reader first, ' \
+            'before adding preprocessors.'
+        if isinstance(layers, Layer):
+            self.preprocessors.append(layers)
+        else:
+            self.preprocessors.extend(layers)
+        self.prepare_preprocessors()
+
     @abstractmethod
     def _load_dtypes(self):
         """
@@ -196,7 +220,16 @@ class BaseImageSource(Layer):
 
         return
 
-    # pylint: disable=arguments-differ,too-many-branches
+    @abstractproperty
+    def output_list(self):
+        """
+        :return: the list of images (including meta data) outputted by
+        this source as a input-source/image dictionary.
+        """
+
+        return
+
+    # pylint: disable=arguments-differ
     def layer_op(self, idx=None, shuffle=True):
         """
         this layer returns dictionaries::
@@ -220,6 +253,24 @@ class BaseImageSource(Layer):
 
         if not image_data_dict:
             idx = -1
+        else:
+            preprocessors = [deepcopy(layer) for layer in self.preprocessors]
+            # dictionary of masks is cached
+            mask = None
+            for layer in preprocessors:
+                # import time; local_time = time.time()
+                if layer is None:
+                    continue
+                if isinstance(layer, RandomisedLayer):
+                    if "random_elastic_deformation" not in layer.name:
+                        layer.randomise()
+                    else:
+                        layer.randomise(image_data_dict)
+
+                    image_data_dict = layer(image_data_dict, interp_order_dict)
+                elif isinstance(layer, Layer):
+                    image_data_dict, mask = layer(image_data_dict, mask)
+                    # print('%s, %.3f sec'%(layer, -local_time + time.time()))
 
         return idx, image_data_dict, interp_order_dict
 

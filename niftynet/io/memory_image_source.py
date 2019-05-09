@@ -44,8 +44,7 @@ class MemoryImageSource(BaseImageSource):
         """
 
         self._section_names, self._modality_names \
-            = self._get_valid_sections_and_input_sources(
-                task_param, self._section_names)
+            = self._get_section_input_sources(task_param, self._section_names)
 
         if any(len(mods) != 1 for mods in self._modality_names.values()):
             raise ValueError('Memory I/O supports only 1 modality'
@@ -72,6 +71,12 @@ class MemoryImageSource(BaseImageSource):
         self._phase_indices = phase_indices
 
         return self
+
+    @property
+    def output_list(self):
+        return [{name: self._input_callback_functions[mod](idx)
+                 for name, mod in self._modality_names.items()}
+                for idx in self._phase_indices]
 
     @property
     def names(self):

@@ -17,7 +17,6 @@ from niftynet.io.base_image_source import BaseImageSource, \
     infer_tf_dtypes, \
     DEFAULT_INTERP_ORDER
 from niftynet.io.image_type import ImageFactory
-from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
 from niftynet.utilities.user_parameters_helper import make_input_tuple
 from niftynet.utilities.util_common import print_progress_bar
 
@@ -58,7 +57,11 @@ class FileImageSource(BaseImageSource):
         self._names = None
         if names:
             self.names = names
-        self.output_list = None
+        self._output_list = None
+
+    @property
+    def output_list(self):
+        return self._output_list
 
     def initialise(self, data_param, task_param=None, file_list=None):
         """
@@ -113,7 +116,7 @@ class FileImageSource(BaseImageSource):
             # defaulting to load all sections defined in the task_param
             self.names = list(task_param)
         self.names, self._input_sources \
-            = self._get_valid_sections_and_input_sources(task_param, self.names)
+            = self._get_section_input_sources(task_param, self.names)
         required_sections = \
             sum([list(task_param.get(name)) for name in self.names], [])
 
@@ -139,7 +142,7 @@ class FileImageSource(BaseImageSource):
                                      list(file_list))
                 raise
 
-        self.output_list, self._file_list = _filename_to_image_list(
+        self._output_list, self._file_list = _filename_to_image_list(
             file_list, self._input_sources, data_param)
         for name in self.names:
             tf.logging.info(
@@ -147,30 +150,6 @@ class FileImageSource(BaseImageSource):
                 'from sections %s as input [%s]',
                 len(self.output_list), self.input_sources[name], name)
         return self
-
-    def prepare_preprocessors(self):
-        """
-        Some preprocessors requires an initial step to initialise
-        data dependent internal parameters.
-
-        This function find these preprocessors and run the initialisations.
-        """
-        for layer in self.preprocessors:
-            if isinstance(layer, DataDependentLayer):
-                layer.train(self.output_list)
-
-    def add_preprocessing_layers(self, layers):
-        """
-        Adding a ``niftynet.layer`` or a list of layers as preprocessing steps.
-        """
-        assert self.output_list is not None, \
-            'Please initialise the reader first, ' \
-            'before adding preprocessors.'
-        if isinstance(layers, Layer):
-            self.preprocessors.append(layers)
-        else:
-            self.preprocessors.extend(layers)
-        self.prepare_preprocessors()
 
     def _get_image_and_interp_dict(self, idx):
         try:
@@ -184,23 +163,6 @@ class FileImageSource(BaseImageSource):
             {field: image.interp_order for (
                 field, image) in image_dict.items()}
 
-        preprocessors = [deepcopy(layer) for layer in self.preprocessors]
-        # dictionary of masks is cached
-        mask = None
-        for layer in preprocessors:
-            # import time; local_time = time.time()
-            if layer is None:
-                continue
-            if isinstance(layer, RandomisedLayer):
-                if "random_elastic_deformation" not in layer.name:
-                    layer.randomise()
-                else:
-                    layer.randomise(image_data_dict)
-
-                image_data_dict = layer(image_data_dict, interp_order_dict)
-            elif isinstance(layer, Layer):
-                image_data_dict, mask = layer(image_data_dict, mask)
-                # print('%s, %.3f sec'%(layer, -local_time + time.time()))
         return image_data_dict, interp_order_dict
 
     def _check_initialised(self):
