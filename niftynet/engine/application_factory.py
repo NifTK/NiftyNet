@@ -117,7 +117,11 @@ SUPPORTED_LOSS_REGRESSION = {
     "MAE":
         'niftynet.layer.loss_regression.mae_loss',
     "Huber":
-        'niftynet.layer.loss_regression.huber_loss'
+        'niftynet.layer.loss_regression.huber_loss',
+    "SmoothL1":
+        'niftynet.layer.loss_regression.smooth_l1_loss',
+    "Cosine":
+        'niftynet.layer.loss_regression.cosine_loss'
 }
 
 SUPPORTED_LOSS_CLASSIFICATION = {

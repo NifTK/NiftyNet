@@ -178,3 +178,89 @@ def huber_loss(prediction, ground_truth, delta=1.0, weight_map=None):
         sum_weights = tf.to_float(tf.size(absolute_residuals))
     sum_loss = tf.reduce_sum(voxelwise_loss)
     return tf.truediv(sum_loss, sum_weights)
+
+
+def smooth_l1_loss(prediction, ground_truth, weight_map=None, value_thresh=0.5):
+    """
+    Similarly to the Huber loss, the residuals are squared below a threshold
+    value. In addition they are square above the inverse of this threshold
+    :param prediction: the current prediction of the ground truth.
+    :param ground_truth: the measurement you are approximating with regression.
+    :param weight_map:
+    :return: mean of the l1 loss across all voxels.
+    """
+    # Definition of thresholds
+    if value_thresh>1:
+        value_thresh_max = value_thresh
+        value_thresh = 1.0/value_thresh
+    else:
+        value_thresh_max = 1.0 / value_thresh
+
+    value_correction = value_thresh ** 3 - value_thresh
+
+    value_correction_max = value_thresh_max - value_thresh_max ** 2
+    print(value_correction_max , value_correction)
+
+    prediction = tf.cast(prediction, dtype=tf.float32)
+
+    ground_truth = tf.cast(ground_truth, dtype=tf.float32)
+
+    absolute_residuals = tf.cast(tf.abs(tf.subtract(prediction,
+                                                             ground_truth)),
+                                 dtype=tf.float32)
+
+    absolute_residuals = tf.where(absolute_residuals < value_thresh,
+                                  value_thresh *
+                                           tf.square(absolute_residuals),
+                                           absolute_residuals + value_correction)
+
+    absolute_residuals = tf.where(tf.greater(absolute_residuals,value_thresh_max),
+                                  tf.square(
+        absolute_residuals) + value_correction_max, absolute_residuals)
+    absolute_residuals = tf.Print(tf.cast(absolute_residuals, tf.float32),
+                                  [absolute_residuals], message='check_absres')
+    if weight_map is not None:
+
+        absolute_residuals = tf.multiply(absolute_residuals, weight_map)
+        sum_residuals = tf.reduce_sum(absolute_residuals)
+
+        sum_weights = tf.reduce_sum(weight_map)
+
+    else:
+        sum_residuals = tf.reduce_sum(absolute_residuals)
+        sum_weights = tf.size(absolute_residuals)
+    return tf.truediv(tf.cast(sum_residuals, dtype=tf.float32),
+                      tf.cast(sum_weights, dtype=tf.float32))
+
+
+def cosine_loss(prediction, ground_truth, weight_map=None, to_complete=True):
+    '''
+    Cosine loss between predicted and ground_truth vectors. The predicted and
+     targeted vectors should be unit vectors
+    :param prediction:
+    :param ground_truth:
+    :param weight_map:
+    :param to_complete: if the unit vector is to be completed
+    :return:
+    '''
+    if to_complete:
+        prediction_complete = tf.sqrt(1 - tf.minimum(tf.reduce_sum(tf.square(
+            prediction),-1),1))
+        ground_truth_complete = tf.sqrt(1 - tf.minimum(tf.reduce_sum(tf.square(
+            ground_truth),-1),1))
+        pred_vect = tf.concat([prediction, [prediction_complete]], -1)
+
+        gt_vect = tf.concat([ground_truth, [ground_truth_complete]], -1)
+    else:
+        pred_vect = prediction
+        gt_vect = ground_truth
+    if weight_map is None:
+        weight_map = 1.0
+
+    pred_vect = pred_vect / tf.maximum(tf.sqrt(tf.reduce_sum(tf.square(
+        pred_vect))),0.00001)
+    gt_vect = gt_vect / tf.maximum(tf.sqrt(tf.reduce_sum(tf.square(
+        gt_vect))),0.00001)
+    loss = tf.losses.cosine_distance(gt_vect, pred_vect, -1, weights=weight_map)
+    loss = tf.where(tf.is_nan(loss), tf.zeros_like(loss), loss)
+    return loss
