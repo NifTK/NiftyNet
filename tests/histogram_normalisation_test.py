@@ -6,8 +6,8 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from niftynet.io.image_reader import ImageReader
-from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
+from niftynet.io.file_image_source import FileImageSource
+from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
@@ -39,7 +39,7 @@ DATA_PARAM = {
 }
 TASK_PARAM = ParserNamespace(image=('T1', 'FLAIR'))
 MODEL_FILE = os.path.join('testing_data', 'std_models.txt')
-data_partitioner = ImageSetsPartitioner()
+data_partitioner = FileImageSetsPartitioner()
 file_list = data_partitioner.initialise(DATA_PARAM).get_file_list()
 
 
@@ -59,7 +59,7 @@ class HistTest(tf.test.TestCase):
              59.2393548654, 63.1565641037, 78.7271261392,
              100.0])
 
-        reader = ImageReader(['image'])
+        reader = FileImageSource(['image'])
         reader.initialise(DATA_PARAM, TASK_PARAM, file_list)
         self.assertAllClose(len(reader._file_list), 4)
 
