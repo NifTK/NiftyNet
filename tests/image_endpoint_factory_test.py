@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import os
+
 import tensorflow as tf
+import nibabel as nib
 import numpy as np
 
 from niftynet.engine.signal import TRAIN, VALID, INFER, ALL
@@ -11,6 +14,7 @@ from niftynet.io.memory_image_sets_partitioner import \
 from niftynet.io.memory_image_source import make_input_spec
 from niftynet.io.memory_image_sink import MEMORY_OUTPUT_CALLBACK_PARAM
 from niftynet.io.image_endpoint_factory import ImageEndPointFactory
+from niftynet.utilities.util_common import ParserNamespace
 
 
 class ImageEndPointFactoryTest(tf.test.TestCase):
@@ -28,39 +32,37 @@ class ImageEndPointFactoryTest(tf.test.TestCase):
         self.assertTrue((image_out == 2*int(sub)).sum() == image_data_in.size)
 
     def _configure_memory(self):
-        from argparse import Namespace
-
         data_param = {MEMORY_INPUT_NUM_SUBJECTS_PARAM: 10,
-                      'input': Namespace(pixdim=(),
-                                         axcodes=(),
-                                         filename_contains='some-string',
-                                         interp_order=3),
-                      'output': Namespace(pixdim=(),
-                                          axcodes=(),
-                                          filename_contains='another-string',
-                                          interp_order=0)}
+                      'input': ParserNamespace(pixdim=(),
+                                               axcodes=(),
+                                               filename_contains='some-string',
+                                               interp_order=3),
+                      'output': ParserNamespace(pixdim=(),
+                                                axcodes=(),
+                                                filename_contains='another-string',
+                                                interp_order=0)}
         data_param['input'] = make_input_spec(data_param['input'],
                                               self._input_callback1)
         data_param['output'] = make_input_spec(data_param['output'],
                                                self._input_callback2)
 
-        action_param = Namespace(output_postfix='never-read',
-                                 num_classes=2,
-                                 output_interp_order=1,
-                                 spatial_window_size=(80, 80))
+        action_param = ParserNamespace(output_postfix='never-read',
+                                       num_classes=2,
+                                       output_interp_order=1,
+                                       spatial_window_size=(80, 80))
         vars(action_param)[MEMORY_OUTPUT_CALLBACK_PARAM] = \
             self._output_callback
 
-        app_param = Namespace(compulsory_labels=(0, 1),
-                              image='input',
-                              label='output')
+        app_param = ParserNamespace(compulsory_labels=(0, 1),
+                                    image=('input',),
+                                    label=('output',))
 
         factory = ImageEndPointFactory()
         factory.set_params(data_param, app_param, action_param)
 
         return factory, data_param, app_param, action_param
 
-    def test_infer_memeory(self):
+    def test_infer_memory(self):
         factory, data_param, _, _ = self._configure_memory()
 
         partitioner = factory.create_partitioner()
@@ -69,7 +71,7 @@ class ImageEndPointFactoryTest(tf.test.TestCase):
                                ratios=(0.2, 0.1),
                                data_split_file=None)
 
-        readers = factory.create_sources(['input'], INFER, INFER)
+        readers = factory.create_sources(['image'], INFER, INFER)
         self.assertEqual(len(readers), 1)
 
         writers = factory.create_sinks(readers)
@@ -81,11 +83,11 @@ class ImageEndPointFactoryTest(tf.test.TestCase):
         for i in range(readers[0].num_subjects):
             idx, img_dict, interp_dict = readers[0](idx=i)
 
-            self.assertEqual(interp_dict['input'], 3)
+            self.assertEqual(interp_dict['image'][0], 3)
             self.assertEqual(i, idx)
             self.assertEqual(len(img_dict), 1)
 
-            img = img_dict['input']
+            img = img_dict['image']
 
             writers[0](2*img, readers[0].get_subject_id(idx), img)
 
@@ -98,7 +100,7 @@ class ImageEndPointFactoryTest(tf.test.TestCase):
                                ratios=(0.2, 0.1),
                                data_split_file=None)
 
-        readers = factory.create_sources(['input', 'output'], VALID, TRAIN)
+        readers = factory.create_sources(['image', 'label'], VALID, TRAIN)
         self.assertEqual(len(readers), 1)
 
         num_subs = data_param[MEMORY_INPUT_NUM_SUBJECTS_PARAM]
@@ -109,10 +111,78 @@ class ImageEndPointFactoryTest(tf.test.TestCase):
             idx, img_dict, interp_dict = readers[0](idx=i)
 
             self.assertEqual(len(img_dict), 2)
-            self.assertEqual(interp_dict['input'], 3)
-            self.assertEqual(interp_dict['output'], 0)
+            self.assertEqual(interp_dict['image'][0], 3)
+            self.assertEqual(interp_dict['label'][0], 0)
             self.assertEqual(i, idx)
-            self.assertAllEqual(2*img_dict['input'], img_dict['output'])
+            self.assertAllEqual(2*img_dict['image'], img_dict['label'])
+
+    def _configure_file(self):
+        from tests.file_image_sets_partitioner_test import test_sections
+
+        data_param = {'input': test_sections['T1'],
+                      'output': test_sections['Flair']}
+
+        action_param = ParserNamespace(output_postfix='_file_output',
+                                       num_classes=2,
+                                       save_seg_dir=os.path.join(
+                                           'testing_data', 'aggregated'),
+                                       output_interp_order=1,
+                                       spatial_window_size=(80, 80))
+        vars(action_param)[MEMORY_OUTPUT_CALLBACK_PARAM] = \
+            self._output_callback
+
+        app_param = ParserNamespace(compulsory_labels=(0, 1),
+                                    image=('input',),
+                                    label=('output',))
+
+        factory = ImageEndPointFactory()
+        factory.set_params(data_param, app_param, action_param)
+
+        return factory, data_param, app_param, action_param
+
+    def test_file_infer(self):
+        factory, data_param, _, action_param = self._configure_file()
+
+        print('data', data_param)
+        print('act', action_param)
+
+        partitioner = factory.create_partitioner()
+
+        partitioner.initialise(data_param=data_param,
+                               new_partition=True,
+                               ratios=(0.0, 0.8),
+                               data_split_file=None)
+
+        num_subs = partitioner.number_of_subjects()
+
+        readers = factory.create_sources(['image'], INFER, INFER)
+        self.assertEqual(len(readers), 1)
+
+        writers = factory.create_sinks(readers)
+
+        self.assertGreater(num_subs, 1)
+        self.assertGreater(readers[0].num_subjects, 1)
+
+        def _get_destination_path(sub):
+            return os.path.join(action_param.save_seg_dir, '{}{}.nii.gz'.format(
+                sub, action_param.output_postfix))
+
+        for i in range(readers[0].num_subjects):
+            idx, images, interps = readers[0](idx=i)
+
+            self.assertEqual(i, idx)
+            self.assertEqual(interps['image'][0],
+                             data_param['input'].interp_order)
+
+            out = images['image']*2
+            sub = readers[0].get_subject_id(idx)
+            img = readers[0].output_list[idx]['image']
+            writers[0](out, sub, img)
+
+            reloaded = nib.load(_get_destination_path(sub)).get_data()
+
+            self.assertAllClose(reloaded.flatten(), out.flatten(), rtol=1e-3)
+
 
 if __name__ == '__main__':
     tf.test.main()
