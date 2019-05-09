@@ -4,7 +4,6 @@ Image F/S output module
 """
 from __future__ import absolute_import
 
-from copy import deepcopy
 import numpy as np
 from six import string_types
 import pandas
