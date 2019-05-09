@@ -153,6 +153,10 @@ class BaseImageSource(Layer):
         Given an index this function must produce two dictionaries
         containing one image data tensor and one interpolation
         order for every named image collection
+
+        On error: E.g., when the index is out of bounds, this function
+        should return a None for both dictionaries.
+
         :return: one dictionary containing image data and one dictionary
         containing interpolation orders.
         """
@@ -180,6 +184,9 @@ class BaseImageSource(Layer):
 
         image_data_dict, interp_order_dict \
             = self._get_image_and_interp_dict(idx)
+
+        if not image_data_dict:
+            idx = -1
 
         return idx, image_data_dict, interp_order_dict
 
