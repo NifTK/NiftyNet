@@ -6,8 +6,8 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from niftynet.io.image_reader import ImageReader
-from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
+from niftynet.io.file_image_source import FileImageSource
+from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
 from niftynet.layer.pad import PadLayer
@@ -129,7 +129,7 @@ IMAGE_2D_TASK_GRAY = ParserNamespace(image=('gray_images',))
 IMAGE_2D_TASK_MASK = ParserNamespace(image=('seg_masks',))
 
 # default data_partitioner
-data_partitioner = ImageSetsPartitioner()
+data_partitioner = FileImageSetsPartitioner()
 multi_mod_list = data_partitioner.initialise(MULTI_MOD_DATA).get_file_list()
 single_mod_list = data_partitioner.initialise(SINGLE_MOD_DATA).get_file_list()
 existing_list = data_partitioner.initialise(EXISTING_DATA).get_file_list()
@@ -138,28 +138,28 @@ bad_data_list = data_partitioner.initialise(BAD_DATA).get_file_list()
 image2d_data_list = data_partitioner.initialise(IMAGE_2D_DATA).get_file_list()
 
 
-class ImageReaderTest(tf.test.TestCase):
+class FileImageSourceTest(tf.test.TestCase):
     def test_initialisation(self):
         with self.assertRaisesRegexp(ValueError, ''):
-            reader = ImageReader(['test'])
+            reader = FileImageSource(['test'])
             reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
-        reader = ImageReader(None)
+        reader = FileImageSource(None)
         # reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
 
-        reader = ImageReader(['image'])
+        reader = FileImageSource(['image'])
         reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
         self.assertEqual(len(reader.output_list), 4)
 
-        reader = ImageReader(['image'])
+        reader = FileImageSource(['image'])
         reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK, single_mod_list)
         self.assertEqual(len(reader.output_list), 4)
 
-        reader = ImageReader(['image'])
+        reader = FileImageSource(['image'])
         with self.assertRaisesRegexp(ValueError, ''):
             reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK, [])
 
     def test_properties(self):
-        reader = ImageReader(['image'])
+        reader = FileImageSource(['image'])
         reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK, single_mod_list)
         self.assertEqual(len(reader.output_list), 4)
         self.assertDictEqual(reader.spatial_ranks, {'image': 3})
@@ -173,10 +173,10 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertTrue(isinstance(reader.get_subject(1), dict))
 
     def test_existing_csv(self):
-        reader_for_csv = ImageReader(['image'])
+        reader_for_csv = FileImageSource(['image'])
         reader_for_csv.initialise(
             SINGLE_MOD_DATA, SINGLE_MOD_TASK, single_mod_list)
-        reader = ImageReader(['image'])
+        reader = FileImageSource(['image'])
         reader.initialise(EXISTING_DATA, SINGLE_MOD_TASK, existing_list)
         self.assertEqual(len(reader.output_list), 4)
         self.assertDictEqual(reader.spatial_ranks, {'image': 3})
@@ -190,7 +190,7 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertTrue(isinstance(reader.get_subject(1), dict))
 
     def test_operations(self):
-        reader = ImageReader(['image'])
+        reader = FileImageSource(['image'])
         reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK, single_mod_list)
         idx, data, interp_order = reader()
         self.assertEqual(
@@ -198,7 +198,7 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertAllClose(data['image'].shape, (256, 168, 256, 1, 1))
 
     def test_preprocessing(self):
-        reader = ImageReader(['image'])
+        reader = FileImageSource(['image'])
         reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK, single_mod_list)
         idx, data, interp_order = reader()
         self.assertEqual(SINGLE_MOD_DATA['lesion'].interp_order,
@@ -211,7 +211,7 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertAllClose(data['image'].shape, (276, 178, 266, 1, 1))
 
     def test_preprocessing_zero_padding(self):
-        reader = ImageReader(['image'])
+        reader = FileImageSource(['image'])
         reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK, single_mod_list)
         idx, data, interp_order = reader()
         self.assertEqual(SINGLE_MOD_DATA['lesion'].interp_order,
@@ -231,7 +231,7 @@ class ImageReaderTest(tf.test.TestCase):
             image_name='label',
             modalities=vars(LABEL_TASK).get('label'),
             model_filename=os.path.join('testing_data', 'label_reader.txt'))
-        reader = ImageReader(['label'])
+        reader = FileImageSource(['label'])
         with self.assertRaisesRegexp(AssertionError, ''):
             reader.add_preprocessing_layers(label_normaliser)
         reader.initialise(LABEL_DATA, LABEL_TASK, label_list)
@@ -285,13 +285,13 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertAllClose(data['label'].shape, (103, 74, 93, 1, 1))
 
     def test_errors(self):
-        reader = ImageReader(['image'])
+        reader = FileImageSource(['image'])
         reader.initialise(BAD_DATA, SINGLE_MOD_TASK, bad_data_list)
         with self.assertRaisesRegexp(ValueError, ''):
-            reader = ImageReader(['image'])
+            reader = FileImageSource(['image'])
             reader.initialise(SINGLE_MOD_DATA, BAD_TASK, single_mod_list)
 
-        reader = ImageReader(['image'])
+        reader = FileImageSource(['image'])
         reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK, single_mod_list)
         idx, data, interp_order = reader(idx=100)
         self.assertEqual(idx, -1)
@@ -300,7 +300,7 @@ class ImageReaderTest(tf.test.TestCase):
         self.assertEqual(data['image'].shape, (256, 168, 256, 1, 1))
 
     def test_images2d(self):
-        reader = ImageReader(['image'])
+        reader = FileImageSource(['image'])
 
         # COLOR IMAGES
         reader.initialise(IMAGE_2D_DATA, IMAGE_2D_TASK_COLOR,
