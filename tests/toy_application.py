@@ -13,7 +13,6 @@ from niftynet.layer.convolution import ConvolutionalLayer
 from niftynet.layer.fully_connected import FullyConnectedLayer
 from niftynet.network.base_net import BaseNet
 
-
 class ToyApplication(BaseApplication):
     REQUIRED_CONFIG_SECTION = "TOY"
 
@@ -54,16 +53,9 @@ class ToyApplication(BaseApplication):
             self.optimiser = optimiser_class.get_instance(
                 learning_rate=self.action_param.lr)
 
-        # a new pop_batch_op for each gpu tower
-        data_x = self.get_sampler()[0][0].pop_batch_op()
-        features = tf.cast(data_x['vectors'], tf.float32, name='sampler_input')
-        features = tf.expand_dims(features, axis=-1, name='feature_input')
+        fake_features, fake_logits, real_logits = self.feed_forward()
 
-        noise = tf.random_uniform(tf.shape(features), 0.0, 1.0)
-        real_logits, fake_logits, fake_features = self.net(features, noise)
-
-        d_loss = tf.reduce_mean(real_logits - fake_logits)
-        g_loss = tf.reduce_mean(fake_logits)
+        d_loss, g_loss = self.compute_loss(fake_logits, real_logits)
 
         with tf.name_scope('ComputeGradients'):
             d_vars = tf.get_collection(
@@ -79,13 +71,15 @@ class ToyApplication(BaseApplication):
             grads = [grads_d, grads_g]
             gradients_collector.add_to_collection(grads)
 
+        self.collect_results(d_loss, fake_features, g_loss, outputs_collector)
+
+    def collect_results(self, d_loss, fake_features, g_loss, outputs_collector):
         outputs_collector.add_to_collection(
             var=d_loss, name='d_loss', average_over_devices=True,
             collection=TF_SUMMARIES)
         outputs_collector.add_to_collection(
             var=g_loss, name='g_loss', average_over_devices=True,
             collection=TF_SUMMARIES)
-
         g_mean, g_var = tf.nn.moments(fake_features, axes=[0, 1, 2])
         g_var = tf.sqrt(g_var)
         outputs_collector.add_to_collection(
@@ -94,7 +88,6 @@ class ToyApplication(BaseApplication):
         outputs_collector.add_to_collection(
             var=g_var, name='var', average_over_devices=True,
             collection=CONSOLE)
-
         outputs_collector.add_to_collection(
             var=g_mean, name='generated_mean', average_over_devices=False,
             collection=TF_SUMMARIES)
@@ -102,17 +95,69 @@ class ToyApplication(BaseApplication):
             var=g_var, name='generated_variance', average_over_devices=False,
             collection=TF_SUMMARIES)
 
-        outputs_collector.add_to_collection(
-            var=features, name='original_distribution',
-            average_over_devices=False,
-            collection=TF_SUMMARIES, summary_type='histogram')
-        outputs_collector.add_to_collection(
-            var=fake_features, name='generated_distribution',
-            average_over_devices=False,
-            collection=TF_SUMMARIES, summary_type='histogram')
+    def compute_loss(self, fake_logits, real_logits):
+        d_loss = tf.reduce_mean(real_logits - fake_logits)
+        g_loss = tf.reduce_mean(fake_logits)
+        return d_loss, g_loss
+
+    def feed_forward(self):
+        # a new pop_batch_op for each gpu tower
+        data_x = self.get_sampler()[0][0].pop_batch_op()
+        features = tf.cast(data_x['vectors'], tf.float32, name='sampler_input')
+        features = tf.expand_dims(features, axis=-1, name='feature_input')
+        noise = tf.random_uniform(tf.shape(features), 0.0, 1.0)
+        real_logits, fake_logits, fake_features = self.net(features, noise)
+        return fake_features, fake_logits, real_logits
 
     def interpret_output(self, batch_output):
         return True
+
+
+class ToyApplicationMultOpti(ToyApplication):
+
+    def __init__(self, net_param, action_param, action):
+        ToyApplication.__init__(self, net_param, action_param, action)
+        tf.logging.info('starting toy application using multiple optimiser')
+
+    def connect_data_and_network(self,
+                                 outputs_collector=None,
+                                 gradients_collector=None):
+        print(vars(self.action_param))
+        self.optimiser = dict()
+        with tf.name_scope('OptimiserGen'):
+            optimiser_class = OptimiserFactory.create(
+                name=self.action_param.optimiser)
+            self.optimiser['gen'] = optimiser_class.get_instance(
+                learning_rate=self.action_param.lr)
+
+        # 2nd optimiser could be initialized different
+        with tf.name_scope('OptimiserDis'):
+            optimiser_class = OptimiserFactory.create(
+                name=self.action_param.optimiser)
+            self.optimiser['dis'] = optimiser_class.get_instance(
+                learning_rate=self.action_param.lr)
+
+        fake_features, fake_logits, real_logits = self.feed_forward()
+
+        d_loss, g_loss = self.compute_loss(fake_logits, real_logits)
+
+        grads = dict()
+        with tf.name_scope('ComputeGradientsD'):
+            d_vars = tf.get_collection(
+                tf.GraphKeys.TRAINABLE_VARIABLES,
+                scope=self.net.d_net.layer_scope().name)
+            grads['dis'] = self.optimiser['dis'].compute_gradients(
+                d_loss, var_list=d_vars)
+        with tf.name_scope('ComputeGradientsG'):
+            g_vars = tf.get_collection(
+                tf.GraphKeys.TRAINABLE_VARIABLES,
+                scope=self.net.g_net.layer_scope().name)
+            grads['gen'] = self.optimiser['gen'].compute_gradients(
+                g_loss, var_list=g_vars)
+
+        gradients_collector.add_to_collection(grads)
+
+        self.collect_results(d_loss, fake_features, g_loss, outputs_collector)
 
 
 class TinyNet(BaseNet):

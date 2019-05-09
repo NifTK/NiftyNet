@@ -25,6 +25,8 @@ from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
+from niftynet.layer.rgb_histogram_equilisation import \
+    RGBHistogramEquilisationLayer
 from niftynet.evaluation.regression_evaluator import RegressionEvaluator
 from niftynet.layer.rand_elastic_deform import RandomElasticDeformationLayer
 
@@ -100,12 +102,17 @@ class RegressionApplication(BaseApplication):
             name='hist_norm_layer') \
             if (self.net_param.histogram_ref_file and
                 self.net_param.normalisation) else None
+        rgb_normaliser = RGBHistogramEquilisationLayer(
+            image_name='image',
+            name='rbg_norm_layer') if self.net_param.rgb_normalisation else None
 
         normalisation_layers = []
         if histogram_normaliser is not None:
             normalisation_layers.append(histogram_normaliser)
         if mean_var_normaliser is not None:
             normalisation_layers.append(mean_var_normaliser)
+        if rgb_normaliser is not None:
+            normalisation_layers.append(rgb_normaliser)
 
         volume_padding_layer = []
         if self.net_param.volume_padding_size:
@@ -124,7 +131,9 @@ class RegressionApplication(BaseApplication):
             if train_param.scaling_percentage:
                 augmentation_layers.append(RandomSpatialScalingLayer(
                     min_percentage=train_param.scaling_percentage[0],
-                    max_percentage=train_param.scaling_percentage[1]))
+                    max_percentage=train_param.scaling_percentage[1],
+                    antialiasing=train_param.antialiasing,
+                    isotropic=train_param.isotropic_scaling))
             if train_param.rotation_angle:
                 rotation_layer = RandomRotationLayer()
                 if train_param.rotation_angle:
@@ -201,7 +210,8 @@ class RegressionApplication(BaseApplication):
             output_path=self.action_param.save_seg_dir,
             window_border=self.action_param.border,
             interp_order=self.action_param.output_interp_order,
-            postfix=self.action_param.output_postfix)
+            postfix=self.action_param.output_postfix,
+            fill_constant=self.action_param.fill_constant)
 
     def initialise_resize_aggregator(self):
         self.output_decoder = ResizeSamplesAggregator(
@@ -287,8 +297,27 @@ class RegressionApplication(BaseApplication):
                 loss = data_loss + reg_loss
             else:
                 loss = data_loss
+
+            # Get all vars
+            to_optimise = tf.trainable_variables()
+            vars_to_freeze = \
+                self.action_param.vars_to_freeze or \
+                self.action_param.vars_to_restore
+            if vars_to_freeze:
+                import re
+                var_regex = re.compile(vars_to_freeze)
+                # Only optimise vars that are not frozen
+                to_optimise = \
+                    [v for v in to_optimise if not var_regex.search(v.name)]
+                tf.logging.info(
+                    "Optimizing %d out of %d trainable variables, "
+                    "the other variables are fixed (--vars_to_freeze %s)",
+                    len(to_optimise),
+                    len(tf.trainable_variables()),
+                    vars_to_freeze)
+
             grads = self.optimiser.compute_gradients(
-                loss, colocate_gradients_with_ops=True)
+                loss, var_list=to_optimise, colocate_gradients_with_ops=True)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
             # collecting output variables

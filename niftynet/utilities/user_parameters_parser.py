@@ -313,7 +313,6 @@ def _raises_bad_keys(keys, error_info='config file'):
             'did you mean "{1}"?\n "{0}" is '
             'not a valid option.{2}'.format(
                 key, closest, EPILOG_STRING, error_info))
-    return
 
 
 def __resolve_config_file_path(cmdline_arg):

@@ -44,9 +44,6 @@ testjob:
     - python -c "import tensorflow as tf; from tensorflow.python.client import device_lib; print device_lib.list_local_devices()"
     - ls -la /dev | grep nvidia
 
-    - echo $(python tests/get_gpu_index.py)
-    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
-
     # removing existing testing data
     - if [ -d models ]; then rm -r models; fi
     - if [ -d testing_data ]; then rm -r testing_data; fi
@@ -78,6 +75,9 @@ testjob:
     - cd $niftynet_dir
 
     - pip install -r requirements-gpu.txt
+
+    - echo $(python tests/get_gpu_index.py)
+    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
 
     # check whether version command works
     # Git-clone:
@@ -148,7 +148,27 @@ testjob:
     ###############end of python3
 
     ######### Python 2 ###################### run python2 code with coverage wrapper
-    # This is using the system-wide Tensorflow. Probably put this in a virtualenv instead
+    # save NiftyNet folder path just in case
+    - export niftynet_dir=$(pwd)
+
+    # create a virtual env to dev-test
+    - venv="niftynet-dev-test-py2"
+    - mypython=$(which python2)
+    - virtualenv -p $mypython $venv
+    - cd $venv
+    - venv_dir=$(pwd)
+    - source bin/activate
+    # print Python version to CI output
+    - which python
+    - python --version
+    - cd $niftynet_dir
+
+    - pip install coverage
+    - pip install -r requirements-gpu.txt
+
+    - echo $(python tests/get_gpu_index.py)
+    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
+
     - python net_download.py testing -r
     - coverage run -a --source . net_segment.py train -c config/highres3dnet_config.ini --batch_size=1 --num_threads=2 --queue_length=40 --max_iter=10
     - coverage run -a --source . net_segment.py inference -c config/highres3dnet_config.ini --batch_size 8 --spatial_window_size 64,64,64 --queue_length 64
@@ -197,7 +217,12 @@ testjob:
 
     - coverage run -a --source . -m tests.test_model_zoo
     - coverage run -a --source . -m unittest discover -s "tests" -p "*_test.py"
-    - coverage report -m
+    - coverage report --omit='niftynet-dev-test*' -m
+
+    # deactivate virtual environment
+    - deactivate
+    - cd $niftynet_dir
+    ###############end of python2
     - echo 'finished test'
   tags:
     - gift-little
@@ -224,8 +249,6 @@ quicktest:
     - which nvidia-smi
     - nvidia-smi
     - pwd
-    - python -c "import tensorflow as tf; print tf.__version__"
-      #- python -c "import tensorflow as tf; from tensorflow.python.client import device_lib; print device_lib.list_local_devices()"
     - ls -la /dev | grep nvidia
 
     - echo $(python tests/get_gpu_index.py)
@@ -243,11 +266,41 @@ quicktest:
     - mkdir -p testing_data
     - tar -xzvf testing_data_v0_3.tar.gz -C testing_data
 
+    ######### Python 2 ###################### run python2 code with coverage wrapper
+    # save NiftyNet folder path just in case
+    - export niftynet_dir=$(pwd)
+
+    # create a virtual env to dev-test
+    - venv="niftynet-dev-test-py2"
+    - mypython=$(which python2)
+    - virtualenv -p $mypython $venv
+    - cd $venv
+    - venv_dir=$(pwd)
+    - source bin/activate
+    # print Python version to CI output
+    - which python
+    - python --version
+    - cd $niftynet_dir
+
+    - pip install coverage
+    - pip install -r requirements-gpu.txt
+
+    - python -c "import tensorflow as tf; print tf.__version__"
+    #- python -c "import tensorflow as tf; from tensorflow.python.client import device_lib; print device_lib.list_local_devices()"
     - coverage erase
     # run only fast tests
+    - pip install -r requirements-gpu.txt
+
+    - echo $(python tests/get_gpu_index.py)
+    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
+
     - python net_download.py testing -r
     - QUICKTEST=True coverage run -a --source . -m unittest discover -s "tests" -p "*_test.py"
-    - coverage report -m
+    - coverage report --omit='niftynet-dev-test*' -m
+    # deactivate virtual environment
+    - deactivate
+    - cd $niftynet_dir
+    ###############end of python2
 
     - echo 'finished quick tests'
   tags:
@@ -259,6 +312,7 @@ pip-installer:
   only:
     - master
     - dev
+    - release-v0.5.0
     - tags
   script:
     # get the shortened version of last commit's hash
@@ -294,12 +348,16 @@ pip-installer:
     # NiftyNet console entries should fail gracefully if TF not installed
     # i.e. check that the warning displays the TF website
     - cd $niftynet_dir
+
+    - echo $(python tests/get_gpu_index.py)
+    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
+
     - set +e
     - python -c "import niftynet" 2>&1 | grep "https://www.tensorflow.org/"
     - set -e
     - cd $venv_dir
     # install TF
-    - pip install tensorflow-gpu==1.10
+    - pip install tensorflow-gpu==1.12.2
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
@@ -394,12 +452,16 @@ pip-installer:
     # NiftyNet console entries should fail gracefully if TF not installed
     # i.e. check that the warning displays the TF website
     - cd $niftynet_dir
+
+    - echo $(python tests/get_gpu_index.py)
+    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
+
     - set +e
     - python -c "import niftynet" 2>&1 | grep "https://www.tensorflow.org/"
     - set -e
     - cd $venv_dir
     # install TF
-    - pip install tensorflow-gpu==1.10
+    - pip install tensorflow-gpu==1.12.2
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly

@@ -1,65 +1,8 @@
 # Developing a new network architecture
 NiftyNet allows users create new network, and choose to use the network by
-specifying command line argument.  To fully utilise this feature, a customised
-network should be prepared in the following steps:
+specifying command line argument.
 
-###### Step 1.
-   Create a new network file, e.g. `new_net.py` and place this inside a folder
-   of your choice, e.g. `my_network_collection` together with a new `__init__.py`
-   file.
-
-###### Step 2.
-   Make sure this folder can be discovered by NiftyNet by doing **either** of the
-   following:
-   * Place `my_network_collection` inside `$NIFTYNET_HOME/niftynetext/network`
-   (with `$NIFTYNET_HOME` defined by the [NiftyNet global `home` setting][glob-conf]).
-   * Append the location of this folder (i.e. **the folder where this folder is
-   located**) to your `$PYTHONPATH`.
-
-[glob-conf]: ../../config/README.md#global-niftynet-settings
-
-###### Step 3.
-   Create a new class, e.g. `NewNet` in `new_net.py` by inheriting the
-   `BaseNet` class from `niftynet.network.base_net`.  `niftynet.network.toynet`
-   is a minimal working example of a fully convolutional network, can be a
-   starting point for `NewNet`.
-
-###### Step 4.
-   In the `NewNet` class, implement `__init__()` function for network property
-   initialisations, and implement `layer_op()` for network connections.
-
-   The network properties can be used to specify the number of channels, kernel
-   dilation factors, as well as sub-network components of the network.
-
-   An example of sub-networks composition is presented in
-   [Simulator Gan](./simulator_gan.py).
-
-   The layer operation function `layer_op()` should specify how the input
-   tensors are connected to network layers.  For basic building blocks, using
-   the ones in `niftynet/layer/` are recommended. as the layers are implemented
-   in a modular design (convenient for parameter sharing) and can handle 2D,
-   2.5D and 3D cases in a unified manner whenever possible.
-
-###### Step 5.
-   Finally training the network could be done by specifying the newly
-   implemented network in the command line argument `--name my_network_collection.new_net.NewNet`
-
-   (`my_network_collection.new_net` refer to the `new_net.py` file, and `NewNet`
-   is the class name with in `new_net.py`)
-
-   e.g., training new network with segmentation application using pip installed NiftyNet:
-   ```
-   net_segment train -c /path/to/customised_config \
-                     --name my_network_collection.new_net.NewNet
-   ```
-   or using NiftyNet cloned from [GitHub](https://github.com/NifTK/NiftyNet):
-   ```
-   python net_segment.py train -c /path/to/customised_config \
-                               --name my_network_collection.new_net.NewNet
-   ```
-
-###### Step 6.
-   Please consider submitting the design to our model zoo.
+_To get started, check out [the developer's guides](https://niftynet.readthedocs.io/en/dev/index.html#guides)._
 
 
 # Network model references
@@ -68,6 +11,8 @@ This section summarises the implemented network models in
 
 All networks can be applied in 2D, 2.5D and 3D configurations and are
 reimplemented from their original presentation with their default parameters.
+
+_See also: [NiftyNet model zoo](https://github.com/NifTK/NiftyNetModelZoo)._
 
 ## UNet
 Reimplementation of

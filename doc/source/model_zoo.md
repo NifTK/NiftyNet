@@ -81,6 +81,8 @@ networks, loss functions, new applications, etc.
 _Depending on their availability, some model zoo entries do not contain
 data, or trained weight, or both._
 
+_See also: [submitting new model zoo entries](contributing.html#submitting-model-zoo-entries)._
+
 
 
 

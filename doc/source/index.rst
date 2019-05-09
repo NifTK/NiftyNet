@@ -109,6 +109,7 @@ Guides
    extending_app
    extending_event_handler
    extending_net
+   transfer_learning
    contributing
 
 
@@ -121,7 +122,7 @@ Resources
 
 `Model zoo repository`_
 
-Mailing list: niftynet@googlegroups.com
+`NiftyNet Google Group / Mailing List`_
 
 `Stack Overflow`_ (for general questions)
 
@@ -130,6 +131,7 @@ Mailing list: niftynet@googlegroups.com
 .. _`Source code on GitHub`: https://github.com/NifTK/NiftyNet
 .. _`Model zoo repository`: https://github.com/NifTK/NiftyNetModelZoo/blob/master/README.md
 .. _`Stack Overflow`: https://stackoverflow.com/questions/tagged/niftynet
+.. _`NiftyNet Google Group / Mailing List`: https://groups.google.com/forum/#!forum/niftynet
 
 
 APIs & reference
@@ -187,7 +189,7 @@ If you use NiftyNet in your work, please cite `Gibson and Li, et al. 2017`_:
 
   E. Gibson*, W. Li*, C. Sudre, L. Fidon, D. I. Shakir, G. Wang,
   Z. Eaton-Rosen, R. Gray, T. Doel, Y. Hu, T. Whyntie, P. Nachev, M. Modat,
-  D. C. Barratt, S. Ourselin, M. J. Cardoso^ and T. Vercauteren^ 2017.
+  D. C. Barratt, S. Ourselin, M. J. Cardoso† and T. Vercauteren† 2017.
   `NiftyNet: a deep-learning platform for medical imaging.`_
   Computer Methods and Programs in Biomedicine (2017).
 

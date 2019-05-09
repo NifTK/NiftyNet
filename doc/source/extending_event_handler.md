@@ -101,5 +101,5 @@ and a `NewHandlerClass` in Python script located in
 
 ```bash
 net_segment ... --event_handler \
-  tensorboard_logger, my_extension.event_handlers.NewHanderClass
+  tensorboard_logger,my_extension.event_handlers.NewHanderClass
 ```
