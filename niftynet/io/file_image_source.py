@@ -112,18 +112,8 @@ class FileImageSource(BaseImageSource):
         if not self.names:
             # defaulting to load all sections defined in the task_param
             self.names = list(task_param)
-        valid_names = [name for name in self.names
-                       if task_param.get(name, None)]
-        if not valid_names:
-            tf.logging.fatal("Reader requires task input keywords %s, but "
-                             "not exist in the config file.\n"
-                             "Available task keywords: %s",
-                             self.names, list(task_param))
-            raise ValueError
-        self.names = valid_names
-
-        self._input_sources = dict((name, task_param.get(name))
-                                   for name in self.names)
+        self.names, self._input_sources \
+            = self._get_valid_sections_and_input_sources(task_param, self.names)
         required_sections = \
             sum([list(task_param.get(name)) for name in self.names], [])
 

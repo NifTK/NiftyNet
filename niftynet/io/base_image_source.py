@@ -7,6 +7,8 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 from copy import deepcopy
 
 import numpy as np
+import tensorflow as tf
+
 from niftynet.io.misc_io import dtype_casting
 from niftynet.layer.base_layer import Layer
 from niftynet.utilities.util_common import ParserNamespace, look_up_operations
@@ -43,6 +45,37 @@ class BaseImageSource(Layer):
 
         self.preprocessors = []
         super(BaseImageSource, self).__init__(name='image_reader')
+
+    @staticmethod
+    def _get_valid_sections_and_input_sources(task_param, section_names):
+        """
+        Filters a list of section names against a task_param
+        struct eliminating any invalid section names. Throws an
+        exception if no valid entries are found in the list.
+
+        :param task_param: task_param dictionary of application
+        specific settings.
+        :param section_names: list of image specification sections.
+        :return: the filtered list of section names and the dictionary
+        of corresponding modalities.
+        """
+
+        if not isinstance(task_param, dict):
+            task_param = vars(task_param)
+
+        valid_names = [name for name in section_names
+                       if task_param.get(name, None)]
+        if not valid_names:
+            tf.logging.fatal("Reader requires task input keywords %s, but "
+                             "not exist in the config file.\n"
+                             "Available task keywords: %s",
+                             section_names, list(task_param))
+            raise ValueError
+
+        modalities = {name: task_param.get(name)
+                      for name in valid_names}
+
+        return valid_names, modalities
 
     @abstractmethod
     def _load_spatial_ranks(self):

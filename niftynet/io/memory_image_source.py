@@ -21,10 +21,10 @@ class MemoryImageSource(BaseImageSource):
     layer.
     """
 
-    def __init__(self, modality_names, name='memory_image_source'):
+    def __init__(self, section_names, name='memory_image_source'):
         """
-        :param modality_names: the list of modality names (in
-        data_param) to read from.
+        :param section_names: the list of section names (in
+        task_param) describing the modalities.
         """
 
         super(MemoryImageSource, self).__init__()
@@ -32,9 +32,9 @@ class MemoryImageSource(BaseImageSource):
         self._input_callback_functions = None
         self._modality_interp_orders = None
         self._phase_indices = None
-        self._modality_names = modality_names
+        self._section_names = section_names
+        self._modality_names = None
 
-    # pylint: disable=unused-argument
     def initialise(self, data_param, task_param, phase_indices):
         """
         :param data_param: Data specification
@@ -43,12 +43,32 @@ class MemoryImageSource(BaseImageSource):
         :return: self
         """
 
-        self._input_callback_functions \
-            = {name: vars(data_param[name])[MEMORY_INPUT_CALLBACK_PARAM]
-               for name in self._modality_names}
+        self._section_names, self._modality_names \
+            = self._get_valid_sections_and_input_sources(
+                task_param, self._section_names)
+
+        if any(len(mods) != 1 for mods in self._modality_names.values()):
+            raise ValueError('Memory I/O supports only 1 modality'
+                             ' per application image section. Please'
+                             ' stack your modalities prior to passing '
+                             'them to the callback function.')
+
+        self._modality_names = {name: mods[0] for name, mods
+                                in self._modality_names.items()}
+
+        self._input_callback_functions = {}
+        for name in self._modality_names.values():
+            if MEMORY_INPUT_CALLBACK_PARAM not in vars(data_param[name]) \
+                or vars(data_param[name])[MEMORY_INPUT_CALLBACK_PARAM] is None:
+                raise ValueError('Require an input callback for modality %s'
+                                 % name)
+
+            self._input_callback_functions[name] \
+                = vars(data_param[name])[MEMORY_INPUT_CALLBACK_PARAM]
+
         self._modality_interp_orders \
-            = {name: data_param[name].interp_order
-               for name in self._modality_names}
+            = {name: (data_param[mod].interp_order,)
+               for name, mod in self._modality_names.items()}
         self._phase_indices = phase_indices
 
         return self
@@ -91,7 +111,9 @@ class MemoryImageSource(BaseImageSource):
         try:
             image_data = {}
 
-            for name, funct in self._input_callback_functions.items():
+            for name in self._section_names:
+                funct \
+                    = self._input_callback_functions[self._modality_names[name]]
                 data = funct(self._phase_indices[idx]).get_data()
                 image_data[name] = data
 
