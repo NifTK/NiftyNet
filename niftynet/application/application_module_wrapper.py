@@ -201,6 +201,10 @@ class ApplicationModuleWrapper(object):
 
         self._app = app_driver
 
+        # Have to remove number of subjects from data_param since
+        # otherwise it gets interpretted as a modality
+        del input_data_param[MEMORY_INPUT_NUM_SUBJECTS_PARAM]
+
         return self
 
     def run(self):
