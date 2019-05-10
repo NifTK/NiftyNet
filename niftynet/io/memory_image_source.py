@@ -8,7 +8,6 @@ from copy import deepcopy
 
 import numpy as np
 from niftynet.io.base_image_source import BaseImageSource, infer_tf_dtypes
-from niftynet.io.image_loader import image2nibabel
 from niftynet.io.misc_io import dtype_casting
 
 # Name of the data_param namespace entry for the memory input sources
@@ -99,14 +98,14 @@ class MemoryImageSource(BaseImageSource):
 
     def _load_shapes(self):
         return {
-            name: self._input_callback_functions[mod](0).get_data().shape
+            name: self._input_callback_functions[mod](0).shape[0]
             for name, mod in self._modality_names.items()
         }
 
     def _load_dtypes(self):
         return {
             name: dtype_casting(
-                self._input_callback_functions[mod](0).get_data().dtype,
+                self._input_callback_functions[mod](0).dtype[0],
                 self._modality_interp_orders[name][0])
             for name, mod in self._modality_names.items()
         }
@@ -134,7 +133,47 @@ class MemoryImageSource(BaseImageSource):
             return None, None
 
 
-def make_input_spec(modality_spec, image_callback_function):
+class _ImageDataWrapper(object):
+    """
+    Simple wrapper class that makes image tensors
+    conform with SpatialImageND classes.
+    """
+
+    def __init__(self, data, interp_order):
+        self._data = data
+        self._interp_order = interp_order
+
+    def get_data(self):
+        return self._data
+
+    @property
+    def original_shape(self):
+        return (self._data.shape,)
+
+    @property
+    def shape(self):
+        return self.original_shape
+
+    @property
+    def spatial_rank(self):
+        return 2 if len(self._data.shape) < 3 or self._data.shape[2] == 1\
+            else 3
+
+    @property
+    def original_pixdim(self):
+        return (tuple([1]*self.spatial_rank))
+
+    @property
+    def original_affine(self):
+        return (np.eye(4),)
+
+    @property
+    def dtype(self):
+        return (self._data.dtype,)
+
+
+def make_input_spec(modality_spec, image_callback_function, do_reshape_nd=False,
+                    do_reshape_rgb=False, do_typecast=True):
     """
     Updates a configuration-file modality specification with the
     necessary fields for loading from memory.
@@ -143,15 +182,61 @@ def make_input_spec(modality_spec, image_callback_function):
         given an index.
     :param modality_spec: the original specification of the modality,
         containing window sizes, pixel dimensions, etc.
+    :param do_reshape_nd: boolean flag indicating whether to add an image
+        tensor reshape wrapper to the function turning it a nD input tensor
+        (with possibly multiple modalities) into a 5D one, as required by
+        NiftyNet, while interpretting the last dimension as modalities.
+    :param do_reshape_rgb: boolean flag indicating whether to add an image
+        tensor reshape wrapper to the function turning it a 2D RGB image
+        into a 5D tensor, as required by
+        NiftyNet.
+    :param do_typecast: boolean flag indicating whether to add an image
+        data typecast wrapper to the function turning it the data into floats.
     """
 
-    def _image_output_wrapper(idx):
-        return image2nibabel(image_callback_function(idx))
+    callback0 = image_callback_function
+    if do_reshape_nd:
+        def _reshape_wrapper_nd(idx):
+            img = callback0(idx)
 
-    if isinstance(modality_spec, dict):
-        modality_spec[MEMORY_INPUT_CALLBACK_PARAM] = _image_output_wrapper
+            new_shape = list(img.shape)
+            new_shape += [1]*(4 - len(new_shape))
+            if len(img.shape) > 3:
+                new_shape += [img.shape[-1]]
+            else:
+                new_shape += [1]
+
+            return img.reshape(new_shape)
+
+        callback1 = _reshape_wrapper_nd
     else:
-        vars(modality_spec)[MEMORY_INPUT_CALLBACK_PARAM] = \
-            _image_output_wrapper
+        callback1 = callback0
+
+    if do_reshape_rgb:
+        def _reshape_wrapper_rgb(idx):
+            img = callback1(idx)
+
+            return img.reshape((img.shape[0], img.shape[1], 1, 1, 3))
+
+        callback2 = _reshape_wrapper_rgb
+    else:
+        callback2 = callback1
+
+    if do_typecast:
+        def _typecase_wrapper(idx):
+            return callback2(idx).astype(np.float32)
+
+        callback3 = _typecase_wrapper
+    else:
+        callback3 = callback2
+
+    if not isinstance(modality_spec, dict):
+        modality_spec = vars(modality_spec)
+
+    def _output_wrapper(idx):
+        return _ImageDataWrapper(callback3(idx),
+                                 modality_spec['interp_order'])
+
+    modality_spec[MEMORY_INPUT_CALLBACK_PARAM] = _output_wrapper
 
     return modality_spec
