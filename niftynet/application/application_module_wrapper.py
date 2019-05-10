@@ -217,7 +217,7 @@ class ApplicationModuleWrapper(object):
 
 def _make_wrapper(app_class, app_name):
     """
-    Creates a wrapper class for a specified application class.
+    Creates a module wrapper class for a specified application class.
     :param app_class: application class, e.g., SegmentationApplication
     :param app_name: front-end name, e.g, net_regress
     """
