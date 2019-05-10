@@ -22,6 +22,10 @@ class LossFunction(Layer):
         self._data_loss_func = LossRegressionFactory.create(loss_type)
         self._loss_func_params = \
             loss_func_params if loss_func_params is not None else {}
+        self._reshape = True
+        if loss_type == 'Cosine':
+            print(loss_type)
+            self._reshape = False
 
     def layer_op(self,
                  prediction,
@@ -46,9 +50,17 @@ class LossFunction(Layer):
 
         with tf.device('/cpu:0'):
             batch_size = ground_truth.shape[0].value
-            ground_truth = tf.reshape(ground_truth, [batch_size, -1])
-            if weight_map is not None:
-                weight_map = tf.reshape(weight_map, [batch_size, -1])
+            dir_size = 1
+            if self._reshape:
+                print("resize is true")
+                ground_truth = tf.reshape(ground_truth, [batch_size, -1])
+                if weight_map is not None:
+                    weight_map = tf.reshape(weight_map, [batch_size, -1])
+            else:
+
+                dir_size = ground_truth.shape[-1].value
+                ground_truth = tf.reshape(ground_truth, [batch_size, -1,
+                                                         dir_size])
             if not isinstance(prediction, (list, tuple)):
                 prediction = [prediction]
 
@@ -63,7 +75,14 @@ class LossFunction(Layer):
                         weight_map_b = None
                     else:
                         pred_b, ground_truth_b, weight_map_b = args[0]
-                    pred_b = tf.reshape(pred_b, [-1])
+                    pred_b = tf.reshape(pred_b, tf.shape(ground_truth_b))
+                    # pred_b = tf.reshape(pred_b, [-1])
+                    # pred_b = tf.Print(tf.cast(pred_b, tf.float32),
+                    #                       [tf.shape(
+                    #                           pred_b), tf.shape(
+                    #                           ground_truth_b)],
+                    #                       message='pred_b_shape')
+
 
                     loss_params = {
                         'prediction': pred_b,
@@ -199,7 +218,6 @@ def smooth_l1_loss(prediction, ground_truth, weight_map=None, value_thresh=0.5):
     value_correction = value_thresh ** 3 - value_thresh
 
     value_correction_max = value_thresh_max - value_thresh_max ** 2
-    print(value_correction_max , value_correction)
 
     prediction = tf.cast(prediction, dtype=tf.float32)
 
@@ -217,8 +235,6 @@ def smooth_l1_loss(prediction, ground_truth, weight_map=None, value_thresh=0.5):
     absolute_residuals = tf.where(tf.greater(absolute_residuals,value_thresh_max),
                                   tf.square(
         absolute_residuals) + value_correction_max, absolute_residuals)
-    absolute_residuals = tf.Print(tf.cast(absolute_residuals, tf.float32),
-                                  [absolute_residuals], message='check_absres')
     if weight_map is not None:
 
         absolute_residuals = tf.multiply(absolute_residuals, weight_map)
@@ -244,23 +260,31 @@ def cosine_loss(prediction, ground_truth, weight_map=None, to_complete=True):
     :return:
     '''
     if to_complete:
-        prediction_complete = tf.sqrt(1 - tf.minimum(tf.reduce_sum(tf.square(
-            prediction),-1),1))
-        ground_truth_complete = tf.sqrt(1 - tf.minimum(tf.reduce_sum(tf.square(
-            ground_truth),-1),1))
-        pred_vect = tf.concat([prediction, [prediction_complete]], -1)
+        prediction_complete = tf.reshape(tf.sqrt(1 - tf.minimum(tf.reduce_sum(
+            tf.square(
+            prediction),-1),1)), [tf.shape(prediction)[0],1])
+        ground_truth_complete = tf.reshape(tf.sqrt(1 - tf.minimum(tf.reduce_sum(
+            tf.square(
+            ground_truth),-1),1)),[tf.shape(prediction)[0],1])
 
-        gt_vect = tf.concat([ground_truth, [ground_truth_complete]], -1)
+        pred_vect = tf.concat([prediction, prediction_complete], -1)
+
+        gt_vect = tf.concat([ground_truth, ground_truth_complete], -1)
     else:
         pred_vect = prediction
         gt_vect = ground_truth
-    if weight_map is None:
-        weight_map = 1.0
 
-    pred_vect = pred_vect / tf.maximum(tf.sqrt(tf.reduce_sum(tf.square(
-        pred_vect))),0.00001)
-    gt_vect = gt_vect / tf.maximum(tf.sqrt(tf.reduce_sum(tf.square(
-        gt_vect))),0.00001)
-    loss = tf.losses.cosine_distance(gt_vect, pred_vect, -1, weights=weight_map)
-    loss = tf.where(tf.is_nan(loss), tf.zeros_like(loss), loss)
+    if weight_map is None:
+        weight_map = tf.ones([tf.shape(prediction)[0]])
+    else:
+        weight_map = tf.reshape(weight_map, [tf.shape(prediction)[0]])
+
+    pred_vect = pred_vect / tf.maximum(tf.norm(
+        pred_vect,ord='euclidean',axis=-1, keep_dims=True), 0.00001)
+    gt_vect = gt_vect /tf.maximum(tf.norm(
+        gt_vect,ord='euclidean',axis=-1, keep_dims=True), 0.00001)
+    loss_init = 1 -tf.reduce_sum(gt_vect * pred_vect, -1)
+    weighted_loss = loss_init * weight_map
+    loss = tf.reduce_sum(weighted_loss) / tf.reduce_sum(weight_map)
+
     return loss

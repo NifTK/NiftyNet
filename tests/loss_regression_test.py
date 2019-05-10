@@ -258,5 +258,56 @@ class SmoothL1LossTests(tf.test.TestCase):
                 computed_smooth_l1_loss.eval(), 4.125 / 4)
 
 
+class CosineLossTests(tf.test.TestCase):
+    def test_cosine_loss_value(self):
+
+        with self.test_session():
+            predicted = tf.constant(
+                [[[1, 0],[0.5,0.5]]], dtype=tf.float32, name='predicted')
+            labels = tf.constant(
+                [[[0, 1],[0.5,0.5]]], dtype=tf.float32, name='labels')
+            test_loss_func = LossFunction(loss_type='Cosine')
+            computed_cosine_loss = test_loss_func(predicted, labels)
+            self.assertAlmostEqual(
+                computed_cosine_loss.eval(), 0.5)
+
+    def test_cosine_loss_value_equal(self):
+
+        with self.test_session():
+            predicted = tf.constant(
+                [[[0.5,0.5]]], dtype=tf.float32, name='predicted')
+            labels = tf.constant(
+                [[[0.5,0.5]]], dtype=tf.float32, name='labels')
+            test_loss_func = LossFunction(loss_type='Cosine')
+            computed_cosine_loss = test_loss_func(predicted, labels)
+            self.assertAlmostEqual(
+                computed_cosine_loss.eval(), 0)
+
+    def test_cosine_loss_value_equal2(self):
+
+        with self.test_session():
+            predicted = tf.constant(
+                [[[1, 0],[0.5,0.5]]], dtype=tf.float32, name='predicted')
+            labels = tf.constant(
+                [[[1, 0],[0.5,0.5]]], dtype=tf.float32, name='labels')
+            test_loss_func = LossFunction(loss_type='Cosine')
+            computed_cosine_loss = test_loss_func(predicted, labels)
+            self.assertAlmostEqual(
+                computed_cosine_loss.eval(), 0)
+
+    def test_cosine_loss_value_weight(self):
+        with self.test_session():
+            weights = tf.constant(
+                [[[2], [1]]], dtype=tf.float32, name='weights')
+            predicted = tf.constant(
+                [[[1, 0],[0.5,0.5]]], dtype=tf.float32, name='predicted')
+            labels = tf.constant(
+                [[[0, 1],[0.5,0.5]]], dtype=tf.float32, name='labels')
+            test_loss_func = LossFunction(loss_type='Cosine')
+            computed_cosine_loss = test_loss_func(predicted, labels, weights)
+            self.assertAlmostEqual(
+                computed_cosine_loss.eval(), 2.0 / 3.0)
+
+
 if __name__ == '__main__':
     tf.test.main()
