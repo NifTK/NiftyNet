@@ -6,18 +6,18 @@ specialisations for NiftyNet's standard applications.
 from __future__ import absolute_import
 
 from niftynet.engine.application_driver import ApplicationDriver
+from niftynet.engine.signal import INFER, TRAIN, EVAL
 from niftynet.evaluation.evaluation_application_driver import \
     EvaluationApplicationDriver
-from niftynet.engine.signal import TRAIN, INFER, EVAL
 from niftynet.io.misc_io import resolve_module_dir, to_absolute_path
 from niftynet.io.memory_image_sets_partitioner import \
     MEMORY_INPUT_NUM_SUBJECTS_PARAM
 from niftynet.io.memory_image_sink import MEMORY_OUTPUT_CALLBACK_PARAM
 from niftynet.io.memory_image_source import make_input_spec
-from niftynet.utilities.user_parameters_parser import extract_app_parameters
-from niftynet.utilities.util_common import look_up_operations
+from niftynet.utilities.user_parameters_parser import extract_app_parameters,\
+    ACTIONS
 
-SUPPORTED_ACTIONS = (TRAIN, INFER, EVAL)
+SUPPORTED_ACTIONS = tuple(ACTIONS.keys())
 
 
 class ApplicationModuleWrapper(object):
@@ -27,8 +27,8 @@ class ApplicationModuleWrapper(object):
     """
 
     def __init__(self,
-                 model_file,
-                 app_name):
+                 app_name,
+                 model_file):
         """
         :param model_file: a NiftyNet application configuration file
         :param app_name: name of registered NiftyNet application
@@ -84,6 +84,11 @@ class ApplicationModuleWrapper(object):
         :return: self
         """
 
+        for ref in SUPPORTED_ACTIONS:
+            if ref.startswith(action.lower()):
+                action = ref
+                break
+
         self._action = action
 
         return self
@@ -97,19 +102,20 @@ class ApplicationModuleWrapper(object):
         :return: the updated data_param and app_param
         """
 
-        data_param[MEMORY_INPUT_NUM_SUBJECTS_PARAM] = self._num_subjects
-
         for name, funct in self._input_callbacks.items():
             if not name in data_param:
-                raise RuntimeError('Have a input callback function'
+                raise RuntimeError('Have an input callback function'
                                    ' %s without corresponding data '
-                                   'specification section.')
+                                   'specification section. Found sections:'
+                                   ' %s' % (name, list(data_param.keys())))
 
             make_input_spec(data_param[name], funct)
 
         if self._output_callback and not infer_param is None:
             vars(infer_param)[MEMORY_OUTPUT_CALLBACK_PARAM] \
                 = self._output_callback
+
+        data_param[MEMORY_INPUT_NUM_SUBJECTS_PARAM] = self._num_subjects
 
     def _check_configured(self):
         """
@@ -121,33 +127,32 @@ class ApplicationModuleWrapper(object):
             raise RuntimeError('A positive number of subjects must be set')
 
         if not self._action \
-           or not look_up_operations(self._action, SUPPORTED_ACTIONS):
+           or self._action not in SUPPORTED_ACTIONS:
             raise RuntimeError('A supported action must be set (%s); got: %s'
                                % (SUPPORTED_ACTIONS, self._action))
 
         if not self._input_callbacks:
             raise RuntimeError('Input image callbacks must be set.')
 
-        if INFER.startswith(
-                look_up_operations(self._action, SUPPORTED_ACTIONS)) \
+        if INFER.startswith(self._action) \
                 and not self._output_callback:
             raise RuntimeError('For evaluations, an output callback function'
                                ' must be set')
 
-    def initialise_application(self, action):
+    def initialise_application(self):
         """
         Loads and configures the application encapsulated by this
         object for the given action.
-        :param action: a NiftyNet action from niftynet.engine.signal
+        :return: self
         """
 
         self._check_configured()
 
         system_param, input_data_param = extract_app_parameters(
-            self._app, self._model_file, action)
+            self._app, self._model_file, self._action)
 
         resolve_module_dir(system_param['SYSTEM'].model_dir,
-                           create_new=action == TRAIN)
+                           create_new=TRAIN.startswith(self._action))
 
         # Verbatim copy of F/S setup from NiftyNet's main
         try:
@@ -191,16 +196,22 @@ class ApplicationModuleWrapper(object):
         infer_param = system_param.get('TRAINING', None)
         self._install_image_callbacks(input_data_param, infer_param)
 
-        app_driver = driver_table[system_param['SYSTEM'].action]()
+        app_driver = driver_table[ACTIONS[self._action]]()
         app_driver.initialise_application(system_param, input_data_param)
         app_driver.run(app_driver.app)
 
         self._app = app_driver
 
+        return self
+
     def run(self):
         """
         Runs the application main loop
         """
+
+        if isinstance(self._app, str):
+            raise RuntimeError('The module must be initialised before it'
+                               ' can be run.')
 
         self._app.run(self._app.app)
 
