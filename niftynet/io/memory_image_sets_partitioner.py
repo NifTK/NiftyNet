@@ -128,7 +128,7 @@ class MemoryImageSetsPartitioner(BaseImageSetsPartitioner):
         return lists
 
     def has_phase(self, phase):
-        return phase in self._partitions and not self._partitions[phase]
+        return phase in self._partitions and self._partitions[phase]
 
     def all_files(self):
         return list(range(self._num_subjects))
