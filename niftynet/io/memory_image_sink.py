@@ -34,5 +34,5 @@ class MemoryImageSink(BaseImageSink):
     def layer_op(self, image_data_out, subject_name, image_data_in):
         image_data_out = self._invert_preprocessing(image_data_out)
 
-        self._output_callback_function(
-            image_data_out, subject_name, image_data_in)
+        self._output_callback_function(image_data_out, subject_name,
+                                       image_data_in)

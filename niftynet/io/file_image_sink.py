@@ -4,11 +4,12 @@ Image F/S output module
 """
 from __future__ import absolute_import
 
-from abc import ABCMeta, abstractproperty
 import os.path
+from abc import ABCMeta, abstractproperty
 
-from niftynet.io.base_image_sink import BaseImageSink
 import niftynet.io.misc_io as misc_io
+from niftynet.io.base_image_sink import BaseImageSink
+
 
 class BaseFileImageSink(BaseImageSink):
     """
@@ -17,11 +18,9 @@ class BaseFileImageSink(BaseImageSink):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self,
-                 reader,
-                 interp_order=-1,
-                 name='image_writer_base'):
-        super(BaseFileImageSink, self).__init__(reader, interp_order, name=name)
+    def __init__(self, reader, interp_order=-1, name='image_writer_base'):
+        super(BaseFileImageSink, self).__init__(
+            reader, interp_order, name=name)
 
     @abstractproperty
     def output_path(self):
@@ -80,11 +79,8 @@ class FileImageSink(BaseFileImageSink):
         image_data_out = self._invert_preprocessing(image_data_out)
 
         filename = "{}{}.nii.gz".format(subject_name, self.postfix)
-        misc_io.save_data_array(self.output_path,
-                                filename,
-                                image_data_out,
-                                image_data_in,
-                                self.interp_order)
+        misc_io.save_data_array(self.output_path, filename, image_data_out,
+                                image_data_in, self.interp_order)
         self.log_inferred(subject_name, filename)
 
     def log_inferred(self, subject_name, filename):
@@ -98,4 +94,3 @@ class FileImageSink(BaseFileImageSink):
         with open(self.inferred_csv, 'a+') as csv_file:
             filename = os.path.join(self.output_path, filename)
             csv_file.write('{},{}\n'.format(subject_name, filename))
-

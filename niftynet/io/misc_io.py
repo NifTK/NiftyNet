@@ -30,8 +30,8 @@ FILE_EXTENSIONS = [".nii.gz", ".tar.gz"]
 CONSOLE_LOG_FORMAT = "\033[1m%(levelname)s:niftynet:\033[0m %(message)s"
 FILE_LOG_FORMAT = "%(levelname)s:niftynet:%(asctime)s: %(message)s"
 
-
 # utilities for file headers #
+
 
 def infer_ndims_from_file(file_path, loader=None):
     """
@@ -164,7 +164,7 @@ def rectify_header_sform_qform(img_nii):
     affine = img_nii.affine
     pixdim = img_nii.header.get_zooms()
     while len(pixdim) < 3:
-        pixdim = pixdim + (1.0,)
+        pixdim = pixdim + (1.0, )
     # assuming 3 elements
     new_affine = create_affine_pixdim(affine, pixdim[:3])
     img_nii.set_sform(new_affine)
@@ -192,8 +192,8 @@ def compute_orientation(init_axcodes, final_axcodes):
         ornt_transf = nib.orientations.ornt_transform(ornt_init, ornt_fin)
         return ornt_transf, ornt_init, ornt_fin
     except (ValueError, IndexError):
-        tf.logging.fatal(
-            'reorientation transform error: %s, %s', ornt_init, ornt_fin)
+        tf.logging.fatal('reorientation transform error: %s, %s', ornt_init,
+                         ornt_fin)
         raise ValueError
 
 
@@ -249,9 +249,10 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     for time_point in range(0, data_shape[3]):
         data_mod = []
         for mod in range(0, data_shape[4]):
-            data_new = scipy.ndimage.zoom(data_array[..., time_point, mod],
-                                          to_multiply[0:3],
-                                          order=interp_order)
+            data_new = scipy.ndimage.zoom(
+                data_array[..., time_point, mod],
+                to_multiply[0:3],
+                order=interp_order)
             data_mod.append(data_new[..., np.newaxis, np.newaxis])
         data_resampled.append(np.concatenate(data_mod, axis=-1))
     return np.concatenate(data_resampled, axis=-2)
@@ -312,13 +313,14 @@ def save_data_array(filefolder,
                 transf, _, _ = compute_orientation(image_axcodes, dst_axcodes)
                 original_shape = tuple(
                     original_shape[k] for k in transf[:, 0].astype(np.int))
-            image_pixdim = dst_pixdim * np.divide(original_shape, spatial_shape)
-        array_to_save = do_resampling(
-            array_to_save, image_pixdim, dst_pixdim, interp_order)
+            image_pixdim = dst_pixdim * np.divide(original_shape,
+                                                  spatial_shape)
+        array_to_save = do_resampling(array_to_save, image_pixdim, dst_pixdim,
+                                      interp_order)
 
     if image_axcodes and dst_axcodes:
-        array_to_save = do_reorientation(
-            array_to_save, image_axcodes, dst_axcodes)
+        array_to_save = do_reorientation(array_to_save, image_axcodes,
+                                         dst_axcodes)
     save_volume_5d(array_to_save, filename, filefolder, affine)
 
 
@@ -361,8 +363,8 @@ def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
     output_name = os.path.join(save_path, filename)
     try:
         if os.path.isfile(output_name):
-            tf.logging.warning(
-                'File %s exists, overwriting the file.', output_name)
+            tf.logging.warning('File %s exists, overwriting the file.',
+                               output_name)
         nib.save(img_nii, output_name)
     except OSError:
         tf.logging.fatal("writing failed {}".format(output_name))
@@ -498,8 +500,7 @@ def resolve_module_dir(module_dir_str, create_new=False):
             else:
                 tf.logging.fatal(
                     "trying to use '{}' as NiftyNet writing path, "
-                    "however cannot write '{}'".format(
-                        folder_path, init_file))
+                    "however cannot write '{}'".format(folder_path, init_file))
                 raise
         else:
             with os.fdopen(file_, 'w') as file_object:
@@ -574,8 +575,8 @@ def resolve_checkpoint(checkpoint_name):
     if os.path.isfile(checkpoint_name + '.index'):
         return checkpoint_name
     home_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
-    checkpoint_name = to_absolute_path(input_path=checkpoint_name,
-                                       model_root=home_folder)
+    checkpoint_name = to_absolute_path(
+        input_path=checkpoint_name, model_root=home_folder)
     if os.path.isfile(checkpoint_name + '.index'):
         return checkpoint_name
     raise ValueError('Invalid checkpoint {}'.format(checkpoint_name))
@@ -597,15 +598,17 @@ def get_latest_subfolder(parent_folder, create_new=False):
     except OSError:
         tf.logging.fatal('not a directory {}'.format(parent_folder))
         raise OSError
-    log_sub_dirs = [name for name in log_sub_dirs
-                    if re.findall('^[0-9]+$', name)]
+    log_sub_dirs = [
+        name for name in log_sub_dirs if re.findall('^[0-9]+$', name)
+    ]
     if log_sub_dirs and create_new:
         latest_id = max([int(name) for name in log_sub_dirs])
         log_sub_dir = '{}'.format(latest_id + 1)
     elif log_sub_dirs and not create_new:
-        latest_valid_id = max(
-            [int(name) for name in log_sub_dirs
-             if os.path.isdir(os.path.join(parent_folder, name))])
+        latest_valid_id = max([
+            int(name) for name in log_sub_dirs
+            if os.path.isdir(os.path.join(parent_folder, name))
+        ])
         log_sub_dir = '{}'.format(latest_valid_id)
     else:
         log_sub_dir = '{}'.format(0)
@@ -618,8 +621,10 @@ def _image3_animated_gif(tag, ims):
     from PIL.GifImagePlugin import Image as GIF
 
     # x=numpy.random.randint(0,256,[10,10,10],numpy.uint8)
-    ims = [np.asarray((ims[i, :, :]).astype(np.uint8))
-           for i in range(ims.shape[0])]
+    ims = [
+        np.asarray((ims[i, :, :]).astype(np.uint8))
+        for i in range(ims.shape[0])
+    ]
     ims = [GIF.fromarray(im) for im in ims]
     img_str = b''
     for b_data in PIL.GifImagePlugin.getheader(ims[0])[0]:
@@ -634,16 +639,15 @@ def _image3_animated_gif(tag, ims):
         img_str = str(img_str)
     summary_image_str = summary_pb2.Summary.Image(
         height=10, width=10, colorspace=1, encoded_image_string=img_str)
-    image_summary = summary_pb2.Summary.Value(
-        tag=tag, image=summary_image_str)
+    image_summary = summary_pb2.Summary.Value(tag=tag, image=summary_image_str)
     return [summary_pb2.Summary(value=[image_summary]).SerializeToString()]
 
 
 def image3(name,
            tensor,
            max_out=3,
-           collections=(tf.GraphKeys.SUMMARIES,),
-           animation_axes=(1,),
+           collections=(tf.GraphKeys.SUMMARIES, ),
+           animation_axes=(1, ),
            image_axes=(2, 3),
            other_indices=None):
     """
@@ -681,15 +685,17 @@ def image3(name,
                       if i not in axis_order]
     original_shape = tensor.shape.as_list()
     new_shape = [
-        original_shape[0], -1,
-        original_shape[axis_order[-2]],
-        original_shape[axis_order[-1]]]
+        original_shape[0], -1, original_shape[axis_order[-2]],
+        original_shape[axis_order[-1]]
+    ]
     transposed_tensor = tf.transpose(tensor, axis_order_all)
     transposed_tensor = tf.reshape(transposed_tensor, new_shape)
     # split images
     with tf.device('/cpu:0'):
         for it_i in range(min(max_out, transposed_tensor.shape.as_list()[0])):
-            inp = [name + suffix.format(it_i), transposed_tensor[it_i, :, :, :]]
+            inp = [
+                name + suffix.format(it_i), transposed_tensor[it_i, :, :, :]
+            ]
             summary_op = tf.py_func(_image3_animated_gif, inp, tf.string)
             for c in collections:
                 tf.add_to_collection(c, summary_op)
@@ -699,7 +705,7 @@ def image3(name,
 def image3_sagittal(name,
                     tensor,
                     max_outputs=3,
-                    collections=(tf.GraphKeys.SUMMARIES,)):
+                    collections=(tf.GraphKeys.SUMMARIES, )):
     """
     Create 2D image summary in the sagittal view.
 
@@ -715,7 +721,7 @@ def image3_sagittal(name,
 def image3_coronal(name,
                    tensor,
                    max_outputs=3,
-                   collections=(tf.GraphKeys.SUMMARIES,)):
+                   collections=(tf.GraphKeys.SUMMARIES, )):
     """
     Create 2D image summary in the coronal view.
 
@@ -731,7 +737,7 @@ def image3_coronal(name,
 def image3_axial(name,
                  tensor,
                  max_outputs=3,
-                 collections=(tf.GraphKeys.SUMMARIES,)):
+                 collections=(tf.GraphKeys.SUMMARIES, )):
     """
     Create 2D image summary in the axial view.
 

@@ -7,6 +7,7 @@ from __future__ import absolute_import
 from copy import deepcopy
 
 import numpy as np
+
 from niftynet.io.base_image_source import BaseImageSource, infer_tf_dtypes
 from niftynet.io.image_loader import image2nibabel
 
@@ -52,15 +53,17 @@ class MemoryImageSource(BaseImageSource):
                              ' stack your modalities prior to passing '
                              'them to the callback function.')
 
-        self._modality_names = {name: mods[0] for name, mods
-                                in self._modality_names.items()}
+        self._modality_names = {
+            name: mods[0]
+            for name, mods in self._modality_names.items()
+        }
 
         self._input_callback_functions = {}
         for name in self._modality_names.values():
-            if MEMORY_INPUT_CALLBACK_PARAM not in vars(data_param[name]) \
-                or vars(data_param[name])[MEMORY_INPUT_CALLBACK_PARAM] is None:
-                raise ValueError('Require an input callback for modality %s'
-                                 % name)
+            if not vars(data_param[name]).get(MEMORY_INPUT_CALLBACK_PARAM,
+                                              None):
+                raise ValueError(
+                    'Require an input callback for modality %s' % name)
 
             self._input_callback_functions[name] \
                 = vars(data_param[name])[MEMORY_INPUT_CALLBACK_PARAM]
@@ -74,9 +77,10 @@ class MemoryImageSource(BaseImageSource):
 
     @property
     def output_list(self):
-        return [{name: self._input_callback_functions[mod](idx)
-                 for name, mod in self._modality_names.items()}
-                for idx in self._phase_indices]
+        return [{
+            name: self._input_callback_functions[mod](idx)
+            for name, mod in self._modality_names.items()
+        } for idx in self._phase_indices]
 
     @property
     def names(self):
@@ -117,8 +121,8 @@ class MemoryImageSource(BaseImageSource):
             image_data = {}
 
             for name in self._section_names:
-                funct \
-                    = self._input_callback_functions[self._modality_names[name]]
+                funct = self._input_callback_functions[
+                    self._modality_names[name]]
                 data = funct(self._phase_indices[idx]).get_data()
                 image_data[name] = data
 

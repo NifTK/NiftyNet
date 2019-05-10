@@ -5,19 +5,18 @@ Image F/S output module
 from __future__ import absolute_import
 
 import numpy as np
-from six import string_types
 import pandas
 import tensorflow as tf
+from six import string_types
 
-from niftynet.io.image_sets_partitioner import COLUMN_UNIQ_ID
+from niftynet.io.base_image_source import (
+    DEFAULT_INTERP_ORDER, BaseImageSource, infer_tf_dtypes, param_to_dict)
 from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
-from niftynet.io.base_image_source import BaseImageSource, \
-    param_to_dict, \
-    infer_tf_dtypes, \
-    DEFAULT_INTERP_ORDER
+from niftynet.io.image_sets_partitioner import COLUMN_UNIQ_ID
 from niftynet.io.image_type import ImageFactory
 from niftynet.utilities.user_parameters_helper import make_input_tuple
 from niftynet.utilities.util_common import print_progress_bar
+
 
 class FileImageSource(BaseImageSource):
     """
@@ -97,7 +96,7 @@ class FileImageSource(BaseImageSource):
         data_param = param_to_dict(data_param)
 
         if not task_param:
-            task_param = {mod: (mod,) for mod in list(data_param)}
+            task_param = {mod: (mod, ) for mod in list(data_param)}
         try:
             if not isinstance(task_param, dict):
                 task_param = vars(task_param)
@@ -124,9 +123,10 @@ class FileImageSource(BaseImageSource):
                 if (file_list is None) or \
                         (required not in list(file_list)) or \
                         (file_list[required].isnull().all()):
-                    tf.logging.fatal('Reader required input section '
-                                     'name [%s], but in the filename list '
-                                     'the column is empty.', required)
+                    tf.logging.fatal(
+                        'Reader required input section '
+                        'name [%s], but in the filename list '
+                        'the column is empty.', required)
                     raise ValueError
             except (AttributeError, TypeError, ValueError):
                 tf.logging.fatal(
@@ -146,8 +146,8 @@ class FileImageSource(BaseImageSource):
         for name in self.names:
             tf.logging.info(
                 'Image reader: loading %d subjects '
-                'from sections %s as input [%s]',
-                len(self.output_list), self.input_sources[name], name)
+                'from sections %s as input [%s]', len(self.output_list),
+                self.input_sources[name], name)
         return self
 
     def _get_image_and_interp_dict(self, idx):
@@ -178,15 +178,13 @@ class FileImageSource(BaseImageSource):
 
         first_image = self.output_list[0]
 
-        return {field: first_image[field].spatial_rank
-                for field in self.names}
+        return {field: first_image[field].spatial_rank for field in self.names}
 
     def _load_shapes(self):
         self._check_initialised()
 
         first_image = self.output_list[0]
-        return {field: first_image[field].shape
-                for field in self.names}
+        return {field: first_image[field].shape for field in self.names}
 
     def _load_dtypes(self):
         """
@@ -196,8 +194,10 @@ class FileImageSource(BaseImageSource):
         self._check_initialised()
 
         first_image = self.output_list[0]
-        return {field: infer_tf_dtypes(first_image[field])
-                for field in self.names}
+        return {
+            field: infer_tf_dtypes(first_image[field])
+            for field in self.names
+        }
 
     @property
     def input_sources(self):
@@ -283,15 +283,19 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
     valid_idx = []
     for idx in range(len(file_list)):
         # create image instance for each subject
-        print_progress_bar(idx, len(file_list),
-                           prefix='reading datasets headers',
-                           decimals=1, length=10, fill='*')
+        print_progress_bar(
+            idx,
+            len(file_list),
+            prefix='reading datasets headers',
+            decimals=1,
+            length=10,
+            fill='*')
 
         # combine fieldnames and volumes as a dictionary
         _dict = {}
         for field, modalities in mod_dict.items():
-            _dict[field] = _create_image(
-                file_list, idx, modalities, data_param)
+            _dict[field] = _create_image(file_list, idx, modalities,
+                                         data_param)
 
         # skipping the subject if there're missing image components
         if _dict and None not in list(_dict.values()):
@@ -321,8 +325,10 @@ def _create_image(file_list, idx, modalities, data_param):
     """
     try:
         file_path = tuple(file_list.iloc[idx][mod] for mod in modalities)
-        any_missing = any([pandas.isnull(file_name) or not bool(file_name)
-                           for file_name in file_path])
+        any_missing = any([
+            pandas.isnull(file_name) or not bool(file_name)
+            for file_name in file_path
+        ])
         if any_missing:
             # todo: enable missing modalities again
             # the file_path of a multimodal image will contain `nan`, e.g.
@@ -334,8 +340,8 @@ def _create_image(file_list, idx, modalities, data_param):
         for mod in modalities:
             mod_spec = data_param[mod] \
                 if isinstance(data_param[mod], dict) else vars(data_param[mod])
-            interp_order.append(mod_spec.get('interp_order',
-                                             DEFAULT_INTERP_ORDER))
+            interp_order.append(
+                mod_spec.get('interp_order', DEFAULT_INTERP_ORDER))
             pixdim.append(mod_spec.get('pixdim', None))
             axcodes.append(mod_spec.get('axcodes', None))
             loader.append(mod_spec.get('loader', None))
@@ -343,8 +349,8 @@ def _create_image(file_list, idx, modalities, data_param):
     except KeyError:
         tf.logging.fatal(
             "Specified modality names %s "
-            "not found in config: input sections %s.",
-            modalities, list(data_param))
+            "not found in config: input sections %s.", modalities,
+            list(data_param))
         raise
     except AttributeError:
         tf.logging.fatal(
@@ -352,10 +358,12 @@ def _create_image(file_list, idx, modalities, data_param):
             "Reader must be initialised with a dataframe as file_list.")
         raise
 
-    image_properties = {'file_path': file_path,
-                        'name': modalities,
-                        'interp_order': interp_order,
-                        'output_pixdim': pixdim,
-                        'output_axcodes': axcodes,
-                        'loader': loader}
+    image_properties = {
+        'file_path': file_path,
+        'name': modalities,
+        'interp_order': interp_order,
+        'output_pixdim': pixdim,
+        'output_axcodes': axcodes,
+        'loader': loader
+    }
     return ImageFactory.create_instance(**image_properties)

@@ -13,14 +13,13 @@ class FileImageSinkDecorator(BaseFileImageSink):
     Base class for decorators on niftynet.io.file_image_sink.FileImageSink
     """
 
-    def __init__(self,
-                 base_writer):
+    def __init__(self, base_writer):
         """
         :param base_writer: Underlying image writer instance
         """
 
-        super(FileImageSinkDecorator, self).__init__(
-            base_writer.source, base_writer.interp_order)
+        super(FileImageSinkDecorator, self).__init__(base_writer.source,
+                                                     base_writer.interp_order)
 
         self.base_writer = base_writer
 

@@ -10,7 +10,8 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.io.misc_io import dtype_casting
-from niftynet.layer.base_layer import Layer, DataDependentLayer, RandomisedLayer
+from niftynet.layer.base_layer import (DataDependentLayer, Layer,
+                                       RandomisedLayer)
 from niftynet.utilities.util_common import ParserNamespace, look_up_operations
 
 DEFAULT_INTERP_ORDER = 1
@@ -63,17 +64,17 @@ class BaseImageSource(Layer):
         if not isinstance(task_param, dict):
             task_param = vars(task_param)
 
-        valid_names = [name for name in section_names
-                       if task_param.get(name, None)]
+        valid_names = [
+            name for name in section_names if task_param.get(name, None)
+        ]
         if not valid_names:
-            tf.logging.fatal("Reader requires task input keywords %s, but "
-                             "not exist in the config file.\n"
-                             "Available task keywords: %s",
-                             section_names, list(task_param))
+            tf.logging.fatal(
+                "Reader requires task input keywords %s, but "
+                "not exist in the config file.\n"
+                "Available task keywords: %s", section_names, list(task_param))
             raise ValueError
 
-        modalities = {name: task_param.get(name)
-                      for name in valid_names}
+        modalities = {name: task_param.get(name) for name in valid_names}
 
         return valid_names, modalities
 
@@ -82,8 +83,7 @@ class BaseImageSource(Layer):
         """
         :return: loads the spatial rank dict, returned by spatial_ranks
         """
-
-        return
+        raise NotImplementedError
 
     @property
     def spatial_ranks(self):
@@ -102,8 +102,7 @@ class BaseImageSource(Layer):
         """
         :return: the dict of image shapes returned by shapes
         """
-
-        return
+        raise NotImplementedError
 
     @property
     def shapes(self):
@@ -156,8 +155,7 @@ class BaseImageSource(Layer):
         """
         :return: the dict of tensorflow data types returned by tf_dtypes
         """
-
-        return
+        raise NotImplementedError
 
     @property
     def tf_dtypes(self):
@@ -176,24 +174,21 @@ class BaseImageSource(Layer):
         """
         :return: the list of input source names
         """
-
-        return
+        raise NotImplementedError
 
     @abstractproperty
     def num_subjects(self):
         """
         :return the total number of subjects across the collections.
         """
-
-        return
+        raise NotImplementedError
 
     @abstractmethod
     def get_subject_id(self, image_index):
         """
         Given an integer id returns the subject id.
         """
-
-        return
+        raise NotImplementedError
 
     @abstractmethod
     def get_image_index(self, subject_id):
@@ -202,7 +197,7 @@ class BaseImageSource(Layer):
         :param subject_id: a string with the subject id
         :return: an int with the file list index
         """
-        return
+        raise NotImplementedError
 
     @abstractmethod
     def _get_image_and_interp_dict(self, idx):
@@ -217,8 +212,7 @@ class BaseImageSource(Layer):
         :return: one dictionary containing image data and one dictionary
         containing interpolation orders.
         """
-
-        return
+        raise NotImplementedError
 
     @abstractproperty
     def output_list(self):
@@ -226,8 +220,7 @@ class BaseImageSource(Layer):
         :return: the list of images (including meta data) outputted by
         this source as a input-source/image dictionary.
         """
-
-        return
+        raise NotImplementedError
 
     # pylint: disable=arguments-differ
     def layer_op(self, idx=None, shuffle=True):

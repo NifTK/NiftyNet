@@ -3,9 +3,7 @@
 This module maintains the image partition tables
 for images kept on disc.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import os
 import shutil
@@ -13,23 +11,22 @@ import shutil
 import pandas
 import tensorflow as tf  # to use the system level logging
 
-from niftynet.engine.signal import TRAIN, VALID, INFER, ALL
-from niftynet.io.image_sets_partitioner import BaseImageSetsPartitioner,\
-    SUPPORTED_PHASES,\
-    COLUMN_UNIQ_ID,\
-    COLUMN_PHASE
+from niftynet.engine.signal import ALL, INFER, TRAIN, VALID
+from niftynet.io.image_sets_partitioner import (
+    COLUMN_PHASE, COLUMN_UNIQ_ID, SUPPORTED_PHASES, BaseImageSetsPartitioner)
 from niftynet.utilities.decorators import singleton
 from niftynet.utilities.filename_matching import KeywordsMatching
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 from niftynet.utilities.util_common import look_up_operations
-from niftynet.utilities.util_csv import match_and_write_filenames_to_csv
-from niftynet.utilities.util_csv import write_csv
+from niftynet.utilities.util_csv import (match_and_write_filenames_to_csv,
+                                         write_csv)
 
 
 @singleton
 class FileImageSetsPartitioner(BaseImageSetsPartitioner):
     """
-    This class maintains a pandas.dataframe of filenames for all input sections.
+    This class maintains a pandas.dataframe of filenames for all input sections
+
     The list of filenames are obtained by searching the specified folders
     or loading from an existing csv file.
 
@@ -121,15 +118,15 @@ class FileImageSetsPartitioner(BaseImageSetsPartitioner):
         if self._partition_ids is None or self._partition_ids.empty:
             tf.logging.fatal('No partition ids available.')
             if self.new_partition:
-                tf.logging.fatal('Unable to create new partitions,'
-                                 'splitting ratios: %s, writing file %s',
-                                 self.ratios, self.data_split_file)
+                tf.logging.fatal(
+                    'Unable to create new partitions,'
+                    'splitting ratios: %s, writing file %s', self.ratios,
+                    self.data_split_file)
             elif os.path.isfile(self.data_split_file):
                 tf.logging.fatal(
                     'Unable to load %s, initialise the'
                     'ImageSetsPartitioner with `new_partition=True`'
-                    'to overwrite the file.',
-                    self.data_split_file)
+                    'to overwrite the file.', self.data_split_file)
             raise ValueError
 
         selector = self._partition_ids[COLUMN_PHASE] == phase
@@ -173,10 +170,11 @@ class FileImageSetsPartitioner(BaseImageSetsPartitioner):
                 self._file_list = modality_file_list
                 continue
             n_rows = self._file_list[COLUMN_UNIQ_ID].count()
-            self._file_list = pandas.merge(self._file_list,
-                                           modality_file_list,
-                                           how='outer',
-                                           on=COLUMN_UNIQ_ID)
+            self._file_list = pandas.merge(
+                self._file_list,
+                modality_file_list,
+                how='outer',
+                on=COLUMN_UNIQ_ID)
             if self._file_list[COLUMN_UNIQ_ID].count() < n_rows:
                 tf.logging.warning('rows not matched in section [%s]',
                                    section_name)
@@ -207,9 +205,10 @@ class FileImageSetsPartitioner(BaseImageSetsPartitioner):
                  the column names are ``(COLUMN_UNIQ_ID, modality_name)``.
         """
         if modality_name not in self.data_param:
-            tf.logging.fatal('unknown section name [%s], '
-                             'current input section names: %s.',
-                             modality_name, list(self.data_param))
+            tf.logging.fatal(
+                'unknown section name [%s], '
+                'current input section names: %s.', modality_name,
+                list(self.data_param))
             raise ValueError
 
         # input data section must have a ``csv_file`` section for loading
@@ -230,9 +229,9 @@ class FileImageSetsPartitioner(BaseImageSetsPartitioner):
                 default_csv_file = os.path.join(
                     os.path.dirname(self.data_split_file),
                     '{}.csv'.format(modality_name))
-                tf.logging.info('`csv_file = %s` not found, '
-                                'writing to "%s" instead.',
-                                csv_file, default_csv_file)
+                tf.logging.info(
+                    '`csv_file = %s` not found, '
+                    'writing to "%s" instead.', csv_file, default_csv_file)
                 csv_file = default_csv_file
                 if os.path.isfile(csv_file):
                     tf.logging.info('Overwriting existing: "%s".', csv_file)
@@ -241,8 +240,8 @@ class FileImageSetsPartitioner(BaseImageSetsPartitioner):
             tf.logging.debug('`csv_file` not specified, writing the list of '
                              'filenames to a temporary file.')
             import tempfile
-            temp_csv_file = os.path.join(
-                tempfile.mkdtemp(), '{}.csv'.format(modality_name))
+            temp_csv_file = os.path.join(tempfile.mkdtemp(),
+                                         '{}.csv'.format(modality_name))
             csv_file = temp_csv_file
 
         #############################################
@@ -260,9 +259,9 @@ class FileImageSetsPartitioner(BaseImageSetsPartitioner):
                     default_folder=self.default_image_file_location)
                 match_and_write_filenames_to_csv([matcher], csv_file)
             except (IOError, ValueError) as reading_error:
-                tf.logging.warning('Ignoring input section: [%s], '
-                                   'due to the following error:',
-                                   modality_name)
+                tf.logging.warning(
+                    'Ignoring input section: [%s], '
+                    'due to the following error:', modality_name)
                 tf.logging.warning(repr(reading_error))
                 return pandas.DataFrame(
                     columns=[COLUMN_UNIQ_ID, modality_name])
@@ -272,8 +271,8 @@ class FileImageSetsPartitioner(BaseImageSetsPartitioner):
                 modality_name, csv_file)
 
         if not os.path.isfile(csv_file):
-            tf.logging.fatal(
-                '[%s] csv file %s not found.', modality_name, csv_file)
+            tf.logging.fatal('[%s] csv file %s not found.', modality_name,
+                             csv_file)
             raise IOError
         ###############################
         # loading the file as dataframe
@@ -342,8 +341,7 @@ class FileImageSetsPartitioner(BaseImageSetsPartitioner):
                     'Please make sure the values of the second column '
                     'of data splitting file %s, in the set of phases: %s.\n'
                     'Remove %s to generate random data partition file.',
-                    self.data_split_file,
-                    SUPPORTED_PHASES,
+                    self.data_split_file, SUPPORTED_PHASES,
                     self.data_split_file)
                 raise ValueError
 
@@ -388,8 +386,10 @@ class FileImageSetsPartitioner(BaseImageSetsPartitioner):
             return False
         selected = self._partition_ids[selector][[COLUMN_UNIQ_ID]]
         subset = pandas.merge(
-            left=self._file_list, right=selected,
-            on=COLUMN_UNIQ_ID, sort=False)
+            left=self._file_list,
+            right=selected,
+            on=COLUMN_UNIQ_ID,
+            sort=False)
         return not subset.empty
 
     @property

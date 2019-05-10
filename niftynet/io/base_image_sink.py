@@ -7,9 +7,10 @@ from __future__ import absolute_import
 from abc import ABCMeta, abstractmethod
 
 from niftynet.layer.base_layer import Layer
-from niftynet.layer.pad import PadLayer
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
+from niftynet.layer.pad import PadLayer
+
 
 class BaseImageSink(Layer):
     """
@@ -18,10 +19,7 @@ class BaseImageSink(Layer):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self,
-                 source,
-                 interp_order,
-                 name='image_sink'):
+    def __init__(self, source, interp_order, name='image_sink'):
         """
         :param source: the image source of the input images
         for which this layer is to write the outputs.
@@ -68,5 +66,4 @@ class BaseImageSink(Layer):
         :param image_data_in: the image object from which the output
         was generated
         """
-
-        return
+        raise NotImplementedError
