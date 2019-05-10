@@ -247,6 +247,7 @@ def _make_wrapper(app_class, app_name):
 
     return cls
 
+
 SegmentationApplicationModule \
     = _make_wrapper('SegmentationApplication', 'net_segment')
 
