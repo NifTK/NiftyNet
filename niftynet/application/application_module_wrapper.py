@@ -63,16 +63,18 @@ class ApplicationModuleWrapper(object):
 
         return self
 
-    def set_input_callback(self, modality, input_callback):
+    def set_input_callback(self, modality, input_callback, **kwargs):
         """
         Sets the callback function for the input images
         :param modality: name of a modality from the model config file
         :param input_callback: a function receiving an index and yielding
-        an image tensor.
+             an image tensor.
+        :param kwargs: keyword arguments passed through to
+             niftynet.io.memory_image_source.make_input_spec
         :return: self
         """
 
-        self._input_callbacks[modality] = input_callback
+        self._input_callbacks[modality] = (input_callback, kwargs)
 
         return self
 
@@ -102,14 +104,14 @@ class ApplicationModuleWrapper(object):
         :return: the updated data_param and app_param
         """
 
-        for name, funct in self._input_callbacks.items():
+        for name, (funct, kwargs) in self._input_callbacks.items():
             if not name in data_param:
                 raise RuntimeError('Have an input callback function'
                                    ' %s without corresponding data '
                                    'specification section. Found sections:'
                                    ' %s' % (name, list(data_param.keys())))
 
-            make_input_spec(data_param[name], funct)
+            make_input_spec(data_param[name], funct, **kwargs)
 
         if self._output_callback and not infer_param is None:
             vars(infer_param)[MEMORY_OUTPUT_CALLBACK_PARAM] \

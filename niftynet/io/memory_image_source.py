@@ -92,20 +92,21 @@ class MemoryImageSource(BaseImageSource):
 
     def _load_spatial_ranks(self):
         return {
-            name: self._input_callback_functions[mod](0).get_data()
+            name: 3 if self._input_callback_functions[mod](0).shape[2] > 1
+            else 2
             for name, mod in self._modality_names.items()
         }
 
     def _load_shapes(self):
         return {
-            name: self._input_callback_functions[mod](0).shape[0]
+            name: self._input_callback_functions[mod](0).shape
             for name, mod in self._modality_names.items()
         }
 
     def _load_dtypes(self):
         return {
             name: dtype_casting(
-                self._input_callback_functions[mod](0).dtype[0],
+                self._input_callback_functions[mod](0).dtype,
                 self._modality_interp_orders[name][0])
             for name, mod in self._modality_names.items()
         }
@@ -125,51 +126,12 @@ class MemoryImageSource(BaseImageSource):
             for name in self._section_names:
                 funct \
                     = self._input_callback_functions[self._modality_names[name]]
-                data = funct(self._phase_indices[idx]).get_data()
+                data = funct(self._phase_indices[idx])
                 image_data[name] = data
 
             return image_data, deepcopy(self._modality_interp_orders)
         except (TypeError, IndexError):
             return None, None
-
-
-class _ImageDataWrapper(object):
-    """
-    Simple wrapper class that makes image tensors
-    conform with SpatialImageND classes.
-    """
-
-    def __init__(self, data, interp_order):
-        self._data = data
-        self._interp_order = interp_order
-
-    def get_data(self):
-        return self._data
-
-    @property
-    def original_shape(self):
-        return (self._data.shape,)
-
-    @property
-    def shape(self):
-        return self.original_shape
-
-    @property
-    def spatial_rank(self):
-        return 2 if len(self._data.shape) < 3 or self._data.shape[2] == 1\
-            else 3
-
-    @property
-    def original_pixdim(self):
-        return (tuple([1]*self.spatial_rank))
-
-    @property
-    def original_affine(self):
-        return (np.eye(4),)
-
-    @property
-    def dtype(self):
-        return (self._data.dtype,)
 
 
 def make_input_spec(modality_spec, image_callback_function, do_reshape_nd=False,
@@ -231,12 +193,8 @@ def make_input_spec(modality_spec, image_callback_function, do_reshape_nd=False,
         callback3 = callback2
 
     if not isinstance(modality_spec, dict):
-        modality_spec = vars(modality_spec)
-
-    def _output_wrapper(idx):
-        return _ImageDataWrapper(callback3(idx),
-                                 modality_spec['interp_order'])
-
-    modality_spec[MEMORY_INPUT_CALLBACK_PARAM] = _output_wrapper
+        vars(modality_spec)[MEMORY_INPUT_CALLBACK_PARAM] = callback3
+    else:
+        modality_spec[MEMORY_INPUT_CALLBACK_PARAM] = callback3
 
     return modality_spec
