@@ -193,12 +193,11 @@ class ApplicationModuleWrapper(object):
             EVAL: EvaluationApplicationDriver
         }
 
-        infer_param = system_param.get('TRAINING', None)
+        infer_param = system_param.get('INFERENCE', None)
         self._install_image_callbacks(input_data_param, infer_param)
 
         app_driver = driver_table[ACTIONS[self._action]]()
         app_driver.initialise_application(system_param, input_data_param)
-        app_driver.run(app_driver.app)
 
         self._app = app_driver
 
@@ -216,75 +215,45 @@ class ApplicationModuleWrapper(object):
         self._app.run(self._app.app)
 
 
-class SegmentationApplicationModule(ApplicationModuleWrapper):
+def _make_wrapper(app_class, app_name):
     """
-    SegmentationApplication as a module
-    """
-
-    def __init__(self, model_file):
-        """
-        Instantiates SegmentationApplication as a module
-        :param model_file: model and data specification file
-        """
-
-        super(SegmentationApplicationModule, self).__init__('net_segment',
-                                                            model_file)
-
-
-class RegressionApplicationModule(ApplicationModuleWrapper):
-    """
-    RegressionApplication as a module
+    Creates a wrapper class for a specified application class.
+    :param app_class: application class, e.g., SegmentationApplication
+    :param app_name: front-end name, e.g, net_regress
     """
 
-    def __init__(self, model_file):
+    class _ClassModule(ApplicationModuleWrapper):
         """
-        Instantiates RegressionApplication as a module
-        :param model_file: model and data specification file
-        """
-
-        super(RegressionApplicationModule, self).__init__('net_regress',
-                                                          model_file)
-
-
-class AutoencoderApplicationModule(ApplicationModuleWrapper):
-    """
-    AutoencoderApplication as a module
-    """
-
-    def __init__(self, model_file):
-        """
-        Instantiates AutoencoderApplication as a module
-        :param model_file: model and data specification file
+        {} as a module
         """
 
-        super(AutoencoderApplicationModule, self).__init__('net_autoencoder',
-                                                           model_file)
+        def __init__(self, model_file):
+            """
+            Instantiates {} as a module
+            :param model_file: model and data specification file
+            """
 
+            super(_ClassModule, self).__init__(app_name,
+                                               model_file)
 
-class GANApplicationModule(ApplicationModuleWrapper):
-    """
-    GANApplication as a module
-    """
+    cls = _ClassModule
 
-    def __init__(self, model_file):
-        """
-        Instantiates GANApplication as a module
-        :param model_file: model and data specification file
-        """
+    cls.__doc__ = cls.__doc__.format(str(app_class))
+    cls.__init__.__doc__ = cls.__init__.__doc__.format(str(app_class))
 
-        super(GANApplicationModule, self).__init__('net_gan', model_file)
+    return cls
 
+SegmentationApplicationModule \
+    = _make_wrapper('SegmentationApplication', 'net_segment')
 
-class ClassificationApplicationModule(ApplicationModuleWrapper):
-    """
-    ClassificationApplication as a module
-    """
+RegressionApplicationModule \
+    = _make_wrapper('RegressionApplication', 'net_regress')
 
-    def __init__(self, model_file):
-        """
-        Instantiates ClassificationApplication as a module
-        :param model_file: model and data specification file
-        """
+AutoencoderApplicationModule \
+    = _make_wrapper('AutoencoderApplication', 'net_autoencoder')
 
-        super(ClassificationApplicationModule, self).__init__('net_classify',
-                                                              model_file)
+GANApplicationModule \
+    = _make_wrapper('GANApplication', 'net_gan')
+
+ClassificationApplicationModule \
+    = _make_wrapper('ClassificationApplication', 'net_classify')
