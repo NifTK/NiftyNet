@@ -1,8 +1,12 @@
+# -*- coding: utf-8 -*-
 """
 This module contains the NiftyNet application module wrapper and
-associated utilities
+specialisations for NiftyNet's standard applications.
 """
-from niftynet.engine.application_driver import ApplicationDriver, \
+from __future__ import absolute_import
+
+from niftynet.engine.application_driver import ApplicationDriver
+from niftynet.evaluation.evaluation_application_driver import \
     EvaluationApplicationDriver
 from niftynet.engine.signal import TRAIN, INFER, EVAL
 from niftynet.io.misc_io import resolve_module_dir, to_absolute_path
