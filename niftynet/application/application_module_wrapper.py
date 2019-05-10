@@ -15,6 +15,7 @@ from niftynet.utilities.util_common import look_up_operations
 
 SUPPORTED_ACTIONS = (TRAIN, INFER, EVAL)
 
+
 class ApplicationModuleWrapper(object):
     """
     This class enables the use of NiftyNet applications as
@@ -75,6 +76,7 @@ class ApplicationModuleWrapper(object):
         """
         Sets the application action to perform. TRAIN, INFER, etc.
         See also niftynet.engine.signal
+        :param action: one of SUPPORTED_ACTIONS
         :return: self
         """
 
@@ -197,3 +199,77 @@ class ApplicationModuleWrapper(object):
         """
 
         self._app.run(self._app.app)
+
+
+class SegmentationApplicationModule(ApplicationModuleWrapper):
+    """
+    SegmentationApplication as a module
+    """
+
+    def __init__(self, model_file):
+        """
+        Instantiates SegmentationApplication as a module
+        :param model_file: model and data specification file
+        """
+
+        super(SegmentationApplicationModule, self).__init__('net_segment',
+                                                            model_file)
+
+
+class RegressionApplicationModule(ApplicationModuleWrapper):
+    """
+    RegressionApplication as a module
+    """
+
+    def __init__(self, model_file):
+        """
+        Instantiates RegressionApplication as a module
+        :param model_file: model and data specification file
+        """
+
+        super(RegressionApplicationModule, self).__init__('net_regress',
+                                                          model_file)
+
+
+class AutoencoderApplicationModule(ApplicationModuleWrapper):
+    """
+    AutoencoderApplication as a module
+    """
+
+    def __init__(self, model_file):
+        """
+        Instantiates AutoencoderApplication as a module
+        :param model_file: model and data specification file
+        """
+
+        super(AutoencoderApplicationModule, self).__init__('net_autoencoder',
+                                                           model_file)
+
+
+class GANApplicationModule(ApplicationModuleWrapper):
+    """
+    GANApplication as a module
+    """
+
+    def __init__(self, model_file):
+        """
+        Instantiates GANApplication as a module
+        :param model_file: model and data specification file
+        """
+
+        super(GANApplicationModule, self).__init__('net_gan', model_file)
+
+
+class ClassificationApplicationModule(ApplicationModuleWrapper):
+    """
+    ClassificationApplication as a module
+    """
+
+    def __init__(self, model_file):
+        """
+        Instantiates ClassificationApplication as a module
+        :param model_file: model and data specification file
+        """
+
+        super(ClassificationApplicationModule, self).__init__('net_classify',
+                                                              model_file)
