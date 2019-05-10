@@ -9,6 +9,7 @@ from copy import deepcopy
 import numpy as np
 from niftynet.io.base_image_source import BaseImageSource, infer_tf_dtypes
 from niftynet.io.image_loader import image2nibabel
+from niftynet.io.misc_io import dtype_casting
 
 # Name of the data_param namespace entry for the memory input sources
 MEMORY_INPUT_CALLBACK_PARAM = 'input_callback'
@@ -86,22 +87,28 @@ class MemoryImageSource(BaseImageSource):
     def num_subjects(self):
         return len(self._phase_indices)
 
+    @property
+    def input_sources(self):
+        return {name: (mod,) for name, mod in self._modality_names.items()}
+
     def _load_spatial_ranks(self):
         return {
-            name: source(0).spatial_rank
-            for name, source in self._input_callback_functions.items()
+            name: self._input_callback_functions[mod](0).get_data()
+            for name, mod in self._modality_names.items()
         }
 
     def _load_shapes(self):
         return {
-            name: source(0).shape
-            for name, source in self._input_callback_functions.items()
+            name: self._input_callback_functions[mod](0).get_data().shape
+            for name, mod in self._modality_names.items()
         }
 
     def _load_dtypes(self):
         return {
-            name: infer_tf_dtypes(source(0))
-            for name, source in self._input_callback_functions.items()
+            name: dtype_casting(
+                self._input_callback_functions[mod](0).get_data().dtype,
+                self._modality_interp_orders[name][0])
+            for name, mod in self._modality_names.items()
         }
 
     def get_image_index(self, subject_id):

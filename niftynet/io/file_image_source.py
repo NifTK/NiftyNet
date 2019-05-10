@@ -201,16 +201,6 @@ class FileImageSource(BaseImageSource):
 
     @property
     def input_sources(self):
-        """
-        returns mapping of input keywords and input sections
-        e.g., input_sources::
-
-            {'image': ('T1', 'T2'),
-             'label': ('manual_map',)}
-
-        map task parameter keywords ``image`` and ``label`` to
-        section names ``T1``, ``T2``, and ``manual_map`` respectively.
-        """
         self._check_initialised()
 
         return self._input_sources
