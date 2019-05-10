@@ -8,6 +8,7 @@ from __future__ import absolute_import
 import os
 
 import pandas
+
 from niftynet.engine.signal import ALL, INFER, TRAIN, VALID
 from niftynet.io.image_sets_partitioner import (
     COLUMN_PHASE, COLUMN_UNIQ_ID, SUPPORTED_PHASES, BaseImageSetsPartitioner)

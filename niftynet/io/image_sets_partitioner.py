@@ -61,8 +61,7 @@ class BaseImageSetsPartitioner(object):
         :param phase: application phase; TRAIN, VALID, etc.
         :return: number of subjects in partition
         """
-
-        return
+        raise NotImplementedError
 
     def _create_partitions(self):
         """
@@ -135,8 +134,7 @@ class BaseImageSetsPartitioner(object):
         :param phase: an element from ``{TRAIN, VALID, INFER, ALL}``
         :return:
         """
-
-        return
+        raise NotImplementedError
 
     @abstractmethod
     def has_phase(self, phase):
@@ -144,8 +142,7 @@ class BaseImageSetsPartitioner(object):
 
         :return: True if the `phase` subset of images is not empty.
         """
-
-        return
+        raise NotImplementedError
 
     @property
     def has_training(self):
@@ -177,8 +174,7 @@ class BaseImageSetsPartitioner(object):
 
         :return: list of all filenames
         """
-
-        return
+        raise NotImplementedError
 
     def reset(self):
         """
