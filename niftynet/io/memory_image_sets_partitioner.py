@@ -53,6 +53,7 @@ class MemoryImageSetsPartitioner(BaseImageSetsPartitioner):
                 self._write_partions(data_split_file)
 
         else:
+            assert os.path.isfile(data_split_file)
             self._partitions = self._load_partitions(data_split_file)
 
     def number_of_subjects(self, phase=ALL):
@@ -94,19 +95,20 @@ class MemoryImageSetsPartitioner(BaseImageSetsPartitioner):
         data_frame = data_frame.sort_values(by=[COLUMN_UNIQ_ID])
         data_frame.to_csv(path)
 
-    def _load_partitions(self, path):
+    @staticmethod
+    def _load_partitions(path):
         """
         Loads a partitioning that was previously written to disc.
         :param path: path to the CSV file containing the data partions
         """
 
-        data_frame = pandas.DataFrame.from_csv(path)
+        data_frame = pandas.read_csv(path)
 
         partitions = {}
         for phase in SUPPORTED_PHASES:
-            partitions[phase] = data_frame.loc(
+            partitions[phase] = data_frame.loc[
                 data_frame[COLUMN_PHASE] == phase,
-                COLUMN_UNIQ_ID).values.tolist()
+                COLUMN_UNIQ_ID].values.tolist()
 
         return partitions
 
