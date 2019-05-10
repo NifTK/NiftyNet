@@ -74,60 +74,18 @@ KEYWORDS = available_keywords()
 NIFTYNET_HOME = NiftyNetGlobalConfig().get_niftynet_home_folder()
 
 
-# pylint: disable=too-many-branches
-def run():
+def extract_app_parameters(app_name, config_file_name, action,
+                           command_line_args=None):
     """
-    meta_parser is first used to find out location
-    of the configuration file. Based on the application_name
-    or meta_parser.prog name, the section parsers are organised
-    to find system parameters and application specific
-    parameters.
-
-    :return: system parameters is a group of parameters including
-        SYSTEM_SECTIONS and app_module.REQUIRED_CONFIG_SECTION
-        input_data_args is a group of input data sources to be
-        used by niftynet.io.base_image_source.BaseImageSource
+    Bare bones initialisation for use in 3rd-party applications.
+    Only uses the information provided in a configuration file,
+    a NiftyNet app name, and an action to produce a usable set of
+    system and input args.
+    See also ApplicationModuleWrapper
     """
-    meta_parser = argparse.ArgumentParser(
-        description="Launch a NiftyNet application.",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=textwrap.dedent(EPILOG_STRING))
-    version_string = get_niftynet_version_string()
-    meta_parser.add_argument("action",
-                             help="train networks, run inferences "
-                                  "or evaluate inferences",
-                             metavar='ACTION',
-                             choices=list(ACTIONS))
-    meta_parser.add_argument("-v", "--version",
-                             action='version',
-                             version=version_string)
-    meta_parser.add_argument("-c", "--conf",
-                             help="specify configurations from a file",
-                             metavar="CONFIG_FILE")
-    meta_parser.add_argument("-a", "--application_name",
-                             help="specify an application module name",
-                             metavar='APPLICATION_NAME',
-                             default="")
 
-    meta_args, args_from_cmdline = meta_parser.parse_known_args()
-    print(version_string)
-
-    # read configurations, to be parsed by sections
-    config_file_name = __resolve_config_file_path(meta_args.conf)
     config = NiftyNetLaunchConfig()
     config.read([config_file_name])
-
-    # infer application name from command
-    app_name = None
-    try:
-        parser_prog = meta_parser.prog.replace('.py', '')
-        app_name = parser_prog if parser_prog in SUPPORTED_APP \
-            else meta_args.application_name
-        assert app_name
-    except (AttributeError, AssertionError):
-        raise ValueError(
-            "\nUnknown application {}, or did you forget '-a' "
-            "command argument?{}".format(app_name, EPILOG_STRING))
 
     # load application by name
     app_module = ApplicationFactory.create(app_name)
@@ -160,7 +118,7 @@ def run():
             _parse_arguments_by_section([],
                                         section,
                                         section_defaults,
-                                        args_from_cmdline,
+                                        command_line_args or [],
                                         app_module.REQUIRED_CONFIG_SECTION)
         all_args[section] = section_args
 
@@ -204,11 +162,74 @@ def run():
     system_args['CONFIG_FILE'] = argparse.Namespace(path=config_file_name)
     # mapping the captured action argument to a string in ACTIONS
     system_args['SYSTEM'].action = \
-        look_up_operations(meta_args.action, ACTIONS)
+        look_up_operations(action, ACTIONS)
     if not system_args['SYSTEM'].model_dir:
         system_args['SYSTEM'].model_dir = os.path.join(
             os.path.dirname(config_file_name), 'model')
+
+    # Insert empty I/O functions for compatibility with module use
+    system_dict = vars(system_args['SYSTEM'])
+    system_dict['output_callback'] = None
+    system_dict['input_callback'] = None
+
     return system_args, input_data_args
+
+
+# pylint: disable=too-many-branches
+def run():
+    """
+    meta_parser is first used to find out location
+    of the configuration file. Based on the application_name
+    or meta_parser.prog name, the section parsers are organised
+    to find system parameters and application specific
+    parameters.
+
+    :return: system parameters is a group of parameters including
+        SYSTEM_SECTIONS and app_module.REQUIRED_CONFIG_SECTION
+        input_data_args is a group of input data sources to be
+        used by niftynet.io.ImageReader
+    """
+    meta_parser = argparse.ArgumentParser(
+        description="Launch a NiftyNet application.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=textwrap.dedent(EPILOG_STRING))
+    version_string = get_niftynet_version_string()
+    meta_parser.add_argument("action",
+                             help="train networks, run inferences "
+                                  "or evaluate inferences",
+                             metavar='ACTION',
+                             choices=list(ACTIONS))
+    meta_parser.add_argument("-v", "--version",
+                             action='version',
+                             version=version_string)
+    meta_parser.add_argument("-c", "--conf",
+                             help="specify configurations from a file",
+                             metavar="CONFIG_FILE")
+    meta_parser.add_argument("-a", "--application_name",
+                             help="specify an application module name",
+                             metavar='APPLICATION_NAME',
+                             default="")
+
+    meta_args, args_from_cmdline = meta_parser.parse_known_args()
+    print(version_string)
+
+    # infer application name from command
+    app_name = None
+    try:
+        parser_prog = meta_parser.prog.replace('.py', '')
+        app_name = parser_prog if parser_prog in SUPPORTED_APP \
+            else meta_args.application_name
+        assert app_name
+    except (AttributeError, AssertionError):
+        raise ValueError(
+            "\nUnknown application {}, or did you forget '-a' "
+            "command argument?{}".format(app_name, EPILOG_STRING))
+
+    # read configurations, to be parsed by sections
+    config_file_name = __resolve_config_file_path(meta_args.conf)
+
+    return extract_app_parameters(app_name, config_file_name, meta_args.action,
+                                  args_from_cmdline)
 
 
 def _parse_arguments_by_section(parents,
