@@ -20,7 +20,8 @@ class GuuNet(nnnbn.BaseNet):
             w_initializer=None, w_regularizer=None,
             b_initializer=None, b_regularizer=None,
             acti_func=None,
-            has_seg_feature=True, has_autoencoder_feature=True,
+            has_seg_feature=True, has_seg_logvar_decoder=True,
+            has_autoencoder_feature=True, has_autoencoder_logvar_decoder=True,
             name='GuuNet'):
         super(GuuNet, self).__init__(name=name)
 
@@ -30,9 +31,9 @@ class GuuNet(nnnbn.BaseNet):
         self.b_initializer = b_initializer
         self.b_regularizer = b_regularizer
         self.has_seg_feature = has_seg_feature
-        self.has_seg_logvar_decoder = has_seg_feature
+        self.has_seg_logvar_decoder = has_seg_logvar_decoder
         self.has_autoencoder_feature = has_autoencoder_feature
-        self.has_autoencoder_logvar_decoder = has_autoencoder_feature
+        self.has_autoencoder_logvar_decoder = has_autoencoder_logvar_decoder
         self.gaussian_segmentation = False
 
     @staticmethod
