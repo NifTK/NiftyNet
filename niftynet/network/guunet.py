@@ -30,7 +30,9 @@ class GuuNet(nnnbn.BaseNet):
         self.b_initializer = b_initializer
         self.b_regularizer = b_regularizer
         self.has_seg_feature = has_seg_feature
+        self.has_seg_logvar_decoder = has_seg_feature
         self.has_autoencoder_feature = has_autoencoder_feature
+        self.has_autoencoder_logvar_decoder = has_autoencoder_feature
         self.gaussian_segmentation = False
 
     @staticmethod
@@ -102,10 +104,10 @@ class GuuNet(nnnbn.BaseNet):
         internal = list()
 
         bc = 32  # base_channels
-        fsc = 3 # final channels
+        fsc = 3  # final channels
         fvc = 2
-        gsc = 16 # gaussian sampler down convolution channels
-        lc = 256 # latent channels
+        gsc = 16  # gaussian sampler down convolution channels
+        lc = 256  # latent channels
         layers = 3
         init_conv = {'kernel_size': 3, 'stride': 1}
         encoder_gn = {'group_size': 8, 'regularizer': None, 'eps': 1e-5}
@@ -147,14 +149,14 @@ class GuuNet(nnnbn.BaseNet):
                 dense_down_fc)
 
             _, pmeans, plogvars = nnlgs.GaussianSampler(
-                lc / 2, 4, 10, -10, name='gaussian_sampler')(_, is_training)
+                lc / 2, 1, 10, -10, name='gaussian_sampler')(_, is_training)
 
             gaussian_sampler_out = self.dense_up(
                 _, bc << layers, restore_shape, dense_up_fc, dense_up_acti,
                 dense_up_conv, dense_up_uplinear)
 
         if self.has_seg_feature:
-            with tf.variable_scope('seg_decoder'):
+            with tf.variable_scope('seg_mean_decoder'):
                 if self.gaussian_segmentation is True:
                     _ = gaussian_sampler_out
                 else:
@@ -164,10 +166,23 @@ class GuuNet(nnnbn.BaseNet):
                     _ = self.decoder_block(
                         _, bc, encoder_gn, encoder_acti, encoder_conv, i, 0)
 
-                seg_out = nnlc.ConvLayer(fsc, name='final_seg_conv', **final_conv)(_)
+                seg_means_out = nnlc.ConvLayer(fsc, name='final_seg_conv', **final_conv)(_)
+
+            if self.has_seg_logvar_decoder:
+                with tf.variable_scope('seg_logvar_decoder'):
+                    if self.gaussian_segmentation is True:
+                        _ = gaussian_sampler_out
+                    else:
+                        _ = skips[-1]
+                    for i in reversed(range(0, layers)):
+                        _ = self.decoder_up(_, bc, up_conv, up_upsample, i, skips)
+                        _ = self.decoder_block(
+                            _, bc, encoder_gn, encoder_acti, encoder_conv, i, 0)
+
+                    seg_logvars_out = nnlc.ConvLayer(fsc, name='final_seg_conv', **final_conv)(_)
 
         if self.has_autoencoder_feature:
-            with tf.variable_scope('vae_decoder'):
+            with tf.variable_scope('vae_mean_decoder'):
                 _ = gaussian_sampler_out
                 for i in reversed(range(0, layers)):
                     _ = self.vae_decoder_up(_, bc, up_conv, up_upsample, i)
@@ -175,12 +190,29 @@ class GuuNet(nnnbn.BaseNet):
                         _ = self.decoder_block(
                             _, bc, encoder_gn, encoder_acti, encoder_conv, i, j)
 
-                img_out = nnlc.ConvLayer(fvc, name='final_img_conv', **final_conv)(_)
+                img_means_out = nnlc.ConvLayer(fvc, name='final_img_conv', **final_conv)(_)
+
+            if self.has_autoencoder_logvar_decoder:
+                with tf.variable_scope('vae_logvar_decoder'):
+                    _ = gaussian_sampler_out
+                    for i in reversed(range(0, layers)):
+                        _ = self.vae_decoder_up(_, bc, up_conv, up_upsample, i)
+                        for j in range(0, up_repeats[i]):
+                            _ = self.decoder_block(
+                                _, bc, encoder_gn, encoder_acti, encoder_conv, i, j)
+
+                    img_logvars_out = nnlc.ConvLayer(fvc, name='final_img_conv', **final_conv)(_)
 
         if self.has_seg_feature:
-            outputs['final_seg_output'] = seg_out
+            outputs['seg_means'] = seg_means_out
+            if self.has_seg_logvar_decoder:
+                outputs['seg_logvars'] = seg_logvars_out
+
         if self.has_autoencoder_feature:
-            outputs['final_image_output'] = img_out
+            outputs['image_means'] = img_means_out
+            if self.has_autoencoder_logvar_decoder:
+                outputs['image_logvars'] = img_logvars_out
+
             outputs['posterior_means'] = pmeans
             outputs['posterior_logvars'] = plogvars
 

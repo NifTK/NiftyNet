@@ -20,6 +20,8 @@ from niftynet.layer.histogram_normalisation import \
 #import niftynet.layer.loss_autoencoder as nnlla
 from niftynet.layer.vae_loss import VAELossLayer
 import niftynet.layer.loss_segmentation as nnlls
+import niftynet.layer.loss_uncertainty as nnllu
+import niftynet.layer.loss_kl_divergence as nnllk
 
 from niftynet.utilities.util_common import look_up_operations
 from niftynet.engine.sampler_uniform_v2 import UniformSampler
@@ -222,50 +224,74 @@ class SemiSupervisedApplication(BaseApplication):
                     learning_rate=self.learning_rate)
 
             #loss function
-            supervised_loss = None
+            seg_loss = None
             if self.has_seg_feature:
-                supervised_loss_func = nnlls.LossFunction(
-                    n_class=self.semi_supervised_param.num_classes,
-                    loss_type=self.action_param.loss_type,
-                    softmax=self.semi_supervised_param.softmax)
-                supervised_loss = supervised_loss_func(
-                    prediction=outputs['final_seg_output'],
-                    ground_truth=data_dict.get('label', None),
-                    weight_map=data_dict.get('weight', None))
+                # seg_means = outputs['final_seg_output']
+                # seg_logvars = tf.constant(0.005, dtype=tf.float32, shape=seg_means.shape)
+                seg_means = outputs['seg_means']
+                seg_logvars = outputs['seg_logvars']
+                seg_truth = data_dict.get('label', None)
+                seg_loss_func = nnllu.LossFunction('dice_plus_xent', name='seg_uncertainty_loss')
+                seg_losses = seg_loss_func(
+                    prediction_means=tf.reshape(seg_means, [-1, seg_means.shape[-1]]),
+                    prediction_logvars=tf.reshape(seg_logvars, [-1, seg_logvars.shape[-1]]),
+                    ground_truth=tf.squeeze(tf.reshape(seg_truth, [-1, 1])))
+                seg_loss = tf.reduce_mean(seg_losses)
 
-            unsupervised_loss = None
+            image_loss = None
+            kl_loss = None
+            autoencoder_loss = None
             if self.has_autoencoder_feature:
-                unsupervised_loss_func = VAELossLayer()
-                print('outputs =', outputs)
-                unsupervised_loss_components = unsupervised_loss_func(
-                    self.kl_weight,
-                    self.vae_weight,
-                    posterior_means=outputs['posterior_means'],
-                    posterior_logvars=outputs['posterior_logvars'],
-                    synthetic_image=outputs['final_image_output'],
-                    image=image)
+                # image_means = outputs['final_image_output']
+                # image_logvars = tf.constant(0.005, dtype=tf.float32, shape=image_means.shape)
+                image_means = outputs['image_means']
+                image_logvars = outputs['image_logvars']
+                image_truth = data_dict.get('image', None)
+                image_loss_func = nnllu.LossFunction('l2', name='image_uncertainty_loss')
+                image_losses = image_loss_func(
+                    prediction_means=tf.reshape(image_means, [-1, image_means.shape[-1]]),
+                    prediction_logvars=tf.reshape(image_logvars, [-1, image_logvars.shape[-1]]),
+                    ground_truth=tf.reshape(image_truth, [-1, image_truth.shape[-1]]))
+                image_loss = tf.reduce_mean(image_losses)
+
+                kl_means = outputs['posterior_means']
+                kl_logvars = outputs['posterior_logvars']
+                kl_loss_func = nnllk.LossFunction(name='kl_loss')
+                kl_losses = kl_loss_func(means=kl_means, logvars=kl_logvars)
+                kl_loss = tf.reduce_mean(kl_losses)
+
+                autoencoder_loss = image_loss + kl_loss
+
+
+                # unsupervised_loss_func = VAELossLayer()
+                # print('outputs =', outputs)
+                # unsupervised_loss_components = unsupervised_loss_func(
+                #     self.kl_weight,
+                #     self.vae_weight,
+                #     posterior_means=outputs['posterior_means'],
+                #     posterior_logvars=outputs['posterior_logvars'],
+                #     synthetic_image=outputs['final_image_output'],
+                #     image=image)
                 reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-                unsupervised_loss = unsupervised_loss_components['loss']
-                # log_unsupervised_loss = tf.log(unsupervised_loss)
+                #unsupervised_loss = unsupervised_loss_components['loss']
+                #log_unsupervised_loss = tf.log(unsupervised_loss)
 
             if self.has_seg_feature:
                 if self.has_autoencoder_feature:
                     if self.net_param.decay > 0.0 and reg_losses:
                         reg_loss = tf.reduce_mean(
                             [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
-                        loss = supervised_loss + unsupervised_loss + reg_loss
+                        loss = seg_loss + autoencoder_loss + reg_loss
                     else:
-                        loss = supervised_loss + unsupervised_loss
+                        loss = seg_loss + autoencoder_loss
                 else:
-                    loss = supervised_loss
+                    loss = seg_loss
             else:
                 if self.has_autoencoder_feature:
-                    loss = unsupervised_loss
+                    loss = autoencoder_loss
                 else:
                     raise ValueError("Features defined")
 
-            #print('supervised_loss:', supervised_loss)
-            #print('unsupervised_loss:', unsupervised_loss, unsupervised_loss['kl_loss'] + unsupervised_loss['l2_loss'])
 
             #output collector
 
@@ -307,18 +333,12 @@ class SemiSupervisedApplication(BaseApplication):
                     var=tf.reduce_mean(t),
                     name="\nmean '{}'".format(t.name),
                     average_over_devices=False,
-                    collection=CONSOLE
-                )
+                    collection=CONSOLE)
                 outputs_collector.add_to_collection(
                     var=tf.reduce_max(t),
                     name="\nmax '{}'".format(t.name),
                     average_over_devices=False,
-                    collection=CONSOLE
-                )
-
-            # outputs_collector.add_to_collection(
-            #     var=
-            # )
+                    collection=CONSOLE)
 
             outputs_collector.add_to_collection(
                 var=self.learning_rate, name="learning rate",
@@ -340,23 +360,8 @@ class SemiSupervisedApplication(BaseApplication):
             if self.has_autoencoder_feature:
                 # for g in grads:
                 #     outputs_collector.add_to_collection(
-                #         var=g[0], name=g[0].name, summary_type='histogram', collection=TF_SUMMARIES
-                #     )
-                outputs_collector.add_to_collection(
-                    var=unsupervised_loss, name='unsupervised loss',
-                    average_over_devices=False, collection=CONSOLE)
-                outputs_collector.add_to_collection(
-                    var=unsupervised_loss_components['image_max'], name='image_max',
-                    average_over_devices=False, collection=CONSOLE)
-                outputs_collector.add_to_collection(
-                    var=unsupervised_loss_components['synthetic_image_max'], name='synthetic_image_max',
-                    average_over_devices=False, collection=CONSOLE)
-                outputs_collector.add_to_collection(
-                    var=unsupervised_loss_components['kl_loss'], name='kl_loss',
-                    average_over_devices=False, collection=CONSOLE)
-                outputs_collector.add_to_collection(
-                    var=unsupervised_loss_components['l2_loss'], name='l2_loss',
-                    average_over_devices=False, collection=CONSOLE)
+                #         var=g[0], name=g[0].name, summary_type='histogram',
+                #         collection=TF_SUMMARIES)
                 outputs_collector.add_to_collection(
                     var=tf.constant(self.kl_weight), name='kl_weight',
                     average_over_devices=False, summary_type='scalar',
@@ -366,40 +371,46 @@ class SemiSupervisedApplication(BaseApplication):
                     average_over_devices=False, summary_type='scalar',
                     collection=TF_SUMMARIES)
                 outputs_collector.add_to_collection(
-                    var=unsupervised_loss, name='unsupervised_loss',
+                    var=image_loss, name='image_loss',
+                    average_over_devices=False, collection=CONSOLE)
+                outputs_collector.add_to_collection(
+                    var=kl_loss, name='kl_loss',
+                    average_over_devices=False, collection=CONSOLE)
+                # outputs_collector.add_to_collection(
+                #     var=unsupervised_loss_components['image_max'], name='image_max',
+                #     average_over_devices=False, collection=CONSOLE)
+                # outputs_collector.add_to_collection(
+                #     var=unsupervised_loss_components['synthetic_image_max'], name='synthetic_image_max',
+                #     average_over_devices=False, collection=CONSOLE)
+                # outputs_collector.add_to_collection(
+                #     var=unsupervised_loss_components['kl_loss'], name='kl_loss',
+                #     average_over_devices=False, collection=CONSOLE)
+                # outputs_collector.add_to_collection(
+                #     var=unsupervised_loss_components['l2_loss'], name='l2_loss',
+                #     average_over_devices=False, collection=CONSOLE)
+                outputs_collector.add_to_collection(
+                    var=image_loss, name='image_loss',
                     average_over_devices=False, summary_type='scalar',
                     collection=TF_SUMMARIES)
                 outputs_collector.add_to_collection(
-                    var=unsupervised_loss, name='unsupervised_loss',
-                    average_over_devices=False, summary_type='scalar',
-                    collection=TF_SUMMARIES)
-                outputs_collector.add_to_collection(
-                    var=tf.log(unsupervised_loss), name='log_unsupervised_loss',
-                    average_over_devices=False, summary_type='scalar',
-                    collection=TF_SUMMARIES)
-                outputs_collector.add_to_collection(
-                    var=tf.log(unsupervised_loss_components['l2_loss']), name='log_l2_loss',
-                    average_over_devices=False, summary_type='scalar',
-                    collection=TF_SUMMARIES)
-                outputs_collector.add_to_collection(
-                    var=tf.log(unsupervised_loss_components['kl_loss']), name='log_kl_loss',
+                    var=kl_loss, name='kl_loss',
                     average_over_devices=False, summary_type='scalar',
                     collection=TF_SUMMARIES)
 
                 outputs_collector.add_to_collection(
-                    var=rescale_image(outputs['final_image_output'], image_min, image_max, 255),
+                    var=rescale_image(outputs['image_means'], image_min, image_max, 255),
                     name='synthetic_image_orig_scale',
                     average_over_devices=False, summary_type='image3_axial',
                     collection=TF_SUMMARIES)
-                rescaled_min = tf.reduce_min(outputs['final_image_output'])
-                rescaled_max = tf.reduce_max(outputs['final_image_output'])
+                rescaled_min = tf.reduce_min(outputs['image_means'])
+                rescaled_max = tf.reduce_max(outputs['image_means'])
                 outputs_collector.add_to_collection(
-                    var=rescale_image(outputs['final_image_output'], rescaled_min, rescaled_max, 255),
+                    var=rescale_image(outputs['image_means'], rescaled_min, rescaled_max, 255),
                     name='synthetic_image',
                     average_over_devices=False, summary_type='image3_axial',
                     collection=TF_SUMMARIES)
                 outputs_collector.add_to_collection(
-                    var=outputs['final_image_output'], name='synthetic_image_hist',
+                    var=outputs['image_means'], name='synthetic_image_hist',
                     average_over_devices=False, summary_type='histogram',
                     collection=TF_SUMMARIES)
                 outputs_collector.add_to_collection(
@@ -413,18 +424,13 @@ class SemiSupervisedApplication(BaseApplication):
 
             if self.has_seg_feature:
                 outputs_collector.add_to_collection(
-                    var=supervised_loss, name='supervised loss',
+                    var=seg_loss, name='supervised_loss',
                     average_over_devices=False, collection=CONSOLE)
-                # outputs_collector.add_to_collection(
-                #     var=supervised_loss, name='supervised loss_dice',
-                #     average_over_devices=False, collection=CONSOLE)
-                # outputs_collector.add_to_collection(
-                #     var=supervised_loss, name='supervised loss_xent',
-                #     average_over_devices=False, collection=CONSOLE)
                 outputs_collector.add_to_collection(
-                    var=supervised_loss, name='supervised loss',
+                    var=seg_loss, name='supervised_loss',
                     average_over_devices=True, summary_type='scalar',
                     collection=TF_SUMMARIES)
+
                 ground_truth_seg = data_dict.get('label', None)
                 outputs_collector.add_to_collection(
                     var=rescale_image(ground_truth_seg, 0, 2, 255), name='ground_truth_seg',
@@ -434,7 +440,7 @@ class SemiSupervisedApplication(BaseApplication):
                     var=data_dict.get('label', None), name='ground_truth_seg_hist',
                     average_over_devices=False, summary_type='histogram',
                     collection=TF_SUMMARIES)
-                predicted_seg = outputs['final_seg_output']
+                predicted_seg = outputs['seg_means']
                 float_predicted_seg = tf.cast(predicted_seg, dtype=tf.float32)
                 final_pred = tf.nn.softmax(float_predicted_seg)
                 outputs_collector.add_to_collection(
