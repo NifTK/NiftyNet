@@ -34,7 +34,7 @@ class GuuNet(nnnbn.BaseNet):
         self.has_seg_logvar_decoder = has_seg_logvar_decoder
         self.has_autoencoder_feature = has_autoencoder_feature
         self.has_autoencoder_logvar_decoder = has_autoencoder_logvar_decoder
-        self.gaussian_segmentation = False
+        self.gaussian_segmentation = True
 
     @staticmethod
     def encoder_block(_, channels, encoder_gn, encoder_acti, encoder_conv, i, j, skips):
