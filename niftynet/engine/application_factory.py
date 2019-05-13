@@ -129,6 +129,13 @@ SUPPORTED_LOSS_CLASSIFICATION = {
         'niftynet.layer.loss_classification.cross_entropy',
 }
 
+SUPPORTED_LOSS_CLASSIFICATION_MULTI = {
+    "ConfusionMatrix":
+        'niftynet.layer.loss_classification_multi.loss_confusion_matrix',
+    "Variability":
+        'niftynet.layer.loss_classification_multi.loss_variability'
+}
+
 
 SUPPORTED_LOSS_AUTOENCODER = {
     "VariationalLowerBound":
@@ -352,6 +359,15 @@ class LossClassificationFactory(ModuleFactory):
     """
     SUPPORTED = SUPPORTED_LOSS_CLASSIFICATION
     type_str = 'classification loss'
+
+
+class LossClassificationMultiFactory(ModuleFactory):
+    """
+    Import a classification loss function from niftynet.layer or
+    from user specified string
+    """
+    SUPPORTED = SUPPORTED_LOSS_CLASSIFICATION_MULTI
+    type_str = 'classification multi loss'
 
 
 class LossAutoencoderFactory(ModuleFactory):
