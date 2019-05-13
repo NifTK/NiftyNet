@@ -49,6 +49,21 @@ class LossVariabilityTest(tf.test.TestCase):
             self.assertAlmostEqual(computed_loss.eval(), np.sqrt(16.0/162.0))
 
 
+class LossConsistencyTest(tf.test.TestCase):
+    def test_consistency_loss(self):
+        with self.test_session():
+            predicted = tf.constant([[[1,-1],[-1,1],[1,-1]],[[1,-1],[1,-1],[1,
+                                                                       -1]]],
+                                    dtype=tf.float32)
+            predicted *= 1000
+            pred_ave = [[[0.66,0.33],[1,0]]]
+            test_loss_func = LossFunction(2, 3, loss_type='Consistency')
+            computed_loss = test_loss_func(pred_ave=pred_ave,
+                                           pred_multi=predicted)
+            self.assertAllClose(computed_loss.eval(), 0, atol=1E-2)
+
+
+
 # class LossFunctionErrorTest(tf.test.TestCase):
 #     """
 #     These tests check that a ValueError is called

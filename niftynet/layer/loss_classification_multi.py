@@ -218,23 +218,16 @@ def variability(pred_multi, num_classes=2, nrater=2):
     freq = tf.divide(tf.reduce_sum(dense_one_hot, 1), tf.cast(tf.shape(
         pred_multi)[1],tf.float32))
     variability = tf.reduce_sum(tf.square(freq), -1)
-    variability = tf.Print(tf.cast(variability, tf.float32), [tf.shape(
-        variability), variability, tf.shape(dense_one_hot), tf.shape(
-        freq)], message='within_var')
     return 1 - variability
 
 
-def loss_variability(ground_truth, pred_multi):
+def loss_variability(ground_truth, pred_multi, weight_map=None):
     one_hot_gt, output_shape = labels_to_one_hot(tf.cast(ground_truth,
                                                          tf.int64),
                                    tf.shape(pred_multi)[-1])
     dense_gt = tf.sparse_tensor_to_dense(one_hot_gt)
     pred_hard = tf.argmax(pred_multi, -1)
-    pred_hard = tf.Print(tf.cast(pred_hard, tf.int64), [tf.shape(
-        ground_truth), tf.shape(one_hot_gt), tf.shape(pred_hard),
-                                                  tf.shape(
-        dense_gt), tf.reduce_max(tf.reduce_sum(dense_gt,-1),-1)],
-             message='check_variability')
+
     one_hot_pred, _ = labels_to_one_hot(tf.cast(pred_hard, tf.int64),
                                    tf.shape(pred_multi)[-1])
     dense_pred = tf.sparse_tensor_to_dense(one_hot_pred)
@@ -244,25 +237,29 @@ def loss_variability(ground_truth, pred_multi):
     freq_gt = tf.divide(tf.reduce_sum(dense_gt, 1),
                         tf.cast(tf.shape(pred_multi)[1],tf.float32))
     variability_gt = tf.reduce_sum(tf.square(freq_gt), -1)
-    variability_gt = tf.Print(tf.cast(variability_gt, tf.float32),
-                              [tf.reduce_max(freq_pred), tf.reduce_max(
-                                  freq_gt), tf.shape(freq_gt),
-                               tf.shape(freq_pred), tf.reduce_max(
-                                  variability_gt),
-                               tf.reduce_max(variability_pred)],
-                              message='check_var2')
-    loss = tf.sqrt(tf.reduce_mean(tf.square(variability_gt-variability_pred)))
+
+    diff_square = tf.square(variability_gt-variability_pred)
+    if weight_map is not None:
+        diff_square = weight_map * diff_square
+    loss = tf.sqrt(tf.reduce_mean(diff_square))
     return loss
 
-def cross_entropy(prediction,
-                  ground_truth):
-    """
-    Function to calculate the cross entropy loss
-    :param prediction: the logits (before softmax)
-    :param ground_truth: the classification ground truth
-    :return: the loss
-    """
-    ground_truth = tf.to_int64(ground_truth)
-    loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=prediction, labels=ground_truth) 
-    return loss
+
+def rmse_consistency(pred_ave,
+                     pred_multi, weight_map=None):
+    pred_multi  = tf.nn.softmax(pred_multi, -1)
+    pred_multi_ave = tf.reduce_mean(pred_multi, axis=1)
+    pred_multi_ave = tf.Print(tf.cast(pred_multi_ave, tf.float32), [pred_ave[0],
+                                                        pred_multi_ave[0],
+                                                                    tf.shape(
+                                                                        pred_ave), tf.shape(pred_multi_ave),
+                              tf.reduce_max(pred_ave-pred_multi_ave)],
+                              message='rmse_test')
+    diff_square = tf.square(pred_ave-pred_multi_ave)
+    if weight_map is not None:
+        diff_square = tf.multiply(weight_map, diff_square) / tf.reduce_sum(
+            weight_map)
+
+    return tf.sqrt(tf.reduce_mean(diff_square))
+
 

@@ -133,7 +133,9 @@ SUPPORTED_LOSS_CLASSIFICATION_MULTI = {
     "ConfusionMatrix":
         'niftynet.layer.loss_classification_multi.loss_confusion_matrix',
     "Variability":
-        'niftynet.layer.loss_classification_multi.loss_variability'
+        'niftynet.layer.loss_classification_multi.loss_variability',
+    "Consistency":
+        'niftynet.layer.loss_classification_multi.rmse_consistency'
 }
 
 
