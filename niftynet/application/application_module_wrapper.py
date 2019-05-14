@@ -141,15 +141,17 @@ class ApplicationModuleWrapper(object):
             raise RuntimeError('For evaluations, an output callback function'
                                ' must be set')
 
-    def override_params(self, **kwargs):
+    def override_params(self, section, **kwargs):
         """
         Overrides specified system parameters.
+        :param section: the section heading in the config.ini format to
+            which the overrides apply.
         :param kwargs: a list of keyword arguments whose keys match
-        those of the configuration file format.
+            those of the configuration file format.
         :return: self
         """
 
-        self._override_params = kwargs
+        self._override_params[section] = kwargs
 
         return self
 
@@ -164,8 +166,6 @@ class ApplicationModuleWrapper(object):
 
         system_param, input_data_param = extract_app_parameters(
             self._app, self._model_file, self._action)
-
-        system_param.update(self._override_params)
 
         system_param['SYSTEM'].model_dir = resolve_module_dir(
             system_param['SYSTEM'].model_dir,
@@ -203,6 +203,9 @@ class ApplicationModuleWrapper(object):
                     model_root=system_param['SYSTEM'].model_dir)
         except (AttributeError, KeyError):
             pass
+
+        for section, overrides in self._override_params.items():
+            vars(system_param[section]).update(overrides)
 
         driver_table = {
             TRAIN: ApplicationDriver,
