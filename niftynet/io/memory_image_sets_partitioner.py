@@ -139,3 +139,46 @@ class MemoryImageSetsPartitioner(BaseImageSetsPartitioner):
 
         self._partitions = None
         self._num_subjects = 0
+
+
+def set_number_of_memory_subjects(data_param, num_subjects):
+    """
+    Configures the data parameters with the number of subjects
+    expected to be retrievable via image input callback
+    functions.
+    :param data_param: the data specification dictionary for
+        the application
+    :param num_subjects: the number of subjects to expect.
+    :return: the modified data_param dictionary
+    """
+
+    data_param[MEMORY_INPUT_NUM_SUBJECTS_PARAM] = num_subjects
+
+    return data_param
+
+
+def restore_data_param(data_param):
+    """
+    Clears any potentially conflicting settings from the
+    data_param dictionary. Must be called after using
+    set_number_of_memory_subjects and before starting
+    the application.
+    :param data_param: a modified data specification dictionary
+    :return: the restored dictionary
+    """
+
+    del data_param[MEMORY_INPUT_NUM_SUBJECTS_PARAM]
+
+    return data_param
+
+
+def is_memory_data_param(data_param):
+    """
+    Indicates whether the argument data-specification dictionary
+    is one where the images are expected to be retrieved using
+    input callback functions.
+    """
+
+    return (MEMORY_INPUT_NUM_SUBJECTS_PARAM in data_param
+            and data_param[MEMORY_INPUT_NUM_SUBJECTS_PARAM] > 0)
+

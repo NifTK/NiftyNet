@@ -11,7 +11,7 @@ from niftynet.io.file_image_sink import FileImageSink
 from niftynet.io.file_image_source import (FileImageSource,
                                            DEFAULT_INTERP_ORDER)
 from niftynet.io.memory_image_sets_partitioner import (
-    MEMORY_INPUT_NUM_SUBJECTS_PARAM, MemoryImageSetsPartitioner)
+    is_memory_data_param, MemoryImageSetsPartitioner)
 from niftynet.io.memory_image_sink import (MEMORY_OUTPUT_CALLBACK_PARAM,
                                            MemoryImageSink)
 from niftynet.io.memory_image_source import MemoryImageSource
@@ -63,7 +63,7 @@ class ImageEndPointFactory(object):
         self._action_param = action_param
 
         if data_param is not None \
-           and MEMORY_INPUT_NUM_SUBJECTS_PARAM in data_param:
+           and is_memory_data_param(data_param):
             self._endpoint_type = ENDPOINT_MEMORY
         else:
             self._endpoint_type = ENDPOINT_FILESYSTEM
@@ -79,7 +79,7 @@ class ImageEndPointFactory(object):
                                ' data set can be partitioned.')
 
         assert self._endpoint_type == ENDPOINT_MEMORY \
-            or MEMORY_INPUT_NUM_SUBJECTS_PARAM not in self._data_param
+            or not is_memory_data_param(self._data_param)
 
         self._partitioner = self._partitioner_classes[
             self._endpoint_type]()

@@ -11,7 +11,7 @@ from niftynet.evaluation.evaluation_application_driver import \
     EvaluationApplicationDriver
 from niftynet.io.misc_io import resolve_module_dir, to_absolute_path
 from niftynet.io.memory_image_sets_partitioner import \
-    MEMORY_INPUT_NUM_SUBJECTS_PARAM
+    set_number_of_memory_subjects, restore_data_param
 from niftynet.io.memory_image_sink import MEMORY_OUTPUT_CALLBACK_PARAM
 from niftynet.io.memory_image_source import make_input_spec
 from niftynet.utilities.user_parameters_parser import extract_app_parameters,\
@@ -117,7 +117,7 @@ class ApplicationModuleWrapper(object):
             vars(infer_param)[MEMORY_OUTPUT_CALLBACK_PARAM] \
                 = self._output_callback
 
-        data_param[MEMORY_INPUT_NUM_SUBJECTS_PARAM] = self._num_subjects
+        set_number_of_memory_subjects(data_param, self._num_subjects)
 
     def _check_configured(self):
         """
@@ -203,9 +203,7 @@ class ApplicationModuleWrapper(object):
 
         self._app = app_driver
 
-        # Have to remove number of subjects from data_param since
-        # otherwise it gets interpretted as a modality
-        del input_data_param[MEMORY_INPUT_NUM_SUBJECTS_PARAM]
+        restore_data_param(data_param)
 
         return self
 

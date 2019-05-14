@@ -10,7 +10,7 @@ import numpy as np
 from niftynet.engine.signal import TRAIN, VALID, INFER, ALL
 from niftynet.io.memory_image_source import MEMORY_INPUT_CALLBACK_PARAM
 from niftynet.io.memory_image_sets_partitioner import \
-    MEMORY_INPUT_NUM_SUBJECTS_PARAM
+    set_number_of_memory_subjects
 from niftynet.io.memory_image_source import make_input_spec
 from niftynet.io.memory_image_sink import MEMORY_OUTPUT_CALLBACK_PARAM
 from niftynet.io.image_endpoint_factory import ImageEndPointFactory
@@ -31,9 +31,10 @@ class ImageEndPointFactoryTest(tf.test.TestCase):
         self.assertTrue((image_data_in == int(sub)).sum() == image_data_in.size)
         self.assertTrue((image_out == 2*int(sub)).sum() == image_data_in.size)
 
+    NUM_MEM_SUBJECTS = 10
+
     def _configure_memory(self):
-        data_param = {MEMORY_INPUT_NUM_SUBJECTS_PARAM: 10,
-                      'input': ParserNamespace(pixdim=(),
+        data_param = {'input': ParserNamespace(pixdim=(),
                                                axcodes=(),
                                                filename_contains='some-string',
                                                interp_order=3),
@@ -45,6 +46,7 @@ class ImageEndPointFactoryTest(tf.test.TestCase):
                                               self._input_callback1)
         data_param['output'] = make_input_spec(data_param['output'],
                                                self._input_callback2)
+        set_number_of_memory_subjects(data_param, self.NUM_MEM_SUBJECTS)
 
         action_param = ParserNamespace(output_postfix='never-read',
                                        num_classes=2,
@@ -76,7 +78,8 @@ class ImageEndPointFactoryTest(tf.test.TestCase):
 
         writers = factory.create_sinks(readers)
 
-        num_subs = data_param[MEMORY_INPUT_NUM_SUBJECTS_PARAM]
+        num_subs = partitioner.number_of_subjects()
+        self.assertEqual(num_subs, self.NUM_MEM_SUBJECTS)
         self.assertTrue(readers[0].num_subjects > 0
                         and abs(readers[0].num_subjects - 0.1*num_subs) <= 1)
 
@@ -103,7 +106,7 @@ class ImageEndPointFactoryTest(tf.test.TestCase):
         readers = factory.create_sources(['image', 'label'], VALID, TRAIN)
         self.assertEqual(len(readers), 1)
 
-        num_subs = data_param[MEMORY_INPUT_NUM_SUBJECTS_PARAM]
+        num_subs = partitioner.number_of_subjects()
         self.assertTrue(readers[0].num_subjects > 0
                         and abs(readers[0].num_subjects - 0.2*num_subs) <= 1)
 
