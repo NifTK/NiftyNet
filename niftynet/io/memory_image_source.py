@@ -154,10 +154,9 @@ def make_input_spec(modality_spec, image_callback_function, do_reshape_nd=False,
         NiftyNet, while interpretting the last dimension as modalities.
     :param do_reshape_rgb: boolean flag indicating whether to add an image
         tensor reshape wrapper to the function turning it a 2D RGB image
-        into a 5D tensor, as required by
-        NiftyNet.
+        into a 5D tensor, as required by NiftyNet.
     :param do_typecast: boolean flag indicating whether to add an image
-        data typecast wrapper to the function turning it the data into floats.
+        data typecast wrapper to the function, turning the data into floats.
     """
 
     callback0 = image_callback_function
@@ -165,7 +164,7 @@ def make_input_spec(modality_spec, image_callback_function, do_reshape_nd=False,
         def _reshape_wrapper_nd(idx):
             img = callback0(idx)
 
-            new_shape = list(img.shape)
+            new_shape = list(img.shape[:3])
             new_shape += [1]*(4 - len(new_shape))
             if len(img.shape) > 3:
                 new_shape += [img.shape[-1]]
@@ -189,10 +188,10 @@ def make_input_spec(modality_spec, image_callback_function, do_reshape_nd=False,
         callback2 = callback1
 
     if do_typecast:
-        def _typecase_wrapper(idx):
+        def _typecast_wrapper(idx):
             return callback2(idx).astype(np.float32)
 
-        callback3 = _typecase_wrapper
+        callback3 = _typecast_wrapper
     else:
         callback3 = callback2
 
