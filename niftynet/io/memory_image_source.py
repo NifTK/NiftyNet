@@ -95,8 +95,8 @@ class MemoryImageSource(BaseImageSource):
 
     def _load_spatial_ranks(self):
         return {
-            name: 3 if self._input_callback_functions[mod](0).shape[2] > 1
-            else 2
+            name:
+            3 if self._input_callback_functions[mod](0).shape[2] > 1 else 2
             for name, mod in self._modality_names.items()
         }
 
