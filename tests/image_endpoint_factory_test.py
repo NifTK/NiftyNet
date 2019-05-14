@@ -12,7 +12,7 @@ from niftynet.io.memory_image_source import MEMORY_INPUT_CALLBACK_PARAM
 from niftynet.io.memory_image_sets_partitioner import \
     set_number_of_memory_subjects
 from niftynet.io.memory_image_source import make_input_spec
-from niftynet.io.memory_image_sink import MEMORY_OUTPUT_CALLBACK_PARAM
+from niftynet.io.memory_image_sink import make_output_spec
 from niftynet.io.image_endpoint_factory import ImageEndPointFactory
 from niftynet.utilities.util_common import ParserNamespace
 
@@ -52,8 +52,7 @@ class ImageEndPointFactoryTest(tf.test.TestCase):
                                        num_classes=2,
                                        output_interp_order=1,
                                        spatial_window_size=(80, 80))
-        vars(action_param)[MEMORY_OUTPUT_CALLBACK_PARAM] = \
-            self._output_callback
+        make_output_spec(action_param, self._output_callback)
 
         app_param = ParserNamespace(compulsory_labels=(0, 1),
                                     image=('input',),
@@ -131,8 +130,7 @@ class ImageEndPointFactoryTest(tf.test.TestCase):
                                            'testing_data', 'aggregated'),
                                        output_interp_order=1,
                                        spatial_window_size=(80, 80))
-        vars(action_param)[MEMORY_OUTPUT_CALLBACK_PARAM] = \
-            self._output_callback
+        make_output_spec(action_param, self._output_callback)
 
         app_param = ParserNamespace(compulsory_labels=(0, 1),
                                     image=('input',),

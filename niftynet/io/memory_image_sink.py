@@ -36,3 +36,25 @@ class MemoryImageSink(BaseImageSink):
 
         self._output_callback_function(image_data_out, subject_name,
                                        image_data_in)
+
+
+def make_output_spec(infer_param, callback_funct):
+    """
+    Installs the output callback function in a
+    inference parameter dictionary.
+
+    :param infer_param: action/inference parameter dictionary
+    :param callback_funct: a function accepting the output image
+         the subject identifier (str), and the corresponding input
+         image.
+    :return: the modified infer_param dictionary
+    """
+
+    if isinstance(infer_param, dict):
+        param_dict = infer_param
+    else:
+        param_dict = vars(infer_param)
+
+    param_dict[MEMORY_OUTPUT_CALLBACK_PARAM] = callback_funct
+
+    return infer_param

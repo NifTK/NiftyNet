@@ -12,7 +12,7 @@ from niftynet.evaluation.evaluation_application_driver import \
 from niftynet.io.misc_io import resolve_module_dir, to_absolute_path
 from niftynet.io.memory_image_sets_partitioner import \
     set_number_of_memory_subjects, restore_data_param
-from niftynet.io.memory_image_sink import MEMORY_OUTPUT_CALLBACK_PARAM
+from niftynet.io.memory_image_sink import make_output_spec
 from niftynet.io.memory_image_source import make_input_spec
 from niftynet.utilities.user_parameters_parser import extract_app_parameters,\
     ACTIONS
@@ -114,8 +114,7 @@ class ApplicationModuleWrapper(object):
             make_input_spec(data_param[name], funct, **kwargs)
 
         if self._output_callback and not infer_param is None:
-            vars(infer_param)[MEMORY_OUTPUT_CALLBACK_PARAM] \
-                = self._output_callback
+            make_output_spec(infer_param, self._output_callback)
 
         set_number_of_memory_subjects(data_param, self._num_subjects)
 
@@ -203,7 +202,7 @@ class ApplicationModuleWrapper(object):
 
         self._app = app_driver
 
-        restore_data_param(data_param)
+        restore_data_param(input_data_param)
 
         return self
 
