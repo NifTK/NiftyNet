@@ -8,7 +8,7 @@ from copy import deepcopy
 
 import numpy as np
 
-from niftynet.io.base_image_source import BaseImageSource, infer_tf_dtypes
+from niftynet.io.base_image_source import BaseImageSource
 from niftynet.io.misc_io import dtype_casting
 
 # Name of the data_param namespace entry for the memory input sources
