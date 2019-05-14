@@ -111,10 +111,11 @@ class ImageWindowsAggregator(object):
             tf.logging.fatal(
                 'network output window can be '
                 'cropped by specifying the border parameter in config file, '
-                'but here the output window %s is already smaller '
-                'than the input window size minus padding: %s, '
-                'not supported by this aggregator',
-                spatial_shape, cropped_shape)
+                'but here the output window content size %s is smaller '
+                'than the window coordinate size: %s -- '
+                'computed by input window size minus border size (%s)'
+                'not supported by this aggregator. Please try larger border.)',
+                spatial_shape, cropped_shape, border)
             raise ValueError
         if n_spatial == 1:
             window = window[:,
