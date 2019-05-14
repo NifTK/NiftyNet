@@ -167,8 +167,9 @@ class ApplicationModuleWrapper(object):
 
         system_param.update(self._override_params)
 
-        resolve_module_dir(system_param['SYSTEM'].model_dir,
-                           create_new=TRAIN.startswith(self._action))
+        system_param['SYSTEM'].model_dir = resolve_module_dir(
+            system_param['SYSTEM'].model_dir,
+            create_new=TRAIN.startswith(self._action))
 
         # Verbatim copy of F/S setup from NiftyNet's main
         try:
