@@ -40,7 +40,7 @@ class FileImageSource(BaseImageSource):
     :param self._dtypes: store the dictionary of tensorflow shapes
         ``{'image': tf.float32, 'label': tf.float32}``
 
-    :param self.output_list: a list of dictionaries, with each item::
+    :param self._output_list: a list of dictionaries, with each item::
 
         {'image': <niftynet.io.image_type.SpatialImage4D object>,
         'label': <niftynet.io.image_type.SpatialImage3D object>}
@@ -57,9 +57,8 @@ class FileImageSource(BaseImageSource):
             self.names = names
         self._output_list = None
 
-    @property
-    def output_list(self):
-        return self._output_list
+    def get_output_image(self, i):
+        return self._output_list[i]
 
     def initialise(self, data_param, task_param=None, file_list=None):
         """
@@ -68,7 +67,7 @@ class FileImageSource(BaseImageSource):
         modality sections, 'label' corresponds to one modality section
 
         This function converts elements of ``file_list`` into
-        dictionaries of image objects, and save them to ``self.output_list``.
+        dictionaries of image objects, and save them to ``self._output_list``.
         e.g.::
 
              data_param = {'T1': {'path_to_search': 'path/to/t1'}
@@ -146,13 +145,13 @@ class FileImageSource(BaseImageSource):
         for name in self.names:
             tf.logging.info(
                 'Image reader: loading %d subjects '
-                'from sections %s as input [%s]', len(self.output_list),
+                'from sections %s as input [%s]', len(self._output_list),
                 self.input_sources[name], name)
         return self
 
     def _get_image_and_interp_dict(self, idx):
         try:
-            image_dict = self.output_list[idx]
+            image_dict = self._output_list[idx]
         except (IndexError, TypeError):
             return None, None
 
@@ -169,21 +168,21 @@ class FileImageSource(BaseImageSource):
         Checks if the reader has been initialised, if not raises a RuntimeError
         """
 
-        if not self.output_list:
+        if not self._output_list:
             tf.logging.fatal("Please initialise the reader first.")
             raise RuntimeError
 
     def _load_spatial_ranks(self):
         self._check_initialised()
 
-        first_image = self.output_list[0]
+        first_image = self._output_list[0]
 
         return {field: first_image[field].spatial_rank for field in self.names}
 
     def _load_shapes(self):
         self._check_initialised()
 
-        first_image = self.output_list[0]
+        first_image = self._output_list[0]
         return {field: first_image[field].shape for field in self.names}
 
     def _load_dtypes(self):
@@ -193,7 +192,7 @@ class FileImageSource(BaseImageSource):
         """
         self._check_initialised()
 
-        first_image = self.output_list[0]
+        first_image = self._output_list[0]
         return {
             field: infer_tf_dtypes(first_image[field])
             for field in self.names
@@ -228,9 +227,9 @@ class FileImageSource(BaseImageSource):
 
         :return: number of subjects in the reader
         """
-        if not self.output_list:
+        if not self._output_list:
             return 0
-        return len(self.output_list)
+        return len(self._output_list)
 
     def get_subject_id(self, image_index):
         """

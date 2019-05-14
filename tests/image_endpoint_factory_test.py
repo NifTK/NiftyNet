@@ -177,7 +177,7 @@ class ImageEndPointFactoryTest(tf.test.TestCase):
 
             out = images['image']*2
             sub = readers[0].get_subject_id(idx)
-            img = readers[0].output_list[idx]['image']
+            img = readers[0].get_output_image(idx)['image']
             writers[0](out, sub, img)
 
             reloaded = nib.load(_get_destination_path(sub)).get_data()

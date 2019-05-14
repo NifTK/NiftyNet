@@ -75,7 +75,9 @@ class HistTest(tf.test.TestCase):
             name='hist_norm_layer')
         if os.path.exists(MODEL_FILE):
             os.remove(MODEL_FILE)
-        hist_norm.train(reader.output_list)
+        hist_norm.train((reader.get_output_image(i)
+                         for i in range(reader.num_subjects)),
+                        num_subjects=reader.num_subjects)
         out_map = hist_norm.mapping
 
         self.assertAllClose(out_map['T1'], expected_T1)

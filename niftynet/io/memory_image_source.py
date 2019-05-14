@@ -75,12 +75,11 @@ class MemoryImageSource(BaseImageSource):
 
         return self
 
-    @property
-    def output_list(self):
-        return [{
-            name: self._input_callback_functions[mod](idx)
+    def get_output_image(self, idx):
+        return {
+            name: self._input_callback_functions[mod](self._phase_indices[idx])
             for name, mod in self._modality_names.items()
-        } for idx in self._phase_indices]
+        }
 
     @property
     def names(self):

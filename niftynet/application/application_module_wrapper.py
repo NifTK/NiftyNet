@@ -39,6 +39,7 @@ class ApplicationModuleWrapper(object):
         self._output_callback = None
         self._num_subjects = 0
         self._input_callbacks = {}
+        self._override_params = {}
         self._action = None
 
     def set_output_callback(self, output_callback):
@@ -140,6 +141,18 @@ class ApplicationModuleWrapper(object):
             raise RuntimeError('For evaluations, an output callback function'
                                ' must be set')
 
+    def override_params(self, **kwargs):
+        """
+        Overrides specified system parameters.
+        :param kwargs: a list of keyword arguments whose keys match
+        those of the configuration file format.
+        :return: self
+        """
+
+        self._override_params = kwargs
+
+        return self
+
     def initialise_application(self):
         """
         Loads and configures the application encapsulated by this
@@ -151,6 +164,8 @@ class ApplicationModuleWrapper(object):
 
         system_param, input_data_param = extract_app_parameters(
             self._app, self._model_file, self._action)
+
+        system_param.update(self._override_params)
 
         resolve_module_dir(system_param['SYSTEM'].model_dir,
                            create_new=TRAIN.startswith(self._action))

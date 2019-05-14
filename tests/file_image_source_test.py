@@ -148,11 +148,11 @@ class FileImageSourceTest(tf.test.TestCase):
 
         reader = FileImageSource(['image'])
         reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
-        self.assertEqual(len(reader.output_list), 4)
+        self.assertEqual(reader.num_subjects, 4)
 
         reader = FileImageSource(['image'])
         reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK, single_mod_list)
-        self.assertEqual(len(reader.output_list), 4)
+        self.assertEqual(reader.num_subjects, 4)
 
         reader = FileImageSource(['image'])
         with self.assertRaisesRegexp(ValueError, ''):
@@ -161,7 +161,7 @@ class FileImageSourceTest(tf.test.TestCase):
     def test_properties(self):
         reader = FileImageSource(['image'])
         reader.initialise(SINGLE_MOD_DATA, SINGLE_MOD_TASK, single_mod_list)
-        self.assertEqual(len(reader.output_list), 4)
+        self.assertEqual(reader.num_subjects, 4)
         self.assertDictEqual(reader.spatial_ranks, {'image': 3})
         self.assertDictEqual(reader.shapes,
                              {'image': (256, 168, 256, 1, 1)})
@@ -178,7 +178,7 @@ class FileImageSourceTest(tf.test.TestCase):
             SINGLE_MOD_DATA, SINGLE_MOD_TASK, single_mod_list)
         reader = FileImageSource(['image'])
         reader.initialise(EXISTING_DATA, SINGLE_MOD_TASK, existing_list)
-        self.assertEqual(len(reader.output_list), 4)
+        self.assertEqual(reader.num_subjects, 4)
         self.assertDictEqual(reader.spatial_ranks, {'image': 3})
         self.assertDictEqual(reader.shapes,
                              {'image': (256, 168, 256, 1, 1)})

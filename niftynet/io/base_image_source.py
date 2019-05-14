@@ -133,15 +133,18 @@ class BaseImageSource(Layer):
 
         This function find these preprocessors and run the initialisations.
         """
+
         for layer in self.preprocessors:
             if isinstance(layer, DataDependentLayer):
-                layer.train(self.output_list)
+                layer.train((self.get_output_image(i)
+                             for i in range(self.num_subjects)),
+                            num_subjects=self.num_subjects)
 
     def add_preprocessing_layers(self, layers):
         """
         Adding a ``niftynet.layer`` or a list of layers as preprocessing steps.
         """
-        assert self.output_list is not None, \
+        assert self.num_subjects > 0, \
             'Please initialise the reader first, ' \
             'before adding preprocessors.'
         if isinstance(layers, Layer):
@@ -202,8 +205,7 @@ class BaseImageSource(Layer):
         map task parameter keywords ``image`` and ``label`` to
         section names ``T1``, ``T2``, and ``manual_map`` respectively.
         """
-
-        return
+        raise NotImplementedError
 
     @abstractmethod
     def get_image_index(self, subject_id):
@@ -229,10 +231,10 @@ class BaseImageSource(Layer):
         """
         raise NotImplementedError
 
-    @abstractproperty
-    def output_list(self):
+    @abstractmethod
+    def get_output_image(self, idx):
         """
-        :return: the list of images (including meta data) outputted by
+        :return: the i-th image (including meta data) outputted by
         this source as a input-source/image dictionary.
         """
         raise NotImplementedError
