@@ -72,13 +72,16 @@ class ApplicationModuleWrapperTest(tf.test.TestCase):
 
     def output_callback(self, outpt, id, inpt):
         self.output_received = True
-        self.assertAllClose(
-            inpt.flatten(), self.get_modality1_image(int(id)).flatten())
+        self.assertTrue(id in self.INFER_IDS)
+        expected_shape = self.get_modality2_image(int(id)).shape
+        self.assertAllEqual(expected_shape, outpt.shape[:2])
 
     FAKE_CSV_PATH = os.path.join('testing_data', 'app_module_fake_split.csv')
+    INFER_IDS = []
 
     def fake_split(self):
         nof_train = 2*len(self.modality1_images)/3
+        self.INFER_IDS = []
         with open(self.FAKE_CSV_PATH, 'w') as fout:
             fout.write('%s,%s\n' % (COLUMN_UNIQ_ID, COLUMN_PHASE))
             for idx in range(len(self.modality1_images)):
@@ -88,6 +91,7 @@ class ApplicationModuleWrapperTest(tf.test.TestCase):
                     type = 'validation'
                 else:
                     type = 'inference'
+                    self.INFER_IDS.append(str(idx))
                 fout.write('%i,%s\n' % (idx,  type))
 
     def test_infer_mem_io(self):
