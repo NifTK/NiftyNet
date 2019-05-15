@@ -9,7 +9,6 @@ from copy import deepcopy
 import numpy as np
 
 from niftynet.io.base_image_source import BaseImageSource
-from niftynet.io.misc_io import dtype_casting
 
 # Name of the data_param namespace entry for the memory input sources
 MEMORY_INPUT_CALLBACK_PARAM = 'input_callback'
@@ -85,9 +84,9 @@ class MemoryImageSource(BaseImageSource):
             for mod in modalities[1:]:
                 images.append(self._input_callback_functions[mod](image_idx))
                 if first_image.shape[:3] != images[-1].shape[:3]:
-                    raise RuntimeError('Only images with identical spatial configuration'
-                                       ' can be stacked. Please adapt your callback '
-                                       'functions.')
+                    raise RuntimeError('Only images with identical spatial '
+                                       'configuration can be stacked. Please '
+                                       'adapt your callback functions.')
 
             return np.concatenate(images, axis=-1)
 
