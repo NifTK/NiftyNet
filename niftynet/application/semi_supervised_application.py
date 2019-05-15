@@ -53,9 +53,9 @@ class SemiSupervisedApplication(BaseApplication):
         self.vae_weight = None
 
         self.has_seg_feature = True
-        self.has_seg_logvar_decoder = True
+        self.has_seg_logvar_decoder = False#True
         self.has_autoencoder_feature = True
-        self.has_autoencoder_logvar_decoder = True
+        self.has_autoencoder_logvar_decoder = False#True
 
         self.learning_rate = None
         self.current_id = None
@@ -73,10 +73,10 @@ class SemiSupervisedApplication(BaseApplication):
         self.seg_weight = self.semi_supervised_param.seg_weight
         self.kl_weight = self.semi_supervised_param.kl_weight
         self.vae_weight = self.semi_supervised_param.vae_weight
-        self.has_seg_feature = self.semi_supervised_param.enable_seg
-        self.has_seg_logvar_decoder = True
-        self.has_autoencoder_feature = self.semi_supervised_param.enable_vae
-        self.has_autoencoder_logvar_decoder = True
+        # self.has_seg_feature = self.semi_supervised_param.enable_seg
+        # self.has_seg_logvar_decoder = True
+        # self.has_autoencoder_feature = self.semi_supervised_param.enable_vae
+        # self.has_autoencoder_logvar_decoder = True
 
         if self.is_training:
             reader_names = ('image', 'label')
@@ -237,14 +237,16 @@ class SemiSupervisedApplication(BaseApplication):
                 # seg_means = outputs['final_seg_output']
                 # seg_logvars = tf.constant(0.005, dtype=tf.float32, shape=seg_means.shape)
                 seg_means = outputs['seg_means']
+                sm_seg_means = tf.nn.softmax(seg_means)
                 seg_logvars =\
-                    outputs.get('seg_logvars', tf.constant(0.005, dtype=tf.float32, shape=seg_means.shape))
+                    outputs.get('seg_logvars', None)
                 seg_truth = data_dict.get('label', None)
-                seg_loss_func = nnllu.LossFunction('dice_plus_xent', name='seg_uncertainty_loss')
+                seg_loss_func = nnllu.LossFunction('l2', name='seg_uncertainty_loss')
                 seg_losses = seg_loss_func(
                     prediction_means=tf.reshape(seg_means, [-1, seg_means.shape[-1]]),
-                    prediction_logvars=tf.reshape(seg_logvars, [-1, seg_logvars.shape[-1]]),
-                    ground_truth=tf.squeeze(tf.reshape(seg_truth, [-1, 1])))
+                    prediction_logvars=None if seg_logvars is None else tf.reshape(seg_logvars, [-1, seg_logvars.shape[-1]]),
+                    ground_truth=tf.reshape(seg_truth, [-1, 1]))
+                    #ground_truth = tf.squeeze(tf.reshape(seg_truth, [-1, 1])))
                 seg_loss = tf.reduce_mean(seg_losses)
 
             image_loss = None
@@ -255,12 +257,12 @@ class SemiSupervisedApplication(BaseApplication):
                 # image_logvars = tf.constant(0.005, dtype=tf.float32, shape=image_means.shape)
                 image_means = outputs['image_means']
                 image_logvars =\
-                    outputs.get('image_logvars', tf.constant(0.005, dtype=tf.float32, shape=image_means.shape))
+                    outputs.get('image_logvars', None)
                 image_truth = data_dict.get('image', None)
                 image_loss_func = nnllu.LossFunction('l2', name='image_uncertainty_loss')
                 image_losses = image_loss_func(
                     prediction_means=tf.reshape(image_means, [-1, image_means.shape[-1]]),
-                    prediction_logvars=tf.reshape(image_logvars, [-1, image_logvars.shape[-1]]),
+                    prediction_logvars=None if image_logvars is None else tf.reshape(image_logvars, [-1, image_logvars.shape[-1]]),
                     ground_truth=tf.reshape(image_truth, [-1, image_truth.shape[-1]]))
                 image_loss = tf.reduce_mean(image_losses)
 

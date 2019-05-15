@@ -39,10 +39,13 @@ class LossFunction(Layer):
             ground_truth=None, weight_map=None):
         with tf.device('/cpu:0'):
             error_term = self._loss_function(prediction_means, ground_truth)
-            loss = -LossFunction._log2_pi_by_2 -\
-                   prediction_logvars -\
-                   0.5 * error_term * tf.exp(2 * -prediction_logvars)
+            if prediction_logvars is None:
+                return tf.reduce_mean(error_term)
+            else:
+                loss = -LossFunction._log2_pi_by_2 -\
+                       prediction_logvars -\
+                       0.5 * error_term * tf.exp(2 * -prediction_logvars)
 
-            return -loss
+                return -tf.reduce_mean(loss)
 
 
