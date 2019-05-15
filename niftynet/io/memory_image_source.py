@@ -94,7 +94,7 @@ class MemoryImageSource(BaseImageSource):
 
     def get_output_image(self, idx):
         return {
-            name: self._assemble_output(0, name)
+            name: self._assemble_output(idx, name)
             for name in self.names
         }
 
