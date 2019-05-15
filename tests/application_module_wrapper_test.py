@@ -48,11 +48,10 @@ class ApplicationModuleWrapperTest(tf.test.TestCase):
     expected_output_train = [
         os.path.join('error_maps','WEB.nii.gz'),
         ]
-    expected_output_inference = [
-        os.path.join('autocontext_output','CHA_niftynet_out.nii.gz'),
-        ]
     modality1_images = []
     modality2_images = []
+    context_images = []
+    weight_images = []
     output_received = False
 
     def setUp(self):
@@ -64,6 +63,12 @@ class ApplicationModuleWrapperTest(tf.test.TestCase):
 
     def get_modality2_image(self, idx):
         return nib.load(self.modality2_images[idx]).get_data()
+
+    def get_context_image(self, idx):
+        return nib.load(self.context_images[idx]).get_data()
+
+    def get_weight_image(self, idx):
+        return nib.load(self.weight_images[idx]).get_data()
 
     def output_callback(self, outpt, id, inpt):
         self.output_received = True
@@ -77,25 +82,40 @@ class ApplicationModuleWrapperTest(tf.test.TestCase):
         with open(self.FAKE_CSV_PATH, 'w') as fout:
             fout.write('%s,%s\n' % (COLUMN_UNIQ_ID, COLUMN_PHASE))
             for idx in range(len(self.modality1_images)):
-                fout.write('%i,%s\n' % (idx, 'training' if idx < nof_train else 'inference'))
+                if idx < nof_train:
+                    type = 'training'
+                elif idx == nof_train:
+                    type = 'validation'
+                else:
+                    type = 'inference'
+                fout.write('%i,%s\n' % (idx,  type))
 
     def test_infer_mem_io(self):
         modality1_images = get_file_list(self.config, 'MODALITY1')
         modality2_path = get_input_path(self.config, 'MODALITY2')
+        context_path = get_input_path(self.config, 'context')
+        weight_path = get_input_path(self.config, 'SAMPWEIGHT')
 
-        self.modality2_images, self.modality1_images = ([], [])
+        self.modality2_images, self.modality1_images, self.context_images = ([], [], [])
         for mod1 in modality1_images:
-            mod2 = os.path.join(modality2_path, os.path.basename(mod1))
-            if os.path.isfile(mod2):
+            base = os.path.basename(mod1)
+            mod2 = os.path.join(modality2_path, base)
+            ctxt = os.path.join(context_path, base[:3] + '_niftynet_out.nii.gz')
+            weight = os.path.join(weight_path, base[:3] + '.nii.gz')
+            if os.path.isfile(mod2) and os.path.isfile(ctxt) and os.path.isfile(weight):
                 self.modality1_images.append(mod1)
                 self.modality2_images.append(mod2)
+                self.context_images.append(ctxt)
+                self.weight_images.append(weight)
         assert len(self.modality1_images) > 0
 
         app_module = RegressionApplicationModule(self.config)
         self.fake_split()
 
-        app_module.set_input_callback('MODALITY1', self.get_modality1_image)\
-                  .set_input_callback('MODALITY2', self.get_modality2_image)\
+        app_module.set_input_callback('MODALITY1', self.get_modality1_image, do_reshape_nd=True)\
+                  .set_input_callback('MODALITY2', self.get_modality2_image, do_reshape_nd=True)\
+                  .set_input_callback('context', self.get_context_image, do_reshape_nd=True)\
+                  .set_input_callback('SAMPWEIGHT', self.get_weight_image, do_reshape_nd=True)\
                   .set_num_subjects(len(self.modality1_images))\
                   .override_params('TRAINING', starting_iter=0, max_iter=2, validation_every_n=-1)\
                   .override_params('SYSTEM', dataset_split_file=self.FAKE_CSV_PATH)\
@@ -111,6 +131,7 @@ class ApplicationModuleWrapperTest(tf.test.TestCase):
                   .set_action('inference')\
                   .initialise_application()\
                   .run()
+        self.assertTrue(self.output_received)
 
         for eo in self.expected_output_train:
             output = os.path.join(MODEL_HOME, 'models', self.location, eo)
