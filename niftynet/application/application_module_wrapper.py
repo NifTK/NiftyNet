@@ -35,7 +35,8 @@ class ApplicationModuleWrapper(object):
         """
 
         self._model_file = model_file
-        self._app = app_name
+        self._app_name = app_name
+        self._app = None
         self._output_callback = None
         self._num_subjects = 0
         self._input_callbacks = {}
@@ -165,7 +166,7 @@ class ApplicationModuleWrapper(object):
         self._check_configured()
 
         system_param, input_data_param = extract_app_parameters(
-            self._app, self._model_file, self._action)
+            self._app_name, self._model_file, self._action)
 
         system_param['SYSTEM'].model_dir = resolve_module_dir(
             system_param['SYSTEM'].model_dir,
