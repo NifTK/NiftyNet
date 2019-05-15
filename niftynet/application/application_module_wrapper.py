@@ -5,6 +5,8 @@ specialisations for NiftyNet's standard applications.
 """
 from __future__ import absolute_import
 
+import sys
+
 from niftynet.engine.application_driver import ApplicationDriver
 from niftynet.engine.signal import INFER, TRAIN, EVAL
 from niftynet.evaluation.evaluation_application_driver import \
@@ -261,8 +263,10 @@ def _make_wrapper(app_class, app_name):
 
     cls = _ClassModule
 
-    cls.__doc__ = cls.__doc__.format(str(app_class))
-    cls.__init__.__doc__ = cls.__init__.__doc__.format(str(app_class))
+    if sys.version_info[0] > 2:
+        # Not supported in Python 2.7; workarounds exist but are ugly.
+        cls.__doc__ = cls.__doc__.format(str(app_class))
+        cls.__init__.__doc__ = cls.__init__.__doc__.format(str(app_class))
 
     return cls
 
