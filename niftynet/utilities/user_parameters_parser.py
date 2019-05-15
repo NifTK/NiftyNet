@@ -167,11 +167,6 @@ def extract_app_parameters(app_name, config_file_name, action,
         system_args['SYSTEM'].model_dir = os.path.join(
             os.path.dirname(config_file_name), 'model')
 
-    # Insert empty I/O functions for compatibility with module use
-    system_dict = vars(system_args['SYSTEM'])
-    system_dict['output_callback'] = None
-    system_dict['input_callback'] = None
-
     return system_args, input_data_args
 
 
