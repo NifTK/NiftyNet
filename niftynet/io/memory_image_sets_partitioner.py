@@ -105,6 +105,13 @@ class MemoryImageSetsPartitioner(BaseImageSetsPartitioner):
 
         data_frame = pandas.read_csv(path)
 
+        if len(data_frame.columns) != 2 \
+           or COLUMN_PHASE not in data_frame.columns \
+           or COLUMN_UNIQ_ID not in data_frame.columns:
+            raise ValueError('{} is not a memory data-set partitions file;'
+                             .format(path) +
+                             ' have you accidentally loaded a F/S-based one?')
+
         partitions = {}
         for phase in SUPPORTED_PHASES:
             partitions[phase] = data_frame.loc[
