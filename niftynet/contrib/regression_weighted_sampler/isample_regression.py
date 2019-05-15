@@ -7,7 +7,7 @@ from niftynet.application.regression_application import \
 from niftynet.engine.sampler_uniform_v2 import UniformSampler
 from niftynet.engine.sampler_weighted_v2 import WeightedSampler
 from niftynet.engine.application_variables import NETWORK_OUTPUT
-from niftynet.io.image_reader import ImageReader
+from niftynet.io.file_image_source import FileImageSource
 from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
 from niftynet.layer.mean_variance_normalisation import \
@@ -55,7 +55,7 @@ class ISampleRegression(RegressionApplication):
         # modifying the original readers in regression application
         # as we need ground truth labels to generate error maps
         self.readers = [
-            ImageReader(['image', 'output']).initialise(
+            FileImageSource(['image', 'output']).initialise(
                 data_param, task_param, file_list) for file_list in file_lists]
 
         mean_var_normaliser = MeanVarNormalisationLayer(image_name='image')
