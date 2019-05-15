@@ -47,19 +47,11 @@ class MemoryImageSource(BaseImageSource):
         self._section_names, self._modality_names \
             = self._get_section_input_sources(task_param, self._section_names)
 
-        if any(len(mods) != 1 for mods in self._modality_names.values()):
-            raise ValueError('Memory I/O supports only 1 modality'
-                             ' per application image section. Please'
-                             ' stack your modalities prior to passing '
-                             'them to the callback function.')
-
-        self._modality_names = {
-            name: mods[0]
-            for name, mods in self._modality_names.items()
-        }
-
         self._input_callback_functions = {}
-        for name in self._modality_names.values():
+        all_modalities = []
+        for mods in self._modality_names.values():
+            all_modalities += mods
+        for name in set(all_modalities):
             if not vars(data_param[name]).get(MEMORY_INPUT_CALLBACK_PARAM,
                                               None):
                 raise ValueError(
@@ -69,21 +61,47 @@ class MemoryImageSource(BaseImageSource):
                 = vars(data_param[name])[MEMORY_INPUT_CALLBACK_PARAM]
 
         self._modality_interp_orders \
-            = {name: (data_param[mod].interp_order,)
-               for name, mod in self._modality_names.items()}
+            = {name: tuple([data_param[mod].interp_order for mod in mods])
+               for name, mods in self._modality_names.items()}
         self._phase_indices = phase_indices
 
         return self
 
+    def _assemble_output(self, idx, source_name):
+        """
+        Assembles the output image for the given source
+        by stacking its modalities
+        """
+
+        if not self._modality_names:
+            raise RuntimeError('This source is not initialised.')
+
+        image_idx = self._phase_indices[idx]
+        modalities = self._modality_names[source_name]
+        first_image = self._input_callback_functions[modalities[0]](image_idx)
+
+        if len(modalities) > 1:
+            images = [first_image]
+            for mod in modalities[1:]:
+                images.append(self._input_callback_functions[mod](image_idx))
+                if first_image.shape[:3] != images[-1].shape[:3]:
+                    raise RuntimeError('Only images with identical spatial configuration'
+                                       ' can be stacked. Please adapt your callback '
+                                       'functions.')
+
+            return np.concatenate(images, axis=-1)
+
+        return first_image
+
     def get_output_image(self, idx):
         return {
-            name: self._input_callback_functions[mod](self._phase_indices[idx])
-            for name, mod in self._modality_names.items()
+            name: self._assemble_output(0, name)
+            for name in self.names
         }
 
     @property
     def names(self):
-        return list(self._input_callback_functions.keys())
+        return list(self._modality_names.keys())
 
     @property
     def num_subjects(self):
@@ -91,28 +109,30 @@ class MemoryImageSource(BaseImageSource):
 
     @property
     def input_sources(self):
-        return {name: (mod,) for name, mod in self._modality_names.items()}
+        return self._modality_names
+
+    def _extract_image_property(self, property_function):
+        """
+        Extracts a property of the output images by means of an
+        argument function
+
+        :param property_function: function that returns a sought
+            image property given an image
+        """
+        return {
+            name: property_function(self._assemble_output(0, name))
+            for name in self._modality_names
+        }
 
     def _load_spatial_ranks(self):
-        return {
-            name:
-            3 if self._input_callback_functions[mod](0).shape[2] > 1 else 2
-            for name, mod in self._modality_names.items()
-        }
+        return self._extract_image_property(
+            lambda img: 3 if img.shape[2] > 1 else 2)
 
     def _load_shapes(self):
-        return {
-            name: self._input_callback_functions[mod](0).shape
-            for name, mod in self._modality_names.items()
-        }
+        return self._extract_image_property(lambda img: img.shape)
 
     def _load_dtypes(self):
-        return {
-            name: dtype_casting(
-                self._input_callback_functions[mod](0).dtype,
-                self._modality_interp_orders[name][0])
-            for name, mod in self._modality_names.items()
-        }
+        return self._extract_image_property(lambda img: img.dtype)
 
     def get_image_index(self, subject_id):
         idx = np.argwhere(np.array(self._phase_indices) == int(subject_id))
@@ -127,9 +147,7 @@ class MemoryImageSource(BaseImageSource):
             image_data = {}
 
             for name in self._section_names:
-                funct \
-                    = self._input_callback_functions[self._modality_names[name]]
-                data = funct(self._phase_indices[idx])
+                data = self._assemble_output(idx, name)
                 image_data[name] = data
 
             return image_data, deepcopy(self._modality_interp_orders)
