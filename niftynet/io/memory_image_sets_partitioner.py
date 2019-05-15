@@ -33,7 +33,8 @@ class MemoryImageSetsPartitioner(BaseImageSetsPartitioner):
                    data_split_file=None,
                    ratios=None):
         """
-        :param num_subjects: number of subjects to partition
+        :param data_param: data specification including the number of subjects
+            to partition.
         :param new_partition: bool value indicating whether to generate new
             partition ids and overwrite csv file
             (this class will write partition file iff new_partition)
