@@ -6,8 +6,8 @@ import os
 import tensorflow as tf
 
 from niftynet.engine.sampler_resize_v2 import ResizeSampler
-from niftynet.io.image_reader import ImageReader
-from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
+from niftynet.io.file_image_source import FileImageSource
+from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
 
 MULTI_MOD_DATA = {
@@ -77,26 +77,26 @@ DYNAMIC_MOD_DATA = {
 }
 DYNAMIC_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'))
 
-data_partitioner = ImageSetsPartitioner()
+data_partitioner = FileImageSetsPartitioner()
 multi_mod_list = data_partitioner.initialise(MULTI_MOD_DATA).get_file_list()
 mod_2d_list = data_partitioner.initialise(MOD_2D_DATA).get_file_list()
 dynamic_list = data_partitioner.initialise(DYNAMIC_MOD_DATA).get_file_list()
 
 
 def get_3d_reader():
-    reader = ImageReader(['image'])
+    reader = FileImageSource(['image'])
     reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
     return reader
 
 
 def get_2d_reader():
-    reader = ImageReader(['image'])
+    reader = FileImageSource(['image'])
     reader.initialise(MOD_2D_DATA, MOD_2D_TASK, mod_2d_list)
     return reader
 
 
 def get_dynamic_window_reader():
-    reader = ImageReader(['image'])
+    reader = FileImageSource(['image'])
     reader.initialise(DYNAMIC_MOD_DATA, DYNAMIC_MOD_TASK, dynamic_list)
     return reader
 
