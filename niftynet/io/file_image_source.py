@@ -57,8 +57,8 @@ class FileImageSource(BaseImageSource):
             self.names = names
         self._output_list = None
 
-    def get_output_image(self, i):
-        return self._output_list[i]
+    def get_output_image(self, idx):
+        return self._output_list[idx]
 
     def initialise(self, data_param, task_param=None, file_list=None):
         """
