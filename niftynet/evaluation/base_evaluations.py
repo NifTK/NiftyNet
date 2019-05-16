@@ -22,7 +22,7 @@ class BaseEvaluation(Layer):
     def get_aggregations(self):
         """
         Returns aggregations to compute for the metric. Each aggregation is
-        a callable that computes a list of DataFrames from a dictionary of 
+        a callable that computes a list of DataFrames from a dictionary of
         metric dataframes (index by the DataFrame index). See
         BaseEvaluator.ScalarAggregator for an example.
 
@@ -34,7 +34,7 @@ class BaseEvaluation(Layer):
         """
         Perform one evaluation calculation for one subject
         :param subject_id:  subject identifier string
-        :param data:  a data dictionary as built by ImageReader
+        :param data:  a data dictionary as built by BaseImageSource
         :return: a list of pandas.DataFrame objects
         """
         raise NotImplementedError('not implemented in abstract base class')
@@ -52,7 +52,7 @@ class CachedSubanalysisEvaluation(BaseEvaluation):
         This function defines the sub-analyses to run. All evaluations with
         matching sub-analyses will be run in sequence, before clearing the cache
         :param subject_id:  subject identifier string
-        :param data:  a data dictionary as built by ImageReader
+        :param data:  a data dictionary as built by BaseImageSource
         :return: list of dictionaries, each containing information specifyng
         the analysis to run. Elements will be passed to layer_op one at a
         time in a cache friendly order
@@ -64,7 +64,7 @@ class CachedSubanalysisEvaluation(BaseEvaluation):
         Performs one sub-analysis
 
         :param subject_id: subject identifier string
-        :param data: a data dictionary as built by ImageReader
+        :param data: a data dictionary as built by BaseImageSource
         :param subanalysis: dictionary containing information specifying the
         analysis to run
         :return: a list of pandas.DataFrame objects
