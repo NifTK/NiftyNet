@@ -58,6 +58,9 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     readers = None
     sampler = None
 
+    # output writers
+    writers = None
+
     # the network
     net = None
 
@@ -70,18 +73,35 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     outputs_collector = None
     gradients_collector = None
 
+    def __init__(self):
+        self.action_param = None
+        self.net_param = None
+        self.data_param = None
+        self.endpoint_factory = None
+
+    # pylint: disable=unused-argument
     def initialise_dataset_loader(
-            self, data_param=None, task_param=None, data_partitioner=None):
+            self, data_param=None, task_param=None, factory=None):
         """
         this function initialise self.readers
 
         :param data_param: input modality specifications
         :param task_param: contains task keywords for grouping data_param
-        :param data_partitioner:
-                           specifies train/valid/infer splitting if needed
+        :param factory: image end-point factory providing the partitioner,
+        and image source and sink instances.
         :return:
         """
-        raise NotImplementedError
+
+        self.endpoint_factory = factory
+        self.data_param = data_param
+
+    #pylint: disable=unused-argument
+    def initialise_output(self):
+        """
+        Configures the image sinks of the application that handle
+        the output of the inference results.
+        """
+        self.writers = self.endpoint_factory.create_sinks(self.readers)
 
     def initialise_sampler(self):
         """
