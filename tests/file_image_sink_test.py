@@ -4,6 +4,7 @@ from __future__ import absolute_import, division
 import csv
 import os
 
+import nibabel as nib
 import tensorflow as tf
 
 from niftynet.io.file_image_sink import FileImageSink
@@ -13,6 +14,7 @@ from tests.windows_aggregator_grid_v2_test import (get_3d_reader,
 
 OUTPUT_PATH = os.path.join('testing_data', 'aggregated')
 POSTFIX = '_writer_test_out'
+
 
 def get_writer(reader):
     return FileImageSink(
@@ -61,12 +63,21 @@ class FileImageSinkTest(tf.test.TestCase):
     def test_2d(self):
         self._test_writer(get_2d_reader())
 
+    def test_preprocessing(self):
+        reader = get_label_reader()
+        writer = get_writer(reader)
+
+        for idx in range(reader.num_subjects):
+            _, inpt, _ = reader(idx=idx)
+            sub = reader.get_subject_id(idx)
+            outpt = (1 + idx)*inpt['label']
+
+            ref = reader.get_output_image(idx)['label']
+            writer(outpt, sub, ref)
+            img = nib.load(os.path.join(
+                OUTPUT_PATH, sub + writer.postfix + '.nii.gz')).get_data()
+            self.assertEqual(img.shape, ref.shape)
+
 
 if __name__ == "__main__":
     tf.test.main()
-
-
-
-
-
-
