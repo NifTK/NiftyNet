@@ -100,7 +100,7 @@ class HistogramNormalisationLayer(DataDependentLayer):
         mod_to_train = self.__check_modalities_to_train()
         return False if mod_to_train else True
 
-    def train(self, image_list):
+    def train(self, image_list, num_subjects=None):
         # check modalities to train, using the first subject in subject list
         # to find input modality list
         if self.is_ready():
@@ -109,12 +109,15 @@ class HistogramNormalisationLayer(DataDependentLayer):
                 " for {}:{}".format(self.image_name, self.modalities))
             return
         mod_to_train = self.__check_modalities_to_train()
+        if num_subjects is None:
+            num_subjects = len(image_list)
         tf.logging.info(
             "training normalisation histogram references "
             "for {}:{}, using {} subjects".format(
-                self.image_name, mod_to_train, len(image_list)))
+                self.image_name, mod_to_train, num_subjects))
         trained_mapping = hs.create_mapping_from_multimod_arrayfiles(
             image_list,
+            num_subjects,
             self.image_name,
             self.modalities,
             mod_to_train,
