@@ -4,9 +4,8 @@ This module is used to cache window-based network outputs,
 form a image-level output,
 write the cached the results to hard drive.
 """
-from __future__ import absolute_import, print_function, division
+from __future__ import absolute_import, division, print_function
 
-import os
 import numpy as np
 import tensorflow as tf
 from niftynet.engine.image_window import N_SPATIAL
@@ -20,12 +19,16 @@ class ImageWindowsAggregator(object):
     information the reader is needed.
     """
 
-    def __init__(self, image_reader=None, output_path='.'):
+    def __init__(self, image_reader=None, image_writer=None):
+        """
+        :param image_reader: BaseImageSource descendant class instance
+        handling the loading of input images
+        :param image_writer: ImageSinkBase descendant class instance
+        handling the output of result images
+        """
         self.reader = image_reader
+        self.writer = image_writer
         self._image_id = None
-        self.postfix = ''
-        self.output_path = os.path.abspath(output_path)
-        self.inferred_cleared = False
 
     @property
     def input_image(self):
@@ -37,7 +40,7 @@ class ImageWindowsAggregator(object):
         :return: an image object from image reader
         """
         if self.image_id is not None and self.reader:
-            return self.reader.output_list[self.image_id]
+            return self.reader.get_output_image(self.image_id)
         return None
 
     @property
@@ -91,7 +94,7 @@ class ImageWindowsAggregator(object):
         assert isinstance(border, (list, tuple)), \
             "border should be a list or tuple"
         while len(border) < N_SPATIAL:
-            border = tuple(border) + (border[-1],)
+            border = tuple(border) + (border[-1], )
         border = border[:N_SPATIAL]
 
         location = location.astype(np.int)
@@ -106,15 +109,15 @@ class ImageWindowsAggregator(object):
 
         cropped_shape = np.max(location[:, 4:7] - location[:, 1:4], axis=0)
         left = np.floor(
-            (spatial_shape - cropped_shape[:n_spatial])/2.0).astype(np.int)
+            (spatial_shape - cropped_shape[:n_spatial]) / 2.0).astype(np.int)
         if np.any(left < 0):
             tf.logging.fatal(
                 'network output window can be '
                 'cropped by specifying the border parameter in config file, '
                 'but here the output window %s is already smaller '
                 'than the input window size minus padding: %s, '
-                'not supported by this aggregator',
-                spatial_shape, cropped_shape)
+                'not supported by this aggregator', spatial_shape,
+                cropped_shape)
             raise ValueError
         if n_spatial == 1:
             window = window[:,
@@ -137,22 +140,3 @@ class ImageWindowsAggregator(object):
                 ' spatial dims are: %s', window_shape, spatial_shape)
             raise NotImplementedError
         return window, location
-
-    def log_inferred(self, subject_name, filename):
-        """
-        This function writes out a csv of inferred files
-
-        :param subject_name: subject name corresponding to output
-        :param filename: filename of output
-        :return:
-        """
-        inferred_csv = os.path.join(self.output_path, 'inferred.csv')
-        if not self.inferred_cleared:
-            if os.path.exists(inferred_csv):
-                os.remove(inferred_csv)
-            self.inferred_cleared = True
-            if not os.path.exists(self.output_path):
-                os.makedirs(self.output_path)
-        with open(inferred_csv, 'a+') as csv_file:
-            filename = os.path.join(self.output_path, filename)
-            csv_file.write('{},{}\n'.format(subject_name, filename))

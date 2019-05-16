@@ -26,7 +26,7 @@ from niftynet.engine.application_variables import \
     GradientsCollector, OutputsCollector
 from niftynet.engine.signal import TRAIN, \
     ITER_STARTED, ITER_FINISHED, GRAPH_CREATED, SESS_FINISHED, SESS_STARTED
-from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
+from niftynet.io.image_endpoint_factory import ImageEndPointFactory
 from niftynet.io.misc_io import infer_latest_model_file
 from niftynet.utilities.user_parameters_default import \
     DEFAULT_EVENT_HANDLERS, DEFAULT_ITERATION_GENERATOR
@@ -63,7 +63,7 @@ class ApplicationDriver(object):
         self.validation_every_n = -1
         self.validation_max_iter = 1
 
-        self.data_partitioner = ImageSetsPartitioner()
+        self.data_partitioner = None
 
         self._event_handlers = None
         self._generator = None
@@ -132,7 +132,12 @@ class ApplicationDriver(object):
         app_module = ApplicationFactory.create(app_param.name)
         self.app = app_module(net_param, action_param, system_param.action)
 
+        # create and configure the image end-point factory
+        endpoint_factory = ImageEndPointFactory()
+        endpoint_factory.set_params(data_param, app_param, action_param)
+
         # clear the cached file lists
+        self.data_partitioner = endpoint_factory.create_partitioner()
         self.data_partitioner.reset()
         if data_param:
             do_new_partition = \
@@ -162,9 +167,11 @@ class ApplicationDriver(object):
                     system_param.dataset_split_file,
                     train_param.exclude_fraction_for_validation)
 
-        # initialise readers
+        # initialise readers and writers
         self.app.initialise_dataset_loader(
-            data_param, app_param, self.data_partitioner)
+            data_param, app_param, endpoint_factory)
+        if not self.is_training_action:
+            self.app.initialise_output()
 
         # make the list of initialised event handler instances.
         self.load_event_handlers(

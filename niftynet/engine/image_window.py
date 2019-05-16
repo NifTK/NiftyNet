@@ -128,7 +128,7 @@ class ImageWindow(object):
                 'modality2': {'spatial_window_size': (10, 10, 2)},
                 'modality3': {'spatial_window_size': (5, 5, 1)}}
 
-        see ``niftynet.io.ImageReader`` for more details.
+        see ``niftynet.io.base_image_source.BaseImageSource`` for more details.
 
         :param source_names: input image names
         :param image_shapes: tuple of image window shapes
