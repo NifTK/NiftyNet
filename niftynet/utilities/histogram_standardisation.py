@@ -76,6 +76,7 @@ def __standardise_cutoff(cutoff, type_hist='quartile'):
 
 
 def create_mapping_from_multimod_arrayfiles(array_files,
+                                            num_files,
                                             field,
                                             modalities,
                                             mod_to_train,
@@ -88,7 +89,8 @@ def create_mapping_from_multimod_arrayfiles(array_files,
     returned providing the landmarks to use for the linear mapping of any
     new incoming data
 
-    :param array_files: List of image files to use
+    :param array_files: List/generator of image files to use
+    :param num_files: number of images to map
     :param modalities: Name of the modalities used for the
         standardisation and the corresponding order in the multimodal files
     :param cutoff: Minimum and maximum landmarks percentile values to use for
@@ -98,7 +100,7 @@ def create_mapping_from_multimod_arrayfiles(array_files,
     """
     perc_database = {}
     for (i, p) in enumerate(array_files):
-        print_progress_bar(i, len(array_files),
+        print_progress_bar(i, num_files,
                            prefix='normalisation histogram training',
                            decimals=1, length=10, fill='*')
         img_data = p[field].get_data()
