@@ -109,15 +109,15 @@ class MemoryImageSetsPartitioner(BaseImageSetsPartitioner):
         if len(data_frame.columns) != 2 \
            or COLUMN_PHASE not in data_frame.columns \
            or COLUMN_UNIQ_ID not in data_frame.columns:
-            raise ValueError('{} is not a memory data-set partitions file;'
-                             .format(path) +
-                             ' have you accidentally loaded a F/S-based one?')
+            raise ValueError(
+                '{} is not a memory data-set partitions file;'.format(path) +
+                ' have you accidentally loaded a F/S-based one?')
 
         partitions = {}
         for phase in SUPPORTED_PHASES:
-            partitions[phase] = data_frame.loc[
-                data_frame[COLUMN_PHASE] == phase,
-                COLUMN_UNIQ_ID].values.tolist()
+            partitions[phase] = data_frame.loc[data_frame[COLUMN_PHASE] ==
+                                               phase,
+                                               COLUMN_UNIQ_ID].values.tolist()
 
         return partitions
 
@@ -189,4 +189,3 @@ def is_memory_data_param(data_param):
 
     return (MEMORY_INPUT_NUM_SUBJECTS_PARAM in data_param
             and data_param[MEMORY_INPUT_NUM_SUBJECTS_PARAM] > 0)
-

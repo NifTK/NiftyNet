@@ -38,14 +38,14 @@ class BaseImageSource(Layer):
     __metaclass__ = ABCMeta
 
     def __init__(self, name='image_source'):
+        super(BaseImageSource, self).__init__(name=name)
+
         self._spatial_ranks = None
         self._shapes = None
         self._dtypes = None
 
         self.current_id = -1
-
         self.preprocessors = []
-        super(BaseImageSource, self).__init__(name='image_reader')
 
     @staticmethod
     def _get_section_input_sources(task_param, section_names):
@@ -258,8 +258,8 @@ class BaseImageSource(Layer):
                 idx = self.current_id + 1
                 self.current_id = idx
 
-        image_data_dict, interp_order_dict \
-            = self._get_image_and_interp_dict(idx)
+        image_data_dict, interp_order_dict = \
+            self._get_image_and_interp_dict(idx)
 
         if not image_data_dict:
             idx = -1

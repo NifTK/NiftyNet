@@ -7,9 +7,9 @@ subsets of ``Train``, ``Validation``, ``Inference``.
 """
 from __future__ import absolute_import
 
-from abc import ABCMeta, abstractmethod, abstractproperty
 import math
 import random
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 import tensorflow as tf
 

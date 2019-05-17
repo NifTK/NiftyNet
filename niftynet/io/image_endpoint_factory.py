@@ -5,13 +5,11 @@ partitioners, and image sources and sinks
 """
 from __future__ import absolute_import
 
-
 from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
 from niftynet.io.file_image_sink import FileImageSink
-from niftynet.io.file_image_source import (FileImageSource,
-                                           DEFAULT_INTERP_ORDER)
+from niftynet.io.file_image_source import DEFAULT_INTERP_ORDER, FileImageSource
 from niftynet.io.memory_image_sets_partitioner import (
-    is_memory_data_param, MemoryImageSetsPartitioner)
+    MemoryImageSetsPartitioner, is_memory_data_param)
 from niftynet.io.memory_image_sink import (MEMORY_OUTPUT_CALLBACK_PARAM,
                                            MemoryImageSink)
 from niftynet.io.memory_image_source import MemoryImageSource
@@ -81,8 +79,7 @@ class ImageEndPointFactory(object):
         assert self._endpoint_type == ENDPOINT_MEMORY \
             or not is_memory_data_param(self._data_param)
 
-        self._partitioner = self._partitioner_classes[
-            self._endpoint_type]()
+        self._partitioner = self._partitioner_classes[self._endpoint_type]()
 
         return self._partitioner
 
@@ -127,17 +124,19 @@ class ImageEndPointFactory(object):
             if 'output_postfix' in vars(self._action_param):
                 kwargs['postfix'] = self._action_param.output_postfix
 
-            return [self._sink_classes[ENDPOINT_FILESYSTEM](
-                sources[0] if sources else None,
-                interp_order,
-                **kwargs)]
+            return [
+                self._sink_classes[ENDPOINT_FILESYSTEM](
+                    sources[0] if sources else None, interp_order, **kwargs)
+            ]
 
         if MEMORY_OUTPUT_CALLBACK_PARAM not in vars(self._action_param):
-            raise RuntimeError('In memory I/O mode an output callback '
-                               'function must be provided via the field'
-                               ' %s in action_param' %
-                               MEMORY_OUTPUT_CALLBACK_PARAM)
+            raise RuntimeError(
+                'In memory I/O mode an output callback '
+                'function must be provided via the field'
+                ' %s in action_param' % MEMORY_OUTPUT_CALLBACK_PARAM)
 
-        return [self._sink_classes[ENDPOINT_MEMORY](
-            sources[0], self._action_param.output_interp_order,
-            vars(self._action_param)[MEMORY_OUTPUT_CALLBACK_PARAM])]
+        return [
+            self._sink_classes[ENDPOINT_MEMORY](
+                sources[0], self._action_param.output_interp_order,
+                vars(self._action_param)[MEMORY_OUTPUT_CALLBACK_PARAM])
+        ]

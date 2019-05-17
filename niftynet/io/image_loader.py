@@ -51,9 +51,9 @@ def register_image_loader(name, requires, min_version=None,
             np = require_module('numpy')
             return image2nibabel(np.random.rand(100, 100, 3), np.eye(4))
 
-    It registers a loader named 'fake' that requires `numpy` version >= '1.13.3'
-    to be installed. It will first dynamically load numpy library and then
-    return a `(100, 100, 3)` fake color image and an identity `(4, 4)`
+    It registers a loader named 'fake' that requires `numpy` version >=
+    '1.13.3' to be installed. It will first dynamically load numpy library and
+    then return a `(100, 100, 3)` fake color image and an identity `(4, 4)`
     affinity matrix. `loader = fake` in the data section of a config file will
     select this loader and generate fake data.
 
@@ -95,7 +95,7 @@ def load_image_obj(filename, loader=None):
         tf.logging.debug('Using requested loader: {}'.format(loader))
         loader_params = AVAILABLE_LOADERS[loader]
         return loader_params['func'](filename)
-    elif loader:
+    if loader:
         raise ValueError(
             'Image Loader {} not supported. Supported loaders: {}'.format(
                 loader, list(SUPPORTED_LOADERS.keys())))

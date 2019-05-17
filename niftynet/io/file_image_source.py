@@ -48,7 +48,7 @@ class FileImageSource(BaseImageSource):
     """
 
     def __init__(self, names=None):
-        super(FileImageSource, self).__init__(name='image_reader')
+        super(FileImageSource, self).__init__(name='file_image_reader')
         # list of file names
         self._file_list = None
         self._input_sources = None

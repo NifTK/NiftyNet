@@ -21,13 +21,13 @@ class MemoryImageSource(BaseImageSource):
     layer.
     """
 
-    def __init__(self, section_names, name='memory_image_source'):
+    def __init__(self, section_names):
         """
         :param section_names: the list of section names (in
         task_param) describing the modalities.
         """
 
-        super(MemoryImageSource, self).__init__()
+        super(MemoryImageSource, self).__init__(name='memory_image_reader')
 
         self._input_callback_functions = None
         self._modality_interp_orders = None
@@ -47,6 +47,7 @@ class MemoryImageSource(BaseImageSource):
             = self._get_section_input_sources(task_param, self._section_names)
 
         self._input_callback_functions = {}
+
         all_modalities = []
         for mods in self._modality_names.values():
             all_modalities += mods
@@ -56,12 +57,12 @@ class MemoryImageSource(BaseImageSource):
                 raise ValueError(
                     'Require an input callback for modality %s' % name)
 
-            self._input_callback_functions[name] \
-                = vars(data_param[name])[MEMORY_INPUT_CALLBACK_PARAM]
+            self._input_callback_functions[name] = \
+                vars(data_param[name])[MEMORY_INPUT_CALLBACK_PARAM]
 
-        self._modality_interp_orders \
-            = {name: tuple([data_param[mod].interp_order for mod in mods])
-               for name, mods in self._modality_names.items()}
+        self._modality_interp_orders = \
+            {name: tuple([data_param[mod].interp_order for mod in mods])
+             for name, mods in self._modality_names.items()}
         self._phase_indices = phase_indices
 
         return self
@@ -93,10 +94,7 @@ class MemoryImageSource(BaseImageSource):
         return first_image
 
     def get_output_image(self, idx):
-        return {
-            name: self._assemble_output(idx, name)
-            for name in self.names
-        }
+        return {name: self._assemble_output(idx, name) for name in self.names}
 
     @property
     def names(self):
@@ -124,8 +122,8 @@ class MemoryImageSource(BaseImageSource):
         }
 
     def _load_spatial_ranks(self):
-        return self._extract_image_property(
-            lambda img: 3 if img.shape[2] > 1 else 2)
+        return self._extract_image_property(lambda img: 3
+                                            if img.shape[2] > 1 else 2)
 
     def _load_shapes(self):
         return self._extract_image_property(lambda img: img.shape)
@@ -154,8 +152,11 @@ class MemoryImageSource(BaseImageSource):
             return None, None
 
 
-def make_input_spec(modality_spec, image_callback_function, do_reshape_nd=False,
-                    do_reshape_rgb=False, do_typecast=True):
+def make_input_spec(modality_spec,
+                    image_callback_function,
+                    do_reshape_nd=False,
+                    do_reshape_rgb=False,
+                    do_typecast=True):
     """
     Updates a configuration-file modality specification with the
     necessary fields for loading from memory.
@@ -177,11 +178,12 @@ def make_input_spec(modality_spec, image_callback_function, do_reshape_nd=False,
 
     callback0 = image_callback_function
     if do_reshape_nd:
+
         def _reshape_wrapper_nd(idx):
             img = callback0(idx)
 
             new_shape = list(img.shape[:3])
-            new_shape += [1]*(4 - len(new_shape))
+            new_shape += [1] * (4 - len(new_shape))
             if len(img.shape) > 3:
                 new_shape += [img.shape[-1]]
             else:
@@ -194,6 +196,7 @@ def make_input_spec(modality_spec, image_callback_function, do_reshape_nd=False,
         callback1 = callback0
 
     if do_reshape_rgb:
+
         def _reshape_wrapper_rgb(idx):
             img = callback1(idx)
 
@@ -204,6 +207,7 @@ def make_input_spec(modality_spec, image_callback_function, do_reshape_nd=False,
         callback2 = callback1
 
     if do_typecast:
+
         def _typecast_wrapper(idx):
             return callback2(idx).astype(np.float32)
 
