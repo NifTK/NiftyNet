@@ -94,7 +94,7 @@ class ApplicationDriverTest(tf.test.TestCase):
     #     test_driver = get_initialised_driver()
     #     graph = test_driver.create_graph(
     #         test_driver.app, test_driver.num_gpus, True)
-    #     with self.test_session(graph=graph) as sess:
+    #     with self.session(graph=graph) as sess:
     #         sess.run(global_vars_init_or_restore())
     #         GRAPH_CREATED.send(test_driver.app, iter_msg=None)
     #         SESS_STARTED.send(test_driver.app, iter_msg=None)
@@ -111,7 +111,7 @@ class ApplicationDriverTest(tf.test.TestCase):
     def test_training_update(self):
         test_driver = get_initialised_driver()
         graph = test_driver.create_graph(test_driver.app, 1, True)
-        with self.test_session(graph=graph) as sess:
+        with self.session(graph=graph) as sess:
             SESS_STARTED.send(test_driver.app, iter_msg=None)
 
             train_op = test_driver.app.gradient_op
@@ -130,7 +130,7 @@ class ApplicationDriverTest(tf.test.TestCase):
         test_driver = get_initialised_driver()
         graph = test_driver.create_graph(
             test_driver.app, test_driver.num_gpus, True)
-        with self.test_session(graph=graph) as sess:
+        with self.session(graph=graph) as sess:
             SESS_STARTED.send(test_driver.app, iter_msg=None)
             for i in range(2):
                 sess.run(test_driver.app.gradient_op)
@@ -158,7 +158,7 @@ class ApplicationDriverTest(tf.test.TestCase):
         test_driver = get_initialised_driver()
         graph = test_driver.create_graph(
             test_driver.app, test_driver.num_gpus, True)
-        with self.test_session(graph=graph) as sess:
+        with self.session(graph=graph) as sess:
             SESS_STARTED.send(test_driver.app, iter_msg=None)
             for i in range(2):
                 sess.run(test_driver.app.gradient_op)
@@ -183,7 +183,7 @@ class ApplicationDriverTest(tf.test.TestCase):
             application='tests.toy_application.ToyApplicationMultOpti')
         graph = test_driver.create_graph(
             test_driver.app, test_driver.num_gpus, True)
-        with self.test_session(graph=graph) as sess:
+        with self.session(graph=graph) as sess:
             SESS_STARTED.send(test_driver.app, iter_msg=None)
             for i in range(2):
                 sess.run(test_driver.app.gradient_op)
@@ -238,7 +238,7 @@ class ApplicationDriverTest(tf.test.TestCase):
     def test_rand_initialisation(self):
         test_driver = get_initialised_driver(0, True)
         graph = test_driver.create_graph(test_driver.app, 1, True)
-        with self.test_session(graph=graph) as sess:
+        with self.session(graph=graph) as sess:
             test_tensor = graph.get_tensor_by_name(
                 "G/conv_bn_selu/conv_/w:0")
             with self.assertRaisesRegexp(
@@ -258,7 +258,7 @@ class ApplicationDriverTest(tf.test.TestCase):
               -0.10836645, 0.06488426, 0.0746650, -0.188567, -0.64652514]],
             dtype=np.float32)
         graph = test_driver.create_graph(test_driver.app, 1, True)
-        with self.test_session(graph=graph) as sess:
+        with self.session(graph=graph) as sess:
             test_tensor = graph.get_tensor_by_name(
                 "G/conv_bn_selu/conv_/w:0")
             with self.assertRaisesRegexp(
@@ -273,7 +273,7 @@ class ApplicationDriverTest(tf.test.TestCase):
     # def test_not_found_file_initialisation(self):
     #     test_driver = get_initialised_driver(42, False)
     #     graph = test_driver.create_graph(test_driver.app, 1, True)
-    #     with self.test_session(graph=graph) as sess:
+    #     with self.session(graph=graph) as sess:
     #         with self.assertRaisesRegexp(
     #                 ValueError, ''):
     #             ModelRestorer(**vars(test_driver)).restore_model(None)
@@ -290,7 +290,7 @@ class ApplicationDriverTest(tf.test.TestCase):
               -0.43854219, 0.40412974, 0.0396539, -0.1590578, -0.53759819]],
             dtype=np.float32)
         graph = test_driver.create_graph(test_driver.app, 1, True)
-        with self.test_session(graph=graph) as sess:
+        with self.session(graph=graph) as sess:
             test_tensor = graph.get_tensor_by_name(
                 "G/conv_bn_selu/conv_/w:0")
             with self.assertRaisesRegexp(
@@ -312,7 +312,7 @@ class ApplicationDriverTest(tf.test.TestCase):
               -0.43854219, 0.40412974, 0.0396539, -0.1590578, -0.53759819]],
             dtype=np.float32)
         graph = test_driver.create_graph(test_driver.app, 1, True)
-        with self.test_session(graph=graph) as sess:
+        with self.session(graph=graph) as sess:
             test_tensor = graph.get_tensor_by_name(
                 "G/conv_bn_selu/conv_/w:0")
             test_negative_tensor = graph.get_tensor_by_name(

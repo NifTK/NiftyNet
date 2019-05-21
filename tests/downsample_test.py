@@ -28,7 +28,7 @@ class DownSampleTest(tf.test.TestCase):
         downsample_layer = DownSampleLayer(**param_dict)
         output_data = downsample_layer(input_data)
         print(downsample_layer)
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(output_data)
             self.assertAllClose(output_shape, out.shape)

@@ -27,7 +27,7 @@ class ResidualUnitTest(tf.test.TestCase):
         res_layer = Res(**param_dict)
         output_data = res_layer(input_data)
         print(res_layer)
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(output_data)
             self.assertAllClose(expected_shape, out.shape)

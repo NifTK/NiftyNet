@@ -151,7 +151,7 @@ class ResamplerGridWarperTest(tf.test.TestCase):
         resampler = ResamplerLayer(
             interpolation=interpolation, boundary=boundary)
         out = resampler(inputs, grid)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertAllClose(expected_value, out_value)
 
@@ -201,7 +201,7 @@ class image_test(tf.test.TestCase):
         optimiser = tf.train.AdagradOptimizer(0.01)
         grads = optimiser.compute_gradients(diff)
         opt = optimiser.apply_gradients(grads)
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
             init_val, affine_val = sess.run([diff, affine_var])
             for _ in range(5):
@@ -275,7 +275,7 @@ class image_2D_test_converge(tf.test.TestCase):
         optimiser = tf.train.AdagradOptimizer(0.05)
         grads = optimiser.compute_gradients(diff)
         opt = optimiser.apply_gradients(grads)
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
             init_val, affine_val = sess.run([diff, affine_var])
             for it in range(500):

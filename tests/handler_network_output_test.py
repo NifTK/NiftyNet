@@ -34,7 +34,7 @@ class EventConsoleTest(tf.test.TestCase):
             ['niftynet.engine.handler_model.ModelRestorer',
              'niftynet.engine.handler_network_output.OutputInterpreter',
              'niftynet.engine.handler_sampler.SamplerThreading'])
-        with self.test_session(graph=test_graph) as sess:
+        with self.session(graph=test_graph) as sess:
             SESS_STARTED.send(app_driver.app, iter_msg=None)
 
             iterator = IterationMessageGenerator(is_training_action=False)

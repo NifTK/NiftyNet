@@ -26,7 +26,7 @@ class BNTest(tf.test.TestCase):
         out_bn = bn_layer(x, is_training=True)
         print(bn_layer)
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_bn)
@@ -41,7 +41,7 @@ class BNTest(tf.test.TestCase):
         out_inst = instnorm_layer(x)
         print(instnorm_layer)
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_inst)
@@ -56,7 +56,7 @@ class BNTest(tf.test.TestCase):
         test_bn = bn_layer(x, is_training=False)
         print(bn_layer)
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_bn)
@@ -74,7 +74,7 @@ class BNTest(tf.test.TestCase):
         out_bn = bn_layer(x, is_training=True)
         print(bn_layer)
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_bn)
@@ -88,7 +88,7 @@ class BNTest(tf.test.TestCase):
         out_inst = instnorm_layer(x)
         print(instnorm_layer)
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_inst)
@@ -104,7 +104,7 @@ class BNTest(tf.test.TestCase):
         print(bn_layer)
         reg_loss = tf.add_n(bn_layer.regularizer_loss())
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_bn)

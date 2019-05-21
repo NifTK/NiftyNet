@@ -13,7 +13,7 @@ class ToyNetTest(tf.test.TestCase):
         toynet_instance = ToyNet(num_classes=160)
         out = toynet_instance(x, is_training=True)
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 160), out.shape)
@@ -25,7 +25,7 @@ class ToyNetTest(tf.test.TestCase):
         toynet_instance = ToyNet(num_classes=160)
         out = toynet_instance(x, is_training=True)
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 160), out.shape)

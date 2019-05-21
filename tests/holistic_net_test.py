@@ -21,7 +21,7 @@ class HolisticNetTest(tf.test.TestCase):
         out = holistic_net_instance(x, is_training=False)
         # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 20, 20, 20, 3), out.shape)
@@ -37,7 +37,7 @@ class HolisticNetTest(tf.test.TestCase):
         out = holistic_net_instance(x, is_training=False)
         # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 20, 20, 3), out.shape)

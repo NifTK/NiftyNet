@@ -21,7 +21,7 @@ class BNTest(tf.test.TestCase):
             intermediate = dilated.tensor
         x = dilated.tensor
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             out = sess.run(x)
             out_dilated = sess.run(intermediate)
             self.assertAllClose((2, 16, 16, 8), out.shape)
@@ -33,7 +33,7 @@ class BNTest(tf.test.TestCase):
             intermediate = dilated.tensor
         x = dilated.tensor
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             out = sess.run(x)
             out_dilated = sess.run(intermediate)
             self.assertAllClose((2, 16, 16, 16, 8), out.shape)

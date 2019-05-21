@@ -25,7 +25,7 @@ class GNTest(tf.test.TestCase):
         out_gn = gn_layer(x)
         print(gn_layer)
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_gn)
@@ -40,7 +40,7 @@ class GNTest(tf.test.TestCase):
         test_gn = gn_layer(x)
         print(gn_layer)
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_gn)
@@ -58,7 +58,7 @@ class GNTest(tf.test.TestCase):
         out_gn = gn_layer(x)
         print(gn_layer)
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_gn)
@@ -74,7 +74,7 @@ class GNTest(tf.test.TestCase):
         print(gn_layer)
         reg_loss = tf.add_n(gn_layer.regularizer_loss())
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_gn)

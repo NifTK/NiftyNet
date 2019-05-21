@@ -34,7 +34,7 @@ class ResamplerTest(tf.test.TestCase):
         test_input = tf.constant(test_input)
         test_coords = tf.ones((1, 5, 5, 5, 3)) * 0.1
         out = ResamplerLayer("LINEAR")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(
                 np.all(np.isclose(out_value[0, ..., 0], 0.9**3, atol=1e-5)))
@@ -47,7 +47,7 @@ class ResamplerTest(tf.test.TestCase):
         test_input = tf.constant(test_input)
         test_coords = tf.ones((1, 5, 5, 2)) * 0.1
         out = ResamplerLayer("LINEAR")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(np.all(out_value[1, ...]==0))
             self.assertTrue(
@@ -60,7 +60,7 @@ class ResamplerTest(tf.test.TestCase):
         test_input = tf.constant(test_input)
         test_coords = tf.ones((1, 5, 1)) * 0.1
         out = ResamplerLayer("LINEAR")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(np.all(out_value[1, ...]==0))
             self.assertTrue(
@@ -75,7 +75,7 @@ class ResamplerTest(tf.test.TestCase):
         test_coords = tf.concat([tf.ones((1, 5, 5, 5, 3)) * 0.1,
                                  tf.ones((1, 5, 5, 5, 3)) * 0.2], axis=0)
         out = ResamplerLayer("LINEAR")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(
                 np.all(np.isclose(out_value[0, ..., 0], 0.9**3, atol=1e-5)))
@@ -89,7 +89,7 @@ class ResamplerTest(tf.test.TestCase):
         test_coords = tf.concat([tf.ones((1, 5, 5, 2)) * 0.1,
                                  tf.ones((1, 5, 5, 2)) * 0.2], axis=0)
         out = ResamplerLayer("LINEAR")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(
                 np.all(np.isclose(out_value[0, ..., 0], 0.9**2, atol=1e-5)))
@@ -103,7 +103,7 @@ class ResamplerTest(tf.test.TestCase):
         test_coords = tf.concat([tf.ones((1, 5, 1)) * 0.1,
                                  tf.ones((1, 5, 1)) * 0.2], axis=0)
         out = ResamplerLayer("LINEAR")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(
                 np.all(np.isclose(out_value[0, ..., 0], 0.9, atol=1e-5)))
@@ -119,7 +119,7 @@ class ResamplerTest(tf.test.TestCase):
         test_input = tf.constant(test_input)
         test_coords = tf.ones((1, 5, 5, 5, 3)) * 0.1
         out = ResamplerLayer("NEAREST")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(
                 np.all(np.isclose(out_value[0, ..., 0], 1.0, atol=1e-5)))
@@ -132,7 +132,7 @@ class ResamplerTest(tf.test.TestCase):
         test_input = tf.constant(test_input)
         test_coords = tf.ones((1, 5, 5, 2)) * 0.1
         out = ResamplerLayer("NEAREST")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(np.all(out_value[1, ...]==0))
             self.assertTrue(
@@ -145,7 +145,7 @@ class ResamplerTest(tf.test.TestCase):
         test_input = tf.constant(test_input)
         test_coords = tf.ones((1, 5, 1)) * 0.1
         out = ResamplerLayer("NEAREST")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(np.all(out_value[1, ...]==0))
             self.assertTrue(
@@ -160,7 +160,7 @@ class ResamplerTest(tf.test.TestCase):
         test_coords = tf.concat([tf.ones((1, 5, 5, 5, 3)) * 0.1,
                                  tf.ones((1, 5, 5, 5, 3)) * 1.2], axis=0)
         out = ResamplerLayer("NEAREST")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(
                 np.all(np.isclose(out_value[0, ..., 0], 1.0, atol=1e-5)))
@@ -174,7 +174,7 @@ class ResamplerTest(tf.test.TestCase):
         test_coords = tf.concat([tf.ones((1, 5, 5, 2)) * 0.1,
                                  tf.ones((1, 5, 5, 2)) * 1.2], axis=0)
         out = ResamplerLayer("NEAREST")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(
                 np.all(np.isclose(out_value[0, ..., 0], 1.0, atol=1e-5)))
@@ -188,7 +188,7 @@ class ResamplerTest(tf.test.TestCase):
         test_coords = tf.concat([tf.ones((1, 5, 1)) * 0.1,
                                  tf.ones((1, 5, 1)) * 1.2], axis=0)
         out = ResamplerLayer("NEAREST")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(
                 np.all(np.isclose(out_value[0, ..., 0], 1.0, atol=1e-5)))
@@ -203,7 +203,7 @@ class ResamplerTest(tf.test.TestCase):
         test_input = tf.constant(test_input)
         test_coords = tf.ones((1, 5, 5, 5, 3)) * 0.1
         out = ResamplerLayer("IDW")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(
                 np.all(np.isclose(out_value[0, ..., 0],
@@ -217,7 +217,7 @@ class ResamplerTest(tf.test.TestCase):
         test_input = tf.constant(test_input)
         test_coords = tf.ones((1, 5, 5, 2)) * 0.1
         out = ResamplerLayer("IDW")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(np.all(out_value[1, ...]==0))
             self.assertTrue(
@@ -231,7 +231,7 @@ class ResamplerTest(tf.test.TestCase):
         test_input = tf.constant(test_input)
         test_coords = tf.ones((1, 5, 1)) * 0.1
         out = ResamplerLayer("IDW")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(np.all(out_value[1, ...]==0))
             self.assertTrue(
@@ -247,7 +247,7 @@ class ResamplerTest(tf.test.TestCase):
         test_coords = tf.concat([tf.ones((1, 5, 5, 5, 3)) * 0.2,
                                  tf.ones((1, 5, 5, 5, 3)) * 1.2], axis=0)
         out = ResamplerLayer("IDW")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(
                 np.all(np.isclose(out_value[0, ..., 0],
@@ -262,7 +262,7 @@ class ResamplerTest(tf.test.TestCase):
         test_coords = tf.concat([tf.ones((1, 5, 5, 2)) * 0.2,
                                  tf.ones((1, 5, 5, 2)) * 1.2], axis=0)
         out = ResamplerLayer("IDW")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(
                 np.all(np.isclose(out_value[0, ..., 0],
@@ -277,7 +277,7 @@ class ResamplerTest(tf.test.TestCase):
         test_coords = tf.concat([tf.ones((1, 5, 1)) * 0.2,
                                  tf.ones((1, 5, 1)) * 1.2], axis=0)
         out = ResamplerLayer("IDW")(test_input, test_coords)
-        with self.test_session() as sess:
+        with self.session() as sess:
             out_value = sess.run(out)
             self.assertTrue(
                 np.all(np.isclose(out_value[0, ..., 0],

@@ -64,7 +64,7 @@ class DriverLoopTest(tf.test.TestCase):
 
         ITER_FINISHED.connect(get_iter_msgs)
 
-        with self.test_session(graph=test_graph) as sess:
+        with self.session(graph=test_graph) as sess:
             SESS_STARTED.send(app_driver.app, iter_msg=None)
             iterations = IterationMessageGenerator(
                 initial_iter=0,

@@ -39,7 +39,7 @@ class ScaleBlockTest(tf.test.TestCase):
         out_2 = scalenet_layer(x, is_training=True)
         print(scalenet_layer)
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
             out_1 = sess.run(out_1)
             out_2 = sess.run(out_2)
@@ -59,7 +59,7 @@ class ScaleBlockTest(tf.test.TestCase):
         out_2 = scalenet_layer(x, is_training=True)
         print(scalenet_layer)
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
             out_1 = sess.run(out_1)
             out_2 = sess.run(out_2)
@@ -76,7 +76,7 @@ class ScaleBlockTest(tf.test.TestCase):
         out_2 = scalenet_layer(x, is_training=True)
         print(scalenet_layer)
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
             out_1 = sess.run(out_1)
             out_2 = sess.run(out_2)
@@ -96,7 +96,7 @@ class ScaleBlockTest(tf.test.TestCase):
         out_2 = scalenet_layer(x, is_training=True)
         print(scalenet_layer)
 
-        with self.test_session() as sess:
+        with self.session() as sess:
             sess.run(tf.global_variables_initializer())
             out_1 = sess.run(out_1)
             out_2 = sess.run(out_2)

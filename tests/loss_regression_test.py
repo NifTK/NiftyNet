@@ -9,7 +9,7 @@ from niftynet.layer.loss_regression import l1_loss, l2_loss, huber_loss
 
 class L1LossTests(tf.test.TestCase):
     def test_l1_loss_value(self):
-        with self.test_session():
+        with self.session():
             predicted = tf.constant(
                 [1, 1],
                 dtype=tf.float32, name='predicted')
@@ -20,7 +20,7 @@ class L1LossTests(tf.test.TestCase):
                 computed_l1_loss.eval(), 0.5)
 
     def test_l1_loss_value_weight(self):
-        with self.test_session():
+        with self.session():
             weights = tf.constant(
                 [[1, 2]], dtype=tf.float32, name='weights')
             predicted = tf.constant(
@@ -32,7 +32,7 @@ class L1LossTests(tf.test.TestCase):
 
     def test_l1_loss(self):
         # expected loss: mean(.2 + 2) = 1.1
-        with self.test_session():
+        with self.session():
             predicted = tf.constant(
                 [1.2, 1],
                 dtype=tf.float32, name='predicted')
@@ -44,7 +44,7 @@ class L1LossTests(tf.test.TestCase):
 
 class L2LossTests(tf.test.TestCase):
     def test_l2_loss_value(self):
-        with self.test_session():
+        with self.session():
             predicted = tf.constant(
                 [[1, 2]], dtype=tf.float32, name='predicted')
             labels = tf.constant(
@@ -54,7 +54,7 @@ class L2LossTests(tf.test.TestCase):
             self.assertAlmostEqual(computed_l2_loss.eval(), 2.0)
 
     def test_l2_loss_value_weight(self):
-        with self.test_session():
+        with self.session():
             weights = tf.constant(
                 [[1, 2]], dtype=tf.float32, name='weights')
             predicted = tf.constant(
@@ -69,7 +69,7 @@ class L2LossTests(tf.test.TestCase):
     def test_l2_loss(self):
         # expected loss: (0.04 + 4 + 1) /2 = 2.52
         # (note - not the mean, just the sum)
-        with self.test_session():
+        with self.session():
             predicted = tf.constant(
                 [1.2, 1, 2],
                 dtype=tf.float32, name='predicted')
@@ -82,7 +82,7 @@ class L2LossTests(tf.test.TestCase):
 
 class HuberLossTests(tf.test.TestCase):
     def test_huber_loss(self):
-        with self.test_session():
+        with self.session():
             predicted = tf.constant(
                 [[0, 10], [10, 0], [10, 0], [10, 0]],
                 dtype=tf.float32, name='predicted')
@@ -92,7 +92,7 @@ class HuberLossTests(tf.test.TestCase):
             self.assertEqual(huber_loss(predicted, gold_standard).eval(), 0.0)
 
     def test_huber_continuous(self):
-        with self.test_session():
+        with self.session():
             epsilon = tf.constant(
                 1e-10, dtype=tf.float32)
             predicted = tf.constant(
@@ -107,7 +107,7 @@ class HuberLossTests(tf.test.TestCase):
                                    huber_loss_outside_delta.eval())
 
     def test_huber_loss_hand_example(self):
-        with self.test_session():
+        with self.session():
             # loss should be: mean( 0.2 ** 2/ 2 + (2-0.5) ) == 1.52/2 == 0.76
             predicted = tf.constant(
                 [1.2, 1], dtype=tf.float32, name='predicted')
@@ -117,7 +117,7 @@ class HuberLossTests(tf.test.TestCase):
             self.assertAlmostEqual(loss.eval(), .76)
 
     def test_huber_loss_value(self):
-        with self.test_session():
+        with self.session():
             predicted = tf.constant(
                 [[1, 2, 0.5]], dtype=tf.float32, name='predicted')
             labels = tf.constant(
@@ -128,7 +128,7 @@ class HuberLossTests(tf.test.TestCase):
                 computed_huber_loss.eval(), 0.5417, places=4)
 
     def test_huber_loss_value_weight(self):
-        with self.test_session():
+        with self.session():
             weights = tf.constant(
                 [[1, 2, 1]], dtype=tf.float32, name='weights')
             predicted = tf.constant(
@@ -143,7 +143,7 @@ class HuberLossTests(tf.test.TestCase):
 
 class RMSELossTests(tf.test.TestCase):
     def test_rmse_loss_value(self):
-        with self.test_session():
+        with self.session():
             predicted = tf.constant(
                 [[1.2, 1]], dtype=tf.float32, name='predicted')
             labels = tf.constant(
@@ -154,7 +154,7 @@ class RMSELossTests(tf.test.TestCase):
                 computed_rmse_loss.eval(), 0.7211, places=4)
 
     def test_rmse_loss_value_weight(self):
-        with self.test_session():
+        with self.session():
             weights = tf.constant(
                 [[1, 2.1]], dtype=tf.float32, name='weights')
             predicted = tf.constant(
@@ -168,7 +168,7 @@ class RMSELossTests(tf.test.TestCase):
 
 class MAELossTests(tf.test.TestCase):
     def test_MAE_loss_value(self):
-        with self.test_session():
+        with self.session():
             predicted = tf.constant(
                 [[1, 2]], dtype=tf.float32, name='predicted')
             labels = tf.constant(
@@ -179,7 +179,7 @@ class MAELossTests(tf.test.TestCase):
                 computed_MAE_loss.eval(), 1.1)
 
     def test_MAE_loss_value_weight(self):
-        with self.test_session():
+        with self.session():
             weights = tf.constant(
                 [[1, 2]], dtype=tf.float32, name='weights')
             predicted = tf.constant(
