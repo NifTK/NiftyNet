@@ -154,7 +154,7 @@ def labels_to_one_hot(ground_truth, num_classes=1):
     """
     # read input/output shapes
     if isinstance(num_classes, tf.Tensor):
-        num_classes_tf = tf.to_int32(num_classes)
+        num_classes_tf = tf.cast(num_classes, tf.int32)
     else:
         num_classes_tf = tf.constant(num_classes, tf.int32)
     input_shape = tf.shape(ground_truth)
