@@ -117,21 +117,26 @@ class MemoryImageSource(BaseImageSource):
             image property given an image
         """
         return {
-            name: property_function(self._assemble_output(0, name))
+            name: property_function(self._assemble_output(0, name), name)
             for name in self._modality_names
         }
 
     def _load_spatial_ranks(self):
-        return self._extract_image_property(lambda img: 3
-                                            if img.shape[2] > 1 else 2)
+        def __rank_func(img, _unused_name):
+            return 3 if img.shape[2] > 1 else 2
+
+        return self._extract_image_property(__rank_func)
 
     def _load_shapes(self):
-        return self._extract_image_property(lambda img: img.shape)
+        def __shape_func(img, _unused_name):
+            return img.shape
+
+        return self._extract_image_property(__shape_func)
 
     def _load_dtypes(self):
-        def __dtype_func(img):
+        def __dtype_func(img, name):
             return dtype_casting(
-                img.dtype, self._modality_interp_orders[0], as_tf=True)
+                img.dtype, self._modality_interp_orders[name][0], as_tf=True)
 
         return self._extract_image_property(__dtype_func)
 
