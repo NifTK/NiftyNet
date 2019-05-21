@@ -1,20 +1,17 @@
 # -*- coding: utf-8 -*-
-"""
-Image F/S output module
-"""
+""" Image F/S output module """
+
 from __future__ import absolute_import
 
 import numpy as np
 import pandas
 import tensorflow as tf
-from six import string_types
 
 from niftynet.io.base_image_source import (
     DEFAULT_INTERP_ORDER, BaseImageSource, infer_tf_dtypes, param_to_dict)
 from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
 from niftynet.io.image_sets_partitioner import COLUMN_UNIQ_ID
 from niftynet.io.image_type import ImageFactory
-from niftynet.utilities.user_parameters_helper import make_input_tuple
 from niftynet.utilities.util_common import print_progress_bar
 
 
@@ -49,6 +46,7 @@ class FileImageSource(BaseImageSource):
 
     def __init__(self, names=None):
         super(FileImageSource, self).__init__(name='file_image_reader')
+
         # list of file names
         self._file_list = None
         self._input_sources = None
@@ -107,13 +105,13 @@ class FileImageSource(BaseImageSource):
             raise
         if file_list is None:
             # defaulting to all files detected by the input specification
-            file_list = FileImageSetsPartitioner().initialise(data_param)\
+            file_list = FileImageSetsPartitioner().initialise(data_param) \
                                                   .all_files
         if not self.names:
             # defaulting to load all sections defined in the task_param
             self.names = list(task_param)
-        self.names, self._input_sources \
-            = self._get_section_input_sources(task_param, self.names)
+        self.names, self._input_sources = \
+            self._get_section_input_sources(task_param, self.names)
         required_sections = \
             sum([list(task_param.get(name)) for name in self.names], [])
 
@@ -203,23 +201,6 @@ class FileImageSource(BaseImageSource):
         self._check_initialised()
 
         return self._input_sources
-
-    @property
-    def names(self):
-        """
-
-        :return: the keys of ``self.input_sources`` dictionary
-        """
-        return self._names
-
-    @names.setter
-    def names(self, fields_tuple):
-        """
-        output_fields is a sequence of output names
-        each name might correspond to a list of multiple input sources
-        this should be specified in CUSTOM section in the config
-        """
-        self._names = make_input_tuple(fields_tuple, string_types)
 
     @property
     def num_subjects(self):
@@ -319,7 +300,7 @@ def _create_image(file_list, idx, modalities, data_param):
             for file_name in file_path
         ])
         if any_missing:
-            # todo: enable missing modalities again
+            # to-do: enable missing modalities again
             # the file_path of a multimodal image will contain `nan`, e.g.
             # this should be handled by `ImageFactory.create_instance`
             # ('testT1.nii.gz', 'testT2.nii.gz', nan, 'testFlair.nii.gz')

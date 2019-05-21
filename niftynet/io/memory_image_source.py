@@ -9,6 +9,7 @@ from copy import deepcopy
 import numpy as np
 
 from niftynet.io.base_image_source import BaseImageSource
+from niftynet.io.misc_io import dtype_casting
 
 # Name of the data_param namespace entry for the memory input sources
 MEMORY_INPUT_CALLBACK_PARAM = 'input_callback'
@@ -35,6 +36,9 @@ class MemoryImageSource(BaseImageSource):
         self._section_names = section_names
         self._modality_names = None
 
+        if self._section_names:
+            self.names = self._section_names
+
     def initialise(self, data_param, task_param, phase_indices):
         """
         :param data_param: Data specification
@@ -43,8 +47,8 @@ class MemoryImageSource(BaseImageSource):
         :return: self
         """
 
-        self._section_names, self._modality_names \
-            = self._get_section_input_sources(task_param, self._section_names)
+        self._section_names, self._modality_names = \
+            self._get_section_input_sources(task_param, self._section_names)
 
         self._input_callback_functions = {}
 
@@ -97,10 +101,6 @@ class MemoryImageSource(BaseImageSource):
         return {name: self._assemble_output(idx, name) for name in self.names}
 
     @property
-    def names(self):
-        return list(self._modality_names.keys())
-
-    @property
     def num_subjects(self):
         return len(self._phase_indices)
 
@@ -129,7 +129,11 @@ class MemoryImageSource(BaseImageSource):
         return self._extract_image_property(lambda img: img.shape)
 
     def _load_dtypes(self):
-        return self._extract_image_property(lambda img: img.dtype)
+        def __dtype_func(img):
+            return dtype_casting(
+                img.dtype, self._modality_interp_orders[0], as_tf=True)
+
+        return self._extract_image_property(__dtype_func)
 
     def get_image_index(self, subject_id):
         idx = np.argwhere(np.array(self._phase_indices) == int(subject_id))
@@ -141,12 +145,8 @@ class MemoryImageSource(BaseImageSource):
 
     def _get_image_and_interp_dict(self, idx):
         try:
-            image_data = {}
-
-            for name in self._section_names:
-                data = self._assemble_output(idx, name)
-                image_data[name] = data
-
+            image_data = {name: self._assemble_output(idx, name)
+                          for name in self._section_names}
             return image_data, deepcopy(self._modality_interp_orders)
         except (TypeError, IndexError):
             return None, None

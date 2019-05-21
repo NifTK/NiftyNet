@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """This module loads images from csv files and outputs numpy arrays."""
+
 from __future__ import absolute_import, division, print_function
 
 import argparse
@@ -8,10 +9,12 @@ from copy import deepcopy
 
 import numpy as np
 import tensorflow as tf
+from six import string_types
 
 from niftynet.io.misc_io import dtype_casting
 from niftynet.layer.base_layer import (DataDependentLayer, Layer,
                                        RandomisedLayer)
+from niftynet.utilities.user_parameters_helper import make_input_tuple
 from niftynet.utilities.util_common import ParserNamespace, look_up_operations
 
 DEFAULT_INTERP_ORDER = 1
@@ -40,6 +43,7 @@ class BaseImageSource(Layer):
     def __init__(self, name='image_source'):
         super(BaseImageSource, self).__init__(name=name)
 
+        self._names = None
         self._spatial_ranks = None
         self._shapes = None
         self._dtypes = None
@@ -77,6 +81,23 @@ class BaseImageSource(Layer):
         modalities = {name: task_param.get(name) for name in valid_names}
 
         return valid_names, modalities
+
+    @property
+    def names(self):
+        """
+
+        :return: the keys of ``self.input_sources`` dictionary
+        """
+        return self._names
+
+    @names.setter
+    def names(self, fields_tuple):
+        """
+        output_fields is a sequence of output names
+        each name might correspond to a list of multiple input sources
+        this should be specified in CUSTOM section in the config
+        """
+        self._names = make_input_tuple(fields_tuple, string_types)
 
     @abstractmethod
     def _load_spatial_ranks(self):
@@ -171,13 +192,6 @@ class BaseImageSource(Layer):
             self._dtypes = self._load_dtypes()
 
         return self._dtypes
-
-    @abstractproperty
-    def names(self):
-        """
-        :return: the list of input source names
-        """
-        raise NotImplementedError
 
     @abstractproperty
     def num_subjects(self):

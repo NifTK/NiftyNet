@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import nibabel as nib
-import numpy as np
 import skimage.io as skio
 
 from niftynet.application.application_module_wrapper import \
