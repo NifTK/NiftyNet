@@ -54,7 +54,7 @@ class BaseImageSetsPartitioner(object):
         self.data_param = data_param
 
     @abstractmethod
-    def number_of_subjects(self, phase=ALL):
+    def num_subjects(self, phase=ALL):
         """
         query number of images according to phase.
 
@@ -71,7 +71,7 @@ class BaseImageSetsPartitioner(object):
         the data set.
         """
 
-        if self.number_of_subjects() <= 0:
+        if self.num_subjects() <= 0:
             raise RuntimeError('Called on an uninitialised partitioner.')
 
         try:
@@ -92,7 +92,7 @@ class BaseImageSetsPartitioner(object):
                 valid_fraction)
             # raise ValueError
 
-        n_total = self.number_of_subjects()
+        n_total = self.num_subjects()
         n_valid = int(math.ceil(n_total * valid_fraction))
         n_infer = int(math.ceil(n_total * infer_fraction))
         n_train = int(n_total - n_infer - n_valid)

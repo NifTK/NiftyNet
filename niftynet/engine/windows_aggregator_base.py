@@ -40,7 +40,7 @@ class ImageWindowsAggregator(object):
         :return: an image object from image reader
         """
         if self.image_id is not None and self.reader:
-            return self.reader.get_output_image(self.image_id)
+            return self.reader.get_image(self.image_id)
         return None
 
     @property

@@ -58,7 +58,7 @@ class MemoryImageSetsPartitioner(BaseImageSetsPartitioner):
             assert os.path.isfile(data_split_file)
             self._partitions = self._load_partitions(data_split_file)
 
-    def number_of_subjects(self, phase=ALL):
+    def num_subjects(self, phase=ALL):
         phase = self._look_up_phase(phase)
 
         return self._num_subjects if phase == ALL \

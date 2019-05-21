@@ -45,18 +45,18 @@ class FileImageSource(BaseImageSource):
     """
 
     def __init__(self, names=None):
+        """
+        :param names: the list of section names (in
+            task_param) describing the modalities.
+        """
         super(FileImageSource, self).__init__(name='file_image_reader')
 
         # list of file names
         self._file_list = None
         self._input_sources = None
-        self._names = None
+        self._output_list = None
         if names:
             self.names = names
-        self._output_list = None
-
-    def get_output_image(self, idx):
-        return self._output_list[idx]
 
     def initialise(self, data_param, task_param=None, file_list=None):
         """
@@ -105,8 +105,8 @@ class FileImageSource(BaseImageSource):
             raise
         if file_list is None:
             # defaulting to all files detected by the input specification
-            file_list = FileImageSetsPartitioner().initialise(data_param) \
-                                                  .all_files
+            file_list = \
+                FileImageSetsPartitioner().initialise(data_param).all_files
         if not self.names:
             # defaulting to load all sections defined in the task_param
             self.names = list(task_param)
@@ -146,20 +146,6 @@ class FileImageSource(BaseImageSource):
                 'from sections %s as input [%s]', len(self._output_list),
                 self.input_sources[name], name)
         return self
-
-    def _get_image_and_interp_dict(self, idx):
-        try:
-            image_dict = self._output_list[idx]
-        except (IndexError, TypeError):
-            return None, None
-
-        image_data_dict = \
-            {field: image.get_data() for (field, image) in image_dict.items()}
-        interp_order_dict = \
-            {field: image.interp_order for (
-                field, image) in image_dict.items()}
-
-        return image_data_dict, interp_order_dict
 
     def _check_initialised(self):
         """
@@ -208,9 +194,15 @@ class FileImageSource(BaseImageSource):
 
         :return: number of subjects in the reader
         """
-        if not self._output_list:
-            return 0
-        return len(self._output_list)
+        return 0 if not self._output_list else len(self._output_list)
+
+    def get_image_index(self, subject_id):
+        """
+        Given a subject id, return the file_list index
+        :param subject_id: a string with the subject id
+        :return: an int with the file list index
+        """
+        return np.flatnonzero(self._file_list['subject_id'] == subject_id)[0]
 
     def get_subject_id(self, image_index):
         """
@@ -221,14 +213,6 @@ class FileImageSource(BaseImageSource):
         except KeyError:
             tf.logging.warning('Unknown subject id in reader file list.')
             raise
-
-    def get_image_index(self, subject_id):
-        """
-        Given a subject id, return the file_list index
-        :param subject_id: a string with the subject id
-        :return: an int with the file list index
-        """
-        return np.flatnonzero(self._file_list['subject_id'] == subject_id)[0]
 
     def get_subject(self, image_index=None):
         """
@@ -242,6 +226,23 @@ class FileImageSource(BaseImageSource):
         except (KeyError, AttributeError):
             tf.logging.warning('Unknown subject id in reader file list.')
             raise
+
+    def get_image(self, idx):
+        return self._output_list[idx]
+
+    def get_image_and_interp_dict(self, idx):
+        try:
+            image_data_dict = {
+                field: image.get_data()
+                for (field, image) in self.get_image(idx).items()
+            }
+            interp_order_dict = {
+                field: image.interp_order
+                for (field, image) in self.get_image(idx).items()
+            }
+            return image_data_dict, interp_order_dict
+        except (IndexError, TypeError):
+            return None, None
 
 
 def _filename_to_image_list(file_list, mod_dict, data_param):

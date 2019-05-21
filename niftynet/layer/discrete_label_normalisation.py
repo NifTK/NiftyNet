@@ -120,7 +120,7 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
             "corrupted mapping file? {}".format(self.model_file)
         return True
 
-    def train(self, image_list, num_subjects=None):
+    def train(self, image_list):
         # check modalities to train, using the first subject in subject list
         # to find input modality list
         assert image_list is not None, "nothing to training for this layer"
@@ -131,14 +131,10 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
                     self.modalities,
                     len(self.label_map[self.key[0]])))
             return
-        if num_subjects is None:
-            num_subjects = len(image_list)
-
         tf.logging.info(
             "Looking for the set of unique discrete labels from input {}"
-            " using {} subjects".format(self.image_name, num_subjects))
-        label_map = find_set_of_labels(image_list, num_subjects,
-                                       self.image_name, self.key)
+            " using {} subjects".format(self.image_name, len(image_list)))
+        label_map = find_set_of_labels(image_list, self.image_name, self.key)
         # merging trained_mapping dict and self.mapping dict
         self.label_map.update(label_map)
         all_maps = hs.read_mapping_file(self.model_file)
@@ -146,19 +142,17 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
         hs.write_all_mod_mapping(self.model_file, all_maps)
 
 
-def find_set_of_labels(image_list, num_subjects, field, output_key):
+def find_set_of_labels(image_list, field, output_key):
     label_set = set()
-    is_first = True
     for idx, image in enumerate(image_list):
-        if is_first and field not in image:
+        if field not in image:
             break
-
         assert field in image, \
             "label normalisation layer requires {} input, " \
             "however it is not provided in the config file.\n" \
             "Please consider setting " \
             "label_normalisation to False.".format(field)
-        print_progress_bar(idx, num_subjects,
+        print_progress_bar(idx, len(image_list),
                            prefix='searching unique labels from files',
                            decimals=1, length=10, fill='*')
         unique_label = np.unique(image[field].get_data())

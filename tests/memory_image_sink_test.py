@@ -56,7 +56,7 @@ class MemoryImageSinkTest(tf.test.TestCase):
 
             sink(2*img_dict['image'],
                  source.get_subject_id(i),
-                 source.get_output_image(i)['image'])
+                 source.get_image(i)['image'])
 
 
 if __name__ == '__main__':

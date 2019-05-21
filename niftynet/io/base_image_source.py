@@ -157,9 +157,8 @@ class BaseImageSource(Layer):
 
         for layer in self.preprocessors:
             if isinstance(layer, DataDependentLayer):
-                layer.train((self.get_output_image(i)
-                             for i in range(self.num_subjects)),
-                            num_subjects=self.num_subjects)
+                layer.train(
+                    [self.get_image(i) for i in range(self.num_subjects)])
 
     def add_preprocessing_layers(self, layers):
         """
@@ -200,13 +199,6 @@ class BaseImageSource(Layer):
         """
         raise NotImplementedError
 
-    @abstractmethod
-    def get_subject_id(self, image_index):
-        """
-        Given an integer id returns the subject id.
-        """
-        raise NotImplementedError
-
     @abstractproperty
     def input_sources(self):
         """
@@ -222,16 +214,24 @@ class BaseImageSource(Layer):
         raise NotImplementedError
 
     @abstractmethod
+    def get_subject_id(self, image_index):
+        """
+        Given an integer id returns the subject id string.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def get_image_index(self, subject_id):
         """
-        Given a subject id, return the file_list index
+        Given a subject string id, return the file_list index
+
         :param subject_id: a string with the subject id
         :return: an int with the file list index
         """
         raise NotImplementedError
 
     @abstractmethod
-    def _get_image_and_interp_dict(self, idx):
+    def get_image_and_interp_dict(self, idx):
         """
         Given an index this function must produce two dictionaries
         containing one image data tensor and one interpolation
@@ -246,7 +246,7 @@ class BaseImageSource(Layer):
         raise NotImplementedError
 
     @abstractmethod
-    def get_output_image(self, idx):
+    def get_image(self, idx):
         """
         :return: the i-th image (including meta data) outputted by
         this source as a input-source/image dictionary.
@@ -273,7 +273,7 @@ class BaseImageSource(Layer):
                 self.current_id = idx
 
         image_data_dict, interp_order_dict = \
-            self._get_image_and_interp_dict(idx)
+            self.get_image_and_interp_dict(idx)
 
         if not image_data_dict:
             idx = -1
@@ -308,9 +308,9 @@ def param_to_dict(input_data_param):
     :return: input data specifications as a nested dictionary
     """
     error_msg = 'Unknown ``data_param`` type. ' \
-                'It should be a nested dictionary: '\
-                '{"modality_name": {"input_property": value}} '\
-                'or a dictionary of: {"modality_name": '\
+                'It should be a nested dictionary: ' \
+                '{"modality_name": {"input_property": value}} ' \
+                'or a dictionary of: {"modality_name": ' \
                 'niftynet.utilities.util_common.ParserNamespace}'
     data_param = deepcopy(input_data_param)
     if isinstance(data_param, (ParserNamespace, argparse.Namespace)):

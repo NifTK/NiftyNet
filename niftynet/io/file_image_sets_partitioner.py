@@ -69,7 +69,7 @@ class FileImageSetsPartitioner(BaseImageSetsPartitioner):
         tf.logging.info(self)
         return self
 
-    def number_of_subjects(self, phase=ALL):
+    def num_subjects(self, phase=ALL):
         if self._file_list is None:
             return 0
         phase = self._look_up_phase(phase)
@@ -352,15 +352,15 @@ class FileImageSetsPartitioner(BaseImageSetsPartitioner):
         """
         Print summary of the partitioner.
         """
-        n_subjects = self.number_of_subjects()
+        n_subjects = self.num_subjects()
         summary_str = '\n\nNumber of subjects {}, '.format(n_subjects)
         if self._file_list is not None:
             summary_str += 'input section names: {}\n'.format(
                 list(self._file_list))
         if self._partition_ids is not None and n_subjects > 0:
-            n_train = self.number_of_subjects(TRAIN)
-            n_valid = self.number_of_subjects(VALID)
-            n_infer = self.number_of_subjects(INFER)
+            n_train = self.num_subjects(TRAIN)
+            n_valid = self.num_subjects(VALID)
+            n_infer = self.num_subjects(INFER)
             summary_str += \
                 'Dataset partitioning:\n' \
                 '-- {} {} cases ({:.2f}%),\n' \

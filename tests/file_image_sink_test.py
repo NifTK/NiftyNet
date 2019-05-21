@@ -49,7 +49,7 @@ class FileImageSinkTest(tf.test.TestCase):
             sub = reader.get_subject_id(idx)
             outpt = (1 + idx)*inpt['image']
 
-            writer(outpt, sub, reader.get_output_image(idx)['image'])
+            writer(outpt, sub, reader.get_image(idx)['image'])
             self._test_content(sub, writer)
             subs.append(sub)
 
@@ -72,7 +72,7 @@ class FileImageSinkTest(tf.test.TestCase):
             sub = reader.get_subject_id(idx)
             outpt = (1 + idx)*inpt['label']
 
-            ref = reader.get_output_image(idx)['label']
+            ref = reader.get_image(idx)['label']
             writer(outpt, sub, ref)
             img = nib.load(os.path.join(
                 OUTPUT_PATH, sub + writer.postfix + '.nii.gz')).get_data()

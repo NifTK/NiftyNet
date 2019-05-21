@@ -7,9 +7,10 @@ from __future__ import absolute_import
 from copy import deepcopy
 
 import numpy as np
+import tensorflow as tf
 
 from niftynet.io.base_image_source import BaseImageSource
-from niftynet.io.misc_io import dtype_casting
+from niftynet.io.misc_io import dtype_casting, expand_to_5d
 
 # Name of the data_param namespace entry for the memory input sources
 MEMORY_INPUT_CALLBACK_PARAM = 'input_callback'
@@ -22,22 +23,19 @@ class MemoryImageSource(BaseImageSource):
     layer.
     """
 
-    def __init__(self, section_names):
+    def __init__(self, names):
         """
-        :param section_names: the list of section names (in
-        task_param) describing the modalities.
+        :param names: the list of section names (in
+            task_param) describing the modalities.
         """
-
         super(MemoryImageSource, self).__init__(name='memory_image_reader')
 
         self._input_callback_functions = None
         self._modality_interp_orders = None
         self._phase_indices = None
-        self._section_names = section_names
         self._modality_names = None
-
-        if self._section_names:
-            self.names = self._section_names
+        if names:
+            self.names = names
 
     def initialise(self, data_param, task_param, phase_indices):
         """
@@ -47,28 +45,25 @@ class MemoryImageSource(BaseImageSource):
         :return: self
         """
 
-        self._section_names, self._modality_names = \
-            self._get_section_input_sources(task_param, self._section_names)
+        self.names, self._modality_names = \
+            self._get_section_input_sources(task_param, self.names)
 
         self._input_callback_functions = {}
 
-        all_modalities = []
-        for mods in self._modality_names.values():
-            all_modalities += mods
-        for name in set(all_modalities):
-            if not vars(data_param[name]).get(MEMORY_INPUT_CALLBACK_PARAM,
-                                              None):
-                raise ValueError(
+        all_modalities = set(
+            sum([list(mods) for mods in self._modality_names.values()], []))
+        for name in all_modalities:
+            try:
+                self._input_callback_functions[name] = \
+                    vars(data_param[name])[MEMORY_INPUT_CALLBACK_PARAM]
+            except (AttributeError, TypeError, ValueError):
+                tf.logging.fatal(
                     'Require an input callback for modality %s' % name)
-
-            self._input_callback_functions[name] = \
-                vars(data_param[name])[MEMORY_INPUT_CALLBACK_PARAM]
-
+                raise
         self._modality_interp_orders = \
             {name: tuple([data_param[mod].interp_order for mod in mods])
              for name, mods in self._modality_names.items()}
         self._phase_indices = phase_indices
-
         return self
 
     def _assemble_output(self, idx, source_name):
@@ -78,31 +73,23 @@ class MemoryImageSource(BaseImageSource):
         """
 
         if not self._modality_names:
-            raise RuntimeError('This source is not initialised.')
+            tf.logging.fatal('This source is not initialised.')
+            raise RuntimeError
 
         image_idx = self._phase_indices[idx]
         modalities = self._modality_names[source_name]
-        first_image = self._input_callback_functions[modalities[0]](image_idx)
 
-        if len(modalities) > 1:
-            images = [first_image]
-            for mod in modalities[1:]:
-                images.append(self._input_callback_functions[mod](image_idx))
-                if first_image.shape[:3] != images[-1].shape[:3]:
-                    raise RuntimeError('Only images with identical spatial '
-                                       'configuration can be stacked. Please '
-                                       'adapt your callback functions.')
-
-            return np.concatenate(images, axis=-1)
-
-        return first_image
-
-    def get_output_image(self, idx):
-        return {name: self._assemble_output(idx, name) for name in self.names}
-
-    @property
-    def num_subjects(self):
-        return len(self._phase_indices)
+        image_data = [
+            self._input_callback_functions[mod](image_idx)
+            for mod in modalities
+        ]
+        try:
+            return np.concatenate(image_data, axis=-1)
+        except ValueError:
+            tf.logging.fatal('Only images with identical spatial '
+                             'configuration can be stacked. Please '
+                             'adapt your callback functions.')
+            raise
 
     @property
     def input_sources(self):
@@ -140,19 +127,23 @@ class MemoryImageSource(BaseImageSource):
 
         return self._extract_image_property(__dtype_func)
 
+    @property
+    def num_subjects(self):
+        return len(self._phase_indices)
+
     def get_image_index(self, subject_id):
         idx = np.argwhere(np.array(self._phase_indices) == int(subject_id))
-
         return idx[0, 0] if idx else -1
 
     def get_subject_id(self, image_index):
-        return str(self._phase_indices[image_index])
+        return '{}'.format(self._phase_indices[image_index])
 
-    def _get_image_and_interp_dict(self, idx):
+    def get_image(self, idx):
+        return {name: self._assemble_output(idx, name) for name in self.names}
+
+    def get_image_and_interp_dict(self, idx):
         try:
-            image_data = {name: self._assemble_output(idx, name)
-                          for name in self._section_names}
-            return image_data, deepcopy(self._modality_interp_orders)
+            return self.get_image(idx), deepcopy(self._modality_interp_orders)
         except (TypeError, IndexError):
             return None, None
 
@@ -161,7 +152,8 @@ def make_input_spec(modality_spec,
                     image_callback_function,
                     do_reshape_nd=False,
                     do_reshape_rgb=False,
-                    do_typecast=True):
+                    do_typecast=True,
+                    additional_callbacks=None):
     """
     Updates a configuration-file modality specification with the
     necessary fields for loading from memory.
@@ -179,50 +171,44 @@ def make_input_spec(modality_spec,
         into a 5D tensor, as required by NiftyNet.
     :param do_typecast: boolean flag indicating whether to add an image
         data typecast wrapper to the function, turning the data into floats.
+    :param additional_callbacks: a list of function transforms which
+        convert a numpy array into another numpy array, as preprocessors
     """
 
-    callback0 = image_callback_function
+    def _reshape_wrapper_nd(img):
+        img = expand_to_5d(img)
+        if img.shape[3] > 1:
+            # time sequences (4th dim length > 1) not supported
+            # all content squeezed to the 5th dim (modality dim)
+            new_shape = img.shape[0:3] + (1, -1)
+            img = img.reshape(new_shape)
+        return img
+
+    def _reshape_wrapper_rgb(img):
+        new_shape = img.shape[0:2] + (1, 1, 3)
+        return img.reshape(new_shape)
+
+    def _typecast_wrapper(img):
+        return img.astype(np.float32)
+
+    img_callbacks = []
     if do_reshape_nd:
-
-        def _reshape_wrapper_nd(idx):
-            img = callback0(idx)
-
-            new_shape = list(img.shape[:3])
-            new_shape += [1] * (4 - len(new_shape))
-            if len(img.shape) > 3:
-                new_shape += [img.shape[-1]]
-            else:
-                new_shape += [1]
-
-            return img.reshape(new_shape)
-
-        callback1 = _reshape_wrapper_nd
-    else:
-        callback1 = callback0
-
+        img_callbacks.append(_reshape_wrapper_nd)
     if do_reshape_rgb:
-
-        def _reshape_wrapper_rgb(idx):
-            img = callback1(idx)
-
-            return img.reshape((img.shape[0], img.shape[1], 1, 1, 3))
-
-        callback2 = _reshape_wrapper_rgb
-    else:
-        callback2 = callback1
-
+        img_callbacks.append(_reshape_wrapper_rgb)
     if do_typecast:
+        img_callbacks.append(_typecast_wrapper)
+    if additional_callbacks:
+        img_callbacks.extend(additional_callbacks)
 
-        def _typecast_wrapper(idx):
-            return callback2(idx).astype(np.float32)
-
-        callback3 = _typecast_wrapper
-    else:
-        callback3 = callback2
+    def _stacked_call(idx):
+        img = image_callback_function(idx)
+        for func in img_callbacks:
+            img = func(img)
+        return img
 
     if not isinstance(modality_spec, dict):
-        vars(modality_spec)[MEMORY_INPUT_CALLBACK_PARAM] = callback3
+        vars(modality_spec)[MEMORY_INPUT_CALLBACK_PARAM] = _stacked_call
     else:
-        modality_spec[MEMORY_INPUT_CALLBACK_PARAM] = callback3
-
+        modality_spec[MEMORY_INPUT_CALLBACK_PARAM] = _stacked_call
     return modality_spec
