@@ -117,7 +117,7 @@ class ApplicationModuleWrapper(object):
 
             make_input_spec(data_param[name], funct, **kwargs)
 
-        if self._output_callback and not infer_param is None:
+        if self._output_callback and infer_param is not None:
             make_output_spec(infer_param, self._output_callback)
 
         set_number_of_memory_subjects(data_param, self._num_subjects)

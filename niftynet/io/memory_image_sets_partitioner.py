@@ -122,8 +122,6 @@ class MemoryImageSetsPartitioner(BaseImageSetsPartitioner):
         return partitions
 
     def get_image_lists_by(self, phase=None, action='train'):
-        lists = []
-
         if phase:
             if phase == ALL:
                 lists = [idcs for idcs in self._partitions.values()]

@@ -32,8 +32,8 @@ class MemoryImageSource(BaseImageSource):
 
         self._input_callback_functions = None
         self._modality_interp_orders = None
-        self._phase_indices = None
         self._modality_names = None
+        self._phase_indices = None
         if names:
             self.names = names
 
@@ -91,10 +91,6 @@ class MemoryImageSource(BaseImageSource):
                              'adapt your callback functions.')
             raise
 
-    @property
-    def input_sources(self):
-        return self._modality_names
-
     def _extract_image_property(self, property_function):
         """
         Extracts a property of the output images by means of an
@@ -128,11 +124,16 @@ class MemoryImageSource(BaseImageSource):
         return self._extract_image_property(__dtype_func)
 
     @property
+    def input_sources(self):
+        return self._modality_names
+
+    @property
     def num_subjects(self):
         return len(self._phase_indices)
 
     def get_image_index(self, subject_id):
-        idx = np.argwhere(np.array(self._phase_indices) == int(subject_id))
+        idx = np.argwhere(
+            np.array(self._phase_indices).reshape(-1) == int(subject_id))
         return idx[0, 0] if idx else -1
 
     def get_subject_id(self, image_index):
