@@ -3,26 +3,16 @@
 
 from __future__ import absolute_import, division, print_function
 
-import argparse
 from abc import ABCMeta, abstractmethod, abstractproperty
 from copy import deepcopy
 
 import numpy as np
-import tensorflow as tf
-from six import string_types
 
 from niftynet.io.misc_io import dtype_casting
 from niftynet.layer.base_layer import (DataDependentLayer, Layer,
                                        RandomisedLayer)
-from niftynet.utilities.user_parameters_helper import make_input_tuple
-from niftynet.utilities.util_common import ParserNamespace, look_up_operations
 
 DEFAULT_INTERP_ORDER = 1
-SUPPORTED_DATA_SPEC = {
-    'csv_file', 'path_to_search', 'filename_contains', 'filename_not_contains',
-    'filename_removefromid', 'interp_order', 'loader', 'pixdim', 'axcodes',
-    'spatial_window_size'
-}
 
 
 def infer_tf_dtypes(image_array):
@@ -43,7 +33,7 @@ class BaseImageSource(Layer):
     def __init__(self, name='image_source'):
         super(BaseImageSource, self).__init__(name=name)
 
-        self._names = None
+        self._input_sources = None
         self._spatial_ranks = None
         self._shapes = None
         self._dtypes = None
@@ -51,53 +41,19 @@ class BaseImageSource(Layer):
         self.current_id = -1
         self.preprocessors = []
 
-    @staticmethod
-    def _get_section_input_sources(task_param, section_names):
-        """
-        Filters a list of section names against a task_param
-        struct eliminating any invalid section names. Throws an
-        exception if no valid entries are found in the list.
-
-        :param task_param: task_param dictionary of application
-        specific settings.
-        :param section_names: list of image specification sections.
-        :return: the filtered list of section names and the dictionary
-        of corresponding modalities.
-        """
-
-        if not isinstance(task_param, dict):
-            task_param = vars(task_param)
-
-        valid_names = [
-            name for name in section_names if task_param.get(name, None)
-        ]
-        if not valid_names:
-            tf.logging.fatal(
-                "Reader requires task input keywords %s, but "
-                "not exist in the config file.\n"
-                "Available task keywords: %s", section_names, list(task_param))
-            raise ValueError
-
-        modalities = {name: task_param.get(name) for name in valid_names}
-
-        return valid_names, modalities
-
     @property
-    def names(self):
+    def input_sources(self):
         """
+        returns mapping of input keywords and input sections
+        e.g., input_sources::
 
-        :return: the keys of ``self.input_sources`` dictionary
-        """
-        return self._names
+            {'image': ('T1', 'T2'),
+             'label': ('manual_map',)}
 
-    @names.setter
-    def names(self, fields_tuple):
+        map task parameter keywords ``image`` and ``label`` to
+        section names ``T1``, ``T2``, and ``manual_map`` respectively.
         """
-        output_fields is a sequence of output names
-        each name might correspond to a list of multiple input sources
-        this should be specified in CUSTOM section in the config
-        """
-        self._names = make_input_tuple(fields_tuple, string_types)
+        return self._input_sources
 
     @abstractmethod
     def _load_spatial_ranks(self):
@@ -124,6 +80,25 @@ class BaseImageSource(Layer):
         :return: the dict of image shapes returned by shapes
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def _load_dtypes(self):
+        """
+        :return: the dict of tensorflow data types returned by tf_dtypes
+        """
+        raise NotImplementedError
+
+    @property
+    def tf_dtypes(self):
+        """
+        Infer input data dtypes in TF
+        (using the first image in the file list).
+        """
+
+        if not self._dtypes:
+            self._dtypes = self._load_dtypes()
+
+        return self._dtypes
 
     @property
     def shapes(self):
@@ -173,43 +148,10 @@ class BaseImageSource(Layer):
             self.preprocessors.extend(layers)
         self.prepare_preprocessors()
 
-    @abstractmethod
-    def _load_dtypes(self):
-        """
-        :return: the dict of tensorflow data types returned by tf_dtypes
-        """
-        raise NotImplementedError
-
-    @property
-    def tf_dtypes(self):
-        """
-        Infer input data dtypes in TF
-        (using the first image in the file list).
-        """
-
-        if not self._dtypes:
-            self._dtypes = self._load_dtypes()
-
-        return self._dtypes
-
     @abstractproperty
     def num_subjects(self):
         """
         :return the total number of subjects across the collections.
-        """
-        raise NotImplementedError
-
-    @abstractproperty
-    def input_sources(self):
-        """
-        returns mapping of input keywords and input sections
-        e.g., input_sources::
-
-            {'image': ('T1', 'T2'),
-             'label': ('manual_map',)}
-
-        map task parameter keywords ``image`` and ``label`` to
-        section names ``T1``, ``T2``, and ``manual_map`` respectively.
         """
         raise NotImplementedError
 
@@ -297,35 +239,3 @@ class BaseImageSource(Layer):
                     # print('%s, %.3f sec'%(layer, -local_time + time.time()))
 
         return idx, image_data_dict, interp_order_dict
-
-
-def param_to_dict(input_data_param):
-    """
-    Validate the user input ``input_data_param``
-    raise an error if it's invalid.
-
-    :param input_data_param:
-    :return: input data specifications as a nested dictionary
-    """
-    error_msg = 'Unknown ``data_param`` type. ' \
-                'It should be a nested dictionary: ' \
-                '{"modality_name": {"input_property": value}} ' \
-                'or a dictionary of: {"modality_name": ' \
-                'niftynet.utilities.util_common.ParserNamespace}'
-    data_param = deepcopy(input_data_param)
-    if isinstance(data_param, (ParserNamespace, argparse.Namespace)):
-        data_param = vars(data_param)
-    if not isinstance(data_param, dict):
-        raise ValueError(error_msg)
-    for mod in data_param:
-        mod_param = data_param[mod]
-        if isinstance(mod_param, (ParserNamespace, argparse.Namespace)):
-            dict_param = vars(mod_param)
-        elif isinstance(mod_param, dict):
-            dict_param = mod_param
-        else:
-            raise ValueError(error_msg)
-        for data_key in dict_param:
-            look_up_operations(data_key, SUPPORTED_DATA_SPEC)
-        data_param[mod] = dict_param
-    return data_param

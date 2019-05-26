@@ -11,6 +11,7 @@ import tensorflow as tf
 from niftynet.io.memory_image_sink import MemoryImageSink
 from niftynet.io.memory_image_source import (MemoryImageSource,
                                              make_input_spec)
+from niftynet.io.image_reader import ImageReader
 from niftynet.layer.pad import PadLayer
 from niftynet.utilities.util_common import ParserNamespace
 
@@ -41,8 +42,10 @@ class MemoryImageSinkTest(tf.test.TestCase):
 
         task_param = ParserNamespace(image=['image'])
 
-        source = MemoryImageSource(['image'])
-        source.initialise(data_param, task_param, [2, 3, 7])
+        # source = MemoryImageSource(['image'])
+        source = ImageReader(['image']).initialise(
+            data_param, task_param, phase_indices=[2, 3, 7], from_files=False)
+        # source.initialise(data_param, task_param, [2, 3, 7])
         source.add_preprocessing_layers([PadLayer(['image'], [3]*2)])
 
         sink = MemoryImageSink(source, 1, self.check_output)

@@ -8,7 +8,7 @@ import nibabel as nib
 import numpy as np
 import tensorflow as tf
 
-from niftynet.io.file_image_source import FileImageSource
+from niftynet.io.image_reader import ImageReader
 
 # from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 
@@ -81,8 +81,7 @@ class Read2DTest(tf.test.TestCase):
         self.assertDictEqual(reader.input_sources, {'mr': ('mr',)})
         self.assertDictEqual(reader.shapes, {'mr': (100, 100, 1, 1, 1)})
         self.assertDictEqual(reader.tf_dtypes, {'mr': tf.float32})
-        self.assertEqual(reader.names, ('mr',))
-        self.assertEqual(reader.num_subjects, 30)
+        self.assertEqual(len(reader.output_list), 30)
 
     def renamed_property_asserts(self, reader):
         # test properties
@@ -90,62 +89,61 @@ class Read2DTest(tf.test.TestCase):
         self.assertDictEqual(reader.input_sources, {'ct': ('mr',)})
         self.assertDictEqual(reader.shapes, {'ct': (100, 100, 1, 1, 1)})
         self.assertDictEqual(reader.tf_dtypes, {'ct': tf.float32})
-        self.assertEqual(reader.names, ('ct',))
-        self.assertEqual(reader.num_subjects, 30)
+        self.assertEqual(len(reader.output_list), 30)
 
     def test_simple(self):
         data_param = {'mr': {'path_to_search': IMAGE_PATH_2D}}
-        reader = FileImageSource().initialise(data_param)
+        reader = ImageReader().initialise(data_param)
         # test properties
         self.default_property_asserts(reader)
         idx, data, interp = reader()
 
         # test output
         self.assertTrue('mr' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,)})
         self.assertEqual(data['mr'].shape, (100, 100, 1, 1, 1))
 
     def test_renaming(self):
         data_param = {'mr': {'path_to_search': IMAGE_PATH_2D}}
         group_param = {'ct': ('mr',)}
-        reader = FileImageSource().initialise(data_param, group_param)
+        reader = ImageReader().initialise(data_param, group_param)
         self.renamed_property_asserts(reader)
         idx, data, interp = reader()
 
         # test output
         self.assertTrue('ct' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'ct': (1,)})
         self.assertEqual(data['ct'].shape, (100, 100, 1, 1, 1))
 
     def test_reader_field(self):
         data_param = {'mr': {'path_to_search': IMAGE_PATH_2D}}
         group_param = {'ct': ('mr',)}
-        reader = FileImageSource(['ct']).initialise(data_param, group_param)
+        reader = ImageReader(['ct']).initialise(data_param, group_param)
         self.renamed_property_asserts(reader)
         idx, data, interp = reader()
 
         # test output
         self.assertTrue('ct' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'ct': (1,)})
         self.assertEqual(data['ct'].shape, (100, 100, 1, 1, 1))
 
         with self.assertRaisesRegexp(ValueError, ''):
             # grouping name 'ct' but
-            reader = FileImageSource(['mr']).initialise(data_param, group_param)
+            reader = ImageReader(['mr']).initialise(data_param, group_param)
 
     def test_input_properties(self):
         data_param = {'mr': {'path_to_search': IMAGE_PATH_2D,
                              'csv_file': '2d_test.csv'}}
-        reader = FileImageSource().initialise(data_param)
+        reader = ImageReader().initialise(data_param)
         self.default_property_asserts(reader)
         idx, data, interp = reader()
 
         # test output
         self.assertTrue('mr' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,)})
         self.assertEqual(data['mr'].shape, (100, 100, 1, 1, 1))
 
@@ -154,14 +152,14 @@ class Read2DTest(tf.test.TestCase):
                              'csv_file': '2d_test.csv',
                              'pixdim': (2, 2, 2),
                              'axcodes': 'RAS'}}
-        reader = FileImageSource().initialise(data_param)
-        self.assertEqual(reader.get_image(0)['mr'].output_pixdim, (None,))
-        self.assertEqual(reader.get_image(0)['mr'].output_axcodes, (None,))
+        reader = ImageReader().initialise(data_param)
+        self.assertEqual(reader.output_list[0]['mr'].output_pixdim, (None,))
+        self.assertEqual(reader.output_list[0]['mr'].output_axcodes, (None,))
         idx, data, interp = reader()
 
         # test output
         self.assertTrue('mr' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,)})
         self.assertEqual(data['mr'].shape, (100, 100, 1, 1, 1))
 
@@ -171,7 +169,7 @@ class Read2DTest(tf.test.TestCase):
                              'pixdim': (2, 2, 2),
                              'axcodes': 'RAS'}}
         grouping_param = {'ct': ('mr', 'mr', 'mr')}
-        reader = FileImageSource().initialise(data_param, grouping_param)
+        reader = ImageReader().initialise(data_param, grouping_param)
         self.assertEqual(reader.spatial_ranks, {'ct': 2})
 
     def test_2D_multimodal_properties(self):
@@ -180,17 +178,17 @@ class Read2DTest(tf.test.TestCase):
                              'pixdim': (2, 1.5, 2),
                              'axcodes': 'RAS'}}
         grouping_param = {'ct': ('mr', 'mr', 'mr')}
-        reader = FileImageSource().initialise(data_param, grouping_param)
+        reader = ImageReader().initialise(data_param, grouping_param)
         self.assertDictEqual(reader.spatial_ranks, {'ct': 2})
-        self.assertEqual(reader.get_image(0)['ct'].output_pixdim,
+        self.assertEqual(reader.output_list[0]['ct'].output_pixdim,
                          ((2.0, 1.5, 2.0),) * 3)
-        self.assertEqual(reader.get_image(0)['ct'].output_axcodes,
+        self.assertEqual(reader.output_list[0]['ct'].output_axcodes,
                          (('R', 'A', 'S'),) * 3)
 
         # test output
         idx, data, interp = reader()
         self.assertTrue('ct' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'ct': (1, 1, 1)})
         self.assertEqual(data['ct'].shape, (100, 100, 1, 1, 3))
 
@@ -203,16 +201,16 @@ class Read2D_1DTest(tf.test.TestCase):
                              'filename_contains': '_img',
                              'pixdim': (2, 2, 2),
                              'axcodes': 'RAS'}}
-        reader = FileImageSource().initialise(data_param)
-        self.assertEqual(reader.get_image(0)['mr'].output_pixdim,
+        reader = ImageReader().initialise(data_param)
+        self.assertEqual(reader.output_list[0]['mr'].output_pixdim,
                          ((2.0, 2.0, 2.0),))
-        self.assertEqual(reader.get_image(0)['mr'].output_axcodes,
+        self.assertEqual(reader.output_list[0]['mr'].output_axcodes,
                          (('R', 'A', 'S'),))
         idx, data, interp = reader()
 
         # test output
         self.assertTrue('mr' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,)})
         self.assertEqual(data['mr'].shape, (120, 160, 1, 1, 1))
 
@@ -222,17 +220,17 @@ class Read2D_1DTest(tf.test.TestCase):
                              'pixdim': (2, 1.5, 2),
                              'axcodes': 'RAS'}}
         grouping_param = {'ct': ('mr', 'mr', 'mr')}
-        reader = FileImageSource().initialise(data_param, grouping_param)
+        reader = ImageReader().initialise(data_param, grouping_param)
         self.assertDictEqual(reader.spatial_ranks, {'ct': 2})
-        self.assertEqual(reader.get_image(0)['ct'].output_pixdim,
+        self.assertEqual(reader.output_list[0]['ct'].output_pixdim,
                          ((2.0, 1.5, 2.0),) * 3)
-        self.assertEqual(reader.get_image(0)['ct'].output_axcodes,
+        self.assertEqual(reader.output_list[0]['ct'].output_axcodes,
                          (('R', 'A', 'S'),) * 3)
 
         # test output
         idx, data, interp = reader()
         self.assertTrue('ct' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'ct': (1, 1, 1)})
         self.assertEqual(data['ct'].shape, (120, 160, 1, 1, 3))
 
@@ -244,16 +242,16 @@ class Read2D_1D_x1y_Test(tf.test.TestCase):
                              'filename_contains': 'x_1_y',
                              'pixdim': (2, 2, 2),
                              'axcodes': 'RAS'}}
-        reader = FileImageSource().initialise(data_param)
-        self.assertEqual(reader.get_image(0)['mr'].output_pixdim,
+        reader = ImageReader().initialise(data_param)
+        self.assertEqual(reader.output_list[0]['mr'].output_pixdim,
                          ((2.0, 2.0, 2.0),))
-        self.assertEqual(reader.get_image(0)['mr'].output_axcodes,
+        self.assertEqual(reader.output_list[0]['mr'].output_axcodes,
                          (('R', 'A', 'S'),))
         idx, data, interp = reader()
 
         # test output
         self.assertTrue('mr' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,)})
         self.assertEqual(data['mr'].shape, (100, 100, 1, 1, 1))
 
@@ -263,17 +261,17 @@ class Read2D_1D_x1y_Test(tf.test.TestCase):
                              'pixdim': (2, 1.5, 2),
                              'axcodes': 'RAS'}}
         grouping_param = {'ct': ('mr', 'mr', 'mr')}
-        reader = FileImageSource().initialise(data_param, grouping_param)
+        reader = ImageReader().initialise(data_param, grouping_param)
         self.assertDictEqual(reader.spatial_ranks, {'ct': 2})
-        self.assertEqual(reader.get_image(0)['ct'].output_pixdim,
+        self.assertEqual(reader.output_list[0]['ct'].output_pixdim,
                          ((2.0, 1.5, 2.0),) * 3)
-        self.assertEqual(reader.get_image(0)['ct'].output_axcodes,
+        self.assertEqual(reader.output_list[0]['ct'].output_axcodes,
                          (('R', 'A', 'S'),) * 3)
 
         # test output
         idx, data, interp = reader()
         self.assertTrue('ct' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'ct': (1, 1, 1)})
         self.assertEqual(data['ct'].shape, (100, 100, 1, 1, 3))
 
@@ -286,16 +284,16 @@ class Read2D_colorTest(tf.test.TestCase):
                              'filename_contains': '_u',
                              'pixdim': (2, 2, 2),
                              'axcodes': 'RAS'}}
-        reader = FileImageSource().initialise(data_param)
-        self.assertEqual(reader.get_image(0)['mr'].output_pixdim,
+        reader = ImageReader().initialise(data_param)
+        self.assertEqual(reader.output_list[0]['mr'].output_pixdim,
                          ((2.0, 2.0, 2.0),))
-        self.assertEqual(reader.get_image(0)['mr'].output_axcodes,
+        self.assertEqual(reader.output_list[0]['mr'].output_axcodes,
                          (('R', 'A', 'S'),))
         idx, data, interp = reader()
 
         # test output
         self.assertTrue('mr' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,)})
         self.assertEqual(data['mr'].shape, (100, 100, 1, 1, 3))
 
@@ -306,17 +304,17 @@ class Read2D_colorTest(tf.test.TestCase):
                    'pixdim': (2, 1.5, 2),
                    'axcodes': 'RAS'}}
         grouping_param = {'ct': ('mr', 'mr', 'mr')}
-        reader = FileImageSource().initialise(data_param, grouping_param)
+        reader = ImageReader().initialise(data_param, grouping_param)
         self.assertDictEqual(reader.spatial_ranks, {'ct': 2})
-        self.assertEqual(reader.get_image(0)['ct'].output_pixdim,
+        self.assertEqual(reader.output_list[0]['ct'].output_pixdim,
                          ((2.0, 1.5, 2.0),) * 3)
-        self.assertEqual(reader.get_image(0)['ct'].output_axcodes,
+        self.assertEqual(reader.output_list[0]['ct'].output_axcodes,
                          (('R', 'A', 'S'),) * 3)
 
         # test output
         idx, data, interp = reader()
         self.assertTrue('ct' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'ct': (1, 1, 1)})
         self.assertEqual(data['ct'].shape, (100, 100, 1, 1, 9))
 
@@ -329,17 +327,17 @@ class Read3DTest(tf.test.TestCase):
                    'filename_contains': 'Lesion',
                    'pixdim': (4, 3, 4),
                    'axcodes': 'RAS'}}
-        reader = FileImageSource().initialise(data_param)
+        reader = ImageReader().initialise(data_param)
         self.assertDictEqual(reader.spatial_ranks, {'mr': 3})
-        self.assertEqual(reader.get_image(0)['mr'].output_pixdim,
+        self.assertEqual(reader.output_list[0]['mr'].output_pixdim,
                          ((4.0, 3.0, 4.0),))
-        self.assertEqual(reader.get_image(0)['mr'].output_axcodes,
+        self.assertEqual(reader.output_list[0]['mr'].output_axcodes,
                          (('R', 'A', 'S'),))
         idx, data, interp = reader()
 
         # test output
         self.assertTrue('mr' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,)})
         # allows rounding error spatially
         self.assertAllClose(data['mr'].shape[:3], (62, 83, 62), atol=1)
@@ -358,18 +356,18 @@ class Read3DTest(tf.test.TestCase):
                    'filename_contains': 'Lesion',
                    'pixdim': (4, 3, 4),
                    'axcodes': 'RAS'}}
-        reader = FileImageSource().initialise(data_param)
+        reader = ImageReader().initialise(data_param)
         self.assertDictEqual(reader.spatial_ranks, {'mr': 3, 'ct': 3})
-        self.assertEqual(reader.get_image(0)['mr'].output_pixdim,
+        self.assertEqual(reader.output_list[0]['mr'].output_pixdim,
                          ((4.0, 3.0, 4.0),))
-        self.assertEqual(reader.get_image(0)['mr'].output_axcodes,
+        self.assertEqual(reader.output_list[0]['mr'].output_axcodes,
                          (('R', 'A', 'S'),))
         idx, data, interp = reader()
 
         # test output
         self.assertTrue('mr' in data)
         self.assertTrue('ct' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,), 'ct': (1,)})
         # allows rounding error spatially
         self.assertAllClose(data['mr'].shape[:3], (62, 83, 62), atol=1)
@@ -391,17 +389,17 @@ class Read3DTest(tf.test.TestCase):
                    'pixdim': (4, 3, 4),
                    'axcodes': 'RAS'}}
         grouping_param = {'image': ('mr', 'ct')}
-        reader = FileImageSource().initialise(data_param, grouping_param)
+        reader = ImageReader().initialise(data_param, grouping_param)
         self.assertDictEqual(reader.spatial_ranks, {'image': 3})
-        self.assertEqual(reader.get_image(0)['image'].output_pixdim,
+        self.assertEqual(reader.output_list[0]['image'].output_pixdim,
                          ((4.0, 3.0, 4.0),) * 2)
-        self.assertEqual(reader.get_image(0)['image'].output_axcodes,
+        self.assertEqual(reader.output_list[0]['image'].output_axcodes,
                          (('R', 'A', 'S'),) * 2)
         idx, data, interp = reader()
 
         # test output
         self.assertTrue('image' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'image': (1, 1)})
         # allows rounding error spatially
         self.assertAllClose(data['image'].shape[:3], (62, 83, 62), atol=1)
@@ -416,17 +414,17 @@ class Read3D_1_1_Test(tf.test.TestCase):
                    'filename_contains': 'x_y_z_1_1',
                    'pixdim': (4, 3, 4),
                    'axcodes': 'RAS'}}
-        reader = FileImageSource().initialise(data_param)
+        reader = ImageReader().initialise(data_param)
         self.assertDictEqual(reader.spatial_ranks, {'mr': 3})
-        self.assertEqual(reader.get_image(0)['mr'].output_pixdim,
+        self.assertEqual(reader.output_list[0]['mr'].output_pixdim,
                          ((4.0, 3.0, 4.0),))
-        self.assertEqual(reader.get_image(0)['mr'].output_axcodes,
+        self.assertEqual(reader.output_list[0]['mr'].output_axcodes,
                          (('R', 'A', 'S'),))
         idx, data, interp = reader()
 
         # test output
         self.assertTrue('mr' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,)})
         # allows rounding error spatially
         self.assertAllClose(data['mr'].shape[:3], (12, 8, 10), atol=1)
@@ -445,18 +443,18 @@ class Read3D_1_1_Test(tf.test.TestCase):
                    'filename_contains': 'x_y_z_1_1',
                    'pixdim': (4, 3, 4),
                    'axcodes': 'RAS'}}
-        reader = FileImageSource().initialise(data_param)
+        reader = ImageReader().initialise(data_param)
         self.assertDictEqual(reader.spatial_ranks, {'mr': 3, 'ct': 3})
-        self.assertEqual(reader.get_image(0)['mr'].output_pixdim,
+        self.assertEqual(reader.output_list[0]['mr'].output_pixdim,
                          ((4.0, 3.0, 4.0),))
-        self.assertEqual(reader.get_image(0)['mr'].output_axcodes,
+        self.assertEqual(reader.output_list[0]['mr'].output_axcodes,
                          (('R', 'A', 'S'),))
         idx, data, interp = reader()
 
         # test output
         self.assertTrue('mr' in data)
         self.assertTrue('ct' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'mr': (1,), 'ct': (1,)})
         # allows rounding error spatially
         self.assertAllClose(data['mr'].shape[:3], (12, 8, 10), atol=1)
@@ -478,17 +476,17 @@ class Read3D_1_1_Test(tf.test.TestCase):
                    'pixdim': (4, 3, 4),
                    'axcodes': 'RAS'}}
         grouping_param = {'image': ('mr', 'ct')}
-        reader = FileImageSource().initialise(data_param, grouping_param)
+        reader = ImageReader().initialise(data_param, grouping_param)
         self.assertDictEqual(reader.spatial_ranks, {'image': 3})
-        self.assertEqual(reader.get_image(0)['image'].output_pixdim,
+        self.assertEqual(reader.output_list[0]['image'].output_pixdim,
                          ((4.0, 3.0, 4.0),) * 2)
-        self.assertEqual(reader.get_image(0)['image'].output_axcodes,
+        self.assertEqual(reader.output_list[0]['image'].output_axcodes,
                          (('R', 'A', 'S'),) * 2)
         idx, data, interp = reader()
 
         # test output
         self.assertTrue('image' in data)
-        self.assertTrue(idx in range(reader.num_subjects))
+        self.assertTrue(idx in range(len(reader.output_list)))
         self.assertDictEqual(interp, {'image': (1, 1)})
         # allows rounding error spatially
         self.assertAllClose(data['image'].shape[:3], (12, 8, 10), atol=1)

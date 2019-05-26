@@ -52,7 +52,7 @@ class MemoryImageSetsPartitioner(BaseImageSetsPartitioner):
            or not os.path.isfile(data_split_file):
             self._partitions = self._assemble_partitions()
             if data_split_file:
-                self._write_partions(data_split_file)
+                self._write_partitions(data_split_file)
 
         else:
             assert os.path.isfile(data_split_file)
@@ -78,7 +78,7 @@ class MemoryImageSetsPartitioner(BaseImageSetsPartitioner):
 
         return partitions
 
-    def _write_partions(self, path):
+    def _write_partitions(self, path):
         """
         Persistently saves the current partioning in the FS.
         :param path: destination path for the CSV file.
