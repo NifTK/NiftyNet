@@ -32,7 +32,7 @@ class ConvTest(tf.test.TestCase):
         conv_layer = ConvLayer(**param_dict)
         output_data = conv_layer(input_data)
         print(conv_layer)
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)
@@ -53,7 +53,7 @@ class ConvTest(tf.test.TestCase):
                                  is_training=is_training,
                                  keep_prob=dropout_prob)
         print(conv_layer)
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)
@@ -118,7 +118,7 @@ class ConvTest(tf.test.TestCase):
             _extract_valid_region(enlarged_input, orig_input) - orig_input).sum() \
             <= 1e-6*np.square(orig_input).sum()
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
 
             small_value = sess.run(small_output)

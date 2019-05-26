@@ -19,7 +19,7 @@ class SimpleGANTest(tf.test.TestCase):
         simple_gan_instance = SimpleGAN()
         out = simple_gan_instance(r, x, is_training=True)
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose(input_shape, out[0].shape)
@@ -35,7 +35,7 @@ class SimpleGANTest(tf.test.TestCase):
         simple_gan_instance = SimpleGAN()
         out = simple_gan_instance(r, x, is_training=True)
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose(input_shape, out[0].shape)

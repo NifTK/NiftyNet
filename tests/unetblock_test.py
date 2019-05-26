@@ -33,7 +33,7 @@ class UNetBlockTest(tf.test.TestCase):
         print(unet_block_op)
         print(out_3)
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_1 = sess.run(out_1)
             self.assertAllClose((2, 8, 8, 64), out_1.shape)
@@ -58,7 +58,7 @@ class UNetBlockTest(tf.test.TestCase):
         print(unet_block_op)
         print(out_3)
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_1 = sess.run(out_1)
             self.assertAllClose((2, 8, 8, 8, 64), out_1.shape)
@@ -85,7 +85,7 @@ class UNetBlockTest(tf.test.TestCase):
         print(unet_block_op)
         print(out_3)
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_1 = sess.run(out_1)
             self.assertAllClose((2, 8, 8, 64), out_1.shape)
@@ -112,7 +112,7 @@ class UNetBlockTest(tf.test.TestCase):
         print(unet_block_op)
         print(out_3)
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_1 = sess.run(out_1)
             self.assertAllClose((2, 8, 8, 8, 64), out_1.shape)

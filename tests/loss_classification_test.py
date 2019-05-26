@@ -10,7 +10,7 @@ from niftynet.layer.loss_classification import LossFunction
 class CrossEntropyTests(tf.test.TestCase):
     def test_cross_entropy_value(self):
         # test value is -0.5 * [1 * log(e / (1+e)) + 1 * log(e^2 / (e^2 + 1))]
-        with self.session():
+        with self.test_session():
             predicted = tf.constant(
                 [[0, 1], [2, 0]],
                 dtype=tf.float32, name='predicted')
@@ -32,13 +32,13 @@ class LossFunctionErrorsTest(tf.test.TestCase):
     """
 
     def test_value_error_for_bad_loss_function(self):
-        with self.session():
+        with self.test_session():
             with self.assertRaises(ValueError):
                 LossFunction(0, loss_type='wrong answer')
 
     # Note: sensitive to precise wording of ValueError message.
     def test_suggestion_for_dice_typo(self):
-        with self.session():
+        with self.test_session():
             with self.assertRaisesRegexp(ValueError, 'CrossEntropy'):
                 LossFunction(0, loss_type='cross_entropy')
 

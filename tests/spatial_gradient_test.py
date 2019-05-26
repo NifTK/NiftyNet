@@ -32,7 +32,7 @@ class SpatialGradientTest(tf.test.TestCase):
         gradient_layer = SpatialGradientLayer(**param_dict)
         output_data = gradient_layer(input_data)
         print(gradient_layer)
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(output_data)
             if expected_value is not None:

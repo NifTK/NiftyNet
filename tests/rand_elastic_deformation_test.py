@@ -58,7 +58,7 @@ class RandDeformationTests(tf.test.TestCase):
             rand_deformation_layer.randomise(x)
             out = rand_deformation_layer(x, interp_orders)
 
-            with self.session():
+            with self.test_session():
                 self.assertTrue(np.array_equal(out['testdata'], x_old))
 
     def test_deformation(self):
@@ -74,7 +74,7 @@ class RandDeformationTests(tf.test.TestCase):
             rand_deformation_layer.randomise(x)
             out = rand_deformation_layer(x, interp_orders)
 
-            with self.session():
+            with self.test_session():
                 self.assertFalse(np.array_equal(out['testdata'], x_old))
 
     def test_deformation_on_2d_imgs(self):
@@ -91,7 +91,7 @@ class RandDeformationTests(tf.test.TestCase):
             rand_deformation_layer.randomise(x)
             out = rand_deformation_layer(x, interp_orders)
 
-            with self.session():
+            with self.test_session():
                 self.assertFalse(np.array_equal(out['testdata'], x_old))
 
 

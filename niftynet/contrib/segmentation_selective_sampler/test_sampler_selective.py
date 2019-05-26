@@ -203,7 +203,7 @@ class SelectiveSamplerTest(tf.test.TestCase):
                                    constraint=constraint_built,
                                    windows_per_image=2,
                                    queue_length=10)
-        with self.session() as sess:
+        with self.test_session() as sess:
             sampler.run_threads(sess, num_threads=1)
             out = sess.run(sampler.pop_batch_op())
             self.assertTrue(check_constraint(out['label'], constraint_built))
@@ -218,7 +218,7 @@ class SelectiveSamplerTest(tf.test.TestCase):
     #                              batch_size=2,
     #                              windows_per_image=10,
     #                              queue_length=10)
-    #     with self.session() as sess:
+    #     with self.test_session() as sess:
     #         sampler.run_threads(sess, num_threads=2)
     #         out = sess.run(sampler.pop_batch_op())
     #         self.assertAllClose(out['image'].shape, (2, 10, 9, 1))
@@ -234,7 +234,7 @@ class SelectiveSamplerTest(tf.test.TestCase):
     #                                    min_num_labels=2),
     #                                windows_per_image=2,
     #                                queue_length=2)
-    #     with self.session() as sess:
+    #     with self.test_session() as sess:
     #         sampler.run_threads(sess, num_threads=2)
     #         out = sess.run(sampler.pop_batch_op())
     #         test = np.zeros_like(out['label'])

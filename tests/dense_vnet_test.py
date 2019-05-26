@@ -19,7 +19,7 @@ class DenseVNetTest(tf.test.TestCase):
         out = dense_vnet_instance(x, is_training=True)
         # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 72, 72, 72, 2), out.shape)
@@ -33,7 +33,7 @@ class DenseVNetTest(tf.test.TestCase):
         out = dense_vnet_instance(x, is_training=True)
         # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 72, 72, 2), out.shape)

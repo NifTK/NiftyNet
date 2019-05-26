@@ -30,7 +30,7 @@ class SubPixelTest(tf.test.TestCase):
         layer = SubPixelLayer(**param_dict)
         output_data = layer(input_data)
         print(layer)
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)

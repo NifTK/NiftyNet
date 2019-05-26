@@ -113,7 +113,7 @@ class AffineGridWarperLayerTest(tf.test.TestCase):
     def _test_correctness(self, args, aff, expected_value):
         grid_warper = AffineGridWarperLayer(**args)
         computed_grid = grid_warper(aff)
-        with self.session() as sess:
+        with self.test_session() as sess:
             output_val = sess.run(computed_grid)
             self.assertAllClose(expected_value, output_val)
 
@@ -209,7 +209,7 @@ class AffineGridWarperInvLayerTest(tf.test.TestCase):
                                              output_shape=(2, 2)).inverse_op()
         aff = tf.constant([[1.5, 1.0, 0.2, 1.0, 1.5, 0.5]])
         output = inverse_grid(aff)
-        with self.session() as sess:
+        with self.test_session() as sess:
             out_val = sess.run(output)
         self.assertAllClose(out_val, expected_grid)
 

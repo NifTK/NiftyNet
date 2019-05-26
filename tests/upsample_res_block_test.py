@@ -29,7 +29,7 @@ class UpsampleResBlockTest(tf.test.TestCase):
         upsample_layer = UpBlock(**param_dict)
         output_data = upsample_layer(input_data)
         print(upsample_layer)
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(output_data)
             self.assertAllClose(output_shape, out.shape)

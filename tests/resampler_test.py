@@ -36,7 +36,7 @@ class ResamplerTest(tf.test.TestCase):
         resampler = ResamplerLayer(interpolation=interpolation,
                                    boundary=boundary)
         out = resampler(input, grid)
-        with self.session() as sess:
+        with self.test_session() as sess:
             out_value = sess.run(out)
             # print(expected_value)
             # print(out_value)
@@ -257,7 +257,7 @@ class ResamplerTest(tf.test.TestCase):
                 input_default, shape=None)
 
         out = resampler(input_placeholder, grid)
-        with self.session() as sess:
+        with self.test_session() as sess:
             out_value = sess.run(
                 out, feed_dict={input_placeholder: input})
             # print(expected_value)

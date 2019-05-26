@@ -22,7 +22,7 @@ class CropTest(tf.test.TestCase):
         out_crop_1 = crop_layer(x)
         print(crop_layer)
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             out = sess.run(out_crop)
             out_1 = sess.run(out_crop_1)
             self.assertAllClose((2, 10, 10, 10, 8), out.shape)
@@ -45,7 +45,7 @@ class CropTest(tf.test.TestCase):
         out_crop_1 = crop_layer(x)
         print(crop_layer)
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             out = sess.run(out_crop)
             out_1 = sess.run(out_crop_1)
             self.assertAllClose((2, 10, 10, 8), out.shape)

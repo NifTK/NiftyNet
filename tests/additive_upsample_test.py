@@ -26,7 +26,7 @@ class AdditiveUpsampleTest(tf.test.TestCase):
             new_size=new_size, n_splits=n_splits)
         resized = resize_layer(x)
         print(resize_layer)
-        with self.session() as sess:
+        with self.test_session() as sess:
             out = sess.run(resized)
             self.assertAllClose(out.shape, expected_shape)
 

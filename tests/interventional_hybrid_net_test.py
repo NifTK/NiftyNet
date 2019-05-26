@@ -16,7 +16,7 @@ class INetHybridPreWarpTest(tf.test.TestCase):
         out = hybridnet_instance(x, x, is_training=True)
         print(hybridnet_instance)
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 3), out[0].shape)
@@ -30,7 +30,7 @@ class INetHybridPreWarpTest(tf.test.TestCase):
         out = hybridnet_instance(x, x, is_training=True)
         print(hybridnet_instance)
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 2), out[0].shape)
@@ -47,7 +47,7 @@ class INetHybridTwoStreamTest(tf.test.TestCase):
         out = hybridnet_instance(x, x, is_training=True)
         print(hybridnet_instance)
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 3), out[0].shape)
@@ -62,7 +62,7 @@ class INetHybridTwoStreamTest(tf.test.TestCase):
         out = hybridnet_instance(x, x, is_training=True)
         print(hybridnet_instance)
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 2), out[0].shape)

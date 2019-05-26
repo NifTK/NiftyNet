@@ -17,7 +17,7 @@ class EventConsoleTest(tf.test.TestCase):
              'niftynet.engine.handler_console.ConsoleLogger',
              'niftynet.engine.handler_sampler.SamplerThreading'])
         graph = app_driver.create_graph(app_driver.app, 1, True)
-        with self.session(graph=graph) as sess:
+        with self.test_session(graph=graph) as sess:
             SESS_STARTED.send(app_driver.app, iter_msg=None)
             msg = IterationMessage()
             msg.current_iter = 1

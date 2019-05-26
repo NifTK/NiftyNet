@@ -21,7 +21,7 @@ class ResamplerTest(tf.test.TestCase):
         resampler = ResamplerLayer(interpolation=interpolation,
                                    boundary=boundary)
         out = resampler(input, grid)
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_value = sess.run(out)
             self.assertAllClose(expected_value, out_value)

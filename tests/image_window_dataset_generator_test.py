@@ -64,7 +64,7 @@ class ImageWindowDataset_Generator_2D_Test(tf.test.TestCase):
         self.assertEqual(window['mr_location'].dtype, np.int32)
 
     def assert_tf_window(self, sampler):
-        with self.session() as sess:
+        with self.test_session() as sess:
             window = sess.run(sampler.pop_batch_op())
         self.assert_window(window)
 
@@ -112,7 +112,7 @@ class ImageWindowDataset_Generator_2D_Test(tf.test.TestCase):
         batch_size = 3
         sampler = ImageWindowGenerator(
             reader=reader, batch_size=batch_size, epoch=1)
-        with self.session() as sess:
+        with self.test_session() as sess:
             next_element = sampler.pop_batch_op()
             iters = 0
             try:
@@ -138,7 +138,7 @@ class ImageWindowDataset_Generator_3D_Test(tf.test.TestCase):
         self.assertEqual(window['mr_location'].dtype, np.int32)
 
     def assert_tf_window(self, sampler):
-        with self.session() as sess:
+        with self.test_session() as sess:
             window = sess.run(sampler.pop_batch_op())
         self.assert_window(window)
 
@@ -179,7 +179,7 @@ class ImageWindowDataset_Generator_3D_Test(tf.test.TestCase):
         batch_size = 3
         sampler = ImageWindowGenerator(
             reader=reader, batch_size=batch_size, epoch=1)
-        with self.session() as sess:
+        with self.test_session() as sess:
             next_element = sampler.pop_batch_op()
             iters = 0
             try:
@@ -198,7 +198,7 @@ class ImageDatasetParamTest(tf.test.TestCase):
     def run_dataset(self, n_iters, n_threads, **kwargs):
         sampler = ImageWindowGenerator(**kwargs)
         sampler.set_num_threads(n_threads)
-        with self.session() as sess:
+        with self.test_session() as sess:
             true_iters = 0
             next_element = sampler.pop_batch_op()
             windows = []

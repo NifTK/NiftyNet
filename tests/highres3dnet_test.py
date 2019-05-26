@@ -25,7 +25,7 @@ class HighRes3DNetTest(tf.test.TestCase):
         out_small = highres_layer_small(x, is_training=True)
         out_large = highres_layer_large(x, is_training=True)
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out, out_large, out_small = sess.run([out, out_large, out_small])
             self.assertAllClose(expected_shape, out.shape)
@@ -47,7 +47,7 @@ class HighRes3DNetTest(tf.test.TestCase):
         out_small = highres_layer_small(x, is_training=True)
         out_large = highres_layer_large(x, is_training=True)
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out, out_large, out_small = sess.run([out, out_large, out_small])
             self.assertAllClose(expected_shape, out.shape)

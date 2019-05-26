@@ -28,7 +28,7 @@ class RandRotationTest(tf.test.TestCase):
         inverse_augment_layer = augment_layer.inverse()
         inverse = inverse_augment_layer(deformed)
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             test_out = sess.run([input_tensor, deformed, inverse])
             original, deformed_image, resumed_image = test_out
             to_compare = resumed_image > 0
@@ -49,7 +49,7 @@ class RandRotationTest(tf.test.TestCase):
         inverse = inverse_augment_layer(deformed)
 
         # with tf.Session() as sess:
-        with self.session() as sess:
+        with self.test_session() as sess:
             test_out = sess.run([input_tensor, deformed, inverse])
             original, deformed_image, resumed_image = test_out
             to_compare = resumed_image > 0

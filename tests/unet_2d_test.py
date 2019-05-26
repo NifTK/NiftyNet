@@ -21,7 +21,7 @@ class UNet3DTest(tf.test.TestCase):
         out = unet_instance(x, is_training=True)
         print(unet_instance.num_trainable_params())
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             #self.assertAllClose((2, 388, 388, 2), out.shape)
@@ -37,7 +37,7 @@ class UNet3DTest(tf.test.TestCase):
         out = unet_instance(x, is_training=True)
         print(unet_instance.num_trainable_params())
 
-        with self.session() as sess:
+        with self.test_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             #self.assertAllClose((2, 388, 388, 2), out.shape)
