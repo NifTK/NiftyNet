@@ -4,13 +4,13 @@ Unit test module for MemoryImageSource
 """
 from __future__ import absolute_import
 
-from functools import reduce, partial
+from functools import partial, reduce
 
 import numpy as np
 import tensorflow as tf
 
-from niftynet.io.memory_image_source import (MemoryImageSource,
-                                             make_input_spec)
+from niftynet.io.image_reader import ImageReader
+from niftynet.io.memory_image_source import make_input_spec
 from niftynet.utilities.util_common import ParserNamespace
 
 NOF_IMAGES = 11
@@ -18,7 +18,7 @@ BASE_IDX = 10
 
 
 def _expected_shape(idx):
-    return (10, 10 + idx, 10 + 2*idx, 2)
+    return (10, 10 + idx, 10 + 2 * idx, 2)
 
 
 def _test_image_callback(idx, sidx, dtype):
@@ -31,9 +31,10 @@ def _test_image_callback(idx, sidx, dtype):
     """
 
     shape = _expected_shape(idx)
-    size = reduce(lambda prod, s: prod*s, shape, 1)
+    size = reduce(lambda prod, s: prod * s, shape, 1)
 
-    return (sidx + 1)*np.arange(size).reshape(_expected_shape(idx)).astype(dtype)
+    return (sidx + 1) * np.arange(size).reshape(
+        _expected_shape(idx)).astype(dtype)
 
 
 class MemoryImageSourceTest(tf.test.TestCase):
@@ -51,9 +52,7 @@ class MemoryImageSourceTest(tf.test.TestCase):
             interp = interps[sidx % len(interps)]
             dtype = dtypes[sidx % len(dtypes)]
             data_param[name] = ParserNamespace(
-                interp_order=interp,
-                pixdim=None,
-                axcodes=None)
+                interp_order=interp, pixdim=None, axcodes=None)
 
             kwargs = {'do_reshape_nd': True}
             if dtype != np.float32:
@@ -65,9 +64,12 @@ class MemoryImageSourceTest(tf.test.TestCase):
         kwargs = {key + '_1': [key] for key in data_param}
         task_param = ParserNamespace(**kwargs)
 
-        source = MemoryImageSource(list(kwargs.keys()))
-        source.initialise(data_param, task_param,
-                          list(range(BASE_IDX, BASE_IDX + NOF_IMAGES)))
+        source = ImageReader(list(kwargs.keys()))
+        source = source.initialise(
+            data_param,
+            task_param,
+            phase_indices=list(range(BASE_IDX, BASE_IDX + NOF_IMAGES)),
+            from_files=False)
 
         for idx in range(NOF_IMAGES):
             int_idx, image_dict, interp_dict = source(idx=idx)
@@ -86,7 +88,8 @@ class MemoryImageSourceTest(tf.test.TestCase):
                 self.assertEqual(len(interp_dict[name]), 1)
                 self.assertEqual(interp, interp_dict[name][0])
 
-                expected = _test_image_callback(idx + BASE_IDX, sidx, np.float32)
+                expected = _test_image_callback(idx + BASE_IDX, sidx,
+                                                np.float32)
                 expected_shape \
                     = list(expected.shape[:3]) + [1] + [expected.shape[-1]]
                 expected = expected.reshape(expected_shape)

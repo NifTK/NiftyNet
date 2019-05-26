@@ -64,7 +64,7 @@ class MemoryImageSource(BaseImageSource):
         self._phase_indices = phase_indices
         return self
 
-    def __assemble_output(self, idx, source_name):
+    def _assemble_output(self, idx, source_name):
         """
         Assembles the output image for the given source
         by stacking its modalities
@@ -74,7 +74,7 @@ class MemoryImageSource(BaseImageSource):
             tf.logging.fatal('This source is not initialised.')
             raise RuntimeError
 
-        image_idx = self._phase_indices[idx]
+        image_idx = self._phase_indices[idx] if self._phase_indices else idx
         modalities = self.input_sources[source_name]
 
         image_data = [
@@ -98,7 +98,7 @@ class MemoryImageSource(BaseImageSource):
             image property given an image
         """
         return {
-            name: property_function(self.__assemble_output(0, name), name)
+            name: property_function(self._assemble_output(0, name), name)
             for name in self.input_sources
         }
 
@@ -137,7 +137,7 @@ class MemoryImageSource(BaseImageSource):
 
     def get_image(self, idx):
         return {
-            name: self.__assemble_output(idx, name)
+            name: self._assemble_output(idx, name)
             for name in self.input_sources
         }
 

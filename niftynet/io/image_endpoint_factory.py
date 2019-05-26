@@ -7,12 +7,12 @@ from __future__ import absolute_import
 
 from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
 from niftynet.io.file_image_sink import FileImageSink
-from niftynet.io.file_image_source import DEFAULT_INTERP_ORDER, FileImageSource
+from niftynet.io.file_image_source import DEFAULT_INTERP_ORDER
+from niftynet.io.image_reader import ImageReader
 from niftynet.io.memory_image_sets_partitioner import (
     MemoryImageSetsPartitioner, is_memory_data_param)
 from niftynet.io.memory_image_sink import (MEMORY_OUTPUT_CALLBACK_PARAM,
                                            MemoryImageSink)
-from niftynet.io.memory_image_source import MemoryImageSource
 from niftynet.utilities.decorators import singleton
 
 ENDPOINT_MEMORY = 'memory'
@@ -33,10 +33,6 @@ class ImageEndPointFactory(object):
     _task_param = None
     _action_param = None
     _endpoint_type = ENDPOINT_FILESYSTEM
-    _source_classes = {
-        ENDPOINT_FILESYSTEM: FileImageSource,
-        ENDPOINT_MEMORY: MemoryImageSource
-    }
     _sink_classes = {
         ENDPOINT_FILESYSTEM: FileImageSink,
         ENDPOINT_MEMORY: MemoryImageSink
@@ -97,13 +93,23 @@ class ImageEndPointFactory(object):
             raise RuntimeError('Sources can only be instantiated after'
                                'data set partitioning')
 
-        return [
-            self._source_classes[
-                self._endpoint_type](dataset_names).initialise(
-                    self._data_param, self._task_param, subject_list)
-            for subject_list in self._partitioner.get_image_lists_by(
-                phase=phase, action=action)
-        ]
+        _sources = []
+        for subject_list in self._partitioner.get_image_lists_by(
+                phase=phase, action=action):
+            if self._endpoint_type == ENDPOINT_FILESYSTEM:
+                _source = ImageReader(dataset_names).initialise(
+                    self._data_param,
+                    self._task_param,
+                    file_list=subject_list,
+                    from_files=True)
+            else:
+                _source = ImageReader(dataset_names).initialise(
+                    self._data_param,
+                    self._task_param,
+                    phase_indices=subject_list,
+                    from_files=False)
+            _sources.append(_source)
+        return _sources
 
     def create_sinks(self, sources):
         """

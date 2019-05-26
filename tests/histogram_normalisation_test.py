@@ -6,7 +6,7 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from niftynet.io.file_image_source import FileImageSource
+from niftynet.io.image_reader import ImageReader
 from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.histogram_normalisation import \
@@ -59,8 +59,8 @@ class HistTest(tf.test.TestCase):
              59.2393548654, 63.1565641037, 78.7271261392,
              100.0])
 
-        reader = FileImageSource(['image'])
-        reader.initialise(DATA_PARAM, TASK_PARAM, file_list)
+        reader = ImageReader(['image'])
+        reader = reader.initialise(DATA_PARAM, TASK_PARAM, file_list)
         self.assertAllClose(len(reader._file_list), 4)
 
         foreground_masking_layer = BinaryMaskingLayer(

@@ -9,7 +9,7 @@ import tensorflow as tf
 # from niftynet.engine.sampler_uniform import UniformSampler
 from niftynet.engine.sampler_uniform_v2 import UniformSampler
 from niftynet.engine.sampler_uniform_v2 import rand_spatial_coordinates
-from niftynet.io.file_image_source import FileImageSource
+from niftynet.io.image_reader import ImageReader
 from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
 from niftynet.engine.image_window import N_SPATIAL
@@ -114,26 +114,22 @@ dynamic_list = data_partitioner.initialise(DYNAMIC_MOD_DATA).get_file_list()
 
 
 def get_3d_reader():
-    reader = FileImageSource(['image'])
-    reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
-    return reader
+    reader = ImageReader(['image'])
+    return reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
 
 
 def get_2d_reader():
-    reader = FileImageSource(['image'])
-    reader.initialise(MOD_2D_DATA, MOD_2D_TASK, mod_2d_list)
-    return reader
+    reader = ImageReader(['image'])
+    return reader.initialise(MOD_2D_DATA, MOD_2D_TASK, mod_2d_list)
 
 
 def get_dynamic_window_reader():
-    reader = FileImageSource(['image'])
-    reader.initialise(DYNAMIC_MOD_DATA, DYNAMIC_MOD_TASK, dynamic_list)
-    return reader
+    reader = ImageReader(['image'])
+    return reader.initialise(DYNAMIC_MOD_DATA, DYNAMIC_MOD_TASK, dynamic_list)
 
 def get_concentric_window_reader():
-    reader = FileImageSource(['image', 'label'])
-    reader.initialise(MULTI_WINDOW_DATA, MULTI_WINDOW_TASK, multi_mod_list)
-    return reader
+    reader = ImageReader(['image', 'label'])
+    return reader.initialise(MULTI_WINDOW_DATA, MULTI_WINDOW_TASK, multi_mod_list)
 
 
 class UniformSamplerTest(tf.test.TestCase):

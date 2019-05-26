@@ -8,7 +8,7 @@ import tensorflow as tf
 
 from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
-from niftynet.io.file_image_source import FileImageSource
+from niftynet.io.image_reader import ImageReader
 from niftynet.io.file_image_sink import FileImageSink
 from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
 from niftynet.layer.discrete_label_normalisation import \
@@ -95,20 +95,18 @@ single_25d_list = data_partitioner.initialise(SINGLE_25D_DATA).get_file_list()
 
 
 def get_3d_reader():
-    reader = FileImageSource(['image'])
-    reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
-    return reader
+    reader = ImageReader(['image'])
+    return reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
 
 
 def get_2d_reader():
-    reader = FileImageSource(['image'])
-    reader.initialise(MOD_2D_DATA, MOD_2D_TASK, mod_2d_list)
-    return reader
+    reader = ImageReader(['image'])
+    return reader.initialise(MOD_2D_DATA, MOD_2D_TASK, mod_2d_list)
 
 
 def get_label_reader():
-    reader = FileImageSource(['label'])
-    reader.initialise(MOD_LABEL_DATA, MOD_LABEl_TASK, mod_label_list)
+    reader = ImageReader(['label'])
+    reader = reader.initialise(MOD_LABEL_DATA, MOD_LABEl_TASK, mod_label_list)
     label_normaliser = DiscreteLabelNormalisationLayer(
         image_name='label',
         modalities=vars(SINGLE_25D_TASK).get('label'),
@@ -120,9 +118,8 @@ def get_label_reader():
 
 
 def get_25d_reader():
-    reader = FileImageSource(['image'])
-    reader.initialise(SINGLE_25D_DATA, SINGLE_25D_TASK, single_25d_list)
-    return reader
+    reader = ImageReader(['image'])
+    return reader.initialise(SINGLE_25D_DATA, SINGLE_25D_TASK, single_25d_list)
 
 
 class ResizeSamplesAggregatorTest(tf.test.TestCase):

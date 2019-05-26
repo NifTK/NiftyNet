@@ -6,7 +6,7 @@ import os
 import tensorflow as tf
 
 from niftynet.engine.sampler_linear_interpolate_v2 import LinearInterpolateSampler
-from niftynet.io.file_image_source import FileImageSource
+from niftynet.io.image_reader import ImageReader
 from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
 
@@ -41,9 +41,8 @@ multi_mod_list = data_partitioner.initialise(MULTI_MOD_DATA).get_file_list()
 
 
 def get_3d_reader():
-    reader = FileImageSource(['image'])
-    reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
-    return reader
+    reader = ImageReader(['image'])
+    return reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
 
 
 class LinearInterpolateSamplerTest(tf.test.TestCase):

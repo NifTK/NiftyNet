@@ -85,20 +85,17 @@ dynamic_list = data_partitioner.initialise(DYNAMIC_MOD_DATA).get_file_list()
 
 def get_3d_reader():
     reader = ImageReader(['image'])
-    reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
-    return reader
+    return reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
 
 
 def get_2d_reader():
     reader = ImageReader(['image'])
-    reader.initialise(MOD_2D_DATA, MOD_2D_TASK, mod_2d_list)
-    return reader
+    return reader.initialise(MOD_2D_DATA, MOD_2D_TASK, mod_2d_list)
 
 
 def get_dynamic_window_reader():
     reader = ImageReader(['image'])
-    reader.initialise(DYNAMIC_MOD_DATA, DYNAMIC_MOD_TASK, dynamic_list)
-    return reader
+    return reader.initialise(DYNAMIC_MOD_DATA, DYNAMIC_MOD_TASK, dynamic_list)
 
 
 class ResizeSamplerTest(tf.test.TestCase):

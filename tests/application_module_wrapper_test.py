@@ -41,7 +41,7 @@ class ApplicationModuleWrapperTest(tf.test.TestCase):
     for testing of ApplicationModuleWrapper
     """
 
-    id = 'autocontext_mr_ct_model_zoo'
+    model_id = 'autocontext_mr_ct_model_zoo'
     location = 'autocontext_mr_ct'
     application = 'net_regress'
     config = os.path.join(MODEL_HOME, 'extensions', 'autocontext_mr_ct', 'net_autocontext.ini')
@@ -56,7 +56,7 @@ class ApplicationModuleWrapperTest(tf.test.TestCase):
 
     def setUp(self):
         tf.test.TestCase.setUp(self)
-        download(self.id, download_if_already_existing=True, verbose=False)
+        download(self.model_id, download_if_already_existing=True, verbose=False)
 
     def get_modality1_image(self, idx):
         return nib.load(self.modality1_images[idx]).get_data()
@@ -83,7 +83,7 @@ class ApplicationModuleWrapperTest(tf.test.TestCase):
         nof_train = 2*len(self.modality1_images)/3
         self.INFER_IDS = []
         with open(self.FAKE_CSV_PATH, 'w') as fout:
-            fout.write('%s,%s\n' % (COLUMN_UNIQ_ID, COLUMN_PHASE))
+            # fout.write('%s,%s\n' % (COLUMN_UNIQ_ID, COLUMN_PHASE))
             for idx in range(len(self.modality1_images)):
                 if idx < nof_train:
                     type = 'training'
