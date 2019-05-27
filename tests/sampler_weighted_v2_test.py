@@ -10,7 +10,7 @@ from niftynet.engine.image_window import N_SPATIAL
 from niftynet.engine.sampler_weighted_v2 import \
     WeightedSampler, weighted_spatial_coordinates
 from niftynet.io.image_reader import ImageReader
-from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
+from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
 
 MULTI_MOD_DATA = {
@@ -83,10 +83,9 @@ DYNAMIC_MOD_DATA = {
 DYNAMIC_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'),
                                    sampler=('FLAIR',))
 
-data_partitioner = FileImageSetsPartitioner()
-multi_mod_list = data_partitioner.initialise(MULTI_MOD_DATA).get_file_list()
-mod_2d_list = data_partitioner.initialise(MOD_2D_DATA).get_file_list()
-dynamic_list = data_partitioner.initialise(DYNAMIC_MOD_DATA).get_file_list()
+multi_mod_list = ImageSetsPartitioner(MULTI_MOD_DATA).initialise().get_file_list()
+mod_2d_list = ImageSetsPartitioner(MOD_2D_DATA).initialise().get_file_list()
+dynamic_list = ImageSetsPartitioner(DYNAMIC_MOD_DATA).initialise().get_file_list()
 
 
 def get_3d_reader():

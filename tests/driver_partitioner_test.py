@@ -6,7 +6,7 @@ import os
 import tensorflow as tf
 
 from niftynet.engine.application_driver import ApplicationDriver
-from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
+from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
 
 TARGET_FILE = os.path.join('testing_data', 'test_splitting.csv')

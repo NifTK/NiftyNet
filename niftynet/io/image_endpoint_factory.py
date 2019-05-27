@@ -5,12 +5,11 @@ partitioners, and image sources and sinks
 """
 from __future__ import absolute_import
 
-from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
+from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.io.file_image_sink import FileImageSink
 from niftynet.io.file_image_source import DEFAULT_INTERP_ORDER
 from niftynet.io.image_reader import ImageReader
-from niftynet.io.memory_image_sets_partitioner import (
-    MemoryImageSetsPartitioner, is_memory_data_param)
+from niftynet.io.range_sets_partitioner import RangeSetsPartitioner
 from niftynet.io.memory_image_sink import (MEMORY_OUTPUT_CALLBACK_PARAM,
                                            MemoryImageSink)
 from niftynet.utilities.decorators import singleton
@@ -38,8 +37,8 @@ class ImageEndPointFactory(object):
         ENDPOINT_MEMORY: MemoryImageSink
     }
     _partitioner_classes = {
-        ENDPOINT_FILESYSTEM: FileImageSetsPartitioner,
-        ENDPOINT_MEMORY: MemoryImageSetsPartitioner
+        ENDPOINT_FILESYSTEM: ImageSetsPartitioner,
+        ENDPOINT_MEMORY: RangeSetsPartitioner
     }
     _partitioner = None
 

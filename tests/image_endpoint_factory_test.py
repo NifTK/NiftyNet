@@ -129,7 +129,7 @@ class ImageEndPointFactoryTest(tf.test.TestCase):
             self.assertAllEqual(2 * img_dict['image'], img_dict['label'])
 
     def _configure_file(self):
-        from tests.file_image_sets_partitioner_test import test_sections
+        from tests.image_sets_partitioner_test import test_sections
 
         data_param = {
             'input': test_sections['T1'],

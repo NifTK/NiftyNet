@@ -10,7 +10,7 @@ from niftynet.engine.sampler_grid_v2 import GridSampler
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.io.file_image_sink import FileImageSink
 from niftynet.io.image_reader import ImageReader
-from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
+from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
 from niftynet.layer.pad import PadLayer
@@ -87,11 +87,10 @@ SINGLE_25D_DATA = {
 }
 SINGLE_25D_TASK = ParserNamespace(image=('T1',))
 
-data_partitioner = FileImageSetsPartitioner()
-multi_mod_list = data_partitioner.initialise(MULTI_MOD_DATA).get_file_list()
-mod_2d_list = data_partitioner.initialise(MOD_2D_DATA).get_file_list()
-mod_label_list = data_partitioner.initialise(MOD_LABEL_DATA).get_file_list()
-single_25d_list = data_partitioner.initialise(SINGLE_25D_DATA).get_file_list()
+multi_mod_list = ImageSetsPartitioner(MULTI_MOD_DATA).initialise().get_file_list()
+mod_2d_list = ImageSetsPartitioner(MOD_2D_DATA).initialise().get_file_list()
+mod_label_list = ImageSetsPartitioner(MOD_LABEL_DATA).initialise().get_file_list()
+single_25d_list = ImageSetsPartitioner(SINGLE_25D_DATA).initialise().get_file_list()
 
 
 def get_3d_reader():

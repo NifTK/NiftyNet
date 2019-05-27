@@ -9,7 +9,7 @@ import tensorflow as tf
 
 from niftynet.io.base_image_source import (DEFAULT_INTERP_ORDER,
                                            BaseImageSource, infer_tf_dtypes)
-from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
+from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.io.image_sets_partitioner import COLUMN_UNIQ_ID
 from niftynet.io.image_type import ImageFactory
 from niftynet.utilities.util_common import print_progress_bar
@@ -60,7 +60,7 @@ class FileImageSource(BaseImageSource):
         if file_list is None:
             # defaulting to all files detected by the input specification
             file_list = \
-                FileImageSetsPartitioner().initialise(data_param).all_files
+                ImageSetsPartitioner(data_param).initialise().all_files
 
         required_modalities = [
             list(input_sources.get(name)) for name in input_sources

@@ -13,7 +13,7 @@ import tensorflow as tf
 
 from niftynet.application.application_module_wrapper import \
     RegressionApplicationModule
-from niftynet.io.image_sets_partitioner import (
+from niftynet.io.base_sets_partitioner import (
     COLUMN_PHASE, COLUMN_UNIQ_ID)
 from niftynet.utilities.download import download
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig

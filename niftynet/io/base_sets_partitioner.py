@@ -131,6 +131,10 @@ class BaseSetsPartitioner(object):
             return self.file_list[[COLUMN_UNIQ_ID] + list(section_names)] \
                 if section_names else self.file_list
 
+        if self._partition_ids is None or self._partition_ids.empty:
+            tf.logging.fatal('No partition ids available.')
+            raise ValueError
+
         selector = self._partition_ids[COLUMN_PHASE] == phase
         selected = self._partition_ids[selector][[COLUMN_UNIQ_ID]]
         if selected.empty:
@@ -321,35 +325,35 @@ def load_data_split(data_split_file):
         tf.logging.warning('Could not find partitioning ids file %s',
                            data_split_file)
 
-    partition_ids = pandas.read_csv(
-        data_split_file,
-        header=None,
-        dtype=(str, str),
-        names=[COLUMN_UNIQ_ID, COLUMN_PHASE],
-        skipinitialspace=True)
+    partition_ids = None
+    if os.path.isfile(data_split_file):
+        partition_ids = pandas.read_csv(
+            data_split_file,
+            header=None,
+            dtype=(str, str),
+            names=[COLUMN_UNIQ_ID, COLUMN_PHASE],
+            skipinitialspace=True)
 
-    # validate the partition_ids loaded from file
-    if partition_ids is None or partition_ids.empty:
-        tf.logging.fatal('No partition ids available.')
-        if os.path.isfile(data_split_file):
-            tf.logging.fatal(
-                'Unable to read %s, initialise the'
-                'ImageSetsPartitioner with `new_partition=True`'
-                'to overwrite the file.', data_split_file)
-        raise ValueError
-
-    try:
-        phase_strings = partition_ids[COLUMN_PHASE]
-        phase_strings = phase_strings.astype(str).str.lower()
-        is_valid_phase = phase_strings.isin(SUPPORTED_PHASES)
-        assert is_valid_phase.all(), \
-            "Partition file contains unknown phase id."
-        partition_ids[COLUMN_PHASE] = phase_strings
-    except (TypeError, AssertionError):
-        tf.logging.warning(
-            'Please make sure the values of the second column '
-            'of data splitting file %s, in the set of phases: %s.\n'
-            'Remove %s to generate random data partition file.',
-            data_split_file, SUPPORTED_PHASES, data_split_file)
-        raise ValueError
+        # validate the partition_ids loaded from file
+        if partition_ids is None or partition_ids.empty:
+            tf.logging.warning('No partition ids available.')
+            if os.path.isfile(data_split_file):
+                tf.logging.warning(
+                    'Unable to read %s, initialise the'
+                    'ImageSetsPartitioner with `new_partition=True`'
+                    'to overwrite the file.', data_split_file)
+        try:
+            phase_strings = partition_ids[COLUMN_PHASE]
+            phase_strings = phase_strings.astype(str).str.lower()
+            is_valid_phase = phase_strings.isin(SUPPORTED_PHASES)
+            assert is_valid_phase.all() and is_valid_phase.count(), \
+                "Partition file contains unknown phase id."
+            partition_ids[COLUMN_PHASE] = phase_strings
+        except (TypeError, AssertionError):
+            tf.logging.warning(
+                'Please make sure the values of the second column '
+                'of data splitting file %s, in the set of phases: %s.\n'
+                'Remove %s to generate random data partition file.',
+                data_split_file, SUPPORTED_PHASES, data_split_file)
+            raise ValueError
     return partition_ids

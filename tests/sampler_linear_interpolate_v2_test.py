@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from niftynet.engine.sampler_linear_interpolate_v2 import LinearInterpolateSampler
 from niftynet.io.image_reader import ImageReader
-from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
+from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
 
 MULTI_MOD_DATA = {
@@ -36,8 +36,7 @@ MULTI_MOD_DATA = {
 }
 MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'))
 
-data_partitioner = FileImageSetsPartitioner()
-multi_mod_list = data_partitioner.initialise(MULTI_MOD_DATA).get_file_list()
+multi_mod_list = ImageSetsPartitioner(MULTI_MOD_DATA).initialise().get_file_list()
 
 
 def get_3d_reader():

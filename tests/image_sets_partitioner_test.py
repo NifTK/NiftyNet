@@ -6,7 +6,7 @@ import os
 import tensorflow as tf
 
 from niftynet.io.image_sets_partitioner import COLUMN_UNIQ_ID
-from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
+from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.engine.signal import TRAIN, VALID, INFER
 from niftynet.utilities.util_common import ParserNamespace
 
@@ -34,17 +34,15 @@ test_sections = {
 partition_output = os.path.join('testing_data', 'partition.csv')
 
 
-class FileImageSetsPartitionerTest(tf.test.TestCase):
+class ImageSetsPartitionerTest(tf.test.TestCase):
     def test_no_partition_file(self):
         if os.path.isfile(partition_output):
             os.remove(partition_output)
 
         data_param = test_sections
-        test_partitioner = FileImageSetsPartitioner()
-        test_partitioner.initialise(
-            data_param,
-            new_partition=False,
-            data_split_file=partition_output)
+        test_partitioner = ImageSetsPartitioner(
+            data_param, data_split_file=partition_output)
+        test_partitioner.initialise(new_partition=False)
         self.assertEqual(
             test_partitioner.get_file_list()[COLUMN_UNIQ_ID].count(), 4)
         with self.assertRaisesRegexp(ValueError, ''):
@@ -55,20 +53,17 @@ class FileImageSetsPartitionerTest(tf.test.TestCase):
             test_partitioner.get_file_list(INFER)
 
 
-class FileImageSetsPartitionerNewPartition(tf.test.TestCase):
+class ImageSetsPartitionerNewPartition(tf.test.TestCase):
     def test_new_partition(self):
         data_param = test_sections
-        test_partitioner = FileImageSetsPartitioner()
+        test_partitioner = ImageSetsPartitioner(data_param, data_split_file=partition_output)
         with self.assertRaisesRegexp(TypeError, ''):
             test_partitioner.initialise(
-                data_param,
                 new_partition=True,
-                data_split_file=partition_output)
+            )
         test_partitioner.initialise(
-            data_param,
             new_partition=True,
-            ratios=(2.0, 2.0),
-            data_split_file=partition_output)
+            ratios=(2.0, 2.0))
         self.assertEqual(
             test_partitioner.get_file_list()[COLUMN_UNIQ_ID].count(), 4)
         self.assertEqual(
@@ -93,29 +88,27 @@ class FileImageSetsPartitionerNewPartition(tf.test.TestCase):
         self.assertTrue(test_partitioner.has_validation)
 
 
-class FileImageSetsPartitionerIllPartition(tf.test.TestCase):
+class ImageSetsPartitionerIllPartition(tf.test.TestCase):
     def test_incompatible_partition_file(self):
         self._reset_partition_file()
         # adding invalid line
         with open(partition_output, 'a') as partition_file:
             partition_file.write('foo, bar')
-        test_partitioner = FileImageSetsPartitioner()
+        test_partitioner = ImageSetsPartitioner(test_sections, data_split_file=partition_output)
         with self.assertRaisesRegexp(ValueError, ""):
             test_partitioner.initialise(
-                test_sections,
-                new_partition=False,
-                data_split_file=partition_output)
+                new_partition=False
+            )
 
     def test_replicated_ids(self):
         self._reset_partition_file()
         with open(partition_output, 'a') as partition_file:
             partition_file.write('1065,Training\n')
             partition_file.write('1065,Validation')
-        test_partitioner = FileImageSetsPartitioner()
+        test_partitioner = ImageSetsPartitioner(test_sections,
+                                                data_split_file=partition_output)
         test_partitioner.initialise(
-            test_sections,
-            new_partition=False,
-            data_split_file=partition_output)
+            new_partition=False)
         self.assertEqual(
             test_partitioner.get_file_list()[COLUMN_UNIQ_ID].count(), 4)
         self.assertEqual(
@@ -129,20 +122,17 @@ class FileImageSetsPartitionerIllPartition(tf.test.TestCase):
         self._reset_partition_file()
         with open(partition_output, 'w') as partition_file:
             partition_file.write('')
-        test_partitioner = FileImageSetsPartitioner()
+        test_partitioner = ImageSetsPartitioner(test_sections,
+                                                data_split_file=partition_output)
         with self.assertRaisesRegexp(ValueError, ""):
-            test_partitioner.initialise(
-                test_sections,
-                new_partition=False,
-                data_split_file=partition_output)
+            test_partitioner.initialise(new_partition=False)
 
     def _reset_partition_file(self):
-        test_partitioner = FileImageSetsPartitioner()
+        test_partitioner = ImageSetsPartitioner(test_sections, data_split_file=partition_output)
         test_partitioner.initialise(
-            test_sections,
             new_partition=True,
-            ratios=(0.2, 0.2),
-            data_split_file=partition_output)
+            ratios=(0.2, 0.2)
+        )
 
 
 if __name__ == "__main__":

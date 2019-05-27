@@ -6,7 +6,7 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from niftynet.io.file_image_sets_partitioner import FileImageSetsPartitioner
+from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
@@ -130,13 +130,12 @@ IMAGE_2D_TASK_GRAY = ParserNamespace(image=('gray_images', ))
 IMAGE_2D_TASK_MASK = ParserNamespace(image=('seg_masks', ))
 
 # default data_partitioner
-data_partitioner = FileImageSetsPartitioner()
-multi_mod_list = data_partitioner.initialise(MULTI_MOD_DATA).get_file_list()
-single_mod_list = data_partitioner.initialise(SINGLE_MOD_DATA).get_file_list()
-existing_list = data_partitioner.initialise(EXISTING_DATA).get_file_list()
-label_list = data_partitioner.initialise(LABEL_DATA).get_file_list()
-bad_data_list = data_partitioner.initialise(BAD_DATA).get_file_list()
-image2d_data_list = data_partitioner.initialise(IMAGE_2D_DATA).get_file_list()
+multi_mod_list = ImageSetsPartitioner(MULTI_MOD_DATA).get_file_list()
+single_mod_list = ImageSetsPartitioner(SINGLE_MOD_DATA).get_file_list()
+existing_list = ImageSetsPartitioner(EXISTING_DATA).get_file_list()
+label_list = ImageSetsPartitioner(LABEL_DATA).get_file_list()
+bad_data_list = ImageSetsPartitioner(BAD_DATA).get_file_list()
+image2d_data_list = ImageSetsPartitioner(IMAGE_2D_DATA).get_file_list()
 
 
 class FileImageSourceTest(tf.test.TestCase):
