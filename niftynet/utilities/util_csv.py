@@ -200,7 +200,7 @@ def write_csv(csv_file, list_combined):
             file_writer = csv.writer(csvfile, delimiter=',')
             for list_temp in list_combined:
                 file_writer.writerow(list_temp)
-    return
+    return os.path.abspath(csv_file)
 
 
 def match_and_write_filenames_to_csv(list_constraints, csv_file):
