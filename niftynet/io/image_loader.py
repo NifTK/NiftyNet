@@ -207,6 +207,9 @@ class ImageAsNibabel(nib.Nifti1Image):
         if img.ndim == 3 and img.shape[2] <= 4:  # Color Image
             img = img[:, :, None, None, :]
 
+        if img.dtype==np.bool: # bool is not a supported datatype by nibabel
+            img=img.astype(np.uint8)
+
         nib.Nifti1Image.__init__(self, img, affine)
 
 
