@@ -37,7 +37,8 @@ class RangeSetsPartitioner(BaseSetsPartitioner):
 
 def _generate_file_list(num_subjects, modality_names):
     subjects = list(range(num_subjects))
-    data_dict = {COLUMN_UNIQ_ID: subjects}
+    data_dict = { # unique IDs are strings
+        COLUMN_UNIQ_ID: ['{}'.format(subject) for subject in subjects]}
     for mod in modality_names:
         data_dict[mod] = subjects
-    return pandas.DataFrame(data=data_dict)
+    return pandas.DataFrame.from_dict(data_dict)

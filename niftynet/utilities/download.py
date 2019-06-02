@@ -105,14 +105,16 @@ def download_file(url, download_path):
 
     # Get a temporary file path for the compressed file download
     temp_folder = tempfile.mkdtemp()
-    downloaded_file = os.path.join(temp_folder, filename)
+    try:
+        downloaded_file = os.path.join(temp_folder, filename)
 
-    # Download the file
-    urlretrieve(url, downloaded_file, reporthook=progress_bar_wrapper)
+        # Download the file
+        urlretrieve(url, downloaded_file, reporthook=progress_bar_wrapper)
 
-    # Move the file to the destination folder
-    shutil.move(downloaded_file, download_path)
-    shutil.rmtree(temp_folder, ignore_errors=True)
+        # Move the file to the destination folder
+        shutil.move(downloaded_file, download_path)
+    finally:
+        shutil.rmtree(temp_folder, ignore_errors=True)
 
 
 def download_and_decompress(url, download_path, verbose=True):
@@ -135,21 +137,23 @@ def download_and_decompress(url, download_path, verbose=True):
 
     # Get a temporary file path for the compressed file download
     temp_folder = tempfile.mkdtemp()
-    downloaded_file = os.path.join(temp_folder, filename)
+    try:
+        downloaded_file = os.path.join(temp_folder, filename)
 
-    # Download the file
-    if verbose:
-        urlretrieve(url, downloaded_file, reporthook=progress_bar_wrapper)
-    else:
-        urlretrieve(url, downloaded_file)
+        # Download the file
+        if verbose:
+            urlretrieve(url, downloaded_file, reporthook=progress_bar_wrapper)
+        else:
+            urlretrieve(url, downloaded_file)
 
-    # Decompress and extract all files to the specified local path
-    tar = tarfile.open(downloaded_file, "r")
-    tar.extractall(download_path)
-    tar.close()
+        # Decompress and extract all files to the specified local path
+        tar = tarfile.open(downloaded_file, "r")
+        tar.extractall(download_path)
+        tar.close()
 
-    # Remove the downloaded file
-    shutil.rmtree(temp_folder, ignore_errors=True)
+    finally:
+        # Remove the downloaded file
+        shutil.rmtree(temp_folder, ignore_errors=True)
 
 
 class ConfigStore(object):
