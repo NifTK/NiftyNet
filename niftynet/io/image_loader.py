@@ -94,7 +94,7 @@ def load_image_obj(filename, loader=None):
         tf.logging.debug('Using requested loader: {}'.format(loader))
         loader_params = AVAILABLE_LOADERS[loader]
         return loader_params['func'](filename)
-    elif loader:
+    if loader:
         raise ValueError('Image Loader {} not supported. Supported loaders: {}'
                          .format(loader, list(SUPPORTED_LOADERS.keys())))
 
@@ -207,8 +207,8 @@ class ImageAsNibabel(nib.Nifti1Image):
         if img.ndim == 3 and img.shape[2] <= 4:  # Color Image
             img = img[:, :, None, None, :]
 
-        if img.dtype==np.bool: # bool is not a supported datatype by nibabel
-            img=img.astype(np.uint8)
+        if img.dtype == np.bool:  # bool is not a supported datatype by nibabel
+            img = img.astype(np.uint8)
 
         nib.Nifti1Image.__init__(self, img, affine)
 
