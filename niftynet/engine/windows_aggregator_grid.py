@@ -72,7 +72,11 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                             n_channels=window[w].shape[-1],
                             dtype=window[w].dtype)
                     else:
-                        self.csv_out[w] = self._initialise_empty_csv(
+                        if isinstance(window[w],(np.int,np.float32,np.bool)):
+                            self.csv_out[w] = self._initialise_empty_csv(1+ location_init[0,
+                                                        :].shape[-1])
+                        else:
+                            self.csv_out[w] = self._initialise_empty_csv(
                                             n_channel=window[w][0].shape[-1]
                                                       + location_init[0,
                                                         :].shape[-1])
@@ -82,10 +86,17 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                         y_start:y_end,
                         z_start:z_end, ...] = window[w][batch_id, ...]
                 else:
-                    window_loc = np.concatenate([window[w],
+                    if not isinstance(window[w], (int, np.float32, bool)):
+                        window_loc = np.concatenate([window[w],
                                                 np.tile(location_init[
                                                             batch_id, ...],
                                                         [window[w].shape[0],1])],1)
+                    else:
+                        window_loc = np.concatenate([np.reshape(window[w],[1,
+                                                                           1]),
+                                                     np.tile(location_init[
+                                                                 batch_id, ...],
+                                                             [1, 1])], 1)
                     self.csv_out[w] = np.concatenate([self.csv_out[w],
                                                       window_loc],0)
         return True
