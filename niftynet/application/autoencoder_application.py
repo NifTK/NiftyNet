@@ -262,17 +262,17 @@ class AutoencoderApplication(BaseApplication):
                 SUPPORTED_INFERENCE)
             if infer_type == 'encode':
                 return self.output_decoder.decode_batch(
-                    batch_output['embedded'],
+                    {'window_embedded':batch_output['embedded']},
                     batch_output['location'][:, 0:1])
             if infer_type == 'encode-decode':
                 return self.output_decoder.decode_batch(
-                    batch_output['generated_image'],
+                    {'window_generated_image':batch_output['generated_image']},
                     batch_output['location'][:, 0:1])
             if infer_type == 'sample':
                 return self.output_decoder.decode_batch(
-                    batch_output['generated_image'],
+                    {'generated_image':batch_output['generated_image']},
                     None)
             if infer_type == 'linear_interpolation':
                 return self.output_decoder.decode_batch(
-                    batch_output['generated_image'],
+                    {'generated_image':batch_output['generated_image']},
                     batch_output['location'][:, :2])

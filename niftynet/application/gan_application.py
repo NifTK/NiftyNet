@@ -264,4 +264,5 @@ class GANApplication(BaseApplication):
         if self.is_training:
             return True
         return self.output_decoder.decode_batch(
-            batch_output['image'], batch_output['location'])
+            {'window_image': batch_output['image']},
+            batch_output['location'])

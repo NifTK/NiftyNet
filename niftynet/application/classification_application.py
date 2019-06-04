@@ -18,6 +18,8 @@ from niftynet.engine.application_variables import \
 from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.engine.windows_aggregator_classifier import \
     ClassifierSamplesAggregator
+from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
+from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
@@ -170,7 +172,7 @@ class ClassificationApplication(BaseApplication):
             self.readers]]
 
     def initialise_aggregator(self):
-        self.output_decoder = ClassifierSamplesAggregator(
+        self.output_decoder = ResizeSamplesAggregator(
             image_reader=self.readers[0],
             output_path=self.action_param.save_seg_dir,
             postfix=self.action_param.output_postfix)
@@ -337,7 +339,8 @@ class ClassificationApplication(BaseApplication):
     def interpret_output(self, batch_output):
         if not self.is_training:
             return self.output_decoder.decode_batch(
-                batch_output['window'], batch_output['location'])
+                {'csv': batch_output['window']},
+                batch_output['location'])
         return True
 
     def initialise_evaluator(self, eval_param):

@@ -300,6 +300,6 @@ class RegApp(BaseApplication):
         if self.is_training:
             return True
         return self.output_decoder.decode_batch(
-            batch_output['resampled_moving_image'],
+            {'window_resampled':batch_output['resampled_moving_image']},
             batch_output['locations'])
 
