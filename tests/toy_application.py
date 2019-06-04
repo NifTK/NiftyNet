@@ -47,6 +47,7 @@ class ToyApplication(BaseApplication):
                                  outputs_collector=None,
                                  gradients_collector=None):
         print(vars(self.action_param))
+        self.patience = self.action_param.patience
         with tf.name_scope('Optimiser'):
             optimiser_class = OptimiserFactory.create(
                 name=self.action_param.optimiser)
@@ -89,6 +90,9 @@ class ToyApplication(BaseApplication):
             var=g_var, name='var', average_over_devices=True,
             collection=CONSOLE)
         outputs_collector.add_to_collection(
+            var=g_loss, name='total_loss', average_over_devices=True,
+            collection=CONSOLE)
+        outputs_collector.add_to_collection(
             var=g_mean, name='generated_mean', average_over_devices=False,
             collection=TF_SUMMARIES)
         outputs_collector.add_to_collection(
@@ -122,6 +126,7 @@ class ToyApplicationMultOpti(ToyApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
+        self.patience = self.action_param.patience
         print(vars(self.action_param))
         self.optimiser = dict()
         with tf.name_scope('OptimiserGen'):
