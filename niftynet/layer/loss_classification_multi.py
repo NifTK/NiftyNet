@@ -9,6 +9,7 @@ import tensorflow as tf
 
 from niftynet.engine.application_factory import LossClassificationMultiFactory
 from niftynet.layer.base_layer import Layer
+#from niftynet.layer.loss_segmentation import labels_to_one_hot
 
 
 class LossFunction(Layer):
@@ -38,17 +39,17 @@ class LossFunction(Layer):
                  ground_truth=None,
                  weight_batch=None,
                  var_scope=None, ):
-        """
-        Compute loss from `prediction` and `ground truth`,
-
-        if `prediction `is list of tensors, each element of the list
-        will be compared against `ground_truth`.
-
-        :param prediction: input will be reshaped into (N, num_classes)
-        :param ground_truth: input will be reshaped into (N,)
+        '''
+        Compute the losses in the case of a multirater setting
+        :param pred_ave: average of the predictions over the different raters
+        :param pred_multi: prediction for each individual rater
+        :param ground_truth: ground truth classification for each individual
+        rater
+        :param weight_batch:
         :param var_scope:
         :return:
-        """
+        '''
+
 
         with tf.device('/cpu:0'):
             if ground_truth is not None:
@@ -122,8 +123,8 @@ class LossFunction(Layer):
             else:
                 return tf.reduce_mean(data_loss)
 
-
-def labels_to_one_hot(ground_truth, num_classes=1, nrater=6):
+#
+def labels_to_one_hot(ground_truth, num_classes=1):
     """
     Converts ground truth labels to one-hot, sparse tensors.
     Used extensively in segmentation losses.
@@ -132,7 +133,7 @@ def labels_to_one_hot(ground_truth, num_classes=1, nrater=6):
     :param num_classes: A scalar defining the depth of the one hot dimension
         (see `depth` of `tf.one_hot`)
     :return: one-hot sparse tf tensor
-        (rank `N+1`; new axis appended at the end)
+        (rank `N+1`; new axis appended at the end) and the output shape
     """
     # read input/output shapes
     if isinstance(num_classes, tf.Tensor):
@@ -182,8 +183,7 @@ def loss_confusion_matrix(ground_truth, pred_multi, num_classes=2, nrater=6):
     matrices divided by number of raters
     '''
 
-    one_hot_gt, output_shape = labels_to_one_hot(ground_truth, num_classes,
-                                   nrater)
+    one_hot_gt, output_shape = labels_to_one_hot(ground_truth, num_classes)
     dense_one_hot = tf.reshape(tf.sparse_tensor_to_dense(one_hot_gt),
                                output_shape)
     dense_one_hot = tf.reshape(dense_one_hot, tf.shape(pred_multi))
@@ -212,8 +212,7 @@ def loss_confusion_matrix(ground_truth, pred_multi, num_classes=2, nrater=6):
 
 def variability(pred_multi, num_classes=2, nrater=2):
     one_hot_gt, output_shape = labels_to_one_hot(tf.cast(pred_multi, tf.int64),
-                                           num_classes,
-                                   nrater)
+                                           num_classes)
     dense_one_hot = tf.sparse_tensor_to_dense(one_hot_gt)
     freq = tf.divide(tf.reduce_sum(dense_one_hot, 1), tf.cast(tf.shape(
         pred_multi)[1],tf.float32))
