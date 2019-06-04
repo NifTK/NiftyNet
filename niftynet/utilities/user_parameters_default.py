@@ -22,7 +22,8 @@ DEFAULT_HISTOGRAM_REF_FILE = os.path.join('.', 'histogram_ref_file.txt')
 DEFAULT_MODEL_DIR = None
 DEFAULT_EVENT_HANDLERS = ('model_saver', 'model_restorer', 'sampler_threading',
                           'apply_gradients', 'output_interpreter',
-                          'console_logger', 'tensorboard_logger')
+                          'console_logger', 'tensorboard_logger',
+                          'performance_logger')
 
 DEFAULT_ITERATION_GENERATOR = 'iteration_generator'
 
@@ -81,6 +82,15 @@ def add_application_args(parser):
         help='String representing an iteration generator class',
         type=str,
         default=DEFAULT_ITERATION_GENERATOR)
+
+    parser.add_argument(
+        "--patience",
+        metavar='',
+        help='Number of iterations to wait before starting '
+             'performance monitoring',
+        type=int,
+        default=100)
+
     return parser
 
 

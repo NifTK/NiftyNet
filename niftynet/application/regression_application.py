@@ -264,6 +264,7 @@ class RegressionApplication(BaseApplication):
                 return sampler.pop_batch_op()
 
         if self.is_training:
+            self.patience = self.action_param.patience
             if self.action_param.validation_every_n > 0:
                 data_dict = tf.cond(tf.logical_not(self.is_validation),
                                     lambda: switch_sampler(for_training=True),
@@ -316,11 +317,21 @@ class RegressionApplication(BaseApplication):
                     len(tf.trainable_variables()),
                     vars_to_freeze)
 
+            self.total_loss = loss
+
             grads = self.optimiser.compute_gradients(
                 loss, var_list=to_optimise, colocate_gradients_with_ops=True)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
+
             # collecting output variables
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
+                average_over_devices=True, collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
+                average_over_devices=True, summary_type='scalar',
+                collection=TF_SUMMARIES)
             outputs_collector.add_to_collection(
                 var=data_loss, name='loss',
                 average_over_devices=False, collection=CONSOLE)
@@ -328,6 +339,8 @@ class RegressionApplication(BaseApplication):
                 var=data_loss, name='loss',
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
+
+
         elif self.is_inference:
             data_dict = switch_sampler(for_training=False)
             image = tf.cast(data_dict['image'], tf.float32)
