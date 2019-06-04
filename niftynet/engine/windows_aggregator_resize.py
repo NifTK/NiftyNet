@@ -77,9 +77,7 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
             if self._is_stopping_signal(location[batch_id]):
                 return False
             self.image_id = location[batch_id, 0]
-            resize_to_shape = self._initialise_image_shape(
-                image_id=self.image_id,
-                n_channels=window.shape[-1])
+            resize_to_shape = None
 
             if self._is_stopping_signal(location[batch_id]):
                     return False
@@ -88,18 +86,25 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
 
             for w in window:
                 if 'window' in w:
+
+                    while window[w].ndim < 5:
+                        window[w] = window[w][..., np.newaxis, :]
+                    resize_to_shape = self._initialise_image_shape(
+                        image_id=self.image_id,
+                        n_channels=window[w].shape[-1])
                     self.image_out[w] = window[w][batch_id, ...]
                 else:
-                    window_loc = np.concatenate([window[w],
-                                                np.tile(location_init[
-                                                            batch_id,...],
-                                                        [window[w].shape[0],1])],1)
-                    self.csv_out[w] = self._initialise_empty_csv(
-                        n_channel=window[w][0].shape[-1] +
-                                                     location_init[0, :].shape[
-                                                         -1])
+                    if isinstance(window[w], (np.int, np.float32, np.bool)):
+                        window_loc = np.reshape(window[w], [1, 1])
+                        self.csv_out[w] = self._initialise_empty_csv(
+                            n_channel=1)
+                    else:
+                        window_loc = window[w]
+                        self.csv_out[w] = self._initialise_empty_csv(
+                            n_channel=window[w][0].shape[-1])
+
                     self.csv_out[w] = np.concatenate([self.csv_out[w],
-                                                      window_loc],0)
+                                                      window_loc], 0)
 
             self._save_current_image(resize_to_shape)
             self._save_current_csv()
@@ -159,7 +164,10 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
             return
         self.current_out = {}
         for i in self.image_out:
-            window_shape = resize_to
+            resize_to_shape = self._initialise_image_shape(
+                image_id=self.image_id,
+                n_channels=self.image_out[i].shape[-1])
+            window_shape = resize_to_shape
             current_out = self.image_out[i]
             while current_out.ndim < 5:
                 current_out = current_out[..., np.newaxis, :]
@@ -168,7 +176,7 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                 while len(np_border) < 5:
                     np_border = np_border + (0,)
                 np_border = [(b,) for b in np_border]
-                current_out[i] = np.pad(current_out[i], np_border, mode='edge')
+                current_out = np.pad(current_out, np_border, mode='edge')
             image_shape = current_out.shape
             zoom_ratio = \
                 [float(p) / float(d) for p, d in zip(window_shape, image_shape)]
