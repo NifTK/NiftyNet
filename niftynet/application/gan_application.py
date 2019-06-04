@@ -196,7 +196,7 @@ class GANApplication(BaseApplication):
                     lossD = lossD + reg_loss
                     lossG = lossG + reg_loss
 
-            self.total_loss = tf.stack([lossD, lossG])
+            self.total_loss = lossD + lossG
 
             outputs_collector.add_to_collection(
                 var=self.total_loss, name='total_loss',
