@@ -123,12 +123,41 @@ class ClassifierSamplesAggregator(ImageWindowsAggregator):
         self.log_inferred(subject_name, filename)
         return
 
+    def _save_current_image(self, name_opt):
+        if self.input_image is None:
+            return
+        for i in self.image_out:
+            print(np.sum(self.image_out[i]), " is sum of image out %s before"
+                  % i)
+        for layer in reversed(self.reader.preprocessors):
+            if isinstance(layer, PadLayer):
+                for i in self.image_out:
+                    self.image_out[i], _ = layer.inverse_op(self.image_out[i])
+            if isinstance(layer, DiscreteLabelNormalisationLayer):
+                for i in self.image_out:
+                    self.image_out[i], _ = layer.inverse_op(self.image_out[i])
+        subject_name = self.reader.get_subject_id(self.image_id)
+        for i in self.image_out:
+            print(np.sum(self.image_out[i]), " is sum of image out %s after"
+                  % i)
+        for i in self.image_out:
+            filename = "{}_{}_niftynet_out.nii.gz".format(i+name_opt,subject_name)
+            source_image_obj = self.input_image[self.name]
+            misc_io.save_data_array(self.output_path,
+                                filename,
+                                self.image_out[i],
+                                source_image_obj,
+                                self.output_interp_order)
+            self.log_inferred(subject_name, filename)
+        return
+
     def _save_current_csv(self, name_opt):
         if self.input_image is None:
             return
         subject_name = self.reader.get_subject_id(self.image_id)
         for i in self.csv_out:
-            filename = "{}_{}_niftynet_out.csv".format(i+name_opt,subject_name)
+            filename = "{}_{}_{}.csv".format(i,subject_name,
+                                                       self.postfix)
             misc_io.save_csv_array(self.output_path,
                                 filename,
                                 self.csv_out[i])

@@ -72,40 +72,38 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                 location_init = np.copy(location)
                 print(w, np.sum(window[w]), np.max(window[w]))
         _, location = self.crop_batch(test, location_init, self.window_border)
+
         for batch_id in range(n_samples):
-            image_id, x_start, y_start, z_start, x_end, y_end, z_end = \
-                location[batch_id, :]
-            if image_id != self.image_id:
-                # image name changed:
-                #    save current image and create an empty image
-                self._save_current_image(name_opt)
-                self._save_current_csv(name_opt)
-                if self._is_stopping_signal(location[batch_id]):
+            if self._is_stopping_signal(location[batch_id]):
+                return False
+            self.image_id = location[batch_id, 0]
+            resize_to_shape = self._initialise_image_shape(
+                image_id=self.image_id,
+                n_channels=window.shape[-1])
+
+            if self._is_stopping_signal(location[batch_id]):
                     return False
-                self.image_out = {}
-                self.csv_out = {}
-                for w in window:
-                    if 'window' in w:
-                        self.image_out[w] = self._initialise_empty_image(
-                            image_id=image_id,
-                            n_channels=window[w].shape[-1],
-                            dtype=window[w].dtype)
-                    else:
-                        self.csv_out[w] = self._initialise_empty_csv(
-                            image_id=image_id,n_channel=window[w][0].shape[
-                                                             -1]+location_init[0,:].shape[-1])
+            self.image_out = {}
+            self.csv_out = {}
+
             for w in window:
                 if 'window' in w:
-                    self.image_out[w][x_start:x_end,
-                           y_start:y_end,
-                           z_start:z_end, ...] = window[w][batch_id, ...]
+                    self.image_out[w] = window[w][batch_id, ...]
                 else:
                     window_loc = np.concatenate([window[w],
                                                 np.tile(location_init[
                                                             batch_id,...],
                                                         [window[w].shape[0],1])],1)
+                    self.csv_out[w] = self._initialise_empty_csv(
+                        n_channel=window[w][0].shape[-1] +
+                                                     location_init[0, :].shape[
+                                                         -1])
                     self.csv_out[w] = np.concatenate([self.csv_out[w],
                                                       window_loc],0)
+
+            self._save_current_image(resize_to_shape)
+            self._save_current_csv()
+
         return True
 
     def _initialise_image_shape(self, image_id, n_channels):
@@ -118,7 +116,7 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                 empty_image, _ = layer(empty_image)
         return empty_image.shape
 
-    def _save_current_image(self, image_out, resize_to):
+    def _save_current_image_old(self, image_out, resize_to):
         if self.input_image is None:
             return
         window_shape = resize_to
@@ -155,14 +153,67 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         self.log_inferred(subject_name, filename)
         return
 
-    def _save_current_csv(self, name_opt):
+
+    def _save_current_image(self, resize_to):
+        if self.input_image is None:
+            return
+        self.current_out = {}
+        for i in self.image_out:
+            window_shape = resize_to
+            current_out = self.image_out[i]
+            while current_out.ndim < 5:
+                current_out = current_out[..., np.newaxis, :]
+            if self.window_border and any([b > 0 for b in self.window_border]):
+                np_border = self.window_border
+                while len(np_border) < 5:
+                    np_border = np_border + (0,)
+                np_border = [(b,) for b in np_border]
+                current_out[i] = np.pad(current_out[i], np_border, mode='edge')
+            image_shape = current_out.shape
+            zoom_ratio = \
+                [float(p) / float(d) for p, d in zip(window_shape, image_shape)]
+            image_shape = list(image_shape[:3]) + [1, image_shape[-1]]
+            print(np.sum(self.image_out[i]), " is sum of image out %s before"
+                  % i)
+            current_out = np.reshape(current_out, image_shape)
+            current_out = zoom_3d(image=current_out,
+                                  ratio=zoom_ratio,
+                                  interp_order=self.output_interp_order)
+            self.current_out[i] = current_out
+        for layer in reversed(self.reader.preprocessors):
+            if isinstance(layer, PadLayer):
+                for i in self.image_out:
+                    self.current_out[i], _ = layer.inverse_op(
+                        self.current_out[i])
+            if isinstance(layer, DiscreteLabelNormalisationLayer):
+                for i in self.image_out:
+                    self.image_out[i], _ = layer.inverse_op(self.image_out[i])
+        subject_name = self.reader.get_subject_id(self.image_id)
+        for i in self.image_out:
+            print(np.sum(self.image_out[i]), " is sum of image out %s after"
+                  % i)
+        for i in self.image_out:
+            filename = "{}_{}_{}.nii.gz".format(i, subject_name, self.postfix)
+            source_image_obj = self.input_image[self.name]
+            misc_io.save_data_array(self.output_path,
+                                filename,
+                                self.current_out[i],
+                                source_image_obj,
+                                self.output_interp_order)
+            self.log_inferred(subject_name, filename)
+        return
+
+    def _save_current_csv(self):
         if self.input_image is None:
             return
         subject_name = self.reader.get_subject_id(self.image_id)
         for i in self.csv_out:
-            filename = "{}_{}_niftynet_out.csv".format(i+name_opt, subject_name)
+            filename = "{}_{}_{}.csv".format(i, subject_name, self.postfix)
             misc_io.save_csv_array(self.output_path,
                                    filename,
                                    self.csv_out[i])
             self.log_inferred(subject_name, filename)
         return
+
+    def _initialise_empty_csv(self, n_channel):
+        return np.zeros([1, n_channel])
