@@ -124,7 +124,9 @@ class SegmentationApplicationBFAug(SegmentationApplication):
         if self.net_param.volume_padding_size:
             volume_padding_layer.append(PadLayer(
                 image_name=SUPPORTED_INPUT,
-                border=self.net_param.volume_padding_size))
+                border=self.net_param.volume_padding_size,
+                mode=self.net_param.volume_padding_mode,
+                pad_to=self.net_param.volume_padding_to_size))
 
         self.readers[0].add_preprocessing_layers(
             volume_padding_layer + normalisation_layers + augmentation_layers)

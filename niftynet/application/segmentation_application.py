@@ -145,7 +145,8 @@ class SegmentationApplication(BaseApplication):
             volume_padding_layer.append(PadLayer(
                 image_name=SUPPORTED_INPUT,
                 border=self.net_param.volume_padding_size,
-                mode=self.net_param.volume_padding_mode))
+                mode=self.net_param.volume_padding_mode,
+                pad_to=self.net_param.volume_padding_to_size))
 
         # initialise training data augmentation layers
         augmentation_layers = []
