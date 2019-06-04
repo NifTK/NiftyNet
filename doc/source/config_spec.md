@@ -119,6 +119,7 @@ within each section.
 This section will be used by [ImageReader](./niftynet.io.image_reader.html)
 to generate a list of [input images objects](./niftynet.io.image_type.html).
 For example, the section
+
 ```ini
 [T1Image]
 path_to_search = ./example_volumes/image_folder
@@ -129,6 +130,7 @@ pixdim = 1.0, 1.0, 1.0
 axcodes = A, R, S
 interp_order = 3
 ```
+
 specifies a set of images
 (currently supports NIfTI format via [NiBabel library](http://nipy.org/nibabel/nifti_images.html))
 from `./example_volumes/image_folder`, with filenames containing both `T1` and
@@ -153,16 +155,16 @@ understand how files are matched.
 
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
-[csv_file](#csv-file) | `string` | `csv_file=file_list.csv` | `''`
-[path_to_search](#path-to-search) | `string` | `path_to_search=my_data/fold_1` | NiftyNet home folder
-[filename_contains](#filename-contains) | `string` or `string array` | `filename_contains=foo, bar` | `''`
-[filename_not_contains](#filename-not-contains) | `string` or `string array` | `filename_not_contains=foo` | `''`
-[filename_removefromid](#filename-removefromid) | `string` | `filename_removefromid=bar` | `''`
-[interp_order](#interp-order) | `integer` | `interp_order=0` | `3`
-[pixdim](#pixdim) | `float array` | `pixdim=1.2, 1.2, 1.2` | `''`
-[axcodes](#axcodes) | `string array` | `axcodes=L, P, S` | `''`
-[spatial_window_size](#spatial-window-size) | `integer array` | `spatial_window_size=64, 64, 64` | `''`
-[loader](#loader) | `string` | `loader=simpleitk` | `None`
+[`csv_file`](#csv-file) | `string` | `csv_file=file_list.csv` | `''`
+[`path_to_search`](#path-to-search) | `string` | `path_to_search=my_data/fold_1` | NiftyNet home folder
+[`filename_contains`](#filename-contains) | `string` or `string array` | `filename_contains=foo, bar` | `''`
+[`filename_not_contains`](#filename-not-contains) | `string` or `string array` | `filename_not_contains=foo` | `''`
+[`filename_removefromid`](#filename-removefromid) | `string` | `filename_removefromid=bar` | `''`
+[`interp_order`](#interp-order) | `integer` | `interp_order=0` | `3`
+[`pixdim`](#pixdim) | `float array` | `pixdim=1.2, 1.2, 1.2` | `''`
+[`axcodes`](#axcodes) | `string array` | `axcodes=L, P, S` | `''`
+[`spatial_window_size`](#spatial-window-size) | `integer array` | `spatial_window_size=64, 64, 64` | `''`
+[`loader`](#loader) | `string` | `loader=simpleitk` | `None`
 
 ###### `csv_file`
 Path to a CSV file containing a list of input images:
@@ -245,7 +247,7 @@ More information about NIfTI orientation can be found on [3D Slicer][slicer-docs
 Array of three integers specifying the input window size.
 Setting it to single slice, e.g., `spatial_window_size=64, 64, 1`, yields a 2-D slice window.
 
-See also: [Patch-base analysis guide](./window_sizes.html)
+See also: [Patch-based analysis guide](./window_sizes.html)
 and [U-Net window shape tutorial][unet]
 
 [unet]: https://gist.github.com/fepegar/1fb865494cb44ac043c3189ec415d411
@@ -261,12 +263,12 @@ Default value `None` indicates trying all available loaders, in the above priori
 
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
-[cuda_devices](#cuda-devices) | `integer or integer array` | `cuda_devices=0,1,2` | `''`
-[num_threads](#num-threads) | `positive integer` | `num_threads=1` | `2`
-[num_gpus](#num-gpus) | `integer` | `num_gpus=4` | `1`
-[model_dir](#model-dir) | `string` | `model_dir=/User/test_dir` | The directory of the config file
-[dataset_split_file](#dataset-split-file) | `string` | `dataset_split_file=/User/my_test` | `./dataset_split_file.csv`
-[event_handler](#event-handler) | `string` or a list of `string`s | `event_handler=model_restorer` | `model_saver, model_restorer, sampler_threading, apply_gradients, output_interpreter, console_logger, tensorboard_logger`
+[`cuda_devices`](#cuda-devices) | `integer or integer array` | `cuda_devices=0,1,2` | `''`
+[`num_threads`](#num-threads) | `positive integer` | `num_threads=1` | `2`
+[`num_gpus`](#num-gpus) | `integer` | `num_gpus=4` | `1`
+[`model_dir`](#model-dir) | `string` | `model_dir=/User/test_dir` | The directory of the config file
+[`dataset_split_file`](#dataset-split-file) | `string` | `dataset_split_file=/User/my_test` | `./dataset_split_file.csv`
+[`event_handler`](#event-handler) | `string` or a list of `string`s | `event_handler=model_restorer` | `model_saver, model_restorer, sampler_threading, apply_gradients, output_interpreter, console_logger, tensorboard_logger`
 
 ###### `cuda_devices`
 Sets the environment variable `CUDA_VISIBLE_DEVICES`,
@@ -291,7 +293,7 @@ If running inference, it is assumed that `model_dir` contains two folders
 named `models` and `logs`.
 
 ###### `dataset_split_file`
-Path to a CSV assigning subjects to training/validation/inference subsets:
+Path to a CSV file assigning subjects to training/validation/inference subsets:
 
 ```
 subject_001,training
@@ -314,17 +316,17 @@ function parameters. See [Signals and event handlers](extending_event_handler.ht
 
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
-[name](#name) | `string` | `name=niftynet.network.toynet.ToyNet` | `''`
-[activation_function](#activation-function) | `string` | `activation_function=prelu` | `relu`
-[batch_size](#batch-size) | `integer` | `batch_size=10` | `2`
-[smaller_final_batch_mode](#smaller-final-batch-mode) | `string` | | `pad`
-[decay](#decay) | `non-negative float` | `decay=1e-5` | `0.0`
-[reg_type](#reg-type) | `string` | `reg_type=L1` | `L2`
-[volume_padding_size](#volume-padding-size) | `integer array` | `volume_padding_size=4, 4, 4` | `0,0,0`
-[volume_padding_mode](#volume-padding-mode) | `string` | `volume_padding_mode=symmetric` | `minimum`
-[window_sampling](#window-sampling) | `string` | `window_sampling=uniform` | `uniform`
-[queue_length](#queue-length) | `integer` | `queue_length=10` | `5`
-[keep_prob](#keep-prob) | `non-negative float` | `keep_prob=0.2` | `1.0`
+[`name`](#name) | `string` | `name=niftynet.network.toynet.ToyNet` | `''`
+[`activation_function`](#activation-function) | `string` | `activation_function=prelu` | `relu`
+[`batch_size`](#batch-size) | `integer` | `batch_size=10` | `2`
+[`smaller_final_batch_mode`](#smaller-final-batch-mode) | `string` | | `pad`
+[`decay`](#decay) | `non-negative float` | `decay=1e-5` | `0.0`
+[`reg_type`](#reg-type) | `string` | `reg_type=L1` | `L2`
+[`volume_padding_size`](#volume-padding-size) | `integer array` | `volume_padding_size=4, 4, 4` | `0,0,0`
+[`volume_padding_mode`](#volume-padding-mode) | `string` | `volume_padding_mode=symmetric` | `minimum`
+[`window_sampling`](#window-sampling) | `string` | `window_sampling=uniform` | `uniform`
+[`queue_length`](#queue-length) | `integer` | `queue_length=10` | `5`
+[`keep_prob`](#keep-prob) | `non-negative float` | `keep_prob=0.2` | `1.0`
 
 ###### `name`
 A network class from [niftynet/network](./niftynet.network.html) or from a
@@ -338,14 +340,15 @@ There are also some shortcuts for NiftyNet's default network modules defined in 
 [supported-network]: ./niftynet.engine.application_factory.html#niftynet.engine.application_factory.ApplicationNetFactory
 
 ###### `activation_function`
-Sets the type of activation of the network. Available choices are listed in
-`SUPPORTED_OP` in [activation layer][activation].
-Depending on its implementation, the network might ignore this option.
+Sets the type of activation function of the network layers.
+Available choices are listed in `SUPPORTED_OP` in
+[activation layer][activation].
+Depending on the implementation, the network might ignore this option.
 
 [activation]: https://github.com/NifTK/NiftyNet/blob/dev/niftynet/layer/activation.py#L27-L37
 
 ###### `batch_size`
-Sets number of image windows to be processed at each iteration.
+Number of image windows to be processed at each iteration.
 When `num_gpus` is greater than 1, `batch_size` is used for each GPU.
 That is, the effective inputs at each iteration become `batch_size` x `num_gpus`.
 
@@ -358,64 +361,96 @@ the class supports different modes for the final batch:
 <!-- TODO: explain this and/or point to iteration tutorial -->
 
 ###### `reg_type`
-Type of trainable parameter regularisation.
-Currently the available choices are `L1` and `L2`.
+Type of regularisation for trainable parameters.
+Currently the available choices are `L1` (Lasso regression)
+and `L2` (ridge regression or weight decay).
+The regularisation looks like this:
+
+```
+J' = J + λ * 1/2 * sum(w ** n)
+```
+
+where `J` is the loss, `J'` is the regularised loss, λ is the [decay](#decay)
+parameter, `w` is an array containing all the trainable parameters and `n` defines the regularisation type (1 for `L1`, 2 for `L2`).
+
+This option will be ignored if [`decay`](#decay) is `0`.
+
 The loss will be added to the
 [`tf.GraphKeys.REGULARIZATION_LOSSES`][tf-losses] collection.
-This option will be ignored if [decay](#decay) is `0`.
 
 [tf-losses]: https://www.tensorflow.org/api_docs/python/tf/GraphKeys#REGULARIZATION_LOSSES
 
 ###### `decay`
-Strength of regularisation, to help prevent overfitting.
+Weight decay factor λ, see [`reg_type`](#reg_type).
+A largest value means stronger regularisation, used to prevent overfitting.
 
 ###### `volume_padding_size`
-Number of values padded at image volume level.
-The padding effect is equivalent to `numpy.pad` with:
-```python
-numpy.pad(input_volume,
-          (volume_padding_size[0],
-           volume_padding_size[1],
-           volume_padding_size[2], 0, 0),
-           mode='minimum')
-```
-For 2-D inputs, the third dimension of `volume_padding_size` should be set to `0`,
-e.g. `volume_padding_size=M,N,0`.
-`volume_padding_size=M` is a shortcut for 3-D inputs, equivalent to `volume_padding_size=M,M,M`.
-The same amount of padding will be removed when before writing the output volume.
+Number of voxels padded at image volume level (before window sampling).
+The padding effect is equivalent to [`numpy.pad`][numpy-pad] with:
 
-See also: [Patch-base analysis guide](./window_sizes.html)
+```python
+i, j, k = volume_padding_size
+numpy.pad(
+    input_volume,
+    (i, j, k, 0, 0),
+    mode='minimum',
+)
+```
+
+For 2D inputs, the third dimension of `volume_padding_size` should be set to `0`, e.g. `volume_padding_size=M,N,0`.
+
+For 3D inputs, setting `volume_padding_size=M`
+is equivalent to `volume_padding_size=M,M,M`.
+The same amount of padding will be removed before writing the output volume.
+
+See also: [Patch-based analysis guide](./window_sizes.html)
 
 ###### `volume_padding_mode`
-Set which type of numpy padding to do, see
-[https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.pad.html](https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.pad.html) for details.
+Set which type of numpy padding to do,
+see [`numpy.pad`][numpy-pad] for details.
+
+[numpy-pad]: https://docs.scipy.org/doc/numpy/reference/generated/numpy.pad.html
 
 ###### `window_sampling`
 Type of sampler used to generate image windows from each image volume:
-- uniform: fixed size uniformly distributed,
-- weighted: fixed size where the likelihood of sampling a voxel is proportional to the cumulative intensity histogram,
-- balanced: fixed size where each label has the same probability of being sampled,
-- resize: resize image to the window size.
+- `uniform`: fixed size uniformly distributed,
+- `weighted`: fixed size where the likelihood of sampling a voxel is proportional to the cumulative intensity histogram on the sampling prior,
+- `balanced`: fixed size where each label in the sampling prior has the same probability of being sampled,
+- `resize`: resize image to the window size.
 
-For `weighted` and `balanced`, an input section is required to load sampling priors.
-As an [example in the demo folder](https://github.com/NifTK/NiftyNet/blob/v0.3.0/demos/PROMISE12/promise12_balanced_train_config.ini#L61),
-`sampler` parameter is set to `label`, indicating that the sampler uses `label`
-section as the sampling prior.
+For `weighted` and `balanced`,
+an input section is required to load sampling priors.
+In the [sampling demo][sampling-demo]
+the `sampler` parameter is set to `label`,
+indicating that the sampler uses the `label` section as the sampling prior.
+
+See also: [Patch-based analysis guide](./window_sizes.html)
+
+[sampling-demo]: https://github.com/NifTK/NiftyNet/blob/v0.3.0/demos/PROMISE12/promise12_balanced_train_config.ini#L61
 
 ###### `queue_length`
-Integer specifies window buffer size used when sampling image windows from image volumes.
+Size of the buffer used when sampling image windows from image volumes.
 Image window samplers fill the buffer and networks read the buffer.
-Because the network reads [batch_size](#batch-size) windows at each iteration,
-this value is set to at least `batch_size * 2.5` to allow for a possible randomised buffer,
-i.e. `max(queue_length, round(batch_size * 2.5))`.
+Because the network reads [`batch_size`](#batch-size) windows at each iteration, this value is set to at least `5 * batch_size`
+to allow for a possible randomised buffer, i.e.
+
+```python
+queue_length = max(queue_length, batch_size * 5)
+```
+
+A longer queue increases the probability of windows in a batch coming from
+different input volumes, but it will take longer to fill and consume more
+memory.
+
 
 ###### `keep_prob`
-The probability that each element is kept if dropout is supported by the network.
+The probability that each unit is kept if dropout is supported by the network.
 The default value is `0.5`, meaning randomly dropout at the ratio of 0.5.
 This is also used as a default value at inference stage.
 
 To achieve a deterministic inference, set `keep_prob=1`;
-to draw stochastic samples at inferece, set `keep_prob` to a value in between 0 and 1.
+to [draw stochastic samples at inferece][highres3dnet],
+set `keep_prob` to a value between 0 and 1.
 
 In the case of drawing multiple Monte Carlo samples, the user can run the
 inference command mutiple times, with each time a different `save_seg_dir`, for
@@ -423,68 +458,71 @@ example:
 
 `python net_segment.py inference ... --save_seg_dir run_2 --keep_prob 0.5`.
 
-
+[highres3dnet]: https://arxiv.org/pdf/1707.01992.pdf
 
 ##### Volume-normalisation
 Intensity based volume normalisation can be configured using a combination of parameters described below:
 
 (1) Setting `normalisation=True` enables the [histogram-based
-normalisation](./niftynet.utilities.histogram_standardisation.html). The
-relevant configuration parameters are:
+standardisation](./niftynet.utilities.histogram_standardisation.html) as described by [Nyúl et al., 2000][nyul].
+The relevant configuration parameters are:
 > `histogram_ref_file`, `norm_type`, `cutoff`, `normalise_foreground_only`, `foreground_type`, `multimod_foreground_type`.
 
-These parameters are ignored and histogram-based normalisation is disabled if `normalisation=False`.
+If `normalisation=False`, these parameters are ignored and histogram-based normalisation is disabled.
 
-(2) Setting `whitening=True` enables the volume level normalisation computed by `(I - mean(I))/std(I)`.
+(2) Setting `whitening=True` enables the volume level normalisation computed by `(I - mean(I))/std(I)`, i.e. the volume is set to have zero-mean and unit variance.
 The relevant configuration parameters are:
 > `normalise_foreground_only`, `foreground_type`, `multimod_foreground_type`.
 
-These parameters are ignored and whitening is disabled if `whitening=False`.
+If `whitening=False`, these parameters are ignored and whitening is disabled.
 
-(3) Setting `rgb_normalisation=True` enables RGB histogram equilisation. Requires OpenCV (opencv-python) and only supports 2D images.
-Unlike `normalisation`, does not use histogram landmarks or files.
+(3) Setting `rgb_normalisation=True` enables RGB histogram equalisation. It requires OpenCV (opencv-python) and only supports 2D images.
+Unlike `normalisation`, it does not use histogram landmarks or files.
+
+[nyul]: https://ieeexplore.ieee.org/document/836373
 
 More specifically:
 
-
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
-[normalisation](#normalisation) | `boolean` | `normalisation=True` | `False`
-[whitening](#whitening) | `boolean` | `whitening=True` | `False`
-[rgb_normalisation](#rgb-normalisation) | `boolean` | `rgb_normalisation=True` | `False`
-[histogram_ref_file](#histogram-ref-file) | `string` | `histogram_ref_file=./hist_ref.txt` | `''`
-[norm_type](#norm-type) | `string` | `norm_type=percentile` | `percentile`
-[cutoff](#cutoff) | `float array (two elements)` | `cutoff=0.1, 0.9` | `0.01, 0.99`
-[normalise_foreground_only](#normalise-foreground-only) | `boolean` | `normalise_foreground_only=True` | `False`
-[foreground_type](#foreground-type) | `string` | `foreground_type=otsu_plus` | `otsu_plus`
-[multimod_foreground_type](#multimod-foreground-type) | `string` | `multimod_foreground_type=and` | `and`
+[`normalisation`](#normalisation) | `boolean` | `normalisation=True` | `False`
+[`whitening`](#whitening) | `boolean` | `whitening=True` | `False`
+[`rgb_normalisation`](#rgb-normalisation) | `boolean` | `rgb_normalisation=True` | `False`
+[`histogram_ref_file`](#histogram-ref-file) | `string` | `histogram_ref_file=./hist_ref.txt` | `''`
+[`norm_type`](#norm-type) | `string` | `norm_type=percentile` | `percentile`
+[`cutoff`](#cutoff) | `float array (two elements)` | `cutoff=0.1, 0.9` | `0.01, 0.99`
+[`normalise_foreground_only`](#normalise-foreground-only) | `boolean` | `normalise_foreground_only=True` | `False`
+[`foreground_type`](#foreground-type) | `string` | `foreground_type=otsu_plus` | `otsu_plus`
+[`multimod_foreground_type`](#multimod-foreground-type) | `string` | `multimod_foreground_type=and` | `and`
 
 ###### `normalisation`
-Boolean indicates if an histogram standardisation should be applied to the data.
+Boolean indicates if histogram standardisation
+(as described in [Nyúl et al., 2000][nyul]) should be applied to the data.
 
 ###### `whitening`
-Boolean indicates if the loaded image should be whitened,
+Boolean to indicate if the loaded image should be whitened,
 that is, given input image `I`, returns `(I - mean(I))/std(I)`.
 
 ###### `rgb_normalisation`
-Boolean indicates if an RGB histogram equilisation should be applied to the data.
+Boolean to indicate if an RGB histogram equalisation should be applied to the data.
 
 ###### `histogram_ref_file`
-Name of the file that contains the normalisation parameter if it has been trained before or where to save it.
+Name of the file that contains the standardisation parameters if it has been trained before or where to save it.
 
 ###### `norm_type`
-Type of histogram landmarks used in histogram-based normalisation (percentile or quartile).
+Type of histogram landmarks used in histogram-based standardisation (percentile or quartile).
 
 ###### `cutoff`
-Inferior and superior cutoff in histogram-based normalisation.
+Inferior and superior cutoff in histogram-based standardisation.
 
 ###### `normalise_foreground_only`
-Boolean indicates if a mask should be computed based on `foreground_type` and `multimod_foreground_type`.
-If this parameter is set to `True`, all normalisation steps will be applied to the generated foreground
-regions only.
+Boolean to indicate if a mask should be computed based on `foreground_type` and `multimod_foreground_type`.
+If this parameter is set to `True`, all normalisation steps will be applied to
+the generated foreground regions only.
 
 ###### `foreground_type`
-To generate a foreground mask and the normalisation will be applied to foreground only.
+To generate a foreground mask and the normalisation will be applied to
+foreground only.
 Available choices:
 > `otsu_plus`, `otsu_minus`, `thresh_plus`, `thresh_minus`, `mean_plus`.
 
@@ -499,17 +537,17 @@ Strategies applied to combine foreground masks of multiple modalities, can take 
 
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
-[optimiser](#optimiser) | `string` | `optimiser=momentum` | `adam`
-[sample_per_volume](#sample-per-volume) | `positive integer` | `sample_per_volume=5` | `1`
-[lr](#lr) | `float` | `lr=0.001` | `0.1`
-[loss_type](#loss-type) | `string` | `loss_type=CrossEntropy` | `Dice`
-[starting_iter](#starting-iter) | `integer` | `starting_iter=0` | `0`
-[save_every_n](#save-every-n) | `integer` | `save_every_n=5` | `500`
-[tensorboard_every_n](#tensorboard-every-n) | `integer` | `tensorboard_every_n=5` | `20`
-[max_iter](#max-iter) | `integer` | `max_iter=1000` | `10000`
-[max_checkpoints](#max-checkpoints) | `integer` | `max_checkpoints=5` | `100`
-[vars_to_restore](#vars-to-restore) | `string` | `vars_to_restore=^.*(conv_1|conv_2).*$` | `''`
-[vars_to_freeze](#vars-to-freeze) | `string` | `vars_to_freeze=^.*(conv_3|conv_4).*$` | value of `vars_to_restore`
+[`optimiser`](#optimiser) | `string` | `optimiser=momentum` | `adam`
+[`sample_per_volume`](#sample-per-volume) | `positive integer` | `sample_per_volume=5` | `1`
+[`lr`](#lr) | `float` | `lr=0.001` | `0.1`
+[`loss_type`](#loss-type) | `string` | `loss_type=CrossEntropy` | `Dice`
+[`starting_iter`](#starting-iter) | `integer` | `starting_iter=0` | `0`
+[`save_every_n`](#save-every-n) | `integer` | `save_every_n=5` | `500`
+[`tensorboard_every_n`](#tensorboard-every-n) | `integer` | `tensorboard_every_n=5` | `20`
+[`max_iter`](#max-iter) | `integer` | `max_iter=1000` | `10000`
+[`max_checkpoints`](#max-checkpoints) | `integer` | `max_checkpoints=5` | `100`
+[`vars_to_restore`](#vars-to-restore) | `string` | `vars_to_restore=^.*(conv_1|conv_2).*$` | `''`
+[`vars_to_freeze`](#vars-to-freeze) | `string` | `vars_to_freeze=^.*(conv_3|conv_4).*$` | value of `vars_to_restore`
 
 ###### `optimiser`
 Type of optimiser for computing graph gradients. Current available options are
@@ -617,10 +655,10 @@ will process all image files defined by [input specifications](#input-data-sourc
 
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
-[validation_every_n](#validation-every-n) | `integer` | `validation_every_n=10` | `-1`
-[validation_max_iter](#validation-max-iter) | `integer` | `validation_max_iter=5` | `1`
-[exclude_fraction_for_validation](#exclude-fraction-for-validation) | `float` | `exclude_fraction_for_validation=0.2` | `0.0`
-[exclude_fraction_for_inference](#exclude-fraction-for-inference) | `float` | `exclude_fraction_for_inference=0.1` | `0.0`
+[`validation_every_n`](#validation-every-n) | `integer` | `validation_every_n=10` | `-1`
+[`validation_max_iter`](#validation-max-iter) | `integer` | `validation_max_iter=5` | `1`
+[`exclude_fraction_for_validation`](#exclude-fraction-for-validation) | `float` | `exclude_fraction_for_validation=0.2` | `0.0`
+[`exclude_fraction_for_inference`](#exclude-fraction-for-inference) | `float` | `exclude_fraction_for_inference=0.1` | `0.0`
 
 ###### `validation_every_n`
 Run validation iterations after every N training iterations.
@@ -643,17 +681,17 @@ Value should be in `[0, 1]`.
 
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
-[rotation_angle](#rotation-angle) | `float array` | `rotation_angle=-10.0,10.0` | `''`
-[scaling_percentage](#scaling-percentage) | `float array` | `scaling_percentage=-20.0,20.0` | `''`
-[antialiasing](#scaling-percentage) | `boolean` | `antialiasing=True` | `True`
-[isotropic_scaling](#scaling-percentage) | `boolean` | `isotropic_scaling=True` | `False`
-[random_flipping_axes](#random-flipping-axes) | `integer array` | `random_flipping_axes=1,2` | `-1`
-[do_elastic_deformation](#do-elastic-deformation) | `boolean` | `do_elastic_deformation=True` | `False`
-[num_ctrl_points](#do-elastic-deformation) | `integer` | `num_ctrl_points=1` | `4`
-[deformation_sigma](#do-elastic-deformation) | `float` | `deformation_sigma=1` | `15`
-[proportion_to_deform](#do-elastic-deformation) | `float` | `proportion_to_deform=0.7` | `0.5`
-[bias_field_range](#bias-field-range) | `float array` | `bias_field_range=-10.0,10.0` | `''`
-[bf_order](#bias-field-range) | `integer` | `bf_order=1` | `3`
+[`rotation_angle`](#rotation-angle) | `float array` | `rotation_angle=-10.0,10.0` | `''`
+[`scaling_percentage`](#scaling-percentage) | `float array` | `scaling_percentage=-20.0,20.0` | `''`
+[`antialiasing`](#scaling-percentage) | `boolean` | `antialiasing=True` | `True`
+[`isotropic_scaling`](#scaling-percentage) | `boolean` | `isotropic_scaling=True` | `False`
+[`random_flipping_axes`](#random-flipping-axes) | `integer array` | `random_flipping_axes=1,2` | `-1`
+[`do_elastic_deformation`](#do-elastic-deformation) | `boolean` | `do_elastic_deformation=True` | `False`
+[`num_ctrl_points`](#do-elastic-deformation) | `integer` | `num_ctrl_points=1` | `4`
+[`deformation_sigma`](#do-elastic-deformation) | `float` | `deformation_sigma=1` | `15`
+[`proportion_to_deform`](#do-elastic-deformation) | `float` | `proportion_to_deform=0.7` | `0.5`
+[`bias_field_range`](#bias-field-range) | `float array` | `bias_field_range=-10.0,10.0` | `''`
+[`bf_order`](#bias-field-range) | `integer` | `bf_order=1` | `3`
 
 
 ###### `rotation_angle`
@@ -697,14 +735,14 @@ When `bias_field_range` is not None, it is possible to further specify:
 
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
-[spatial_window_size](#spatial-window-size) | `integer array` | `spatial_window_size=64,64,64` | `''`
-[border](#border) | `integer array` | `border=5,5,5` | `0, 0, 0`
-[inference_iter](#inference-iter) | `integer` | `inference_iter=1000` | `-1`
-[save_seg_dir](#save-seg-dir) | `string` | `save_seg_dir=output/test` | `output`
-[output_postfix](#output-postfix) | `string` | `output_postfix=_output` | `_niftynet_out`
-[output_interp_order](#output-interp-order) | `non-negative integer` | `output_interp_order=0` | `0`
-[dataset_to_infer](#dataset-to-infer) | `string` | `dataset_to_infer=training` | `''`
-[fill_constant](#fill-constant) | `float` | `fill_constant=1.0` | `0.0`
+[`spatial_window_size`](#spatial-window-size) | `integer array` | `spatial_window_size=64,64,64` | `''`
+[`border`](#border) | `integer array` | `border=5,5,5` | `0, 0, 0`
+[`inference_iter`](#inference-iter) | `integer` | `inference_iter=1000` | `-1`
+[`save_seg_dir`](#save-seg-dir) | `string` | `save_seg_dir=output/test` | `output`
+[`output_postfix`](#output-postfix) | `string` | `output_postfix=_output` | `_niftynet_out`
+[`output_interp_order`](#output-interp-order) | `non-negative integer` | `output_interp_order=0` | `0`
+[`dataset_to_infer`](#dataset-to-infer) | `string` | `dataset_to_infer=training` | `''`
+[`fill_constant`](#fill-constant) | `float` | `fill_constant=1.0` | `0.0`
 
 ###### `spatial_window_size`
 Array of integers indicating the size of input window. By default, the window
@@ -712,14 +750,14 @@ size at inference time is the same as the [input source specification](#input-da
 If this parameter is specified, it
 overrides the `spatial_window_size` parameter in input source sections.
 
-See also: [Patch-base analysis guide](./window_sizes.html)
+See also: [Patch-based analysis guide](./window_sizes.html)
 
 ###### `border`
 Tuple of integers specifying a border size used to crop (along both sides of each
 dimension) the network output image window. E.g., `3, 3, 3` will crop a
 `64x64x64` window to size `58x58x58`.
 
-See also: [Patch-base analysis guide](./window_sizes.html)
+See also: [Patch-based analysis guide](./window_sizes.html)
 
 ###### `inference_iter`
 Integer specifies the trained model to be used for inference.
