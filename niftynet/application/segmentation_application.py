@@ -146,7 +146,6 @@ class SegmentationApplication(BaseApplication):
             mode=self.net_param.volume_padding_mode,
             pad_to=self.net_param.volume_padding_to_size)
         ]
-
         # initialise training data augmentation layers
         augmentation_layers = []
         if self.is_training:
