@@ -285,6 +285,7 @@ function parameters. See [Signals and event handlers](extending_event_handler.ht
 [volume_padding_size](#volume-padding-size) | `integer array` | `volume_padding_size=4, 4, 4` | `0,0,0`
 [volume_padding_mode](#volume-padding-mode) | `string` | `volume_padding_mode=symmetric` | `minimum`
 [window_sampling](#window-sampling) | `string` | `window_sampling=uniform` | `uniform`
+[force_output_identity_resizing](#force-output-identity-resizing) | `boolean` | `force_output_identity_resizing=True` | `False`
 [queue_length](#queue-length) | `integer` | `queue_length=10` | `5`
 [keep_prob](#keep-prob) | `non-negative float` | `keep_prob=0.2` | `1.0`
 
@@ -357,6 +358,9 @@ For `weighted` and `balanced`, an input section is required to load sampling pri
 As an [example in the demo folder](https://github.com/NifTK/NiftyNet/blob/v0.3.0/demos/PROMISE12/promise12_balanced_train_config.ini#L61),
 `sampler` parameter is set to `label`, indicating that the sampler uses `label`
 section as the sampling prior.
+
+###### `force_output_identity_resizing`
+Forces the inferred output shape to match the label shape for regression tasks when the resize sampler is used. If the resize sampler is used and this flag is not set to `True`, the network output will be resized to the shape of the input image. 
 
 ###### `queue_length`
 Integer specifies window buffer size used when sampling image windows from image volumes.
