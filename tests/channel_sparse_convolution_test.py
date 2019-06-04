@@ -31,7 +31,7 @@ class ChannelSparseConvolutionalLayerTest(tf.test.TestCase):
         x4, mask4=conv4(x3, mask3, True, .75)
         x5, mask5=conv5(x4, mask4, True, 1.)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out1, out2, out3, out4, out5 = sess.run([x1,x2,x3,x4,x5])
         self.assertAllClose([2,4,5,6,4], out1.shape)

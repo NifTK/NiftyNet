@@ -70,7 +70,7 @@ class RandDeformationTests(tf.test.TestCase):
     #         rand_bias_field_layer.randomise(x)
     #         out = rand_bias_field_layer(x, interp_orders)
 
-    #         with self.test_session():
+    #         with self.cached_session():
     #             self.assertFalse(np.array_equal(out['image'], x_old))
 
 

@@ -23,7 +23,7 @@ class PostProcessingTest(tf.test.TestCase):
         out_post = post_process_layer(x)
         print(post_process_layer)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             out = sess.run(out_post)
             x_shape = tuple(x.shape.as_list())
             self.assertAllClose(x_shape, out.shape)
@@ -34,7 +34,7 @@ class PostProcessingTest(tf.test.TestCase):
         out_post = post_process_layer(x)
         print(post_process_layer)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             out = sess.run(out_post)
             x_shape = tuple(x.shape.as_list())
             self.assertAllClose(x_shape, out.shape)
@@ -45,7 +45,7 @@ class PostProcessingTest(tf.test.TestCase):
         out_post = post_process_layer(x)
         print(post_process_layer)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             out = sess.run(out_post)
             x_shape = tuple(x.shape.as_list()[:-1])
             self.assertAllClose(x_shape + (1,), out.shape)

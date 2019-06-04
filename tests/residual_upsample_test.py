@@ -25,7 +25,7 @@ class ResidualUpsampleTest(tf.test.TestCase):
         upsample_layer = ResidualUpsampleLayer(**param_dict)
         resized = upsample_layer(x)
         print(upsample_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(resized)
             self.assertAllClose(out.shape, expected_shape)

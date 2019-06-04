@@ -22,7 +22,7 @@ class DeepMedicTest(tf.test.TestCase):
         out = deepmedic_instance(x, is_training=True)
         # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 9, 9, 9, 160), out.shape)
@@ -38,7 +38,7 @@ class DeepMedicTest(tf.test.TestCase):
         out = deepmedic_instance(x, is_training=True)
         # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 9, 9, 160), out.shape)
@@ -50,7 +50,7 @@ class DeepMedicTest(tf.test.TestCase):
         deepmedic_instance = DeepMedic(num_classes=160)
         out = deepmedic_instance(x, is_training=True)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 9, 9, 9, 160), out.shape)
@@ -62,7 +62,7 @@ class DeepMedicTest(tf.test.TestCase):
         deepmedic_instance = DeepMedic(num_classes=160)
         out = deepmedic_instance(x, is_training=True)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 9, 9, 160), out.shape)

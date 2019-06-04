@@ -19,7 +19,7 @@ class ScaleNetTest(tf.test.TestCase):
         out = scalenet_layer(x, is_training=True)
         print(scalenet_layer.num_trainable_params())
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 5), out.shape)
@@ -32,7 +32,7 @@ class ScaleNetTest(tf.test.TestCase):
         out = scalenet_layer(x, is_training=True)
         print(scalenet_layer.num_trainable_params())
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 5), out.shape)
@@ -47,7 +47,7 @@ class ScaleNetTest(tf.test.TestCase):
         out = scalenet_layer(x, is_training=True)
         print(scalenet_layer.num_trainable_params())
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 5), out.shape)
@@ -62,7 +62,7 @@ class ScaleNetTest(tf.test.TestCase):
         out = scalenet_layer(x, is_training=True)
         print(scalenet_layer.num_trainable_params())
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 5), out.shape)

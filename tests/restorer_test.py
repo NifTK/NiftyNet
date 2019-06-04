@@ -47,7 +47,7 @@ class RestorerTest(tf.test.TestCase):
                              ('foo', checkpoint_name, 'bar'))
         init_op = global_vars_init_or_restore()
         all_vars = tf.global_variables()
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(init_op)
 
             def getvar(x):
@@ -71,7 +71,7 @@ class RestorerTest(tf.test.TestCase):
         b2 = block1(tf.ones([1., 5., 5., 1.]))
         init_op = global_vars_init_or_restore()
         all_vars = tf.global_variables()
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(init_op)
 
             def getvar(x):

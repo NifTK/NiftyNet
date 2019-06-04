@@ -30,7 +30,7 @@ class LinearResizeTest(tf.test.TestCase):
         resize_layer = LinearResizeLayer(new_size=new_size)
         resized = resize_layer(x)
         print(resize_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             out = sess.run(resized)
             self.assertAllClose(out.shape, expected_shape)
 
