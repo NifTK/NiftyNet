@@ -58,6 +58,7 @@ def get_initialised_driver(starting_iter=0,
             exclude_fraction_for_validation=0.1,
             exclude_fraction_for_inference=0.1,
             vars_to_restore=vars_to_restore,
+            patience=100,
             lr=0.01),
         'CUSTOM': ParserNamespace(
             vector_size=100,

@@ -21,16 +21,13 @@ class PerformanceLogger(object):
         :return:
         """
         iter_msg = msg['iter_msg']
-        if iter_msg._phase == 'validation':
+
+        if iter_msg.is_validation:
             try:
                 console_content = iter_msg.current_iter_output.get(CONSOLE, '')
                 current_loss = console_content['total_loss']
 
-                if _sender.performance_history is None:
-                    _sender.performance_history = []
-
                 if len(_sender.performance_history) < _sender.patience:
-
                     _sender.performance_history.append(current_loss)
                 else:
                     _sender.performance_history = \
