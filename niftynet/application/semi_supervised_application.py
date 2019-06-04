@@ -29,6 +29,7 @@ from niftynet.engine.sampler_grid_v2 import GridSampler
 from niftynet.engine.application_factory import InitializerFactory
 
 import math
+import numpy as np
 
 SUPPORTED_INPUT = set(['image', 'label'])
 SUPPORTED_TRAINING = set(['label', 'no_label'])
@@ -53,9 +54,10 @@ class SemiSupervisedApplication(BaseApplication):
         self.vae_weight = None
 
         self.has_seg_feature = True
-        self.has_seg_logvar_decoder = False#True
-        self.has_autoencoder_feature = True
-        self.has_autoencoder_logvar_decoder = False#True
+        self.has_seg_logvar_decoder = False
+        self.has_autoencoder_feature = False
+        self.has_autoencoder_logvar_decoder = False
+        self.has_gaussian_seg_feature = False
 
         self.learning_rate = None
         self.current_id = None
@@ -177,6 +179,7 @@ class SemiSupervisedApplication(BaseApplication):
             has_seg_logvar_decoder=self.has_seg_logvar_decoder,
             has_autoencoder_feature=self.has_autoencoder_feature,
             has_autoencoder_logvar_decoder=self.has_autoencoder_logvar_decoder,
+            has_gaussian_seg_feature=self.has_gaussian_seg_feature,
             acti_func=self.net_param.activation_function)
 
 
@@ -204,7 +207,7 @@ class SemiSupervisedApplication(BaseApplication):
 
         if self.is_training:
 
-            #self.sampler[0][0].layer_op(idx=0)
+            self.sampler[0][0].layer_op(idx=0)
             #print("sampler =", self.sampler)
 
             if self.action_param.validation_every_n > 0:

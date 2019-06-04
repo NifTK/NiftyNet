@@ -20,7 +20,7 @@ class GuuNet(nnnbn.BaseNet):
             w_initializer=None, w_regularizer=None,
             b_initializer=None, b_regularizer=None,
             acti_func=None,
-            has_seg_feature=True, has_seg_logvar_decoder=True,
+            has_seg_feature=True, has_seg_logvar_decoder=True, has_gaussian_seg_feature=True,
             has_autoencoder_feature=True, has_autoencoder_logvar_decoder=True,
             name='GuuNet'):
         super(GuuNet, self).__init__(name=name)
@@ -32,9 +32,9 @@ class GuuNet(nnnbn.BaseNet):
         self.b_regularizer = b_regularizer
         self.has_seg_feature = has_seg_feature
         self.has_seg_logvar_decoder = has_seg_logvar_decoder
+        self.has_gaussian_seg_feature = has_gaussian_seg_feature
         self.has_autoencoder_feature = has_autoencoder_feature
         self.has_autoencoder_logvar_decoder = has_autoencoder_logvar_decoder
-        self.gaussian_segmentation = True
 
     @staticmethod
     def encoder_block(_, channels, encoder_gn, encoder_acti, encoder_conv, i, j, skips):
@@ -144,21 +144,23 @@ class GuuNet(nnnbn.BaseNet):
                 if i < layers:
                     _ = self.encoder_down(_, bc, down_conv, i)
 
-        with tf.variable_scope('gaussian_sampler'):
-            _, restore_shape = self.dense_down(
-                _, gsc, lc, dense_down_gn, dense_down_acti, dense_down_conv,
-                dense_down_fc)
+        gaussian_sampler_out = None
+        if self.has_gaussian_seg_feature or self.has_autoencoder_feature:
+            with tf.variable_scope('gaussian_sampler'):
+                _, restore_shape = self.dense_down(
+                    _, gsc, lc, dense_down_gn, dense_down_acti, dense_down_conv,
+                    dense_down_fc)
 
-            _, pmeans, plogvars = nnlgs.GaussianSampler(
-                lc / 2, 1, 10, -10, name='gaussian_sampler')(_, is_training)
+                _, pmeans, plogvars = nnlgs.GaussianSampler(
+                    lc / 2, 5, 10, -10, name='gaussian_sampler')(_, is_training)
 
-            gaussian_sampler_out = self.dense_up(
-                _, bc << layers, restore_shape, dense_up_fc, dense_up_acti,
-                dense_up_conv, dense_up_uplinear)
+                gaussian_sampler_out = self.dense_up(
+                    _, bc << layers, restore_shape, dense_up_fc, dense_up_acti,
+                    dense_up_conv, dense_up_uplinear)
 
         if self.has_seg_feature:
             with tf.variable_scope('seg_mean_decoder'):
-                if self.gaussian_segmentation is True:
+                if self.has_gaussian_seg_feature is True:
                     _ = gaussian_sampler_out
                 else:
                     _ = skips[-1]
@@ -171,7 +173,7 @@ class GuuNet(nnnbn.BaseNet):
 
             if self.has_seg_logvar_decoder:
                 with tf.variable_scope('seg_logvar_decoder'):
-                    if self.gaussian_segmentation is True:
+                    if self.has_gaussian_seg_feature is True:
                         _ = gaussian_sampler_out
                     else:
                         _ = skips[-1]
