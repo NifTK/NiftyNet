@@ -1,9 +1,9 @@
-six>=1.10
-nibabel>=2.1.0
-numpy>=1.13.3, <= 1.14.5
-scipy>=0.18
+six>=1.12.0
+nibabel>=2.4.1
+numpy>=1.16.4
+scipy>=1.3.0
 configparser
-tensorflow-gpu==1.12.2
+tensorflow-gpu==1.13.1
 pandas
 pillow
 blinker
