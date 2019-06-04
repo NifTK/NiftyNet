@@ -328,7 +328,7 @@ def add_network_args(parser):
         " 'resize': resize image to the patch size.",
         choices=['uniform', 'resize', 'balanced', 'weighted'],
         default='uniform')
-    
+
     parser.add_argument(
         "--force_output_identity_resizing",
         metavar=str2boolean,
