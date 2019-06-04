@@ -160,6 +160,15 @@ class ClassificationApplication(BaseApplication):
         for reader in self.readers[1:]:
             reader.add_preprocessing_layers(normalisation_layers)
 
+        # Checking num_classes is set correctly
+        if self.classification_param.num_classes <= 1:
+            raise ValueError("Number of classes must be at least 2 for classification")
+        for preprocessor in self.readers[0].preprocessors:
+            if preprocessor.name == 'label_norm':
+                if len(preprocessor.label_map[preprocessor.key[0]]) != self.classification_param.num_classes:
+                    raise ValueError("Number of unique labels must be equal to "
+                                     "number of classes (check histogram_ref file)")
+
     def initialise_resize_sampler(self):
         self.sampler = [[ResizeSampler(
             reader=reader,
