@@ -1,5 +1,7 @@
-from __future__ import absolute_import, print_function
+from __future__ import division, absolute_import, print_function
 
+import functools as ft
+import numpy as np
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
@@ -55,6 +57,129 @@ class ConvTest(tf.test.TestCase):
             sess.run(tf.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)
+
+    def _test_extended_conv(self, orig_input, init_dict):
+        """
+        Tests the extended padding options of ConvLayer
+        """
+
+        def _w_init(shape, dtype=tf.float32, **kwargs):
+            data = np.arange(ft.reduce(lambda prod, x: prod*x, shape, 1))\
+                     .astype(np.float32)
+            data *= 2.374/data.mean()
+            data -= data.mean()
+
+            return tf.constant(data.reshape(shape), dtype=dtype)
+
+        def _b_init(shape, dtype=tf.float32, **kwargs):
+            data = np.arange(shape[0]).astype(np.float32)
+            data *= 0.273/data.mean()
+            data -= data.mean()
+
+            return tf.constant(data.reshape(shape), dtype=dtype)
+
+        init_dict['w_initializer'] = _w_init
+        init_dict['b_initializer'] = _b_init
+
+        conv_layer = ConvLayer(**init_dict)
+        small_output = conv_layer(tf.constant(orig_input))
+
+        input_shape = orig_input.shape
+        multiplier = init_dict['kernel_size'] + init_dict['dilation'] \
+            + init_dict['stride']
+        pad = [d*multiplier for d in input_shape[1:-1]]
+        paddings = [(0, 0)] + [(p, p) for p in pad] + [(0, 0)]
+
+        if init_dict['padding'] == 'CONSTANT':
+            opts = {'constant_values': init_dict.get('padding_constant', 0)}
+        else:
+            opts = {}
+
+        enlarged_input = np.pad(orig_input,
+                                paddings,
+                                init_dict['padding'].lower(),
+                                **opts)
+
+        conv_layer.padding = 'SAME'
+        large_output = conv_layer(tf.constant(enlarged_input))
+
+        def _extract_valid_region(output_tensor, target_tensor):
+            output_shape = output_tensor.shape
+            target_shape = target_tensor.shape
+            extr_slices = []
+            for d in range(len(target_shape)):
+                opad = (output_shape[d] - target_shape[d])//2
+                extr_slices.append(slice(
+                    opad, opad + target_shape[d]))
+
+            return output_tensor[tuple(extr_slices)]
+
+        assert np.square(
+            _extract_valid_region(enlarged_input, orig_input) - orig_input).sum() \
+            <= 1e-6*np.square(orig_input).sum()
+
+        with self.test_session() as sess:
+            sess.run(tf.global_variables_initializer())
+
+            small_value = sess.run(small_output)
+            large_value = sess.run(large_output)
+
+            extr_value = _extract_valid_region(large_value, small_value)
+
+            print(np.square(small_value - extr_value).sum()/np.square(extr_value).sum())
+
+            self.assertAllClose(small_value, extr_value, rtol=1e-3)
+
+    def _get_pad_test_input_3d(self):
+        data = np.arange(1024, dtype=np.float32)
+
+        return data.reshape([1, 16, 4, 4, 4])
+
+    def _get_pad_test_input_2d(self):
+        data = np.arange(256, dtype=np.float32)
+
+        return data.reshape([4, 8, 4, 2])
+
+    # padding tests
+    def _test_extended_padding(self, pad, do_2d):
+        batch = self._get_pad_test_input_2d() if do_2d \
+            else self._get_pad_test_input_3d()
+
+        const = 127.23
+        min_dim = min(batch.shape[1:-1]) - 1
+        for ks in (2, min_dim):
+            for ds in (1, min_dim):
+                name = 'pad_test_conv' + ('2' if do_2d else '3')
+                name += "%i_%i" % (ks, ds)
+                init_dict = {'n_output_chns': 4,
+                             'kernel_size': ks,
+                             'stride': 1,
+                             'dilation': ds,
+                             'padding': pad,
+                             'name': name}
+
+                if ds%2 == 0:
+                    init_dict['padding_constant'] = const
+
+                self._test_extended_conv(batch, init_dict)
+
+    def test_2d_const_padding(self):
+        self._test_extended_padding('CONSTANT', True)
+
+    def test_2d_reflect_padding(self):
+        self._test_extended_padding('REFLECT', True)
+
+    def test_2d_symmetric_padding(self):
+        self._test_extended_padding('SYMMETRIC', True)
+
+    def test_3d_const_padding(self):
+        self._test_extended_padding('CONSTANT', False)
+
+    def test_3d_reflect_padding(self):
+        self._test_extended_padding('REFLECT', False)
+
+    def test_3d_symmetric_padding(self):
+        self._test_extended_padding('SYMMETRIC', False)
 
     # 3d tests
     def test_3d_conv_default_shape(self):
@@ -131,7 +256,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': 3,
                        'stride': 1,
                        'with_bias': True,
-                       'featnorm_type': None}
+                       'feature_normalization': None}
         self._test_conv_layer_output_shape(rank=3,
                                            param_dict=input_param,
                                            output_shape=(2, 16, 16, 16, 10))
@@ -141,7 +266,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': 3,
                        'stride': 1,
                        'with_bias': True,
-                       'featnorm_type': None,
+                       'feature_normalization': None,
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_conv_layer_output_shape(rank=3,
@@ -153,7 +278,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [5, 1, 2],
                        'stride': 1,
                        'with_bias': False,
-                       'featnorm_type': 'batch',
+                       'feature_normalization': 'batch',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_conv_layer_output_shape(rank=3,
@@ -166,7 +291,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [5, 1, 2],
                        'stride': [1, 1, 2],
                        'with_bias': False,
-                       'featnorm_type': 'batch',
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
@@ -180,7 +305,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [5, 1, 2],
                        'stride': [1, 2, 2],
                        'with_bias': False,
-                       'featnorm_type': 'batch',
+                       'feature_normalization': 'batch',
                        'acti_func': 'relu',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
@@ -194,7 +319,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [5, 1, 2],
                        'stride': [1, 2, 2],
                        'with_bias': False,
-                       'featnorm_type': 'batch',
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu'}
         self._test_conv_layer_output_shape(rank=3,
                                            param_dict=input_param,
@@ -207,7 +332,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [5, 3, 2],
                        'stride': [2, 2, 3],
                        'with_bias': False,
-                       'featnorm_type': 'batch',
+                       'feature_normalization': 'batch',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'acti_func': 'prelu',
                        'padding': 'VALID'}
@@ -222,7 +347,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [5, 3, 2],
                        'stride': [2, 2, 3],
                        'with_bias': False,
-                       'featnorm_type': 'group',
+                       'feature_normalization': 'group',
                        'group_size': 4,
                        'w_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_conv_layer_output_shape(rank=3,
@@ -284,7 +409,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': 2,
                        'stride': [2, 1],
                        'with_bias': True,
-                       'featnorm_type': None}
+                       'feature_normalization': None}
         self._test_conv_layer_output_shape(rank=2,
                                            param_dict=input_param,
                                            output_shape=(2, 8, 16, 10))
@@ -294,7 +419,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [3, 5],
                        'stride': [2, 1],
                        'with_bias': True,
-                       'featnorm_type': None,
+                       'feature_normalization': None,
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_conv_layer_output_shape(rank=2,
@@ -306,7 +431,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [3, 5],
                        'stride': [2, 1],
                        'with_bias': False,
-                       'featnorm_type': 'batch',
+                       'feature_normalization': 'batch',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_conv_layer_output_shape(rank=2,
@@ -319,7 +444,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': 3,
                        'stride': [2, 1],
                        'with_bias': False,
-                       'featnorm_type': 'batch',
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu'}
         self._test_conv_layer_output_shape(rank=2,
                                            param_dict=input_param,
@@ -331,7 +456,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': 3,
                        'stride': [3, 1],
                        'with_bias': False,
-                       'featnorm_type': 'batch',
+                       'feature_normalization': 'batch',
                        'acti_func': 'relu'}
         self._test_conv_layer_output_shape(rank=2,
                                            param_dict=input_param,
@@ -343,7 +468,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': 3,
                        'stride': 1,
                        'with_bias': False,
-                       'featnorm_type': 'batch',
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu',
                        'w_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_conv_layer_output_shape(rank=2,
@@ -356,7 +481,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [3, 2],
                        'stride': [2, 3],
                        'with_bias': False,
-                       'featnorm_type': 'batch',
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu',
                        'padding': 'VALID',
                        'w_regularizer': regularizers.l2_regularizer(0.5)}

@@ -53,7 +53,7 @@ class HolisticNet(BaseNet):
         scores_instances = []
         first_conv_layer = ConvolutionalLayer(
             n_output_chns=self.num_features[0],
-            featnorm_type='batch',
+            feature_normalization='batch',
             kernel_size=3,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
@@ -223,7 +223,7 @@ class ScoreLayer(TrainableLayer):
         for layer in range(n_layers - 1):
             layer_to_add = ConvolutionalLayer(
                 n_output_chns=self.num_features[layer + 1],
-                featnorm_type='batch',
+                feature_normalization='batch',
                 kernel_size=3,
                 w_initializer=self.initializers['w'],
                 w_regularizer=self.regularizers['w'],

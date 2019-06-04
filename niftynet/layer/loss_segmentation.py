@@ -262,26 +262,37 @@ def dice_plus_xent_loss(prediction, ground_truth, weight_map=None):
     :return: the loss (cross_entropy + Dice)
 
     """
-    if weight_map is not None:
-        raise NotImplementedError
+    num_classes = tf.shape(prediction)[-1]
 
     prediction = tf.cast(prediction, tf.float32)
-    loss_xent = cross_entropy(prediction, ground_truth)
-
-    softmax_of_logits = tf.nn.softmax(prediction, axis=-1)
+    loss_xent = cross_entropy(prediction, ground_truth, weight_map=weight_map)
 
     # Dice as according to the paper:
-    num_classes = tf.shape(prediction)[-1]
     one_hot = labels_to_one_hot(ground_truth, num_classes=num_classes)
+    softmax_of_logits = tf.nn.softmax(prediction)
 
-    dice_numerator = 2.0 * tf.sparse_reduce_sum(one_hot * softmax_of_logits,
-                                                reduction_axes=[0])
-    dice_denominator = tf.reduce_sum(softmax_of_logits, reduction_indices=[0]) + \
-                       tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
+    if weight_map is not None:
+        weight_map_nclasses = tf.tile(
+            tf.reshape(weight_map, [-1, 1]), [1, num_classes])
+        dice_numerator = 2.0 * tf.sparse_reduce_sum(
+            weight_map_nclasses * one_hot * softmax_of_logits,
+            reduction_axes=[0])
+        dice_denominator = \
+            tf.reduce_sum(weight_map_nclasses * softmax_of_logits,
+                          reduction_indices=[0]) + \
+            tf.sparse_reduce_sum(one_hot * weight_map_nclasses,
+                                 reduction_axes=[0])
+    else:
+        dice_numerator = 2.0 * tf.sparse_reduce_sum(
+            one_hot * softmax_of_logits, reduction_axes=[0])
+        dice_denominator = \
+            tf.reduce_sum(softmax_of_logits, reduction_indices=[0]) + \
+            tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
 
     epsilon = 0.00001
-
     loss_dice = -(dice_numerator + epsilon) / (dice_denominator + epsilon)
+    dice_numerator = tf.Print(
+        dice_denominator, [dice_numerator, dice_denominator, loss_dice])
 
     return loss_dice + loss_xent
 

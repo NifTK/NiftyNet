@@ -149,24 +149,33 @@ See also: [input filename matching guide](./filename_matching.html)
 ###### `filename_contains`
 Keywords used to match filenames.
 The matched keywords will be removed, and the remaining part is used as
-subject name (for loading corresponding images across modalities).
+subject name (for loading corresponding images across modalities). Note
+that if the type pf `filename_contains` is a string array, then a filename
+has to contain every string in the array to be a match.
 
 See also: [input filename matching guide](./filename_matching.html)
 
 ###### `filename_not_contains`
 Keywords used to exclude filenames.
-The filenames with these keywords will not be used as input.
+The filenames with these keywords will not be used as input. Note that
+if the type of `filename_not_contains` is a string array, then a filename
+must not contain any of the strings in the array to be a match.
 
 See also: [input filename matching guide](./filename_matching.html)
 
 ###### `filename_removefromid`
-Regular expression for extracting subject id from filename, 
+Regular expression for extracting subject id from filename,
 matched pattern will be removed from the file names to form the subject id.
 
 See also: [input filename matching guide](./filename_matching.html)
 
 ###### `interp_order`
-Interpolation order of the input data.
+Interpolation order of the input data. Note that only the following values
+are supported.
+- `0`: nearest neighbor with `sitk.sitkNearestNeighbor`
+- `1`: linear interpolation with `sitk.sitkLinear`
+- `2` and above: b-spline interpolation with `sitk.sitkBSpline`
+- negative values: returns original image
 
 ###### `pixdim`
 If specified, the input volume will be resampled to the voxel sizes
@@ -185,7 +194,8 @@ See also: [Patch-base analysis guide](./window_sizes.html)
 ###### `loader`
 Specify the loader to be used to load the files in the input section.
 Some loaders require additional Python packages.
-Default value `None` indicates trying all available loaders.
+Supported loaders: `nibabel`, `opencv`, `skimage`, `pillow`, `simpleitk`, `dummy` in prioriy order.
+Default value `None` indicates trying all available loaders, in the above priority order.
 
 This section will be used by [ImageReader](./niftynet.io.image_reader.html)
 to generate a list of [input images objects](./niftynet.io.image_type.html).
@@ -249,6 +259,8 @@ Directory to save/load intermediate training models and logs.  NiftyNet tries
 to interpret this parameter as an absolute system path or a path relative to
 the current command.  It's defaulting to the directory of the current
 configuration file if left blank.
+
+It is assumed that `model_dir` contains two folders, `models` and `logs`.
 
 ######  `dataset_split_file`
 File assigning subjects to training/validation/inference subsets.
@@ -331,7 +343,7 @@ The same amount of padding will be removed when before writing the output volume
 See also: [Patch-base analysis guide](./window_sizes.html)
 
 ###### `volume_padding_mode`
-Set which type of numpy padding to do, see 
+Set which type of numpy padding to do, see
 [https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.pad.html](https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.pad.html) for details.
 
 ###### `window_sampling`
@@ -385,6 +397,9 @@ The relevant configuration parameters are:
 
 These parameters are ignored and whitening is disabled if `whitening=False`.
 
+(3) Setting `rgb_normalisation=True` enables RGB histogram equilisation. Requires OpenCV (opencv-python) and only supports 2D images.
+Unlike `normalisation`, does not use histogram landmarks or files.
+
 More specifically:
 
 
@@ -392,6 +407,7 @@ More specifically:
  ---- | ---- | ------- | -------
 [normalisation](#normalisation) | `boolean` | `normalisation=True` | `False`
 [whitening](#whitening) | `boolean` | `whitening=True` | `False`
+[rgb_normalisation](#rgb-normalisation) | `boolean` | `rgb_normalisation=True` | `False`
 [histogram_ref_file](#histogram-ref-file) | `string` | `histogram_ref_file=./hist_ref.txt` | `''`
 [norm_type](#norm-type) | `string` | `norm_type=percentile` | `percentile`
 [cutoff](#cutoff) | `float array (two elements)` | `cutoff=0.1, 0.9` | `0.01, 0.99`
@@ -405,6 +421,9 @@ Boolean indicates if an histogram standardisation should be applied to the data.
 ###### `whitening`
 Boolean indicates if the loaded image should be whitened,
 that is, given input image `I`, returns  `(I - mean(I))/std(I)`.
+
+###### `rgb_normalisation`
+Boolean indicates if an RGB histogram equilisation should be applied to the data.
 
 ###### `histogram_ref_file`
 Name of the file that contains the normalisation parameter if it has been trained before or where to save it.
@@ -445,6 +464,8 @@ Strategies applied to combine foreground masks of multiple modalities, can take 
 [tensorboard_every_n](#tensorboard-every-n) | `integer` | `tensorboard_every_n=5` | `20`
 [max_iter](#max-iter) | `integer` | `max_iter=1000` | `10000`
 [max_checkpoints](#max-checkpoints) | `integer` | `max_checkpoints=5` | `100`
+[vars_to_restore](#vars-to-restore) | `string` | `vars_to_restore=^.*(conv_1|conv_2).*$` | `''`
+[vars_to_freeze](#vars-to-freeze) | `string` | `vars_to_freeze=^.*(conv_3|conv_4).*$` | value of `vars_to_restore`
 
 ###### `optimiser`
 Type of optimiser for computing graph gradients.  Current available options are
@@ -491,6 +512,19 @@ save the random model initialisation.
 
 ###### `max_checkpoints`
 Maximum number of recent checkpoints to keep.
+
+###### `vars_to_restore`
+Regular expression string to match variable names,
+values of the matched variables will be initialised for a checkpoint file.
+
+See also: [guide for finetuning pre-trained networks](./transfer_learning.html)
+
+###### `vars_to_freeze`
+Regular expression string to match variable names,
+values of the matched variables will be updated during training.
+Defaulting to the value of `vars_to_restore`.
+
+See also: [guide for finetuning pre-trained networks](./transfer_learning.html)
 
 ##### Validation during training
 Setting [`validation_every_n`](#validation-every-n) to a positive integer
@@ -568,6 +602,7 @@ Value should be in `[0, 1]`.
 [rotation_angle](#rotation-angle) | `float array` | `rotation_angle=-10.0,10.0` | `''`
 [scaling_percentage](#scaling-percentage) | `float array` | `scaling_percentage=-20.0,20.0` | `''`
 [antialiasing](#scaling-percentage) | `boolean` | `antialiasing=True` | `True`
+[isotropic_scaling](#scaling-percentage) | `boolean` | `isotropic_scaling=True` | `False`
 [random_flipping_axes](#random-flipping-axes) | `integer array` | `random_flipping_axes=1,2` | `-1`
 [do_elastic_deformation](#do-elastic-deformation) | `boolean` | `do_elastic_deformation=True` | `False`
 [num_ctrl_points](#do-elastic-deformation) | `integer` | `num_ctrl_points=1` | `4`
@@ -584,13 +619,15 @@ volumes (This can be slow depending on the input volume dimensionality).
 ###### `scaling_percentage`
 Float array indicates a random spatial scaling should be applied
 (This can be slow depending on the input volume dimensionality).
-The option accepts percentages relative to 100 (the original input size). 
+The option accepts percentages relative to 100 (the original input size).
 E.g, `(-50, 50)` indicates transforming
 image (size `d`) to image with its size in between `0.5*d` and `1.5d`.
 
 When random scaling is enabled, it is possible to further specify:
-- `antialiasing` indicating if antialiasing should be performed
+- `antialiasing` indicating if Gaussian filtering should be performed
 when randomly downsampling the input images.
+- `isotropic_scaling` indicating if the same amount of scaling should be applied
+in each dimension.
 
 ###### `random_flipping_axes`
 The axes which can be flipped to augment the data.
@@ -623,6 +660,7 @@ When `bias_field_range` is not None, it is possible to further specify:
 [output_postfix](#output-postfix) | `string` | `output_postfix=_output` | `_niftynet_out`
 [output_interp_order](#output-interp-order) | `non-negative integer` | `output_interp_order=0` | `0`
 [dataset_to_infer](#dataset-to-infer) | `string` | `dataset_to_infer=training` | `''`
+[fill_constant](#fill-constant) | `float` | `fill_constant=1.0` | `0.0`
 
 ###### `spatial_window_size`
 Array of integers indicating the size of input window.  By default, the window
@@ -654,7 +692,11 @@ Interpolation order of the network outputs.
 
 ###### `dataset_to_infer`
 String specifies which dataset ('all', 'training', 'validation', 'inference') to compute inference for.
-By default 'inference' dataset is used.
+By default 'inference' dataset is used. If no `dataset_split_file` is specified, then all data specified
+in the csv or search path are used for inference.
+
+##### `fill_constant`
+Value used to fill borders of output images.
 
 
 ### EVALUATION
@@ -690,8 +732,13 @@ The evaluation configuration section (`[EVALUATION]`) must contain:
  [regression evaluations](./niftynet.evaluation.regression_evaluations.html),
  [segmentation evaluations](./niftynet.evaluation.segmentation_evaluations.html),
  and [classification evaluations](./niftynet.evaluation.classification_evaluations.html).
+
+Note that application specific configuration (such as `evaluation_units`) are specified
+in the application configuration section (such as `[SEGMENTATION]`).
+<!---
 - `evaluation_units` -- `foreground`, `label` or `cc`. Describe how the
   evaluation should be performed in the case of segmentation mostly
   (`foreground` means only one label, `label` means metrics per label, `cc`
   means metrics per connected component).  More on this topic can be found at
   [segmentation evaluations](./niftynet.evaluation.segmentation_evaluations.html).
+-->

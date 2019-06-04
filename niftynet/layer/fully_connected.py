@@ -98,7 +98,7 @@ class FullyConnectedLayer(TrainableLayer):
     def __init__(self,
                  n_output_chns,
                  with_bias=True,
-                 featnorm_type='batch',
+                 feature_normalization='batch',
                  group_size=-1,
                  acti_func=None,
                  w_initializer=None,
@@ -110,18 +110,18 @@ class FullyConnectedLayer(TrainableLayer):
                  name="fc"):
 
         self.acti_func = acti_func
-        self.featnorm_type = featnorm_type
+        self.feature_normalization = feature_normalization
         self.group_size = group_size
         self.layer_name = '{}'.format(name)
 
-        if self.featnorm_type != 'group' and group_size > 0:
+        if self.feature_normalization != 'group' and group_size > 0:
             raise ValueError('You cannot have a group_size > 0 if not using group norm')
-        elif self.featnorm_type == 'group' and group_size <= 0:
+        elif self.feature_normalization == 'group' and group_size <= 0:
             raise ValueError('You cannot have a group_size <= 0 if using group norm')
 
-        if self.featnorm_type is not None:
+        if self.feature_normalization is not None:
             # to append batch_norm as _bn and likewise for other norms
-            self.layer_name += '_' + self.featnorm_type[0] + 'n'
+            self.layer_name += '_' + self.feature_normalization[0] + 'n'
         if self.acti_func is not None:
             self.layer_name += '_{}'.format(self.acti_func)
         super(FullyConnectedLayer, self).__init__(name=self.layer_name)
@@ -150,20 +150,20 @@ class FullyConnectedLayer(TrainableLayer):
                            name='fc_')
         output_tensor = fc_layer(input_tensor)
 
-        if self.featnorm_type == 'batch':
+        if self.feature_normalization == 'batch':
             if is_training is None:
                 raise ValueError('is_training argument should be '
-                                 'True or False unless featnorm_type is False')
+                                 'True or False unless feature_normalization is False')
             bn_layer = BNLayer(
                 regularizer=self.regularizers['w'],
                 moving_decay=self.moving_decay,
                 eps=self.eps,
                 name='bn_')
             output_tensor = bn_layer(output_tensor, is_training)
-        elif self.featnorm_type == 'instance':
+        elif self.feature_normalization == 'instance':
             in_layer = InstanceNormLayer(eps=self.eps, name='in_')
             output_tensor = in_layer(output_tensor)
-        elif self.featnorm_type == 'group':
+        elif self.feature_normalization == 'group':
             gn_layer = GNLayer(
                 regularizer=self.regularizers['w'],
                 group_size=self.group_size,

@@ -325,7 +325,7 @@ class ChannelSparseConvolutionalLayer(TrainableLayer):
                  dilation=1,
                  padding='SAME',
                  with_bias=False,
-                 featnorm_type='batch',
+                 feature_normalization='batch',
                  acti_func=None,
                  w_initializer=None,
                  w_regularizer=None,
@@ -336,9 +336,9 @@ class ChannelSparseConvolutionalLayer(TrainableLayer):
                  name="conv"):
 
         self.acti_func = acti_func
-        self.featnorm_type = featnorm_type
+        self.feature_normalization = feature_normalization
         self.layer_name = '{}'.format(name)
-        if self.featnorm_type == 'batch':
+        if self.feature_normalization == 'batch':
             self.layer_name += '_bn'
         if self.acti_func is not None:
             self.layer_name += '_{}'.format(self.acti_func)
@@ -395,7 +395,7 @@ class ChannelSparseConvolutionalLayer(TrainableLayer):
         output_tensor.set_shape(
             output_tensor.shape.as_list()[:-1] + [n_output_ch])
 
-        if self.featnorm_type == 'batch':
+        if self.feature_normalization == 'batch':
             if is_training is None:
                 raise ValueError('For batch norm, you must set the `is_training` argument.')
             bn_layer = ChannelSparseBNLayer(

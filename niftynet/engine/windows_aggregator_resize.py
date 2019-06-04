@@ -42,6 +42,14 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         location specifies the original input image (so that the
         interpolation order, original shape information retained in the
         generated outputs).
+
+        each network output window is first cropped to::
+
+            size=input_window_size - inference_border
+
+        then resized to original_image_size + volume_padding_size
+        then cropped by volume_padding_size
+        then written to file
         """
         n_samples = location.shape[0]
         window, location = self.crop_batch(window, location, self.window_border)
@@ -71,12 +79,12 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         window_shape = resize_to
         while image_out.ndim < 5:
             image_out = image_out[..., np.newaxis, :]
-        if self.window_border and any([b > 0 for b in self.window_border]):
-            np_border = self.window_border
-            while len(np_border) < 5:
-                np_border = np_border + (0,)
-            np_border = [(b,) for b in np_border]
-            image_out = np.pad(image_out, np_border, mode='edge')
+        # if self.window_border and any([b > 0 for b in self.window_border]):
+        #     np_border = self.window_border
+        #     while len(np_border) < 5:
+        #         np_border = np_border + (0,)
+        #     np_border = [(b,) for b in np_border]
+        #     image_out = np.pad(image_out, np_border, mode='edge')
         image_shape = image_out.shape
         zoom_ratio = \
             [float(p) / float(d) for p, d in zip(window_shape, image_shape)]

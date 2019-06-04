@@ -304,7 +304,7 @@ class ConvEncoder(TrainableLayer):
                 kernel_size=self.conv_kernel_sizes[i],
                 padding='SAME',
                 with_bias=True,
-                featnorm_type='batch',
+                feature_normalization='batch',
                 w_initializer=self.initializers['w'],
                 w_regularizer=None,
                 acti_func=self.acti_func_conv[i],
@@ -319,7 +319,7 @@ class ConvEncoder(TrainableLayer):
                 stride=self.conv_pooling_factors[i],
                 padding='SAME',
                 with_bias=False,
-                featnorm_type='batch',
+                feature_normalization='batch',
                 w_initializer=self.initializers['w'],
                 w_regularizer=None,
                 acti_func=self.acti_func_conv[i],
@@ -335,7 +335,7 @@ class ConvEncoder(TrainableLayer):
             encoders_fc.append(FullyConnectedLayer(
                 n_output_chns=self.layer_sizes_encoder[i],
                 with_bias=True,
-                featnorm_type='batch',
+                feature_normalization='batch',
                 acti_func=self.acti_func_encoder[i],
                 w_initializer=self.initializers['w'],
                 w_regularizer=self.regularizers['w'],
@@ -402,7 +402,7 @@ class GaussianSampler(TrainableLayer):
 
         encoder_means = FullyConnectedLayer(
             n_output_chns=self.number_of_latent_variables,
-            featnorm_type=None,
+            feature_normalization=None,
             acti_func=None,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
@@ -411,7 +411,7 @@ class GaussianSampler(TrainableLayer):
 
         encoder_logvars = FullyConnectedLayer(
             n_output_chns=self.number_of_latent_variables,
-            featnorm_type=None,
+            feature_normalization=None,
             acti_func=None,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
@@ -485,7 +485,7 @@ class ConvDecoder(TrainableLayer):
             decoders_fc.append(FullyConnectedLayer(
                 n_output_chns=self.layer_sizes_decoder[i],
                 with_bias=True,
-                featnorm_type='batch',
+                feature_normalization='batch',
                 acti_func=self.acti_func_decoder[i],
                 w_initializer=self.initializers['w'],
                 w_regularizer=self.regularizers['w'],
@@ -503,7 +503,7 @@ class ConvDecoder(TrainableLayer):
                     stride=self.trans_conv_unpooling_factors[i],
                     padding='SAME',
                     with_bias=True,
-                    featnorm_type='batch',
+                    feature_normalization='batch',
                     w_initializer=self.initializers['w'],
                     w_regularizer=None,
                     acti_func=None,
@@ -518,8 +518,8 @@ class ConvDecoder(TrainableLayer):
                 stride=1,
                 padding='SAME',
                 with_bias=True,
-                featnorm_type='batch',
-                #featnorm_type=not (i == len(self.trans_conv_output_channels) - 1),
+                feature_normalization='batch',
+                #feature_normalization=not (i == len(self.trans_conv_output_channels) - 1),
                 # No BN on output
                 w_initializer=self.initializers['w'],
                 w_regularizer=None,
@@ -586,7 +586,7 @@ class FCDecoder(TrainableLayer):
             decoders_fc.append(FullyConnectedLayer(
                 n_output_chns=self.layer_sizes_decoder[i],
                 with_bias=True,
-                featnorm_type='batch',
+                feature_normalization='batch',
                 acti_func=self.acti_func_decoder[i],
                 w_initializer=self.initializers['w'],
                 w_regularizer=self.regularizers['w'],

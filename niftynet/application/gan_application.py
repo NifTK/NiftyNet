@@ -104,7 +104,8 @@ class GANApplication(BaseApplication):
                 augmentation_layers.append(RandomSpatialScalingLayer(
                     min_percentage=self.action_param.scaling_percentage[0],
                     max_percentage=self.action_param.scaling_percentage[1],
-                    antialiasing=self.action_param.antialiasing))
+                    antialiasing=self.action_param.antialiasing,
+                    isotropic=self.action_param.isotropic_scaling))
             if self.action_param.rotation_angle:
                 augmentation_layers.append(RandomRotationLayer())
                 augmentation_layers[-1].init_uniform_angle(
@@ -156,6 +157,8 @@ class GANApplication(BaseApplication):
                                  outputs_collector=None,
                                  gradients_collector=None):
         if self.is_training:
+            self.patience = self.action_param.patience
+
             def switch_sampler(for_training):
                 with tf.name_scope('train' if for_training else 'validation'):
                     sampler = self.get_sampler()[0][0 if for_training else -1]
@@ -192,6 +195,16 @@ class GANApplication(BaseApplication):
                         [tf.reduce_mean(l_reg) for l_reg in reg_losses])
                     lossD = lossD + reg_loss
                     lossG = lossG + reg_loss
+
+            self.total_loss = lossD + lossG
+
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
+                average_over_devices=True, collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
+                average_over_devices=True, summary_type='scalar',
+                collection=TF_SUMMARIES)
 
             # variables to display in STDOUT
             outputs_collector.add_to_collection(

@@ -136,7 +136,8 @@ class ClassificationApplication(BaseApplication):
                 augmentation_layers.append(RandomSpatialScalingLayer(
                     min_percentage=train_param.scaling_percentage[0],
                     max_percentage=train_param.scaling_percentage[1],
-                    antialiasing=train_param.antialiasing))
+                    antialiasing=train_param.antialiasing,
+                    isotropic=train_param.isotropic_scaling))
             if train_param.rotation_angle or \
                     self.action_param.rotation_angle_x or \
                     self.action_param.rotation_angle_y or \
@@ -257,6 +258,7 @@ class ClassificationApplication(BaseApplication):
                 return sampler.pop_batch_op()
 
         if self.is_training:
+            self.patience = self.action_param.patience
             if self.action_param.validation_every_n > 0:
                 data_dict = tf.cond(tf.logical_not(self.is_validation),
                                     lambda: switch_sampler(for_training=True),
@@ -287,8 +289,19 @@ class ClassificationApplication(BaseApplication):
                 loss = data_loss + reg_loss
             else:
                 loss = data_loss
+
+            self.total_loss = loss
+
             grads = self.optimiser.compute_gradients(
                 loss, colocate_gradients_with_ops=True)
+
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
+                average_over_devices=True, collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
+                average_over_devices=True, summary_type='scalar',
+                collection=TF_SUMMARIES)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
             # collecting output variables

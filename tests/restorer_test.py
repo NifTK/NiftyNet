@@ -30,17 +30,17 @@ class RestorerTest(tf.test.TestCase):
             'bar/bing/boffin': [2]}
         checkpoint_name = self.make_checkpoint('chk1', definition)
         tf.reset_default_graph()
-        block1 = ConvolutionalLayer(3, 3, featnorm_type=None, name='foo')
+        block1 = ConvolutionalLayer(3, 3, feature_normalization=None, name='foo')
         b1 = block1(tf.ones([1., 5., 5., 1.]))
         tf.add_to_collection(RESTORABLE,
                              ('foo', checkpoint_name, 'bar'))
-        block2 = ConvolutionalLayer(4, 3, name='bar', featnorm_type=None,
+        block2 = ConvolutionalLayer(4, 3, name='bar', feature_normalization=None,
                                     w_initializer=tf.constant_initializer(1.))
         b2 = block2(tf.ones([1., 5., 5., 1.]))
-        block3 = ConvolutionalLayer(3, 3, featnorm_type=None, name='foo2')
+        block3 = ConvolutionalLayer(3, 3, feature_normalization=None, name='foo2')
         block3.restore_from_checkpoint(checkpoint_name, 'bar2')
         b3 = block3(tf.ones([1., 5., 5., 1.]))
-        block4 = ConvolutionalLayer(3, 3, featnorm_type=None, name='foo3')
+        block4 = ConvolutionalLayer(3, 3, feature_normalization=None, name='foo3')
         block4.restore_from_checkpoint(checkpoint_name)
         b4 = block4(tf.ones([1., 5., 5., 1.]))
         tf.add_to_collection(RESTORABLE,
@@ -66,7 +66,7 @@ class RestorerTest(tf.test.TestCase):
 
     def test_no_restores(self):
         tf.reset_default_graph()
-        block1 = ConvolutionalLayer(4, 3, name='bar', featnorm_type=None,
+        block1 = ConvolutionalLayer(4, 3, name='bar', feature_normalization=None,
                                     w_initializer=tf.constant_initializer(1.))
         b2 = block1(tf.ones([1., 5., 5., 1.]))
         init_op = global_vars_init_or_restore()

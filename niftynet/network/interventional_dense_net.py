@@ -143,7 +143,7 @@ class INetDense(BaseNet):
             field = Conv(n_output_chns=spatial_rank,
                          kernel_size=self.k_conv,
                          with_bias=True,
-                         featnorm_type=None,
+                         feature_normalization=None,
                          acti_func=None,
                          **self.disp_param)(scale_out)
             resized_field = Resize(new_size=spatial_shape)(field)

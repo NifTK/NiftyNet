@@ -56,7 +56,7 @@ class ResNet(BaseNet):
     def create(self):
         bn=BNLayer()
         fc=FCLayer(self.num_classes)
-        conv1=self.Conv(self.n_features[0], acti_func=None, featnorm_type=None)
+        conv1=self.Conv(self.n_features[0], acti_func=None, feature_normalization=None)
         blocks=[]
         blocks+=[DownResBlock(self.n_features[1], self.n_blocks_per_resolution, 1, self.Conv)]
         for n in self.n_features[2:]:
@@ -93,11 +93,11 @@ class BottleneckBlock(TrainableLayer):
         else:
             b1 = BNLayer()
             b2 = self.Conv(self.bottle_neck_chns,kernel_size=1,
-                           stride=self.stride, acti_func=None, featnorm_type=None)
+                           stride=self.stride, acti_func=None, feature_normalization=None)
             b3 = self.Conv(self.bottle_neck_chns,kernel_size=3)
             b4 = self.Conv(self.n_output_chns,kernel_size=1)
             b5 = self.Conv(self.n_output_chns,kernel_size=1,
-                           stride=self.stride, acti_func=None,featnorm_type=None)
+                           stride=self.stride, acti_func=None,feature_normalization=None)
             return BottleneckBlockDesc2(common_bn=b1, conv=[b2, b3, b4], 
                               conv_shortcut=b5)
 
