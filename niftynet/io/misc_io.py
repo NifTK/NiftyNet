@@ -257,6 +257,10 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     return np.concatenate(data_resampled, axis=-2)
 
 
+def save_csv_array(filefolder, filename, array_to_save):
+    np.savetxt(os.path.join(filefolder,filename), array_to_save,
+               delimiter=",", fmt='%.3e')
+
 def save_data_array(filefolder,
                     filename,
                     array_to_save,
@@ -790,6 +794,7 @@ def close_logger():
             logger.removeHandler(handler)
         except (OSError, ValueError):
             pass
+
 
 
 def infer_latest_model_file(model_dir):

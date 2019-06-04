@@ -32,11 +32,13 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         ImageWindowsAggregator.__init__(
             self, image_reader=image_reader, output_path=output_path)
         self.name = name
+        self.image_out = None
+        self.csv_out = None
         self.window_border = window_border
         self.output_interp_order = interp_order
         self.postfix = postfix
 
-    def decode_batch(self, window, location):
+    def decode_batch_old(self, window, location):
         """
         Resizing each output image window in the batch as an image volume
         location specifies the original input image (so that the
@@ -53,6 +55,57 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                 image_id=self.image_id,
                 n_channels=window.shape[-1])
             self._save_current_image(window[batch_id, ...], resize_to_shape)
+        return True
+
+    def decode_batch(self, window, location, name_opt=''):
+        n_samples = location.shape[0]
+        location_init = np.copy(location)
+        test = None
+        for w in window:
+            if 'window' in w:
+                # print(w)
+                test = np.ones_like(window[w])
+                # print(w, location_init, window[w].shape, self.window_border,
+                #       np.sum(window[w]))
+                window[w], _ = self.crop_batch(window[w], location_init,
+                                               self.window_border)
+                location_init = np.copy(location)
+                print(w, np.sum(window[w]), np.max(window[w]))
+        _, location = self.crop_batch(test, location_init, self.window_border)
+        for batch_id in range(n_samples):
+            image_id, x_start, y_start, z_start, x_end, y_end, z_end = \
+                location[batch_id, :]
+            if image_id != self.image_id:
+                # image name changed:
+                #    save current image and create an empty image
+                self._save_current_image(name_opt)
+                self._save_current_csv(name_opt)
+                if self._is_stopping_signal(location[batch_id]):
+                    return False
+                self.image_out = {}
+                self.csv_out = {}
+                for w in window:
+                    if 'window' in w:
+                        self.image_out[w] = self._initialise_empty_image(
+                            image_id=image_id,
+                            n_channels=window[w].shape[-1],
+                            dtype=window[w].dtype)
+                    else:
+                        self.csv_out[w] = self._initialise_empty_csv(
+                            image_id=image_id,n_channel=window[w][0].shape[
+                                                             -1]+location_init[0,:].shape[-1])
+            for w in window:
+                if 'window' in w:
+                    self.image_out[w][x_start:x_end,
+                           y_start:y_end,
+                           z_start:z_end, ...] = window[w][batch_id, ...]
+                else:
+                    window_loc = np.concatenate([window[w],
+                                                np.tile(location_init[
+                                                            batch_id,...],
+                                                        [window[w].shape[0],1])],1)
+                    self.csv_out[w] = np.concatenate([self.csv_out[w],
+                                                      window_loc],0)
         return True
 
     def _initialise_image_shape(self, image_id, n_channels):
@@ -100,4 +153,16 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                                 source_image_obj,
                                 self.output_interp_order)
         self.log_inferred(subject_name, filename)
+        return
+
+    def _save_current_csv(self, name_opt):
+        if self.input_image is None:
+            return
+        subject_name = self.reader.get_subject_id(self.image_id)
+        for i in self.csv_out:
+            filename = "{}_{}_niftynet_out.csv".format(i+name_opt, subject_name)
+            misc_io.save_csv_array(self.output_path,
+                                   filename,
+                                   self.csv_out[i])
+            self.log_inferred(subject_name, filename)
         return
