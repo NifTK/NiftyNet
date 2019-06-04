@@ -83,14 +83,6 @@ def add_application_args(parser):
         type=str,
         default=DEFAULT_ITERATION_GENERATOR)
 
-    parser.add_argument(
-        "--patience",
-        metavar='',
-        help='Number of iterations to wait before starting '
-             'performance monitoring',
-        type=int,
-        default=100)
-
     return parser
 
 
@@ -639,6 +631,15 @@ def add_training_args(parser):
         help="regex strings matching variable to be fixed during training",
         type=str,
         default='')
+
+    parser.add_argument(
+        "--patience",
+        metavar='',
+        help='Number of iterations to wait before starting '
+             'performance monitoring',
+        type=int,
+        default=100)
+
 
     return parser
 
