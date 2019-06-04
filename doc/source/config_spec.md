@@ -38,7 +38,7 @@ or `inference`:
 NiftyNet will try to import the class named `MyApplication` implemented in `user/path/python/module.py`.
 
 A few applications are already included in NiftyNet, and can be passed as an
-argument of `-a`.  Aliases are also created for these application (full
+argument of `-a`. Aliases are also created for these application (full
 specification can be found here:
 [`SUPPORTED_APP`](./niftynet.engine.application_factory.html)):
 The commands include:
@@ -80,7 +80,7 @@ In the case of quickly adjusting only a few options in the configuration file,
 creating a separate file is sometimes tedious.
 
 To make it more accessible, `net_run` command also accepts parameters
-specification in the form of `--<name> <value>` or `--<name>=<value>`.  When
+specification in the form of `--<name> <value>` or `--<name>=<value>`. When
 these are used, `value` will override the corresponding value of `name` defined
 both by system default and configuration file.
 
@@ -92,23 +92,23 @@ The configuration file currently adopts the INI file format, and is parsed by
 [`configparser`](https://docs.python.org/3/library/configparser.html).
 The file consists of multiple sections of `name=value` elements.
 
-All files should have two sections:
+All files should have at least these two sections:
 - [`[SYSTEM]`](#system)
 - [`[NETWORK]`](#network)
 
-If  `train` action is specified, then a [`[TRAINING]`](#training) section is required.
+If `train` action is specified, then a [`[TRAINING]`](#training) section is required.
 
-If  `inference` action is specified, then an [`[INFERENCE]`](#inference) section is required.
+If `inference` action is specified, then an [`[INFERENCE]`](#inference) section is required.
 
 Additionally, an application specific section is required for each application
-(Please find further comments on [creating customised parser here](https://github.com/NifTK/NiftyNet/blob/dev/niftynet/utilities/user_parameters_custom.py)):
+(please find further comments on [creating customised parsers here](https://github.com/NifTK/NiftyNet/blob/dev/niftynet/utilities/user_parameters_custom.py)):
 - `[GAN]` for generative adversarial networks
 - `[SEGMENTATION]` for segmentation networks
 - `[REGRESSION]` for regression networks
 - `[AUTOENCODER]` for autoencoder networks
 
 The [user parameter parser](../niftynet/utilities/user_parameters_parser.py)
-tries to match the section names listed above.  All other section names will be
+tries to match the section names listed above. All other section names will be
 treated as [`input data source specifications`](#input-data-source-section).
 
 The following sections specify parameters (`<name> = <value>` pairs) available
@@ -116,6 +116,40 @@ within each section.
 
 ### Input data source section
 
+This section will be used by [ImageReader](./niftynet.io.image_reader.html)
+to generate a list of [input images objects](./niftynet.io.image_type.html).
+For example, the section
+```ini
+[T1Image]
+path_to_search = ./example_volumes/image_folder
+filename_contains = T1, subject
+filename_not_contains = T1c, T2
+spatial_window_size = 128, 128, 1
+pixdim = 1.0, 1.0, 1.0
+axcodes = A, R, S
+interp_order = 3
+```
+specifies a set of images
+(currently supports NIfTI format via [NiBabel library](http://nipy.org/nibabel/nifti_images.html))
+from `./example_volumes/image_folder`, with filenames containing both `T1` and
+`subject`, but not `T1c` and `T2`. These images will be read into
+memory and transformed into "A, R, S" orientation
+(using [NiBabel](http://nipy.org/nibabel/reference/nibabel.orientations.html)).
+The images will also be transformed to have voxel size `(1.0, 1.0, 1.0)`
+with an interpolation order of `3`.
+
+A CSV file with the matched filenames and extracted subject names will be
+generated to `T1Image.csv` in [`model_dir`](#model-dir) (by default; the CSV
+file location can be specified by setting [csv_file](#csv-file)). To exclude
+particular images, the [csv_file](#csv-file) can be edited manually.
+
+This input source can be used alone, as a monomodal input to an application.
+Additional modalities can be used, as shown in [this example][multimodal].
+
+[multimodal]: https://github.com/NifTK/NiftyNet/blob/dev/config/default_multimodal_segmentation.ini
+
+The [**input filename matching guide**](./filename_matching.html) is useful to
+understand how files are matched.
 
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
@@ -131,14 +165,20 @@ within each section.
 [loader](#loader) | `string` | `loader=simpleitk` | `None`
 
 ###### `csv_file`
-A file path to a list of input images.  If the file exists, input image name
-list will be loaded from the file; the filename based input image search will
-be disabled; [path_to_search](#path-to-search),
-[filename_contains](#filename-contains),
- [filename_not_contains](#filename-not-contains),
- and [filename_removefromid](#filename-removefromid) will be ignored.  If this
-parameter is left blank or the file does not exist, input image search will be
-enabled, and the matched filenames will be written to this file path.
+Path to a CSV file containing a list of input images:
+
+```
+image_id_0,/path/to/image_0.nii.gz
+image_id_4,/path/to/image_4.nii.gz
+image_id_9,/path/to/image_9.nii.gz
+```
+
+If the CSV file exists, the input image name list will be loaded from the file.
+The filename-based image search will be disabled and the parameters
+[`path_to_search`](#path-to-search), [`filename_contains`](#filename-contains),
+[`filename_not_contains`](#filename-not-contains),
+and [`filename_removefromid`](#filename-removefromid) will be ignored.
+If this parameter is left blank or the file does not exist, input image search will be enabled, and the matched filenames will be written to this file path.
 
 ###### `path_to_search`
 Single or multiple folders to search for input images.
@@ -170,12 +210,20 @@ matched pattern will be removed from the file names to form the subject id.
 See also: [input filename matching guide](./filename_matching.html)
 
 ###### `interp_order`
-Interpolation order of the input data. Note that only the following values
-are supported.
-- `0`: nearest neighbor with `sitk.sitkNearestNeighbor`
+Interpolation order of the input data. Note that only the following values are
+supported.
+- `0`: nearest neighbour with `sitk.sitkNearestNeighbor`
 - `1`: linear interpolation with `sitk.sitkLinear`
-- `2` and above: b-spline interpolation with `sitk.sitkBSpline`
+- `2` and above: B-spline interpolation with `sitk.sitkBSpline`
 - negative values: returns original image
+
+B-spline interpolation produces the best results, but it's slower than linear
+or nearest neighbour. Linear interpolation is usually a good compromise between
+speed and quality.
+
+[This SimpleITK notebook][simpleitk-interpolation] shows some interpolation examples.
+
+[simpleitk-interpolation]: https://simpleitk-prototype.readthedocs.io/en/latest/user_guide/transforms/plot_interpolation.html
 
 ###### `pixdim`
 If specified, the input volume will be resampled to the voxel sizes
@@ -183,90 +231,80 @@ before fed into the network.
 
 ###### `axcodes`
 If specified, the input volume will be reoriented to the axes codes
-before fed into the network.
+before fed into the network. This is useful if the input images have different
+orientations.
+
+The impact on performance is minimal, so it's a good idea to set this
+parameter in order to force the reorientation to, for example, `R, A, S`.
+More information about NIfTI orientation can be found on [3D Slicer][slicer-docs] or [NiBabel][nibabel-docs] docs.
+
+[slicer-docs]: https://www.slicer.org/wiki/Coordinate_systems
+[nibabel-docs]: https://nipy.org/nibabel/coordinate_systems.html
 
 ###### `spatial_window_size`
-Array of three integers specifies the input window size.
+Array of three integers specifying the input window size.
 Setting it to single slice, e.g., `spatial_window_size=64, 64, 1`, yields a 2-D slice window.
 
 See also: [Patch-base analysis guide](./window_sizes.html)
+and [U-Net window shape tutorial][unet]
+
+[unet]: https://gist.github.com/fepegar/1fb865494cb44ac043c3189ec415d411
 
 ###### `loader`
 Specify the loader to be used to load the files in the input section.
 Some loaders require additional Python packages.
-Supported loaders: `nibabel`, `opencv`, `skimage`, `pillow`, `simpleitk`, `dummy` in prioriy order.
+Supported loaders: `nibabel`, `opencv`, `skimage`, `pillow`, `simpleitk`, `dummy` in priority order.
 Default value `None` indicates trying all available loaders, in the above priority order.
-
-This section will be used by [ImageReader](./niftynet.io.image_reader.html)
-to generate a list of [input images objects](./niftynet.io.image_type.html).
-For example:
-```ini
-[T1Image]
-path_to_search = ./example_volumes/image_folder
-filename_contains = T1, subject
-filename_not_contains = T1c, T2
-spatial_window_size = 128, 128, 1
-pixdim = 1.0, 1.0, 1.0
-axcodes = A, R, S
-interp_order = 3
-```
-Specifies a set of images
-(currently supports NIfTI format via [NiBabel library](http://nipy.org/nibabel/nifti_images.html))
-from `./example_volumes/image_folder`, with filenames contain both `T1` and
-`subject`, but not contain `T1c` and `T2`. These images will be read into
-memory and transformed into "A, R, S" orientation
-(using [NiBabel](http://nipy.org/nibabel/reference/nibabel.orientations.html)).
-The images will also be transformed to have voxel size `(1.0, 1.0, 1.0)`
-with an interpolation order of `3`.
-
-A CSV file with the matched filenames and extracted subject names will be
-generated to `T1Image.csv` in [`model_dir`](#model-dir) (by default; the CSV
-file location can be specified by setting [csv_file](#csv-file)).  To exclude
-particular images, the [csv_file](#csv-file) can be edited manually.
-
-This input source can be used alone, as a `T1` MRI input to an application.
-It can also be used along with other modalities, a multi-modality example
-can be find [here](https://github.com/NifTK/NiftyNet/blob/dev/config/default_multimodal_segmentation.ini).
-
-The following sections describe system parameters that can be specified in the configuration file.
 
 
 ### SYSTEM
 
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
-[cuda_devices](#cuda-devices) | `integer array` | `cuda_devices=0,1,2` | `''`
+[cuda_devices](#cuda-devices) | `integer or integer array` | `cuda_devices=0,1,2` | `''`
 [num_threads](#num-threads) | `positive integer` | `num_threads=1` | `2`
 [num_gpus](#num-gpus) | `integer` | `num_gpus=4` | `1`
-[model_dir](#model-dir) | `string` | `model_dir=/User/test_dir` | The directory of the config. file
+[model_dir](#model-dir) | `string` | `model_dir=/User/test_dir` | The directory of the config file
 [dataset_split_file](#dataset-split-file) | `string` | `dataset_split_file=/User/my_test` | `./dataset_split_file.csv`
 [event_handler](#event-handler) | `string` or a list of `string`s | `event_handler=model_restorer` | `model_saver, model_restorer, sampler_threading, apply_gradients, output_interpreter, console_logger, tensorboard_logger`
 
 ###### `cuda_devices`
-Sets the environment variable `CUDA_VISIBLE_DEVICES` variable,
-e.g. `0,2,3` uses devices 0, 2, 3 will be visible; device 1 is masked.
+Sets the environment variable `CUDA_VISIBLE_DEVICES`,
+e.g. `0,2,3` uses devices 0, 2, 3 and device 1 is masked.
 
 ###### `num_threads`
 Sets number of preprocessing threads for training.
+<!-- TODO: explain the effect of this -->
 
-######  `num_gpus`
+###### `num_gpus`
 Sets number of training GPUs.
 The value should be the number of available GPUs at most.
 This option is ignored if there's no GPU device.
 
-######  `model_dir`
-Directory to save/load intermediate training models and logs.  NiftyNet tries
+###### `model_dir`
+Directory to save/load intermediate training models and logs. NiftyNet tries
 to interpret this parameter as an absolute system path or a path relative to
-the current command.  It's defaulting to the directory of the current
+the current command. It defaults to the directory of the current
 configuration file if left blank.
 
-It is assumed that `model_dir` contains two folders, `models` and `logs`.
+If running inference, it is assumed that `model_dir` contains two folders
+named `models` and `logs`.
 
-######  `dataset_split_file`
-File assigning subjects to training/validation/inference subsets.
-If the string is a relative path, NiftyNet interpret this as relative to `model_dir`.
+###### `dataset_split_file`
+Path to a CSV assigning subjects to training/validation/inference subsets:
 
-######  `event_handler`
+```
+subject_001,training
+subject_021,training
+subject_027,training
+subject_029,validation
+subject_429,validation
+subject_002,inference
+```
+
+If the string is a relative path, NiftyNet interprets this as relative to `model_dir`.
+
+###### `event_handler`
 Event handler functions registered to these signals will be called by the
 engine, along with NiftyNet application properties and iteration messages as
 function parameters. See [Signals and event handlers](extending_event_handler.html) for more details.
@@ -288,39 +326,45 @@ function parameters. See [Signals and event handlers](extending_event_handler.ht
 [queue_length](#queue-length) | `integer` | `queue_length=10` | `5`
 [keep_prob](#keep-prob) | `non-negative float` | `keep_prob=0.2` | `1.0`
 
-######  `name`
-A network class from [niftynet/network](./niftynet.network.html) or from user
-specified module string.  NiftyNet tries to import this string as a module
-specification.  For example, setting it to `niftynet.network.toynet.ToyNet`
+###### `name`
+A network class from [niftynet/network](./niftynet.network.html) or from a
+user-specified module string. NiftyNet tries to import this string as a module
+specification. For example, setting it to `niftynet.network.toynet.ToyNet`
 will import the `ToyNet` class defined in
 [`niftynet/network/toynet.py`](./niftynet.network.toynet.html)
-(The relevant module path must be a valid Python path).
-There are also some shortcuts
-([`SUPPORTED_NETWORK`](./niftynet.engine.application_factory.html#niftynet.engine.application_factory.ApplicationNetFactory))
-for NiftyNet's default network modules.
+(the relevant module path must be a valid Python path).
+There are also some shortcuts for NiftyNet's default network modules defined in [`SUPPORTED_NETWORK`].
 
-######  `activation_function`
-Sets the type of activation of the network.  Available choices are listed in
-`SUPPORTED_OP` in [activation layer](https://github.com/NifTK/NiftyNet/blob/dev/niftynet/layer/activation.py).
-Depending on its implementation, the network might ignore this option .
+[supported-network]: ./niftynet.engine.application_factory.html#niftynet.engine.application_factory.ApplicationNetFactory
 
-######  `batch_size`
+###### `activation_function`
+Sets the type of activation of the network. Available choices are listed in
+`SUPPORTED_OP` in [activation layer][activation].
+Depending on its implementation, the network might ignore this option.
+
+[activation]: https://github.com/NifTK/NiftyNet/blob/dev/niftynet/layer/activation.py#L27-L37
+
+###### `batch_size`
 Sets number of image windows to be processed at each iteration.
-When `num_gpus` is greater than 1, `batch_size` is used for each computing device.
+When `num_gpus` is greater than 1, `batch_size` is used for each GPU.
 That is, the effective inputs at each iteration become `batch_size` x `num_gpus`.
 
-######  `smaller_final_batch_mode`
-When total number of window samples are not divisible by batch_size
+###### `smaller_final_batch_mode`
+When the total number of window samples is not divisible by `batch_size`
 the class supports different modes for the final batch:
 - `drop`: drop the remainder batch
 - `pad`: padding the final smaller batch with -1
-- `dynamic`: output the remainder directly (
-    in this case the batch_size is undetermined at "compile time")
+- `dynamic`: output the remainder directly (in this case the batch_size is undetermined at "compile time")
+<!-- TODO: explain this and/or point to iteration tutorial -->
 
 ###### `reg_type`
-Type of trainable parameter regularisation; currently the available choices are "L1" and "L2".
-The loss will be added to `tf.GraphKeys.REGULARIZATION_LOSSES` collection.
-This option will be ignored if [decay](#decay) is `0.0`.
+Type of trainable parameter regularisation.
+Currently the available choices are `L1` and `L2`.
+The loss will be added to the
+[`tf.GraphKeys.REGULARIZATION_LOSSES`][tf-losses] collection.
+This option will be ignored if [decay](#decay) is `0`.
+
+[tf-losses]: https://www.tensorflow.org/api_docs/python/tf/GraphKeys#REGULARIZATION_LOSSES
 
 ###### `decay`
 Strength of regularisation, to help prevent overfitting.
@@ -333,7 +377,7 @@ numpy.pad(input_volume,
           (volume_padding_size[0],
            volume_padding_size[1],
            volume_padding_size[2], 0, 0),
-          mode='minimum')
+           mode='minimum')
 ```
 For 2-D inputs, the third dimension of `volume_padding_size` should be set to `0`,
 e.g. `volume_padding_size=M,N,0`.
@@ -385,7 +429,7 @@ example:
 Intensity based volume normalisation can be configured using a combination of parameters described below:
 
 (1) Setting `normalisation=True` enables the [histogram-based
-normalisation](./niftynet.utilities.histogram_standardisation.html).  The
+normalisation](./niftynet.utilities.histogram_standardisation.html). The
 relevant configuration parameters are:
 > `histogram_ref_file`, `norm_type`, `cutoff`, `normalise_foreground_only`, `foreground_type`, `multimod_foreground_type`.
 
@@ -420,7 +464,7 @@ Boolean indicates if an histogram standardisation should be applied to the data.
 
 ###### `whitening`
 Boolean indicates if the loaded image should be whitened,
-that is, given input image `I`, returns  `(I - mean(I))/std(I)`.
+that is, given input image `I`, returns `(I - mean(I))/std(I)`.
 
 ###### `rgb_normalisation`
 Boolean indicates if an RGB histogram equilisation should be applied to the data.
@@ -468,7 +512,7 @@ Strategies applied to combine foreground masks of multiple modalities, can take 
 [vars_to_freeze](#vars-to-freeze) | `string` | `vars_to_freeze=^.*(conv_3|conv_4).*$` | value of `vars_to_restore`
 
 ###### `optimiser`
-Type of optimiser for computing graph gradients.  Current available options are
+Type of optimiser for computing graph gradients. Current available options are
 defined here:
 [`SUPPORTED_OPTIMIZERS`](./niftynet.engine.application_factory.html#niftynet.engine.application_factory.OptimiserFactory).
 
@@ -546,7 +590,7 @@ and make sure both [`exclude_fraction_for_validation`](#exclude-fraction-for-val
 and [`exclude_fraction_for_inference`](#exclude-fraction-for-inference) are `0`.
 
 To exclude particular subjects or adjust the randomly generated partition, the
-[`dataset_split_file`](#dataset-split-file) can be edited manually.  Please note
+[`dataset_split_file`](#dataset-split-file) can be edited manually. Please note
 duplicated rows are not removed. For example, if the content of
 [`dataset_split_file`](#dataset-split-file) is as follows:
 ```text
@@ -562,7 +606,7 @@ Each row will be treated as an independent subject. This means:
 >subject `1071` will be used in `Inference` twice, the output of the second inference will overwrite the first.
 
 Note that at each validation iteration, input will be sampled from the set of validation data,
-and the network parameters will remain unchanged.  The `is_training` parameter of the network
+and the network parameters will remain unchanged. The `is_training` parameter of the network
 is set to `True` during validation, as a result layers with different behaviours in training and inference
 (such as dropout and batch normalisation) uses the training behaviour.
 
@@ -663,7 +707,7 @@ When `bias_field_range` is not None, it is possible to further specify:
 [fill_constant](#fill-constant) | `float` | `fill_constant=1.0` | `0.0`
 
 ###### `spatial_window_size`
-Array of integers indicating the size of input window.  By default, the window
+Array of integers indicating the size of input window. By default, the window
 size at inference time is the same as the [input source specification](#input-data-source-section).
 If this parameter is specified, it
 overrides the `spatial_window_size` parameter in input source sections.
@@ -739,6 +783,6 @@ in the application configuration section (such as `[SEGMENTATION]`).
 - `evaluation_units` -- `foreground`, `label` or `cc`. Describe how the
   evaluation should be performed in the case of segmentation mostly
   (`foreground` means only one label, `label` means metrics per label, `cc`
-  means metrics per connected component).  More on this topic can be found at
+  means metrics per connected component). More on this topic can be found at
   [segmentation evaluations](./niftynet.evaluation.segmentation_evaluations.html).
 -->
