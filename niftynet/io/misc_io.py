@@ -753,9 +753,9 @@ def set_logger(file_name=None):
     :return:
     """
     # pylint: disable=no-name-in-module
-    from tensorflow.python.platform.tf_logging import _get_logger
+    from tensorflow.python.platform.tf_logging import get_logger
 
-    logger = _get_logger()
+    logger = get_logger()
     tf.logging.set_verbosity(tf.logging.INFO)
     logger.handlers = []
 
@@ -780,9 +780,9 @@ def close_logger():
     :return:
     """
     # pylint: disable=no-name-in-module
-    from tensorflow.python.platform.tf_logging import _get_logger
+    from tensorflow.python.platform.tf_logging import get_logger
 
-    logger = _get_logger()
+    logger = get_logger()
     for handler in reversed(logger.handlers):
         try:
             handler.flush()

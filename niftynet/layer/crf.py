@@ -284,13 +284,15 @@ def permutohedral_prepare(position_vectors):
     hash_table = tf.contrib.lookup.MutableDenseHashTable(
         tf.int64, tf.int64,
         default_value=tf.constant([-1] * n_ch, dtype=tf.int64),
-        empty_key=-2,
+        empty_key=-3,
+        deleted_key=-2,
         initial_num_buckets=8,
         checkpoint=False)
     index_table = tf.contrib.lookup.MutableDenseHashTable(
         tf.int64, tf.int64,
         default_value=0,
-        empty_key=-1,
+        empty_key=-2,
+        deleted_key=-1,
         initial_num_buckets=8,
         checkpoint=False)
 
