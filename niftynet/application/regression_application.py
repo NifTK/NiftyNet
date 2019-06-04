@@ -235,7 +235,7 @@ class RegressionApplication(BaseApplication):
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][1]()
 
     def initialise_aggregator(self):
-        if self.net_param.force_identity_output_resizing:
+        if self.net_param.force_output_identity_resizing:
             self.initialise_identity_aggregator()
         else:
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]()
