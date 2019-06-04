@@ -328,6 +328,13 @@ def add_network_args(parser):
         " 'resize': resize image to the patch size.",
         choices=['uniform', 'resize', 'balanced', 'weighted'],
         default='uniform')
+    
+    parser.add_argument(
+        "--force_identity_output_resizing",
+        metavar=str2boolean,
+        help="Forces the shape of the inferred output to match the "
+        "input label shape rather than be resized to input image shape.",
+        default=False)
 
     parser.add_argument(
         "--queue_length",
