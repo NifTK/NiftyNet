@@ -130,11 +130,12 @@ class SelectiveSampling(BaseApplication):
                         self.action_param.rotation_angle_z)
                 augmentation_layers.append(rotation_layer)
 
-        volume_padding_layer = []
-        if self.net_param.volume_padding_size:
-            volume_padding_layer.append(PadLayer(
-                image_name=SUPPORTED_INPUT,
-                border=self.net_param.volume_padding_size))
+        volume_padding_layer = [PadLayer(
+            image_name=SUPPORTED_INPUT,
+            border=self.net_param.volume_padding_size,
+            mode=self.net_param.volume_padding_mode,
+            pad_to=self.net_param.volume_padding_to_size)
+        ]
 
         for reader in self.readers:
             reader.add_preprocessing_layers(
