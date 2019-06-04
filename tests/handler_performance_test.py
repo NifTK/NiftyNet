@@ -35,8 +35,6 @@ class PerformanceLoggerTest(tf.test.TestCase):
         if msg.current_iter > 1:
             self.assertTrue(isinstance(sender.performance_history, list))
             self.assertTrue(len(sender.performance_history) <= sender.patience)
-            print(sender.performance_history)
-            print(type(sender.performance_history[0]))
             self.assertTrue(all([isinstance(p, np.float32) for p in sender.performance_history]))
 
 
