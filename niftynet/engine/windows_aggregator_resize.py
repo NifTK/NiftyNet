@@ -39,7 +39,7 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         self.output_interp_order = interp_order
         self.postfix = postfix
 
-    def decode_batch(self, window, location, name_opt=''):
+    def decode_batch(self, window, location):
         """
         Resizing each output image window in the batch as an image volume
         location specifies the original input image (so that the
@@ -53,43 +53,39 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         n_samples = location.shape[0]
         location_init = np.copy(location)
         test = None
-        for w in window:
-            if 'window' in w:
-                # print(w)
-                test = np.ones_like(window[w])
-                # print(w, location_init, window[w].shape, self.window_border,
-                #       np.sum(window[w]))
-                window[w], _ = self.crop_batch(window[w], location_init,
+        for wi in window:
+            if 'window' in wi:
+
+                test = np.ones_like(window[wi])
+                window[wi], _ = self.crop_batch(window[wi], location_init,
                                                self.window_border)
                 location_init = np.copy(location)
-                print(w, np.sum(window[w]), np.max(window[w]))
+                print(wi, np.sum(window[wi]), np.max(window[wi]))
         _, location = self.crop_batch(test, location_init, self.window_border)
 
         for batch_id in range(n_samples):
             if self._is_stopping_signal(location[batch_id]):
                 return False
             self.image_id = location[batch_id, 0]
-            resize_to_shape = None
-
             if self._is_stopping_signal(location[batch_id]):
-                    return False
+                return False
             self.image_out = {}
             self.csv_out = {}
 
-            for w in window:
-                if 'window' in w:
+            for wi in window:
+                if 'window' in wi:
 
-                    while window[w].ndim < 5:
-                        window[w] = window[w][..., np.newaxis, :]
-                    self.image_out[w] = window[w][batch_id, ...]
+                    while window[wi].ndim < 5:
+                        window[wi] = window[wi][..., np.newaxis, :]
+                    self.image_out[wi] = window[wi][batch_id, ...]
                 else:
-                    if not isinstance(window[w], (list, tuple, np.ndarray)):
-                        window_loc = np.reshape(window[w], [1, 1])
-                        self.csv_out[w] = self._initialise_empty_csv(1)
+                    if not isinstance(window[wi], (list, tuple, np.ndarray)):
+                        window_loc = np.reshape(window[wi], [1, 1])
+                        self.csv_out[wi] = self._initialise_empty_csv(1)
                     else:
-                        window[w] = np.asarray(window[w])
+                        window[wi] = np.asarray(window[wi])
                         try:
-                            assert window[w].ndim <= 2
+                            assert window[wi].ndim <= 2
                         except (TypeError, AssertionError):
                             tf.logging.error(
                                 "The output you are trying to "
@@ -99,23 +95,13 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                                 "Put the keyword window "
                                 "in the output dictionary"
                                 " in your application file")
-                        if window[w].ndim < 2:
-                            window[w] = np.expand_dims(window[w], 0)
-                        window_loc = window[w]
-                        self.csv_out[w] = self._initialise_empty_csv(
-                            n_channel=window[w][0].shape[-1])
+                        if window[wi].ndim < 2:
+                            window[wi] = np.expand_dims(window[wi], 0)
+                        window_loc = window[wi]
+                        self.csv_out[wi] = self._initialise_empty_csv(
+                            n_channel=window[wi][0].shape[-1])
 
-
-                    # if isinstance(window[w], (np.int, np.float32, np.bool)):
-                    #     window_loc = np.reshape(window[w], [1, 1])
-                    #     self.csv_out[w] = self._initialise_empty_csv(
-                    #         n_channel=1)
-                    # else:
-                    #     window_loc = window[w]
-                    #     self.csv_out[w] = self._initialise_empty_csv(
-                    #         n_channel=window[w][0].shape[-1])
-
-                    self.csv_out[w] = np.concatenate([self.csv_out[w],
+                    self.csv_out[wi] = np.concatenate([self.csv_out[wi],
                                                       window_loc], 0)
 
             self._save_current_image()
@@ -191,10 +177,10 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
             filename = "{}_{}_{}.nii.gz".format(i, subject_name, self.postfix)
             source_image_obj = self.input_image[self.name]
             misc_io.save_data_array(self.output_path,
-                                filename,
-                                self.current_out[i],
-                                source_image_obj,
-                                self.output_interp_order)
+                                    filename,
+                                    self.current_out[i],
+                                    source_image_obj,
+                                    self.output_interp_order)
             self.log_inferred(subject_name, filename)
         return
 
@@ -222,3 +208,4 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         :return:
         '''
         return np.zeros([1, n_channel])
+    

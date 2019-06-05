@@ -56,14 +56,14 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         n_samples = location.shape[0]
         location_init = np.copy(location)
         init_ones = None
-        for w in window:
-            if 'window' in w: # all outputs to be created as images should
+        for wi in window:
+            if 'window' in wi: # all outputs to be created as images should
                 # contained the keyword "window"
-                init_ones = np.ones_like(window[w])
-                window[w], _ = self.crop_batch(window[w], location_init,
+                init_ones = np.ones_like(window[wi])
+                window[wi], _ = self.crop_batch(window[wi], location_init,
                                                self.window_border)
                 location_init = np.copy(location)
-                print(w, np.sum(window[w]), np.max(window[w]))
+                print(wi, np.sum(window[wi]), np.max(window[wi]))
         _, location = self.crop_batch(init_ones, location_init,
                                       self.window_border)
         for batch_id in range(n_samples):
@@ -78,23 +78,23 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                     return False
                 self.image_out = {}
                 self.csv_out = {}
-                for w in window:
-                    if 'window' in w: # check that we want to have an image
+                for wi in window:
+                    if 'window' in wi: # check that we want to have an image
                         # and initialise accordingly
-                        self.image_out[w] = self._initialise_empty_image(
+                        self.image_out[wi] = self._initialise_empty_image(
                             image_id=image_id,
-                            n_channels=window[w].shape[-1],
-                            dtype=window[w].dtype)
-                        print("for output shape is ", self.image_out[w].shape)
+                            n_channels=window[wi].shape[-1],
+                            dtype=window[wi].dtype)
+                        print("for output shape is ", self.image_out[wi].shape)
                     else:
-                        if not isinstance(window[w], (list, tuple, np.ndarray)):
-                            self.csv_out[w] = self._initialise_empty_csv(1 +
-                                                                         location_init[0,
-                                                        :].shape[-1])
+                        if not isinstance(window[wi], (list, tuple, 
+                                                       np.ndarray)):
+                            self.csv_out[wi] = self._initialise_empty_csv(
+                                1 + location_init[0, :].shape[-1])
                         else:
-                            window[w] = np.asarray(window[w])
+                            window[wi] = np.asarray(window[wi])
                             try:
-                                assert window[w].ndim <= 2
+                                assert window[wi].ndim <= 2
                             except (TypeError, AssertionError):
                                 tf.logging.error(
                                     "The output you are trying to "
@@ -104,22 +104,21 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                                     "Put the keyword window "
                                     "in the output dictionary"
                                     " in your application file")
-                            if window[w].ndim < 2:
-                                window[w] = np.expand_dims(window[w],0)
-                            self.csv_out[w] = self._initialise_empty_csv(
-                                            n_channel=window[w][0].shape[-1]
-                                                      + location_init[0,
-                                                        :].shape[-1])
-            for w in window:
-                if 'window' in w:
-                    self.image_out[w][x_start:x_end,
-                        y_start:y_end,
-                        z_start:z_end, ...] = window[w][batch_id, ...]
+                            if window[wi].ndim < 2:
+                                window[wi] = np.expand_dims(window[wi], 0)
+                            self.csv_out[wi] = self._initialise_empty_csv(
+                                n_channel=window[wi][0].shape[-1] + 
+                                          location_init[0, :].shape[-1])
+            for wi in window:
+                if 'window' in wi:
+                    self.image_out[wi][
+                        x_start:x_end, y_start:y_end, z_start:z_end, ...] = \
+                        window[wi][batch_id, ...]
                 else:
-                    if isinstance(window[w], (list, tuple, np.ndarray)):
-                        window[w] = np.asarray(window[w])
+                    if isinstance(window[wi], (list, tuple, np.ndarray)):
+                        window[wi] = np.asarray(window[wi])
                         try:
-                            assert window[w].ndim <= 2
+                            assert window[wi].ndim <= 2
                         except (TypeError, AssertionError):
                             tf.logging.error(
                                 "The output you are trying to "
@@ -129,19 +128,19 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                                 "Put the keyword window "
                                 "in the output dictionary"
                                 " in your application file")
-                        if window[w].ndim < 2:
-                            window[w] = np.expand_dims(window[w], 0)
-                        window[w] = np.asarray(window[w])
+                        if window[wi].ndim < 2:
+                            window[wi] = np.expand_dims(window[wi], 0)
+                        window[wi] = np.asarray(window[wi])
 
                         window_loc = np.concatenate([
-                            window[w], np.tile(location_init[batch_id, ...],
-                                                        [window[w].shape[0],
-                                                         1])], 1)
+                            window[wi], np.tile(
+                                location_init[batch_id, ...], 
+                                [window[wi].shape[0], 1])], 1)
                     else:
                         window_loc = np.concatenate([
-                            np.reshape(window[w], [1, 1]), np.tile(
+                            np.reshape(window[wi], [1, 1]), np.tile(
                                 location_init[batch_id, ...], [1, 1])], 1)
-                    self.csv_out[w] = np.concatenate([self.csv_out[w],
+                    self.csv_out[wi] = np.concatenate([self.csv_out[wi],
                                                       window_loc], 0)
         return True
 
