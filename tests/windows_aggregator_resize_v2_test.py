@@ -288,6 +288,61 @@ class ResizeSamplesAggregatorTest(tf.test.TestCase):
         )
         sampler.close_all()
 
+    def test_init_3d_mo_bidimcsv(self):
+        reader = get_3d_reader()
+        sampler = ResizeSampler(reader=reader,
+                                window_sizes=MULTI_MOD_DATA,
+                                batch_size=1,
+                                shuffle=False,
+                                queue_length=50)
+        aggregator = ResizeSamplesAggregator(
+            image_reader=reader,
+            name='image',
+            output_path=os.path.join('testing_data', 'aggregated'),
+            interp_order=3)
+        more_batch = True
+
+        with self.test_session() as sess:
+            sampler.set_num_threads(2)
+            while more_batch:
+                try:
+                    out = sess.run(sampler.pop_batch_op())
+                except tf.errors.OutOfRangeError:
+                    break
+                min_val = np.sum((np.asarray(out['image']).flatten()))
+                stats_val = [np.min(out['image']), np.max(out['image']), np.sum(
+                    out['image'])]
+                stats_val = np.expand_dims(stats_val, 0)
+                stats_val = np.concatenate([stats_val, stats_val], axis=0)
+                more_batch = aggregator.decode_batch(
+                    {'window_image':out['image'],
+                     'csv_sum':min_val,
+                     'csv_stats_2d':stats_val},
+                    out['image_location'])
+        output_filename = 'window_image_{}_niftynet_out.nii.gz'.format(
+            sampler.reader.get_subject_id(0))
+        sum_filename = os.path.join('testing_data','aggregated',
+                                    'csv_sum_{}_niftynet_out.csv'.format(
+            sampler.reader.get_subject_id(0)))
+        stats_filename = os.path.join('testing_data', 'aggregated',
+                                    'csv_stats_2d_{}_niftynet_out.csv'.format(
+                                        sampler.reader.get_subject_id(0)))
+        output_file = os.path.join('testing_data',
+                                   'aggregated',
+                                   output_filename)
+
+        self.assertAllClose(
+            nib.load(output_file).shape, (256, 168, 256, 1, 2))
+        min_pd = pd.read_csv(sum_filename)
+        self.assertAllClose(
+            min_pd.shape, [2, 2]
+        )
+        stats_pd = pd.read_csv(stats_filename)
+        self.assertAllClose(
+            stats_pd.shape, [3, 4]
+        )
+        sampler.close_all()
+
     def test_2d_init(self):
         reader = get_2d_reader()
         sampler = ResizeSampler(reader=reader,
@@ -318,6 +373,157 @@ class ResizeSamplesAggregatorTest(tf.test.TestCase):
                                    output_filename)
         self.assertAllClose(
             nib.load(output_file).shape, [128, 128, 1, 1, 1])
+        sampler.close_all()
+
+    def test_init_2d_mo(self):
+        reader = get_2d_reader()
+        sampler = ResizeSampler(reader=reader,
+                                window_sizes=MOD_2D_DATA,
+                                batch_size=1,
+                                shuffle=False,
+                                queue_length=50)
+        aggregator = ResizeSamplesAggregator(
+            image_reader=reader,
+            name='image',
+            output_path=os.path.join('testing_data', 'aggregated'),
+            interp_order=3)
+        more_batch = True
+
+        with self.test_session() as sess:
+            sampler.set_num_threads(2)
+            while more_batch:
+                try:
+                    out = sess.run(sampler.pop_batch_op())
+                except tf.errors.OutOfRangeError:
+                    break
+                min_val = np.sum((np.asarray(out['image']).flatten()))
+                stats_val = [np.min(out), np.max(out), np.sum(out)]
+                more_batch = aggregator.decode_batch(
+                    {'window_image':out['image'], 'csv_sum':min_val},
+                    out['image_location'])
+        output_filename = 'window_image_{}_niftynet_out.nii.gz'.format(
+            sampler.reader.get_subject_id(0))
+        sum_filename = os.path.join('testing_data','aggregated',
+                                    'csv_sum_{}_niftynet_out.csv'.format(
+            sampler.reader.get_subject_id(0)))
+        output_file = os.path.join('testing_data',
+                                   'aggregated',
+                                   output_filename)
+
+        self.assertAllClose(
+            nib.load(output_file).shape, (128, 128, 1, 1, 1))
+        min_pd = pd.read_csv(sum_filename)
+        self.assertAllClose(
+            min_pd.shape, [2, 2]
+        )
+        sampler.close_all()
+
+    def test_init_2d_mo_3out(self):
+        reader = get_2d_reader()
+        sampler = ResizeSampler(reader=reader,
+                                window_sizes=MOD_2D_DATA,
+                                batch_size=1,
+                                shuffle=False,
+                                queue_length=50)
+        aggregator = ResizeSamplesAggregator(
+            image_reader=reader,
+            name='image',
+            output_path=os.path.join('testing_data', 'aggregated'),
+            interp_order=3)
+        more_batch = True
+
+        with self.test_session() as sess:
+            sampler.set_num_threads(2)
+            while more_batch:
+                try:
+                    out = sess.run(sampler.pop_batch_op())
+                except tf.errors.OutOfRangeError:
+                    break
+                min_val = np.sum((np.asarray(out['image']).flatten()))
+                stats_val = [np.min(out['image']), np.max(out['image']), np.sum(
+                    out['image'])]
+                more_batch = aggregator.decode_batch(
+                    {'window_image': out['image'],
+                     'csv_sum': min_val,
+                     'csv_stats': stats_val},
+                    out['image_location'])
+        output_filename = 'window_image_{}_niftynet_out.nii.gz'.format(
+            sampler.reader.get_subject_id(0))
+        sum_filename = os.path.join('testing_data', 'aggregated',
+                                    'csv_sum_{}_niftynet_out.csv'.format(
+                                        sampler.reader.get_subject_id(0)))
+        stats_filename = os.path.join('testing_data', 'aggregated',
+                                      'csv_stats_{}_niftynet_out.csv'.format(
+                                          sampler.reader.get_subject_id(0)))
+        output_file = os.path.join('testing_data',
+                                   'aggregated',
+                                   output_filename)
+
+        self.assertAllClose(
+            nib.load(output_file).shape, (128, 128, 1, 1, 1))
+        min_pd = pd.read_csv(sum_filename)
+        self.assertAllClose(
+            min_pd.shape, [2, 2]
+        )
+        stats_pd = pd.read_csv(stats_filename)
+        self.assertAllClose(
+            stats_pd.shape, [2, 4]
+        )
+        sampler.close_all()
+
+    def test_init_2d_mo_bidimcsv(self):
+        reader = get_2d_reader()
+        sampler = ResizeSampler(reader=reader,
+                                window_sizes=MOD_2D_DATA,
+                                batch_size=1,
+                                shuffle=False,
+                                queue_length=50)
+        aggregator = ResizeSamplesAggregator(
+            image_reader=reader,
+            name='image',
+            output_path=os.path.join('testing_data', 'aggregated'),
+            interp_order=3)
+        more_batch = True
+
+        with self.test_session() as sess:
+            sampler.set_num_threads(2)
+            while more_batch:
+                try:
+                    out = sess.run(sampler.pop_batch_op())
+                except tf.errors.OutOfRangeError:
+                    break
+                min_val = np.sum((np.asarray(out['image']).flatten()))
+                stats_val = [np.min(out['image']), np.max(out['image']), np.sum(
+                    out['image'])]
+                stats_val = np.expand_dims(stats_val, 0)
+                stats_val = np.concatenate([stats_val, stats_val], axis=0)
+                more_batch = aggregator.decode_batch(
+                    {'window_image': out['image'],
+                     'csv_sum': min_val,
+                     'csv_stats_2d': stats_val},
+                    out['image_location'])
+        output_filename = 'window_image_{}_niftynet_out.nii.gz'.format(
+            sampler.reader.get_subject_id(0))
+        sum_filename = os.path.join('testing_data', 'aggregated',
+                                    'csv_sum_{}_niftynet_out.csv'.format(
+                                        sampler.reader.get_subject_id(0)))
+        stats_filename = os.path.join('testing_data', 'aggregated',
+                                      'csv_stats_2d_{}_niftynet_out.csv'.format(
+                                          sampler.reader.get_subject_id(0)))
+        output_file = os.path.join('testing_data',
+                                   'aggregated',
+                                   output_filename)
+
+        self.assertAllClose(
+            nib.load(output_file).shape, (128, 128, 1, 1, 1))
+        min_pd = pd.read_csv(sum_filename)
+        self.assertAllClose(
+            min_pd.shape, [2, 2]
+        )
+        stats_pd = pd.read_csv(stats_filename)
+        self.assertAllClose(
+            stats_pd.shape, [3, 4]
+        )
         sampler.close_all()
 
     def test_25d_init(self):
