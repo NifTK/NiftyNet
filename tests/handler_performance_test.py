@@ -31,7 +31,7 @@ class PerformanceLoggerTest(tf.test.TestCase):
 
     def iteration_listener(self, sender, **msg):
         msg = msg['iter_msg']
-        self.assertRegex(msg.to_console_string(), 'total_loss')
+        self.assertRegexpMatches(msg.to_console_string(), '.*total_loss.*')
         if msg.current_iter > 1:
             self.assertTrue(isinstance(sender.performance_history, list))
             self.assertTrue(len(sender.performance_history) <= sender.patience)
