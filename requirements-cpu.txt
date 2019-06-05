@@ -3,7 +3,7 @@ nibabel>=2.4.1
 numpy>=1.13.3
 scipy>=1.2.1
 configparser
-tensorflow==1.13.1
+tensorflow==1.14.0rc0
 pandas
 pillow
 blinker
