@@ -7,10 +7,11 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.scalenet import ScaleNet
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
 @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
-class ScaleNetTest(tf.test.TestCase):
+class ScaleNetTest(NiftyNetTestCase):
     def test_3d_shape(self):
         input_shape = (2, 32, 32, 32, 4)
         x = tf.ones(input_shape)

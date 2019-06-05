@@ -7,11 +7,12 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.unet_2d import UNet2D
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
 @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true",
                  'Skipping slow tests')
-class UNet3DTest(tf.test.TestCase):
+class UNet3DTest(NiftyNetTestCase):
     def test_2d_shape(self):
         #input_shape = (2, 572, 572, 3)
         input_shape = (2, 180, 180, 3)

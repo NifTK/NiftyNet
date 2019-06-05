@@ -4,9 +4,10 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.resampler import ResamplerLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class ResamplerTest(tf.test.TestCase):
+class ResamplerTest(NiftyNetTestCase):
 
     def test_shape_interface(self):
         test_input = tf.zeros((2, 10, 10, 10, 3))

@@ -11,6 +11,7 @@ from niftynet.contrib.segmentation_selective_sampler.sampler_selective import \
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
 ### utility function for testing purposes
@@ -192,7 +193,7 @@ def get_dynamic_window_reader():
     return reader
 
 
-class SelectiveSamplerTest(tf.test.TestCase):
+class SelectiveSamplerTest(NiftyNetTestCase):
     def test_3d_init(self):
         constraint_built = Constraint(compulsory_labels=[1],
                                       min_ratio=0.000001,
@@ -203,7 +204,7 @@ class SelectiveSamplerTest(tf.test.TestCase):
                                    constraint=constraint_built,
                                    windows_per_image=2,
                                    queue_length=10)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sampler.run_threads(sess, num_threads=1)
             out = sess.run(sampler.pop_batch_op())
             self.assertTrue(check_constraint(out['label'], constraint_built))
@@ -218,7 +219,7 @@ class SelectiveSamplerTest(tf.test.TestCase):
     #                              batch_size=2,
     #                              windows_per_image=10,
     #                              queue_length=10)
-    #     with self.test_session() as sess:
+    #     with self.cached_session() as sess:
     #         sampler.run_threads(sess, num_threads=2)
     #         out = sess.run(sampler.pop_batch_op())
     #         self.assertAllClose(out['image'].shape, (2, 10, 9, 1))
@@ -234,7 +235,7 @@ class SelectiveSamplerTest(tf.test.TestCase):
     #                                    min_num_labels=2),
     #                                windows_per_image=2,
     #                                queue_length=2)
-    #     with self.test_session() as sess:
+    #     with self.cached_session() as sess:
     #         sampler.run_threads(sess, num_threads=2)
     #         out = sess.run(sampler.pop_batch_op())
     #         test = np.zeros_like(out['label'])
@@ -262,7 +263,7 @@ class SelectiveSamplerTest(tf.test.TestCase):
     #    sampler.close_all()
 
 
-# class RandomCoordinatesTest(tf.test.TestCase):
+# class RandomCoordinatesTest(NiftyNetTestCase):
 #     def test_coordinates(self):
 #         coords = rand_choice_coordinates(
 #             subject_id=1,

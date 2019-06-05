@@ -4,9 +4,10 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.layer.linear_resize import LinearResizeLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class LinearResizeTest(tf.test.TestCase):
+class LinearResizeTest(NiftyNetTestCase):
     def get_3d_input(self):
         input_shape = (2, 16, 16, 16, 4)
         x = tf.ones(input_shape)

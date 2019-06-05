@@ -5,9 +5,10 @@ import tensorflow as tf
 
 from niftynet.layer.loss_regression import LossFunction
 from niftynet.layer.loss_regression import l1_loss, l2_loss, huber_loss
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class L1LossTests(tf.test.TestCase):
+class L1LossTests(NiftyNetTestCase):
     def test_l1_loss_value(self):
         with self.cached_session():
             predicted = tf.constant(
@@ -42,7 +43,7 @@ class L1LossTests(tf.test.TestCase):
                 l1_loss(predicted, gold_standard).eval(), 1.1)
 
 
-class L2LossTests(tf.test.TestCase):
+class L2LossTests(NiftyNetTestCase):
     def test_l2_loss_value(self):
         with self.cached_session():
             predicted = tf.constant(
@@ -80,7 +81,7 @@ class L2LossTests(tf.test.TestCase):
                 l2_loss(predicted, gold_standard).eval(), 2.52)
 
 
-class HuberLossTests(tf.test.TestCase):
+class HuberLossTests(NiftyNetTestCase):
     def test_huber_loss(self):
         with self.cached_session():
             predicted = tf.constant(
@@ -141,7 +142,7 @@ class HuberLossTests(tf.test.TestCase):
                 computed_huber_loss.eval(), 3.125 / 4)
 
 
-class RMSELossTests(tf.test.TestCase):
+class RMSELossTests(NiftyNetTestCase):
     def test_rmse_loss_value(self):
         with self.cached_session():
             predicted = tf.constant(
@@ -166,7 +167,7 @@ class RMSELossTests(tf.test.TestCase):
                 computed_rmse_loss.eval(), 0.8231, places=4)
 
 
-class MAELossTests(tf.test.TestCase):
+class MAELossTests(NiftyNetTestCase):
     def test_MAE_loss_value(self):
         with self.cached_session():
             predicted = tf.constant(

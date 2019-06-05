@@ -13,6 +13,7 @@ from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
 from niftynet.engine.image_window import N_SPATIAL
+from tests.niftynet_testcase import NiftyNetTestCase
 
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
@@ -136,7 +137,7 @@ def get_concentric_window_reader():
     return reader
 
 
-class UniformSamplerTest(tf.test.TestCase):
+class UniformSamplerTest(NiftyNetTestCase):
     def test_3d_concentric_init(self):
         sampler = UniformSampler(reader=get_concentric_window_reader(),
                                  window_sizes=MULTI_WINDOW_DATA,
@@ -208,7 +209,7 @@ class UniformSamplerTest(tf.test.TestCase):
         sampler.close_all()
 
 
-class RandomCoordinatesTest(tf.test.TestCase):
+class RandomCoordinatesTest(NiftyNetTestCase):
     def assertCoordinatesAreValid(self, coords, img_size, win_size):
         for coord in coords:
             for i in range(len(coord.shape)):

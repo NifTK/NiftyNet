@@ -4,9 +4,10 @@ import tensorflow as tf
 
 from niftynet.layer.resampler import ResamplerLayer
 from niftynet.layer.spatial_transformer import ResampledFieldGridWarperLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class ResamplerTest(tf.test.TestCase):
+class ResamplerTest(NiftyNetTestCase):
     def get_3d_input1(self):
         return tf.expand_dims(tf.constant(
             [[[[1, 2, -1], [3, 4, -2]], [[5, 6, -3], [7, 8, -4]]],

@@ -2,9 +2,10 @@ from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 from niftynet.layer.crop import CropLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class CropTest(tf.test.TestCase):
+class CropTest(NiftyNetTestCase):
     def test_3d_shape(self):
         input_shape = (2, 16, 16, 16, 8)
         test_border = 3

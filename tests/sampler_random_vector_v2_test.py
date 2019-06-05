@@ -5,9 +5,10 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.engine.sampler_random_vector_v2 import RandomVectorSampler
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class RandomVectorSamplerTest(tf.test.TestCase):
+class RandomVectorSamplerTest(NiftyNetTestCase):
     def test_random_vector(self):
         sampler = RandomVectorSampler(names=('test_vector',),
                                       vector_size=(100,),

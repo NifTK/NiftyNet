@@ -7,9 +7,10 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.simple_gan import SimpleGAN
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class SimpleGANTest(tf.test.TestCase):
+class SimpleGANTest(NiftyNetTestCase):
     def test_3d_reg_shape(self):
         input_shape = (2, 32, 32, 32, 1)
         noise_shape = (2, 512)

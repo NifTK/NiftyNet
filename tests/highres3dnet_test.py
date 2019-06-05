@@ -9,11 +9,12 @@ from tensorflow.contrib.layers.python.layers import regularizers
 from niftynet.network.highres3dnet import HighRes3DNet
 from niftynet.network.highres3dnet_large import HighRes3DNetLarge
 from niftynet.network.highres3dnet_small import HighRes3DNetSmall
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
 @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true",
                  'Skipping slow tests')
-class HighRes3DNetTest(tf.test.TestCase):
+class HighRes3DNetTest(NiftyNetTestCase):
     def shape_test(self, input_shape, expected_shape):
         x = tf.ones(input_shape)
 

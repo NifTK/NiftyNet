@@ -7,9 +7,10 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.dense_vnet import DenseVNet
+from tests.niftynet_testcase import NiftyNetTestCase
 
 @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
-class DenseVNetTest(tf.test.TestCase):
+class DenseVNetTest(NiftyNetTestCase):
     def test_3d_shape(self):
         input_shape = (2, 72, 72, 72, 3)
         x = tf.ones(input_shape)

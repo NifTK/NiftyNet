@@ -9,6 +9,7 @@ from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
+from tests.niftynet_testcase import NiftyNetTestCase
 
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
@@ -101,7 +102,7 @@ def get_dynamic_window_reader():
     return reader
 
 
-class ResizeSamplerTest(tf.test.TestCase):
+class ResizeSamplerTest(NiftyNetTestCase):
     def test_3d_init(self):
         sampler = ResizeSampler(
             reader=get_3d_reader(),

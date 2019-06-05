@@ -14,6 +14,7 @@ from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
 from niftynet.layer.pad import PadLayer
 from niftynet.utilities.util_common import ParserNamespace
+from tests.niftynet_testcase import NiftyNetTestCase
 
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
@@ -124,7 +125,7 @@ def get_25d_reader():
     return reader
 
 
-class ResizeSamplesAggregatorTest(tf.test.TestCase):
+class ResizeSamplesAggregatorTest(NiftyNetTestCase):
     def test_3d_init(self):
         reader = get_3d_reader()
         sampler = ResizeSampler(reader=reader,

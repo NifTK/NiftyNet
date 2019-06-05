@@ -5,9 +5,10 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.crf import CRFAsRNNLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class CRFTest(tf.test.TestCase):
+class CRFTest(NiftyNetTestCase):
     def test_2d3d_shape(self):
         tf.reset_default_graph()
         I = tf.random_normal(shape=[2, 4, 5, 6, 3])

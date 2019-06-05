@@ -4,9 +4,10 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.vnet import VNetBlock
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class VNetBlockTest(tf.test.TestCase):
+class VNetBlockTest(NiftyNetTestCase):
     def get_2d_data(self):
         input_shape = (2, 16, 16, 8)
         x = tf.ones(input_shape)

@@ -7,10 +7,11 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.deepmedic import DeepMedic
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
 @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
-class DeepMedicTest(tf.test.TestCase):
+class DeepMedicTest(NiftyNetTestCase):
     def test_3d_reg_shape(self):
         input_shape = (2, 57, 57, 57, 1)
         x = tf.ones(input_shape)

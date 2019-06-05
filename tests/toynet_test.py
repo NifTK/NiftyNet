@@ -3,9 +3,10 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.network.toynet import ToyNet
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class ToyNetTest(tf.test.TestCase):
+class ToyNetTest(NiftyNetTestCase):
     def test_3d_shape(self):
         input_shape = (2, 32, 32, 32, 1)
         x = tf.ones(input_shape)

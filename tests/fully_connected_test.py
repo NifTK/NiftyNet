@@ -5,9 +5,10 @@ from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.layer.fully_connected import FCLayer
 from niftynet.layer.fully_connected import FullyConnectedLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class FCTest(tf.test.TestCase):
+class FCTest(NiftyNetTestCase):
     def get_3d_input(self):
         input_shape = (2, 10, 10, 5, 8)
         x_3d = tf.ones(input_shape)

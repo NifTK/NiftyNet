@@ -4,9 +4,10 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.resampler import ResamplerLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class ResamplerTest(tf.test.TestCase):
+class ResamplerTest(NiftyNetTestCase):
     def get_2d_input(self, as_tensor=True):
         test_array = np.array(
             [[[[1, 2, -1], [3, 4, -2]], [[5, 6, -3], [7, 8, -4]]],

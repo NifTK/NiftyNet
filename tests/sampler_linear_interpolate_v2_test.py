@@ -9,6 +9,7 @@ from niftynet.engine.sampler_linear_interpolate_v2 import LinearInterpolateSampl
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
+from tests.niftynet_testcase import NiftyNetTestCase
 
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
@@ -46,7 +47,7 @@ def get_3d_reader():
     return reader
 
 
-class LinearInterpolateSamplerTest(tf.test.TestCase):
+class LinearInterpolateSamplerTest(NiftyNetTestCase):
     def test_init(self):
         sampler = LinearInterpolateSampler(
             reader=get_3d_reader(),

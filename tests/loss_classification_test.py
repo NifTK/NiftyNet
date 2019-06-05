@@ -5,9 +5,10 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.loss_classification import LossFunction
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class CrossEntropyTests(tf.test.TestCase):
+class CrossEntropyTests(NiftyNetTestCase):
     def test_cross_entropy_value(self):
         # test value is -0.5 * [1 * log(e / (1+e)) + 1 * log(e^2 / (e^2 + 1))]
         with self.cached_session():
@@ -23,7 +24,7 @@ class CrossEntropyTests(tf.test.TestCase):
                     np.e ** 2 / (1 + np.e ** 2))))
 
 
-class LossFunctionErrorsTest(tf.test.TestCase):
+class LossFunctionErrorsTest(NiftyNetTestCase):
     """
     These tests check that a ValueError is called
     for non-existent loss functions.

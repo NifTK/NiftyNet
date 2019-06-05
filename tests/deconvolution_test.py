@@ -5,9 +5,10 @@ from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.layer.deconvolution import DeconvLayer
 from niftynet.layer.deconvolution import DeconvolutionalLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class DeconvTest(tf.test.TestCase):
+class DeconvTest(NiftyNetTestCase):
     def get_2d_input(self):
         input_shape = (2, 16, 16, 8)
         x_2d = tf.ones(input_shape)

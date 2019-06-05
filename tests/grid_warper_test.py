@@ -6,9 +6,10 @@ import tensorflow as tf
 from niftynet.layer.grid_warper import AffineGridWarperLayer
 from niftynet.layer.grid_warper import AffineWarpConstraints
 from niftynet.layer.grid_warper import _create_affine_features
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class GridWarperTest(tf.test.TestCase):
+class GridWarperTest(NiftyNetTestCase):
     def test_regular_grids(self):
         out = _create_affine_features([3, 3], [2])
         expected = [
@@ -18,7 +19,7 @@ class GridWarperTest(tf.test.TestCase):
         self.assertAllClose(expected, out)
 
 
-class GridWarperRelativeTest(tf.test.TestCase):
+class GridWarperRelativeTest(NiftyNetTestCase):
     def test_regular_grids(self):
         out = _create_affine_features([3, 3], [2], True)
         expected = [
@@ -28,7 +29,7 @@ class GridWarperRelativeTest(tf.test.TestCase):
         self.assertAllClose(expected, out)
 
 
-class AffineWarpConstraintsTest(tf.test.TestCase):
+class AffineWarpConstraintsTest(NiftyNetTestCase):
     def test_default(self):
         aff_c = AffineWarpConstraints()
         self.assertAllEqual(aff_c.constraints,
@@ -109,7 +110,7 @@ class AffineWarpConstraintsTest(tf.test.TestCase):
             aff_c_1.combine_with(aff_c_2)
 
 
-class AffineGridWarperLayerTest(tf.test.TestCase):
+class AffineGridWarperLayerTest(NiftyNetTestCase):
     def _test_correctness(self, args, aff, expected_value):
         grid_warper = AffineGridWarperLayer(**args)
         computed_grid = grid_warper(aff)
@@ -192,7 +193,7 @@ class AffineGridWarperLayerTest(tf.test.TestCase):
         self._test_correctness(params, aff, expected)
 
 
-class AffineGridWarperInvLayerTest(tf.test.TestCase):
+class AffineGridWarperInvLayerTest(NiftyNetTestCase):
     def test_simple_inverse(self):
         expected_grid = np.array([[
             [[0.38, 0.08],

@@ -7,9 +7,10 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.holistic_net import HolisticNet
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class HolisticNetTest(tf.test.TestCase):
+class HolisticNetTest(NiftyNetTestCase):
     def test_3d_reg_shape(self):
         input_shape = (2, 20, 20, 20, 1)
         x = tf.ones(input_shape)

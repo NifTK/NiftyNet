@@ -4,9 +4,10 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.layer.downsample import DownSampleLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class DownSampleTest(tf.test.TestCase):
+class DownSampleTest(NiftyNetTestCase):
     def get_3d_input(self):
         input_shape = (2, 16, 16, 16, 8)
         x = tf.ones(input_shape)

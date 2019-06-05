@@ -6,10 +6,11 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.unet import UNet3D
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
 @unittest.skip('Test currently disabled')
-class UNet3DTest(tf.test.TestCase):
+class UNet3DTest(NiftyNetTestCase):
     def test_3d_shape(self):
         input_shape = (2, 96, 96, 96, 1)
         x = tf.ones(input_shape)

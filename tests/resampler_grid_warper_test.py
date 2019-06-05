@@ -7,6 +7,7 @@ import tensorflow as tf
 
 from niftynet.layer.grid_warper import AffineGridWarperLayer
 from niftynet.layer.resampler import ResamplerLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 test_case_2d_1 = {
     'data': "+/b9/+3/377dpX+Mxp+Y/9nT/d/X6vfMuf+hX/hSY/1pvf/P9/z//+///+7z"
@@ -145,7 +146,7 @@ def get_3d_input1():
     return tf.expand_dims(test_case, 4)
 
 
-class ResamplerGridWarperTest(tf.test.TestCase):
+class ResamplerGridWarperTest(NiftyNetTestCase):
     def _test_correctness(
             self, inputs, grid, interpolation, boundary, expected_value):
         resampler = ResamplerLayer(
@@ -173,7 +174,7 @@ class ResamplerGridWarperTest(tf.test.TestCase):
                                expected_value=expected)
 
 
-class image_test(tf.test.TestCase):
+class image_test(NiftyNetTestCase):
     def _test_grads_images(self,
                            interpolation='linear',
                            boundary='replicate',
@@ -246,7 +247,7 @@ class image_test(tf.test.TestCase):
         self._test_grads_images('idw', 'symmetric', ndim=3)
 
 
-class image_2D_test_converge(tf.test.TestCase):
+class image_2D_test_converge(NiftyNetTestCase):
     def _test_simple_2d_images(self,
                                interpolation='linear',
                                boundary='replicate'):

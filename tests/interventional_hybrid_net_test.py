@@ -4,9 +4,10 @@ import tensorflow as tf
 
 from niftynet.network.toynet import ToyNet
 from niftynet.network.interventional_hybrid_net import INetHybridPreWarp, INetHybridTwoStream
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class INetHybridPreWarpTest(tf.test.TestCase):
+class INetHybridPreWarpTest(NiftyNetTestCase):
 
     def test_3d_shape(self):
         input_shape = (2, 32, 32, 32, 1)
@@ -36,7 +37,7 @@ class INetHybridPreWarpTest(tf.test.TestCase):
             self.assertAllClose((2, 32, 32, 2), out[0].shape)
             self.assertAllClose((2, 32, 32, 2), out[1].shape)
 
-class INetHybridTwoStreamTest(tf.test.TestCase):
+class INetHybridTwoStreamTest(NiftyNetTestCase):
 
 
     def test_3d_shape(self):

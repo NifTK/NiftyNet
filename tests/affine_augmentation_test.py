@@ -5,9 +5,10 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.affine_augmentation import AffineAugmentationLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class RandRotationTest(tf.test.TestCase):
+class RandRotationTest(NiftyNetTestCase):
     def get_3d_image(self):
         image_shape = (1, 200, 200, 1)
         elements = tf.range(np.prod(image_shape), dtype=tf.float32)

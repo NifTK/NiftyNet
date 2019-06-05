@@ -12,6 +12,7 @@ from niftynet.engine.sampler_weighted_v2 import \
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
+from tests.niftynet_testcase import NiftyNetTestCase
 
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
@@ -107,7 +108,7 @@ def get_dynamic_window_reader():
     return reader
 
 
-class WeightedSamplerTest(tf.test.TestCase):
+class WeightedSamplerTest(NiftyNetTestCase):
     def test_3d_init(self):
         sampler = WeightedSampler(reader=get_3d_reader(),
                                   window_sizes=MULTI_MOD_DATA,
@@ -160,7 +161,7 @@ class WeightedSamplerTest(tf.test.TestCase):
         sampler.close_all()
 
 
-class WeightedCoordinatesTest(tf.test.TestCase):
+class WeightedCoordinatesTest(NiftyNetTestCase):
     def assertCoordinatesAreValid(self, coords, sampling_map):
         for coord in coords:
             for i in range(len(coord.shape)):

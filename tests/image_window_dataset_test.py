@@ -8,6 +8,7 @@ import tensorflow as tf
 
 from niftynet.engine.image_window_dataset import ImageWindowDataset
 from niftynet.io.image_reader import ImageReader
+from tests.niftynet_testcase import NiftyNetTestCase
 
 IMAGE_PATH_2D_1 = os.path.join('.', 'example_volumes', 'gan_test_data')
 IMAGE_PATH_3D = os.path.join('.', 'testing_data')
@@ -27,7 +28,7 @@ def get_3d_reader():
     return reader
 
 
-class ImageWindowDataset_2D_Test(tf.test.TestCase):
+class ImageWindowDataset_2D_Test(NiftyNetTestCase):
     def assert_window(self, window):
         if not isinstance(window, dict):
             window = next(window)
@@ -97,7 +98,7 @@ class ImageWindowDataset_2D_Test(tf.test.TestCase):
                 np.ceil(reader.num_subjects / np.float(batch_size)), iters)
 
 
-class ImageWindowDataset_3D_Test(tf.test.TestCase):
+class ImageWindowDataset_3D_Test(NiftyNetTestCase):
     def assert_window(self, window):
         if not isinstance(window, dict):
             window = next(window)
@@ -160,7 +161,7 @@ class ImageWindowDataset_3D_Test(tf.test.TestCase):
                 np.ceil(reader.num_subjects / np.float(batch_size)), iters)
 
 
-class ImageDatasetParamTest(tf.test.TestCase):
+class ImageDatasetParamTest(NiftyNetTestCase):
     def run_dataset(self, n_iters, n_threads, **kwargs):
         sampler = ImageWindowDataset(**kwargs)
         sampler.set_num_threads(n_threads)

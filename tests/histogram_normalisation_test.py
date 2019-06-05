@@ -14,6 +14,7 @@ from niftynet.layer.histogram_normalisation import \
 from niftynet.layer.mean_variance_normalisation import \
     MeanVarNormalisationLayer
 from niftynet.utilities.util_common import ParserNamespace
+from tests.niftynet_testcase import NiftyNetTestCase
 
 DATA_PARAM = {
     'T1': ParserNamespace(
@@ -44,7 +45,7 @@ file_list = data_partitioner.initialise(DATA_PARAM).get_file_list()
 
 
 # @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
-class HistTest(tf.test.TestCase):
+class HistTest(NiftyNetTestCase):
     def test_volume_loader(self):
         expected_T1 = np.array(
             [0.0, 8.24277910972, 21.4917343731,

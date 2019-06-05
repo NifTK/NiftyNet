@@ -7,9 +7,10 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.rand_flip import RandomFlipLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class RandFlipTest(tf.test.TestCase):
+class RandFlipTest(NiftyNetTestCase):
     def test_1d_flip(self):
         a = np.array([[0, 1], [2, 3]])
         flip_layer = RandomFlipLayer(flip_axes=[0], flip_probability=1)

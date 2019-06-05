@@ -5,9 +5,10 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.layer.gn import GNLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class GNTest(tf.test.TestCase):
+class GNTest(NiftyNetTestCase):
     def get_3d_input(self):
         input_shape = (2, 16, 16, 16, 8)
         x = tf.ones(input_shape)

@@ -2,9 +2,10 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.layer.dilatedcontext import DilatedTensor
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class BNTest(tf.test.TestCase):
+class BNTest(NiftyNetTestCase):
     def get_2d_input(self):
         input_shape = (2, 16, 16, 8)
         x = tf.ones(input_shape)

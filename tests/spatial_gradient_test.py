@@ -5,9 +5,10 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.spatial_gradient import SpatialGradientLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class SpatialGradientTest(tf.test.TestCase):
+class SpatialGradientTest(NiftyNetTestCase):
 
     def get_3d_input(self):
         input_shape = (2, 16, 16, 16, 8)

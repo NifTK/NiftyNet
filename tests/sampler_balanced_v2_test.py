@@ -13,6 +13,7 @@ from niftynet.engine.sampler_balanced_v2 import \
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
+from tests.niftynet_testcase import NiftyNetTestCase
 
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
@@ -109,7 +110,7 @@ def get_dynamic_window_reader():
 
 
 @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
-class BalancedSamplerTest(tf.test.TestCase):
+class BalancedSamplerTest(NiftyNetTestCase):
     def test_3d_init(self):
         sampler = BalancedSampler(reader=get_3d_reader(),
                                   window_sizes=MULTI_MOD_DATA,
@@ -163,7 +164,7 @@ class BalancedSamplerTest(tf.test.TestCase):
         sampler.close_all()
 
 
-class BalancedCoordinatesTest(tf.test.TestCase):
+class BalancedCoordinatesTest(NiftyNetTestCase):
     def assertCoordinatesAreValid(self, coords, sampling_map):
         for coord in coords:
             for i in range(len(coord.shape)):

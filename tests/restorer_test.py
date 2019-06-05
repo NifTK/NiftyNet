@@ -8,9 +8,10 @@ import tensorflow as tf
 from niftynet.engine.application_variables \
     import RESTORABLE, global_vars_init_or_restore
 from niftynet.layer.convolution import ConvolutionalLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class RestorerTest(tf.test.TestCase):
+class RestorerTest(NiftyNetTestCase):
     def make_checkpoint(self, checkpoint_name, definition):
         scopes = {}
         tf.reset_default_graph()
