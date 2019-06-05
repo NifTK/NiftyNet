@@ -81,7 +81,7 @@ class EarlyStopper(object):
                 else:
                     #uneven
                     kernel_size = int(np.round(_sender.patience / 2))
-                smoothed = signal.medfilt(performance_to_consider,
+                smoothed = signal.medfilt(_sender.performance_history,
                                           kernel_size=kernel_size)
                 gradient = np.gradient(smoothed)
                 tresholded = np.where(np.abs(gradient) < 0.03, 1, 0)
