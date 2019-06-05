@@ -352,7 +352,7 @@ Number of image windows to be processed at each iteration.
 When `num_gpus` is greater than 1, `batch_size` is used for each GPU.
 That is, the effective inputs at each iteration become `batch_size` x `num_gpus`.
 
-See the [interactive buffer animation][buffer-sketch] to simulate the effect
+See the [interactive buffer animation](#queue-length) to simulate the effect
 of modifying this parameter.
 
 ###### `smaller_final_batch_mode`
@@ -445,10 +445,9 @@ A longer queue increases the probability of windows in a batch coming from
 different input volumes, but it will take longer to fill and consume more
 memory.
 
-See the [interactive buffer animation][buffer-sketch] to simulate the effect
-of modifying this parameter.
-
-[buffer-sketch]: https://editor.p5js.org/fepegar/present/DZwjZzkkV
+You can use this interactive animation to simulate the effect
+of modifying the parameters related to the buffer:
+<iframe style="width: 640px; height: 360px; overflow: hidden;"  scrolling="no" frameborder="0" src="https://editor.p5js.org/embed/DZwjZzkkV"></iframe>
 
 
 ###### `keep_prob`
@@ -566,7 +565,7 @@ defined here in [`SUPPORTED_OPTIMIZERS`][optimizers].
 ###### `sample_per_volume`
 Number of samples to take from each image volume when filling the queue.
 
-See the [interactive buffer animation][buffer-sketch] to simulate the effect
+See the [interactive buffer animation](#queue-length) to simulate the effect
 of modifying this parameter.
 
 ###### `lr`
