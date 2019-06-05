@@ -16,8 +16,6 @@ from niftynet.engine.application_factory import \
 from niftynet.engine.application_variables import \
     CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
 from niftynet.engine.sampler_resize_v2 import ResizeSampler
-from niftynet.engine.windows_aggregator_classifier import \
-    ClassifierSamplesAggregator
 from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.io.image_reader import ImageReader
