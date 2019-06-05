@@ -9,7 +9,7 @@ __BUILD_LOCATION__ \
 
 def _find_and_load_op():
     for test_path in (osp.join(osp.dirname(__file__), __MODULE_FILENAME__),
-                      osp.join('.', __INSTALL_LOCATION__),
+                      osp.join('.', __INSTALL_LOCATION__, __MODULE_FILENAME__),
                       osp.join(__INSTALL_LOCATION__, __MODULE_FILENAME__),
                       osp.join(__BUILD_LOCATION__, __MODULE_FILENAME__)):
         if osp.isfile(test_path):
