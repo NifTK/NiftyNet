@@ -8,7 +8,7 @@ from __future__ import absolute_import, print_function, division
 import os
 
 import numpy as np
-
+import tensorflow as tf
 import niftynet.io.misc_io as misc_io
 from niftynet.engine.sampler_resize_v2 import zoom_3d
 from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
@@ -28,7 +28,7 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                  output_path=os.path.join('.', 'output'),
                  window_border=(),
                  interp_order=0,
-                 postfix='_niftynet_out'):
+                 postfix='niftynet_out'):
         ImageWindowsAggregator.__init__(
             self, image_reader=image_reader, output_path=output_path)
         self.name = name
@@ -38,26 +38,13 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         self.output_interp_order = interp_order
         self.postfix = postfix
 
-    def decode_batch_old(self, window, location):
+    def decode_batch(self, window, location, name_opt=''):
         """
         Resizing each output image window in the batch as an image volume
         location specifies the original input image (so that the
         interpolation order, original shape information retained in the
         generated outputs).
         """
-        n_samples = location.shape[0]
-        window, location = self.crop_batch(window, location, self.window_border)
-        for batch_id in range(n_samples):
-            if self._is_stopping_signal(location[batch_id]):
-                return False
-            self.image_id = location[batch_id, 0]
-            resize_to_shape = self._initialise_image_shape(
-                image_id=self.image_id,
-                n_channels=window.shape[-1])
-            self._save_current_image(window[batch_id, ...], resize_to_shape)
-        return True
-
-    def decode_batch(self, window, location, name_opt=''):
         n_samples = location.shape[0]
         location_init = np.copy(location)
         test = None
@@ -89,24 +76,44 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
 
                     while window[w].ndim < 5:
                         window[w] = window[w][..., np.newaxis, :]
-                    resize_to_shape = self._initialise_image_shape(
-                        image_id=self.image_id,
-                        n_channels=window[w].shape[-1])
                     self.image_out[w] = window[w][batch_id, ...]
                 else:
-                    if isinstance(window[w], (np.int, np.float32, np.bool)):
+                    if not isinstance(window[w], (list, tuple, np.ndarray)):
                         window_loc = np.reshape(window[w], [1, 1])
-                        self.csv_out[w] = self._initialise_empty_csv(
-                            n_channel=1)
+                        self.csv_out[w] = self._initialise_empty_csv(1)
                     else:
+                        window[w] = np.asarray(window[w])
+                        try:
+                            assert window[w].ndim <= 2
+                        except (TypeError, AssertionError):
+                            tf.logging.warning(
+                                "The output you are trying to "
+                                "save as csv is more than "
+                                "bidimensional. Did you want "
+                                "to save an image instead? "
+                                "Put the keyword window "
+                                "in the output dictionary"
+                                " in your application file")
+                        if window[w].ndim < 2:
+                            window[w] = np.expand_dims(window[w], 0)
                         window_loc = window[w]
                         self.csv_out[w] = self._initialise_empty_csv(
                             n_channel=window[w][0].shape[-1])
 
+
+                    # if isinstance(window[w], (np.int, np.float32, np.bool)):
+                    #     window_loc = np.reshape(window[w], [1, 1])
+                    #     self.csv_out[w] = self._initialise_empty_csv(
+                    #         n_channel=1)
+                    # else:
+                    #     window_loc = window[w]
+                    #     self.csv_out[w] = self._initialise_empty_csv(
+                    #         n_channel=window[w][0].shape[-1])
+
                     self.csv_out[w] = np.concatenate([self.csv_out[w],
                                                       window_loc], 0)
 
-            self._save_current_image(resize_to_shape)
+            self._save_current_image()
             self._save_current_csv()
 
         return True
@@ -121,45 +128,8 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                 empty_image, _ = layer(empty_image)
         return empty_image.shape
 
-    def _save_current_image_old(self, image_out, resize_to):
-        if self.input_image is None:
-            return
-        window_shape = resize_to
-        while image_out.ndim < 5:
-            image_out = image_out[..., np.newaxis, :]
-        if self.window_border and any([b > 0 for b in self.window_border]):
-            np_border = self.window_border
-            while len(np_border) < 5:
-                np_border = np_border + (0,)
-            np_border = [(b,) for b in np_border]
-            image_out = np.pad(image_out, np_border, mode='edge')
-        image_shape = image_out.shape
-        zoom_ratio = \
-            [float(p) / float(d) for p, d in zip(window_shape, image_shape)]
-        image_shape = list(image_shape[:3]) + [1, image_shape[-1]]
-        image_out = np.reshape(image_out, image_shape)
-        image_out = zoom_3d(image=image_out,
-                            ratio=zoom_ratio,
-                            interp_order=self.output_interp_order)
 
-        for layer in reversed(self.reader.preprocessors):
-            if isinstance(layer, PadLayer):
-                image_out, _ = layer.inverse_op(image_out)
-            if isinstance(layer, DiscreteLabelNormalisationLayer):
-                image_out, _ = layer.inverse_op(image_out)
-        subject_name = self.reader.get_subject_id(self.image_id)
-        filename = "{}{}.nii.gz".format(subject_name, self.postfix)
-        source_image_obj = self.input_image[self.name]
-        misc_io.save_data_array(self.output_path,
-                                filename,
-                                image_out,
-                                source_image_obj,
-                                self.output_interp_order)
-        self.log_inferred(subject_name, filename)
-        return
-
-
-    def _save_current_image(self, resize_to):
+    def _save_current_image(self):
         if self.input_image is None:
             return
         self.current_out = {}

@@ -14,6 +14,7 @@ import warnings
 import nibabel as nib
 import numpy as np
 import scipy.ndimage
+import pandas as pd
 import tensorflow as tf
 # pylint: disable=no-name-in-module
 from tensorflow.core.framework import summary_pb2
@@ -258,8 +259,10 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
 
 
 def save_csv_array(filefolder, filename, array_to_save):
-    np.savetxt(os.path.join(filefolder,filename), array_to_save,
-               delimiter=",", fmt='%.3e')
+    pd_array = pd.DataFrame(array_to_save)
+    pd_array.to_csv(os.path.join(filefolder,filename))
+    # np.savetxt(os.path.join(filefolder,filename), array_to_save,
+    #            delimiter=",",fmt='%s')
 
 def save_data_array(filefolder,
                     filename,
