@@ -20,7 +20,8 @@ from niftynet.layer.pad import PadLayer
 class ResizeSamplesAggregator(ImageWindowsAggregator):
     """
     This class decodes each item in a batch by resizing each image
-    window and save as a new image volume.
+    window and save as a new image volume. Multiple output image can be
+    proposed and csv output can be performed as well
     """
     def __init__(self,
                  image_reader,
@@ -43,7 +44,11 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         Resizing each output image window in the batch as an image volume
         location specifies the original input image (so that the
         interpolation order, original shape information retained in the
-        generated outputs).
+        generated outputs).For the fields that have the keyword 'window' in the
+        dictionary key, it will be saved as image. The rest will be saved as
+        csv. CSV files will contain at saving a first line of 0 (to be
+        changed into the header by the user), the first column being the
+        index of the window, followed by the list of output.
         """
         n_samples = location.shape[0]
         location_init = np.copy(location)
@@ -86,7 +91,7 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                         try:
                             assert window[w].ndim <= 2
                         except (TypeError, AssertionError):
-                            tf.logging.warning(
+                            tf.logging.error(
                                 "The output you are trying to "
                                 "save as csv is more than "
                                 "bidimensional. Did you want "
@@ -119,6 +124,13 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         return True
 
     def _initialise_image_shape(self, image_id, n_channels):
+        '''
+        Return the shape of the empty image to be saved
+        :param image_id: index to find the appropriate input image from the
+        reader
+        :param n_channels: number of channels of the image
+        :return:  shape of the empty image
+        '''
         self.image_id = image_id
         spatial_shape = self.input_image[self.name].shape[:3]
         output_image_shape = spatial_shape + (1, n_channels,)
@@ -130,6 +142,11 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
 
 
     def _save_current_image(self):
+        '''
+        Loop through the dictionary of images output and resize and reverse
+        the preprocessing prior to saving
+        :return:
+        '''
         if self.input_image is None:
             return
         self.current_out = {}
@@ -182,6 +199,10 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         return
 
     def _save_current_csv(self):
+        '''
+        Save all csv output present in the dictionary of csv_output.
+        :return:
+        '''
         if self.input_image is None:
             return
         subject_name = self.reader.get_subject_id(self.image_id)
@@ -194,4 +215,10 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         return
 
     def _initialise_empty_csv(self, n_channel):
+        '''
+        Initialise the array to be saved as csv as a line of zeros according
+        to the number of elements to be saved
+        :param n_channel:
+        :return:
+        '''
         return np.zeros([1, n_channel])

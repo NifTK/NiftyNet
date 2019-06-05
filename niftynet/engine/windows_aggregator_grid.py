@@ -41,6 +41,18 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         self.fill_constant = fill_constant
 
     def decode_batch(self, window, location):
+        '''
+        Function used to save multiple outputs listed in the window
+        dictionary. For the fields that have the keyword 'window' in the
+        dictionary key, it will be saved as image. The rest will be saved as
+        csv. CSV files will contain at saving a first line of 0 (to be
+        changed into the header by the user), the first column being the
+        index of the window, followed by the list of output and the location
+        array for each considered window
+        :param window: dictionary of output
+        :param location: location of the input
+        :return:
+        '''
         n_samples = location.shape[0]
         location_init = np.copy(location)
         init_ones = None
@@ -48,7 +60,8 @@ class GridSamplesAggregator(ImageWindowsAggregator):
             if 'window' in w: # all outputs to be created as images should
                 # contained the keyword "window"
                 init_ones = np.ones_like(window[w])
-                window[w], _ = self.crop_batch(window[w], location_init, self.window_border)
+                window[w], _ = self.crop_batch(window[w], location_init,
+                                               self.window_border)
                 location_init = np.copy(location)
                 print(w, np.sum(window[w]), np.max(window[w]))
         _, location = self.crop_batch(init_ones, location_init,
@@ -66,22 +79,24 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                 self.image_out = {}
                 self.csv_out = {}
                 for w in window:
-                    if 'window' in w:
+                    if 'window' in w: # check that we want to have an image
+                        # and initialise accordingly
                         self.image_out[w] = self._initialise_empty_image(
                             image_id=image_id,
                             n_channels=window[w].shape[-1],
                             dtype=window[w].dtype)
                         print("for output shape is ", self.image_out[w].shape)
                     else:
-                        if not isinstance(window[w],(list, tuple, np.ndarray)):
-                            self.csv_out[w] = self._initialise_empty_csv(1+ location_init[0,
+                        if not isinstance(window[w], (list, tuple, np.ndarray)):
+                            self.csv_out[w] = self._initialise_empty_csv(1 +
+                                                                         location_init[0,
                                                         :].shape[-1])
                         else:
                             window[w] = np.asarray(window[w])
                             try:
                                 assert window[w].ndim <= 2
                             except (TypeError, AssertionError):
-                                tf.logging.warning(
+                                tf.logging.error(
                                     "The output you are trying to "
                                     "save as csv is more than "
                                     "bidimensional. Did you want "
@@ -106,7 +121,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                         try:
                             assert window[w].ndim <= 2
                         except (TypeError, AssertionError):
-                            tf.logging.warning(
+                            tf.logging.error(
                                 "The output you are trying to "
                                 "save as csv is more than "
                                 "bidimensional. Did you want "
@@ -118,22 +133,27 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                             window[w] = np.expand_dims(window[w], 0)
                         window[w] = np.asarray(window[w])
 
-                        window_loc = np.concatenate([window[w],
-                                                np.tile(location_init[
-                                                            batch_id, ...],
-                                                        [window[w].shape[0],1])],1)
+                        window_loc = np.concatenate([
+                            window[w], np.tile(location_init[batch_id, ...],
+                                                        [window[w].shape[0],
+                                                         1])], 1)
                     else:
-                        window_loc = np.concatenate([np.reshape(window[w],[1,
-                                                                           1]),
-                                                     np.tile(location_init[
-                                                                 batch_id, ...],
-                                                             [1, 1])], 1)
+                        window_loc = np.concatenate([
+                            np.reshape(window[w], [1, 1]), np.tile(
+                                location_init[batch_id, ...], [1, 1])], 1)
                     self.csv_out[w] = np.concatenate([self.csv_out[w],
-                                                      window_loc],0)
+                                                      window_loc], 0)
         return True
 
-
     def _initialise_empty_image(self, image_id, n_channels, dtype=np.float):
+        '''
+        Initialise an empty image in which to populate the output
+        :param image_id: image_id to be used in the reader
+        :param n_channels: numbers of channels of the saved output (for
+        multimodal output)
+        :param dtype: datatype used for the saving
+        :return: the initialised empty image
+        '''
         self.image_id = image_id
         spatial_shape = self.input_image[self.name].shape[:3]
         output_image_shape = spatial_shape + (n_channels,)
@@ -149,9 +169,19 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         return empty_image
 
     def _initialise_empty_csv(self, n_channel):
+        '''
+        Initialise a csv output file with a first line of zeros
+        :param n_channel: number of saved fields
+        :return: empty first line of the array to be saved as csv
+        '''
         return np.zeros([1, n_channel])
 
     def _save_current_image(self):
+        '''
+        For all the outputs to be saved as images, go through the dictionary
+        and save the resulting output after reversing the initial preprocessing
+        :return:
+        '''
         if self.input_image is None:
             return
         for i in self.image_out:
@@ -180,8 +210,12 @@ class GridSamplesAggregator(ImageWindowsAggregator):
             self.log_inferred(subject_name, filename)
         return
 
-
     def _save_current_csv(self):
+        '''
+        For all output to be saved as csv, loop through the dictionary of
+        output and create the csv
+        :return:
+        '''
         if self.input_image is None:
             return
         subject_name = self.reader.get_subject_id(self.image_id)
