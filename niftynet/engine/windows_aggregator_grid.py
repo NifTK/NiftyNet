@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, division
 import os
 
 import numpy as np
+
 import tensorflow as tf
 # pylint: disable=too-many-nested-blocks
 import niftynet.io.misc_io as misc_io
@@ -157,7 +158,6 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         spatial_shape = self.input_image[self.name].shape[:3]
         output_image_shape = spatial_shape + (n_channels,)
         empty_image = np.zeros(output_image_shape, dtype=dtype)
-
         for layer in self.reader.preprocessors:
             if isinstance(layer, PadLayer):
                 empty_image, _ = layer(empty_image)
