@@ -752,6 +752,10 @@ def set_logger(file_name=None):
     :param file_name:
     :return:
     """
+    # This is done so if the user had TF 1.12.1 or a new version the code
+    # does not brake. First part of the try is renaming the TF 1.12.1 to
+    # fit the TF 1.13.1>= naming scheme, while the second is just a normal
+    # import for TF 1.13.1>=
     try:
         # pylint: disable=no-name-in-module
         from tensorflow.python.platform.tf_logging import \
@@ -783,6 +787,10 @@ def close_logger():
 
     :return:
     """
+    # This is done so if the user had TF 1.12.1 or a new version the code
+    # does not brake. First part of the try is renaming the TF 1.12.1 to
+    # fit the TF 1.13.1>= naming scheme, while the second is just a normal
+    # import for TF 1.13.1>=
     try:
         # pylint: disable=no-name-in-module
         from tensorflow.python.platform.tf_logging import \

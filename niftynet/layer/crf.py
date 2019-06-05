@@ -281,6 +281,10 @@ def permutohedral_prepare(position_vectors):
         hash_vector = tf.constant(hash_vector, dtype=tf.int64)
         return tf.reduce_sum(tf.to_int64(key) * hash_vector, 1)
 
+    # This is done so if the user had TF 1.12.1 or a new version the code
+    # does not brake. First part of the try is for TF 1.12.1 where the
+    # deleted_key keyword was missing, while the second is just a normal
+    # usage for TF 1.13.1>=
     try:
         hash_table = tf.contrib.lookup.MutableDenseHashTable(
             tf.int64, tf.int64,
@@ -299,6 +303,10 @@ def permutohedral_prepare(position_vectors):
             checkpoint=False
         )
 
+    # This is done so if the user had TF 1.12.1 or a new version the code
+    # does not brake. First part of the try is for TF 1.12.1 where the
+    # deleted_key keyword was missing, while the second is just a normal
+    # usage for TF 1.13.1>=
     try:
         index_table = tf.contrib.lookup.MutableDenseHashTable(
             tf.int64, tf.int64,
