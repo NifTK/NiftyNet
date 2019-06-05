@@ -64,64 +64,62 @@ class UniformSamplerCSV(ImageWindowDatasetCSV):
         :return: output data dictionary
             ``{image_modality: data_array, image_location: n_samples * 7}``
         """
-        while True:
-            image_id, data, _ = self.reader(idx=idx, shuffle=True)
-            image_shapes = dict(
-                (name, data[name].shape) for name in self.window.names)
-            static_window_shapes = self.window.match_image_shapes(image_shapes)
-            # find random coordinates based on window and image shapes
-            coordinates = self._spatial_coordinates_generator(
-                subject_id=image_id,
-                data=data,
-                img_sizes=image_shapes,
-                win_sizes=static_window_shapes,
-                n_samples=self.window.n_samples)
+        image_id, data, _ = self.reader(idx=idx, shuffle=True)
+        image_shapes = dict(
+            (name, data[name].shape) for name in self.window.names)
+        static_window_shapes = self.window.match_image_shapes(image_shapes)
+        # find random coordinates based on window and image shapes
+        coordinates = self._spatial_coordinates_generator(
+            subject_id=image_id,
+            data=data,
+            img_sizes=image_shapes,
+            win_sizes=static_window_shapes,
+            n_samples=self.window.n_samples)
 
-            # initialise output dict, placeholders as dictionary keys
-            # this dictionary will be used in
-            # enqueue operation in the form of: `feed_dict=output_dict`
-            output_dict = {}
-            # fill output dict with data
-            for name in list(data):
-                coordinates_key = LOCATION_FORMAT.format(name)
-                image_data_key = name
+        # initialise output dict, placeholders as dictionary keys
+        # this dictionary will be used in
+        # enqueue operation in the form of: `feed_dict=output_dict`
+        output_dict = {}
+        # fill output dict with data
+        for name in list(data):
+            coordinates_key = LOCATION_FORMAT.format(name)
+            image_data_key = name
 
-                # fill the coordinates
-                location_array = coordinates[name]
-                output_dict[coordinates_key] = location_array
+            # fill the coordinates
+            location_array = coordinates[name]
+            output_dict[coordinates_key] = location_array
 
-                # fill output window array
-                image_array = []
-                for window_id in range(self.window.n_samples):
-                    x_start, y_start, z_start, x_end, y_end, z_end = \
-                        location_array[window_id, 1:]
-                    try:
-                        image_window = data[name][
-                            x_start:x_end, y_start:y_end, z_start:z_end, ...]
-                        image_array.append(image_window[np.newaxis, ...])
-                    except ValueError:
-                        tf.logging.fatal(
-                            "dimensionality miss match in input volumes, "
-                            "please specify spatial_window_size with a "
-                            "3D tuple and make sure each element is "
-                            "smaller than the image length in each dim. "
-                            "Current coords %s", location_array[window_id])
-                        raise
-                if len(image_array) > 1:
-                    output_dict[image_data_key] = \
-                        np.concatenate(image_array, axis=0)
-                else:
-                    output_dict[image_data_key] = image_array[0]
-            # the output image shape should be
-            # [enqueue_batch_size, x, y, z, time, modality]
-            # where enqueue_batch_size = windows_per_image
-            if self.csv_reader is not None:
-                _, label_dict, _ = self.csv_reader(idx=image_id)
-                print(idx, image_id, label_dict)
-                output_dict.update(label_dict)
-                for name in self.csv_reader.task_param.keys():
-                    output_dict[name + '_location'] = output_dict['image_location']
-            yield output_dict
+            # fill output window array
+            image_array = []
+            for window_id in range(self.window.n_samples):
+                x_start, y_start, z_start, x_end, y_end, z_end = \
+                    location_array[window_id, 1:]
+                try:
+                    image_window = data[name][
+                        x_start:x_end, y_start:y_end, z_start:z_end, ...]
+                    image_array.append(image_window[np.newaxis, ...])
+                except ValueError:
+                    tf.logging.fatal(
+                        "dimensionality miss match in input volumes, "
+                        "please specify spatial_window_size with a "
+                        "3D tuple and make sure each element is "
+                        "smaller than the image length in each dim. "
+                        "Current coords %s", location_array[window_id])
+                    raise
+            if len(image_array) > 1:
+                output_dict[image_data_key] = \
+                    np.concatenate(image_array, axis=0)
+            else:
+                output_dict[image_data_key] = image_array[0]
+        # the output image shape should be
+        # [enqueue_batch_size, x, y, z, time, modality]
+        # where enqueue_batch_size = windows_per_image
+        if self.csv_reader is not None:
+            _, label_dict, _ = self.csv_reader(idx=image_id)
+            output_dict.update(label_dict)
+            for name in self.csv_reader.task_param.keys():
+                output_dict[name + '_location'] = output_dict['image_location']
+        return output_dict
 
     def _spatial_coordinates_generator(self,
                                        subject_id,
@@ -167,7 +165,6 @@ class UniformSamplerCSV(ImageWindowDatasetCSV):
         # adjust spatial coordinates based on each mod spatial window size
         all_coordinates = {}
         for mod in list(win_sizes):
-            print(mod, win_sizes[mod][:N_SPATIAL], "checking coord per mod")
             win_size = np.asarray(win_sizes[mod][:N_SPATIAL])
             half_win = np.floor(win_size / 2.0).astype(int)
 
