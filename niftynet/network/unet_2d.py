@@ -35,7 +35,8 @@ class UNet2D(BaseNet):
 
         net_params = {'padding': 'VALID',
                       'with_bias': True,
-                      'feature_normalization': None,
+                      'feature_normalization': 'batch',
+                      'group_size': -1,
                       'acti_func': acti_func,
                       'w_initializer': w_initializer,
                       'b_initializer': b_initializer,
@@ -51,36 +52,36 @@ class UNet2D(BaseNet):
 
     def layer_op(self, images, is_training=True, **unused_kwargs):
         # contracting path
-        output_1 = TwoLayerConv(self.n_fea[0], self.conv_params)(images)
+        output_1 = TwoLayerConv(self.n_fea[0], self.conv_params)(images, is_training=is_training)
         down_1 = Pooling(func='MAX', **self.pooling_params)(output_1)
 
-        output_2 = TwoLayerConv(self.n_fea[1], self.conv_params)(down_1)
+        output_2 = TwoLayerConv(self.n_fea[1], self.conv_params)(down_1, is_training=is_training)
         down_2 = Pooling(func='MAX', **self.pooling_params)(output_2)
 
-        output_3 = TwoLayerConv(self.n_fea[2], self.conv_params)(down_2)
+        output_3 = TwoLayerConv(self.n_fea[2], self.conv_params)(down_2, is_training=is_training)
         down_3 = Pooling(func='MAX', **self.pooling_params)(output_3)
 
-        output_4 = TwoLayerConv(self.n_fea[3], self.conv_params)(down_3)
+        output_4 = TwoLayerConv(self.n_fea[3], self.conv_params)(down_3, is_training=is_training)
         down_4 = Pooling(func='MAX', **self.pooling_params)(output_4)
 
-        output_5 = TwoLayerConv(self.n_fea[4], self.conv_params)(down_4)
+        output_5 = TwoLayerConv(self.n_fea[4], self.conv_params)(down_4, is_training=is_training)
 
         # expansive path
-        up_4 = DeConv(self.n_fea[3], **self.deconv_params)(output_5)
+        up_4 = DeConv(self.n_fea[3], **self.deconv_params)(output_5, is_training=is_training)
         output_4 = CropConcat()(output_4, up_4)
-        output_4 = TwoLayerConv(self.n_fea[3], self.conv_params)(output_4)
+        output_4 = TwoLayerConv(self.n_fea[3], self.conv_params)(output_4, is_training=is_training)
 
-        up_3 = DeConv(self.n_fea[2], **self.deconv_params)(output_4)
+        up_3 = DeConv(self.n_fea[2], **self.deconv_params)(output_4, is_training=is_training)
         output_3 = CropConcat()(output_3, up_3)
-        output_3 = TwoLayerConv(self.n_fea[2], self.conv_params)(output_3)
+        output_3 = TwoLayerConv(self.n_fea[2], self.conv_params)(output_3, is_training=is_training)
 
-        up_2 = DeConv(self.n_fea[1], **self.deconv_params)(output_3)
+        up_2 = DeConv(self.n_fea[1], **self.deconv_params)(output_3, is_training=is_training)
         output_2 = CropConcat()(output_2, up_2)
-        output_2 = TwoLayerConv(self.n_fea[1], self.conv_params)(output_2)
+        output_2 = TwoLayerConv(self.n_fea[1], self.conv_params)(output_2, is_training=is_training)
 
-        up_1 = DeConv(self.n_fea[0], **self.deconv_params)(output_2)
+        up_1 = DeConv(self.n_fea[0], **self.deconv_params)(output_2, is_training=is_training)
         output_1 = CropConcat()(output_1, up_1)
-        output_1 = TwoLayerConv(self.n_fea[0], self.conv_params)(output_1)
+        output_1 = TwoLayerConv(self.n_fea[0], self.conv_params)(output_1, is_training=is_training)
 
         # classification layer
         classifier = Conv(n_output_chns=self.num_classes,
@@ -105,9 +106,9 @@ class TwoLayerConv(TrainableLayer):
         self.n_chns = n_chns
         self.conv_params = conv_params
 
-    def layer_op(self, input_tensor):
-        output_tensor = Conv(self.n_chns, **self.conv_params)(input_tensor)
-        output_tensor = Conv(self.n_chns, **self.conv_params)(output_tensor)
+    def layer_op(self, input_tensor, is_training=None):
+        output_tensor = Conv(self.n_chns, **self.conv_params)(input_tensor, is_training=is_training)
+        output_tensor = Conv(self.n_chns, **self.conv_params)(output_tensor, is_training=is_training)
         return output_tensor
 
 

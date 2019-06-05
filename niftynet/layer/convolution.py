@@ -124,11 +124,11 @@ class ConvolutionalLayer(TrainableLayer):
     """
     This class defines a composite layer with optional components::
 
-        convolution -> batch_norm -> activation -> dropout
+        convolution -> feature_normalization (default batch norm) -> activation -> dropout
 
     The b_initializer and b_regularizer are applied to the ConvLayer
     The w_initializer and w_regularizer are applied to the ConvLayer,
-    the batch normalisation layer, and the activation layer (for 'prelu')
+    the feature normalization layer, and the activation layer (for 'prelu')
     """
 
     def __init__(self,
