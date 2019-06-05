@@ -38,6 +38,7 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         self.window_border = window_border
         self.output_interp_order = interp_order
         self.postfix = postfix
+        self.current_out = {}
 
     def decode_batch(self, window, location):
         """

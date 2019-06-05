@@ -9,6 +9,7 @@ import os
 
 import numpy as np
 import tensorflow as tf
+# pylint: disable=too-many-nested-blocks
 import niftynet.io.misc_io as misc_io
 from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
 from niftynet.layer.discrete_label_normalisation import \
