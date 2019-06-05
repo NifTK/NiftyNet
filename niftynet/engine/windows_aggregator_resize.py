@@ -63,6 +63,30 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
             self._save_current_image(window[batch_id, ...], resize_to_shape)
         return True
 
+    def decode_dict_batch(self, window, location):
+        """
+        Resizing each output image window element of the window dictionary in
+        the batch as an image volume
+        location specifies the original input image (so that the
+        interpolation order, original shape information retained in the
+        generated outputs). The key in the dictionary will be added to the
+        postfix to differentiate between dictionary output elements
+        :param window:
+        :param location:
+        :return:
+        """
+        n_samples = location.shape[0]
+        for batch_id in range(n_samples):
+            if self._is_stopping_signal(location[batch_id]):
+                return False
+            for w in window:
+                self.image_id = location[batch_id, 0]
+                resize_to_shape = self._initialise_image_shape(
+                    image_id=self.image_id,
+                    n_channels=window[w].shape[-1])
+                self._save_current_image(window[w][batch_id, ...],
+                                         resize_to_shape, name=w)
+
     def _initialise_image_shape(self, image_id, n_channels):
         self.image_id = image_id
         spatial_shape = self.input_image[self.name].shape[:3]
@@ -73,7 +97,7 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                 empty_image, _ = layer(empty_image)
         return empty_image.shape
 
-    def _save_current_image(self, image_out, resize_to):
+    def _save_current_image(self, image_out, resize_to, name=''):
         if self.input_image is None:
             return
         window_shape = resize_to
@@ -100,7 +124,7 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
             if isinstance(layer, DiscreteLabelNormalisationLayer):
                 image_out, _ = layer.inverse_op(image_out)
         subject_name = self.reader.get_subject_id(self.image_id)
-        filename = "{}{}.nii.gz".format(subject_name, self.postfix)
+        filename = "{}{}.nii.gz".format(subject_name, self.postfix+name)
         source_image_obj = self.input_image[self.name]
         misc_io.save_data_array(self.output_path,
                                 filename,
