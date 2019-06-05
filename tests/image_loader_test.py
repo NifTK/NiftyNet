@@ -2,6 +2,7 @@
 from __future__ import absolute_import, print_function
 
 import os
+import numpy as np
 import tensorflow as tf
 import niftynet.io.image_loader as image_loader
 
@@ -16,6 +17,10 @@ class ImageLoaderTest(tf.test.TestCase):
     def load_2d_image(self, loader=None):
         data = image_loader.load_image_obj(CASE_LOGO_2D, loader=loader).get_data()
         self.assertAllClose(data.shape, (400, 677, 1, 1, 4))
+
+    def test_convert_bool(self):
+        boolarr=np.ones((256,256,256),np.bool)
+        img=image_loader.image2nibabel(boolarr)
 
     def test_2d_loaders(self):
         with self.assertRaisesRegexp(ValueError, ''):
