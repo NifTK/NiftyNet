@@ -124,6 +124,7 @@ class RegApp(BaseApplication):
                 return sampler()  # returns image only
 
         if self.is_training:
+            self.patience = self.action_param.patience
             if self.action_param.validation_every_n > 0:
                 sampler_window = \
                     tf.cond(tf.logical_not(self.is_validation),
@@ -168,6 +169,8 @@ class RegApp(BaseApplication):
                 total_loss = total_loss + \
                     self.net_param.decay * tf.reduce_mean(reg_loss)
 
+            self.total_loss = total_loss
+
             # compute training gradients
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
@@ -204,7 +207,7 @@ class RegApp(BaseApplication):
                 collection=TF_SUMMARIES)
             outputs_collector.add_to_collection(
                 var=total_loss,
-                name='averaged_total_loss',
+                name='total_loss',
                 average_over_devices=True,
                 summary_type='scalar',
                 collection=TF_SUMMARIES)

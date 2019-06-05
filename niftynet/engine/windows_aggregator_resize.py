@@ -45,11 +45,13 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         Resizing each output image window in the batch as an image volume
         location specifies the original input image (so that the
         interpolation order, original shape information retained in the
+
         generated outputs).For the fields that have the keyword 'window' in the
         dictionary key, it will be saved as image. The rest will be saved as
         csv. CSV files will contain at saving a first line of 0 (to be
         changed into the header by the user), the first column being the
         index of the window, followed by the list of output.
+
         """
         n_samples = location.shape[0]
         location_init = np.copy(location)
@@ -136,6 +138,7 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
         '''
         if self.input_image is None:
             return
+
         self.current_out = {}
         for i in self.image_out:
             resize_to_shape = self._initialise_image_shape(
@@ -162,6 +165,7 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                                   ratio=zoom_ratio,
                                   interp_order=self.output_interp_order)
             self.current_out[i] = current_out
+
         for layer in reversed(self.reader.preprocessors):
             if isinstance(layer, PadLayer):
                 for i in self.image_out:
