@@ -1,7 +1,12 @@
-from niftynet.engine.application_variables import CONSOLE
-from niftynet.engine.signal import ITER_FINISHED
+# -*- coding: utf-8 -*-
+"""
+This module implements a performance logger.
+"""
 
 import tensorflow as tf
+
+from niftynet.engine.application_variables import CONSOLE
+from niftynet.engine.signal import ITER_FINISHED
 
 
 class PerformanceLogger(object):
