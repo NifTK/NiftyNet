@@ -752,8 +752,12 @@ def set_logger(file_name=None):
     :param file_name:
     :return:
     """
-    # pylint: disable=no-name-in-module
-    from tensorflow.python.platform.tf_logging import get_logger
+    try:
+        # pylint: disable=no-name-in-module
+        from tensorflow.python.platform.tf_logging import \
+            _get_logger as get_logger
+    except ImportError:
+        from tensorflow.python.platform.tf_logging import get_logger
 
     logger = get_logger()
     tf.logging.set_verbosity(tf.logging.INFO)
@@ -779,8 +783,12 @@ def close_logger():
 
     :return:
     """
-    # pylint: disable=no-name-in-module
-    from tensorflow.python.platform.tf_logging import get_logger
+    try:
+        # pylint: disable=no-name-in-module
+        from tensorflow.python.platform.tf_logging import \
+            _get_logger as get_logger
+    except ImportError:
+        from tensorflow.python.platform.tf_logging import get_logger
 
     logger = get_logger()
     for handler in reversed(logger.handlers):

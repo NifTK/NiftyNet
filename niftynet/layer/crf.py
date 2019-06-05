@@ -298,7 +298,7 @@ def permutohedral_prepare(position_vectors):
             initial_num_buckets=8,
             checkpoint=False
         )
-    
+
     try:
         index_table = tf.contrib.lookup.MutableDenseHashTable(
             tf.int64, tf.int64,
