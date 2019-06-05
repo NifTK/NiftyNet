@@ -259,10 +259,16 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
 
 
 def save_csv_array(filefolder, filename, array_to_save):
+    '''
+    Save a np array as a csv
+    :param filefolder: Path to the folder where to save
+    :param filename: Name of the file to save
+    :param array_to_save: Array to save
+    :return:
+    '''
     pd_array = pd.DataFrame(array_to_save)
-    pd_array.to_csv(os.path.join(filefolder,filename))
-    # np.savetxt(os.path.join(filefolder,filename), array_to_save,
-    #            delimiter=",",fmt='%s')
+    pd_array.to_csv(os.path.join(filefolder, filename))
+
 
 def save_data_array(filefolder,
                     filename,
