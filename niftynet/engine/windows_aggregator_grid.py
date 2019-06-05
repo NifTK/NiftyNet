@@ -87,8 +87,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                             dtype=window[i].dtype)
                         print("for output shape is ", self.image_out[i].shape)
                     else:
-                        if not isinstance(window[i], (list, tuple, 
-                                                       np.ndarray)):
+                        if not isinstance(window[i], (list, tuple, np.ndarray)):
                             self.csv_out[i] = self._initialise_empty_csv(
                                 1 + location_init[0, :].shape[-1])
                         else:
@@ -107,8 +106,8 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                             if window[i].ndim < 2:
                                 window[i] = np.expand_dims(window[i], 0)
                             self.csv_out[i] = self._initialise_empty_csv(
-                                n_channel=window[i][0].shape[-1] + 
-                                          location_init[0, :].shape[-1])
+                                n_channel=window[i][0].shape[-1] + location_init
+                                [0, :].shape[-1])
             for i in window:
                 if 'window' in i:
                     self.image_out[i][
@@ -134,7 +133,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
 
                         window_loc = np.concatenate([
                             window[i], np.tile(
-                                location_init[batch_id, ...], 
+                                location_init[batch_id, ...],
                                 [window[i].shape[0], 1])], 1)
                     else:
                         window_loc = np.concatenate([

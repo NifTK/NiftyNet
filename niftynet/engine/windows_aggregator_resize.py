@@ -72,8 +72,8 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
             self.image_out = {}
             self.csv_out = {}
 
-            for wi in window:
-                if 'window' in wi:
+            for i in window:
+                if 'window' in i:
 
                     while window[i].ndim < 5:
                         window[i] = window[i][..., np.newaxis, :]
