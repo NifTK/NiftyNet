@@ -352,6 +352,9 @@ Number of image windows to be processed at each iteration.
 When `num_gpus` is greater than 1, `batch_size` is used for each GPU.
 That is, the effective inputs at each iteration become `batch_size` x `num_gpus`.
 
+See the [interactive buffer animation][buffer-sketch] to simulate the effect
+of modifying this parameter.
+
 ###### `smaller_final_batch_mode`
 When the total number of window samples is not divisible by `batch_size`
 the class supports different modes for the final batch:
@@ -441,6 +444,11 @@ queue_length = max(queue_length, batch_size * 5)
 A longer queue increases the probability of windows in a batch coming from
 different input volumes, but it will take longer to fill and consume more
 memory.
+
+See the [interactive buffer animation][buffer-sketch] to simulate the effect
+of modifying this parameter.
+
+[buffer-sketch]: https://editor.p5js.org/fepegar/present/DZwjZzkkV
 
 
 ###### `keep_prob`
@@ -551,86 +559,95 @@ Strategies applied to combine foreground masks of multiple modalities, can take 
 
 ###### `optimiser`
 Type of optimiser for computing graph gradients. Current available options are
-defined here:
-[`SUPPORTED_OPTIMIZERS`](./niftynet.engine.application_factory.html#niftynet.engine.application_factory.OptimiserFactory).
+defined here in [`SUPPORTED_OPTIMIZERS`][optimizers].
+
+[optimizers]: ./niftynet.engine.application_factory.html#niftynet.engine.application_factory.OptimiserFactory
 
 ###### `sample_per_volume`
-Set number of samples to take from each image volume.
+Number of samples to take from each image volume when filling the queue.
+
+See the [interactive buffer animation][buffer-sketch] to simulate the effect
+of modifying this parameter.
 
 ###### `lr`
 The learning rate for the optimiser.
 
 ###### `loss_type`
 Type of loss function.
-Please see the relevant loss function layer for choices available:
+Please see the relevant loss function layer for available choices:
 - [Segmentation](./niftynet.layer.loss_segmentation.html),
 - [Regression](./niftynet.layer.loss_regression.html),
 - [Autoencoder](./niftynet.layer.loss_autoencoder.html),
 - [GAN](./niftynet.layer.loss_gan.html).
 
 The corresponding loss function type names are defined in the
-[`ApplicationFactory`](https://github.com/NifTK/NiftyNet/blob/dev/niftynet/engine/application_factory.py)
+[`ApplicationFactory`][app-factory].
+
+[app-factory]: https://github.com/NifTK/NiftyNet/blob/dev/niftynet/engine/application_factory.py
 
 
 ###### `starting_iter`
-The iteration to resume training model.
+The iteration from which to resume training the model.
 Setting `starting_iter=0` starts the network from random initialisations.
 Setting `starting_iter=-1` starts the network from the latest checkpoint if it exists.
 
 ###### `save_every_n`
 Frequency of saving the current training model saving.
-Setting to a `0` to disable the saving schedule.
-(A final model will always be saved when quitting the training loop.)
+Setting it to `0` disables the saving schedule (the last model will always be saved when quitting the training loop).
 
 ###### `tensorboard_every_n`
-Frequency of evaluating graph elements and write to tensorboard.
-Setting to `0` to disable the tensorboard writing schedule.
+Frequency of evaluating graph elements and writing to tensorboard.
+Setting it to `0` disables the tensorboard writing schedule.
 
 ###### `max_iter`
 Maximum number of training iterations.
-The value is total number of iterations.
-Setting both `starting_iter` and `max_iter` to `0` to
-save the random model initialisation.
+Setting both `starting_iter` and `max_iter` to `0` can be used to save the
+random model initialisation.
 
 ###### `max_checkpoints`
-Maximum number of recent checkpoints to keep.
+Maximum number of checkpoints to save.
 
 ###### `vars_to_restore`
-Regular expression string to match variable names,
-values of the matched variables will be initialised for a checkpoint file.
+Regular expression string to match variable names that will be initialised from a checkpoint file.
 
 See also: [guide for finetuning pre-trained networks](./transfer_learning.html)
 
 ###### `vars_to_freeze`
-Regular expression string to match variable names,
-values of the matched variables will be updated during training.
-Defaulting to the value of `vars_to_restore`.
+Regular expression string to match variable names that will be updated during
+training.
+Defaults to the value of `vars_to_restore`.
 
 See also: [guide for finetuning pre-trained networks](./transfer_learning.html)
 
 ##### Validation during training
 Setting [`validation_every_n`](#validation-every-n) to a positive integer
 enables validation loops during training.
-When validation is enabled, images list (defined by [input specifications](#input-data-source-section))
-will be treated as the whole dataset, and partitioned into subsets of training, validation, and inference
-according to [`exclude_fraction_for_validation`](#exclude-fraction-for-validation) and
+When validation is enabled, images list
+(defined by [input specifications](#input-data-source-section))
+will be treated as the whole dataset,
+and partitioned into subsets of training, validation, and inference according
+to [`exclude_fraction_for_validation`](#exclude-fraction-for-validation) and
 [`exclude_fraction_for_inference`](#exclude-fraction-for-inference).
 
 A CSV table randomly mapping each file name to one of the stages `{'Training',
 'Validation', 'Inference'}` will be generated and written to
 [dataset_split_file](#dataset-split-file). This file will be created at the
-beginning of training (`starting_iter=0`) and only if the file does not exist.
+beginning of training (`starting_iter=0`) only if the file does not exist.
 
 - If a new random partition is required, please remove the existing [dataset_split_file](#dataset-split-file).
 
-- If no partition is required, please remove any existing [dataset_split_file](#dataset-split-file),
-and make sure both [`exclude_fraction_for_validation`](#exclude-fraction-for-validation)
-and [`exclude_fraction_for_inference`](#exclude-fraction-for-inference) are `0`.
+- If no partition is required,
+please remove any existing [dataset_split_file](#dataset-split-file),
+and make sure
+both [`exclude_fraction_for_validation`](#exclude-fraction-for-validation)
+and [`exclude_fraction_for_inference`](#exclude-fraction-for-inference)
+are `0`.
 
-To exclude particular subjects or adjust the randomly generated partition, the
-[`dataset_split_file`](#dataset-split-file) can be edited manually. Please note
-duplicated rows are not removed. For example, if the content of
+To exclude specific subjects or adjust the randomly generated partition, the
+[`dataset_split_file`](#dataset-split-file) can be edited manually.
+Please note duplicated rows are not removed. For example, if the content of
 [`dataset_split_file`](#dataset-split-file) is as follows:
+
 ```text
 1040,Training
 1071,Inference
@@ -639,18 +656,25 @@ duplicated rows are not removed. For example, if the content of
 1065,Training
 1065,Validation
 ```
-Each row will be treated as an independent subject. This means:
->subject `1065` will be used in both `Training` and `Validation` stages, and it'll be sampled more frequently than subject `1040` during training;
->subject `1071` will be used in `Inference` twice, the output of the second inference will overwrite the first.
 
-Note that at each validation iteration, input will be sampled from the set of validation data,
-and the network parameters will remain unchanged. The `is_training` parameter of the network
-is set to `True` during validation, as a result layers with different behaviours in training and inference
-(such as dropout and batch normalisation) uses the training behaviour.
+Each row will be treated as an independent subject. This means that:
+
+> Subject `1065` will be used in both `Training` and `Validation` stages, and it will be sampled more frequently than subject `1040` during training.
+
+> Subject `1071` will be used twice in `Inference`, and the output of the second inference will overwrite the first.
+
+Note that at each validation iteration,
+input will be sampled from the set of validation data,
+and the network parameters will remain unchanged.
+
+The `is_training` parameter of the network is set to `True` during validation.
+As a result, layers with different behaviours in training and inference
+(such as dropout and batch normalisation) use the training behaviour.
 
 During inference, if a [dataset_split_file](#dataset-split-file) is available,
-only image files in the `Inference` phase will be used, otherwise inference
-will process all image files defined by [input specifications](#input-data-source-section).
+only image files in the `Inference` phase will be used,
+otherwise inference will process all image files
+defined by [input specifications](#input-data-source-section).
 
 
  Name | Type | Example | Default
@@ -662,7 +686,7 @@ will process all image files defined by [input specifications](#input-data-sourc
 
 ###### `validation_every_n`
 Run validation iterations after every N training iterations.
-Setting to `0` disables the validation.
+Setting it to `0` disables the validation.
 
 ###### `validation_max_iter`
 Number of validation iterations to run.
@@ -676,8 +700,8 @@ Value should be in `[0, 1]`.
 Fraction of dataset to use for inference.
 Value should be in `[0, 1]`.
 
-##### Data augmentation during training
 
+##### Data augmentation during training
 
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
@@ -695,40 +719,55 @@ Value should be in `[0, 1]`.
 
 
 ###### `rotation_angle`
-Float array, indicates a random rotation operation should be applied to the
-volumes (This can be slow depending on the input volume dimensionality).
+Interval of rotation degrees to apply a random rotation to the volumes.
+A different random value is compueted for each rotation axis.
+
+This processing can be slow
+depending on the input volume size and dimensionality.
 
 ###### `scaling_percentage`
-Float array indicates a random spatial scaling should be applied
-(This can be slow depending on the input volume dimensionality).
-The option accepts percentages relative to 100 (the original input size).
-E.g, `(-50, 50)` indicates transforming
-image (size `d`) to image with its size in between `0.5*d` and `1.5d`.
+Interval of percentages relative to 100 to apply a random spatial scaling
+to the volumes.
+For example, setting this parameter to `(-50, 50)` might transform a volume
+with size `100, 100, 100` to `140, 88, 109`.
 
 When random scaling is enabled, it is possible to further specify:
-- `antialiasing` indicating if Gaussian filtering should be performed
+
+- `antialiasing`: indicating if Gaussian filtering should be performed
 when randomly downsampling the input images.
-- `isotropic_scaling` indicating if the same amount of scaling should be applied
-in each dimension.
+- `isotropic_scaling`: indicating if the same amount of scaling
+should be applied in each dimension. If this option is set to `False`,
+a different random value will be computed for each volume axis.
+
+This processing can be slow
+depending on the input volume size and dimensionality.
 
 ###### `random_flipping_axes`
-The axes which can be flipped to augment the data.
-Supply as comma-separated values within single quotes, e.g. '0,1'.
-Note that these are 0-indexed, so choose some combination of 0, 1.
+Axes which can be flipped to augment the data.
+
+For example, to randomly flip the first and third axes, use
+`random_flipping_axes = 0, 2`
 
 ###### `do_elastic_deformation`
-Boolean value indicates data augmentation using elastic deformations
+Boolean value to indicate if data augmentation
+using elastic deformations should be performed.
 
 When `do_elastic_deformation=True`, it is possible to further specify:
-- `num_ctrl_points` -- number of control points for the elastic deformation,
-- `deformation_sigma` -- the standard deviation for the elastic deformation,
-- `proportion_to_deform` -- what fraction of samples to deform elastically.
+- `num_ctrl_points`: number of control points for the elastic deformation,
+- `deformation_sigma`: the standard deviation for the elastic deformation,
+- `proportion_to_deform`: what fraction of samples to deform elastically.
+
+See an example of elastic deformations for data augmentation
+on the [U-Net demo][unet-demo].
+
+[unet-demo]: https://github.com/NifTK/NiftyNet/blob/dev/demos/unet/U-Net_Demo.ipynb
 
 ###### `bias_field_range`
-Float array, indicates data augmentation with randomised bias field
+Float array indicating whether to perform
+data augmentation with randomised bias field.
 
-When `bias_field_range` is not None, it is possible to further specify:
-- `bf_order` -- maximal polynomial order to use for the bias field augmentation.
+When `bias_field_range` is not `None`, it is possible to further specify:
+- `bf_order`: maximal polynomial order to use for the bias field augmentation.
 
 
 ### INFERENCE
@@ -744,27 +783,30 @@ When `bias_field_range` is not None, it is possible to further specify:
 [`dataset_to_infer`](#dataset-to-infer) | `string` | `dataset_to_infer=training` | `''`
 [`fill_constant`](#fill-constant) | `float` | `fill_constant=1.0` | `0.0`
 
+
 ###### `spatial_window_size`
-Array of integers indicating the size of input window. By default, the window
-size at inference time is the same as the [input source specification](#input-data-source-section).
-If this parameter is specified, it
-overrides the `spatial_window_size` parameter in input source sections.
+Array of integers indicating the size of input window.
+By default, the window size at inference time is the same as
+the [input source specification](#input-data-source-section).
+If this parameter is specified, it overrides the `spatial_window_size` parameter in input source sections.
 
 See also: [Patch-based analysis guide](./window_sizes.html)
 
 ###### `border`
-Tuple of integers specifying a border size used to crop (along both sides of each
-dimension) the network output image window. E.g., `3, 3, 3` will crop a
-`64x64x64` window to size `58x58x58`.
+Tuple of integers specifying a border size used to crop
+(along both sides of each dimension) the network output image window.
+E.g., `3, 3, 3` will crop a `64x64x64` window to size `58x58x58`.
 
 See also: [Patch-based analysis guide](./window_sizes.html)
 
 ###### `inference_iter`
 Integer specifies the trained model to be used for inference.
-`-1` or unspecified indicating to use the latest available trained model in `model_dir`.
+If set to `-1` or unspecified,
+the latest available trained model in `model_dir` will be used.
 
 ###### `save_seg_dir`
-Prediction directory name. If it's a relative path, it is set to be relative to [`model_dir`](#model-dir).
+Prediction directory name.
+If it's a relative path, it is set to be relative to [`model_dir`](#model-dir).
 
 ###### `output_postfix`
 Postfix appended to every inference output filenames.
@@ -773,9 +815,11 @@ Postfix appended to every inference output filenames.
 Interpolation order of the network outputs.
 
 ###### `dataset_to_infer`
-String specifies which dataset ('all', 'training', 'validation', 'inference') to compute inference for.
-By default 'inference' dataset is used. If no `dataset_split_file` is specified, then all data specified
-in the csv or search path are used for inference.
+String to specify which dataset
+(`all`, `training`, `validation` or `inference`) to compute inference for.
+By default `inference` dataset is used.
+If no `dataset_split_file` is specified, then all data specified
+in the CSV or search path are used for inference.
 
 ##### `fill_constant`
 Value used to fill borders of output images.
