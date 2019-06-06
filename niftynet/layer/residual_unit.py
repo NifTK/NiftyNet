@@ -81,9 +81,9 @@ class ResidualUnit(TrainableLayer):
         acti_0 = Acti(func=self.acti_func)
         acti_1 = Acti(func=self.acti_func)
         # convolutions
-        conv_0 = Conv(acti_func=None, with_bias=False, with_bn=False,
+        conv_0 = Conv(acti_func=None, with_bias=False, feature_normalization=None,
                       **self.conv_param)
-        conv_1 = Conv(acti_func=None, with_bias=False, with_bn=False,
+        conv_1 = Conv(acti_func=None, with_bias=False, feature_normalization=None,
                       **self.conv_param)
 
         if self.type_string == 'original':

@@ -256,7 +256,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': 3,
                        'stride': 1,
                        'with_bias': True,
-                       'with_bn': False}
+                       'feature_normalization': None}
         self._test_conv_layer_output_shape(rank=3,
                                            param_dict=input_param,
                                            output_shape=(2, 16, 16, 16, 10))
@@ -266,7 +266,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': 3,
                        'stride': 1,
                        'with_bias': True,
-                       'with_bn': False,
+                       'feature_normalization': None,
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_conv_layer_output_shape(rank=3,
@@ -278,7 +278,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [5, 1, 2],
                        'stride': 1,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_conv_layer_output_shape(rank=3,
@@ -291,7 +291,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [5, 1, 2],
                        'stride': [1, 1, 2],
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
@@ -305,7 +305,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [5, 1, 2],
                        'stride': [1, 2, 2],
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'relu',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
@@ -319,7 +319,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [5, 1, 2],
                        'stride': [1, 2, 2],
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu'}
         self._test_conv_layer_output_shape(rank=3,
                                            param_dict=input_param,
@@ -332,7 +332,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [5, 3, 2],
                        'stride': [2, 2, 3],
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'acti_func': 'prelu',
                        'padding': 'VALID'}
@@ -347,7 +347,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [5, 3, 2],
                        'stride': [2, 2, 3],
                        'with_bias': False,
-                       'with_bn': False,
+                       'feature_normalization': 'group',
                        'group_size': 4,
                        'w_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_conv_layer_output_shape(rank=3,
@@ -409,7 +409,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': 2,
                        'stride': [2, 1],
                        'with_bias': True,
-                       'with_bn': False}
+                       'feature_normalization': None}
         self._test_conv_layer_output_shape(rank=2,
                                            param_dict=input_param,
                                            output_shape=(2, 8, 16, 10))
@@ -419,7 +419,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [3, 5],
                        'stride': [2, 1],
                        'with_bias': True,
-                       'with_bn': False,
+                       'feature_normalization': None,
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_conv_layer_output_shape(rank=2,
@@ -431,7 +431,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [3, 5],
                        'stride': [2, 1],
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_conv_layer_output_shape(rank=2,
@@ -444,7 +444,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': 3,
                        'stride': [2, 1],
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu'}
         self._test_conv_layer_output_shape(rank=2,
                                            param_dict=input_param,
@@ -456,7 +456,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': 3,
                        'stride': [3, 1],
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'relu'}
         self._test_conv_layer_output_shape(rank=2,
                                            param_dict=input_param,
@@ -468,7 +468,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': 3,
                        'stride': 1,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu',
                        'w_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_conv_layer_output_shape(rank=2,
@@ -481,7 +481,7 @@ class ConvTest(tf.test.TestCase):
                        'kernel_size': [3, 2],
                        'stride': [2, 3],
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu',
                        'padding': 'VALID',
                        'w_regularizer': regularizers.l2_regularizer(0.5)}

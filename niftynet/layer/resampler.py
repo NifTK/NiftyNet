@@ -41,12 +41,11 @@ class ResamplerLayer(Layer):
             # raise NotImplementedError
 
         self.FastResamplerLayer = None  #
-        if implementation in ['NiftyReg', 'niftyreg', 'Fast', 'fast']:
+        if implementation.lower() in ['niftyreg', 'fast']:
             # check if niftyreg_resampling_layer is installed
             try:
                 from niftyreg_image_resampling import NiftyregImageResamplingLayer
                 import niftyreg_image_resampling as resampler_module
-
             except ImportError:
                 tf.logging.warning('''
                     niftyreg_image_resampling is not installed; falling back onto
@@ -54,6 +53,8 @@ class ResamplerLayer(Layer):
                     please see installation instructions in
                     niftynet/contrib/niftyreg_image_resampling/README.md
                     ''')
+                return
+
             # Passthrough of supported boundary types for  resampling
             SUPPORTED_BOUNDARY_FAST = resampler_module.SUPPORTED_BOUNDARY
 
@@ -498,7 +499,7 @@ def _binary_neighbour_ids(spatial_rank):
             for i in range(2 ** spatial_rank)]
 
 
-try: # Some tf versions have this defined already
+try:  # Some tf versions have this defined already
     @tf.RegisterGradient('FloorMod')
     def _floormod_grad(op, grad):
         return [None, None]
