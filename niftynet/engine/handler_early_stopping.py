@@ -1,4 +1,8 @@
-import tensorflow as tf
+# -*- coding: utf-8 -*-
+"""
+This module implements an early stopping handler
+"""
+
 import numpy as np
 from scipy.ndimage import median_filter
 
@@ -29,8 +33,7 @@ class EarlyStopper(object):
             msg.should_stop = \
                 check_should_stop(
                     mode=_sender.mode,
-                    performance_history=_sender.performance_history,
-                    patience=_sender.patience)
+                    performance_history=_sender.performance_history)
 
 
 def compute_generalisation_loss(validation_his):
@@ -110,8 +113,8 @@ def check_should_stop(performance_history, mode='mean', min_delta=0.03,
         strips = np.split(np.array(performance_to_consider), k_splits)
         gl_increase = []
         for strip in strips:
-            gl = compute_generalisation_loss(strip)
-            gl_increase.append(gl >= min_delta)
+            generalisation_loss = compute_generalisation_loss(strip)
+            gl_increase.append(generalisation_loss >= min_delta)
         should_stop = False not in gl_increase
     else:
         raise Exception('Mode: {} provided is not supported'.format(mode))
