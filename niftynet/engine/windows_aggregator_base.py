@@ -25,6 +25,8 @@ class ImageWindowsAggregator(object):
         self._image_id = None
         self.postfix = ''
         self.output_path = os.path.abspath(output_path)
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
         self.inferred_cleared = False
 
     @property
