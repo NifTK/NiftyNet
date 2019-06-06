@@ -158,7 +158,7 @@ class GANApplication(BaseApplication):
                                  gradients_collector=None):
         if self.is_training:
             self.patience = self.action_param.patience
-
+            self.mode = self.action_param.early_stopping_mode
             def switch_sampler(for_training):
                 with tf.name_scope('train' if for_training else 'validation'):
                     sampler = self.get_sampler()[0][0 if for_training else -1]

@@ -151,6 +151,7 @@ class SegmentationApplication(BaseApplication):
         if self.is_training:
             train_param = self.action_param
             self.patience = train_param.patience
+            self.mode = self.action_param.early_stopping_mode
             if train_param.random_flipping_axes != -1:
                 augmentation_layers.append(RandomFlipLayer(
                     flip_axes=train_param.random_flipping_axes))

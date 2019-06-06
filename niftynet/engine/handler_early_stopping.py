@@ -24,19 +24,15 @@ class EarlyStopper(object):
         """
         msg = msg['iter_msg']
         if len(_sender.performance_history) == _sender.patience:
-            tresh = None
-            should_stop = False
-
-            # Value / treshold based methods:
+            # Value / threshold based methods:
             # Check the latest value of the performance history against a
-            # treshold calculated based on the performance history
+            # threshold calculated based on the performance history
+            msg.should_stop = \
+                check_should_stop(
+                    mode=_sender.mode,
+                    performance_history=_sender.performance_history,
+                    patience=_sender.patience)
 
-            should_stop = check_should_stop(mode=_sender.mode,
-                                            performance_history=_sender.performance_history,
-                                            patience=_sender.patience)
-            #actual stop check
-            if should_stop:
-                msg['iter_msg'].should_stop = True
 
 def compute_generalisation_loss(validation_his):
     min_val_loss = np.min(np.array(validation_his))
