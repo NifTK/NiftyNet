@@ -3,7 +3,7 @@ from niftynet.engine.signal import ITER_FINISHED
 
 import tensorflow as tf
 import numpy as np
-from scipy import signal
+from scipy.ndimage import median_filter
 
 
 class EarlyStopper(object):
@@ -14,11 +14,6 @@ class EarlyStopper(object):
 
     def __init__(self, **_unused):
         ITER_FINISHED.connect(self.check_criteria)
-
-    def compute_generalisation_loss(self, validation_his):
-        min_val_loss = np.min(np.array(validation_his))
-        last = validation_his[-1]
-        return np.divide(np.abs(last-min_val_loss), min_val_loss)
 
     def check_criteria(self, _sender, **msg):
         """
@@ -43,8 +38,17 @@ class EarlyStopper(object):
             if should_stop:
                 msg['iter_msg'].should_stop = True
 
+def compute_generalisation_loss(validation_his):
+    min_val_loss = np.min(np.array(validation_his))
+    max_val_loss = np.max(np.array(validation_his))
+    last = validation_his[-1]
+    if min_val_loss == 0:
+        return last
+    return (last-min_val_loss)/(max_val_loss - min_val_loss)
 
-def check_should_stop(performance_history, patience, mode='mean', min_delta=0.03):
+
+def check_should_stop(performance_history, patience,
+                      mode='mean', min_delta=0.03, kernel_size=5):
     """
     This function takes in a mode, performance_history and patience and
     returns True if the application should stop early.
@@ -53,6 +57,7 @@ def check_should_stop(performance_history, patience, mode='mean', min_delta=0.03
     :param performance_history: a list of size patience with the performance history
     :param patience: see above
     :param min_delta: threshold for smoothness
+    :param kernel_size: hyperparameter for median smoothing
     :return:
     """
     if mode == 'mean':
@@ -73,16 +78,17 @@ def check_should_stop(performance_history, patience, mode='mean', min_delta=0.03
         perc = np.percentile(performance_to_consider, q=[5, 95])
         temp = []
         for perf_val in performance_to_consider:
-            if perf_val < perc[1] and perf_val > perc[0]:
+            if perc[0] < perf_val < perc[1]:
                 temp.append(perf_val)
-        should_stop = performance_history[-1] < np.mean(temp)
+        should_stop = performance_history[-1] > np.mean(temp)
 
     elif mode == 'median':
         """
         As in mode='mean' but using the median
         """
         performance_to_consider = performance_history[:-1]
-        should_stop = value < np.median(performance_to_consider)
+        should_stop = performance_history[-1] > np.median(
+            performance_to_consider)
 
     elif mode == 'generalisation_loss':
         """
@@ -90,21 +96,14 @@ def check_should_stop(performance_history, patience, mode='mean', min_delta=0.03
         and stops if it reaches an arbitrary threshold of 0.2.
         """
 
-        value = self.compute_generalisation_loss(
-            performance_history[:-1])
-        should_stop = value < 0.2
+        value = compute_generalisation_loss(performance_history)
+        should_stop = value > 0.2
 
     elif mode == 'median_smoothing':
-        if patience % 2 == 0:
-            # even patience
-            kernel_size = int(patience / 2) + 1
-        else:
-            # uneven
-            kernel_size = int(np.round(patience / 2))
-        smoothed = signal.medfilt(performance_history,
-                                  kernel_size=kernel_size)
+        smoothed = median_filter(performance_history[:-1],
+                                  size=kernel_size)
         gradient = np.gradient(smoothed)
-        tresholded = np.where(np.abs(gradient) < min_delta, 1, 0)
+        tresholded = np.where(gradient < min_delta, 1, 0)
         value = np.sum(tresholded) / len(gradient)
         should_stop = value < 0.5
     elif mode == 'validation_up':
@@ -114,25 +113,14 @@ def check_should_stop(performance_history, patience, mode='mean', min_delta=0.03
         # patience to be divisible by both k and s, we define that k is
         # either 4 or 5, depending on which has the smallest remainder when
         # dividing.
-        remainder_5 = patience % 5
-        remainder_4 = patience % 4
-
-        if remainder_4 < remainder_5:
-            k = 4
-            remainder = remainder_4
-        else:
-            k = 5
-            remainder = remainder_5
-        s = np.floor(patience / k)
+        remainder = len(performance_history) % kernel_size
         performance_to_consider = performance_history[remainder:]
 
-        strips = np.split(np.array(performance_to_consider), k)
-
+        strips = np.split(np.array(performance_to_consider), kernel_size)
         GL_increase = []
         for strip in strips:
-            GL = self.compute_generalisation_loss(
-                strip)
-            GL_increase.append(GL > (0 + min_delta))
+            GL = compute_generalisation_loss(strip)
+            GL_increase.append(GL >= min_delta)
         should_stop = False not in GL_increase
     else:
         raise Exception('Mode: {} provided is not supported'.format(mode))
