@@ -341,6 +341,13 @@ def add_network_args(parser):
         default='uniform')
 
     parser.add_argument(
+        "--force_output_identity_resizing",
+        metavar=str2boolean,
+        help="Forces the shape of the inferred output to match the "
+        "input label shape rather than be resized to input image shape.",
+        default=False)
+
+    parser.add_argument(
         "--queue_length",
         help="Set size of preprocessing buffer queue",
         metavar='',
