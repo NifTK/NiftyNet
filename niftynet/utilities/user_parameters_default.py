@@ -656,6 +656,14 @@ def add_training_args(parser):
         type=int,
         default=100)
 
+    parser.add_argument(
+        "--early_stopping_mode",
+        metavar='',
+        help="Choose between {'mean', 'robust_mean', 'median', "
+             "'generalisation_loss', 'median_smoothing', 'validation_up'}",
+        type=str,
+        default='mean')
+
     return parser
 
 
