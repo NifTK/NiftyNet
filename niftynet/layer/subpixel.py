@@ -103,8 +103,9 @@ class SubPixelLayer(TrainableLayer):
         # Setting the number of output features to the known value
         # obtained from the input shape results in a ValueError as
         # of TF 1.12
-        output_shape = [
-            batch_size, *[self.upsample_factor * i for i in input_shape[:-1]], None]
+        output_shape = ([batch_size] +
+                        [self.upsample_factor * i for i in input_shape[:-1]] + 
+                        [None])
 
         return tf.contrib.periodic_resample.periodic_resample(features,
                                                               output_shape,
