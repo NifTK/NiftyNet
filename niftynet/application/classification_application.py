@@ -16,8 +16,8 @@ from niftynet.engine.application_factory import \
 from niftynet.engine.application_variables import \
     CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
 from niftynet.engine.sampler_resize_v2 import ResizeSampler
-from niftynet.engine.windows_aggregator_classifier import \
-    ClassifierSamplesAggregator
+from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
+from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
@@ -160,6 +160,15 @@ class ClassificationApplication(BaseApplication):
         for reader in self.readers[1:]:
             reader.add_preprocessing_layers(normalisation_layers)
 
+        # Checking num_classes is set correctly
+        if self.classification_param.num_classes <= 1:
+            raise ValueError("Number of classes must be at least 2 for classification")
+        for preprocessor in self.readers[0].preprocessors:
+            if preprocessor.name == 'label_norm':
+                if len(preprocessor.label_map[preprocessor.key[0]]) != self.classification_param.num_classes:
+                    raise ValueError("Number of unique labels must be equal to "
+                                     "number of classes (check histogram_ref file)")
+
     def initialise_resize_sampler(self):
         self.sampler = [[ResizeSampler(
             reader=reader,
@@ -170,7 +179,7 @@ class ClassificationApplication(BaseApplication):
             self.readers]]
 
     def initialise_aggregator(self):
-        self.output_decoder = ClassifierSamplesAggregator(
+        self.output_decoder = ResizeSamplesAggregator(
             image_reader=self.readers[0],
             output_path=self.action_param.save_seg_dir,
             postfix=self.action_param.output_postfix)
@@ -349,7 +358,8 @@ class ClassificationApplication(BaseApplication):
     def interpret_output(self, batch_output):
         if not self.is_training:
             return self.output_decoder.decode_batch(
-                batch_output['window'], batch_output['location'])
+                {'csv': batch_output['window']},
+                batch_output['location'])
         return True
 
     def initialise_evaluator(self, eval_param):

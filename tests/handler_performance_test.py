@@ -2,6 +2,8 @@
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
+import numpy as np
+
 from tests.application_driver_test import get_initialised_driver
 from niftynet.engine.application_iteration import IterationMessage
 from niftynet.engine.signal import SESS_STARTED, ITER_FINISHED, VALID
@@ -29,10 +31,11 @@ class PerformanceLoggerTest(tf.test.TestCase):
 
     def iteration_listener(self, sender, **msg):
         msg = msg['iter_msg']
-        self.assertRegexpMatches(msg.to_console_string(), 'total_loss')
-        if msg.current_iter >= 1:
+        self.assertRegexpMatches(msg.to_console_string(), '.*total_loss.*')
+        if msg.current_iter > 1:
             self.assertTrue(isinstance(sender.performance_history, list))
             self.assertTrue(len(sender.performance_history) <= sender.patience)
+            self.assertTrue(all([isinstance(p, np.float32) for p in sender.performance_history]))
 
 
 if __name__ == "__main__":

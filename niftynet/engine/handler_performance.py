@@ -1,7 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+This module tracks model validation performance over training
+"""
+import tensorflow as tf
+
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.signal import ITER_FINISHED
-
-import tensorflow as tf
 
 
 class PerformanceLogger(object):
