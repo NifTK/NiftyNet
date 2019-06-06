@@ -19,9 +19,9 @@ def check_spatial_dims(input_tensor, criteria):
     all_dims_satisfied = np.all([criteria(x) for x in spatial_dims])
     if not all_dims_satisfied:
         import inspect
-        raise ValueError("input tensor's spatial dimensionality not"
+        raise ValueError("input tensor's spatial dimensionality"
                          " not compatible, please tune "
-                         "the input window sizes:\n{}".format(
+                         "the input window sizes (must be divisible by 8 and bigger than 88):\n{}".format(
             inspect.getsource(criteria)))
     return all_dims_satisfied
 
