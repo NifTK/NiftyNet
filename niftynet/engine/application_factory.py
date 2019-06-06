@@ -235,6 +235,8 @@ SUPPORTED_EVENT_HANDLERS = {
         'niftynet.engine.handler_tensorboard.TensorBoardLogger',
     'performance_logger':
         'niftynet.engine.handler_performance.PerformanceLogger',
+    'early_stopper':
+        'niftynet.engine.handler_early_stopping.EarlyStopper',
 }
 
 SUPPORTED_ITERATION_GENERATORS = {
