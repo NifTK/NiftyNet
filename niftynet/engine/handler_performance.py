@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-This module implements a performance logger.
+This module tracks model validation performance over training
 """
-
 import tensorflow as tf
 
 from niftynet.engine.application_variables import CONSOLE
