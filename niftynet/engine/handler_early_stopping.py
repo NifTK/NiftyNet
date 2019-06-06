@@ -6,7 +6,6 @@ import numpy as np
 from scipy import signal
 
 
-
 class EarlyStopper(object):
     """
     This class handles iteration events to store the current performance as
@@ -19,7 +18,7 @@ class EarlyStopper(object):
     def compute_generalisation_loss(self, validation_his):
         min_val_loss = np.min(np.array(validation_his))
         last = validation_his[-1]
-        return np.divide(last, min_val_loss) - 1.0
+        return np.divide(np.abs(last-min_val_loss), min_val_loss)
 
     def check_criteria(self, _sender, **msg):
         """
@@ -29,102 +28,112 @@ class EarlyStopper(object):
         :return:
         """
         msg = msg['iter_msg']
-        min_delta = -1
-        #Min delta is a amount of change we ignore.
-
         if len(_sender.performance_history) == _sender.patience:
             tresh = None
-            value = _sender.performance_history[-1]
+            should_stop = False
 
             # Value / treshold based methods:
             # Check the latest value of the performance history against a
             # treshold calculated based on the performance history
-            if _sender.mode == 'mean':
-                performance_to_consider = _sender.performance_history[:-1]
-                tresh = np.mean(performance_to_consider)
 
-            elif _sender.mode == 'robust_mean':
-                performance_to_consider = _sender.performance_history[:-1]
-                perc = np.percentile(performance_to_consider, q=[5, 95])
-                temp = []
-                for perf_val in performance_to_consider:
-                    if perf_val < perc[1] and perf_val > perc[0]:
-                        temp.append(perf_val)
-                tresh = np.mean(temp)
-
-            elif _sender.mode == 'median':
-                performance_to_consider = _sender.performance_history[:-1]
-                tresh = np.median(performance_to_consider)
-
-            elif _sender.mode == 'std':
-                value = np.std(_sender.performance_history)
-                tresh = 0.01
-
-            elif _sender.mode == 'robust_std':
-                tresh = 0.01
-                perc = np.percentile(_sender.performance_history, q=[5, 95])
-                temp = []
-                for perf_val in _sender.performance_history:
-                    if perf_val < perc[1] and perf_val > perc[0]:
-                        temp.append(perf_val)
-                value = np.std(temp)
-
-            elif _sender.mode == 'generalisation_loss':
-                value = self.compute_generalisation_loss(
-                    _sender.performance_history[:-1])
-                tresh = 0.2
-
-            elif _sender.mode == 'median_smoothing':
-                if _sender.patience%2 == 0:
-                    #even patience
-                    kernel_size = int(_sender.patience / 2) + 1
-                else:
-                    #uneven
-                    kernel_size = int(np.round(_sender.patience / 2))
-                smoothed = signal.medfilt(_sender.performance_history,
-                                          kernel_size=kernel_size)
-                gradient = np.gradient(smoothed)
-                tresholded = np.where(np.abs(gradient) < 0.03, 1, 0)
-                value = np.sum(tresholded) / len(gradient)
-
+            should_stop = check_should_stop(mode=_sender.mode,
+                                            performance_history=_sender.performance_history,
+                                            patience=_sender.patience)
             #actual stop check
-            if tresh is not None and value < tresh:
+            if should_stop:
                 msg['iter_msg'].should_stop = True
-                return
-
-            # Strip-based methods:
-            # These methods check for performance increases in k sub-arrays of
-            # length s, where k x s = patience. Because we cannot guarantee
-            # patience to be divisible by both k and s, we define that k is
-            # either 4 or 5, depending on which has the smallest remainder when
-            # dividing.
-            remainder_5 = _sender.patience % 5
-            remainder_4 = _sender.patience % 4
-
-            if remainder_4 < remainder_5:
-                k = 4
-                remainder = remainder_4
-            else:
-                k = 5
-                remainder = remainder_5
-            s = np.floor(_sender.patience / k)
-            performance_to_consider = _sender.performance_history[remainder:]
-
-            strips = np.split(np.array(performance_to_consider), k)
 
 
-            if _sender.mode == 'validation_up':
-                GL_increase = []
-                for strip in strips:
-                    GL = self.compute_generalisation_loss(
-                        strip)
-                    GL_increase.append(GL > (0 + min_delta))
-                if GL_increase.__contains__(False):
-                    return
-                else:
-                    msg['iter_msg'].should_stop = True
+def check_should_stop(performance_history, patience, mode='mean', min_delta=0.03):
+    """
+    This function takes in a mode, performance_history and patience and
+    returns True if the application should stop early.
+    :param mode: {'mean', 'robust_mean', 'median', 'generalisation_loss', 'median_smoothing', 'validation_up'}
+           the default mode is 'mean'
+    :param performance_history: a list of size patience with the performance history
+    :param patience: see above
+    :param min_delta: threshold for smoothness
+    :return:
+    """
+    if mode == 'mean':
+        """
+        If your last loss is less than the average across the entire 
+        performance history stop training
+        """
+        performance_to_consider = performance_history[:-1]
+        tresh = np.mean(performance_to_consider)
+        should_stop = performance_history[-1] > tresh
 
-        return
+    elif mode == 'robust_mean':
+        """
+        Same as 'mean' but only loss values within 5th and 95th percentile
+        are considered
+        """
+        performance_to_consider = performance_history[:-1]
+        perc = np.percentile(performance_to_consider, q=[5, 95])
+        temp = []
+        for perf_val in performance_to_consider:
+            if perf_val < perc[1] and perf_val > perc[0]:
+                temp.append(perf_val)
+        should_stop = performance_history[-1] < np.mean(temp)
 
+    elif mode == 'median':
+        """
+        As in mode='mean' but using the median
+        """
+        performance_to_consider = performance_history[:-1]
+        should_stop = value < np.median(performance_to_consider)
 
+    elif mode == 'generalisation_loss':
+        """
+        Computes generalisation loss over the performance history,
+        and stops if it reaches an arbitrary threshold of 0.2.
+        """
 
+        value = self.compute_generalisation_loss(
+            performance_history[:-1])
+        should_stop = value < 0.2
+
+    elif mode == 'median_smoothing':
+        if patience % 2 == 0:
+            # even patience
+            kernel_size = int(patience / 2) + 1
+        else:
+            # uneven
+            kernel_size = int(np.round(patience / 2))
+        smoothed = signal.medfilt(performance_history,
+                                  kernel_size=kernel_size)
+        gradient = np.gradient(smoothed)
+        tresholded = np.where(np.abs(gradient) < min_delta, 1, 0)
+        value = np.sum(tresholded) / len(gradient)
+        should_stop = value < 0.5
+    elif mode == 'validation_up':
+        # Strip-based methods:
+        # These methods check for performance increases in k sub-arrays of
+        # length s, where k x s = patience. Because we cannot guarantee
+        # patience to be divisible by both k and s, we define that k is
+        # either 4 or 5, depending on which has the smallest remainder when
+        # dividing.
+        remainder_5 = patience % 5
+        remainder_4 = patience % 4
+
+        if remainder_4 < remainder_5:
+            k = 4
+            remainder = remainder_4
+        else:
+            k = 5
+            remainder = remainder_5
+        s = np.floor(patience / k)
+        performance_to_consider = performance_history[remainder:]
+
+        strips = np.split(np.array(performance_to_consider), k)
+
+        GL_increase = []
+        for strip in strips:
+            GL = self.compute_generalisation_loss(
+                strip)
+            GL_increase.append(GL > (0 + min_delta))
+        should_stop = False not in GL_increase
+    else:
+        raise Exception('Mode: {} provided is not supported'.format(mode))
+    return should_stop

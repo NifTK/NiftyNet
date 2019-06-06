@@ -2,39 +2,75 @@
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
-from tests.application_driver_test import get_initialised_driver
-from niftynet.engine.application_iteration import IterationMessage
-from niftynet.engine.signal import SESS_STARTED, ITER_FINISHED, VALID
+
+from niftynet.engine.handler_early_stopping import check_should_stop
 
 
 class EarlyStopperTest(tf.test.TestCase):
-    def test_init(self):
-        ITER_FINISHED.connect(self.iteration_listener)
-        app_driver = get_initialised_driver()
-        app_driver.load_event_handlers(
-            ['niftynet.engine.handler_model.ModelRestorer',
-             'niftynet.engine.handler_console.ConsoleLogger',
-             'niftynet.engine.handler_sampler.SamplerThreading',
-             'niftynet.engine.handler_performance.PerformanceLogger',
-             'niftynet.engine.handler_early_stopping.EarlyStopper'])
-        graph = app_driver.create_graph(app_driver.app, 1, True)
-        with self.test_session(graph=graph) as sess:
-            for i in range(250):
-                SESS_STARTED.send(app_driver.app, iter_msg=None)
-                msg = IterationMessage()
-                msg._phase = VALID
-                msg.current_iter = i
-                app_driver.loop(app_driver.app, [msg])
-        app_driver.app.stop()
-        ITER_FINISHED.disconnect(self.iteration_listener)
 
-    def iteration_listener(self, sender, **msg):
-        msg = msg['iter_msg']
-        self.assertRegexpMatches(msg.to_console_string(), 'total_loss')
-        if len(sender.performance_history) >= sender.patience:
+    def test_mean(self):
+        should_stop = check_should_stop(mode='mean',
+                                        performance_history=[1, 2, 1, 2, 1, 2, 1, 2, 3],
+                                        patience=3)
+        self.assertTrue(should_stop)
+        should_stop = check_should_stop(mode='mean',
+                                        performance_history=[1, 2, 1, 2, 1, 2, 1, 2, 3, 0],
+                                        patience=3)
+        self.assertFalse(should_stop)
 
-            self.assertTrue()
+    def test_robust_mean(self):
+        should_stop = check_should_stop(mode='robust_mean',
+                                        performance_history=[1, 2, 1, 2, 1, 2, 1, 200, -100, 1.2],
+                                        patience=6)
+        self.assertFalse(should_stop)
+        should_stop = check_should_stop(mode='robust_mean',
+                                        performance_history=[1, 2, 1, 2, 1, 2, 1, 200, -100, 1.4],
+                                        patience=6)
+        self.assertTrue(should_stop)
 
+    def test_median(self):
+        should_stop = check_should_stop(mode='median',
+                                        performance_history=[1, 2, 1, 2, 1, 2, 1, 2, 3],
+                                        patience=3)
+        self.assertTrue(should_stop)
+        should_stop = check_should_stop(mode='median',
+                                        performance_history=[1, 2, 1, 2, 1, 2, 1, 2, 3, 0],
+                                        patience=3)
+        self.assertFalse(should_stop)
+
+    def test_generalisation_loss(self):
+        should_stop = check_should_stop(mode='generalisation_loss',
+                                        performance_history=[1, 2, 1, 2, 1, 2, 1, 2, 3],
+                                        patience=6)
+        self.assertTrue(should_stop)
+        should_stop = check_should_stop(mode='generalisation_loss',
+                                        performance_history=[1, 2, 1, 2, 3, 2, 1, 2, 1],
+                                        patience=6)
+        self.assertFalse(should_stop)
+
+    def test_robust_median(self):
+        should_stop = check_should_stop(mode='robust_median',
+                                        performance_history=[1, 2, 1, 2, 1, 2, 1, 200, -100, 0.9],
+                                        patience=6)
+        self.assertFalse(should_stop)
+        should_stop = check_should_stop(mode='robust_median',
+                                        performance_history=[1, 2, 1, 2, 1, 2, 1, 200, -100, 1.1],
+                                        patience=6)
+        self.assertTrue(should_stop)
+
+    def test_median_smoothing(self):
+        should_stop = check_should_stop(mode='median_smoothing',
+                                        performance_history=get_data(),
+                                        patience=8)
+        self.assertTrue(should_stop)
+
+    def test_weird_mode(self):
+        check_should_stop(mode='adslhfjdkas', performance_history=get_data(), patience=3)
+        self.assertRaises(Exception)
+
+    def test_no_hist(self):
+        should_stop = check_should_stop(mode='mean', performance_history=[], patience=3)
+        self.assertFalse(should_stop)
 
 
 if __name__ == "__main__":
