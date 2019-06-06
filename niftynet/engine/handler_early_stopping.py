@@ -37,6 +37,12 @@ class EarlyStopper(object):
 
 
 def compute_generalisation_loss(validation_his):
+    """
+    This function computes the generalisation loss as
+        l[-1]-min(l)/max(l)-min(l)
+    :param validation_his: performance history
+    :return: generalisation loss
+    """
     min_val_loss = np.min(np.array(validation_his))
     max_val_loss = np.max(np.array(validation_his))
     last = validation_his[-1]
