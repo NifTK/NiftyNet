@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
+from io import open
 
 import versioneer
 from niftynet.utilities.versioning import get_niftynet_version
@@ -12,7 +13,7 @@ description = 'An open-source convolutional neural networks platform' + \
               ' image-guided therapy'
 
 # Get the long description
-with open('pip/long_description.rst') as f:
+with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
@@ -23,6 +24,7 @@ setup(
 
     description=description,
     long_description=long_description,
+    long_description_content_type='text/markdown',
 
     url='http://niftynet.io/',
 
@@ -62,7 +64,7 @@ setup(
     install_requires=[
         'six>=1.10',
         'nibabel>=2.1.0',
-        'numpy>=1.12',
+        'numpy>=1.13.3, <= 1.14.5',
         'scipy>=0.18',
         'configparser',
         'pandas',

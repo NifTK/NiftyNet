@@ -25,8 +25,11 @@ from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
+from niftynet.layer.rgb_histogram_equilisation import \
+    RGBHistogramEquilisationLayer
 from niftynet.evaluation.regression_evaluator import RegressionEvaluator
 from niftynet.layer.rand_elastic_deform import RandomElasticDeformationLayer
+from niftynet.engine.windows_aggregator_identity import WindowAsImageAggregator
 
 SUPPORTED_INPUT = set(['image', 'output', 'weight', 'sampler', 'inferred'])
 
@@ -100,19 +103,24 @@ class RegressionApplication(BaseApplication):
             name='hist_norm_layer') \
             if (self.net_param.histogram_ref_file and
                 self.net_param.normalisation) else None
+        rgb_normaliser = RGBHistogramEquilisationLayer(
+            image_name='image',
+            name='rbg_norm_layer') if self.net_param.rgb_normalisation else None
 
         normalisation_layers = []
         if histogram_normaliser is not None:
             normalisation_layers.append(histogram_normaliser)
         if mean_var_normaliser is not None:
             normalisation_layers.append(mean_var_normaliser)
+        if rgb_normaliser is not None:
+            normalisation_layers.append(rgb_normaliser)
 
-        volume_padding_layer = []
-        if self.net_param.volume_padding_size:
-            volume_padding_layer.append(PadLayer(
-                image_name=SUPPORTED_INPUT,
-                border=self.net_param.volume_padding_size,
-                mode=self.net_param.volume_padding_mode))
+        volume_padding_layer = [PadLayer(
+            image_name=SUPPORTED_INPUT,
+            border=self.net_param.volume_padding_size,
+            mode=self.net_param.volume_padding_mode,
+            pad_to=self.net_param.volume_padding_to_size)
+        ]
 
         # initialise training data augmentation layers
         augmentation_layers = []
@@ -125,7 +133,8 @@ class RegressionApplication(BaseApplication):
                 augmentation_layers.append(RandomSpatialScalingLayer(
                     min_percentage=train_param.scaling_percentage[0],
                     max_percentage=train_param.scaling_percentage[1],
-                    antialiasing=train_param.antialiasing))
+                    antialiasing=train_param.antialiasing,
+                    isotropic=train_param.isotropic_scaling))
             if train_param.rotation_angle:
                 rotation_layer = RandomRotationLayer()
                 if train_param.rotation_angle:
@@ -202,7 +211,8 @@ class RegressionApplication(BaseApplication):
             output_path=self.action_param.save_seg_dir,
             window_border=self.action_param.border,
             interp_order=self.action_param.output_interp_order,
-            postfix=self.action_param.output_postfix)
+            postfix=self.action_param.output_postfix,
+            fill_constant=self.action_param.fill_constant)
 
     def initialise_resize_aggregator(self):
         self.output_decoder = ResizeSamplesAggregator(
@@ -211,6 +221,12 @@ class RegressionApplication(BaseApplication):
             window_border=self.action_param.border,
             interp_order=self.action_param.output_interp_order,
             postfix=self.action_param.output_postfix)
+        
+    def initialise_identity_aggregator(self):
+        self.output_decoder = WindowAsImageAggregator(
+                image_reader=self.readers[0],
+                output_path=self.action_param.save_seg_dir,
+                postfix=self.action_param.output_postfix)
 
     def initialise_sampler(self):
         if self.is_training:
@@ -219,7 +235,10 @@ class RegressionApplication(BaseApplication):
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][1]()
 
     def initialise_aggregator(self):
-        self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]()
+        if self.net_param.force_output_identity_resizing:
+            self.initialise_identity_aggregator()
+        else:
+            self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]()
 
     def initialise_network(self):
         w_regularizer = None
@@ -255,6 +274,8 @@ class RegressionApplication(BaseApplication):
                 return sampler.pop_batch_op()
 
         if self.is_training:
+            self.patience = self.action_param.patience
+            self.mode = self.action_param.early_stopping_mode
             if self.action_param.validation_every_n > 0:
                 data_dict = tf.cond(tf.logical_not(self.is_validation),
                                     lambda: switch_sampler(for_training=True),
@@ -274,13 +295,20 @@ class RegressionApplication(BaseApplication):
                     learning_rate=self.action_param.lr)
             loss_func = LossFunction(loss_type=self.action_param.loss_type)
 
-            crop_layer = CropLayer(border=self.regression_param.loss_border)
             weight_map = data_dict.get('weight', None)
-            weight_map = None if weight_map is None else crop_layer(weight_map)
-            data_loss = loss_func(
-                prediction=crop_layer(net_out),
-                ground_truth=crop_layer(data_dict['output']),
-                weight_map=weight_map)
+            border=self.regression_param.loss_border
+            if border == None or tf.reduce_sum(tf.abs(border)) == 0:
+                data_loss = loss_func(
+                        prediction=net_out,
+                        ground_truth=data_dict['output'],
+                        weight_map=weight_map)
+            else:
+                crop_layer = CropLayer(border)
+                weight_map = None if weight_map is None else crop_layer(weight_map)
+                data_loss = loss_func(
+                        prediction=crop_layer(net_out),
+                        ground_truth=crop_layer(data_dict['output']),
+                        weight_map=weight_map)
             reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(
@@ -288,11 +316,40 @@ class RegressionApplication(BaseApplication):
                 loss = data_loss + reg_loss
             else:
                 loss = data_loss
+
+            # Get all vars
+            to_optimise = tf.trainable_variables()
+            vars_to_freeze = \
+                self.action_param.vars_to_freeze or \
+                self.action_param.vars_to_restore
+            if vars_to_freeze:
+                import re
+                var_regex = re.compile(vars_to_freeze)
+                # Only optimise vars that are not frozen
+                to_optimise = \
+                    [v for v in to_optimise if not var_regex.search(v.name)]
+                tf.logging.info(
+                    "Optimizing %d out of %d trainable variables, "
+                    "the other variables are fixed (--vars_to_freeze %s)",
+                    len(to_optimise),
+                    len(tf.trainable_variables()),
+                    vars_to_freeze)
+
+            self.total_loss = loss
+
             grads = self.optimiser.compute_gradients(
-                loss, colocate_gradients_with_ops=True)
+                loss, var_list=to_optimise, colocate_gradients_with_ops=True)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
+
             # collecting output variables
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
+                average_over_devices=True, collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
+                average_over_devices=True, summary_type='scalar',
+                collection=TF_SUMMARIES)
             outputs_collector.add_to_collection(
                 var=data_loss, name='loss',
                 average_over_devices=False, collection=CONSOLE)
@@ -300,6 +357,8 @@ class RegressionApplication(BaseApplication):
                 var=data_loss, name='loss',
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
+
+
         elif self.is_inference:
             data_dict = switch_sampler(for_training=False)
             image = tf.cast(data_dict['image'], tf.float32)
@@ -319,7 +378,7 @@ class RegressionApplication(BaseApplication):
     def interpret_output(self, batch_output):
         if self.is_inference:
             return self.output_decoder.decode_batch(
-                batch_output['window'], batch_output['location'])
+                {'window_reg':batch_output['window']}, batch_output['location'])
         return True
 
     def initialise_evaluator(self, eval_param):

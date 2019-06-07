@@ -21,19 +21,26 @@ class RandomSpatialScalingLayer(RandomisedLayer):
                  min_percentage=-10.0,
                  max_percentage=10.0,
                  antialiasing=True,
+                 isotropic=False,
                  name='random_spatial_scaling'):
         super(RandomSpatialScalingLayer, self).__init__(name=name)
         assert min_percentage <= max_percentage
         self._min_percentage = max(min_percentage, -99.9)
         self._max_percentage = max_percentage
         self.antialiasing = antialiasing
+        self.isotropic = isotropic
         self._rand_zoom = None
 
     def randomise(self, spatial_rank=3):
         spatial_rank = int(np.floor(spatial_rank))
-        rand_zoom = np.random.uniform(low=self._min_percentage,
-                                      high=self._max_percentage,
-                                      size=(spatial_rank,))
+        if self.isotropic:
+            one_rand_zoom = np.random.uniform(low=self._min_percentage,
+                                              high=self._max_percentage)
+            rand_zoom = np.repeat(one_rand_zoom, spatial_rank)
+        else:
+            rand_zoom = np.random.uniform(low=self._min_percentage,
+                                          high=self._max_percentage,
+                                          size=(spatial_rank,))
         self._rand_zoom = (rand_zoom + 100.0) / 100.0
 
     def _get_sigma(self, zoom):

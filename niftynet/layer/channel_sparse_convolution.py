@@ -325,7 +325,7 @@ class ChannelSparseConvolutionalLayer(TrainableLayer):
                  dilation=1,
                  padding='SAME',
                  with_bias=False,
-                 with_bn=True,
+                 feature_normalization='batch',
                  acti_func=None,
                  w_initializer=None,
                  w_regularizer=None,
@@ -336,9 +336,9 @@ class ChannelSparseConvolutionalLayer(TrainableLayer):
                  name="conv"):
 
         self.acti_func = acti_func
-        self.with_bn = with_bn
+        self.feature_normalization = feature_normalization
         self.layer_name = '{}'.format(name)
-        if self.with_bn:
+        if self.feature_normalization == 'batch':
             self.layer_name += '_bn'
         if self.acti_func is not None:
             self.layer_name += '_{}'.format(self.acti_func)
@@ -359,9 +359,9 @@ class ChannelSparseConvolutionalLayer(TrainableLayer):
 
         self.initializers = {
             'w': w_initializer if w_initializer else
-                niftynet.layer.convolution.default_w_initializer(),
+            niftynet.layer.convolution.default_w_initializer(),
             'b': b_initializer if b_initializer else
-                niftynet.layer.convolution.default_b_initializer()}
+            niftynet.layer.convolution.default_b_initializer()}
 
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
@@ -395,10 +395,9 @@ class ChannelSparseConvolutionalLayer(TrainableLayer):
         output_tensor.set_shape(
             output_tensor.shape.as_list()[:-1] + [n_output_ch])
 
-        if self.with_bn:
+        if self.feature_normalization == 'batch':
             if is_training is None:
-                raise ValueError('is_training argument should be '
-                                 'True or False unless with_bn is False')
+                raise ValueError('For batch norm, you must set the `is_training` argument.')
             bn_layer = ChannelSparseBNLayer(
                 self.n_output_chns,
                 regularizer=self.regularizers['w'],

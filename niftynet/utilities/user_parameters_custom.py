@@ -45,8 +45,7 @@ def add_customised_args(parser, task_name):
     task_name = task_name.upper()
     if task_name in SUPPORTED_ARG_SECTIONS:
         return SUPPORTED_ARG_SECTIONS[task_name](parser)
-    else:
-        raise NotImplementedError
+    raise NotImplementedError
 
 
 def __add_regression_args(parser):

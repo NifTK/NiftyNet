@@ -27,6 +27,8 @@ from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
 from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
+from niftynet.layer.rgb_histogram_equilisation import \
+    RGBHistogramEquilisationLayer
 from niftynet.evaluation.segmentation_evaluator import SegmentationEvaluator
 from niftynet.layer.rand_elastic_deform import RandomElasticDeformationLayer
 
@@ -109,6 +111,9 @@ class SegmentationApplication(BaseApplication):
             name='hist_norm_layer') \
             if (self.net_param.histogram_ref_file and
                 self.net_param.normalisation) else None
+        rgb_normaliser = RGBHistogramEquilisationLayer(
+            image_name='image',
+            name='rbg_norm_layer') if self.net_param.rgb_normalisation else None
         label_normalisers = None
         if self.net_param.histogram_ref_file and \
                 task_param.label_normalisation:
@@ -127,23 +132,26 @@ class SegmentationApplication(BaseApplication):
         normalisation_layers = []
         if histogram_normaliser is not None:
             normalisation_layers.append(histogram_normaliser)
+        if rgb_normaliser is not None:
+            normalisation_layers.append(rgb_normaliser)
         if mean_var_normaliser is not None:
             normalisation_layers.append(mean_var_normaliser)
         if task_param.label_normalisation and \
                 (self.is_training or not task_param.output_prob):
             normalisation_layers.extend(label_normalisers)
 
-        volume_padding_layer = []
-        if self.net_param.volume_padding_size:
-            volume_padding_layer.append(PadLayer(
-                image_name=SUPPORTED_INPUT,
-                border=self.net_param.volume_padding_size,
-                mode=self.net_param.volume_padding_mode))
-
+        volume_padding_layer = [PadLayer(
+            image_name=SUPPORTED_INPUT,
+            border=self.net_param.volume_padding_size,
+            mode=self.net_param.volume_padding_mode,
+            pad_to=self.net_param.volume_padding_to_size)
+        ]
         # initialise training data augmentation layers
         augmentation_layers = []
         if self.is_training:
             train_param = self.action_param
+            self.patience = train_param.patience
+            self.mode = self.action_param.early_stopping_mode
             if train_param.random_flipping_axes != -1:
                 augmentation_layers.append(RandomFlipLayer(
                     flip_axes=train_param.random_flipping_axes))
@@ -151,7 +159,8 @@ class SegmentationApplication(BaseApplication):
                 augmentation_layers.append(RandomSpatialScalingLayer(
                     min_percentage=train_param.scaling_percentage[0],
                     max_percentage=train_param.scaling_percentage[1],
-                    antialiasing=train_param.antialiasing))
+                    antialiasing=train_param.antialiasing,
+                    isotropic=train_param.isotropic_scaling))
             if train_param.rotation_angle or \
                     train_param.rotation_angle_x or \
                     train_param.rotation_angle_y or \
@@ -181,6 +190,15 @@ class SegmentationApplication(BaseApplication):
         for reader in self.readers[1:]:
             reader.add_preprocessing_layers(
                 volume_padding_layer + normalisation_layers)
+
+        # Checking num_classes is set correctly
+        if self.segmentation_param.num_classes <= 1:
+            raise ValueError("Number of classes must be at least 2 for segmentation")
+        for preprocessor in self.readers[0].preprocessors:
+            if preprocessor.name == 'label_norm':
+                if len(preprocessor.label_map[preprocessor.key[0]]) != self.segmentation_param.num_classes:
+                    raise ValueError("Number of unique labels must be equal to "
+                                     "number of classes (check histogram_ref file)")
 
     def initialise_uniform_sampler(self):
         if self.action_param.do_whole_volume_validation:
@@ -299,7 +317,8 @@ class SegmentationApplication(BaseApplication):
             interp_order=self.action_param.output_interp_order,
             postfix=self.action_param.output_postfix if not
             self.action_param.do_whole_volume_validation else
-            '_wvv_out')
+            '_wvv_out',
+            fill_constant=self.action_param.fill_constant)
 
     def initialise_resize_aggregator(self):
         self.output_decoder = ResizeSamplesAggregator(
@@ -386,11 +405,41 @@ class SegmentationApplication(BaseApplication):
                 loss = data_loss + reg_loss
             else:
                 loss = data_loss
+
+            # Get all vars
+            to_optimise = tf.trainable_variables()
+            vars_to_freeze = \
+                self.action_param.vars_to_freeze or \
+                self.action_param.vars_to_restore
+            if vars_to_freeze:
+                import re
+                var_regex = re.compile(vars_to_freeze)
+                # Only optimise vars that are not frozen
+                to_optimise = \
+                    [v for v in to_optimise if not var_regex.search(v.name)]
+                tf.logging.info(
+                    "Optimizing %d out of %d trainable variables, "
+                    "the other variables fixed (--vars_to_freeze %s)",
+                    len(to_optimise),
+                    len(tf.trainable_variables()),
+                    vars_to_freeze)
+
             grads = self.optimiser.compute_gradients(
-                loss, colocate_gradients_with_ops=True)
+                loss, var_list=to_optimise, colocate_gradients_with_ops=True)
+
+            self.total_loss = loss
+
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
+
             # collecting output variables
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
+                average_over_devices=True, collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
+                average_over_devices=True, summary_type='scalar',
+                collection=TF_SUMMARIES)
             outputs_collector.add_to_collection(
                 var=data_loss, name='loss',
                 average_over_devices=False, collection=CONSOLE)
@@ -463,12 +512,11 @@ class SegmentationApplication(BaseApplication):
             outputs_collector.add_to_collection(
                 var=data_dict['image_location'], name='location',
                 average_over_devices=False, collection=NETWORK_OUTPUT)
-            print('interpolation order', self.action_param.output_interp_order)
             self.initialise_aggregator()
 
     def interpret_output(self, batch_output):
-        return self.output_decoder.decode_batch(batch_output['window'],
-                                                batch_output['location'])
+        return self.output_decoder.decode_batch(
+            {'window_seg': batch_output['window']}, batch_output['location'])
 
     def initialise_evaluator(self, eval_param):
         self.eval_param = eval_param

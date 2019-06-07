@@ -184,6 +184,98 @@ def labels_to_one_hot(ground_truth, num_classes=1):
     return one_hot
 
 
+def undecided_loss(prediction, ground_truth, weight_map=None):
+    """
+
+    :param prediction:
+    :param ground_truth:
+    :param weight_map:
+    :return:
+    """
+    ratio_undecided = 1.0/tf.cast(tf.shape(prediction)[-1], tf.float32)
+    res_undecided = tf.reciprocal(tf.reduce_mean(tf.abs(prediction -
+                                                 ratio_undecided), -1) + 0.0001)
+    if weight_map is None:
+        return tf.reduce_mean(res_undecided)
+    else:
+        res_undecided = tf.Print(tf.cast(res_undecided, tf.float32), [tf.shape(
+            res_undecided), tf.shape(weight_map), tf.shape(
+                res_undecided*weight_map)], message='test_printshape_und')
+        return tf.reduce_sum(res_undecided * weight_map /
+                             tf.reduce_sum(weight_map))
+
+
+def volume_enforcement(prediction, ground_truth, weight_map=None, eps=0.001,
+                       hard=False):
+    """
+    Computing a volume enforcement loss to ensure that the obtained volumes are
+    close and avoid empty results when something is expected
+    :param prediction:
+    :param ground_truth: labels
+    :param weight_map: potential weight map to apply
+    :param eps: epsilon to use as regulariser
+    :return:
+    """
+
+    prediction = tf.cast(prediction, tf.float32)
+    if len(ground_truth.shape) == len(prediction.shape):
+        ground_truth = ground_truth[..., -1]
+    one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
+
+    gt_red = tf.sparse_reduce_sum(one_hot, 0)
+    pred_red = tf.reduce_sum(prediction, 0)
+    if hard:
+        pred_red  = tf.sparse_reduce_sum(labels_to_one_hot(tf.argmax(
+            prediction,-1),tf.shape(prediction)[-1]), 0)
+
+    if weight_map is not None:
+        n_classes = prediction.shape[1].value
+        weight_map_nclasses = tf.tile(tf.expand_dims(tf.reshape(weight_map,
+                                                                [-1]), 1),
+                                      [1, n_classes])
+        gt_red = tf.sparse_reduce_sum(weight_map_nclasses * one_hot,
+                                      reduction_axes=[0])
+        pred_red = tf.reduce_sum(weight_map_nclasses * prediction, 0)
+
+    return tf.reduce_mean(tf.sqrt(tf.square((gt_red+eps)/(pred_red+eps) -
+                                            (pred_red+eps)/(gt_red+eps))))
+
+
+def volume_enforcement_fin(prediction, ground_truth, weight_map=None,
+                           eps=0.001):
+    """
+    Computing a volume enforcement loss to ensure that the obtained volumes are
+     close and avoid empty results when something is expected
+    :param prediction:
+    :param ground_truth:
+    :param weight_map:
+    :param eps:
+    :return:
+    """
+
+    prediction = tf.cast(prediction, tf.float32)
+    if len(ground_truth.shape) == len(prediction.shape):
+        ground_truth = ground_truth[..., -1]
+    one_hot = labels_to_one_hot(ground_truth, tf.shape(prediction)[-1])
+    gt_red = tf.sparse_reduce_sum(one_hot, 0)
+    pred_red = tf.sparse_reduce_sum(labels_to_one_hot(tf.argmax(
+            prediction,-1),tf.shape(prediction)[-1]), 0)
+
+    if weight_map is not None:
+        n_classes = prediction.shape[1].value
+        weight_map_nclasses = tf.tile(tf.expand_dims(tf.reshape(weight_map,
+                                                                [-1]), 1),
+                                      [1, n_classes])
+        gt_red = tf.sparse_reduce_sum(weight_map_nclasses * one_hot,
+                                      reduction_axes=[0])
+        pred_red = tf.sparse_reduce_sum(labels_to_one_hot(tf.argmax(
+            prediction, -1), tf.shape(prediction)[-1]) * weight_map_nclasses, 0)
+
+    return tf.reduce_mean(tf.sqrt(tf.square((gt_red+eps)/(pred_red+eps)
+                                            - (pred_red+eps)/(gt_red+eps))))
+
+
+
 def generalised_dice_loss(prediction,
                           ground_truth,
                           weight_map=None,
@@ -262,26 +354,37 @@ def dice_plus_xent_loss(prediction, ground_truth, weight_map=None):
     :return: the loss (cross_entropy + Dice)
 
     """
-    if weight_map is not None:
-        raise NotImplementedError
+    num_classes = tf.shape(prediction)[-1]
 
     prediction = tf.cast(prediction, tf.float32)
-    loss_xent = cross_entropy(prediction, ground_truth)
-
-    softmax_of_logits = tf.nn.softmax(prediction, axis=-1)
+    loss_xent = cross_entropy(prediction, ground_truth, weight_map=weight_map)
 
     # Dice as according to the paper:
-    num_classes = tf.shape(prediction)[-1]
     one_hot = labels_to_one_hot(ground_truth, num_classes=num_classes)
+    softmax_of_logits = tf.nn.softmax(prediction)
 
-    dice_numerator = 2.0 * tf.sparse_reduce_sum(one_hot * softmax_of_logits,
-                                                reduction_axes=[0])
-    dice_denominator = tf.reduce_sum(softmax_of_logits, reduction_indices=[0]) + \
-                       tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
+    if weight_map is not None:
+        weight_map_nclasses = tf.tile(
+            tf.reshape(weight_map, [-1, 1]), [1, num_classes])
+        dice_numerator = 2.0 * tf.sparse_reduce_sum(
+            weight_map_nclasses * one_hot * softmax_of_logits,
+            reduction_axes=[0])
+        dice_denominator = \
+            tf.reduce_sum(weight_map_nclasses * softmax_of_logits,
+                          reduction_indices=[0]) + \
+            tf.sparse_reduce_sum(one_hot * weight_map_nclasses,
+                                 reduction_axes=[0])
+    else:
+        dice_numerator = 2.0 * tf.sparse_reduce_sum(
+            one_hot * softmax_of_logits, reduction_axes=[0])
+        dice_denominator = \
+            tf.reduce_sum(softmax_of_logits, reduction_indices=[0]) + \
+            tf.sparse_reduce_sum(one_hot, reduction_axes=[0])
 
     epsilon = 0.00001
-
     loss_dice = -(dice_numerator + epsilon) / (dice_denominator + epsilon)
+    dice_numerator = tf.Print(
+        dice_denominator, [dice_numerator, dice_denominator, loss_dice])
 
     return loss_dice + loss_xent
 

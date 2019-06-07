@@ -143,7 +143,7 @@ class ApplicationDriver(object):
         self.data_partitioner.reset()
         if data_param:
             do_new_partition = \
-                self.is_training_action and self.initial_iter == 0 and \
+                self.is_training_action and \
                 (not os.path.isfile(system_param.dataset_split_file)) and \
                 (train_param.exclude_fraction_for_validation > 0 or
                  train_param.exclude_fraction_for_inference > 0)

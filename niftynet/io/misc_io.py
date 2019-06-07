@@ -14,6 +14,7 @@ import warnings
 import nibabel as nib
 import numpy as np
 import scipy.ndimage
+import pandas as pd
 import tensorflow as tf
 # pylint: disable=no-name-in-module
 from tensorflow.core.framework import summary_pb2
@@ -255,6 +256,18 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
             data_mod.append(data_new[..., np.newaxis, np.newaxis])
         data_resampled.append(np.concatenate(data_mod, axis=-1))
     return np.concatenate(data_resampled, axis=-2)
+
+
+def save_csv_array(filefolder, filename, array_to_save):
+    '''
+    Save a np array as a csv
+    :param filefolder: Path to the folder where to save
+    :param filename: Name of the file to save
+    :param array_to_save: Array to save
+    :return:
+    '''
+    pd_array = pd.DataFrame(array_to_save)
+    pd_array.to_csv(os.path.join(filefolder, filename))
 
 
 def save_data_array(filefolder,
@@ -790,6 +803,7 @@ def close_logger():
             logger.removeHandler(handler)
         except (OSError, ValueError):
             pass
+
 
 
 def infer_latest_model_file(model_dir):
