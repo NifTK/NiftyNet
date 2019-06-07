@@ -221,7 +221,10 @@ SUPPORTED_EVENT_HANDLERS = {
 
 SUPPORTED_ITERATION_GENERATORS = {
     'iteration_generator':
-        'niftynet.engine.application_iteration.IterationMessageGenerator'
+        'niftynet.engine.application_iteration.IterationMessageGenerator',
+    'whole_volume_iteration_generator':
+        'niftynet.engine.application_iteration.' \
+        'WholeVolumeIterationMessageGenerator'
 }
 
 

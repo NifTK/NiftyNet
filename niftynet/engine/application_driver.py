@@ -21,7 +21,7 @@ import tensorflow as tf
 
 from niftynet.engine.application_factory import \
     ApplicationFactory, EventHandlerFactory, IteratorFactory
-from niftynet.engine.application_iteration import IterationMessage, IterationMessageCreator
+from niftynet.engine.application_iteration import IterationMessage
 from niftynet.engine.application_variables import \
     GradientsCollector, OutputsCollector
 from niftynet.engine.signal import TRAIN, \
@@ -56,6 +56,7 @@ class ApplicationDriver(object):
         self.max_checkpoints = 2
         self.save_every_n = 0
         self.tensorboard_every_n = -1
+        self.vars_to_restore = ''
 
         self.initial_iter = 0
         self.final_iter = 0
@@ -111,7 +112,10 @@ class ApplicationDriver(object):
             self.max_checkpoints = max(self.max_checkpoints,
                                        train_param.max_checkpoints)
             self.validation_every_n = train_param.validation_every_n
-            self.do_whole_volume_validation = train_param.do_whole_volume_validation
+            self.do_whole_volume_validation = \
+                train_param.do_whole_volume_validation
+            self.vars_to_restore = train_param.vars_to_restore \
+                if hasattr(train_param, 'vars_to_restore') else ''
             if self.validation_every_n > 0:
                 self.validation_max_iter = max(self.validation_max_iter,
                                                train_param.validation_max_iter)
@@ -153,7 +157,7 @@ class ApplicationDriver(object):
                 ratios=data_fractions,
                 data_split_file=system_param.dataset_split_file)
             assert self.data_partitioner.has_validation or \
-                   self.validation_every_n <= 0, \
+                self.validation_every_n <= 0, \
                 'validation_every_n is set to {}, ' \
                 'but train/validation splitting not available.\nPlease ' \
                 'check dataset partition list {} ' \
@@ -175,9 +179,13 @@ class ApplicationDriver(object):
 
         self.load_event_handlers(
             system_param.event_handler or DEFAULT_EVENT_HANDLERS)
-
-        self._generator = IteratorFactory.create(
-            system_param.iteration_generator or DEFAULT_ITERATION_GENERATOR)
+        if self.do_whole_volume_validation and self.is_training_action:
+            self._generator = IteratorFactory.create(
+                'whole_volume_iteration_generator')
+        else:
+            self._generator = IteratorFactory.create(
+                system_param.iteration_generator or
+                DEFAULT_ITERATION_GENERATOR)
 
     def run(self, application, graph=None):
         """
@@ -205,15 +213,10 @@ class ApplicationDriver(object):
 
                 # create a iteration message generator and
                 # iteratively run the graph (the main engine loop)
-                iter_msg_creator = IterationMessageCreator(initial_iter=self.initial_iter,
-                                                           final_iter=self.final_iter,
-                                                           validation_every_n=self.validation_every_n,
-                                                           validation_max_iter=self.validation_max_iter,
-                                                           is_training_action=self.is_training_action,
-                                                           do_whole_volume_validation=self.do_whole_volume_validation)
+                iteration_messages = self._generator(**vars(self))()
                 ApplicationDriver.loop(
                     application=application,
-                    iter_msg_creator=iter_msg_creator,
+                    iteration_messages=iteration_messages,
                     loop_status=loop_status)
 
             except KeyboardInterrupt:
@@ -268,8 +271,6 @@ class ApplicationDriver(object):
             # initialise network, these are connected in
             # the context of multiple gpus
             application.initialise_network()
-            # application.initialise_aggregator()
-
             application.add_validation_flag()
 
             # for data parallelism --
@@ -313,7 +314,7 @@ class ApplicationDriver(object):
 
     @staticmethod
     def loop(application,
-             iter_msg_creator=None,
+             iteration_messages=(),
              loop_status=None):
         """
         Running ``loop_step`` with ``IterationMessage`` instances
@@ -338,13 +339,17 @@ class ApplicationDriver(object):
         :return:
         """
         loop_status = loop_status or {}
-        iter_msg = iter_msg_creator.iter_msg_func(application)
-        while not iter_msg.should_stop:
-            iter_msg = iter_msg_creator.iter_msg_func(application)
+        for iter_msg in iteration_messages:
             loop_status['current_iter'] = iter_msg.current_iter
+
             # run an iteration
             ApplicationDriver.loop_step(application, iter_msg)
-        tf.logging.info('stopping -- event handler: %s.', iter_msg.should_stop)
+
+            # Checking stopping conditions
+            if iter_msg.should_stop:
+                tf.logging.info('stopping -- event handler: %s.',
+                                iter_msg.should_stop)
+                break
         # loop finished without any exception
         loop_status['normal_exit'] = True
 
@@ -367,8 +372,10 @@ class ApplicationDriver(object):
         # passed to the application (and observers) for interpretation.
         sess = tf.get_default_session()
         assert sess, 'method should be called within a TF session context.'
+
         iteration_message.current_iter_output = sess.run(
             iteration_message.ops_to_run,
             feed_dict=iteration_message.data_feed_dict)
+
         # broadcasting event of finishing an iteration
         ITER_FINISHED.send(application, iter_msg=iteration_message)
