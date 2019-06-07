@@ -302,9 +302,9 @@ def _console_vars_to_str(console_dict):
     return console_str
 
 
-class IterationMessageCreator(object):
+class WholeVolumeIterationMessageGenerator(IterationMessageGenerator):
     """
-    Class provides function which returns an iteration message.
+    Generation for whole volume validation iteration messages generator
     """
 
     def __init__(self,
@@ -313,49 +313,91 @@ class IterationMessageCreator(object):
                  validation_every_n=0,
                  validation_max_iter=0,
                  is_training_action=True,
-                 do_whole_volume_validation=False,
+                 do_whole_volume_validation=True,
                  **_unused):
-        self.initial_iter = max(initial_iter, -1)
-        self.final_iter = max(final_iter, self.initial_iter)
-        self.current_iter = -1
-        self.validation_counter = validation_max_iter
-        self.currently_validating = False
-        self.validation_every_n = validation_every_n
-        self.validation_max_iter = validation_max_iter
-        self.is_training_action = is_training_action
-        self.do_whole_volume_validation = do_whole_volume_validation
+        super().__init__(initial_iter, final_iter, validation_every_n,
+                         validation_max_iter, is_training_action, True,
+                         **_unused)
+        self.app = _unused['app']
+        self.current_iter = max(self.initial_iter, 0)
+        self.is_validating = None
 
-    def iter_msg_func(self, app):
-        """
-        This function will generate an IterationMessage given a loop_counter
-        and an application object
-        :param application: Application object
-        :param loop_counter: How many times the ApplicationDriver.loop method has been called
-        :return: an IterationMessage object
-        """
-        if not self.do_whole_volume_validation:
+    def __call__(self):
+        while self.current_iter <= self.final_iter:
             iter_msg = IterationMessage()
-            if self.current_iter > 0 and self.validation_every_n > 0 and \
-                self.validation_counter > 0 and self.current_iter % self.validation_every_n == 0:
+            finished_validating = self.app.sampler[0][1].no_more_samples
+            print('finished_validating', finished_validating)
+            print('self.is_validating', self.is_validating)
+            if finished_validating and self.is_validating:
+                self.app.sampler[0][1].no_more_samples = False
+                self.is_validating = False
+            if self.current_iter > 0 and self.validation_every_n > 0 \
+                    and self.current_iter % self.validation_every_n == 0 \
+                and not finished_validating:
                 iter_msg.current_iter, iter_msg.phase = self.current_iter, VALID
-                self.validation_counter -= 1
-                if self.validation_counter == 0:
-                    self.validation_counter = self.validation_max_iter
-                return iter_msg
-            iter_msg.current_iter, iter_msg.phase = self.current_iter, TRAIN
-            self.current_iter += 1
-            return iter_msg
-        else:
-            iter_msg = IterationMessage()
-            finished_validating = app.sampler[0][1].no_more_samples
-            if finished_validating and self.currently_validating:
-                app.sampler[0][1].no_more_samples = False
-                self.currently_validating = False
-            if self.current_iter > 0 and self.validation_every_n > 0\
-                    and self.current_iter % self.validation_every_n == 0 and not finished_validating:
-                iter_msg.current_iter, iter_msg.phase = self.current_iter, VALID
-                self.currently_validating = True
-                return iter_msg
-            iter_msg.current_iter, iter_msg.phase = self.current_iter, TRAIN
-            self.current_iter += 1
-            return iter_msg
+                self.is_validating = True
+                yield iter_msg
+            if not self.is_validating:
+                iter_msg.current_iter, iter_msg.phase = self.current_iter, TRAIN
+                self.current_iter += 1
+            yield iter_msg
+
+
+
+# class IterationMessageCreator(object):
+#     """
+#     Class provides function which returns an iteration message.
+#     """
+#
+#     def __init__(self,
+#                  initial_iter=0,
+#                  final_iter=0,
+#                  validation_every_n=0,
+#                  validation_max_iter=0,
+#                  is_training_action=True,
+#                  do_whole_volume_validation=False,
+#                  **_unused):
+#         self.initial_iter = max(initial_iter, -1)
+#         self.final_iter = max(final_iter, self.initial_iter)
+#         self.current_iter = -1
+#         self.validation_counter = validation_max_iter
+#         self.currently_validating = False
+#         self.validation_every_n = validation_every_n
+#         self.validation_max_iter = validation_max_iter
+#         self.is_training_action = is_training_action
+#         self.do_whole_volume_validation = do_whole_volume_validation
+#
+#     def iter_msg_func(self, app):
+#         """
+#         This function will generate an IterationMessage given a loop_counter
+#         and an application object
+#         :param application: Application object
+#         :param loop_counter: How many times the ApplicationDriver.loop method has been called
+#         :return: an IterationMessage object
+#         """
+#         if not self.do_whole_volume_validation:
+#             iter_msg = IterationMessage()
+#             if self.current_iter > 0 and self.validation_every_n > 0 and \
+#                 self.validation_counter > 0 and self.current_iter % self.validation_every_n == 0:
+#                 iter_msg.current_iter, iter_msg.phase = self.current_iter, VALID
+#                 self.validation_counter -= 1
+#                 if self.validation_counter == 0:
+#                     self.validation_counter = self.validation_max_iter
+#                 return iter_msg
+#             iter_msg.current_iter, iter_msg.phase = self.current_iter, TRAIN
+#             self.current_iter += 1
+#             return iter_msg
+#         else:
+#             iter_msg = IterationMessage()
+#             finished_validating = app.sampler[0][1].no_more_samples
+#             if finished_validating and self.currently_validating:
+#                 app.sampler[0][1].no_more_samples = False
+#                 self.currently_validating = False
+#             if self.current_iter > 0 and self.validation_every_n > 0\
+#                     and self.current_iter % self.validation_every_n == 0 and not finished_validating:
+#                 iter_msg.current_iter, iter_msg.phase = self.current_iter, VALID
+#                 self.currently_validating = True
+#                 return iter_msg
+#             iter_msg.current_iter, iter_msg.phase = self.current_iter, TRAIN
+#             self.current_iter += 1
+#             return iter_msg

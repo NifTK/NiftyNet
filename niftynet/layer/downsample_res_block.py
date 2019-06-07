@@ -41,7 +41,7 @@ class DownBlock(TrainableLayer):
         conv_0 = Conv(n_output_chns=self.n_output_chns,
                       kernel_size=self.kernel_size,
                       acti_func=self.acti_func,
-                      with_bias=False, with_bn=True,
+                      with_bias=False, feature_normalization='batch',
                       **self.conv_param)(inputs, is_training)
         conv_res = ResUnit(n_output_chns=self.n_output_chns,
                            kernel_size=self.kernel_size,

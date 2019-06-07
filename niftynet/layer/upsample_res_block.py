@@ -53,7 +53,7 @@ class UpBlock(TrainableLayer):
                                kernel_size=self.kernel_size,
                                stride=self.upsample_stride,
                                acti_func=self.acti_func,
-                               with_bias=False, with_bn=True,
+                               with_bias=False, feature_normalization='batch',
                                **self.conv_param)(inputs, is_training)
 
         if forwarding is None:

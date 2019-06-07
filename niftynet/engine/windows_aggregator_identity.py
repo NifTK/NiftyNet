@@ -85,7 +85,10 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
     def _save_current_image(self, idx, filename, image):
         if image is None:
             return
-        uniq_name = "{}_{}{}.nii.gz".format(idx, filename, self.postfix)
+        if idx == 0:
+            uniq_name = "{}{}.nii.gz".format(filename, self.postfix)
+        else:
+            uniq_name = "{}_{}{}.nii.gz".format(idx, filename, self.postfix)
         misc_io.save_data_array(self.output_path, uniq_name, image, None)
         with open(self.inferred_csv, 'a') as csv_file:
             filename = os.path.join(self.output_path, filename)

@@ -24,6 +24,7 @@ class GridSampler(ImageWindowDataset):
                  spatial_window_size=None,
                  window_border=None,
                  queue_length=1,
+                 do_whole_volume_validation=False,
                  smaller_final_batch_mode='dynamic',
                  name='grid_sampler'):
 
@@ -42,7 +43,7 @@ class GridSampler(ImageWindowDataset):
             epoch=1,
             smaller_final_batch_mode=smaller_final_batch_mode,
             name=name)
-
+        self.do_whole_volume_validation = do_whole_volume_validation
         self.border_size = window_border or (0, 0, 0)
         assert isinstance(self.border_size, (list, tuple)), \
             "window_border should be a list or tuple"
@@ -58,9 +59,12 @@ class GridSampler(ImageWindowDataset):
         while True:
             image_id, data, _ = self.reader(idx=None, shuffle=False)
             if not data:
-                self.reader.reset()
-                self.no_more_samples = True
-                continue
+                if self.do_whole_volume_validation:
+                    self.reader.reset()
+                    self.no_more_samples = True
+                    continue
+                else:
+                    break
             image_shapes = {name: data[name].shape
                             for name in self.window.names}
             static_window_shapes = self.window.match_image_shapes(image_shapes)

@@ -64,13 +64,13 @@ class ImageGenerator(BaseGenerator):
 
         def conv(ch, x):
             with tf.name_scope('conv'):
-                conv_layer = ConvolutionalLayer(ch, 3, with_bn=False, w_initializer=w_init)
+                conv_layer = ConvolutionalLayer(ch, 3, feature_normalization=None, w_initializer=w_init)
                 c = conv_layer(x, is_training=is_training)
                 return tf.nn.relu(tf.contrib.layers.batch_norm(c))
 
         def up(ch, x, hack=False):
             with tf.name_scope('up'):
-                deconv = DeconvolutionalLayer(ch, 3, with_bn=False, stride=2, w_initializer=w_init)(x, is_training=is_training)
+                deconv = DeconvolutionalLayer(ch, 3, feature_normalization=None, stride=2, w_initializer=w_init)(x, is_training=is_training)
                 if hack:
                     deconv = deconv[:, :, 1:, :]  # hack to match Yipeng's image size
                 return tf.nn.relu(tf.contrib.layers.batch_norm(deconv))
@@ -96,7 +96,7 @@ class ImageGenerator(BaseGenerator):
             if add_noise:
                 noise = tf.random_normal(g_h5.shape.as_list()[0:-1] + [add_noise], 0, .1)
                 g_h5 = tf.concat([g_h5, noise],axis=3)
-            x_sample = ConvolutionalLayer(1, 3, with_bn=False, with_bias=True,
+            x_sample = ConvolutionalLayer(1, 3, feature_normalization=None, with_bias=True,
                                           w_initializer=w_init,
                                           b_initializer=b_init)(g_h5, is_training=is_training)
             x_sample = tf.nn.dropout(tf.nn.tanh(x_sample), keep_prob_ph)
@@ -144,18 +144,18 @@ class ImageDiscriminator(BaseDiscriminator):
 
         def down(ch, x):
             with tf.name_scope('downsample'):
-                c = ConvolutionalLayer(ch, 3, stride=2, with_bn=False,
+                c = ConvolutionalLayer(ch, 3, stride=2, feature_normalization=None,
                                        w_initializer=w_init)(x, is_training=is_training)
                 c=tf.contrib.layers.batch_norm(c)
                 c = leaky_relu(c)
                 return c
 
         def convr(ch, x):
-            c= ConvolutionalLayer(ch, 3, with_bn=False,
+            c= ConvolutionalLayer(ch, 3, feature_normalization=None,
                                   w_initializer=w_init)(x, is_training=is_training)
             return leaky_relu(tf.contrib.layers.batch_norm(c))
         def conv(ch, x, s):
-            c = (ConvolutionalLayer(ch, 3, with_bn=False,
+            c = (ConvolutionalLayer(ch, 3, feature_normalization=None,
                                       w_initializer=w_init)(x, is_training=is_training))
             return leaky_relu(tf.contrib.layers.batch_norm(c) + s)
 
@@ -169,7 +169,7 @@ class ImageDiscriminator(BaseDiscriminator):
             image = tf.concat([image, conditioning], axis=-1)
         with tf.name_scope('feature'):
             d_h1s = ConvolutionalLayer(ch[0], 5, with_bias=True,
-                                                  with_bn=False,
+                                                  feature_normalization=None,
                                                   w_initializer=w_init,
                                                   b_initializer=b_init)(image,
                                                                         is_training=is_training)

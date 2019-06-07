@@ -84,7 +84,7 @@ class INetAffine(BaseNet):
 
         conv_5 = Conv(n_output_chns=self.fea[4],
                       kernel_size=self.k_conv,
-                      with_bias=False, with_bn=True,
+                      with_bias=False, feature_normalization='batch',
                       **self.res_param)(res_4, is_training)
 
         if spatial_rank == 2:
@@ -99,7 +99,7 @@ class INetAffine(BaseNet):
             self.affine_w_initializer = init_affine_w()
         if self.affine_b_initializer is None:
             self.affine_b_initializer = init_affine_b(spatial_rank)
-        affine = FC(n_output_chns=affine_size, with_bn=False,
+        affine = FC(n_output_chns=affine_size, feature_normalization=None,
                     w_initializer=self.affine_w_initializer,
                     b_initializer=self.affine_b_initializer,
                     **self.affine_param)(conv_5)
