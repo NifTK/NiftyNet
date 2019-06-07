@@ -297,7 +297,9 @@ class SegmentationApplication(BaseApplication):
             output_path=self.action_param.save_seg_dir,
             window_border=self.action_param.border,
             interp_order=self.action_param.output_interp_order,
-            postfix=self.action_param.output_postfix)
+            postfix=self.action_param.output_postfix if not
+            self.action_param.do_whole_volume_validation else
+            '_wvv_out')
 
     def initialise_resize_aggregator(self):
         self.output_decoder = ResizeSamplesAggregator(
@@ -461,7 +463,7 @@ class SegmentationApplication(BaseApplication):
             outputs_collector.add_to_collection(
                 var=data_dict['image_location'], name='location',
                 average_over_devices=False, collection=NETWORK_OUTPUT)
-
+            print('interpolation order', self.action_param.output_interp_order)
             self.initialise_aggregator()
 
     def interpret_output(self, batch_output):

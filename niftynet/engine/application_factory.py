@@ -216,7 +216,9 @@ SUPPORTED_EVENT_HANDLERS = {
     'console_logger':
         'niftynet.engine.handler_console.ConsoleLogger',
     'tensorboard_logger':
-        'niftynet.engine.handler_tensorboard.TensorBoardLogger'
+        'niftynet.engine.handler_tensorboard.TensorBoardLogger',
+    'whole_volume_evaluator':
+        'niftynet.engine.handler_evaluator.EvaluationHandler'
 }
 
 SUPPORTED_ITERATION_GENERATORS = {
