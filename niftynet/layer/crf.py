@@ -327,8 +327,8 @@ def permutohedral_prepare(position_vectors):
     # linearised [batch, spatial_dim] indices
     # where in the splat variable each simplex vertex is
     batch_index = tf.range(batch_size, dtype=tf.int32)
-    batch_index = tf.expand_dims(batch_index, 0)
-    batch_index = tf.tile(batch_index, [n_voxels, 1])
+    batch_index = tf.expand_dims(batch_index, 1)
+    batch_index = tf.tile(batch_index, [1, n_voxels])
     batch_index = tf.to_int64(tf.reshape(batch_index, [-1]))
 
     indices = [None] * n_ch_1
