@@ -5,7 +5,7 @@ Resize input image as output window.
 from __future__ import absolute_import, print_function, division
 
 import numpy as np
-import scipy.ndimage
+import scipy.ndimage as scnd
 import tensorflow as tf
 
 from niftynet.engine.image_window_dataset import ImageWindowDataset
@@ -91,8 +91,8 @@ class ResizeSampler(ImageWindowDataset):
                 else:
                     zoom_ratio = [float(p) / float(d) for p, d in
                                   zip(window_shape, image_shape)]
-                    image_window = zoom_3d(image=data[name],
-                                           ratio=zoom_ratio,
+                    image_window = zoom_3d(data[name],
+                                           zoom_ratio,
                                            interp_order=interp_orders[name][0])
                 image_array.append(image_window[np.newaxis, ...])
             if len(image_array) > 1:
@@ -107,17 +107,18 @@ class ResizeSampler(ImageWindowDataset):
         return output_dict
 
 
-def zoom_3d(image, ratio, interp_order):
-    """
-    Taking 5D image as input, and zoom each 3D slice independently
-    """
-    assert image.ndim == 5, "input images should be 5D array"
-    output = []
-    for time_pt in range(image.shape[3]):
-        output_mod = []
-        for mod in range(image.shape[4]):
-            zoomed = scipy.ndimage.zoom(
-                image[..., time_pt, mod], ratio[:3], order=interp_order)
-            output_mod.append(zoomed[..., np.newaxis, np.newaxis])
-        output.append(np.concatenate(output_mod, axis=-1))
-    return np.concatenate(output, axis=-2)
+
+def zoom_3d(im, ratio, interp_order=1):
+    assert (interp_order<4) and (interp_order>-1), "interp_order is between 0 and 3"
+    imshape = im.shape
+    dim = len(imshape)
+    spatial_coord = {}
+    size = tuple([int(imshape[i]*ratio[i]) for i in range(len(imshape))])
+    for i, s in enumerate(size):
+        spatial_coord[i] = imshape[i] / s * (np.arange(0, s) + 0.5) - 0.5
+    coordinate = np.meshgrid(*(spatial_coord[i] for i in range(len(size))), indexing="ij")
+    coordinate = np.stack([c for c in coordinate], 0)
+    coordinate = np.reshape(coordinate, (dim, -1))
+    im = scnd.interpolation.map_coordinates(im, coordinate, order=interp_order)
+    im = np.reshape(im, size)
+    return im

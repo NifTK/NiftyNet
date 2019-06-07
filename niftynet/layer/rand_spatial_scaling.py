@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function
 import warnings
 
 import numpy as np
-import scipy.ndimage as ndi
+import scipy.ndimage as scnd
 
 from niftynet.layer.base_layer import RandomisedLayer
 
@@ -71,14 +71,13 @@ class RandomSpatialScalingLayer(RandomisedLayer):
             for mod in range(image.shape[-1]):
                 to_scale = ndi.gaussian_filter(image[..., mod], sigma) if \
                     run_antialiasing_filter else image[..., mod]
-                scaled = ndi.zoom(to_scale, full_zoom[:3], order=interp_order)
+                scaled = zoom_3d(to_scale, tuple(full_zoom[:3]), interp_order)
                 output.append(scaled[..., np.newaxis])
             return np.concatenate(output, axis=-1)
         elif image.ndim == 3:
             to_scale = ndi.gaussian_filter(image, sigma) \
                 if run_antialiasing_filter else image
-            scaled = ndi.zoom(
-                to_scale, full_zoom[:3], order=interp_order)
+            scaled = zoom_3d(to_scale, tuple(full_zoom[:3]), interp_order)
             return scaled[..., np.newaxis]
         else:
             raise NotImplementedError('not implemented random scaling')
@@ -104,3 +103,20 @@ class RandomSpatialScalingLayer(RandomisedLayer):
         else:
             raise NotImplementedError("unknown input format")
         return inputs
+
+
+
+def zoom_3d(im, ratio, interp_order=1):
+    assert (interp_order<4) and (interp_order>-1), "interp_order is between 0 and 3"
+    imshape = im.shape
+    dim = len(imshape)
+    spatial_coord = {}
+    size = tuple([int(imshape[i]*ratio[i]) for i in range(len(imshape))])
+    for i, s in enumerate(size):
+        spatial_coord[i] = imshape[i] / s * (np.arange(0, s) + 0.5) - 0.5
+    coordinate = np.meshgrid(*(spatial_coord[i] for i in range(len(size))), indexing="ij")
+    coordinate = np.stack([c for c in coordinate], 0)
+    coordinate = np.reshape(coordinate, (dim, -1))
+    im = scnd.interpolation.map_coordinates(im, coordinate, order=interp_order)
+    im = np.reshape(im, size)
+    return im
