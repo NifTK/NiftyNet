@@ -12,6 +12,9 @@ from niftynet.engine.signal import ITER_STARTED, ITER_FINISHED, SESS_STARTED, \
     SESS_FINISHED
 from niftynet.utilities.util_common import traverse_nested
 from niftynet.evaluation.pairwise_measures import PairwiseMeasures
+from niftynet.layer.pad import PadLayer
+from niftynet.layer.discrete_label_normalisation import \
+    DiscreteLabelNormalisationLayer
 
 
 class EvaluationHandler(object):
@@ -39,25 +42,35 @@ class EvaluationHandler(object):
             self.internal_validation_flag = True
         else:
             if self.internal_validation_flag:
-                # In the last iteration we were in validation. Now we should evaluate
-                # Search model dir.
+                # In the last iteration we were in validation.
+                # Now we should evaluate
                 save_seg_dir = _sender.action_param.save_seg_dir
                 for i in range(0, len(_sender.readers[-1].output_list)):
                     label = _sender.readers[-1](idx=i)[1]['label']
+                    for layer in reversed(_sender.readers[-1].preprocessors):
+                        if isinstance(layer, PadLayer):
+                            label, _ = layer.inverse_op(label)
+                        if isinstance(layer, DiscreteLabelNormalisationLayer):
+                            label, _ = layer.inverse_op(label)
                     output = nib.load(
                         os.path.join(save_seg_dir,
+                                     'window_seg_' +
                                      _sender.readers[-1]
-                                     .get_subject_id(i) + '_wvv_out.nii.gz')) \
+                                     .get_subject_id(i) + '__wvv_out.nii.gz')) \
                         .get_data()
-                    dice = \
-                        PairwiseMeasures(
-                            seg_img=np.where(output > 0, 1, 0),
-                            ref_img=np.where(label > 0, 1, 0)).dice_score()
-                    tf.logging.info(
-                        'subject_id: {} dice: {}'.format(
-                            _sender.readers[-1].get_subject_id(i), dice))
+                    try:
+                        dice = \
+                            PairwiseMeasures(
+                                seg_img=np.where(output > 0, 1, 0),
+                                ref_img=np.where(label > 0, 1, 0)).dice_score()
+                        tf.logging.info(
+                            'subject_id: {} dice: {}'.format(
+                                _sender.readers[-1].get_subject_id(i), dice))
+                    except ValueError:
+                        print('Shapes of prediction and label are'
+                              ' mismatched: {} {}'.format(output.shape,
+                                                          label.shape))
                 self.internal_validation_flag = False
                 # Match seg to ground truth
                 # Compute PairwiseMeasures
                 # Save results to TensorBoard/CSV
-                pass

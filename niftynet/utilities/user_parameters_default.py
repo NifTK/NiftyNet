@@ -23,7 +23,7 @@ DEFAULT_MODEL_DIR = None
 DEFAULT_EVENT_HANDLERS = ('model_saver', 'model_restorer', 'sampler_threading',
                           'apply_gradients', 'output_interpreter',
                           'console_logger', 'tensorboard_logger',
-                          'performance_logger')
+                          'performance_logger', 'whole_volume_evaluator')
 
 DEFAULT_ITERATION_GENERATOR = 'iteration_generator'
 
@@ -637,7 +637,6 @@ def add_training_args(parser):
         default=0.)
 
     parser.add_argument(
-<<<<<<< HEAD
         "--do_whole_volume_validation",
         help="Does validation on entire volumes and aggregates.",
         type=str2boolean,
@@ -648,7 +647,8 @@ def add_training_args(parser):
         help="Directory to save whole-volume validation results",
         type=str,
         default='./output_whole_validations')
-=======
+
+    parser.add_argument(
         "--vars_to_restore",
         help="regex strings matching variable names to restore",
         type=str,
@@ -675,7 +675,6 @@ def add_training_args(parser):
              "'generalisation_loss', 'median_smoothing', 'validation_up'}",
         type=str,
         default='mean')
->>>>>>> 9e466aba2c4054b3a7c1d5d15047d7b7c5eeae44
 
     return parser
 
