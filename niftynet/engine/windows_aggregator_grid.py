@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, division
 import os
 
 import numpy as np
+
 import tensorflow as tf
 # pylint: disable=too-many-nested-blocks
 import niftynet.io.misc_io as misc_io
@@ -93,8 +94,16 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                                 1 + location_init[0, :].shape[-1])
                         else:
                             window[i] = np.asarray(window[i])
+                            if n_samples > 1 and np.asarray(window[i]).ndim < 2:
+                                window[i] = np.expand_dims(window[i], 1)
+                            elif n_samples == 1 and np.asarray(window[i]).shape[
+                                0] != n_samples:
+                                window[i] = np.expand_dims(window[i], 0)
+                            window_save = np.asarray(np.squeeze(window[i][
+                                                                    batch_id,
+                                                                ...]))
                             try:
-                                assert window[i].ndim <= 2
+                                assert window_save.ndim <= 2
                             except (TypeError, AssertionError):
                                 tf.logging.error(
                                     "The output you are trying to "
@@ -104,10 +113,11 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                                     "Put the keyword window "
                                     "in the output dictionary"
                                     " in your application file")
-                            if window[i].ndim < 2:
-                                window[i] = np.expand_dims(window[i], 0)
+                            if window_save.ndim < 2:
+                                window_save = np.expand_dims(window_save, 0)
                             self.csv_out[i] = self._initialise_empty_csv(
-                                n_channel=window[i][0].shape[-1] + location_init
+                                n_channel=window_save.shape[-1] +
+                                          location_init
                                 [0, :].shape[-1])
             for i in window:
                 if 'window' in i:
@@ -117,8 +127,15 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                 else:
                     if isinstance(window[i], (list, tuple, np.ndarray)):
                         window[i] = np.asarray(window[i])
+                        if n_samples > 1 and window[i].ndim <2:
+                            window[i] = np.expand_dims(window[i], 1)
+                        elif n_samples==1 and window[i].shape[0] != n_samples:
+                            window[i] = np.expand_dims(window[i], 0)
+                        print(batch_id, "is batch_id ", window[i].shape )
+                        window_save = np.squeeze(np.asarray(window[i][batch_id,
+                                                                   ...]))
                         try:
-                            assert window[i].ndim <= 2
+                            assert window_save.ndim <= 2
                         except (TypeError, AssertionError):
                             tf.logging.error(
                                 "The output you are trying to "
@@ -128,17 +145,18 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                                 "Put the keyword window "
                                 "in the output dictionary"
                                 " in your application file")
-                        if window[i].ndim < 2:
-                            window[i] = np.expand_dims(window[i], 0)
-                        window[i] = np.asarray(window[i])
+                        while window_save.ndim < 2:
+                            window_save = np.expand_dims(window_save, 0)
+                        window_save = np.asarray(window_save)
 
                         window_loc = np.concatenate([
-                            window[i], np.tile(
+                            window_save, np.tile(
                                 location_init[batch_id, ...],
-                                [window[i].shape[0], 1])], 1)
+                                [window_save.shape[0], 1])], 1)
                     else:
                         window_loc = np.concatenate([
-                            np.reshape(window[i], [1, 1]), np.tile(
+                            np.reshape(window[i], [1, 1]), \
+                                     np.tile(
                                 location_init[batch_id, ...], [1, 1])], 1)
                     self.csv_out[i] = np.concatenate([self.csv_out[i],
                                                       window_loc], 0)
@@ -157,7 +175,6 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         spatial_shape = self.input_image[self.name].shape[:3]
         output_image_shape = spatial_shape + (n_channels,)
         empty_image = np.zeros(output_image_shape, dtype=dtype)
-
         for layer in self.reader.preprocessors:
             if isinstance(layer, PadLayer):
                 empty_image, _ = layer(empty_image)

@@ -246,8 +246,9 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
-                min_val = np.sum((np.asarray(out['image']).flatten()))
-                stats_val = [np.min(out), np.max(out), np.sum(out)]
+                out_flatten = np.reshape(np.asarray(out['image']), [10, -1])
+                min_val = np.sum(np.reshape(np.asarray(out['image']),
+                                            [10, -1]), 1)
                 more_batch = aggregator.decode_batch(
                     {'window_image':out['image'], 'csv_sum':min_val},
                     out['image_location'])
@@ -288,6 +289,7 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
+
                 more_batch = aggregator.decode_batch(
                     {'window_image':out['image'], 'window_im2':out['image']},
                     out['image_location'])
@@ -325,9 +327,14 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
-                min_val = np.sum((np.asarray(out['image']).flatten()))
-                stats_val = [np.min(out['image']), np.max(out['image']), np.sum(
-                    out['image'])]
+                print(out['image'].shape)
+                out_flatten = np.reshape(np.asarray(out['image']), [10, -1])
+                min_val = np.sum(np.reshape(np.asarray(out['image']),
+                                             [10,-1]),1)
+                stats_val = np.concatenate([np.min(out_flatten,1,
+                                                   keepdims=True), np.max(
+                    out_flatten, 1,keepdims=True), np.sum(
+                    out_flatten,1,keepdims=True)],1)
                 more_batch = aggregator.decode_batch(
                     {'window_image':out['image'], 'csv_sum':min_val,
                      'csv_stats':stats_val},
@@ -376,11 +383,15 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
-                min_val = np.sum((np.asarray(out['image']).flatten()))
-                stats_val = [np.min(out['image']), np.max(out['image']), np.sum(
-                    out['image'])]
-                stats_val = np.expand_dims(stats_val, 0)
-                stats_val = np.concatenate([stats_val, stats_val], axis=0)
+                out_flatten = np.reshape(np.asarray(out['image']), [10, -1])
+                min_val = np.sum(np.reshape(np.asarray(out['image']),
+                                             [10,-1]),1)
+                stats_val = np.concatenate([np.min(out_flatten,1,
+                                                   keepdims=True), np.max(
+                    out_flatten, 1,keepdims=True), np.sum(
+                    out_flatten,1,keepdims=True)],1)
+                stats_val = np.expand_dims(stats_val, 1)
+                stats_val = np.concatenate([stats_val, stats_val], axis=1)
                 more_batch = aggregator.decode_batch(
                     {'window_image':out['image'],
                      'csv_sum':min_val,
@@ -430,8 +441,13 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
-                min_val = np.sum((np.asarray(out['image']).flatten()))
-                stats_val = [np.min(out), np.max(out), np.sum(out)]
+                out_flatten = np.reshape(np.asarray(out['image']), [10, -1])
+                min_val = np.sum(np.reshape(np.asarray(out['image']),
+                                             [10,-1]),1)
+                stats_val = np.concatenate([np.min(out_flatten,1,
+                                                   keepdims=True), np.max(
+                    out_flatten, 1,keepdims=True), np.sum(
+                    out_flatten,1,keepdims=True)],1)
                 more_batch = aggregator.decode_batch(
                     {'window_image':out['image'], 'csv_sum':min_val},
                     out['image_location'])
@@ -472,9 +488,13 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
-                min_val = np.sum((np.asarray(out['image']).flatten()))
-                stats_val = [np.min(out['image']), np.max(out['image']), np.sum(
-                    out['image'])]
+                out_flatten = np.reshape(np.asarray(out['image']), [10, -1])
+                min_val = np.sum(np.reshape(np.asarray(out['image']),
+                                             [10,-1]),1)
+                stats_val = np.concatenate([np.min(out_flatten,1,
+                                                   keepdims=True), np.max(
+                    out_flatten, 1,keepdims=True), np.sum(
+                    out_flatten,1,keepdims=True)],1)
                 more_batch = aggregator.decode_batch(
                     {'window_image':out['image'],
                      'csv_sum':min_val,
@@ -524,11 +544,15 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
-                min_val = np.sum((np.asarray(out['image']).flatten()))
-                stats_val = [np.min(out['image']), np.max(out['image']), np.sum(
-                    out['image'])]
-                stats_val = np.expand_dims(stats_val, 0)
-                stats_val = np.concatenate([stats_val, stats_val], axis=0)
+                out_flatten = np.reshape(np.asarray(out['image']), [10, -1])
+                min_val = np.sum(np.reshape(np.asarray(out['image']),
+                                             [10,-1]),1)
+                stats_val = np.concatenate([np.min(out_flatten,1,
+                                                   keepdims=True), np.max(
+                    out_flatten, 1,keepdims=True), np.sum(
+                    out_flatten,1,keepdims=True)],1)
+                stats_val = np.expand_dims(stats_val, 1)
+                stats_val = np.concatenate([stats_val, stats_val], axis=1)
                 more_batch = aggregator.decode_batch(
                     {'window_image':out['image'],
                      'csv_sum':min_val,
