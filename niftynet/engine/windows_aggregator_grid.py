@@ -96,12 +96,11 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                             window[i] = np.asarray(window[i])
                             if n_samples > 1 and np.asarray(window[i]).ndim < 2:
                                 window[i] = np.expand_dims(window[i], 1)
-                            elif n_samples == 1 and np.asarray(window[i]).shape[
-                                0] != n_samples:
+                            elif n_samples == 1 and np.asarray(
+                                    window[i]).shape[0] != n_samples:
                                 window[i] = np.expand_dims(window[i], 0)
-                            window_save = np.asarray(np.squeeze(window[i][
-                                                                    batch_id,
-                                                                ...]))
+                            window_save = np.asarray(np.squeeze(
+                                window[i][batch_id, ...]))
                             try:
                                 assert window_save.ndim <= 2
                             except (TypeError, AssertionError):
@@ -116,8 +115,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                             if window_save.ndim < 2:
                                 window_save = np.expand_dims(window_save, 0)
                             self.csv_out[i] = self._initialise_empty_csv(
-                                n_channel=window_save.shape[-1] +
-                                          location_init
+                                n_channel=window_save.shape[-1] + location_init
                                 [0, :].shape[-1])
             for i in window:
                 if 'window' in i:
@@ -127,13 +125,13 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                 else:
                     if isinstance(window[i], (list, tuple, np.ndarray)):
                         window[i] = np.asarray(window[i])
-                        if n_samples > 1 and window[i].ndim <2:
+                        if n_samples > 1 and window[i].ndim < 2:
                             window[i] = np.expand_dims(window[i], 1)
-                        elif n_samples==1 and window[i].shape[0] != n_samples:
+                        elif n_samples == 1 and window[i].shape[0] != n_samples:
                             window[i] = np.expand_dims(window[i], 0)
-                        print(batch_id, "is batch_id ", window[i].shape )
-                        window_save = np.squeeze(np.asarray(window[i][batch_id,
-                                                                   ...]))
+                        print(batch_id, "is batch_id ", window[i].shape)
+                        window_save = np.squeeze(np.asarray(
+                            window[i][batch_id, ...]))
                         try:
                             assert window_save.ndim <= 2
                         except (TypeError, AssertionError):
@@ -155,8 +153,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
                                 [window_save.shape[0], 1])], 1)
                     else:
                         window_loc = np.concatenate([
-                            np.reshape(window[i], [1, 1]), \
-                                     np.tile(
+                            np.reshape(window[i], [1, 1]), np.tile(
                                 location_init[batch_id, ...], [1, 1])], 1)
                     self.csv_out[i] = np.concatenate([self.csv_out[i],
                                                       window_loc], 0)

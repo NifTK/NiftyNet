@@ -96,18 +96,30 @@ single_25d_list = data_partitioner.initialise(SINGLE_25D_DATA).get_file_list()
 
 
 def get_3d_reader():
+    '''
+    define the 3d reader
+    :return: 3d reader
+    '''
     reader = ImageReader(['image'])
     reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
     return reader
 
 
 def get_2d_reader():
+    '''
+    define the 2d reader
+    :return: 2d reader
+    '''
     reader = ImageReader(['image'])
     reader.initialise(MOD_2D_DATA, MOD_2D_TASK, mod_2d_list)
     return reader
 
 
 def get_label_reader():
+    '''
+    define the label reader
+    :return: label reader
+    '''
     reader = ImageReader(['label'])
     reader.initialise(MOD_LABEL_DATA, MOD_LABEl_TASK, mod_label_list)
     label_normaliser = DiscreteLabelNormalisationLayer(
@@ -121,6 +133,10 @@ def get_label_reader():
 
 
 def get_25d_reader():
+    '''
+    define the 2.5 d reader
+    :return:
+    '''
     reader = ImageReader(['image'])
     reader.initialise(SINGLE_25D_DATA, SINGLE_25D_TASK, single_25d_list)
     return reader
@@ -182,13 +198,14 @@ class ResizeSamplesAggregatorTest(NiftyNetTestCase):
                     break
                 sum_val = np.sum(out['image'])
                 more_batch = aggregator.decode_batch(
-                    {'window_image':out['image'], 'csv_sum':sum_val},
+                    {'window_image': out['image'], 'csv_sum': sum_val},
                     out['image_location'])
         output_filename = 'window_image_{}_niftynet_out.nii.gz'.format(
             sampler.reader.get_subject_id(0))
-        sum_filename = os.path.join('testing_data','aggregated',
-                                    'csv_sum_{}_niftynet_out.csv'.format(
-            sampler.reader.get_subject_id(0)))
+        sum_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'csv_sum_{}_niftynet_out.csv'.format(
+                sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated',
                                    output_filename)
@@ -226,9 +243,10 @@ class ResizeSamplesAggregatorTest(NiftyNetTestCase):
                     out['image_location'])
         output_filename = 'window_image_{}_niftynet_out.nii.gz'.format(
             sampler.reader.get_subject_id(0))
-        outim2_filename = os.path.join('testing_data','aggregated',
-                                    'window_im2_{}_niftynet_out.nii.gz'.format(
-            sampler.reader.get_subject_id(0)))
+        outim2_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'window_im2_{}_niftynet_out.nii.gz'.format(
+                sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated',
                                    output_filename)
@@ -260,20 +278,23 @@ class ResizeSamplesAggregatorTest(NiftyNetTestCase):
                 except tf.errors.OutOfRangeError:
                     break
                 sum_val = np.sum(out['image'])
-                stats_val = [np.sum(out['image']), np.min(out['image']),
-                                                         np.max(out['image'])]
+                stats_val = [np.sum(out['image']),
+                             np.min(out['image']),
+                             np.max(out['image'])]
                 more_batch = aggregator.decode_batch(
-                    {'window_image':out['image'], 'csv_sum':sum_val,
-                     'csv_stats':stats_val},
+                    {'window_image': out['image'], 'csv_sum': sum_val,
+                     'csv_stats': stats_val},
                     out['image_location'])
         output_filename = 'window_image_{}_niftynet_out.nii.gz'.format(
             sampler.reader.get_subject_id(0))
-        sum_filename = os.path.join('testing_data','aggregated',
-                                    'csv_sum_{}_niftynet_out.csv'.format(
-            sampler.reader.get_subject_id(0)))
-        stats_filename = os.path.join('testing_data', 'aggregated',
-                                    'csv_stats_{}_niftynet_out.csv'.format(
-                                        sampler.reader.get_subject_id(0)))
+        sum_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'csv_sum_{}_niftynet_out.csv'.format(
+                sampler.reader.get_subject_id(0)))
+        stats_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'csv_stats_{}_niftynet_out.csv'.format(
+                sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated',
                                    output_filename)
@@ -316,18 +337,20 @@ class ResizeSamplesAggregatorTest(NiftyNetTestCase):
                 stats_val = np.expand_dims(stats_val, 0)
                 stats_val = np.concatenate([stats_val, stats_val], axis=0)
                 more_batch = aggregator.decode_batch(
-                    {'window_image':out['image'],
-                     'csv_sum':min_val,
-                     'csv_stats_2d':stats_val},
+                    {'window_image': out['image'],
+                     'csv_sum': min_val,
+                     'csv_stats_2d': stats_val},
                     out['image_location'])
         output_filename = 'window_image_{}_niftynet_out.nii.gz'.format(
             sampler.reader.get_subject_id(0))
-        sum_filename = os.path.join('testing_data','aggregated',
-                                    'csv_sum_{}_niftynet_out.csv'.format(
-            sampler.reader.get_subject_id(0)))
-        stats_filename = os.path.join('testing_data', 'aggregated',
-                                    'csv_stats_2d_{}_niftynet_out.csv'.format(
-                                        sampler.reader.get_subject_id(0)))
+        sum_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'csv_sum_{}_niftynet_out.csv'.format(
+                sampler.reader.get_subject_id(0)))
+        stats_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'csv_stats_2d_{}_niftynet_out.csv'.format(
+                sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated',
                                    output_filename)
@@ -400,13 +423,14 @@ class ResizeSamplesAggregatorTest(NiftyNetTestCase):
                 min_val = np.sum((np.asarray(out['image']).flatten()))
                 stats_val = [np.min(out), np.max(out), np.sum(out)]
                 more_batch = aggregator.decode_batch(
-                    {'window_image':out['image'], 'csv_sum':min_val},
+                    {'window_image': out['image'], 'csv_sum': min_val},
                     out['image_location'])
         output_filename = 'window_image_{}_niftynet_out.nii.gz'.format(
             sampler.reader.get_subject_id(0))
-        sum_filename = os.path.join('testing_data','aggregated',
-                                    'csv_sum_{}_niftynet_out.csv'.format(
-            sampler.reader.get_subject_id(0)))
+        sum_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'csv_sum_{}_niftynet_out.csv'.format(
+                sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated',
                                    output_filename)

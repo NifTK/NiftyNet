@@ -91,9 +91,8 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                             window[i] = np.expand_dims(window[i], 1)
                         elif n_samples == 1 and window[i].shape[0] != n_samples:
                             window[i] = np.expand_dims(window[i], 0)
-                        window_save = np.asarray(np.squeeze(window[i][
-                                                                batch_id,
-                                                                ...]))
+                        window_save = np.asarray(np.squeeze(
+                            window[i][batch_id, ...]))
                         try:
                             assert window_save.ndim <= 2
                         except (TypeError, AssertionError):
@@ -135,7 +134,6 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
             if isinstance(layer, PadLayer):
                 empty_image, _ = layer(empty_image)
         return empty_image.shape
-
 
     def _save_current_image(self):
         '''
