@@ -87,8 +87,15 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                         self.csv_out[i] = self._initialise_empty_csv(1)
                     else:
                         window[i] = np.asarray(window[i])
+                        if n_samples > 1 and window[i].ndim < 2:
+                            window[i] = np.expand_dims(window[i], 1)
+                        elif n_samples == 1 and window[i].shape[0] != n_samples:
+                            window[i] = np.expand_dims(window[i], 0)
+                        window_save = np.asarray(np.squeeze(window[i][
+                                                                batch_id,
+                                                                ...]))
                         try:
-                            assert window[i].ndim <= 2
+                            assert window_save.ndim <= 2
                         except (TypeError, AssertionError):
                             tf.logging.error(
                                 "The output you are trying to "
@@ -98,11 +105,11 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                                 "Put the keyword window "
                                 "in the output dictionary"
                                 " in your application file")
-                        if window[i].ndim < 2:
-                            window[i] = np.expand_dims(window[i], 0)
-                        window_loc = window[i]
+                        while window_save.ndim < 2:
+                            window_save = np.expand_dims(window_save, 0)
+                        window_loc = window_save
                         self.csv_out[i] = self._initialise_empty_csv(
-                            n_channel=window[i][0].shape[-1])
+                            n_channel=window_save.shape[-1])
 
                     self.csv_out[i] = np.concatenate([self.csv_out[i],
                                                       window_loc], 0)
