@@ -117,8 +117,10 @@ class UniformSamplerCSV(ImageWindowDatasetCSV):
         if self.csv_reader is not None:
             _, label_dict, _ = self.csv_reader(idx=image_id)
             output_dict.update(label_dict)
-            for name in self.csv_reader.task_param.keys():
+            for name in self.csv_reader.names:
+            # for name in self.csv_reader.task_param.keys():
                 output_dict[name + '_location'] = output_dict['image_location']
+        print("output_dict gotten", output_dict.keys(), len(output_dict.keys()))
         return output_dict
 
     def _spatial_coordinates_generator(self,
