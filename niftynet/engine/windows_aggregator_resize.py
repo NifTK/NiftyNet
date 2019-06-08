@@ -86,9 +86,13 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                         window_loc = np.reshape(window[i], [1, 1])
                         self.csv_out[i] = self._initialise_empty_csv(1)
                     else:
-                        window_save = np.asarray(np.squeeze(window[i][
-                                                                batch_id,
-                                                                ...]))
+                        window[i] = np.asarray(window[i])
+                        if n_samples > 1 and window[i].ndim < 2:
+                            window[i] = np.expand_dims(window[i], 1)
+                        elif n_samples == 1 and window[i].shape[0] != n_samples:
+                            window[i] = np.expand_dims(window[i], 0)
+                        window_save = np.asarray(np.squeeze(
+                            window[i][batch_id, ...]))
                         try:
                             assert window_save.ndim <= 2
                         except (TypeError, AssertionError):
@@ -102,7 +106,7 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
                                 " in your application file")
                         while window_save.ndim < 2:
                             window_save = np.expand_dims(window_save, 0)
-                        window_loc = window[i]
+                        window_loc = window_save
                         self.csv_out[i] = self._initialise_empty_csv(
                             n_channel=window_save.shape[-1])
 
@@ -130,7 +134,6 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
             if isinstance(layer, PadLayer):
                 empty_image, _ = layer(empty_image)
         return empty_image.shape
-
 
     def _save_current_image(self):
         '''
