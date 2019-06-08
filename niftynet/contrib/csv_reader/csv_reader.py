@@ -289,7 +289,7 @@ class CSVReader(Layer):
     def tile_nsamples(self, data):
         if self.n_samples_per_id > 1:
             print("preparing tiling")
-            data = np.expand_dims(data,1)
+            data = np.expand_dims(data, 1)
             data = np.tile(data, np.asarray(np.concatenate(([
                                                              self.n_samples_per_id],
                                                  [1,]*(len(
@@ -343,6 +343,4 @@ class CSVReader(Layer):
             data = np.expand_dims(data, 0)
         while len(data.shape) < 6:
             data = np.expand_dims(data, -1)
-
-
         return data

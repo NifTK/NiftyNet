@@ -15,9 +15,21 @@ from niftynet.engine.application_factory import \
     ApplicationNetFactory, InitializerFactory, OptimiserFactory
 from niftynet.engine.application_variables import \
     CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
-from niftynet.contrib.csv_reader.sampler_resize_v2_csv import ResizeSamplerCSV as ResizeSampler
+from niftynet.contrib.csv_reader.sampler_resize_v2_csv import ResizeSamplerCSV \
+    as ResizeSampler
+from niftynet.contrib.csv_reader.sampler_uniform_v2_csv import \
+    UniformSamplerCSV as UniformSampler
+from niftynet.contrib.csv_reader.sampler_weighted_v2_csv import \
+    WeightedSamplerCSV as WeightedSampler
+from niftynet.contrib.csv_reader.sampler_balanced_v2_csv import \
+    BalancedSamplerCSV as BalancedSampler
+from niftynet.contrib.csv_reader.sampler_grid_v2_csv import GridSamplerCSV as\
+    GridSampler
+
 # from niftynet.engine.windows_aggregator_classifier import \
 #     ClassifierSamplesAggregator
+from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
+from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.contrib.csv_reader.csv_reader import CSVReader
 from niftynet.layer.discrete_label_normalisation import \
@@ -26,7 +38,10 @@ from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.post_processing import PostProcessingLayer
-from niftynet.layer.loss_classification import LossFunction
+from niftynet.layer.loss_classification import LossFunction as \
+    LossFunctionClassification
+from niftynet.layer.loss_segmentation import \
+    LossFunction as LossFunctionSegmentation
 from niftynet.layer.mean_variance_normalisation import \
     MeanVarNormalisationLayer
 from niftynet.layer.rand_flip import RandomFlipLayer
@@ -34,10 +49,10 @@ from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 from niftynet.evaluation.classification_evaluator import ClassificationEvaluator
 
-SUPPORTED_INPUT = set(['image', 'label', 'sampler', 'inferred'])
+SUPPORTED_INPUT = set(['image', 'class', 'label', 'sampler', 'inferred'])
 
 
-class ClassificationApplication(BaseApplication):
+class MultiClassifSegApplication(BaseApplication):
     """This class defines an application for image-level classification
     problems mapping from images to scalar labels.
 
@@ -48,10 +63,10 @@ class ClassificationApplication(BaseApplication):
     supports different samplers/aggregators (because patch-based
     processing is not appropriate), and monitoring metrics."""
 
-    REQUIRED_CONFIG_SECTION = "CLASSIFICATION"
+    REQUIRED_CONFIG_SECTION = "SEGMENTATION"
 
     def __init__(self, net_param, action_param, action):
-        super(ClassificationApplication, self).__init__()
+        super(MultiClassifSegApplication, self).__init__()
         tf.logging.info('starting classification application')
         self.action = action
 
@@ -59,26 +74,37 @@ class ClassificationApplication(BaseApplication):
         self.action_param = action_param
 
         self.data_param = None
-        self.classification_param = None
+        self.segmentation_param = None
         self.SUPPORTED_SAMPLING = {
+            'uniform': (self.initialise_uniform_sampler,
+                        self.initialise_grid_sampler,
+                        self.initialise_grid_aggregator),
+            'weighted': (self.initialise_weighted_sampler,
+                         self.initialise_grid_sampler,
+                         self.initialise_grid_aggregator),
             'resize': (self.initialise_resize_sampler,
-                       self.initialise_resize_sampler),
+                       self.initialise_resize_sampler,
+                       self.initialise_resize_aggregator),
+            'balanced': (self.initialise_balanced_sampler,
+                         self.initialise_grid_sampler,
+                         self.initialise_grid_aggregator),
         }
 
     def initialise_dataset_loader(
             self, data_param=None, task_param=None, data_partitioner=None):
 
         self.data_param = data_param
-        self.classification_param = task_param
+        self.segmentation_param = task_param
 
         if self.is_training:
-            image_reader_names = ('image', 'sampler')
-            csv_reader_names = ('label',)
+            image_reader_names = ('image', 'sampler', 'label')
+            csv_reader_names = ('class',)
         elif self.is_inference:
             image_reader_names = ('image',)
+            csv_reader_names = ()
         elif self.is_evaluation:
-            image_reader_names = ('image', 'inferred')
-            csv_reader_names = ('label',)
+            image_reader_names = ('image', 'inferred', 'label')
+            csv_reader_names = ('class',)
         else:
             tf.logging.fatal(
                 'Action `%s` not supported. Expected one of %s',
@@ -93,9 +119,17 @@ class ClassificationApplication(BaseApplication):
         self.readers = [
             ImageReader(image_reader_names).initialise(
                 data_param, task_param, file_list) for file_list in file_lists]
-        self.csv_readers = [
-            CSVReader(csv_reader_names).initialise(
-                data_param, task_param, file_list) for file_list in file_lists]
+        if self.is_inference:
+            self.action_param.sample_per_volume=1
+        if csv_reader_names is not None and len(csv_reader_names) > 0:
+            self.csv_readers = [
+                CSVReader(csv_reader_names).initialise(
+                    data_param, task_param, file_list,
+                    sample_per_volume=self.action_param.sample_per_volume) for file_list in
+                    file_lists]
+        else:
+            self.csv_readers = [None for file_list in
+                    file_lists]
 
         foreground_masking_layer = BinaryMaskingLayer(
             type_str=self.net_param.foreground_type,
@@ -164,27 +198,85 @@ class ClassificationApplication(BaseApplication):
         for reader in self.readers[1:]:
             reader.add_preprocessing_layers(normalisation_layers)
 
+    def initialise_uniform_sampler(self):
+        self.sampler = [[UniformSampler(
+            reader=reader,
+            csv_reader=csv_reader,
+            window_sizes=self.data_param,
+            batch_size=self.net_param.batch_size,
+            windows_per_image=self.action_param.sample_per_volume,
+            queue_length=self.net_param.queue_length) for reader, csv_reader in
+            zip(self.readers, self.csv_readers)]]
+
+    def initialise_weighted_sampler(self):
+        self.sampler = [[WeightedSampler(
+            reader=reader,
+            csv_reader=csv_reader,
+            window_sizes=self.data_param,
+            batch_size=self.net_param.batch_size,
+            windows_per_image=self.action_param.sample_per_volume,
+            queue_length=self.net_param.queue_length) for reader, csv_reader in
+            zip(self.readers, self.csv_readers)]]
+
     def initialise_resize_sampler(self):
         self.sampler = [[ResizeSampler(
-            reader=image_reader,
+            reader=reader,
             csv_reader=csv_reader,
             window_sizes=self.data_param,
             batch_size=self.net_param.batch_size,
             shuffle=self.is_training,
-            queue_length=self.net_param.queue_length) for image_reader, csv_reader in
+            smaller_final_batch_mode=self.net_param.smaller_final_batch_mode,
+            queue_length=self.net_param.queue_length) for reader, csv_reader in
             zip(self.readers, self.csv_readers)]]
 
-    def initialise_aggregator(self):
-        self.output_decoder = ClassifierSamplesAggregator(
+    def initialise_grid_sampler(self):
+        self.sampler = [[GridSampler(
+            reader=reader,
+            csv_reader=csv_reader,
+            window_sizes=self.data_param,
+            batch_size=self.net_param.batch_size,
+            spatial_window_size=self.action_param.spatial_window_size,
+            window_border=self.action_param.border,
+            smaller_final_batch_mode=self.net_param.smaller_final_batch_mode,
+            queue_length=self.net_param.queue_length) for reader, csv_reader in
+            zip(self.readers, self.csv_readers)]]
+
+    def initialise_balanced_sampler(self):
+        self.sampler = [[BalancedSampler(
+            reader=reader,
+            csv_reader=csv_reader,
+            window_sizes=self.data_param,
+            batch_size=self.net_param.batch_size,
+            windows_per_image=self.action_param.sample_per_volume,
+            queue_length=self.net_param.queue_length) for reader, csv_reader in
+            zip(self.readers, self.csv_readers)]]
+
+    def initialise_grid_aggregator(self):
+        self.output_decoder = GridSamplesAggregator(
             image_reader=self.readers[0],
             output_path=self.action_param.save_seg_dir,
+            window_border=self.action_param.border,
+            interp_order=self.action_param.output_interp_order,
+            postfix=self.action_param.output_postfix,
+            fill_constant=self.action_param.fill_constant)
+
+    def initialise_resize_aggregator(self):
+        self.output_decoder = ResizeSamplesAggregator(
+            image_reader=self.readers[0],
+            output_path=self.action_param.save_seg_dir,
+            window_border=self.action_param.border,
+            interp_order=self.action_param.output_interp_order,
             postfix=self.action_param.output_postfix)
 
     def initialise_sampler(self):
         if self.is_training:
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][0]()
-        else:
+        elif self.is_inference:
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][1]()
+
+    def initialise_aggregator(self):
+        self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]()
+
 
     def initialise_network(self):
         w_regularizer = None
@@ -200,8 +292,19 @@ class ClassificationApplication(BaseApplication):
             w_regularizer = regularizers.l1_regularizer(decay)
             b_regularizer = regularizers.l1_regularizer(decay)
 
-        self.net = ApplicationNetFactory.create(self.net_param.name)(
-            num_classes=self.classification_param.num_classes,
+        self.net = ApplicationNetFactory.create(
+            'niftynet.contrib.csv_reader.toynet_features.ToyNetFeat')(
+            num_classes=self.segmentation_param.num_classes,
+            w_initializer=InitializerFactory.get_initializer(
+                name=self.net_param.weight_initializer),
+            b_initializer=InitializerFactory.get_initializer(
+                name=self.net_param.bias_initializer),
+            w_regularizer=w_regularizer,
+            b_regularizer=b_regularizer,
+            acti_func=self.net_param.activation_function)
+        self.net_multi = ApplicationNetFactory.create(
+            'niftynet.contrib.csv_reader.class_seg_finnet.ClassSegFinnet')(
+            num_classes=self.segmentation_param.num_classes,
             w_initializer=InitializerFactory.get_initializer(
                 name=self.net_param.weight_initializer),
             b_initializer=InitializerFactory.get_initializer(
@@ -218,10 +321,10 @@ class ClassificationApplication(BaseApplication):
         are derived from the confusion matrix """
         labels = tf.reshape(tf.cast(data_dict['label'], tf.int64), [-1])
         prediction = tf.reshape(tf.argmax(net_out, -1), [-1])
-        num_classes = self.classification_param.num_classes
+        num_classes = 2
         conf_mat = tf.confusion_matrix(labels, prediction, num_classes)
         conf_mat = tf.to_float(conf_mat)
-        if self.classification_param.num_classes == 2:
+        if self.segmentation_param.num_classes == 2:
             outputs_collector.add_to_collection(
                 var=conf_mat[1][1], name='true_positives',
                 average_over_devices=True, summary_type='scalar',
@@ -250,7 +353,6 @@ class ClassificationApplication(BaseApplication):
             average_over_devices=True, summary_type='scalar',
             collection=TF_SUMMARIES)
 
-
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
@@ -272,40 +374,52 @@ class ClassificationApplication(BaseApplication):
             net_args = {'is_training': self.is_training,
                         'keep_prob': self.net_param.keep_prob}
             net_out = self.net(image, **net_args)
+            net_out_seg, net_out_class = self.net_multi(net_out,
+                                                        self.is_training)
 
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(
                     name=self.action_param.optimiser)
                 self.optimiser = optimiser_class.get_instance(
                     learning_rate=self.action_param.lr)
-            loss_func = LossFunction(
-                n_class=self.classification_param.num_classes,
+            loss_func_class = LossFunctionClassification(
+                n_class=2,
+                loss_type='CrossEntropy')
+            loss_func_seg = LossFunctionSegmentation(
+                n_class=self.segmentation_param.num_classes,
                 loss_type=self.action_param.loss_type)
-            data_loss = loss_func(
-                prediction=net_out,
+            data_loss_seg = loss_func_seg(
+                prediction=net_out_seg,
                 ground_truth=data_dict.get('label', None))
+            data_loss_class = loss_func_class(prediction=net_out_class,
+                ground_truth=data_dict.get('class',  None))
             reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(
                     [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
-                loss = data_loss + reg_loss
+                loss = data_loss_seg + data_loss_class + reg_loss
             else:
-                loss = data_loss
+                loss = data_loss_seg + data_loss_class
+            self.total_loss = loss
+            self.total_loss = tf.Print(tf.cast(self.total_loss, tf.float32),
+                                       [loss, tf.shape(net_out_seg),
+                                        tf.shape(net_out_class)],
+                                       message='test')
             grads = self.optimiser.compute_gradients(
                 loss, colocate_gradients_with_ops=True)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
             # collecting output variables
             outputs_collector.add_to_collection(
-                var=data_loss, name='data_loss',
+                var=data_loss_class, name='data_loss',
                 average_over_devices=False, collection=CONSOLE)
             outputs_collector.add_to_collection(
-                var=data_loss, name='data_loss',
+                var=data_loss_seg, name='data_loss',
                 average_over_devices=True, summary_type='scalar',
                 collection=TF_SUMMARIES)
-            self.add_confusion_matrix_summaries_(outputs_collector,
-                                                 net_out,
-                                                 data_dict)
+            # self.add_confusion_matrix_summaries_(outputs_collector,
+            #                                      net_out_class,
+            #                                      data_dict)
         else:
             # converting logits into final output for
             # classification probabilities or argmax classification labels
@@ -314,24 +428,37 @@ class ClassificationApplication(BaseApplication):
             net_args = {'is_training': self.is_training,
                         'keep_prob': self.net_param.keep_prob}
             net_out = self.net(image, **net_args)
+            net_out_seg, net_out_class = self.net_multi(net_out, self.is_training)
             tf.logging.info(
                 'net_out.shape may need to be resized: %s', net_out.shape)
-            output_prob = self.classification_param.output_prob
-            num_classes = self.classification_param.num_classes
+            output_prob = self.segmentation_param.output_prob
+            num_classes = self.segmentation_param.num_classes
             if output_prob and num_classes > 1:
-                post_process_layer = PostProcessingLayer(
+                post_process_layer_class = PostProcessingLayer(
                     'SOFTMAX', num_classes=num_classes)
+                post_process_layer_seg = PostProcessingLayer('SOFTMAX',
+                                                             num_classes=2)
             elif not output_prob and num_classes > 1:
-                post_process_layer = PostProcessingLayer(
+                post_process_layer_class = PostProcessingLayer(
                     'ARGMAX', num_classes=num_classes)
+                post_process_layer_seg = PostProcessingLayer('ARGMAX',
+                                                             num_classes=2)
             else:
-                post_process_layer = PostProcessingLayer(
+                post_process_layer_class = PostProcessingLayer(
                     'IDENTITY', num_classes=num_classes)
-            net_out = post_process_layer(net_out)
+                post_process_layer_seg = PostProcessingLayer('IDENTITY',
+                                                             num_classes=2)
+
+            net_out_class = post_process_layer_class(net_out_class)
+            net_out_seg = post_process_layer_seg(net_out_seg)
 
             outputs_collector.add_to_collection(
-                var=net_out, name='window',
+                var=net_out_seg, name='seg',
                 average_over_devices=False, collection=NETWORK_OUTPUT)
+            outputs_collector.add_to_collection(var=net_out_class,
+                                                name='class',
+                                                average_over_devices=False,
+                                                collection=NETWORK_OUTPUT)
             outputs_collector.add_to_collection(
                 var=data_dict['image_location'], name='location',
                 average_over_devices=False, collection=NETWORK_OUTPUT)
@@ -340,13 +467,15 @@ class ClassificationApplication(BaseApplication):
     def interpret_output(self, batch_output):
         if not self.is_training:
             return self.output_decoder.decode_batch(
-                batch_output['window'], batch_output['location'])
+                {'window_seg':batch_output['seg'],
+                 'csv_class':batch_output['class']}, batch_output[
+                    'location'])
         return True
 
     def initialise_evaluator(self, eval_param):
         self.eval_param = eval_param
         self.evaluator = ClassificationEvaluator(self.readers[0],
-                                                 self.classification_param,
+                                                 self.segmentation_param,
                                                  eval_param)
 
     def add_inferred_output(self, data_param, task_param):

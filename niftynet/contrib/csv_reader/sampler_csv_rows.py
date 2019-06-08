@@ -21,6 +21,7 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
                  smaller_final_batch_mode='pad',
                  name='random_vector_sampler'):
         self.csv_reader = csv_reader
+        print("assigned csv_reader")
         ImageWindowDataset.__init__(
             self,
             reader=reader,
@@ -32,6 +33,7 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
             epoch=epoch,
             smaller_final_batch_mode=smaller_final_batch_mode,
             name=name)
+        print("initialised IWD")
         self.set_num_threads(num_threads)
 
     def layer_op(self, idx=None):
