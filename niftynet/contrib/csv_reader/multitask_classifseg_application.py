@@ -6,8 +6,6 @@ that maps from images to scalar, multi-class labels.
 This class is instantiated and initalized by the application_driver.
 """
 
-import os
-
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
@@ -25,9 +23,6 @@ from niftynet.contrib.csv_reader.sampler_balanced_v2_csv import \
     BalancedSamplerCSV as BalancedSampler
 from niftynet.contrib.csv_reader.sampler_grid_v2_csv import GridSamplerCSV as\
     GridSampler
-
-# from niftynet.engine.windows_aggregator_classifier import \
-#     ClassifierSamplesAggregator
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.io.image_reader import ImageReader
@@ -49,7 +44,7 @@ from niftynet.layer.rand_rotation import RandomRotationLayer
 from niftynet.layer.rand_spatial_scaling import RandomSpatialScalingLayer
 from niftynet.evaluation.classification_evaluator import ClassificationEvaluator
 
-SUPPORTED_INPUT = set(['image', 'class', 'label', 'sampler', 'inferred'])
+SUPPORTED_INPUT = set(['image', 'value', 'label', 'sampler', 'inferred'])
 
 
 class MultiClassifSegApplication(BaseApplication):
@@ -71,10 +66,13 @@ class MultiClassifSegApplication(BaseApplication):
         self.action = action
 
         self.net_param = net_param
+        self.eval_param = None
+        self.evaluator = None
         self.action_param = action_param
-
+        self.net_multi = None
         self.data_param = None
         self.segmentation_param = None
+        self.csv_readers = None
         self.SUPPORTED_SAMPLING = {
             'uniform': (self.initialise_uniform_sampler,
                         self.initialise_grid_sampler,
@@ -92,19 +90,27 @@ class MultiClassifSegApplication(BaseApplication):
 
     def initialise_dataset_loader(
             self, data_param=None, task_param=None, data_partitioner=None):
+        '''
+        Initialise the data loader both csv readers and image readers and
+        specify preprocessing layers
+        :param data_param:
+        :param task_param:
+        :param data_partitioner:
+        :return:
+        '''
 
         self.data_param = data_param
         self.segmentation_param = task_param
 
         if self.is_training:
             image_reader_names = ('image', 'sampler', 'label')
-            csv_reader_names = ('class',)
+            csv_reader_names = ('value',)
         elif self.is_inference:
             image_reader_names = ('image',)
             csv_reader_names = ()
         elif self.is_evaluation:
             image_reader_names = ('image', 'inferred', 'label')
-            csv_reader_names = ('class',)
+            csv_reader_names = ('value',)
         else:
             tf.logging.fatal(
                 'Action `%s` not supported. Expected one of %s',
@@ -120,16 +126,15 @@ class MultiClassifSegApplication(BaseApplication):
             ImageReader(image_reader_names).initialise(
                 data_param, task_param, file_list) for file_list in file_lists]
         if self.is_inference:
-            self.action_param.sample_per_volume=1
-        if csv_reader_names is not None and len(csv_reader_names) > 0:
+            self.action_param.sample_per_volume = 1
+        if csv_reader_names is not None and list(csv_reader_names):
             self.csv_readers = [
                 CSVReader(csv_reader_names).initialise(
                     data_param, task_param, file_list,
-                    sample_per_volume=self.action_param.sample_per_volume) for file_list in
-                    file_lists]
+                    sample_per_volume=self.action_param.sample_per_volume)
+                for file_list in file_lists]
         else:
-            self.csv_readers = [None for file_list in
-                    file_lists]
+            self.csv_readers = [None for file_list in file_lists]
 
         foreground_masking_layer = BinaryMaskingLayer(
             type_str=self.net_param.foreground_type,
@@ -193,12 +198,15 @@ class MultiClassifSegApplication(BaseApplication):
 
         # only add augmentation to first reader (not validation reader)
         self.readers[0].add_preprocessing_layers(
-             normalisation_layers + augmentation_layers)
-
+            normalisation_layers + augmentation_layers)
         for reader in self.readers[1:]:
             reader.add_preprocessing_layers(normalisation_layers)
 
     def initialise_uniform_sampler(self):
+        '''
+        Create the uniform sampler using information from readers
+        :return:
+        '''
         self.sampler = [[UniformSampler(
             reader=reader,
             csv_reader=csv_reader,
@@ -206,9 +214,14 @@ class MultiClassifSegApplication(BaseApplication):
             batch_size=self.net_param.batch_size,
             windows_per_image=self.action_param.sample_per_volume,
             queue_length=self.net_param.queue_length) for reader, csv_reader in
-            zip(self.readers, self.csv_readers)]]
+                         zip(self.readers, self.csv_readers)]]
 
     def initialise_weighted_sampler(self):
+        '''
+        Create the weighted sampler using the info from the csv_readers and
+        image_readers and the configuration parameters
+        :return:
+        '''
         self.sampler = [[WeightedSampler(
             reader=reader,
             csv_reader=csv_reader,
@@ -216,9 +229,14 @@ class MultiClassifSegApplication(BaseApplication):
             batch_size=self.net_param.batch_size,
             windows_per_image=self.action_param.sample_per_volume,
             queue_length=self.net_param.queue_length) for reader, csv_reader in
-            zip(self.readers, self.csv_readers)]]
+                         zip(self.readers, self.csv_readers)]]
 
     def initialise_resize_sampler(self):
+        '''
+        Define the resize sampler using the information from the
+        configuration parameters, csv_readers and image_readers
+        :return:
+        '''
         self.sampler = [[ResizeSampler(
             reader=reader,
             csv_reader=csv_reader,
@@ -227,9 +245,14 @@ class MultiClassifSegApplication(BaseApplication):
             shuffle=self.is_training,
             smaller_final_batch_mode=self.net_param.smaller_final_batch_mode,
             queue_length=self.net_param.queue_length) for reader, csv_reader in
-            zip(self.readers, self.csv_readers)]]
+                         zip(self.readers, self.csv_readers)]]
 
     def initialise_grid_sampler(self):
+        '''
+        Define the grid sampler based on the information from configuration
+        and the csv_readers and image_readers specifications
+        :return:
+        '''
         self.sampler = [[GridSampler(
             reader=reader,
             csv_reader=csv_reader,
@@ -239,9 +262,14 @@ class MultiClassifSegApplication(BaseApplication):
             window_border=self.action_param.border,
             smaller_final_batch_mode=self.net_param.smaller_final_batch_mode,
             queue_length=self.net_param.queue_length) for reader, csv_reader in
-            zip(self.readers, self.csv_readers)]]
+                         zip(self.readers, self.csv_readers)]]
 
     def initialise_balanced_sampler(self):
+        '''
+        Define the balanced sampler based on the information from configuration
+        and the csv_readers and image_readers specifications
+        :return:
+        '''
         self.sampler = [[BalancedSampler(
             reader=reader,
             csv_reader=csv_reader,
@@ -249,9 +277,14 @@ class MultiClassifSegApplication(BaseApplication):
             batch_size=self.net_param.batch_size,
             windows_per_image=self.action_param.sample_per_volume,
             queue_length=self.net_param.queue_length) for reader, csv_reader in
-            zip(self.readers, self.csv_readers)]]
+                         zip(self.readers, self.csv_readers)]]
 
     def initialise_grid_aggregator(self):
+        '''
+        Define the grid aggregator used for decoding using configuration
+        parameters
+        :return:
+        '''
         self.output_decoder = GridSamplesAggregator(
             image_reader=self.readers[0],
             output_path=self.action_param.save_seg_dir,
@@ -261,6 +294,11 @@ class MultiClassifSegApplication(BaseApplication):
             fill_constant=self.action_param.fill_constant)
 
     def initialise_resize_aggregator(self):
+        '''
+        Define the resize aggregator used for decoding using the
+        configuration parameters
+        :return:
+        '''
         self.output_decoder = ResizeSamplesAggregator(
             image_reader=self.readers[0],
             output_path=self.action_param.save_seg_dir,
@@ -269,16 +307,28 @@ class MultiClassifSegApplication(BaseApplication):
             postfix=self.action_param.output_postfix)
 
     def initialise_sampler(self):
+        '''
+        Specifies the sampler used among those previously defined based on
+        the sampling choice
+        :return:
+        '''
         if self.is_training:
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][0]()
         elif self.is_inference:
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][1]()
 
     def initialise_aggregator(self):
+        '''
+        Specifies the aggregator used based on the sampling choice
+        :return:
+        '''
         self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]()
 
-
     def initialise_network(self):
+        '''
+        Initialise the network and specifies the ordering of elements
+        :return:
+        '''
         w_regularizer = None
         b_regularizer = None
         reg_type = self.net_param.reg_type.lower()
@@ -294,24 +344,24 @@ class MultiClassifSegApplication(BaseApplication):
 
         self.net = ApplicationNetFactory.create(
             'niftynet.contrib.csv_reader.toynet_features.ToyNetFeat')(
-            num_classes=self.segmentation_param.num_classes,
-            w_initializer=InitializerFactory.get_initializer(
-                name=self.net_param.weight_initializer),
-            b_initializer=InitializerFactory.get_initializer(
-                name=self.net_param.bias_initializer),
-            w_regularizer=w_regularizer,
-            b_regularizer=b_regularizer,
-            acti_func=self.net_param.activation_function)
+                num_classes=self.segmentation_param.num_classes,
+                w_initializer=InitializerFactory.get_initializer(
+                    name=self.net_param.weight_initializer),
+                b_initializer=InitializerFactory.get_initializer(
+                    name=self.net_param.bias_initializer),
+                w_regularizer=w_regularizer,
+                b_regularizer=b_regularizer,
+                acti_func=self.net_param.activation_function)
         self.net_multi = ApplicationNetFactory.create(
             'niftynet.contrib.csv_reader.class_seg_finnet.ClassSegFinnet')(
-            num_classes=self.segmentation_param.num_classes,
-            w_initializer=InitializerFactory.get_initializer(
-                name=self.net_param.weight_initializer),
-            b_initializer=InitializerFactory.get_initializer(
-                name=self.net_param.bias_initializer),
-            w_regularizer=w_regularizer,
-            b_regularizer=b_regularizer,
-            acti_func=self.net_param.activation_function)
+                num_classes=self.segmentation_param.num_classes,
+                w_initializer=InitializerFactory.get_initializer(
+                    name=self.net_param.weight_initializer),
+                b_initializer=InitializerFactory.get_initializer(
+                    name=self.net_param.bias_initializer),
+                w_regularizer=w_regularizer,
+                b_regularizer=b_regularizer,
+                acti_func=self.net_param.activation_function)
 
     def add_confusion_matrix_summaries_(self,
                                         outputs_collector,
@@ -391,8 +441,9 @@ class MultiClassifSegApplication(BaseApplication):
             data_loss_seg = loss_func_seg(
                 prediction=net_out_seg,
                 ground_truth=data_dict.get('label', None))
-            data_loss_class = loss_func_class(prediction=net_out_class,
-                ground_truth=data_dict.get('class',  None))
+            data_loss_class = loss_func_class(
+                prediction=net_out_class,
+                ground_truth=data_dict.get('value', None))
             reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(
@@ -428,7 +479,8 @@ class MultiClassifSegApplication(BaseApplication):
             net_args = {'is_training': self.is_training,
                         'keep_prob': self.net_param.keep_prob}
             net_out = self.net(image, **net_args)
-            net_out_seg, net_out_class = self.net_multi(net_out, self.is_training)
+            net_out_seg, net_out_class = self.net_multi(net_out,
+                                                        self.is_training)
             tf.logging.info(
                 'net_out.shape may need to be resized: %s', net_out.shape)
             output_prob = self.segmentation_param.output_prob
@@ -456,7 +508,7 @@ class MultiClassifSegApplication(BaseApplication):
                 var=net_out_seg, name='seg',
                 average_over_devices=False, collection=NETWORK_OUTPUT)
             outputs_collector.add_to_collection(var=net_out_class,
-                                                name='class',
+                                                name='value',
                                                 average_over_devices=False,
                                                 collection=NETWORK_OUTPUT)
             outputs_collector.add_to_collection(
@@ -465,18 +517,34 @@ class MultiClassifSegApplication(BaseApplication):
             self.initialise_aggregator()
 
     def interpret_output(self, batch_output):
+        '''
+        Specifies how the output should be decoded
+        :param batch_output:
+        :return:
+        '''
         if not self.is_training:
             return self.output_decoder.decode_batch(
-                {'window_seg':batch_output['seg'],
-                 'csv_class':batch_output['class']}, batch_output[
-                    'location'])
+                {'window_seg': batch_output['seg'],
+                 'csv_class': batch_output['value']},
+                batch_output['location'])
         return True
 
     def initialise_evaluator(self, eval_param):
+        '''
+        Define the evaluator
+        :param eval_param:
+        :return:
+        '''
         self.eval_param = eval_param
         self.evaluator = ClassificationEvaluator(self.readers[0],
                                                  self.segmentation_param,
                                                  eval_param)
 
     def add_inferred_output(self, data_param, task_param):
+        '''
+        Define how to treat added inferred output
+        :param data_param:
+        :param task_param:
+        :return:
+        '''
         return self.add_inferred_output_like(data_param, task_param, 'label')

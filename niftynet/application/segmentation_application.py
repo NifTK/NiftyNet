@@ -32,7 +32,8 @@ from niftynet.layer.rgb_histogram_equilisation import \
 from niftynet.evaluation.segmentation_evaluator import SegmentationEvaluator
 from niftynet.layer.rand_elastic_deform import RandomElasticDeformationLayer
 
-SUPPORTED_INPUT = set(['image', 'label', 'weight', 'sampler', 'inferred'])
+SUPPORTED_INPUT = set(['image', 'label', 'weight', 'sampler', 'inferred',
+                       'value'])
 
 
 class SegmentationApplication(BaseApplication):

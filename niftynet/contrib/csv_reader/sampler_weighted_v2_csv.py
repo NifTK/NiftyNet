@@ -36,13 +36,13 @@ class WeightedSamplerCSV(UniformSamplerCSV):
                  queue_length=10,
                  name='weighted_sampler'):
         UniformSamplerCSV.__init__(self,
-                                reader=reader,
-                                csv_reader=csv_reader,
-                                window_sizes=window_sizes,
-                                batch_size=batch_size,
-                                windows_per_image=windows_per_image,
-                                queue_length=queue_length,
-                                name=name)
+                                   reader=reader,
+                                   csv_reader=csv_reader,
+                                   window_sizes=window_sizes,
+                                   batch_size=batch_size,
+                                   windows_per_image=windows_per_image,
+                                   queue_length=queue_length,
+                                   name=name)
         tf.logging.info('Initialised weighted sampler window instance')
         self.window_centers_sampler = weighted_spatial_coordinates
 

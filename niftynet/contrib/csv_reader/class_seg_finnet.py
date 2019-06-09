@@ -46,17 +46,17 @@ class ClassSegFinnet(BaseNet):
             {'name': 'fc_seg', 'n_features': 10,
              'kernel_size': 1},
             {'name': 'pool', 'n_features': 10,
-             'stride': 1,'func':'AVG'},
+             'stride': 1, 'func': 'AVG'},
             {'name': 'fc_seg', 'n_features': num_classes,
              'kernel_size': 1},
-            {'name': 'fc_class', 'n_features': 2, 'kernel_size':1}]
+            {'name': 'fc_class', 'n_features': 2, 'kernel_size': 1}]
 
     def layer_op(self, images, is_training, layer_id=-1):
         # go through self.layers, create an instance of each layer
         # and plugin data
         layer_instances = []
 
-        ### class convolution layer
+        # class convolution layer
         params = self.layers[0]
         fc_seg = ConvolutionalLayer(
             with_bn=False,
@@ -70,7 +70,7 @@ class ClassSegFinnet(BaseNet):
         flow = fc_seg(images, is_training)
         layer_instances.append((fc_seg, flow))
 
-        ### pooling layer
+        # pooling layer
         params = self.layers[1]
         pool_layer = PoolingLayer(
             func=params['func'],
@@ -82,7 +82,7 @@ class ClassSegFinnet(BaseNet):
         print("check flow pooling", flow_pool.shape)
         layer_instances.append((pool_layer, flow_pool))
 
-        ### seg convolution layer
+        # seg convolution layer
         params = self.layers[2]
         seg_conv_layer = ConvolutionalLayer(
             with_bn=False,
@@ -95,7 +95,7 @@ class ClassSegFinnet(BaseNet):
         seg_flow = seg_conv_layer(flow, is_training)
         layer_instances.append((seg_conv_layer, seg_flow))
 
-        ### class convolution layer
+        # class convolution layer
         params = self.layers[3]
         class_conv_layer = ConvolutionalLayer(
             with_bn=False,

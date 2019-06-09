@@ -96,7 +96,8 @@ class ImageWindowDatasetCSV(ImageWindowDataset):
                 print(label_dict, image_id, idx)
                 image_data.update(label_dict)
                 for name in self.csv_reader.names:
-                    image_data[name + '_location'] = image_data['image_location']
+                    image_data[name + '_location'] = \
+                        image_data['image_location']
             return image_data
         else:
             print("Warning, it may not be ready yet")
