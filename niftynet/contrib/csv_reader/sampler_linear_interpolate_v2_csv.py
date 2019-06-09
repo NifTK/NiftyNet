@@ -89,7 +89,7 @@ class LinearInterpolateSamplerCSV(ImageWindowDatasetCSV):
             _, label_dict_y, _ = self.csv_reader(idx=image_id_y)
             output_dict.update(label_dict_x)
             output_dict.update(label_dict_y)
-            for name in self.csv_reader.task_param.keys():
+            for name in self.csv_reader.names():
                     output_dict[name + '_location'] = output_dict[
                             'image_location']
         return output_dict

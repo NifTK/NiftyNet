@@ -116,7 +116,7 @@ class GridSamplerCSV(ImageWindowDatasetCSV):
                     if self.csv_reader is not None:
                         _, label_dict, _ = self.csv_reader(idx=image_id)
                         output_dict.update(label_dict)
-                        for name in self.csv_reader.task_param.keys():
+                        for name in self.csv_reader.names:
                             output_dict[name + '_location'] = output_dict[
                                 'image_location']
                 yield output_dict
