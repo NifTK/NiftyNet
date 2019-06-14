@@ -128,6 +128,7 @@ class ApplicationDriver(object):
             assert infer_param, 'inference parameters not specified'
             self.initial_iter = infer_param.inference_iter
             action_param = infer_param
+            action_param.do_whole_volume_validation = False
 
         # infer the initial iteration from model files
         if self.initial_iter < 0:
@@ -365,6 +366,7 @@ class ApplicationDriver(object):
         :return:
         """
         # broadcasting event of starting an iteration
+
         ITER_STARTED.send(application, iter_msg=iteration_message)
 
         # ``iter_msg.ops_to_run`` are populated with the ops to run in
