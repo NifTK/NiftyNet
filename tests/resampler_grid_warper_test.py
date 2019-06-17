@@ -273,12 +273,17 @@ class image_2D_test_converge(NiftyNetTestCase):
 
         diff = tf.reduce_mean(tf.squared_difference(
             new_image, tf.constant(test_target, dtype=tf.float32)))
-        optimiser = tf.train.AdagradOptimizer(0.05)
+        learning_rate = 0.05
+        if(interpolation == 'linear') and (boundary == 'zero'):
+            learning_rate = 0.0003
+        optimiser = tf.train.AdagradOptimizer(learning_rate)
         grads = optimiser.compute_gradients(diff)
         opt = optimiser.apply_gradients(grads)
         with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             init_val, affine_val = sess.run([diff, affine_var])
+            # compute the MAE between the initial estimated parameters and the expected parameters
+            init_var_diff = np.sum(np.abs(affine_val[0] - expected))
             for it in range(500):
                 _, diff_val, affine_val = sess.run([opt, diff, affine_var])
                 # print('{} diff: {}, {}'.format(it, diff_val, affine_val[0]))
@@ -293,8 +298,9 @@ class image_2D_test_converge(NiftyNetTestCase):
 
             # plt.show()
             self.assertGreater(init_val, diff_val)
+            # compute the MAE between the final estimated parameters and the expected parameters
             var_diff = np.sum(np.abs(affine_val[0] - expected))
-            self.assertGreater(4.72, var_diff)
+            self.assertGreater(init_var_diff, var_diff)
             print('{} {} -- diff {}'.format(
                 interpolation, boundary, var_diff))
             print('{}'.format(affine_val[0]))

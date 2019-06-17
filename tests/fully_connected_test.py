@@ -83,14 +83,14 @@ class FCTest(NiftyNetTestCase):
     def test_3d_fclayer_bias_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': True,
-                       'with_bn': False}
+                       'feature_normalization': None}
         self._test_fc_layer_output_shape(rank=3,
                                          param_dict=input_param,
                                          output_shape=(2, 10))
 
     def test_fclayer_3d_bias_reg_shape(self):
         input_param = {'n_output_chns': 10,
-                       'with_bn': False,
+                       'feature_normalization': None,
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_fc_layer_output_shape(rank=3,
@@ -100,7 +100,7 @@ class FCTest(NiftyNetTestCase):
     def test_fclayer_3d_bn_reg_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_fc_layer_output_shape(rank=3,
@@ -111,7 +111,7 @@ class FCTest(NiftyNetTestCase):
     def test_fclayer_3d_bn_reg_prelu_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
@@ -123,7 +123,7 @@ class FCTest(NiftyNetTestCase):
     def test_fclayer_3d_relu_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'relu',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
@@ -135,7 +135,7 @@ class FCTest(NiftyNetTestCase):
     def test_fclayer_3d_bn_reg_dropout_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu'}
         self._test_fc_layer_output_shape(rank=3,
                                          param_dict=input_param,
@@ -146,7 +146,7 @@ class FCTest(NiftyNetTestCase):
     def test_fclayer_3d_bn_reg_dropout_valid_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'acti_func': 'prelu', }
         self._test_fc_layer_output_shape(rank=3,
@@ -189,7 +189,7 @@ class FCTest(NiftyNetTestCase):
     def test_2d_fclayer_bias_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': True,
-                       'with_bn': False}
+                       'feature_normalization': None}
         self._test_fc_layer_output_shape(rank=2,
                                          param_dict=input_param,
                                          output_shape=(2, 10))
@@ -197,7 +197,7 @@ class FCTest(NiftyNetTestCase):
     def test_fclayer_2d_bias_reg_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': True,
-                       'with_bn': False,
+                       'feature_normalization': None,
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_fc_layer_output_shape(rank=2,
@@ -207,7 +207,7 @@ class FCTest(NiftyNetTestCase):
     def test_fclayer_2d_bn_reg_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_fc_layer_output_shape(rank=2,
@@ -218,7 +218,7 @@ class FCTest(NiftyNetTestCase):
     def test_fclayer_2d_bn_reg_prelu_2_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu'}
         self._test_fc_layer_output_shape(rank=2,
                                          param_dict=input_param,
@@ -228,7 +228,7 @@ class FCTest(NiftyNetTestCase):
     def test_fclayer_2d_relu_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'relu'}
         self._test_fc_layer_output_shape(rank=2,
                                          param_dict=input_param,
@@ -238,7 +238,7 @@ class FCTest(NiftyNetTestCase):
     def test_fclayer_2d_bn_reg_prelu_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu',
                        'w_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_fc_layer_output_shape(rank=2,

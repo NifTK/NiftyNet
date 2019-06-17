@@ -47,6 +47,7 @@ class ToyApplication(BaseApplication):
                                  outputs_collector=None,
                                  gradients_collector=None):
         print(vars(self.action_param))
+        self.patience = self.action_param.patience
         with tf.name_scope('Optimiser'):
             optimiser_class = OptimiserFactory.create(
                 name=self.action_param.optimiser)
@@ -89,6 +90,9 @@ class ToyApplication(BaseApplication):
             var=g_var, name='var', average_over_devices=True,
             collection=CONSOLE)
         outputs_collector.add_to_collection(
+            var=g_loss, name='total_loss', average_over_devices=True,
+            collection=CONSOLE)
+        outputs_collector.add_to_collection(
             var=g_mean, name='generated_mean', average_over_devices=False,
             collection=TF_SUMMARIES)
         outputs_collector.add_to_collection(
@@ -122,6 +126,7 @@ class ToyApplicationMultOpti(ToyApplication):
     def connect_data_and_network(self,
                                  outputs_collector=None,
                                  gradients_collector=None):
+        self.patience = self.action_param.patience
         print(vars(self.action_param))
         self.optimiser = dict()
         with tf.name_scope('OptimiserGen'):
@@ -181,11 +186,11 @@ class DNet(BaseNet):
     def layer_op(self, features):
         batch_size = features.shape.as_list()[0]
         conv_1 = ConvolutionalLayer(
-            20, 3, with_bn=False, with_bias=True, acti_func='relu')
+            20, 3, feature_normalization=None, with_bias=True, acti_func='relu')
         fc_1 = FullyConnectedLayer(
-            20, with_bn=False, with_bias=True, acti_func='relu')
+            20, feature_normalization=None, with_bias=True, acti_func='relu')
         fc_2 = FullyConnectedLayer(
-            2, with_bn=False, with_bias=True)
+            2, feature_normalization=None, with_bias=True)
 
         hidden_feature = conv_1(features, is_training=True)
         hidden_feature = tf.reshape(hidden_feature, [batch_size, -1])
@@ -201,11 +206,11 @@ class GNet(BaseNet):
     def layer_op(self, noise):
         n_chns = noise.shape[-1]
         conv_1 = ConvolutionalLayer(
-            20, 10, with_bn=True, acti_func='selu', with_bias=True)
+            20, 10, feature_normalization='batch', acti_func='selu', with_bias=True)
         conv_2 = ConvolutionalLayer(
-            20, 10, with_bn=True, acti_func='selu', with_bias=True)
+            20, 10, feature_normalization='batch', acti_func='selu', with_bias=True)
         conv_3 = ConvolutionalLayer(
-            n_chns, 10, with_bn=False, with_bias=True)
+            n_chns, 10, feature_normalization=None, with_bias=True)
         hidden_feature = conv_1(noise, is_training=True)
         hidden_feature = conv_2(hidden_feature, is_training=True)
         fake_features = conv_3(hidden_feature, is_training=True)

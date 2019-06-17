@@ -49,6 +49,8 @@ SUPPORTED_NETWORK = {
         'niftynet.network.toynet.ToyNet',
     "unet":
         'niftynet.network.unet.UNet3D',
+    "nonewnet":
+        'niftynet.network.no_new_net.UNet3D',
     "vnet":
         'niftynet.network.vnet.VNet',
     "dense_vnet":
@@ -97,6 +99,8 @@ SUPPORTED_LOSS_SEGMENTATION = {
         'niftynet.layer.loss_segmentation.generalised_wasserstein_dice_loss',
     "SensSpec":
         'niftynet.layer.loss_segmentation.sensitivity_specificity_loss',
+    "VolEnforcement":
+        'niftynet.layer.loss_segmentation.volume_enforcement',
     # "L1Loss":
     #     'niftynet.layer.loss_segmentation.l1_loss',
     # "L2Loss":
@@ -115,12 +119,25 @@ SUPPORTED_LOSS_REGRESSION = {
     "MAE":
         'niftynet.layer.loss_regression.mae_loss',
     "Huber":
-        'niftynet.layer.loss_regression.huber_loss'
+        'niftynet.layer.loss_regression.huber_loss',
+    "SmoothL1":
+        'niftynet.layer.loss_regression.smooth_l1_loss',
+    "Cosine":
+        'niftynet.layer.loss_regression.cosine_loss'
 }
 
 SUPPORTED_LOSS_CLASSIFICATION = {
     "CrossEntropy":
         'niftynet.layer.loss_classification.cross_entropy',
+}
+
+SUPPORTED_LOSS_CLASSIFICATION_MULTI = {
+    "ConfusionMatrix":
+        'niftynet.layer.loss_classification_multi.loss_confusion_matrix',
+    "Variability":
+        'niftynet.layer.loss_classification_multi.loss_variability',
+    "Consistency":
+        'niftynet.layer.loss_classification_multi.rmse_consistency'
 }
 
 
@@ -217,7 +234,11 @@ SUPPORTED_EVENT_HANDLERS = {
     'console_logger':
         'niftynet.engine.handler_console.ConsoleLogger',
     'tensorboard_logger':
-        'niftynet.engine.handler_tensorboard.TensorBoardLogger'
+        'niftynet.engine.handler_tensorboard.TensorBoardLogger',
+    'performance_logger':
+        'niftynet.engine.handler_performance.PerformanceLogger',
+    'early_stopper':
+        'niftynet.engine.handler_early_stopping.EarlyStopper',
 }
 
 SUPPORTED_ITERATION_GENERATORS = {
@@ -346,6 +367,15 @@ class LossClassificationFactory(ModuleFactory):
     """
     SUPPORTED = SUPPORTED_LOSS_CLASSIFICATION
     type_str = 'classification loss'
+
+
+class LossClassificationMultiFactory(ModuleFactory):
+    """
+    Import a classification loss function from niftynet.layer or
+    from user specified string
+    """
+    SUPPORTED = SUPPORTED_LOSS_CLASSIFICATION_MULTI
+    type_str = 'classification multi loss'
 
 
 class LossAutoencoderFactory(ModuleFactory):

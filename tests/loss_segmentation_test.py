@@ -473,6 +473,33 @@ class DiceDenseNoSquareTest(NiftyNetTestCase):
             self.assertAllEqual(sparse_dice.eval(), dense_dice.eval())
 
 
+# class VolumeEnforcementTest(tf.test.TestCase):
+#     def test_volume_enforcement_equal(self):
+#         with self.test_session():
+#             predicted = tf.constant([[-1000, 1000], [1000, -1000], [1000,
+#                                                                      -1000], [1000, -1000]],
+#                                     dtype=tf.float32, name='predicted')
+#             labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
+# 
+#             predicted, labels = [tf.expand_dims(x, axis=0) for x in
+#                                  (predicted, labels)]
+#             venf_loss_func = LossFunction(2, loss_type='VolEnforcement')
+#             venf_loss = venf_loss_func(predicted, labels)
+#             self.assertAllClose(venf_loss.eval(), 0.0, atol=1e-4)
+# 
+#     def test_volume_enforcement_nonexist(self):
+#         with self.test_session():
+#             predicted = tf.constant([[1000, -1000], [1000, -1000], [1000, -1000], [1000, -1000]],
+#                                     dtype=tf.float32, name='predicted')
+#             labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
+# 
+#             predicted, labels = [tf.expand_dims(x, axis=0) for x in
+#                                  (predicted, labels)]
+#             venf_loss_func = LossFunction(2, loss_type='VolEnforcement')
+#             venf_loss = venf_loss_func(predicted, labels)
+#             self.assertAllClose(venf_loss.eval(), 500.75, atol=0.1)
+
+
 class LossFunctionErrorsTest(NiftyNetTestCase):
     """
     These tests check that a ValueError is called

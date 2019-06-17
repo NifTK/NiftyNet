@@ -80,7 +80,6 @@ class DenseVNet(BaseNet):
         use_dense_connections=True,
         use_coords=False)
 
-
     def __init__(self,
                  num_classes,
                  hyperparams={},
@@ -106,7 +105,7 @@ class DenseVNet(BaseNet):
 
         # Check for dilation rates
         if any([d != 1 for ds in self.hyperparams['dilation_rates']
-                   for d in ds]):
+                for d in ds]):
             raise NotImplementedError(
                 'Dilated convolutions are not yet implemented')
         # Check available modes
@@ -117,8 +116,8 @@ class DenseVNet(BaseNet):
             raise NotImplementedError(
                 'Image coordinate augmentation is not yet implemented')
 
-
     def create_network(self):
+
         hyperparams = self.hyperparams
 
         # Create initial convolutional layer
@@ -126,10 +125,10 @@ class DenseVNet(BaseNet):
             hyperparams['n_initial_conv_channels'],
             kernel_size=5,
             stride=2)
-            # name='initial_conv')
+        # name='initial_conv')
 
         # Create dense vblocks
-        num_blocks = len(hyperparams["n_dense_channels"]) # Num dense blocks
+        num_blocks = len(hyperparams["n_dense_channels"])  # Num dense blocks
         dense_ch = hyperparams["n_dense_channels"]
         seg_ch = hyperparams["n_seg_channels"]
         down_ch = hyperparams["n_down_channels"]
@@ -152,18 +151,17 @@ class DenseVNet(BaseNet):
         final_conv = ConvolutionalLayer(
             self.num_classes,
             kernel_size=hyperparams['seg_kernel_size'],
-            with_bn=False,
+            feature_normalization='batch',
             with_bias=True)
-            # name='final_conv')
+        #  name='final_conv')
 
         # Create a structure with all the fields of a DenseVNet
         dense_vnet = namedtuple('DenseVNet',
-            ['initial_conv', 'dense_vblocks', 'final_conv'])
+                                ['initial_conv', 'dense_vblocks', 'final_conv'])
 
         return dense_vnet(initial_conv=initial_conv,
                           dense_vblocks=dense_vblocks,
                           final_conv=final_conv)
-
 
     def layer_op(self,
                  input_tensor,
@@ -227,7 +225,6 @@ class DenseVNet(BaseNet):
         # Perform final convolution to segment structures
         output = dense_vnet.final_conv(all_features, is_training=is_training)
 
-
         ######################
         ### Postprocessing ###
         ######################
@@ -287,7 +284,6 @@ class SpatialPriorBlock(TrainableLayer):
                  prior_shape,
                  output_shape,
                  name='spatial_prior_block'):
-
         super(SpatialPriorBlock, self).__init__(name=name)
 
         self.prior_shape = prior_shape
@@ -467,11 +463,11 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
             down_conv = ConvolutionalLayer(self.n_down_channels,
                                            kernel_size=self.kernel_size,
                                            stride=2,
-                                           # name='down_conv',
+                                           #  name='down_conv',
                                            **self.kwargs)
 
         dfssd_block = namedtuple('DenseSDBlock',
-            ['dfs_block', 'skip_conv', 'down_conv'])
+                                 ['dfs_block', 'skip_conv', 'down_conv'])
 
         return dfssd_block(dfs_block=dfs_block,
                            skip_conv=skip_conv,
