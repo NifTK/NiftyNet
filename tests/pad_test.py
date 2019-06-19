@@ -5,9 +5,10 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.pad import PadLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class PaddingTest(tf.test.TestCase):
+class PaddingTest(NiftyNetTestCase):
     def get_3d_input(self):
         input_shape = (16, 16, 16, 8)
         x = np.ones(input_shape)

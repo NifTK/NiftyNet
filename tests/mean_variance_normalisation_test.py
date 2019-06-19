@@ -6,9 +6,10 @@ import tensorflow as tf
 
 from niftynet.layer.binary_masking import BinaryMaskingLayer
 from niftynet.layer.mean_variance_normalisation import MeanVarNormalisationLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class BinaryMaskingTEst(tf.test.TestCase):
+class BinaryMaskingTEst(NiftyNetTestCase):
     def get_3d_input(self):
         input_shape = (16, 16, 16)
         x = np.random.randint(-10, 10, size=input_shape)

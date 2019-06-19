@@ -5,9 +5,9 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.layer.activation import ActiLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class ActivationTest(tf.test.TestCase):
+class ActivationTest(NiftyNetTestCase):
     def get_3d_input(self):
         input_shape = (2, 16, 16, 16, 8)
         x = tf.ones(input_shape)
@@ -26,7 +26,7 @@ class ActivationTest(tf.test.TestCase):
         activation_layer = ActiLayer(func=type_str)
         out_acti = activation_layer(x)
         print(activation_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_acti)
             self.assertAllClose(out.shape, expected_shape)
@@ -66,7 +66,7 @@ class ActivationTest(tf.test.TestCase):
                                 name='regularized')
         out_prelu = prelu_layer(x)
         print(prelu_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_prelu)
             self.assertAllClose((2, 16, 16, 16, 8), out.shape)
@@ -76,7 +76,7 @@ class ActivationTest(tf.test.TestCase):
         dropout_layer = ActiLayer(func='dropout')
         out_dropout = dropout_layer(x, keep_prob=0.8)
         print(dropout_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_dropout)
             self.assertAllClose((2, 16, 16, 16, 8), out.shape)
@@ -119,7 +119,7 @@ class ActivationTest(tf.test.TestCase):
                                 name='regularized')
         out_prelu = prelu_layer(x)
         print(prelu_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_prelu)
             self.assertAllClose((2, 16, 16, 8), out.shape)
@@ -129,7 +129,7 @@ class ActivationTest(tf.test.TestCase):
         dropout_layer = ActiLayer(func='dropout')
         out_dropout = dropout_layer(x, keep_prob=0.8)
         print(dropout_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_dropout)
             self.assertAllClose((2, 16, 16, 8), out.shape)

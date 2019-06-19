@@ -8,9 +8,10 @@ import tensorflow as tf
 from niftynet.engine.application_variables \
     import RESTORABLE, global_vars_init_or_restore
 from niftynet.layer.convolution import ConvolutionalLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class RestorerTest(tf.test.TestCase):
+class RestorerTest(NiftyNetTestCase):
     def make_checkpoint(self, checkpoint_name, definition):
         scopes = {}
         tf.reset_default_graph()
@@ -47,7 +48,7 @@ class RestorerTest(tf.test.TestCase):
                              ('foo', checkpoint_name, 'bar'))
         init_op = global_vars_init_or_restore()
         all_vars = tf.global_variables()
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(init_op)
 
             def getvar(x):
@@ -71,7 +72,7 @@ class RestorerTest(tf.test.TestCase):
         b2 = block1(tf.ones([1., 5., 5., 1.]))
         init_op = global_vars_init_or_restore()
         all_vars = tf.global_variables()
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(init_op)
 
             def getvar(x):

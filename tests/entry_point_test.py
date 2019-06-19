@@ -12,8 +12,9 @@ import net_regress
 import net_run
 import net_segment
 
+from tests.niftynet_testcase import NiftyNetTestCase
 
-class EntryPointTest(tf.test.TestCase):
+class EntryPointTest(NiftyNetTestCase):
     def test_wrong_app(self):
         sys.argv = ['', 'train',
                     '-a', 'foo',

@@ -5,20 +5,18 @@ import tensorflow as tf
 import numpy as np
 
 from niftynet.engine.handler_early_stopping import check_should_stop
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class EarlyStopperTest(tf.test.TestCase):
+class EarlyStopperTest(NiftyNetTestCase):
 
     def test_mean(self):
         should_stop = check_should_stop(mode='mean',
                                         performance_history=[1, 2, 1, 2, 1,
-                                                             2, 1, 2, 3],
-                                        patience=3)
+                                                             2, 1, 2, 3])
         self.assertTrue(should_stop)
         should_stop = check_should_stop(mode='mean',
                                         performance_history=[1, 2, 1, 2, 1, 2,
-                                                             1, 2, 3, 0],
-                                        patience=3)
+                                                             1, 2, 3, 0])
         self.assertFalse(should_stop)
 
     def test_robust_mean(self):

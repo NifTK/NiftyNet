@@ -5,9 +5,10 @@ from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.layer.deconvolution import DeconvLayer
 from niftynet.layer.deconvolution import DeconvolutionalLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class DeconvTest(tf.test.TestCase):
+class DeconvTest(NiftyNetTestCase):
     def get_2d_input(self):
         input_shape = (2, 16, 16, 8)
         x_2d = tf.ones(input_shape)
@@ -30,7 +31,7 @@ class DeconvTest(tf.test.TestCase):
         deconv_layer = DeconvLayer(**param_dict)
         output_data = deconv_layer(input_data)
         print(deconv_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)
@@ -51,7 +52,7 @@ class DeconvTest(tf.test.TestCase):
                                    is_training=is_training,
                                    keep_prob=dropout_prob)
         print(deconv_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)

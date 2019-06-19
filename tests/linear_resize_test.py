@@ -4,9 +4,10 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.layer.linear_resize import LinearResizeLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class LinearResizeTest(tf.test.TestCase):
+class LinearResizeTest(NiftyNetTestCase):
     def get_3d_input(self):
         input_shape = (2, 16, 16, 16, 4)
         x = tf.ones(input_shape)
@@ -30,7 +31,7 @@ class LinearResizeTest(tf.test.TestCase):
         resize_layer = LinearResizeLayer(new_size=new_size)
         resized = resize_layer(x)
         print(resize_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             out = sess.run(resized)
             self.assertAllClose(out.shape, expected_shape)
 

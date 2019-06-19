@@ -11,6 +11,7 @@ from niftynet.engine.sampler_grid_v2 import \
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
+from tests.niftynet_testcase import NiftyNetTestCase
 
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
@@ -103,7 +104,7 @@ def get_dynamic_window_reader():
     return reader
 
 
-class GridSamplerTest(tf.test.TestCase):
+class GridSamplerTest(NiftyNetTestCase):
     def test_3d_initialising(self):
         sampler = GridSampler(reader=get_3d_reader(),
                               window_sizes=MULTI_MOD_DATA,
@@ -111,7 +112,7 @@ class GridSamplerTest(tf.test.TestCase):
                               spatial_window_size=None,
                               window_border=(0, 0, 0),
                               queue_length=10)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, (10, 8, 10, 2, 2))
@@ -124,7 +125,7 @@ class GridSamplerTest(tf.test.TestCase):
                               spatial_window_size=(1, 20, 15),
                               window_border=(0, 0, 0),
                               queue_length=10)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, (10, 20, 15, 2))
@@ -137,7 +138,7 @@ class GridSamplerTest(tf.test.TestCase):
                               spatial_window_size=None,
                               window_border=(0, 0, 0),
                               queue_length=10)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sampler.set_num_threads(1)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, (10, 10, 7, 1))
@@ -150,7 +151,7 @@ class GridSamplerTest(tf.test.TestCase):
                               spatial_window_size=None,
                               window_border=(0, 0, 0),
                               queue_length=10)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sampler.set_num_threads(1)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, (10, 8, 2, 256, 2))
@@ -173,7 +174,7 @@ class GridSamplerTest(tf.test.TestCase):
                                   queue_length=10)
 
 
-class CoordinatesTest(tf.test.TestCase):
+class CoordinatesTest(NiftyNetTestCase):
     def test_coordinates(self):
         coords = grid_spatial_coordinates(
             subject_id=1,
@@ -306,7 +307,7 @@ class CoordinatesTest(tf.test.TestCase):
                 border_size=(0, 0, 0))
 
 
-class StepPointsTest(tf.test.TestCase):
+class StepPointsTest(NiftyNetTestCase):
     def test_steps(self):
         loc = _enumerate_step_points(0, 10, 4, 1)
         self.assertAllClose(loc, [0, 1, 2, 3, 4, 5, 6])

@@ -6,14 +6,14 @@ import tensorflow as tf
 from niftynet.engine.application_variables import GradientsCollector
 from niftynet.engine.handler_gradient import ApplyGradients
 from niftynet.network.toynet import ToyNet
-
+from tests.niftynet_testcase import NiftyNetTestCase
 
 def get_test_network():
     net = ToyNet(num_classes=4)
     return net
 
 
-class GradientCollectorTest(tf.test.TestCase):
+class GradientCollectorTest(NiftyNetTestCase):
     def test_nested_gradients(self):
         n_device = 3
         grad_collector = GradientsCollector(n_devices=n_device)

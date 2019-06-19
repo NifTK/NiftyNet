@@ -5,9 +5,9 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.affine_augmentation import AffineAugmentationLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class RandRotationTest(tf.test.TestCase):
+class RandRotationTest(NiftyNetTestCase):
     def get_3d_image(self):
         image_shape = (1, 200, 200, 1)
         elements = tf.range(np.prod(image_shape), dtype=tf.float32)
@@ -28,7 +28,7 @@ class RandRotationTest(tf.test.TestCase):
         inverse_augment_layer = augment_layer.inverse()
         inverse = inverse_augment_layer(deformed)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             test_out = sess.run([input_tensor, deformed, inverse])
             original, deformed_image, resumed_image = test_out
             to_compare = resumed_image > 0
@@ -49,7 +49,7 @@ class RandRotationTest(tf.test.TestCase):
         inverse = inverse_augment_layer(deformed)
 
         # with tf.Session() as sess:
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             test_out = sess.run([input_tensor, deformed, inverse])
             original, deformed_image, resumed_image = test_out
             to_compare = resumed_image > 0

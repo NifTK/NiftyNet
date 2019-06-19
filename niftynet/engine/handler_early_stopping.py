@@ -77,7 +77,6 @@ def check_should_stop(performance_history, mode='mean', min_delta=0.03,
         dividing.
     :param performance_history: a list of size patience with the performance
     history
-    :param patience: see above
     :param min_delta: threshold for smoothness
     :param kernel_size: hyperparameter for median smoothing
     :param k_splits: number of splits if using 'validation_up'
