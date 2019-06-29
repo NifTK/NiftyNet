@@ -55,17 +55,20 @@ class EarlyStopperTest(NiftyNetTestCase):
             data.extend(np.arange(1, 9))
             data.extend(np.arange(2, 10)[::-1])
         should_stop = check_should_stop(mode='validation_up',
-                                        performance_history=np.arange(0,
-                                                                      20) / 10)
+                                        performance_history=
+                                        np.arange(0, 20) / 10.0)
+        print("1 val")
         self.assertTrue(should_stop)
         should_stop = check_should_stop(mode='validation_up',
                                         performance_history=np.arange(
                                             0, 20)[::-1] / 10)
+        print("2 val")
         self.assertFalse(should_stop)
 
         should_stop = check_should_stop(mode='validation_up',
                                         performance_history=data,
                                         min_delta=0.2)
+        print("3 val")
         self.assertFalse(should_stop)
 
     def test_median_smoothing(self):
@@ -75,7 +78,7 @@ class EarlyStopperTest(NiftyNetTestCase):
             data.extend(np.arange(1, 9)[::-1])
         should_stop = \
             check_should_stop(mode='median_smoothing',
-                              performance_history=np.arange(0, 20) / 10)
+                              performance_history=np.arange(0, 20) / 10.0)
         self.assertTrue(should_stop)
         should_stop = check_should_stop(mode='median_smoothing',
                                         performance_history=np.arange(

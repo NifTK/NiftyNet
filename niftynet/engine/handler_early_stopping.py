@@ -114,7 +114,7 @@ def check_should_stop(performance_history, mode='mean', min_delta=0.03,
                                  size=kernel_size)
         gradient = np.gradient(smoothed)
         thresholded = np.where(gradient < min_delta, 1, 0)
-        value = np.sum(thresholded) / len(gradient)
+        value = np.sum(thresholded) * 1.0 / len(gradient)
         should_stop = value < 0.5
     elif mode == 'validation_up':
         remainder = len(performance_history) % k_splits
