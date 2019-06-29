@@ -5,6 +5,7 @@ import tensorflow as tf
 
 from niftynet.engine.image_window import ImageWindow
 from niftynet.utilities.util_common import ParserNamespace
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
 def get_static_window_param():
@@ -133,7 +134,7 @@ def get_ill_image_window_2():
 #    )
 
 
-class ImageWindowTest(tf.test.TestCase):
+class ImageWindowTest(NiftyNetTestCase):
     def test_init(self):
         window = ImageWindow.from_data_reader_properties(
             **get_static_window_param())

@@ -6,6 +6,7 @@ import tensorflow as tf
 
 from niftynet.layer.rand_elastic_deform import RandomElasticDeformationLayer
 from niftynet.layer.rand_elastic_deform import sitk
+from tests.niftynet_testcase import NiftyNetTestCase
 
 SHAPE_3D = (10, 16, 2)
 SHAPE_4D = (10, 16, 16, 2)
@@ -13,7 +14,7 @@ SHAPE_5D = (10, 32, 32, 8, 1)
 
 
 @unittest.skipIf(not sitk, 'SimpleITK not found')
-class RandDeformationTests(tf.test.TestCase):
+class RandDeformationTests(NiftyNetTestCase):
     def get_3d_input(self):
         input_3d = {'testdata': np.random.randn(*SHAPE_3D)}
         interp_order = {'testdata': (3,) * 2}
@@ -58,7 +59,7 @@ class RandDeformationTests(tf.test.TestCase):
             rand_deformation_layer.randomise(x)
             out = rand_deformation_layer(x, interp_orders)
 
-            with self.test_session():
+            with self.cached_session():
                 self.assertTrue(np.array_equal(out['testdata'], x_old))
 
     def test_deformation(self):
@@ -74,7 +75,7 @@ class RandDeformationTests(tf.test.TestCase):
             rand_deformation_layer.randomise(x)
             out = rand_deformation_layer(x, interp_orders)
 
-            with self.test_session():
+            with self.cached_session():
                 self.assertFalse(np.array_equal(out['testdata'], x_old))
 
     def test_deformation_on_2d_imgs(self):
@@ -91,7 +92,7 @@ class RandDeformationTests(tf.test.TestCase):
             rand_deformation_layer.randomise(x)
             out = rand_deformation_layer(x, interp_orders)
 
-            with self.test_session():
+            with self.cached_session():
                 self.assertFalse(np.array_equal(out['testdata'], x_old))
 
 

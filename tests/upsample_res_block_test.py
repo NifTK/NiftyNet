@@ -4,9 +4,9 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.layer.upsample_res_block import UpBlock
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class UpsampleResBlockTest(tf.test.TestCase):
+class UpsampleResBlockTest(NiftyNetTestCase):
     def get_3d_input(self):
         input_shape = (2, 16, 16, 16, 8)
         x = tf.ones(input_shape)
@@ -29,7 +29,7 @@ class UpsampleResBlockTest(tf.test.TestCase):
         upsample_layer = UpBlock(**param_dict)
         output_data = upsample_layer(input_data)
         print(upsample_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(output_data)
             self.assertAllClose(output_shape, out.shape)

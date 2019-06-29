@@ -5,9 +5,9 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.subpixel import SubPixelLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class SubPixelTest(tf.test.TestCase):
+class SubPixelTest(NiftyNetTestCase):
     """
     Test for niftynet.layer.subpixel.SubPixelLayer.
     Mostly adapted from convolution_test.py
@@ -30,7 +30,7 @@ class SubPixelTest(tf.test.TestCase):
         layer = SubPixelLayer(**param_dict)
         output_data = layer(input_data)
         print(layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)

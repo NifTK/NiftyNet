@@ -5,12 +5,13 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.loss_classification import LossFunction
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class CrossEntropyTests(tf.test.TestCase):
+class CrossEntropyTests(NiftyNetTestCase):
     def test_cross_entropy_value(self):
         # test value is -0.5 * [1 * log(e / (1+e)) + 1 * log(e^2 / (e^2 + 1))]
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 1], [2, 0]],
                 dtype=tf.float32, name='predicted')
@@ -23,7 +24,7 @@ class CrossEntropyTests(tf.test.TestCase):
                     np.e ** 2 / (1 + np.e ** 2))))
 
 
-class LossFunctionErrorsTest(tf.test.TestCase):
+class LossFunctionErrorsTest(NiftyNetTestCase):
     """
     These tests check that a ValueError is called
     for non-existent loss functions.
@@ -32,13 +33,13 @@ class LossFunctionErrorsTest(tf.test.TestCase):
     """
 
     def test_value_error_for_bad_loss_function(self):
-        with self.test_session():
+        with self.cached_session():
             with self.assertRaises(ValueError):
                 LossFunction(0, loss_type='wrong answer')
 
     # Note: sensitive to precise wording of ValueError message.
     def test_suggestion_for_dice_typo(self):
-        with self.test_session():
+        with self.cached_session():
             with self.assertRaisesRegexp(ValueError, 'CrossEntropy'):
                 LossFunction(0, loss_type='cross_entropy')
 

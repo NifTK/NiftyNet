@@ -5,9 +5,10 @@ import tensorflow as tf
 
 from niftynet.utilities.versioning import check_pep_440
 from niftynet.utilities.versioning import get_niftynet_version_string
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class VersioningTest(tf.test.TestCase):
+class VersioningTest(NiftyNetTestCase):
     def test_version(self):
         version_str = get_niftynet_version_string()
         expected_string = "NiftyNet version "

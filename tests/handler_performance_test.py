@@ -7,9 +7,10 @@ import numpy as np
 from tests.application_driver_test import get_initialised_driver
 from niftynet.engine.application_iteration import IterationMessage
 from niftynet.engine.signal import SESS_STARTED, ITER_FINISHED, VALID
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class PerformanceLoggerTest(tf.test.TestCase):
+class PerformanceLoggerTest(NiftyNetTestCase):
     def test_init(self):
         ITER_FINISHED.connect(self.iteration_listener)
         app_driver = get_initialised_driver()
@@ -19,7 +20,7 @@ class PerformanceLoggerTest(tf.test.TestCase):
              'niftynet.engine.handler_sampler.SamplerThreading',
              'niftynet.engine.handler_performance.PerformanceLogger'])
         graph = app_driver.create_graph(app_driver.app, 1, True)
-        with self.test_session(graph=graph) as sess:
+        with self.cached_session(graph=graph) as sess:
             for i in range(110):
                 SESS_STARTED.send(app_driver.app, iter_msg=None)
                 msg = IterationMessage()

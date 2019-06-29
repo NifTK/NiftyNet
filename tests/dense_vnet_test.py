@@ -7,9 +7,10 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.dense_vnet import DenseVNet
+from tests.niftynet_testcase import NiftyNetTestCase
 
 @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
-class DenseVNetTest(tf.test.TestCase):
+class DenseVNetTest(NiftyNetTestCase):
     def test_3d_shape(self):
         input_shape = (2, 72, 72, 72, 3)
         x = tf.ones(input_shape)
@@ -19,7 +20,7 @@ class DenseVNetTest(tf.test.TestCase):
         out = dense_vnet_instance(x, is_training=True)
         # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 72, 72, 72, 2), out.shape)
@@ -33,7 +34,7 @@ class DenseVNetTest(tf.test.TestCase):
         out = dense_vnet_instance(x, is_training=True)
         # print(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 72, 72, 2), out.shape)

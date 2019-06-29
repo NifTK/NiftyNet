@@ -6,14 +6,14 @@ import tensorflow as tf
 from niftynet.engine.application_variables import \
     NETWORK_OUTPUT, CONSOLE, TF_SUMMARIES
 from niftynet.engine.application_variables import OutputsCollector
-
+from tests.niftynet_testcase import NiftyNetTestCase
 
 # def get_test_network():
 #    net = ToyNet(num_classes=4)
 #    return net
 
 
-class OutputCollectorTest(tf.test.TestCase):
+class OutputCollectorTest(NiftyNetTestCase):
     def test_add_to_single_device(self):
         n_device = 1
         collector = OutputsCollector(n_devices=n_device)

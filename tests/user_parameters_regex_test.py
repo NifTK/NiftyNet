@@ -5,9 +5,9 @@ import re
 import tensorflow as tf
 
 from niftynet.utilities.user_parameters_regex import STATEMENT
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class UserParameterRegexTest(tf.test.TestCase):
+class UserParameterRegexTest(NiftyNetTestCase):
     def run_match(self, string_to_match, expected_output):
         regex = re.compile(STATEMENT)
         matched_str = regex.match(string_to_match)

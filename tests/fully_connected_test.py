@@ -5,9 +5,9 @@ from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.layer.fully_connected import FCLayer
 from niftynet.layer.fully_connected import FullyConnectedLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class FCTest(tf.test.TestCase):
+class FCTest(NiftyNetTestCase):
     def get_3d_input(self):
         input_shape = (2, 10, 10, 5, 8)
         x_3d = tf.ones(input_shape)
@@ -30,7 +30,7 @@ class FCTest(tf.test.TestCase):
         fc_layer = FCLayer(**param_dict)
         output_data = fc_layer(input_data)
         print(fc_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)
@@ -51,7 +51,7 @@ class FCTest(tf.test.TestCase):
                                is_training=is_training,
                                keep_prob=dropout_prob)
         print(fc_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)

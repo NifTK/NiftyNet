@@ -4,6 +4,7 @@ import tensorflow as tf
 from niftynet.layer.rgb_histogram_equilisation import \
     RGBHistogramEquilisationLayer
 from niftynet.utilities.util_import import require_module
+from tests.niftynet_testcase import NiftyNetTestCase
 
 IMAGE_DATA = \
     np.array([[[0.49803922, 0.19215687, 0.3529412 ],
@@ -108,7 +109,7 @@ IMAGE_DATA = \
                [0.38039216, 0.10588235, 0.32156864]]], dtype=np.float32)
 
 
-class RGBEquilisationTest(tf.test.TestCase):
+class RGBEquilisationTest(NiftyNetTestCase):
     """
     Test for RGBHistogramEquilisationLayer
     """

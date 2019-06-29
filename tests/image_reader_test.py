@@ -13,6 +13,7 @@ from niftynet.layer.discrete_label_normalisation import \
 from niftynet.layer.pad import PadLayer
 from niftynet.utilities.util_common import ParserNamespace
 from tests.reader_modular_test import generate_2d_images, SEG_THRESHOLD
+from tests.niftynet_testcase import NiftyNetTestCase
 
 generate_2d_images()
 # test multiple modalities
@@ -138,7 +139,7 @@ bad_data_list = data_partitioner.initialise(BAD_DATA).get_file_list()
 image2d_data_list = data_partitioner.initialise(IMAGE_2D_DATA).get_file_list()
 
 
-class ImageReaderTest(tf.test.TestCase):
+class ImageReaderTest(NiftyNetTestCase):
     def test_initialisation(self):
         with self.assertRaisesRegexp(ValueError, ''):
             reader = ImageReader(['test'])

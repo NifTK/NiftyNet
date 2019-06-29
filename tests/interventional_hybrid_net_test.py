@@ -4,9 +4,10 @@ import tensorflow as tf
 
 from niftynet.network.toynet import ToyNet
 from niftynet.network.interventional_hybrid_net import INetHybridPreWarp, INetHybridTwoStream
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class INetHybridPreWarpTest(tf.test.TestCase):
+class INetHybridPreWarpTest(NiftyNetTestCase):
 
     def test_3d_shape(self):
         input_shape = (2, 32, 32, 32, 1)
@@ -16,7 +17,7 @@ class INetHybridPreWarpTest(tf.test.TestCase):
         out = hybridnet_instance(x, x, is_training=True)
         print(hybridnet_instance)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 3), out[0].shape)
@@ -30,13 +31,13 @@ class INetHybridPreWarpTest(tf.test.TestCase):
         out = hybridnet_instance(x, x, is_training=True)
         print(hybridnet_instance)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 2), out[0].shape)
             self.assertAllClose((2, 32, 32, 2), out[1].shape)
 
-class INetHybridTwoStreamTest(tf.test.TestCase):
+class INetHybridTwoStreamTest(NiftyNetTestCase):
 
 
     def test_3d_shape(self):
@@ -47,7 +48,7 @@ class INetHybridTwoStreamTest(tf.test.TestCase):
         out = hybridnet_instance(x, x, is_training=True)
         print(hybridnet_instance)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 3), out[0].shape)
@@ -62,7 +63,7 @@ class INetHybridTwoStreamTest(tf.test.TestCase):
         out = hybridnet_instance(x, x, is_training=True)
         print(hybridnet_instance)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 2), out[0].shape)
