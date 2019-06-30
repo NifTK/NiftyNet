@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, division
 import os
 
 import tensorflow as tf
+
 import niftynet.io.misc_io as misc_io
 import numpy as np
 from niftynet.engine.sampler_resize_v2 import zoom_3d
