@@ -5,9 +5,10 @@ windows aggregator saves each item in a batch output as an image.
 from __future__ import absolute_import, print_function, division
 
 import os
-
-import niftynet.io.misc_io as misc_io
 import numpy as np
+import niftynet.io.misc_io as misc_io
+# pylint: disable=too-many-branches
+
 from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
 
 

@@ -7,9 +7,9 @@ from __future__ import absolute_import, print_function, division
 
 import os
 
-import numpy as np
 import tensorflow as tf
 import niftynet.io.misc_io as misc_io
+import numpy as np
 from niftynet.engine.sampler_resize_v2 import zoom_3d
 from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
 from niftynet.layer.discrete_label_normalisation import \
