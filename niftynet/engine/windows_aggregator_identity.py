@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, division
 import os
 
 import niftynet.io.misc_io as misc_io
+import numpy as np
 from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
 
 
@@ -70,16 +71,48 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
                         self._decode_subject_name(location[batch_id, 1]))
                 else:
                     output_name = self.output_id['base_name']
-                self._save_current_image(self.output_id['relative_id'],
-                                         output_name,
-                                         window[batch_id, ...])
+
+                for i in window:
+                    if 'window' in i:
+                        true_outname = i + output_name
+                        self._save_current_image(self.output_id['relative_id'],
+                                                 true_outname,
+                                                 window[i][batch_id, ...])
+                    else:
+                        true_outname = i + output_name
+                        to_save = np.asarray(window[i])
+                        if to_save.ndim == 0:
+                            to_save = np.expand_dims(to_save, 0)
+                        if n_samples > 1 and to_save.ndim < 2:
+                            to_save = np.expand_dims(to_save, 1)
+                        elif n_samples == 1 and to_save.shape[0] != n_samples:
+                            to_save = np.expand_dims(to_save, 0)
+                        print(true_outname, window[i], i, to_save.shape)
+                        self._save_current_csv(self.output_id['relative_id'],
+                                               true_outname,
+                                               to_save[batch_id, ...])
+
                 self.output_id['relative_id'] += 1
             return True
         n_samples = window.shape[0]
         for batch_id in range(n_samples):
             filename = self._decode_subject_name()
-            self._save_current_image(
-                batch_id, filename, window[batch_id, ...])
+            for i in window:
+                if 'window' in i:
+                    new_filename = i + filename
+                    self._save_current_image(
+                        batch_id, new_filename, window[i][batch_id, ...])
+                else:
+                    new_filename = i + filename
+                    to_save = np.asarray(window[i])
+                    if to_save.ndim == 0:
+                        to_save = np.expand_dims(to_save, 0)
+                    if n_samples > 1 and to_save.ndim < 2:
+                        to_save = np.expand_dims(to_save, 1)
+                    elif n_samples == 1 and to_save.shape[0] != n_samples:
+                        to_save = np.expand_dims(to_save, 0)
+                    self._save_current_csv(batch_id, new_filename,
+                                           to_save[batch_id, ...])
         return False
 
     def _save_current_image(self, idx, filename, image):
@@ -92,5 +125,25 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
         misc_io.save_data_array(self.output_path, uniq_name, image, None)
         with open(self.inferred_csv, 'a') as csv_file:
             filename = os.path.join(self.output_path, filename)
-            csv_file.write('{},{}\n'.format(idx, uniq_name))
+            csv_file.write('{},{}\n'.format(idx, filename))
+        return
+
+    def _save_current_csv(self, idx, filename, image):
+        '''
+        Save all csv output present in the dictionary of csv_output.
+        :return:
+        '''
+
+        if image is None:
+            return
+        while image.ndim < 2:
+            image = np.expand_dims(image, 0)
+        if idx == 0:
+            uniq_name = "{}{}.csv".format(filename, self.postfix)
+        else:
+            uniq_name = "{}_{}{}.csv".format(idx, filename, self.postfix)
+        misc_io.save_csv_array(self.output_path, uniq_name, image)
+        with open(self.inferred_csv, 'a') as csv_file:
+            filename = os.path.join(self.output_path, filename)
+            csv_file.write('{},{}\n'.format(idx, filename))
         return
