@@ -151,7 +151,7 @@ class DenseVNet(BaseNet):
         final_conv = ConvolutionalLayer(
             self.num_classes,
             kernel_size=hyperparams['seg_kernel_size'],
-            feature_normalization='batch',
+            feature_normalization=None,
             with_bias=True)
         #  name='final_conv')
 
