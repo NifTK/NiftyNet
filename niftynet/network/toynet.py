@@ -6,6 +6,16 @@ from niftynet.network.base_net import BaseNet
 
 
 class ToyNet(BaseNet):
+    """
+    ### Description
+        Toy net for testing
+
+    ### Diagram
+    INPUT --> CONV(kernel = 3, activation = relu) --> CONV(kernel = 1, activation = None) --> MULTICLASS OUTPUT
+
+    ### Constraints
+    None
+    """
     def __init__(self,
                  num_classes,
                  w_initializer=None,
@@ -14,6 +24,16 @@ class ToyNet(BaseNet):
                  b_regularizer=None,
                  acti_func='prelu',
                  name='ToyNet'):
+        """
+
+        :param num_classes: int, number of final output channels
+        :param w_initializer: weight initialisation for network
+        :param w_regularizer: weight regularisation for network
+        :param b_initializer: bias initialisation for network
+        :param b_regularizer: bias regularisation for network
+        :param acti_func: ctivation function to use
+        :param name: layer name
+        """
 
         super(ToyNet, self).__init__(
             num_classes=num_classes,
@@ -27,6 +47,13 @@ class ToyNet(BaseNet):
         self.hidden_features = 10
 
     def layer_op(self, images, is_training=True, **unused_kwargs):
+        """
+
+        :param images: tensor, input to the network
+        :param is_training: boolean, True if network is in training mode
+        :param unused_kwargs: other arguments, not in use
+        :return: tensor, network output
+        """
         conv_1 = ConvolutionalLayer(self.hidden_features,
                                     kernel_size=3,
                                     w_initializer=self.initializers['w'],
