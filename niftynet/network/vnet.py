@@ -15,9 +15,41 @@ from niftynet.utilities.util_common import look_up_operations
 
 class VNet(BaseNet):
     """
-    implementation of V-Net:
-      Milletari et al., "V-Net: Fully convolutional neural networks for
-      volumetric medical image segmentation", 3DV '16
+    ### Description
+        implementation of V-Net:
+          Milletari et al., "V-Net: Fully convolutional neural networks for
+          volumetric medical image segmentation", 3DV '16
+
+    ### Building Blocks
+    (n)[dBLOCK]        - Downsampling VNet block with n conv layers (kernel size = 5,
+                            with residual connections, activation = relu as default)
+                            followed by downsampling conv layer (kernel size = 2,
+                            stride = 2) + final activation
+    (n)[uBLOCK]         - Upsampling VNet block with n conv layers (kernel size = 5,
+                            with residual connections, activation = relu as default)
+                            followed by deconv layer (kernel size = 2,
+                            stride = 2) + final activation
+    (n)[sBLOCK]         - VNet block with n conv layers (kernel size = 5,
+                            with residual connections, activation = relu as default)
+                            followed by 1x1x1 conv layer (kernel size = 1,
+                            stride = 1) + final activation
+
+    ### Diagram
+
+    INPUT  -->  (1)[dBLOCK] - - - - - - - - - - - - - - - - (1)[sBLOCK] --> OUTPUT
+                    |                                             |
+                   (2)[dBLOCK] - - - - - - - - - - - - (2)[uBLOCK]
+                        |                                   |
+                        (3)[dBLOCK]  - - - - - - - (3)[uBLOCK]
+                            |                           |
+                            (3)[dBLOCK]  - - - (3)[uBLOCK]
+                                |                   |
+                                ----(3)[uBLOCk] ----
+
+
+    ### Constraints
+     - Input size should be divisible by 8
+     - Input should be either 2D or 3D
     """
 
     def __init__(self,
@@ -28,6 +60,16 @@ class VNet(BaseNet):
                  b_regularizer=None,
                  acti_func='relu',
                  name='VNet'):
+        """
+
+        :param num_classes: int, number of channels of output
+        :param w_initializer: weight initialisation for network
+        :param w_regularizer: weight regularisation for network
+        :param b_initializer: bias initialisation for network
+        :param b_regularizer: bias regularisation for network
+        :param acti_func: activation function to use
+        :param name: layer name
+        """
 
         super(VNet, self).__init__(
             num_classes=num_classes,
@@ -41,6 +83,14 @@ class VNet(BaseNet):
         self.n_features = [16, 32, 64, 128, 256]
 
     def layer_op(self, images, is_training=True, layer_id=-1, **unused_kwargs):
+        """
+
+        :param images: tensor to input to the network. Size has to be divisible by 8
+        :param is_training:  boolean, True if network is in training mode
+        :param layer_id: not in use
+        :param unused_kwargs: other conditional arguments, not in use
+        :return: tensor, network output
+        """
         assert layer_util.check_spatial_dims(images, lambda x: x % 8 == 0)
 
         if layer_util.infer_spatial_rank(images) == 2:
@@ -137,6 +187,19 @@ class VNetBlock(TrainableLayer):
                  b_regularizer=None,
                  acti_func='relu',
                  name='vnet_block'):
+        """
+
+        :param func: string, defines final block operation (Downsampling, upsampling, same)
+        :param n_conv: int, number of conv layers to apply
+        :param n_feature_chns: int, number of feature channels (output channels) for each conv layer
+        :param n_output_chns: int, number of output channels of the final block operation (func)
+        :param w_initializer: weight initialisation of convolutional layers
+        :param w_regularizer: weight regularisation of convolutional layers
+        :param b_initializer: bias initialisation of convolutional layers
+        :param b_regularizer: bias regularisation of convolutional layers
+        :param acti_func: activation function to use
+        :param name: layer name
+        """
 
         super(VNetBlock, self).__init__(name=name)
 
@@ -150,6 +213,13 @@ class VNetBlock(TrainableLayer):
         self.regularizers = {'w': w_regularizer, 'b': b_regularizer}
 
     def layer_op(self, main_flow, bypass_flow):
+        """
+
+        :param main_flow: tensor, input to the VNet block
+        :param bypass_flow: tensor, input from skip connection
+        :return: res_flow is tensor before final block operation (for residual connections),
+            main_flow is final output tensor
+        """
         for i in range(self.n_conv):
             main_flow = ConvLayer(name='conv_{}'.format(i),
                                   n_output_chns=self.n_feature_chns,

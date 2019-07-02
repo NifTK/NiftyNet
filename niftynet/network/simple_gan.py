@@ -10,8 +10,12 @@ from niftynet.layer.base_layer import TrainableLayer
 class GenericGAN(TrainableLayer):
   """
     ### Description
+    Generic Generative Adversarial Network
 
     ### Diagram
+
+    RANDOM NOISE --> [GENERATOR] --> [DISCRIMINATOR] --> fake logits
+    TRAINING SET ------------------> [DISCRIMINATOR] --> real logits
 
     ### Constraints
 
@@ -32,8 +36,16 @@ class GenericGAN(TrainableLayer):
 class SimpleGAN(GenericGAN):
   """
     ### Description
+    Specification of generator and discriminator for generic gan
+
+    ### Building blocks
+    [GENERATOR]       - See ImageGenerator class below
+    [DISCRIMINATOR]   - See ImageDiscriminator class below
 
     ### Diagram
+
+    RANDOM NOISE --> [GENERATOR] --> [DISCRIMINATOR] --> fake logits
+    TRAINING SET ------------------> [DISCRIMINATOR] --> real logits
 
     ### Constraints
 
@@ -56,7 +68,7 @@ class ImageGenerator(TrainableLayer):
     """
 
     :param hidden_layer_channels:
-    :param name:
+    :param name: layer name
     """
     super(ImageGenerator, self).__init__(name=name)
     self._num_layers = len(hidden_layer_channels)
@@ -66,10 +78,10 @@ class ImageGenerator(TrainableLayer):
   def layer_op(self, random_source, image_size,is_training):
     """
 
-    :param random_source:
-    :param image_size:
-    :param is_training:
-    :return:
+    :param random_source: tensor, random noise to start generation
+    :param image_size: output image size
+    :param is_training: boolean, True if network is in training mode
+    :return: tensor, generated image
     """
     spatial_rank = len(image_size)-1
     batch_size = random_source.shape.as_list()[0]
@@ -136,8 +148,8 @@ class ImageDiscriminator(TrainableLayer):
   def __init__(self, hidden_layer_channels,name):
     """
 
-    :param hidden_layer_channels:
-    :param name:
+    :param hidden_layer_channels: array, number of output channels for each layer
+    :param name: layer name
     """
     super(ImageDiscriminator, self).__init__(name=name)
     self._layer_channels = hidden_layer_channels
@@ -146,9 +158,9 @@ class ImageDiscriminator(TrainableLayer):
   def layer_op(self, image,is_training):
     """
 
-    :param image:
-    :param is_training:
-    :return:
+    :param image: tensor, input image to distriminator
+    :param is_training: boolean, True if network is in training mode
+    :return: tensor, classification logits
     """
     batch_size=image.shape.as_list()[0]
     spatial_rank=len(image.shape)-2

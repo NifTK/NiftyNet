@@ -15,7 +15,18 @@ reimplemented from their original presentation with their default parameters.
 _See also: [NiftyNet model zoo](https://github.com/NifTK/NiftyNetModelZoo)._
 
 
-## UNet
+## UNet 2D
+Reimplementation of
+
+Ronneberger, O., Fischer, P., and Brox, T. (2015). 
+[U-Net: Convolutional Networks for Buomedical Image 
+Segmentation](https://arxiv.org/pdf/1505.04597.pdf)
+In MICCAI 2015
+##### Constraints
+* input should be 2D
+
+
+## UNet 3D
 Reimplementation of
 
 Çiçek, Ö., Abdulkadir, A., Lienkamp, S. S., Brox, T., and Ronneberger, O.
@@ -26,9 +37,6 @@ In MICCAI 2016
 * Image size - 4 should be divisible by 8
 * Label size should be more than 88
 * border is 44
-#### Versions
-* 3D
-* 2D
 
 
 ## VNet
@@ -39,7 +47,8 @@ neural networks for volumetric medical image
 segmentation](http://campar.in.tum.de/pub/milletari2016Vnet/milletari2016Vnet.pdf),
 In 3DV 2016
 ##### Constraints
-* Image size should be divisible by 8
+* Input size should be divisible by 8
+* Input should be either 2D or 3D
 
 
 ## DenseVNet
