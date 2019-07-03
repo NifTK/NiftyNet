@@ -244,10 +244,10 @@ def do_reorientation_idx(idx_array, init_axcodes, final_axcodes,
         # print("obtained new first", init_spatial_size)
         reorder_axes = np.squeeze(np.asarray(ornt_transf[:, 0], dtype=np.int32))
         fin_spatial_size = [init_spatial_size[k] for k in reorder_axes]
-        for d in range(ornt_transf.shape[0]):
-            if ornt_transf[d, 1] < 0:
-                new_idx[:, d] = fin_spatial_size[d] - np.asarray(new_idx[:, d])
-                print("Updated idx for %d" % d)
+        for i in range(ornt_transf.shape[0]):
+            if ornt_transf[i, 1] < 0:
+                new_idx[:, i] = fin_spatial_size[i] - np.asarray(new_idx[:, i])
+                print("Updated idx for %d" % i)
         return new_idx, ornt_transf
 
 
