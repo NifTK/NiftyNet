@@ -152,6 +152,7 @@ class SegmentationApplication(BaseApplication):
         if self.is_training:
             train_param = self.action_param
             self.patience = train_param.patience
+            self.mode = self.action_param.early_stopping_mode
             if train_param.random_flipping_axes != -1:
                 augmentation_layers.append(RandomFlipLayer(
                     flip_axes=train_param.random_flipping_axes))
@@ -190,6 +191,15 @@ class SegmentationApplication(BaseApplication):
         for reader in self.readers[1:]:
             reader.add_preprocessing_layers(
                 volume_padding_layer + normalisation_layers)
+
+        # Checking num_classes is set correctly
+        if self.segmentation_param.num_classes <= 1:
+            raise ValueError("Number of classes must be at least 2 for segmentation")
+        for preprocessor in self.readers[0].preprocessors:
+            if preprocessor.name == 'label_norm':
+                if len(preprocessor.label_map[preprocessor.key[0]]) != self.segmentation_param.num_classes:
+                    raise ValueError("Number of unique labels must be equal to "
+                                     "number of classes (check histogram_ref file)")
 
     def initialise_uniform_sampler(self):
         self.sampler = [[UniformSampler(

@@ -12,6 +12,7 @@ from niftynet.engine.sampler_weighted_v2 import \
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
+from tests.niftynet_testcase import NiftyNetTestCase
 
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
@@ -107,14 +108,14 @@ def get_dynamic_window_reader():
     return reader
 
 
-class WeightedSamplerTest(tf.test.TestCase):
+class WeightedSamplerTest(NiftyNetTestCase):
     def test_3d_init(self):
         sampler = WeightedSampler(reader=get_3d_reader(),
                                   window_sizes=MULTI_MOD_DATA,
                                   batch_size=2,
                                   windows_per_image=10,
                                   queue_length=10)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, (2, 7, 10, 2, 2))
@@ -126,7 +127,7 @@ class WeightedSamplerTest(tf.test.TestCase):
                                   batch_size=2,
                                   windows_per_image=10,
                                   queue_length=10)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, (2, 10, 9, 1))
@@ -138,7 +139,7 @@ class WeightedSamplerTest(tf.test.TestCase):
                                   batch_size=2,
                                   windows_per_image=10,
                                   queue_length=10)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape[1:], (8, 2, 256, 2))
@@ -160,7 +161,7 @@ class WeightedSamplerTest(tf.test.TestCase):
         sampler.close_all()
 
 
-class WeightedCoordinatesTest(tf.test.TestCase):
+class WeightedCoordinatesTest(NiftyNetTestCase):
     def assertCoordinatesAreValid(self, coords, sampling_map):
         for coord in coords:
             for i in range(len(coord.shape)):

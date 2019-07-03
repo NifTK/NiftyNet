@@ -131,6 +131,7 @@ class AutoencoderApplication(BaseApplication):
 
         if self.is_training:
             self.patience = self.action_param.patience
+            self.mode = self.action_param.early_stopping_mode
             if self.action_param.validation_every_n > 0:
                 data_dict = tf.cond(tf.logical_not(self.is_validation),
                                     lambda: switch_sampler(True),

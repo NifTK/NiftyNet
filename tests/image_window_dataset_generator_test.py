@@ -10,6 +10,7 @@ import tensorflow as tf
 from niftynet.engine.image_window import N_SPATIAL, LOCATION_FORMAT
 from niftynet.engine.image_window_dataset import ImageWindowDataset
 from niftynet.io.image_reader import ImageReader
+from tests.niftynet_testcase import NiftyNetTestCase
 
 IMAGE_PATH_2D_1 = os.path.join('.', 'example_volumes', 'gan_test_data')
 IMAGE_PATH_3D = os.path.join('.', 'testing_data')
@@ -53,7 +54,7 @@ class ImageWindowGenerator(ImageWindowDataset):
 
 
 @unittest.skip("temp skipping window generator test")
-class ImageWindowDataset_Generator_2D_Test(tf.test.TestCase):
+class ImageWindowDataset_Generator_2D_Test(NiftyNetTestCase):
     def assert_window(self, window):
         if not isinstance(window, dict):
             window = next(window)
@@ -64,7 +65,7 @@ class ImageWindowDataset_Generator_2D_Test(tf.test.TestCase):
         self.assertEqual(window['mr_location'].dtype, np.int32)
 
     def assert_tf_window(self, sampler):
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             window = sess.run(sampler.pop_batch_op())
         self.assert_window(window)
 
@@ -112,7 +113,7 @@ class ImageWindowDataset_Generator_2D_Test(tf.test.TestCase):
         batch_size = 3
         sampler = ImageWindowGenerator(
             reader=reader, batch_size=batch_size, epoch=1)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             next_element = sampler.pop_batch_op()
             iters = 0
             try:
@@ -127,7 +128,7 @@ class ImageWindowDataset_Generator_2D_Test(tf.test.TestCase):
 
 
 @unittest.skip("temp skipping window generator test")
-class ImageWindowDataset_Generator_3D_Test(tf.test.TestCase):
+class ImageWindowDataset_Generator_3D_Test(NiftyNetTestCase):
     def assert_window(self, window):
         if not isinstance(window, dict):
             window = next(window)
@@ -138,7 +139,7 @@ class ImageWindowDataset_Generator_3D_Test(tf.test.TestCase):
         self.assertEqual(window['mr_location'].dtype, np.int32)
 
     def assert_tf_window(self, sampler):
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             window = sess.run(sampler.pop_batch_op())
         self.assert_window(window)
 
@@ -179,7 +180,7 @@ class ImageWindowDataset_Generator_3D_Test(tf.test.TestCase):
         batch_size = 3
         sampler = ImageWindowGenerator(
             reader=reader, batch_size=batch_size, epoch=1)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             next_element = sampler.pop_batch_op()
             iters = 0
             try:
@@ -194,11 +195,11 @@ class ImageWindowDataset_Generator_3D_Test(tf.test.TestCase):
 
 
 @unittest.skip("temp skipping window generator test")
-class ImageDatasetParamTest(tf.test.TestCase):
+class ImageDatasetParamTest(NiftyNetTestCase):
     def run_dataset(self, n_iters, n_threads, **kwargs):
         sampler = ImageWindowGenerator(**kwargs)
         sampler.set_num_threads(n_threads)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             true_iters = 0
             next_element = sampler.pop_batch_op()
             windows = []

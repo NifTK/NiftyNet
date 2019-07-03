@@ -4,12 +4,13 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.rand_bias_field import RandomBiasFieldLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 SHAPE_4D = (10, 16, 16, 2)
 SHAPE_5D = (10, 32, 32, 8, 1)
 
 
-class RandDeformationTests(tf.test.TestCase):
+class RandDeformationTests(NiftyNetTestCase):
     # def get_3d_input(self):
     #     input_3d = {'image': np.random.randn(10, 16, 2)}
     #     interp_order = {'image': (3,) * 2}
@@ -70,7 +71,7 @@ class RandDeformationTests(tf.test.TestCase):
     #         rand_bias_field_layer.randomise(x)
     #         out = rand_bias_field_layer(x, interp_orders)
 
-    #         with self.test_session():
+    #         with self.cached_session():
     #             self.assertFalse(np.array_equal(out['image'], x_old))
 
 

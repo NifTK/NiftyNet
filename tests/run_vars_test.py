@@ -9,10 +9,11 @@ from niftynet.engine.application_iteration import IterationMessage, \
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.signal import \
     TRAIN, ITER_FINISHED, GRAPH_CREATED, SESS_STARTED
+from tests.niftynet_testcase import NiftyNetTestCase
 from tests.application_driver_test import get_initialised_driver
 
 
-class DriverLoopTest(tf.test.TestCase):
+class DriverLoopTest(NiftyNetTestCase):
     def test_interfaces(self):
         msg = IterationMessage()
         msg.current_iter = 0
@@ -64,7 +65,7 @@ class DriverLoopTest(tf.test.TestCase):
 
         ITER_FINISHED.connect(get_iter_msgs)
 
-        with self.test_session(graph=test_graph) as sess:
+        with self.cached_session(graph=test_graph) as sess:
             SESS_STARTED.send(app_driver.app, iter_msg=None)
             iterations = IterationMessageGenerator(
                 initial_iter=0,

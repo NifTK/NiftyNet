@@ -15,10 +15,54 @@ from niftynet.network.highres3dnet import HighResBlock
 
 class HolisticNet(BaseNet):
     """
+    ### Description
     Implementation of HolisticNet detailed in
     Fidon, L. et. al. (2017) Generalised Wasserstein Dice Score for Imbalanced
     Multi-class Segmentation using Holistic Convolutional Networks.
     MICCAI 2017 (BrainLes)
+
+    ### Diagram Blocks
+    [CONV]          -   3x3x3 Convolutional layer in form: Activation(Convolution(X))
+                        where X = input tensor or output of previous layer
+
+                        and Activation is a function which includes:
+
+                            a) Batch-Norm
+                            b) Activation Function (Elu, ReLu, PreLu, Sigmoid, Tanh etc.)
+
+    [D-CONV(d)]     -   3x3x3 Convolutional layer with dilated convolutions with blocks in
+                         pre-activation mode: D-Convolution(Activation(X))
+                         see He et al., "Identity Mappings in Deep Residual Networks", ECCV '16
+
+                         dilation factor = d
+                         D-CONV(2) : dilated convolution with dilation factor 2
+
+                         repeat factor = r
+                         e.g.
+                         (2)[D-CONV(d)]     : 2 dilated convolutional layers in a row [D-CONV] -> [D-CONV]
+                         { (2)[D-CONV(d)] } : 2 dilated convolutional layers within residual block
+
+    [SCORE]         -   Batch-Norm + 3x3x3 Convolutional layer  + Activation function + 1x1x1 Convolutional layer
+
+    [MERGE]         -   Channel-wise merging
+
+
+    ### Diagram
+
+    MULTIMODAL INPUT ----- [CONV]x3 -----[D-CONV(2)]x3 ----- MaxPooling ----- [CONV]x3 -----[D-CONV(2)]x3
+                                        |                   |                          |                  |
+                                      [SCORE]             [SCORE]                    [SCORE]            [SCORE]
+                                        |                   |                          |                  |
+                                        -------------------------------------------------------------------
+                                                                        |
+                                                                     [MERGE] --> OUTPUT
+
+    ### Constraints
+    - Input image size should be divisible by 8
+
+    ### Comments
+    - The network returns only the merged output, so the loss will be applied only to this
+    (different from the referenced paper)
     """
 
     def __init__(self,
@@ -29,6 +73,16 @@ class HolisticNet(BaseNet):
                  b_regularizer=None,
                  acti_func='elu',
                  name='HolisticNet'):
+        """
+
+        :param num_classes: int, number of channels of output
+        :param w_initializer: weight initialisation for network
+        :param w_regularizer: weight regularisation for network
+        :param b_initializer: bias initialisation for network
+        :param b_regularizer: bias regularisation for network
+        :param acti_func: activation function to use
+        :param name: layer name
+        """
         super(HolisticNet, self).__init__(
             num_classes=num_classes,
             acti_func=acti_func,
@@ -49,11 +103,19 @@ class HolisticNet(BaseNet):
                  is_training=True,
                  layer_id=-1,
                  **unused_kwargs):
+        """
+
+        :param input_tensor: tensor, input to the network
+        :param is_training: boolean, True if network is in training mode
+        :param layer_id: not in use
+        :param unused_kwargs:
+        :return: fused prediction from multiple scales
+        """
         layer_instances = []
         scores_instances = []
         first_conv_layer = ConvolutionalLayer(
             n_output_chns=self.num_features[0],
-            with_bn=True,
+            feature_normalization='batch',
             kernel_size=3,
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
@@ -202,6 +264,15 @@ class ScoreLayer(TrainableLayer):
                  num_classes=1,
                  acti_func='elu',
                  name='ScoreLayer'):
+        """
+
+        :param num_features: int, number of features
+        :param w_initializer: weight initialisation for network
+        :param w_regularizer: weight regularisation for network
+        :param num_classes: int, number of prediction channels
+        :param acti_func: activation function to use
+        :param name: layer name
+        """
         super(ScoreLayer, self).__init__(name=name)
         self.num_classes = num_classes
         self.acti_func = acti_func
@@ -211,6 +282,13 @@ class ScoreLayer(TrainableLayer):
         self.regularizers = {'w': w_regularizer}
 
     def layer_op(self, input_tensor, is_training, layer_id=-1):
+        """
+
+        :param input_tensor: tensor, input to the layer
+        :param is_training: boolean, True if network is in training mode
+        :param layer_id: not is use
+        :return: tensor with number of channels to num_classes
+        """
         rank = input_tensor.shape.ndims
         perm = [i for i in range(rank)]
         perm[-2], perm[-1] = perm[-1], perm[-2]
@@ -223,7 +301,7 @@ class ScoreLayer(TrainableLayer):
         for layer in range(n_layers - 1):
             layer_to_add = ConvolutionalLayer(
                 n_output_chns=self.num_features[layer + 1],
-                with_bn=True,
+                feature_normalization='batch',
                 kernel_size=3,
                 w_initializer=self.initializers['w'],
                 w_regularizer=self.regularizers['w'],
@@ -248,6 +326,14 @@ class MergeLayer(TrainableLayer):
                  w_regularizer=None,
                  acti_func='elu',
                  name='MergeLayer'):
+        """
+
+        :param func: type of merging layer (SUPPORTED_OPS: AVERAGE, WEIGHTED_AVERAGE, MAXOUT)
+        :param w_initializer: weight initialisation for network
+        :param w_regularizer: weight regularisation for network
+        :param acti_func: activation function to use
+        :param name: layer name
+        """
         super(MergeLayer, self).__init__(name=name)
         self.func = func
         self.acti_func = acti_func
@@ -255,6 +341,11 @@ class MergeLayer(TrainableLayer):
         self.regularizers = {'w': w_regularizer}
 
     def layer_op(self, roots):
+        """
+        Performs channel-wise merging of input tensors
+        :param roots: tensors to be merged
+        :return: fused tensor
+        """
         if self.func == 'MAXOUT':
             return tf.reduce_max(tf.stack(roots, axis=-1), axis=-1)
         elif self.func == 'AVERAGE':

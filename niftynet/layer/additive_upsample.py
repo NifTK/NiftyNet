@@ -98,7 +98,7 @@ class ResidualUpsampleLayer(TrainableLayer):
         n_output_chns = check_divisible_channels(input_tensor, self.n_splits)
         # deconvolution path
         deconv_output = Deconv(n_output_chns=n_output_chns,
-                               with_bias=False, with_bn=True,
+                               with_bias=False, feature_normalization='batch',
                                **self.deconv_param)(input_tensor, is_training)
 
         # additive upsampling path

@@ -6,9 +6,10 @@ from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.layer.bn import BNLayer
 from niftynet.layer.bn import InstanceNormLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class BNTest(tf.test.TestCase):
+class BNTest(NiftyNetTestCase):
     def get_3d_input(self):
         input_shape = (2, 16, 16, 16, 8)
         x = tf.ones(input_shape)
@@ -26,7 +27,7 @@ class BNTest(tf.test.TestCase):
         out_bn = bn_layer(x, is_training=True)
         print(bn_layer)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_bn)
@@ -41,7 +42,7 @@ class BNTest(tf.test.TestCase):
         out_inst = instnorm_layer(x)
         print(instnorm_layer)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_inst)
@@ -56,7 +57,7 @@ class BNTest(tf.test.TestCase):
         test_bn = bn_layer(x, is_training=False)
         print(bn_layer)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_bn)
@@ -74,7 +75,7 @@ class BNTest(tf.test.TestCase):
         out_bn = bn_layer(x, is_training=True)
         print(bn_layer)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_bn)
@@ -88,7 +89,7 @@ class BNTest(tf.test.TestCase):
         out_inst = instnorm_layer(x)
         print(instnorm_layer)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_inst)
@@ -104,7 +105,7 @@ class BNTest(tf.test.TestCase):
         print(bn_layer)
         reg_loss = tf.add_n(bn_layer.regularizer_loss())
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out = sess.run(out_bn)

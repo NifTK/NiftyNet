@@ -1,4 +1,4 @@
-Patch-base analysis
+Patch-based analysis
 ===================
 
 NiftyNet is designed to facilitate patch-based medical image analysis.
@@ -117,7 +117,7 @@ locations get evaluated by the network.
 
 Therefore,
 
-1. for the grid window sampler, we would like to have ``100 x 100``-pixel 
+1. for the grid window sampler, we would like to have ``100 x 100``-pixel
    window generated with a step size of ``76`` in both directions;
 
 2. for the window aggregation, the spatial coordinates of the ``76 x 76``-pixel
@@ -218,5 +218,3 @@ accept array values up to three elements.
 For multi-channel input images with sizes such as ``height x width x depth x
 num_modalities``, the shape of the windows will be
 ``window height x window width x window depth x num_modalities``.
-
-

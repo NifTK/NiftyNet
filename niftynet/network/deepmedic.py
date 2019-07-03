@@ -12,9 +12,31 @@ from niftynet.network.base_net import BaseNet
 
 class DeepMedic(BaseNet):
     """
+    ### Description
     reimplementation of DeepMedic:
         Kamnitsas et al., "Efficient multi-scale 3D CNN with fully connected
         CRF for accurate brain lesion segmentation", MedIA '17
+
+    ### Building blocks
+    [CONV]          - 3x3x3 convolutional layer
+    [denseCONV]     - 1x1x1 convolutional layer
+
+    ### Diagram
+    INPUT --> CROP -------> [CONV]x8 ------> [SUM] ----> [denseCONV]x3 --> OUTPUT
+                |                             |
+            DOWNSAMPLE ---> [CONV]x8 ---> UPSAMPLE
+
+
+    ### Constraints:
+    - The downsampling factor (d_factor) should be odd
+    - Label size = [(image_size / d_factor) - 16]* d_factor
+    - Image size should be divisible by d_factor
+
+    # Examples:
+    - Appropriate configuration for training:
+    image spatial window size = 57, label spatial window size = 9, d_ factor = 3
+    - Appropriate configuration for inference:
+    image spatial window size = 105, label spatial window size = 57, d_ factor = 3
     """
 
     def __init__(self,
@@ -25,6 +47,16 @@ class DeepMedic(BaseNet):
                  b_regularizer=None,
                  acti_func='prelu',
                  name="DeepMedic"):
+        """
+
+        :param num_classes: int, number of channels of output
+        :param w_initializer: weight initialisation for network
+        :param w_regularizer: weight regularisation for network
+        :param b_initializer: bias initialisation for network
+        :param b_regularizer: bias regularisation for network
+        :param acti_func: activation function to use
+        :param name: layer name
+        """
 
         super(DeepMedic, self).__init__(
             num_classes=num_classes,
@@ -35,12 +67,20 @@ class DeepMedic(BaseNet):
             acti_func=acti_func,
             name=name)
 
-        self.d_factor = 3  # downsampling factor
+        self.d_factor = 3  # downsampling factor - should be odd
         self.crop_diff = ((self.d_factor - 1) * 16) // 2
         self.conv_features = [30, 30, 40, 40, 40, 40, 50, 50]
         self.fc_features = [150, 150, num_classes]
 
     def layer_op(self, images, is_training, layer_id=-1, **unused_kwargs):
+        """
+
+        :param images: tensor, input to the network, size should be divisible by d_factor
+        :param is_training: boolean, True if network is in training mode
+        :param layer_id: not in use
+        :param unused_kwargs:
+        :return: tensor, network output
+        """
         # image_size is defined as the largest context, then:
         #   downsampled path size: image_size / d_factor
         #   downsampled path output: image_size / d_factor - 16

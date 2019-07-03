@@ -7,6 +7,7 @@ from niftynet.layer import layer_util
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.convolution import ConvolutionalLayer
 
+
 class SubPixelLayer(TrainableLayer):
     """
     Implementation of Shi et al.'s sub-pixel CNN single-image
@@ -23,7 +24,8 @@ class SubPixelLayer(TrainableLayer):
                                        (3, 32),
                                        (3, -1)),
                  acti_func='tanh',
-                 with_bn=False,
+                 feature_normalization=None,
+                 group_size=-1,
                  with_bias=True,
                  padding='REFLECT',
                  w_initializer=None,
@@ -38,7 +40,9 @@ class SubPixelLayer(TrainableLayer):
         layer must have a feature-map size of -1.
         :param padding: padding applied in convolutional layers
         :param with_bias: incorporate bias parameters in convolutional layers
-        :param with_bn: incorporate batch normalisation in convolutional layers
+        :param feature_normalization: the type of feature normalization (e.g.
+                batch, instance or group norm. Default None.
+        :param group_size: size of the groups if groupnorm is chosen.
         :param acti_func: activation function applied to first N - 1 layers
         """
 
@@ -54,7 +58,8 @@ class SubPixelLayer(TrainableLayer):
         self.acti_func = acti_func
 
         self.conv_layer_params = {'with_bias': with_bias,
-                                  'with_bn': with_bn,
+                                  'feature_normalization': feature_normalization,
+                                  'group_size': group_size,
                                   'padding': padding,
                                   'w_initializer': w_initializer,
                                   'b_initializer': b_initializer,
@@ -65,28 +70,28 @@ class SubPixelLayer(TrainableLayer):
         input_shape = lr_images.shape.as_list()
         batch_size = input_shape[0]
         input_shape = input_shape[1:]
-        nof_dims = len(input_shape) - 1
+        n_of_dims = len(input_shape) - 1
 
         if batch_size is None:
             raise ValueError('The batch size must be known and fixed.')
         if any(i is None or i <= 0 for i in input_shape):
             raise ValueError('The image shape must be known in advance.')
 
-        nof_channels = input_shape[-1]
+        n_of_channels = input_shape[-1]
 
         features = lr_images
-        for i, (ksize, nof_features) in enumerate(self.layer_configurations):
+        for i, (ksize, n_of_features) in enumerate(self.layer_configurations):
             name = 'fmap_{}'.format(i)
 
-            if nof_features > 0:
-                conv = ConvolutionalLayer(nof_features,
+            if n_of_features > 0:
+                conv = ConvolutionalLayer(n_of_features,
                                           kernel_size=ksize,
                                           acti_func=self.acti_func,
                                           name=name,
                                           **self.conv_layer_params)
             else:
-                nof_features = nof_channels*self.upsample_factor**nof_dims
-                conv = ConvolutionalLayer(nof_features,
+                n_of_features = n_of_channels * self.upsample_factor ** n_of_dims
+                conv = ConvolutionalLayer(n_of_features,
                                           kernel_size=ksize,
                                           acti_func=None,
                                           name=name,
@@ -98,9 +103,9 @@ class SubPixelLayer(TrainableLayer):
         # Setting the number of output features to the known value
         # obtained from the input shape results in a ValueError as
         # of TF 1.12
-        output_shape = [batch_size] \
-            + [self.upsample_factor*i for i in input_shape[:-1]] \
-            + [None]
+        output_shape = ([batch_size] +
+                        [self.upsample_factor * i for i in input_shape[:-1]] + 
+                        [None])
 
         return tf.contrib.periodic_resample.periodic_resample(features,
                                                               output_shape,

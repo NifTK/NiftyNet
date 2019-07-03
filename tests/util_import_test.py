@@ -2,9 +2,9 @@
 import tensorflow as tf
 
 from niftynet.utilities.util_import import require_module
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class OptionalPackageTest(tf.test.TestCase):
+class OptionalPackageTest(NiftyNetTestCase):
     def test_installed(self):
         require_module('tensorflow')
 

@@ -29,6 +29,7 @@ from niftynet.layer.rgb_histogram_equilisation import \
     RGBHistogramEquilisationLayer
 from niftynet.evaluation.regression_evaluator import RegressionEvaluator
 from niftynet.layer.rand_elastic_deform import RandomElasticDeformationLayer
+from niftynet.engine.windows_aggregator_identity import WindowAsImageAggregator
 
 SUPPORTED_INPUT = set(['image', 'output', 'weight', 'sampler', 'inferred'])
 
@@ -220,6 +221,12 @@ class RegressionApplication(BaseApplication):
             window_border=self.action_param.border,
             interp_order=self.action_param.output_interp_order,
             postfix=self.action_param.output_postfix)
+        
+    def initialise_identity_aggregator(self):
+        self.output_decoder = WindowAsImageAggregator(
+                image_reader=self.readers[0],
+                output_path=self.action_param.save_seg_dir,
+                postfix=self.action_param.output_postfix)
 
     def initialise_sampler(self):
         if self.is_training:
@@ -228,7 +235,10 @@ class RegressionApplication(BaseApplication):
             self.SUPPORTED_SAMPLING[self.net_param.window_sampling][1]()
 
     def initialise_aggregator(self):
-        self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]()
+        if self.net_param.force_output_identity_resizing:
+            self.initialise_identity_aggregator()
+        else:
+            self.SUPPORTED_SAMPLING[self.net_param.window_sampling][2]()
 
     def initialise_network(self):
         w_regularizer = None
@@ -265,6 +275,7 @@ class RegressionApplication(BaseApplication):
 
         if self.is_training:
             self.patience = self.action_param.patience
+            self.mode = self.action_param.early_stopping_mode
             if self.action_param.validation_every_n > 0:
                 data_dict = tf.cond(tf.logical_not(self.is_validation),
                                     lambda: switch_sampler(for_training=True),
@@ -284,13 +295,20 @@ class RegressionApplication(BaseApplication):
                     learning_rate=self.action_param.lr)
             loss_func = LossFunction(loss_type=self.action_param.loss_type)
 
-            crop_layer = CropLayer(border=self.regression_param.loss_border)
             weight_map = data_dict.get('weight', None)
-            weight_map = None if weight_map is None else crop_layer(weight_map)
-            data_loss = loss_func(
-                prediction=crop_layer(net_out),
-                ground_truth=crop_layer(data_dict['output']),
-                weight_map=weight_map)
+            border=self.regression_param.loss_border
+            if border == None or tf.reduce_sum(tf.abs(border)) == 0:
+                data_loss = loss_func(
+                        prediction=net_out,
+                        ground_truth=data_dict['output'],
+                        weight_map=weight_map)
+            else:
+                crop_layer = CropLayer(border)
+                weight_map = None if weight_map is None else crop_layer(weight_map)
+                data_loss = loss_func(
+                        prediction=crop_layer(net_out),
+                        ground_truth=crop_layer(data_dict['output']),
+                        weight_map=weight_map)
             reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
             if self.net_param.decay > 0.0 and reg_losses:
                 reg_loss = tf.reduce_mean(

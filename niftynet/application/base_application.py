@@ -74,6 +74,7 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     total_loss = None
     patience = None
     performance_history = []
+    mode = None
 
     def initialise_dataset_loader(
             self, data_param=None, task_param=None, data_partitioner=None):

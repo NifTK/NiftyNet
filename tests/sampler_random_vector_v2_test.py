@@ -5,15 +5,15 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.engine.sampler_random_vector_v2 import RandomVectorSampler
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class RandomVectorSamplerTest(tf.test.TestCase):
+class RandomVectorSamplerTest(NiftyNetTestCase):
     def test_random_vector(self):
         sampler = RandomVectorSampler(names=('test_vector',),
                                       vector_size=(100,),
                                       batch_size=20,
                                       repeat=None)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['test_vector'].shape, (20, 100))
@@ -38,7 +38,7 @@ class RandomVectorSamplerTest(tf.test.TestCase):
                                       batch_size=batch_size,
                                       n_interpolations=n_interpolations,
                                       repeat=repeat)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sampler.set_num_threads(1)
             n_output = 0
             for _ in range(2):

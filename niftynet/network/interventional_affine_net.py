@@ -16,14 +16,9 @@ from niftynet.network.base_net import BaseNet
 
 
 class INetAffine(BaseNet):
-    def __init__(self,
-                 decay=1e-6,
-                 affine_w_initializer=None,
-                 affine_b_initializer=None,
-                 acti_func='relu',
-                 name='inet-affine'):
-        """
-        This network estimates affine transformations from
+    """
+    ### Description
+    This network estimates affine transformations from
         a pair of moving and fixed image:
 
             Hu et al., Label-driven weakly-supervised learning for
@@ -37,11 +32,33 @@ class INetAffine(BaseNet):
         see also:
             https://github.com/YipengHu/label-reg
 
-        :param decay:
-        :param affine_w_initializer:
-        :param affine_b_initializer:
-        :param acti_func:
-        :param name:
+    ### Building blocks
+    [DOWN CONV]         - Convolutional layer + Residual Unit + Max pooling
+    [CONV]              - Convolutional layer
+    [FC]                - Fully connected layer, outputs the affine matrix
+    [WARPER]            - Grid resampling with the obtained affine matrix
+
+    ### Diagram
+
+    INPUT PAIR --> [DOWN CONV]x4 --> [CONV] --> [FC] --> [WARPER] --> DISPLACEMENT FIELD
+
+    ### Constraints
+    - input spatial rank should be either 2 or 3 (2D or 3D images only)
+
+    """
+    def __init__(self,
+                 decay=1e-6,
+                 affine_w_initializer=None,
+                 affine_b_initializer=None,
+                 acti_func='relu',
+                 name='inet-affine'):
+        """
+
+        :param decay: float, regularisation decay
+        :param affine_w_initializer: weight initialisation for affine registration network
+        :param affine_b_initializer: bias initialisation for affine registration network
+        :param acti_func: activation function to use
+        :param name: layer name
         """
 
         BaseNet.__init__(self, name=name)
@@ -65,9 +82,9 @@ class INetAffine(BaseNet):
                  **unused_kwargs):
         """
 
-        :param fixed_image:
-        :param moving_image:
-        :param is_training:
+        :param fixed_image: tensor, fixed image for registration (defines reference space)
+        :param moving_image: tensor, moving image to be registered to fixed
+        :param is_training: boolean, True if network is in training mode
         :return: displacement fields transformed by estimating affine
         """
 
@@ -84,7 +101,7 @@ class INetAffine(BaseNet):
 
         conv_5 = Conv(n_output_chns=self.fea[4],
                       kernel_size=self.k_conv,
-                      with_bias=False, with_bn=True,
+                      with_bias=False, feature_normalization='batch',
                       **self.res_param)(res_4, is_training)
 
         if spatial_rank == 2:
@@ -99,7 +116,7 @@ class INetAffine(BaseNet):
             self.affine_w_initializer = init_affine_w()
         if self.affine_b_initializer is None:
             self.affine_b_initializer = init_affine_b(spatial_rank)
-        affine = FC(n_output_chns=affine_size, with_bn=False,
+        affine = FC(n_output_chns=affine_size, feature_normalization=None,
                     w_initializer=self.affine_w_initializer,
                     b_initializer=self.affine_b_initializer,
                     **self.affine_param)(conv_5)
@@ -109,10 +126,21 @@ class INetAffine(BaseNet):
 
 
 def init_affine_w(std=1e-8):
+    """
+
+    :param std: float, standard deviation of normal distribution for weight initialisation
+    :return: random weight initialisation from normal distribution with zero mean
+    """
     return tf.random_normal_initializer(0, std)
 
 
 def init_affine_b(spatial_rank, initial_bias=0.0):
+    """
+
+    :param spatial_rank: int, rank of inputs (either 2D or 3D)
+    :param initial_bias: float, initial bias
+    :return: bias initialisation for the affine matrix
+    """
     if spatial_rank == 2:
         identity = np.array([[1., 0., 0.],
                              [0., 1., 0.]]).flatten()

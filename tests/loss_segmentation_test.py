@@ -5,12 +5,13 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.loss_segmentation import LossFunction, labels_to_one_hot
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class DiceWithMissingClass(tf.test.TestCase):
+class DiceWithMissingClass(NiftyNetTestCase):
     # all dice methods should return 0.0 for this case:
     def test_missing_class(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 0, 1], [1, 0, 0]],
                 dtype=tf.float32, name='predicted')
@@ -30,7 +31,7 @@ class DiceWithMissingClass(tf.test.TestCase):
                 self.assertAllClose(loss_value.eval(), 0.0, atol=1e-4)
 
     def test_missing_class_dice_plus_xent(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 0, 999], [999, 0, 0]],
                 dtype=tf.float32, name='predicted')
@@ -45,9 +46,9 @@ class DiceWithMissingClass(tf.test.TestCase):
             self.assertAllClose(loss_value.eval(), -1.0, atol=1e-4)
 
 
-class DicePlusXEntTest(tf.test.TestCase):
+class DicePlusXEntTest(NiftyNetTestCase):
     def test_dice_plus(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 9999], [9999, 0], [9999, 0], [9999, 0]],
                 dtype=tf.float32, name='predicted')
@@ -60,7 +61,7 @@ class DicePlusXEntTest(tf.test.TestCase):
             self.assertAllClose(loss_value.eval(), -1.0, atol=1e-3)
 
     def test_dice_plus_multilabel(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 0, 9999], [9999, 0, 0], [0, 9999, 0], [9999, 0, 0]],
                 dtype=tf.float32, name='predicted')
@@ -73,7 +74,7 @@ class DicePlusXEntTest(tf.test.TestCase):
             self.assertAllClose(loss_value.eval(), -1.0, atol=1e-3)
 
     def test_dice_plus_non_zeros(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 9999, 9999], [9999, 0, 0], [0, 9999, 9999], [9999, 0, 0]],
                 dtype=tf.float32, name='predicted')
@@ -86,7 +87,7 @@ class DicePlusXEntTest(tf.test.TestCase):
             self.assertAllClose(loss_value.eval(), .5 * np.log(2) - 2. / 3., atol=1e-3)
 
     def test_dice_plus_wrong_softmax(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 9999, 9999], [9999, 0, 0], [0, 9999, 9999], [9999, 0, 0]],
                 dtype=tf.float32, name='predicted')
@@ -99,7 +100,7 @@ class DicePlusXEntTest(tf.test.TestCase):
             self.assertAllClose(loss_value.eval(), .5 * np.log(2) - 2. / 3., atol=1e-3)
 
     def test_dice_plus_weighted(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 9999, 9999], [9999, 0, 0], [0, 9999, 9999], [9999, 0, 0]],
                 dtype=tf.float32, name='predicted')
@@ -111,9 +112,9 @@ class DicePlusXEntTest(tf.test.TestCase):
             self.assertAllClose(loss_value.eval(), -1.)
 
 
-class OneHotTester(tf.test.TestCase):
+class OneHotTester(NiftyNetTestCase):
     def test_vs_tf_onehot(self):
-        with self.test_session():
+        with self.cached_session():
             labels = tf.constant([1, 2, 3, 0], dtype=tf.int64, name='labels')
             tf_one_hot = tf.one_hot(labels, depth=4)
             niftynet_one_hot = tf.sparse_tensor_to_dense(labels_to_one_hot(labels, 4))
@@ -125,7 +126,7 @@ class OneHotTester(tf.test.TestCase):
              [[0., 0., 0., 1., 0.], [0., 0., 0., 0., 1.]]],
             dtype=np.float32)
 
-        with self.test_session():
+        with self.cached_session():
             labels = tf.constant([[1, 2], [3, 4]])
             # import pdb; pdb.set_trace()
             one_hot = tf.sparse_tensor_to_dense(
@@ -133,10 +134,10 @@ class OneHotTester(tf.test.TestCase):
             self.assertAllEqual(one_hot, ref)
 
 
-class SensitivitySpecificityTests(tf.test.TestCase):
+class SensitivitySpecificityTests(NiftyNetTestCase):
     # test done by regression for refactoring purposes
     def test_sens_spec_loss_by_regression(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 10], [10, 0], [10, 0], [10, 0]],
                 dtype=tf.float32, name='predicted')
@@ -148,7 +149,7 @@ class SensitivitySpecificityTests(tf.test.TestCase):
             self.assertAlmostEqual(test_loss.eval(), 2.06106e-9)
 
     def test_multi_label_sens_spec(self):
-        with self.test_session():
+        with self.cached_session():
             # answer calculated by hand -
             predicted = tf.constant(
                 [[0, 1, 0], [0, 0, 1]],
@@ -162,10 +163,10 @@ class SensitivitySpecificityTests(tf.test.TestCase):
             self.assertAlmostEqual(test_loss.eval(), 0.14598623)
 
 
-class GeneralisedDiceTest(tf.test.TestCase):
+class GeneralisedDiceTest(NiftyNetTestCase):
     # test done by regression for refactoring purposes
     def test_generalised_dice_score_regression(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 10], [10, 0], [10, 0], [10, 0]],
                 dtype=tf.float32, name='predicted')
@@ -179,7 +180,7 @@ class GeneralisedDiceTest(tf.test.TestCase):
                 one_minus_generalised_dice_score.eval(), 0.0, atol=1e-4)
 
     def test_gdsc_incorrect_type_weight_error(self):
-        with self.test_session():
+        with self.cached_session():
             with self.assertRaises(ValueError) as cm:
                 predicted = tf.constant(
                     [[0, 10], [10, 0], [10, 0], [10, 0]],
@@ -196,7 +197,7 @@ class GeneralisedDiceTest(tf.test.TestCase):
                                                                   labels)
 
     def test_generalised_dice_score_uniform_regression(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant([[0, 10], [10, 0], [10, 0], [10, 0]],
                                     dtype=tf.float32, name='predicted')
 
@@ -214,9 +215,9 @@ class GeneralisedDiceTest(tf.test.TestCase):
                                 0.3333, atol=1e-4)
 
 
-class DiceTest(tf.test.TestCase):
+class DiceTest(NiftyNetTestCase):
     def test_dice_score(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 10], [10, 0], [10, 0], [10, 0]],
                 dtype=tf.float32, name='predicted')
@@ -228,7 +229,7 @@ class DiceTest(tf.test.TestCase):
             self.assertAllClose(one_minus_dice_score.eval(), 0.0, atol=1e-5)
 
     def test_dice_score_weights(self):
-        with self.test_session():
+        with self.cached_session():
             weights = tf.constant([[1, 1, 0, 0]], dtype=tf.float32,
                                   name='weights')
             predicted = tf.constant(
@@ -243,7 +244,7 @@ class DiceTest(tf.test.TestCase):
             self.assertAllClose(one_minus_dice_score.eval(), 0.0, atol=1e-4)
 
     def test_wrong_prediction(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 100]],
                 dtype=tf.float32, name='predicted')
@@ -257,7 +258,7 @@ class DiceTest(tf.test.TestCase):
     def test_dice_batch_size_greater_than_one(self):
         # test for Github issue #22: need to take mean per-image before
         # averaging Dice of ~1 and ~0.16, should get dice ~ 1 - 0.5816
-        with self.test_session():
+        with self.cached_session():
             # predictions ~ [1, 0, 0]; [0, 0, 1]; [0, .5, .5]; [.333, .333, .333]
             predictions_numpy = np.array([[[10., 0, 0], [0, 0, 10]],
                                           [[-10, 0, 0], [0, 0, 0]]]).reshape([2, 2, 1, 1, 3])
@@ -272,10 +273,10 @@ class DiceTest(tf.test.TestCase):
             self.assertAllClose(one_minus_dice_score.eval(), 1 - 0.5816, atol=1e-4)
 
 
-class CrossEntropyTests(tf.test.TestCase):
+class CrossEntropyTests(NiftyNetTestCase):
     def test_cross_entropy_value(self):
         # test value is -0.5 * [1 * log(e / (1+e)) + 1 * log(e^2 / (e^2 + 1))]
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 1], [2, 0]],
                 dtype=tf.float32, name='predicted')
@@ -298,7 +299,7 @@ class CrossEntropyTests(tf.test.TestCase):
                     np.e ** 2 / (1 + np.e ** 2))))
 
     def test_cross_entropy_value_weight(self):
-        with self.test_session():
+        with self.cached_session():
             weights = tf.constant([[1], [2]], dtype=tf.float32, name='weights')
             predicted = tf.constant(
                 [[0, 1], [2, 0]],
@@ -316,9 +317,9 @@ class CrossEntropyTests(tf.test.TestCase):
                     np.e ** 2 / (1 + np.e ** 2))))
 
 
-class DiceTestNoSquare(tf.test.TestCase):
+class DiceTestNoSquare(NiftyNetTestCase):
     def test_dice_score_nosquare(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 10], [10, 0], [10, 0], [10, 0]],
                 dtype=tf.float32, name='predicted')
@@ -330,7 +331,7 @@ class DiceTestNoSquare(tf.test.TestCase):
             self.assertAllClose(one_minus_dice_score.eval(), 0.0, atol=1e-4)
 
     def test_dice_score_nosquare_weights(self):
-        with self.test_session():
+        with self.cached_session():
             weights = tf.constant([[1, 1, 0, 0]], dtype=tf.float32,
                                   name='weights')
             predicted = tf.constant(
@@ -346,7 +347,7 @@ class DiceTestNoSquare(tf.test.TestCase):
             self.assertAllClose(one_minus_dice_score.eval(), 0.0, atol=1e-4)
 
     def test_wrong_prediction(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 100]],
                 dtype=tf.float32, name='predicted')
@@ -358,9 +359,9 @@ class DiceTestNoSquare(tf.test.TestCase):
             self.assertAllClose(one_minus_dice_score.eval(), 1.0, atol=1e-4)
 
 
-class TverskyTest(tf.test.TestCase):
+class TverskyTest(NiftyNetTestCase):
     def test_tversky_index(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 10], [10, 0], [10, 0], [10, 0]],
                 dtype=tf.float32, name='predicted')
@@ -373,7 +374,7 @@ class TverskyTest(tf.test.TestCase):
             self.assertAllClose(one_minus_tversky_index.eval(), 0.0, atol=1e-4)
 
     def test_tversky_index_weights(self):
-        with self.test_session():
+        with self.cached_session():
             weights = tf.constant([[1, 1, 0, 0]], dtype=tf.float32,
                                   name='weights')
             predicted = tf.constant(
@@ -390,7 +391,7 @@ class TverskyTest(tf.test.TestCase):
             self.assertAllClose(one_minus_tversky_index.eval(), 0.0, atol=1e-4)
 
     def test_wrong_prediction(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 100]],
                 dtype=tf.float32, name='predicted')
@@ -403,9 +404,9 @@ class TverskyTest(tf.test.TestCase):
             self.assertAlmostEqual(one_minus_tversky_index.eval(), 1.0)
 
 
-class DiceDenseTest(tf.test.TestCase):
+class DiceDenseTest(NiftyNetTestCase):
     def test_dice_dense_score(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 10], [10, 0], [10, 0], [10, 0]],
                 dtype=tf.float32, name='predicted')
@@ -418,7 +419,7 @@ class DiceDenseTest(tf.test.TestCase):
             self.assertAllClose(one_minus_dice_score.eval(), 1.0, atol=1e-4)
 
     def test_wrong_prediction(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[0, 100]],
                 dtype=tf.float32, name='predicted')
@@ -432,7 +433,7 @@ class DiceDenseTest(tf.test.TestCase):
 
     def test_dense_dice_vs_sparse(self):
         # regression test vs dense version
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[2, 3], [9, 8], [0, 0], [1, 0]],
                 dtype=tf.float32, name='predicted')
@@ -450,11 +451,11 @@ class DiceDenseTest(tf.test.TestCase):
             self.assertAllEqual(sparse_dice.eval(), dense_dice.eval())
 
 
-class DiceDenseNoSquareTest(tf.test.TestCase):
+class DiceDenseNoSquareTest(NiftyNetTestCase):
 
     def test_dense_dice_nosquare_vs_sparse(self):
         # regression test vs dense version
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant(
                 [[2, 3], [9, 8], [0, 0], [1, 0]],
                 dtype=tf.float32, name='predicted')
@@ -472,9 +473,9 @@ class DiceDenseNoSquareTest(tf.test.TestCase):
             self.assertAllEqual(sparse_dice.eval(), dense_dice.eval())
 
 
-class VolumeEnforcementTest(tf.test.TestCase):
+class VolumeEnforcementTest(NiftyNetTestCase):
     def test_volume_enforcement_equal(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant([[-1000, 1000], [1000, -1000], [1000,
                                                                      -1000], [1000, -1000]],
                                     dtype=tf.float32, name='predicted')
@@ -487,7 +488,7 @@ class VolumeEnforcementTest(tf.test.TestCase):
             self.assertAllClose(venf_loss.eval(), 0.0, atol=1e-4)
 
     def test_volume_enforcement_nonexist(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant([[1000, -1000], [1000, -1000], [1000, -1000], [1000, -1000]],
                                     dtype=tf.float32, name='predicted')
             labels = tf.constant([1, 0, 0, 0], dtype=tf.int64, name='labels')
@@ -504,7 +505,7 @@ class VolumeEnforcementTest(tf.test.TestCase):
 
 
 
-class LossFunctionErrorsTest(tf.test.TestCase):
+class LossFunctionErrorsTest(NiftyNetTestCase):
     """
     These tests check that a ValueError is called
     for non-existent loss functions.
@@ -513,18 +514,18 @@ class LossFunctionErrorsTest(tf.test.TestCase):
     """
 
     def test_value_error_for_bad_loss_function(self):
-        with self.test_session():
+        with self.cached_session():
             with self.assertRaises(ValueError):
                 LossFunction(1, loss_type='wrong answer')
 
     # Note: sensitive to precise wording of ValueError message.
     def test_suggestion_for_dice_typo(self):
-        with self.test_session():
+        with self.cached_session():
             with self.assertRaisesRegexp(ValueError, 'Dice'):
                 LossFunction(1, loss_type='dice')
 
     def test_suggestion_for_gdsc_typo(self):
-        with self.test_session():
+        with self.cached_session():
             with self.assertRaisesRegexp(ValueError, 'GDSC'):
                 LossFunction(1, loss_type='GSDC')
 

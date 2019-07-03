@@ -4,9 +4,9 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.resampler import ResamplerLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class ResamplerTest(tf.test.TestCase):
+class ResamplerTest(NiftyNetTestCase):
     def get_2d_input(self, as_tensor=True):
         test_array = np.array(
             [[[[1, 2, -1], [3, 4, -2]], [[5, 6, -3], [7, 8, -4]]],
@@ -36,7 +36,7 @@ class ResamplerTest(tf.test.TestCase):
         resampler = ResamplerLayer(interpolation=interpolation,
                                    boundary=boundary)
         out = resampler(input, grid)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             out_value = sess.run(out)
             # print(expected_value)
             # print(out_value)
@@ -257,7 +257,7 @@ class ResamplerTest(tf.test.TestCase):
                 input_default, shape=None)
 
         out = resampler(input_placeholder, grid)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             out_value = sess.run(
                 out, feed_dict={input_placeholder: input})
             # print(expected_value)

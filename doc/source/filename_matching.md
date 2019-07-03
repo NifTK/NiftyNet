@@ -8,7 +8,7 @@ manner.
 To facilitate the cross-subject analysis, the user should specify lists of
 files to be used. For example, the relevant configurations could be:
 
-```
+```ini
 [SYSTEM]
 dataset_split_file = '/mnt/data/cross_validation_fold_01.csv'
 
@@ -26,19 +26,19 @@ where `[MRI_T1]` and `[segmentation_target]` are input source sections, with
 The csv files should be created beforehand by the user and share the same set
 of unique subject identifier (“subject ID”) among them, for example:
 
-Content of t1_list.csv:
+Contents of `t1_list.csv`:
 ```
 subject_001,/mnt/data/t1/T1_001_img.nii.gz
 subject_002,/mnt/data/t1/T1_002_img.nii.gz
 ```
 
-Content of ground_truth.csv:
+Contents of `ground_truth.csv`:
 ```
 subject_001,/mnt/data/ground_truth/001_img_seg.nii.gz
 subject_002,/mnt/data/ground_truth/002_img_seg.nii.gz
 ```
 
-Content of cross_validation_fold_01.txt:
+Contents of `cross_validation_fold_01.csv`:
 ```
 subject_001,training
 subject_002,inference

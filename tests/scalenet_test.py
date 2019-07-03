@@ -7,10 +7,10 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.scalenet import ScaleNet
-
+from tests.niftynet_testcase import NiftyNetTestCase
 
 @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
-class ScaleNetTest(tf.test.TestCase):
+class ScaleNetTest(NiftyNetTestCase):
     def test_3d_shape(self):
         input_shape = (2, 32, 32, 32, 4)
         x = tf.ones(input_shape)
@@ -19,7 +19,7 @@ class ScaleNetTest(tf.test.TestCase):
         out = scalenet_layer(x, is_training=True)
         print(scalenet_layer.num_trainable_params())
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 5), out.shape)
@@ -32,7 +32,7 @@ class ScaleNetTest(tf.test.TestCase):
         out = scalenet_layer(x, is_training=True)
         print(scalenet_layer.num_trainable_params())
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 5), out.shape)
@@ -47,7 +47,7 @@ class ScaleNetTest(tf.test.TestCase):
         out = scalenet_layer(x, is_training=True)
         print(scalenet_layer.num_trainable_params())
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 5), out.shape)
@@ -62,7 +62,7 @@ class ScaleNetTest(tf.test.TestCase):
         out = scalenet_layer(x, is_training=True)
         print(scalenet_layer.num_trainable_params())
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 5), out.shape)

@@ -19,6 +19,9 @@ class HighRes3DNetSmall(BaseNet):
         convolutional networks: Brain parcellation as a pretext task", IPMI '17
 
     (This is smaller model with an initial stride-2 convolution)
+
+    ### Constraints
+    - Input image size should be divisible by 8
     """
 
     def __init__(self,
@@ -29,6 +32,16 @@ class HighRes3DNetSmall(BaseNet):
                  b_regularizer=None,
                  acti_func='relu',
                  name='HighRes3DNetSmall'):
+        """
+
+        :param num_classes: int, number of channels of output
+        :param w_initializer: weight initialisation for network
+        :param w_regularizer: weight regularisation for network
+        :param b_initializer: bias initialisation for network
+        :param b_regularizer: bias regularisation for network
+        :param acti_func: activation function to use
+        :param name: layer name
+        """
 
         super(HighRes3DNetSmall, self).__init__(
             num_classes=num_classes,
@@ -48,6 +61,14 @@ class HighRes3DNetSmall(BaseNet):
             {'name': 'conv_2', 'n_features': num_classes, 'kernel_size': 1}]
 
     def layer_op(self, images, is_training=True, layer_id=-1, **unused_kwargs):
+        """
+
+        :param images: tensor to input to the network. Size has to be divisible by 8
+        :param is_training: boolean, True if network is in training mode
+        :param layer_id: int, index of the layer to return as output
+        :param unused_kwargs:
+        :return: output of layer indicated by layer_id
+        """
         assert (layer_util.check_spatial_dims(
             images, lambda x: x % 8 == 0))
         # go through self.layers, create an instance of each layer
