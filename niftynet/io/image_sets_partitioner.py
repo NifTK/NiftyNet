@@ -76,8 +76,13 @@ class ImageSetsPartitioner(object):
         """
         self.data_param = {}
         for key in data_param.keys():
-            if len(data_param[key].csv_data_file) == 0:
+            if not isinstance(data_param[key], dict):
+                data_param[key] = data_param[key].__dict__
+            if 'csv_data_file' not in data_param[key] or len(data_param[\
+                    key].csv_data_file) == 0:
                 self.data_param[key] = data_param[key]
+                # self.data_param[key]['csv_data_file'] = ''
+                # self.data_param[key].csv_data_file = ''
 
         # self.data_param = {key: self.data_param[key] for key in
         #                    self.data_param if not self.data_param[
@@ -203,8 +208,18 @@ class ImageSetsPartitioner(object):
             raise ValueError
         self._file_list = None
         section_first = [section_name for section_name in
-                         self.data_param if
-                         self.data_param[section_name].csv_data_file == '']
+                         self.data_param if 'csv_data_file' not in
+                                                self.data_param[
+                             section_name]
+                         ]
+        print(section_first, self.data_param.keys())
+        section_selec_bis = [section_name for section_name in self.data_param
+                             if section_name not in section_first]
+        section_first_bis = [section_name for section_name in
+                             section_selec_bis if
+                             len(self.data_param[
+                                     section_name].csv_data_file)==0]
+        section_first += section_first_bis
         section_second = [section_name for section_name in self.data_param if
                           section_name not in section_first]
         usable_section = section_first + section_second
@@ -340,19 +355,21 @@ class ImageSetsPartitioner(object):
         # loading the file as dataframe
         ###############################
         try:
-            if self.data_param[modality_name].csv_data_file == '':
+            if 'csv_data_file' not in self.data_param[modality_name] or \
+                    len(
+                    self.data_param[modality_name].csv_data_file) == 0:
                 csv_list = pandas.read_csv(
                     csv_data_file,
                     header=None,
                     dtype=(str, str),
                     names=[COLUMN_UNIQ_ID, modality_name],
                     skipinitialspace=True)
+                print(dir(self.data_param[modality_name]))
             else:
                 csv_list = pandas.read_csv(
                     csv_data_file,
                     header=None,
                     index_col=0,
-
                 )
                 csv_list.index = csv_list.index.map(str)
         except Exception as csv_error:
