@@ -218,7 +218,7 @@ class ImageSetsPartitioner(object):
             n_rows = self._file_list[COLUMN_UNIQ_ID].count()
             if len(modality_file_list.index) > n_rows and set(
                     modality_file_list.index) == set(self._file_list[
-                    COLUMN_UNIQ_ID]):
+                        COLUMN_UNIQ_ID]):
                 tf.logging.warning('The data file has multiple entries for '
                                    'each subject')
                 if merge_multi:
