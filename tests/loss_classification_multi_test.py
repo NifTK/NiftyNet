@@ -5,12 +5,12 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.loss_classification_multi import LossFunction, variability
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class VariabilityTests(tf.test.TestCase):
+class VariabilityTests(NiftyNetTestCase):
     def test_variability_value(self):
         # test value is -0.5 * [1 * log(e / (1+e)) + 1 * log(e^2 / (e^2 + 1))]
-        with self.test_session():
+        with self.cached_session():
             # [0,1,0] 2/3 , 1/3 4/9
             # [0,0,0] 1, 0 0
             predicted = [[0, 1,0],[1, 1,1]]
@@ -21,9 +21,9 @@ class VariabilityTests(tf.test.TestCase):
 
 
 
-class LossConfusionTest(tf.test.TestCase):
+class LossConfusionTest(NiftyNetTestCase):
     def test_confusion_matrix_loss(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant([[[1,-1],[-1,1],[1,-1]],[[1,-1],[1,-1],[1,
                                                                        -1]]],
                                     dtype=tf.float32)
@@ -35,9 +35,9 @@ class LossConfusionTest(tf.test.TestCase):
                                            pred_multi=predicted)
             self.assertAlmostEqual(computed_loss.eval(), 4.0/3.0)
 
-class LossVariabilityTest(tf.test.TestCase):
+class LossVariabilityTest(NiftyNetTestCase):
     def test_variability_loss(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant([[[1,-1],[-1,1],[1,-1]],[[1,-1],[1,-1],[1,
                                                                        -1]]],
                                     dtype=tf.float32)
@@ -49,9 +49,9 @@ class LossVariabilityTest(tf.test.TestCase):
             self.assertAlmostEqual(computed_loss.eval(), np.sqrt(16.0/162.0))
 
 
-class LossConsistencyTest(tf.test.TestCase):
+class LossConsistencyTest(NiftyNetTestCase):
     def test_consistency_loss(self):
-        with self.test_session():
+        with self.cached_session():
             predicted = tf.constant([[[1,-1],[-1,1],[1,-1]],[[1,-1],[1,-1],[1,
                                                                        -1]]],
                                     dtype=tf.float32)
@@ -64,7 +64,7 @@ class LossConsistencyTest(tf.test.TestCase):
 
 
 
-# class LossFunctionErrorTest(tf.test.TestCase):
+# class LossFunctionErrorTest(NiftyNetTestCase):
 #     """
 #     These tests check that a ValueError is called
 #     for non-existent loss functions.
@@ -73,13 +73,13 @@ class LossConsistencyTest(tf.test.TestCase):
 #     """
 #
 #     def test_value_error_for_bad_loss_function(self):
-#         with self.test_session():
+#         with self.cached_session():
 #             with self.assertRaises(ValueError):
 #                 LossFunction(0, loss_type='wrong answer')
 #
 #     # Note: sensitive to precise wording of ValueError message.
 #     def test_suggestion_for_dice_typo(self):
-#         with self.test_session():
+#         with self.cached_session():
 #             with self.assertRaisesRegexp(ValueError, 'CrossEntropy'):
 #                 LossFunction(0, loss_type='cross_entropy')
 

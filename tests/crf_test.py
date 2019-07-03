@@ -5,9 +5,10 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.crf import CRFAsRNNLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class CRFTest(tf.test.TestCase):
+class CRFTest(NiftyNetTestCase):
     def test_2d3d_shape(self):
         tf.reset_default_graph()
         I = tf.random_normal(shape=[2, 4, 5, 6, 3])
@@ -17,7 +18,7 @@ class CRFTest(tf.test.TestCase):
         out1 = crf_layer(I, U)
         out2 = crf_layer2(I[:, :, :, 0, :], out1[:, :, :, 0, :])
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out1, out2 = sess.run([out1, out2])
@@ -42,7 +43,7 @@ class CRFTest(tf.test.TestCase):
         loss = tf.reduce_mean(tf.abs(smoothed_logits - gt))
         opt = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             params = sess.run(tf.trainable_variables())
             for param in params:
@@ -73,7 +74,7 @@ class CRFTest(tf.test.TestCase):
         loss = tf.reduce_mean(tf.abs(smoothed_logits - gt))
         opt = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             params = sess.run(tf.trainable_variables())
             for param in params:

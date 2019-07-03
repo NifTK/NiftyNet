@@ -9,6 +9,7 @@ import tensorflow as tf
 
 from niftynet.utilities.download import download
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
+from tests.niftynet_testcase import NiftyNetTestCase
 
 MODEL_HOME = NiftyNetGlobalConfig().get_niftynet_home_folder()
 
@@ -23,7 +24,7 @@ TEST_CASE_3_TARGET = os.path.join(MODEL_HOME, 'examples', TEST_CASE_3)
 TEST_WRONG_ID = '42'
 
 
-class NetDownloadTest(tf.test.TestCase):
+class NetDownloadTest(NiftyNetTestCase):
     def test_download(self):
         self.assertTrue(download(TEST_CASE_1, False))
         self.assertTrue(os.path.isdir(TEST_CASE_1_TARGET))

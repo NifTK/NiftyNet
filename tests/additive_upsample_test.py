@@ -4,6 +4,7 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.layer.additive_upsample import AdditiveUpsampleLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 def get_3d_input():
     input_shape = (2, 16, 16, 16, 4)
@@ -15,7 +16,7 @@ def get_2d_input():
     x = tf.ones(input_shape)
     return x
 
-class AdditiveUpsampleTest(tf.test.TestCase):
+class AdditiveUpsampleTest(NiftyNetTestCase):
     def run_test(self, new_size, n_splits, expected_shape, is_3d=True):
         if is_3d:
             x = get_3d_input()
@@ -26,7 +27,7 @@ class AdditiveUpsampleTest(tf.test.TestCase):
             new_size=new_size, n_splits=n_splits)
         resized = resize_layer(x)
         print(resize_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             out = sess.run(resized)
             self.assertAllClose(out.shape, expected_shape)
 

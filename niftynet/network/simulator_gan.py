@@ -15,10 +15,23 @@ from niftynet.layer.gan_blocks import GANImageBlock
 
 class SimulatorGAN(GANImageBlock):
     """
-    implementation of
-    Hu et al., "Freehand Ultrasound Image Simulation with Spatially-Conditioned
-    Generative Adversarial Networks", MICCAI RAMBO 2017
-    https://arxiv.org/abs/1707.05392
+    ### Description
+        implementation of
+            Hu et al., "Freehand Ultrasound Image Simulation with Spatially-Conditioned
+            Generative Adversarial Networks", MICCAI RAMBO 2017
+            https://arxiv.org/abs/1707.05392
+
+    ### Building blocks
+    [GENERATOR]         - See ImageGenerator below
+    [DISCRIMINATOR]     - See ImageDiscriminator below
+    Note: See niftynet.layer.gan_blocks for layer_op
+
+    ### Diagram
+
+    RANDOM NOISE --> [GENERATOR] --> [DISCRIMINATOR] --> fake logits
+    TRAINING SET ------------------> [DISCRIMINATOR] --> real logits
+
+    ### Constraints
     """
 
     def __init__(self, name='simulator_GAN'):
@@ -30,7 +43,33 @@ class SimulatorGAN(GANImageBlock):
 
 
 class ImageGenerator(BaseGenerator):
+    """
+    ### Description
+        implementation of generator from
+            Hu et al., "Freehand Ultrasound Image Simulation with Spatially-Conditioned
+            Generative Adversarial Networks", MICCAI RAMBO 2017
+            https://arxiv.org/abs/1707.05392
+
+    ### Building blocks
+    [FC]            - Fully connected layer
+    [CONV]          - Convolutional layer, conditioning is concatenated to input before the convolution
+                        (if conditioning is used)
+                        kernel size = 3, activation = relu
+    [UPCONV]        - Upsampling block composed of upsampling deconvolution (stride 2, kernel size = 3,
+                        activation = relu) and concatenation of conditioning
+    [fCONV]         - Final convolutional layer, with no conditioning. Kernel size = 3, activation = tanh
+
+    ### Diagram
+
+    RANDOM NOISE --> [FC] --> [CONV] --> [UPCONV]x3 --> [fCONV] --> OUTPUT IMAGE
+
+    ### Constraints
+    """
     def __init__(self, name):
+        """
+
+        :param name: layer name
+        """
         super(ImageGenerator, self).__init__(name=name)
         self.initializers = {'w': tf.random_normal_initializer(0, 0.02),
                              'b': tf.constant_initializer(0.001)}
@@ -38,6 +77,14 @@ class ImageGenerator(BaseGenerator):
         self.with_conditionings = [True, True, True, True, False]
 
     def layer_op(self, random_source, image_size, conditioning, is_training):
+        """
+
+        :param random_source: tensor, random noise to start generation
+        :param image_size: output image size
+        :param conditioning: tensor, conditioning information (e.g. coordinates in physical space)
+        :param is_training: boolean, True if network is in training mode
+        :return: tensor, generated image
+        """
         keep_prob_ph = 1  # not passed in as a placeholder
         add_noise = self.noise_channels_per_layer
         if conditioning is not None:
@@ -74,6 +121,12 @@ class ImageGenerator(BaseGenerator):
             resize_func = tf.image.resize_bilinear
 
         def concat_cond(x, with_conditioning):
+            """
+
+            :param x: tensor, input
+            :param with_conditioning: boolean, True if conditioning is to be used
+            :return: tensor, concatenation of x and conditioning, with noise addition
+            """
             noise = []
             if add_noise:
                 feature_shape = x.shape.as_list()[0:-1]
@@ -88,42 +141,70 @@ class ImageGenerator(BaseGenerator):
             return x
 
         def conv(ch, x):
+            """
+            Generates and applies a convolutional layer with relu as activation, kernel size 3,
+            batch norm
+            :param ch: int, number of output channels for convolutional layer
+            :param x: tensor, input to convolutional layer
+            :return: tensor, output of convolutiona layer
+            """
             with tf.name_scope('conv'):
                 conv_layer = ConvolutionalLayer(
                     n_output_chns=ch,
                     kernel_size=3,
-                    with_bn=True,
+                    feature_normalization='batch',
                     with_bias=False,
                     acti_func='relu',
                     w_initializer=self.initializers['w'])
                 return conv_layer(x, is_training=is_training)
 
         def up(ch, x):
+            """
+            Performs deconvolution operation with kernel size 3, stride 2, batch norm, and relu
+            :param ch: int, number of output channels for deconvolutional layer
+            :param x: tensor, input to deconvolutional layer
+            :return: tensor, output of deconvolutiona layer
+            """
             with tf.name_scope('up'):
                 deconv_layer = DeconvolutionalLayer(
                     n_output_chns=ch,
                     kernel_size=3,
                     stride=2,
-                    with_bn=True,
+                    feature_normalization='batch',
                     with_bias=False,
                     acti_func='relu',
                     w_initializer=self.initializers['w'])
                 return deconv_layer(x, is_training=is_training)
 
         def up_block(ch, x, with_conditioning):
+            """
+            Performs upsampling and concatenation with conditioning
+            :param ch: int, number of output channels for deconvolutional layer
+            :param x: tensor, input to deconvolutional layer
+            :param with_conditioning: boolean, True if conditioning is to be used
+            :return: tensor, output of upsampling and concatenation
+            """
             with tf.name_scope('up_block'):
                 u = up(ch, x)
                 cond = concat_cond(u, with_conditioning)
                 return conv(cond.shape.as_list()[-1], cond)
 
         def noise_to_image(sz, ch, rand_tensor, with_conditioning):
+            """
+            Processes random noise with fully connected layer and then convolutional layer
+            :param sz: image size
+            :param ch: int, number of output channels
+            :param rand_tensor: tensor, input random noise to generate image
+            :param with_conditioning: boolean, True if conditioning is to be used
+            :return: tensor, output of convolutional layer
+            """
             batch_size = rand_tensor.shape.as_list()[0]
             output_shape = [batch_size] + sz + [ch]
             with tf.name_scope('noise_to_image'):
                 g_no_0 = np.prod(sz) * ch
                 fc_layer = FullyConnectedLayer(
                     n_output_chns=g_no_0,
-                    with_bn=False,
+                    feature_normalization=None,
                     with_bias=True,
                     w_initializer=self.initializers['w'],
                     b_initializer=self.initializers['b'])
@@ -133,6 +214,12 @@ class ImageGenerator(BaseGenerator):
                 return conv(ch + conditioning_channels, g_h1p)
 
         def final_image(n_chns, x):
+            """
+
+            :param n_chns: int, number of output channels
+            :param x: tensor, input tensor to layers
+            :return: tensor, generated image
+            """
             with tf.name_scope('final_image'):
                 if add_noise > 0:
                     feature_shape = x.shape.as_list()[0:-1]
@@ -143,7 +230,7 @@ class ImageGenerator(BaseGenerator):
                     n_output_chns=n_chns,
                     kernel_size=3,
                     acti_func='tanh',
-                    with_bn=False,
+                    feature_normalization=None,
                     with_bias=True,
                     w_initializer=self.initializers['w'],
                     b_initializer=self.initializers['b'])
@@ -164,7 +251,39 @@ class ImageGenerator(BaseGenerator):
 
 
 class ImageDiscriminator(BaseDiscriminator):
+    """
+    ### Description
+        implementation of discrimator from
+            Hu et al., "Freehand Ultrasound Image Simulation with Spatially-Conditioned
+            Generative Adversarial Networks", MICCAI RAMBO 2017
+            https://arxiv.org/abs/1707.05392
+
+    ### Building blocks
+    [FEATURE BLOCK]     - Convolutional layer (kernel size = 5, activation = selu)
+                          + residual convolutiona layer (kernel size = 3, activation = selu, batch norm)
+                          + convolutional layer (kernel size = 3, activation = selu, batch norm)
+
+    [DOWN BLOCK]        - Downsampling block with residual connections:
+                          Downsampling convolutional layer (stride = 2, kernel size = 3,
+                          activation = selu, batch norm)
+                          + residual convolutiona layer (kernel size = 3, activation = selu, batch norm)
+                          + convolutional layer (kernel size = 3, activation = selu, batch norm)
+
+    [FC]                - Fully connected layer
+
+    If conditioning is used, it gets concatenated to the image at the discriminator input
+
+    ### Diagram
+
+    INPUT IMAGE --> [FEATURE BLOCK] --> [DOWN BLOCK]x5 --> [FC] --> OUTPUT LOGITS
+
+    ### Constraints
+    """
     def __init__(self, name):
+        """
+
+        :param name: layer name
+        """
         super(ImageDiscriminator, self).__init__(name=name)
 
         w_init = tf.random_normal_initializer(0, 0.02)
@@ -176,34 +295,61 @@ class ImageDiscriminator(BaseDiscriminator):
         self.chns = [32, 64, 128, 256, 512, 1024, 1]
 
     def layer_op(self, image, conditioning, is_training):
+        """
+
+        :param image: tensor, input to the network
+        :param conditioning: tensor, conditioning information (e.g. coordinates in physical space)
+        :param is_training: boolean, True if network is in training mode
+        :return: tensor, classification logits
+        """
 
         batch_size = image.shape.as_list()[0]
 
         def down(ch, x):
+            """
+            Downsampling convolutional layer (stride 2, kernel size 3, activation selu, batch norm)
+            :param ch: int, number of output channels
+            :param x: tensor, input to the convolutional layer
+            :return: tensor, output of the convolutional layer
+            """
             with tf.name_scope('downsample'):
                 conv_layer = ConvolutionalLayer(
                     n_output_chns=ch,
                     kernel_size=3,
                     stride=2,
-                    with_bn=True,
+                    feature_normalization='batch',
                     acti_func='selu',
                     w_initializer=self.initializers['w'])
                 return conv_layer(x, is_training=is_training)
 
         def convr(ch, x):
+            """
+            Convolutional layer for residuals (stride 1, kernel size 3, activation selu, batch norm)
+            :param ch: int, number of output channels
+            :param x: tensor, input to the convolutional layer
+            :return: tensor, output of the convolutional layer
+            """
             conv_layer = ConvolutionalLayer(
                 n_output_chns=ch,
                 kernel_size=3,
-                with_bn=True,
+                feature_normalization='batch',
                 acti_func='selu',
                 w_initializer=self.initializers['w'])
             return conv_layer(x, is_training=is_training)
 
         def conv(ch, x, s):
+            """
+            Convolutional layer (stride 1, kernel size 3, batch norm)
+            combining two flows
+            :param ch: int, number of output channels
+            :param x: tensor, input to the convolutional layer
+            :param s: flow to be added after convolution
+            :return: tensor, output of selu activation layer (selu(conv(x) + s))
+            """
             conv_layer = ConvolutionalLayer(
                 n_output_chns=ch,
                 kernel_size=3,
-                with_bn=True,
+                feature_normalization='batch',
                 w_initializer=self.initializers['w'])
             acti_layer = ActiLayer(func='selu')
 
@@ -212,18 +358,30 @@ class ImageDiscriminator(BaseDiscriminator):
             return acti_layer(res_flow)
 
         def down_block(ch, x):
+            """
+            Downsampling block with residual connections
+            :param ch: int, number of output channels
+            :param x: tensor, input to the convolutional layer
+            :return: tensor, output of downsampling + conv + conv
+            """
             with tf.name_scope('down_resnet'):
                 s = down(ch, x)
                 r = convr(ch, s)
                 return conv(ch, r, s)
 
         def feature_block(ch, image):
+            """
+            First discriminator processing block
+            :param ch: int, number of output channels
+            :param image: tensor, input image to discriminator
+            :return: tensor, output of conv(image) --> conv --> conv
+            """
             with tf.name_scope('feature'):
                 conv_layer = ConvolutionalLayer(
                     n_output_chns=ch,
                     kernel_size=5,
                     with_bias=True,
-                    with_bn=False,
+                    feature_normalization=None,
                     acti_func='selu',
                     w_initializer=self.initializers['w'],
                     b_initializer=self.initializers['b'])
@@ -232,10 +390,16 @@ class ImageDiscriminator(BaseDiscriminator):
                 return conv(ch, d_h1r, d_h1s)
 
         def fully_connected(ch, features):
+            """
+            Final discriminator processing block
+            :param ch: int, number of output channels
+            :param features: tensor, input features for final classification
+            :return: tensor, output logits of discriminator classification
+            """
             with tf.name_scope('fully_connected'):
                 # with bn?
                 fc_layer = FullyConnectedLayer(
-                    n_output_chns=ch, with_bn=False, with_bias=True)
+                    n_output_chns=ch, feature_normalization=None, with_bias=True)
                 return fc_layer(features, is_training=is_training)
 
         if conditioning is not None:

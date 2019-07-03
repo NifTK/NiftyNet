@@ -9,6 +9,7 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.io.image_reader import ImageReader
+from tests.niftynet_testcase import NiftyNetTestCase
 
 # from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 
@@ -75,7 +76,7 @@ IMAGE_PATH_3D = os.path.join('.', 'testing_data')
 IMAGE_PATH_3D_1 = os.path.join('.', 'testing_data', 'images_x_y_z_1_1')
 
 
-class Read2DTest(tf.test.TestCase):
+class Read2DTest(NiftyNetTestCase):
     def default_property_asserts(self, reader):
         self.assertDictEqual(reader.spatial_ranks, {'mr': 2})
         self.assertDictEqual(reader.input_sources, {'mr': ('mr',)})
@@ -195,7 +196,7 @@ class Read2DTest(tf.test.TestCase):
         self.assertEqual(data['ct'].shape, (100, 100, 1, 1, 3))
 
 
-class Read2D_1DTest(tf.test.TestCase):
+class Read2D_1DTest(NiftyNetTestCase):
     # loading 2d images of rank 3: [x, y, 1]
     def test_no_2d_resampling_properties(self):
         data_param = {'mr': {'path_to_search': IMAGE_PATH_2D_1,
@@ -237,7 +238,7 @@ class Read2D_1DTest(tf.test.TestCase):
         self.assertEqual(data['ct'].shape, (120, 160, 1, 1, 3))
 
 
-class Read2D_1D_x1y_Test(tf.test.TestCase):
+class Read2D_1D_x1y_Test(NiftyNetTestCase):
     # loading 2d images of rank 3: [x, 1, y]
     def test_no_2d_resampling_properties(self):
         data_param = {'mr': {'path_to_search': IMAGE_PATH_2D_2,
@@ -278,7 +279,7 @@ class Read2D_1D_x1y_Test(tf.test.TestCase):
         self.assertEqual(data['ct'].shape, (100, 100, 1, 1, 3))
 
 
-class Read2D_colorTest(tf.test.TestCase):
+class Read2D_colorTest(NiftyNetTestCase):
     # loading 2d images of rank 3: [x, y, 3] or [x, y, 4]
     def test_no_2d_resampling_properties(self):
         data_param = {'mr': {'path_to_search': IMAGE_PATH_2D,
@@ -321,7 +322,7 @@ class Read2D_colorTest(tf.test.TestCase):
         self.assertEqual(data['ct'].shape, (100, 100, 1, 1, 9))
 
 
-class Read3DTest(tf.test.TestCase):
+class Read3DTest(NiftyNetTestCase):
     # loading 3d images of rank 3: [x, y, z]
     def test_3d_resampling_properties(self):
         data_param = {
@@ -408,7 +409,7 @@ class Read3DTest(tf.test.TestCase):
         self.assertAllClose(data['image'].shape[3:], (1, 2))
 
 
-class Read3D_1_1_Test(tf.test.TestCase):
+class Read3D_1_1_Test(NiftyNetTestCase):
     # loading 5d images of rank 3: [x, y, z, 1, 1]
     def test_3d_resampling_properties(self):
         data_param = {

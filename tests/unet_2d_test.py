@@ -7,11 +7,11 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.unet_2d import UNet2D
-
+from tests.niftynet_testcase import NiftyNetTestCase
 
 @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true",
                  'Skipping slow tests')
-class UNet3DTest(tf.test.TestCase):
+class UNet3DTest(NiftyNetTestCase):
     def test_2d_shape(self):
         #input_shape = (2, 572, 572, 3)
         input_shape = (2, 180, 180, 3)
@@ -21,7 +21,7 @@ class UNet3DTest(tf.test.TestCase):
         out = unet_instance(x, is_training=True)
         print(unet_instance.num_trainable_params())
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             #self.assertAllClose((2, 388, 388, 2), out.shape)
@@ -37,7 +37,7 @@ class UNet3DTest(tf.test.TestCase):
         out = unet_instance(x, is_training=True)
         print(unet_instance.num_trainable_params())
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             #self.assertAllClose((2, 388, 388, 2), out.shape)

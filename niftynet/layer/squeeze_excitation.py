@@ -49,12 +49,12 @@ class ChannelSELayer(Layer):
         num_channels_reduced = num_channels / reduction_ratio
         fc1 = FullyConnectedLayer(num_channels_reduced,
                                   with_bias=False,
-                                  with_bn=False,
+                                  feature_normalization=None,
                                   acti_func='relu',
                                   name='se_fc_1')
         fc2 = FullyConnectedLayer(num_channels,
                                   with_bias=False,
-                                  with_bn=False,
+                                  feature_normalization=None,
                                   acti_func='sigmoid',
                                   name='se_fc_2')
 
@@ -86,7 +86,7 @@ class SpatialSELayer(Layer):
         # channel squeeze
         conv = ConvolutionalLayer(n_output_chns=1,
                                   kernel_size=1,
-                                  with_bn=False,
+                                  feature_normalization=None,
                                   acti_func='sigmoid',
                                   name="se_conv")
 

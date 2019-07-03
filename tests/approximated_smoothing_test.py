@@ -5,9 +5,9 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.approximated_smoothing import SmoothingLayer as Smoothing
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class SmoothingTest(tf.test.TestCase):
+class SmoothingTest(NiftyNetTestCase):
     def get_1d_input(self):
         input_shape = (2, 16, 8)
         x = tf.ones(input_shape)
@@ -34,7 +34,7 @@ class SmoothingTest(tf.test.TestCase):
         smoothing_layer = Smoothing(sigma=sigma, type_str=type_str)
         smoothed = smoothing_layer(x)
         print(smoothing_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             out = sess.run(smoothed)
             self.assertAllClose(out.shape, x.shape.as_list())
         return out

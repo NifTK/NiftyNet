@@ -365,6 +365,7 @@ class CSVReader(Layer):
         output_shapes = nest.map_structure_up_to(
             self.tf_dtypes, tf.TensorShape, self.shapes)
         return output_shapes
+
     
     @staticmethod
     def apply_niftynet_format_to_data(data):
@@ -378,3 +379,4 @@ class CSVReader(Layer):
         while len(data.shape) < 6:
             data = np.expand_dims(data, -1)
         return data
+

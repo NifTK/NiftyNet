@@ -23,7 +23,8 @@ class ResamplerLayer(Layer):
     def __init__(self,
                  interpolation="LINEAR",
                  boundary="REPLICATE",
-                 name="resampler"):
+                 name="resampler",
+                 implementation="Fast"):
         super(ResamplerLayer, self).__init__(name=name)
         self.boundary = boundary.upper()
         self.boundary_func = look_up_operations(
@@ -38,6 +39,36 @@ class ResamplerLayer(Layer):
         if self.boundary == 'ZERO' and self.interpolation == 'IDW':
             tf.logging.warning('Zero padding is not supported for IDW mode')
             # raise NotImplementedError
+
+        self.FastResamplerLayer = None  #
+        if implementation.lower() in ['niftyreg', 'fast']:
+            # check if niftyreg_resampling_layer is installed
+            try:
+                from niftyreg_image_resampling import NiftyregImageResamplingLayer
+                import niftyreg_image_resampling as resampler_module
+            except ImportError:
+                tf.logging.warning('''
+                    niftyreg_image_resampling is not installed; falling back onto
+                    niftynet.layer.resampler.ResamplerLayer. To allow fast resampling,
+                    please see installation instructions in
+                    niftynet/contrib/niftyreg_image_resampling/README.md
+                    ''')
+                return
+
+            # Passthrough of supported boundary types for  resampling
+            SUPPORTED_BOUNDARY_FAST = resampler_module.SUPPORTED_BOUNDARY
+
+            # Passthrough of supported interpolation types for NiftyReg resampling
+            SUPPORTED_INTERPOLATION_FAST = resampler_module.SUPPORTED_INTERPOLATION
+            # check compatibility of the resampling options with niftyreg_image_resampling
+            try:
+                boundary_fast = look_up_operations(self.boundary, SUPPORTED_BOUNDARY_FAST)
+                interp_fast = look_up_operations(self.interpolation, SUPPORTED_INTERPOLATION_FAST)
+                self.FastResamplerLayer = NiftyregImageResamplingLayer(interp_fast, boundary_fast)
+                tf.logging.info('''NiftyReg image resampling is used.''')
+            except ValueError as e:
+                tf.logging.warning(e)
+                tf.logging.warning('''Falling back onto niftynet.layer.resampler.ResamplerLayer.''')
 
     def layer_op(self, inputs, sample_coords):
         """
@@ -119,6 +150,10 @@ class ResamplerLayer(Layer):
         if sample_coords.dtype not in SUPPORTED_INPUT_DTYPE:
             sample_coords = tf.to_float(sample_coords)
 
+        # use fast resampling layer if available
+        if self.FastResamplerLayer is not None:
+            return self.FastResamplerLayer.layer_op(inputs, sample_coords)
+        # otherwise compatibility resampling layer is used
         if self.interpolation == 'LINEAR':
             return self._resample_linear(inputs, sample_coords)
         if self.interpolation == 'NEAREST':
@@ -464,7 +499,7 @@ def _binary_neighbour_ids(spatial_rank):
             for i in range(2 ** spatial_rank)]
 
 
-try: # Some tf versions have this defined already
+try:  # Some tf versions have this defined already
     @tf.RegisterGradient('FloorMod')
     def _floormod_grad(op, grad):
         return [None, None]

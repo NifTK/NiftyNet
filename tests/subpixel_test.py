@@ -5,8 +5,9 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.subpixel import SubPixelLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
-class SubPixelTest(tf.test.TestCase):
+class SubPixelTest(NiftyNetTestCase):
     """
     Test for niftynet.layer.subpixel.SubPixelLayer.
     Mostly adapted from convolution_test.py
@@ -26,11 +27,10 @@ class SubPixelTest(tf.test.TestCase):
                                     input_data,
                                     param_dict,
                                     output_shape):
-
         layer = SubPixelLayer(**param_dict)
         output_data = layer(input_data)
         print(layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)
@@ -38,7 +38,7 @@ class SubPixelTest(tf.test.TestCase):
     def _make_output_shape(self, data, upsampling):
         data_shape = data.shape.as_list()
         output_shape = [data_shape[0]]
-        output_shape += [upsampling*d for d in data_shape[1:-1]]
+        output_shape += [upsampling * d for d in data_shape[1:-1]]
         output_shape += [data_shape[-1]]
 
         return output_shape
@@ -51,7 +51,6 @@ class SubPixelTest(tf.test.TestCase):
         self._test_subpixel_output_shape(data,
                                          {},
                                          output_shape)
-
 
     def test_3d_bespoke(self):
         data = self.get_3d_input()
@@ -69,8 +68,6 @@ class SubPixelTest(tf.test.TestCase):
         self._test_subpixel_output_shape(data,
                                          params,
                                          output_shape)
-
-
 
     def test_2d_bespoke(self):
         data = self.get_2d_input()

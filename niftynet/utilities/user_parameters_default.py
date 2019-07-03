@@ -356,6 +356,13 @@ def add_network_args(parser):
         default='uniform')
 
     parser.add_argument(
+        "--force_output_identity_resizing",
+        metavar=str2boolean,
+        help="Forces the shape of the inferred output to match the "
+        "input label shape rather than be resized to input image shape.",
+        default=False)
+
+    parser.add_argument(
         "--queue_length",
         help="Set size of preprocessing buffer queue",
         metavar='',
@@ -663,6 +670,14 @@ def add_training_args(parser):
              'performance monitoring',
         type=int,
         default=100)
+
+    parser.add_argument(
+        "--early_stopping_mode",
+        metavar='',
+        help="Choose between {'mean', 'robust_mean', 'median', "
+             "'generalisation_loss', 'median_smoothing', 'validation_up'}",
+        type=str,
+        default='mean')
 
     return parser
 

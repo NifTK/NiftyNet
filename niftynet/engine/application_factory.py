@@ -49,6 +49,8 @@ SUPPORTED_NETWORK = {
         'niftynet.network.toynet.ToyNet',
     "unet":
         'niftynet.network.unet.UNet3D',
+    "nonewnet":
+        'niftynet.network.no_new_net.UNet3D',
     "vnet":
         'niftynet.network.vnet.VNet',
     "dense_vnet":
@@ -235,6 +237,8 @@ SUPPORTED_EVENT_HANDLERS = {
         'niftynet.engine.handler_tensorboard.TensorBoardLogger',
     'performance_logger':
         'niftynet.engine.handler_performance.PerformanceLogger',
+    'early_stopper':
+        'niftynet.engine.handler_early_stopping.EarlyStopper',
 }
 
 SUPPORTED_ITERATION_GENERATORS = {

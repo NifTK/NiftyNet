@@ -7,8 +7,9 @@ import tensorflow as tf
 
 from niftynet.evaluation.classification_evaluator import ClassificationEvaluator
 from niftynet.io.misc_io import set_logger
+from tests.niftynet_testcase import NiftyNetTestCase
 
-class ClassificationEvaluatorTest(tf.test.TestCase):
+class ClassificationEvaluatorTest(NiftyNetTestCase):
     def test_basic(self):
         class NS(object):
             def __init__(self, dict):
