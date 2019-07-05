@@ -7,8 +7,19 @@ import numpy as np
 from niftynet.layer.base_layer import TrainableLayer
 
 
-
 class GenericGAN(TrainableLayer):
+  """
+    ### Description
+    Generic Generative Adversarial Network
+
+    ### Diagram
+
+    RANDOM NOISE --> [GENERATOR] --> [DISCRIMINATOR] --> fake logits
+    TRAINING SET ------------------> [DISCRIMINATOR] --> real logits
+
+    ### Constraints
+
+  """
   def __init__(self, generator, discriminator, name='generic_GAN'):
     self._generator=generator
     self._discriminator=discriminator
@@ -23,6 +34,22 @@ class GenericGAN(TrainableLayer):
     return image, real_logits, fake_logits, diff
 
 class SimpleGAN(GenericGAN):
+  """
+    ### Description
+    Specification of generator and discriminator for generic gan
+
+    ### Building blocks
+    [GENERATOR]       - See ImageGenerator class below
+    [DISCRIMINATOR]   - See ImageDiscriminator class below
+
+    ### Diagram
+
+    RANDOM NOISE --> [GENERATOR] --> [DISCRIMINATOR] --> fake logits
+    TRAINING SET ------------------> [DISCRIMINATOR] --> real logits
+
+    ### Constraints
+
+  """
   def __init__(self, name='simple_GAN'):
     generator=ImageGenerator(hidden_layer_channels=[128,64,32,16],
                              name='generator')
@@ -30,13 +57,32 @@ class SimpleGAN(GenericGAN):
     super(SimpleGAN, self).__init__(generator, discriminator, name)
 
 class ImageGenerator(TrainableLayer):
+  """
+    ### Description
+
+    ### Diagram
+
+    ### Constraints
+  """
   def __init__(self, hidden_layer_channels, name):
+    """
+
+    :param hidden_layer_channels:
+    :param name: layer name
+    """
     super(ImageGenerator, self).__init__(name=name)
     self._num_layers = len(hidden_layer_channels)
     self._layer_channels = hidden_layer_channels
     self.initializers = {'w':tf.contrib.layers.variance_scaling_initializer(),'b':tf.constant_initializer(0)}
 
   def layer_op(self, random_source, image_size,is_training):
+    """
+
+    :param random_source: tensor, random noise to start generation
+    :param image_size: output image size
+    :param is_training: boolean, True if network is in training mode
+    :return: tensor, generated image
+    """
     spatial_rank = len(image_size)-1
     batch_size = random_source.shape.as_list()[0]
     noise_size=random_source.shape.as_list()[1]
@@ -91,12 +137,31 @@ class ImageGenerator(TrainableLayer):
     return tf.nn.tanh(image)
 
 class ImageDiscriminator(TrainableLayer):
+  """
+    ### Description
+
+    ### Diagram
+
+    ### Constraints
+
+  """
   def __init__(self, hidden_layer_channels,name):
+    """
+
+    :param hidden_layer_channels: array, number of output channels for each layer
+    :param name: layer name
+    """
     super(ImageDiscriminator, self).__init__(name=name)
     self._layer_channels = hidden_layer_channels
     self.initializers = {'w':tf.contrib.layers.variance_scaling_initializer(),'b':tf.constant_initializer(0)}
 
   def layer_op(self, image,is_training):
+    """
+
+    :param image: tensor, input image to distriminator
+    :param is_training: boolean, True if network is in training mode
+    :return: tensor, classification logits
+    """
     batch_size=image.shape.as_list()[0]
     spatial_rank=len(image.shape)-2
     image_channels = image.shape.as_list()[-1]

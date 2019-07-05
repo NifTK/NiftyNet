@@ -13,9 +13,31 @@ from niftynet.utilities.util_common import look_up_operations
 
 class UNet3D(TrainableLayer):
     """
-    reimplementation of 3D U-net
-      Çiçek et al., "3D U-Net: Learning dense Volumetric segmentation from
-      sparse annotation", MICCAI '16
+    ### Description
+        reimplementation of 3D U-net
+          Çiçek et al., "3D U-Net: Learning dense Volumetric segmentation from
+          sparse annotation", MICCAI '16
+
+    ### Building blocks
+    [dBLOCK]        - Downsampling UNet Block
+    [uBLOCK]        - Upsampling UNet Block
+    [nBLOCK]        - UNet Block with no final operation
+    [CROP]          - Cropping layer
+
+    ### Diagram
+
+    INPUT  -->  [dBLOCK] - - - - - - - - - - - - - - - -  [nBLOCK] --> [CROP] --> OUTPUT
+                    |                                       |
+                    [dBLOCK] - - - - - - - - - - - - [uBLOCK]
+                        |                              |
+                        [dBLOCK]  - - - - - - - [uBLOCK]
+                            |                      |
+                            --------[uBLOCk] ------
+
+    ### Constraints
+     - Image size - 4 should be divisible by 8
+     - Label size should be more than 88
+     - border is 44
     """
 
     def __init__(self,
@@ -26,6 +48,16 @@ class UNet3D(TrainableLayer):
                  b_regularizer=None,
                  acti_func='prelu',
                  name='UNet'):
+        """
+
+        :param num_classes: int, number of final output channels
+        :param w_initializer: weight initialisation for network
+        :param w_regularizer: weight regularisation for network
+        :param b_initializer: bias initialisation for network
+        :param b_regularizer: bias regularisation for network
+        :param acti_func: activation function to use
+        :param name: layer name
+        """
         super(UNet3D, self).__init__(name=name)
 
         self.n_features = [32, 64, 128, 256, 512]
@@ -38,6 +70,14 @@ class UNet3D(TrainableLayer):
         print('using {}'.format(name))
 
     def layer_op(self, images, is_training=True, layer_id=-1, **unused_kwargs):
+        """
+
+        :param images: tensor, input to the network
+        :param is_training: boolean, True if network is in training mode
+        :param layer_id: int, not in use
+        :param unused_kwargs: other arguments, not in use
+        :return: tensor, output of the network
+        """
         # image_size  should be divisible by 8
         assert layer_util.check_spatial_dims(images, lambda x: x % 8 == 0)
         assert layer_util.check_spatial_dims(images, lambda x: x >= 89)
@@ -137,6 +177,17 @@ class UNetBlock(TrainableLayer):
                  with_downsample_branch=False,
                  acti_func='relu',
                  name='UNet_block'):
+        """
+
+        :param func: string, type of operation to perform after convolution (Downsampling, Upsampling, None)
+        :param n_chns: array, number of output channels for each convolutional layer of the block
+        :param kernels: array, kernel sizes for each convolutional layer of the block
+        :param w_initializer: weight initialisation of convolutional layers
+        :param w_regularizer: weight regularisation of convolutional layers
+        :param with_downsample_branch: boolean, returns also the tensor before func is applied
+        :param acti_func: activation function to use
+        :param name: layer name
+        """
 
         super(UNetBlock, self).__init__(name=name)
 
@@ -151,6 +202,12 @@ class UNetBlock(TrainableLayer):
         self.regularizers = {'w': w_regularizer}
 
     def layer_op(self, input_tensor, is_training):
+        """
+
+        :param input_tensor: tensor, input to the UNet block
+        :param is_training: boolean, True if network is in training mode
+        :return: output tensor of the UNet block and branch before downsampling (if required)
+        """
         output_tensor = input_tensor
         for (kernel_size, n_features) in zip(self.kernels, self.n_chns):
             conv_op = ConvolutionalLayer(n_output_chns=n_features,

@@ -4,9 +4,9 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.unet import UNetBlock
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class UNetBlockTest(tf.test.TestCase):
+class UNetBlockTest(NiftyNetTestCase):
     def get_2d_input(self):
         input_shape = (2, 16, 16, 8)
         x = tf.ones(input_shape)
@@ -33,7 +33,7 @@ class UNetBlockTest(tf.test.TestCase):
         print(unet_block_op)
         print(out_3)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_1 = sess.run(out_1)
             self.assertAllClose((2, 8, 8, 64), out_1.shape)
@@ -58,7 +58,7 @@ class UNetBlockTest(tf.test.TestCase):
         print(unet_block_op)
         print(out_3)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_1 = sess.run(out_1)
             self.assertAllClose((2, 8, 8, 8, 64), out_1.shape)
@@ -85,7 +85,7 @@ class UNetBlockTest(tf.test.TestCase):
         print(unet_block_op)
         print(out_3)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_1 = sess.run(out_1)
             self.assertAllClose((2, 8, 8, 64), out_1.shape)
@@ -112,7 +112,7 @@ class UNetBlockTest(tf.test.TestCase):
         print(unet_block_op)
         print(out_3)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out_1 = sess.run(out_1)
             self.assertAllClose((2, 8, 8, 8, 64), out_1.shape)

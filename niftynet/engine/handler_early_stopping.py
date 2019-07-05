@@ -4,6 +4,7 @@ This module implements an early stopping handler
 """
 
 import numpy as np
+import tensorflow as tf
 from scipy.ndimage import median_filter
 
 from niftynet.engine.signal import ITER_FINISHED
@@ -77,7 +78,6 @@ def check_should_stop(performance_history, mode='mean', min_delta=0.03,
         dividing.
     :param performance_history: a list of size patience with the performance
     history
-    :param patience: see above
     :param min_delta: threshold for smoothness
     :param kernel_size: hyperparameter for median smoothing
     :param k_splits: number of splits if using 'validation_up'
@@ -86,6 +86,9 @@ def check_should_stop(performance_history, mode='mean', min_delta=0.03,
     if mode == 'mean':
         performance_to_consider = performance_history[:-1]
         thresh = np.mean(performance_to_consider)
+        tf.logging.info("====Mean====")
+        tf.logging.info(thresh)
+        tf.logging.info(performance_history[-1])
         should_stop = performance_history[-1] > thresh
 
     elif mode == 'robust_mean':
@@ -111,7 +114,7 @@ def check_should_stop(performance_history, mode='mean', min_delta=0.03,
                                  size=kernel_size)
         gradient = np.gradient(smoothed)
         thresholded = np.where(gradient < min_delta, 1, 0)
-        value = np.sum(thresholded) / len(gradient)
+        value = np.sum(thresholded) * 1.0 / len(gradient)
         should_stop = value < 0.5
     elif mode == 'validation_up':
         remainder = len(performance_history) % k_splits
@@ -121,6 +124,8 @@ def check_should_stop(performance_history, mode='mean', min_delta=0.03,
         for strip in strips:
             generalisation_loss = compute_generalisation_loss(strip)
             gl_increase.append(generalisation_loss >= min_delta)
+        tf.logging.info("====Validation_up====")
+        tf.logging.info(gl_increase)
         should_stop = False not in gl_increase
     else:
         raise Exception('Mode: {} provided is not supported'.format(mode))

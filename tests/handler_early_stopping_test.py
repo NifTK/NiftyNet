@@ -5,20 +5,18 @@ import tensorflow as tf
 import numpy as np
 
 from niftynet.engine.handler_early_stopping import check_should_stop
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class EarlyStopperTest(tf.test.TestCase):
+class EarlyStopperTest(NiftyNetTestCase):
 
     def test_mean(self):
         should_stop = check_should_stop(mode='mean',
                                         performance_history=[1, 2, 1, 2, 1,
-                                                             2, 1, 2, 3],
-                                        patience=3)
+                                                             2, 1, 2, 3])
         self.assertTrue(should_stop)
         should_stop = check_should_stop(mode='mean',
                                         performance_history=[1, 2, 1, 2, 1, 2,
-                                                             1, 2, 3, 0],
-                                        patience=3)
+                                                             1, 2, 3, 0])
         self.assertFalse(should_stop)
 
     def test_robust_mean(self):
@@ -57,17 +55,20 @@ class EarlyStopperTest(tf.test.TestCase):
             data.extend(np.arange(1, 9))
             data.extend(np.arange(2, 10)[::-1])
         should_stop = check_should_stop(mode='validation_up',
-                                        performance_history=np.arange(0,
-                                                                      20) / 10)
+                                        performance_history=
+                                        np.arange(0, 20) / 10.0)
+        print("1 val")
         self.assertTrue(should_stop)
         should_stop = check_should_stop(mode='validation_up',
                                         performance_history=np.arange(
                                             0, 20)[::-1] / 10)
+        print("2 val")
         self.assertFalse(should_stop)
 
         should_stop = check_should_stop(mode='validation_up',
                                         performance_history=data,
                                         min_delta=0.2)
+        print("3 val")
         self.assertFalse(should_stop)
 
     def test_median_smoothing(self):
@@ -77,7 +78,7 @@ class EarlyStopperTest(tf.test.TestCase):
             data.extend(np.arange(1, 9)[::-1])
         should_stop = \
             check_should_stop(mode='median_smoothing',
-                              performance_history=np.arange(0, 20) / 10)
+                              performance_history=np.arange(0, 20) / 10.0)
         self.assertTrue(should_stop)
         should_stop = check_should_stop(mode='median_smoothing',
                                         performance_history=np.arange(

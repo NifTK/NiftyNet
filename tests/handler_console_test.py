@@ -5,9 +5,10 @@ import tensorflow as tf
 from tests.application_driver_test import get_initialised_driver
 from niftynet.engine.application_iteration import IterationMessage
 from niftynet.engine.signal import SESS_STARTED, ITER_FINISHED
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class EventConsoleTest(tf.test.TestCase):
+class EventConsoleTest(NiftyNetTestCase):
     def test_init(self):
         ITER_FINISHED.connect(self.iteration_listener)
 
@@ -17,7 +18,7 @@ class EventConsoleTest(tf.test.TestCase):
              'niftynet.engine.handler_console.ConsoleLogger',
              'niftynet.engine.handler_sampler.SamplerThreading'])
         graph = app_driver.create_graph(app_driver.app, 1, True)
-        with self.test_session(graph=graph) as sess:
+        with self.cached_session(graph=graph) as sess:
             SESS_STARTED.send(app_driver.app, iter_msg=None)
             msg = IterationMessage()
             msg.current_iter = 1

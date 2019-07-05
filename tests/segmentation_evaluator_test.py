@@ -6,8 +6,9 @@ import tensorflow as tf
 
 from niftynet.evaluation.segmentation_evaluator import SegmentationEvaluator
 from niftynet.io.misc_io import set_logger
+from tests.niftynet_testcase import NiftyNetTestCase
 
-class SegmentationEvaluatorTest(tf.test.TestCase):
+class SegmentationEvaluatorTest(NiftyNetTestCase):
     def test_basic(self):
         class NS(object):
             def __init__(self, dict):

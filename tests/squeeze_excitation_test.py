@@ -5,15 +5,16 @@ import tensorflow as tf
 from niftynet.layer.squeeze_excitation import ChannelSELayer
 from niftynet.layer.squeeze_excitation import SpatialSELayer
 from niftynet.layer.squeeze_excitation import ChannelSpatialSELayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
-class SETest(tf.test.TestCase):
+class SETest(NiftyNetTestCase):
     def test_cSE_3d_shape(self):
         input_shape = (2, 16, 16, 16, 32)
         x = tf.ones(input_shape)
         se_layer = ChannelSELayer()
         out_se = se_layer(x)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_se)
             x_shape = tuple(x.shape.as_list())
@@ -25,7 +26,7 @@ class SETest(tf.test.TestCase):
         se_layer = SpatialSELayer()
         out_se = se_layer(x)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_se)
             x_shape = tuple(x.shape.as_list())
@@ -37,7 +38,7 @@ class SETest(tf.test.TestCase):
         se_layer = ChannelSpatialSELayer()
         out_se = se_layer(x)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_se)
             x_shape = tuple(x.shape.as_list())
@@ -49,7 +50,7 @@ class SETest(tf.test.TestCase):
         se_layer = ChannelSELayer()
         out_se = se_layer(x)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_se)
             x_shape = tuple(x.shape.as_list())
@@ -61,7 +62,7 @@ class SETest(tf.test.TestCase):
         se_layer = SpatialSELayer()
         out_se = se_layer(x)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_se)
             x_shape = tuple(x.shape.as_list())
@@ -73,7 +74,7 @@ class SETest(tf.test.TestCase):
         se_layer = ChannelSpatialSELayer()
         out_se = se_layer(x)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out_se)
             x_shape = tuple(x.shape.as_list())
@@ -106,7 +107,7 @@ class SETest(tf.test.TestCase):
         div_0_1=out_0_1/x_0_1
         div_1_1=out_1_1/x_1_1
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             self.assertAlmostEqual(div_0_0, div_1_0,places=5)
             self.assertAlmostEqual(div_0_1, div_1_1,places=5)
             
@@ -131,7 +132,7 @@ class SETest(tf.test.TestCase):
         div_0_0=out_0_0/x_0_0
         div_0_1=out_0_1/x_0_1
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             self.assertAlmostEqual(div_0_0, div_0_1,places=5)
 
     def test_cSE_2d_excitation_op(self):
@@ -161,7 +162,7 @@ class SETest(tf.test.TestCase):
         div_0_1=out_0_1/x_0_1
         div_1_1=out_1_1/x_1_1
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             self.assertAlmostEqual(div_0_0, div_1_0,places=5)
             self.assertAlmostEqual(div_0_1, div_1_1,places=5)
             
@@ -186,11 +187,11 @@ class SETest(tf.test.TestCase):
         div_0_0=out_0_0/x_0_0
         div_0_1=out_0_1/x_0_1
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             self.assertAlmostEqual(div_0_0, div_0_1,places=5)
 
     def test_cSE_pooling_op_error(self):
-            with self.test_session() as sess:
+            with self.cached_session() as sess:
                 sess.run(tf.global_variables_initializer())
 
                 with self.assertRaises(ValueError):

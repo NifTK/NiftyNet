@@ -15,9 +15,30 @@ from niftynet.network.base_net import BaseNet
 
 class UNet2D(BaseNet):
     """
-    A reimplementation of 2D UNet:
-        Ronneberger et al., U-Net: Convolutional Networks for Biomedical
-        Image Segmentation, MICCAI '15
+    ### Description
+        A reimplementation of 2D UNet:
+            Ronneberger et al., U-Net: Convolutional Networks for Biomedical
+            Image Segmentation, MICCAI '15
+
+    ### Building blocks
+    [dBLOCK]        - Downsampling Block (conv 3x3, Relu + conv 3x3, Relu +  Max pooling)
+    [BLOCK]         - Two layer Block (conv 3x3, Relu + conv 3x3, Relu)
+    [uBLOCK]        - Upsampling Block (deconv 2x2 + crop and concat + conv 3x3, Relu + conv 3x3, Relu)
+    [CONV]          - Classification block (conv 1x1)
+
+    ### Diagram
+
+    INPUT  -->  [dBLOCK] - - - - - - - - - - - - - - - -  [BLOCK] --> [CONV] --> OUTPUT
+                    |                                       |
+                    [dBLOCK] - - - - - - - - - - - - [uBLOCK]
+                        |                              |
+                        [dBLOCK]  - - - - - - - [uBLOCK]
+                            |                      |
+                            [dBLOCK]  - - - [uBLOCK]
+                                |               |
+                                ----[BLOCk] ----
+
+    ### Constraints
     """
 
     def __init__(self,
@@ -51,6 +72,13 @@ class UNet2D(BaseNet):
         self.deconv_params.update(net_params)
 
     def layer_op(self, images, is_training=True, **unused_kwargs):
+        """
+
+        :param images: tensor, input to the network
+        :param is_training: boolean, True if network is in training mode
+        :param unused_kwargs: other conditional arguments, not in use
+        :return: tensor, output of the network
+        """
         # contracting path
         output_1 = TwoLayerConv(self.n_fea[0], self.conv_params)(images, is_training=is_training)
         down_1 = Pooling(func='MAX', **self.pooling_params)(output_1)
@@ -107,8 +135,15 @@ class TwoLayerConv(TrainableLayer):
         self.conv_params = conv_params
 
     def layer_op(self, input_tensor, is_training=None):
+        """
+
+        :param input_tensor: tensor, input to the two layer convolution
+        :param is_training: flag for training
+        :return: tensor, output of --conv--conv
+        """
         output_tensor = Conv(self.n_chns, **self.conv_params)(input_tensor, is_training=is_training)
         output_tensor = Conv(self.n_chns, **self.conv_params)(output_tensor, is_training=is_training)
+
         return output_tensor
 
 
@@ -129,8 +164,8 @@ class CropConcat(Layer):
         match the spatial shape and concatenate the tensors
         tensor_a will be cropped and resized to match tensor_b.
 
-        :param tensor_a:
-        :param tensor_b:
+        :param tensor_a: tensor, input
+        :param tensor_b: tensor, input
         :return: concatenated tensor
         """
         crop_border = (tensor_a.shape[1] - tensor_b.shape[1]) // 2

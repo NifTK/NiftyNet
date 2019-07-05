@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Utilities functions for file and path management"""
-
 from __future__ import absolute_import, print_function, unicode_literals
 
 import errno
@@ -766,9 +765,18 @@ def set_logger(file_name=None):
     :return:
     """
     # pylint: disable=no-name-in-module
-    from tensorflow.python.platform.tf_logging import _get_logger
+    # This is done so if the user had TF 1.12.1 or a new version the code
+    # does not brake. First part of the try is renaming the TF 1.12.1 to
+    # fit the TF 1.13.1>= naming scheme, while the second is just a normal
+    # import for TF 1.13.1>=
+    try:
+        # pylint: disable=no-name-in-module
+        from tensorflow.python.platform.tf_logging import \
+            _get_logger as get_logger
+    except ImportError:
+        from tensorflow.python.platform.tf_logging import get_logger
 
-    logger = _get_logger()
+    logger = get_logger()
     tf.logging.set_verbosity(tf.logging.INFO)
     logger.handlers = []
 
@@ -793,9 +801,18 @@ def close_logger():
     :return:
     """
     # pylint: disable=no-name-in-module
-    from tensorflow.python.platform.tf_logging import _get_logger
+    # This is done so if the user had TF 1.12.1 or a new version the code
+    # does not brake. First part of the try is renaming the TF 1.12.1 to
+    # fit the TF 1.13.1>= naming scheme, while the second is just a normal
+    # import for TF 1.13.1>=
+    try:
+        # pylint: disable=no-name-in-module
+        from tensorflow.python.platform.tf_logging import \
+            _get_logger as get_logger
+    except ImportError:
+        from tensorflow.python.platform.tf_logging import get_logger
 
-    logger = _get_logger()
+    logger = get_logger()
     for handler in reversed(logger.handlers):
         try:
             handler.flush()

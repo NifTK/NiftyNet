@@ -5,9 +5,10 @@ import tensorflow as tf
 import tensorflow.test as tft
 
 from niftynet.contrib.layer.resampler_optional_niftyreg import ResamplerOptionalNiftyRegLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 import niftynet.contrib.layer.resampler_optional_niftyreg as resampler_module
 
-class ResamplerTest(tf.test.TestCase):
+class ResamplerTest(NiftyNetTestCase):
     def get_2d_input(self, as_tensor=True):
         test_array = np.array(
             [[[[1, 2, -1], [3, 4, -2]], [[5, 6, -3], [7, 8, -4]]],
@@ -46,7 +47,7 @@ class ResamplerTest(tf.test.TestCase):
         out = resampler(input, grid)
 
         for use_gpu in self._get_devs():
-            with self.test_session(use_gpu=use_gpu) as sess:
+            with self.cached_session(use_gpu=use_gpu) as sess:
                 out_value = sess.run(out)
                 self.assertAllClose(expected_value, out_value)
 
@@ -235,7 +236,7 @@ class ResamplerTest(tf.test.TestCase):
                 input_default, shape=None)
 
         out = resampler(input_placeholder, grid)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             out_value = sess.run(
                 out, feed_dict={input_placeholder: input})
             if expected_value is not None:

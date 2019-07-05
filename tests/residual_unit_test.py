@@ -5,9 +5,10 @@ import tensorflow as tf
 
 from niftynet.layer.residual_unit import ResidualUnit as Res
 from niftynet.layer.residual_unit import SUPPORTED_OP as connection_types
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class ResidualUnitTest(tf.test.TestCase):
+class ResidualUnitTest(NiftyNetTestCase):
     def get_3d_input(self):
         input_shape = (2, 16, 16, 16, 8)
         x = tf.ones(input_shape)
@@ -27,7 +28,7 @@ class ResidualUnitTest(tf.test.TestCase):
         res_layer = Res(**param_dict)
         output_data = res_layer(input_data)
         print(res_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(output_data)
             self.assertAllClose(expected_shape, out.shape)

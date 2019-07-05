@@ -4,9 +4,10 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.highres3dnet import HighResBlock
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class HighResBlockTest(tf.test.TestCase):
+class HighResBlockTest(NiftyNetTestCase):
     def test_3d_increase_shape(self):
         input_shape = (2, 16, 16, 16, 8)
         x = tf.ones(input_shape)
@@ -17,7 +18,7 @@ class HighResBlockTest(tf.test.TestCase):
         out = highres_layer(x, is_training=True)
         print(highres_layer)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 16, 16, 16, 16), out.shape)
@@ -32,7 +33,7 @@ class HighResBlockTest(tf.test.TestCase):
         out = highres_layer(x, is_training=True)
         print(highres_layer)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 16, 16, 16, 8), out.shape)
@@ -47,7 +48,7 @@ class HighResBlockTest(tf.test.TestCase):
         out = highres_layer(x, is_training=True)
         print(highres_layer)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 16, 16, 16, 4), out.shape)
@@ -64,7 +65,7 @@ class HighResBlockTest(tf.test.TestCase):
         out = highres_layer(x, is_training=True)
         print(highres_layer)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 16, 16, 16, 16), out.shape)
@@ -82,7 +83,7 @@ class HighResBlockTest(tf.test.TestCase):
         out = highres_layer(x, is_training=True)
         print(highres_layer)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 16, 16, 16, 8), out.shape)
@@ -99,7 +100,7 @@ class HighResBlockTest(tf.test.TestCase):
         out = highres_layer(x, is_training=True)
         print(highres_layer)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 16, 16, 16, 4), out.shape)
@@ -114,7 +115,7 @@ class HighResBlockTest(tf.test.TestCase):
         out = highres_layer(x, is_training=True)
         print(highres_layer)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 16, 16, 16), out.shape)
@@ -129,7 +130,7 @@ class HighResBlockTest(tf.test.TestCase):
         out = highres_layer(x, is_training=True)
         print(highres_layer)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 16, 16, 8), out.shape)
@@ -144,7 +145,7 @@ class HighResBlockTest(tf.test.TestCase):
         out = highres_layer(x, is_training=True)
         print(highres_layer)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 16, 16, 4), out.shape)
