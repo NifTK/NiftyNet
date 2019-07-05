@@ -5,6 +5,7 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.crf import CRFAsRNNLayer
+from niftynet.layer.crf import permutohedral_prepare, permutohedral_compute
 
 
 class CRFTest(tf.test.TestCase):
@@ -118,6 +119,22 @@ class CRFTest(tf.test.TestCase):
             sess.run(opt)
             params_1 = sess.run(tf.trainable_variables())
             self.assertGreater(np.sum(np.abs(params_1[0] - params[0])), 0.0)
+
+    def test_batch_mix(self):
+        feat = tf.random.uniform(shape=[2, 64, 5])
+        desc = tf.ones(shape=[1, 64, 1])
+        desc_ = tf.zeros(shape=[1, 64, 1])
+        desc = tf.concat([desc, desc_], axis=0)
+        barycentric, blur_neighbours1, blur_neighbours2, indices = permutohedral_prepare(feat)
+        sliced = permutohedral_compute(desc,
+                          barycentric,
+                          blur_neighbours1,
+                          blur_neighbours2,
+                          indices,
+                          "test",
+                          True)
+        self.assertAllClose(sliced[1:], tf.zeros(shape=[1, 64, 1]))
+
 
 
 if __name__ == "__main__":
