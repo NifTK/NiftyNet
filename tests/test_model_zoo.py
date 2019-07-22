@@ -61,7 +61,7 @@ class UltrasoundSimulatorGanModelZooTest(NiftyNetTestCase):
     location = 'ultrasound_simulator_gan'
     config = os.path.join(MODEL_HOME, 'extensions', 'ultrasound_simulator_gan', 'config.ini')
     application = 'net_gan'
-    expected_output = os.path.join('ultrasound_gan_simulated','0_000053__niftynet_generated.nii.gz')
+    expected_output = os.path.join('ultrasound_gan_simulated','5_000053__window_image_niftynet_generated.nii.gz')
 
     def setUp(self):
         NiftyNetTestCase.setUp(self)

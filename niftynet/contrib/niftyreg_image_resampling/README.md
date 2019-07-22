@@ -12,7 +12,7 @@ To provide compatibility where this module is not installed, the following modul
 
 ## Building and Installing
 
-Building and installing is performed as usual via setup.py.
+Building and installing is performed as usual via the setup file.
 
 Building the module requires that a CUDA toolkit and CMake be installed, and nvcc and cmake can be found on the executables search path.
 CMake variables can be overriden through the `override` command and `--settings`/`-s` switch as a list of colon (':') separated variable-value pairs. E.g., `python setup.py override -s "CMAKE_CXX_COMPILER:/usr/bin/g++-6:CMAKE_C_COMPILER:/usr/bin/gcc-6" build`.
