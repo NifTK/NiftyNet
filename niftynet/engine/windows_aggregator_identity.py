@@ -2,14 +2,18 @@
 """
 windows aggregator saves each item in a batch output as an image.
 """
-from __future__ import absolute_import, print_function, division
+from __future__ import absolute_import, division, print_function
 
 import os
-import numpy as np
-import niftynet.io.misc_io as misc_io
-# pylint: disable=too-many-branches
+from collections import OrderedDict
 
+import numpy as np
+import pandas as pd
+
+import niftynet.io.misc_io as misc_io
 from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
+
+# pylint: disable=too-many-branches
 
 
 class WindowAsImageAggregator(ImageWindowsAggregator):
@@ -33,6 +37,7 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
         (indicates output image is from single input image)
         ``location[batch_id, 0]`` is used as the file name
     """
+
     def __init__(self,
                  image_reader=None,
                  output_path=os.path.join('.', 'output'),
@@ -56,65 +61,49 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
     def decode_batch(self, window, location=None):
         if location is not None:
             n_samples = location.shape[0]
-            for batch_id in range(n_samples):
-                if self._is_stopping_signal(location[batch_id]):
-                    return False
-                filename = self._decode_subject_name(location[batch_id, 0])
-                # if base file name changed, reset relative name index
-                if filename != self.output_id['base_name']:
-                    self.output_id['base_name'] = filename
-                    self.output_id['relative_id'] = 0
-                # when location has two component, the name should
-                # be constructed as a composite of two input filenames
-                if len(location[batch_id]) == 2:
-                    output_name = '{}_{}'.format(
-                        self.output_id['base_name'],
-                        self._decode_subject_name(location[batch_id, 1]))
-                else:
-                    output_name = self.output_id['base_name']
+        else:
+            n_samples = window[sorted(window)[0]].shape[0]
 
-                for i in window:
-                    if 'window' in i:
-                        true_outname = i + output_name
-                        self._save_current_image(self.output_id['relative_id'],
-                                                 true_outname,
-                                                 window[i][batch_id, ...])
-                    else:
-                        true_outname = i + output_name
-                        to_save = np.asarray(window[i])
-                        if to_save.ndim == 0:
-                            to_save = np.expand_dims(to_save, 0)
-                        if n_samples > 1 and to_save.ndim < 2:
-                            to_save = np.expand_dims(to_save, 1)
-                        elif n_samples == 1 and to_save.shape[0] != n_samples:
-                            to_save = np.expand_dims(to_save, 0)
-                        print(true_outname, window[i], i, to_save.shape)
-                        self._save_current_csv(self.output_id['relative_id'],
-                                               true_outname,
-                                               to_save[batch_id, ...])
-
-                self.output_id['relative_id'] += 1
-            return True
-        n_samples = window.shape[0]
         for batch_id in range(n_samples):
-            filename = self._decode_subject_name()
-            for i in window:
-                if 'window' in i:
-                    new_filename = i + filename
-                    self._save_current_image(
-                        batch_id, new_filename, window[i][batch_id, ...])
+            location_b = location[batch_id] if (location is not None) else None
+            if self._is_stopping_signal(location_b):
+                return False
+            filename = self._decode_subject_name(location_b[0]) \
+                if (location_b is not None) else self._decode_subject_name()
+            # if base file name changed, reset relative name index
+            if filename != self.output_id['base_name']:
+                self.output_id['base_name'] = filename
+                self.output_id['relative_id'] = 0
+            # when location has two component, the name should
+            # be constructed as a composite of two input filenames
+            if (location_b is not None) and (len(location_b) == 2):
+                output_name = '{}_{}'.format(
+                    self.output_id['base_name'],
+                    self._decode_subject_name(location_b[1]))
+            else:
+                output_name = self.output_id['base_name']
+
+            for key in window:
+                output_name_k = '{}_{}'.format(output_name, key)
+                if 'window' in key:
+                    self._save_current_image(self.output_id['relative_id'],
+                                             output_name_k,
+                                             window[key][batch_id, ...])
                 else:
-                    new_filename = i + filename
-                    to_save = np.asarray(window[i])
-                    if to_save.ndim == 0:
-                        to_save = np.expand_dims(to_save, 0)
-                    if n_samples > 1 and to_save.ndim < 2:
-                        to_save = np.expand_dims(to_save, 1)
-                    elif n_samples == 1 and to_save.shape[0] != n_samples:
-                        to_save = np.expand_dims(to_save, 0)
-                    self._save_current_csv(batch_id, new_filename,
-                                           to_save[batch_id, ...])
-        return False
+                    window[key] = np.asarray(window[key]).reshape(
+                        [n_samples, -1])
+                    n_elements = window[key].shape[-1]
+                    table_header = [
+                        '{}_{}'.format(key, idx) for idx in range(n_elements)
+                    ] if n_elements > 1 else ['{}'.format(key)]
+                    csv_table = pd.DataFrame(columns=table_header)
+                    csv_table = csv_table.append(
+                        OrderedDict(zip(table_header, window[key].ravel())),
+                        ignore_index=True)
+                    self._save_current_csv(self.output_id['relative_id'],
+                                           output_name_k, csv_table)
+            self.output_id['relative_id'] += 1
+        return True
 
     def _save_current_image(self, idx, filename, image):
         if image is None:
@@ -129,21 +118,19 @@ class WindowAsImageAggregator(ImageWindowsAggregator):
             csv_file.write('{},{}\n'.format(idx, filename))
         return
 
-    def _save_current_csv(self, idx, filename, image):
-        '''
+    def _save_current_csv(self, idx, filename, csv_data):
+        """
         Save all csv output present in the dictionary of csv_output.
         :return:
-        '''
+        """
 
-        if image is None:
+        if csv_data is None:
             return
-        while image.ndim < 2:
-            image = np.expand_dims(image, 0)
         if idx == 0:
             uniq_name = "{}{}.csv".format(filename, self.postfix)
         else:
             uniq_name = "{}_{}{}.csv".format(idx, filename, self.postfix)
-        misc_io.save_csv_array(self.output_path, uniq_name, image)
+        misc_io.save_csv_array(self.output_path, uniq_name, csv_data)
         with open(self.inferred_csv, 'a') as csv_file:
             filename = os.path.join(self.output_path, filename)
             csv_file.write('{},{}\n'.format(idx, filename))

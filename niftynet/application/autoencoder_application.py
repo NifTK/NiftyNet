@@ -282,9 +282,9 @@ class AutoencoderApplication(BaseApplication):
                     batch_output['location'][:, 0:1])
             if infer_type == 'sample':
                 return self.output_decoder.decode_batch(
-                    {'generated_image':batch_output['generated_image']},
+                    {'window_generated_image':batch_output['generated_image']},
                     None)
             if infer_type == 'linear_interpolation':
                 return self.output_decoder.decode_batch(
-                    {'generated_image':batch_output['generated_image']},
+                    {'window_generated_image':batch_output['generated_image']},
                     batch_output['location'][:, :2])

@@ -110,6 +110,10 @@ class KeywordsMatching(object):
             [os.path.join(p, filename) for p, filename in matching_path_file]
         subjectname_list = [self.__extract_subject_id_from(filename)
             for p, filename in matching_path_file]
+        for sname, fname in zip(subjectname_list, filename_list):
+            if not sname:
+                subjectname_list.remove(sname)
+                filename_list.remove(fname)
         self.__check_unique_names(filename_list, subjectname_list)
         if not filename_list or not subjectname_list:
             tf.logging.fatal('no file matched based on this matcher: %s', self)
@@ -161,6 +165,8 @@ class KeywordsMatching(object):
     def __check_unique_names(self, file_list, id_list):
         uniq_dict = dict()
         for idx, subject_id in enumerate(id_list):
+            if not subject_id:
+                continue
             id_string = subject_id[0]
             if id_string in uniq_dict:
                 tf.logging.fatal(

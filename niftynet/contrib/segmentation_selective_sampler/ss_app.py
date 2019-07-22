@@ -311,5 +311,6 @@ class SelectiveSampling(BaseApplication):
     def interpret_output(self, batch_output):
         if not self.is_training:
             return self.output_decoder.decode_batch(
-                batch_output['window'], batch_output['location'])
+                {'window_image': batch_output['window']},
+                batch_output['location'])
         return True

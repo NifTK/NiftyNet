@@ -266,7 +266,7 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             nib.load(output_file).shape, (256, 168, 256, 1, 2))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
-            min_pd.shape, [421, 9]
+            min_pd.shape, [420, 9]
         )
         sampler.close_all()
 
@@ -359,11 +359,11 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             nib.load(output_file).shape, (256, 168, 256, 1, 2))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
-            min_pd.shape, [421, 9]
+            min_pd.shape, [420, 9]
         )
         stats_pd = pd.read_csv(stats_filename)
         self.assertAllClose(
-            stats_pd.shape, [421, 11]
+            stats_pd.shape, [420, 11]
         )
         sampler.close_all()
 
@@ -419,11 +419,11 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             nib.load(output_file).shape, (256, 168, 256, 1, 2))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
-            min_pd.shape, [421, 9]
+            min_pd.shape, [420, 9]
         )
         stats_pd = pd.read_csv(stats_filename)
         self.assertAllClose(
-            stats_pd.shape, [841, 11]
+            stats_pd.shape, [420, 14]
         )
         sampler.close_all()
 
@@ -471,7 +471,7 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             nib.load(output_file).shape, (128, 128, 1, 1, 1))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
-            min_pd.shape, [11, 9]
+            min_pd.shape, [10, 9]
         )
         sampler.close_all()
 
@@ -525,11 +525,11 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             nib.load(output_file).shape, (128, 128, 1, 1, 1))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
-            min_pd.shape, [11, 9]
+            min_pd.shape, [10, 9]
         )
         stats_pd = pd.read_csv(stats_filename)
         self.assertAllClose(
-            stats_pd.shape, [11, 11]
+            stats_pd.shape, [10, 11]
         )
         sampler.close_all()
 
@@ -585,11 +585,11 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             nib.load(output_file).shape, (128, 128, 1, 1, 1))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
-            min_pd.shape, [11, 9]
+            min_pd.shape, [10, 9]
         )
         stats_pd = pd.read_csv(stats_filename)
         self.assertAllClose(
-            stats_pd.shape, [21, 11]
+            stats_pd.shape, [10, 14]
         )
         sampler.close_all()
 

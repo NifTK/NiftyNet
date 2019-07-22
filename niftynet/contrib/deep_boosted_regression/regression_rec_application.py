@@ -252,7 +252,7 @@ class RegressionRecApplication(BaseApplication):
 
             crop_layer = CropLayer(
                 border=self.regression_param.loss_border, name='crop-88')
- 
+
             data_loss1 = loss_func(
                 prediction=crop_layer(pct1_out),
                 ground_truth=crop_layer(data_dict.get('output', None)),
@@ -321,7 +321,7 @@ class RegressionRecApplication(BaseApplication):
 #                var=pct3_out, name="pct3_out",
 #                average_over_devices=True, summary_type="image3_axial",
 #                collection=TF_SUMMARIES)
-        
+
         else:
             data_dict = switch_sampler(for_training=False)
             image = tf.cast(data_dict['image'], tf.float32)
@@ -350,6 +350,7 @@ class RegressionRecApplication(BaseApplication):
     def interpret_output(self, batch_output):
         if not self.is_training:
             return self.output_decoder.decode_batch(
-                batch_output['window'], batch_output['location'])
+                {'window_image': batch_output['window']},
+                batch_output['location'])
         else:
             return True

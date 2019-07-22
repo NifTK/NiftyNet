@@ -168,7 +168,7 @@ class IdentityAggregatorTest(NiftyNetTestCase):
                     break
                 more_batch = aggregator.decode_batch(
                     {'window_image': out['image']}, out['image_location'])
-        output_filename = 'window_image{}_niftynet_generated.nii.gz'.format(
+        output_filename = '{}_window_image_niftynet_generated.nii.gz'.format(
             sampler.reader.get_subject_id(0))
         output_file = os.path.join('testing_data',
                                    'aggregated_identity',
@@ -203,11 +203,11 @@ class IdentityAggregatorTest(NiftyNetTestCase):
                 more_batch = aggregator.decode_batch(
                     {'window_image': out['image'], 'csv_sum': sum_val},
                     out['image_location'])
-        output_filename = 'window_image{}_niftynet_generated.nii.gz'.format(
+        output_filename = '{}_window_image_niftynet_generated.nii.gz'.format(
             sampler.reader.get_subject_id(0))
         sum_filename = os.path.join(
             'testing_data', 'aggregated_identity',
-            'csv_sum{}_niftynet_generated.csv'.format(
+            '{}_csv_sum_niftynet_generated.csv'.format(
                 sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated_identity',
@@ -245,11 +245,11 @@ class IdentityAggregatorTest(NiftyNetTestCase):
                 more_batch = aggregator.decode_batch(
                     {'window_image': out['image'], 'window_im2': out['image']},
                     out['image_location'])
-        output_filename = 'window_image{}_niftynet_generated.nii.gz'.format(
+        output_filename = '{}_window_image_niftynet_generated.nii.gz'.format(
             sampler.reader.get_subject_id(0))
         outim2_filename = os.path.join(
             'testing_data', 'aggregated_identity',
-            'window_im2{}_niftynet_generated.nii.gz'.format(
+            '{}_window_im2_niftynet_generated.nii.gz'.format(
                 sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated_identity',
@@ -290,15 +290,15 @@ class IdentityAggregatorTest(NiftyNetTestCase):
                     {'window_image': out['image'], 'csv_sum': sum_val,
                      'csv_stats': stats_val},
                     out['image_location'])
-        output_filename = 'window_image{}_niftynet_generated.nii.gz'.format(
+        output_filename = '{}_window_image_niftynet_generated.nii.gz'.format(
             sampler.reader.get_subject_id(0))
         sum_filename = os.path.join(
             'testing_data', 'aggregated_identity',
-            'csv_sum{}_niftynet_generated.csv'.format(
+            '{}_csv_sum_niftynet_generated.csv'.format(
                 sampler.reader.get_subject_id(0)))
         stats_filename = os.path.join(
             'testing_data', 'aggregated_identity',
-            'csv_stats{}_niftynet_generated.csv'.format(
+            '{}_csv_stats_niftynet_generated.csv'.format(
                 sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated_identity',
@@ -347,15 +347,15 @@ class IdentityAggregatorTest(NiftyNetTestCase):
                      'csv_sum': min_val,
                      'csv_stats2d': stats_val},
                     out['image_location'])
-        output_filename = 'window_image{}_niftynet_generated.nii.gz'.format(
+        output_filename = '{}_window_image_niftynet_generated.nii.gz'.format(
             sampler.reader.get_subject_id(0))
         sum_filename = os.path.join(
             'testing_data', 'aggregated_identity',
-            'csv_sum{}_niftynet_generated.csv'.format(
+            '{}_csv_sum_niftynet_generated.csv'.format(
                 sampler.reader.get_subject_id(0)))
         stats_filename = os.path.join(
             'testing_data', 'aggregated_identity',
-            'csv_stats2d{}_niftynet_generated.csv'.format(
+            '{}_csv_stats2d_niftynet_generated.csv'.format(
                 sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated_identity',
@@ -369,7 +369,7 @@ class IdentityAggregatorTest(NiftyNetTestCase):
         )
         stats_pd = pd.read_csv(stats_filename)
         self.assertAllClose(
-            stats_pd.shape, [2, 4]
+            stats_pd.shape, [1, 7]
         )
         sampler.close_all()
 
@@ -396,7 +396,7 @@ class IdentityAggregatorTest(NiftyNetTestCase):
                     break
                 more_batch = aggregator.decode_batch(
                     {'window_image': out['image']}, out['image_location'])
-        output_filename = 'window_image{}_niftynet_generated.nii.gz'.format(
+        output_filename = '{}_window_image_niftynet_generated.nii.gz'.format(
             sampler.reader.get_subject_id(0))
         output_file = os.path.join('testing_data',
                                    'aggregated_identity',
@@ -432,11 +432,11 @@ class IdentityAggregatorTest(NiftyNetTestCase):
                 more_batch = aggregator.decode_batch(
                     {'window_image': out['image'], 'csv_sum': min_val},
                     out['image_location'])
-        output_filename = 'window_image{}_niftynet_generated.nii.gz'.format(
+        output_filename = '{}_window_image_niftynet_generated.nii.gz'.format(
             sampler.reader.get_subject_id(0))
         sum_filename = os.path.join(
             'testing_data', 'aggregated_identity',
-            'csv_sum{}_niftynet_generated.csv'.format(
+            '{}_csv_sum_niftynet_generated.csv'.format(
                 sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated_identity',
@@ -460,7 +460,7 @@ class IdentityAggregatorTest(NiftyNetTestCase):
                                 queue_length=50)
         aggregator = WindowAsImageAggregator(
             image_reader=reader,
-            
+
             output_path=os.path.join('testing_data', 'aggregated_identity'),
             )
         more_batch = True
@@ -481,13 +481,13 @@ class IdentityAggregatorTest(NiftyNetTestCase):
                      'csv_sum': min_val,
                      'csv_stats': stats_val},
                     out['image_location'])
-        output_filename = 'window_image{}_niftynet_generated.nii.gz'.format(
+        output_filename = '{}_window_image_niftynet_generated.nii.gz'.format(
             sampler.reader.get_subject_id(0))
         sum_filename = os.path.join('testing_data', 'aggregated_identity',
-                                    'csv_sum{}_niftynet_generated.csv'.format(
+                                    '{}_csv_sum_niftynet_generated.csv'.format(
                                         sampler.reader.get_subject_id(0)))
         stats_filename = os.path.join('testing_data', 'aggregated_identity',
-                                      'csv_stats{}_niftynet_generated.csv'.format(
+                                      '{}_csv_stats_niftynet_generated.csv'.format(
                                           sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated_identity',
@@ -514,7 +514,7 @@ class IdentityAggregatorTest(NiftyNetTestCase):
                                 queue_length=50)
         aggregator = WindowAsImageAggregator(
             image_reader=reader,
-            
+
             output_path=os.path.join('testing_data', 'aggregated_identity'),
             )
         more_batch = True
@@ -537,13 +537,13 @@ class IdentityAggregatorTest(NiftyNetTestCase):
                      'csv_sum': min_val,
                      'csv_stats2d': stats_val},
                     out['image_location'])
-        output_filename = 'window_image{}_niftynet_generated.nii.gz'.format(
+        output_filename = '{}_window_image_niftynet_generated.nii.gz'.format(
             sampler.reader.get_subject_id(0))
         sum_filename = os.path.join('testing_data', 'aggregated_identity',
-                                    'csv_sum{}_niftynet_generated.csv'.format(
+                                    '{}_csv_sum_niftynet_generated.csv'.format(
                                         sampler.reader.get_subject_id(0)))
         stats_filename = os.path.join('testing_data', 'aggregated_identity',
-                                      'csv_stats2d{}_niftynet_generated.csv'.format(
+                                      '{}_csv_stats2d_niftynet_generated.csv'.format(
                                           sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated_identity',
@@ -558,7 +558,7 @@ class IdentityAggregatorTest(NiftyNetTestCase):
         )
         stats_pd = pd.read_csv(stats_filename)
         self.assertAllClose(
-            stats_pd.shape, [2, 4]
+            stats_pd.shape, [1, 7]
         )
         sampler.close_all()
 
@@ -571,7 +571,7 @@ class IdentityAggregatorTest(NiftyNetTestCase):
                                 queue_length=50)
         aggregator = WindowAsImageAggregator(
             image_reader=reader,
-            
+
             output_path=os.path.join('testing_data', 'aggregated_identity'),
             )
         more_batch = True
@@ -586,7 +586,7 @@ class IdentityAggregatorTest(NiftyNetTestCase):
                     break
                 more_batch = aggregator.decode_batch(
                     {'window_image': out['image']}, out['image_location'])
-        output_filename = 'window_image{}_niftynet_generated.nii.gz'.format(
+        output_filename = '{}_window_image_niftynet_generated.nii.gz'.format(
             sampler.reader.get_subject_id(0))
         output_file = os.path.join('testing_data',
                                    'aggregated_identity',
