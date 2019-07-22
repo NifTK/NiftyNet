@@ -32,6 +32,7 @@ testjob:
     - master
     - dev
     - tags
+    - fixes-unit-tests
   script:
     # !!kill coverage in case of hanging processes
     - if pgrep coverage; then pkill -f coverage; fi
@@ -40,8 +41,6 @@ testjob:
     - which nvidia-smi
     - nvidia-smi
     - pwd
-    - python -c "import tensorflow as tf; print tf.__version__"
-    - python -c "import tensorflow as tf; from tensorflow.python.client import device_lib; print device_lib.list_local_devices()"
     - ls -la /dev | grep nvidia
 
     # removing existing testing data
@@ -75,6 +74,8 @@ testjob:
     - cd $niftynet_dir
 
     - pip install -r requirements-gpu.txt
+    - python -c "import tensorflow as tf; print(tf.__version__)"
+    - python -c "import tensorflow as tf; from tensorflow.python.client import device_lib; print(device_lib.list_local_devices())"
 
     - echo $(python tests/get_gpu_index.py)
     - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
@@ -232,6 +233,7 @@ quicktest:
   except:
     - master
     - dev
+    - fixes-unit-tests
     - tags
     - 147-revise-contribution-guidelines-to-include-github
     - 150-properly-format-the-bibtex-entry-to-the-ipmi-2017-paper-on-the-main-readme
@@ -312,6 +314,7 @@ pip-installer:
   only:
     - master
     - dev
+    - fixes-unit-tests
     - release-v0.5.0
     - tags
   script:
@@ -357,7 +360,7 @@ pip-installer:
     - set -e
     - cd $venv_dir
     # install TF
-    - pip install tensorflow-gpu==1.12.2
+    - pip install tensorflow-gpu>=1.13.2
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
@@ -461,7 +464,7 @@ pip-installer:
     - set -e
     - cd $venv_dir
     # install TF
-    - pip install tensorflow-gpu==1.12.2
+    - pip install tensorflow-gpu==1.13.2
     # install using built NiftyNet wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
