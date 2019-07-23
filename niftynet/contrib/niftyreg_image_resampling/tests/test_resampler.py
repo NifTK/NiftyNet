@@ -8,7 +8,7 @@ import copy
 import tensorflow as tf
 import tensorflow.test as tft
 
-from niftyreg_module_loader import get_niftyreg_module
+from niftynet.contrib.niftyreg_image_resampling.niftyreg_module_loader import get_niftyreg_module
 
 
 res = get_niftyreg_module()

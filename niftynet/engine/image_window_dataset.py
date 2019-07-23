@@ -320,11 +320,14 @@ class ImageWindowDataset(Layer):
         if self._num_threads < 2 or not self.shuffle:
             window_generator = self
         else:
+            # self._enqueuer = GeneratorEnqueuer(
+            #     self(),
+            #     use_multiprocessing=True,
+            #     wait_time=0.01,
+            #     seed=self._seed)
             self._enqueuer = GeneratorEnqueuer(
                 self(),
-                use_multiprocessing=True,
-                wait_time=0.01,
-                seed=self._seed)
+                use_multiprocessing=True)
             self._enqueuer.start(
                 workers=self._num_threads, max_queue_size=self.queue_length)
             window_generator = self._enqueuer.get

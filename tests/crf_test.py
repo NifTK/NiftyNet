@@ -8,6 +8,7 @@ from niftynet.layer.crf import CRFAsRNNLayer
 from niftynet.layer.crf import permutohedral_prepare, permutohedral_compute
 from tests.niftynet_testcase import NiftyNetTestCase
 
+
 class CRFTest(NiftyNetTestCase):
     def test_2d3d_shape(self):
         tf.reset_default_graph()
@@ -133,7 +134,10 @@ class CRFTest(NiftyNetTestCase):
                           indices,
                           "test",
                           True)
-        self.assertAllClose(sliced[1:], tf.zeros(shape=[1, 64, 1]))
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
+            sliced_np = sess.run(sliced)
+            self.assertAllClose(sliced_np[1:], np.zeros(shape=[1, 64, 1]))
 
 
 

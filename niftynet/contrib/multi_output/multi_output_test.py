@@ -15,7 +15,7 @@ from niftynet.engine.sampler_balanced_v2 import BalancedSampler
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.engine.windows_aggregator_identity import WindowAsImageAggregator
-from niftynet.engine.windows_aggregator_classifier import ClassifierSamplesAggregator
+# from niftynet.engine.windows_aggregator_classifier import ClassifierSamplesAggregator
 from niftynet.layer.loss_segmentation import LossFunction
 from niftynet.layer.post_processing import PostProcessingLayer
 from niftynet.engine.application_variables import CONSOLE, TF_SUMMARIES, NETWORK_OUTPUT
@@ -153,15 +153,15 @@ class MultiOutputApplication(BaseApplication):
     def initialise_identity_aggregator(self):
         self.output_decoder = WindowAsImageAggregator(
             image_reader=self.readers[0],
-            name='image',
             output_path=self.action_param.save_seg_dir,
             postfix=self.action_param.output_postfix)
 
     def initialise_classifier_aggregator(self):
-        self.output_decoder = ClassifierSamplesAggregator(
-            image_reader=self.readers[0],
-            output_path=self.action_param.save_seg_dir,
-            postfix=self.action_param.output_postfix)
+        pass
+        # self.output_decoder = ClassifierSamplesAggregator(
+        #     image_reader=self.readers[0],
+        #     output_path=self.action_param.save_seg_dir,
+        #     postfix=self.action_param.output_postfix)
 
     def initialise_sampler(self):
         if self.is_training:

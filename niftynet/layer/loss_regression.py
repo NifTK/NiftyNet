@@ -24,7 +24,6 @@ class LossFunction(Layer):
             loss_func_params if loss_func_params is not None else {}
         self._reshape = True
         if loss_type == 'Cosine':
-            print(loss_type)
             self._reshape = False
 
     def layer_op(self,
@@ -52,7 +51,6 @@ class LossFunction(Layer):
             batch_size = ground_truth.shape[0].value
             dir_size = 1
             if self._reshape:
-                print("resize is true")
                 ground_truth = tf.reshape(ground_truth, [batch_size, -1])
                 if weight_map is not None:
                     weight_map = tf.reshape(weight_map, [batch_size, -1])
