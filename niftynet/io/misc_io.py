@@ -372,7 +372,9 @@ def expand_to_5d(img_data):
 
 def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
     """
-    Save the img_data to nifti image
+    Save the img_data to nifti image, if the final dimensions of the 5D array are 1's,
+    save the lower dimensional image to disk by squeezing the trailing single dimensional
+    spaces away.
 
     :param img_data: 5d img to save
     :param filename: filename under which to save the img_data
@@ -382,6 +384,13 @@ def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
     """
     if img_data is None:
         return
+    # 5D images are not well supported by many image processing tools (or are assumed to be time series)
+    # Squeeze 5d processing space into smaller image spatial size (3d or 2d) for improved compatibility with
+    # external visualization/processing tools like Slicer3D, ITK, SimpleITK, etc ...
+    sqeezed_shape = img_data.shape
+    while( sqeezed_shape[-1] == 1 ):
+      sqeezed_shape = sqeezed_shape[0:-1]
+    img_data.shape = sqeezed_shape
     touch_folder(save_path)
     img_nii = nib.Nifti1Image(img_data, affine)
     # img_nii.set_data_dtype(np.dtype(np.float32))
