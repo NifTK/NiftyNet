@@ -8,6 +8,7 @@ import tensorflow as tf
 from niftynet.engine.application_driver import ApplicationDriver
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
+from tests.niftynet_testcase import NiftyNetTestCase
 
 TARGET_FILE = os.path.join('testing_data', 'test_splitting.csv')
 
@@ -94,7 +95,7 @@ def write_target():
     return
 
 
-class DriverPartitionerTestExistingFile(tf.test.TestCase):
+class DriverPartitionerTestExistingFile(NiftyNetTestCase):
     def test_training(self):
         write_target()
         user_param = generate_input_params(
@@ -176,7 +177,7 @@ class DriverPartitionerTestExistingFile(tf.test.TestCase):
         self.assertTrue(partitioner.has_validation)
 
 
-class DriverPartitionerTestNoFile(tf.test.TestCase):
+class DriverPartitionerTestNoFile(NiftyNetTestCase):
     def test_training(self):
         clear_target()
         user_param = generate_input_params(
@@ -278,7 +279,7 @@ class DriverPartitionerTestNoFile(tf.test.TestCase):
                         or partitioner._partition_ids is None)
 
 
-class DriverPartitionerTestNoData(tf.test.TestCase):
+class DriverPartitionerTestNoData(NiftyNetTestCase):
     def test_no_data_param_infer(self):
         clear_target()
         user_param = generate_input_params(

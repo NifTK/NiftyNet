@@ -3,9 +3,9 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.utilities.filename_matching import KeywordsMatching
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class FileNameMatchingTest(tf.test.TestCase):
+class FileNameMatchingTest(NiftyNetTestCase):
     def test_default(self):
         matcher = KeywordsMatching()
         with self.assertRaisesRegexp(ValueError, ""):

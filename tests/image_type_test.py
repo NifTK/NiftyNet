@@ -12,6 +12,7 @@ from niftynet.io.image_type import SpatialImage3D
 from niftynet.io.image_type import SpatialImage4D
 from niftynet.io.image_type import SpatialImage5D
 from niftynet.io.misc_io import set_logger
+from tests.niftynet_testcase import NiftyNetTestCase
 
 CASE_2D = 'testing_data/2d_3_000044.nii.gz'
 CASE_3D_a = 'testing_data/1040_o_T1_time_01.nii.gz'
@@ -19,7 +20,7 @@ CASE_3D_b = 'testing_data/1023_o_T1_time_01.nii.gz'
 CASE_5D = 'testing_data/pat2__niftynet_out.nii.gz'
 
 
-class ImageTypeTest(tf.test.TestCase):
+class ImageTypeTest(NiftyNetTestCase):
     def test_2d(self):
         image = ImageFactory.create_instance(
             file_path=CASE_2D,

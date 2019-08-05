@@ -14,6 +14,17 @@ class ScaleNet(BaseNet):
     implementation of ScaleNet:
         Fidon et al., "Scalable multimodal convolutional
         networks for brain tumour segmentation", MICCAI '17
+
+    ### Diagram
+
+    INPUT --> [BACKEND] ----> [MERGING] ----> [FRONTEND] ---> OUTPUT
+
+    [BACKEND] and [MERGING] are provided by the ScaleBlock below
+    [FRONTEND]: it can be any NiftyNet network (default: HighRes3dnet)
+
+    ### Constraints:
+    - Input image size should be divisible by 8
+    - more than one modality should be used
     """
 
     def __init__(self,
@@ -24,6 +35,16 @@ class ScaleNet(BaseNet):
                  b_regularizer=None,
                  acti_func='prelu',
                  name='ScaleNet'):
+        """
+
+        :param num_classes: int, number of channels of output
+        :param w_initializer: weight initialisation for network
+        :param w_regularizer: weight regularisation for network
+        :param b_initializer: bias initialisation for network
+        :param b_regularizer: bias regularisation for network
+        :param acti_func: activation function to use
+        :param name: layer name
+        """
 
         super(ScaleNet, self).__init__(
             num_classes=num_classes,
@@ -37,6 +58,14 @@ class ScaleNet(BaseNet):
         self.n_features = 16
 
     def layer_op(self, images, is_training=True, layer_id=-1, **unused_kwargs):
+        """
+
+        :param images: tensor, concatenation of multiple input modalities
+        :param is_training: boolean, True if network is in training mode
+        :param layer_id: not in use
+        :param unused_kwargs:
+        :return: predicted tensor
+        """
         n_modality = images.shape.as_list()[-1]
         rank = images.shape.ndims
         assert n_modality > 1
@@ -64,6 +93,14 @@ SUPPORTED_OP = set(['MAX', 'AVERAGE'])
 
 
 class ScaleBlock(TrainableLayer):
+    """
+    Implementation of the ScaleBlock described in
+    Fidon et al., "Scalable multimodal convolutional
+        networks for brain tumour segmentation", MICCAI '17
+
+    See Fig 2(a) for diagram details - SN BackEnd
+
+    """
     def __init__(self,
                  func,
                  n_layers=1,
@@ -71,6 +108,14 @@ class ScaleBlock(TrainableLayer):
                  w_regularizer=None,
                  acti_func='relu',
                  name='scaleblock'):
+        """
+        :param func: merging function (SUPPORTED_OP: MAX, AVERAGE)
+        :param n_layers: int, number of layers
+        :param w_initializer: weight initialisation for network
+        :param w_regularizer: weight regularisation for network
+        :param acti_func: activation function to use
+        :param name: layer name
+        """
         self.func = look_up_operations(func.upper(), SUPPORTED_OP)
         super(ScaleBlock, self).__init__(name=name)
         self.n_layers = n_layers
@@ -80,6 +125,12 @@ class ScaleBlock(TrainableLayer):
         self.regularizers = {'w': w_regularizer}
 
     def layer_op(self, input_tensor, is_training):
+        """
+
+        :param input_tensor: tensor, input to the network
+        :param is_training: boolean, True if network is in training mode
+        :return: merged tensor after backend layers
+        """
         n_modality = input_tensor.shape.as_list()[-1]
         n_chns = input_tensor.shape.as_list()[-2]
         rank = input_tensor.shape.ndims

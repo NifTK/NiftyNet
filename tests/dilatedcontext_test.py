@@ -2,9 +2,10 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.layer.dilatedcontext import DilatedTensor
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class BNTest(tf.test.TestCase):
+class BNTest(NiftyNetTestCase):
     def get_2d_input(self):
         input_shape = (2, 16, 16, 8)
         x = tf.ones(input_shape)
@@ -21,7 +22,7 @@ class BNTest(tf.test.TestCase):
             intermediate = dilated.tensor
         x = dilated.tensor
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             out = sess.run(x)
             out_dilated = sess.run(intermediate)
             self.assertAllClose((2, 16, 16, 8), out.shape)
@@ -33,7 +34,7 @@ class BNTest(tf.test.TestCase):
             intermediate = dilated.tensor
         x = dilated.tensor
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             out = sess.run(x)
             out_dilated = sess.run(intermediate)
             self.assertAllClose((2, 16, 16, 16, 8), out.shape)

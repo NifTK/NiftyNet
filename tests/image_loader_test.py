@@ -5,11 +5,12 @@ import os
 import numpy as np
 import tensorflow as tf
 import niftynet.io.image_loader as image_loader
+from tests.niftynet_testcase import NiftyNetTestCase
 
 CASE_NIBABEL_3D = 'testing_data/FLAIR_1023.nii.gz'
 CASE_LOGO_2D = 'niftynet-logo.png'
 
-class ImageLoaderTest(tf.test.TestCase):
+class ImageLoaderTest(NiftyNetTestCase):
     def test_nibabel_3d(self):
         data = image_loader.load_image_obj(CASE_NIBABEL_3D).get_data()
         self.assertAllClose(data.shape, (256, 168, 256))

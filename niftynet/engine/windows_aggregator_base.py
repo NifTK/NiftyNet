@@ -29,6 +29,11 @@ class ImageWindowsAggregator(object):
         self.reader = image_reader
         self.writer = image_writer
         self._image_id = None
+        self.postfix = ''
+        self.output_path = os.path.abspath(output_path)
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
+        self.inferred_cleared = False
 
     @property
     def input_image(self):
@@ -75,6 +80,8 @@ class ImageWindowsAggregator(object):
 
     @staticmethod
     def _is_stopping_signal(location_vector):
+        if location_vector is None:
+            return True
         return np.any(location_vector < 0)
 
     @staticmethod

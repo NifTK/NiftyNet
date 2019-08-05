@@ -12,7 +12,8 @@ from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
 from niftynet.layer.pad import PadLayer
 from niftynet.utilities.util_common import ParserNamespace
-from tests.reader_modular_test import SEG_THRESHOLD, generate_2d_images
+from tests.reader_modular_test import generate_2d_images, SEG_THRESHOLD
+from tests.niftynet_testcase import NiftyNetTestCase
 
 generate_2d_images()
 # test multiple modalities

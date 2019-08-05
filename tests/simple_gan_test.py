@@ -7,9 +7,9 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.network.simple_gan import SimpleGAN
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class SimpleGANTest(tf.test.TestCase):
+class SimpleGANTest(NiftyNetTestCase):
     def test_3d_reg_shape(self):
         input_shape = (2, 32, 32, 32, 1)
         noise_shape = (2, 512)
@@ -19,7 +19,7 @@ class SimpleGANTest(tf.test.TestCase):
         simple_gan_instance = SimpleGAN()
         out = simple_gan_instance(r, x, is_training=True)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose(input_shape, out[0].shape)
@@ -35,7 +35,7 @@ class SimpleGANTest(tf.test.TestCase):
         simple_gan_instance = SimpleGAN()
         out = simple_gan_instance(r, x, is_training=True)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose(input_shape, out[0].shape)

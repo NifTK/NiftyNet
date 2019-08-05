@@ -3,9 +3,9 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.network.interventional_dense_net import INetDense
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class INetDenseTest(tf.test.TestCase):
+class INetDenseTest(NiftyNetTestCase):
     def test_3d_shape(self):
         input_shape = (2, 32, 32, 32, 1)
         x = tf.ones(input_shape)
@@ -14,7 +14,7 @@ class INetDenseTest(tf.test.TestCase):
         out = densenet_instance(x, x, is_training=True)
         print(densenet_instance)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 32, 32, 32, 3), out.shape)
@@ -27,7 +27,7 @@ class INetDenseTest(tf.test.TestCase):
         out = densenet_instance(x, x, is_training=True)
         print(densenet_instance)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 16, 16, 16, 3), out.shape)
@@ -40,7 +40,7 @@ class INetDenseTest(tf.test.TestCase):
         out = densenet_instance(x, x, is_training=True)
         print(densenet_instance)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 48, 48, 48, 3), out.shape)
@@ -53,7 +53,7 @@ class INetDenseTest(tf.test.TestCase):
         out = densenet_instance(x, x, is_training=True)
         print(densenet_instance)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(out)
             self.assertAllClose((2, 16, 16, 2), out.shape)

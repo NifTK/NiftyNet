@@ -9,6 +9,7 @@ from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
+from tests.niftynet_testcase import NiftyNetTestCase
 
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
@@ -97,7 +98,7 @@ def get_dynamic_window_reader():
     return reader.initialise(DYNAMIC_MOD_DATA, DYNAMIC_MOD_TASK, dynamic_list)
 
 
-class ResizeSamplerTest(tf.test.TestCase):
+class ResizeSamplerTest(NiftyNetTestCase):
     def test_3d_init(self):
         sampler = ResizeSampler(
             reader=get_3d_reader(),
@@ -105,7 +106,7 @@ class ResizeSamplerTest(tf.test.TestCase):
             batch_size=1,
             shuffle=False,
             queue_length=1)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, [1, 7, 10, 2, 2])
@@ -118,7 +119,7 @@ class ResizeSamplerTest(tf.test.TestCase):
             batch_size=1,
             shuffle=False,
             queue_length=1)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, [1, 8, 2, 256, 2])
@@ -131,7 +132,7 @@ class ResizeSamplerTest(tf.test.TestCase):
             batch_size=1,
             shuffle=True,
             queue_length=1)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             self.assertAllClose(out['image'].shape, [1, 10, 9, 1])

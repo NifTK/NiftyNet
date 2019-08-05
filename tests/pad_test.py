@@ -5,9 +5,10 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.pad import PadLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class PaddingTest(tf.test.TestCase):
+class PaddingTest(NiftyNetTestCase):
     def get_3d_input(self):
         input_shape = (16, 16, 16, 8)
         x = np.ones(input_shape)
@@ -97,6 +98,46 @@ class PaddingTest(tf.test.TestCase):
                        'border': (18, 2, 1)}
         self.run_test(False, input_param, (49, 18, 12, 8))
         self.run_inverse_test(False, input_param, (13, 10, 8, 8))
+
+    def test_pad_to_simple(self):
+        rand_image = np.random.random([10, 10, 2, 1])
+        data_dict = {'image': rand_image}
+        tst = PadLayer(('image',), (0,), pad_to=(52, 52, 2))
+
+        padded = tst.layer_op(data_dict)
+        self.assertTrue(padded[0]['image'].shape == (52, 52, 2, 1))
+        depadded = tst.inverse_op(padded[0])
+        self.assertTrue(np.all(depadded[0]['image'] == rand_image))
+
+    def test_pad_to_smaller_window_than_input(self):
+        rand_image = np.random.random([10, 10, 2, 1])
+        data_dict = {'image': rand_image}
+        tst = PadLayer(('image',), (0,), pad_to=(5, 5, 10))
+        # test straightforward pad_to
+        padded = tst.layer_op(data_dict)
+        self.assertTrue(padded[0]['image'].shape == (10, 10, 10, 1))
+        depadded = tst.inverse_op(padded[0])
+        self.assertTrue(np.all(depadded[0]['image'] == rand_image))
+
+    def test_pad_to_odd_numbers(self):
+        rand_image = np.random.random([10, 10, 2, 1])
+        data_dict = {'image': rand_image}
+        tst = PadLayer(('image',), (0,), pad_to=(15, 17, 10))
+        # test straightforward pad_to
+        padded = tst.layer_op(data_dict)
+        self.assertTrue(padded[0]['image'].shape == (15, 17, 10, 1))
+        depadded = tst.inverse_op(padded[0])
+        self.assertTrue(np.all(depadded[0]['image'] == rand_image))
+
+    def test_pad_to_without_data_dict(self):
+        rand_image = np.random.random([10, 10, 2, 1])
+        data_dict = {'image': rand_image}
+        # test without dictionary
+        tst = PadLayer(('image',), (0,), pad_to=(5, 5, 10))
+        padded = tst.layer_op(data_dict['image'])[0]
+        self.assertTrue(padded.shape == (10, 10, 10, 1))
+        depadded = tst.inverse_op(padded)[0]
+        self.assertTrue(np.all(depadded == rand_image))
 
 
 if __name__ == "__main__":

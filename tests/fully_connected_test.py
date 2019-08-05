@@ -5,9 +5,9 @@ from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.layer.fully_connected import FCLayer
 from niftynet.layer.fully_connected import FullyConnectedLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class FCTest(tf.test.TestCase):
+class FCTest(NiftyNetTestCase):
     def get_3d_input(self):
         input_shape = (2, 10, 10, 5, 8)
         x_3d = tf.ones(input_shape)
@@ -30,7 +30,7 @@ class FCTest(tf.test.TestCase):
         fc_layer = FCLayer(**param_dict)
         output_data = fc_layer(input_data)
         print(fc_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)
@@ -51,7 +51,7 @@ class FCTest(tf.test.TestCase):
                                is_training=is_training,
                                keep_prob=dropout_prob)
         print(fc_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)
@@ -82,14 +82,14 @@ class FCTest(tf.test.TestCase):
     def test_3d_fclayer_bias_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': True,
-                       'with_bn': False}
+                       'feature_normalization': None}
         self._test_fc_layer_output_shape(rank=3,
                                          param_dict=input_param,
                                          output_shape=(2, 10))
 
     def test_fclayer_3d_bias_reg_shape(self):
         input_param = {'n_output_chns': 10,
-                       'with_bn': False,
+                       'feature_normalization': None,
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_fc_layer_output_shape(rank=3,
@@ -99,7 +99,7 @@ class FCTest(tf.test.TestCase):
     def test_fclayer_3d_bn_reg_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_fc_layer_output_shape(rank=3,
@@ -110,7 +110,7 @@ class FCTest(tf.test.TestCase):
     def test_fclayer_3d_bn_reg_prelu_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
@@ -122,7 +122,7 @@ class FCTest(tf.test.TestCase):
     def test_fclayer_3d_relu_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'relu',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
@@ -134,7 +134,7 @@ class FCTest(tf.test.TestCase):
     def test_fclayer_3d_bn_reg_dropout_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu'}
         self._test_fc_layer_output_shape(rank=3,
                                          param_dict=input_param,
@@ -145,7 +145,7 @@ class FCTest(tf.test.TestCase):
     def test_fclayer_3d_bn_reg_dropout_valid_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'acti_func': 'prelu', }
         self._test_fc_layer_output_shape(rank=3,
@@ -188,7 +188,7 @@ class FCTest(tf.test.TestCase):
     def test_2d_fclayer_bias_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': True,
-                       'with_bn': False}
+                       'feature_normalization': None}
         self._test_fc_layer_output_shape(rank=2,
                                          param_dict=input_param,
                                          output_shape=(2, 10))
@@ -196,7 +196,7 @@ class FCTest(tf.test.TestCase):
     def test_fclayer_2d_bias_reg_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': True,
-                       'with_bn': False,
+                       'feature_normalization': None,
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_fc_layer_output_shape(rank=2,
@@ -206,7 +206,7 @@ class FCTest(tf.test.TestCase):
     def test_fclayer_2d_bn_reg_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_fc_layer_output_shape(rank=2,
@@ -217,7 +217,7 @@ class FCTest(tf.test.TestCase):
     def test_fclayer_2d_bn_reg_prelu_2_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu'}
         self._test_fc_layer_output_shape(rank=2,
                                          param_dict=input_param,
@@ -227,7 +227,7 @@ class FCTest(tf.test.TestCase):
     def test_fclayer_2d_relu_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'relu'}
         self._test_fc_layer_output_shape(rank=2,
                                          param_dict=input_param,
@@ -237,7 +237,7 @@ class FCTest(tf.test.TestCase):
     def test_fclayer_2d_bn_reg_prelu_shape(self):
         input_param = {'n_output_chns': 10,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu',
                        'w_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_fc_layer_output_shape(rank=2,

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Utilities functions for file and path management"""
-
 from __future__ import absolute_import, print_function, unicode_literals
 
 import errno
@@ -13,6 +12,7 @@ import warnings
 
 import nibabel as nib
 import numpy as np
+import pandas as pd
 import scipy.ndimage
 import tensorflow as tf
 # pylint: disable=no-name-in-module
@@ -270,6 +270,31 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     return np.concatenate(data_resampled, axis=-2)
 
 
+def save_csv_array(filefolder, filename, array_to_save):
+    """
+    Save a np array as a csv
+    :param filefolder: Path to the folder where to save
+    :param filename: Name of the file to save
+    :param array_to_save: Array to save
+    :return:
+    """
+    if array_to_save is None:
+        return
+    if not isinstance(array_to_save, pd.DataFrame):
+        array_to_save = pd.DataFrame(array_to_save)
+    touch_folder(filefolder)
+    output_name = os.path.join(filefolder, filename)
+    try:
+        if os.path.isfile(output_name):
+            tf.logging.warning('File %s exists, overwriting the file.',
+                               output_name)
+        array_to_save.to_csv(output_name)
+    except OSError:
+        tf.logging.fatal("writing failed {}".format(output_name))
+        raise
+    tf.logging.info('Saved {}'.format(output_name))
+
+
 def save_data_array(filefolder,
                     filename,
                     array_to_save,
@@ -381,7 +406,7 @@ def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
     except OSError:
         tf.logging.fatal("writing failed {}".format(output_name))
         raise
-    print('Saved {}'.format(output_name))
+    tf.logging.info('Saved {}'.format(output_name))
 
 
 def split_filename(file_name):

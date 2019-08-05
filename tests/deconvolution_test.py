@@ -5,9 +5,10 @@ from tensorflow.contrib.layers.python.layers import regularizers
 
 from niftynet.layer.deconvolution import DeconvLayer
 from niftynet.layer.deconvolution import DeconvolutionalLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class DeconvTest(tf.test.TestCase):
+class DeconvTest(NiftyNetTestCase):
     def get_2d_input(self):
         input_shape = (2, 16, 16, 8)
         x_2d = tf.ones(input_shape)
@@ -30,7 +31,7 @@ class DeconvTest(tf.test.TestCase):
         deconv_layer = DeconvLayer(**param_dict)
         output_data = deconv_layer(input_data)
         print(deconv_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)
@@ -51,7 +52,7 @@ class DeconvTest(tf.test.TestCase):
                                    is_training=is_training,
                                    keep_prob=dropout_prob)
         print(deconv_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             output_value = sess.run(output_data)
             self.assertAllClose(output_shape, output_value.shape)
@@ -98,7 +99,7 @@ class DeconvTest(tf.test.TestCase):
                        'kernel_size': 3,
                        'stride': 2,
                        'with_bias': True,
-                       'with_bn': False}
+                       'feature_normalization': None}
         self._test_deconv_layer_output_shape(rank=3,
                                              param_dict=input_param,
                                              output_shape=(2, 32, 32, 32, 10),
@@ -113,7 +114,7 @@ class DeconvTest(tf.test.TestCase):
                        'kernel_size': 3,
                        'stride': 1,
                        'with_bias': True,
-                       'with_bn': False,
+                       'feature_normalization': None,
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_deconv_layer_output_shape(rank=3,
@@ -128,7 +129,7 @@ class DeconvTest(tf.test.TestCase):
                        'kernel_size': 3,
                        'stride': 1,
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'w_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_deconv_layer_output_shape(rank=3,
                                              param_dict=input_param,
@@ -144,7 +145,7 @@ class DeconvTest(tf.test.TestCase):
                        'kernel_size': [3, 5, 2],
                        'stride': [1, 1, 2],
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'acti_func': 'prelu'}
         self._test_deconv_layer_output_shape(rank=3,
@@ -161,7 +162,7 @@ class DeconvTest(tf.test.TestCase):
                        'kernel_size': [3, 5, 2],
                        'stride': [1, 1, 2],
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'relu'}
         self._test_deconv_layer_output_shape(rank=3,
                                              param_dict=input_param,
@@ -177,7 +178,7 @@ class DeconvTest(tf.test.TestCase):
                        'kernel_size': [3, 5, 2],
                        'stride': [1, 2, 2],
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu',
                        'w_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_deconv_layer_output_shape(rank=3,
@@ -194,7 +195,7 @@ class DeconvTest(tf.test.TestCase):
                        'kernel_size': [3, 5, 2],
                        'stride': [1, 2, 1],
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu',
                        'w_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_deconv_layer_output_shape(rank=3,
@@ -254,7 +255,7 @@ class DeconvTest(tf.test.TestCase):
                        'kernel_size': [3, 1],
                        'stride': [2, 1],
                        'with_bias': True,
-                       'with_bn': False}
+                       'feature_normalization': None}
         self._test_deconv_layer_output_shape(rank=2,
                                              param_dict=input_param,
                                              output_shape=(2, 32, 16, 10),
@@ -269,7 +270,7 @@ class DeconvTest(tf.test.TestCase):
                        'kernel_size': [3, 1],
                        'stride': [2, 3],
                        'with_bias': True,
-                       'with_bn': False,
+                       'feature_normalization': None,
                        'w_regularizer': regularizers.l2_regularizer(0.5),
                        'b_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_deconv_layer_output_shape(rank=2,
@@ -286,7 +287,7 @@ class DeconvTest(tf.test.TestCase):
                        'kernel_size': [3, 1],
                        'stride': [1, 3],
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'w_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_deconv_layer_output_shape(rank=2,
                                              param_dict=input_param,
@@ -302,7 +303,7 @@ class DeconvTest(tf.test.TestCase):
                        'kernel_size': [4, 1],
                        'stride': [1, 3],
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu',
                        'w_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_deconv_layer_output_shape(rank=2,
@@ -319,7 +320,7 @@ class DeconvTest(tf.test.TestCase):
                        'kernel_size': [4, 1],
                        'stride': [1, 3],
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'relu',
                        'w_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_deconv_layer_output_shape(rank=2,
@@ -336,7 +337,7 @@ class DeconvTest(tf.test.TestCase):
                        'kernel_size': [4, 1],
                        'stride': [1, 3],
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu',
                        'w_regularizer': regularizers.l2_regularizer(0.5)}
         self._test_deconv_layer_output_shape(rank=2,
@@ -355,7 +356,7 @@ class DeconvTest(tf.test.TestCase):
                        'kernel_size': [4, 3],
                        'stride': [1, 2],
                        'with_bias': False,
-                       'with_bn': True,
+                       'feature_normalization': 'batch',
                        'acti_func': 'prelu',
                        'padding': 'VALID',
                        'w_regularizer': regularizers.l2_regularizer(0.5)}
@@ -375,7 +376,7 @@ class DeconvTest(tf.test.TestCase):
                        'kernel_size': [4, 3],
                        'stride': [1, 2],
                        'with_bias': False,
-                       'with_bn': False,
+                       'feature_normalization': 'group',
                        'group_size': 5,
                        'acti_func': 'prelu',
                        'padding': 'VALID',

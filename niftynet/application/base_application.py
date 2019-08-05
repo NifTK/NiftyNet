@@ -73,6 +73,12 @@ class BaseApplication(with_metaclass(SingletonApplication, object)):
     outputs_collector = None
     gradients_collector = None
 
+    # performance
+    total_loss = None
+    patience = None
+    performance_history = []
+    mode = None
+
     def __init__(self):
         self.action_param = None
         self.net_param = None

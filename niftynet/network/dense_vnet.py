@@ -20,6 +20,7 @@ from collections import namedtuple
 
 class DenseVNet(BaseNet):
     """
+    ### Description
     implementation of Dense-V-Net:
        Gibson et al., "Automatic multi-organ segmentation on abdominal CT with
        dense V-networks" 2018
@@ -46,6 +47,9 @@ class DenseVNet(BaseNet):
     [DFS + Conv + Downsampling] in a single module, and outputs 2 elements:
         - Skip layer:          [ DFS + Conv]
         - Downsampled output:  [ DFS + Down]
+
+    ### Constraints
+    - Input size has to be divisible by 2*dilation_rates
 
     """
 
@@ -80,7 +84,6 @@ class DenseVNet(BaseNet):
         use_dense_connections=True,
         use_coords=False)
 
-
     def __init__(self,
                  num_classes,
                  hyperparams={},
@@ -90,6 +93,17 @@ class DenseVNet(BaseNet):
                  b_regularizer=None,
                  acti_func='relu',
                  name='DenseVNet'):
+        """
+
+        :param num_classes: int, number of channels of output
+        :param hyperparams: dictionary, network hyperparameters
+        :param w_initializer: weight initialisation for network
+        :param w_regularizer: weight regularisation for network
+        :param b_initializer: bias initialisation for network
+        :param b_regularizer: bias regularisation for network
+        :param acti_func: activation function to use
+        :param name: layer name
+        """
 
         super(DenseVNet, self).__init__(
             num_classes=num_classes,
@@ -106,7 +120,7 @@ class DenseVNet(BaseNet):
 
         # Check for dilation rates
         if any([d != 1 for ds in self.hyperparams['dilation_rates']
-                   for d in ds]):
+                for d in ds]):
             raise NotImplementedError(
                 'Dilated convolutions are not yet implemented')
         # Check available modes
@@ -117,8 +131,8 @@ class DenseVNet(BaseNet):
             raise NotImplementedError(
                 'Image coordinate augmentation is not yet implemented')
 
-
     def create_network(self):
+
         hyperparams = self.hyperparams
 
         # Create initial convolutional layer
@@ -126,10 +140,10 @@ class DenseVNet(BaseNet):
             hyperparams['n_initial_conv_channels'],
             kernel_size=5,
             stride=2)
-            # name='initial_conv')
+        # name='initial_conv')
 
         # Create dense vblocks
-        num_blocks = len(hyperparams["n_dense_channels"]) # Num dense blocks
+        num_blocks = len(hyperparams["n_dense_channels"])  # Num dense blocks
         dense_ch = hyperparams["n_dense_channels"]
         seg_ch = hyperparams["n_seg_channels"]
         down_ch = hyperparams["n_down_channels"]
@@ -152,18 +166,17 @@ class DenseVNet(BaseNet):
         final_conv = ConvolutionalLayer(
             self.num_classes,
             kernel_size=hyperparams['seg_kernel_size'],
-            with_bn=False,
+            feature_normalization=None,
             with_bias=True)
-            # name='final_conv')
+        #  name='final_conv')
 
         # Create a structure with all the fields of a DenseVNet
         dense_vnet = namedtuple('DenseVNet',
-            ['initial_conv', 'dense_vblocks', 'final_conv'])
+                                ['initial_conv', 'dense_vblocks', 'final_conv'])
 
         return dense_vnet(initial_conv=initial_conv,
                           dense_vblocks=dense_vblocks,
                           final_conv=final_conv)
-
 
     def layer_op(self,
                  input_tensor,
@@ -171,6 +184,15 @@ class DenseVNet(BaseNet):
                  layer_id=-1,
                  keep_prob=0.5,
                  **unused_kwargs):
+        """
+
+        :param input_tensor: tensor to input to the network, size has to be divisible by 2*dilation_rates
+        :param is_training: boolean, True if network is in training mode
+        :param layer_id: not in use
+        :param keep_prob: double, percentage of nodes to keep for drop-out
+        :param unused_kwargs:
+        :return: network prediction
+        """
         hyperparams = self.hyperparams
 
         # Validate that dilation rates are compatible with input dimensions
@@ -226,7 +248,6 @@ class DenseVNet(BaseNet):
 
         # Perform final convolution to segment structures
         output = dense_vnet.final_conv(all_features, is_training=is_training)
-
 
         ######################
         ### Postprocessing ###
@@ -288,12 +309,23 @@ class SpatialPriorBlock(TrainableLayer):
                  output_shape,
                  name='spatial_prior_block'):
 
+        """
+
+        :param prior_shape: shape of spatial prior
+        :param output_shape: target shape for resampling
+        :param name: layer name
+        """
+
         super(SpatialPriorBlock, self).__init__(name=name)
 
         self.prior_shape = prior_shape
         self.output_shape = output_shape
 
     def layer_op(self):
+        """
+
+        :return: spatial prior resampled to the target shape
+        """
         # The internal representation is probabilities so
         # that resampling makes sense
         prior = tf.get_variable('prior',
@@ -329,6 +361,15 @@ class DenseFeatureStackBlock(TrainableLayer):
                  use_bdo,
                  name='dense_feature_stack_block',
                  **kwargs):
+        """
+
+        :param n_dense_channels: int, number of dense channels in each block
+        :param kernel_size: kernel size for convolutional layers
+        :param dilation_rates: dilation rate of each layer in each vblock
+        :param use_bdo: boolean, set to True to use batch-wise drop-out
+        :param name: tensorflow scope name
+        :param kwargs:
+        """
 
         super(DenseFeatureStackBlock, self).__init__(name=name)
 
@@ -339,6 +380,10 @@ class DenseFeatureStackBlock(TrainableLayer):
         self.kwargs = kwargs
 
     def create_block(self):
+        """
+
+        :return:  dense feature stack block
+        """
         dfs_block = []
         for _ in self.dilation_rates:
             if self.use_bdo:
@@ -357,6 +402,13 @@ class DenseFeatureStackBlock(TrainableLayer):
         return dfs_block
 
     def layer_op(self, input_tensor, is_training=True, keep_prob=None):
+        """
+
+        :param input_tensor: tf tensor, input to the DenseFeatureStackBlock
+        :param is_training: boolean, True if network is in training mode
+        :param keep_prob: double, percentage of nodes to keep for drop-out
+        :return: feature stack
+        """
         # Create dense feature stack block
         dfs_block = self.create_block()
         # Initialize feature stack for block
@@ -438,6 +490,17 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
                  use_bdo,
                  name='dense_feature_stack_block',
                  **kwargs):
+        """
+
+        :param n_dense_channels: int, number of dense channels
+        :param kernel_size: kernel size for convolutional layers
+        :param dilation_rates: dilation rate of each layer in each vblock
+        :param n_seg_channels: int, number of segmentation channels
+        :param n_down_channels: int, number of output channels when downsampling
+        :param use_bdo: boolean, set to True to use batch-wise drop-out
+        :param name: layer name
+        :param kwargs:
+        """
 
         super(DenseFeatureStackBlockWithSkipAndDownsample, self).__init__(
             name=name)
@@ -451,6 +514,10 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
         self.kwargs = kwargs
 
     def create_block(self):
+        """
+
+        :return: Dense Feature Stack with Skip Layer and Downsampling block
+        """
         dfs_block = DenseFeatureStackBlock(self.n_dense_channels,
                                            self.kernel_size,
                                            self.dilation_rates,
@@ -467,17 +534,24 @@ class DenseFeatureStackBlockWithSkipAndDownsample(TrainableLayer):
             down_conv = ConvolutionalLayer(self.n_down_channels,
                                            kernel_size=self.kernel_size,
                                            stride=2,
-                                           # name='down_conv',
+                                           #  name='down_conv',
                                            **self.kwargs)
 
         dfssd_block = namedtuple('DenseSDBlock',
-            ['dfs_block', 'skip_conv', 'down_conv'])
+                                 ['dfs_block', 'skip_conv', 'down_conv'])
 
         return dfssd_block(dfs_block=dfs_block,
                            skip_conv=skip_conv,
                            down_conv=down_conv)
 
     def layer_op(self, input_tensor, is_training=True, keep_prob=None):
+        """
+
+        :param input_tensor: tf tensor, input to the DenseFeatureStackBlock
+        :param is_training: boolean, True if network is in training mode
+        :param keep_prob: double, percentage of nodes to keep for drop-out
+        :return: feature stack after skip convolution, feature stack after downsampling
+        """
         # Create dense feature stack block with skip and downsample
         dfssd_block = self.create_block()
 

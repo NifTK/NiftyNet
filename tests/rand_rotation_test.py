@@ -4,9 +4,10 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.rand_rotation import RandomRotationLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class RandRotationTest(tf.test.TestCase):
+class RandRotationTest(NiftyNetTestCase):
     def get_4d_input(self):
         input_4d = {'testdata': np.ones((16, 16, 16, 8))}
         interp_order = {'testdata': (3,) * 8}

@@ -5,9 +5,11 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.crf import CRFAsRNNLayer
+from niftynet.layer.crf import permutohedral_prepare, permutohedral_compute
+from tests.niftynet_testcase import NiftyNetTestCase
 
 
-class CRFTest(tf.test.TestCase):
+class CRFTest(NiftyNetTestCase):
     def test_2d3d_shape(self):
         tf.reset_default_graph()
         I = tf.random_normal(shape=[2, 4, 5, 6, 3])
@@ -17,7 +19,7 @@ class CRFTest(tf.test.TestCase):
         out1 = crf_layer(I, U)
         out2 = crf_layer2(I[:, :, :, 0, :], out1[:, :, :, 0, :])
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
 
             out1, out2 = sess.run([out1, out2])
@@ -42,7 +44,7 @@ class CRFTest(tf.test.TestCase):
         loss = tf.reduce_mean(tf.abs(smoothed_logits - gt))
         opt = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             params = sess.run(tf.trainable_variables())
             for param in params:
@@ -73,7 +75,7 @@ class CRFTest(tf.test.TestCase):
         loss = tf.reduce_mean(tf.abs(smoothed_logits - gt))
         opt = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
 
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             params = sess.run(tf.trainable_variables())
             for param in params:
@@ -118,6 +120,25 @@ class CRFTest(tf.test.TestCase):
             sess.run(opt)
             params_1 = sess.run(tf.trainable_variables())
             self.assertGreater(np.sum(np.abs(params_1[0] - params[0])), 0.0)
+
+    def test_batch_mix(self):
+        feat = tf.random.uniform(shape=[2, 64, 5])
+        desc = tf.ones(shape=[1, 64, 1])
+        desc_ = tf.zeros(shape=[1, 64, 1])
+        desc = tf.concat([desc, desc_], axis=0)
+        barycentric, blur_neighbours1, blur_neighbours2, indices = permutohedral_prepare(feat)
+        sliced = permutohedral_compute(desc,
+                          barycentric,
+                          blur_neighbours1,
+                          blur_neighbours2,
+                          indices,
+                          "test",
+                          True)
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
+            sliced_np = sess.run(sliced)
+            self.assertAllClose(sliced_np[1:], np.zeros(shape=[1, 64, 1]))
+
 
 
 if __name__ == "__main__":

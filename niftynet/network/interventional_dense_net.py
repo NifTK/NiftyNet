@@ -17,15 +17,8 @@ from niftynet.network.base_net import BaseNet
 
 
 class INetDense(BaseNet):
-    def __init__(self,
-                 decay=0.0,
-                 smoothing=0,
-                 disp_w_initializer=None,
-                 disp_b_initializer=None,
-                 acti_func='relu',
-                 multi_scale_fusion=True,
-                 name='inet-dense'):
-        """
+    """
+     ### Description
         The network estimates dense displacement fields from a pair
         of moving and fixed images:
 
@@ -40,14 +33,48 @@ class INetDense(BaseNet):
         see also:
             https://github.com/YipengHu/label-reg
 
-        :param decay:
-        :param smoothing:
+     ### Building blocks
+     [DOWN CONV]         - Convolutional layer + Residual Unit + Downsampling (Max pooling)
+     [CONV]              - Convolutional layer
+     [UP CONV]           - Upsampling + Sum + Residual Unit
+     [FUSION]            - Multi-scale displacement fields fusion
+     [DISPtoDEF]         - (Smoothing if required) Conversion to deformation field (adding base grid)
+
+
+     ### Diagram
+     INPUT PAIR -->  [DOWN CONV]              [UP CONV] --> [CONV] --[FUSION] --> [DISPtoDEF] --> DENSE FIELD
+                         |                        |                     |
+                     [DOWN CONV]              [UP CONV] --> [CONV] -----|
+                         |                        |                     |
+                     [DOWN CONV]              [UP CONV] --> [CONV] -----|
+                         |                        |                     |
+                     [DOWN CONV]              [UP CONV] --> [CONV] -----|
+                          |                       |                     |
+                          -------- [CONV]------------------ [CONV]-------
+
+
+     ### Constraints
+        - input spatial rank should be either 2 or 3 (2D or 3D images only)
+        - fixed image size should be divisible by 16
+    """
+    def __init__(self,
+                 decay=0.0,
+                 smoothing=0,
+                 disp_w_initializer=None,
+                 disp_b_initializer=None,
+                 acti_func='relu',
+                 multi_scale_fusion=True,
+                 name='inet-dense'):
+        """
+
+        :param decay: float, regularisation decay
+        :param smoothing: float, smoothing factor for dense displacement field
         :param disp_w_initializer: initialisation of the displacement fields
-        :param disp_b_initializer: initialisation of the dis
-        :param acti_func:
+        :param disp_b_initializer: initialisation of the displacement fields
+        :param acti_func: activation function to use
         :param multi_scale_fusion: True/False indicating whether to use
             multiscale feature fusion.
-        :param name:
+        :param name: layer name
         """
         BaseNet.__init__(self, name=name)
 
@@ -96,10 +123,10 @@ class INetDense(BaseNet):
                  **unused_kwargs):
         """
 
-        :param fixed_image:
-        :param moving_image:
-        :param base_grid:
-        :param is_training:
+        :param fixed_image: tensor, fixed image for registration (defines reference space)
+        :param moving_image: tensor, moving image to be registered to fixed
+        :param base_grid: initial identity or affine displacement field
+        :param is_training: boolean, True if network is in training mode
         :return: estimated dense displacement fields
         """
 
@@ -143,7 +170,7 @@ class INetDense(BaseNet):
             field = Conv(n_output_chns=spatial_rank,
                          kernel_size=self.k_conv,
                          with_bias=True,
-                         with_bn=False,
+                         feature_normalization=None,
                          acti_func=None,
                          **self.disp_param)(scale_out)
             resized_field = Resize(new_size=spatial_shape)(field)
@@ -178,6 +205,12 @@ class INetDense(BaseNet):
 
 
 def _get_smoothing_kernel(sigma, spatial_rank):
+    """
+
+    :param sigma: float, standard deviation for gaussian smoothing kernel
+    :param spatial_rank: int, rank of input
+    :return: smoothing kernel
+    """
     # sigma defined in voxel not in freeform deformation grid
     if sigma <= 0:
         raise NotImplementedError
@@ -195,6 +228,12 @@ def _get_smoothing_kernel(sigma, spatial_rank):
 
 def _smoothing_func(sigma):
     def smoothing(dense_field, spatial_rank):
+        """
+
+        :param dense_field: tensor, dense field to be smoothed
+        :param spatial_rank: int, rank of input images
+        :return: smoothed dense field
+        """
         kernel = _get_smoothing_kernel(sigma, spatial_rank)
         kernel = tf.constant(kernel, dtype=dense_field.dtype)
         kernel = tf.expand_dims(kernel, axis=-1)
@@ -208,6 +247,11 @@ def _smoothing_func(sigma):
 
 
 def _computing_bending_energy(displacement):
+    """
+
+    :param displacement: tensor, displacement field
+    :return: bending energy
+    """
     spatial_rank = infer_spatial_rank(displacement)
     if spatial_rank == 2:
         return _computing_bending_energy_2d(displacement)
@@ -218,6 +262,11 @@ def _computing_bending_energy(displacement):
 
 
 def _computing_bending_energy_2d(displacement):
+    """
+
+    :param displacement: 2D tensor, displacement field
+    :return: bending energy
+    """
     dTdx = ImgGrad(spatial_axis=0)(displacement)
     dTdy = ImgGrad(spatial_axis=1)(displacement)
 
@@ -230,6 +279,11 @@ def _computing_bending_energy_2d(displacement):
 
 
 def _computing_bending_energy_3d(displacement):
+    """
+
+    :param displacement: 3D tensor, displacement field
+    :return: bending energy
+    """
     dTdx = ImgGrad(spatial_axis=0)(displacement)
     dTdy = ImgGrad(spatial_axis=1)(displacement)
     dTdz = ImgGrad(spatial_axis=2)(displacement)
@@ -249,6 +303,12 @@ def _computing_bending_energy_3d(displacement):
 
 
 def _computing_gradient_norm(displacement, flag_L1=False):
+    """
+
+    :param displacement: tensor, displacement field
+    :param flag_L1: boolean, True if L1 norm shoudl be used
+    :return: L2 (or L1) norm of gradients
+    """
     norms = []
     for spatial_ind in range(infer_spatial_rank(displacement)):
         dTdt = ImgGrad(spatial_axis=spatial_ind)(displacement)

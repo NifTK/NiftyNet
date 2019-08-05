@@ -5,9 +5,9 @@ import numpy as np
 import tensorflow as tf
 
 from niftynet.layer.spatial_gradient import SpatialGradientLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class SpatialGradientTest(tf.test.TestCase):
+class SpatialGradientTest(NiftyNetTestCase):
 
     def get_3d_input(self):
         input_shape = (2, 16, 16, 16, 8)
@@ -32,7 +32,7 @@ class SpatialGradientTest(tf.test.TestCase):
         gradient_layer = SpatialGradientLayer(**param_dict)
         output_data = gradient_layer(input_data)
         print(gradient_layer)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             out = sess.run(output_data)
             if expected_value is not None:

@@ -3,9 +3,9 @@ from __future__ import absolute_import, print_function
 import tensorflow as tf
 
 from niftynet.layer.upsample import UpSampleLayer
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class UpSampleTest(tf.test.TestCase):
+class UpSampleTest(NiftyNetTestCase):
     def get_3d_input(self):
         input_shape = (4, 16, 16, 16, 8)
         x = tf.ones(input_shape)
@@ -24,7 +24,7 @@ class UpSampleTest(tf.test.TestCase):
 
         upsample_layer = UpSampleLayer(**param_dict)
         output_data = upsample_layer(input_data)
-        with self.test_session() as sess:
+        with self.cached_session() as sess:
             sess.run(tf.global_variables_initializer())
             output = sess.run(output_data)
             self.assertAllClose(output_shape, output.shape)

@@ -2,9 +2,9 @@ from __future__ import absolute_import, print_function
 
 import tensorflow as tf
 import niftynet.engine.application_factory as Factory
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class FactoryTest(tf.test.TestCase):
+class FactoryTest(NiftyNetTestCase):
     def test_import(self):
         var_names = [
             item for item in list(dir(Factory)) if item.startswith("SUPPORTED")]

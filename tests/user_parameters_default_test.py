@@ -6,9 +6,9 @@ import argparse
 import tensorflow as tf
 
 from niftynet.utilities.user_parameters_default import *
+from tests.niftynet_testcase import NiftyNetTestCase
 
-
-class TestUserParameters(tf.test.TestCase):
+class TestUserParameters(NiftyNetTestCase):
     def test_list_all(self):
         test_parser = argparse.ArgumentParser(conflict_handler='resolve')
         test_parser = add_application_args(test_parser)

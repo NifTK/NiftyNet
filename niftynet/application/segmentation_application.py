@@ -137,17 +137,18 @@ class SegmentationApplication(BaseApplication):
                 (self.is_training or not task_param.output_prob):
             normalisation_layers.extend(label_normalisers)
 
-        volume_padding_layer = []
-        if self.net_param.volume_padding_size:
-            volume_padding_layer.append(PadLayer(
-                image_name=SUPPORTED_INPUT,
-                border=self.net_param.volume_padding_size,
-                mode=self.net_param.volume_padding_mode))
-
+        volume_padding_layer = [PadLayer(
+            image_name=SUPPORTED_INPUT,
+            border=self.net_param.volume_padding_size,
+            mode=self.net_param.volume_padding_mode,
+            pad_to=self.net_param.volume_padding_to_size)
+        ]
         # initialise training data augmentation layers
         augmentation_layers = []
         if self.is_training:
             train_param = self.action_param
+            self.patience = train_param.patience
+            self.mode = self.action_param.early_stopping_mode
             if train_param.random_flipping_axes != -1:
                 augmentation_layers.append(RandomFlipLayer(
                     flip_axes=train_param.random_flipping_axes))
@@ -186,6 +187,15 @@ class SegmentationApplication(BaseApplication):
         for reader in self.readers[1:]:
             reader.add_preprocessing_layers(
                 volume_padding_layer + normalisation_layers)
+
+        # Checking num_classes is set correctly
+        if self.segmentation_param.num_classes <= 1:
+            raise ValueError("Number of classes must be at least 2 for segmentation")
+        for preprocessor in self.readers[0].preprocessors:
+            if preprocessor.name == 'label_norm':
+                if len(preprocessor.label_map[preprocessor.key[0]]) != self.segmentation_param.num_classes:
+                    raise ValueError("Number of unique labels must be equal to "
+                                     "number of classes (check histogram_ref file)")
 
     def initialise_uniform_sampler(self):
         self.sampler = [[UniformSampler(
@@ -346,9 +356,19 @@ class SegmentationApplication(BaseApplication):
             grads = self.optimiser.compute_gradients(
                 loss, var_list=to_optimise, colocate_gradients_with_ops=True)
 
+            self.total_loss = loss
+
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
+
             # collecting output variables
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
+                average_over_devices=True, collection=CONSOLE)
+            outputs_collector.add_to_collection(
+                var=self.total_loss, name='total_loss',
+                average_over_devices=True, summary_type='scalar',
+                collection=TF_SUMMARIES)
             outputs_collector.add_to_collection(
                 var=data_loss, name='loss',
                 average_over_devices=False, collection=CONSOLE)
@@ -404,7 +424,7 @@ class SegmentationApplication(BaseApplication):
     def interpret_output(self, batch_output):
         if self.is_inference:
             return self.output_decoder.decode_batch(
-                batch_output['window'], batch_output['location'])
+                {'window_seg':batch_output['window']}, batch_output['location'])
         return True
 
     def initialise_evaluator(self, eval_param):
