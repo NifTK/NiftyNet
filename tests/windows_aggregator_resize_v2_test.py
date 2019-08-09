@@ -398,7 +398,7 @@ class ResizeSamplesAggregatorTest(NiftyNetTestCase):
             sampler.reader.get_subject_id(0))
         output_file = os.path.join('testing_data', 'aggregated',
                                    output_filename)
-        self.assertAllClose(nib.load(output_file).shape, [128, 128, 1, 1, 1])
+        self.assertAllClose(nib.load(output_file).shape, [128, 128])
         sampler.close_all()
 
     def test_init_2d_mo(self):
@@ -438,7 +438,7 @@ class ResizeSamplesAggregatorTest(NiftyNetTestCase):
         output_file = os.path.join('testing_data', 'aggregated',
                                    output_filename)
 
-        self.assertAllClose(nib.load(output_file).shape, (128, 128, 1, 1, 1))
+        self.assertAllClose(nib.load(output_file).shape, (128, 128))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(min_pd.shape, [1, 2])
         sampler.close_all()
@@ -489,7 +489,7 @@ class ResizeSamplesAggregatorTest(NiftyNetTestCase):
         output_file = os.path.join('testing_data', 'aggregated',
                                    output_filename)
 
-        self.assertAllClose(nib.load(output_file).shape, (128, 128, 1, 1, 1))
+        self.assertAllClose(nib.load(output_file).shape, (128, 128))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(min_pd.shape, [1, 2])
         stats_pd = pd.read_csv(stats_filename)
@@ -544,7 +544,7 @@ class ResizeSamplesAggregatorTest(NiftyNetTestCase):
         output_file = os.path.join('testing_data', 'aggregated',
                                    output_filename)
 
-        self.assertAllClose(nib.load(output_file).shape, (128, 128, 1, 1, 1))
+        self.assertAllClose(nib.load(output_file).shape, (128, 128))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(min_pd.shape, [1, 2])
         stats_pd = pd.read_csv(stats_filename)
@@ -579,7 +579,7 @@ class ResizeSamplesAggregatorTest(NiftyNetTestCase):
             sampler.reader.get_subject_id(0))
         output_file = os.path.join('testing_data', 'aggregated',
                                    output_filename)
-        self.assertAllClose(nib.load(output_file).shape, [256, 168, 256, 1, 1])
+        self.assertAllClose(nib.load(output_file).shape, [256, 168, 256])
         sampler.close_all()
 
     def test_inverse_mapping(self):
@@ -610,7 +610,7 @@ class ResizeSamplesAggregatorTest(NiftyNetTestCase):
             sampler.reader.get_subject_id(0))
         output_file = os.path.join('testing_data', 'aggregated',
                                    output_filename)
-        self.assertAllClose(nib.load(output_file).shape, [256, 168, 256, 1, 1])
+        self.assertAllClose(nib.load(output_file).shape, [256, 168, 256])
         sampler.close_all()
         # output_data = nib.load(output_file).get_data()[..., 0, 0]
         # expected_data = nib.load(

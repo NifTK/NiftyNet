@@ -22,7 +22,7 @@ from niftynet.io.image_loader import load_image_obj
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 from niftynet.utilities.util_import import require_module
 
-IS_PYTHON2 = False if sys.version_info[0] > 2 else True
+IS_PYTHON2 = sys.version_info[0] == 2
 
 warnings.simplefilter("ignore", UserWarning)
 
@@ -150,14 +150,14 @@ def rectify_header_sform_qform(img_nii):
     if img_nii.header['sform_code'] > 0:
         if not flag_sform_problem:
             return img_nii
-        elif not flag_qform_problem:
+        if not flag_qform_problem:
             # recover by copying the qform over the sform
             img_nii.set_sform(np.copy(img_nii.get_qform()))
             return img_nii
     elif img_nii.header['qform_code'] > 0:
         if not flag_qform_problem:
             return img_nii
-        elif not flag_sform_problem:
+        if not flag_sform_problem:
             # recover by copying the sform over the qform
             img_nii.set_qform(np.copy(img_nii.get_sform()))
             return img_nii
@@ -231,7 +231,7 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     :return data_resampled: Array containing the resampled data
     """
     if data_array is None:
-        return
+        return None
     if np.array_equal(pixdim_fin, pixdim_init):
         return data_array
     try:
@@ -320,7 +320,7 @@ def save_data_array(filefolder,
             # feature vector, should be saved with shape (1, 1, 1, 1, mod)
             while array_to_save.ndim < 5:
                 array_to_save = np.expand_dims(array_to_save, axis=0)
-        elif input_ndim == 2 or input_ndim == 3:
+        elif input_ndim in (2, 3):
             # 2D or 3D images should be saved with shape (x, y, z, 1, 1)
             while array_to_save.ndim < 5:
                 array_to_save = np.expand_dims(array_to_save, axis=-1)
@@ -372,9 +372,9 @@ def expand_to_5d(img_data):
 
 def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
     """
-    Save the img_data to nifti image, if the final dimensions of the 5D array are 1's,
-    save the lower dimensional image to disk by squeezing the trailing single dimensional
-    spaces away.
+    Save the img_data to nifti image, if the final dimensions of the 5D array
+    are 1's, save the lower dimensional image to disk by squeezing the trailing
+    single dimensional spaces away.
 
     :param img_data: 5d img to save
     :param filename: filename under which to save the img_data
@@ -384,12 +384,15 @@ def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
     """
     if img_data is None:
         return
-    # 5D images are not well supported by many image processing tools (or are assumed to be time series)
-    # Squeeze 5d processing space into smaller image spatial size (3d or 2d) for improved compatibility with
-    # external visualization/processing tools like Slicer3D, ITK, SimpleITK, etc ...
+    # 5D images are not well supported by many image processing tools
+    # (or are assumed to be time series)
+    # Squeeze 5d processing space into smaller image spatial size (3d or 2d)
+    # for improved compatibility with
+    # external visualization/processing tools like Slicer3D, ITK,
+    # SimpleITK, etc ...
     sqeezed_shape = img_data.shape
-    while( sqeezed_shape[-1] == 1 ):
-      sqeezed_shape = sqeezed_shape[0:-1]
+    while sqeezed_shape[-1] == 1:
+        sqeezed_shape = sqeezed_shape[0:-1]
     img_data.shape = sqeezed_shape
     touch_folder(save_path)
     img_nii = nib.Nifti1Image(img_data, affine)
@@ -444,11 +447,11 @@ def squeeze_spatial_temporal_dim(tf_tensor):
     if tf_tensor.shape[4] != 1:
         if tf_tensor.shape[5] > 1:
             raise NotImplementedError("time sequences not currently supported")
-        else:  # input shape [batch, x, y, z, t, 1]: swapping 't' and 1
-            tf_tensor = tf.transpose(tf_tensor, [0, 1, 2, 3, 5, 4])
+        # input shape [batch, x, y, z, t, 1]: swapping 't' and 1
+        tf_tensor = tf.transpose(tf_tensor, [0, 1, 2, 3, 5, 4])
     axis_to_squeeze = []
     for (idx, axis) in enumerate(tf_tensor.shape.as_list()):
-        if idx == 0 or idx == 5:
+        if idx in (0, 5):
             continue
         if axis == 1:
             axis_to_squeeze.append(idx)
@@ -540,13 +543,12 @@ def resolve_module_dir(module_dir_str, create_new=False):
             with os.fdopen(file_, 'w') as file_object:
                 file_object.write("# Created automatically\n")
         return folder_path
-    else:
-        raise ValueError(
-            "Could not resolve [{}].\nMake sure it is a valid folder path "
-            "or a module name.\nIf it is string representing a module, "
-            "the parent folder of [{}] should be on "
-            "the system path.\n\nCurrent system path {}.".format(
-                module_dir_str, module_dir_str, sys.path))
+    raise ValueError(
+        "Could not resolve [{}].\nMake sure it is a valid folder path "
+        "or a module name.\nIf it is string representing a module, "
+        "the parent folder of [{}] should be on "
+        "the system path.\n\nCurrent system path {}.".format(
+            module_dir_str, module_dir_str, sys.path))
 
 
 def to_absolute_path(input_path, model_root):
@@ -588,7 +590,7 @@ def resolve_file_name(file_name, paths):
                 tf.logging.info('Resolving {} as {}'.format(
                     file_name, path_file_name))
                 return os.path.abspath(path_file_name)
-        assert False, 'Could not resolve file name'
+        raise IOError('Could not resolve file name')
     except (TypeError, AssertionError, IOError):
         raise IOError('Could not resolve {}'.format(file_name))
 

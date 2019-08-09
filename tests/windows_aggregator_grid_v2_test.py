@@ -191,7 +191,7 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
                                    'aggregated',
                                    output_filename)
         self.assertAllClose(
-            nib.load(output_file).shape, [128, 128, 1, 1, 1])
+            nib.load(output_file).shape, [128, 128])
         sampler.close_all()
 
     def test_25d_init(self):
@@ -222,7 +222,7 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
                                    output_filename)
         print(output_file)
         self.assertAllClose(
-            nib.load(output_file).shape, [256, 168, 256, 1, 1],
+            nib.load(output_file).shape, [256, 168, 256],
             rtol=1e-03, atol=1e-03)
         sampler.close_all()
 
@@ -468,7 +468,7 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
                                    output_filename)
 
         self.assertAllClose(
-            nib.load(output_file).shape, (128, 128, 1, 1, 1))
+            nib.load(output_file).shape, (128, 128))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
             min_pd.shape, [10, 9]
@@ -522,7 +522,7 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
                                    output_filename)
 
         self.assertAllClose(
-            nib.load(output_file).shape, (128, 128, 1, 1, 1))
+            nib.load(output_file).shape, (128, 128))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
             min_pd.shape, [10, 9]
@@ -582,7 +582,7 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
                                    output_filename)
 
         self.assertAllClose(
-            nib.load(output_file).shape, (128, 128, 1, 1, 1))
+            nib.load(output_file).shape, (128, 128))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
             min_pd.shape, [10, 9]
@@ -620,9 +620,9 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
         output_file = os.path.join(
             'testing_data', 'aggregated', output_filename)
         self.assertAllClose(
-            nib.load(output_file).shape, [256, 168, 256, 1, 1])
+            nib.load(output_file).shape, [256, 168, 256])
         sampler.close_all()
-        output_data = nib.load(output_file).get_data()[..., 0, 0]
+        output_data = nib.load(output_file).get_data()
         expected_data = nib.load(
             'testing_data/T1_1023_NeuroMorph_Parcellation.nii.gz').get_data()
         self.assertAllClose(output_data, expected_data)
@@ -658,7 +658,7 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             sampler.reader.get_subject_id(0), postfix)
         output_file = os.path.join(
             'testing_data', 'aggregated', output_filename)
-        output_data = nib.load(output_file).get_data()[..., 0, 0]
+        output_data = nib.load(output_file).get_data()
         output_shape = output_data.shape
         for i in range(3):
             def _test_background(idcs):

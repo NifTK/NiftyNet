@@ -403,7 +403,7 @@ class IdentityAggregatorTest(NiftyNetTestCase):
                                    output_filename)
         out_shape = [out_shape[i] for i in NEW_ORDER_2D] + [1,]
         self.assertAllClose(
-            nib.load(output_file).shape, out_shape)
+            nib.load(output_file).shape, out_shape[:2])
         sampler.close_all()
 
     def test_init_2d_mo(self):
@@ -444,7 +444,7 @@ class IdentityAggregatorTest(NiftyNetTestCase):
         out_shape = [out_shape[i] for i in NEW_ORDER_2D] + [1,]
 
         self.assertAllClose(
-            nib.load(output_file).shape, out_shape)
+            nib.load(output_file).shape, out_shape[:2])
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
             min_pd.shape, [1, 2]
@@ -494,7 +494,7 @@ class IdentityAggregatorTest(NiftyNetTestCase):
                                    output_filename)
         out_shape = [out_shape[i] for i in NEW_ORDER_2D] + [1,]
         self.assertAllClose(
-            nib.load(output_file).shape, out_shape)
+            nib.load(output_file).shape, out_shape[:2])
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
             min_pd.shape, [1, 2]
@@ -551,7 +551,7 @@ class IdentityAggregatorTest(NiftyNetTestCase):
 
         out_shape = [out_shape[i] for i in NEW_ORDER_2D] + [1,]
         self.assertAllClose(
-            nib.load(output_file).shape, out_shape)
+            nib.load(output_file).shape, out_shape[:2])
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
             min_pd.shape, [1, 2]
@@ -593,7 +593,7 @@ class IdentityAggregatorTest(NiftyNetTestCase):
                                    output_filename)
         out_shape = [out_shape[i] for i in NEW_ORDER_2D] + [1,]
         self.assertAllClose(
-            nib.load(output_file).shape, out_shape)
+            nib.load(output_file).shape, out_shape[:2])
         sampler.close_all()
 
 
