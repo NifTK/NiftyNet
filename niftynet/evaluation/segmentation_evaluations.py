@@ -343,7 +343,7 @@ def cached_label_binarizer(label, output_prob):
             out = np.argmax(data['inferred'], -1)
         else:
             out = data['inferred']
-        return out == label, data['label']
+        return out == label, data['label'] == label
 
     return binarizer
 
