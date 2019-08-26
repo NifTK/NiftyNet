@@ -277,9 +277,12 @@ class FileImageSourceTest(tf.test.TestCase):
             150., 151., 152., 153., 154., 155., 156., 157.
         ],
                                dtype=np.float32)
-        compatible_assert = \
-            np.all(unique_data == expected_v1) or \
-            np.all(unique_data == expected_v2)
+        if unique_data.shape == expected_v1.shape:
+            compatible_assert = \
+                np.all(unique_data == expected_v1)
+        else:
+            compatible_assert = \
+                np.all(unique_data == expected_v2)
         self.assertTrue(compatible_assert)
         self.assertAllClose(data['label'].shape, (103, 74, 93, 1, 1))
 

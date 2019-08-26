@@ -97,7 +97,10 @@ class BaseSetsPartitioner(object):
         if self._partition_ids is None:
             return 0
         selector = self._partition_ids[COLUMN_PHASE] == phase
-        return self._partition_ids[selector].count()[COLUMN_UNIQ_ID]
+        selected = self._partition_ids[selector][[COLUMN_UNIQ_ID]]
+        subset = pandas.merge(
+            self.file_list, selected, on=COLUMN_UNIQ_ID, sort=True)
+        return subset.count()[COLUMN_UNIQ_ID]
 
     def get_file_list(self, phase=ALL, *section_names):
         """
