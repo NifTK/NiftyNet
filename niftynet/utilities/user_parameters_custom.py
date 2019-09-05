@@ -170,6 +170,28 @@ def __add_segmentation_args(parser):
         choices=['foreground', 'label', 'cc'],
         default='foreground')
 
+    #  for mixup augmentation
+    parser.add_argument(
+        "--do_mixup",
+        help="Use the 'mixup' option.",
+        type=str2boolean,
+        default=False)
+
+    #  for mixup augmentation
+    parser.add_argument(
+        "--mixup_alpha",
+        help="The alpha value to parametrise the beta distribution (alpha, alpha)."
+             "Default: 0.2.",
+        type=float,
+        default=0.2)
+
+    #  for mixup augmentation
+    parser.add_argument(
+        "--mix_match",
+        help="If true, matches bigger segmentations with smaller segmentations.",
+        type=str2boolean,
+        default=False)
+
     from niftynet.application.segmentation_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser
@@ -229,7 +251,6 @@ def __add_classification_args(parser):
              "consecutive integers (the smallest label will be  mapped to 0)",
         type=str2boolean,
         default=False)
-
 
     from niftynet.application.classification_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
