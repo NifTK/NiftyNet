@@ -2,14 +2,11 @@
 """
 This module defines task specific parameters
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
-from niftynet.utilities.user_parameters_helper import add_input_name_args
-from niftynet.utilities.user_parameters_helper import int_array
-from niftynet.utilities.user_parameters_helper import str2boolean
+from niftynet.utilities.user_parameters_helper import (add_input_name_args,
+                                                       int_array, str2boolean)
 
 
 #######################################################################
@@ -120,8 +117,7 @@ def __add_segmentation_args(parser):
              "selective sampler",
         metavar='',
         type=float,
-        default=0
-    )
+        default=0)
 
     # for selective sampling only
     parser.add_argument(
@@ -130,8 +126,7 @@ def __add_segmentation_args(parser):
              "selective sampling",
         metavar='',
         type=int_array,
-        default=(0, 1)
-    )
+        default=(0, 1))
 
     # for selective sampling only
     parser.add_argument(
@@ -140,8 +135,7 @@ def __add_segmentation_args(parser):
              "when using selective sampler",
         metavar='',
         type=int,
-        default=0
-    )
+        default=0)
 
     # for selective sampling only
     parser.add_argument(
@@ -150,8 +144,7 @@ def __add_segmentation_args(parser):
              "selective sampler",
         metavar='',
         type=int,
-        default=1
-    )
+        default=1)
 
     # for selective sampling only
     parser.add_argument(
@@ -160,8 +153,7 @@ def __add_segmentation_args(parser):
              "selective sampler",
         metavar='',
         type=str2boolean,
-        default=True
-    )
+        default=True)
 
     parser.add_argument(
         "--evaluation_units",
@@ -180,15 +172,16 @@ def __add_segmentation_args(parser):
     #  for mixup augmentation
     parser.add_argument(
         "--mixup_alpha",
-        help="The alpha value to parametrise the beta distribution (alpha, alpha)."
-             "Default: 0.2.",
+        help="The alpha value to parametrise the beta distribution "
+             "(alpha, alpha). Default: 0.2.",
         type=float,
         default=0.2)
 
     #  for mixup augmentation
     parser.add_argument(
         "--mix_match",
-        help="If true, matches bigger segmentations with smaller segmentations.",
+        help="If true, matches bigger segmentations with "
+             "smaller segmentations.",
         type=str2boolean,
         default=False)
 
