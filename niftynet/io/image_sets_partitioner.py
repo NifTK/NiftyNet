@@ -87,7 +87,6 @@ class ImageSetsPartitioner(object):
             # if len(data_param[key].csv_data_file) == 0:
             #     self.data_param[key] = data_param[key]
 
-
         # self.data_param = {key: self.data_param[key] for key in
         #                    self.data_param if not self.data_param[
         # key].csv_data_file}
@@ -215,22 +214,19 @@ class ImageSetsPartitioner(object):
             raise ValueError
         self._file_list = None
         section_first = [section_name for section_name in
-
                          self.data_param if 'csv_data_file' not in
-                                                self.data_param[
-                             section_name]
-                         ]
+                         self.data_param[section_name]]
         print(section_first, self.data_param.keys())
         section_selec_bis = [section_name for section_name in self.data_param
                              if section_name not in section_first]
         section_first_bis = [section_name for section_name in
                              section_selec_bis if
                              len(self.data_param[
-                                     section_name].csv_data_file)==0]
+                                     section_name].csv_data_file) == 0]
         section_first += section_first_bis
 
-                         # self.data_param if
-                         # self.data_param[section_name].csv_data_file == '']
+        # self.data_param if
+        # self.data_param[section_name].csv_data_file == '']
 
         section_second = [section_name for section_name in self.data_param if
                           section_name not in section_first]
@@ -372,7 +368,7 @@ class ImageSetsPartitioner(object):
                     len(
                     self.data_param[modality_name].csv_data_file) == 0:
 
-            # if self.data_param[modality_name].csv_data_file == '':
+                # if self.data_param[modality_name].csv_data_file == '':
 
                 csv_list = pandas.read_csv(
                     csv_data_file,
