@@ -235,6 +235,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         subject_name = self.reader.get_subject_id(self.image_id)
         for i in self.csv_out:
             filename = "{}_{}_{}.csv".format(i, subject_name, self.postfix)
-            misc_io.save_csv_array(self.output_path, filename, self.csv_out[i])
+            misc_io.save_csv_array(self.output_path, filename, self.csv_out[
+                i][1:, :])
             self.log_inferred(subject_name, filename)
         return
