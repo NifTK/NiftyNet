@@ -22,6 +22,7 @@ except ImportError:
 
 try:
     from distutils.version import LooseVersion
+
     minimal_required_version = LooseVersion("1.5")
     tf_version = LooseVersion(tf.__version__)
     if tf_version < minimal_required_version:
@@ -50,6 +51,10 @@ set_logger()
 from niftynet.utilities.util_import import require_module
 
 require_module('blinker', descriptor='New dependency', mandatory=True)
+
+from tensorflow.python.util import deprecation
+
+deprecation._PRINT_DEPRECATION_WARNINGS = False
 
 from niftynet.engine.signal import TRAIN, INFER, EVAL
 import niftynet.utilities.util_common as util

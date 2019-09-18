@@ -1,5 +1,5 @@
-from niftyreg_image_resampling import NiftyregImageResamplingLayer
-from test_resampler import ResamplerTest
+from niftynet.contrib.niftyreg_image_resampling.niftyreg_image_resampling import NiftyregImageResamplingLayer
+from niftynet.contrib.niftyreg_image_resampling.tests.test_resampler import ResamplerTest
 
 import numpy as np
 import tensorflow as tf

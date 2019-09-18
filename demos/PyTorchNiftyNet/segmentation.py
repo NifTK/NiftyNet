@@ -171,7 +171,7 @@ def inference(sampler, model, device, pred_path, cp_path):
 
             outputs = outputs.cpu().numpy()
             outputs = np.transpose(outputs, (0, 2, 3, 4, 1))
-            output.decode_batch(outputs.astype(np.float32),
+            output.decode_batch({'window_image': outputs.astype(np.float32)},
                                 batch_output['image_location'])
 
 

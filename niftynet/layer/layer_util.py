@@ -21,7 +21,8 @@ def check_spatial_dims(input_tensor, criteria):
         import inspect
         raise ValueError("input tensor's spatial dimensionality"
                          " not compatible, please tune "
-                         "the input window sizes (must be divisible by 8 and bigger than 88):\n{}".format(
+                         "the input window sizes. "
+                         "(e.g. lambda x : x % 8 == 0 checks whether each dimension is divisible by 8)\n{}".format(
             inspect.getsource(criteria)))
     return all_dims_satisfied
 

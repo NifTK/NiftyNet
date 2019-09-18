@@ -30,15 +30,15 @@ def net_run_with_sys_argv(argv):
 
 @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class DenseVNetAbdominalCTModelZooTest(NiftyNetTestCase):
-    id = 'dense_vnet_abdominal_ct_model_zoo'
+    zoo_id = 'dense_vnet_abdominal_ct_model_zoo'
     location = 'dense_vnet_abdominal_ct'
     config = os.path.join(MODEL_HOME, 'extensions', 'dense_vnet_abdominal_ct', 'config.ini')
     application = 'net_segment'
-    expected_output = os.path.join('segmentation_output','100__niftynet_out.nii.gz')
+    expected_output = os.path.join('segmentation_output','window_seg_100___niftynet_out.nii.gz')
 
     def setUp(self):
         NiftyNetTestCase.setUp(self)
-        download(self.id, download_if_already_existing=True, verbose=False)
+        download(self.zoo_id, download_if_already_existing=True, verbose=False)
 
     def test_train_infer(self):
         self._train()
@@ -57,15 +57,15 @@ class DenseVNetAbdominalCTModelZooTest(NiftyNetTestCase):
 
 @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class UltrasoundSimulatorGanModelZooTest(NiftyNetTestCase):
-    id = 'ultrasound_simulator_gan_model_zoo'
+    zoo_id = 'ultrasound_simulator_gan_model_zoo'
     location = 'ultrasound_simulator_gan'
     config = os.path.join(MODEL_HOME, 'extensions', 'ultrasound_simulator_gan', 'config.ini')
     application = 'net_gan'
-    expected_output = os.path.join('ultrasound_gan_simulated','0_000053__niftynet_generated.nii.gz')
+    expected_output = os.path.join('ultrasound_gan_simulated','5_000053__window_image_niftynet_generated.nii.gz')
 
     def setUp(self):
         NiftyNetTestCase.setUp(self)
-        download(self.id, download_if_already_existing=True, verbose=False)
+        download(self.zoo_id, download_if_already_existing=True, verbose=False)
 
     def test_inference(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'inference'])
@@ -75,15 +75,15 @@ class UltrasoundSimulatorGanModelZooTest(NiftyNetTestCase):
 
 @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class Highres3dnetBrainParcellationModelZooTest(NiftyNetTestCase):
-    id = 'highres3dnet_brain_parcellation_model_zoo'
+    zoo_id = 'highres3dnet_brain_parcellation_model_zoo'
     location = 'highres3dnet_brain_parcellation'
     config = os.path.join(MODEL_HOME, 'extensions', 'highres3dnet_brain_parcellation', 'highres3dnet_config_eval.ini')
     application = 'net_segment'
-    expected_output = os.path.join('parcellation_output','OAS1_0145_MR2_mpr_n4_anon_sbj_111_niftynet_out.nii.gz')
+    expected_output = os.path.join('parcellation_output','window_seg_OAS1_0145_MR2_mpr_n4_anon_sbj_111__niftynet_out.nii.gz')
 
     def setUp(self):
         NiftyNetTestCase.setUp(self)
-        download(self.id, download_if_already_existing=True, verbose=False)
+        download(self.zoo_id, download_if_already_existing=True, verbose=False)
 
     def test_inference(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'inference'])
@@ -93,19 +93,19 @@ class Highres3dnetBrainParcellationModelZooTest(NiftyNetTestCase):
 
 @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class AnisotropicNetsBratsChallengeModelZooTest(NiftyNetTestCase):
-    id = 'anisotropic_nets_brats_challenge_model_zoo'
+    zoo_id = 'anisotropic_nets_brats_challenge_model_zoo'
     location = 'anisotropic_nets_brats_challenge'
     application = 'anisotropic_nets_brats_challenge.brats_seg_app.BRATSApp'
-    expected_outputs = [os.path.join('model_whole_tumor_axial','pred_whole_tumor_axial','LGG71__niftynet_out.nii.gz'),
-                        os.path.join('model_whole_tumor_coronal','pred_whole_tumor_coronal','LGG71__niftynet_out.nii.gz'),
-                        os.path.join('model_whole_tumor_sagittal','pred_whole_tumor_sagittal','LGG71__niftynet_out.nii.gz')]
+    expected_outputs = [os.path.join('model_whole_tumor_axial','pred_whole_tumor_axial','window_LGG71__niftynet_out.nii.gz'),
+                        os.path.join('model_whole_tumor_coronal','pred_whole_tumor_coronal','window_LGG71__niftynet_out.nii.gz'),
+                        os.path.join('model_whole_tumor_sagittal','pred_whole_tumor_sagittal','window_LGG71__niftynet_out.nii.gz')]
     configA = os.path.join(MODEL_HOME, 'extensions', 'anisotropic_nets_brats_challenge', 'whole_tumor_axial.ini')
     configC = os.path.join(MODEL_HOME, 'extensions', 'anisotropic_nets_brats_challenge', 'whole_tumor_coronal.ini')
     configS = os.path.join(MODEL_HOME, 'extensions', 'anisotropic_nets_brats_challenge', 'whole_tumor_sagittal.ini')
 
     def setUp(self):
         NiftyNetTestCase.setUp(self)
-        download(self.id, download_if_already_existing=True, verbose=False)
+        download(self.zoo_id, download_if_already_existing=True, verbose=False)
 
     def test_inference(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.configA, 'inference'])
@@ -118,7 +118,7 @@ class AnisotropicNetsBratsChallengeModelZooTest(NiftyNetTestCase):
 
 @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class MRCTRegressionModelZooTest(NiftyNetTestCase):
-    id = 'mr_ct_regression_model_zoo'
+    zoo_id = 'mr_ct_regression_model_zoo'
     location = 'mr_ct_regression'
     application = 'niftynet.contrib.regression_weighted_sampler.isample_regression.ISampleRegression'
     config = os.path.join(MODEL_HOME, 'extensions', 'mr_ct_regression','net_isampler.ini')
@@ -128,7 +128,7 @@ class MRCTRegressionModelZooTest(NiftyNetTestCase):
 
     def setUp(self):
         NiftyNetTestCase.setUp(self)
-        download(self.id, download_if_already_existing=True, verbose=False)
+        download(self.zoo_id, download_if_already_existing=True, verbose=False)
 
     def test_train(self):
         net_run_with_sys_argv(['net_run', '-a', self.application, '-c', self.config, 'train', '--starting_iter','0','--max_iter', '2'])
@@ -146,7 +146,7 @@ class MRCTRegressionModelZooTest(NiftyNetTestCase):
 
 @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
 class AutoContextMRCTModelZooTest(NiftyNetTestCase):
-    id = 'autocontext_mr_ct_model_zoo'
+    zoo_id = 'autocontext_mr_ct_model_zoo'
     location = 'autocontext_mr_ct'
     application = 'net_regress'
     config = os.path.join(MODEL_HOME, 'extensions', 'autocontext_mr_ct','net_autocontext.ini')
@@ -154,13 +154,13 @@ class AutoContextMRCTModelZooTest(NiftyNetTestCase):
         os.path.join('error_maps','WEB.nii.gz'),
         ]
     expected_output_inference = [
-        os.path.join('autocontext_output','CHA_niftynet_out.nii.gz'),
+        os.path.join('autocontext_output','window_reg_CHA_niftynet_out.nii.gz'),
         ]
 
 
     def setUp(self):
         NiftyNetTestCase.setUp(self)
-        download(self.id, download_if_already_existing=True, verbose=False)
+        download(self.zoo_id, download_if_already_existing=True, verbose=False)
 
     def test_train_infer(self):
         self._train()

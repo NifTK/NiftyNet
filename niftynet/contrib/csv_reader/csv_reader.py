@@ -105,7 +105,7 @@ class CSVReader(Layer):
             self.dims_by_task[name] = _dims
             self._indexable_output[name] = _indexable_output
             self.valid_by_task[name] = -1 * np.ones(
-                [self.df_by_task[name].shape[0]])
+                [self.df_by_task[name].shape[0]])  # -1 means they have not been checked
             self.pad_by_task[name] = np.zeros(
                 [self.df_by_task[name].shape[0], 2*_dims])
             if df_fin.shape[0] > len(set(self.subject_ids)):
@@ -195,8 +195,8 @@ class CSVReader(Layer):
                 #  Take the list of idx corresponding to subject id and randomly
                 # sample from there
                 for name in self.names:
-                    relevant_indices = np.where(self.df_by_task[
-                        name].index.get_loc(subject_id))[0]
+                    relevant_indices = self.df_by_task[name].reset_index()[
+                        self.df_by_task[name].reset_index()[0] == subject_id].index.values
                     if reject:
                         relevant_valid = np.asarray(np.where(np.abs(
                             self.valid_by_task[name][relevant_indices]) > 0)[0])
@@ -215,13 +215,13 @@ class CSVReader(Layer):
                     print(relevant_final, "is relevant final")
                     idx_dict[name] = random.choice(relevant_final) if \
                         list(relevant_final) else []
-            else:
+            else: #self.df_by_task[self.df_by_task[name] == subject_id]
                 # mode full i.e. output all the lines corresponding to
                 # subject_id
                 print(" Taking all valid indices")
                 for name in self.names:
-                    relevant_indices = np.where(self.df_by_task[
-                        name].index.get_loc(subject_id))[0]
+                    relevant_indices = self.df_by_task[name].reset_index()[
+                        self.df_by_task[name].reset_index()[0] == subject_id].index.values
                     if reject:
                         relevant_valid = np.asarray(np.where(np.abs(
                             self.valid_by_task[name][relevant_indices]) > 0)[0])
@@ -328,6 +328,8 @@ class CSVReader(Layer):
                 dtype=np.int))
             print("tiling done", data.shape)
             return data
+        else:
+            return data
     
     @property
     def shapes(self):
@@ -370,7 +372,7 @@ class CSVReader(Layer):
     @staticmethod
     def apply_niftynet_format_to_data(data):
         '''
-        Transform the dtaa to be of dimension 5d
+        Transform the data to be of dimension 5d
         :param data: data to expand
         :return: expanded data
         '''
