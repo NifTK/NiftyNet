@@ -13,7 +13,7 @@ from tests.niftynet_testcase import NiftyNetTestCase
 
 test_sections = {
     'T1': ParserNamespace(
-        csv_file=os.path.join('testing_data', 'test_reader.csv'),
+        csv_path_file=os.path.join('testing_data', 'test_reader.csv'),
         path_to_search='testing_data',
         filename_contains=('_o_T1_time',),
         filename_not_contain=('Parcellation',),
@@ -23,7 +23,7 @@ test_sections = {
         loader=None),
 
     'Flair': ParserNamespace(
-        csv_file=os.path.join('testing_data', 'test_Flairreader.csv'),
+        csv_path_file=os.path.join('testing_data', 'test_Flairreader.csv'),
         path_to_search='testing_data',
         filename_contains=('FLAIR_',),
         filename_not_contains=('Parcellation',),

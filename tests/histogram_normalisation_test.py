@@ -18,7 +18,7 @@ from tests.niftynet_testcase import NiftyNetTestCase
 
 DATA_PARAM = {
     'T1': ParserNamespace(
-        csv_file=os.path.join('testing_data', 'T1.csv'),
+        csv_path_file=os.path.join('testing_data', 'T1.csv'),
         path_to_search='testing_data',
         filename_contains=('_o_T1_time',),
         filename_not_contains=('Parcellation',),
@@ -28,7 +28,7 @@ DATA_PARAM = {
         loader=None
     ),
     'FLAIR': ParserNamespace(
-        csv_file=os.path.join('testing_data', 'FLAIR.csv'),
+        csv_path_file=os.path.join('testing_data', 'FLAIR.csv'),
         path_to_search='testing_data',
         filename_contains=('FLAIR_',),
         filename_not_contains=('Parcellation',),

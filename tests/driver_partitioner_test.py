@@ -49,12 +49,12 @@ def _generate_base_params():
 def _generate_data_param():
     user_param = dict()
     user_param['modality'] = ParserNamespace(
-        csv_file=os.path.join('testing_data', 'mod1test.csv'),
+        csv_path_file=os.path.join('testing_data', 'mod1test.csv'),
         path_to_search='testing_data',
         filename_contains='nii')
 
     user_param['modality2'] = ParserNamespace(
-        csv_file=os.path.join('testing_data', 'mod2test.csv'),
+        csv_path_file=os.path.join('testing_data', 'mod2test.csv'),
         path_to_search='testing_data',
         filename_contains='nii')
     return user_param

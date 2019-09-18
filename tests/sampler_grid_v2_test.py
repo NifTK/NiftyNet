@@ -15,7 +15,7 @@ from tests.niftynet_testcase import NiftyNetTestCase
 
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
-        csv_file=os.path.join('testing_data', 'T1sampler.csv'),
+        csv_path_file=os.path.join('testing_data', 'T1sampler.csv'),
         path_to_search='testing_data',
         filename_contains=('_o_T1_time',),
         filename_not_contains=('Parcellation',),
@@ -26,7 +26,7 @@ MULTI_MOD_DATA = {
         loader=None
     ),
     'FLAIR': ParserNamespace(
-        csv_file=os.path.join('testing_data', 'FLAIRsampler.csv'),
+        csv_path_file=os.path.join('testing_data', 'FLAIRsampler.csv'),
         path_to_search='testing_data',
         filename_contains=('FLAIR_',),
         filename_not_contains=('Parcellation',),
@@ -41,7 +41,7 @@ MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'))
 
 MOD_2D_DATA = {
     'ultrasound': ParserNamespace(
-        csv_file=os.path.join('testing_data', 'T1sampler2d.csv'),
+        csv_path_file=os.path.join('testing_data', 'T1sampler2d.csv'),
         path_to_search='testing_data',
         filename_contains=('2d_',),
         filename_not_contains=('Parcellation',),
@@ -56,7 +56,7 @@ MOD_2D_TASK = ParserNamespace(image=('ultrasound',))
 
 DYNAMIC_MOD_DATA = {
     'T1': ParserNamespace(
-        csv_file=os.path.join('testing_data', 'T1sampler.csv'),
+        csv_path_file=os.path.join('testing_data', 'T1sampler.csv'),
         path_to_search='testing_data',
         filename_contains=('_o_T1_time',),
         filename_not_contains=('Parcellation',),
@@ -67,7 +67,7 @@ DYNAMIC_MOD_DATA = {
         loader=None
     ),
     'FLAIR': ParserNamespace(
-        csv_file=os.path.join('testing_data', 'FLAIRsampler.csv'),
+        csv_path_file=os.path.join('testing_data', 'FLAIRsampler.csv'),
         path_to_search='testing_data',
         filename_contains=('FLAIR_',),
         filename_not_contains=('Parcellation',),

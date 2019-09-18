@@ -21,7 +21,7 @@ NEW_ORDER = (0, 1, 2, 4, 3)
 NEW_ORDER_2D = (0, 1, 3, 2)
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
-        csv_file=os.path.join('testing_data', 'T1sampler.csv'),
+        csv_path_file=os.path.join('testing_data', 'T1sampler.csv'),
         path_to_search='testing_data',
         filename_contains=('_o_T1_time', '23'),
         filename_not_contains=('Parcellation',),
@@ -32,7 +32,7 @@ MULTI_MOD_DATA = {
         loader=None
     ),
     'FLAIR': ParserNamespace(
-        csv_file=os.path.join('testing_data', 'FLAIRsampler.csv'),
+        csv_path_file=os.path.join('testing_data', 'FLAIRsampler.csv'),
         path_to_search='testing_data',
         filename_contains=('FLAIR_', '23'),
         filename_not_contains=('Parcellation',),
@@ -47,7 +47,7 @@ MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'))
 
 MOD_2D_DATA = {
     'ultrasound': ParserNamespace(
-        csv_file=os.path.join('testing_data', 'T1sampler2d.csv'),
+        csv_path_file=os.path.join('testing_data', 'T1sampler2d.csv'),
         path_to_search='testing_data',
         filename_contains=('2d_',),
         filename_not_contains=('Parcellation',),
@@ -62,7 +62,7 @@ MOD_2D_TASK = ParserNamespace(image=('ultrasound',))
 
 MOD_LABEL_DATA = {
     'parcellation': ParserNamespace(
-        csv_file=os.path.join('testing_data', 'Parcelsampler2d.csv'),
+        csv_path_file=os.path.join('testing_data', 'Parcelsampler2d.csv'),
         path_to_search='testing_data',
         filename_contains=('23_NeuroMorph_Parcellation',),
         filename_not_contains=('FLAIR',),
@@ -77,7 +77,7 @@ MOD_LABEl_TASK = ParserNamespace(label=('parcellation',))
 
 SINGLE_25D_DATA = {
     'T1': ParserNamespace(
-        csv_file=os.path.join('testing_data', 'T1sampler.csv'),
+        csv_path_file=os.path.join('testing_data', 'T1sampler.csv'),
         path_to_search='testing_data',
         filename_contains=('_o_T1_time', '106'),
         filename_not_contains=('Parcellation',),
