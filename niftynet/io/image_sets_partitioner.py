@@ -84,6 +84,10 @@ class ImageSetsPartitioner(object):
                 # self.data_param[key]['csv_data_file'] = ''
                 # self.data_param[key].csv_data_file = ''
 
+            # if len(data_param[key].csv_data_file) == 0:
+            #     self.data_param[key] = data_param[key]
+
+
         # self.data_param = {key: self.data_param[key] for key in
         #                    self.data_param if not self.data_param[
         # key].csv_data_file}
@@ -123,7 +127,10 @@ class ImageSetsPartitioner(object):
         if self._partition_ids is None:
             return 0
         selector = self._partition_ids[COLUMN_PHASE] == phase
-        return self._partition_ids[selector].count()[COLUMN_UNIQ_ID]
+        selected = self._partition_ids[selector][[COLUMN_UNIQ_ID]]
+        subset = pandas.merge(
+            self._file_list, selected, on=COLUMN_UNIQ_ID, sort=True)
+        return subset.count()[COLUMN_UNIQ_ID]
 
     def get_file_list(self, phase=ALL, *section_names):
         """
@@ -208,6 +215,7 @@ class ImageSetsPartitioner(object):
             raise ValueError
         self._file_list = None
         section_first = [section_name for section_name in
+
                          self.data_param if 'csv_data_file' not in
                                                 self.data_param[
                              section_name]
@@ -220,6 +228,10 @@ class ImageSetsPartitioner(object):
                              len(self.data_param[
                                      section_name].csv_data_file)==0]
         section_first += section_first_bis
+
+                         # self.data_param if
+                         # self.data_param[section_name].csv_data_file == '']
+
         section_second = [section_name for section_name in self.data_param if
                           section_name not in section_first]
         usable_section = section_first + section_second
@@ -355,9 +367,13 @@ class ImageSetsPartitioner(object):
         # loading the file as dataframe
         ###############################
         try:
+
             if 'csv_data_file' not in self.data_param[modality_name] or \
                     len(
                     self.data_param[modality_name].csv_data_file) == 0:
+
+            # if self.data_param[modality_name].csv_data_file == '':
+
                 csv_list = pandas.read_csv(
                     csv_data_file,
                     header=None,
@@ -365,6 +381,7 @@ class ImageSetsPartitioner(object):
                     names=[COLUMN_UNIQ_ID, modality_name],
                     skipinitialspace=True)
                 print(dir(self.data_param[modality_name]))
+
             else:
                 csv_list = pandas.read_csv(
                     csv_data_file,

@@ -12,8 +12,8 @@ import warnings
 
 import nibabel as nib
 import numpy as np
-import scipy.ndimage
 import pandas as pd
+import scipy.ndimage
 import tensorflow as tf
 # pylint: disable=no-name-in-module
 from tensorflow.core.framework import summary_pb2
@@ -22,7 +22,7 @@ from niftynet.io.image_loader import load_image_obj
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
 from niftynet.utilities.util_import import require_module
 
-IS_PYTHON2 = False if sys.version_info[0] > 2 else True
+IS_PYTHON2 = sys.version_info[0] == 2
 
 warnings.simplefilter("ignore", UserWarning)
 
@@ -30,8 +30,8 @@ FILE_EXTENSIONS = [".nii.gz", ".tar.gz"]
 CONSOLE_LOG_FORMAT = "\033[1m%(levelname)s:niftynet:\033[0m %(message)s"
 FILE_LOG_FORMAT = "%(levelname)s:niftynet:%(asctime)s: %(message)s"
 
-
 # utilities for file headers #
+
 
 def infer_ndims_from_file(file_path, loader=None):
     """
@@ -150,21 +150,21 @@ def rectify_header_sform_qform(img_nii):
     if img_nii.header['sform_code'] > 0:
         if not flag_sform_problem:
             return img_nii
-        elif not flag_qform_problem:
+        if not flag_qform_problem:
             # recover by copying the qform over the sform
             img_nii.set_sform(np.copy(img_nii.get_qform()))
             return img_nii
     elif img_nii.header['qform_code'] > 0:
         if not flag_qform_problem:
             return img_nii
-        elif not flag_sform_problem:
+        if not flag_sform_problem:
             # recover by copying the sform over the qform
             img_nii.set_qform(np.copy(img_nii.get_sform()))
             return img_nii
     affine = img_nii.affine
     pixdim = img_nii.header.get_zooms()
     while len(pixdim) < 3:
-        pixdim = pixdim + (1.0,)
+        pixdim = pixdim + (1.0, )
     # assuming 3 elements
     new_affine = create_affine_pixdim(affine, pixdim[:3])
     img_nii.set_sform(new_affine)
@@ -192,8 +192,8 @@ def compute_orientation(init_axcodes, final_axcodes):
         ornt_transf = nib.orientations.ornt_transform(ornt_init, ornt_fin)
         return ornt_transf, ornt_init, ornt_fin
     except (ValueError, IndexError):
-        tf.logging.fatal(
-            'reorientation transform error: %s, %s', ornt_init, ornt_fin)
+        tf.logging.fatal('reorientation transform error: %s, %s', ornt_init,
+                         ornt_fin)
         raise ValueError
 
 
@@ -285,7 +285,7 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     :return data_resampled: Array containing the resampled data
     """
     if data_array is None:
-        return
+        return None
     if np.array_equal(pixdim_fin, pixdim_init):
         return data_array
     try:
@@ -303,24 +303,38 @@ def do_resampling(data_array, pixdim_init, pixdim_fin, interp_order):
     for time_point in range(0, data_shape[3]):
         data_mod = []
         for mod in range(0, data_shape[4]):
-            data_new = scipy.ndimage.zoom(data_array[..., time_point, mod],
-                                          to_multiply[0:3],
-                                          order=interp_order)
+            data_new = scipy.ndimage.zoom(
+                data_array[..., time_point, mod],
+                to_multiply[0:3],
+                order=interp_order)
             data_mod.append(data_new[..., np.newaxis, np.newaxis])
         data_resampled.append(np.concatenate(data_mod, axis=-1))
     return np.concatenate(data_resampled, axis=-2)
 
 
 def save_csv_array(filefolder, filename, array_to_save):
-    '''
+    """
     Save a np array as a csv
     :param filefolder: Path to the folder where to save
     :param filename: Name of the file to save
     :param array_to_save: Array to save
     :return:
-    '''
-    pd_array = pd.DataFrame(array_to_save)
-    pd_array.to_csv(os.path.join(filefolder, filename))
+    """
+    if array_to_save is None:
+        return
+    if not isinstance(array_to_save, pd.DataFrame):
+        array_to_save = pd.DataFrame(array_to_save)
+    touch_folder(filefolder)
+    output_name = os.path.join(filefolder, filename)
+    try:
+        if os.path.isfile(output_name):
+            tf.logging.warning('File %s exists, overwriting the file.',
+                               output_name)
+        array_to_save.to_csv(output_name)
+    except OSError:
+        tf.logging.fatal("writing failed {}".format(output_name))
+        raise
+    tf.logging.info('Saved {}'.format(output_name))
 
 
 def save_data_array(filefolder,
@@ -360,7 +374,7 @@ def save_data_array(filefolder,
             # feature vector, should be saved with shape (1, 1, 1, 1, mod)
             while array_to_save.ndim < 5:
                 array_to_save = np.expand_dims(array_to_save, axis=0)
-        elif input_ndim == 2 or input_ndim == 3:
+        elif input_ndim in (2, 3):
             # 2D or 3D images should be saved with shape (x, y, z, 1, 1)
             while array_to_save.ndim < 5:
                 array_to_save = np.expand_dims(array_to_save, axis=-1)
@@ -378,13 +392,14 @@ def save_data_array(filefolder,
                 transf, _, _ = compute_orientation(image_axcodes, dst_axcodes)
                 original_shape = tuple(
                     original_shape[k] for k in transf[:, 0].astype(np.int))
-            image_pixdim = dst_pixdim * np.divide(original_shape, spatial_shape)
-        array_to_save = do_resampling(
-            array_to_save, image_pixdim, dst_pixdim, interp_order)
+            image_pixdim = dst_pixdim * np.divide(original_shape,
+                                                  spatial_shape)
+        array_to_save = do_resampling(array_to_save, image_pixdim, dst_pixdim,
+                                      interp_order)
 
     if image_axcodes and dst_axcodes:
-        array_to_save = do_reorientation(
-            array_to_save, image_axcodes, dst_axcodes)
+        array_to_save = do_reorientation(array_to_save, image_axcodes,
+                                         dst_axcodes)
     save_volume_5d(array_to_save, filename, filefolder, affine)
 
 
@@ -411,7 +426,9 @@ def expand_to_5d(img_data):
 
 def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
     """
-    Save the img_data to nifti image
+    Save the img_data to nifti image, if the final dimensions of the 5D array
+    are 1's, save the lower dimensional image to disk by squeezing the trailing
+    single dimensional spaces away.
 
     :param img_data: 5d img to save
     :param filename: filename under which to save the img_data
@@ -421,19 +438,29 @@ def save_volume_5d(img_data, filename, save_path, affine=np.eye(4)):
     """
     if img_data is None:
         return
+    # 5D images are not well supported by many image processing tools
+    # (or are assumed to be time series)
+    # Squeeze 5d processing space into smaller image spatial size (3d or 2d)
+    # for improved compatibility with
+    # external visualization/processing tools like Slicer3D, ITK,
+    # SimpleITK, etc ...
+    sqeezed_shape = img_data.shape
+    while sqeezed_shape[-1] == 1:
+        sqeezed_shape = sqeezed_shape[0:-1]
+    img_data.shape = sqeezed_shape
     touch_folder(save_path)
     img_nii = nib.Nifti1Image(img_data, affine)
     # img_nii.set_data_dtype(np.dtype(np.float32))
     output_name = os.path.join(save_path, filename)
     try:
         if os.path.isfile(output_name):
-            tf.logging.warning(
-                'File %s exists, overwriting the file.', output_name)
+            tf.logging.warning('File %s exists, overwriting the file.',
+                               output_name)
         nib.save(img_nii, output_name)
     except OSError:
         tf.logging.fatal("writing failed {}".format(output_name))
         raise
-    print('Saved {}'.format(output_name))
+    tf.logging.info('Saved {}'.format(output_name))
 
 
 def split_filename(file_name):
@@ -474,11 +501,11 @@ def squeeze_spatial_temporal_dim(tf_tensor):
     if tf_tensor.shape[4] != 1:
         if tf_tensor.shape[5] > 1:
             raise NotImplementedError("time sequences not currently supported")
-        else:  # input shape [batch, x, y, z, t, 1]: swapping 't' and 1
-            tf_tensor = tf.transpose(tf_tensor, [0, 1, 2, 3, 5, 4])
+        # input shape [batch, x, y, z, t, 1]: swapping 't' and 1
+        tf_tensor = tf.transpose(tf_tensor, [0, 1, 2, 3, 5, 4])
     axis_to_squeeze = []
     for (idx, axis) in enumerate(tf_tensor.shape.as_list()):
-        if idx == 0 or idx == 5:
+        if idx in (0, 5):
             continue
         if axis == 1:
             axis_to_squeeze.append(idx)
@@ -564,20 +591,18 @@ def resolve_module_dir(module_dir_str, create_new=False):
             else:
                 tf.logging.fatal(
                     "trying to use '{}' as NiftyNet writing path, "
-                    "however cannot write '{}'".format(
-                        folder_path, init_file))
+                    "however cannot write '{}'".format(folder_path, init_file))
                 raise
         else:
             with os.fdopen(file_, 'w') as file_object:
                 file_object.write("# Created automatically\n")
         return folder_path
-    else:
-        raise ValueError(
-            "Could not resolve [{}].\nMake sure it is a valid folder path "
-            "or a module name.\nIf it is string representing a module, "
-            "the parent folder of [{}] should be on "
-            "the system path.\n\nCurrent system path {}.".format(
-                module_dir_str, module_dir_str, sys.path))
+    raise ValueError(
+        "Could not resolve [{}].\nMake sure it is a valid folder path "
+        "or a module name.\nIf it is string representing a module, "
+        "the parent folder of [{}] should be on "
+        "the system path.\n\nCurrent system path {}.".format(
+            module_dir_str, module_dir_str, sys.path))
 
 
 def to_absolute_path(input_path, model_root):
@@ -619,7 +644,7 @@ def resolve_file_name(file_name, paths):
                 tf.logging.info('Resolving {} as {}'.format(
                     file_name, path_file_name))
                 return os.path.abspath(path_file_name)
-        assert False, 'Could not resolve file name'
+        raise IOError('Could not resolve file name')
     except (TypeError, AssertionError, IOError):
         raise IOError('Could not resolve {}'.format(file_name))
 
@@ -640,8 +665,8 @@ def resolve_checkpoint(checkpoint_name):
     if os.path.isfile(checkpoint_name + '.index'):
         return checkpoint_name
     home_folder = NiftyNetGlobalConfig().get_niftynet_home_folder()
-    checkpoint_name = to_absolute_path(input_path=checkpoint_name,
-                                       model_root=home_folder)
+    checkpoint_name = to_absolute_path(
+        input_path=checkpoint_name, model_root=home_folder)
     if os.path.isfile(checkpoint_name + '.index'):
         return checkpoint_name
     raise ValueError('Invalid checkpoint {}'.format(checkpoint_name))
@@ -663,15 +688,17 @@ def get_latest_subfolder(parent_folder, create_new=False):
     except OSError:
         tf.logging.fatal('not a directory {}'.format(parent_folder))
         raise OSError
-    log_sub_dirs = [name for name in log_sub_dirs
-                    if re.findall('^[0-9]+$', name)]
+    log_sub_dirs = [
+        name for name in log_sub_dirs if re.findall('^[0-9]+$', name)
+    ]
     if log_sub_dirs and create_new:
         latest_id = max([int(name) for name in log_sub_dirs])
         log_sub_dir = '{}'.format(latest_id + 1)
     elif log_sub_dirs and not create_new:
-        latest_valid_id = max(
-            [int(name) for name in log_sub_dirs
-             if os.path.isdir(os.path.join(parent_folder, name))])
+        latest_valid_id = max([
+            int(name) for name in log_sub_dirs
+            if os.path.isdir(os.path.join(parent_folder, name))
+        ])
         log_sub_dir = '{}'.format(latest_valid_id)
     else:
         log_sub_dir = '{}'.format(0)
@@ -684,8 +711,10 @@ def _image3_animated_gif(tag, ims):
     from PIL.GifImagePlugin import Image as GIF
 
     # x=numpy.random.randint(0,256,[10,10,10],numpy.uint8)
-    ims = [np.asarray((ims[i, :, :]).astype(np.uint8))
-           for i in range(ims.shape[0])]
+    ims = [
+        np.asarray((ims[i, :, :]).astype(np.uint8))
+        for i in range(ims.shape[0])
+    ]
     ims = [GIF.fromarray(im) for im in ims]
     img_str = b''
     for b_data in PIL.GifImagePlugin.getheader(ims[0])[0]:
@@ -700,16 +729,15 @@ def _image3_animated_gif(tag, ims):
         img_str = str(img_str)
     summary_image_str = summary_pb2.Summary.Image(
         height=10, width=10, colorspace=1, encoded_image_string=img_str)
-    image_summary = summary_pb2.Summary.Value(
-        tag=tag, image=summary_image_str)
+    image_summary = summary_pb2.Summary.Value(tag=tag, image=summary_image_str)
     return [summary_pb2.Summary(value=[image_summary]).SerializeToString()]
 
 
 def image3(name,
            tensor,
            max_out=3,
-           collections=(tf.GraphKeys.SUMMARIES,),
-           animation_axes=(1,),
+           collections=(tf.GraphKeys.SUMMARIES, ),
+           animation_axes=(1, ),
            image_axes=(2, 3),
            other_indices=None):
     """
@@ -747,15 +775,17 @@ def image3(name,
                       if i not in axis_order]
     original_shape = tensor.shape.as_list()
     new_shape = [
-        original_shape[0], -1,
-        original_shape[axis_order[-2]],
-        original_shape[axis_order[-1]]]
+        original_shape[0], -1, original_shape[axis_order[-2]],
+        original_shape[axis_order[-1]]
+    ]
     transposed_tensor = tf.transpose(tensor, axis_order_all)
     transposed_tensor = tf.reshape(transposed_tensor, new_shape)
     # split images
     with tf.device('/cpu:0'):
         for it_i in range(min(max_out, transposed_tensor.shape.as_list()[0])):
-            inp = [name + suffix.format(it_i), transposed_tensor[it_i, :, :, :]]
+            inp = [
+                name + suffix.format(it_i), transposed_tensor[it_i, :, :, :]
+            ]
             summary_op = tf.py_func(_image3_animated_gif, inp, tf.string)
             for c in collections:
                 tf.add_to_collection(c, summary_op)
@@ -765,7 +795,7 @@ def image3(name,
 def image3_sagittal(name,
                     tensor,
                     max_outputs=3,
-                    collections=(tf.GraphKeys.SUMMARIES,)):
+                    collections=(tf.GraphKeys.SUMMARIES, )):
     """
     Create 2D image summary in the sagittal view.
 
@@ -781,7 +811,7 @@ def image3_sagittal(name,
 def image3_coronal(name,
                    tensor,
                    max_outputs=3,
-                   collections=(tf.GraphKeys.SUMMARIES,)):
+                   collections=(tf.GraphKeys.SUMMARIES, )):
     """
     Create 2D image summary in the coronal view.
 
@@ -797,7 +827,7 @@ def image3_coronal(name,
 def image3_axial(name,
                  tensor,
                  max_outputs=3,
-                 collections=(tf.GraphKeys.SUMMARIES,)):
+                 collections=(tf.GraphKeys.SUMMARIES, )):
     """
     Create 2D image summary in the axial view.
 
@@ -874,7 +904,6 @@ def close_logger():
             logger.removeHandler(handler)
         except (OSError, ValueError):
             pass
-
 
 
 def infer_latest_model_file(model_dir):

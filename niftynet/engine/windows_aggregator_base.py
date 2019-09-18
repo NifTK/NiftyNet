@@ -74,6 +74,8 @@ class ImageWindowsAggregator(object):
 
     @staticmethod
     def _is_stopping_signal(location_vector):
+        if location_vector is None:
+            return True
         return np.any(location_vector < 0)
 
     @staticmethod

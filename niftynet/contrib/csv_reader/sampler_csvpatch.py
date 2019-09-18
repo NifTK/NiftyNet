@@ -91,6 +91,10 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
         assert len(self.available_subjects) >0, "No available subject from " \
                                                 "check"
 
+        # assert len(self.available_subjects) > 0, "No available subject from " \
+        #                                          "check"
+
+
         print("subject id is ", subject_id)
         if len(self.available_subjects) > 0:
             idx_subject_id = np.where(
@@ -126,7 +130,8 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
                     if subject_id in set(self.available_subjects):
                         self.available_subjects.drop([idx_subject_id], inplace=True)
 
-                        print(self.available_subjects, idx_subject_id)
+                        print('self.available_subjects', self.available_subjects, idx_subject_id)
+
                         subject_id = None
                     else:
                         tf.logging.warning('%s may have already been dropped from list of available subjects' %subject_id)

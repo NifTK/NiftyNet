@@ -13,7 +13,9 @@ from niftynet.io.image_reader import ImageReader
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.utilities.util_common import ParserNamespace
 from niftynet.engine.image_window import N_SPATIAL
-from niftynet.contrib.csv_reader.csv_reader import  CSVReader
+
+from niftynet.contrib.csv_reader.csv_reader import CSVReader
+
 from niftynet.contrib.csv_reader.sampler_csvpatch import CSVPatchSampler
 
 # MULTI_MOD_DATA = {
@@ -73,9 +75,9 @@ from niftynet.contrib.csv_reader.sampler_csvpatch import CSVPatchSampler
 DYNAMIC_MOD_DATA = {
     'T1': ParserNamespace(
         csv_path_file='',
-        path_to_search='example_volumes/csv_data',
+        path_to_search='data/csv_data',
         filename_contains=(),
-        filename_not_contains=('_','csv'),
+        filename_not_contains=('_', 'csv'),
         interp_order=3,
         csv_data_file='',
         pixdim=None,
@@ -93,28 +95,24 @@ DYNAMIC_MOD_DATA = {
         axcodes=None,
         spatial_window_size=(),
         loader=None,
-        csv_data_file='/Users/csudre/DevelopmentNiftyNet/NiftyNet_CSV' \
-                      '/example_volumes/csv_data/ICBMTest3.csv'
+        csv_data_file='data/csv_data/ICBMTest3.csv'
     )
 }
-
 
 DYNAMIC_MOD_TASK = ParserNamespace(image=('T1',), label=('T1',),
                                    sampler=('sampler',))
 
-
-
 LARGE_MOD_DATA = {
     'T1': ParserNamespace(
         csv_path_file='',
-        path_to_search='example_volumes/csv_data',
+        path_to_search='data/csv_data',
         filename_contains=(),
-        filename_not_contains=('_','csv'),
+        filename_not_contains=('_', 'csv'),
         interp_order=3,
         csv_data_file='',
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(75,75,75),
+        spatial_window_size=(75, 75, 75),
         loader=None
     ),
     'sampler': ParserNamespace(
@@ -127,12 +125,37 @@ LARGE_MOD_DATA = {
         axcodes=None,
         spatial_window_size=(),
         loader=None,
-        csv_data_file='/Users/csudre/DevelopmentNiftyNet/NiftyNet_CSV' \
-                      '/example_volumes/csv_data/ICBMTest2.csv'
+        csv_data_file='data/csv_data/ICBMTest2.csv'
+    )
+}
+LARGE_MOD_DATA_2_ELEMENTS = {
+    'T1': ParserNamespace(
+        csv_path_file='',
+        path_to_search='data/csv_data',
+        filename_contains=(),
+        filename_not_contains=('_', 'csv'),
+        interp_order=3,
+        csv_data_file='',
+        pixdim=None,
+        axcodes=None,
+        spatial_window_size=(75, 75, 75),
+        loader=None
+    ),
+    'sampler': ParserNamespace(
+        csv_path_file='',
+        path_to_search='',
+        filename_contains=(),
+        filename_not_contains=(),
+        interp_order=0,
+        pixdim=None,
+        axcodes=None,
+        spatial_window_size=(),
+        loader=None,
+        csv_data_file='data/csv_data/ICBMTest4.csv'
     )
 }
 LARGE_MOD_TASK = ParserNamespace(image=('T1',), label=('T1',),
-                                   sampler=('sampler',))
+                                 sampler=('sampler',))
 
 CSV_DATA = {
     'sampler': ParserNamespace(
@@ -145,8 +168,22 @@ CSV_DATA = {
         axcodes=None,
         spatial_window_size=(),
         loader=None,
-        csv_data_file='/Users/csudre/DevelopmentNiftyNet/NiftyNet_CSV' \
-                      '/NiftyNet/example_volumes/csv_data/ICBMTest3.csv'
+        csv_data_file='data/csv_data/ICBMTest3.csv'
+    )
+}
+
+CSV_DATA_TWO_ELEMENTS = {
+    'sampler': ParserNamespace(
+        csv_path_file='',
+        path_to_search='',
+        filename_contains=(),
+        filename_not_contains=(),
+        interp_order=0,
+        pixdim=None,
+        axcodes=None,
+        spatial_window_size=(),
+        loader=None,
+        csv_data_file='data/csv_data/ICBMTest4.csv'
     )
 }
 
@@ -161,8 +198,7 @@ CSVBAD_DATA = {
         axcodes=None,
         spatial_window_size=(),
         loader=None,
-        csv_data_file='/Users/csudre/DevelopmentNiftyNet/NiftyNet_CSV' \
-                      '/NiftyNet/example_volumes/csv_data/ICBMTest.csv'
+        csv_data_file='data/csv_data/ICBMTest.csv'
     )
 }
 
@@ -194,10 +230,20 @@ def get_large_window_reader():
     reader.initialise(LARGE_MOD_DATA, LARGE_MOD_TASK, dynamic_list)
     return reader
 
+def get_large_window_reader_two_elements():
+    reader = ImageReader(['image'])
+    reader.initialise(LARGE_MOD_DATA_2_ELEMENTS, LARGE_MOD_TASK, dynamic_list)
+    return reader
+
 # def get_concentric_window_reader():
 #     reader = ImageReader(['image', 'label'])
 #     reader.initialise(MULTI_WINDOW_DATA, MULTI_WINDOW_TASK, multi_mod_list)
 #     return reader
+
+def get_csvpatch_reader_two_elements():
+    csv_reader = CSVReader(['sampler'])
+    csv_reader.initialise(CSV_DATA_TWO_ELEMENTS, DYNAMIC_MOD_TASK, dynamic_list)
+    return csv_reader
 
 def get_csvpatch_reader():
     csv_reader = CSVReader(['sampler'])
@@ -229,23 +275,22 @@ class CSVPatchSamplerTest(tf.test.TestCase):
             self.assertAllClose(out['image'].shape, (2, 69, 69, 69, 1))
         sampler.close_all()
 
-
     def test_pad_init(self):
         sampler = CSVPatchSampler(reader=get_large_window_reader(),
                                   csv_reader=get_csvpatch_reader(),
-                                    window_sizes=LARGE_MOD_DATA,
-                                    batch_size=2,
-                                     windows_per_image=1,
-                                    queue_length=3)
+                                  window_sizes=LARGE_MOD_DATA,
+                                  batch_size=2,
+                                  windows_per_image=1,
+                                  queue_length=3)
+
         with self.test_session() as sess:
             sampler.set_num_threads(2)
             out = sess.run(sampler.pop_batch_op())
             img_loc = out['image_location']
             print(img_loc)
-            self.assertAllClose(out['image'].shape[1:], (75,75,75, 1))
+
+            self.assertAllClose(out['image'].shape[1:], (75, 75, 75, 1))
         sampler.close_all()
-
-
 
     def test_padd_volume(self):
         sampler = CSVPatchSampler(reader=get_large_window_reader(),
@@ -294,21 +339,35 @@ class CSVPatchSamplerTest(tf.test.TestCase):
         sampler.close_all()
 
 
-    def test_remove_element(self):
-
-        sampler = CSVPatchSampler(reader=get_large_window_reader(),
-                              csv_reader=get_csvpatch_reader(),
-                              window_sizes=LARGE_MOD_DATA,
-                              batch_size=2,
-                              windows_per_image=1,
-                              queue_length=3,
-                              mode_correction='remove')
+    def test_remove_element_two_elements(self):
+        sampler = CSVPatchSampler(reader=get_large_window_reader_two_elements(),
+                                  csv_reader=get_csvpatch_reader_two_elements(),
+                                  window_sizes=LARGE_MOD_DATA_2_ELEMENTS,
+                                  batch_size=2,
+                                  windows_per_image=1,
+                                  queue_length=3,
+                                  mode_correction='remove')
         with self.test_session() as sess:
-            sampler.set_num_threads(2)
-            with self.assertRaisesRegexp(ValueError, ""):
+            sampler.set_num_threads(1)
+            try:
                 out = sess.run(sampler.pop_batch_op())
+                passed = True
+            except Exception:
+                passed = False
+            self.assertTrue(passed)
 
-
+    def test_remove_element_one_element(self):
+        sampler = CSVPatchSampler(reader=get_large_window_reader(),
+                                  csv_reader=get_csvpatch_reader(),
+                                  window_sizes=LARGE_MOD_DATA,
+                                  batch_size=2,
+                                  windows_per_image=1,
+                                  queue_length=3,
+                                  mode_correction='remove')
+        with self.assertRaisesRegexp(Exception, ""):
+            with self.test_session() as sess:
+                sampler.set_num_threads(1)
+                out = sess.run(sampler.pop_batch_op())
 
     def test_ill_init(self):
         with self.assertRaisesRegexp(Exception, ""):
@@ -320,13 +379,15 @@ class CSVPatchSamplerTest(tf.test.TestCase):
                                      windows_per_image=10,
                                      queue_length=3)
     #
-    # def test_close_early(self):
-    #     sampler = UniformSampler(reader=get_dynamic_window_reader(),
-    #                              window_sizes=DYNAMIC_MOD_DATA,
-    #                              batch_size=2,
-    #                              windows_per_image=10,
-    #                              queue_length=10)
-    #     sampler.close_all()
+
+
+            # def test_close_early(self):
+            #     sampler = UniformSampler(reader=get_dynamic_window_reader(),
+            #                              window_sizes=DYNAMIC_MOD_DATA,
+            #                              batch_size=2,
+            #                              windows_per_image=10,
+            #                              queue_length=10)
+
 
 
 class RandomCoordinatesTest(tf.test.TestCase):
@@ -334,7 +395,9 @@ class RandomCoordinatesTest(tf.test.TestCase):
         for coord in coords:
             for i in range(len(coord.shape)):
                 self.assertTrue(coord[i] >= int(win_size[i] / 2))
-                self.assertTrue(coord[i] <= img_size[i] - int(win_size[i]/2))
+
+                self.assertTrue(coord[i] <= img_size[i] - int(win_size[i] / 2))
+
 
     def test_3d_coordinates(self):
         img_size = [8, 9, 10]
@@ -345,7 +408,8 @@ class RandomCoordinatesTest(tf.test.TestCase):
         self.assertCoordinatesAreValid(coords, img_size, win_size)
 
     def test_2d_coordinates(self):
-        cropped_map=np.zeros((256, 512, 1))
+
+        cropped_map = np.zeros((256, 512, 1))
         img_size = [8, 9, 1]
         win_size = [8, 8, 1]
         coords = rand_spatial_coordinates(
@@ -354,7 +418,7 @@ class RandomCoordinatesTest(tf.test.TestCase):
         self.assertCoordinatesAreValid(coords, img_size, win_size)
 
     def test_1d_coordinates(self):
-        cropped_map=np.zeros((1, 1, 1))
+        cropped_map = np.zeros((1, 1, 1))
         img_size = [4, 1, 1]
         win_size = [2, 1, 1]
         coords = rand_spatial_coordinates(

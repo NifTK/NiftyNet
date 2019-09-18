@@ -176,7 +176,7 @@ be disabled; [path_to_search](#path-to-search),
  and [filename_removefromid](#filename-removefromid) will be ignored.  If this
 parameter is left blank or the file does not exist, input image search will be
 enabled, and the matched filenames will be written to this file path.
->>>>>>> changed csv_file -> csv_path_file in various places and merged carole changes
+
 
 ###### `path_to_search`
 Single or multiple folders to search for input images.

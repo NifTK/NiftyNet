@@ -191,7 +191,7 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
                                    'aggregated',
                                    output_filename)
         self.assertAllClose(
-            nib.load(output_file).shape, [128, 128, 1, 1, 1])
+            nib.load(output_file).shape, [128, 128])
         sampler.close_all()
 
     def test_25d_init(self):
@@ -222,7 +222,7 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
                                    output_filename)
         print(output_file)
         self.assertAllClose(
-            nib.load(output_file).shape, [256, 168, 256, 1, 1],
+            nib.load(output_file).shape, [256, 168, 256],
             rtol=1e-03, atol=1e-03)
         sampler.close_all()
 
@@ -246,16 +246,18 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
-                min_val = np.sum((np.asarray(out['image']).flatten()))
-                stats_val = [np.min(out), np.max(out), np.sum(out)]
+                out_flatten = np.reshape(np.asarray(out['image']), [10, -1])
+                min_val = np.sum(np.reshape(np.asarray(out['image']),
+                                            [10, -1]), 1)
                 more_batch = aggregator.decode_batch(
-                    {'window_image':out['image'], 'csv_sum':min_val},
+                    {'window_image': out['image'], 'csv_sum': min_val},
                     out['image_location'])
         output_filename = 'window_image_{}_niftynet_out.nii.gz'.format(
             sampler.reader.get_subject_id(0))
-        sum_filename = os.path.join('testing_data','aggregated',
-                                    'csv_sum_{}_niftynet_out.csv'.format(
-            sampler.reader.get_subject_id(0)))
+        sum_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'csv_sum_{}_niftynet_out.csv'.format(
+                sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated',
                                    output_filename)
@@ -264,7 +266,7 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             nib.load(output_file).shape, (256, 168, 256, 1, 2))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
-            min_pd.shape, [421, 9]
+            min_pd.shape, [420, 9]
         )
         sampler.close_all()
 
@@ -288,14 +290,16 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
+
                 more_batch = aggregator.decode_batch(
-                    {'window_image':out['image'], 'window_im2':out['image']},
+                    {'window_image': out['image'], 'window_im2': out['image']},
                     out['image_location'])
         output_filename = 'window_image_{}_niftynet_out.nii.gz'.format(
             sampler.reader.get_subject_id(0))
-        outim2_filename = os.path.join('testing_data','aggregated',
-                                    'window_im2_{}_niftynet_out.nii.gz'.format(
-            sampler.reader.get_subject_id(0)))
+        outim2_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'window_im2_{}_niftynet_out.nii.gz'.format(
+                sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated',
                                    output_filename)
@@ -325,21 +329,28 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
-                min_val = np.sum((np.asarray(out['image']).flatten()))
-                stats_val = [np.min(out['image']), np.max(out['image']), np.sum(
-                    out['image'])]
+                print(out['image'].shape)
+                out_flatten = np.reshape(np.asarray(out['image']), [10, -1])
+                min_val = np.sum(np.reshape(
+                    np.asarray(out['image']), [10, -1]), 1)
+                stats_val = np.concatenate(
+                    [np.min(out_flatten, 1, keepdims=True),
+                     np.max(out_flatten, 1, keepdims=True),
+                     np.sum(out_flatten, 1, keepdims=True)], 1)
                 more_batch = aggregator.decode_batch(
-                    {'window_image':out['image'], 'csv_sum':min_val,
-                     'csv_stats':stats_val},
+                    {'window_image': out['image'], 'csv_sum': min_val,
+                     'csv_stats': stats_val},
                     out['image_location'])
         output_filename = 'window_image_{}_niftynet_out.nii.gz'.format(
             sampler.reader.get_subject_id(0))
-        sum_filename = os.path.join('testing_data','aggregated',
-                                    'csv_sum_{}_niftynet_out.csv'.format(
-            sampler.reader.get_subject_id(0)))
-        stats_filename = os.path.join('testing_data', 'aggregated',
-                                    'csv_stats_{}_niftynet_out.csv'.format(
-                                        sampler.reader.get_subject_id(0)))
+        sum_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'csv_sum_{}_niftynet_out.csv'.format(
+                sampler.reader.get_subject_id(0)))
+        stats_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'csv_stats_{}_niftynet_out.csv'.format(
+                sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated',
                                    output_filename)
@@ -348,11 +359,11 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             nib.load(output_file).shape, (256, 168, 256, 1, 2))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
-            min_pd.shape, [421, 9]
+            min_pd.shape, [420, 9]
         )
         stats_pd = pd.read_csv(stats_filename)
         self.assertAllClose(
-            stats_pd.shape, [421, 11]
+            stats_pd.shape, [420, 11]
         )
         sampler.close_all()
 
@@ -376,24 +387,30 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
-                min_val = np.sum((np.asarray(out['image']).flatten()))
-                stats_val = [np.min(out['image']), np.max(out['image']), np.sum(
-                    out['image'])]
-                stats_val = np.expand_dims(stats_val, 0)
-                stats_val = np.concatenate([stats_val, stats_val], axis=0)
+                out_flatten = np.reshape(np.asarray(out['image']), [10, -1])
+                min_val = np.sum(np.reshape(
+                    np.asarray(out['image']), [10, -1]), 1)
+                stats_val = np.concatenate(
+                    [np.min(out_flatten, 1, keepdims=True),
+                     np.max(out_flatten, 1, keepdims=True),
+                     np.sum(out_flatten, 1, keepdims=True)], 1)
+                stats_val = np.expand_dims(stats_val, 1)
+                stats_val = np.concatenate([stats_val, stats_val], axis=1)
                 more_batch = aggregator.decode_batch(
-                    {'window_image':out['image'],
-                     'csv_sum':min_val,
-                     'csv_stats_2d':stats_val},
+                    {'window_image': out['image'],
+                     'csv_sum': min_val,
+                     'csv_stats_2d': stats_val},
                     out['image_location'])
         output_filename = 'window_image_{}_niftynet_out.nii.gz'.format(
             sampler.reader.get_subject_id(0))
-        sum_filename = os.path.join('testing_data','aggregated',
-                                    'csv_sum_{}_niftynet_out.csv'.format(
-            sampler.reader.get_subject_id(0)))
-        stats_filename = os.path.join('testing_data', 'aggregated',
-                                    'csv_stats_2d_{}_niftynet_out.csv'.format(
-                                        sampler.reader.get_subject_id(0)))
+        sum_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'csv_sum_{}_niftynet_out.csv'.format(
+                sampler.reader.get_subject_id(0)))
+        stats_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'csv_stats_2d_{}_niftynet_out.csv'.format(
+                sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated',
                                    output_filename)
@@ -402,11 +419,11 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             nib.load(output_file).shape, (256, 168, 256, 1, 2))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
-            min_pd.shape, [421, 9]
+            min_pd.shape, [420, 9]
         )
         stats_pd = pd.read_csv(stats_filename)
         self.assertAllClose(
-            stats_pd.shape, [841, 11]
+            stats_pd.shape, [420, 14]
         )
         sampler.close_all()
 
@@ -430,25 +447,31 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
-                min_val = np.sum((np.asarray(out['image']).flatten()))
-                stats_val = [np.min(out), np.max(out), np.sum(out)]
+                out_flatten = np.reshape(np.asarray(out['image']), [10, -1])
+                min_val = np.sum(np.reshape(
+                    np.asarray(out['image']), [10, -1]), 1)
+                stats_val = np.concatenate(
+                    [np.min(out_flatten, 1, keepdims=True),
+                     np.max(out_flatten, 1, keepdims=True),
+                     np.sum(out_flatten, 1, keepdims=True)], 1)
                 more_batch = aggregator.decode_batch(
-                    {'window_image':out['image'], 'csv_sum':min_val},
+                    {'window_image': out['image'], 'csv_sum': min_val},
                     out['image_location'])
         output_filename = 'window_image_{}_niftynet_out.nii.gz'.format(
             sampler.reader.get_subject_id(0))
-        sum_filename = os.path.join('testing_data','aggregated',
-                                    'csv_sum_{}_niftynet_out.csv'.format(
-            sampler.reader.get_subject_id(0)))
+        sum_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'csv_sum_{}_niftynet_out.csv'.format(
+                sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated',
                                    output_filename)
 
         self.assertAllClose(
-            nib.load(output_file).shape, (128, 128, 1, 1, 1))
+            nib.load(output_file).shape, (128, 128))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
-            min_pd.shape, [11, 9]
+            min_pd.shape, [10, 9]
         )
         sampler.close_all()
 
@@ -472,35 +495,41 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
-                min_val = np.sum((np.asarray(out['image']).flatten()))
-                stats_val = [np.min(out['image']), np.max(out['image']), np.sum(
-                    out['image'])]
+                out_flatten = np.reshape(np.asarray(out['image']), [10, -1])
+                min_val = np.sum(np.reshape(
+                    np.asarray(out['image']), [10, -1]), 1)
+                stats_val = np.concatenate(
+                    [np.min(out_flatten, 1, keepdims=True),
+                     np.max(out_flatten, 1, keepdims=True),
+                     np.sum(out_flatten, 1, keepdims=True)], 1)
                 more_batch = aggregator.decode_batch(
-                    {'window_image':out['image'],
-                     'csv_sum':min_val,
-                     'csv_stats':stats_val},
+                    {'window_image': out['image'],
+                     'csv_sum': min_val,
+                     'csv_stats': stats_val},
                     out['image_location'])
         output_filename = 'window_image_{}_niftynet_out.nii.gz'.format(
             sampler.reader.get_subject_id(0))
-        sum_filename = os.path.join('testing_data','aggregated',
-                                    'csv_sum_{}_niftynet_out.csv'.format(
-            sampler.reader.get_subject_id(0)))
-        stats_filename = os.path.join('testing_data', 'aggregated',
-                                    'csv_stats_{}_niftynet_out.csv'.format(
-                                        sampler.reader.get_subject_id(0)))
+        sum_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'csv_sum_{}_niftynet_out.csv'.format(
+                sampler.reader.get_subject_id(0)))
+        stats_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'csv_stats_{}_niftynet_out.csv'.format(
+                sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated',
                                    output_filename)
 
         self.assertAllClose(
-            nib.load(output_file).shape, (128, 128, 1, 1, 1))
+            nib.load(output_file).shape, (128, 128))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
-            min_pd.shape, [11, 9]
+            min_pd.shape, [10, 9]
         )
         stats_pd = pd.read_csv(stats_filename)
         self.assertAllClose(
-            stats_pd.shape, [11, 11]
+            stats_pd.shape, [10, 11]
         )
         sampler.close_all()
 
@@ -524,37 +553,43 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             sampler.set_num_threads(2)
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
-                min_val = np.sum((np.asarray(out['image']).flatten()))
-                stats_val = [np.min(out['image']), np.max(out['image']), np.sum(
-                    out['image'])]
-                stats_val = np.expand_dims(stats_val, 0)
-                stats_val = np.concatenate([stats_val, stats_val], axis=0)
+                out_flatten = np.reshape(np.asarray(out['image']), [10, -1])
+                min_val = np.sum(np.reshape(
+                    np.asarray(out['image']), [10, -1]), 1)
+                stats_val = np.concatenate(
+                    [np.min(out_flatten, 1, keepdims=True),
+                     np.max(out_flatten, 1, keepdims=True),
+                     np.sum(out_flatten, 1, keepdims=True)], 1)
+                stats_val = np.expand_dims(stats_val, 1)
+                stats_val = np.concatenate([stats_val, stats_val], axis=1)
                 more_batch = aggregator.decode_batch(
-                    {'window_image':out['image'],
-                     'csv_sum':min_val,
-                     'csv_stats_2d':stats_val},
+                    {'window_image': out['image'],
+                     'csv_sum': min_val,
+                     'csv_stats_2d': stats_val},
                     out['image_location'])
         output_filename = 'window_image_{}_niftynet_out.nii.gz'.format(
             sampler.reader.get_subject_id(0))
-        sum_filename = os.path.join('testing_data','aggregated',
-                                    'csv_sum_{}_niftynet_out.csv'.format(
-            sampler.reader.get_subject_id(0)))
-        stats_filename = os.path.join('testing_data', 'aggregated',
-                                    'csv_stats_2d_{}_niftynet_out.csv'.format(
-                                        sampler.reader.get_subject_id(0)))
+        sum_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'csv_sum_{}_niftynet_out.csv'.format(
+                sampler.reader.get_subject_id(0)))
+        stats_filename = os.path.join(
+            'testing_data', 'aggregated',
+            'csv_stats_2d_{}_niftynet_out.csv'.format(
+                sampler.reader.get_subject_id(0)))
         output_file = os.path.join('testing_data',
                                    'aggregated',
                                    output_filename)
 
         self.assertAllClose(
-            nib.load(output_file).shape, (128, 128, 1, 1, 1))
+            nib.load(output_file).shape, (128, 128))
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(
-            min_pd.shape, [11, 9]
+            min_pd.shape, [10, 9]
         )
         stats_pd = pd.read_csv(stats_filename)
         self.assertAllClose(
-            stats_pd.shape, [21, 11]
+            stats_pd.shape, [10, 14]
         )
         sampler.close_all()
 
@@ -579,15 +614,15 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
                 more_batch = aggregator.decode_batch(
-                    {'window_label':out['label']}, out['label_location'])
+                    {'window_label': out['label']}, out['label_location'])
         output_filename = 'window_label_{}_niftynet_out.nii.gz'.format(
             sampler.reader.get_subject_id(0))
         output_file = os.path.join(
             'testing_data', 'aggregated', output_filename)
         self.assertAllClose(
-            nib.load(output_file).shape, [256, 168, 256, 1, 1])
+            nib.load(output_file).shape, [256, 168, 256])
         sampler.close_all()
-        output_data = nib.load(output_file).get_data()[..., 0, 0]
+        output_data = nib.load(output_file).get_data()
         expected_data = nib.load(
             'testing_data/T1_1023_NeuroMorph_Parcellation.nii.gz').get_data()
         self.assertAllClose(output_data, expected_data)
@@ -618,12 +653,12 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
             while more_batch:
                 out = sess.run(sampler.pop_batch_op())
                 more_batch = aggregator.decode_batch(
-                    {'window_label':out['label']}, out['label_location'])
+                    {'window_label': out['label']}, out['label_location'])
         output_filename = 'window_label_{}_{}.nii.gz'.format(
             sampler.reader.get_subject_id(0), postfix)
         output_file = os.path.join(
             'testing_data', 'aggregated', output_filename)
-        output_data = nib.load(output_file).get_data()[..., 0, 0]
+        output_data = nib.load(output_file).get_data()
         output_shape = output_data.shape
         for i in range(3):
             def _test_background(idcs):
