@@ -423,7 +423,7 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
         )
         stats_pd = pd.read_csv(stats_filename)
         self.assertAllClose(
-            stats_pd.shape, [420, 14]
+            stats_pd.shape, [840, 11]
         )
         sampler.close_all()
 
@@ -562,6 +562,7 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
                      np.sum(out_flatten, 1, keepdims=True)], 1)
                 stats_val = np.expand_dims(stats_val, 1)
                 stats_val = np.concatenate([stats_val, stats_val], axis=1)
+                print(stats_val.shape)
                 more_batch = aggregator.decode_batch(
                     {'window_image': out['image'],
                      'csv_sum': min_val,
@@ -589,7 +590,7 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
         )
         stats_pd = pd.read_csv(stats_filename)
         self.assertAllClose(
-            stats_pd.shape, [10, 14]
+            stats_pd.shape, [20, 11]
         )
         sampler.close_all()
 

@@ -367,7 +367,7 @@ class ResizeSamplesAggregatorTest(NiftyNetTestCase):
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(min_pd.shape, [1, 2])
         stats_pd = pd.read_csv(stats_filename)
-        self.assertAllClose(stats_pd.shape, [1, 7])
+        self.assertAllClose(stats_pd.shape, [2, 4])
         sampler.close_all()
 
     def test_2d_init(self):
@@ -548,7 +548,7 @@ class ResizeSamplesAggregatorTest(NiftyNetTestCase):
         min_pd = pd.read_csv(sum_filename)
         self.assertAllClose(min_pd.shape, [1, 2])
         stats_pd = pd.read_csv(stats_filename)
-        self.assertAllClose(stats_pd.shape, [1, 7])
+        self.assertAllClose(stats_pd.shape, [2, 4])
         sampler.close_all()
 
     def test_25d_init(self):
