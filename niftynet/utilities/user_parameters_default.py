@@ -9,7 +9,7 @@ import os
 
 from niftynet.engine.image_window_dataset import SMALLER_FINAL_BATCH_MODE
 from niftynet.io.image_loader import SUPPORTED_LOADERS
-from niftynet.io.image_sets_partitioner import SUPPORTED_PHASES
+from niftynet.io.base_sets_partitioner import SUPPORTED_PHASES
 from niftynet.utilities.user_parameters_helper import (
     float_array, int_array, spatial_atleast3d, spatialnumarray, str2boolean,
     str_array)

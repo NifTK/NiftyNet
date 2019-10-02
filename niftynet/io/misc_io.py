@@ -17,6 +17,18 @@ import scipy.ndimage
 import tensorflow as tf
 # pylint: disable=no-name-in-module
 from tensorflow.core.framework import summary_pb2
+try:
+    # pylint: disable=no-name-in-module
+    from tensorflow.python.platform.tf_logging import \
+        _get_logger as get_logger
+except ImportError:
+    pass
+
+try:
+    from tensorflow.python.platform.tf_logging import get_logger
+except ImportError:
+    pass
+
 
 from niftynet.io.image_loader import load_image_obj
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
@@ -794,18 +806,6 @@ def set_logger(file_name=None):
     :param file_name:
     :return:
     """
-    # pylint: disable=no-name-in-module
-    # This is done so if the user had TF 1.12.1 or a new version the code
-    # does not brake. First part of the try is renaming the TF 1.12.1 to
-    # fit the TF 1.13.1>= naming scheme, while the second is just a normal
-    # import for TF 1.13.1>=
-    try:
-        # pylint: disable=no-name-in-module
-        from tensorflow.python.platform.tf_logging import \
-            _get_logger as get_logger
-    except ImportError:
-        from tensorflow.python.platform.tf_logging import get_logger
-
     logger = get_logger()
     tf.logging.set_verbosity(tf.logging.INFO)
     logger.handlers = []
@@ -830,18 +830,6 @@ def close_logger():
 
     :return:
     """
-    # pylint: disable=no-name-in-module
-    # This is done so if the user had TF 1.12.1 or a new version the code
-    # does not brake. First part of the try is renaming the TF 1.12.1 to
-    # fit the TF 1.13.1>= naming scheme, while the second is just a normal
-    # import for TF 1.13.1>=
-    try:
-        # pylint: disable=no-name-in-module
-        from tensorflow.python.platform.tf_logging import \
-            _get_logger as get_logger
-    except ImportError:
-        from tensorflow.python.platform.tf_logging import get_logger
-
     logger = get_logger()
     for handler in reversed(logger.handlers):
         try:

@@ -11,6 +11,7 @@ import tensorflow as tf
 from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
 from niftynet.io.image_reader import ImageReader
+from niftynet.io.file_image_sink import FileImageSink
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
 from niftynet.layer.discrete_label_normalisation import \
     DiscreteLabelNormalisationLayer
@@ -110,8 +111,7 @@ def get_3d_reader():
     :return: 3d reader
     '''
     reader = ImageReader(['image'])
-    reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
-    return reader
+    return reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
 
 
 def get_2d_reader():
@@ -120,8 +120,7 @@ def get_2d_reader():
     :return: 2d reader
     '''
     reader = ImageReader(['image'])
-    reader.initialise(MOD_2D_DATA, MOD_2D_TASK, mod_2d_list)
-    return reader
+    return reader.initialise(MOD_2D_DATA, MOD_2D_TASK, mod_2d_list)
 
 
 def get_label_reader():
@@ -130,7 +129,7 @@ def get_label_reader():
     :return: label reader
     '''
     reader = ImageReader(['label'])
-    reader.initialise(MOD_LABEL_DATA, MOD_LABEl_TASK, mod_label_list)
+    reader = reader.initialise(MOD_LABEL_DATA, MOD_LABEl_TASK, mod_label_list)
     label_normaliser = DiscreteLabelNormalisationLayer(
         image_name='label',
         modalities=vars(SINGLE_25D_TASK).get('label'),
@@ -147,8 +146,7 @@ def get_25d_reader():
     :return:
     '''
     reader = ImageReader(['image'])
-    reader.initialise(SINGLE_25D_DATA, SINGLE_25D_TASK, single_25d_list)
-    return reader
+    return reader.initialise(SINGLE_25D_DATA, SINGLE_25D_TASK, single_25d_list)
 
 
 class ResizeSamplesAggregatorTest(NiftyNetTestCase):
@@ -562,8 +560,9 @@ class ResizeSamplesAggregatorTest(NiftyNetTestCase):
         aggregator = ResizeSamplesAggregator(
             image_reader=reader,
             name='image',
-            output_path=os.path.join('testing_data', 'aggregated'),
-            interp_order=3)
+            image_writer=FileImageSink(
+                reader, 3,
+                output_path=os.path.join('testing_data', 'aggregated')))
         more_batch = True
 
         with self.cached_session() as sess:
@@ -593,8 +592,9 @@ class ResizeSamplesAggregatorTest(NiftyNetTestCase):
         aggregator = ResizeSamplesAggregator(
             image_reader=reader,
             name='label',
-            output_path=os.path.join('testing_data', 'aggregated'),
-            interp_order=0)
+            image_writer=FileImageSink(
+                reader, 3,
+                output_path=os.path.join('testing_data', 'aggregated')))
         more_batch = True
 
         with self.cached_session() as sess:

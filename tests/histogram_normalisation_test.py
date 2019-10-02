@@ -40,8 +40,8 @@ DATA_PARAM = {
 }
 TASK_PARAM = ParserNamespace(image=('T1', 'FLAIR'))
 MODEL_FILE = os.path.join('testing_data', 'std_models.txt')
-data_partitioner = ImageSetsPartitioner()
-file_list = data_partitioner.initialise(DATA_PARAM).get_file_list()
+data_partitioner = ImageSetsPartitioner(DATA_PARAM)
+file_list = data_partitioner.initialise().get_file_list()
 
 
 # @unittest.skipIf(os.environ.get('QUICKTEST', "").lower() == "true", 'Skipping slow tests')
@@ -61,7 +61,7 @@ class HistTest(NiftyNetTestCase):
              100.0])
 
         reader = ImageReader(['image'])
-        reader.initialise(DATA_PARAM, TASK_PARAM, file_list)
+        reader = reader.initialise(DATA_PARAM, TASK_PARAM, file_list)
         self.assertAllClose(len(reader._file_list), 4)
 
         foreground_masking_layer = BinaryMaskingLayer(
@@ -76,7 +76,7 @@ class HistTest(NiftyNetTestCase):
             name='hist_norm_layer')
         if os.path.exists(MODEL_FILE):
             os.remove(MODEL_FILE)
-        hist_norm.train(reader.output_list)
+        hist_norm.train([reader.get_image(i) for i in range(reader.num_subjects)])
         out_map = hist_norm.mapping
 
         self.assertAllClose(out_map['T1'], expected_T1)

@@ -13,7 +13,6 @@ from niftynet.engine.sampler_weighted_v2 import WeightedSampler
 from niftynet.engine.sampler_balanced_v2 import BalancedSampler
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.engine.windows_aggregator_resize import ResizeSamplesAggregator
-from niftynet.io.image_reader import ImageReader
 from niftynet.layer.crop import CropLayer
 from niftynet.layer.histogram_normalisation import \
     HistogramNormalisationLayer
@@ -63,9 +62,10 @@ class RegressionApplication(BaseApplication):
         }
 
     def initialise_dataset_loader(
-            self, data_param=None, task_param=None, data_partitioner=None):
+            self, data_param=None, task_param=None, factory=None):
+        super(RegressionApplication, self).initialise_dataset_loader(
+            data_param=data_param, task_param=task_param, factory=factory)
 
-        self.data_param = data_param
         self.regression_param = task_param
 
         # initialise input image readers
@@ -85,11 +85,8 @@ class RegressionApplication(BaseApplication):
             reader_phase = self.action_param.dataset_to_infer
         except AttributeError:
             reader_phase = None
-        file_lists = data_partitioner.get_file_lists_by(
-            phase=reader_phase, action=self.action)
-        self.readers = [
-            ImageReader(reader_names).initialise(
-                data_param, task_param, file_list) for file_list in file_lists]
+        self.readers = self.endpoint_factory.create_sources(
+            reader_names, reader_phase, self.action)
 
         # initialise input preprocessing layers
         mean_var_normaliser = MeanVarNormalisationLayer(image_name='image') \
@@ -208,16 +205,14 @@ class RegressionApplication(BaseApplication):
     def initialise_grid_aggregator(self):
         self.output_decoder = GridSamplesAggregator(
             image_reader=self.readers[0],
-            output_path=self.action_param.save_seg_dir,
+            image_writer=self.writers[0],
             window_border=self.action_param.border,
-            interp_order=self.action_param.output_interp_order,
-            postfix=self.action_param.output_postfix,
             fill_constant=self.action_param.fill_constant)
 
     def initialise_resize_aggregator(self):
         self.output_decoder = ResizeSamplesAggregator(
             image_reader=self.readers[0],
-            output_path=self.action_param.save_seg_dir,
+            image_writer=self.writers[0],
             window_border=self.action_param.border,
             interp_order=self.action_param.output_interp_order,
             postfix=self.action_param.output_postfix)

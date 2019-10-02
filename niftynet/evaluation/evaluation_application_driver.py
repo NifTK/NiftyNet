@@ -22,7 +22,7 @@ import tensorflow as tf
 
 from niftynet.engine.application_factory import ApplicationFactory
 from niftynet.io.misc_io import touch_folder
-from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
+from niftynet.io.image_endpoint_factory import ImageEndPointFactory
 
 FILE_PREFIX = 'model.ckpt'
 
@@ -83,7 +83,9 @@ class EvaluationApplicationDriver(object):
         data_param, self.app_param = \
             self.app.add_inferred_output(data_param, self.app_param)
         # initialise data input
-        data_partitioner = ImageSetsPartitioner()
+        endpoint_factory = ImageEndPointFactory()
+        endpoint_factory.set_params(data_param, self.app_param, eval_param)
+        data_partitioner = endpoint_factory.create_partitioner()
         # clear the cached file lists
         data_partitioner.reset()
         if data_param:

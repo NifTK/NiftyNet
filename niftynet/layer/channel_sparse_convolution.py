@@ -272,13 +272,13 @@ class ChannelSparseBNLayer(niftynet.layer.bn.BNLayer):
         mean, variance = tf.nn.moments(inputs, axes)
         # only update masked moving averages
         mean_update = tf.dynamic_stitch(
-            [tf.to_int32(tf.where(mask)[:, 0]),
-             tf.to_int32(tf.where(~mask)[:, 0])],
+            [tf.cast(tf.where(mask)[:, 0], tf.int32),
+             tf.cast(tf.where(~mask)[:, 0], tf.int32)],
             [mean,
              tf.boolean_mask(moving_mean, ~mask)])
         variance_update = tf.dynamic_stitch(
-            [tf.to_int32(tf.where(mask)[:, 0]),
-             tf.to_int32(tf.where(~mask)[:, 0])],
+            [tf.cast(tf.where(mask)[:, 0], tf.int32),
+             tf.cast(tf.where(~mask)[:, 0], tf.int32)],
             [variance,
              tf.boolean_mask(moving_variance, ~mask)])
         update_moving_mean = moving_averages.assign_moving_average(

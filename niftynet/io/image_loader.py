@@ -12,12 +12,13 @@ from niftynet.utilities.util_import import require_module
 SUPPORTED_LOADERS = OrderedDict()
 AVAILABLE_LOADERS = OrderedDict()
 
-
 ###############################################################################
 # Utility Image Loader Funtions
 ###############################################################################
 
-def register_image_loader(name, requires, min_version=None, auto_discover=True):
+
+def register_image_loader(name, requires, min_version=None,
+                          auto_discover=True):
     """
     Function decorator to register an image loader.
 
@@ -50,9 +51,9 @@ def register_image_loader(name, requires, min_version=None, auto_discover=True):
             np = require_module('numpy')
             return image2nibabel(np.random.rand(100, 100, 3), np.eye(4))
 
-    It registers a loader named 'fake' that requires `numpy` version >= '1.13.3'
-    to be installed. It will first dynamically load numpy library and then
-    return a `(100, 100, 3)` fake color image and an identity `(4, 4)`
+    It registers a loader named 'fake' that requires `numpy` version >=
+    '1.13.3' to be installed. It will first dynamically load numpy library and
+    then return a `(100, 100, 3)` fake color image and an identity `(4, 4)`
     affinity matrix. `loader = fake` in the data section of a config file will
     select this loader and generate fake data.
 
@@ -89,14 +90,15 @@ def load_image_obj(filename, loader=None):
     if loader and loader in SUPPORTED_LOADERS:
         if loader not in AVAILABLE_LOADERS:
             raise ValueError('Image Loader {} supported but library not found.'
-                             ' Required libraries: {}'
-                             .format(loader, SUPPORTED_LOADERS[loader]))
+                             ' Required libraries: {}'.format(
+                                 loader, SUPPORTED_LOADERS[loader]))
         tf.logging.debug('Using requested loader: {}'.format(loader))
         loader_params = AVAILABLE_LOADERS[loader]
         return loader_params['func'](filename)
     if loader:
-        raise ValueError('Image Loader {} not supported. Supported loaders: {}'
-                         .format(loader, list(SUPPORTED_LOADERS.keys())))
+        raise ValueError(
+            'Image Loader {} not supported. Supported loaders: {}'.format(
+                loader, list(SUPPORTED_LOADERS.keys())))
 
     for name, loader_params in AVAILABLE_LOADERS.items():
         if not loader_params['auto_discover']:
@@ -112,14 +114,15 @@ def load_image_obj(filename, loader=None):
             pass
 
     raise ValueError('No available loader could load file: {}.'
-                     ' Available loaders: {}. Supported Loaders: {}'
-                     .format(filename, list(AVAILABLE_LOADERS.keys()),
-                             list(SUPPORTED_LOADERS.keys())))
+                     ' Available loaders: {}. Supported Loaders: {}'.format(
+                         filename, list(AVAILABLE_LOADERS.keys()),
+                         list(SUPPORTED_LOADERS.keys())))
 
 
 ###############################################################################
 # All supported Image Loaders -- In Priority Order
 ###############################################################################
+
 
 @register_image_loader('nibabel', requires='nibabel')
 def imread_nibabel(filename):
@@ -178,13 +181,13 @@ def imread_numpy(filename=None):
     return image2nibabel(fake_img, affine=np.eye(4))
 
 
-tf.logging.info(
-    'Available Image Loaders:\n{}.'.format(list(AVAILABLE_LOADERS.keys())))
-
+tf.logging.info('Available Image Loaders:\n{}.'.format(
+    list(AVAILABLE_LOADERS.keys())))
 
 ###############################################################################
 # Auxiliary functions
 ###############################################################################
+
 
 def image2nibabel(img, affine=np.eye(4)):
     """
@@ -218,16 +221,16 @@ def make_affine_from_sitk(sitk_img):
     if sitk_img.GetDepth() <= 0:
         return np.eye(4)
 
-    rot = [sitk_img.TransformContinuousIndexToPhysicalPoint(p)
-           for p in ((1, 0, 0),
-                     (0, 1, 0),
-                     (0, 0, 1),
-                     (0, 0, 0))]
+    rot = [
+        sitk_img.TransformContinuousIndexToPhysicalPoint(p)
+        for p in ((1, 0, 0), (0, 1, 0), (0, 0, 1), (0, 0, 0))
+    ]
     rot = np.array(rot)
     affine = np.concatenate([
         np.concatenate([rot[0:3] - rot[3:], rot[3:]], axis=0),
         [[0.], [0.], [0.], [1.]]
-    ], axis=1)
+    ],
+                            axis=1)
     affine = np.transpose(affine)
     # convert to RAS to match nibabel
     affine = np.matmul(np.diag([-1., -1., 1., 1.]), affine)

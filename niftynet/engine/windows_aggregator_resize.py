@@ -14,8 +14,6 @@ import pandas as pd
 import niftynet.io.misc_io as misc_io
 from niftynet.engine.sampler_resize_v2 import zoom_3d
 from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
-from niftynet.layer.discrete_label_normalisation import \
-    DiscreteLabelNormalisationLayer
 from niftynet.layer.pad import PadLayer
 
 
@@ -28,8 +26,8 @@ class ResizeSamplesAggregator(ImageWindowsAggregator):
 
     def __init__(self,
                  image_reader,
+                 image_writer,
                  name='image',
-                 output_path=os.path.join('.', 'output'),
                  window_border=(),
                  interp_order=0,
                  postfix='niftynet_out'):

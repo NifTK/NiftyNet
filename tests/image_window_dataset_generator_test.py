@@ -9,7 +9,7 @@ import tensorflow as tf
 
 from niftynet.engine.image_window import N_SPATIAL, LOCATION_FORMAT
 from niftynet.engine.image_window_dataset import ImageWindowDataset
-from niftynet.io.image_reader import ImageReader
+from niftynet.io.file_image_source import FileImageSource
 from tests.niftynet_testcase import NiftyNetTestCase
 
 IMAGE_PATH_2D_1 = os.path.join('.', 'example_volumes', 'gan_test_data')
@@ -18,7 +18,7 @@ IMAGE_PATH_3D = os.path.join('.', 'testing_data')
 
 def get_2d_reader():
     data_param = {'mr': {'path_to_search': IMAGE_PATH_2D_1}}
-    reader = ImageReader().initialise(data_param)
+    reader = FileImageSource().initialise(data_param)
     return reader
 
 
@@ -28,7 +28,7 @@ def get_3d_reader():
             'path_to_search': IMAGE_PATH_3D,
             'filename_contains': 'FLAIR',
             'interp_order': 1}}
-    reader = ImageReader().initialise(data_param)
+    reader = FileImageSource().initialise(data_param)
     return reader
 
 

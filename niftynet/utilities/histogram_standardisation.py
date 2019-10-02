@@ -88,7 +88,7 @@ def create_mapping_from_multimod_arrayfiles(array_files,
     returned providing the landmarks to use for the linear mapping of any
     new incoming data
 
-    :param array_files: List of image files to use
+    :param array_files: List/generator of image files to use
     :param modalities: Name of the modalities used for the
         standardisation and the corresponding order in the multimodal files
     :param cutoff: Minimum and maximum landmarks percentile values to use for

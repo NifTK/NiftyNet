@@ -15,8 +15,6 @@ import pandas as pd
 # pylint: disable=too-many-branches
 import niftynet.io.misc_io as misc_io
 from niftynet.engine.windows_aggregator_base import ImageWindowsAggregator
-from niftynet.layer.discrete_label_normalisation import \
-    DiscreteLabelNormalisationLayer
 from niftynet.layer.pad import PadLayer
 
 
@@ -29,14 +27,14 @@ class GridSamplesAggregator(ImageWindowsAggregator):
 
     def __init__(self,
                  image_reader,
+                 image_writer,
                  name='image',
-                 output_path=os.path.join('.', 'output'),
                  window_border=(),
                  interp_order=0,
                  postfix='niftynet_out',
                  fill_constant=0.0):
-        ImageWindowsAggregator.__init__(
-            self, image_reader=image_reader, output_path=output_path)
+        ImageWindowsAggregator.__init__(self, image_reader, image_writer)
+
         self.name = name
         self.image_out = None
         self.csv_out = None
@@ -133,6 +131,7 @@ class GridSamplesAggregator(ImageWindowsAggregator):
         spatial_shape = self.input_image[self.name].shape[:3]
         output_image_shape = spatial_shape + (n_channels, )
         empty_image = np.zeros(output_image_shape, dtype=dtype)
+
         for layer in self.reader.preprocessors:
             if isinstance(layer, PadLayer):
                 empty_image, _ = layer(empty_image)

@@ -119,7 +119,9 @@ class DataDependentLayer(Layer):
     Some layers require a one-pass training through the training set
     to determine their internal models, this abstract provides
     interfaces for training these internal models and querying the
-    status.
+    status. The training images are provided as a generator, with
+    a second optional argument, num_subjects providing the number of
+    images to expect.
     """
 
     def __init__(self, name='data_dependent_op'):

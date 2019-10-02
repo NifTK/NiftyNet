@@ -37,14 +37,12 @@ MULTI_MOD_DATA = {
 }
 MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'))
 
-data_partitioner = ImageSetsPartitioner()
-multi_mod_list = data_partitioner.initialise(MULTI_MOD_DATA).get_file_list()
+multi_mod_list = ImageSetsPartitioner(MULTI_MOD_DATA).initialise().get_file_list()
 
 
 def get_3d_reader():
     reader = ImageReader(['image'])
-    reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
-    return reader
+    return reader.initialise(MULTI_MOD_DATA, MULTI_MOD_TASK, multi_mod_list)
 
 
 class LinearInterpolateSamplerTest(NiftyNetTestCase):

@@ -144,24 +144,25 @@ class DiscreteLabelNormalisationLayer(DataDependentLayer, Invertible):
 
 def find_set_of_labels(image_list, field, output_key):
     label_set = set()
-    if field in image_list[0] :
-        for idx, image in enumerate(image_list):
-            assert field in image, \
-                "label normalisation layer requires {} input, " \
-                "however it is not provided in the config file.\n" \
-                "Please consider setting " \
-                "label_normalisation to False.".format(field)
-            print_progress_bar(idx, len(image_list),
-                               prefix='searching unique labels from files',
-                               decimals=1, length=10, fill='*')
-            unique_label = np.unique(image[field].get_data())
-            if len(unique_label) > 500 or len(unique_label) <= 1:
-                tf.logging.warning(
-                    'unusual discrete values: number of unique '
-                    'labels to normalise %s', len(unique_label))
-            label_set.update(set(unique_label))
-        label_set = list(label_set)
-        label_set.sort()
+    for idx, image in enumerate(image_list):
+        if field not in image:
+            break
+        assert field in image, \
+            "label normalisation layer requires {} input, " \
+            "however it is not provided in the config file.\n" \
+            "Please consider setting " \
+            "label_normalisation to False.".format(field)
+        print_progress_bar(idx, len(image_list),
+                           prefix='searching unique labels from files',
+                           decimals=1, length=10, fill='*')
+        unique_label = np.unique(image[field].get_data())
+        if len(unique_label) > 500 or len(unique_label) <= 1:
+            tf.logging.warning(
+                'unusual discrete values: number of unique '
+                'labels to normalise %s', len(unique_label))
+        label_set.update(set(unique_label))
+    label_set = list(label_set)
+    label_set.sort()
     try:
         mapping_from_to = dict()
         mapping_from_to[output_key[0]] = tuple(label_set)

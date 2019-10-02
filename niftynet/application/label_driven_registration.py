@@ -13,7 +13,6 @@ from __future__ import absolute_import, division, print_function
 import tensorflow as tf
 
 from niftynet.application.base_application import BaseApplication
-from niftynet.io.image_reader import ImageReader
 from niftynet.contrib.sampler_pairwise.sampler_pairwise_uniform import \
     PairwiseUniformSampler
 from niftynet.contrib.sampler_pairwise.sampler_pairwise_resize import \
@@ -49,8 +48,10 @@ class RegApp(BaseApplication):
         self.data_param = None
 
     def initialise_dataset_loader(
-            self, data_param=None, task_param=None, data_partitioner=None):
-        self.data_param = data_param
+            self, data_param=None, task_param=None, factory=None):
+        super(RegApp, self).initialise_dataset_loader(
+            data_param=data_param, task_param=task_param, factory=factory)
+
         self.registration_param = task_param
 
         if self.is_evaluation:
@@ -60,18 +61,16 @@ class RegApp(BaseApplication):
             reader_phase = self.action_param.dataset_to_infer
         except AttributeError:
             reader_phase = None
-        file_lists = data_partitioner.get_file_lists_by(
-            phase=reader_phase, action=self.action)
 
         self.readers = []
-        for file_list in file_lists:
-            fixed_reader = ImageReader({'fixed_image', 'fixed_label'})
-            fixed_reader.initialise(data_param, task_param, file_list)
-            self.readers.append(fixed_reader)
-
-            moving_reader = ImageReader({'moving_image', 'moving_label'})
-            moving_reader.initialise(data_param, task_param, file_list)
-            self.readers.append(moving_reader)
+        for fixed, moving in zip(
+                self.endpoint_factory.create_sources(
+                    {'fixed_image', 'fixed_label'},
+                    reader_phase, self.action),
+                self.endpoint_factory.create_sources(
+                    {'moving_image', 'moving_label'},
+                    reader_phase, self.action)):
+            self.readers += [fixed, moving]
 
         # pad the fixed target only
         # moving image will be resampled to match the targets
@@ -296,8 +295,8 @@ class RegApp(BaseApplication):
 
             self.output_decoder = ResizeSamplesAggregator(
                 image_reader=self.readers[0], # fixed image reader
+                image_writer=self.writers[0],
                 name='fixed_image',
-                output_path=self.action_param.save_seg_dir,
                 interp_order=self.action_param.output_interp_order)
 
     def interpret_output(self, batch_output):

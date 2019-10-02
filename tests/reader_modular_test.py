@@ -82,7 +82,6 @@ class Read2DTest(NiftyNetTestCase):
         self.assertDictEqual(reader.input_sources, {'mr': ('mr',)})
         self.assertDictEqual(reader.shapes, {'mr': (100, 100, 1, 1, 1)})
         self.assertDictEqual(reader.tf_dtypes, {'mr': tf.float32})
-        self.assertEqual(reader.names, ('mr',))
         self.assertEqual(len(reader.output_list), 30)
 
     def renamed_property_asserts(self, reader):
@@ -91,7 +90,6 @@ class Read2DTest(NiftyNetTestCase):
         self.assertDictEqual(reader.input_sources, {'ct': ('mr',)})
         self.assertDictEqual(reader.shapes, {'ct': (100, 100, 1, 1, 1)})
         self.assertDictEqual(reader.tf_dtypes, {'ct': tf.float32})
-        self.assertEqual(reader.names, ('ct',))
         self.assertEqual(len(reader.output_list), 30)
 
     def test_simple(self):
