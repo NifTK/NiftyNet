@@ -75,15 +75,11 @@ class ImageSetsPartitioner(object):
             and get_file_list always returns all subjects.
         """
         self.data_param = {}
-        print(data_param)
-        #import pdb
-        #pdb.set_trace()
         for key in data_param.keys():
             if not isinstance(data_param[key], dict):
                 data_param[key] = data_param[key].__dict__
-            if 'csv_data_file' not in data_param[key]:
-                self.data_param[key] = data_param[key]
-            if len(data_param[key]['csv_data_file']) == 0:
+            if 'csv_data_file' not in data_param[key] or \
+                    len(data_param[key]['csv_data_file']) == 0:
                 self.data_param[key] = data_param[key]
 
                 # self.data_param[key]['csv_data_file'] = ''
