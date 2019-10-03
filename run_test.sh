@@ -4,6 +4,9 @@ rm example_volumes_v0_2.tar.gz
 wget -N https://www.dropbox.com/s/p7b3t2c3mewtree/testing_data_v0_2.tar.gz
 tar -xzvf testing_data_v0_2.tar.gz
 rm testing_data_v0_2.tar.gz
+wget -N https://www.dropbox.com/s/gt0hm6o61rlsfcc/csv_data.tar.gz
+tar -C data -xzvf csv_data.tar.gz
+rm csv_data.tar.gz
 
 python -m unittest discover -s "tests" -p "*_test.py"
 
