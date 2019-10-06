@@ -44,8 +44,8 @@ HIG -- High-dimensional Imaging Group, UCL), where BMEIS acts as the consortium 
 ### Installation
 
 1. Please install the appropriate [TensorFlow][tf] package*:
-   * [`pip install tensorflow-gpu>=1.13.2`][tf-pypi-gpu] for TensorFlow with GPU support
-   * [`pip install tensorflow>=1.13.2`][tf-pypi] for CPU-only TensorFlow
+   * [`pip install "tensorflow-gpu>=1.13.2,<2.0"`][tf-pypi-gpu] for TensorFlow with GPU support
+   * [`pip install "tensorflow>=1.13.2,<2.0"`][tf-pypi] for CPU-only TensorFlow
 1. [`pip install niftynet`](https://pypi.org/project/NiftyNet/)
 
  <sup>All other NiftyNet dependencies are installed automatically as part of the pip installation process.
