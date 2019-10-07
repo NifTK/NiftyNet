@@ -223,7 +223,7 @@ class ClassificationApplication(BaseApplication):
         labels = tf.reshape(tf.cast(data_dict['label'], tf.int64), [-1])
         prediction = tf.reshape(tf.argmax(net_out, -1), [-1])
         num_classes = self.classification_param.num_classes
-        conf_mat = tf.metrics.confusion_matrix(labels, prediction, num_classes)
+        conf_mat = tf.contrib.metrics.confusion_matrix(labels, prediction, num_classes)
         conf_mat = tf.to_float(conf_mat)
         if self.classification_param.num_classes == 2:
             outputs_collector.add_to_collection(
