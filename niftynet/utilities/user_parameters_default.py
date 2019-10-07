@@ -180,7 +180,7 @@ def add_input_data_args(parser):
     :return:
     """
     parser.add_argument(
-        "--csv_path_file",
+        "--csv_file",
         metavar='',
         type=str,
         help="Input list of subjects in csv files",

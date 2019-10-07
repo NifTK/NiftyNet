@@ -13,7 +13,7 @@ from niftynet.layer.elementwise import ElementwiseLayer
 from niftynet.network.base_net import BaseNet
 from niftynet.layer.layer_util import infer_spatial_rank
 from niftynet.layer.fully_connected import FullyConnectedLayer
-from niftynet.layer.pool_full import PoolingLayer
+# from niftynet.layer.pool_full import PoolingLayer
 import tensorflow as tf
 
 
@@ -72,10 +72,11 @@ class ClassSegFinnet(BaseNet):
 
         # pooling layer
         params = self.layers[1]
-        pool_layer = PoolingLayer(
-            func=params['func'],
-            name=params['name'])
-        flow_pool = pool_layer(flow)
+        # pool_layer = PoolingLayer(
+        #     func=params['func'],
+        #     name=params['name'])
+        # flow_pool = pool_layer(flow)
+        flow_pool = flow
         flow_pool = tf.reshape(flow_pool, [tf.shape(images)[0], 1, 1, 1,
                                            self.layers[1][
             'n_features']])

@@ -19,7 +19,7 @@ generate_2d_images()
 # test multiple modalities
 MULTI_MOD_DATA = {
     'T1': ParserNamespace(
-        csv_path_file=os.path.join('testing_data', 'T1reader.csv'),
+        csv_file=os.path.join('testing_data', 'T1reader.csv'),
         path_to_search='testing_data',
         filename_contains=('_o_T1_time',),
         filename_not_contains=('Parcellation',),
@@ -29,7 +29,7 @@ MULTI_MOD_DATA = {
         loader=None
     ),
     'FLAIR': ParserNamespace(
-        csv_path_file=os.path.join('testing_data', 'FLAIRreader.csv'),
+        csv_file=os.path.join('testing_data', 'FLAIRreader.csv'),
         path_to_search='testing_data',
         filename_contains=('FLAIR_',),
         filename_not_contains=('Parcellation',),
@@ -44,7 +44,7 @@ MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'))
 # test single modalities
 SINGLE_MOD_DATA = {
     'lesion': ParserNamespace(
-        csv_path_file=os.path.join('testing_data', 'lesion.csv'),
+        csv_file=os.path.join('testing_data', 'lesion.csv'),
         path_to_search='testing_data',
         filename_contains=('Lesion',),
         filename_not_contains=('Parcellation',),
@@ -58,7 +58,7 @@ SINGLE_MOD_TASK = ParserNamespace(image=('lesion',))
 
 EXISTING_DATA = {
     'lesion': ParserNamespace(
-        csv_path_file=os.path.join('testing_data', 'lesion.csv'),
+        csv_file=os.path.join('testing_data', 'lesion.csv'),
         interp_order=3,
         pixdim=None,
         axcodes=None,
@@ -69,7 +69,7 @@ EXISTING_DATA = {
 # test labels
 LABEL_DATA = {
     'parcellation': ParserNamespace(
-        csv_path_file=os.path.join('testing_data', 'labels.csv'),
+        csv_file=os.path.join('testing_data', 'labels.csv'),
         path_to_search='testing_data',
         filename_contains=('Parcellation',),
         filename_not_contains=('Lesion',),
@@ -83,7 +83,7 @@ LABEL_TASK = ParserNamespace(label=('parcellation',))
 
 BAD_DATA = {
     'lesion': ParserNamespace(
-        csv_path_file=os.path.join('testing_data', 'lesion.csv'),
+        csv_file=os.path.join('testing_data', 'lesion.csv'),
         path_to_search='testing_data',
         filename_contains=('Lesion',),
         filename_not_contains=('Parcellation',),
@@ -97,7 +97,7 @@ BAD_TASK = ParserNamespace(image=('test',))
 
 IMAGE_2D_DATA = {
     'color_images': ParserNamespace(
-        csv_path_file=os.path.join('testing_data', 'images_2d_u.csv'),
+        csv_file=os.path.join('testing_data', 'images_2d_u.csv'),
         path_to_search=os.path.join('testing_data', 'images2d'),
         filename_contains=('_u.png',),
         interp_order=1,
@@ -106,7 +106,7 @@ IMAGE_2D_DATA = {
         loader=None
     ),
     'gray_images': ParserNamespace(
-        csv_path_file=os.path.join('testing_data', 'images_2d_g.csv'),
+        csv_file=os.path.join('testing_data', 'images_2d_g.csv'),
         path_to_search=os.path.join('testing_data', 'images2d'),
         filename_contains=('_g.png',),
         interp_order=1,
@@ -115,7 +115,7 @@ IMAGE_2D_DATA = {
         loader=None
     ),
     'seg_masks': ParserNamespace(
-        csv_path_file=os.path.join('testing_data', 'images_2d_m.csv'),
+        csv_file=os.path.join('testing_data', 'images_2d_m.csv'),
         path_to_search=os.path.join('testing_data', 'images2d'),
         filename_contains=('_m.png',),
         interp_order=0,

@@ -21,7 +21,7 @@ from niftynet.utilities.util_common import look_up_operations
 DEFAULT_INTERP_ORDER = 1
 SUPPORTED_DATA_SPEC = {
 
-    'csv_path_file', 'path_to_search', 'csv_data_file', 'filename_removefromid',
+    'csv_file', 'path_to_search', 'csv_data_file', 'filename_removefromid',
     'filename_contains', 'filename_not_contains', 'to_ohe',
     'interp_order', 'loader', 'pixdim', 'axcodes', 'spatial_window_size'}
 
@@ -410,7 +410,7 @@ def _filename_to_image_list(file_list, mod_dict, data_param):
     if not volume_list:
         tf.logging.fatal(
             "Empty filename lists, please check the csv "
-            "files. (removing csv_path_file keyword if it is"
+            "files. (removing csv_file keyword if it is"
             " in the config file "
             "to automatically search folders and generate new csv "
             "files again)\n\n"

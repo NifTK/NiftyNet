@@ -19,7 +19,7 @@ from tests.niftynet_testcase import NiftyNetTestCase
 DYNAMIC_MOD_DATA = {
     'T1':
     ParserNamespace(
-        csv_path_file='',
+        csv_file='',
         path_to_search='data/csv_data',
         filename_contains=(),
         filename_not_contains=('_', 'csv'),
@@ -31,7 +31,7 @@ DYNAMIC_MOD_DATA = {
         loader=None),
     'sampler':
     ParserNamespace(
-        csv_path_file='',
+        csv_file='',
         path_to_search='',
         filename_contains=(),
         filename_not_contains=(),
@@ -49,7 +49,7 @@ DYNAMIC_MOD_TASK = ParserNamespace(
 LARGE_MOD_DATA = {
     'T1':
     ParserNamespace(
-        csv_path_file='',
+        csv_file='',
         path_to_search='data/csv_data',
         filename_contains=(),
         filename_not_contains=('_', 'csv'),
@@ -61,7 +61,7 @@ LARGE_MOD_DATA = {
         loader=None),
     'sampler':
     ParserNamespace(
-        csv_path_file='',
+        csv_file='',
         path_to_search='',
         filename_contains=(),
         filename_not_contains=(),
@@ -75,7 +75,7 @@ LARGE_MOD_DATA = {
 LARGE_MOD_DATA_2_ELEMENTS = {
     'T1':
     ParserNamespace(
-        csv_path_file='',
+        csv_file='',
         path_to_search='data/csv_data',
         filename_contains=(),
         filename_not_contains=('_', 'csv'),
@@ -87,7 +87,7 @@ LARGE_MOD_DATA_2_ELEMENTS = {
         loader=None),
     'sampler':
     ParserNamespace(
-        csv_path_file='',
+        csv_file='',
         path_to_search='',
         filename_contains=(),
         filename_not_contains=(),
@@ -104,7 +104,7 @@ LARGE_MOD_TASK = ParserNamespace(
 CSV_DATA = {
     'sampler':
     ParserNamespace(
-        csv_path_file='',
+        csv_file='',
         path_to_search='',
         filename_contains=(),
         filename_not_contains=(),
@@ -119,7 +119,7 @@ CSV_DATA = {
 CSV_DATA_TWO_ELEMENTS = {
     'sampler':
     ParserNamespace(
-        csv_path_file='',
+        csv_file='',
         path_to_search='',
         filename_contains=(),
         filename_not_contains=(),
@@ -134,7 +134,7 @@ CSV_DATA_TWO_ELEMENTS = {
 CSVBAD_DATA = {
     'sampler':
     ParserNamespace(
-        csv_path_file='',
+        csv_file='',
         path_to_search='',
         filename_contains=(),
         filename_not_contains=(),
