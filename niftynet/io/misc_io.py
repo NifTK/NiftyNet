@@ -261,7 +261,7 @@ def do_reorientation(data_array, init_axcodes, final_axcodes):
     """
     ornt_transf, ornt_init, ornt_fin = \
         compute_orientation(init_axcodes, final_axcodes)
-    print(ornt_transf, init_axcodes, final_axcodes)
+    # print(ornt_transf, init_axcodes, final_axcodes)
     if np.array_equal(ornt_init, ornt_fin):
         return data_array
     try:

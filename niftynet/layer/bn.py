@@ -135,5 +135,5 @@ class InstanceNormLayer(TrainableLayer):
             variables_collections=None,
             outputs_collections=None,
             trainable=True,
-            data_format='NWC',
+            data_format='NHWC',
             scope=None)
