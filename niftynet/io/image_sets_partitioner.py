@@ -364,12 +364,8 @@ class ImageSetsPartitioner(object):
         # loading the file as dataframe
         ###############################
         try:
-
-            if 'csv_data_file' not in self.data_param[modality_name] or \
-                    len(self.data_param[modality_name]['csv_data_file']) == 0:
-
+            if not self.data_param[modality_name].get('csv_data_file', None):
                 # if self.data_param[modality_name].csv_data_file == '':
-
                 csv_list = pandas.read_csv(
                     csv_data_file,
                     header=None,

@@ -475,7 +475,7 @@ class CSVPatchSampler(ImageWindowDatasetCSV):
                                                  reject=reject)
 
         windows_centres = csv_data['sampler']
-        print("Windows extracted", windows_centres)
+        # print("Windows extracted", windows_centres)
         numb = windows_centres.shape[0]
         if windows_centres.shape[0] > 0:
             checked = self.csv_reader.valid_by_task['sampler'][
