@@ -423,7 +423,7 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
         )
         stats_pd = pd.read_csv(stats_filename)
         self.assertAllClose(
-            stats_pd.shape, [840, 11]
+            stats_pd.shape, [420, 14]
         )
         sampler.close_all()
 
@@ -590,7 +590,7 @@ class GridSamplesAggregatorTest(NiftyNetTestCase):
         )
         stats_pd = pd.read_csv(stats_filename)
         self.assertAllClose(
-            stats_pd.shape, [20, 11]
+            stats_pd.shape, [10, 14]
         )
         sampler.close_all()
 
