@@ -32,8 +32,8 @@ from niftynet.layer.rgb_histogram_equilisation import \
 from niftynet.evaluation.segmentation_evaluator import SegmentationEvaluator
 from niftynet.layer.rand_elastic_deform import RandomElasticDeformationLayer
 
-SUPPORTED_INPUT = set(['image', 'label', 'weight', 'sampler', 'inferred',
-                       'value'])
+SUPPORTED_INPUT = set(
+    ['image', 'label', 'weight', 'sampler', 'inferred', 'value'])
 
 
 class SegmentationApplication(BaseApplication):
@@ -338,7 +338,7 @@ class SegmentationApplication(BaseApplication):
                         inds2 = tf.argsort(tf.map_fn(tf.reduce_sum, tf.cast(d_dict_to_mix['label'] > 0, tf.int64)))
                         for field in [field for field in mix_fields if field in d_dict]:
                             d_dict[field] = tf.gather(d_dict[field], indices=inds1)
-                            # note: sorted for opposite directions for d_dict_to_mix 
+                            # note: sorted for opposite directions for d_dict_to_mix
                             d_dict_to_mix[field] = tf.gather(d_dict_to_mix[field], indices=inds2[::-1])
 
                     # making the labels dense and one-hot
@@ -482,8 +482,8 @@ class SegmentationApplication(BaseApplication):
     def interpret_output(self, batch_output):
         if self.is_inference:
             return self.output_decoder.decode_batch(
-                {'window_seg': batch_output['window']}, batch_output[
-                    'location'])
+                {'window_seg': batch_output['window']},
+                batch_output['location'])
 
         return True
 
