@@ -56,7 +56,8 @@ testjob:
     - mkdir -p testing_data
     - tar -xzvf testing_data_v0_3.tar.gz -C testing_data
     - tar -xzvf testing_code_v0_3.tar.gz -C testing_data
-
+    - wget -N https://www.dropbox.com/s/gt0hm6o61rlsfcc/csv_data.tar.gz
+    - tar -C data -xzvf csv_data.tar.gz
 
     #### python 2 tests ###################################
     # save NiftyNet folder path just in case
@@ -268,6 +269,8 @@ quicktest:
     - wget -q https://www.dropbox.com/s/5p5fdgy053tgmdj/testing_data_v0_3.tar.gz
     - mkdir -p testing_data
     - tar -xzvf testing_data_v0_3.tar.gz -C testing_data
+    - wget -N https://www.dropbox.com/s/gt0hm6o61rlsfcc/csv_data.tar.gz
+    - tar -C data -xzvf csv_data.tar.gz
 
     ######### Python 2 ###################### run python2 code with coverage wrapper
     # save NiftyNet folder path just in case

@@ -32,8 +32,7 @@ from niftynet.layer.rgb_histogram_equilisation import \
 from niftynet.evaluation.segmentation_evaluator import SegmentationEvaluator
 from niftynet.layer.rand_elastic_deform import RandomElasticDeformationLayer
 
-SUPPORTED_INPUT = set(
-    ['image', 'label', 'weight', 'sampler', 'inferred', 'value'])
+SUPPORTED_INPUT = set(['image', 'label', 'weight', 'sampler', 'inferred'])
 
 
 class SegmentationApplication(BaseApplication):
@@ -152,7 +151,6 @@ class SegmentationApplication(BaseApplication):
         if self.is_training:
             train_param = self.action_param
             self.patience = train_param.patience
-            self.mode = self.action_param.early_stopping_mode
             if train_param.random_flipping_axes != -1:
                 augmentation_layers.append(RandomFlipLayer(
                     flip_axes=train_param.random_flipping_axes))
@@ -191,15 +189,6 @@ class SegmentationApplication(BaseApplication):
         for reader in self.readers[1:]:
             reader.add_preprocessing_layers(
                 volume_padding_layer + normalisation_layers)
-
-        # Checking num_classes is set correctly
-        if self.segmentation_param.num_classes <= 1:
-            raise ValueError("Number of classes must be at least 2 for segmentation")
-        for preprocessor in self.readers[0].preprocessors:
-            if preprocessor.name == 'label_norm':
-                if len(preprocessor.label_map[preprocessor.key[0]]) != self.segmentation_param.num_classes:
-                    raise ValueError("Number of unique labels must be equal to "
-                                     "number of classes (check histogram_ref file)")
 
     def initialise_uniform_sampler(self):
         self.sampler = [[UniformSampler(
@@ -308,64 +297,13 @@ class SegmentationApplication(BaseApplication):
                 sampler = self.get_sampler()[0][0 if for_training else -1]
                 return sampler.pop_batch_op()
 
-        def mixup_switch_sampler(for_training):
-            # get first set of samples
-            d_dict = switch_sampler(for_training=for_training)
-
-            mix_fields = ('image', 'weight', 'label')
-
-            if not for_training:
-                with tf.name_scope('nomix'):
-                    # ensure label is appropriate for dense loss functions
-                    ground_truth = tf.cast(d_dict['label'], tf.int32)
-                    one_hot = tf.one_hot(tf.squeeze(ground_truth, axis=-1),
-                                         depth=self.segmentation_param.num_classes)
-                    d_dict['label'] = one_hot
-            else:
-                with tf.name_scope('mixup'):
-                    # get the mixing parameter from the Beta distribution
-                    alpha = self.segmentation_param.mixup_alpha
-                    beta = tf.distributions.Beta(alpha, alpha)  # 1, 1: uniform:
-                    rand_frac = beta.sample()
-
-                    # get another minibatch
-                    d_dict_to_mix = switch_sampler(for_training=True)
-
-                    # look at binarised labels: sort them
-                    if self.segmentation_param.mix_match:
-                        # sum up the positive labels to sort by their volumes
-                        inds1 = tf.argsort(tf.map_fn(tf.reduce_sum, tf.cast(d_dict['label'], tf.int64)))
-                        inds2 = tf.argsort(tf.map_fn(tf.reduce_sum, tf.cast(d_dict_to_mix['label'] > 0, tf.int64)))
-                        for field in [field for field in mix_fields if field in d_dict]:
-                            d_dict[field] = tf.gather(d_dict[field], indices=inds1)
-                            # note: sorted for opposite directions for d_dict_to_mix
-                            d_dict_to_mix[field] = tf.gather(d_dict_to_mix[field], indices=inds2[::-1])
-
-                    # making the labels dense and one-hot
-                    for d in (d_dict, d_dict_to_mix):
-                        ground_truth = tf.cast(d['label'], tf.int32)
-                        one_hot = tf.one_hot(tf.squeeze(ground_truth, axis=-1),
-                                             depth=self.segmentation_param.num_classes)
-                        d['label'] = one_hot
-
-                    # do the mixing for any fields that are relevant and present
-                    mixed_up = {field: d_dict[field] * rand_frac + d_dict_to_mix[field] * (1 - rand_frac) for field
-                                in mix_fields if field in d_dict}
-                    # reassign all relevant values in d_dict
-                    d_dict.update(mixed_up)
-
-            return d_dict
-
         if self.is_training:
-            if not self.segmentation_param.do_mixup:
+            if self.action_param.validation_every_n > 0:
                 data_dict = tf.cond(tf.logical_not(self.is_validation),
                                     lambda: switch_sampler(for_training=True),
                                     lambda: switch_sampler(for_training=False))
             else:
-                # mix up the samples if not in validation phase
-                data_dict = tf.cond(tf.logical_not(self.is_validation),
-                                    lambda: mixup_switch_sampler(for_training=True),
-                                    lambda: mixup_switch_sampler(for_training=False))  # don't mix the validation
+                data_dict = switch_sampler(for_training=True)
 
             image = tf.cast(data_dict['image'], tf.float32)
             net_args = {'is_training': self.is_training,
@@ -482,9 +420,7 @@ class SegmentationApplication(BaseApplication):
     def interpret_output(self, batch_output):
         if self.is_inference:
             return self.output_decoder.decode_batch(
-                {'window_seg': batch_output['window']},
-                batch_output['location'])
-
+                {'window_seg':batch_output['window']}, batch_output['location'])
         return True
 
     def initialise_evaluator(self, eval_param):

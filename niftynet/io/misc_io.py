@@ -197,6 +197,59 @@ def compute_orientation(init_axcodes, final_axcodes):
         raise ValueError
 
 
+def do_resampling_idx(idx_array, init_pixdim, fin_pixdim):
+    """
+    Performs the transformation of indices (for csv sampler) when resampling
+    is required (change of resolution enforced
+    :param idx_array: array of indices to modify
+    :param init_pixdim: initial pixdim
+    :param fin_pixdim: target pixdim
+    :return: new_idx transformed array of indices according to resampling
+    """
+    if fin_pixdim is None:
+        new_idx = idx_array
+        return new_idx
+    factor_mult = np.asarray(init_pixdim) / np.asarray(fin_pixdim)
+    new_idx = idx_array.astype(np.float32) * factor_mult
+    new_idx = new_idx.astype(np.int32)
+    return new_idx
+
+
+def do_reorientation_idx(idx_array, init_axcodes, final_axcodes,
+                         init_spatial_size):
+    """
+    Perform the indices change based on the the orientation transformation
+    :param idx_array: array of indices to transform when reorienting
+    :param init_axcodes: initial orientation codes
+    :param final_axcodes: target orientation codes
+    :param init_spatial_size: initial image spatial size
+    :return: new_idx the array of transformed indices and orientation transform
+    """
+    new_idx = idx_array
+    if final_axcodes is None:
+        ornt_transf, ornt_init, ornt_fin = compute_orientation(init_axcodes,
+                                                               init_axcodes)
+        return new_idx, ornt_transf
+    ornt_transf, ornt_init, ornt_fin = compute_orientation(init_axcodes,
+                                                           final_axcodes)
+    # print(ornt_transf, ornt_init, "orientation prior idx transfo",
+    #       idx_array.shape, init_spatial_size)
+    if np.array_equal(ornt_init, ornt_fin):
+        return new_idx, ornt_transf
+    else:
+        # print(ornt_transf[:, 0])
+        # print(idx_array[:, np.asarray(ornt_transf[:,0],dtype=np.int32)])
+        new_idx = idx_array[:, np.asarray(ornt_transf[:, 0], dtype=np.int32)]
+        # print("obtained new first", init_spatial_size)
+        reorder_axes = np.squeeze(np.asarray(ornt_transf[:, 0], dtype=np.int32))
+        fin_spatial_size = [init_spatial_size[k] for k in reorder_axes]
+        for i in range(ornt_transf.shape[0]):
+            if ornt_transf[i, 1] < 0:
+                new_idx[:, i] = fin_spatial_size[i] - np.asarray(new_idx[:, i])
+                print("Updated idx for %d" % i)
+        return new_idx, ornt_transf
+
+
 def do_reorientation(data_array, init_axcodes, final_axcodes):
     """
     Performs the reorientation (changing order of axes)
@@ -208,6 +261,7 @@ def do_reorientation(data_array, init_axcodes, final_axcodes):
     """
     ornt_transf, ornt_init, ornt_fin = \
         compute_orientation(init_axcodes, final_axcodes)
+    # print(ornt_transf, init_axcodes, final_axcodes)
     if np.array_equal(ornt_init, ornt_fin):
         return data_array
     try:

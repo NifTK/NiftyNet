@@ -198,6 +198,15 @@ class ImageSetsPartitioner(object):
             raise ValueError
         self._file_list = None
         for section_name in self.data_param:
+
+            if isinstance(self.data_param[section_name], dict):
+                mod_spec = self.data_param[section_name]
+            else:
+                mod_spec = vars(self.data_param[section_name])
+            if mod_spec.get('csv_data_file', None):  # has csv_data_file
+                # skip file search
+                continue
+
             modality_file_list = self.grep_files_by_data_section(section_name)
             if self._file_list is None:
                 # adding all rows of the first modality

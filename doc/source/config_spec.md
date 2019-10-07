@@ -155,32 +155,27 @@ understand how files are matched.
 
  Name | Type | Example | Default
  ---- | ---- | ------- | -------
-[`csv_file`](#csv-file) | `string` | `csv_file=file_list.csv` | `''`
-[`path_to_search`](#path-to-search) | `string` | `path_to_search=my_data/fold_1` | NiftyNet home folder
-[`filename_contains`](#filename-contains) | `string` or `string array` | `filename_contains=foo, bar` | `''`
-[`filename_not_contains`](#filename-not-contains) | `string` or `string array` | `filename_not_contains=foo` | `''`
-[`filename_removefromid`](#filename-removefromid) | `string` | `filename_removefromid=bar` | `''`
-[`interp_order`](#interp-order) | `integer` | `interp_order=0` | `3`
-[`pixdim`](#pixdim) | `float array` | `pixdim=1.2, 1.2, 1.2` | `''`
-[`axcodes`](#axcodes) | `string array` | `axcodes=L, P, S` | `''`
-[`spatial_window_size`](#spatial-window-size) | `integer array` | `spatial_window_size=64, 64, 64` | `''`
-[`loader`](#loader) | `string` | `loader=simpleitk` | `None`
+[csv_file](#csv-file) | `string` | `csv_file=file_list.csv` | `''`
+[path_to_search](#path-to-search) | `string` | `path_to_search=my_data/fold_1` | NiftyNet home folder
+[filename_contains](#filename-contains) | `string` or `string array` | `filename_contains=foo, bar` | `''`
+[filename_not_contains](#filename-not-contains) | `string` or `string array` | `filename_not_contains=foo` | `''`
+[filename_removefromid](#filename-removefromid) | `string` | `filename_removefromid=bar` | `''`
+[interp_order](#interp-order) | `integer` | `interp_order=0` | `3`
+[pixdim](#pixdim) | `float array` | `pixdim=1.2, 1.2, 1.2` | `''`
+[axcodes](#axcodes) | `string array` | `axcodes=L, P, S` | `''`
+[spatial_window_size](#spatial-window-size) | `integer array` | `spatial_window_size=64, 64, 64` | `''`
+[loader](#loader) | `string` | `loader=simpleitk` | `None`
 
 ###### `csv_file`
-Path to a CSV file containing a list of input images:
+A file path to a list of input images.  If the file exists, input image name
+list will be loaded from the file; the filename based input image search will
+be disabled; [path_to_search](#path-to-search),
+[filename_contains](#filename-contains),
+ [filename_not_contains](#filename-not-contains),
+ and [filename_removefromid](#filename-removefromid) will be ignored.  If this
+parameter is left blank or the file does not exist, input image search will be
+enabled, and the matched filenames will be written to this file path.
 
-```
-image_id_0,/path/to/image_0.nii.gz
-image_id_4,/path/to/image_4.nii.gz
-image_id_9,/path/to/image_9.nii.gz
-```
-
-If the CSV file exists, the input image name list will be loaded from the file.
-The filename-based image search will be disabled and the parameters
-[`path_to_search`](#path-to-search), [`filename_contains`](#filename-contains),
-[`filename_not_contains`](#filename-not-contains),
-and [`filename_removefromid`](#filename-removefromid) will be ignored.
-If this parameter is left blank or the file does not exist, input image search will be enabled, and the matched filenames will be written to this file path.
 
 ###### `path_to_search`
 Single or multiple folders to search for input images.
@@ -258,6 +253,39 @@ Some loaders require additional Python packages.
 Supported loaders: `nibabel`, `opencv`, `skimage`, `pillow`, `simpleitk`, `dummy` in priority order.
 Default value `None` indicates trying all available loaders, in the above priority order.
 
+
+This section will be used by [ImageReader](./niftynet.io.image_reader.html)
+to generate a list of [input images objects](./niftynet.io.image_type.html).
+For example:
+```ini
+[T1Image]
+path_to_search = ./example_volumes/image_folder
+filename_contains = T1, subject
+filename_not_contains = T1c, T2
+spatial_window_size = 128, 128, 1
+pixdim = 1.0, 1.0, 1.0
+axcodes = A, R, S
+interp_order = 3
+```
+Specifies a set of images
+(currently supports NIfTI format via [NiBabel library](http://nipy.org/nibabel/nifti_images.html))
+from `./example_volumes/image_folder`, with filenames contain both `T1` and
+`subject`, but not contain `T1c` and `T2`. These images will be read into
+memory and transformed into "A, R, S" orientation
+(using [NiBabel](http://nipy.org/nibabel/reference/nibabel.orientations.html)).
+The images will also be transformed to have voxel size `(1.0, 1.0, 1.0)`
+with an interpolation order of `3`.
+
+A CSV file with the matched filenames and extracted subject names will be
+generated to `T1Image.csv` in [`model_dir`](#model-dir) (by default; the CSV
+file location can be specified by setting [csv_file](#csv-file)).  To exclude
+particular images, the [csv_file](#csv-file) can be edited manually.
+
+This input source can be used alone, as a `T1` MRI input to an application.
+It can also be used along with other modalities, a multi-modality example
+can be find [here](https://github.com/NifTK/NiftyNet/blob/dev/config/default_multimodal_segmentation.ini).
+
+The following sections describe system parameters that can be specified in the configuration file.
 
 ### SYSTEM
 

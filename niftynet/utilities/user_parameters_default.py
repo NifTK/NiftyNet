@@ -187,6 +187,22 @@ def add_input_data_args(parser):
         default='')
 
     parser.add_argument(
+        "--csv_data_file",
+        metavar='',
+        type=str,
+        help="Path to a csv with data; labels, features or coordinates for"
+             "the patch based sampler",
+        default='')
+
+    parser.add_argument(
+        "--to_ohe",
+        help="Indicates if the data provided in the csv should be "
+             "one-hot-encoded."
+             "This is only valid when the csv_data_file has 2 columns",
+        type=str2boolean,
+        default=False)
+
+    parser.add_argument(
         "--path_to_search",
         metavar='',
         type=str,
@@ -337,7 +353,7 @@ def add_network_args(parser):
         help="How to sample patches from each loaded image:"
              " 'uniform': fixed size uniformly distributed,"
              " 'resize': resize image to the patch size.",
-        choices=['uniform', 'resize', 'balanced', 'weighted'],
+        choices=['uniform', 'resize', 'balanced', 'weighted', 'patch'],
         default='uniform')
 
     parser.add_argument(

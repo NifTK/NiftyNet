@@ -29,6 +29,7 @@ class ResizeSamplerCSV(ImageWindowDatasetCSV):
                  windows_per_image=1,
                  shuffle=True,
                  queue_length=10,
+                 num_threads=4,
                  smaller_final_batch_mode='pad',
                  name='resize_sampler_v2'):
         tf.logging.info('reading size of preprocessed images')
@@ -41,6 +42,7 @@ class ResizeSamplerCSV(ImageWindowDatasetCSV):
             batch_size=batch_size,
             windows_per_image=windows_per_image,
             queue_length=queue_length,
+            num_threads=num_threads,
             shuffle=shuffle,
             epoch=-1 if shuffle else 1,
             smaller_final_batch_mode=smaller_final_batch_mode,
@@ -65,55 +67,54 @@ class ResizeSamplerCSV(ImageWindowDatasetCSV):
 
         :return: output data dictionary ``{'image_modality': data_array}``
         """
-        while True:
-            image_id, data, interp_orders = self.reader(idx=idx)
-            image_shapes = \
-                dict((name, data[name].shape) for name in self.window.names)
-            # window shapes can be dynamic, here they
-            # are converted to static ones
-            # as now we know the image shapes
-            static_window_shapes = self.window.match_image_shapes(image_shapes)
+        image_id, data, interp_orders = self.reader(idx=idx)
+        image_shapes = \
+            dict((name, data[name].shape) for name in self.window.names)
+        # window shapes can be dynamic, here they
+        # are converted to static ones
+        # as now we know the image shapes
+        static_window_shapes = self.window.match_image_shapes(image_shapes)
+        # for resize sampler the coordinates are not used
+        # simply use the spatial dims of the input image
+        output_dict = {}
+        for name in list(data):
+            # prepare output dictionary keys
+            coordinates_key = LOCATION_FORMAT.format(name)
+            image_data_key = name
 
-            # for resize sampler the coordinates are not used
-            # simply use the spatial dims of the input image
-            output_dict = {}
-            for name in list(data):
-                # prepare output dictionary keys
-                coordinates_key = LOCATION_FORMAT.format(name)
-                image_data_key = name
+            output_dict[coordinates_key] = self.dummy_coordinates(
+                image_id, static_window_shapes[name], self.window.n_samples)
+            image_array = []
+            for _ in range(self.window.n_samples):
+                # prepare image data
+                image_shape = image_shapes[name]
+                window_shape = static_window_shapes[name]
 
-                output_dict[coordinates_key] = np.squeeze(self.dummy_coordinates(
-                    image_id, static_window_shapes[name], self.window.n_samples), axis=0)
-                image_array = []
-                for _ in range(self.window.n_samples):
-                    # prepare image data
-                    image_shape = image_shapes[name]
-                    window_shape = static_window_shapes[name]
-
-                    if image_shape == window_shape or interp_orders[name][0] < 0:
-                        # already in the same shape
-                        image_window = data[name]
-                    else:
-                        zoom_ratio = [float(p) / float(d) for p, d in
-                                      zip(window_shape, image_shape)]
-                        image_window = zoom_3d(image=data[name],
-                                               ratio=zoom_ratio, interp_order=
-                                               interp_orders[name][0])
-                    image_array.append(image_window[np.newaxis, ...])
-                if len(image_array) > 1:
-                    output_dict[image_data_key] = \
-                        np.concatenate(image_array, axis=0)
+                if image_shape == window_shape or interp_orders[name][0] < 0:
+                    # already in the same shape
+                    image_window = data[name]
                 else:
-                    output_dict[image_data_key] = np.squeeze(image_array[0], axis=0)
-            # the output image shape should be
-            # [enqueue_batch_size, x, y, z, time, modality]
-            # here enqueue_batch_size = 1 as we only have one sample
-            # per image
-            if self.csv_reader is not None:
-                _, label_dict, _ = self.csv_reader(idx=image_id)
-                output_dict['label'] = np.squeeze(label_dict['label'], axis=0)
-                output_dict['label_location'] = output_dict['image_location']
-            yield output_dict
+                    zoom_ratio = [float(p) / float(d) for p, d in
+                                  zip(window_shape, image_shape)]
+                    image_window = zoom_3d(image=data[name],
+                                           ratio=zoom_ratio, interp_order=
+                                           interp_orders[name][0])
+                image_array.append(image_window[np.newaxis, ...])
+            if len(image_array) > 1:
+                output_dict[image_data_key] = \
+                    np.concatenate(image_array, axis=0)
+            else:
+                output_dict[image_data_key] = image_array[0]
+        # the output image shape should be
+        # [enqueue_batch_size, x, y, z, time, modality]
+        # here enqueue_batch_size = 1 as we only have one sample
+        # per image
+        if self.csv_reader is not None:
+            _, label_dict, _ = self.csv_reader(idx=image_id)
+            output_dict.update(label_dict)
+            for name in self.csv_reader.names:
+                output_dict[name + '_location'] = output_dict['image_location']
+        return output_dict
 
 
 def zoom_3d(image, ratio, interp_order):
