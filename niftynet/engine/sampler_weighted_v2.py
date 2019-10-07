@@ -73,7 +73,9 @@ def weighted_spatial_coordinates(
     win_spatial_size = np.asarray(win_spatial_size, dtype=np.int32)
     cropped_map = crop_sampling_map(sampler_map, win_spatial_size)
     flatten_map = cropped_map.flatten()
-    flatten_map = flatten_map - np.min(flatten_map)
+    flatten_map_min = np.min(flatten_map)
+    if flatten_map_min < 0:
+        flatten_map -= flatten_map_min
     normaliser = flatten_map.sum()
     # get the sorting indexes to that we can invert the sorting later on.
     sorted_indexes = np.argsort(flatten_map)
@@ -81,10 +83,10 @@ def weighted_spatial_coordinates(
         np.true_divide(flatten_map[sorted_indexes], normaliser))
 
     middle_coords = np.zeros((n_samples, N_SPATIAL), dtype=np.int32)
-    for sample in range(0, n_samples):
+    for sample in range(n_samples):
         # get n_sample from the cumulative histogram, spaced by 1/n_samples,
         # plus a random perturbation to give us a stochastic sampler
-        sample_ratio = 1 - (np.random.random() + sample) / (n_samples + 1)
+        sample_ratio = 1 - (np.random.random() + sample) / n_samples
         # find the index where the cumulative it above the sample threshold
         try:
             if normaliser == 0:
