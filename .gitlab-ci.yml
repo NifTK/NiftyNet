@@ -531,10 +531,6 @@ pip-camera-ready:
   script:
     # Copy wheel created in previous stage to a specific location on GIFT-Adelie
     - export niftynet_dir=$(pwd)
-    # install TF
-    - pip install tensorflow-gpu==1.13.2
-    - pip install -r requirements-gpu.txt
-
     # create the NiftyNet wheel
     - rm -rf dist  # remove dist directory, just in case
     - sh ci/bundlewheel.sh
@@ -550,6 +546,9 @@ pip-camera-ready:
     - export check_version_venv=check_version_venv
     - virtualenv $check_version_venv
     - source $check_version_venv/bin/activate
+        # install TF
+    - pip install tensorflow-gpu==1.13.2
+    - pip install -r requirements-gpu.txt
     - pip install $niftynet_wheel
     - net_segment --version 2>&1 | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+' | grep -v +
     - python -c 'import niftynet; print(niftynet.__version__)' | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+' | grep -v +
