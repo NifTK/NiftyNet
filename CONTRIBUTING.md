@@ -284,7 +284,7 @@ Steps to release a new version:
 1. Push the release note changes to a new branch `releasing-x`;
 1. Send a pull request from `releasing-x` to `dev`;
 1. Check CI tests outcome, check changelog, accept the pull request;
-1. Tag the latest commit of `dev`;
+1. Tag the latest commit of `dev` (make sure that commit is not [skip][gitlab-ci-skip]ped, as this will subsequently [skip the tag build][tag-ci-skip-issue]);
 1. Once the tag has been pushed to GitHub, run [chandler][chandler] to synchronise the changelog with the published release on GitHub
 1. the `pip stage` will be triggered in CI, there should be a wheel ready;
 1. Publish the pip wheel on [PyPI test server][pypi-test];
@@ -292,6 +292,8 @@ Steps to release a new version:
 1. Push pip wheel to release (warning: not revertible);
 1. Merge `dev` to `master` (archiving the new version).
 
+[tag-ci-skip-issue]: https://gitlab.com/gitlab-org/gitlab/issues/18798
+[gitlab-ci-skip]: https://docs.gitlab.com/ee/ci/yaml/README.html#skipping-jobs
 [chandler]: https://github.com/mattbrictson/chandler
 [pep440]: https://www.python.org/dev/peps/pep-0440/
 [changelog]: CHANGELOG.md
