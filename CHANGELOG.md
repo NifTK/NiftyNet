@@ -6,6 +6,38 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.6.0] - 2019-10-09
+### Added
+* isotropic random scaling option
+* volume padding with user-specified constant
+* subpixel layer for superresolution
+* various loss functions for regression (smooth L1 loss, cosine loss etc.)
+* handler for early stopping mechanism
+* aggregator with multiple outputs including labels in CSV
+* nnUNet, an improved version of UNet3D
+* data augmentation with mixup and mixmatch
+* documentation contents
+* demo for learning rate scheduling
+* demo for deep boosted regression
+* initial integration of NiftyReg Resampler
+* initial integration of CSV reader
+
+### Fixed
+* issue of loading binary values of NIfTI file
+* various fixes in CI tests
+* prefix name for aggregators
+* various improvements in error messages
+* issue of batch indices in the conditional random field
+* issue of location selection in the weighted sampler
+* model zoo: compatibility upgrade
+* model zoo: new decathlon hippocampus dataset
+
+### Changed
+* feature normalisation types options: instance norm, group norm, batch norm
+* convolution with padding option
+* various documentation and docstrings
+* defaulting to remove length one dimensions when saving a 5D volume
+
 ## [0.5.0] - 2019-02-04
 ### Added
 * Version controlled model zoo with git-lfs
@@ -115,7 +147,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 * Bugs in data augmentation, I/O, sampler
 
-[Unreleased]: https://github.com/NifTK/NiftyNet/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/NifTK/NiftyNet/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/NifTK/NiftyNet/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/NifTK/NiftyNet/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/NifTK/NiftyNet/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/NifTK/NiftyNet/compare/v0.2.2...v0.3.0
