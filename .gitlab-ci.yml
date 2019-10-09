@@ -318,9 +318,8 @@ pip-installer:
   only:
     - master
     - dev
-    - fixes-unit-tests
-    - release-v0.5.0
     - tags
+    - fixes-dependencies
   script:
     - export TF_CPP_MIN_LOG_LEVEL=2
     # get the shortened version of last commit's hash
