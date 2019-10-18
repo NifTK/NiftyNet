@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
 import tensorflow as tf
@@ -5,11 +6,10 @@ import tensorflow as tf
 from niftynet.application.base_application import BaseApplication
 from niftynet.engine.application_factory import ApplicationNetFactory
 from niftynet.engine.application_factory import OptimiserFactory
-from niftynet.engine.application_variables import CONSOLE
-from niftynet.engine.application_variables import NETWORK_OUTPUT
-from niftynet.engine.application_variables import TF_SUMMARIES
-from niftynet.engine.sampler_random_vector import RandomVectorSampler
-from niftynet.engine.sampler_resize import ResizeSampler
+from niftynet.engine.application_variables import \
+    CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
+from niftynet.engine.sampler_random_vector_v2 import RandomVectorSampler
+from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.engine.windows_aggregator_identity import WindowAsImageAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.binary_masking import BinaryMaskingLayer
@@ -28,10 +28,10 @@ SUPPORTED_INPUT = set(['image', 'conditioning'])
 class GANApplication(BaseApplication):
     REQUIRED_CONFIG_SECTION = "GAN"
 
-    def __init__(self, net_param, action_param, is_training):
+    def __init__(self, net_param, action_param, action):
         BaseApplication.__init__(self)
         tf.logging.info('starting GAN application')
-        self.is_training = is_training
+        self.action = action
 
         self.net_param = net_param
         self.action_param = action_param
@@ -44,52 +44,57 @@ class GANApplication(BaseApplication):
         self.data_param = data_param
         self.gan_param = task_param
 
-        # read each line of csv files into an instance of Subject
         if self.is_training:
-            file_lists = []
-            if self.action_param.validation_every_n > 0:
-                file_lists.append(data_partitioner.train_files)
-                file_lists.append(data_partitioner.validation_files)
-            else:
-                file_lists.append(data_partitioner.train_files)
-            self.readers = []
-            for file_list in file_lists:
-                reader = ImageReader(['image', 'conditioning'])
-                reader.initialise(data_param, task_param, file_list)
-                self.readers.append(reader)
+            reader_names = ('image', 'conditioning')
+        elif self.is_inference:
+            # in the inference process use `conditioning` input only
+            reader_names = ('conditioning',)
+        elif self.is_evaluation:
+            tf.logging.fatal(
+                'Evaluation is not yet supported in this application.')
+            raise NotImplementedError
         else:
-            inference_reader = ImageReader(['conditioning'])
-            file_list = data_partitioner.inference_files
-            inference_reader.initialise(data_param, task_param, file_list)
-            self.readers = [inference_reader]
+            tf.logging.fatal(
+                'Action `%s` not supported. Expected one of %s',
+                self.action, self.SUPPORTED_PHASES)
+            raise ValueError
+        try:
+            reader_phase = self.action_param.dataset_to_infer
+        except AttributeError:
+            reader_phase = None
+        file_lists = data_partitioner.get_file_lists_by(
+            phase=reader_phase, action=self.action)
+        self.readers = [
+            ImageReader(reader_names).initialise(
+                data_param, task_param, file_list) for file_list in file_lists]
 
-        foreground_masking_layer = None
-        if self.net_param.normalise_foreground_only:
-            foreground_masking_layer = BinaryMaskingLayer(
-                type_str=self.net_param.foreground_type,
-                multimod_fusion=self.net_param.multimod_foreground_type,
-                threshold=0.0)
-
+        # initialise input preprocessing layers
+        foreground_masking_layer = BinaryMaskingLayer(
+            type_str=self.net_param.foreground_type,
+            multimod_fusion=self.net_param.multimod_foreground_type,
+            threshold=0.0) \
+            if self.net_param.normalise_foreground_only else None
         mean_var_normaliser = MeanVarNormalisationLayer(
+            image_name='image', binary_masking_func=foreground_masking_layer) \
+            if self.net_param.whitening else None
+        histogram_normaliser = HistogramNormalisationLayer(
             image_name='image',
-            binary_masking_func=foreground_masking_layer)
-        histogram_normaliser = None
-        if self.net_param.histogram_ref_file:
-            histogram_normaliser = HistogramNormalisationLayer(
-                image_name='image',
-                modalities=vars(task_param).get('image'),
-                model_filename=self.net_param.histogram_ref_file,
-                binary_masking_func=foreground_masking_layer,
-                norm_type=self.net_param.norm_type,
-                cutoff=self.net_param.cutoff,
-                name='hist_norm_layer')
+            modalities=vars(task_param).get('image'),
+            model_filename=self.net_param.histogram_ref_file,
+            binary_masking_func=foreground_masking_layer,
+            norm_type=self.net_param.norm_type,
+            cutoff=self.net_param.cutoff,
+            name='hist_norm_layer') \
+            if (self.net_param.histogram_ref_file and
+                self.net_param.normalisation) else None
 
         normalisation_layers = []
-        if self.net_param.normalisation:
+        if histogram_normaliser is not None:
             normalisation_layers.append(histogram_normaliser)
-        if self.net_param.whitening:
+        if mean_var_normaliser is not None:
             normalisation_layers.append(mean_var_normaliser)
 
+        # initialise training data augmentation layers
         augmentation_layers = []
         if self.is_training:
             if self.action_param.random_flipping_axes != -1:
@@ -104,19 +109,22 @@ class GANApplication(BaseApplication):
                 augmentation_layers[-1].init_uniform_angle(
                     self.action_param.rotation_angle)
 
-        for reader in self.readers:
-            reader.add_preprocessing_layers(
-                normalisation_layers + augmentation_layers)
+        # only add augmentation to first reader (not validation reader)
+        self.readers[0].add_preprocessing_layers(
+            normalisation_layers + augmentation_layers)
+
+        for reader in self.readers[1:]:
+            reader.add_preprocessing_layers(normalisation_layers)
 
     def initialise_sampler(self):
         self.sampler = []
         if self.is_training:
             self.sampler.append([ResizeSampler(
                 reader=reader,
-                data_param=self.data_param,
+                window_sizes=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=1,
-                shuffle_buffer=True,
+                shuffle=True,
                 queue_length=self.net_param.queue_length) for reader in
                 self.readers])
         else:
@@ -133,10 +141,10 @@ class GANApplication(BaseApplication):
             # (n = self.gan_param.n_interpolations)
             self.sampler.append([ResizeSampler(
                 reader=reader,
-                data_param=self.data_param,
+                window_sizes=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=self.gan_param.n_interpolations,
-                shuffle_buffer=False,
+                shuffle=False,
                 queue_length=self.net_param.queue_length) for reader in
                 self.readers])
 
@@ -154,8 +162,8 @@ class GANApplication(BaseApplication):
 
             if self.action_param.validation_every_n > 0:
                 data_dict = tf.cond(tf.logical_not(self.is_validation),
-                                    lambda: switch_sampler(True),
-                                    lambda: switch_sampler(False))
+                                    lambda: switch_sampler(for_training=True),
+                                    lambda: switch_sampler(for_training=False))
             else:
                 data_dict = switch_sampler(for_training=True)
 
@@ -210,13 +218,17 @@ class GANApplication(BaseApplication):
                 generator_variables = tf.get_collection(
                     tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
                 generator_grads = self.optimiser.compute_gradients(
-                    lossG, var_list=generator_variables)
+                    lossG,
+                    var_list=generator_variables,
+                    colocate_gradients_with_ops=True)
 
                 # gradients of discriminator
                 discriminator_variables = tf.get_collection(
                     tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator')
                 discriminator_grads = self.optimiser.compute_gradients(
-                    lossD, var_list=discriminator_variables)
+                    lossD,
+                    var_list=discriminator_variables,
+                    colocate_gradients_with_ops=True)
                 grads = [generator_grads, discriminator_grads]
 
                 # add the grads back to application_driver's training_grads

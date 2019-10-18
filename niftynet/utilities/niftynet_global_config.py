@@ -1,16 +1,27 @@
 # -*- coding: utf-8 -*-
+"""
+NiftyNet user folder configuration
+"""
 
-from os.path import (expanduser, join, split, isdir, isfile, splitext)
-from os import (makedirs, rename)
+import sys
 from random import choice
 from string import ascii_lowercase
 from time import strftime
-import sys
+
+import os
+from os.path import expanduser, join, split, isdir, isfile, splitext
+
+# pylint: disable=wrong-import-order
 try:
     from configparser import (ConfigParser, Error)
 except ImportError:
     from ConfigParser import (ConfigParser, Error)
 from niftynet.utilities.decorators import singleton
+
+CONFIG_HOME_VAR = 'niftynet_config_home'
+MODEL_ZOO_VAR = 'niftynet_model_zoo'
+# SERVER_URL = 'https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer'
+SERVER_URL = 'https://github.com/NifTK/NiftyNetModelZoo'
 
 
 @singleton
@@ -23,21 +34,40 @@ class NiftyNetGlobalConfig(object):
     niftynet_exts = {'extensions': ['network']}
 
     def __init__(self):
-        self.setup()
-
-
-    def setup(self):
-        self._download_server_url = \
-            'https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNetExampleServer'
+        self._download_server_url = SERVER_URL
         self._config_home = join(expanduser('~'), '.niftynet')
+
+        try:
+            if os.environ[MODEL_ZOO_VAR]:
+                self._download_server_url = os.environ[MODEL_ZOO_VAR]
+        except KeyError:
+            pass
+
+        try:
+            if os.environ[CONFIG_HOME_VAR]:
+                self._config_home = os.environ[CONFIG_HOME_VAR]
+        except KeyError:
+            pass
+
         self._config_file = join(self._config_home, 'config.ini')
 
-        config_opts = NiftyNetGlobalConfig.__load_or_create(self._config_file)
+        self._niftynet_home = self._config_home
 
+        self.setup()
+
+    def setup(self):
+        """
+        Read variables from system environment and make directories.
+
+        :return:
+        """
+        config_opts = NiftyNetGlobalConfig.__load_or_create(self._config_file)
         self._niftynet_home = expanduser(
-            config_opts[NiftyNetGlobalConfig.global_section][NiftyNetGlobalConfig.home_key])
+            config_opts[NiftyNetGlobalConfig.global_section][
+                NiftyNetGlobalConfig.home_key])
+
         if not isdir(self._niftynet_home):
-            makedirs(self._niftynet_home)
+            os.makedirs(self._niftynet_home)
 
             # create folders for user-defined extensions such as new networks
             for ext in list(NiftyNetGlobalConfig.niftynet_exts):
@@ -53,7 +83,6 @@ class NiftyNetGlobalConfig(object):
         sys.path.insert(1, self._niftynet_home)
         return self
 
-
     @staticmethod
     def __create_module(path):
         """Create the passed path, i.e. folder and place an empty
@@ -62,7 +91,7 @@ class NiftyNetGlobalConfig(object):
         :param path: assumed not to exist
         :type path: `os.path`
         """
-        makedirs(path)
+        os.makedirs(path)
         open(join(path, '__init__.py'), 'a').close()
 
     @staticmethod
@@ -112,15 +141,15 @@ class NiftyNetGlobalConfig(object):
                 backup = True
 
             if not backup:  # loaded file contains all required
-                            # config options: so return
+                # config options: so return
                 return dict(config)
 
         config_dir, config_filename = split(config_file)
         if not isdir(config_dir):
-            makedirs(config_dir)
+            os.makedirs(config_dir)
 
         if backup:  # config file exists, but does not contain all required
-                    # config opts: so backup not to override
+            # config opts: so backup not to override
             timestamp = strftime('%Y-%m-%d-%H-%M-%S')
             random_str = ''.join(choice(ascii_lowercase) for _ in range(3))
             backup_suffix = '-'.join(['backup', timestamp, random_str])
@@ -128,7 +157,7 @@ class NiftyNetGlobalConfig(object):
             filename, extension = splitext(config_filename)
             backup_filename = ''.join([filename, '-', backup_suffix, extension])
             backup_file = join(config_dir, backup_filename)
-            rename(config_file, backup_file)
+            os.rename(config_file, backup_file)
 
         # create a new default global config file
         config = ConfigParser(default_values)

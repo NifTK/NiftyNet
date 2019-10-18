@@ -9,13 +9,17 @@ Using this modular structure you can:
 * Adapt existing networks to your imaging data
 * Quickly build new solutions to your own image analysis problems
 
-NiftyNet is a consortium of research groups (WEISS -- `Wellcome EPSRC Centre for Interventional and Surgical Sciences`_, CMIC -- `Centre for Medical Image Computing`_, HIG -- High-dimensional Imaging Group), where WEISS acts as the consortium lead.
+NiftyNet is a consortium of research organisations
+(BMEIS -- `School of Biomedical Engineering and Imaging Sciences, King's College London`_;
+WEISS -- `Wellcome EPSRC Centre for Interventional and Surgical Sciences, UCL`_;
+CMIC -- `Centre for Medical Image Computing, UCL`_;
+HIG -- High-dimensional Imaging Group, UCL), where BMEIS acts as the consortium lead.
 
 .. image:: https://badge.fury.io/py/NiftyNet.svg
   :target: https://badge.fury.io/py/NiftyNet
 
 .. image:: https://img.shields.io/badge/License-Apache%202.0-blue.svg
-  :target: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/dev/LICENSE
+  :target: https://github.com/NifTK/NiftyNet/blob/dev/LICENSE
 
 .. [#] Please install the appropriate `TensorFlow`_ PyPI package (``tensorflow`` or ``tensorflow-gpu``) **before** executing ``pip install niftynet`` -- see the instructions on the `NiftyNet source code repository`_ for details.
 
@@ -23,16 +27,18 @@ NiftyNet is a consortium of research groups (WEISS -- `Wellcome EPSRC Centre for
 Features
 --------
 
-NiftyNet currently supports medical image segmentation and generative adversarial networks.
-**NiftyNet is not intended for clinical use**.
-Other features of NiftyNet include:
-
 * Easy-to-customise interfaces of network components
 * Sharing networks and pretrained models
 * Support for 2-D, 2.5-D, 3-D, 4-D inputs [#]_
 * Efficient discriminative training with multiple-GPU support
 * Implementation of recent networks (HighRes3DNet, 3D U-net, V-net, DeepMedic)
 * Comprehensive evaluation metrics for medical image segmentation
+
+**NiftyNet is not intended for clinical use**.
+
+NiftyNet release notes are available in the `changelog`_.
+
+.. _`changelog`: https://github.com/NifTK/NiftyNet/blob/dev/CHANGELOG.md
 
 .. [#] 2.5-D: volumetric images processed as a stack of 2D slices; 4-D: co-registered multi-modal 3D volumes
 
@@ -45,21 +51,21 @@ Installation
 
 Please follow the `installation instructions`_.
 
-.. _`installation instructions`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet#installation
+.. _`installation instructions`: http://niftynet.readthedocs.io/en/dev/installation.html
 
 Examples
 ^^^^^^^^
 
 Please see the `NiftyNet demos`_.
 
-.. _`NiftyNet demos`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/tree/dev/demos
+.. _`NiftyNet demos`: https://github.com/NifTK/NiftyNet/tree/dev/demos
 
 Network (re-)implementations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Please see the list of `network (re-)implementations in NiftyNet`_.
 
-.. _`network (re-)implementations in NiftyNet`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/tree/dev/niftynet/network
+.. _`network (re-)implementations in NiftyNet`: https://github.com/niftk/NiftyNet/tree/dev/niftynet/network
 
 API documentation
 ^^^^^^^^^^^^^^^^^
@@ -73,23 +79,20 @@ Contributing
 
 Please see the `contribution guidelines`_ on the `NiftyNet source code repository`_.
 
-.. _`contribution guidelines`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet/blob/dev/CONTRIBUTING.md
+.. _`contribution guidelines`: https://github.com/niftk/NiftyNet/blob/dev/CONTRIBUTING.md
 
 Useful links
 ^^^^^^^^^^^^
 
 `NiftyNet website`_
 
-`NiftyNet source code on CmicLab`_
+`NiftyNet source code on GitHub`_
 
-`NiftyNet source code mirror on GitHub`_
-
-NiftyNet mailing list: nifty-net@live.ucl.ac.uk
+NiftyNet mailing list: niftynet@googlegroups.com
 
 
 .. _`NiftyNet website`: http://niftynet.io/
-.. _`NiftyNet source code on CmicLab`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
-.. _`NiftyNet source code mirror on GitHub`: https://github.com/NifTK/NiftyNet
+.. _`NiftyNet source code on GitHub`: https://github.com/NifTK/NiftyNet
 
 
 Citing NiftyNet
@@ -121,22 +124,31 @@ BibTeX entry:
 Licensing and copyright
 -----------------------
 
-Copyright 2017 University College London and the NiftyNet Contributors.
 NiftyNet is released under the Apache License, Version 2.0.
 Please see the LICENSE file in the `NiftyNet source code repository`_ for details.
 
+Copyright 2018, the NiftyNet Consortium.
 
 Acknowledgements
 ----------------
 
-This project is grateful for the support from the `Wellcome Trust`_, the `Engineering and Physical Sciences Research Council (EPSRC)`_, the `National Institute for Health Research (NIHR)`_, the `Department of Health (DoH)`_, `University College London (UCL)`_, the `Science and Engineering South Consortium (SES)`_, the `STFC Rutherford-Appleton Laboratory`_, and `NVIDIA`_.
+This project is grateful for the support from the `Wellcome Trust`_,
+the `Engineering and Physical Sciences Research Council (EPSRC)`_,
+the `National Institute for Health Research (NIHR)`_,
+the `Department of Health (DoH)`_,
+`University College London (UCL)`_,
+`King's College London (KCL)`_,
+the `Science and Engineering South Consortium (SES)`_,
+the `STFC Rutherford-Appleton Laboratory`_, and `NVIDIA`_.
 
 .. _`TensorFlow`: https://www.tensorflow.org/
-.. _`Wellcome EPSRC Centre for Interventional and Surgical Sciences`: http://www.ucl.ac.uk/weiss
-.. _`NiftyNet source code repository`: https://cmiclab.cs.ucl.ac.uk/CMIC/NiftyNet
-.. _`Centre for Medical Image Computing`: http://cmic.cs.ucl.ac.uk/
+.. _`School of Biomedical Engineering and Imaging Sciences, King's College London`: https://www.kcl.ac.uk/lsm/research/divisions/imaging/index.aspx
+.. _`Wellcome EPSRC Centre for Interventional and Surgical Sciences, UCL`: http://www.ucl.ac.uk/weiss
+.. _`NiftyNet source code repository`: https://github.com/NifTK/NiftyNet
+.. _`Centre for Medical Image Computing, UCL`: http://cmic.cs.ucl.ac.uk/
 .. _`Centre for Medical Image Computing (CMIC)`: http://cmic.cs.ucl.ac.uk/
 .. _`University College London (UCL)`: http://www.ucl.ac.uk/
+.. _`King's College London (KCL)`: http://www.kcl.ac.uk/
 .. _`Wellcome Trust`: https://wellcome.ac.uk/
 .. _`Engineering and Physical Sciences Research Council (EPSRC)`: https://www.epsrc.ac.uk/
 .. _`National Institute for Health Research (NIHR)`: https://www.nihr.ac.uk/

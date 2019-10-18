@@ -47,7 +47,12 @@ class HighRes3DNetLarge(BaseNet):
             {'name': 'conv_2', 'n_features': 64, 'kernel_size': 1},
             {'name': 'conv_3', 'n_features': num_classes, 'kernel_size': 1}]
 
-    def layer_op(self, images, is_training, layer_id=-1):
+    def layer_op(self,
+                 images,
+                 is_training=True,
+                 layer_id=-1,
+                 keep_prob=0.5,
+                 **unused_kwargs):
         assert (layer_util.check_spatial_dims(
             images, lambda x: x % 8 == 0))
         # go through self.layers, create an instance of each layer
@@ -132,7 +137,7 @@ class HighRes3DNetLarge(BaseNet):
             w_initializer=self.initializers['w'],
             w_regularizer=self.regularizers['w'],
             name=params['name'])
-        flow = fc_layer(flow, is_training)
+        flow = fc_layer(flow, is_training, keep_prob)
         layer_instances.append((fc_layer, flow))
 
         ### 1x1x1 convolution layer

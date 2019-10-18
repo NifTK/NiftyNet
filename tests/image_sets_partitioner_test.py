@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from niftynet.io.image_sets_partitioner import COLUMN_UNIQ_ID
 from niftynet.io.image_sets_partitioner import ImageSetsPartitioner
-from niftynet.io.image_sets_partitioner import TRAIN, VALID, INFER
+from niftynet.engine.signal import TRAIN, VALID, INFER
 from niftynet.utilities.util_common import ParserNamespace
 
 test_sections = {
@@ -18,7 +18,8 @@ test_sections = {
         filename_not_contain=('Parcellation',),
         interp_order=3,
         pixdim=None,
-        axcodes=None),
+        axcodes=None,
+        loader=None),
 
     'Flair': ParserNamespace(
         csv_file=os.path.join('testing_data', 'test_Flairreader.csv'),
@@ -27,7 +28,8 @@ test_sections = {
         filename_not_contains=('Parcellation',),
         interp_order=3,
         pixdim=None,
-        axcodes=None)}
+        axcodes=None,
+        loader=None)}
 
 partition_output = os.path.join('testing_data', 'partition.csv')
 
@@ -43,7 +45,7 @@ class ImageSetsPartitionerTest(tf.test.TestCase):
             data_param,
             new_partition=False,
             data_split_file=partition_output)
-        self.assertEquals(
+        self.assertEqual(
             test_partitioner.get_file_list()[COLUMN_UNIQ_ID].count(), 4)
         with self.assertRaisesRegexp(ValueError, ''):
             test_partitioner.get_file_list(TRAIN)
@@ -67,18 +69,18 @@ class ImageSetsPartitionerNewPartition(tf.test.TestCase):
             new_partition=True,
             ratios=(2.0, 2.0),
             data_split_file=partition_output)
-        self.assertEquals(
+        self.assertEqual(
             test_partitioner.get_file_list()[COLUMN_UNIQ_ID].count(), 4)
-        self.assertEquals(
+        self.assertEqual(
             test_partitioner.get_file_list(TRAIN), None)
-        self.assertEquals(
+        self.assertEqual(
             test_partitioner.get_file_list(VALID)[COLUMN_UNIQ_ID].count(), 4)
-        self.assertEquals(
+        self.assertEqual(
             test_partitioner.get_file_list(INFER), None)
-        self.assertEquals(
+        self.assertEqual(
             test_partitioner.get_file_list(
                 VALID, 'T1', 'Flair')[COLUMN_UNIQ_ID].count(), 4)
-        self.assertEquals(
+        self.assertEqual(
             test_partitioner.get_file_list(
                 VALID, 'Flair')[COLUMN_UNIQ_ID].count(), 4)
         with self.assertRaisesRegexp(ValueError, ''):
@@ -114,13 +116,13 @@ class ImageSetsPartitionerIllPartition(tf.test.TestCase):
             test_sections,
             new_partition=False,
             data_split_file=partition_output)
-        self.assertEquals(
+        self.assertEqual(
             test_partitioner.get_file_list()[COLUMN_UNIQ_ID].count(), 4)
-        self.assertEquals(
+        self.assertEqual(
             test_partitioner.get_file_list(TRAIN)[COLUMN_UNIQ_ID].count(), 3)
-        self.assertEquals(
+        self.assertEqual(
             test_partitioner.get_file_list(VALID)[COLUMN_UNIQ_ID].count(), 2)
-        self.assertEquals(
+        self.assertEqual(
             test_partitioner.get_file_list(INFER)[COLUMN_UNIQ_ID].count(), 1)
 
     def test_empty(self):

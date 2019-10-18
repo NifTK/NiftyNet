@@ -8,6 +8,7 @@ from niftynet.layer import layer_util
 from niftynet.layer.activation import ActiLayer
 from niftynet.layer.base_layer import TrainableLayer
 from niftynet.layer.bn import BNLayer
+from niftynet.layer.gn import GNLayer
 from niftynet.utilities.util_common import look_up_operations
 
 SUPPORTED_PADDING = set(['SAME', 'VALID'])
@@ -120,7 +121,9 @@ class ConvolutionalLayer(TrainableLayer):
                  padding='SAME',
                  with_bias=False,
                  with_bn=True,
+                 group_size=-1,
                  acti_func=None,
+                 preactivation=False,
                  w_initializer=None,
                  w_regularizer=None,
                  b_initializer=None,
@@ -131,9 +134,15 @@ class ConvolutionalLayer(TrainableLayer):
 
         self.acti_func = acti_func
         self.with_bn = with_bn
+        self.group_size = group_size
+        self.preactivation = preactivation
         self.layer_name = '{}'.format(name)
+        if self.with_bn and group_size > 0:
+            raise ValueError('only choose either batchnorm or groupnorm')
         if self.with_bn:
             self.layer_name += '_bn'
+        if self.group_size > 0:
+            self.layer_name += '_gn'
         if self.acti_func is not None:
             self.layer_name += '_{}'.format(self.acti_func)
         super(ConvolutionalLayer, self).__init__(name=self.layer_name)
@@ -168,7 +177,6 @@ class ConvolutionalLayer(TrainableLayer):
                                b_initializer=self.initializers['b'],
                                b_regularizer=self.regularizers['b'],
                                name='conv_')
-        output_tensor = conv_layer(input_tensor)
 
         if self.with_bn:
             if is_training is None:
@@ -179,17 +187,36 @@ class ConvolutionalLayer(TrainableLayer):
                 moving_decay=self.moving_decay,
                 eps=self.eps,
                 name='bn_')
-            output_tensor = bn_layer(output_tensor, is_training)
-
+        if self.group_size > 0:
+            gn_layer = GNLayer(
+                regularizer=self.regularizers['w'],
+                group_size=self.group_size,
+                eps=self.eps,
+                name='gn_')
         if self.acti_func is not None:
             acti_layer = ActiLayer(
                 func=self.acti_func,
                 regularizer=self.regularizers['w'],
                 name='acti_')
-            output_tensor = acti_layer(output_tensor)
 
         if keep_prob is not None:
             dropout_layer = ActiLayer(func='dropout', name='dropout_')
-            output_tensor = dropout_layer(output_tensor, keep_prob=keep_prob)
+
+        def activation(output_tensor):
+            if self.with_bn:
+                output_tensor = bn_layer(output_tensor, is_training)
+            if self.group_size > 0:
+                output_tensor = gn_layer(output_tensor)
+            if self.acti_func is not None:
+                output_tensor = acti_layer(output_tensor)
+            if keep_prob is not None:
+                output_tensor = dropout_layer(output_tensor,
+                                              keep_prob=keep_prob)
+            return output_tensor
+
+        if self.preactivation:
+            output_tensor = conv_layer(activation(input_tensor))
+        else:
+            output_tensor = activation(conv_layer(input_tensor))
 
         return output_tensor

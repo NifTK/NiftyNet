@@ -40,7 +40,7 @@ class DeepMedic(BaseNet):
         self.conv_features = [30, 30, 40, 40, 40, 40, 50, 50]
         self.fc_features = [150, 150, num_classes]
 
-    def layer_op(self, images, is_training, layer_id=-1):
+    def layer_op(self, images, is_training, layer_id=-1, **unused_kwargs):
         # image_size is defined as the largest context, then:
         #   downsampled path size: image_size / d_factor
         #   downsampled path output: image_size / d_factor - 16

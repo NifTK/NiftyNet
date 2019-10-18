@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
+import re
+from packaging import version
 
 
 def get_niftynet_version_string():
@@ -18,17 +20,29 @@ def get_niftynet_version_string():
 
 def get_niftynet_version():
     """
-    Return a user-visible string describing the product version
+    Return a user-visible string describing the product version.
 
-    This is a safe function that will never throw an exception
+    This is a safe function that will never throw an exception.
+
+    :return: a PEP440-compliant version string on success, ``None`` otherwise
     """
+
+    # Default: to be set only if conditions in the branches below are fulfilled
+    version_string = None
 
     # Attempt to get the version string from the git repository
     try:
-        version_buf, version_git, command_git = get_niftynet_git_version()
-        version_string = version_git
+        from .versioneer_version import get_versions
+        version_info = get_versions()
+        if version_info['error'] is None:
+            version_string = version_info['version']
+        elif 'full-revisionid' in version_info:
+            if version_info['full-revisionid']:
+                version_string = '{} ({})'.format(
+                    version_info['full-revisionid'], version_info['error']
+                )
     except:
-        version_string = None
+        pass  # version_string is None by default
 
     # If we cannot get a git version, attempt to get a package version
     if not version_string:
@@ -36,51 +50,22 @@ def get_niftynet_version():
             import pkg_resources
             version_string = pkg_resources.get_distribution("niftynet").version
         except:
-            version_string = None
+            pass  # version_string is None by default
 
     return version_string
 
+def check_pep_440():
+    niftynet_version = get_niftynet_version()
+    # Regex for checking PEP 440 conformity
+    # https://www.python.org/dev/peps/pep-0440/#id79
+    pep440_regex = re.compile(
+        r"^\s*" + version.VERSION_PATTERN + r"\s*$",
+        re.VERBOSE | re.IGNORECASE,
+    )
 
-def get_niftynet_git_version():
-    """
-    Return a version string based on the git repository,
-    conforming to PEP440
-    """
+    # Check PEP 440 conformity
+    if niftynet_version is not None and \
+            pep440_regex.match(niftynet_version) is None:
+        raise ValueError('The version string {} does not conform to'
+                         ' PEP 440'.format(niftynet_version))
 
-    from subprocess import check_output
-
-    # Describe the version relative to last tag
-    command_git = ['git', 'describe', '--match', 'v[0-9]*']
-    version_buf = check_output(command_git,
-                               stderr=open('/dev/null', 'w')).rstrip()
-
-    # Exclude the 'v' for PEP440 conformity, see
-    # https://www.python.org/dev/peps/pep-0440/#public-version-identifiers
-    version_buf = version_buf[1:]
-
-    # Split the git describe output, as it may not be a tagged commit
-    try:
-        # converting if string returned as bytes object
-        # (not Unicode str object)
-        version_buf = version_buf.decode('utf-8')
-    except AttributeError:
-        pass
-
-    try:
-        tokens = version_buf.split('-')
-    except TypeError:
-        tokens = ['unknown token']
-
-    if len(tokens) > 1:  # not a tagged commit
-        # Format a developmental release identifier according to PEP440, see:
-        # https://www.python.org/dev/peps/pep-0440/#developmental-releases
-        version_git = '{}.dev{}'.format(tokens[0], tokens[1])
-    elif len(tokens) == 1:  # tagged commit
-        # Format a public version identifier according to PEP440, see:
-        # https://www.python.org/dev/peps/pep-0440/#public-version-identifiers
-        version_git = tokens[0]
-    else:
-        raise ValueError('Unexpected "git describe" output:'
-                         '{}'.format(version_buf))
-
-    return version_buf, version_git, command_git

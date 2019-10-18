@@ -1,20 +1,20 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+"""
+Downloading model zoo specifications and model zoo contents.
+"""
+from __future__ import absolute_import
+from __future__ import print_function
 
 import argparse
 import math
 import os
+import shutil
 import tarfile
 import tempfile
 from distutils.version import LooseVersion
-from os.path import basename
-from shutil import copyfile
-from shutil import move
 
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
+# pylint: disable=wrong-import-order
 from six.moves.urllib.parse import urlparse
 from six.moves.urllib.request import urlopen
 from six.moves.urllib.request import urlretrieve
@@ -23,6 +23,7 @@ from six.moves.urllib.request import urlretrieve
 # if the downloaded configuration file is compatible with
 # this version of NiftyNet downloader code
 from niftynet.utilities.niftynet_global_config import NiftyNetGlobalConfig
+from niftynet.utilities import NiftyNetLaunchConfig
 from niftynet.utilities.util_common import print_progress_bar
 from niftynet.utilities.versioning import get_niftynet_version, \
     get_niftynet_version_string
@@ -41,11 +42,13 @@ def download(example_ids,
         A list of identifiers for the samples to download
     :param download_if_already_existing:
         If true, data will always be downloaded
+    :param verbose:
+        If true, download info will be printed
     """
 
     global_config = NiftyNetGlobalConfig()
 
-    config_store = ConfigStore(global_config)
+    config_store = ConfigStore(global_config, verbose=verbose)
 
     # If a single id is specified, convert to a list
     example_ids = [example_ids] \
@@ -94,24 +97,26 @@ def download_file(url, download_path):
 
     # Extract the filename from the URL
     parsed = urlparse(url)
-    filename = basename(parsed.path)
+    filename = os.path.basename(parsed.path)
 
     # Ensure the output directory exists
     if not os.path.exists(download_path):
         os.makedirs(download_path)
 
     # Get a temporary file path for the compressed file download
-    downloaded_file = os.path.join(tempfile.gettempdir(), filename)
+    temp_folder = tempfile.mkdtemp()
+    downloaded_file = os.path.join(temp_folder, filename)
 
     # Download the file
     urlretrieve(url, downloaded_file, reporthook=progress_bar_wrapper)
 
     # Move the file to the destination folder
     destination_path = os.path.join(download_path, filename)
-    move(downloaded_file, destination_path)
+    shutil.move(downloaded_file, destination_path)
+    shutil.rmtree(temp_folder, ignore_errors=True)
 
 
-def download_and_decompress(url, download_path):
+def download_and_decompress(url, download_path, verbose=True):
     """
     Download an archive from a resource URL and
     decompresses/unarchives to the given location
@@ -121,18 +126,23 @@ def download_and_decompress(url, download_path):
     """
 
     # Extract the filename from the URL
+    print('Downloading from {}'.format(url))
     parsed = urlparse(url)
-    filename = basename(parsed.path)
+    filename = os.path.basename(parsed.path)
 
     # Ensure the output directory exists
     if not os.path.exists(download_path):
         os.makedirs(download_path)
 
     # Get a temporary file path for the compressed file download
-    downloaded_file = os.path.join(tempfile.gettempdir(), filename)
+    temp_folder = tempfile.mkdtemp()
+    downloaded_file = os.path.join(temp_folder, filename)
 
     # Download the file
-    urlretrieve(url, downloaded_file, reporthook=progress_bar_wrapper)
+    if verbose:
+        urlretrieve(url, downloaded_file, reporthook=progress_bar_wrapper)
+    else:
+        urlretrieve(url, downloaded_file)
 
     # Decompress and extract all files to the specified local path
     tar = tarfile.open(downloaded_file, "r")
@@ -140,22 +150,23 @@ def download_and_decompress(url, download_path):
     tar.close()
 
     # Remove the downloaded file
-    os.remove(downloaded_file)
+    shutil.rmtree(temp_folder, ignore_errors=True)
 
 
-class ConfigStore:
+class ConfigStore(object):
     """
     Manages a configuration file store based on a
     remote repository with local caching
     """
 
-    def __init__(self, global_config):
+    def __init__(self, global_config, verbose=True):
         self._download_folder = global_config.get_niftynet_home_folder()
         self._config_folder = global_config.get_niftynet_config_folder()
         self._local = ConfigStoreCache(
             os.path.join(self._config_folder, '.downloads_local_config_cache'))
         self._remote = RemoteProxy(self._config_folder,
                                    global_config.get_download_server_url())
+        self._verbose = verbose
 
     def exists(self, example_id):
         """
@@ -165,6 +176,7 @@ class ConfigStore:
 
         return self._local.exists(example_id) or self._remote.exists(example_id)
 
+    # pylint: disable=broad-except
     def update_if_required(self,
                            example_id,
                            download_if_already_existing=False):
@@ -177,9 +189,9 @@ class ConfigStore:
         try:
             self._remote.update(example_id)
             remote_update_failed = False
-        except Exception as e:
+        except Exception as fail_msg:
             print("Warning: updating the examples file "
-                  "from the server caused an error: {}".format(e))
+                  "from the server caused an error: {}".format(fail_msg))
             remote_update_failed = True
 
         current_config, current_entries = \
@@ -205,7 +217,7 @@ class ConfigStore:
                     current_config, remote_config):
                 self._check_minimum_versions(remote_config)
                 self._download(remote_entries, example_id)
-                self._replace_local_with_remote_config(example_id)
+                self._replace_local_with_remote(example_id)
             else:
                 print(example_id + ": OK. ")
                 print("Already downloaded. "
@@ -217,18 +229,25 @@ class ConfigStore:
     def _check_minimum_versions(remote_config):
         # Checks whether a minimum download API is specified
         if 'min_download_api' in remote_config:
-            min_download_api = remote_config['min_download_api']
-            current_download_api_version = DOWNLOAD_API_VERSION
-            if LooseVersion(min_download_api) > LooseVersion(
-                    current_download_api_version):
+            try:
+                min_download_api = LooseVersion(
+                    remote_config['min_download_api'])
+            except AttributeError:
+                min_download_api = LooseVersion(DOWNLOAD_API_VERSION)
+            current_download_api_version = LooseVersion(DOWNLOAD_API_VERSION)
+            if min_download_api > current_download_api_version:
                 raise ValueError(
                     "This example requires a newer version of NiftyNet.")
 
         # Checks whether a minimum NiftyNet version is specified
         if 'min_niftynet' in remote_config:
-            min_niftynet = remote_config['min_niftynet']
-            current_version = get_niftynet_version()
-            if LooseVersion(min_niftynet) > LooseVersion(current_version):
+            try:
+                min_niftynet = LooseVersion(remote_config['min_niftynet'])
+                current_version = LooseVersion(get_niftynet_version())
+            except AttributeError:
+                min_niftynet = LooseVersion('0')
+                current_version = LooseVersion('0')
+            if min_niftynet > current_version:
                 raise ValueError("This example requires NiftyNet "
                                  "version %s or later.", min_niftynet)
 
@@ -244,9 +263,8 @@ class ConfigStore:
         if 'version' not in current_config:
             return 'version' in remote_config
 
-        else:
-            return LooseVersion(current_config['version']) < \
-                   LooseVersion(remote_config['version'])
+        return LooseVersion(current_config['version']) < \
+               LooseVersion(remote_config['version'])
 
     def _download(self, remote_config_sections, example_id):
         for section_name, config_params in remote_config_sections.items():
@@ -258,8 +276,10 @@ class ConfigStore:
                                          'configuration file')
                     local_download_path = self._get_local_download_path(
                         config_params, example_id)
-                    download_and_decompress(url=config_params['url'],
-                                            download_path=local_download_path)
+                    download_and_decompress(
+                        url=config_params['url'],
+                        download_path=local_download_path,
+                        verbose=self._verbose)
                     print('{} -- {}: OK.'.format(example_id, section_name))
                     print("Downloaded data to " + local_download_path)
                 else:
@@ -272,13 +292,13 @@ class ConfigStore:
         local_id = remote_config.get('local_id', example_id)
         return os.path.join(self._download_folder, destination, local_id)
 
-    def _replace_local_with_remote_config(self, example_id):
+    def _replace_local_with_remote(self, example_id):
         local_filename = self._local.get_local_path(example_id)
         remote_filename = self._remote.get_local_path(example_id)
-        copyfile(remote_filename, local_filename)
+        shutil.copyfile(remote_filename, local_filename)
 
     def _are_data_missing(self, remote_config_sections, example_id):
-        for section_name, config_params in remote_config_sections.items():
+        for _, config_params in remote_config_sections.items():
             if 'action' in config_params:
                 action = config_params.get('action').lower()
                 if action == 'expand':
@@ -287,15 +307,15 @@ class ConfigStore:
                     if not os.path.isdir(local_download_path):
                         return True
 
-                    non_system_files = [f for f in
-                                        os.listdir(local_download_path) if
-                                        not f.startswith('.')]
+                    non_system_files = [
+                        f for f in os.listdir(local_download_path)
+                        if not f.startswith('.')]
                     if not non_system_files:
                         return True
         return False
 
 
-class ConfigStoreCache:
+class ConfigStoreCache(object):
     """
     A local cache for configuration files
     """
@@ -334,7 +354,7 @@ class ConfigStoreCache:
 
         config_filename = self.get_local_path(example_id)
 
-        parser = configparser.ConfigParser()
+        parser = NiftyNetLaunchConfig()
         parser.read(config_filename)
         if parser.has_section('config'):
             config_section = dict(parser.items('config'))
@@ -348,7 +368,7 @@ class ConfigStoreCache:
         return config_section, other_sections
 
 
-class RemoteProxy:
+class RemoteProxy(object):
     """
     A remote configuration file store with a local cache
     """
@@ -389,7 +409,7 @@ class RemoteProxy:
         return self._cache.get_local_path(example_id)
 
 
-class RemoteConfigStore:
+class RemoteConfigStore(object):
     """
     A remote configuration file store
     """
@@ -418,10 +438,12 @@ def gitlab_raw_file_url(base_url, file_name):
     Returns the url for the raw file on a GitLab server
     """
 
-    return base_url + '/raw/master/' + file_name
-    #return base_url + '/raw/revising-config/' + file_name
+    return base_url + '/raw/new_dataset_api/' + file_name
+    # return base_url + '/raw/master/' + file_name
+    # return base_url + '/raw/revising-config/' + file_name
 
 
+# pylint: disable=broad-except
 def url_exists(url):
     """
     Returns true if the specified url exists, without any redirects
@@ -438,7 +460,7 @@ def progress_bar_wrapper(count, block_size, total_size):
     """
     Uses the common progress bar in the urlretrieve hook format
     """
-    if block_size*5 >= total_size:
+    if block_size * 5 >= total_size:
         # no progress bar for tiny files
         return
     print_progress_bar(
@@ -448,6 +470,11 @@ def progress_bar_wrapper(count, block_size, total_size):
 
 
 def main():
+    """
+    Launch download process with user-specified options.
+
+    :return:
+    """
     arg_parser = argparse.ArgumentParser(
         description="Download NiftyNet sample data")
     arg_parser.add_argument(

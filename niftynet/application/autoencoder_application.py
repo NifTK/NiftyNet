@@ -6,8 +6,8 @@ from niftynet.engine.application_factory import OptimiserFactory
 from niftynet.engine.application_variables import CONSOLE
 from niftynet.engine.application_variables import NETWORK_OUTPUT
 from niftynet.engine.application_variables import TF_SUMMARIES
-from niftynet.engine.sampler_linear_interpolate import LinearInterpolateSampler
-from niftynet.engine.sampler_resize import ResizeSampler
+from niftynet.engine.sampler_linear_interpolate_v2 import LinearInterpolateSampler
+from niftynet.engine.sampler_resize_v2 import ResizeSampler
 from niftynet.engine.windows_aggregator_identity import WindowAsImageAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.loss_autoencoder import LossFunction
@@ -21,11 +21,11 @@ SUPPORTED_INFERENCE = \
 class AutoencoderApplication(BaseApplication):
     REQUIRED_CONFIG_SECTION = "AUTOENCODER"
 
-    def __init__(self, net_param, action_param, is_training):
+    def __init__(self, net_param, action_param, action):
         BaseApplication.__init__(self)
         tf.logging.info('starting autoencoder application')
 
-        self.is_training = is_training
+        self.action = action
 
         self.net_param = net_param
         self.action_param = action_param
@@ -43,16 +43,17 @@ class AutoencoderApplication(BaseApplication):
                 self.autoencoder_param.inference_type, SUPPORTED_INFERENCE)
         else:
             self._infer_type = None
-
+        try:
+            reader_phase = self.action_param.dataset_to_infer
+        except AttributeError:
+            reader_phase = None
+        file_lists = data_partitioner.get_file_lists_by(
+            phase=reader_phase, action=self.action)
         # read each line of csv files into an instance of Subject
+        if self.is_evaluation:
+            NotImplementedError('Evaluation is not yet '
+                                'supported in this application.')
         if self.is_training:
-            file_lists = []
-            if self.action_param.validation_every_n > 0:
-                file_lists.append(data_partitioner.train_files)
-                file_lists.append(data_partitioner.validation_files)
-            else:
-                file_lists.append(data_partitioner.train_files)
-
             self.readers = []
             for file_list in file_lists:
                 reader = ImageReader(['image'])
@@ -60,16 +61,12 @@ class AutoencoderApplication(BaseApplication):
                 self.readers.append(reader)
         if self._infer_type in ('encode', 'encode-decode'):
             self.readers = [ImageReader(['image'])]
-            self.readers[0].initialise(data_param,
-                                       task_param,
-                                       data_partitioner.inference_files)
+            self.readers[0].initialise(data_param, task_param, file_lists[0])
         elif self._infer_type == 'sample':
             self.readers = []
         elif self._infer_type == 'linear_interpolation':
             self.readers = [ImageReader(['feature'])]
-            self.readers[0].initialise(data_param,
-                                       task_param,
-                                       data_partitioner.inference_files)
+            self.readers[0].initialise(data_param, task_param, file_lists[0])
         # if self.is_training or self._infer_type in ('encode', 'encode-decode'):
         #    mean_var_normaliser = MeanVarNormalisationLayer(image_name='image')
         #    self.reader.add_preprocessing_layers([mean_var_normaliser])
@@ -79,27 +76,27 @@ class AutoencoderApplication(BaseApplication):
         if self.is_training:
             self.sampler.append([ResizeSampler(
                 reader=reader,
-                data_param=self.data_param,
+                window_sizes=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=1,
-                shuffle_buffer=True,
+                shuffle=True,
                 queue_length=self.net_param.queue_length) for reader in
                 self.readers])
             return
         if self._infer_type in ('encode', 'encode-decode'):
             self.sampler.append([ResizeSampler(
                 reader=reader,
-                data_param=self.data_param,
+                window_sizes=self.data_param,
                 batch_size=self.net_param.batch_size,
                 windows_per_image=1,
-                shuffle_buffer=False,
+                shuffle=False,
                 queue_length=self.net_param.queue_length) for reader in
                 self.readers])
             return
         if self._infer_type == 'linear_interpolation':
             self.sampler.append([LinearInterpolateSampler(
                 reader=reader,
-                data_param=self.data_param,
+                window_sizes=self.data_param,
                 batch_size=self.net_param.batch_size,
                 n_interpolations=self.autoencoder_param.n_interpolations,
                 queue_length=self.net_param.queue_length) for reader in
@@ -159,7 +156,8 @@ class AutoencoderApplication(BaseApplication):
                     reg_loss = tf.reduce_mean(
                         [tf.reduce_mean(reg_loss) for reg_loss in reg_losses])
                     loss = loss + reg_loss
-            grads = self.optimiser.compute_gradients(loss)
+            grads = self.optimiser.compute_gradients(
+                loss, colocate_gradients_with_ops=True)
             # collecting gradients variables
             gradients_collector.add_to_collection([grads])
 

@@ -55,23 +55,35 @@ class LossFunction(Layer):
             data_loss = []
             for ind, pred in enumerate(prediction):
                 # go through each scale
+                def _batch_i_loss(*args):
 
-                loss_batch = []
-                for b_ind, pred_b in enumerate(tf.unstack(pred, axis=0)):
                     # go through each image in a batch
-
+                    if len(args[0]) == 2:
+                        pred_b, ground_truth_b = args[0]
+                        weight_map_b = None
+                    else:
+                        pred_b, ground_truth_b, weight_map_b = args[0]
                     pred_b = tf.reshape(pred_b, [-1])
-                    ground_truth_b = ground_truth[b_ind]
-                    weight_b = None if weight_map is None else weight_map[b_ind]
 
                     loss_params = {
                         'prediction': pred_b,
                         'ground_truth': ground_truth_b,
-                        'weight_map': weight_b}
+                        'weight_map': weight_map_b}
                     if self._loss_func_params:
                         loss_params.update(self._loss_func_params)
 
-                    loss_batch.append(self._data_loss_func(**loss_params))
+                    return tf.to_float(self._data_loss_func(**loss_params))
+
+                if weight_map is not None:
+                    elements = (pred, ground_truth, weight_map)
+                else:
+                    elements = (pred, ground_truth)
+
+                loss_batch = tf.map_fn(
+                    fn=_batch_i_loss,
+                    elems=elements,
+                    dtype=tf.float32,
+                    parallel_iterations=1)
                 data_loss.append(tf.reduce_mean(loss_batch))
             return tf.reduce_mean(data_loss)
 

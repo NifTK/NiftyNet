@@ -26,6 +26,9 @@ SUPPORTED_APP = {
         'niftynet.application.autoencoder_application.AutoencoderApplication',
     'net_gan':
         'niftynet.application.gan_application.GANApplication',
+    'net_classify':
+        'niftynet.application.classification_application.'
+        'ClassificationApplication',
 }
 
 SUPPORTED_NETWORK = {
@@ -56,6 +59,12 @@ SUPPORTED_NETWORK = {
         'niftynet.network.scalenet.ScaleNet',
     "holisticnet":
         'niftynet.network.holistic_net.HolisticNet',
+    "unet_2d":
+        'niftynet.network.unet_2d.UNet2D',
+
+    # classification
+    "resnet": 'niftynet.network.resnet.ResNet',
+    "se_resnet": 'niftynet.network.se_resnet.SE_ResNet',
 
     # autoencoder
     "vae": 'niftynet.network.vae.VAE'
@@ -68,24 +77,30 @@ SUPPORTED_LOSS_GAN = {
 SUPPORTED_LOSS_SEGMENTATION = {
     "CrossEntropy":
         'niftynet.layer.loss_segmentation.cross_entropy',
+    "CrossEntropy_Dense":
+        'niftynet.layer.loss_segmentation.cross_entropy_dense',
     "Dice":
         'niftynet.layer.loss_segmentation.dice',
     "Dice_NS":
         'niftynet.layer.loss_segmentation.dice_nosquare',
     "Dice_Dense":
         'niftynet.layer.loss_segmentation.dice_dense',
+    "Dice_Dense_NS":
+        'niftynet.layer.loss_segmentation.dice_dense_nosquare',
+    "Tversky":
+        'niftynet.layer.loss_segmentation.tversky',
     "GDSC":
         'niftynet.layer.loss_segmentation.generalised_dice_loss',
     "WGDL":
         'niftynet.layer.loss_segmentation.generalised_wasserstein_dice_loss',
     "SensSpec":
         'niftynet.layer.loss_segmentation.sensitivity_specificity_loss',
-    "L1Loss":
-        'niftynet.layer.loss_segmentation.l1_loss',
-    "L2Loss":
-        'niftynet.layer.loss_segmentation.l2_loss',
-    "Huber":
-        'niftynet.layer.loss_segmentation.huber_loss'
+    # "L1Loss":
+    #     'niftynet.layer.loss_segmentation.l1_loss',
+    # "L2Loss":
+    #     'niftynet.layer.loss_segmentation.l2_loss',
+    # "Huber":
+    #     'niftynet.layer.loss_segmentation.huber_loss'
 }
 
 SUPPORTED_LOSS_REGRESSION = {
@@ -100,6 +115,12 @@ SUPPORTED_LOSS_REGRESSION = {
     "Huber":
         'niftynet.layer.loss_regression.huber_loss'
 }
+
+SUPPORTED_LOSS_CLASSIFICATION = {
+    "CrossEntropy":
+        'niftynet.layer.loss_classification.cross_entropy',
+}
+
 
 SUPPORTED_LOSS_AUTOENCODER = {
     "VariationalLowerBound":
@@ -133,8 +154,77 @@ SUPPORTED_INITIALIZATIONS = {
     'he_uniform': 'niftynet.engine.application_initializer.HeUniform'
 }
 
+SUPPORTED_EVALUATIONS = {
+    'dice': 'niftynet.evaluation.segmentation_evaluations.dice',
+    'jaccard': 'niftynet.evaluation.segmentation_evaluations.jaccard',
+    'Dice': 'niftynet.evaluation.segmentation_evaluations.dice',
+    'Jaccard': 'niftynet.evaluation.segmentation_evaluations.jaccard',
+    'n_pos_ref': 'niftynet.evaluation.segmentation_evaluations.n_pos_ref',
+    'n_neg_ref': 'niftynet.evaluation.segmentation_evaluations.n_neg_ref',
+    'n_pos_seg': 'niftynet.evaluation.segmentation_evaluations.n_pos_seg',
+    'n_neg_seg': 'niftynet.evaluation.segmentation_evaluations.n_neg_seg',
+    'fp': 'niftynet.evaluation.segmentation_evaluations.fp',
+    'fn': 'niftynet.evaluation.segmentation_evaluations.fn',
+    'tp': 'niftynet.evaluation.segmentation_evaluations.tp',
+    'tn': 'niftynet.evaluation.segmentation_evaluations.tn',
+    'n_intersection': 'niftynet.evaluation.segmentation_evaluations'
+                      '.n_intersection',
+    'n_union': 'niftynet.evaluation.segmentation_evaluations.n_union',
+    'specificity': 'niftynet.evaluation.segmentation_evaluations.specificity',
+    'sensitivity': 'niftynet.evaluation.segmentation_evaluations.sensitivity',
+    'accuracy': 'niftynet.evaluation.segmentation_evaluations.accuracy',
+    'false_positive_rate': 'niftynet.evaluation.segmentation_evaluations'
+                           '.false_positive_rate',
+    'positive_predictive_values': 'niftynet.evaluation.segmentation_evaluations'
+                                  '.positive_predictive_values',
+    'negative_predictive_values': 'niftynet.evaluation.segmentation_evaluations'
+                                  '.negative_predictive_values',
+    'intersection_over_union': 'niftynet.evaluation.segmentation_evaluations'
+                               '.intersection_over_union',
+    'informedness': 'niftynet.evaluation.segmentation_evaluations.informedness',
+    'markedness': 'niftynet.evaluation.segmentation_evaluations.markedness',
+    'vol_diff': 'niftynet.evaluation.segmentation_evaluations.vol_diff',
+    'average_distance': 'niftynet.evaluation.segmentation_evaluations'
+                        '.average_distance',
+    'hausdorff_distance': 'niftynet.evaluation.segmentation_evaluations'
+                          '.hausdorff_distance',
+    'hausdorff95_distance': 'niftynet.evaluation.segmentation_evaluations'
+                            '.hausdorff95_distance',
+    'com_ref': 'niftynet.contrib.evaluation.segmentation_evaluations.com_ref',
+    'mse': 'niftynet.evaluation.regression_evaluations.mse',
+    'rmse': 'niftynet.evaluation.regression_evaluations.rmse',
+    'mae': 'niftynet.evaluation.regression_evaluations.mae',
+    # 'r2': 'niftynet.contrib.evaluation.regression_evaluations.r2',
+    'classification_accuracy': 'niftynet.evaluation.classification_evaluations'
+                               '.accuracy',
+    'roc_auc': 'niftynet.contrib.evaluation.classification_evaluations.roc_auc',
+    'roc': 'niftynet.contrib.evaluation.classification_evaluations.roc',
+}
 
-def select_module(module_name, type_str, lookup_table):
+SUPPORTED_EVENT_HANDLERS = {
+    'model_restorer':
+        'niftynet.engine.handler_model.ModelRestorer',
+    'model_saver':
+        'niftynet.engine.handler_model.ModelSaver',
+    'sampler_threading':
+        'niftynet.engine.handler_sampler.SamplerThreading',
+    'apply_gradients':
+        'niftynet.engine.handler_gradient.ApplyGradients',
+    'output_interpreter':
+        'niftynet.engine.handler_network_output.OutputInterpreter',
+    'console_logger':
+        'niftynet.engine.handler_console.ConsoleLogger',
+    'tensorboard_logger':
+        'niftynet.engine.handler_tensorboard.TensorBoardLogger'
+}
+
+SUPPORTED_ITERATION_GENERATORS = {
+    'iteration_generator':
+        'niftynet.engine.application_iteration.IterationMessageGenerator'
+}
+
+
+def select_module(module_name, type_str, lookup_table=None):
     """
     This function first tries to find the absolute module name
     by matching the static dictionary items, if not found, it
@@ -146,42 +236,46 @@ def select_module(module_name, type_str, lookup_table):
     :param type_str: type of the module (used for better error display)
     :param lookup_table: defines a set of shorthands for absolute class name
     """
+    lookup_table = lookup_table or {}
     module_name = '{}'.format(module_name)
+    is_external = True
     if module_name in lookup_table:
         module_name = lookup_table[module_name]
+        is_external = False
     module_str, class_name = None, None
     try:
         module_str, class_name = module_name.rsplit('.', 1)
         the_module = importlib.import_module(module_str)
         the_class = getattr(the_module, class_name)
-        tf.logging.info('Import [%s] from %s.',
-                        class_name, os.path.abspath(the_module.__file__))
+        if is_external:
+            # print location of external module
+            tf.logging.info('Import [%s] from %s.',
+                            class_name, os.path.abspath(the_module.__file__))
         return the_class
     except (AttributeError, ValueError, ImportError) as not_imported:
-        # print sys.path
         tf.logging.fatal(repr(not_imported))
-        # Two possibilities: a typo for a lookup table entry
-        #                 or a non-existing module
-        dists = dict((k, edit_distance(k, module_name))
-                     for k in list(lookup_table))
+        if '.' not in module_name:
+            err = 'Could not import {}: ' \
+                  'Incorrect module name "{}"; ' \
+                  'expected "module.object".'.format(type_str, module_name)
+        else:
+            err = '{}: Could not import object' \
+                  '"{}" from "{}"'.format(type_str, class_name, module_str)
+        tf.logging.fatal(err)
+
+        if not lookup_table:
+            # no further guess
+            raise ValueError(err)
+
+        dists = dict(
+            (k, edit_distance(k, module_name)) for k in list(lookup_table))
         closest = min(dists, key=dists.get)
         if dists[closest] <= 3:
             err = 'Could not import {2}: By "{0}", ' \
                   'did you mean "{1}"?\n "{0}" is ' \
                   'not a valid option. '.format(module_name, closest, type_str)
             tf.logging.fatal(err)
-            raise ValueError(err)
-        else:
-            if '.' not in module_name:
-                err = 'Could not import {}: ' \
-                      'Incorrect module name format {}. ' \
-                      'Expected "module.object".'.format(type_str, module_name)
-                tf.logging.fatal(err)
-                raise ValueError(err)
-            err = '{}: Could not import object' \
-                  '"{}" from "{}"'.format(type_str, class_name, module_str)
-            tf.logging.fatal(err)
-            raise ValueError(err)
+        raise ValueError(err)
 
 
 class ModuleFactory(object):
@@ -243,6 +337,15 @@ class LossRegressionFactory(ModuleFactory):
     type_str = 'regression loss'
 
 
+class LossClassificationFactory(ModuleFactory):
+    """
+    Import a classification loss function from niftynet.layer or
+    from user specified string
+    """
+    SUPPORTED = SUPPORTED_LOSS_CLASSIFICATION
+    type_str = 'classification loss'
+
+
 class LossAutoencoderFactory(ModuleFactory):
     """
     Import an autoencoder loss function from ``niftynet.layer`` or
@@ -282,3 +385,28 @@ class InitializerFactory(ModuleFactory):
         if args is None:
             args = {}
         return init_class.get_instance(args)
+
+
+class EvaluationFactory(ModuleFactory):
+    """
+    Import an optimiser from niftynet.engine.application_optimiser or
+    from user specified string
+    """
+    SUPPORTED = SUPPORTED_EVALUATIONS
+    type_str = 'evaluation'
+
+
+class EventHandlerFactory(ModuleFactory):
+    """
+    Import an event handler such as niftynet.engine.handler_console
+    """
+    SUPPORTED = SUPPORTED_EVENT_HANDLERS
+    type_str = 'event handler'
+
+
+class IteratorFactory(ModuleFactory):
+    """
+    Import an iterative message generator for the main engine loop
+    """
+    SUPPORTED = SUPPORTED_ITERATION_GENERATORS
+    type_str = 'engine iterator'

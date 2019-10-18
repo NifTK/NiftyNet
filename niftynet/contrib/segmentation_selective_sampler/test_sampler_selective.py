@@ -60,7 +60,8 @@ MULTI_MOD_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(7, 10, 2)
+        spatial_window_size=(7, 10, 2),
+        loader=None
     ),
     'FLAIR': ParserNamespace(
         csv_file=os.path.join('testing_data', 'FLAIRsampler.csv'),
@@ -70,7 +71,8 @@ MULTI_MOD_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(7, 10, 2)
+        spatial_window_size=(7, 10, 2),
+        loader=None
     ),
     'Label': ParserNamespace(
         csv_file=os.path.join('testing_data', 'lesion.csv'),
@@ -80,7 +82,8 @@ MULTI_MOD_DATA = {
         interp_order=1,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(7, 10, 2)
+        spatial_window_size=(7, 10, 2),
+        loader=None
     )
 }
 LABEL_TASK = {
@@ -92,7 +95,8 @@ LABEL_TASK = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(7, 10, 2)
+        spatial_window_size=(7, 10, 2),
+        loader=None
     )
 }
 MULTI_MOD_TASK = ParserNamespace(image=('T1', 'FLAIR'), label=('Label',))
@@ -106,7 +110,8 @@ MOD_2D_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(10, 9, 1)
+        spatial_window_size=(10, 9, 1),
+        loader=None
     ),
 }
 MOD_2D_TASK = ParserNamespace(image=('ultrasound',))
@@ -120,7 +125,8 @@ DYNAMIC_MOD_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(8, 2)
+        spatial_window_size=(8, 2),
+        loader=None
     ),
     'FLAIR': ParserNamespace(
         csv_file=os.path.join('testing_data', 'FLAIRsampler.csv'),
@@ -130,7 +136,8 @@ DYNAMIC_MOD_DATA = {
         interp_order=3,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(8, 2)
+        spatial_window_size=(8, 2),
+        loader=None
     ),
     'Label': ParserNamespace(
         csv_file=os.path.join('testing_data', 'labels.csv'),
@@ -140,7 +147,8 @@ DYNAMIC_MOD_DATA = {
         interp_order=1,
         pixdim=None,
         axcodes=None,
-        spatial_window_size=(8, 2)
+        spatial_window_size=(8, 2),
+        loader=None
     )
 }
 
@@ -196,8 +204,7 @@ class SelectiveSamplerTest(tf.test.TestCase):
                                    windows_per_image=2,
                                    queue_length=10)
         with self.test_session() as sess:
-            coordinator = tf.train.Coordinator()
-            sampler.run_threads(sess, coordinator, num_threads=1)
+            sampler.run_threads(sess, num_threads=1)
             out = sess.run(sampler.pop_batch_op())
             self.assertTrue(check_constraint(out['label'], constraint_built))
             self.assertAllClose(out['image'].shape, (2, 7, 10, 2, 2))
@@ -212,8 +219,7 @@ class SelectiveSamplerTest(tf.test.TestCase):
     #                              windows_per_image=10,
     #                              queue_length=10)
     #     with self.test_session() as sess:
-    #         coordinator = tf.train.Coordinator()
-    #         sampler.run_threads(sess, coordinator, num_threads=2)
+    #         sampler.run_threads(sess, num_threads=2)
     #         out = sess.run(sampler.pop_batch_op())
     #         self.assertAllClose(out['image'].shape, (2, 10, 9, 1))
     #     sampler.close_all()
@@ -229,8 +235,7 @@ class SelectiveSamplerTest(tf.test.TestCase):
     #                                windows_per_image=2,
     #                                queue_length=2)
     #     with self.test_session() as sess:
-    #         coordinator = tf.train.Coordinator()
-    #         sampler.run_threads(sess, coordinator, num_threads=2)
+    #         sampler.run_threads(sess, num_threads=2)
     #         out = sess.run(sampler.pop_batch_op())
     #         test = np.zeros_like(out['label'])
     #         test[out['label'] == 1] = 1

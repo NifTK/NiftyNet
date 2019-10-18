@@ -89,8 +89,12 @@ class RandomRotationLayer(RandomisedLayer):
         self._transform = transform
 
     def _apply_transformation_3d(self, image_3d, interp_order=3):
+        if interp_order < 0:
+            return image_3d
         assert image_3d.ndim == 3
         assert self._transform is not None
+        assert all([dim > 1 for dim in image_3d.shape]), \
+            'random rotation supports 3D inputs only'
         center_ = 0.5 * np.asarray(image_3d.shape, dtype=np.int64)
         c_offset = center_ - center_.dot(self._transform)
         image_3d[...] = scipy.ndimage.affine_transform(
@@ -103,22 +107,23 @@ class RandomRotationLayer(RandomisedLayer):
 
         if isinstance(inputs, dict) and isinstance(interp_orders, dict):
             for (field, image) in inputs.items():
-                assert image.shape[-1] == len(interp_orders[field]), \
-                    "interpolation orders should be" \
-                    "specified for each inputs modality"
-                for mod_i, interp_order in enumerate(interp_orders[field]):
+                interp_order = interp_orders[field][0]
+                for channel_idx in range(image.shape[-1]):
                     if image.ndim == 4:
-                        inputs[field][..., mod_i] = \
+                        inputs[field][..., channel_idx] = \
                             self._apply_transformation_3d(
-                                image[..., mod_i], interp_order)
+                                image[..., channel_idx], interp_order)
                     elif image.ndim == 5:
                         for t in range(image.shape[-2]):
-                            inputs[field][..., t, mod_i] = \
+                            inputs[field][..., t, channel_idx] = \
                                 self._apply_transformation_3d(
-                                    image[..., t, mod_i], interp_order)
+                                    image[..., t, channel_idx], interp_order)
                     else:
                         raise NotImplementedError("unknown input format")
-
+            # shapes = []
+            # for (field, image) in inputs.items():
+            #     shapes.append(image.shape)
+            # assert(len(shapes) == 2 and shapes[0][0:4] == shapes[1][0:4]), shapes
         else:
             raise NotImplementedError("unknown input format")
         return inputs

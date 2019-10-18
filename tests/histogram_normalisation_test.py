@@ -23,7 +23,8 @@ DATA_PARAM = {
         filename_not_contains=('Parcellation',),
         interp_order=3,
         pixdim=None,
-        axcodes=None
+        axcodes=None,
+        loader=None
     ),
     'FLAIR': ParserNamespace(
         csv_file=os.path.join('testing_data', 'FLAIR.csv'),
@@ -32,7 +33,8 @@ DATA_PARAM = {
         filename_not_contains=('Parcellation',),
         interp_order=3,
         pixdim=None,
-        axcodes=None
+        axcodes=None,
+        loader=None
     )
 }
 TASK_PARAM = ParserNamespace(image=('T1', 'FLAIR'))

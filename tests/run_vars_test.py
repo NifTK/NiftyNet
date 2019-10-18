@@ -4,13 +4,15 @@ from __future__ import absolute_import, print_function
 import numpy as np
 import tensorflow as tf
 
-from niftynet.engine.application_iteration import IterationMessage
+from niftynet.engine.application_iteration import IterationMessage, \
+    IterationMessageGenerator
 from niftynet.engine.application_variables import CONSOLE
-from niftynet.io.image_sets_partitioner import TRAIN, VALID
+from niftynet.engine.signal import \
+    TRAIN, ITER_FINISHED, GRAPH_CREATED, SESS_STARTED
 from tests.application_driver_test import get_initialised_driver
 
 
-class RunVarsTest(tf.test.TestCase):
+class DriverLoopTest(tf.test.TestCase):
     def test_interfaces(self):
         msg = IterationMessage()
         msg.current_iter = 0
@@ -18,7 +20,7 @@ class RunVarsTest(tf.test.TestCase):
         self.assertEqual(msg.ops_to_run, {})
         self.assertEqual(msg.data_feed_dict, {})
         self.assertEqual(msg.current_iter_output, None)
-        self.assertEqual(msg.should_stop, False)
+        self.assertEqual(msg.should_stop, None)
         self.assertEqual(msg.phase, TRAIN)
         self.assertEqual(msg.is_training, True)
         self.assertEqual(msg.is_validation, False)
@@ -26,7 +28,7 @@ class RunVarsTest(tf.test.TestCase):
         msg.current_iter_output = {'test'}
         self.assertEqual(msg.current_iter_output, {'test'})
         self.assertGreater(msg.iter_duration, 0.0)
-        self.assertStartsWith(msg.to_console_string(), 'Training')
+        self.assertStartsWith(msg.to_console_string(), 'training')
         self.assertEqual(msg.to_tf_summary(0), None)
 
     def test_set_fields(self):
@@ -48,59 +50,58 @@ class RunVarsTest(tf.test.TestCase):
 
     def test_run_vars(self):
         app_driver = get_initialised_driver()
-        test_graph = app_driver._create_graph(app_driver.graph)
-        test_tensor = app_driver.graph.get_tensor_by_name(
+        test_graph = app_driver.create_graph(app_driver.app, 1, True)
+        test_tensor = test_graph.get_tensor_by_name(
             "G/conv_bn_selu/conv_/w:0")
+        train_eval_msgs = []
+        test_vals = []
+
+        def get_iter_msgs(_sender, **msg):
+            """" Captures iter_msg and model values for testing"""
+            train_eval_msgs.append(msg['iter_msg'])
+            test_vals.append(sess.run(test_tensor))
+            print(msg['iter_msg'].to_console_string())
+
+        ITER_FINISHED.connect(get_iter_msgs)
 
         with self.test_session(graph=test_graph) as sess:
-            app_driver._run_sampler_threads()
-            app_driver._run_sampler_threads(sess)
-            sess.run(app_driver._init_op)
+            GRAPH_CREATED.send(app_driver.app, iter_msg=None)
+            SESS_STARTED.send(app_driver.app, iter_msg=None)
+            iterations = IterationMessageGenerator(
+                initial_iter=0,
+                final_iter=3,
+                validation_every_n=2,
+                validation_max_iter=1,
+                is_training_action=True)
+            app_driver.loop(app_driver.app, iterations())
 
-            iter_msg = IterationMessage()
+            # Check sequence of iterations
+            self.assertRegexpMatches(
+                train_eval_msgs[0].to_console_string(), 'training')
+            self.assertRegexpMatches(
+                train_eval_msgs[1].to_console_string(), 'training')
+            self.assertRegexpMatches(
+                train_eval_msgs[2].to_console_string(), 'validation')
+            self.assertRegexpMatches(
+                train_eval_msgs[3].to_console_string(), 'training')
 
-            # run 1st training iter
-            iter_msg.current_iter, iter_msg.phase = 1, TRAIN
-            app_driver.run_vars(sess, iter_msg)
-            model_value_1 = sess.run(test_tensor)
-            self.assertGreater(iter_msg.iter_duration, 0.0)
-            print(iter_msg.to_console_string())
-            self.assertRegexpMatches(iter_msg.to_console_string(), 'Training')
+            # Check durations
+            for iter_msg in train_eval_msgs:
+                self.assertGreater(iter_msg.iter_duration, 0.0)
 
-            # run 2nd training iter
-            iter_msg.current_iter, iter_msg.phase = 2, TRAIN
-            app_driver.run_vars(sess, iter_msg)
-            model_value_2 = sess.run(test_tensor)
-            # make sure model gets updated
+            # Check training changes test tensor
             self.assertNotAlmostEqual(
-                np.mean(np.abs(model_value_1 - model_value_2)), 0.0)
-            print(iter_msg.to_console_string())
-            self.assertRegexpMatches(iter_msg.to_console_string(), 'Training')
+                np.mean(np.abs(test_vals[0] - test_vals[1])), 0.0)
+            self.assertNotAlmostEqual(
+                np.mean(np.abs(test_vals[2] - test_vals[3])), 0.0)
 
-            # run validation iter
-            iter_msg.current_tier, iter_msg.phase = 3, VALID
-            app_driver.run_vars(sess, iter_msg)
-            model_value_3 = sess.run(test_tensor)
-            # make sure model not gets udpated
+            # Check validation doesn't change test tensor
             self.assertAlmostEqual(
-                np.mean(np.abs(model_value_2 - model_value_3)), 0.0)
-            print(iter_msg.to_console_string())
-            self.assertRegexpMatches(iter_msg.to_console_string(), 'Validation')
-
-            # run training iter
-            iter_msg.current_iter, iter_msg.phase = 4, TRAIN
-            app_driver.run_vars(sess, iter_msg)
-            model_value_4 = sess.run(test_tensor)
-            # make sure model gets updated
-            self.assertNotAlmostEqual(
-                np.mean(np.abs(model_value_2 - model_value_4)), 0.0)
-            self.assertNotAlmostEqual(
-                np.mean(np.abs(model_value_3 - model_value_4)), 0.0)
-            print(iter_msg.to_console_string())
-            self.assertRegexpMatches(iter_msg.to_console_string(), 'Training')
+                np.mean(np.abs(test_vals[1] - test_vals[2])), 0.0)
 
             app_driver.app.stop()
-            self.assertEqual(iter_msg.ops_to_run, {})
+
+        ITER_FINISHED.disconnect(get_iter_msgs)
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ from niftynet.engine.application_factory import \
     ApplicationNetFactory, InitializerFactory, OptimiserFactory
 from niftynet.engine.application_variables import \
     CONSOLE, NETWORK_OUTPUT, TF_SUMMARIES
-from niftynet.engine.sampler_grid import GridSampler
+from niftynet.engine.sampler_grid_v2 import GridSampler
 from niftynet.engine.windows_aggregator_grid import GridSamplesAggregator
 from niftynet.io.image_reader import ImageReader
 from niftynet.layer.binary_masking import BinaryMaskingLayer
@@ -52,15 +52,14 @@ class SelectiveSampling(BaseApplication):
         self.data_param = data_param
         self.segmentation_param = task_param
 
+        try:
+            reader_phase = self.action_param.dataset_to_infer
+        except AttributeError:
+            reader_phase = None
+        file_lists = data_partitioner.get_file_lists_by(
+            phase=reader_phase, action=self.action)
         # read each line of csv files into an instance of Subject
         if self.is_training:
-            file_lists = []
-            if self.action_param.validation_every_n > 0:
-                file_lists.append(data_partitioner.train_files)
-                file_lists.append(data_partitioner.validation_files)
-            else:
-                file_lists.append(data_partitioner.train_files)
-
             self.readers = []
             for file_list in file_lists:
                 reader = ImageReader(SUPPORTED_INPUT)
@@ -69,8 +68,7 @@ class SelectiveSampling(BaseApplication):
 
         else:  # in the inference process use image input only
             inference_reader = ImageReader(['image'])
-            file_list = data_partitioner.inference_files
-            inference_reader.initialise(data_param, task_param, file_list)
+            inference_reader.initialise(data_param, task_param, file_lists[0])
             self.readers = [inference_reader]
 
         foreground_masking_layer = None
@@ -169,7 +167,7 @@ class SelectiveSampling(BaseApplication):
     def initialise_grid_sampler(self):
         self.sampler = [[GridSampler(
             reader=reader,
-            data_param=self.data_param,
+            window_sizes=self.data_param,
             batch_size=self.net_param.batch_size,
             spatial_window_size=self.action_param.spatial_window_size,
             window_border=self.action_param.border,

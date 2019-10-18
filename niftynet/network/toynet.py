@@ -26,7 +26,7 @@ class ToyNet(BaseNet):
 
         self.hidden_features = 10
 
-    def layer_op(self, images, is_training):
+    def layer_op(self, images, is_training=True, **unused_kwargs):
         conv_1 = ConvolutionalLayer(self.hidden_features,
                                     kernel_size=3,
                                     w_initializer=self.initializers['w'],

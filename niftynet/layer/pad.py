@@ -17,7 +17,7 @@ class PadLayer(Layer, Invertible):
     therefore assumes the input has at least three spatial dims.
     """
 
-    def __init__(self, image_name, border, name='pad'):
+    def __init__(self, image_name, border, name='pad', mode='minimum'):
         super(PadLayer, self).__init__(name=name)
         try:
             spatial_border = tuple(map(lambda x: (x,), border))
@@ -26,11 +26,12 @@ class PadLayer(Layer, Invertible):
             raise
         self.border = spatial_border
         self.image_name = set(image_name)
+        self.mode = mode
 
     def layer_op(self, input_image, mask=None):
         if not isinstance(input_image, dict):
             full_border = match_ndim(self.border, input_image.ndim)
-            input_image = np.pad(input_image, full_border, mode='minimum')
+            input_image = np.pad(input_image, full_border, mode=self.mode)
             return input_image, mask
 
         for name, image in input_image.items():
@@ -40,7 +41,7 @@ class PadLayer(Layer, Invertible):
                     name, self.image_name)
                 continue
             full_border = match_ndim(self.border, image.ndim)
-            input_image[name] = np.pad(image, full_border, mode='minimum')
+            input_image[name] = np.pad(image, full_border, mode=self.mode)
         return input_image, mask
 
     def inverse_op(self, input_image, mask=None):
