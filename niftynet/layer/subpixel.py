@@ -182,13 +182,13 @@ class ICNR:
             return self.initializer(shape)
 
         # Initializing W0 (enough kernels for one output channel)
-        new_shape = shape[:-1] + [shape[-1] // (self.upsample_factor ** 2)]
+        new_shape = shape[:-1] + [shape[-1] // (self.upsample_factor ** (len(shape)-2))]
         x = self.initializer(new_shape, dtype, partition_info)
 
         # Repeat the elements along the output dimension
         x = tf.keras.backend.repeat_elements(
             x=x,
-            rep=self.upsample_factor ** 2,
+            rep=self.upsample_factor ** len(shape)-2,
             axis=-1
         )
 
