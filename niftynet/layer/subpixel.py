@@ -15,6 +15,11 @@ class SubPixelLayer(TrainableLayer):
     SubPixel Convolution initialised with ICNR initialisation
     and followed by an AveragePooling
 
+    Limitations:
+
+    If ICNR initialization is used then the upsample factor
+    MUST be an integer
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Shi, W., Caballero, J., Huszár, F., Totz, J., Aitken, A.P.,
     Bishop, R., Rueckert, D. and Wang, Z., 2016.
@@ -88,6 +93,8 @@ class SubPixelLayer(TrainableLayer):
 
         if upsample_factor <= 0:
             raise ValueError("The upsampling factor must be strictly positive.")
+        if int(upsample_factor)!=float(upsample_factor) and use_icnr:
+            raise ValueError("If ICNR initialization is used the sample factor must be an integer")
 
         self.upsample_factor = upsample_factor
         self.kernel_size = kernel_size
