@@ -59,15 +59,15 @@ class SubPixelLayer(TrainableLayer):
     def __init__(
         self,
         upsample_factor=2,
-        no_img_channels=1,
+        n_output_chns=1,
         kernel_size=3,
         acti_func="tanh",
         feature_normalization=None,
         group_size=-1,
         with_bias=True,
         padding="REFLECT",
-        use_icnr=True,
-        use_avg=True,
+        use_icnr=False,
+        use_avg=False,
         w_initializer=None,
         w_regularizer=None,
         b_initializer=None,
@@ -76,7 +76,7 @@ class SubPixelLayer(TrainableLayer):
     ):
         """
         :param upsample_factor: zoom-factor/image magnification factor
-        :param no_img_channels: the desired ammount of channels for the
+        :param n_output_chns: the desired ammount of channels for the
         upsampled image
         :param kernel_size: the size of the convolutional kernels
         :param acti_func: activation function applied to first N - 1 layers
@@ -93,14 +93,20 @@ class SubPixelLayer(TrainableLayer):
 
         if upsample_factor <= 0:
             raise ValueError("The upsampling factor must be strictly positive.")
-        if int(upsample_factor)!=float(upsample_factor) and use_icnr:
-            raise ValueError("If ICNR initialization is used the sample factor must be an integer")
+        if int(upsample_factor) != float(upsample_factor) and use_icnr:
+            raise ValueError(
+                "If ICNR initialization is used the sample factor must be an integer"
+            )
+        if w_initializer is None and use_icnr:
+            raise ValueError(
+                "If ICNR initialization is used the weights initializer must be specified"
+            )
 
         self.upsample_factor = upsample_factor
         self.kernel_size = kernel_size
         self.acti_func = acti_func
         self.use_avg = use_avg
-        self.no_img_channels = no_img_channels
+        self.n_output_chns = n_output_chns
 
         self.conv_layer_params = {
             "with_bias": with_bias,
@@ -109,7 +115,7 @@ class SubPixelLayer(TrainableLayer):
             "padding": padding,
             "w_initializer": w_initializer
             if not use_icnr
-            else ICNR(
+            else _ICNR(
                 initializer=tf.keras.initializers.get(w_initializer),
                 upsample_factor=upsample_factor,
             ),
@@ -131,8 +137,7 @@ class SubPixelLayer(TrainableLayer):
         # periodic shuffling
         features = ConvolutionalLayer(
             n_output_chns=(
-                self.no_img_channels *
-                self.upsample_factor ** (len(input_shape) - 1)
+                self.n_output_chns * self.upsample_factor ** (len(input_shape) - 1)
             ),
             kernel_size=self.kernel_size,
             acti_func=None,
@@ -167,7 +172,7 @@ class SubPixelLayer(TrainableLayer):
         return sr_image
 
 
-class ICNR:
+class _ICNR:
     def __init__(self, initializer, upsample_factor=1):
         """
         :param initializer:  initializer used for sub kernels (orthogonal, glorot uniform, etc.)
@@ -182,14 +187,14 @@ class ICNR:
             return self.initializer(shape)
 
         # Initializing W0 (enough kernels for one output channel)
-        new_shape = shape[:-1] + [shape[-1] // (self.upsample_factor ** (len(shape)-2))]
+        new_shape = shape[:-1] + [
+            shape[-1] // (self.upsample_factor ** (len(shape) - 2))
+        ]
         x = self.initializer(new_shape, dtype, partition_info)
 
         # Repeat the elements along the output dimension
         x = tf.keras.backend.repeat_elements(
-            x=x,
-            rep=self.upsample_factor ** len(shape)-2,
-            axis=-1
+            x=x, rep=self.upsample_factor ** (len(shape) - 2), axis=-1
         )
 
         return x
