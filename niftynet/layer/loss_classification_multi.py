@@ -202,7 +202,7 @@ def loss_confusion_matrix(ground_truth, pred_multi, num_classes=2, nrater=6):
                                        nn_pred[:, j, :])
             confusion_gt = tf.matmul(tf.transpose(dense_one_hot[:, i, :]),
                                      dense_one_hot[:, j, :])
-            error = tf.divide(np.abs(confusion_gt - confusion_pred), tf.cast(
+            error = tf.divide(tf.abs(confusion_gt - confusion_pred), tf.cast(
                 tf.shape(ground_truth)[0], tf.float32))
             error_fin += error
             error_fin = tf.Print(tf.cast(error,tf.float32), [tf.reduce_sum(
