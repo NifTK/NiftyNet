@@ -93,8 +93,8 @@ testjob:
     - coverage run -a --source . net_segment.py inference -c config/vnet_config.ini --batch_size 16 --spatial_window_size 64,64,64 --queue_length 32 --activation_function relu
 
     # need a large GPU to run
-      #- coverage run -a --source . net_segment.py train -c config/unet_config.ini --batch_size 1 --queue_length 5 --num_threads 2
-      #- coverage run -a --source . net_segment.py inference -c config/unet_config.ini --batch_size 1 --spatial_window_size 96,96,96 --queue_length 5
+    - coverage run -a --source . net_segment.py train -c config/unet_config.ini --batch_size 1 --queue_length 5 --num_threads 2
+    - coverage run -a --source . net_segment.py inference -c config/unet_config.ini --batch_size 1 --spatial_window_size 96,96,96 --queue_length 5
 
       #- coverage run -a --source . net_segment.py train -c config/deepmedic_config.ini --batch_size 128 --queue_length 48 --num_threads 4
       #- coverage run -a --source . net_segment.py inference -c config/deepmedic_config.ini --batch_size 12 --spatial_window_size 135,135,135  --queue_length 128
