@@ -54,7 +54,6 @@ except ImportError:
     from tensorflow.python.util import deprecation_wrapper as deprecation
 deprecation._PER_MODULE_WARNING_LIMIT = 0
 
-
 from niftynet.io.misc_io import set_logger, close_logger
 
 set_logger()

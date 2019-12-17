@@ -145,7 +145,6 @@ quicktest:
   except:
     - master
     - dev
-    - fixes-unit-tests
     - tags
     - 147-revise-contribution-guidelines-to-include-github
     - 150-properly-format-the-bibtex-entry-to-the-ipmi-2017-paper-on-the-main-readme
@@ -228,31 +227,12 @@ pip-installer:
     - master
     - dev
     - tags
-    - fixes-dependencies
   script:
-    - export TF_CPP_MIN_LOG_LEVEL=2
     # get the shortened version of last commit's hash
     - LAST_COMMIT=$(git rev-parse --short HEAD)
-    # source utils
-    - source ci/utils.sh
     # following three lines copied over from dev script:
     - ls -la /dev | grep nvidia
-    # install TF
-    - pip install --upgrade pip
-    - pip install "tensorflow==1.15.*"
-    - echo $(python tests/get_gpu_index.py)
-    - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
-    # create a Python file that will import all available packages from the pip installer
-    - package_importer="$(pwd)/import_niftynet_packages.py"
-    # traverse the file hierarchy recursively to discover all packages
-    - find niftynet -type f \( ! -name . \) -print | grep '.py$' | grep -v __init__ | sed 's/\.\.\///g;s/\//\./g;s/\.py//g;s/^niftynet/import niftynet/g' > $package_importer
-    # save NiftyNet folder path just in case
     - export niftynet_dir=$(pwd)
-    # create the NiftyNet wheel
-    - rm -rf dist  # remove dist directory, just in case
-    - sh ci/bundlewheel.sh
-    - source ci/findwheel.sh
-    - echo $niftynet_wheel
     # ============= Python 3 ============================
     # create a virtual env to test pip installer
     - venv="niftynet-pip-installer-venv-py3"
@@ -267,18 +247,30 @@ pip-installer:
     # NiftyNet console entries should fail gracefully if TF not installed
     # i.e. check that the warning displays the TF website
     - cd $niftynet_dir
-
     - echo $(python tests/get_gpu_index.py)
     - export CUDA_VISIBLE_DEVICES=$(python tests/get_gpu_index.py)
+
+    # create a Python file that will import all available packages from the pip installer
+    - package_importer="$(pwd)/import_niftynet_packages.py"
+    # traverse the file hierarchy recursively to discover all packages
+    - find niftynet -type f \( ! -name . \) -print | grep '.py$' | grep -v __init__ | sed 's/\.\.\///g;s/\//\./g;s/\.py//g;s/^niftynet/import niftynet/g' > $package_importer
 
     - set +e
     - python -c "import niftynet" 2>&1 | grep "https://www.tensorflow.org/"
     - set -e
-    - cd $venv_dir
     # install TF
     - pip install --upgrade pip
     - pip install "tensorflow==1.15.*"
-    # install using built NiftyNet wheel
+    - pip install -r requirements.txt
+
+
+    # source utils
+    - source ci/utils.sh
+    # create the NiftyNet wheel
+    - rm -rf dist  # remove dist directory, just in case
+    - sh ci/bundlewheel.sh
+    - source ci/findwheel.sh
+    - echo $niftynet_wheel
     - pip install $niftynet_wheel
     # install SimpleITK for package importer test to work properly
     - pip install simpleitk
@@ -336,10 +328,16 @@ pip-camera-ready:
   only:
     - tags
   script:
+    - export check_version_venv=check_version_venv
+    - virtualenv -p $(which python3) $check_version_venv
+    - source $check_version_venv/bin/activate
+    - pip install "tensorflow==1.15.*"
+    - pip install -r requirements.txt
     # Copy wheel created in previous stage to a specific location on GIFT-Adelie
     - export niftynet_dir=$(pwd)
     # create the NiftyNet wheel
     - rm -rf dist  # remove dist directory, just in case
+    - source ci/utils.sh
     - sh ci/bundlewheel.sh
     - source ci/findwheel.sh
     - echo $niftynet_wheel
@@ -350,14 +348,10 @@ pip-camera-ready:
     # Clean up the camera-ready folder if already there
     - rm -rf $camera_ready_dir/*.whl
     # check whether version command works
-    - export check_version_venv=check_version_venv
-    - virtualenv $check_version_venv
-    - source $check_version_venv/bin/activate
-        # install TF
-    - pip install --upgrade pip
-    - pip install "tensorflow==1.15.*"
-    - pip install -r requirements.txt
-    - pip install $niftynet_wheel
+    - pip3 install "tensorflow==1.15.*"
+    - pip3 install -r requirements.txt
+    - pip3 install $niftynet_wheel
+    - net_segment --version
     - net_segment --version 2>&1 | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+' | grep -v +
     - python -c 'import niftynet; print(niftynet.__version__)' | grep -E 'NiftyNet.*version.*[0-9]+\.[0-9]+\.[0-9]+' | grep -v +
     - deactivate
