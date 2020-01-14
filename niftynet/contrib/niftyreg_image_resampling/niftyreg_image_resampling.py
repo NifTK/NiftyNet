@@ -5,7 +5,7 @@ from tensorflow.python.framework import ops
 from niftynet.layer.base_layer import Layer
 from niftynet.layer.layer_util import infer_spatial_rank
 
-from niftynet.contrib.niftyreg_image_resampling.niftyreg_module_loader import get_niftyreg_module
+from niftyreg_module_loader import get_niftyreg_module
 
 
 # NiftyNet boundary types to NiftyReg code mapping
