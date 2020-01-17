@@ -215,10 +215,10 @@ class GANApplication(BaseApplication):
                 collection=CONSOLE)
             # variables to display in tensorboard
             outputs_collector.add_to_collection(
-                var=lossG, name='lossG', average_over_devices=False,
+                var=lossD, name='lossD', average_over_devices=True,
                 collection=TF_SUMMARIES)
             outputs_collector.add_to_collection(
-                var=lossG, name='lossD', average_over_devices=True,
+                var=lossG, name='lossG', average_over_devices=False,
                 collection=TF_SUMMARIES)
 
             with tf.name_scope('Optimiser'):
