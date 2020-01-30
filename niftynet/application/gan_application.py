@@ -179,13 +179,11 @@ class GANApplication(BaseApplication):
                                      stddev=1.0,
                                      dtype=tf.float32)
             conditioning = data_dict['conditioning']
-            net_output = self.net(
+            fake_image, real_logits, fake_logits = self.net(
                 noise, images, conditioning, self.is_training)
 
             loss_func = LossFunction(
                 loss_type=self.action_param.loss_type)
-            real_logits = net_output[1]
-            fake_logits = net_output[2]
             lossG, lossD = loss_func(real_logits, fake_logits)
             if self.net_param.decay > 0:
                 reg_losses = tf.get_collection(
@@ -220,6 +218,23 @@ class GANApplication(BaseApplication):
             outputs_collector.add_to_collection(
                 var=lossG, name='lossG', average_over_devices=False,
                 collection=TF_SUMMARIES)
+            # images to display in tensorboard
+            if self.gan_param.tensorboard_n_fake_images > 0:
+                outputs_collector.add_to_collection(
+                    var=fake_image[:self.gan_param.tensorboard_n_fake_images],
+                    name='fake_image_sagittal',
+                    collection=TF_SUMMARIES, summary_type='image3_sagittal_n')
+
+                outputs_collector.add_to_collection(
+                    var=fake_image[:self.gan_param.tensorboard_n_fake_images],
+                    name='fake_image_coronal',
+                    collection=TF_SUMMARIES, summary_type='image3_coronal_n')
+
+                outputs_collector.add_to_collection(
+                    var=fake_image[:self.gan_param.tensorboard_n_fake_images],
+                    name='fake_image_axial',
+                    collection=TF_SUMMARIES, summary_type='image3_axial_n')
+
 
             with tf.name_scope('Optimiser'):
                 optimiser_class = OptimiserFactory.create(

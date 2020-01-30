@@ -9,7 +9,8 @@ import tensorflow as tf
 from tensorflow.contrib.framework import list_variables
 
 from niftynet.io.misc_io import \
-    image3_axial, image3_coronal, image3_sagittal, resolve_checkpoint
+    image3_axial, image3_coronal, image3_sagittal, \
+    image3_axial_n, image3_coronal_n, image3_sagittal_n, resolve_checkpoint
 from niftynet.utilities import util_common as util
 from niftynet.utilities.restore_initializer import restore_initializer
 
@@ -22,8 +23,10 @@ SUPPORTED_SUMMARY = {'scalar': tf.summary.scalar,
                      'image': tf.summary.image,
                      'image3_sagittal': image3_sagittal,
                      'image3_coronal': image3_coronal,
-                     'image3_axial': image3_axial}
-
+                     'image3_axial': image3_axial,
+                     'image3_sagittal_n': image3_sagittal_n,
+                     'image3_coronal_n': image3_coronal_n,
+                     'image3_axial_n': image3_axial_n}
 
 class GradientsCollector(object):
     """

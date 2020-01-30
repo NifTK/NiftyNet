@@ -840,6 +840,55 @@ def image3_axial(name,
     return image3(name, tensor, max_outputs, collections, [3], [1, 2])
 
 
+def image3_sagittal_n(name,
+                    tensor,
+                    collections=(tf.GraphKeys.SUMMARIES, )):
+    """
+    Create 2D image summary in the sagittal view. An image will be generated for
+    every element in axis 0 of the tensor.
+
+    :param name:
+    :param tensor:
+    :param max_outputs:
+    :param collections:
+    :return:
+    """
+    return image3(name, tensor, tensor.shape.as_list()[0], collections, [1], [2, 3])
+
+
+def image3_coronal_n(name,
+                   tensor,
+                   collections=(tf.GraphKeys.SUMMARIES, )):
+    """
+    Create 2D image summary in the coronal view. An image will be generated for
+    every element in axis 0 of the tensor.
+
+    :param name:
+    :param tensor:
+    :param max_outputs:
+    :param collections:
+    :return:
+    """
+    return image3(name, tensor, tensor.shape.as_list()[0], collections, [2], [1, 3])
+
+
+def image3_axial_n(name,
+                 tensor,
+                 max_outputs=3,
+                 collections=(tf.GraphKeys.SUMMARIES, )):
+    """
+    Create 2D image summary in the axial view. An image will be generated for
+    every element in axis 0 of the tensor.
+
+    :param name:
+    :param tensor:
+    :param max_outputs:
+    :param collections:
+    :return:
+    """
+    return image3(name, tensor, tensor.shape.as_list()[0], collections, [3], [1, 2])
+
+
 def set_logger(file_name=None):
     """
     Writing logs to a file if file_name,
