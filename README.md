@@ -1,3 +1,7 @@
+# Status update - 2020-04-21
+
+⚠️ **NiftyNet is not actively maintained anymore**. We have learned a lot in our journey and decided to redirect most of the development efforts towards [MONAI](https://github.com/Project-MONAI/MONAI/).
+
 # NiftyNet
 
 <img src="https://github.com/NifTK/NiftyNet/raw/dev/niftynet-logo.png" width="263" height="155">
