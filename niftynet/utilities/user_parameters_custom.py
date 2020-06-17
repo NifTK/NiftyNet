@@ -211,6 +211,12 @@ def __add_gan_args(parser):
         type=int,
         default=10)
 
+    parser.add_argument(
+        "--tensorboard_n_fake_images",
+        help="the number of fake images to log to Tensorboard in every update",
+        type=int,
+        default=0)
+
     from niftynet.application.gan_application import SUPPORTED_INPUT
     parser = add_input_name_args(parser, SUPPORTED_INPUT)
     return parser
